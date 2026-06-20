@@ -1,7 +1,7 @@
 export const freshNav = [
   { group: "Command", items: [{ key: "command", label: "Command Board", mark: "CM" }] },
   { group: "Work", items: [
-    { key: "hub", label: "Smart Hub", mark: "SH" },
+    { key: "hub", label: "Dashboard", mark: "SH" },
     { key: "jobs", label: "Jobs", mark: "JB" },
     { key: "dispatch", label: "Dispatch", mark: "DP" },
     { key: "clients", label: "Clients", mark: "CL" },
@@ -34,7 +34,7 @@ export const clients = [
 ];
 
 export const boards = {
-  hub: { title: "Smart Hub", copy: "Morning view: what needs action, what is booked, and where money is waiting.", rows: ["Approve invoice", "Confirm access", "Garden tidy today"] },
+  hub: { title: "Dashboard", copy: "Morning view: what needs action, what is booked, and where money is waiting.", rows: ["Approve invoice", "Confirm access", "Garden tidy today"] },
   jobs: { title: "Jobs", copy: "Create, schedule, assign, price and complete work.", rows: ["Lawn service assigned", "Garden tidy in progress", "Driveway clean needs access"] },
   dispatch: { title: "Dispatch", copy: "Daily route planning: who is going where, what is late, and who has acknowledged.", rows: ["Unconfirmed", "Ready", "On site", "Complete"] },
   quotes: { title: "Quotes", copy: "Draft, send, follow up and convert accepted quotes into jobs.", rows: ["Driveway clean draft", "Garden package sent", "Lawn reset accepted"] },

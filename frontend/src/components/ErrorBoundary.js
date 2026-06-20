@@ -18,7 +18,7 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       const fallbackHref = this.props.fallbackHref || "/dashboard";
-      const fallbackLabel = this.props.fallbackLabel || "Back to Smart Hub";
+      const fallbackLabel = this.props.fallbackLabel || "Back to Dashboard";
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl shadow-sm p-6 text-center space-y-4">

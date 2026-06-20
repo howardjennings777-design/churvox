@@ -118,7 +118,7 @@ export default function FreshDemoMode({ onNavigate }) {
           <div className="freshDemoButtons">
             <button type="button" onClick={() => loadDemo(onNavigate, setLoaded)}>Load demo and open Command</button>
             <button type="button" onClick={() => clearDemo(setLoaded)}>Clear demo data</button>
-            <button type="button" onClick={() => onNavigate?.("smart")}>Open Smart Hub</button>
+            <button type="button" onClick={() => onNavigate?.("smart")}>Open Dashboard</button>
             <button type="button" onClick={() => onNavigate?.("launchpack")}>Open Launch Pack</button>
           </div>
         </article>

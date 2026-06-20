@@ -1,5 +1,5 @@
-/* Stable Smart Hub rescue polish.
-   Loaded from DashboardPage after the older Smart Hub styles so the new dashboard is not weakened by old global overrides. */
+/* Stable Dashboard rescue polish.
+   Loaded from DashboardPage after the older Dashboard styles so the new dashboard is not weakened by old global overrides. */
 
 .smart-hub-hard-trade-v4 {
   padding-top: clamp(24px, 3vw, 44px) !important;

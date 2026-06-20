@@ -59,7 +59,7 @@ export default function SmartHubBrainPageStable() {
 
       setData({ actions: normalizedActions, jobs: toList(jobs, ["jobs"]), invoices: toList(invoices, ["invoices"]), quotes: toList(quotes, ["quotes"]), proofPacks: toList(proofPacks, ["proof_packs", "items"]), followUps: toList(followUps, ["actions", "items"]), recurring: toList(recurring, ["rules", "items"]), receptionist: toList(receptionist, ["enquiries", "items"]), customerUpdates: toList(customerUpdates, ["updates", "items"]), quoteDrafts: toList(quoteDrafts, ["drafts", "items"]), health: health || {}, clients: toList(clients, ["clients"]), workers: toList(workers, ["workers"]), memory: toList(memory, ["items", "actions"]) });
     } catch {
-      setError("Smart Hub could not load everything yet.");
+      setError("Dashboard could not load everything yet.");
     } finally {
       setLoading(false);
     }
@@ -129,6 +129,6 @@ export default function SmartHubBrainPageStable() {
     {tab === "account" && warningCount > 0 ? <section className="smart-command-panel"><h2>Account & Plan Health</h2><p>Warnings detected across trial, billing, limits, credits, or integrations.</p><button className="smart-command-btn light" onClick={() => window.location.assign("/account-plan")}>Open Account & Plan Centre</button></section> : null}
     {notice ? <section className="smart-command-panel"><p>{notice}</p></section> : null}
     {error ? <section className="smart-command-panel"><p>{error}</p></section> : null}
-    {loading ? <section className="smart-command-panel"><p>Loading Smart Hub...</p></section> : null}
+    {loading ? <section className="smart-command-panel"><p>Loading Dashboard...</p></section> : null}
   </div></main></Layout>;
 }

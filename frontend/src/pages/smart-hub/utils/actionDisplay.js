@@ -52,7 +52,7 @@ export const getBestNextMove = ({ readyToBillCount = 0, unassignedJobsCount = 0,
   if (readyToBillCount > 0) return { key: "invoice_drafts", label: `Create draft invoices for ${readyToBillCount} ready-to-bill job${readyToBillCount === 1 ? "" : "s"}.`, drawer: "Invoices", mode: "readyToBill", approvalTab: "ready" };
   if (openInvoicesCount > 0) return { key: "invoice_reminders", label: `Prepare reminders for ${openInvoicesCount} open invoice${openInvoicesCount === 1 ? "" : "s"}.`, drawer: "Payment Reminders", mode: "reminders", approvalTab: "drafts" };
   if (quotesWaitingCount > 0) return { key: "quote_followups", label: `Review follow-ups for ${quotesWaitingCount} waiting quote${quotesWaitingCount === 1 ? "" : "s"}.`, drawer: "Quote Follow-ups", mode: "followUps", approvalTab: "drafts" };
-  return { key: "all_clear", label: "All clear — no urgent actions in Smart Hub.", drawer: "Dashboard", mode: "list", approvalTab: "all" };
+  return { key: "all_clear", label: "All clear — no urgent actions in Dashboard.", drawer: "Dashboard", mode: "list", approvalTab: "all" };
 };
 
 export const getActionDisplayMeta = (item = {}, { jobs = [], clients = [], invoices = [], quotes = [], workers = [] } = {}) => {
@@ -81,7 +81,7 @@ export const getActionDisplayMeta = (item = {}, { jobs = [], clients = [], invoi
   if (actionType === 'missing_contact') return { ...base, title: `Add contact details for ${clientName}`, subtitle: 'Needed before email/SMS can be sent' };
   if (actionType === 'schedule_conflict') return { ...base, title: `Review schedule conflict for ${jobTitle}`, subtitle: `${workerName} · ${scheduledTime} · conflict needs approval` };
   if (actionType === 'crew_workload') return { ...base, title: 'Review crew workload', subtitle: 'AI found uneven workload or pressure' };
-  if (actionType === 'info') return { ...base, title: textOr(item?.title, 'AI note'), subtitle: textOr(item?.subtitle || item?.dataUsed || item?.message, 'Smart Hub update') };
+  if (actionType === 'info') return { ...base, title: textOr(item?.title, 'AI note'), subtitle: textOr(item?.subtitle || item?.dataUsed || item?.message, 'Dashboard update') };
 
   return { ...base, title: textOr(item.title, 'Approval action'), subtitle: textOr(item.subtitle || item.dataUsed, '') };
 };

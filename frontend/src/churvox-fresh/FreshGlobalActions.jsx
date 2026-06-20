@@ -3,7 +3,7 @@ import React from "react";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
 const searchItems = [
-  ["Smart Hub", "Today’s actions and AI admin", "smart"],
+  ["Dashboard", "Today’s actions and AI admin", "smart"],
   ["Ask Churvox", "Type one command in plain English", "askchurvox"],
   ["Command", "Approve AI prepared work", "command"],
   ["Clients", "Customers and history", "clients"],

@@ -3,7 +3,7 @@ import API_BASE from "../../lib/apiBase";
 
 const TESTS = [
   { id: "launch_smoke", label: "Run launch smoke test", routes: ["/login", "/dashboard", "/clients", "/jobs"] },
-  { id: "smart_hub", label: "Run Smart Hub test", routes: ["/dashboard"] },
+  { id: "smart_hub", label: "Run Dashboard test", routes: ["/dashboard"] },
   { id: "role_permission", label: "Run role permission test", routes: ["/dashboard", "/payroll", "/team"] },
   { id: "mobile_tap", label: "Run mobile tap test", routes: ["/dashboard", "/jobs"] },
   { id: "billing_plans", label: "Run billing/plans test", routes: ["/plans"] },

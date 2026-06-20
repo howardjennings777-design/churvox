@@ -127,7 +127,7 @@ function SmartHubBrainPage() {
         approvals: safeArray(approvals),
       });
     } catch (loadError) {
-      setError(loadError.message || "Smart Hub could not load right now.");
+      setError(loadError.message || "Dashboard could not load right now.");
     } finally {
       setLoading(false);
     }
@@ -206,7 +206,7 @@ function SmartHubBrainPage() {
 
     try {
       await apiFetch(path, { method: "POST", body: JSON.stringify({ source: "smart_hub_brain" }) });
-      setMessage(`${label} completed. Smart Hub has refreshed.`);
+      setMessage(`${label} completed. Dashboard has refreshed.`);
       await load();
     } catch (actionError) {
       setError(actionError.message || `${label} failed.`);
@@ -222,7 +222,7 @@ function SmartHubBrainPage() {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
             <div>
               <p style={{ margin: 0, opacity: 0.85, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>Churvox AI Operator</p>
-              <h1 style={{ margin: "8px 0", fontSize: "clamp(32px, 5vw, 58px)", lineHeight: 1, fontWeight: 900 }}>Smart Hub Brain</h1>
+              <h1 style={{ margin: "8px 0", fontSize: "clamp(32px, 5vw, 58px)", lineHeight: 1, fontWeight: 900 }}>Dashboard Brain</h1>
               <p style={{ margin: 0, maxWidth: 720, fontSize: 17, opacity: 0.92 }}>
                 Daily business command centre for jobs, invoices, quotes, workers, and owner approvals.
               </p>
@@ -268,7 +268,7 @@ function SmartHubBrainPage() {
             </div>
 
             {loading ? (
-              <p style={{ color: "#64748b", fontWeight: 700 }}>Loading Smart Hub...</p>
+              <p style={{ color: "#64748b", fontWeight: 700 }}>Loading Dashboard...</p>
             ) : priorityItems.length ? (
               <div style={{ display: "grid", gap: 12 }}>
                 {priorityItems.map((item, index) => (

@@ -1,5 +1,5 @@
 /* CHURVOX_PURPLE_COMMAND_CENTRE_FORCE_20260601
-   CSS-only force layer for the real Command Floor / Smart Hub.
+   CSS-only force layer for the real Command Floor / Dashboard.
    No backend, auth, routing, billing, MYOB, SMS, database or API logic changed. */
 
 :root {
@@ -67,7 +67,7 @@ body:has(.xcf-shell) {
   -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
 }
 
-/* Make Smart Hub look like the preview: purple AI command hero. */
+/* Make Dashboard look like the preview: purple AI command hero. */
 .xcf-command-10.xcf-command-10 .xcf10-hero.xcf10-hero,
 .xcf-command-10.xcf-command-10 .xcf10-next.xcf10-next,
 .concept-c2-frame.concept-c2-frame .c2-spine.c2-spine {

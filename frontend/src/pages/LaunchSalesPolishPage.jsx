@@ -33,7 +33,7 @@ const plans = [
     name: "Operator",
     price: "$149",
     line: "The main Churvox plan. AI prepares the admin.",
-    items: ["AI Operator Actions", "Approval queue", "Smart Hub", "Automation support", "MYOB add-on available"],
+    items: ["AI Operator Actions", "Approval queue", "Dashboard", "Automation support", "MYOB add-on available"],
     popular: true,
   },
   {
@@ -745,7 +745,7 @@ export default function ChurvoxPublicSite() {
             <div className="eyebrow">Inside Churvox</div>
             <h2>Your logged-in app becomes the Command Desk.</h2>
             <p>
-              Smart Hub shows what needs attention, what Churvox prepared,
+              Dashboard shows what needs attention, what Churvox prepared,
               and what button to press next. No messy public-page boxes. No confusing workflow.
             </p>
           </div>

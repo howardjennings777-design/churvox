@@ -424,7 +424,7 @@ function OperatorProofHistory({ m, onPick }) {
     <div className="xcf-operator-proof-stats">
       <button type="button" onClick={() => onPick(makeGroup("Safe prepared actions", "Actions Churvox believes are ready for owner review.", safe, "green", "Open safe actions"))}><small>Safe</small><b>{safe.length}</b></button>
       <button type="button" onClick={() => onPick(makeGroup("Blocked actions", "Actions that need owner input before approval.", blocked, "red", "Open blocked actions"))}><small>Blocked</small><b>{blocked.length}</b></button>
-      <button type="button" onClick={() => onPick(makeGroup("Recent proof history", "Recent Smart Hub / Operator activity.", proofItems, "blue", "Open proof history"))}><small>History</small><b>{proofItems.length}</b></button>
+      <button type="button" onClick={() => onPick(makeGroup("Recent proof history", "Recent Dashboard / Operator activity.", proofItems, "blue", "Open proof history"))}><small>History</small><b>{proofItems.length}</b></button>
     </div>
     <div className="xcf-operator-proof-list">
       {proofItems.length ? proofItems.map((x, i) => (

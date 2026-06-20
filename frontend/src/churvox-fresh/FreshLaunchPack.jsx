@@ -219,7 +219,7 @@ export default function FreshLaunchPack({ onNavigate }) {
             <button type="button" onClick={() => onNavigate?.("imports")}>Open Imports</button>
             <button type="button" onClick={() => onNavigate?.("exports")}>Open Exports</button>
             <button type="button" onClick={() => onNavigate?.("qa")}>Open QA</button>
-            <button type="button" onClick={() => onNavigate?.("smart")}>Open Smart Hub</button>
+            <button type="button" onClick={() => onNavigate?.("smart")}>Open Dashboard</button>
           </div>
         </article>
       </div>

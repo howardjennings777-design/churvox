@@ -2,7 +2,7 @@ import React from "react";
 import { sendFreshSlipToCommand } from "./commandBridge";
 
 const copy = {
-  hub: ["Smart Hub", "Today: what needs action, what is booked, and where money is waiting."],
+  hub: ["Dashboard", "Today: what needs action, what is booked, and where money is waiting."],
   jobs: ["Jobs", "Create, schedule, assign, price and complete work."],
   dispatch: ["Dispatch", "Daily planning: who is going where, what is late, and who has acknowledged."],
   quotes: ["Quotes", "Draft, follow up and convert accepted quotes into jobs."],
@@ -18,7 +18,7 @@ const copy = {
 };
 
 const coreActions = [
-  ["smart", "Smart Hub", "See the full Churvox flow"],
+  ["smart", "Dashboard", "See the full Churvox flow"],
   ["askchurvox", "Tell Churvox", "Type what you want done"],
   ["command", "Command", "Review prepared work"],
   ["jobs", "Jobs", "Open job records"],
@@ -59,7 +59,7 @@ export default function FreshSimple({ page, onNavigate }) {
         <article className="freshCard">
           <h2>How this fits</h2>
           <div className="freshItem"><b>Owner-first</b><span>This area feeds the owner workflow. Nothing important happens without review.</span></div>
-          <div className="freshItem"><b>Core flow</b><span>Use Smart Hub to see whether the next step is job, invoice, payment, accounting or payroll.</span></div>
+          <div className="freshItem"><b>Core flow</b><span>Use Dashboard to see whether the next step is job, invoice, payment, accounting or payroll.</span></div>
           <div className="freshItem"><b>Command</b><span>Anything unclear should be prepared as a Command slip instead of getting lost.</span></div>
         </article>
 

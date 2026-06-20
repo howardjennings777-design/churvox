@@ -114,7 +114,7 @@
   box-shadow: none !important;
 }
 
-/* Hard Smart Hub hero redesign. Hide repeated hero heading/details and leave logo + actions clean. */
+/* Hard Dashboard hero redesign. Hide repeated hero heading/details and leave logo + actions clean. */
 .smart-hub-hard-trade-v4 .operator-hero > *:first-child > *:not(:first-child),
 .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] > *:first-child > *:not(:first-child) {
   display: none !important;

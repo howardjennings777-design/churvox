@@ -21,7 +21,7 @@ export function AiOperatorSettingsPanel({ aiSettings, setAiSettings, onSave, ope
           <label className="flex items-center justify-between gap-3 rounded-2xl border border-[#c9bba8] bg-[#fff8ee] p-4">
             <span>
               <span className="block text-sm font-black text-[#101318]">AI Operator</span>
-              <span className="block text-xs font-semibold text-[#6f6558]">Let Smart Hub scan the business and prepare actions.</span>
+              <span className="block text-xs font-semibold text-[#6f6558]">Let Dashboard scan the business and prepare actions.</span>
             </span>
             <input type="checkbox" checked={!!aiSettings.ai_operator_enabled} onChange={(event) => updateSetting('ai_operator_enabled', event.target.checked)} className="h-5 w-5" />
           </label>
