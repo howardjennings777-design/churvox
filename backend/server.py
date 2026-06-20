@@ -6238,6 +6238,290 @@ async def decline_ai_action(action_id: str, payload: dict = Body(default_factory
 # Include router once, after every route above has been registered.
 # app.include_router(api_router) moved to bottom
 
+
+
+# =========================
+# OWNER NOTIFICATIONS
+# Bell feed + read state. Keeps frontend from 404 and gives owner one place
+# to see worker messages, completed jobs and proof-ready work.
+# =========================
+
+def _notification_dt(value):
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str) and value:
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc)
+
+
+def _notification_iso(value):
+    dt = _notification_dt(value)
+    try:
+        return dt.isoformat()
+    except Exception:
+        return datetime.now(timezone.utc).isoformat()
+
+
+def _notification_id(prefix: str, doc: dict):
+    raw = doc.get("_id") or doc.get("id") or doc.get("notification_id")
+    return f"{prefix}:{str(raw)}"
+
+
+async def _notification_read_state(business_id: str, user_id: str):
+    try:
+        state = await db.notification_read_state.find_one({
+            "business_id": business_id,
+            "user_id": user_id,
+        })
+        all_read_at = state.get("all_read_at") if state else None
+    except Exception:
+        all_read_at = None
+
+    read_ids = set()
+    try:
+        cursor = db.notification_reads.find({
+            "business_id": business_id,
+            "user_id": user_id,
+        }).limit(1000)
+        async for item in cursor:
+            nid = item.get("notification_id")
+            if nid:
+                read_ids.add(str(nid))
+    except Exception:
+        pass
+
+    return all_read_at, read_ids
+
+
+def _is_notification_read(item: dict, all_read_at, read_ids: set):
+    nid = str(item.get("id") or "")
+    if nid and nid in read_ids:
+        return True
+
+    if all_read_at:
+        try:
+            created = _notification_dt(item.get("created_at"))
+            cutoff = _notification_dt(all_read_at)
+            if created <= cutoff:
+                return True
+        except Exception:
+            pass
+
+    return bool(item.get("read") is True or item.get("is_read") is True or item.get("read_at"))
+
+
+async def _build_owner_notifications(current_user: dict, limit: int = 20):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    user_id = str(current_user.get("id") or "")
+    all_read_at, read_ids = await _notification_read_state(business_id, user_id)
+
+    items = []
+
+    # 1) Real notification documents, when created by app code.
+    try:
+        cursor = db.notifications.find({"business_id": business_id}).sort("created_at", -1).limit(max(limit, 50))
+        async for doc in cursor:
+            item = make_json_safe(doc)
+            item["id"] = str(doc.get("_id"))
+            item.setdefault("title", doc.get("title") or "Notification")
+            item.setdefault("message", doc.get("message") or doc.get("body") or "")
+            item.setdefault("created_at", _notification_iso(doc.get("created_at") or doc.get("updated_at")))
+            item.setdefault("route", doc.get("route") or "")
+            items.append(item)
+    except Exception:
+        pass
+
+    # 2) Worker messages to office/support.
+    try:
+        cursor = db.support_tickets.find({
+            "business_id": business_id,
+            "source": {"$in": ["worker_office_contact", "worker_message", "worker_app"]},
+        }).sort("created_at", -1).limit(30)
+
+        async for ticket in cursor:
+            worker_name = ticket.get("worker_name") or ticket.get("name") or "Worker"
+            message = ticket.get("message") or "Worker sent a message."
+            items.append({
+                "id": _notification_id("ticket", ticket),
+                "title": "Worker message",
+                "message": f"{worker_name}: {message}",
+                "type": "worker_message",
+                "route": "/worker-command",
+                "created_at": _notification_iso(ticket.get("created_at")),
+            })
+    except Exception:
+        pass
+
+    # 3) Jobs finished by worker / ready for owner review.
+    try:
+        cursor = db.jobs.find({
+            "business_id": business_id,
+            "$or": [
+                {"completed_by_worker": True},
+                {"work_review_status": {"$in": ["ready_for_review", "ready"]}},
+                {"review_status": {"$in": ["ready_for_review", "ready"]}},
+                {"owner_review_status": {"$in": ["ready_for_review", "ready"]}},
+            ],
+        }).sort("updated_at", -1).limit(40)
+
+        async for job in cursor:
+            title = job.get("title") or job.get("job_name") or job.get("job_type") or "Job"
+            worker_name = job.get("worker_name") or job.get("assigned_worker_name") or "Worker"
+            photos = job.get("photos") if isinstance(job.get("photos"), list) else []
+            note = job.get("worker_notes") or job.get("completion_notes") or job.get("worker_message") or ""
+            proof = []
+            if photos:
+                proof.append(f"{len(photos)} photo{'s' if len(photos) != 1 else ''}")
+            if note:
+                proof.append("message")
+            proof_text = " + ".join(proof) if proof else "ready for review"
+
+            items.append({
+                "id": _notification_id("job", job),
+                "title": "Job ready for review",
+                "message": f"{worker_name} finished {title} — {proof_text}.",
+                "type": "job_ready_for_review",
+                "route": "/worker-command",
+                "created_at": _notification_iso(job.get("updated_at") or job.get("completed_at") or job.get("created_at")),
+            })
+    except Exception:
+        pass
+
+    # De-dupe and sort newest first.
+    seen = set()
+    deduped = []
+    for item in items:
+        nid = str(item.get("id") or "")
+        if not nid or nid in seen:
+            continue
+        seen.add(nid)
+        item["read"] = _is_notification_read(item, all_read_at, read_ids)
+        item["is_read"] = item["read"]
+        deduped.append(item)
+
+    deduped.sort(key=lambda item: str(item.get("created_at") or ""), reverse=True)
+    return deduped[:max(1, min(int(limit or 20), 50))]
+
+
+@api_router.get("/notifications")
+async def get_notifications(limit: int = Query(20), current_user: dict = Depends(get_current_user)):
+    items = await _build_owner_notifications(current_user, limit)
+    unread = len([item for item in items if not item.get("read")])
+    return {
+        "success": True,
+        "notifications": items,
+        "items": items,
+        "data": items,
+        "unread": unread,
+    }
+
+
+@api_router.patch("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    user_id = str(current_user.get("id") or "")
+    now = datetime.now(timezone.utc)
+
+    await db.notification_reads.update_one(
+        {
+            "business_id": business_id,
+            "user_id": user_id,
+            "notification_id": notification_id,
+        },
+        {
+            "$set": {
+                "business_id": business_id,
+                "user_id": user_id,
+                "notification_id": notification_id,
+                "read_at": now,
+                "updated_at": now,
+            }
+        },
+        upsert=True,
+    )
+
+    # Also mark real notification docs when the id is a Mongo ObjectId.
+    try:
+        await db.notifications.update_one(
+            {"_id": ObjectId(notification_id), "business_id": business_id},
+            {"$set": {"read": True, "is_read": True, "read_at": now, "updated_at": now}},
+        )
+    except Exception:
+        pass
+
+    return {"success": True, "id": notification_id}
+
+
+@api_router.post("/notifications/mark-all-read")
+async def mark_all_notifications_read(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    user_id = str(current_user.get("id") or "")
+    now = datetime.now(timezone.utc)
+
+    await db.notification_read_state.update_one(
+        {
+            "business_id": business_id,
+            "user_id": user_id,
+        },
+        {
+            "$set": {
+                "business_id": business_id,
+                "user_id": user_id,
+                "all_read_at": now,
+                "updated_at": now,
+            }
+        },
+        upsert=True,
+    )
+
+    try:
+        await db.notifications.update_many(
+            {"business_id": business_id},
+            {"$set": {"read": True, "is_read": True, "read_at": now, "updated_at": now}},
+        )
+    except Exception:
+        pass
+
+    return {"success": True, "read_at": now.isoformat()}
+
+
+@api_router.post("/worker/notification-opt-in")
+async def worker_notification_opt_in(payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    user_id = str(current_user.get("id") or "")
+    now = datetime.now(timezone.utc)
+
+    await db.notification_settings.update_one(
+        {
+            "business_id": business_id,
+            "user_id": user_id,
+        },
+        {
+            "$set": {
+                "business_id": business_id,
+                "user_id": user_id,
+                "role": current_user.get("role"),
+                "email": current_user.get("email"),
+                "name": current_user.get("name"),
+                "browser_notifications_enabled": bool(payload.get("enabled", True)),
+                "permission": payload.get("permission") or "granted",
+                "device": payload.get("device") or "",
+                "updated_at": now,
+            },
+            "$setOnInsert": {
+                "created_at": now,
+            },
+        },
+        upsert=True,
+    )
+
+    return {"success": True, "enabled": bool(payload.get("enabled", True))}
+
+
+
 # =========================
 # FRONTEND COMPATIBILITY ENDPOINTS
 # Stops dashboard/command pages throwing 404 while full modules are built.
