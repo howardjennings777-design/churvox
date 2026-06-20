@@ -4,6 +4,7 @@ import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshWorkerCommand.css";
 import "./freshWorkerMobileApp.css";
 import "./freshWorkerOwnerDetail.css";
+import "./freshWorkerOwnerFinal.css";
 
 const workerEndpoints = ["/worker/live-status", "/team/workers", "/team", "/workers"];
 

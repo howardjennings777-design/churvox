@@ -1,0 +1,226 @@
+/* CHURVOX_WORKER_OWNER_FINAL_OVERRIDE_20260621
+   Imported LAST. This overrides the messy old Worker View patches. */
+
+/* Use normal page scroll, not nested right-side scroll */
+.cvWorkerPage,
+.cvWorkerLayout,
+.cvWorkerDetail {
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* Keep page layout simple */
+.cvWorkerLayout {
+  display: grid !important;
+  grid-template-columns: 240px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: start !important;
+}
+
+/* Left rail is just a selector list */
+.cvWorkerRail {
+  position: sticky !important;
+  top: 16px !important;
+  align-self: start !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 32px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+
+  padding: 12px !important;
+  border-radius: 24px !important;
+  background: rgba(255, 250, 240, .92) !important;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, .06) !important;
+}
+
+/* Header row */
+.cvWorkerRailHead {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 0 6px !important;
+  padding: 0 !important;
+}
+
+.cvWorkerRailHead b {
+  font-size: 20px !important;
+  line-height: 1 !important;
+  letter-spacing: -.04em !important;
+}
+
+.cvWorkerRailHead button {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+}
+
+/* Worker cards: compact, stacked, no big gaps */
+.cvWorkerRailItem,
+.cvWorkerRailItem.active,
+.cvWorkerRailItem:not(.active) {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  height: 74px !important;
+  min-height: 74px !important;
+  max-height: 74px !important;
+  margin: 0 !important;
+  padding: 11px 12px !important;
+
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: auto auto !important;
+  grid-template-areas:
+    "name status"
+    "job job" !important;
+  align-items: center !important;
+  gap: 6px 8px !important;
+
+  border-radius: 17px !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-left: 5px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, .055) !important;
+  overflow: hidden !important;
+  transform: none !important;
+  aspect-ratio: auto !important;
+}
+
+/* Selected worker */
+.cvWorkerRailItem.active {
+  background: #111827 !important;
+  border-left-color: #f97316 !important;
+}
+
+/* Worker name */
+.cvWorkerRailItem b {
+  grid-area: name !important;
+  min-width: 0 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-size: 18px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  letter-spacing: -.035em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Status pill */
+.cvWorkerRailItem span {
+  grid-area: status !important;
+  justify-self: end !important;
+  align-self: center !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 92px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 5px 8px !important;
+  border-radius: 999px !important;
+  background: #ecfdf5 !important;
+  color: #166534 !important;
+  -webkit-text-fill-color: #166534 !important;
+  font-size: 8px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Job line only */
+.cvWorkerRailItem small {
+  grid-area: job !important;
+  min-width: 0 !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Hide repeated GPS/address line */
+.cvWorkerRailItem em {
+  display: none !important;
+}
+
+/* Selected text */
+.cvWorkerRailItem.active b,
+.cvWorkerRailItem.active small {
+  color: #fffaf0 !important;
+  -webkit-text-fill-color: #fffaf0 !important;
+}
+
+.cvWorkerRailItem.active span {
+  background: rgba(249, 115, 22, .18) !important;
+  color: #fdba74 !important;
+  -webkit-text-fill-color: #fdba74 !important;
+}
+
+/* Kill old giant decorative/pseudo bits */
+.cvWorkerRailItem::before,
+.cvWorkerRailItem::after,
+.cvWorkerRailItem span::before,
+.cvWorkerRailItem span::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Stop the hidden duplicate big card/Ask bar coming back */
+.cvWorkerPage .cvWorkerTopCard,
+.cvWorkerPage .freshGlobalAsk,
+.freshPageScroll:has(.cvWorkerPage) .freshGlobalAsk {
+  display: none !important;
+}
+
+/* Keep the small worker status strip only */
+.cvWorkerStickyBar {
+  position: relative !important;
+  top: auto !important;
+  z-index: 1 !important;
+  margin: 0 0 12px !important;
+  background: #fffaf0 !important;
+}
+
+/* Main detail grid neat */
+.cvWorkerDetail {
+  gap: 10px !important;
+  padding-right: 0 !important;
+}
+
+.cvWorkerGpsGrid,
+.cvWorkerStats,
+.cvWorkerDetailGrid {
+  gap: 10px !important;
+}
+
+@media (max-width: 900px) {
+  .cvWorkerLayout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cvWorkerRail {
+    position: relative !important;
+    top: auto !important;
+    max-height: none !important;
+  }
+}
