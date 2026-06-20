@@ -1121,3 +1121,97 @@ html body .freshPricingPageV2 .freshCurrentPlanBox small.freshDarkPanelPill {
   opacity: 1 !important;
   font-weight: 900 !important;
 }
+
+/* CHURVOX_PLAN_LOGIC_MATRIX_20260621 */
+.freshPlanLogicCard {
+  margin-top: 14px;
+}
+
+.freshPlanLogicHead span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.freshPlanLogicHead h2 {
+  margin: 10px 0 6px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshPlanLogicHead p {
+  margin: 0 0 14px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshPlanLogicTable {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(110px, 1fr));
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 22px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.freshPlanLogicTable > div {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-right: 1px solid rgba(15,23,42,.08);
+  border-bottom: 1px solid rgba(15,23,42,.08);
+  display: flex;
+  align-items: center;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshPlanLogicTable > div:nth-child(5n) {
+  border-right: 0;
+}
+
+.freshPlanLogicTable .head {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.freshPlanLogicTable .area {
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-weight: 1000;
+}
+
+@media (max-width: 860px) {
+  .freshPlanLogicTable {
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+  }
+
+  .freshPlanLogicTable > div {
+    display: inline-flex;
+    width: 160px;
+    vertical-align: top;
+  }
+
+  .freshPlanLogicTable .area {
+    width: 240px;
+  }
+}

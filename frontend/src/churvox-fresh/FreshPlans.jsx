@@ -1,5 +1,6 @@
 import React from "react";
 import "./freshPlans.css";
+import { PLAN_FEATURE_MATRIX } from "./planRules";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { COUNTRY_OPTIONS, addonPriceForCountry, detectCountryCode, getCountryMeta, normalizeCountry, pricePlanForCountry } from "../config/churvoxPlans";
@@ -262,6 +263,30 @@ export default function FreshPlans({ onNavigate }) {
           <section className="freshPlanSection"><h3>Add-ons</h3><div className="freshAddOnGrid"><button type="button" className={`freshAddOnCard ${accountingSelected ? "active" : ""}`} onClick={() => { if (!accountingIncluded) setAccountingSync((value) => !value); }}><b>Accounting Sync Add-on</b><span>{accountingIncluded ? "Included with Command" : pricedAccountingAddon.priceLabel}</span><p>MYOB or Xero, where available. Owner-approved draft invoice sync only.</p></button><button type="button" className={`freshAddOnCard ${commandSelected ? "active" : "locked"}`} onClick={() => { if (!commandSelected) choosePlan("command"); }}><b>Command Growth Pack</b><span>{pricedGrowthPack.priceLabel}</span><p>Adds 50 active team members plus extra job, AI action, automation and admin capacity.</p></button></div>{commandSelected && <div className="freshGrowthPack premium freshGrowthPackV2"><div><b>Command Growth Pack</b><span>Command includes 50 active team members. Each pack adds 50 more active team members.</span></div><div className="freshGrowthControls"><button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button><strong>{growthPacks}</strong><button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button></div></div>}</section>
         </section>
         <aside className="freshCard freshCheckoutCard freshCheckoutCardV2"><span>Buy / update</span><h2>{selected.name}</h2><strong>{money(monthlyTotal, country)}<small>/month {countryMeta.taxLabel}</small></strong><p>Stripe opens securely using {countryMeta.label} pricing. Churvox then confirms the session and updates your current plan from billing.</p><div className="freshActions"><button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading}>{checkoutLoading ? "Opening Stripe..." : "Buy selected plan"}</button><button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => loadPlan({ force: true })} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload current plan"}</button></div><div className="freshItem"><b>Selected total</b><span>{selected.name} {accountingSync && !commandSelected ? "+ Accounting Sync" : ""} {growthPacks ? `+ ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}</span></div><div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div><div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div></aside>
+      </section>
+
+      <section className="freshCard freshPlanLogicCard">
+        <div className="freshPlanLogicHead">
+          <span>Plan logic</span>
+          <h2>What opens on each tier</h2>
+          <p>One rule set controls the owner workspace: Open, Locked, Add-on, Included, or Growth Pack only.</p>
+        </div>
+        <div className="freshPlanLogicTable">
+          <div className="head">Area</div>
+          <div className="head">Start</div>
+          <div className="head">Crew</div>
+          <div className="head">Operator</div>
+          <div className="head">Command</div>
+          {PLAN_FEATURE_MATRIX.map((row) => (
+            <React.Fragment key={row.area}>
+              <div className="area">{row.area}</div>
+              <div>{row.start}</div>
+              <div>{row.crew}</div>
+              <div>{row.operator}</div>
+              <div>{row.command}</div>
+            </React.Fragment>
+          ))}
+        </div>
       </section>
 
       {showDebug && debug && <section className="freshCard freshNotice" style={{ marginTop: 14 }}><b>Checkout diagnostic</b><span style={{ whiteSpace: "pre-wrap", fontFamily: "monospace", fontSize: 12 }}>{JSON.stringify(debug, null, 2).slice(0, 1800)}</span></section>}

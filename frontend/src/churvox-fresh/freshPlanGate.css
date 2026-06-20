@@ -1,0 +1,131 @@
+.freshPlanGate,
+.freshPlanGate * {
+  box-sizing: border-box;
+}
+
+.freshPlanGate {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.freshPlanGate header {
+  border: 1px solid rgba(15,23,42,.13);
+  border-left: 7px solid #f97316;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(249,115,22,.48), transparent 34%),
+    linear-gradient(135deg, #0b111a 0%, #111827 58%, #070b12 100%);
+  color: #fff;
+  padding: 22px;
+  box-shadow: 0 18px 45px rgba(2,6,23,.14);
+}
+
+.freshPlanGate header span {
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 7px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.freshPlanGate header h1 {
+  margin: 12px 0 8px;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: .88;
+  letter-spacing: -.075em;
+}
+
+.freshPlanGate header p {
+  margin: 0;
+  max-width: 760px;
+  color: #f8fafc;
+  -webkit-text-fill-color: #f8fafc;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshPlanGateCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.freshPlanGateCards article {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 24px;
+  background: #fffaf0;
+  padding: 16px;
+  box-shadow: 0 14px 34px rgba(2,6,23,.07);
+}
+
+.freshPlanGateCards b {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.freshPlanGateCards strong {
+  display: block;
+  margin-top: 12px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 1000;
+}
+
+.freshPlanGateCards p {
+  margin: 8px 0 0;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.freshPlanGateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.freshPlanGateActions button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 0 18px;
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshPlanGateActions button:first-child {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+@media (max-width: 900px) {
+  .freshPlanGateCards {
+    grid-template-columns: 1fr;
+  }
+}

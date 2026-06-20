@@ -1,4 +1,5 @@
 import React from "react";
+import { useAuth } from "../context/AuthContext";
 import "./fresh.css";
 import "./freshAIActions.css";
 import "./freshAIHub.css";
@@ -71,6 +72,7 @@ import "./freshUltimateContrast.css";
 import "./freshVariations.css";
 import "./freshWarranties.css";
 import FreshShell from "./FreshShell";
+import FreshPlanGate from "./FreshPlanGate";
 import FreshSimple from "./FreshSimple";
 import FreshTodaysWork from "./FreshTodaysWork";
 import FreshJobs from "./FreshJobs";
@@ -214,6 +216,7 @@ function getInitialPage() {
 }
 
 export default function FreshApp() {
+  const { user } = useAuth();
   React.useEffect(() => installPillContrastRuntime(), []);
 
   const [page, setPage] = React.useState(getInitialPage);
@@ -242,7 +245,9 @@ export default function FreshApp() {
 
   return (
     <FreshShell active={page} onNavigate={navigate}>
-      <Page page={page} onNavigate={navigate} />
+      <FreshPlanGate page={page} user={user} onNavigate={navigate}>
+        <Page page={page} onNavigate={navigate} />
+      </FreshPlanGate>
     </FreshShell>
   );
 }
