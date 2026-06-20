@@ -224,3 +224,10 @@
     max-height: none !important;
   }
 }
+
+/* CHURVOX_REMOVE_WORKER_STATUS_STRIP_20260621
+   Remove the duplicate top worker status strip from Employer Worker View.
+   Worker details stay in the main panel and worker selector. */
+.cvWorkerPage .cvWorkerStickyBar {
+  display: none !important;
+}
