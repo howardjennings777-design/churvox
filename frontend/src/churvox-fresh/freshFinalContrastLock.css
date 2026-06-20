@@ -65,3 +65,74 @@ html body .freshSegment button.active * {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
 }
+
+/* FINAL BADGE/PILL TEXT LOCK
+   Covers small labels like Quick guide, Page guide, status tags, and selected tabs. */
+
+html body .freshCard span,
+html body .freshHero span,
+html body .freshTellLauncher span,
+html body .freshAIHub span,
+html body .freshSimple span,
+html body .freshRoutePopupHero span,
+html body .freshCommandDesk span,
+html body .freshWorkerAppHero span,
+html body .freshPlanTag,
+html body .freshCurrentBadge,
+html body [class*="Tag"],
+html body [class*="Badge"],
+html body [class*="Pill"],
+html body [class*="Chip"] {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+}
+
+/* Orange/light badges must use dark text */
+html body .freshPlanTag,
+html body .freshCurrentBadge,
+html body [class*="Tag"],
+html body [class*="Badge"],
+html body [class*="Pill"],
+html body [class*="Chip"] {
+  font-weight: 900 !important;
+}
+
+/* Badges sitting on dark cards must use white text */
+html body .freshHero [class*="Tag"],
+html body .freshHero [class*="Badge"],
+html body .freshHero [class*="Pill"],
+html body .freshHero [class*="Chip"],
+html body .freshTellLauncherHero [class*="Tag"],
+html body .freshTellLauncherHero [class*="Badge"],
+html body .freshTellLauncherHero [class*="Pill"],
+html body .freshTellLauncherHero [class*="Chip"],
+html body .freshCommandHero [class*="Tag"],
+html body .freshCommandHero [class*="Badge"],
+html body .freshCommandHero [class*="Pill"],
+html body .freshCommandHero [class*="Chip"] {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Specific pale/orange guide pills on white cards */
+html body .freshCard > span:first-child,
+html body article > span:first-child,
+html body section > span:first-child {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+}
+
+/* If the first pill is on a dark hero/card, keep it white */
+html body .freshHero > span:first-child,
+html body .freshHero div > span:first-child,
+html body [class*="Hero"] > span:first-child,
+html body [class*="Hero"] div > span:first-child {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+}
