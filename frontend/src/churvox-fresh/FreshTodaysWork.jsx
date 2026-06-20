@@ -191,6 +191,7 @@ function JobCard({ job, invoicedJobIds, onNavigate }) {
 export default function FreshTodaysWork({ onNavigate }) {
   const { get } = useApi();
   const [selectedDate, setSelectedDate] = React.useState(() => todayInputValue());
+  const [quickAsk, setQuickAsk] = React.useState("");
   const [data, setData] = React.useState({ jobs: [], workers: [], clients: [], invoices: [] });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -270,6 +271,44 @@ export default function FreshTodaysWork({ onNavigate }) {
     [150, 450, 900].forEach((delay) => window.setTimeout(() => openJobModal(`Create a job for ${longDay(selectedDate)}`), delay));
   }
 
+  function submitQuickAsk(event) {
+    event?.preventDefault?.();
+    const text = quickAsk.trim();
+    const clean = text.toLowerCase();
+
+    if (!text) return;
+
+    if (clean.includes("client") || clean.includes("customer")) {
+      try { window.localStorage.setItem("churvox:fresh-open-client-modal:v1", "true"); } catch {}
+      onNavigate?.("clients");
+      return;
+    }
+
+    if (clean.includes("unpaid") || clean.includes("overdue") || clean.includes("payment") || clean.includes("money")) {
+      onNavigate?.("payments");
+      return;
+    }
+
+    if (clean.includes("invoice")) {
+      onNavigate?.("invoices");
+      return;
+    }
+
+    if (clean.includes("command") || clean.includes("approve") || clean.includes("review")) {
+      onNavigate?.("command");
+      return;
+    }
+
+    if (clean.includes("job") || clean.includes("book") || clean.includes("work") || clean.includes("mow") || clean.includes("clean")) {
+      openJobModal(text);
+      onNavigate?.("jobs");
+      [150, 450, 900].forEach((delay) => window.setTimeout(() => openJobModal(text), delay));
+      return;
+    }
+
+    onNavigate?.("command");
+  }
+
   return (
     <section className="freshTodayWorkPage">
       <header className="freshTodayWorkHero">
@@ -292,6 +331,18 @@ export default function FreshTodaysWork({ onNavigate }) {
           <button type="button" onClick={() => onNavigate?.("workercommand")}><b>{activeWorkers.length}</b><span>Active workers</span></button>
         </div>
       </header>
+
+      <form className="freshTodayWorkAsk" onSubmit={submitQuickAsk}>
+        <label>
+          <span>What do you want to do?</span>
+          <input
+            value={quickAsk}
+            onChange={(event) => setQuickAsk(event.target.value)}
+            placeholder="Add job, open invoices, show unpaid money..."
+          />
+        </label>
+        <button type="submit">Ask Churvox</button>
+      </form>
 
       <section className="freshTodayWorkToolbar">
         <button type="button" onClick={() => setSelectedDate(addDays(selectedDate, -1))}>Yesterday</button>

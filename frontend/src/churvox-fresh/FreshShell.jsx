@@ -83,7 +83,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
       <main className="freshMain">
         <header className="freshMobileAppTop"><div><b>Churvox</b><span>{mobileTitle} · ready</span></div><button className="freshMobileLogout" type="button" onClick={handleLogout}>Log out</button></header>
         <div className="freshPageScroll">{children}</div>
-        <form className="freshGlobalAsk" onSubmit={submitAsk}><label><span>What do you want to do?</span><input value={globalAsk} onChange={(event) => setGlobalAsk(event.target.value)} placeholder="open jobs, add client, show unpaid invoices…" /></label><button type="submit">Ask Churvox</button></form>
+        <form className="freshGlobalAsk freshGlobalAsk--hidden" onSubmit={submitAsk} aria-hidden="true"><label><span>What do you want to do?</span><input value={globalAsk} onChange={(event) => setGlobalAsk(event.target.value)} placeholder="open jobs, add client, show unpaid invoices…" /></label><button type="submit">Ask Churvox</button></form>
       </main>
       {moreOpen && <div className="freshMobileMore">{safeExtraMobile.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</div>}
       <nav className="freshMobileNav" aria-label="Mobile navigation">{safeMobileItems.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</nav>
