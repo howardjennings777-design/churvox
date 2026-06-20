@@ -311,6 +311,40 @@ function installHardPillContrastStyleTag() {
       font-weight: 900 !important;
     }
 
+
+    html body small.freshDarkPanelPill,
+    html body .freshDarkPanelPill,
+    html body .freshPricingHero small.freshDarkPanelPill,
+    html body .freshPricingHero .freshDarkPanelPill,
+    html body .freshCurrentPlanBox small.freshDarkPanelPill,
+    html body .freshCurrentPlanBox .freshDarkPanelPill,
+    html body .freshPlansPage small.freshDarkPanelPill,
+    html body .freshPlansPage .freshDarkPanelPill {
+      background: #111827 !important;
+      background-color: #111827 !important;
+      border-color: #111827 !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+      font-weight: 950 !important;
+      filter: none !important;
+      text-shadow: none !important;
+      mix-blend-mode: normal !important;
+    }
+
+    html body small.freshDarkPanelPill *,
+    html body .freshDarkPanelPill *,
+    html body .freshPricingHero small.freshDarkPanelPill *,
+    html body .freshPricingHero .freshDarkPanelPill *,
+    html body .freshCurrentPlanBox small.freshDarkPanelPill *,
+    html body .freshCurrentPlanBox .freshDarkPanelPill *,
+    html body .freshPlansPage small.freshDarkPanelPill *,
+    html body .freshPlansPage .freshDarkPanelPill * {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+    }
+
     html body .freshWorkerAppSummary span,
     html body .freshWorkerAppSummary small,
     html body .freshWorkerAppSummary b {
