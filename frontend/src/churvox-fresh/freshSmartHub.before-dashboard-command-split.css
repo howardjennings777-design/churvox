@@ -1,0 +1,819 @@
+.freshSmartPage{display:grid;gap:16px}
+.freshSmartHero{display:flex;justify-content:space-between;gap:18px;padding:22px;border-radius:30px;background:#111827;box-shadow:0 24px 70px rgba(2,6,23,.18)}
+.freshSmartHero span,.freshSmartPanel header span{display:inline-flex;border-radius:999px;background:rgba(249,115,22,.16);color:#fed7aa;-webkit-text-fill-color:#fed7aa;padding:8px 11px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}
+.freshSmartHero h1{margin:13px 0 8px;color:#fff;-webkit-text-fill-color:#fff;font-size:48px;line-height:.9;letter-spacing:-.075em}
+.freshSmartHero p{margin:0;max-width:760px;color:#e5e7eb;-webkit-text-fill-color:#e5e7eb;font-size:15px;font-weight:850;line-height:1.45}
+.freshSmartStats{min-width:380px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.freshSmartStats div{border-radius:20px;background:rgba(255,255,255,.08);padding:14px}
+.freshSmartStats b{display:block;color:#fbbf24;-webkit-text-fill-color:#fbbf24;font-size:30px;line-height:1}
+.freshSmartStats small{display:block;margin-top:5px;color:#f9fafb;-webkit-text-fill-color:#f9fafb;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
+.freshSmartGrid{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}
+.freshSmartWide{grid-row:span 2}
+.freshSmartPanel{border:1px solid rgba(15,23,42,.12);border-radius:30px;background:#fffaf0;padding:18px;box-shadow:0 18px 48px rgba(2,6,23,.10)}
+.freshSmartPanel header span{background:#fff7ed;color:#9a3412;-webkit-text-fill-color:#9a3412}
+.freshSmartPanel h2{margin:11px 0 6px;color:#101827;-webkit-text-fill-color:#101827;font-size:32px;line-height:.95;letter-spacing:-.055em}
+.freshSmartPanel p{color:#475569;-webkit-text-fill-color:#475569;font-weight:850;line-height:1.4}
+.freshSmartActions{display:grid;gap:10px;margin-top:14px}
+.freshSmartActions section{display:flex;justify-content:space-between;gap:14px;border:1px solid rgba(15,23,42,.10);border-radius:24px;background:#fff;padding:16px}
+.freshSmartActions b,.freshSmartFlow b{display:block;color:#101827;-webkit-text-fill-color:#101827;font-size:18px}
+.freshSmartActions p{margin:7px 0 0}
+.freshSmartActionButtons,.freshSmartLaunchButtons{display:grid;gap:8px;align-content:start}
+.freshSmartActionButtons button,.freshSmartLaunchButtons button,.freshSmartFlow button{border:0;border-radius:16px;min-height:44px;padding:0 14px;font-size:12px;font-weight:1000;cursor:pointer}
+.freshSmartActionButtons button:first-child,.freshSmartLaunchButtons button:first-child{background:#f97316;color:#111827;-webkit-text-fill-color:#111827}
+.freshSmartActionButtons button:not(:first-child),.freshSmartLaunchButtons button:not(:first-child){background:#111827;color:#fff;-webkit-text-fill-color:#fff}
+.freshSmartFlow{display:grid;gap:8px;margin-top:14px}
+.freshSmartFlow button{text-align:left;background:#fff;border:1px solid rgba(15,23,42,.10);padding:14px}
+.freshSmartFlow small{display:block;margin-top:4px;color:#64748b;-webkit-text-fill-color:#64748b;font-weight:850}
+@media(max-width:1050px){.freshSmartHero,.freshSmartGrid,.freshSmartActions section{display:grid}.freshSmartStats{min-width:0;grid-template-columns:1fr}.freshSmartActionButtons,.freshSmartLaunchButtons{display:grid}}
+
+/* Live cockpit data states */
+.freshSmartSync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.freshSmartSync b {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-weight: 1000;
+}
+
+.freshSmartSync small {
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  font-weight: 850;
+}
+
+.freshSmartSync button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 36px;
+  padding: 0 13px;
+  background: #f97316;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshSmartSync button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.freshSmartError {
+  margin-top: 10px !important;
+  max-width: 720px;
+  border: 1px solid rgba(248, 113, 113, 0.38);
+  border-radius: 14px;
+  background: rgba(127, 29, 29, 0.32);
+  color: #fecaca !important;
+  -webkit-text-fill-color: #fecaca !important;
+  padding: 10px 12px;
+  font-weight: 900;
+}
+
+.freshSmartEmpty {
+  border: 1px dashed rgba(15, 23, 42, 0.22);
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.freshSmartEmpty b {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 18px;
+}
+
+.freshSmartEmpty p {
+  margin: 8px 0 0;
+}
+
+.freshSmartSource {
+  display: inline-flex;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshSmartPage .freshNewUserGuide {
+  display: none !important;
+}
+
+
+/* CHURVOX_TODAY_PAGE_CLEANUP_20260617 */
+.freshSmartHero--today {
+  min-height: auto !important;
+  padding: 24px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .9fr) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+.freshSmartHero--today h1 {
+  font-size: clamp(34px, 5vw, 58px) !important;
+  line-height: .92 !important;
+  letter-spacing: -.06em !important;
+  margin-bottom: 10px !important;
+}
+
+.freshSmartHero--today p {
+  max-width: 680px !important;
+  margin-bottom: 14px !important;
+}
+
+.freshSmartStats--today {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.freshSmartStats--today button {
+  border: 1px solid rgba(255,255,255,.10) !important;
+  border-radius: 20px !important;
+  background: rgba(255,255,255,.08) !important;
+  color: #fff !important;
+  padding: 16px !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+.freshSmartStats--today button b {
+  display: block !important;
+  color: #fff !important;
+  font-size: 26px !important;
+  line-height: 1 !important;
+}
+
+.freshSmartStats--today button small {
+  display: block !important;
+  margin-top: 8px !important;
+  color: rgba(255,255,255,.72) !important;
+  text-transform: uppercase !important;
+  font-size: 10px !important;
+  letter-spacing: .12em !important;
+  font-weight: 900 !important;
+}
+
+.freshSmartTodayGrid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .9fr) !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.freshSmartPanel--main {
+  grid-row: span 2 !important;
+}
+
+.freshSmartActionGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 16px !important;
+}
+
+.freshSmartActionGrid button {
+  min-height: 120px !important;
+  border: 1px solid rgba(15,23,42,.10) !important;
+  border-radius: 22px !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  text-align: left !important;
+  padding: 18px !important;
+  box-shadow: 0 12px 32px rgba(15,23,42,.06) !important;
+}
+
+.freshSmartActionGrid button b {
+  display: block !important;
+  color: #f97316 !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+}
+
+.freshSmartActionGrid button span {
+  display: block !important;
+  margin-top: 10px !important;
+  color: #0f172a !important;
+  font-size: 17px !important;
+  font-weight: 1000 !important;
+}
+
+.freshSmartActionGrid button small {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+.freshSmartPanel--quick .freshSmartLaunchButtons button:first-child {
+  background: #f97316 !important;
+  color: #fff !important;
+}
+
+@media (max-width: 980px) {
+  .freshSmartHero--today,
+  .freshSmartTodayGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshSmartStats--today,
+  .freshSmartActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .freshSmartHero--today {
+    padding: 18px !important;
+  }
+
+  .freshSmartStats--today,
+  .freshSmartActionGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* CHURVOX_TODAY_DAILY_BRIEF_20260617 */
+.freshTodayPage {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.freshTodayHero {
+  min-height: 250px !important;
+  border-radius: 30px !important;
+  border-left: 7px solid #f97316 !important;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(249, 115, 22, .62), transparent 34%),
+    linear-gradient(135deg, #0b111a 0%, #111827 58%, #070b12 100%) !important;
+  color: #fff !important;
+  padding: 24px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+  box-shadow: 0 18px 45px rgba(2,6,23,.14) !important;
+}
+
+.freshTodayHero span {
+  display: inline-flex !important;
+  border-radius: 999px !important;
+  padding: 7px 11px !important;
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  color: #fed7aa !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase !important;
+}
+
+.freshTodayHero h1 {
+  margin: 16px 0 10px !important;
+  font-size: clamp(62px, 8vw, 108px) !important;
+  line-height: .82 !important;
+  letter-spacing: -.085em !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.freshTodayHero p {
+  margin: 0 !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  line-height: 1.35 !important;
+  max-width: 680px !important;
+}
+
+.freshTodayHeroStats {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.freshTodayHeroStats button {
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 22px !important;
+  background: rgba(255,255,255,.08) !important;
+  color: #fff !important;
+  padding: 18px !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+.freshTodayHeroStats b {
+  display: block !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 36px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+}
+
+.freshTodayHeroStats small {
+  display: block !important;
+  margin-top: 8px !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayBriefGrid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.freshTodayPanel {
+  border: 1px solid rgba(15,23,42,.13) !important;
+  border-radius: 28px !important;
+  background: rgba(255,250,240,.94) !important;
+  box-shadow: 0 18px 45px rgba(2,6,23,.08) !important;
+  padding: 18px !important;
+}
+
+.freshTodayPanel header {
+  margin-bottom: 12px !important;
+}
+
+.freshTodayPanel header span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+}
+
+.freshTodayPanel h2 {
+  margin: 4px 0 !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: clamp(28px, 3vw, 42px) !important;
+  line-height: 1 !important;
+  letter-spacing: -.055em !important;
+}
+
+.freshTodayPanel p {
+  margin: 0 !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-weight: 850 !important;
+}
+
+.freshTodayList {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.freshTodayJobCard,
+.freshTodayNeedCard,
+.freshTodayMoneyRows button,
+.freshTodayQuickButtons button {
+  width: 100% !important;
+  text-align: left !important;
+  border: 1px solid rgba(15,23,42,.12) !important;
+  border-left: 6px solid #16a34a !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  padding: 14px !important;
+  display: grid !important;
+  gap: 5px !important;
+  cursor: pointer !important;
+  box-shadow: 0 8px 22px rgba(2,6,23,.045) !important;
+}
+
+.freshTodayJobCard b {
+  color: #f97316 !important;
+  -webkit-text-fill-color: #f97316 !important;
+  font-size: 16px !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayJobCard strong,
+.freshTodayNeedCard b {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 18px !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayJobCard span,
+.freshTodayNeedCard small,
+.freshTodayJobCard small {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-weight: 850 !important;
+}
+
+.freshTodayNeedCard span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.freshTodayNeedCard.warn,
+.freshTodayMoneyRows button:first-child {
+  border-left-color: #f59e0b !important;
+}
+
+.freshTodayNeedCard.danger,
+.freshTodayMoneyRows button:nth-child(2) {
+  border-left-color: #dc2626 !important;
+}
+
+.freshTodayNeedCard.info {
+  border-left-color: #f97316 !important;
+}
+
+.freshTodayEmpty {
+  border: 1px dashed rgba(15,23,42,.18) !important;
+  border-radius: 20px !important;
+  padding: 18px !important;
+  background: rgba(255,255,255,.62) !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-weight: 900 !important;
+}
+
+.freshTodayMoneyRows,
+.freshTodayQuickButtons {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.freshTodayMoneyRows b {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 26px !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayMoneyRows span,
+.freshTodayQuickButtons button {
+  font-weight: 1000 !important;
+}
+
+.freshTodayQuickButtons button {
+  justify-content: center !important;
+  text-align: center !important;
+  border-left-color: #111827 !important;
+}
+
+.freshTodayQuickButtons button:first-child {
+  background: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  border-left-color: #f97316 !important;
+}
+
+@media (max-width: 900px) {
+  .freshTodayHero,
+  .freshTodayBriefGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshTodayHeroStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .freshTodayHeroStats {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* CHURVOX_TODAY_COLUMNS_NO_EMPTY_GAP_20260617 */
+.freshTodayBriefGrid--columns {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .9fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.freshTodayColumn {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 14px !important;
+  align-content: start !important;
+}
+
+.freshTodayColumn--left .freshTodayPanel--jobs {
+  min-height: 0 !important;
+}
+
+.freshTodayColumn--left .freshTodayPanel--money {
+  margin-top: 0 !important;
+}
+
+.freshTodayPanel--talk {
+  display: none !important;
+}
+
+.freshTodayPanel--jobs .freshTodayEmpty {
+  min-height: 74px !important;
+  display: grid !important;
+  align-items: center !important;
+}
+
+@media (max-width: 900px) {
+  .freshTodayBriefGrid--columns {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* CHURVOX_TODAY_COLUMNS_NO_EMPTY_GAP_20260617 */
+.freshTodayBriefGrid--columns {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .9fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.freshTodayColumn {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 14px !important;
+  align-content: start !important;
+}
+
+.freshTodayColumn--left .freshTodayPanel--jobs {
+  min-height: 0 !important;
+}
+
+.freshTodayColumn--left .freshTodayPanel--money {
+  margin-top: 0 !important;
+}
+
+.freshTodayPanel--talk {
+  display: none !important;
+}
+
+.freshTodayPanel--jobs .freshTodayEmpty {
+  min-height: 74px !important;
+  display: grid !important;
+  align-items: center !important;
+}
+
+@media (max-width: 900px) {
+  .freshTodayBriefGrid--columns {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.freshTodayPanel--workerStatus {
+  border-color: rgba(14, 165, 233, 0.24);
+}
+
+/* CHURVOX_DASHBOARD_CLEAN_REAL_20260620 */
+.freshDashboardClean {
+  max-width: 1320px !important;
+  margin: 0 auto !important;
+  gap: 18px !important;
+}
+
+.freshDashboardClean .freshTodayHero--clean {
+  min-height: 0 !important;
+  padding: 22px !important;
+  border-radius: 28px !important;
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr) !important;
+  align-items: center !important;
+}
+
+.freshDashboardClean .freshTodayHero h1 {
+  font-size: clamp(46px, 6vw, 78px) !important;
+  line-height: .9 !important;
+  margin: 12px 0 8px !important;
+}
+
+.freshDashboardClean .freshTodayHero p {
+  max-width: 680px !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+}
+
+.freshDashboardHeroCards {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.freshDashboardHeroCards button {
+  border: 1px solid rgba(255,255,255,.14) !important;
+  border-radius: 22px !important;
+  background: rgba(255,255,255,.08) !important;
+  padding: 16px !important;
+  min-height: 108px !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+.freshDashboardHeroCards b {
+  display: block !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+}
+
+.freshDashboardHeroCards span {
+  display: block !important;
+  margin-top: 9px !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  font-size: 11px !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+}
+
+.freshDashboardPrimary {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.1fr) minmax(330px, .9fr) !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+.freshDashboardPriority {
+  background: #fffaf0 !important;
+  border-left: 7px solid #f97316 !important;
+}
+
+.freshDashboardActionTiles {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.freshDashboardActionTiles button {
+  border: 1px solid rgba(15,23,42,.12) !important;
+  border-radius: 24px !important;
+  background: #111827 !important;
+  color: #fff !important;
+  padding: 18px !important;
+  text-align: left !important;
+  box-shadow: 0 14px 34px rgba(2,6,23,.14) !important;
+  cursor: pointer !important;
+}
+
+.freshDashboardActionTiles span {
+  display: inline-flex !important;
+  margin-bottom: 9px !important;
+  border-radius: 999px !important;
+  background: rgba(249,115,22,.15) !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.freshDashboardActionTiles b {
+  display: block !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 26px !important;
+  line-height: 1.05 !important;
+  font-weight: 1000 !important;
+}
+
+.freshDashboardActionTiles small {
+  display: block !important;
+  margin-top: 7px !important;
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  font-weight: 850 !important;
+}
+
+.freshDashboardFlow {
+  padding: 16px !important;
+}
+
+.freshDashboardFlow header {
+  margin-bottom: 10px !important;
+}
+
+.freshDashboardFlow h2 {
+  font-size: clamp(28px, 3vw, 40px) !important;
+}
+
+.freshDashboardStageRail {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.freshDashboardStageRail .freshTodayNeedCard {
+  min-height: 104px !important;
+  padding: 12px !important;
+  border-radius: 18px !important;
+}
+
+.freshDashboardStageRail .freshTodayNeedCard b {
+  font-size: 26px !important;
+  line-height: 1 !important;
+}
+
+.freshDashboardStageRail .freshTodayNeedCard small {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+.freshDashboardSecondary {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+.freshDashboardSecondary .freshTodayPanel {
+  min-height: 0 !important;
+}
+
+.freshDashboardSecondary .freshTodayPanel h2 {
+  font-size: clamp(26px, 2.6vw, 36px) !important;
+}
+
+.freshDashboardMoneyRows {
+  gap: 8px !important;
+}
+
+.freshDashboardMoneyRows button {
+  min-height: 78px !important;
+  padding: 13px !important;
+}
+
+.freshDashboardMoneyRows b {
+  font-size: 24px !important;
+}
+
+.freshDashboardOk {
+  border-left: 6px solid #16a34a !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
+
+.freshDashboardClean .freshTodayPanel--workerStatus {
+  grid-column: span 1 !important;
+}
+
+@media (max-width: 1180px) {
+  .freshDashboardStageRail {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .freshDashboardSecondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .freshDashboardClean .freshTodayHero--clean,
+  .freshDashboardPrimary,
+  .freshDashboardSecondary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshDashboardStageRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .freshDashboardHeroCards,
+  .freshDashboardStageRail {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshDashboardClean .freshTodayHero h1 {
+    font-size: 46px !important;
+  }
+}
