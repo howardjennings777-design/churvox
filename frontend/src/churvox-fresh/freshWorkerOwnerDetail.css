@@ -1149,3 +1149,72 @@
     min-height: auto !important;
   }
 }
+
+/* CHURVOX_WORKER_VIEW_CLEAN_SCROLL_AND_DUPLICATES_20260621
+   Worker View should use the main page scroll only.
+   Keep the small status strip, remove the big duplicate worker card. */
+
+/* Hide Ask Churvox only when it has been moved into Worker View */
+.cvWorkerPage .freshGlobalAsk,
+.freshPageScroll:has(.cvWorkerPage) .freshGlobalAsk {
+  display: none !important;
+}
+
+/* Remove the large duplicate "talia / on job now" card.
+   Keep .cvWorkerStickyBar because that is the smaller top worker strip. */
+.cvWorkerPage .cvWorkerTopCard {
+  display: none !important;
+}
+
+/* Stop Worker View from creating its own internal scroll panel */
+.cvWorkerPage,
+.cvWorkerLayout,
+.cvWorkerDetail {
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* Keep the main page/browser scroll as the only scroll */
+.freshMain,
+.freshPageScroll {
+  overflow-y: auto !important;
+}
+
+/* Keep left worker list visible but do not create an ugly nested scroll */
+.cvWorkerRail {
+  position: sticky !important;
+  top: 16px !important;
+  max-height: calc(100vh - 32px) !important;
+  overflow-y: auto !important;
+  align-self: start !important;
+}
+
+/* Make the small top worker strip clean and non-overlapping */
+.cvWorkerStickyBar {
+  position: sticky !important;
+  top: 10px !important;
+  z-index: 40 !important;
+  margin: 0 0 12px !important;
+  background: #fffaf0 !important;
+}
+
+/* Remove previous split-panel height rules */
+@media (min-width: 761px) {
+  .cvWorkerPage,
+  .cvWorkerLayout,
+  .cvWorkerDetail {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .cvWorkerDetail {
+    padding-right: 0 !important;
+  }
+
+  .cvWorkerLayout {
+    align-items: start !important;
+  }
+}
