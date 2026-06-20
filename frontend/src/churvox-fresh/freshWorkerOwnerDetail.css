@@ -694,3 +694,38 @@
     text-align: left;
   }
 }
+
+/* CHURVOX_WORKER_STICKY_REAL_FIX_20260621
+   Previous media query disabled sticky at laptop/tablet width.
+   Keep worker list + GPS bar sticky unless it is a small phone screen. */
+@media (min-width: 761px) {
+  .cvWorkerRail {
+    position: sticky !important;
+    top: 18px !important;
+    align-self: start !important;
+    z-index: 50 !important;
+    max-height: calc(100vh - 36px) !important;
+    overflow-y: auto !important;
+  }
+
+  .cvWorkerStickyBar {
+    position: sticky !important;
+    top: 10px !important;
+    z-index: 80 !important;
+  }
+
+  .cvWorkerGpsStickyCard {
+    position: sticky !important;
+    top: 82px !important;
+    z-index: 40 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvWorkerRail,
+  .cvWorkerStickyBar,
+  .cvWorkerGpsStickyCard {
+    position: relative !important;
+    top: auto !important;
+  }
+}
