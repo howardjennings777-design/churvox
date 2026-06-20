@@ -224,9 +224,29 @@ export default function FreshPayments({ onNavigate }) {
         </div>
       </div>
 
-      {message ? <div className={`freshXeroNotice ${risks ? "need" : "proper"}`}><b>Payment status</b><span>{message}</span></div> : null}
+      {message && items.length ? <div className={`freshXeroNotice ${risks ? "need" : "proper"}`}><b>Payment status</b><span>{message}</span></div> : null}
 
-      <div className="freshPaymentsLayout">
+      {!loading && !items.length ? (
+        <section className="freshPaymentsEmptyState">
+          <div>
+            <span>Start here</span>
+            <h2>No invoices yet</h2>
+            <p>Create an invoice first. Once invoices exist, Churvox will show what is paid, what is owing, and what needs follow-up.</p>
+          </div>
+          <div className="freshPaymentsEmptyActions">
+            <button type="button" onClick={() => onNavigate?.("invoices")}>Create / open invoices</button>
+            <button type="button" onClick={() => onNavigate?.("today")}>Open Today’s Work</button>
+            <button type="button" onClick={() => onNavigate?.("command")}>Open Command</button>
+          </div>
+          <div className="freshPaymentsEmptySteps">
+            <section><b>1</b><span>Complete work</span><small>Finish the job first.</small></section>
+            <section><b>2</b><span>Create invoice</span><small>Turn completed work into an invoice.</small></section>
+            <section><b>3</b><span>Track payment</span><small>Paid, owing, overdue and follow-up show here.</small></section>
+          </div>
+        </section>
+      ) : null}
+
+      <div className={`freshPaymentsLayout ${!items.length ? "freshPaymentsLayout--empty" : ""}`}>
         <aside className="freshPaymentsList">
           <header>
             <div><b>Invoice payment queue</b><span>{loading ? "Loading invoices..." : `${risks} needs action`}</span></div>
