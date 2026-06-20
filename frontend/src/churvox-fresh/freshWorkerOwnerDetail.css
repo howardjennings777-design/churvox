@@ -980,3 +980,39 @@
   font-weight: 850;
   line-height: 1.45;
 }
+
+/* CHURVOX_WORKER_NO_INTERNAL_OVERLAP_20260621
+   Keep the main app nav sticky, but stop the worker status strip
+   from floating over the worker detail card. */
+.cvWorkerStickyBar {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  z-index: 1 !important;
+  margin: 0 0 12px 0 !important;
+  background: #fffaf0 !important;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, .07) !important;
+}
+
+.cvWorkerTopCard,
+.cvWorkerGpsGrid,
+.cvWorkerStats,
+.cvWorkerCurrentJob,
+.cvWorkerDetailGrid {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.cvWorkerDetail {
+  isolation: isolate !important;
+}
+
+/* Do not let old sticky rules bring it back on desktop. */
+@media (min-width: 761px) {
+  .cvWorkerStickyBar {
+    position: relative !important;
+    top: auto !important;
+    z-index: 1 !important;
+  }
+}
