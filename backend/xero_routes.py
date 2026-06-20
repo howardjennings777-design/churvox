@@ -28,7 +28,31 @@ XERO_AUTHORIZE_URL = "https://login.xero.com/identity/connect/authorize"
 XERO_TOKEN_URL = "https://identity.xero.com/connect/token"
 XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
 XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
-XERO_DEFAULT_SCOPES = "openid profile email offline_access accounting.transactions accounting.contacts accounting.settings"
+XERO_SAFE_SCOPES = [
+    "offline_access",
+    "openid",
+    "profile",
+    "email",
+    "accounting.transactions",
+    "accounting.contacts",
+    "accounting.settings",
+]
+
+def _clean_xero_scopes(value: str | None = None) -> str:
+    """
+    Xero rejects the whole OAuth request if one scope is bad.
+    Keep phase-one Churvox scope safe and predictable.
+    Render may override order, but unknown scopes are ignored.
+    """
+    raw = str(value or os.environ.get("XERO_SCOPES") or "").replace(",", " ").split()
+    cleaned = [scope for scope in raw if scope in XERO_SAFE_SCOPES]
+    if not cleaned:
+        cleaned = XERO_SAFE_SCOPES
+    # Keep stable order so old/bad values cannot sneak into the OAuth URL.
+    ordered = [scope for scope in XERO_SAFE_SCOPES if scope in cleaned]
+    return " ".join(ordered)
+
+XERO_DEFAULT_SCOPES = _clean_xero_scopes()
 XERO_SALES_ACCOUNT_CODE = os.environ.get("XERO_SALES_ACCOUNT_CODE", "200").strip()
 XERO_SALES_TAX_TYPE = os.environ.get("XERO_SALES_TAX_TYPE", "OUTPUT2").strip()
 
@@ -627,6 +651,8 @@ def install(app, db, get_current_user):
                 "approval_required": True,
             },
             "required_env": ["XERO_CLIENT_ID", "XERO_CLIENT_SECRET", "XERO_REDIRECT_URI"],
+            "oauth_redirect_uri": XERO_REDIRECT_URI,
+            "oauth_scopes": XERO_DEFAULT_SCOPES,
         }
 
     @router.post("/xero/connect/start")
