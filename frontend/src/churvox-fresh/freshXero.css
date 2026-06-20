@@ -679,3 +679,144 @@
     font-size: 56px !important;
   }
 }
+
+/* CHURVOX_XERO_HEADER_FINAL_CLEAN_20260620 */
+.freshXeroPage {
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  padding-top: 0 !important;
+  overflow-x: hidden !important;
+}
+
+.freshXeroHero {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px) !important;
+  align-items: center !important;
+  gap: 18px !important;
+  padding: 24px 26px !important;
+  border-radius: 30px !important;
+  border-left: 7px solid #f97316 !important;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(249,115,22,.58), transparent 34%),
+    linear-gradient(135deg, #0b111a 0%, #111827 58%, #070b12 100%) !important;
+  box-shadow: 0 18px 45px rgba(2,6,23,.14) !important;
+}
+
+.freshXeroHero > div:first-child {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.freshXeroHero > div:first-child > span {
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: max-content !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  padding: 7px 11px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+.freshXeroHero h1 {
+  display: block !important;
+  margin: 12px 0 8px !important;
+  max-width: 100% !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: clamp(52px, 7vw, 88px) !important;
+  line-height: .84 !important;
+  letter-spacing: -.08em !important;
+  white-space: normal !important;
+  overflow: visible !important;
+}
+
+.freshXeroHero p {
+  display: block !important;
+  margin: 0 !important;
+  max-width: 720px !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  line-height: 1.38 !important;
+  white-space: normal !important;
+}
+
+.freshXeroStats {
+  min-width: 0 !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.freshXeroStats div {
+  min-width: 0 !important;
+  border-radius: 20px !important;
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  padding: 14px !important;
+  overflow: hidden !important;
+}
+
+.freshXeroStats b {
+  display: block !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: clamp(27px, 3vw, 38px) !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+  white-space: nowrap !important;
+}
+
+.freshXeroStats small {
+  display: inline-flex !important;
+  margin-top: 8px !important;
+  width: auto !important;
+  max-width: max-content !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.09) !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  padding: 6px 9px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .09em !important;
+  text-transform: uppercase !important;
+}
+
+.freshXeroNotice {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 920px) {
+  .freshXeroHero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshXeroStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .freshXeroStats {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshXeroHero h1 {
+    font-size: 56px !important;
+  }
+}
