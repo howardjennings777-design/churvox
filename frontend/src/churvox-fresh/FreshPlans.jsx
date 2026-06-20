@@ -59,11 +59,20 @@ function postAddonCheckout({ token, addon, country, quantity = 1 }) {
   const headers = { "Content-Type": "application/json", Accept: "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  const safeQuantity = Math.max(1, Number(quantity || 1));
+
   return apiRequest(backendUrl("/billing/create-addon-checkout-session"), {
     method: "POST",
     credentials: "include",
     headers,
-    body: JSON.stringify({ addon, country: country || "NZ", quantity }),
+    body: JSON.stringify({
+      addon,
+      addon_key: addon,
+      country: country || "NZ",
+      quantity: safeQuantity,
+      growth_packs: addon === "command_growth_pack" ? safeQuantity : 0,
+      packs: addon === "command_growth_pack" ? safeQuantity : 0,
+    }),
   }).then(({ response, body }) => {
     const checkoutUrl = firstCheckoutUrl(body);
     if (!response.ok || body?.success === false || !checkoutUrl) throw new Error(errorFrom(body, response));
@@ -270,7 +279,7 @@ export default function FreshPlans({ onNavigate }) {
       if (!token) throw new Error("Checkout token missing. Please sign in again.");
 
       if (addonOnlyGrowthCheckout) {
-        await postAddonCheckout({ token, addon: "command_growth_pack", country, quantity: growthPacks });
+        await postAddonCheckout({ token, addon: "command_growth_pack", country, quantity: Number(growthPacks || 1) });
         return;
       }
 

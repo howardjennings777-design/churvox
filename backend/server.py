@@ -4737,8 +4737,17 @@ async def create_addon_checkout_session(payload: dict, request: Request):
     country_code = normalize_billing_country(payload.get("country") or payload.get("billing_country") or "NZ")
     price_id = get_country_addon_price_id(addon_key, country_code)
 
+    raw_quantity = (
+        payload.get("growth_packs")
+        if payload.get("growth_packs") not in (None, "", 0, "0")
+        else payload.get("quantity")
+        if payload.get("quantity") not in (None, "", 0, "0")
+        else payload.get("packs")
+        if payload.get("packs") not in (None, "", 0, "0")
+        else 1
+    )
     try:
-        quantity = int(payload.get("quantity") or payload.get("growth_packs") or payload.get("packs") or 1)
+        quantity = int(float(raw_quantity))
     except Exception:
         quantity = 1
     quantity = max(1, min(quantity, 20))
@@ -4748,8 +4757,11 @@ async def create_addon_checkout_session(payload: dict, request: Request):
     frontend_url = os.environ.get("FRONTEND_URL", FRONTEND_URL).rstrip("/")
     session = stripe.checkout.Session.create(
         mode="subscription",
-        line_items=[{"price": price_id, "quantity": quantity}],
-        success_url=f"{frontend_url}/plans?addon_success=1&addon={addon_key}&quantity={quantity}&session_id={{CHECKOUT_SESSION_ID}}&country={country_code}",
+        line_items=[{
+            "price": price_id,
+            "quantity": quantity,
+        }],
+        success_url=f"{frontend_url}/plans?addon_success=1&addon={addon_key}&quantity={quantity}&growth_packs={quantity}&session_id={{CHECKOUT_SESSION_ID}}&country={country_code}",
         cancel_url=f"{frontend_url}/plans?addon_cancelled=1&addon={addon_key}&country={country_code}",
         customer_email=user["email"],
         metadata={
@@ -4757,6 +4769,7 @@ async def create_addon_checkout_session(payload: dict, request: Request):
             "business_id": user["business_id"],
             "addon": addon_key,
             "quantity": str(quantity),
+            "growth_packs": str(quantity if addon_key in ("growth", "growth_pack", "command_growth_pack") else 0),
             "country": country_code,
             "purchase_type": "addon_only",
         },
