@@ -313,6 +313,12 @@ export default function FreshPayroll({ onNavigate }) {
   }, [get]);
 
   React.useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.querySelectorAll(".freshMain,.freshPageScroll,.freshApp,main").forEach((el) => {
+        if (el) el.scrollTop = 0;
+      });
+    } catch {}
     loadPayroll();
   }, [loadPayroll]);
 

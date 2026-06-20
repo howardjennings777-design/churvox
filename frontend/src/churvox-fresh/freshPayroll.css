@@ -411,3 +411,19 @@
     font-size: 46px;
   }
 }
+
+/* CHURVOX_PAYROLL_HEADER_VISIBLE_FINAL */
+.cvPayPage,
+.freshPayrollPage {
+  padding-top: 26px !important;
+}
+
+.cvPayHeader,
+.freshPayrollHeader {
+  margin-top: 0 !important;
+  scroll-margin-top: 32px !important;
+}
+
+.freshMain {
+  scroll-padding-top: 30px !important;
+}
