@@ -729,3 +729,65 @@
     top: auto !important;
   }
 }
+
+/* CHURVOX_WORKER_SPLIT_PANEL_FINAL_20260621
+   Stop relying on sticky. Worker View becomes a fixed-height split panel:
+   left workers stay visible, right detail scrolls. */
+@media (min-width: 761px) {
+  .cvWorkerPage {
+    height: calc(100vh - 36px) !important;
+    max-height: calc(100vh - 36px) !important;
+    overflow: hidden !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+
+  .cvWorkerHero {
+    flex-shrink: 0 !important;
+  }
+
+  .cvWorkerLayout {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    grid-template-columns: 300px minmax(0, 1fr) !important;
+    align-items: stretch !important;
+  }
+
+  .cvWorkerRail {
+    position: relative !important;
+    top: auto !important;
+    height: 100% !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+  }
+
+  .cvWorkerDetail {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 8px !important;
+    overscroll-behavior: contain !important;
+  }
+
+  .cvWorkerStickyBar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+  }
+
+  .cvWorkerGpsStickyCard {
+    position: relative !important;
+    top: auto !important;
+  }
+
+  .cvWorkerMap {
+    min-height: 300px !important;
+  }
+
+  .cvWorkerMap iframe {
+    min-height: 300px !important;
+  }
+}
