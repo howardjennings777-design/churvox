@@ -269,26 +269,36 @@ function buildRiskScanIssues() {
 
 
 const selectedFilterButtonStyle = {
-  background: "#111827",
-  backgroundColor: "#111827",
-  borderColor: "#111827",
-  color: "#ffffff",
-  WebkitTextFillColor: "#ffffff",
+  background: "#f97316",
+  backgroundColor: "#f97316",
+  borderColor: "#f97316",
+  color: "#111827",
+  WebkitTextFillColor: "#111827",
+  opacity: 1,
+  fontWeight: 950,
+  textShadow: "none",
+  mixBlendMode: "normal",
 };
 
 const selectedFilterTextStyle = {
-  color: "#ffffff",
-  WebkitTextFillColor: "#ffffff",
+  color: "#111827",
+  WebkitTextFillColor: "#111827",
   opacity: 1,
+  fontWeight: 950,
+  textShadow: "none",
+  mixBlendMode: "normal",
 };
 
 const selectedFilterCountStyle = {
-  background: "#f97316",
-  backgroundColor: "#f97316",
+  background: "#111827",
+  backgroundColor: "#111827",
   color: "#ffffff",
   WebkitTextFillColor: "#ffffff",
   opacity: 1,
+  fontWeight: 950,
   borderRadius: "999px",
+  textShadow: "none",
+  mixBlendMode: "normal",
 };
 
 export default function FreshCommand({ onNavigate }) {

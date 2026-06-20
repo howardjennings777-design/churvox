@@ -502,3 +502,53 @@ html body .freshCommandStablePage .freshClose {
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
 }
+
+/* Command selected filter pill final lock — selected filter stays orange/readable */
+html body .freshCommandStablePage .freshCommandFilterBar button.active,
+html body .freshCommandStablePage .freshCommandFilterBar button.commandFilterSelected,
+html body .freshCommandStablePage .freshCommandFilterBar button.active.commandFilterSelected,
+html body .freshCommandStablePage .freshCommandFilterBar button[aria-pressed="true"],
+html body .freshCommandStablePage .freshCommandFilterBar button[aria-current="true"] {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  border-color: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+html body .freshCommandStablePage .freshCommandFilterBar button.active span,
+html body .freshCommandStablePage .freshCommandFilterBar button.commandFilterSelected span,
+html body .freshCommandStablePage .freshCommandFilterBar button.active.commandFilterSelected span,
+html body .freshCommandStablePage .freshCommandFilterBar button[aria-pressed="true"] span,
+html body .freshCommandStablePage .freshCommandFilterBar button[aria-current="true"] span {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+}
+
+html body .freshCommandStablePage .freshCommandFilterBar button.active b,
+html body .freshCommandStablePage .freshCommandFilterBar button.commandFilterSelected b,
+html body .freshCommandStablePage .freshCommandFilterBar button.active.commandFilterSelected b,
+html body .freshCommandStablePage .freshCommandFilterBar button[aria-pressed="true"] b,
+html body .freshCommandStablePage .freshCommandFilterBar button[aria-current="true"] b {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+  border-radius: 999px !important;
+  min-width: 1.5rem !important;
+  text-align: center !important;
+}
