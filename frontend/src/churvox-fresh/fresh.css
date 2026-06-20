@@ -1718,3 +1718,51 @@ select,
     font-size: 46px !important;
   }
 }
+
+/* CHURVOX_REAL_PAYROLL_HEADER_FIX_20260621
+   Hits Payroll classes case-insensitively. */
+[class*="payroll" i] [class*="hero" i],
+[class*="payroll" i] [class*="header" i],
+[class*="payroll" i] [class*="banner" i] {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 18px 22px !important;
+  border-radius: 26px !important;
+  overflow: hidden !important;
+}
+
+[class*="payroll" i] h1 {
+  max-width: 100% !important;
+  margin: 8px 0 6px !important;
+  font-size: clamp(38px, 4.8vw, 62px) !important;
+  line-height: .9 !important;
+  letter-spacing: -.07em !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+[class*="payroll" i] [class*="hero" i] p,
+[class*="payroll" i] [class*="header" i] p,
+[class*="payroll" i] [class*="banner" i] p {
+  max-width: 900px !important;
+  margin: 0 !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+}
+
+[class*="payroll" i] [class*="hero" i] span,
+[class*="payroll" i] [class*="header" i] span,
+[class*="payroll" i] [class*="banner" i] span {
+  width: auto !important;
+  max-width: max-content !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 760px) {
+  [class*="payroll" i] h1 {
+    font-size: 42px !important;
+  }
+}
