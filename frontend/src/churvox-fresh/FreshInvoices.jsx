@@ -110,12 +110,52 @@ export default function FreshInvoices({ onNavigate }) {
   React.useEffect(() => {
     const onFreshDataUpdated = () => loadInvoices();
     window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
-    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    const filterPillStyle = (active) => active ? {
+    background: "#111827",
+    borderColor: "#111827",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+  } : undefined;
+
+  const filterTextStyle = (active) => active ? {
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  const filterCountStyle = (active) => active ? {
+    background: "#f97316",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, [loadInvoices]);
 
   function openInvoicePopup() {
     setInvoicePopupOpen(true);
   }
+
+  const filterPillStyle = (active) => active ? {
+    background: "#111827",
+    borderColor: "#111827",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+  } : undefined;
+
+  const filterTextStyle = (active) => active ? {
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  const filterCountStyle = (active) => active ? {
+    background: "#f97316",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
 
   return (
     <section>

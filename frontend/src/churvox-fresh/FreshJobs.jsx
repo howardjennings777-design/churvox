@@ -90,7 +90,27 @@ export default function FreshJobs({ onNavigate }) {
   React.useEffect(() => {
     const onFreshDataUpdated = () => loadJobs();
     window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
-    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    const filterPillStyle = (active) => active ? {
+    background: "#111827",
+    borderColor: "#111827",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+  } : undefined;
+
+  const filterTextStyle = (active) => active ? {
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  const filterCountStyle = (active) => active ? {
+    background: "#f97316",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, [loadJobs]);
 
   React.useEffect(() => {
@@ -102,12 +122,32 @@ export default function FreshJobs({ onNavigate }) {
     window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } }));
   }
 
+  const filterPillStyle = (active) => active ? {
+    background: "#111827",
+    borderColor: "#111827",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+  } : undefined;
+
+  const filterTextStyle = (active) => active ? {
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  const filterCountStyle = (active) => active ? {
+    background: "#f97316",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
   return (
     <section className="freshJobsPage">
       <header className="freshHero"><span>Churvox fresh · Jobs</span><h1>Jobs</h1><p>Real job records from your business account. New jobs should appear here after save.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Total jobs</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Blocked").length}</h2><p>Blocked</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Could not load jobs</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadJobs}>Retry</button></section> : null}
-      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}><span>{item}</span><b>{item === "All" ? jobs.length : jobs.filter((job) => job.status === item).length}</b></button>)}</section>
+      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{item === "All" ? jobs.length : jobs.filter((job) => job.status === item).length}</b></button>)}</section>
       <section className="freshGrid">
         <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading real jobs…</b><span>Checking your business account.</span></div> : visibleJobs.map((job) => <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" ? "need" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}</b><span>{job.client} · {job.status} · {job.scheduled}</span></button>)}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs…</b><span>Showing your current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No jobs yet</b><span>Create your first real job to start the workflow.</span></div> : null}</aside>
         <section className="freshCard freshJobsDetailCard"><h2>{selected?.title || "Select job"}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div><span>Price</span><b>{selected.price}</b></div></div><label className="freshField"><span>Address</span><input value={selected.address} readOnly /></label><label className="freshField"><span>Scheduled</span><input value={selected.scheduled} readOnly /></label><label className="freshField"><span>Job notes</span><textarea value={selected.notes} readOnly /></label><div className="freshItem need"><b>Command check</b><span>{selected.risk}</span></div></> : <div className="freshItem"><b>No job selected</b><span>Create a job to see the connected detail record.</span></div>}</section>

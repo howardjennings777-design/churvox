@@ -112,14 +112,54 @@ export default function FreshClients({ onNavigate }) {
       loadClients({ quiet: true });
     };
     window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
-    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    const filterPillStyle = (active) => active ? {
+    background: "#111827",
+    borderColor: "#111827",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+  } : undefined;
+
+  const filterTextStyle = (active) => active ? {
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  const filterCountStyle = (active) => active ? {
+    background: "#f97316",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, [loadClients]);
 
   React.useEffect(() => {
     function openPopup() { setAddOpen(true); setAddError(""); try { window.localStorage.removeItem(OPEN_CLIENT_MODAL_KEY); } catch {} }
     window.addEventListener("churvox:open-client-popup", openPopup);
     try { if (window.localStorage.getItem(OPEN_CLIENT_MODAL_KEY) === "true") window.setTimeout(openPopup, 50); } catch {}
-    return () => window.removeEventListener("churvox:open-client-popup", openPopup);
+    const filterPillStyle = (active) => active ? {
+    background: "#111827",
+    borderColor: "#111827",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+  } : undefined;
+
+  const filterTextStyle = (active) => active ? {
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  const filterCountStyle = (active) => active ? {
+    background: "#f97316",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  return () => window.removeEventListener("churvox:open-client-popup", openPopup);
   }, []);
 
   React.useEffect(() => {
@@ -190,6 +230,26 @@ export default function FreshClients({ onNavigate }) {
     setSavedAt(`Client saved ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
   }
 
+  const filterPillStyle = (active) => active ? {
+    background: "#111827",
+    borderColor: "#111827",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+  } : undefined;
+
+  const filterTextStyle = (active) => active ? {
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
+  const filterCountStyle = (active) => active ? {
+    background: "#f97316",
+    color: "#ffffff",
+    WebkitTextFillColor: "#ffffff",
+    opacity: 1,
+  } : undefined;
+
   return (
     <section>
       <header className="freshHero"><span>Churvox fresh · Clients</span><h1>Clients</h1><p>Real client records from your business account. Jobs, quotes, invoices and Command should use these clients.</p></header>
@@ -198,7 +258,7 @@ export default function FreshClients({ onNavigate }) {
       {error ? <section className="freshCard freshItem need"><b>Clients need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => loadClients()}>Retry</button></section> : null}
       {savedAt ? <section className="freshCard freshItem"><b>Client save status</b><span>{savedAt}</span></section> : null}
 
-      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}><span>{item}</span><b>{item === "All" ? clients.length : clients.filter((client) => client.status === item).length}</b></button>)}</section>
+      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{item === "All" ? clients.length : clients.filter((client) => client.status === item).length}</b></button>)}</section>
       <label className="freshField"><span>Search clients</span><input type="search" value={search} placeholder="Search by name, email, phone or address" onChange={(event) => setSearch(event.target.value)} /></label>
 
       <section className="freshGrid">
