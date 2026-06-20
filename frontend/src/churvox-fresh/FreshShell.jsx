@@ -170,6 +170,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const askHomeRef = React.useRef(null);
   const currentPrimary = parentByKey[active] || active;
   const mobileTitle = mobileLabels[currentPrimary] || mobileLabels[active] || "Churvox";
+  const showGlobalAsk = currentPrimary !== "workercommand";
 
   React.useEffect(() => {
     const refresh = () => setGuideComplete(guideIsComplete());
@@ -331,19 +332,23 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
             <button className="freshMobileLogout" type="button" onClick={handleLogout}>Log out</button>
           </header>
 
-          <div ref={askHomeRef} className="freshGlobalAskHome" />
+          {showGlobalAsk ? (
+            <>
+              <div ref={askHomeRef} className="freshGlobalAskHome" />
 
-          <form ref={askBarRef} className="freshGlobalAsk" onSubmit={submitAsk}>
-            <label>
-              <span>What do you want to do?</span>
-              <input
-                value={globalAsk}
-                onChange={(event) => setGlobalAsk(event.target.value)}
-                placeholder="open jobs, add client, show unpaid invoices…"
-              />
-            </label>
-            <button type="submit">Ask Churvox</button>
-          </form>
+              <form ref={askBarRef} className="freshGlobalAsk" onSubmit={submitAsk}>
+                <label>
+                  <span>What do you want to do?</span>
+                  <input
+                    value={globalAsk}
+                    onChange={(event) => setGlobalAsk(event.target.value)}
+                    placeholder="open jobs, add client, show unpaid invoices…"
+                  />
+                </label>
+                <button type="submit">Ask Churvox</button>
+              </form>
+            </>
+          ) : null}
 
           <div className="freshPageScroll" key={active}>{children}</div>
         </main>
