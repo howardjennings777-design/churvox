@@ -193,6 +193,55 @@ function gpsUpdatedAt(worker) {
   return pick(worker, "last_gps_at", "gps_updated_at", "last_location_at", "location_updated_at", "live_updated_at", "last_live_status_at", "updated_at");
 }
 
+function uniqueAddressParts(parts) {
+  const seen = new Set();
+  return parts
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .filter((part) => {
+      const key = part.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function formatReverseGpsAddress(data) {
+  const address = data?.address || {};
+  const streetName =
+    address.road ||
+    address.pedestrian ||
+    address.footway ||
+    address.path ||
+    address.cycleway ||
+    address.neighbourhood ||
+    "";
+
+  const street = uniqueAddressParts([
+    address.house_number,
+    streetName,
+  ]).join(" ");
+
+  const suburb =
+    address.suburb ||
+    address.neighbourhood ||
+    address.city_district ||
+    address.quarter ||
+    address.hamlet ||
+    "";
+
+  const city =
+    address.city ||
+    address.town ||
+    address.village ||
+    address.municipality ||
+    address.county ||
+    "";
+
+  const parts = uniqueAddressParts([street, suburb, city, address.postcode]);
+  return parts.join(", ") || data?.display_name || "";
+}
+
 function gpsAccuracy(worker) {
   const raw = pick(worker, "gps_accuracy", "location_accuracy", "accuracy", "last_gps_accuracy");
   return raw ? `${raw}m accuracy` : "Accuracy not sent";
@@ -425,6 +474,9 @@ export default function FreshWorkerCommand() {
   const [lastUpdated, setLastUpdated] = React.useState(null);
   const [error, setError] = React.useState("");
   const [panelModal, setPanelModal] = React.useState(null);
+  const [resolvedGpsAddresses, setResolvedGpsAddresses] = React.useState({});
+  const [gpsAddressErrors, setGpsAddressErrors] = React.useState({});
+  const [gpsAddressLoading, setGpsAddressLoading] = React.useState(false);
 
   const selected = workers.find((worker, index) => idOf(worker, `worker-${index}`) === selectedId) || workers[0] || null;
   const view = selected ? buildWorkerView(selected, jobs) : null;
@@ -443,6 +495,11 @@ export default function FreshWorkerCommand() {
     : [];
   const recentCompleted = view ? view.assignedJobs.filter(isComplete).slice(0, 5) : [];
   const point = selected ? gpsPoint(selected) : null;
+  const gpsKey = point ? `${point.lat.toFixed(6)},${point.lng.toFixed(6)}` : "";
+  const selectedSavedGpsAddress = selected ? gpsAddress(selected) : "";
+  const selectedResolvedGpsAddress = selectedSavedGpsAddress || (gpsKey ? resolvedGpsAddresses[gpsKey] : "");
+  const selectedGpsAddressError = gpsKey ? gpsAddressErrors[gpsKey] : "";
+  const selectedGpsAddressLabel = selectedResolvedGpsAddress || (gpsAddressLoading ? "Looking up street address…" : "Live GPS point");
   const mapUrl = selected ? mapsSearchUrl(selected) : "";
   const embedUrl = selected ? mapsEmbedUrl(selected) : "";
   const currentJobMap = view?.currentJob ? jobSiteMapUrl(view.currentJob) : "";
@@ -506,6 +563,59 @@ export default function FreshWorkerCommand() {
       window.removeEventListener("focus", refreshLiveWorkerView);
     };
   }, [autoRefresh, load]);
+
+  React.useEffect(() => {
+    if (!point || !gpsKey || selectedSavedGpsAddress || selectedResolvedGpsAddress) return undefined;
+
+    let cancelled = false;
+    const cacheKey = `churvox:gps-address:${gpsKey}`;
+
+    async function lookupStreetAddress() {
+      try {
+        const cached = window.localStorage.getItem(cacheKey);
+        if (cached) {
+          setResolvedGpsAddresses((previous) => ({ ...previous, [gpsKey]: cached }));
+          return;
+        }
+      } catch {}
+
+      setGpsAddressLoading(true);
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(point.lat)}&lon=${encodeURIComponent(point.lng)}&addressdetails=1&zoom=18`;
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Accept-Language": "en-NZ,en;q=0.9",
+          },
+        });
+
+        if (!response.ok) throw new Error(`Address lookup failed (${response.status})`);
+
+        const data = await response.json();
+        const address = formatReverseGpsAddress(data);
+
+        if (!cancelled && address) {
+          setResolvedGpsAddresses((previous) => ({ ...previous, [gpsKey]: address }));
+          try { window.localStorage.setItem(cacheKey, address); } catch {}
+        }
+
+        if (!cancelled && !address) {
+          setGpsAddressErrors((previous) => ({ ...previous, [gpsKey]: "No street address found for this GPS point." }));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setGpsAddressErrors((previous) => ({ ...previous, [gpsKey]: error?.message || "Street address lookup failed." }));
+        }
+      } finally {
+        if (!cancelled) setGpsAddressLoading(false);
+      }
+    }
+
+    lookupStreetAddress();
+    return () => { cancelled = true; };
+  }, [gpsKey, point?.lat, point?.lng, selectedSavedGpsAddress, selectedResolvedGpsAddress]);
 
   const openJobModal = (job) => setPanelModal({ type: "job", job });
   const openPhotosModal = () => setPanelModal({ type: "photos", photos: photoProofs });
@@ -577,7 +687,7 @@ export default function FreshWorkerCommand() {
                 <div>
                   <b>{workerName(selected)}</b>
                   <span>{selectedLiveStatus}</span>
-                  <small>{gpsAddress(selected) || lastLocation(selected)}</small>
+                  <small>{selectedResolvedGpsAddress || lastLocation(selected)}</small>
                 </div>
                 <div>
                   <em>GPS: {gpsUpdatedAt(selected) || "No update"}</em>
@@ -590,7 +700,7 @@ export default function FreshWorkerCommand() {
                   <span>{selectedLiveStatus}</span>
                   <h2>{workerName(selected)}</h2>
                   <p>{selectedCurrent.title ? `${selectedCurrent.title} · ${clientName(view.currentJob || {})}` : "No active job right now."}</p>
-                  <small>Last location: {lastLocation(selected)}</small>
+                  <small>Last location: {selectedResolvedGpsAddress || lastLocation(selected)}</small>
                   <small>Last update: {selectedLatestUpdate || "No update yet"}</small>
                 </div>
                 <div className="cvWorkerTopActions">
@@ -611,14 +721,14 @@ export default function FreshWorkerCommand() {
 
                 <article className="cvWorkerInfoCard cvWorkerGpsStickyCard">
                   <span>GPS / location</span>
-                  <h3>{gpsAddress(selected) || "Live GPS point"}</h3>
+                  <h3>{selectedGpsAddressLabel}</h3>
                   <p>{point ? `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}` : "No coordinates recorded."}</p>
-                  <small>Address: {gpsAddress(selected) || "Address lookup not saved yet — use Open in Google Maps."}</small>
+                  <small>Address: {selectedResolvedGpsAddress || selectedGpsAddressError || "Looking up street name and number…"}</small>
                   <small>{gpsAccuracy(selected)}</small>
                   <small>Updated: {gpsUpdatedAt(selected) || "No GPS update yet"}</small>
                   <div className="cvWorkerActions">
                     {mapUrl ? <a href={mapUrl} target="_blank" rel="noreferrer">Open in Google Maps</a> : null}
-                    <button type="button" onClick={() => navigator.clipboard?.writeText(gpsAddress(selected) || gpsCoords(selected) || lastLocation(selected))}>Copy location</button>
+                    <button type="button" onClick={() => navigator.clipboard?.writeText(selectedResolvedGpsAddress || gpsAddress(selected) || gpsCoords(selected) || lastLocation(selected))}>Copy location</button>
                   </div>
                 </article>
               </section>
