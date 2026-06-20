@@ -121,6 +121,30 @@ function sendPayrollToCommand(person, period) {
   } catch {}
 }
 
+
+const selectedFilterButtonStyle = {
+  background: "#111827",
+  backgroundColor: "#111827",
+  borderColor: "#111827",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+};
+
+const selectedFilterTextStyle = {
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+};
+
+const selectedFilterCountStyle = {
+  background: "#f97316",
+  backgroundColor: "#f97316",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+  borderRadius: "999px",
+};
+
 export default function FreshPayroll({ onNavigate }) {
   const { get } = useApi();
   const [people, setPeople] = React.useState([]);

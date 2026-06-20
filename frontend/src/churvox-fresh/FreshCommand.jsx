@@ -267,6 +267,30 @@ function buildRiskScanIssues() {
   ];
 }
 
+
+const selectedFilterButtonStyle = {
+  background: "#111827",
+  backgroundColor: "#111827",
+  borderColor: "#111827",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+};
+
+const selectedFilterTextStyle = {
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+};
+
+const selectedFilterCountStyle = {
+  background: "#f97316",
+  backgroundColor: "#f97316",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+  borderRadius: "999px",
+};
+
 export default function FreshCommand({ onNavigate }) {
   const [boxes, setBoxes] = React.useState(loadCommandBoxes);
   const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("command", null));
@@ -432,10 +456,11 @@ export default function FreshCommand({ onNavigate }) {
             type="button"
             key={item}
             className={filter === item ? "active" : ""}
+            style={filter === item ? selectedFilterButtonStyle : undefined}
             onClick={() => setFilter(item)}
           >
-            <span>{item}</span>
-            <b>{filterCounts[item]}</b>
+            <span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span>
+            <b style={filter === item ? selectedFilterCountStyle : undefined}>{filterCounts[item]}</b>
           </button>
         ))}
       </section>

@@ -63,6 +63,30 @@ function normalizeJob(job, index) {
   return { ...job, id: normalizeId(job?.id || job?._id || job?.job_id) || `job-${index}`, title, client, address: job?.address || job?.site_address || job?.service_address || "No address", status, worker, scheduled: scheduleText(job), price: moneyText(job), notes: job?.notes || job?.description || "No notes yet", risk: status === "Blocked" ? "Needs owner review" : worker === "Unassigned" ? "Worker not assigned" : "Ready to dispatch", sortTime: dateScore(job) };
 }
 
+
+const selectedFilterButtonStyle = {
+  background: "#111827",
+  backgroundColor: "#111827",
+  borderColor: "#111827",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+};
+
+const selectedFilterTextStyle = {
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+};
+
+const selectedFilterCountStyle = {
+  background: "#f97316",
+  backgroundColor: "#f97316",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+  borderRadius: "999px",
+};
+
 export default function FreshJobs({ onNavigate }) {
   const { get } = useApi();
   const [jobs, setJobs] = React.useState([]);

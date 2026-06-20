@@ -66,6 +66,30 @@ function normalizeInvoice(invoice, index) {
   };
 }
 
+
+const selectedFilterButtonStyle = {
+  background: "#111827",
+  backgroundColor: "#111827",
+  borderColor: "#111827",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+};
+
+const selectedFilterTextStyle = {
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+};
+
+const selectedFilterCountStyle = {
+  background: "#f97316",
+  backgroundColor: "#f97316",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+  borderRadius: "999px",
+};
+
 export default function FreshInvoices({ onNavigate }) {
   const { get } = useApi();
   const [invoices, setInvoices] = React.useState([]);
@@ -194,10 +218,11 @@ export default function FreshInvoices({ onNavigate }) {
             type="button"
             key={item}
             className={filter === item ? "active" : ""}
+            style={filter === item ? selectedFilterButtonStyle : undefined}
             onClick={() => setFilter(item)}
           >
-            <span>{item}</span>
-            <b>{item === "All" ? invoices.length : invoices.filter((invoice) => invoice.status === item).length}</b>
+            <span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span>
+            <b style={filter === item ? selectedFilterCountStyle : undefined}>{item === "All" ? invoices.length : invoices.filter((invoice) => invoice.status === item).length}</b>
           </button>
         ))}
       </section>

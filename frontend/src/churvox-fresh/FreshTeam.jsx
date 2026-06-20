@@ -80,6 +80,30 @@ async function deleteFallback(endpoint) {
   return response.ok ? { success: true, data } : { success: false, error: data.detail || data.message || data.error || "Delete failed" };
 }
 
+
+const selectedFilterButtonStyle = {
+  background: "#111827",
+  backgroundColor: "#111827",
+  borderColor: "#111827",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+};
+
+const selectedFilterTextStyle = {
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+};
+
+const selectedFilterCountStyle = {
+  background: "#f97316",
+  backgroundColor: "#f97316",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+  borderRadius: "999px",
+};
+
 export default function FreshTeam({ onNavigate }) {
   const api = useApi();
   const { get, post } = api;
@@ -201,7 +225,7 @@ export default function FreshTeam({ onNavigate }) {
       {error ? <section className="freshCard freshItem need"><b>Team needs attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadTeam}>Retry</button></section> : null}
       {actionMessage ? <section className="freshCard freshItem"><b>Done</b><span>{actionMessage}</span></section> : null}
 
-      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}><span>{item}</span><b>{item === "All" ? team.length : team.filter((member) => member.status === item).length}</b></button>)}</section>
+      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filter === item ? selectedFilterButtonStyle : undefined} onClick={() => setFilter(item)}><span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span><b style={filter === item ? selectedFilterCountStyle : undefined}>{item === "All" ? team.length : team.filter((member) => member.status === item).length}</b></button>)}</section>
 
       <section className="freshGrid">
         <aside className="freshCard"><h2>Add person</h2><p className="freshMuted">Adding someone creates their team record and prepares worker access. Payroll-only users stay out of reports and owner tools.</p><FreshTeamAddPerson onAdded={loadTeam} onNavigate={onNavigate} /></aside>

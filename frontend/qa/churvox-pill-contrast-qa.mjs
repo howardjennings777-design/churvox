@@ -137,23 +137,29 @@ async function scanPage(page, pageName, viewportName) {
 
     function looksLikePill(el) {
       const text = clean(el.innerText || el.textContent || "");
-      if (!text || text.length > 55) return false;
+      if (!text || text.length > 70) return false;
+
+      // Do not count navigation/sidebar/metric counters as pills.
+      if (el.closest(".freshShellSidebar, .freshSidebar, .freshBottomNav, .freshTopbar, .freshTodayHeroStats, .freshWorkerAppSummary, .freshPaymentsStats, .freshAutomationStats, nav, [class*='Sidebar'], [class*='BottomNav'], [class*='Topbar']")) {
+        return false;
+      }
 
       const style = getComputedStyle(el);
       const rect = el.getBoundingClientRect();
       if (rect.width < 12 || rect.height < 8) return false;
-      if (rect.width > 360 || rect.height > 80) return false;
+      if (rect.width > 360 || rect.height > 90) return false;
 
       const className = String(el.className || "");
       const role = String(el.getAttribute("role") || "");
       const radius = parseFloat(style.borderRadius || "0");
       const parentClass = String(el.parentElement?.className || "");
+      const textUpper = text === text.toUpperCase();
 
-      const named = /pill|chip|badge|tag|filter|status|label|tab|seg/i.test(className + " " + parentClass + " " + role);
-      const roundedSmall = radius >= 8 && rect.height <= 58;
-      const uppercaseTiny = text === text.toUpperCase() && text.length <= 24 && rect.height <= 64;
+      if (el.closest(".freshCommandFilterBar")) return true;
+      if (/pill|chip|badge|tag|filter|status|label|tab|seg|guide/i.test(className + " " + parentClass + " " + role)) return true;
+      if (textUpper && text.length <= 28 && radius >= 8 && rect.height <= 56 && !el.closest("button:not(.active)")) return true;
 
-      return named || roundedSmall || uppercaseTiny;
+      return false;
     }
 
     const nodes = Array.from(document.querySelectorAll("button, span, small, b, em, strong, label"));

@@ -61,6 +61,30 @@ function normalizeClient(client, index) {
   return { ...client, id, name, type, status, email, phone, address, notes, risk: email ? "Clean setup" : "Contact detail missing", value: client?.value || client?.lifetime_value || client?.amount_due || "Real client", sortTime: timeValue(client) };
 }
 
+
+const selectedFilterButtonStyle = {
+  background: "#111827",
+  backgroundColor: "#111827",
+  borderColor: "#111827",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+};
+
+const selectedFilterTextStyle = {
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+};
+
+const selectedFilterCountStyle = {
+  background: "#f97316",
+  backgroundColor: "#f97316",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+  borderRadius: "999px",
+};
+
 export default function FreshClients({ onNavigate }) {
   const { get, post, patch, del } = useApi();
   const [clients, setClients] = React.useState([]);

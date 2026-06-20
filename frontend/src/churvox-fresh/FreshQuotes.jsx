@@ -64,6 +64,30 @@ function normalizeQuote(quote, index) {
   };
 }
 
+
+const selectedFilterButtonStyle = {
+  background: "#111827",
+  backgroundColor: "#111827",
+  borderColor: "#111827",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+};
+
+const selectedFilterTextStyle = {
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+};
+
+const selectedFilterCountStyle = {
+  background: "#f97316",
+  backgroundColor: "#f97316",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+  opacity: 1,
+  borderRadius: "999px",
+};
+
 export default function FreshQuotes({ onNavigate }) {
   const { get } = useApi();
   const [quotes, setQuotes] = React.useState([]);
@@ -191,10 +215,11 @@ export default function FreshQuotes({ onNavigate }) {
             type="button"
             key={item}
             className={filter === item ? "active" : ""}
+            style={filter === item ? selectedFilterButtonStyle : undefined}
             onClick={() => setFilter(item)}
           >
-            <span>{item}</span>
-            <b>{item === "All" ? quotes.length : quotes.filter((quote) => quote.status === item).length}</b>
+            <span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span>
+            <b style={filter === item ? selectedFilterCountStyle : undefined}>{item === "All" ? quotes.length : quotes.filter((quote) => quote.status === item).length}</b>
           </button>
         ))}
       </section>
