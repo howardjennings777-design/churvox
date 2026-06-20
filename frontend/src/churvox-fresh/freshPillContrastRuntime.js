@@ -110,7 +110,13 @@ function importantStyle(el, name, value) {
 function applyReadable(el) {
   if (!el || !looksLikePill(el)) return;
 
-  const color = readableColorFor(el);
+  const text = clean(el.innerText || el.textContent || "");
+  const bg = rgbParts(effectiveBackground(el));
+  let color = readableColorFor(el);
+
+  if (/^CLOCKED IN$/i.test(text) && bg && luminance(bg) >= 0.42) {
+    color = "#111827";
+  }
 
   importantStyle(el, "color", color);
   importantStyle(el, "-webkit-text-fill-color", color);

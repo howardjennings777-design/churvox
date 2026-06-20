@@ -243,3 +243,32 @@ html body [class*="Hero"] span {
   -webkit-text-fill-color: #ffffff !important;
   opacity: 1 !important;
 }
+
+/* Final exact pill fixes */
+html body .freshDarkPanelPill {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+}
+
+html body .freshPricingHero .freshDarkPanelPill,
+html body .freshCurrentPlanBox .freshDarkPanelPill {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .freshCommandBox .freshCommandPill {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  border-color: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+}
+
+html body .freshWorkerAppView span,
+html body .freshWorkerCommandPage span {
+  opacity: 1 !important;
+}

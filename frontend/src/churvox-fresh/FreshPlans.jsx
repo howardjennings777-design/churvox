@@ -211,14 +211,14 @@ export default function FreshPlans({ onNavigate }) {
     <section className="freshPricingPage freshPricingPageV2" data-checkout-trace={CHECKOUT_TRACE_MARKER}>
       <header className="freshPricingHero freshPricingHeroV2">
         <div>
-          <span>Churvox pricing</span>
+          <span className="freshDarkPanelPill">Churvox pricing</span>
           <h1>Plans</h1>
           <p>Choose the plan that fits your business. Start simple, add crew tools, or use Operator where Churvox prepares admin and you approve.</p>
           <div className="freshPricingHeroActions"><button className="freshPrimary" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Ask which plan fits</button></div>
-          <label className="freshCountrySelect"><span>Pricing country</span><select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>{COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label>
+          <label className="freshCountrySelect"><span className="freshDarkPanelPill">Pricing country</span><select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>{COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label>
         </div>
         <aside className="freshCurrentPlanBox">
-          <small>Current plan</small>
+          <small className="freshDarkPanelPill">Current plan</small>
           <strong>{current ? current.name : checkingPlan || authLoading ? "Checking plan" : "No plan chosen"}</strong>
           <p>{checkingPlan && current ? `${notice} Current plan stays visible.` : notice}</p>
           {current ? <button type="button" onClick={() => choosePlan(current.id)}>View current plan</button> : <button type="button" onClick={() => loadPlan({ force: true })}>Reload current plan</button>}

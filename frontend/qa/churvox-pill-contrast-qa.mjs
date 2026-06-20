@@ -144,6 +144,11 @@ async function scanPage(page, pageName, viewportName) {
         return false;
       }
 
+      const parentActiveButton = el.closest("button.active, button.selected, button.is-active, button[aria-pressed='true'], button[aria-current='true']");
+      if (parentActiveButton && el !== parentActiveButton && !el.classList.contains("freshCommandPill")) {
+        return false;
+      }
+
       const style = getComputedStyle(el);
       const rect = el.getBoundingClientRect();
       if (rect.width < 12 || rect.height < 8) return false;
