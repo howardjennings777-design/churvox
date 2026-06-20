@@ -791,3 +791,101 @@
     min-height: 300px !important;
   }
 }
+
+/* CHURVOX_WORKER_COMPACT_HEADER_20260621
+   Worker View is an operating screen, not a landing page.
+   Hide the oversized hero so the sticky nav + worker detail have room. */
+.cvWorkerPage .cvWorkerHero {
+  min-height: auto !important;
+  padding: 14px 18px !important;
+  border-radius: 22px !important;
+  align-items: center !important;
+}
+
+.cvWorkerPage .cvWorkerHero h1 {
+  font-size: clamp(30px, 4vw, 44px) !important;
+  line-height: .95 !important;
+  margin: 6px 0 3px !important;
+}
+
+.cvWorkerPage .cvWorkerHero p {
+  font-size: 13px !important;
+}
+
+.cvWorkerPage .cvWorkerSummary article {
+  padding: 9px 11px !important;
+  border-radius: 16px !important;
+}
+
+.cvWorkerPage .cvWorkerSummary b {
+  font-size: 20px !important;
+}
+
+.cvWorkerPage .cvWorkerSummary small {
+  font-size: 9px !important;
+}
+
+/* Give the whole worker screen safe top breathing room */
+.cvWorkerPage {
+  padding-top: 10px !important;
+}
+
+/* Keep app nav sticky/fixed and make page content start beside it */
+@media (min-width: 901px) {
+  .freshSide {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 236px !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    z-index: 99999 !important;
+  }
+
+  .freshMain {
+    margin-left: 236px !important;
+    width: calc(100vw - 236px) !important;
+    max-width: calc(100vw - 236px) !important;
+    padding-top: 14px !important;
+  }
+
+  .freshApp {
+    display: block !important;
+  }
+}
+
+/* Worker operating layout */
+@media (min-width: 901px) {
+  .cvWorkerPage {
+    height: calc(100vh - 28px) !important;
+    max-height: calc(100vh - 28px) !important;
+    overflow: hidden !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+
+  .cvWorkerLayout {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    grid-template-columns: 260px minmax(0, 1fr) !important;
+  }
+
+  .cvWorkerRail {
+    height: 100% !important;
+    overflow-y: auto !important;
+  }
+
+  .cvWorkerDetail {
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding-right: 8px !important;
+  }
+
+  .cvWorkerStickyBar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+  }
+}
