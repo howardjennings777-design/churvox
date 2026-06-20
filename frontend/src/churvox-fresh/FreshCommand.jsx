@@ -299,6 +299,25 @@ export default function FreshCommand({ onNavigate }) {
 
   const selected = boxes.find((box) => box.id === selectedId);
 
+  const commandCardInfoStyle = {
+    color: "#111827",
+    WebkitTextFillColor: "#111827",
+    opacity: 1,
+    fontWeight: 850,
+    textShadow: "none",
+    mixBlendMode: "normal",
+  };
+
+  const commandCardUrgencyStyle = {
+    color: "#334155",
+    WebkitTextFillColor: "#334155",
+    opacity: 1,
+    fontWeight: 900,
+    textShadow: "none",
+    mixBlendMode: "normal",
+  };
+
+
   React.useEffect(() => {
     try {
       if (typeof window !== "undefined") {
@@ -475,8 +494,8 @@ export default function FreshCommand({ onNavigate }) {
           >
             <span className="freshCommandPill">{box.group}</span>
             <strong>{box.title}</strong>
-            <em>{box.info}</em>
-            <small>{box.status === "Pending" ? box.urgency : box.status}</small>
+            <em style={commandCardInfoStyle}>{box.info}</em>
+            <small style={commandCardUrgencyStyle}>{box.status === "Pending" ? box.urgency : box.status}</small>
           </button>
         ))}
 

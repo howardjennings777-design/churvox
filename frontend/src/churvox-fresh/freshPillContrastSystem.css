@@ -344,3 +344,20 @@ html body .freshActions .freshOrange {
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
 }
+
+/* Hard lock Command card helper text */
+html body .freshCommandBox em,
+html body .freshCommandBox small {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+}
+
+html body .freshCommandBox small {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  font-weight: 900 !important;
+}
