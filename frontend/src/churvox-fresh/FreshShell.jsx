@@ -166,6 +166,8 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [guideComplete, setGuideComplete] = React.useState(guideIsComplete);
   const [globalAsk, setGlobalAsk] = React.useState("");
+  const askBarRef = React.useRef(null);
+  const askHomeRef = React.useRef(null);
   const currentPrimary = parentByKey[active] || active;
   const mobileTitle = mobileLabels[currentPrimary] || mobileLabels[active] || "Churvox";
 
@@ -183,6 +185,36 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
 
   React.useLayoutEffect(() => { resetScroll(); }, [active]);
   React.useEffect(() => { resetScroll(); }, [active]);
+
+  React.useEffect(() => {
+    const askBar = askBarRef.current;
+    const home = askHomeRef.current;
+    if (!askBar || !home) return undefined;
+
+    const moveAskBar = () => {
+      const page = document.querySelector(".freshPageScroll");
+      if (!page) return;
+
+      const targetHeader = page.querySelector(
+        ".cvWorkerHero, .cxHero, .freshHero, .freshPageHero, .freshCommandHero, .freshDashboardHero, .freshPlansHero, .freshXeroHero, .freshPayrollHero, header"
+      );
+
+      if (targetHeader && targetHeader.parentNode) {
+        targetHeader.insertAdjacentElement("afterend", askBar);
+        askBar.classList.add("freshGlobalAsk--underHeader");
+      } else {
+        home.appendChild(askBar);
+        askBar.classList.remove("freshGlobalAsk--underHeader");
+      }
+    };
+
+    moveAskBar();
+    const timers = [50, 180, 450].map((delay) => window.setTimeout(moveAskBar, delay));
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      if (home && askBar) home.appendChild(askBar);
+    };
+  }, [active]);
 
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
@@ -299,7 +331,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
             <button className="freshMobileLogout" type="button" onClick={handleLogout}>Log out</button>
           </header>
 
-          <form className="freshGlobalAsk" onSubmit={submitAsk}>
+          <div ref={askHomeRef} className="freshGlobalAskHome" />\n\n          <form ref={askBarRef} className="freshGlobalAsk" onSubmit={submitAsk}>
             <label>
               <span>What do you want to do?</span>
               <input

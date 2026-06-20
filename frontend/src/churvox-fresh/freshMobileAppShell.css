@@ -179,3 +179,34 @@
     width: 100%;
   }
 }
+
+/* CHURVOX_ASK_BAR_UNDER_PAGE_HEADER_20260621 */
+.freshGlobalAskHome {
+  display: contents;
+}
+
+.freshGlobalAsk.freshGlobalAsk--underHeader {
+  position: relative !important;
+  top: auto !important;
+  z-index: 20 !important;
+  margin: 12px auto 14px !important;
+  width: min(1120px, calc(100% - 24px)) !important;
+}
+
+.freshPageScroll > .freshGlobalAsk {
+  grid-column: 1 / -1;
+}
+
+/* When the bar is under the page header, keep it neat and not oversized. */
+.freshGlobalAsk--underHeader input {
+  min-height: 42px !important;
+}
+
+.freshGlobalAsk--underHeader button {
+  min-height: 42px !important;
+}
+
+/* Keep the bell above the bar, but do not let the bar hide page headers. */
+.freshGlobalAsk:not(.freshGlobalAsk--underHeader) {
+  margin-top: 0 !important;
+}
