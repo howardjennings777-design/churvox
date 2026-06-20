@@ -1,11 +1,9 @@
-/* CHURVOX_PAYROLL_CLEAN_PAGE_20260621 */
-
-.freshPayrollPageClean,
-.freshPayrollPageClean * {
+.freshPayrollPage,
+.freshPayrollPage * {
   box-sizing: border-box;
 }
 
-.freshPayrollPageClean {
+.freshPayrollPage {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
@@ -14,249 +12,394 @@
   overflow-x: hidden;
 }
 
-/* Header */
-.freshPayrollPageClean .freshPayrollHeroClean {
-  min-height: 0 !important;
-  height: auto !important;
-  padding: 18px 22px !important;
-  border-radius: 26px !important;
-  margin: 0 !important;
-  overflow: hidden !important;
+.freshPayrollHeader {
+  border: 1px solid rgba(15, 23, 42, .13);
+  border-left: 7px solid #f97316;
+  border-radius: 26px;
+  background: #111827;
+  color: #fff;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, .13);
 }
 
-.freshPayrollPageClean .freshPayrollHeroClean span {
-  display: inline-flex !important;
-  width: auto !important;
-  max-width: max-content !important;
-  white-space: nowrap !important;
+.freshPayrollHeader span {
+  display: inline-flex;
+  width: auto;
+  max-width: max-content;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.freshPayrollPageClean .freshPayrollHeroClean h1 {
-  margin: 10px 0 7px !important;
-  font-size: clamp(42px, 5vw, 62px) !important;
-  line-height: .9 !important;
-  letter-spacing: -.07em !important;
-  white-space: normal !important;
-  overflow: visible !important;
+.freshPayrollHeader h1 {
+  margin: 7px 0 4px;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: .9;
+  letter-spacing: -.07em;
+  font-weight: 1000;
 }
 
-.freshPayrollPageClean .freshPayrollHeroClean p {
-  max-width: 850px !important;
-  margin: 0 !important;
-  font-size: 14px !important;
-  line-height: 1.35 !important;
-  white-space: normal !important;
-  overflow: visible !important;
+.freshPayrollHeader p {
+  margin: 0;
+  max-width: 860px;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
 }
 
-/* Safety notice */
-.freshPayrollPageClean .freshPayrollNotice {
-  margin: 0 !important;
-  border: 1px solid rgba(22,163,74,.18) !important;
-  border-left: 6px solid #16a34a !important;
-  border-radius: 20px !important;
-  background: #f0fdf4 !important;
-  padding: 12px 14px !important;
-  display: grid !important;
-  grid-template-columns: 180px minmax(0, 1fr) !important;
-  gap: 10px !important;
-  align-items: center !important;
+.freshPayrollHeaderActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-.freshPayrollPageClean .freshPayrollNotice b {
-  color: #166534 !important;
-  -webkit-text-fill-color: #166534 !important;
-  font-size: 11px !important;
-  font-weight: 1000 !important;
-  text-transform: uppercase !important;
-  letter-spacing: .11em !important;
+.freshPayrollHeaderActions button,
+.freshPayrollPeriod button,
+.freshPayrollActions button {
+  border: 0;
+  border-radius: 15px;
+  min-height: 42px;
+  padding: 0 13px;
+  background: #fff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.freshPayrollPageClean .freshPayrollNotice span {
-  color: #334155 !important;
-  -webkit-text-fill-color: #334155 !important;
-  font-weight: 850 !important;
-  line-height: 1.35 !important;
+.freshPayrollHeaderActions button:first-child {
+  background: #f97316;
 }
 
-/* Stats grid — does NOT use freshCommandPulse */
-.freshPayrollPageClean .freshPayrollStatsGrid {
-  position: static !important;
-  transform: none !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  align-items: stretch !important;
+.freshPayrollSafety,
+.freshPayrollNotice {
+  border: 1px solid rgba(22, 163, 74, .18);
+  border-left: 6px solid #16a34a;
+  border-radius: 20px;
+  background: #f0fdf4;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
 }
 
-.freshPayrollPageClean .freshPayrollStatsGrid .freshCard {
-  position: static !important;
-  transform: none !important;
-  margin: 0 !important;
-  min-height: 112px !important;
-  display: grid !important;
-  align-content: center !important;
-  border-radius: 24px !important;
-  background: rgba(255,250,240,.96) !important;
+.freshPayrollNotice.need {
+  border-color: rgba(249,115,22,.22);
+  border-left-color: #f97316;
+  background: #fff7ed;
 }
 
-.freshPayrollPageClean .freshPayrollStatsGrid .freshCard h2 {
-  margin: 0 0 8px !important;
-  font-size: clamp(32px, 4vw, 50px) !important;
-  line-height: .9 !important;
-  letter-spacing: -.055em !important;
+.freshPayrollSafety b,
+.freshPayrollNotice b {
+  color: #166534;
+  -webkit-text-fill-color: #166534;
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .11em;
 }
 
-.freshPayrollPageClean .freshPayrollStatsGrid .freshCard p {
-  margin: 0 !important;
-  color: #475569 !important;
-  -webkit-text-fill-color: #475569 !important;
-  font-size: 13px !important;
-  font-weight: 850 !important;
+.freshPayrollNotice.need b {
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
 }
 
-/* Pay period */
-.freshPayrollPageClean .freshPayrollPeriod {
-  margin: 0 !important;
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 10px !important;
-  align-items: end !important;
+.freshPayrollSafety span,
+.freshPayrollNotice span {
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  font-weight: 850;
+  line-height: 1.35;
 }
 
-.freshPayrollPageClean .freshPayrollPeriod .freshField {
-  min-width: 260px !important;
-  flex: 1 !important;
-  margin: 0 !important;
+.freshPayrollStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.freshPayrollPageClean .freshPayrollPeriod button {
-  min-height: 44px !important;
-  white-space: nowrap !important;
+.freshPayrollStats article,
+.freshPayrollPanel,
+.freshPayrollPeriod {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 24px;
+  background: rgba(255,250,240,.96);
+  box-shadow: 0 14px 34px rgba(2,6,23,.07);
 }
 
-/* Filter bar */
-.freshPayrollPageClean .freshCommandFilterBar {
-  margin: 0 !important;
-  position: static !important;
-  transform: none !important;
+.freshPayrollStats article {
+  min-height: 112px;
+  padding: 16px;
+  display: grid;
+  align-content: center;
 }
 
-/* Main grid */
-.freshPayrollPageClean .freshGrid {
-  margin-top: 0 !important;
+.freshPayrollStats b {
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: clamp(32px, 4vw, 50px);
+  line-height: .9;
+  font-weight: 950;
+  letter-spacing: -.055em;
 }
 
-@media (max-width: 980px) {
-  .freshPayrollPageClean .freshPayrollStatsGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+.freshPayrollStats span {
+  margin-top: 8px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.freshPayrollPeriod {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.freshPayrollPeriod label,
+.freshPayrollField {
+  display: grid;
+  gap: 7px;
+}
+
+.freshPayrollPeriod label span,
+.freshPayrollField span,
+.freshPayrollMiniGrid span {
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.freshPayrollPeriod select,
+.freshPayrollField input,
+.freshPayrollField textarea {
+  width: 100%;
+  border: 1px solid rgba(15,23,42,.14);
+  border-radius: 16px;
+  background: #fff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  padding: 12px 13px;
+  font-size: 14px;
+  font-weight: 850;
+  outline: none;
+}
+
+.freshPayrollField textarea {
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.freshPayrollFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.freshPayrollFilters button {
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 999px;
+  background: #fffaf0;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  padding: 9px 14px;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshPayrollFilters button.active {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.freshPayrollFilters button b {
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshPayrollGrid {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr) minmax(250px, 310px);
+  gap: 14px;
+  align-items: start;
+}
+
+.freshPayrollPanel {
+  padding: 16px;
+  min-width: 0;
+}
+
+.freshPayrollPanel h2 {
+  margin: 0 0 12px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshPayrollItem {
+  width: 100%;
+  border: 1px solid rgba(15,23,42,.12);
+  border-left: 6px solid #16a34a;
+  border-radius: 18px;
+  background: #fff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  padding: 13px;
+  margin: 10px 0;
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.freshPayrollItem.need {
+  border-left-color: #f97316;
+}
+
+.freshPayrollItem.active {
+  background: #fff7ed;
+  border-color: rgba(249,115,22,.45);
+}
+
+.freshPayrollItem b {
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 14px;
+  font-weight: 1000;
+}
+
+.freshPayrollItem span,
+.freshPayrollItem small {
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.freshPayrollMiniGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.freshPayrollMiniGrid section {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 18px;
+  background: #fff;
+  padding: 13px;
+}
+
+.freshPayrollMiniGrid b {
+  display: block;
+  margin-top: 6px;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 15px;
+  font-weight: 1000;
+}
+
+.freshPayrollPerson {
+  display: grid;
+  gap: 10px;
+}
+
+.freshPayrollActions {
+  display: grid;
+  gap: 8px;
+}
+
+.freshPayrollActions button {
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,.13);
+}
+
+.freshPayrollActions button.green {
+  background: #16a34a;
+  color: #052e16;
+  -webkit-text-fill-color: #052e16;
+}
+
+.freshPayrollActions button.dark {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.freshPayrollActions button.orange {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+@media (max-width: 1080px) {
+  .freshPayrollHeader,
+  .freshPayrollGrid {
+    grid-template-columns: 1fr;
   }
 
-  .freshPayrollPageClean .freshPayrollNotice {
-    grid-template-columns: 1fr !important;
+  .freshPayrollHeaderActions {
+    justify-content: flex-start;
+  }
+
+  .freshPayrollStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 640px) {
-  .freshPayrollPageClean .freshPayrollStatsGrid {
-    grid-template-columns: 1fr !important;
+@media (max-width: 760px) {
+  .freshPayrollPeriod,
+  .freshPayrollSafety,
+  .freshPayrollNotice {
+    grid-template-columns: 1fr;
   }
 
-  .freshPayrollPageClean .freshPayrollHeroClean h1 {
-    font-size: 46px !important;
-  }
-}
-
-/* CHURVOX_PAYROLL_TOPBAR_FINAL_20260621 */
-.freshPayrollPageClean .freshPayrollHeroClean,
-.freshPayrollPageClean .freshHero {
-  display: none !important;
-}
-
-.freshPayrollPageClean .freshPayrollTopbar {
-  border: 1px solid rgba(15,23,42,.13) !important;
-  border-left: 7px solid #f97316 !important;
-  border-radius: 24px !important;
-  background: #111827 !important;
-  color: #ffffff !important;
-  padding: 16px 18px !important;
-  margin: 0 !important;
-  min-height: 0 !important;
-  display: grid !important;
-  gap: 6px !important;
-  box-shadow: 0 14px 34px rgba(2,6,23,.12) !important;
-  overflow: hidden !important;
-}
-
-.freshPayrollPageClean .freshPayrollTopbar span {
-  display: inline-flex !important;
-  width: auto !important;
-  max-width: max-content !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(255,255,255,.14) !important;
-  background: rgba(255,255,255,.08) !important;
-  color: #fed7aa !important;
-  -webkit-text-fill-color: #fed7aa !important;
-  padding: 6px 10px !important;
-  font-size: 10px !important;
-  font-weight: 1000 !important;
-  letter-spacing: .13em !important;
-  text-transform: uppercase !important;
-  white-space: nowrap !important;
-}
-
-.freshPayrollPageClean .freshPayrollTopbar h1 {
-  margin: 4px 0 2px !important;
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-  font-size: clamp(34px, 4vw, 52px) !important;
-  line-height: .92 !important;
-  letter-spacing: -.065em !important;
-  font-weight: 1000 !important;
-}
-
-.freshPayrollPageClean .freshPayrollTopbar p {
-  max-width: 920px !important;
-  margin: 0 !important;
-  color: #e5e7eb !important;
-  -webkit-text-fill-color: #e5e7eb !important;
-  font-size: 13px !important;
-  font-weight: 850 !important;
-  line-height: 1.35 !important;
-}
-
-.freshPayrollPageClean .freshPayrollPeriod {
-  display: grid !important;
-  grid-template-columns: minmax(260px, 1fr) auto auto !important;
-  gap: 10px !important;
-  align-items: end !important;
-  overflow: hidden !important;
-}
-
-.freshPayrollPageClean .freshPayrollPeriod .freshField {
-  min-width: 0 !important;
-  width: 100% !important;
-}
-
-.freshPayrollPageClean .freshPayrollPeriod button {
-  min-width: 150px !important;
-  max-width: 190px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-@media (max-width: 850px) {
-  .freshPayrollPageClean .freshPayrollPeriod {
-    grid-template-columns: 1fr !important;
+  .freshPayrollStats,
+  .freshPayrollMiniGrid {
+    grid-template-columns: 1fr;
   }
 
-  .freshPayrollPageClean .freshPayrollPeriod button {
-    width: 100% !important;
-    max-width: none !important;
+  .freshPayrollHeader h1 {
+    font-size: 46px;
   }
 }
