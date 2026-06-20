@@ -4800,24 +4800,31 @@ async def create_addon_checkout_session(payload: dict, request: Request):
         quantity = 1
 
     frontend_url = os.environ.get("FRONTEND_URL", FRONTEND_URL).rstrip("/")
+    addon_metadata = {
+        "user_id": user["id"],
+        "business_id": user["business_id"],
+        "addon": addon_key,
+        "quantity": str(quantity),
+        "growth_packs": str(quantity if addon_key in ("growth", "growth_pack", "command_growth_pack") else 0),
+        "country": country_code,
+        "purchase_type": "addon_only_no_trial",
+    }
+
     session = stripe.checkout.Session.create(
         mode="subscription",
         line_items=[{
             "price": price_id,
             "quantity": quantity,
         }],
+        # Add-ons are not free trials. Base plans can trial; Growth Packs and Accounting Sync should bill immediately.
+        subscription_data={
+            "metadata": addon_metadata,
+            "trial_period_days": 0,
+        },
         success_url=f"{frontend_url}/plans?addon_success=1&addon={addon_key}&quantity={quantity}&growth_packs={quantity}&session_id={{CHECKOUT_SESSION_ID}}&country={country_code}",
         cancel_url=f"{frontend_url}/plans?addon_cancelled=1&addon={addon_key}&country={country_code}",
         customer_email=user["email"],
-        metadata={
-            "user_id": user["id"],
-            "business_id": user["business_id"],
-            "addon": addon_key,
-            "quantity": str(quantity),
-            "growth_packs": str(quantity if addon_key in ("growth", "growth_pack", "command_growth_pack") else 0),
-            "country": country_code,
-            "purchase_type": "addon_only",
-        },
+        metadata=addon_metadata,
     )
     return {"success": True, "url": session.url, "checkout_url": session.url, "addon": addon_key, "quantity": quantity}
 
