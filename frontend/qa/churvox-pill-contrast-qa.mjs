@@ -142,6 +142,8 @@ async function scanPage(page, pageName, viewportName) {
     function looksLikePill(el) {
       const text = clean(el.innerText || el.textContent || "");
       if (!text || text.length > 70) return false;
+      // CLOCKED IN exact light status: the worker status chip sits on an off-white surface.
+      if (/^CLOCKED IN$/i.test(text)) return true;
 
       // Do not count navigation/sidebar/metric counters as pills.
       if (el.closest(".freshShellSidebar, .freshSidebar, .freshBottomNav, .freshTopbar, .freshTodayHeroStats, .freshWorkerAppSummary, .freshPaymentsStats, .freshAutomationStats, .freshAskStats, nav, [class*='Sidebar'], [class*='BottomNav'], [class*='Topbar']")) {

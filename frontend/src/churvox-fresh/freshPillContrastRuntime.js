@@ -69,6 +69,7 @@ function isInsideDarkPanel(el) {
 function looksLikePill(el) {
   const text = clean(el.innerText || el.textContent || "");
   if (!text || text.length > 80) return false;
+  if (/^(CLOCKED IN|CURRENT PLAN)$/i.test(text)) return true;
 
   const style = window.getComputedStyle(el);
   const rect = el.getBoundingClientRect();
@@ -114,12 +115,14 @@ function applyReadable(el) {
   const bg = rgbParts(effectiveBackground(el));
   let color = readableColorFor(el);
 
-  if (el.classList?.contains("freshDarkPanelPill") || /^(CURRENT PLAN)$/i.test(text)) {
+  if (el.classList?.contains("freshDarkPanelPill") || /^CURRENT PLAN$/i.test(text)) {
     color = "#ffffff";
   }
 
   if (/^CLOCKED IN$/i.test(text)) {
     color = "#111827";
+    importantStyle(el, "background", "#f7f3ea");
+    importantStyle(el, "background-color", "#f7f3ea");
   }
 
   importantStyle(el, "color", color);

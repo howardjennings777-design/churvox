@@ -234,7 +234,7 @@ export default function FreshPlans({ onNavigate }) {
           <label className="freshCountrySelect"><span className="freshDarkPanelPill">Pricing country</span><select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>{COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label>
         </div>
         <aside className="freshCurrentPlanBox">
-          <small className="freshDarkPanelPill">Current plan</small>
+          <small className="freshDarkPanelPill" style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, fontWeight: 900 }}>Current plan</small>
           <strong>{current ? current.name : checkingPlan || authLoading ? "Checking plan" : "No plan chosen"}</strong>
           <p>{checkingPlan && current ? `${notice} Current plan stays visible.` : notice}</p>
           {current ? <button type="button" onClick={() => choosePlan(current.id)}>View current plan</button> : <button type="button" onClick={() => loadPlan({ force: true })}>Reload current plan</button>}
