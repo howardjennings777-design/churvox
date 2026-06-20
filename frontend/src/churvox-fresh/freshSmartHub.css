@@ -817,3 +817,187 @@
     font-size: 46px !important;
   }
 }
+
+/* CHURVOX_DASHBOARD_COMMAND_SPLIT_20260620 */
+.freshDashboardSnapshot {
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  gap: 16px !important;
+}
+
+.freshDashboardSnapshot .freshTodayHero--snapshot {
+  min-height: 0 !important;
+  padding: 22px !important;
+  border-radius: 28px !important;
+  grid-template-columns: minmax(0, 1.18fr) minmax(330px, .82fr) !important;
+  align-items: center !important;
+}
+
+.freshDashboardSnapshot .freshTodayHero h1 {
+  font-size: clamp(46px, 5.8vw, 76px) !important;
+  line-height: .9 !important;
+  margin: 12px 0 8px !important;
+}
+
+.freshDashboardSnapshot .freshTodayHero p {
+  max-width: 720px !important;
+  font-size: 16px !important;
+  line-height: 1.38 !important;
+}
+
+.freshDashboardCommandStrip {
+  border: 1px solid rgba(15,23,42,.12) !important;
+  border-left: 7px solid #f97316 !important;
+  border-radius: 26px !important;
+  background: #111827 !important;
+  color: #fff !important;
+  padding: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  box-shadow: 0 16px 42px rgba(2,6,23,.12) !important;
+}
+
+.freshDashboardCommandStrip span {
+  display: inline-flex !important;
+  border-radius: 999px !important;
+  background: rgba(249,115,22,.16) !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.freshDashboardCommandStrip h2 {
+  margin: 9px 0 5px !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: clamp(24px, 3vw, 38px) !important;
+  line-height: 1 !important;
+  letter-spacing: -.055em !important;
+}
+
+.freshDashboardCommandStrip p {
+  margin: 0 !important;
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  font-weight: 850 !important;
+}
+
+.freshDashboardCommandStrip button,
+.freshDashboardOpenButton {
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  min-height: 42px !important;
+  padding: 0 18px !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+.freshDashboardSnapshotGrid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+.freshDashboardSnapshotCard {
+  min-height: 0 !important;
+}
+
+.freshDashboardSnapshotCard h2 {
+  font-size: clamp(28px, 3vw, 38px) !important;
+}
+
+.freshDashboardOpenButton {
+  margin-top: 12px !important;
+  width: 100% !important;
+}
+
+.freshDashboardSnapshot .freshDashboardFlow {
+  padding: 16px !important;
+}
+
+.freshDashboardSnapshot .freshDashboardFlow h2 {
+  font-size: clamp(28px, 3vw, 40px) !important;
+}
+
+.freshDashboardSnapshot .freshDashboardStageRail {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.freshDashboardSnapshot .freshDashboardStageRail .freshTodayNeedCard {
+  min-height: 98px !important;
+  padding: 12px !important;
+  border-radius: 18px !important;
+}
+
+.freshDashboardSnapshot .freshDashboardStageRail .freshTodayNeedCard b {
+  font-size: 25px !important;
+  line-height: 1 !important;
+}
+
+.freshDashboardSnapshot .freshDashboardStageRail .freshTodayNeedCard small {
+  font-size: 11px !important;
+  line-height: 1.24 !important;
+}
+
+.freshDashboardSnapshot .freshTodayPanel--needs,
+.freshDashboardSnapshot .freshDashboardPriority,
+.freshDashboardSnapshot .freshDashboardActionTiles,
+.freshDashboardSnapshot .freshTodayBriefGrid,
+.freshDashboardSnapshot .freshDashboardPrimary,
+.freshDashboardSnapshot .freshDashboardSecondary {
+  display: none !important;
+}
+
+@media (max-width: 1160px) {
+  .freshDashboardSnapshotGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .freshDashboardSnapshot .freshDashboardStageRail {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .freshDashboardSnapshot .freshTodayHero--snapshot,
+  .freshDashboardSnapshotGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshDashboardCommandStrip {
+    display: grid !important;
+  }
+
+  .freshDashboardCommandStrip button {
+    width: 100% !important;
+  }
+
+  .freshDashboardSnapshot .freshDashboardStageRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .freshDashboardSnapshot .freshDashboardHeroCards,
+  .freshDashboardSnapshot .freshDashboardStageRail {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshDashboardSnapshot .freshTodayHero h1 {
+    font-size: 46px !important;
+  }
+}

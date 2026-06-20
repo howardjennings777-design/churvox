@@ -107,18 +107,18 @@ export default function FreshSmartHub({ onNavigate }) {
   React.useEffect(() => { loadLiveData(); }, [loadLiveData]);
   React.useEffect(() => { const refresh = () => loadLiveData(); const refreshSettings = () => setBusinessSettings(loadBusinessSettings()); window.addEventListener("churvox:fresh-data-updated", refresh); window.addEventListener("churvox-business-settings-updated", refreshSettings); window.addEventListener("focus", refresh); const timer = window.setInterval(refresh, 45000); return () => { window.removeEventListener("churvox:fresh-data-updated", refresh); window.removeEventListener("churvox-business-settings-updated", refreshSettings); window.removeEventListener("focus", refresh); window.clearInterval(timer); }; }, [loadLiveData]);
   const today = React.useMemo(() => buildToday(liveData, businessSettings), [liveData, businessSettings]);
-  const urgentCount = today.needsDoing.length;
+  const commandCount = today.needsDoing.length;
   const showWorkerStatus = today.activeCrew.length > 0;
-  const nextSetupSteps = today.setup.steps.filter((step) => !step.done).slice(0, 3);
   const setupDone = today.setup.complete;
+  const nextSetupSteps = today.setup.steps.filter((step) => !step.done).slice(0, 2);
 
   return (
-    <section className="freshSmartPage freshTodayPage freshDashboardClean">
-      <div className="freshTodayHero freshTodayHero--clean">
+    <section className="freshSmartPage freshTodayPage freshDashboardClean freshDashboardSnapshot">
+      <div className="freshTodayHero freshTodayHero--snapshot">
         <div>
           <span>Today</span>
           <h1>Dashboard</h1>
-          <p>{today.message}</p>
+          <p>Business snapshot only. For approvals, edits, and AI prepared work, open Command.</p>
           <div className="freshSmartSync">
             <b>{loading ? "Checking live data..." : "Live data updated"}</b>
             {lastSynced ? <small>Updated {lastSynced}</small> : null}
@@ -130,10 +130,6 @@ export default function FreshSmartHub({ onNavigate }) {
         </div>
 
         <div className="freshDashboardHeroCards">
-          <button type="button" onClick={() => onNavigate?.("command")}>
-            <b>{urgentCount}</b>
-            <span>Needs attention</span>
-          </button>
           <button type="button" onClick={() => onNavigate?.("jobs")}>
             <b>{today.todayJobs.length}</b>
             <span>Jobs today</span>
@@ -146,102 +142,74 @@ export default function FreshSmartHub({ onNavigate }) {
             <b>{today.coreFlow.completedNeedInvoice.length}</b>
             <span>Need invoice</span>
           </button>
-        </div>
-      </div>
-
-      <div className="freshDashboardPrimary">
-        <article className="freshTodayPanel freshTodayPanel--needs freshDashboardPriority">
-          <header>
-            <span>Owner priority</span>
-            <h2>Needs attention</h2>
-            <p>Only the work, money, and approvals that need a decision.</p>
-          </header>
-          <div className="freshTodayList">
-            {today.needsDoing.length
-              ? today.needsDoing.map((item, index) => <NeedCard key={`${item.type}-${index}`} item={item} onNavigate={onNavigate} />)
-              : <div className="freshTodayEmpty freshDashboardOk">Nothing urgent right now. Keep jobs moving and invoice completed work.</div>}
-          </div>
-        </article>
-
-        <aside className="freshDashboardActionTiles">
-          <button type="button" onClick={() => onNavigate?.("jobs")}>
-            <span>Next job move</span>
-            <b>{today.coreFlow.next?.title || "Jobs"}</b>
-            <small>{today.coreFlow.next?.detail || "Open jobs and keep work moving."}</small>
-          </button>
           <button type="button" onClick={() => onNavigate?.("invoices")}>
-            <span>Invoice work</span>
-            <b>{today.coreFlow.completedNeedInvoice.length}</b>
-            <small>Completed jobs waiting for an invoice.</small>
+            <b>{money(today.overdueMoney)}</b>
+            <span>Overdue</span>
           </button>
-          <button type="button" onClick={() => onNavigate?.("command")}>
-            <span>Owner review</span>
-            <b>{today.reviewItems.length}</b>
-            <small>Prepared admin waiting for approval.</small>
-          </button>
-        </aside>
+        </div>
       </div>
 
-      <article className="freshTodayPanel freshTodayPanel--core freshDashboardFlow">
-        <header>
-          <span>Core flow</span>
-          <h2>Job → Invoice → Paid</h2>
-          <p>One clean view of the real Churvox workflow.</p>
-        </header>
-        <div className="freshDashboardStageRail">
-          {today.coreFlow.stages.map((stage, index) => (
-            <CoreStageCard key={stage.key} stage={stage} index={index} onNavigate={onNavigate} />
-          ))}
+      <article className="freshDashboardCommandStrip">
+        <div>
+          <span>Command</span>
+          <h2>{commandCount ? `${commandCount} owner decision${commandCount === 1 ? "" : "s"} waiting` : "No owner decisions waiting"}</h2>
+          <p>Dashboard shows the state of the business. Command is where you approve, edit, decline, or open prepared work.</p>
         </div>
+        <button type="button" onClick={() => onNavigate?.("command")}>
+          Open Command
+        </button>
       </article>
 
-      <div className="freshDashboardSecondary">
-        <article className="freshTodayPanel freshTodayPanel--jobs">
+      <section className="freshDashboardSnapshotGrid">
+        <article className="freshTodayPanel freshDashboardSnapshotCard">
           <header>
             <span>Jobs</span>
             <h2>Today</h2>
-            <p>Only work scheduled for today.</p>
+            <p>Work scheduled for today.</p>
           </header>
           <div className="freshTodayList">
             {loading && !today.todayJobs.length
               ? <div className="freshTodayEmpty">Checking jobs...</div>
               : today.todayJobs.length
-                ? today.todayJobs.slice(0, 4).map((job, index) => <TodayJobCard key={recordId(job, "id", "_id") || index} job={job} onNavigate={onNavigate} />)
+                ? today.todayJobs.slice(0, 3).map((job, index) => <TodayJobCard key={recordId(job, "id", "_id") || index} job={job} onNavigate={onNavigate} />)
                 : <div className="freshTodayEmpty">No jobs booked for today.</div>}
           </div>
+          <button type="button" className="freshDashboardOpenButton" onClick={() => onNavigate?.("jobs")}>Open Jobs</button>
         </article>
 
-        <article className="freshTodayPanel freshTodayPanel--money">
+        <article className="freshTodayPanel freshDashboardSnapshotCard">
           <header>
             <span>Money</span>
             <h2>To check</h2>
-            <p>Invoices due, overdue money, and quotes still open.</p>
+            <p>Money state only. Sending and approval happens elsewhere.</p>
           </header>
           <div className="freshTodayMoneyRows freshDashboardMoneyRows">
             <button type="button" onClick={() => onNavigate?.("invoices")}><b>{money(today.dueTodayMoney)}</b><span>Due today</span></button>
             <button type="button" onClick={() => onNavigate?.("invoices")}><b>{money(today.overdueMoney)}</b><span>Overdue</span></button>
             <button type="button" onClick={() => onNavigate?.("quotes")}><b>{today.quotesToChase.length}</b><span>Quotes open</span></button>
           </div>
+          <button type="button" className="freshDashboardOpenButton" onClick={() => onNavigate?.("payments")}>Open Payments</button>
         </article>
 
-        <article className="freshTodayPanel freshTodayPanel--setup">
+        <article className="freshTodayPanel freshDashboardSnapshotCard">
           <header>
             <span>Setup</span>
             <h2>{setupDone ? "Ready" : "Finish setup"}</h2>
-            <p>{setupDone ? "Core setup is done. Keep running the job-to-paid workflow." : `${today.setup.completeCount}/${today.setup.steps.length} setup steps complete.`}</p>
+            <p>{setupDone ? "Core setup is done." : `${today.setup.completeCount}/${today.setup.steps.length} setup steps complete.`}</p>
           </header>
           <div className="freshTodayList">
             {setupDone
               ? <div className="freshTodayEmpty freshDashboardOk">Setup is complete.</div>
               : nextSetupSteps.map((step) => <SetupStepCard key={step.key} step={step} onNavigate={onNavigate} />)}
           </div>
+          <button type="button" className="freshDashboardOpenButton" onClick={() => onNavigate?.("settings")}>Open Setup</button>
         </article>
 
         {showWorkerStatus ? (
-          <article className="freshTodayPanel freshTodayPanel--workerStatus">
+          <article className="freshTodayPanel freshDashboardSnapshotCard">
             <header>
               <span>Team live</span>
-              <h2>Worker status</h2>
+              <h2>Workers</h2>
               <p>Only shown when workers are active.</p>
             </header>
             <div className="freshTodayMoneyRows freshDashboardMoneyRows">
@@ -249,9 +217,23 @@ export default function FreshSmartHub({ onNavigate }) {
               <button type="button" onClick={() => onNavigate?.("workercommand")}><b>{today.activeCrew.filter((worker) => worker?.current_job_id).length}</b><span>On job</span></button>
               <button type="button" onClick={() => onNavigate?.("dispatch")}><b>Ready</b><span>Last GPS</span></button>
             </div>
+            <button type="button" className="freshDashboardOpenButton" onClick={() => onNavigate?.("workercommand")}>Open Worker View</button>
           </article>
         ) : null}
-      </div>
+      </section>
+
+      <article className="freshTodayPanel freshDashboardFlow">
+        <header>
+          <span>Core flow</span>
+          <h2>Job → Invoice → Paid</h2>
+          <p>Use this as the health check. Use Command when something needs a decision.</p>
+        </header>
+        <div className="freshDashboardStageRail">
+          {today.coreFlow.stages.map((stage, index) => (
+            <CoreStageCard key={stage.key} stage={stage} index={index} onNavigate={onNavigate} />
+          ))}
+        </div>
+      </article>
     </section>
   );
 }
