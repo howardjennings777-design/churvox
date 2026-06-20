@@ -291,3 +291,56 @@ html body .freshWorkerAppView span:where(:not(.freshDarkPanelPill)),
 html body .freshWorkerCommandPage span:where(:not(.freshDarkPanelPill)) {
   opacity: 1 !important;
 }
+
+/* Command card readable helper text lock */
+html body .freshCommandBox,
+html body .freshCommandBox * {
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+}
+
+html body .freshCommandBox strong,
+html body .freshCommandBox em,
+html body .freshCommandBox small {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+}
+
+html body .freshCommandBox strong {
+  font-weight: 950 !important;
+}
+
+html body .freshCommandBox em,
+html body .freshCommandBox small {
+  font-weight: 850 !important;
+}
+
+html body .freshCommandBox .freshCommandPill {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+}
+
+/* Command action buttons readable */
+html body .freshActions .freshPrimary,
+html body .freshActions .freshOrange,
+html body .freshActions .freshDark {
+  opacity: 1 !important;
+  text-shadow: none !important;
+  font-weight: 900 !important;
+}
+
+html body .freshActions .freshPrimary,
+html body .freshActions .freshDark {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .freshActions .freshOrange {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
