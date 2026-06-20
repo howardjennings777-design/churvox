@@ -384,3 +384,62 @@ html body span.freshCommandPill {
   animation: none !important;
   will-change: auto !important;
 }
+
+/* Stable Command controls — no runtime/global pill fighting */
+html body .freshCommandStablePage .freshCommandFilterBar button,
+html body .freshCommandStablePage .freshSlipActions button,
+html body .freshCommandStablePage .freshActions button,
+html body .freshCommandStablePage .freshClose {
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+html body .freshCommandStablePage .freshCommandFilterBar button.commandFilterSelected {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  border-color: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .freshCommandStablePage .freshCommandFilterBar button.commandFilterSelected span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+html body .freshCommandStablePage .freshCommandFilterBar button.commandFilterSelected b {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  font-weight: 950 !important;
+}
+
+html body .freshCommandStablePage .freshSlipActions .freshPrimary,
+html body .freshCommandStablePage .freshActions .freshPrimary,
+html body .freshCommandStablePage .freshSlipActions .freshDark,
+html body .freshCommandStablePage .freshActions .freshDark {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .freshCommandStablePage .freshSlipActions .freshOrange,
+html body .freshCommandStablePage .freshActions .freshOrange {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+html body .freshCommandStablePage .freshSlipActions .freshGhost,
+html body .freshCommandStablePage .freshActions .freshGhost,
+html body .freshCommandStablePage .freshClose {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}

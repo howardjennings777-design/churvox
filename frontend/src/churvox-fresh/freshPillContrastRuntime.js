@@ -111,9 +111,9 @@ function importantStyle(el, name, value) {
 function applyReadable(el) {
   if (!el || !looksLikePill(el)) return;
 
-  // Command card category pills are locked by CSS. Do not keep re-writing them,
-  // because that causes flicker/glitching on some browsers.
-  if (el.classList?.contains("freshCommandPill")) return;
+  // Command controls are locked by Command CSS. Do not keep re-writing them,
+  // because that causes the Pending / Approve / Decline pills to flicker.
+  if (el.closest(".freshCommandStablePage")) return;
 
   const text = clean(el.innerText || el.textContent || "");
   const bg = rgbParts(effectiveBackground(el));

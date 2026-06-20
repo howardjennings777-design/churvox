@@ -428,7 +428,7 @@ export default function FreshCommand({ onNavigate }) {
   }
 
   return (
-    <section>
+    <section className="freshCommandStablePage">
       <header className="freshHero">
         <span>Churvox fresh · Command</span>
         <h1>Command</h1>
@@ -456,7 +456,7 @@ export default function FreshCommand({ onNavigate }) {
           <button
             type="button"
             key={item}
-            className={filter === item ? "active" : ""}
+            className={filter === item ? "commandFilterSelected" : ""}
             style={filter === item ? selectedFilterButtonStyle : undefined}
             onClick={() => setFilter(item)}
           >
