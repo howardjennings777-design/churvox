@@ -71,7 +71,7 @@ export default function FreshTeamAddPerson({ onAdded, onNavigate }) {
       <label className="freshField"><span>Phone</span><input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="Phone number" /></label>
       <label className="freshField"><span>Role</span><select value={form.role} onChange={(event) => update("role", event.target.value)}>{roles.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
 
-      <button className="freshPrimary" type="submit" disabled={saving}>{saving ? "Adding…" : "Add person"}</button>
+      <button className="freshPrimary" type="submit" disabled={saving}>{saving ? "Saving…" : "Add person / Save"}</button>
     </form>
   );
 }

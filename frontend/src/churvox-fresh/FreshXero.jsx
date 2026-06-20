@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshXero.css";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
@@ -113,7 +114,7 @@ export default function FreshXero({ onNavigate }) {
     try {
       const result = await get("/invoices", { timeout: 25000 });
       if (!result?.success) return null;
-      const invoices = asArray(result.data);
+      const invoices = hideDemoRecords(asArray(result.data));
       const sorted = invoices.sort((a, b) => new Date(b?.created_at || b?.createdAt || b?.date || 0) - new Date(a?.created_at || a?.createdAt || a?.date || 0));
       return sorted[0] || null;
     } catch {

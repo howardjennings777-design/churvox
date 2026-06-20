@@ -142,9 +142,9 @@ export default function FreshAutomation({ onNavigate }) {
     <section className="freshAutomationPage">
       <div className="freshAutomationHero">
         <div>
-          <span>Automation preview</span>
-          <h1>Rules that ask first</h1>
-          <p>Churvox can find admin work automatically, but the owner still approves customer-facing or money actions.</p>
+          <span>Owner-approved rules</span>
+          <h1>Automation</h1>
+          <p>Set simple rules for follow-ups, blocked jobs and admin checks. Customer and money actions still go to Command first.</p>
         </div>
 
         <div className="freshAutomationStats">
@@ -159,7 +159,7 @@ export default function FreshAutomation({ onNavigate }) {
           <header>
             <div>
               <b>Automation rules</b>
-              <span>Frontend preview only</span>
+              <span>Owner-approved actions only</span>
             </div>
             <button type="button" onClick={resetRules}>Reset</button>
           </header>

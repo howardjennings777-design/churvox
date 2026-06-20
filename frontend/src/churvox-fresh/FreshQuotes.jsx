@@ -1,6 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import QuoteCreateForm from "../components/forms/QuoteCreateForm";
+import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshRoutePopups.css";
 
 const filters = ["All", "Draft", "Sent", "Accepted", "Declined"];
@@ -90,7 +91,7 @@ export default function FreshQuotes({ onNavigate }) {
       return;
     }
 
-    const nextQuotes = listFrom(res.data)
+    const nextQuotes = hideDemoRecords(listFrom(res.data))
       .map(normalizeQuote)
       .sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
 

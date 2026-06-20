@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import { hideDemoRecords } from "./freshDemoRecords";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
@@ -161,7 +162,7 @@ export default function FreshPayments({ onNavigate }) {
     try {
       const result = await get("/invoices", { timeout: 25000 });
       if (!result?.success) throw new Error(result?.error || "Could not load invoices.");
-      const rows = asArray(result.data).map(rowFromInvoice).sort((a, b) => b.owing - a.owing);
+      const rows = hideDemoRecords(asArray(result.data)).map(rowFromInvoice).sort((a, b) => b.owing - a.owing);
       setItems(rows);
       setSelectedId((current) => current && rows.some((item) => item.id === current) ? current : rows[0]?.id || "");
       if (!rows.length) setMessage("No invoices yet. Create an invoice first, then payment tracking will appear here.");
@@ -212,8 +213,8 @@ export default function FreshPayments({ onNavigate }) {
       <div className="freshPaymentsHero">
         <div>
           <span>Payments / deposits</span>
-          <h1>Live invoice payment control</h1>
-          <p>Payments are now driven from real invoices. Mark paid, chase balances, then check Xero/payment status where available.</p>
+          <h1>Payments</h1>
+          <p>See who owes money, what is paid, and what needs follow-up. Owner controls payment updates.</p>
         </div>
         <div className="freshPaymentsStats">
           <div><b>{money(total)}</b><small>invoiced</small></div>

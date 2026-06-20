@@ -10,8 +10,8 @@ export default function FreshCalendar({ onNavigate }) {
   return (
     <section className="freshSmartPage">
       <header className="freshHero">
-        <span>Schedule</span>
-        <h1>Calendar</h1>
+        <span>Calendar</span>
+        <h1>Schedule</h1>
         <p>Plan the day, check jobs and keep the schedule connected to owner review.</p>
       </header>
 

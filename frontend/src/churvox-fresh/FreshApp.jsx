@@ -135,6 +135,7 @@ const pages = {
   quotes: FreshQuotes,
   invoices: FreshInvoices,
   calendar: FreshCalendar,
+  schedule: FreshCalendar,
   dispatch: FreshCalendar,
   team: FreshTeam,
   settings: FreshSettings,

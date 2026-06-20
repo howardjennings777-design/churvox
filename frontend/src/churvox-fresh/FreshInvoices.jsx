@@ -1,6 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import InvoiceQuickCreateForm from "../components/forms/InvoiceQuickCreateForm";
+import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshRoutePopups.css";
 
 const filters = ["All", "Draft", "Sent", "Overdue", "Paid"];
@@ -93,7 +94,7 @@ export default function FreshInvoices({ onNavigate }) {
       return;
     }
 
-    const nextInvoices = listFrom(res.data)
+    const nextInvoices = hideDemoRecords(listFrom(res.data))
       .map(normalizeInvoice)
       .sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
 

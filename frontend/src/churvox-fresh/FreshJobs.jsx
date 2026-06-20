@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshJobsPolish.css";
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed"];
@@ -78,7 +79,7 @@ export default function FreshJobs({ onNavigate }) {
     setError("");
     const res = await get("/jobs", { timeout: 25000 });
     if (!res.success) { setJobs([]); setSelectedId(""); setError(res.error || "Could not load real jobs"); setLoading(false); return; }
-    const nextJobs = unpackList(res.data).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+    const nextJobs = hideDemoRecords(unpackList(res.data)).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
     setJobs(nextJobs);
     setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs[0]?.id || "");
     setLoading(false);

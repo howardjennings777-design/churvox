@@ -1,6 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { readFreshFocus } from "./freshFocus";
+import { hideDemoRecords } from "./freshDemoRecords";
 
 const filters = ["All", "Active", "Needs setup", "Paused"];
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
@@ -96,7 +97,7 @@ export default function FreshClients({ onNavigate }) {
       setLoading(false);
       return [];
     }
-    const nextClients = unpackList(res.data).map(normalizeClient).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+    const nextClients = hideDemoRecords(unpackList(res.data)).map(normalizeClient).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
     setClients(nextClients);
     setSelectedId((current) => nextClients.some((client) => client.id === current) ? current : nextClients[0]?.id || "");
     setLoading(false);

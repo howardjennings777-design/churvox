@@ -158,7 +158,7 @@ export default function InvoiceQuickCreateForm({ onSuccess, onCancel }) {
       </label>
 
       <label className="wide">
-        <span>Invoice line item *</span>
+        <span>Description / invoice line item *</span>
         <textarea value={form.description} onChange={(event) => update("description", event.target.value)} required />
       </label>
 
@@ -168,7 +168,7 @@ export default function InvoiceQuickCreateForm({ onSuccess, onCancel }) {
       </label>
 
       <label>
-        <span>Unit price *</span>
+        <span>Subtotal / unit price *</span>
         <input type="number" step="0.01" value={form.unit_price} onChange={(event) => update("unit_price", event.target.value)} required />
       </label>
 
@@ -184,7 +184,7 @@ export default function InvoiceQuickCreateForm({ onSuccess, onCancel }) {
 
       <div className="freshRoutePopupActions">
         <button type="button" className="freshGhost" onClick={onCancel} disabled={saving}>Cancel</button>
-        <button type="submit" className="freshPrimary" disabled={saving}>{saving ? "Saving…" : "Create draft invoice"}</button>
+        <button type="submit" className="freshPrimary" disabled={saving}>{saving ? "Saving…" : "Save draft invoice"}</button>
       </div>
     </form>
   );

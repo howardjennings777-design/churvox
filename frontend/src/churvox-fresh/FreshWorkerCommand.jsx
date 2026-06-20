@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshWorkerCommand.css";
 import "./freshWorkerMobileApp.css";
 
@@ -161,7 +162,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
     try {
       const liveRes = await get(`/worker/live-status?ts=${Date.now()}`, { timeout: 25000, headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } });
       const liveWorkers = liveRes?.data?.workers || liveRes?.data?.data?.workers || [];
-      const liveJobs = liveRes?.data?.jobs || liveRes?.data?.data?.jobs || [];
+      const liveJobs = hideDemoRecords(liveRes?.data?.jobs || liveRes?.data?.data?.jobs || []);
       if (liveRes?.success && Array.isArray(liveWorkers)) {
         const ordered = sortLiveWorkers(liveWorkers);
         setWorkers(ordered); setJobs(Array.isArray(liveJobs) ? liveJobs : []); setSelectedId((current) => preferredWorkerId(ordered, current)); setLastUpdated(new Date()); return;
@@ -174,7 +175,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
         lastWorkerError = res?.error || res?.detail || lastWorkerError;
       }
       const jobRes = await get("/jobs", { timeout: 25000 });
-      const nextJobs = jobRes?.success ? arr(jobRes.data) : [];
+      const nextJobs = jobRes?.success ? hideDemoRecords(arr(jobRes.data)) : [];
       const ordered = sortLiveWorkers(nextWorkers);
       setWorkers(ordered); setJobs(nextJobs); setSelectedId((current) => preferredWorkerId(ordered, current)); if (!nextWorkers.length && lastWorkerError) setError(lastWorkerError); setLastUpdated(new Date());
     } finally { if (!silent) setLoading(false); setRefreshing(false); }
@@ -298,7 +299,7 @@ export default function FreshWorkerCommand({ onNavigate }) {
             <span>Worker view</span>
             <h2>{panelModal.type === "photo" ? "Uploaded photo" : panelModal.type === "photos" ? "Uploaded photos" : panelModal.type === "jobs" ? "Assigned jobs" : "Job detail"}</h2>
           </div>
-          <button type="button" onClick={() => setPanelModal(null)}>Close</button>
+          <button type="button" aria-label="Close worker popup" onClick={() => setPanelModal(null)}>Close</button>
         </header>
 
         {panelModal.type === "photo" && <div className="freshWorkerPhotoLarge">

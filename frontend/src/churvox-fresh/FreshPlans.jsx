@@ -212,8 +212,8 @@ export default function FreshPlans({ onNavigate }) {
       <header className="freshPricingHero freshPricingHeroV2">
         <div>
           <span>Churvox pricing</span>
-          <h1>Choose how much admin Churvox handles.</h1>
-          <p>Start simple, add crew tools when you need them, then move into AI prepared admin when you are ready. You stay in control — Churvox prepares, you approve.</p>
+          <h1>Plans</h1>
+          <p>Choose the plan that fits your business. Start simple, add crew tools, or use Operator where Churvox prepares admin and you approve.</p>
           <div className="freshPricingHeroActions"><button className="freshPrimary" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Ask which plan fits</button></div>
           <label className="freshCountrySelect"><span>Pricing country</span><select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>{COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label>
         </div>
