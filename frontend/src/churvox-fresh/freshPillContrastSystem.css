@@ -1,0 +1,148 @@
+/* Churvox final pill/badge/filter contrast system.
+   Imported last. This is intentionally direct because multiple page styles were fighting pill text. */
+
+/* Filter bars */
+html body .freshCommandFilterBar button {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+}
+
+html body .freshCommandFilterBar button span,
+html body .freshCommandFilterBar button small,
+html body .freshCommandFilterBar button em {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+}
+
+html body .freshCommandFilterBar button b {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background: rgba(249, 115, 22, 0.18) !important;
+  border-radius: 999px !important;
+  min-width: 1.5rem !important;
+  text-align: center !important;
+}
+
+html body .freshCommandFilterBar button.active,
+html body .freshCommandFilterBar button.selected,
+html body .freshCommandFilterBar button.is-active,
+html body .freshCommandFilterBar button[aria-pressed="true"],
+html body .freshCommandFilterBar button[aria-current="true"] {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  border-color: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+html body .freshCommandFilterBar button.active span,
+html body .freshCommandFilterBar button.active small,
+html body .freshCommandFilterBar button.active em,
+html body .freshCommandFilterBar button.selected span,
+html body .freshCommandFilterBar button.is-active span,
+html body .freshCommandFilterBar button[aria-pressed="true"] span,
+html body .freshCommandFilterBar button[aria-current="true"] span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+html body .freshCommandFilterBar button.active b,
+html body .freshCommandFilterBar button.selected b,
+html body .freshCommandFilterBar button.is-active b,
+html body .freshCommandFilterBar button[aria-pressed="true"] b,
+html body .freshCommandFilterBar button[aria-current="true"] b {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Generic tag/badge/chip/pill classes */
+html body :is(
+  [class*="Pill"],
+  [class*="pill"],
+  [class*="Badge"],
+  [class*="badge"],
+  [class*="Tag"],
+  [class*="tag"],
+  [class*="Chip"],
+  [class*="chip"]
+) {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+  font-weight: 900 !important;
+}
+
+/* Their children too */
+html body :is(
+  [class*="Pill"],
+  [class*="pill"],
+  [class*="Badge"],
+  [class*="badge"],
+  [class*="Tag"],
+  [class*="tag"],
+  [class*="Chip"],
+  [class*="chip"]
+) * {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+}
+
+/* Small first labels on light cards: Quick guide, Page guide, etc */
+html body :is(.freshCard, article, section) > span:first-child,
+html body :is(.freshCard, article, section) > header span:first-child,
+html body :is(.freshCard, article, section) > div > span:first-child {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+}
+
+/* Hero/dark panels: first labels stay white */
+html body :is(
+  .freshHero,
+  [class*="Hero"],
+  .freshTellLauncherHero,
+  .freshCommandHero,
+  .freshWorkerAppHero
+) span,
+html body :is(
+  .freshHero,
+  [class*="Hero"],
+  .freshTellLauncherHero,
+  .freshCommandHero,
+  .freshWorkerAppHero
+) :is([class*="Pill"], [class*="Badge"], [class*="Tag"], [class*="Chip"]) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Orange pills and count dots */
+html body :is(
+  .freshCurrentBadge,
+  .freshPlanTag,
+  .freshCommandFilterBar button b,
+  [class*="Count"],
+  [class*="count"]
+) {
+  font-weight: 900 !important;
+  opacity: 1 !important;
+}
+
+/* Disabled/empty pills should still be readable */
+html body button:disabled,
+html body button:disabled *,
+html body [aria-disabled="true"],
+html body [aria-disabled="true"] * {
+  opacity: 0.72 !important;
+}

@@ -126,6 +126,7 @@ import FreshMaterialsAI from "./FreshMaterialsAI";
 import FreshNz from "./FreshNz";
 import FreshPortal from "./FreshPortal";
 import "./freshFinalContrastLock.css";
+import "./freshPillContrastSystem.css";
 
 const pages = {
   smart: FreshSmartHub,
