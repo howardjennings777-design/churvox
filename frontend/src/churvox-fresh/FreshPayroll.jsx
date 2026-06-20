@@ -395,32 +395,32 @@ export default function FreshPayroll({ onNavigate }) {
   }
 
   return (
-    <section className="freshPayrollPage">
-      <header className="freshPayrollHeader">
+    <section className="cvPayPage">
+      <header className="cvPayHeader">
         <div>
           <span>Payroll review</span>
           <h1>Payroll</h1>
           <p>Review worker hours, adjustments and gross pay. Tax filing, government filing and payment files stay outside Churvox.</p>
         </div>
-        <div className="freshPayrollHeaderActions">
+        <div className="cvPayHeaderActions">
           <button type="button" onClick={loadPayroll} disabled={loading}>{loading ? "Refreshing..." : "Refresh workers"}</button>
           <button type="button" onClick={() => onNavigate?.("time")}>Open Time Sheets</button>
         </div>
       </header>
 
-      <section className="freshPayrollSafety">
+      <section className="cvPaySafety">
         <b>Payroll safety rule</b>
         <span>No tax filing. No government filing. No bank/payment files. Export review CSV only.</span>
       </section>
 
-      <section className="freshPayrollStats">
+      <section className="cvPayStats">
         <article><b>{money(totalGross)}</b><span>Gross pay preview</span></article>
         <article><b>{totalHours.toFixed(1)}</b><span>Total hours</span></article>
         <article><b>{needsReviewCount}</b><span>Need review</span></article>
         <article><b>{liveTimeCount}</b><span>With live time</span></article>
       </section>
 
-      <section className="freshPayrollPeriod">
+      <section className="cvPayPeriod">
         <label>
           <span>Pay period</span>
           <select value={period} onChange={(event) => setPeriod(event.target.value)}>
@@ -436,20 +436,20 @@ export default function FreshPayroll({ onNavigate }) {
       </section>
 
       {error ? (
-        <section className="freshPayrollNotice need">
+        <section className="cvPayNotice need">
           <b>Payroll needs attention</b>
           <span>{error}</span>
         </section>
       ) : null}
 
       {actionMessage ? (
-        <section className="freshPayrollNotice">
+        <section className="cvPayNotice">
           <b>Payroll updated</b>
           <span>{actionMessage}</span>
         </section>
       ) : null}
 
-      <section className="freshPayrollFilters">
+      <section className="cvPayFilters">
         {filters.map((item) => (
           <button type="button" key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>
             <span>{item}</span>
@@ -458,11 +458,11 @@ export default function FreshPayroll({ onNavigate }) {
         ))}
       </section>
 
-      <section className="freshPayrollGrid">
-        <aside className="freshPayrollPanel">
+      <section className="cvPayGrid">
+        <aside className="cvPayPanel">
           <h2>Pay list</h2>
           {loading ? (
-            <div className="freshPayrollItem">
+            <div className="cvPayItem">
               <b>Loading payroll</b>
               <span>Checking real workers and job time.</span>
             </div>
@@ -471,7 +471,7 @@ export default function FreshPayroll({ onNavigate }) {
           {!loading && visiblePeople.map((person) => (
             <button
               type="button"
-              className={`freshPayrollItem ${selected?.id === person.id ? "active" : ""} ${person.status === "Needs review" ? "need" : ""}`}
+              className={`cvPayItem ${selected?.id === person.id ? "active" : ""} ${person.status === "Needs review" ? "need" : ""}`}
               key={person.id}
               onClick={() => setSelectedId(person.id)}
             >
@@ -482,46 +482,46 @@ export default function FreshPayroll({ onNavigate }) {
           ))}
 
           {!loading && visiblePeople.length === 0 ? (
-            <div className="freshPayrollItem">
+            <div className="cvPayItem">
               <b>No pay records</b>
               <span>{people.length ? "Change filter to see more workers." : "Add workers in Team before running payroll."}</span>
             </div>
           ) : null}
         </aside>
 
-        <main className="freshPayrollPanel freshPayrollPerson">
+        <main className="cvPayPanel cvPayPerson">
           <h2>{selected?.name || "Select person"}</h2>
 
           {selected ? (
             <>
-              <div className="freshPayrollMiniGrid">
+              <div className="cvPayMiniGrid">
                 <section><span>Status</span><b>{selected.status}</b></section>
                 <section><span>Role</span><b>{selected.role}</b></section>
                 <section><span>Total hours</span><b>{(Number(selected.ordinaryHours) + Number(selected.extraHours)).toFixed(1)}</b></section>
                 <section><span>Gross pay</span><b>{money(grossPay(selected))}</b></section>
               </div>
 
-              <label className="freshPayrollField">
+              <label className="cvPayField">
                 <span>Ordinary hours</span>
                 <input value={selected.ordinaryHours} inputMode="decimal" onChange={(event) => updateSelectedPerson({ ordinaryHours: Number(event.target.value) || 0 })} />
               </label>
 
-              <label className="freshPayrollField">
+              <label className="cvPayField">
                 <span>Extra hours</span>
                 <input value={selected.extraHours} inputMode="decimal" onChange={(event) => updateSelectedPerson({ extraHours: Number(event.target.value) || 0 })} />
               </label>
 
-              <label className="freshPayrollField">
+              <label className="cvPayField">
                 <span>Hourly rate</span>
                 <input value={selected.hourlyRate} inputMode="decimal" onChange={(event) => updateSelectedPerson({ hourlyRate: Number(event.target.value) || 0 })} />
               </label>
 
-              <label className="freshPayrollField">
+              <label className="cvPayField">
                 <span>Manual adjustment</span>
                 <input value={selected.adjustment} inputMode="decimal" onChange={(event) => updateSelectedPerson({ adjustment: Number(event.target.value) || 0 })} />
               </label>
 
-              <label className="freshPayrollField">
+              <label className="cvPayField">
                 <span>Payroll notes</span>
                 <textarea value={selected.notes} onChange={(event) => updateSelectedPerson({ notes: event.target.value })} />
               </label>
@@ -531,9 +531,9 @@ export default function FreshPayroll({ onNavigate }) {
           )}
         </main>
 
-        <aside className="freshPayrollPanel">
+        <aside className="cvPayPanel">
           <h2>Owner actions</h2>
-          <div className="freshPayrollActions">
+          <div className="cvPayActions">
             <button type="button" className="green" onClick={() => updateSelectedPerson({ status: "Ready" })}>Mark ready</button>
             <button type="button" className="dark" onClick={() => updateSelectedPerson({ status: "Approved" })}>Approve pay</button>
             <button type="button" className="orange" onClick={() => updateSelectedPerson({ status: "Needs review" })}>Needs review</button>

@@ -1,9 +1,9 @@
-.freshPayrollPage,
-.freshPayrollPage * {
+.cvPayPage,
+.cvPayPage * {
   box-sizing: border-box;
 }
 
-.freshPayrollPage {
+.cvPayPage {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
@@ -12,13 +12,13 @@
   overflow-x: hidden;
 }
 
-.freshPayrollHeader {
+.cvPayHeader {
   border: 1px solid rgba(15, 23, 42, .13);
   border-left: 7px solid #f97316;
-  border-radius: 26px;
+  border-radius: 24px;
   background: #111827;
   color: #fff;
-  padding: 18px;
+  padding: 16px 18px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
@@ -26,7 +26,7 @@
   box-shadow: 0 14px 34px rgba(2, 6, 23, .13);
 }
 
-.freshPayrollHeader span {
+.cvPayHeader span {
   display: inline-flex;
   width: auto;
   max-width: max-content;
@@ -43,7 +43,7 @@
   white-space: nowrap;
 }
 
-.freshPayrollHeader h1 {
+.cvPayHeader h1 {
   margin: 7px 0 4px;
   color: #fff;
   -webkit-text-fill-color: #fff;
@@ -53,7 +53,7 @@
   font-weight: 1000;
 }
 
-.freshPayrollHeader p {
+.cvPayHeader p {
   margin: 0;
   max-width: 860px;
   color: #e5e7eb;
@@ -63,16 +63,16 @@
   line-height: 1.35;
 }
 
-.freshPayrollHeaderActions {
+.cvPayHeaderActions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
 }
 
-.freshPayrollHeaderActions button,
-.freshPayrollPeriod button,
-.freshPayrollActions button {
+.cvPayHeaderActions button,
+.cvPayPeriod button,
+.cvPayActions button {
   border: 0;
   border-radius: 15px;
   min-height: 42px;
@@ -86,15 +86,15 @@
   white-space: nowrap;
 }
 
-.freshPayrollHeaderActions button:first-child {
+.cvPayHeaderActions button:first-child {
   background: #f97316;
 }
 
-.freshPayrollSafety,
-.freshPayrollNotice {
+.cvPaySafety,
+.cvPayNotice {
   border: 1px solid rgba(22, 163, 74, .18);
   border-left: 6px solid #16a34a;
-  border-radius: 20px;
+  border-radius: 18px;
   background: #f0fdf4;
   padding: 12px 14px;
   display: grid;
@@ -103,14 +103,14 @@
   align-items: center;
 }
 
-.freshPayrollNotice.need {
+.cvPayNotice.need {
   border-color: rgba(249,115,22,.22);
   border-left-color: #f97316;
   background: #fff7ed;
 }
 
-.freshPayrollSafety b,
-.freshPayrollNotice b {
+.cvPaySafety b,
+.cvPayNotice b {
   color: #166534;
   -webkit-text-fill-color: #166534;
   font-size: 11px;
@@ -119,42 +119,42 @@
   letter-spacing: .11em;
 }
 
-.freshPayrollNotice.need b {
+.cvPayNotice.need b {
   color: #9a3412;
   -webkit-text-fill-color: #9a3412;
 }
 
-.freshPayrollSafety span,
-.freshPayrollNotice span {
+.cvPaySafety span,
+.cvPayNotice span {
   color: #334155;
   -webkit-text-fill-color: #334155;
   font-weight: 850;
   line-height: 1.35;
 }
 
-.freshPayrollStats {
+.cvPayStats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.freshPayrollStats article,
-.freshPayrollPanel,
-.freshPayrollPeriod {
+.cvPayStats article,
+.cvPayPanel,
+.cvPayPeriod {
   border: 1px solid rgba(15,23,42,.12);
-  border-radius: 24px;
+  border-radius: 22px;
   background: rgba(255,250,240,.96);
   box-shadow: 0 14px 34px rgba(2,6,23,.07);
 }
 
-.freshPayrollStats article {
-  min-height: 112px;
+.cvPayStats article {
+  min-height: 108px;
   padding: 16px;
   display: grid;
   align-content: center;
 }
 
-.freshPayrollStats b {
+.cvPayStats b {
   color: #101827;
   -webkit-text-fill-color: #101827;
   font-size: clamp(32px, 4vw, 50px);
@@ -163,7 +163,7 @@
   letter-spacing: -.055em;
 }
 
-.freshPayrollStats span {
+.cvPayStats span {
   margin-top: 8px;
   color: #475569;
   -webkit-text-fill-color: #475569;
@@ -171,7 +171,7 @@
   font-weight: 850;
 }
 
-.freshPayrollPeriod {
+.cvPayPeriod {
   padding: 14px;
   display: grid;
   grid-template-columns: minmax(260px, 1fr) auto auto;
@@ -179,15 +179,15 @@
   align-items: end;
 }
 
-.freshPayrollPeriod label,
-.freshPayrollField {
+.cvPayPeriod label,
+.cvPayField {
   display: grid;
   gap: 7px;
 }
 
-.freshPayrollPeriod label span,
-.freshPayrollField span,
-.freshPayrollMiniGrid span {
+.cvPayPeriod label span,
+.cvPayField span,
+.cvPayMiniGrid span {
   color: #7c2d12;
   -webkit-text-fill-color: #7c2d12;
   font-size: 11px;
@@ -196,9 +196,9 @@
   text-transform: uppercase;
 }
 
-.freshPayrollPeriod select,
-.freshPayrollField input,
-.freshPayrollField textarea {
+.cvPayPeriod select,
+.cvPayField input,
+.cvPayField textarea {
   width: 100%;
   border: 1px solid rgba(15,23,42,.14);
   border-radius: 16px;
@@ -211,19 +211,19 @@
   outline: none;
 }
 
-.freshPayrollField textarea {
+.cvPayField textarea {
   min-height: 92px;
   resize: vertical;
   line-height: 1.4;
 }
 
-.freshPayrollFilters {
+.cvPayFilters {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.freshPayrollFilters button {
+.cvPayFilters button {
   border: 1px solid rgba(15,23,42,.12);
   border-radius: 999px;
   background: #fffaf0;
@@ -237,13 +237,13 @@
   cursor: pointer;
 }
 
-.freshPayrollFilters button.active {
+.cvPayFilters button.active {
   background: #111827;
   color: #fff;
   -webkit-text-fill-color: #fff;
 }
 
-.freshPayrollFilters button b {
+.cvPayFilters button b {
   min-width: 26px;
   height: 26px;
   border-radius: 999px;
@@ -254,19 +254,19 @@
   -webkit-text-fill-color: #111827;
 }
 
-.freshPayrollGrid {
+.cvPayGrid {
   display: grid;
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr) minmax(250px, 310px);
   gap: 14px;
   align-items: start;
 }
 
-.freshPayrollPanel {
+.cvPayPanel {
   padding: 16px;
   min-width: 0;
 }
 
-.freshPayrollPanel h2 {
+.cvPayPanel h2 {
   margin: 0 0 12px;
   color: #101827;
   -webkit-text-fill-color: #101827;
@@ -275,7 +275,7 @@
   letter-spacing: -.055em;
 }
 
-.freshPayrollItem {
+.cvPayItem {
   width: 100%;
   border: 1px solid rgba(15,23,42,.12);
   border-left: 6px solid #16a34a;
@@ -291,45 +291,53 @@
   cursor: pointer;
 }
 
-.freshPayrollItem.need {
+.cvPayItem.need {
   border-left-color: #f97316;
 }
 
-.freshPayrollItem.active {
-  background: #fff7ed;
-  border-color: rgba(249,115,22,.45);
+.cvPayItem.active {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
 }
 
-.freshPayrollItem b {
+.cvPayItem.active b,
+.cvPayItem.active span,
+.cvPayItem.active small {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.cvPayItem b {
   color: #101827;
   -webkit-text-fill-color: #101827;
   font-size: 14px;
   font-weight: 1000;
 }
 
-.freshPayrollItem span,
-.freshPayrollItem small {
+.cvPayItem span,
+.cvPayItem small {
   color: #64748b;
   -webkit-text-fill-color: #64748b;
   font-size: 12px;
   font-weight: 850;
 }
 
-.freshPayrollMiniGrid {
+.cvPayMiniGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
 
-.freshPayrollMiniGrid section {
+.cvPayMiniGrid section {
   border: 1px solid rgba(15,23,42,.10);
   border-radius: 18px;
   background: #fff;
   padding: 13px;
 }
 
-.freshPayrollMiniGrid b {
+.cvPayMiniGrid b {
   display: block;
   margin-top: 6px;
   color: #111827;
@@ -338,68 +346,68 @@
   font-weight: 1000;
 }
 
-.freshPayrollPerson {
+.cvPayPerson {
   display: grid;
   gap: 10px;
 }
 
-.freshPayrollActions {
+.cvPayActions {
   display: grid;
   gap: 8px;
 }
 
-.freshPayrollActions button {
+.cvPayActions button {
   width: 100%;
   background: #fff;
   border: 1px solid rgba(15,23,42,.13);
 }
 
-.freshPayrollActions button.green {
+.cvPayActions button.green {
   background: #16a34a;
   color: #052e16;
   -webkit-text-fill-color: #052e16;
 }
 
-.freshPayrollActions button.dark {
+.cvPayActions button.dark {
   background: #111827;
   color: #fff;
   -webkit-text-fill-color: #fff;
 }
 
-.freshPayrollActions button.orange {
+.cvPayActions button.orange {
   background: #f97316;
   color: #111827;
   -webkit-text-fill-color: #111827;
 }
 
 @media (max-width: 1080px) {
-  .freshPayrollHeader,
-  .freshPayrollGrid {
+  .cvPayHeader,
+  .cvPayGrid {
     grid-template-columns: 1fr;
   }
 
-  .freshPayrollHeaderActions {
+  .cvPayHeaderActions {
     justify-content: flex-start;
   }
 
-  .freshPayrollStats {
+  .cvPayStats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 760px) {
-  .freshPayrollPeriod,
-  .freshPayrollSafety,
-  .freshPayrollNotice {
+  .cvPayPeriod,
+  .cvPaySafety,
+  .cvPayNotice {
     grid-template-columns: 1fr;
   }
 
-  .freshPayrollStats,
-  .freshPayrollMiniGrid {
+  .cvPayStats,
+  .cvPayMiniGrid {
     grid-template-columns: 1fr;
   }
 
-  .freshPayrollHeader h1 {
+  .cvPayHeader h1 {
     font-size: 46px;
   }
 }
