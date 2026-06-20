@@ -189,12 +189,12 @@ async function scanPage(page, pageName, viewportName) {
   for (const [route, name] of routes) {
     await page.setViewportSize({ width: 1366, height: 850 });
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle" }).catch(() => {});
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(2200);
     await scanPage(page, name, "desktop");
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle" }).catch(() => {});
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(2200);
     await scanPage(page, name, "mobile");
   }
 

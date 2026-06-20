@@ -125,6 +125,7 @@ import FreshMaterialsReminder from "./FreshMaterialsReminder";
 import FreshMaterialsAI from "./FreshMaterialsAI";
 import FreshNz from "./FreshNz";
 import FreshPortal from "./FreshPortal";
+import { installPillContrastRuntime } from "./freshPillContrastRuntime";
 import "./freshFinalContrastLock.css";
 import "./freshPillContrastSystem.css";
 
@@ -206,6 +207,8 @@ function getInitialPage() {
 }
 
 export default function FreshApp() {
+  React.useEffect(() => installPillContrastRuntime(), []);
+
   const [page, setPage] = React.useState(getInitialPage);
   const Page = pages[page] || FreshSimple;
 
