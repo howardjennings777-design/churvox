@@ -24,7 +24,23 @@ groups.forEach((group) => group.items.forEach(([key]) => { parentByKey[key] = ke
 function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
 function cleanGroups(sourceGroups, guideComplete = false) { const seen = new Set(); return sourceGroups.map((group) => ({ ...group, items: group.items.filter(([key]) => !(guideComplete && key === "setupassistant")).filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }) })).filter((group) => group.items.length); }
-function resetScroll() { try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch {} try { document.querySelectorAll(".freshMain,.freshPageScroll,.freshApp,main").forEach((el) => { el.scrollTop = 0; }); } catch {} }
+function resetScroll() {
+  const run = () => {
+    try {
+      if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      document.querySelectorAll(".freshMain,.freshPageScroll,.freshApp,main").forEach((el) => {
+        if (el) el.scrollTop = 0;
+      });
+    } catch {}
+  };
+
+  run();
+  try { window.requestAnimationFrame(run); } catch {}
+  [40, 120, 300, 650].forEach((delay) => window.setTimeout(run, delay));
+}
 function cleanAsk(text) { return String(text || "").toLowerCase().replace(/[^a-z0-9$@.\s-]/g, " ").replace(/\s+/g, " ").trim(); }
 function isJobCommand(text) { const lower = cleanAsk(text); return /(add|new|create|book|make).{0,50}(job|work|booking|service)/.test(lower) || /lawn|mowing|cleaning|garden|handyman|painting|plumbing|electrical/.test(lower); }
 function isClientCommand(text) { const lower = cleanAsk(text); return /(add|new|create|make).{0,40}(client|customer)/.test(lower); }
@@ -41,6 +57,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const mobileTitle = mobileLabels[currentPrimary] || mobileLabels[active] || "Churvox";
 
   React.useEffect(() => { const refresh = () => setGuideComplete(guideIsComplete()); window.addEventListener("storage", refresh); window.addEventListener("churvox:ai-guide-status", refresh); window.addEventListener("churvox:fresh-data-updated", refresh); return () => { window.removeEventListener("storage", refresh); window.removeEventListener("churvox:ai-guide-status", refresh); window.removeEventListener("churvox:fresh-data-updated", refresh); }; }, []);
+  React.useLayoutEffect(() => { resetScroll(); }, [active]);
   React.useEffect(() => { resetScroll(); }, [active]);
 
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
@@ -82,7 +99,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
       </aside>
       <main className="freshMain">
         <header className="freshMobileAppTop"><div><b>Churvox</b><span>{mobileTitle} · ready</span></div><button className="freshMobileLogout" type="button" onClick={handleLogout}>Log out</button></header>
-        <div className="freshPageScroll">{children}</div>
+        <div className="freshPageScroll" key={active}>{children}</div>
         <form className="freshGlobalAsk freshGlobalAsk--hidden" onSubmit={submitAsk} aria-hidden="true"><label><span>What do you want to do?</span><input value={globalAsk} onChange={(event) => setGlobalAsk(event.target.value)} placeholder="open jobs, add client, show unpaid invoices…" /></label><button type="submit">Ask Churvox</button></form>
       </main>
       {moreOpen && <div className="freshMobileMore">{safeExtraMobile.map(([key, mark, label]) => <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</div>}

@@ -1766,3 +1766,28 @@ select,
     font-size: 42px !important;
   }
 }
+
+/* CHURVOX_SHELL_HEADER_NOT_CUT_20260621
+   Global fix: pages must start below the top edge and never reopen half-scrolled. */
+.freshMain {
+  padding: 18px 14px 24px !important;
+  scroll-padding-top: 18px !important;
+}
+
+.freshPageScroll {
+  padding-top: 0 !important;
+  padding-bottom: 96px !important;
+  overflow: visible !important;
+}
+
+.freshPageScroll > section:first-child,
+.freshPageScroll > main:first-child,
+.freshPageScroll > div:first-child {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 900px) {
+  .freshMain {
+    padding: 74px 10px 96px !important;
+  }
+}
