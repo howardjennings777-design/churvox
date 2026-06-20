@@ -587,3 +587,233 @@
 .freshTodayPanel--workerStatus {
   border-color: rgba(14, 165, 233, 0.24);
 }
+
+/* CHURVOX_DASHBOARD_CLEAN_REAL_20260620 */
+.freshDashboardClean {
+  max-width: 1320px !important;
+  margin: 0 auto !important;
+  gap: 18px !important;
+}
+
+.freshDashboardClean .freshTodayHero--clean {
+  min-height: 0 !important;
+  padding: 22px !important;
+  border-radius: 28px !important;
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr) !important;
+  align-items: center !important;
+}
+
+.freshDashboardClean .freshTodayHero h1 {
+  font-size: clamp(46px, 6vw, 78px) !important;
+  line-height: .9 !important;
+  margin: 12px 0 8px !important;
+}
+
+.freshDashboardClean .freshTodayHero p {
+  max-width: 680px !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+}
+
+.freshDashboardHeroCards {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.freshDashboardHeroCards button {
+  border: 1px solid rgba(255,255,255,.14) !important;
+  border-radius: 22px !important;
+  background: rgba(255,255,255,.08) !important;
+  padding: 16px !important;
+  min-height: 108px !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+.freshDashboardHeroCards b {
+  display: block !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+}
+
+.freshDashboardHeroCards span {
+  display: block !important;
+  margin-top: 9px !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  font-size: 11px !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+}
+
+.freshDashboardPrimary {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.1fr) minmax(330px, .9fr) !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+.freshDashboardPriority {
+  background: #fffaf0 !important;
+  border-left: 7px solid #f97316 !important;
+}
+
+.freshDashboardActionTiles {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.freshDashboardActionTiles button {
+  border: 1px solid rgba(15,23,42,.12) !important;
+  border-radius: 24px !important;
+  background: #111827 !important;
+  color: #fff !important;
+  padding: 18px !important;
+  text-align: left !important;
+  box-shadow: 0 14px 34px rgba(2,6,23,.14) !important;
+  cursor: pointer !important;
+}
+
+.freshDashboardActionTiles span {
+  display: inline-flex !important;
+  margin-bottom: 9px !important;
+  border-radius: 999px !important;
+  background: rgba(249,115,22,.15) !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.freshDashboardActionTiles b {
+  display: block !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 26px !important;
+  line-height: 1.05 !important;
+  font-weight: 1000 !important;
+}
+
+.freshDashboardActionTiles small {
+  display: block !important;
+  margin-top: 7px !important;
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  font-weight: 850 !important;
+}
+
+.freshDashboardFlow {
+  padding: 16px !important;
+}
+
+.freshDashboardFlow header {
+  margin-bottom: 10px !important;
+}
+
+.freshDashboardFlow h2 {
+  font-size: clamp(28px, 3vw, 40px) !important;
+}
+
+.freshDashboardStageRail {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.freshDashboardStageRail .freshTodayNeedCard {
+  min-height: 104px !important;
+  padding: 12px !important;
+  border-radius: 18px !important;
+}
+
+.freshDashboardStageRail .freshTodayNeedCard b {
+  font-size: 26px !important;
+  line-height: 1 !important;
+}
+
+.freshDashboardStageRail .freshTodayNeedCard small {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+.freshDashboardSecondary {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+.freshDashboardSecondary .freshTodayPanel {
+  min-height: 0 !important;
+}
+
+.freshDashboardSecondary .freshTodayPanel h2 {
+  font-size: clamp(26px, 2.6vw, 36px) !important;
+}
+
+.freshDashboardMoneyRows {
+  gap: 8px !important;
+}
+
+.freshDashboardMoneyRows button {
+  min-height: 78px !important;
+  padding: 13px !important;
+}
+
+.freshDashboardMoneyRows b {
+  font-size: 24px !important;
+}
+
+.freshDashboardOk {
+  border-left: 6px solid #16a34a !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
+
+.freshDashboardClean .freshTodayPanel--workerStatus {
+  grid-column: span 1 !important;
+}
+
+@media (max-width: 1180px) {
+  .freshDashboardStageRail {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .freshDashboardSecondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .freshDashboardClean .freshTodayHero--clean,
+  .freshDashboardPrimary,
+  .freshDashboardSecondary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshDashboardStageRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .freshDashboardHeroCards,
+  .freshDashboardStageRail {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshDashboardClean .freshTodayHero h1 {
+    font-size: 46px !important;
+  }
+}
