@@ -1,0 +1,134 @@
+/* CHURVOX_OWNER_SHELL_FINAL_SCROLL_20260621
+   Final shell rule: body/page scrolls, not a trapped inner panel.
+   This stops page headers being chopped on Payroll, Exports, Xero, etc. */
+
+html,
+body,
+#root {
+  min-height: 100% !important;
+  height: auto !important;
+  overflow-x: hidden !important;
+}
+
+body {
+  overflow-y: auto !important;
+}
+
+.freshApp {
+  min-height: 100vh !important;
+  height: auto !important;
+  overflow: visible !important;
+  display: grid !important;
+  grid-template-columns: 236px minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+.freshSide {
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+.freshMain {
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  height: auto !important;
+  overflow: visible !important;
+  padding: 18px 14px 96px !important;
+  scroll-padding-top: 18px !important;
+}
+
+.freshPageScroll {
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  padding-top: 0 !important;
+  padding-bottom: 96px !important;
+  display: block !important;
+}
+
+.freshPageScroll > section:first-child,
+.freshPageScroll > main:first-child,
+.freshPageScroll > div:first-child {
+  margin-top: 0 !important;
+}
+
+/* Make first page blocks stack instead of overlaying each other */
+.freshPageScroll > section:first-child {
+  position: relative !important;
+  display: grid !important;
+  gap: 14px !important;
+  align-content: start !important;
+}
+
+/* Any page header/hero must be fully visible */
+.freshPageScroll .freshHero,
+.freshPageScroll .freshExportsHero,
+.freshPageScroll .freshTodayWorkHero,
+.freshPageScroll .freshXeroHero,
+.freshPageScroll .freshXeroCompactHeader,
+.freshPageScroll .freshPaymentsHero,
+.freshPageScroll .freshInvoicesHero,
+.freshPageScroll .freshJobsHero,
+.freshPageScroll .freshClientsHero,
+.freshPageScroll .freshQuotesHero,
+.freshPageScroll .cvPayHeader {
+  position: relative !important;
+  top: auto !important;
+  transform: none !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  overflow: visible !important;
+  z-index: 1 !important;
+}
+
+/* The block after a header should not ride up over it */
+.freshPageScroll .freshHero + *,
+.freshPageScroll .freshExportsHero + *,
+.freshPageScroll .freshTodayWorkHero + *,
+.freshPageScroll .freshXeroHero + *,
+.freshPageScroll .freshXeroCompactHeader + *,
+.freshPageScroll .freshPaymentsHero + *,
+.freshPageScroll .freshInvoicesHero + *,
+.freshPageScroll .freshJobsHero + *,
+.freshPageScroll .freshClientsHero + *,
+.freshPageScroll .freshQuotesHero + *,
+.freshPageScroll .cvPayHeader + * {
+  position: relative !important;
+  top: auto !important;
+  transform: none !important;
+  margin-top: 0 !important;
+  z-index: 1 !important;
+}
+
+@media (max-width: 900px) {
+  .freshApp {
+    display: block !important;
+  }
+
+  .freshSide {
+    display: none !important;
+  }
+
+  .freshMain {
+    min-height: 100vh !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 76px 10px 140px !important;
+  }
+
+  .freshPageScroll {
+    padding-bottom: 160px !important;
+  }
+
+  .freshMobileAppTop {
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    top: 8px !important;
+  }
+}

@@ -129,6 +129,7 @@ import FreshPortal from "./FreshPortal";
 import { installPillContrastRuntime } from "./freshPillContrastRuntime";
 import "./freshFinalContrastLock.css";
 import "./freshPillContrastSystem.css";
+import "./freshOwnerShellFinal.css";
 
 const pages = {
   today: FreshTodaysWork,
