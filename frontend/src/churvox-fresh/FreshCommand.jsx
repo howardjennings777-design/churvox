@@ -258,7 +258,7 @@ function buildRiskScanIssues() {
         found: `${person.name} has payroll marked as needs review.`,
         prepared: "Churvox prepared a payroll workspace review slip.",
         why: "Payroll should be checked by the owner before export.",
-        owner: "Review hours, adjustment and gross pay. Do not submit tax or payment files.",
+        owner: "Review hours, adjustment and gross pay. Tax filing stays outside Churvox or payment files.",
         area: "Payroll",
         page: "payroll",
         fromInbox: true,

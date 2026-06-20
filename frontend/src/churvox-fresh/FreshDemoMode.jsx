@@ -100,7 +100,7 @@ export default function FreshDemoMode({ onNavigate }) {
         </div>
 
         <div className="freshDemoStats">
-          <div><b>{loaded ? "On" : "Off"}</b><small>demo mode</small></div>
+          <div><b>{loaded ? "On" : "Off"}</b><small>preview mode</small></div>
           <div><b>3</b><small>AI slips</small></div>
           <div><b>2 min</b><small>first value</small></div>
           <div><b>Reset</b><small>safe testing</small></div>

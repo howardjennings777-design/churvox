@@ -23,7 +23,7 @@ import { useApi } from "../hooks/useApi";
 import { formatCurrency } from "../lib/utils";
 import { PremiumAIBox } from "../components/premium";
 
-const DISCLAIMER = "Churvox prepares payroll for review and handoff. Tax filing, government submission and payment files stay outside Churvox.";
+const DISCLAIMER = "Churvox prepares payroll for review and handoff. Tax filing, government filing and payment files stay outside Churvox.";
 const FREQUENCY_OPTIONS = ["weekly", "fortnightly", "monthly", "custom"];
 
 function safeFilePart(value) {
