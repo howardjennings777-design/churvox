@@ -171,8 +171,22 @@ function gpsCoords(worker) {
   return `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
 }
 
+function gpsAddress(worker) {
+  return pick(
+    worker,
+    "gps_address",
+    "last_gps_address",
+    "last_address",
+    "last_location_address",
+    "reverse_geocoded_address",
+    "formatted_address",
+    "location_address",
+    "address"
+  );
+}
+
 function lastLocation(worker) {
-  return gpsLabel(worker) || gpsCoords(worker) || "No location yet";
+  return gpsAddress(worker) || gpsLabel(worker) || gpsCoords(worker) || "No location yet";
 }
 
 function gpsUpdatedAt(worker) {
@@ -559,6 +573,18 @@ export default function FreshWorkerCommand() {
         <main className="cvWorkerDetail">
           {selected && view ? (
             <>
+              <section className="cvWorkerStickyBar">
+                <div>
+                  <b>{workerName(selected)}</b>
+                  <span>{selectedLiveStatus}</span>
+                  <small>{gpsAddress(selected) || lastLocation(selected)}</small>
+                </div>
+                <div>
+                  <em>GPS: {gpsUpdatedAt(selected) || "No update"}</em>
+                  <em>Job: {view.currentJob ? jobTitle(view.currentJob) : "None active"}</em>
+                </div>
+              </section>
+
               <section className="cvWorkerTopCard">
                 <div>
                   <span>{selectedLiveStatus}</span>
@@ -583,15 +609,16 @@ export default function FreshWorkerCommand() {
                   )}
                 </article>
 
-                <article className="cvWorkerInfoCard">
+                <article className="cvWorkerInfoCard cvWorkerGpsStickyCard">
                   <span>GPS / location</span>
-                  <h3>{lastLocation(selected)}</h3>
+                  <h3>{gpsAddress(selected) || "Live GPS point"}</h3>
                   <p>{point ? `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}` : "No coordinates recorded."}</p>
+                  <small>Address: {gpsAddress(selected) || "Address lookup not saved yet — use Open in Google Maps."}</small>
                   <small>{gpsAccuracy(selected)}</small>
                   <small>Updated: {gpsUpdatedAt(selected) || "No GPS update yet"}</small>
                   <div className="cvWorkerActions">
                     {mapUrl ? <a href={mapUrl} target="_blank" rel="noreferrer">Open in Google Maps</a> : null}
-                    <button type="button" onClick={() => navigator.clipboard?.writeText(gpsCoords(selected) || lastLocation(selected))}>Copy location</button>
+                    <button type="button" onClick={() => navigator.clipboard?.writeText(gpsAddress(selected) || gpsCoords(selected) || lastLocation(selected))}>Copy location</button>
                   </div>
                 </article>
               </section>

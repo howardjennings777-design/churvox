@@ -595,3 +595,102 @@
     font-size: 50px;
   }
 }
+
+/* CHURVOX_WORKER_STICKY_GPS_ADDRESS_20260621 */
+.cvWorkerRail {
+  position: sticky !important;
+  top: 18px !important;
+  align-self: start !important;
+  z-index: 20 !important;
+  max-height: calc(100vh - 36px) !important;
+  overflow-y: auto !important;
+}
+
+.cvWorkerStickyBar {
+  position: sticky;
+  top: 10px;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid rgba(15,23,42,.12);
+  border-left: 6px solid #16a34a;
+  border-radius: 20px;
+  background: rgba(255, 250, 240, .96);
+  backdrop-filter: blur(12px);
+  padding: 11px 13px;
+  box-shadow: 0 12px 30px rgba(2,6,23,.10);
+}
+
+.cvWorkerStickyBar div {
+  min-width: 0;
+}
+
+.cvWorkerStickyBar b {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 17px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.cvWorkerStickyBar span {
+  margin-left: 8px;
+  display: inline-flex;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #166534;
+  -webkit-text-fill-color: #166534;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.cvWorkerStickyBar small {
+  display: block;
+  margin-top: 5px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cvWorkerStickyBar em {
+  display: block;
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  font-style: normal;
+  text-align: right;
+  line-height: 1.35;
+}
+
+.cvWorkerGpsStickyCard {
+  position: sticky;
+  top: 82px;
+  z-index: 10;
+}
+
+@media (max-width: 1100px) {
+  .cvWorkerStickyBar,
+  .cvWorkerGpsStickyCard,
+  .cvWorkerRail {
+    position: relative !important;
+    top: auto !important;
+  }
+
+  .cvWorkerStickyBar {
+    grid-template-columns: 1fr;
+  }
+
+  .cvWorkerStickyBar em {
+    text-align: left;
+  }
+}
