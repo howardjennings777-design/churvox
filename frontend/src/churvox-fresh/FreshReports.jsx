@@ -1,4 +1,5 @@
 import React from "react";
+import "./freshPayrollCompact.css";
 
 const storageKeys = {
   jobs: "churvox:fresh-jobs:v1",
@@ -124,7 +125,7 @@ export default function FreshReports({ onNavigate }) {
         <p>Live preview reports from your fresh Jobs, Invoices, Quotes, Clients, Team and Payroll data.</p>
       </header>
 
-      <section className="freshCommandPulse">
+      <section className="freshCommandPulse freshPayrollCompactPage">
         <aside className="freshCard">
           <h2>{money(data.invoiceMoney)}</h2>
           <p>Invoice value</p>

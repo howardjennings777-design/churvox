@@ -1,6 +1,7 @@
 import React from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
+import "./freshPayrollCompact.css";
 
 const STORE_KEY = "churvox_ai_approval_actions_v1";
 const EVENT_KEY = "churvox_field_activity_events_v1";

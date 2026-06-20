@@ -1,5 +1,6 @@
 import React from "react";
 import { readFreshFocus } from "./freshFocus";
+import "./freshPayrollCompact.css";
 
 const commandFilters = ["Pending", "Approved", "Edited", "Declined", "All"];
 
@@ -438,7 +439,7 @@ export default function FreshCommand({ onNavigate }) {
   }
 
   return (
-    <section className="freshCommandStablePage">
+    <section className="freshCommandStablePage freshPayrollCompactPage">
       <header className="freshHero">
         <span>Churvox fresh · Command</span>
         <h1>Command</h1>

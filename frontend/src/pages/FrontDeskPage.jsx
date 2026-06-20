@@ -8,6 +8,7 @@ import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import ZoneCard from "../components/frontdesk/ZoneCard";
 import WorkSlipModal from "../components/frontdesk/WorkSlipModal";
 import OnboardingChecklist from "../components/frontdesk/OnboardingChecklist";
+import "./freshPayrollCompact.css";
 
 const safeArray = (v) =>
   Array.isArray(v)

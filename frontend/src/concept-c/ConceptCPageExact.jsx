@@ -11,6 +11,7 @@ import "./commandFloorFullScreen10.css";
 import "./commandFloorFinalProductPolish.css";
 import "./commandFloorWowOperatorLayout.css";
 import "./commandFloorCompactHeroNoTopbar.css";
+import "./freshPayrollCompact.css";
 
 const arr = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.jobs) ? v.jobs : Array.isArray(v?.clients) ? v.clients : Array.isArray(v?.invoices) ? v.invoices : Array.isArray(v?.quotes) ? v.quotes : Array.isArray(v?.workers) ? v.workers : Array.isArray(v?.actions) ? v.actions : Array.isArray(v?.activities) ? v.activities : Array.isArray(v?.notifications) ? v.notifications : [];
 const str = (v) => String(v || "").trim();

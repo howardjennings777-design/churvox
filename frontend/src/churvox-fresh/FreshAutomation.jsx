@@ -1,4 +1,5 @@
 import React from "react";
+import "./freshPayrollCompact.css";
 
 const AUTOMATION_KEY = "churvox:fresh-automation-rules:v1";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
@@ -139,7 +140,7 @@ export default function FreshAutomation({ onNavigate }) {
   }
 
   return (
-    <section className="freshAutomationPage">
+    <section className="freshAutomationPage freshPayrollCompactPage">
       <div className="freshAutomationHero">
         <div>
           <span>Owner-approved rules</span>
