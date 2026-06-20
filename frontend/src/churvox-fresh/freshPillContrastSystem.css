@@ -272,3 +272,22 @@ html body .freshWorkerAppView span,
 html body .freshWorkerCommandPage span {
   opacity: 1 !important;
 }
+
+/* Final last-two pill fixes */
+html body .freshCurrentPlanBox .freshDarkPanelPill,
+html body small.freshDarkPanelPill {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+html body .freshWorkerAppView span,
+html body .freshWorkerCommandPage span {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+html body .freshWorkerAppView span:where(:not(.freshDarkPanelPill)),
+html body .freshWorkerCommandPage span:where(:not(.freshDarkPanelPill)) {
+  opacity: 1 !important;
+}

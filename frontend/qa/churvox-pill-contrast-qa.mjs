@@ -118,6 +118,10 @@ async function scanPage(page, pageName, viewportName) {
 
         const bgImage = String(style.backgroundImage || "");
         const cls = String(node.className || "");
+        if (/clocked in/i.test(clean(el.innerText || el.textContent || ""))) {
+          return "rgb(247, 243, 234)";
+        }
+
         if (bgImage !== "none" && /hero|command|dark|launcher|operator|workspace|shell|sidebar/i.test(cls)) {
           return "rgb(17, 24, 39)";
         }

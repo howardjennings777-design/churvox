@@ -114,7 +114,11 @@ function applyReadable(el) {
   const bg = rgbParts(effectiveBackground(el));
   let color = readableColorFor(el);
 
-  if (/^CLOCKED IN$/i.test(text) && bg && luminance(bg) >= 0.42) {
+  if (el.classList?.contains("freshDarkPanelPill") || /^(CURRENT PLAN)$/i.test(text)) {
+    color = "#ffffff";
+  }
+
+  if (/^CLOCKED IN$/i.test(text)) {
     color = "#111827";
   }
 
