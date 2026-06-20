@@ -164,7 +164,7 @@ ${invoice.payment_link ? `<p><a href="${invoice.payment_link}">Pay invoice onlin
           notes: invoice?.notes ? `${invoice.notes}\n${note}` : note,
         },
         res.data?.email_sent === false
-          ? "PDF generated. Add email provider env vars on Render to send automatically."
+          ? "PDF generated. Add email provider env vars on Render to send after owner approval."
           : "Invoice sent with PDF attached"
       );
       setBusy("");
