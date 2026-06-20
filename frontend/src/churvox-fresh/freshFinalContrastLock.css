@@ -1,0 +1,67 @@
+/* FINAL CONTRAST LOCK
+   This file is imported last so selected pills stay readable everywhere. */
+
+html body .freshCommandFilterBar button,
+html body .freshCommandFilterBar button span,
+html body .freshCommandFilterBar button small,
+html body .freshCommandFilterBar button em {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+}
+
+html body .freshCommandFilterBar button.active,
+html body .freshCommandFilterBar button.active:hover,
+html body .freshCommandFilterBar button[aria-pressed="true"],
+html body .freshCommandFilterBar button[aria-current="true"],
+html body .freshCommandFilterBar button.selected,
+html body .freshCommandFilterBar button.is-active {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  border-color: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .freshCommandFilterBar button.active *,
+html body .freshCommandFilterBar button[aria-pressed="true"] *,
+html body .freshCommandFilterBar button[aria-current="true"] *,
+html body .freshCommandFilterBar button.selected *,
+html body .freshCommandFilterBar button.is-active * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+}
+
+html body .freshCommandFilterBar button.active b,
+html body .freshCommandFilterBar button[aria-pressed="true"] b,
+html body .freshCommandFilterBar button[aria-current="true"] b,
+html body .freshCommandFilterBar button.selected b,
+html body .freshCommandFilterBar button.is-active b {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border-radius: 999px !important;
+  padding: 0.12rem 0.42rem !important;
+  min-width: 1.45rem !important;
+  text-align: center !important;
+}
+
+/* Mobile/other pill systems too */
+html body .freshFilters button.active,
+html body .freshTabs button.active,
+html body .freshSegment button.active {
+  background: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body .freshFilters button.active *,
+html body .freshTabs button.active *,
+html body .freshSegment button.active * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
