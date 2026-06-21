@@ -1,4 +1,6 @@
 import React from "react";
+import { useApi } from "../hooks/useApi";
+import { useAuth } from "../context/AuthContext";
 
 const LEADS_KEY = "churvox:fresh-leads:v1";
 const QUOTES_KEY = "churvox:fresh-quotes:v1";
@@ -46,6 +48,34 @@ const defaults = [
     nextStep: "Create quote",
   },
 ];
+
+
+function requestToLead(request) {
+  const id = request.id || request._id || `request-${Date.now()}`;
+  const service = request.service_needed || request.service || "Customer request";
+  const area = request.address || request.area || "No address";
+  const photos = Array.isArray(request.photos) ? request.photos : [];
+  const preferred = request.preferred_day ? `Preferred: ${request.preferred_day}. ` : "";
+  const urgency = request.urgency ? `Urgency: ${request.urgency}. ` : "";
+  const photoText = photos.length ? `Photos attached: ${photos.length}. ` : "";
+
+  return {
+    id: `request-${id}`,
+    backendRequestId: id,
+    name: request.customer_name || request.name || "Customer request",
+    source: "Website Request",
+    status: request.status || "New",
+    service,
+    area,
+    phone: request.customer_phone || request.phone || "",
+    email: request.customer_email || request.email || "",
+    estimate: Number(request.estimate || 0),
+    note: `${preferred}${urgency}${photoText}${request.message || request.note || "Customer submitted a request from the public form."}`.trim(),
+    nextStep: request.next_step || "Owner review",
+    photos,
+  };
+}
+
 
 function readList(key, fallback = []) {
   try {
@@ -99,9 +129,22 @@ function sendLeadToCommand(lead) {
 }
 
 export default function FreshLeads({ onNavigate }) {
+  const { get } = useApi();
+  const { user } = useAuth();
+  const [requestLoading, setRequestLoading] = React.useState(false);
   const [leads, setLeads] = React.useState(() => readList(LEADS_KEY, defaults));
   const [selectedId, setSelectedId] = React.useState(() => readList(LEADS_KEY, defaults)[0]?.id || "");
   const selected = leads.find((item) => item.id === selectedId) || leads[0];
+  const ownerEmail = String(user?.email || "").trim();
+  const publicRequestLink = React.useMemo(() => {
+    try {
+      const url = new URL("/request", window.location.origin);
+      if (ownerEmail) url.searchParams.set("owner", ownerEmail);
+      return url.toString();
+    } catch {
+      return "/request";
+    }
+  }, [ownerEmail]);
 
   const newCount = leads.filter((item) => item.status === "New").length;
   const readyCount = leads.filter((item) => item.status === "Ready").length;
@@ -111,6 +154,50 @@ export default function FreshLeads({ onNavigate }) {
     setLeads(next);
     saveList(LEADS_KEY, next, "leads");
   }
+
+  React.useEffect(() => {
+    let alive = true;
+
+    async function loadCustomerRequests() {
+      setRequestLoading(true);
+      try {
+        const result = await get("/customer-requests", { timeout: 25000 });
+        const data = result?.data ?? result;
+        const requests = Array.isArray(data?.requests) ? data.requests : Array.isArray(data?.items) ? data.items : Array.isArray(data?.data) ? data.data : [];
+        const requestLeads = requests.map(requestToLead);
+
+        if (!alive || !requestLeads.length) return;
+
+        setLeads((current) => {
+          const seen = new Set(current.map((item) => item.id));
+          const fresh = requestLeads.filter((item) => !seen.has(item.id));
+          if (!fresh.length) return current;
+          const next = [...fresh, ...current];
+          saveList(LEADS_KEY, next, "customer-requests");
+          setSelectedId((existing) => existing || fresh[0]?.id || "");
+          return next;
+        });
+      } catch {
+        // Keep manual/local request queue usable.
+      } finally {
+        if (alive) setRequestLoading(false);
+      }
+    }
+
+    loadCustomerRequests();
+
+    return () => {
+      alive = false;
+    };
+  }, [get]);
+
+  async function copyRequestLink() {
+    try {
+      await navigator.clipboard.writeText(publicRequestLink);
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "request-link-copied" } }));
+    } catch {}
+  }
+
 
   function updateLead(id, patch) {
     const next = leads.map((item) => (item.id === id ? { ...item, ...patch } : item));
@@ -205,12 +292,23 @@ export default function FreshLeads({ onNavigate }) {
         </div>
       </div>
 
+      <section className="freshPublicRequestLink">
+        <div>
+          <b>Public request form</b>
+          <span>Share this link so customers can request work. Requests come here first for owner review.</span>
+        </div>
+        <div>
+          <a href={publicRequestLink} target="_blank" rel="noreferrer">Open request form</a>
+          <button type="button" onClick={copyRequestLink}>Copy link</button>
+        </div>
+      </section>
+
       <div className="freshLeadsLayout">
         <aside className="freshLeadsList">
           <header>
             <div>
               <b>Lead queue</b>
-              <span>New work before quote/job</span>
+              <span>{requestLoading ? "Checking website requests..." : "New work before quote/job"}</span>
             </div>
             <button type="button" onClick={addLead}>Add</button>
           </header>
@@ -261,6 +359,14 @@ export default function FreshLeads({ onNavigate }) {
                 <b>${selected.estimate}</b>
                 <p>Use this as the quote or job starting price.</p>
               </section>
+
+              {selected.photos?.length ? (
+                <section>
+                  <span>Photos</span>
+                  <b>{selected.photos.length} attached</b>
+                  <p>Customer supplied photos with this request.</p>
+                </section>
+              ) : null}
 
               <section>
                 <span>Next step</span>

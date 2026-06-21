@@ -6846,6 +6846,158 @@ async def worker_shift_records(limit: int = Query(100), current_user: dict = Dep
     }
 
 
+
+
+# =========================
+# PUBLIC CUSTOMER REQUESTS
+# Customer request form → owner request inbox.
+# Creates a request only. Does not auto-create job/quote.
+# =========================
+
+def _request_business_id_from_user(current_user: dict):
+    return str(current_user.get("business_id") or current_user.get("business") or current_user.get("owner_business_id") or current_user.get("id") or "")
+
+
+def _request_owner_email(current_user: dict):
+    return str(current_user.get("email") or "").strip().lower()
+
+
+def _request_doc_to_json(doc: dict):
+    item = make_json_safe(doc)
+    item["id"] = str(doc.get("_id") or doc.get("id") or "")
+    return item
+
+
+@api_router.post("/public/customer-request")
+async def public_customer_request(payload: dict = Body(default_factory=dict)):
+    now = datetime.now(timezone.utc)
+
+    customer_name = str(payload.get("customer_name") or payload.get("name") or "").strip()
+    customer_email = str(payload.get("customer_email") or payload.get("email") or "").strip().lower()
+    customer_phone = str(payload.get("customer_phone") or payload.get("phone") or "").strip()
+    service_needed = str(payload.get("service_needed") or payload.get("service") or payload.get("work_needed") or "").strip()
+
+    if not customer_name:
+        raise HTTPException(status_code=400, detail="Customer name is required.")
+    if not customer_email and not customer_phone:
+        raise HTTPException(status_code=400, detail="Phone or email is required.")
+    if not service_needed:
+        raise HTTPException(status_code=400, detail="Work needed is required.")
+
+    owner_email = str(payload.get("owner_email") or os.environ.get("PUBLIC_REQUEST_OWNER_EMAIL") or "").strip().lower()
+    business_id = str(payload.get("business_id") or os.environ.get("PUBLIC_REQUEST_BUSINESS_ID") or "").strip()
+
+    photos = payload.get("photos") if isinstance(payload.get("photos"), list) else []
+    safe_photos = []
+    for photo in photos[:3]:
+        if not isinstance(photo, dict):
+            continue
+        safe_photos.append({
+            "name": str(photo.get("name") or "")[:120],
+            "type": str(photo.get("type") or "")[:80],
+            "size": int(photo.get("size") or 0),
+            "data_url": str(photo.get("data_url") or "")[:3500000],
+        })
+
+    doc = {
+        "business_id": business_id,
+        "owner_email": owner_email,
+        "customer_name": customer_name,
+        "customer_email": customer_email,
+        "customer_phone": customer_phone,
+        "address": str(payload.get("address") or "").strip(),
+        "service_needed": service_needed,
+        "preferred_day": str(payload.get("preferred_day") or "").strip(),
+        "urgency": str(payload.get("urgency") or "Normal").strip(),
+        "message": str(payload.get("message") or payload.get("note") or "").strip(),
+        "photos": safe_photos,
+        "source": str(payload.get("source") or "Public request form").strip(),
+        "page_url": str(payload.get("page_url") or "").strip(),
+        "status": "New",
+        "next_step": "Owner review",
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.customer_requests.insert_one(doc)
+    doc["_id"] = result.inserted_id
+
+    try:
+        await db.notifications.insert_one({
+            "business_id": business_id,
+            "owner_email": owner_email,
+            "title": "New customer request",
+            "message": f"{customer_name}: {service_needed}",
+            "type": "customer_request",
+            "route": "/dashboard#leads",
+            "read": False,
+            "is_read": False,
+            "created_at": now,
+            "updated_at": now,
+        })
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "request": _request_doc_to_json(doc),
+        "message": "Request sent for owner review.",
+    }
+
+
+@api_router.get("/customer-requests")
+async def customer_requests(limit: int = Query(100), current_user: dict = Depends(get_current_user)):
+    business_id = _request_business_id_from_user(current_user)
+    owner_email = _request_owner_email(current_user)
+
+    query = {
+        "$or": [
+            {"business_id": business_id},
+            {"owner_email": owner_email},
+        ]
+    }
+
+    rows = []
+    cursor = db.customer_requests.find(query).sort("created_at", -1).limit(max(1, min(int(limit or 100), 250)))
+    async for doc in cursor:
+        rows.append(_request_doc_to_json(doc))
+
+    return {
+        "success": True,
+        "requests": rows,
+        "items": rows,
+        "data": rows,
+    }
+
+
+@api_router.patch("/customer-requests/{request_id}")
+async def update_customer_request(request_id: str, payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    business_id = _request_business_id_from_user(current_user)
+    owner_email = _request_owner_email(current_user)
+
+    updates = {}
+    for key in ["status", "next_step", "estimate", "owner_note"]:
+        if key in payload:
+            updates[key] = payload[key]
+
+    updates["updated_at"] = datetime.now(timezone.utc)
+
+    query = {
+        "$or": [
+            {"business_id": business_id},
+            {"owner_email": owner_email},
+        ]
+    }
+
+    try:
+        query["_id"] = ObjectId(request_id)
+    except Exception:
+        query["id"] = request_id
+
+    result = await db.customer_requests.update_one(query, {"$set": updates})
+    return {"success": True, "updated": result.modified_count}
+
+
 # =========================
 # FRONTEND COMPATIBILITY ENDPOINTS
 # Stops dashboard/command pages throwing 404 while full modules are built.

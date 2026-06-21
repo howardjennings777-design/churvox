@@ -1,0 +1,158 @@
+.crqShell,
+.crqShell * {
+  box-sizing: border-box;
+}
+
+.crqShell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 95% -10%, rgba(249, 115, 22, .22), transparent 32%),
+    linear-gradient(180deg, #fff7ed 0%, #f8fafc 100%);
+  padding: clamp(18px, 4vw, 46px);
+  color: #101827;
+}
+
+.crqCard,
+.crqDone {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-left: 8px solid #f97316;
+  border-radius: 32px;
+  background: rgba(255, 250, 240, .96);
+  box-shadow: 0 24px 70px rgba(2, 6, 23, .12);
+  padding: clamp(20px, 4vw, 38px);
+}
+
+.crqCard header span,
+.crqDone span,
+.crqGrid label > span,
+.crqSafety b {
+  display: inline-flex;
+  width: max-content;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.crqCard h1,
+.crqDone h1 {
+  margin: 12px 0 8px;
+  color: #101827;
+  font-size: clamp(42px, 7vw, 76px);
+  line-height: .86;
+  letter-spacing: -.075em;
+  font-weight: 1000;
+}
+
+.crqCard header p,
+.crqDone p {
+  margin: 0;
+  max-width: 760px;
+  color: #475569;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.crqGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.crqGrid label {
+  display: grid;
+  gap: 7px;
+}
+
+.crqGrid label.wide {
+  grid-column: 1 / -1;
+}
+
+.crqGrid input,
+.crqGrid select,
+.crqGrid textarea {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, .14);
+  border-radius: 17px;
+  background: #fff;
+  color: #101827;
+  padding: 13px 14px;
+  font-size: 15px;
+  font-weight: 850;
+  outline: none;
+}
+
+.crqGrid textarea {
+  min-height: 130px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.crqPhotoInput input {
+  padding: 12px;
+}
+
+.crqPhotoInput small {
+  color: #64748b;
+  font-weight: 850;
+}
+
+.crqSafety {
+  margin-top: 16px;
+  border: 1px solid rgba(22, 163, 74, .18);
+  border-left: 6px solid #16a34a;
+  border-radius: 20px;
+  background: #f0fdf4;
+  padding: 13px;
+  display: grid;
+  gap: 7px;
+}
+
+.crqSafety b {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.crqSafety span {
+  color: #334155;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.crqSubmit,
+.crqDone button {
+  margin-top: 18px;
+  border: 0;
+  border-radius: 18px;
+  min-height: 52px;
+  padding: 0 22px;
+  background: #111827;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.crqSubmit:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .crqGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .crqCard h1,
+  .crqDone h1 {
+    font-size: 46px;
+  }
+}

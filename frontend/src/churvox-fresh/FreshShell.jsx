@@ -10,7 +10,7 @@ const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
   { title: "Home", items: [["today", "TW", "Today’s Work"], ["command", "CM", "Command"], ["askchurvox", "AI", "Tell Churvox"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
+  { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
   { title: "Tools", items: [["automation", "AT", "Automation"], ["reports", "RP", "Reports"], ["launchcontrol", "LC", "Launch"]] },
@@ -31,6 +31,7 @@ const mobileLabels = {
   calendar: "Today’s Work",
   jobs: "Jobs",
   clients: "Clients",
+  leads: "Requests",
   quotes: "Quotes",
   invoices: "Money",
   payments: "Money",
