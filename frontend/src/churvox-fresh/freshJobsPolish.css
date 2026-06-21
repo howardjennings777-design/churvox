@@ -527,3 +527,82 @@ html body .jobModalOverlay .jobModalCard {
 .freshQuotesActionsCard .freshJobsActionStack button:disabled {
   opacity: .45 !important;
 }
+
+/* CHURVOX_QUOTES_PAGE_POLISH_20260621 */
+.freshQuotesPage .freshGrid {
+  align-items: stretch !important;
+}
+
+.freshQuoteNextBox {
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-left: 6px solid #f97316 !important;
+  border-radius: 18px !important;
+  background: rgba(255, 247, 237, .82) !important;
+  padding: 12px !important;
+  margin: 10px 0 !important;
+}
+
+.freshQuoteNextBox.accepted {
+  border-left-color: #16a34a !important;
+  background: rgba(240, 253, 244, .82) !important;
+}
+
+.freshQuoteNextBox.sent {
+  border-left-color: #f59e0b !important;
+  background: rgba(255, 251, 235, .82) !important;
+}
+
+.freshQuoteNextBox span {
+  display: block !important;
+  color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 5px !important;
+}
+
+.freshQuoteNextBox b {
+  display: block !important;
+  color: #101827 !important;
+  font-size: 18px !important;
+  font-weight: 1000 !important;
+  line-height: 1.15 !important;
+}
+
+.freshQuoteNextBox p {
+  margin: 6px 0 0 !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.freshEmptyStateBig {
+  min-height: 210px !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 10px !important;
+  border: 1px dashed rgba(15, 23, 42, .18) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 250, 240, .72) !important;
+  padding: 18px !important;
+}
+
+.freshEmptyStateBig b {
+  color: #101827 !important;
+  font-size: 22px !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.04em !important;
+}
+
+.freshEmptyStateBig span {
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1.4 !important;
+}
+
+.freshQuotesActionsCard .freshJobsActionStack button:disabled {
+  opacity: .45 !important;
+}
