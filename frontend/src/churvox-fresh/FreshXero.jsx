@@ -81,7 +81,7 @@ function sendXeroToCommand({ status, invoice, syncResult, message }) {
       found: `Xero configured: ${configured ? "yes" : "no"}. Add-on active: ${addonActive ? "yes" : "no"}. Connected: ${connected ? "yes" : "no"}. Latest invoice: ${invoiceText}.`,
       prepared: syncResult?.success ? "Churvox created a Xero draft invoice only. It was not sent to the customer and was not marked paid automatically." : "Churvox prepared an owner accounting sync check before any draft invoice sync.",
       why: message || "Accounting sync should be the final controlled step after invoice/payment review.",
-      owner: "Open Xero, review the draft invoice, then send or reconcile inside Xero if correct. Churvox does not keep tax filing outside Churvox or create payment files.",
+      owner: "Open Xero, review the draft invoice, then send or reconcile inside Xero if correct. Churvox does not file tax, send invoices, reconcile payments, or create payment files.",
       payload: {
         tenant,
         invoice: invoiceText,
@@ -345,8 +345,17 @@ export default function FreshXero({ onNavigate }) {
             <label><span>Tax type</span><input readOnly value={status?.sales_tax_type || ""} /></label>
             <label><span>Latest invoice</span><input readOnly value={latestInvoiceLabel} /></label>
             <label><span>Latest total</span><input readOnly value={latestInvoiceTotal} /></label>
-            <label className="wide"><span>Safety rule</span><textarea readOnly value="Draft invoice only. Owner approval is required before invoices are sent. Tax filing stays outside Churvox. Do not create payment files. Mark paid only after owner/accounting status check." /></label>
-            <label className="wide"><span>Required env</span><textarea readOnly value={(status?.required_env || []).join("\n")} /></label>
+            <section className="freshXeroSafeRule">
+              <span>Safety rule</span>
+              <b>Draft invoice only</b>
+              <p>Owner approval is required before invoices are sent. Tax filing stays outside Churvox. Churvox does not create payment files. Mark paid only after owner/accounting status check.</p>
+            </section>
+
+            <section className="freshXeroTechBox">
+              <span>Technical setup</span>
+              <b>{configured ? "Required env is present" : "Required env still missing"}</b>
+              <p>{(status?.required_env || []).length ? (status?.required_env || []).join(", ") : "No missing env keys reported."}</p>
+            </section>
             {syncResult?.success && (
               <label className="wide">
                 <span>Last Xero draft result</span>

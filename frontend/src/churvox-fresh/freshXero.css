@@ -537,3 +537,68 @@
     max-width: none;
   }
 }
+
+/* CHURVOX_XERO_SAFE_HANDOFF_POLISH_20260621
+   Xero should feel like a safe owner handoff, not a debug/settings form. */
+.freshXeroSafeRule,
+.freshXeroTechBox {
+  grid-column: 1 / -1 !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-left: 6px solid #f97316 !important;
+  border-radius: 20px !important;
+  background: rgba(255, 247, 237, .80) !important;
+  padding: 13px !important;
+}
+
+.freshXeroSafeRule span,
+.freshXeroTechBox span {
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: max-content !important;
+  border-radius: 999px !important;
+  background: #fff7ed !important;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 8px !important;
+}
+
+.freshXeroSafeRule b,
+.freshXeroTechBox b {
+  display: block !important;
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 17px !important;
+  font-weight: 1000 !important;
+  line-height: 1.2 !important;
+}
+
+.freshXeroSafeRule p,
+.freshXeroTechBox p {
+  margin: 6px 0 0 !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1.4 !important;
+}
+
+.freshXeroTechBox {
+  border-left-color: #111827 !important;
+  background: rgba(255, 255, 255, .70) !important;
+}
+
+/* Top actions + left reload already cover this. Remove duplicate bottom button row. */
+.freshXeroActions {
+  display: none !important;
+}
+
+/* Once Ask Churvox is limited to Today’s Work, this is a safety fallback. */
+.freshXeroPage ~ .freshGlobalAsk,
+.freshPageScroll:has(.freshXeroPage) .freshGlobalAsk {
+  display: none !important;
+}
