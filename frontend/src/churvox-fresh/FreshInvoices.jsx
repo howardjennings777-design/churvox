@@ -161,6 +161,64 @@ export default function FreshInvoices({ onNavigate }) {
     setInvoicePopupOpen(true);
   }
 
+  function invoiceNextMove(invoice) {
+    if (!invoice) return "Create or select an invoice.";
+    if (invoice.status === "Draft") return "Review draft before sending.";
+    if (invoice.status === "Sent") return "Watch payment and follow up if needed.";
+    if (invoice.status === "Overdue") return "Needs owner-approved follow-up.";
+    if (invoice.status === "Paid") return "Paid — check accounting sync.";
+    return "Review invoice.";
+  }
+
+  function sendSelectedInvoiceToCommand() {
+    if (!selected) return;
+
+    const reviewKey = "churvox:review-inbox:v1";
+    const item = {
+      id: `invoice-review-${selected.id}-${Date.now()}`,
+      title: `Invoice review: ${selected.id}`,
+      category: "money",
+      type: "invoice",
+      summary: invoiceNextMove(selected),
+      source: "Invoices",
+      status: "open",
+      createdAt: new Date().toLocaleString("en-NZ", { day: "2-digit", month: "short", hour: "numeric", minute: "2-digit" }),
+      details: {
+        "What Churvox found": `${selected.id} for ${selected.client}`,
+        "Invoice status": selected.status,
+        "Amount": money(selected.amount),
+        "GST": money(selected.gst),
+        "Due": selected.due,
+        "Sync": selected.sync,
+        "Next action": invoiceNextMove(selected),
+        "Why it needs approval": "Money follow-ups, sends and accounting changes should be reviewed by the owner first."
+      }
+    };
+
+    try {
+      const current = JSON.parse(window.localStorage.getItem(reviewKey) || "[]");
+      window.localStorage.setItem(reviewKey, JSON.stringify([item, ...current].slice(0, 80)));
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "review-tray", source: "invoices" } }));
+    } catch {}
+
+    onNavigate?.("command");
+  }
+
+  function openPaymentsForSelected() {
+    if (!selected) return;
+    try {
+      window.localStorage.setItem("churvox:selected-invoice-for-payment", JSON.stringify({
+        id: selected.id,
+        client: selected.client,
+        amount: selected.amount,
+        status: selected.status,
+      }));
+    } catch {}
+
+    onNavigate?.("payments");
+  }
+
+
   const filterPillStyle = (active) => active ? {
     background: "#111827",
     borderColor: "#111827",
@@ -182,7 +240,7 @@ export default function FreshInvoices({ onNavigate }) {
   } : undefined;
 
   return (
-    <section>
+    <section className="freshInvoicesPage">
       <header className="freshHero">
         <span>Churvox fresh · Invoices</span>
         <h1>Invoices</h1>
@@ -263,50 +321,62 @@ export default function FreshInvoices({ onNavigate }) {
           ) : null}
         </aside>
 
-        <section className="freshCard">
-          <h2>{selected?.id || "Select invoice"}</h2>
+<section className="freshCard freshInvoicesDetailCard">
+  <div className="freshJobsDetailHeader">
+    <div>
+      <small>Selected invoice</small>
+      <h2>{selected?.id || "Select invoice"}</h2>
+    </div>
+    {selected ? <span className={selected.status === "Paid" ? "ready" : selected.status === "Overdue" ? "need" : ""}>{selected.status}</span> : null}
+  </div>
 
-          {selected ? (
-            <>
-              <div className="freshMiniGrid">
-                <div><span>Client</span><b>{selected.client}</b></div>
-                <div><span>Status</span><b>{selected.status}</b></div>
-                <div><span>Amount</span><b>{money(selected.amount)}</b></div>
-                <div><span>GST</span><b>{money(selected.gst)}</b></div>
-              </div>
+  {selected ? (
+    <>
+      <div className="freshMiniGrid freshJobsMiniGrid">
+        <div><span>Client</span><b>{selected.client}</b></div>
+        <div><span>Status</span><b>{selected.status}</b></div>
+        <div><span>Amount</span><b>{money(selected.amount)}</b></div>
+        <div><span>GST</span><b>{money(selected.gst)}</b></div>
+      </div>
 
-              <div className={`freshInvoiceStatus ${selected.status.toLowerCase()}`}>
-                <b>{selected.due}</b>
-                <span>{selected.sync}</span>
-              </div>
+      <section className={`freshInvoiceNextBox ${selected.status.toLowerCase()}`}>
+        <span>Next owner move</span>
+        <b>{invoiceNextMove(selected)}</b>
+        <p>{selected.status === "Draft" ? "Draft invoices stay draft-only until the owner sends or syncs them." : selected.status === "Overdue" ? "Follow-up should go through Command so nothing contacts the customer by mistake." : selected.status === "Paid" ? "Payment is done. Check sync/status only." : "Keep watching this invoice until paid."}</p>
+      </section>
 
-              <div className="freshInvoiceLines">
-                {selected.lines.map((line, index) => (
-                  <div key={`${selected.id}-${index}`}>
-                    <span>{String(line)}</span>
-                  </div>
-                ))}
-              </div>
+      <section className="freshJobsDetailBox">
+        <span>Due / sync</span>
+        <b>{selected.due} · {selected.sync}</b>
+      </section>
 
-              <label className="freshField">
-                <span>Owner invoice note</span>
-                <textarea value={selected.note} readOnly />
-              </label>
-            </>
-          ) : (
-            <div className="freshItem">
-              <b>No invoice selected</b>
-              <span>Create an invoice to see the connected detail record.</span>
-            </div>
-          )}
-        </section>
+      <section className="freshJobsDetailBox notes">
+        <span>Invoice lines</span>
+        {selected.lines.map((line, index) => <p key={`${selected.id}-${index}`}>{String(line)}</p>)}
+      </section>
 
-        <aside className="freshCard">
+      <section className="freshJobsDetailBox notes">
+        <span>Owner invoice note</span>
+        <p>{selected.note}</p>
+      </section>
+    </>
+  ) : (
+    <div className="freshEmptyStateBig">
+      <b>No invoice selected</b>
+      <span>Create a draft invoice after work is complete. Churvox keeps invoices owner-approved.</span>
+      <button type="button" className="freshPrimary" onClick={openInvoicePopup}>Create first draft invoice</button>
+    </div>
+  )}
+</section>
+
+<aside className="freshCard freshInvoicesActionsCard">
           <h2>Owner actions</h2>
-          <div className="freshActions">
-            <button className="freshPrimary" type="button" onClick={openInvoicePopup}>New invoice</button>
-            <button className="freshPrimary" type="button" onClick={loadInvoices}>Refresh invoices</button>
-            <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button>
+          <p className="freshJobsActionHint">Invoices stay draft-only until the owner approves the next move.</p>
+          <div className="freshActions freshJobsActionStack">
+            <button className="freshPrimary" type="button" onClick={openInvoicePopup}>New draft invoice</button>
+            <button className="freshOrange" type="button" disabled={!selected || selected.status === "Paid"} onClick={openPaymentsForSelected}>Open payment follow-up</button>
+            <button className="freshDark" type="button" disabled={!selected} onClick={sendSelectedInvoiceToCommand}>Send selected to Command</button>
+            <button className="freshGhost" type="button" onClick={loadInvoices}>Refresh invoices</button>
           </div>
         </aside>
       </section>
