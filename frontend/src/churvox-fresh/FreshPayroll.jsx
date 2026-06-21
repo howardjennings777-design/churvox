@@ -210,6 +210,27 @@ function aggregateJobTime(jobs, workers) {
   return totals;
 }
 
+
+function mergeShiftTime(totals, shifts, workers) {
+  const lookup = buildWorkerLookup(workers);
+
+  shifts.forEach((row) => {
+    const rawKey = row?.worker_id || row?.user_id || row?.worker_email || row?.email || row?.worker || row?.worker_name;
+    const id = resolveWorkerId(rawKey, lookup);
+    const hours = numberFrom(row?.hours, row?.duration_hours, row?.total_hours) || hoursFromSeconds(row?.shift_seconds, row?.total_seconds);
+
+    if (!id || !hours) return;
+
+    if (!totals[id]) totals[id] = { hours: 0, jobs: 0, source: [] };
+    totals[id].hours = Number((Number(totals[id].hours || 0) + Number(hours || 0)).toFixed(2));
+    totals[id].jobs += 1;
+    totals[id].source.push(row?.source || "worker shift clock");
+  });
+
+  return totals;
+}
+
+
 function normalizePayroll(worker, index, edits = {}, timeByWorker = {}) {
   const id = idOf(worker, `worker-${index}`);
   const saved = edits[id] || {};
@@ -289,15 +310,17 @@ export default function FreshPayroll({ onNavigate }) {
     setError("");
 
     try {
-      const [workerPayload, jobPayload] = await Promise.all([
+      const [workerPayload, jobPayload, shiftPayload] = await Promise.all([
         get("/team/workers", { timeout: 25000 }),
         get("/jobs", { timeout: 25000 }).catch(() => ({ data: [] })),
+        get("/worker/shift-records", { timeout: 25000 }).catch(() => ({ data: [] })),
       ]);
 
       const workers = listFrom(workerPayload, "workers");
       const jobs = listFrom(jobPayload, "jobs");
+      const shifts = listFrom(shiftPayload, "records");
       const edits = loadEdits();
-      const timeByWorker = aggregateJobTime(jobs, workers);
+      const timeByWorker = mergeShiftTime(aggregateJobTime(jobs, workers), shifts, workers);
       const rows = workers.map((worker, index) => normalizePayroll(worker, index, edits, timeByWorker)).sort((a, b) => a.name.localeCompare(b.name));
 
       setPeople(rows);

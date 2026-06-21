@@ -329,7 +329,7 @@ export default function WorkerJobsPage() {
   }
 
   async function fetchShiftStatus() {
-    const res = await get("/worker/shift/status");
+    const res = await get("/worker/shift/status-v2");
     if (res?.success) {
       const data = res.data?.data || res.data || {};
       setShiftStatus(data.status || "clocked_out");
@@ -359,7 +359,7 @@ export default function WorkerJobsPage() {
     setShiftBusy(true);
     try {
       const location = await getGpsPosition();
-      const res = await post("/worker/clock-in", { location });
+      const res = await post("/worker/shift-clock-in", { location });
       if (res?.success) {
         setShiftStatus("clocked_in");
         setGpsTracking(true);
@@ -416,7 +416,7 @@ export default function WorkerJobsPage() {
     try {
       let location = null;
       try { location = await getGpsPosition(); } catch { location = null; }
-      const res = await post("/worker/clock-out", { location });
+      const res = await post("/worker/shift-clock-out", { location });
       if (res?.success) {
         setShiftStatus("clocked_out");
         setGpsTracking(false);
@@ -427,7 +427,7 @@ export default function WorkerJobsPage() {
           clock_status: "clocked_out",
           location,
         });
-        toast.success("Clocked out. GPS is off.");
+        toast.success("Clocked out. Time sheet sent for owner review.");
         await fetchShiftStatus();
       } else {
         toast.error(res?.error || "Could not clock out");

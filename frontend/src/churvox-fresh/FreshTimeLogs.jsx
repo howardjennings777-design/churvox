@@ -236,13 +236,28 @@ export default function FreshTimeLogs({ onNavigate }) {
     setLoading(true);
     setError("");
     try {
-      const [jobsPayload, workersPayload] = await Promise.all([
+      const [jobsPayload, workersPayload, shiftPayload] = await Promise.all([
         get("/jobs", { timeout: 25000 }),
         get("/team/workers", { timeout: 25000 }).catch(() => []),
+        get("/worker/shift-records", { timeout: 25000 }).catch(() => []),
       ]);
       const jobs = asArray(jobsPayload, "jobs");
       const workers = asArray(workersPayload, "workers");
-      const liveRows = buildRows(jobs, workers).sort((a, b) => a.worker.localeCompare(b.worker));
+      const shiftRows = asArray(shiftPayload, "records").map((row, index) => ({
+        id: row.id || `shift-${index}`,
+        worker: row.worker || "Worker",
+        job: row.job || "Shift clock",
+        client: row.client || "General shift",
+        date: row.date || "No date",
+        start: row.start || "Not set",
+        finish: row.finish || "Not set",
+        breakMins: Number(row.breakMins || row.break_minutes || 0),
+        hours: Number(row.hours || row.duration_hours || 0),
+        status: row.status || "Needs review",
+        note: row.note || "Clock-in/clock-out captured. Owner review required before payroll.",
+        source: row.source || "Worker clock in/out",
+      }));
+      const liveRows = [...shiftRows, ...buildRows(jobs, workers)].sort((a, b) => a.worker.localeCompare(b.worker));
       setItems(liveRows);
       setSelectedId((current) => current || liveRows[0]?.id || manualRows[0]?.id || "");
     } catch (err) {
