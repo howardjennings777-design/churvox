@@ -51,8 +51,12 @@ function scheduleText(job) {
 function moneyText(job) {
   const raw = job?.fixed_price ?? job?.price ?? job?.amount ?? job?.total ?? "";
   const amount = Number(raw || 0);
-  if (!Number.isFinite(amount) || amount <= 0) return "No price yet";
+  if (!Number.isFinite(amount) || amount <= 0) return "Price missing";
   return `$${amount.toFixed(amount % 1 ? 2 : 0)}`;
+}
+
+function priceMissing(job) {
+  return moneyText(job) === "Price missing";
 }
 
 function normalizeJob(job, index) {
@@ -60,7 +64,29 @@ function normalizeJob(job, index) {
   const client = job?.client_name || job?.customer_name || job?.client || job?.customer || "No client linked";
   const worker = job?.assigned_worker_name || job?.worker_name || job?.worker || "Unassigned";
   const status = statusLabel(job?.status);
-  return { ...job, id: normalizeId(job?.id || job?._id || job?.job_id) || `job-${index}`, title, client, address: job?.address || job?.site_address || job?.service_address || "No address", status, worker, scheduled: scheduleText(job), price: moneyText(job), notes: job?.notes || job?.description || "No notes yet", risk: status === "Blocked" ? "Needs owner review" : worker === "Unassigned" ? "Worker not assigned" : "Ready to dispatch", sortTime: dateScore(job) };
+  const price = moneyText(job);
+  const missingPrice = price === "Price missing";
+  return {
+    ...job,
+    id: normalizeId(job?.id || job?._id || job?.job_id) || `job-${index}`,
+    title,
+    client,
+    address: job?.address || job?.site_address || job?.service_address || "No address",
+    status,
+    worker,
+    scheduled: scheduleText(job),
+    price,
+    priceMissing: missingPrice,
+    notes: job?.notes || job?.description || "No notes yet",
+    risk: status === "Blocked"
+      ? "Needs owner review"
+      : missingPrice
+        ? "Price missing — add before invoice."
+        : worker === "Unassigned"
+          ? "Worker not assigned"
+          : "Ready to dispatch",
+    sortTime: dateScore(job)
+  };
 }
 
 
@@ -146,6 +172,56 @@ export default function FreshJobs({ onNavigate }) {
     window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } }));
   }
 
+  function createInvoiceForSelected() {
+    if (!selected) return;
+    try {
+      window.localStorage.setItem("churvox:selected-job-for-invoice", JSON.stringify({
+        id: selected.id,
+        title: selected.title,
+        client: selected.client,
+        address: selected.address,
+        price: selected.price,
+        scheduled: selected.scheduled,
+      }));
+    } catch {}
+
+    onNavigate?.("invoices");
+  }
+
+  function sendSelectedToCommand() {
+    if (!selected) return;
+
+    const reviewKey = "churvox:review-inbox:v1";
+    const item = {
+      id: `job-review-${selected.id}-${Date.now()}`,
+      title: `Job needs review: ${selected.title}`,
+      category: "work",
+      type: "job",
+      summary: selected.risk || "Owner review needed for this job.",
+      source: "Jobs",
+      status: "open",
+      createdAt: new Date().toLocaleString("en-NZ", { day: "2-digit", month: "short", hour: "numeric", minute: "2-digit" }),
+      details: {
+        "What Churvox found": `${selected.title} for ${selected.client}`,
+        "What needs attention": selected.risk || "Check job details.",
+        "Worker": selected.worker || "Unassigned",
+        "Price": selected.price || "Price missing",
+        "Scheduled": selected.scheduled || "Not scheduled",
+        "Address": selected.address || "No address",
+        "Why it needs approval": "Job changes and customer follow-up should be reviewed by the owner first."
+      }
+    };
+
+    try {
+      const current = JSON.parse(window.localStorage.getItem(reviewKey) || "[]");
+      window.localStorage.setItem(reviewKey, JSON.stringify([item, ...current].slice(0, 80)));
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "review-tray", source: "jobs" } }));
+    } catch {}
+
+    onNavigate?.("command");
+  }
+
+
   const filterPillStyle = (active) => active ? {
     background: "#111827",
     borderColor: "#111827",
@@ -174,8 +250,59 @@ export default function FreshJobs({ onNavigate }) {
       <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{item === "All" ? jobs.length : jobs.filter((job) => job.status === item).length}</b></button>)}</section>
       <section className="freshGrid">
         <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading real jobs…</b><span>Checking your business account.</span></div> : visibleJobs.map((job) => <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" ? "need" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}</b><span>{job.client} · {job.status} · {job.scheduled}</span></button>)}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs…</b><span>Showing your current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No jobs yet</b><span>Create your first real job to start the workflow.</span></div> : null}</aside>
-        <section className="freshCard freshJobsDetailCard"><h2>{selected?.title || "Select job"}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div><span>Price</span><b>{selected.price}</b></div></div><label className="freshField"><span>Address</span><input value={selected.address} readOnly /></label><label className="freshField"><span>Scheduled</span><input value={selected.scheduled} readOnly /></label><label className="freshField"><span>Job notes</span><textarea value={selected.notes} readOnly /></label><div className="freshItem need"><b>Command check</b><span>{selected.risk}</span></div></> : <div className="freshItem"><b>No job selected</b><span>Create a job to see the connected detail record.</span></div>}</section>
-        <aside className="freshCard freshJobsActionsCard"><h2>Owner actions</h2><div className="freshActions"><button className="freshPrimary" type="button" onClick={openBlankJob}>New job</button><button className="freshPrimary" type="button" onClick={loadJobs}>Refresh jobs</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send issue to Command</button></div></aside>
+<section className="freshCard freshJobsDetailCard">
+  <div className="freshJobsDetailHeader">
+    <div>
+      <small>Selected job</small>
+      <h2>{selected?.title || "Select job"}</h2>
+    </div>
+    {selected ? <span className={selected.priceMissing ? "need" : "ready"}>{selected.priceMissing ? "Price needed" : "Ready"}</span> : null}
+  </div>
+
+  {selected ? (
+    <>
+      <div className="freshMiniGrid freshJobsMiniGrid">
+        <div><span>Client</span><b>{selected.client}</b></div>
+        <div><span>Status</span><b>{selected.status}</b></div>
+        <div><span>Worker</span><b>{selected.worker}</b></div>
+        <div className={selected.priceMissing ? "need" : ""}><span>Invoice readiness</span><b>{selected.priceMissing ? "Need price" : selected.price}</b></div>
+      </div>
+
+      <section className="freshJobsDetailBox">
+        <span>Address</span>
+        <b>{selected.address}</b>
+      </section>
+
+      <section className="freshJobsDetailBox">
+        <span>Scheduled</span>
+        <b>{selected.scheduled}</b>
+      </section>
+
+      <section className="freshJobsDetailBox notes">
+        <span>Job notes</span>
+        <p>{selected.notes}</p>
+      </section>
+
+      <div className={`freshItem ${selected.priceMissing || selected.status === "Blocked" ? "need" : ""}`}>
+        <b>{selected.priceMissing ? "Price missing before invoice" : "Command check"}</b>
+        <span>{selected.risk}</span>
+      </div>
+    </>
+  ) : (
+    <div className="freshItem">
+      <b>No job selected</b>
+      <span>Create a job to see the connected detail record.</span>
+    </div>
+  )}
+</section>
+<aside className="freshCard freshJobsActionsCard"><h2>Owner actions</h2>
+          <p className="freshJobsActionHint">Use these for the selected job. Churvox prepares; owner decides.</p>
+          <div className="freshActions freshJobsActionStack">
+            <button className="freshPrimary" type="button" onClick={openBlankJob}>New job</button>
+            <button className="freshOrange" type="button" disabled={!selected || selected.priceMissing} onClick={createInvoiceForSelected}>Create invoice</button>
+            <button className="freshDark" type="button" disabled={!selected} onClick={sendSelectedToCommand}>Send selected to Command</button>
+            <button className="freshGhost" type="button" onClick={loadJobs}>Refresh jobs</button>
+          </div></aside>
       </section>
     </section>
   );
