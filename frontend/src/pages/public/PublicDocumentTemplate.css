@@ -145,3 +145,102 @@
     display: grid !important;
   }
 }
+
+/* CHURVOX_PUBLIC_INVOICE_PAYMENT_POLISH_20260621 */
+.cpd-invoice-shell {
+  background:
+    radial-gradient(circle at 92% -15%, rgba(22, 163, 74, .18), transparent 32%),
+    linear-gradient(180deg, #f0fdf4 0%, #f8fafc 100%) !important;
+}
+
+.cpd-invoice-actions .cpd-pay-action,
+.cpd-invoice-total-card .cpd-pay-action {
+  background: #16a34a !important;
+  color: #052e16 !important;
+  -webkit-text-fill-color: #052e16 !important;
+}
+
+.cpd-invoice-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 370px) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+.cpd-invoice-status-card {
+  border: 1px solid rgba(255, 255, 255, .14) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, .08) !important;
+  padding: 18px !important;
+  display: grid !important;
+  align-content: center !important;
+}
+
+.cpd-invoice-status-card span {
+  display: inline-flex !important;
+  width: max-content !important;
+  border-radius: 999px !important;
+  background: rgba(249, 115, 22, .18) !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+}
+
+.cpd-invoice-status-card b {
+  display: block !important;
+  margin-top: 10px !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 22px !important;
+  font-weight: 1000 !important;
+}
+
+.cpd-invoice-status-card strong {
+  display: block !important;
+  margin-top: 8px !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+  font-size: clamp(34px, 5vw, 58px) !important;
+  line-height: .9 !important;
+  letter-spacing: -.06em !important;
+  font-weight: 1000 !important;
+}
+
+.cpd-invoice-status-card.paid strong {
+  color: #86efac !important;
+  -webkit-text-fill-color: #86efac !important;
+}
+
+.cpd-invoice-status-card.overdue strong {
+  color: #fb923c !important;
+  -webkit-text-fill-color: #fb923c !important;
+}
+
+.cpd-invoice-status-card p {
+  margin: 10px 0 0 !important;
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.cpd-invoice-total-card .cpd-primary-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: max-content !important;
+  min-height: 50px !important;
+  border-radius: 16px !important;
+  padding: 0 20px !important;
+  font-weight: 1000 !important;
+}
+
+@media (max-width: 820px) {
+  .cpd-invoice-head {
+    grid-template-columns: 1fr !important;
+  }
+}
