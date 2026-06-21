@@ -176,3 +176,33 @@
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
 }
+
+/* CHURVOX_NOTIFICATION_EVENT_LABELS_20260621 */
+.freshNotifyList button {
+  position: relative !important;
+  padding-left: 50px !important;
+}
+
+.freshNotifyList button em {
+  position: absolute !important;
+  left: 12px !important;
+  top: 14px !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 10px !important;
+  background: #111827 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  font-style: normal !important;
+  letter-spacing: -.03em !important;
+}
+
+.freshNotifyList button.unread em {
+  background: #f97316 !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
