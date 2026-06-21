@@ -234,3 +234,13 @@
 .freshPageScroll form:has(input[placeholder*="unpaid money"]) {
   display: none !important;
 }
+
+/* CHURVOX_HIDE_COMMAND_DUPLICATE_ASK_20260621
+   Command is the approval desk. Do not show old page-level Ask Churvox
+   bars at the bottom of Command content. */
+.freshPageScroll form:has(input[placeholder*="open jobs"]),
+.freshPageScroll form:has(input[placeholder*="Add job"]),
+.freshPageScroll form:has(input[placeholder*="unpaid invoices"]),
+.freshPageScroll form:has(input[placeholder*="unpaid money"]) {
+  display: none !important;
+}
