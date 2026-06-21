@@ -5,7 +5,7 @@ import "./SimplePublic.css";
 
 const proof = [
   "14-day free trial",
-  "No card to start",
+  "Card added securely in Stripe",
   "Owner approval built in",
   "Real quote-to-paid workflow",
 ];
@@ -21,17 +21,17 @@ const trades = [
 ];
 
 const steps = [
-  ["Quote the work", "Create and send a professional quote from the same customer and job details."],
-  ["Customer accepts", "The public quote link lets the customer accept, then Churvox prepares the job for the owner."],
-  ["Run the job", "Assign a worker, track time, complete the work and keep the record together."],
-  ["Invoice and get paid", "Send the invoice by email, let the customer open the public link, and keep paid status visible."],
+  ["Add the work", "Create the client, quote or job once, then keep the details in one place."],
+  ["Run the job", "Schedule it, assign a worker, track time and capture notes or photos."],
+  ["Review the admin", "Churvox prepares the next step, but important actions stay owner-approved."],
+  ["Invoice and get paid", "Send the invoice, keep payment status visible and sync accounting where available."],
 ];
 
 const trust = [
-  ["Built for real operators", "Designed for owners who need jobs, workers, quotes and invoices in one place."],
-  ["You stay in control", "Churvox prepares the next admin step, but important actions stay owner-approved."],
-  ["Customer links included", "Quotes and invoices can be opened by customers without needing a login."],
-  ["Proofed core loop", "The core job-to-paid workflow has been tested end-to-end before launch."],
+  ["Built for real operators", "Designed for owners who need jobs, workers, quotes and invoices connected."],
+  ["You stay in control", "Churvox prepares admin actions, but you approve what goes out."],
+  ["Customer links included", "Quotes, invoices and request forms can be opened by customers without a login."],
+  ["Start simple", "Begin with the core workflow, then add workers, AI Operator Actions and accounting sync as you grow."],
 ];
 
 export function Nav() {
@@ -44,9 +44,9 @@ export function Nav() {
       <div className="simpleLinks">
         <Link to="/features" className="simpleGhost">How it works</Link>
         <Link to="/pricing" className="simpleGhost">Pricing</Link>
-        <Link to="/request" className="simpleGhost">Request a quote</Link>
+        <Link to="/request" className="simpleGhost">Request work</Link>
         <Link to="/login" className="simpleGhost">Log in</Link>
-        <Link to="/signup" className="simplePrimary">Start free</Link>
+        <Link to="/signup" className="simplePrimary">Start trial</Link>
       </div>
     </nav>
   );
@@ -72,34 +72,32 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_PUBLIC_LAUNCH_READY_CORE_20260619">
+    <main className="simplePublic" data-version="CHURVOX_PUBLIC_CARD_REQUIRED_20260621">
       <Nav />
 
       <section className="simpleHero">
         <div>
           <span className="simpleKicker">Job admin for service businesses</span>
-          <h1>Job done. Invoice ready. You approve.</h1>
+          <h1>Know what needs doing next.</h1>
           <p className="simpleLead">
-            Churvox gives service businesses one clean workspace for clients, jobs, quotes, workers,
-            time sheets, invoices and owner-approved admin actions.
+            Churvox keeps jobs, clients, quotes, workers, time, invoices and owner-approved admin actions in one clean workspace.
           </p>
           <div className="simpleActions">
-            <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
-            <Link to="/request" className="simpleBtn simpleGhost">Request a quote</Link>
+            <Link to="/signup" className="simpleBtn simplePrimary">Start trial</Link>
+            <Link to="/request" className="simpleBtn simpleGhost">Request work</Link>
             <Link to="/pricing" className="simpleBtn simpleGhost">View plans</Link>
           </div>
           <div className="simpleProof">{proof.map((item) => <span key={item}>{item}</span>)}</div>
         </div>
 
         <aside className="simpleCard">
-          <h2>One flow from job to paid invoice.</h2>
-          <p>Quote the work, run the job, approve time, prepare the invoice, send it, mark it paid, then sync accounting where available.</p>
+          <h2>The Churvox flow</h2>
           <ol>
-            <li>1. Add client or quote the work</li>
-            <li>2. Job gets scheduled and assigned</li>
-            <li>3. Worker completes with time captured</li>
-            <li>4. Owner reviews time, payroll and invoice</li>
-            <li>5. Invoice goes out and paid status stays visible</li>
+            <li>1. Add the work</li>
+            <li>2. Churvox prepares the admin</li>
+            <li>3. You review it</li>
+            <li>4. You approve it</li>
+            <li>5. The next step moves</li>
           </ol>
         </aside>
       </section>
@@ -118,7 +116,6 @@ export default function ExecutiveHomePage() {
         <h2>The core workflow is simple.</h2>
         <p className="simpleLead">
           No more jumping between messages, notes, spreadsheets, paper invoices and memory.
-          Churvox keeps jobs, time, payroll review and money in one place.
         </p>
         <div className="simpleGrid">
           {steps.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
@@ -129,7 +126,7 @@ export default function ExecutiveHomePage() {
         <h2>Serious enough for real work. Simple enough to start today.</h2>
         <p className="simpleLead">
           Start with jobs, clients, quotes and invoices. Add workers, time sheets, payroll review,
-          Command approvals, automation and accounting support as your business grows.
+          Command approvals, automation and accounting sync as your business grows.
         </p>
         <div className="simpleGrid">
           {trust.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
@@ -139,11 +136,11 @@ export default function ExecutiveHomePage() {
       <section className="simpleBand">
         <h2>Ready to run your next job properly?</h2>
         <p className="simpleLead">
-          Start free, set up your business, add your first client and run the first job-to-paid flow.
+          Start the 14-day trial, set up your business, add your first client and run the first job-to-paid flow.
         </p>
         <div className="simpleActions">
-          <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
-          <Link to="/request" className="simpleBtn simpleGhost">Request a quote</Link>
+          <Link to="/signup" className="simpleBtn simplePrimary">Start trial</Link>
+          <Link to="/request" className="simpleBtn simpleGhost">Request work</Link>
           <Link to="/pricing" className="simpleBtn simpleGhost">Choose a plan</Link>
         </div>
       </section>
