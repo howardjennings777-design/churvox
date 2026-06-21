@@ -505,7 +505,7 @@ export default function FreshCommand({ onNavigate }) {
           <p>Command stays clean. It only shows decisions, risk and admin ready for approval.</p>
           <div className="freshActions">
             <button className="freshPrimary" onClick={scanFreshRisks}>Scan fresh data</button>
-            <button className="freshPrimary" onClick={() => onNavigate?.("jobs")}>Create job</button>
+            <button className="freshPrimary" onClick={() => onNavigate?.("jobs")}>New job</button>
             <button className="freshOrange" onClick={() => onNavigate?.("quotes")}>Create quote</button>
             <button className="freshDark" onClick={() => onNavigate?.("clients")}>Add client</button>
           </div>

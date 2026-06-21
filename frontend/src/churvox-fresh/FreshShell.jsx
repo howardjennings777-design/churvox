@@ -9,7 +9,7 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Home", items: [["today", "TW", "Today’s Work"], ["command", "CM", "Command"], ["askchurvox", "AI", "Tell Churvox"]] },
+  { title: "Home", items: [["today", "TW", "Today’s Work"], ["command", "CM", "Command"], ["askchurvox", "AI", "AI Guide"]] },
   { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
@@ -49,7 +49,7 @@ const mobileLabels = {
   exports: "Exports",
   plans: "Plans",
   support: "Support",
-  askchurvox: "Tell Churvox",
+  askchurvox: "AI Guide",
 };
 
 const parentByKey = {

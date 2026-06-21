@@ -258,8 +258,8 @@ export default function FreshReports({ onNavigate }) {
           </div>
 
           <div className="freshItem">
-            <b>Reports are preview only</b>
-            <span>They read local fresh test data until backend wiring is connected later.</span>
+            <b>Reports read current workspace data</b>
+            <span>They read current workspace data and highlight money, work, team and payroll risks.</span>
           </div>
         </aside>
       </section>

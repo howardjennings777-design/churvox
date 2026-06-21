@@ -108,12 +108,12 @@ function jobHasInvoice(job, invoiceJobIds) {
 function statusRank(status) {
   if (status === "Blocked") return 0;
   if (status === "Needs attention") return 1;
-  if (status === "Needs test") return 2;
+  if (status === "Needs check") return 2;
   return 3;
 }
 
 function autoStatus(ok, testNeeded = false) {
-  return ok ? (testNeeded ? "Needs test" : "Ready") : "Needs attention";
+  return ok ? (testNeeded ? "Needs check" : "Ready") : "Needs attention";
 }
 
 function buildChecks(data, settings, manual) {
@@ -148,7 +148,7 @@ function buildChecks(data, settings, manual) {
       group: "Customer entry",
       area: "Public request form",
       check: "Customers can request a quote without login. Requests go to owner review only.",
-      status: "Needs test",
+      status: "Needs check",
       page: "leads",
       proof: `${requests.length} customer requests found. Public form: ${publicRequestUrl}`,
     },
@@ -175,7 +175,7 @@ function buildChecks(data, settings, manual) {
       group: "Team",
       area: "Worker clock-in/out",
       check: "Worker can clock in, clock out, and send time to Time Sheets.",
-      status: shifts.length > 0 ? "Needs test" : "Needs attention",
+      status: shifts.length > 0 ? "Needs check" : "Needs attention",
       page: "time",
       proof: `${shifts.length} worker shift rows captured.`,
     },
@@ -211,7 +211,7 @@ function buildChecks(data, settings, manual) {
       group: "Money",
       area: "Completed jobs invoiced",
       check: "Completed jobs should not sit forgotten without invoices.",
-      status: completedWithoutInvoice.length ? "Needs attention" : jobs.length ? "Ready" : "Needs test",
+      status: completedWithoutInvoice.length ? "Needs attention" : jobs.length ? "Ready" : "Needs check",
       page: "jobs",
       proof: `${completedWithoutInvoice.length} completed jobs may still need invoices.`,
     },
@@ -229,7 +229,7 @@ function buildChecks(data, settings, manual) {
       group: "Owner control",
       area: "Command",
       check: "Command can surface owner approval work and launch decisions.",
-      status: "Needs test",
+      status: "Needs check",
       page: "command",
       proof: `${reviewItems.length} backend review items, ${localCommand.length} workflow slips.`,
     },
@@ -238,7 +238,7 @@ function buildChecks(data, settings, manual) {
       group: "Accounting",
       area: "Xero / accounting sync",
       check: "Accounting sync is safe, owner-approved and clearly blocked if not connected.",
-      status: xero.connected ? "Needs test" : "Needs attention",
+      status: xero.connected ? "Needs check" : "Needs attention",
       page: "xero",
       proof: xero.connected ? `Connected to ${xero.connection?.tenant_name || "Xero"}.` : "Not connected yet.",
     },
@@ -256,7 +256,7 @@ function buildChecks(data, settings, manual) {
       group: "Final QA",
       area: "Mobile QA",
       check: "Phone/tablet hard refresh, tap checks, text visibility and core workflows pass.",
-      status: manual.mobile || "Needs test",
+      status: manual.mobile || "Needs check",
       page: "today",
       proof: "Manual device test still matters before paid launch.",
     },
@@ -265,7 +265,7 @@ function buildChecks(data, settings, manual) {
       group: "Final QA",
       area: "Plans / billing",
       check: "Trial, GST wording, Stripe return and current plan display are checked.",
-      status: manual.billing || "Needs test",
+      status: manual.billing || "Needs check",
       page: "plans",
       proof: "Needs real checkout/return check before public paid launch.",
     },
@@ -277,7 +277,7 @@ function buildChecks(data, settings, manual) {
 function sendLaunchControlToCommand(items, onNavigate) {
   const blocked = items.filter((item) => item.status === "Blocked");
   const attention = items.filter((item) => item.status === "Needs attention");
-  const needs = items.filter((item) => item.status === "Needs test");
+  const needs = items.filter((item) => item.status === "Needs check");
 
   try {
     const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
@@ -292,7 +292,7 @@ function sendLaunchControlToCommand(items, onNavigate) {
       info: `${blocked.length} blocked · ${attention.length} attention · ${needs.length} tests`,
       urgency: blocked.length ? "High" : attention.length ? "Medium" : needs.length ? "Medium" : "Low",
       found: [...blocked, ...attention].length ? [...blocked, ...attention].map((item) => `${item.area}: ${item.proof}`).join(" | ") : "No hard launch blockers marked.",
-      prepared: needs.length ? `Test next: ${needs.map((item) => item.area).join(", ")}` : "Controlled beta can start when owner is comfortable.",
+      prepared: needs.length ? `Check next: ${needs.map((item) => item.area).join(", ")}` : "Controlled beta can start when owner is comfortable.",
       why: "Launch should be decided from core workflow readiness, not page count.",
       owner: "Fix blockers, test needs, then approve a controlled beta.",
       fromInbox: true,
@@ -316,7 +316,7 @@ export default function FreshLaunchControl({ onNavigate }) {
 
   const items = React.useMemo(() => buildChecks(data, settings, manual), [data, settings, manual]);
   const ready = items.filter((item) => item.status === "Ready").length;
-  const needs = items.filter((item) => item.status === "Needs test").length;
+  const needs = items.filter((item) => item.status === "Needs check").length;
   const attention = items.filter((item) => item.status === "Needs attention").length;
   const blocked = items.filter((item) => item.status === "Blocked").length;
   const score = Math.round((ready / items.length) * 100);
@@ -358,7 +358,7 @@ export default function FreshLaunchControl({ onNavigate }) {
     setMessage("Manual launch marks cleared.");
   }
 
-  const launchMode = blocked ? "Blocked" : attention ? "Fix first" : needs ? "Beta test" : "Ready";
+  const launchMode = blocked ? "Blocked" : attention ? "Fix first" : needs ? "Beta check" : "Ready";
 
   return (
     <section className="freshLaunchControlPage">
@@ -375,7 +375,7 @@ export default function FreshLaunchControl({ onNavigate }) {
         <div className="freshLaunchControlStats">
           <div><b>{score}%</b><small>ready score</small></div>
           <div><b>{ready}</b><small>ready</small></div>
-          <div><b>{needs}</b><small>needs test</small></div>
+          <div><b>{needs}</b><small>needs check</small></div>
           <div><b>{blocked + attention}</b><small>fix/check</small></div>
         </div>
       </div>
@@ -387,8 +387,8 @@ export default function FreshLaunchControl({ onNavigate }) {
           <p>
             {launchMode === "Ready"
               ? "No launch blockers marked. Controlled beta can start when you are comfortable."
-              : launchMode === "Beta test"
-                ? "Core pieces are close. Run the remaining tests before selling hard."
+              : launchMode === "Beta check"
+                ? "Core pieces are close. Run the remaining checks before selling hard."
                 : launchMode === "Fix first"
                   ? "There are setup or workflow checks needing attention before launch."
                   : "A blocker is marked. Fix it before inviting customers."}
@@ -439,7 +439,7 @@ export default function FreshLaunchControl({ onNavigate }) {
             <div className="freshLaunchControlControls">
               <select value={item.status} onChange={(event) => updateStatus(item.id, event.target.value)}>
                 <option>Ready</option>
-                <option>Needs test</option>
+                <option>Needs check</option>
                 <option>Needs attention</option>
                 <option>Blocked</option>
               </select>

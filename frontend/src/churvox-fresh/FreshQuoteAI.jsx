@@ -39,7 +39,7 @@ export default function FreshQuoteAI({ onNavigate }) {
 
         <article className="freshCard">
           <h2>Useful actions</h2>
-          <div className="freshItem"><b>Create quote</b><span>Open Quotes to build or edit a real quote.</span></div>
+          <div className="freshItem"><b>Create quote</b><span>Open Quotes to create or edit a real quote.</span></div>
           <div className="freshItem"><b>Use Tell Churvox</b><span>Type the job details and let Churvox open the right next step.</span></div>
         </article>
 

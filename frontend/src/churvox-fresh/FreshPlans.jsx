@@ -140,6 +140,11 @@ export default function FreshPlans({ onNavigate }) {
   const addonOnlyGrowthCheckout = samePlanSelected && commandSelected && growthPacks > 0;
   const addonOnlyAccountingCheckout = samePlanSelected && !commandSelected && accountingSync;
   const noCheckoutChange = samePlanSelected && monthlyTotal === 0;
+  const checkoutModeLabel = addonOnlyGrowthCheckout
+    ? `${growthPacks} Command Growth Pack${growthPacks === 1 ? "" : "s"} only`
+    : addonOnlyAccountingCheckout
+      ? "Accounting Sync Add-on only"
+      : `${selected.name}${accountingSync && !commandSelected ? " + Accounting Sync" : ""}${growthPacks ? ` + ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}`;
   const checkoutButtonLabel = noCheckoutChange
     ? "Current plan active"
     : checkoutLoading
@@ -149,11 +154,6 @@ export default function FreshPlans({ onNavigate }) {
         : "Buy selected plan";
   const selectedTotalLabel = noCheckoutChange ? "Already active" : money(monthlyTotal, country);
   const checkoutTotalLabel = noCheckoutChange ? "No checkout needed" : checkoutModeLabel;
-  const checkoutModeLabel = addonOnlyGrowthCheckout
-    ? `${growthPacks} Command Growth Pack${growthPacks === 1 ? "" : "s"} only`
-    : addonOnlyAccountingCheckout
-      ? "Accounting Sync Add-on only"
-      : `${selected.name}${accountingSync && !commandSelected ? " + Accounting Sync" : ""}${growthPacks ? ` + ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}`;
   const showDebug = React.useMemo(() => { try { return new URLSearchParams(window.location.search || "").get("debug") === "1"; } catch { return false; } }, []);
 
   function applyPlan(planId, reason = "Current plan updated.") {
