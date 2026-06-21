@@ -44,6 +44,7 @@ export function Nav() {
       <div className="simpleLinks">
         <Link to="/features" className="simpleGhost">How it works</Link>
         <Link to="/pricing" className="simpleGhost">Pricing</Link>
+        <Link to="/request" className="simpleGhost">Request a quote</Link>
         <Link to="/login" className="simpleGhost">Log in</Link>
         <Link to="/signup" className="simplePrimary">Start free</Link>
       </div>
@@ -84,6 +85,7 @@ export default function ExecutiveHomePage() {
           </p>
           <div className="simpleActions">
             <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
+            <Link to="/request" className="simpleBtn simpleGhost">Request a quote</Link>
             <Link to="/pricing" className="simpleBtn simpleGhost">View plans</Link>
           </div>
           <div className="simpleProof">{proof.map((item) => <span key={item}>{item}</span>)}</div>
@@ -141,6 +143,7 @@ export default function ExecutiveHomePage() {
         </p>
         <div className="simpleActions">
           <Link to="/signup" className="simpleBtn simplePrimary">Start free</Link>
+          <Link to="/request" className="simpleBtn simpleGhost">Request a quote</Link>
           <Link to="/pricing" className="simpleBtn simpleGhost">Choose a plan</Link>
         </div>
       </section>
