@@ -857,8 +857,8 @@ export default function FreshWorkerCommand() {
 
               <section className="cvWorkerCurrentJob">
                 <span>Current work</span>
-                <h3>{view.currentJob ? jobTitle(view.currentJob) : selectedCurrent.title || "No current job"}</h3>
-                <p>{view.currentJob ? `${clientName(view.currentJob)} · ${jobAddress(view.currentJob)}` : "No active job is linked to this worker right now."}</p>
+                <h3>{view.currentJob ? jobTitle(view.currentJob) : selectedCurrent.title || "No active job right now"}</h3>
+                <p>{view.currentJob ? `${clientName(view.currentJob)} · ${jobAddress(view.currentJob)}` : view.todayJobs.length ? "Worker has assigned jobs below. No live active job is linked right now." : "No active job is linked to this worker right now."}</p>
                 <div className="cvWorkerActions">
                   {view.currentJob ? <button type="button" onClick={() => openJobModal(view.currentJob)}>Open job detail</button> : null}
                   {currentJobMap ? <a href={currentJobMap} target="_blank" rel="noreferrer">Open job site map</a> : null}
