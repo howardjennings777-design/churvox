@@ -4,6 +4,7 @@ import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshXero.css";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const XERO_PHASE_ONE_SCOPES = ["openid", "profile", "email", "offline_access", "accounting.transactions", "accounting.contacts"];
 
 function unwrap(result) {
   return result?.data ?? result;
@@ -50,6 +51,16 @@ function isPaid(invoice) {
 
 function money(value) {
   return `$${Number(value || 0).toLocaleString("en-NZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function sanitiseXeroConnectUrl(url) {
+  try {
+    const next = new URL(String(url || ""));
+    next.searchParams.set("scope", XERO_PHASE_ONE_SCOPES.join(" "));
+    return next.toString();
+  } catch {
+    return url;
+  }
 }
 
 function readCommandInbox() {
@@ -154,7 +165,7 @@ export default function FreshXero({ onNavigate }) {
     try {
       const data = unwrap(await post("/xero/connect/start", {}));
       if (!data?.url) throw new Error("Xero did not return a connect URL.");
-      window.location.href = data.url;
+      window.location.href = sanitiseXeroConnectUrl(data.url);
     } catch (err) {
       setMessage(err?.message || "Xero connection could not start.");
     } finally {
@@ -243,7 +254,7 @@ export default function FreshXero({ onNavigate }) {
         <span>
           {connected
             ? `Connected to ${connection?.tenant_name || "a Xero organisation"}. Draft invoice sync is available for controlled owner testing.`
-            : "Connect Xero once credentials, redirect URI, scopes, and the Accounting Sync add-on are ready."}
+            : "Connect Xero once credentials, redirect URI, safe scopes, and the Accounting Sync add-on are ready."}
         </span>
       </div>
 
