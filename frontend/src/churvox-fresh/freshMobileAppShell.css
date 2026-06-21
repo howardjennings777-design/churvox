@@ -210,3 +210,17 @@
 .freshGlobalAsk:not(.freshGlobalAsk--underHeader) {
   margin-top: 0 !important;
 }
+
+/* CHURVOX_ONE_GLOBAL_ASK_BAR_20260621
+   Keep the shell Ask Churvox bar as the single source.
+   Hide old page-level duplicate ask bars inside page content. */
+.freshPageScroll .freshGlobalAsk,
+.freshPageScroll .freshGlobalAskHome {
+  display: none !important;
+}
+
+.freshMain > .freshGlobalAsk {
+  margin: 12px 18px 14px;
+  position: relative;
+  z-index: 5;
+}
