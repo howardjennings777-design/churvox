@@ -139,6 +139,16 @@ export default function FreshPlans({ onNavigate }) {
   const accountingSelected = accountingIncluded || accountingSync;
   const addonOnlyGrowthCheckout = samePlanSelected && commandSelected && growthPacks > 0;
   const addonOnlyAccountingCheckout = samePlanSelected && !commandSelected && accountingSync;
+  const noCheckoutChange = samePlanSelected && monthlyTotal === 0;
+  const checkoutButtonLabel = noCheckoutChange
+    ? "Current plan active"
+    : checkoutLoading
+      ? "Opening Stripe..."
+      : addonOnlyGrowthCheckout || addonOnlyAccountingCheckout
+        ? "Buy selected add-on"
+        : "Buy selected plan";
+  const selectedTotalLabel = noCheckoutChange ? "Already active" : money(monthlyTotal, country);
+  const checkoutTotalLabel = noCheckoutChange ? "No checkout needed" : checkoutModeLabel;
   const checkoutModeLabel = addonOnlyGrowthCheckout
     ? `${growthPacks} Command Growth Pack${growthPacks === 1 ? "" : "s"} only`
     : addonOnlyAccountingCheckout
@@ -318,7 +328,7 @@ export default function FreshPlans({ onNavigate }) {
       </header>
 
       <section className="freshPlanNotice proper freshPlanNoticeV2"><b>14-day trial</b><span>Start testing Churvox with real jobs, clients, quotes and invoices. Billing actions stay owner-approved.</span></section>
-      <section className="freshPlanNotice proper freshPlanNoticeV2"><b>Safe money rules</b><span>Invoices stay draft-only until approved. Accounting sync is owner-approved. Churvox keeps invoices approval-only, mark paid, keep tax filing outside Churvox or create payment files.</span></section>
+      <section className="freshPlanNotice proper freshPlanNoticeV2"><b>Safe money rules</b><span>Invoices stay draft-only until approved. Accounting sync is owner-approved. Churvox does not file tax, mark paid automatically, or create payment files.</span></section>
 
       {error && !/not authenticated|401|403/i.test(error) && <section className="freshCard freshNotice need"><b>Plans need attention</b><span>{error}</span></section>}
 
@@ -332,12 +342,12 @@ export default function FreshPlans({ onNavigate }) {
 
       <section className="freshPricingDetail freshPricingDetailV2">
         <section className="freshCard freshSelectedPlanCard freshSelectedPlanCardV2">
-          <div className="freshSelectedPlanTop"><div><span>Selected plan</span><h2>{selected.name}</h2><p>{selected.summary}</p></div><strong>{money(monthlyTotal, country)}<small>/month {countryMeta.taxLabel}</small></strong></div>
+          <div className="freshSelectedPlanTop"><div><span>Selected plan</span><h2>{selected.name}</h2><p>{selected.summary}</p></div><strong>{selectedTotalLabel}<small>{noCheckoutChange ? "" : `/month ${countryMeta.taxLabel}`}</small></strong></div>
           <div className="freshPlanBreakdown"><div><b>Base plan</b><span>{selected.name}</span><strong>{samePlanSelected ? "Already active" : money(selected.price, country)}</strong></div><div><b>Accounting sync</b><span>{accountingIncluded ? "Included with Command" : accountingSync ? "Add-on selected" : "Optional add-on"}</span><strong>{accountingAddonTotal ? money(accountingAddonTotal, country) : accountingIncluded ? "Included" : money(pricedAccountingAddon.monthly, country)}</strong></div><div><b>Growth packs</b><span>{commandSelected ? `${growthPacks} selected` : "Only for Command"}</span><strong>{growthTotal ? money(growthTotal, country) : money(0, country)}</strong></div></div>
           <section className="freshPlanSection"><h3>What you get on {selected.name}</h3><div className="freshPlanFeatures premium">{selectedIncludes.map((feature) => <div key={feature}><b>✓</b><span>{feature}</span></div>)}</div></section>
           <section className="freshPlanSection"><h3>Add-ons</h3><div className="freshAddOnGrid"><button type="button" className={`freshAddOnCard ${accountingSelected ? "active" : ""}`} onClick={() => { if (!accountingIncluded) setAccountingSync((value) => !value); }}><b>Accounting Sync Add-on</b><span>{accountingIncluded ? "Included with Command" : pricedAccountingAddon.priceLabel}</span><p>MYOB or Xero, where available. Owner-approved draft invoice sync only.</p></button><button type="button" className={`freshAddOnCard ${commandSelected ? "active" : "locked"}`} onClick={() => { if (!commandSelected) choosePlan("command"); }}><b>Command Growth Pack</b><span>{pricedGrowthPack.priceLabel}</span><p>Adds 50 active team members plus extra job, AI action, automation and admin capacity.</p></button></div>{commandSelected && <div className="freshGrowthPack premium freshGrowthPackV2"><div><b>Command Growth Pack</b><span>Command includes 50 active team members. Each pack adds 50 more active team members.</span></div><div className="freshGrowthControls"><button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button><strong>{growthPacks}</strong><button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button></div></div>}</section>
         </section>
-        <aside className="freshCard freshCheckoutCard freshCheckoutCardV2"><span>Buy / update</span><h2>{selected.name}</h2><strong>{money(monthlyTotal, country)}<small>/month {countryMeta.taxLabel}</small></strong><p>Stripe opens securely using {countryMeta.label} pricing. If this is only an add-on for your current plan, checkout charges the add-on only.</p><div className="freshActions"><button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading}>{checkoutLoading ? "Opening Stripe..." : "Buy selected plan"}</button><button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => loadPlan({ force: true })} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload current plan"}</button></div><div className="freshItem"><b>Checkout total</b><span>{checkoutModeLabel}</span></div><div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div><div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div></aside>
+        <aside className="freshCard freshCheckoutCard freshCheckoutCardV2"><span>Buy / update</span><h2>{selected.name}</h2><strong>{selectedTotalLabel}<small>{noCheckoutChange ? "" : `/month ${countryMeta.taxLabel}`}</small></strong><p>{noCheckoutChange ? "This is your current plan. Choose an add-on or another plan if you want to change billing." : `Stripe opens securely using ${countryMeta.label} pricing. If this is only an add-on for your current plan, checkout charges the add-on only.`}</p><div className="freshActions"><button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading || noCheckoutChange}>{checkoutButtonLabel}</button><button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => loadPlan({ force: true })} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload current plan"}</button></div><div className="freshItem"><b>Checkout total</b><span>{checkoutTotalLabel}</span></div><div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div><div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div></aside>
       </section>
 
       <section className="freshCard freshPlanLogicCard">

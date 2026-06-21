@@ -1215,3 +1215,19 @@ html body .freshPricingPageV2 .freshCurrentPlanBox small.freshDarkPanelPill {
     width: 240px;
   }
 }
+
+/* CHURVOX_PLANS_CURRENT_PLAN_POLISH_20260621 */
+.freshCheckoutCardV2 button:disabled {
+  opacity: .52 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(.2) !important;
+}
+
+.freshSelectedPlanTop strong {
+  overflow-wrap: anywhere !important;
+}
+
+.freshCheckoutCardV2 > p {
+  font-weight: 850 !important;
+  line-height: 1.4 !important;
+}
