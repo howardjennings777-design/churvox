@@ -28,27 +28,45 @@ XERO_AUTHORIZE_URL = "https://login.xero.com/identity/connect/authorize"
 XERO_TOKEN_URL = "https://identity.xero.com/connect/token"
 XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
 XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
-XERO_SAFE_SCOPES = [
+XERO_REQUIRED_SCOPES = [
+    "openid",
+    "profile",
+    "email",
     "offline_access",
+]
+
+XERO_ACCOUNTING_SCOPES = [
     "accounting.transactions",
     "accounting.contacts",
     "accounting.settings",
 ]
 
+XERO_SAFE_SCOPES = XERO_REQUIRED_SCOPES + XERO_ACCOUNTING_SCOPES
+
 def _clean_xero_scopes(value: str | None = None) -> str:
     """
     Xero rejects the whole OAuth request if one scope is bad.
     Keep phase-one Churvox scope safe and predictable.
-    Render may override order, but unknown scopes are ignored.
-    Keep this accounting-only. Do not request openid/profile/email here.
+    Always include the required identity/offline scopes, then the approved
+    phase-one accounting scopes. Unknown Render env scope values are ignored.
     """
     raw = str(value or os.environ.get("XERO_SCOPES") or "").replace(",", " ").split()
     cleaned = [scope for scope in raw if scope in XERO_SAFE_SCOPES]
+
     if not cleaned:
-        cleaned = XERO_SAFE_SCOPES
-    # Keep stable order so old/bad values cannot sneak into the OAuth URL.
-    ordered = [scope for scope in XERO_SAFE_SCOPES if scope in cleaned]
-    return " ".join(ordered)
+        cleaned = list(XERO_SAFE_SCOPES)
+
+    # Always include identity/offline scopes.
+    ordered = []
+    for scope in XERO_REQUIRED_SCOPES + cleaned:
+        if scope not in ordered:
+            ordered.append(scope)
+
+    # Phase one needs these accounting scopes for draft invoice/contact/settings sync.
+    if not any(scope in ordered for scope in XERO_ACCOUNTING_SCOPES):
+        ordered.extend(XERO_ACCOUNTING_SCOPES)
+
+    return " ".join(scope for scope in XERO_SAFE_SCOPES if scope in ordered)
 
 XERO_DEFAULT_SCOPES = _clean_xero_scopes()
 XERO_SALES_ACCOUNT_CODE = os.environ.get("XERO_SALES_ACCOUNT_CODE", "200").strip()
