@@ -5,7 +5,7 @@ import "./SimplePublic.css";
 
 const proof = [
   "14-day free trial",
-  "Card added securely in Stripe",
+  "Choose a plan before Stripe",
   "Owner approval built in",
   "Real quote-to-paid workflow",
 ];
@@ -31,7 +31,7 @@ const trust = [
   ["Built for real operators", "Designed for owners who need jobs, workers, quotes and invoices connected."],
   ["You stay in control", "Churvox prepares admin actions, but you approve what goes out."],
   ["Customer links included", "Quotes, invoices and request forms can be opened by customers without a login."],
-  ["Start simple", "Begin with the core workflow, then add workers, AI Operator Actions and accounting sync as you grow."],
+  ["Start with the right plan", "Pick Start, Crew, Operator or Command, then Stripe starts the 14-day trial for that plan."],
 ];
 
 export function Nav() {
@@ -72,7 +72,7 @@ export function Footer() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_PUBLIC_CARD_REQUIRED_20260621">
+    <main className="simplePublic" data-version="CHURVOX_PUBLIC_PLAN_FIRST_STRIPE_TRIAL_20260621">
       <Nav />
 
       <section className="simpleHero">
@@ -93,11 +93,11 @@ export default function ExecutiveHomePage() {
         <aside className="simpleCard">
           <h2>The Churvox flow</h2>
           <ol>
-            <li>1. Add the work</li>
-            <li>2. Churvox prepares the admin</li>
-            <li>3. You review it</li>
-            <li>4. You approve it</li>
-            <li>5. The next step moves</li>
+            <li>1. Create your account</li>
+            <li>2. Choose Start, Crew, Operator or Command</li>
+            <li>3. Stripe starts the 14-day trial</li>
+            <li>4. Churvox opens setup</li>
+            <li>5. You run the first job-to-paid flow</li>
           </ol>
         </aside>
       </section>
@@ -136,7 +136,7 @@ export default function ExecutiveHomePage() {
       <section className="simpleBand">
         <h2>Ready to run your next job properly?</h2>
         <p className="simpleLead">
-          Start the 14-day trial, set up your business, add your first client and run the first job-to-paid flow.
+          Create your account, choose the plan that matches your business, then Stripe starts the 14-day trial.
         </p>
         <div className="simpleActions">
           <Link to="/signup" className="simpleBtn simplePrimary">Start trial</Link>
