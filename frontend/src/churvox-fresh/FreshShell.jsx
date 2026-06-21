@@ -168,7 +168,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const [globalAsk, setGlobalAsk] = React.useState("");
   const currentPrimary = parentByKey[active] || active;
   const mobileTitle = mobileLabels[currentPrimary] || mobileLabels[active] || "Churvox";
-  const showGlobalAsk = currentPrimary !== "workercommand";
+  const showGlobalAsk = currentPrimary === "today";
 
   React.useEffect(() => {
     const refresh = () => setGuideComplete(guideIsComplete());
