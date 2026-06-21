@@ -204,6 +204,75 @@ function getGpsPosition() {
   });
 }
 
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = `${base64String}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
+async function registerWorkerPushSubscription({ get, post }) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    await post("/worker/notification-opt-in", {
+      enabled: true,
+      permission: "granted",
+      push_supported: false,
+      reason: "Service worker or PushManager not supported",
+      device: navigator.userAgent,
+    });
+    return { success: true, stored: false, fallback: true };
+  }
+
+  const config = await get("/worker/push-config");
+  const publicKey =
+    config?.data?.vapid_public_key ||
+    config?.data?.data?.vapid_public_key ||
+    process.env.REACT_APP_VAPID_PUBLIC_KEY ||
+    "";
+
+  if (!publicKey) {
+    await post("/worker/notification-opt-in", {
+      enabled: true,
+      permission: "granted",
+      push_supported: true,
+      push_subscription_waiting_for_vapid: true,
+      device: navigator.userAgent,
+    });
+    return { success: true, stored: false, waitingForVapid: true };
+  }
+
+  const serviceWorkerRegistration = await navigator.serviceWorker.register("/service-worker.js");
+  await navigator.serviceWorker.ready;
+
+  let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+
+  if (!subscription) {
+    subscription = await serviceWorkerRegistration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+  }
+
+  const pushSubscription = subscription.toJSON();
+
+  await post("/worker/push-subscription", {
+    subscription: pushSubscription,
+    endpoint: subscription.endpoint,
+    permission: "granted",
+    device: navigator.userAgent,
+    created_at: new Date().toISOString(),
+  });
+
+  return { success: true, stored: true };
+}
+
 function WorkerJobCard({ job }) {
   const id = idOf(job);
   const address = addressOf(job);
@@ -325,23 +394,18 @@ export default function WorkerJobsPage() {
         return;
       }
 
+      const pushResult = await registerWorkerPushSubscription({ get, post });
+
       window.localStorage.setItem("churvox-worker-notifications", "on");
       setWorkerPushEnabled(true);
 
-      try {
-        await post("/worker/notification-opt-in", {
-          enabled: true,
-          permission: "granted",
-          device: navigator.userAgent,
-          created_at: new Date().toISOString(),
-        });
-      } catch {}
-
       new Notification("Churvox notifications on", {
-        body: "You’ll see job alerts and boss messages here.",
+        body: pushResult?.stored
+          ? "You’ll get real job push alerts on this device."
+          : "Notifications are allowed. Push delivery will activate when VAPID keys are set.",
       });
 
-      toast.success("Worker notifications turned on");
+      toast.success(pushResult?.stored ? "Worker push notifications turned on" : "Notifications saved");
     } catch {
       toast.error("Could not turn notifications on.");
     }

@@ -6488,6 +6488,102 @@ async def mark_all_notifications_read(current_user: dict = Depends(get_current_u
     return {"success": True, "read_at": now.isoformat()}
 
 
+
+@api_router.get("/worker/push-config")
+async def worker_push_config(current_user: dict = Depends(get_current_user)):
+    # Frontend uses this public key to create a real PushSubscription.
+    # Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Render before sending real push.
+    return {
+        "success": True,
+        "vapid_public_key": os.environ.get("VAPID_PUBLIC_KEY", "").strip(),
+        "vapid_ready": bool(os.environ.get("VAPID_PUBLIC_KEY", "").strip() and os.environ.get("VAPID_PRIVATE_KEY", "").strip()),
+    }
+
+
+@api_router.post("/worker/push-subscription")
+async def worker_push_subscription(payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    user_id = str(current_user.get("id") or "")
+    now = datetime.now(timezone.utc)
+
+    subscription = payload.get("subscription") if isinstance(payload.get("subscription"), dict) else {}
+    endpoint = payload.get("endpoint") or subscription.get("endpoint")
+
+    if not endpoint:
+        raise HTTPException(status_code=400, detail="Missing push subscription endpoint")
+
+    await db.push_subscriptions.update_one(
+        {
+            "business_id": business_id,
+            "user_id": user_id,
+            "endpoint": endpoint,
+        },
+        {
+            "$set": {
+                "business_id": business_id,
+                "user_id": user_id,
+                "role": current_user.get("role"),
+                "email": current_user.get("email"),
+                "name": current_user.get("name"),
+                "endpoint": endpoint,
+                "subscription": make_json_safe(subscription),
+                "permission": payload.get("permission") or "granted",
+                "device": payload.get("device") or "",
+                "enabled": True,
+                "updated_at": now,
+            },
+            "$setOnInsert": {
+                "created_at": now,
+            },
+        },
+        upsert=True,
+    )
+
+    await db.notification_settings.update_one(
+        {
+            "business_id": business_id,
+            "user_id": user_id,
+        },
+        {
+            "$set": {
+                "business_id": business_id,
+                "user_id": user_id,
+                "browser_notifications_enabled": True,
+                "push_subscription_enabled": True,
+                "updated_at": now,
+            },
+            "$setOnInsert": {
+                "created_at": now,
+            },
+        },
+        upsert=True,
+    )
+
+    return {"success": True, "stored": True}
+
+
+@api_router.post("/worker/push-unsubscribe")
+async def worker_push_unsubscribe(payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    user_id = str(current_user.get("id") or "")
+    endpoint = payload.get("endpoint")
+
+    query = {
+        "business_id": business_id,
+        "user_id": user_id,
+    }
+    if endpoint:
+        query["endpoint"] = endpoint
+
+    await db.push_subscriptions.update_many(
+        query,
+        {"$set": {"enabled": False, "updated_at": datetime.now(timezone.utc)}},
+    )
+
+    return {"success": True}
+
+
+
 @api_router.post("/worker/notification-opt-in")
 async def worker_notification_opt_in(payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
     business_id = str(current_user.get("business_id") or current_user.get("id"))
