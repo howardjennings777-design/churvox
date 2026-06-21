@@ -30,7 +30,7 @@ const chooser = [
   ["Start", "For solo operators who need jobs, clients, quotes and invoices organised."],
   ["Crew", "For small crews that assign work and need time tracking."],
   ["Operator", "For owners who want AI Operator Actions prepared for review and approval."],
-  ["Command", "For larger teams that need one accounting sync option, roles, payroll workspace, exports and priority support."],
+  ["Command", "For larger teams that need accounting sync, roles, payroll workspace, exports and priority support."],
 ];
 
 export default function ExecutivePricingPage() {
@@ -54,16 +54,16 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="simplePublic" data-version="CHURVOX_COUNTRY_PRICING_20260619">
+    <main className="simplePublic" data-version="CHURVOX_COUNTRY_PRICING_PLAN_FIRST_20260621">
       <Nav />
 
       <section className="simpleHero">
         <div>
           <span className="simpleKicker">Plans for real service businesses</span>
-          <h1>Start free. Choose the plan that matches how you run jobs.</h1>
+          <h1>Choose the plan that matches how you run jobs.</h1>
           <p className="simpleLead">
-            Try Churvox for 14 days with no card. Start with the basics, then move up when you need workers,
-            AI Operator Actions, accounting sync, payroll workspace or bigger team control.
+            Create your account, choose Start, Crew, Operator or Command, then Stripe starts the 14-day trial for that plan.
+            Start with the basics, then move up when you need workers, AI Operator Actions, accounting sync, payroll workspace or bigger team control.
           </p>
 
           <label className="simpleCountrySelect">
@@ -80,7 +80,7 @@ export default function ExecutivePricingPage() {
           </p>
 
           <div className="simpleActions">
-            <Link to={signupTo} className="simpleBtn simplePrimary">Start free</Link>
+            <Link to={signupTo} className="simpleBtn simplePrimary">Start trial</Link>
             <Link to="/login" className="simpleBtn simpleGhost">Log in</Link>
           </div>
         </div>
@@ -89,7 +89,7 @@ export default function ExecutivePricingPage() {
           <h2>Most growing businesses should look at Operator.</h2>
           <p>
             Operator is where Churvox starts preparing admin actions for you to approve.
-            Start or Crew are better if you only need the core workflow first. Add Xero or MYOB sync when your business is ready.
+            Start or Crew are better if you only need the core workflow first. Accounting sync can be added where available.
           </p>
         </aside>
       </section>
@@ -119,7 +119,7 @@ export default function ExecutivePricingPage() {
               <span>{plan.summary}</span>
               {featureList(plan).map((item) => <span key={item}>• {item}</span>)}
               <div className="simpleActions">
-                <Link to={signupTo} className="simpleBtn simplePrimary">Start free</Link>
+                <Link to={signupTo} className="simpleBtn simplePrimary">Start trial</Link>
               </div>
             </article>
           ))}
@@ -129,8 +129,8 @@ export default function ExecutivePricingPage() {
       <section className="simpleBand">
         <h2>Accounting Sync Add-on</h2>
         <p className="simpleLead">
-          Start, Crew and Operator can add Xero or MYOB sync for {accountingAddon.priceLabel} where available.
-          Command includes one accounting sync option: Xero or MYOB.
+          Start, Crew and Operator can add accounting sync for {accountingAddon.priceLabel} where available.
+          Command includes one accounting sync option.
         </p>
       </section>
 
