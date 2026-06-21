@@ -6686,71 +6686,44 @@ def _cv_shift_row(doc: dict):
 
     hours = round(seconds / 3600, 2)
 
-    
+    return {
+        "id": str(doc.get("_id") or doc.get("id") or ""),
+        "business_id": str(doc.get("business_id") or ""),
+        "worker_id": str(doc.get("worker_id") or ""),
+        "worker_name": doc.get("worker_name") or "Worker",
+        "worker_email": doc.get("worker_email") or "",
+        "clock_in_at": _cv_shift_iso(clock_in),
+        "clock_out_at": _cv_shift_iso(clock_out) if clock_out else None,
+        "shift_seconds": seconds,
+        "duration_hours": hours,
+        "hours": hours,
+        "review_status": doc.get("review_status") or ("Needs review" if clock_out else "Clocked in"),
+        "note": doc.get("note") or "",
+        "source": doc.get("source") or "worker_clock",
+        "gps_tracking_enabled": bool(doc.get("gps_tracking_enabled", not bool(clock_out))),
+        "clock_in_location": doc.get("clock_in_location"),
+        "clock_out_location": doc.get("clock_out_location"),
+        "created_at": _cv_shift_iso(doc.get("created_at")) if doc.get("created_at") else None,
+        "updated_at": _cv_shift_iso(doc.get("updated_at")) if doc.get("updated_at") else None,
+    }
 
-    
-    # CHURVOX_SYNTHETIC_NOTIFY_EVENTS_20260621
-    # Add a few current business events to the bell without changing the underlying records.
-    try:
-        synthetic = []
-        business_id = str((locals().get("current_user") or {}).get("business_id") or (locals().get("current_user") or {}).get("id") or "")
-        owner_email = str((locals().get("current_user") or {}).get("email") or "").lower()
 
-        try:
-            cursor = db.customer_requests.find({
-                "$or": [{"business_id": business_id}, {"owner_email": owner_email}],
-                "status": {"$in": ["New", "Needs info", "Ready"]},
-            }).sort("created_at", -1).limit(5)
-            async for req in cursor:
-                synthetic.append({
-                    "id": f"request-{req.get('_id')}",
-                    "title": "New customer request",
-                    "message": f"{req.get('customer_name') or 'Customer'}: {req.get('service_needed') or 'Work request'}",
-                    "type": "customer_request",
-                    "route": "/dashboard#leads",
-                    "read": False,
-                    "is_read": False,
-                    "created_at": req.get("created_at"),
-                })
-        except Exception:
-            pass
+@api_router.get("/worker/shift/status-v2")
+async def worker_shift_status_v2(current_user: dict = Depends(get_current_user)):
+    shift = await _cv_shift_current(current_user)
 
-        try:
-            cursor = db.worker_shift_records.find({
-                "business_id": business_id,
-                "review_status": "Needs review",
-            }).sort("clock_out_at", -1).limit(5)
-            async for row in cursor:
-                synthetic.append({
-                    "id": f"shift-{row.get('_id')}",
-                    "title": "Worker time ready",
-                    "message": f"{row.get('worker_name') or 'Worker'} clocked out. Review time sheet.",
-                    "type": "worker_clock_out",
-                    "route": "/dashboard#time",
-                    "read": False,
-                    "is_read": False,
-                    "created_at": row.get("clock_out_at") or row.get("updated_at"),
-                })
-        except Exception:
-            pass
+    if not shift:
+        return {
+            "success": True,
+            "status": "clocked_out",
+            "shift_seconds": 0,
+            "gps_tracking_enabled": False,
+            "shift": None,
+        }
 
-        try:
-            existing_items = locals().get("items") or locals().get("notifications") or []
-            if isinstance(existing_items, list):
-                seen_ids = {str(item.get("id") or item.get("_id") or "") for item in existing_items if isinstance(item, dict)}
-                for event in synthetic:
-                    if str(event.get("id")) not in seen_ids:
-                        existing_items.insert(0, event)
-                if "items" in locals():
-                    items = existing_items[: int(locals().get("limit") or 20)]
-                elif "notifications" in locals():
-                    notifications = existing_items[: int(locals().get("limit") or 20)]
-        except Exception:
-            pass
-    except Exception:
-        pass
+    row = _cv_shift_row(shift)
 
-return {
+    return {
         "success": True,
         "status": "clocked_in",
         "shift_seconds": row["shift_seconds"],
