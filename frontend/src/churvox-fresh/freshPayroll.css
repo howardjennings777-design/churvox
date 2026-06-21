@@ -427,3 +427,60 @@
 .freshMain {
   scroll-padding-top: 30px !important;
 }
+
+/* CHURVOX_PAYROLL_ACTIONS_POLISH_20260621 */
+.cvPayActionsPanel {
+  padding-bottom: 86px !important;
+}
+
+.cvPayActionHint {
+  margin: -4px 0 12px !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.cvPayActionGroup {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.cvPayActionGroup + .cvPayActionGroup {
+  margin-top: 14px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid rgba(15, 23, 42, .10) !important;
+}
+
+.cvPayActionGroup button {
+  width: 100% !important;
+  border: 1px solid rgba(15, 23, 42, .13) !important;
+  border-radius: 15px !important;
+  min-height: 42px !important;
+  padding: 0 13px !important;
+  font-size: 12px !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
+}
+
+.cvPayActionGroup--secondary button {
+  background: rgba(255, 255, 255, .82) !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
+
+.cvPayActionGroup--secondary button:first-child,
+.cvPayActionGroup--secondary button:nth-child(4) {
+  background: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Move support bubble off the payroll action buttons. */
+.cvPayPage ~ .churvoxHelpWidget,
+body:has(.cvPayPage) .churvoxHelpWidget,
+body:has(.cvPayPage) [class*="HelpWidget"],
+body:has(.cvPayPage) [class*="helpWidget"] {
+  bottom: 92px !important;
+}

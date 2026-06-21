@@ -537,19 +537,24 @@ export default function FreshPayroll({ onNavigate }) {
           )}
         </main>
 
-        <aside className="cvPayPanel">
-          <h2>Owner actions</h2>
-          <div className="cvPayActions">
-            <button type="button" className="green" onClick={() => updateSelectedPerson({ status: "Ready" })}>Mark ready</button>
-            <button type="button" className="dark" onClick={() => updateSelectedPerson({ status: "Approved" })}>Approve pay</button>
-            <button type="button" className="orange" onClick={() => updateSelectedPerson({ status: "Needs review" })}>Needs review</button>
-            <button type="button" onClick={exportCsv}>Export CSV</button>
-            <button type="button" onClick={() => onNavigate?.("time")}>Open Time Sheets</button>
-            <button type="button" onClick={() => onNavigate?.("team")}>Open Team</button>
-            <button type="button" onClick={sendSelectedToCommand}>Send to Command</button>
-            <button type="button" onClick={resetPayroll}>Reset payroll edits</button>
-          </div>
-        </aside>
+<aside className="cvPayPanel cvPayActionsPanel">
+  <h2>Owner actions</h2>
+  <p className="cvPayActionHint">Review gross pay only. Churvox does not file tax, submit government records, or create bank/payment files.</p>
+
+  <div className="cvPayActionGroup cvPayActionGroup--main">
+    <button type="button" className="green" onClick={() => updateSelectedPerson({ status: "Ready" })}>Mark ready</button>
+    <button type="button" className="dark" onClick={() => updateSelectedPerson({ status: "Approved" })}>Approve pay</button>
+    <button type="button" className="orange" onClick={() => updateSelectedPerson({ status: "Needs review" })}>Needs review</button>
+  </div>
+
+  <div className="cvPayActionGroup cvPayActionGroup--secondary">
+    <button type="button" onClick={exportCsv}>Export review CSV</button>
+    <button type="button" onClick={() => onNavigate?.("time")}>Open Time Sheets</button>
+    <button type="button" onClick={() => onNavigate?.("team")}>Open Team</button>
+    <button type="button" onClick={sendSelectedToCommand}>Send to Command</button>
+    <button type="button" onClick={resetPayroll}>Reset payroll edits</button>
+  </div>
+</aside>
       </section>
     </section>
   );
