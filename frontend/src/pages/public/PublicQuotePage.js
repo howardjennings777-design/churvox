@@ -2,6 +2,7 @@
 // CHURVOX_PUBLIC_DOCUMENT_IMPORT_SAFETY_20260528
 // CHURVOX_PUBLIC_DOCUMENT_LINE_ITEMS_TOTALS_20260529
 // CHURVOX_PUBLIC_DOCUMENT_TOTAL_FALLBACK_HARDENING_20260529
+// CHURVOX_PUBLIC_QUOTE_APPROVAL_POLISH_20260621
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -73,22 +74,91 @@ export default function PublicQuotePage() {
 
   const quoteNumber = quote.quote_number || quote.number || "Quote";
   const customer = quote.customer_name || quote.client_name || "Customer";
+  const biz = quote.business_snapshot || quote.business || {};
+  const businessName = biz.business_name || quote.business_name || "Business quote";
   const description = quote.job_description || quote.description || quote.notes || "Quoted work prepared for review.";
   const rowSubtotal = rows.reduce((sum, row) => sum + lineAmount(row), 0);
   const subtotal = firstPositive(quote.subtotal, rowSubtotal);
   const total = firstPositive(quote.price, quote.total, quote.amount, subtotal);
-  const status = quote.status || "draft";
+  const status = String(quote.status || "draft").toLowerCase();
   const validUntil = quote.valid_until || quote.expiry_date || quote.expires_at || "";
   const publicNotes = quote.public_notes || quote.customer_notes || quote.notes || "";
+  const accepted = status === "accepted" || status === "accept";
+  const declined = status === "declined" || status === "decline";
 
-  return (
-    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_DOCUMENT_TOTAL_FALLBACK_HARDENING_20260529 CHURVOX_PUBLIC_DOCUMENT_LINE_ITEMS_TOTALS_20260529">
-      <section className="cpd-actions"><b>Churvox quote</b><button type="button" onClick={() => window.print()}>Print / PDF</button><button type="button" onClick={copyLink}>Copy link</button><button type="button" disabled={saving || status === "accepted"} onClick={() => updateStatus("accept")}>Accept quote</button><button type="button" disabled={saving || status === "declined"} onClick={() => updateStatus("decline")}>Decline quote</button>{notice ? <span>{notice}</span> : null}</section>
-      <article className="cpd-document">
-        <header className="cpd-head"><div><small>Quote</small><h1>{quoteNumber}</h1><p>{customer}</p></div></header>
-        <section className="cpd-body"><div className="cpd-grid"><div className="cpd-card"><small>Prepared for</small><h2>{customer}</h2><p>{quote.address || quote.email || quote.customer_email || "Customer details saved by the business."}</p></div><div className="cpd-card"><small>Scope</small><h2>Work quoted</h2><p>{description}</p></div></div><table className="cpd-line-table"><thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>{rows.map((line, index) => <tr key={index}><td>{lineDescription(line, description)}</td><td>{lineQty(line)}</td><td>{formatCurrency(lineRate(line))}</td><td>{formatCurrency(lineAmount(line))}</td></tr>)}</tbody></table><div className="cpd-total-card"><small>Quote total</small><div className="cpd-total-lines"><span>Subtotal</span><b>{formatCurrency(subtotal)}</b></div><h2>{formatCurrency(total)}</h2><p>{publicNotes && publicNotes !== description ? publicNotes : "Approve or decline this quote using the action bar above."}</p></div></section>
-        <footer className="cpd-footer"><b>Churvox</b><span>Quote prepared. Customer reviews. Owner stays in control.</span></footer>
-      </article>
-    </main>
-  );
+return (
+  <main className="cpd-shell cpd-quote-shell" data-version="CHURVOX_PUBLIC_QUOTE_APPROVAL_POLISH_20260621">
+    <section className="cpd-actions cpd-quote-actions">
+      <b>{businessName}</b>
+      <button type="button" onClick={() => window.print()}>Print / PDF</button>
+      <button type="button" onClick={copyLink}>Copy link</button>
+      <button type="button" className="cpd-accept" disabled={saving || accepted} onClick={() => updateStatus("accept")}>{accepted ? "Accepted" : saving ? "Saving..." : "Accept quote"}</button>
+      <button type="button" className="cpd-decline" disabled={saving || declined} onClick={() => updateStatus("decline")}>{declined ? "Declined" : "Decline"}</button>
+      {notice ? <span>{notice}</span> : null}
+    </section>
+
+    <article className="cpd-document cpd-quote-document">
+      <header className="cpd-head cpd-quote-head">
+        <div>
+          {biz.logo_base64 ? <img src={biz.logo_base64} alt="Business logo" style={{ maxWidth: 150, maxHeight: 70, objectFit: "contain", marginBottom: 12 }} /> : null}
+          <small>Quote for approval</small>
+          <h1>{quoteNumber}</h1>
+          <p>{businessName}</p>
+          <p>{biz.business_address || quote.business_address || ""}</p>
+        </div>
+
+        <aside className="cpd-quote-approval-card">
+          <span>Status</span>
+          <b>{accepted ? "Accepted" : declined ? "Declined" : "Ready for review"}</b>
+          <strong>{formatCurrency(total)}</strong>
+          <p>{validUntil ? `Valid until ${validUntil}` : "Review the quote and choose accept or decline."}</p>
+        </aside>
+      </header>
+
+      <section className="cpd-body">
+        <div className="cpd-grid">
+          <div className="cpd-card">
+            <small>Prepared for</small>
+            <h2>{customer}</h2>
+            <p>{quote.address || quote.email || quote.customer_email || "Customer details saved by the business."}</p>
+          </div>
+
+          <div className="cpd-card">
+            <small>Scope</small>
+            <h2>Work quoted</h2>
+            <p>{description}</p>
+          </div>
+        </div>
+
+        <table className="cpd-line-table">
+          <thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
+          <tbody>
+            {rows.map((line, index) => (
+              <tr key={index}>
+                <td>{lineDescription(line, description)}</td>
+                <td>{lineQty(line)}</td>
+                <td>{formatCurrency(lineRate(line))}</td>
+                <td>{formatCurrency(lineAmount(line))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="cpd-total-card cpd-quote-total-card">
+          <small>Quote total</small>
+          <div className="cpd-total-lines"><span>Subtotal</span><b>{formatCurrency(subtotal)}</b></div>
+          <h2>{formatCurrency(total)}</h2>
+          <p>{publicNotes && publicNotes !== description ? publicNotes : "Accepting this quote tells the business owner you are happy for them to move forward. It does not take payment automatically."}</p>
+
+          <div className="cpd-quote-bottom-actions">
+            <button type="button" className="cpd-primary-action cpd-accept" disabled={saving || accepted} onClick={() => updateStatus("accept")}>{accepted ? "Quote accepted" : "Accept quote"}</button>
+            <button type="button" className="cpd-secondary-action" disabled={saving || declined} onClick={() => updateStatus("decline")}>{declined ? "Quote declined" : "Decline quote"}</button>
+          </div>
+        </div>
+      </section>
+
+      <footer className="cpd-footer"><b>Churvox</b><span>Quote prepared. Customer reviews. Owner stays in control.</span></footer>
+    </article>
+  </main>
+);
 }

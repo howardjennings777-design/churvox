@@ -32,3 +32,116 @@
 .cpd-footer { display: flex; justify-content: space-between; gap: 16px; padding: 20px clamp(20px, 4vw, 42px) 32px; color: rgba(17, 24, 39, 0.58); font-weight: 800; }
 @media (max-width: 820px) { .cpd-head, .cpd-grid { grid-template-columns: 1fr; } .cpd-actions { border-radius: 24px; } .cpd-actions b, .cpd-actions button, .cpd-actions a, .cpd-actions span { width: 100%; text-align: center; } .cpd-line-table, .cpd-line-table tbody, .cpd-line-table tr, .cpd-line-table td { display: block; width: 100%; } .cpd-line-table thead { display: none; } .cpd-line-table tr { margin-bottom: 12px; border-radius: 18px; background: rgba(17,24,39,.045); overflow: hidden; } .cpd-line-table td { background: transparent; border-radius: 0 !important; text-align: left !important; padding: 8px 12px; } .cpd-line-table td:nth-child(2)::before { content: "Qty: "; font-weight: 950; } .cpd-line-table td:nth-child(3)::before { content: "Rate: "; font-weight: 950; } .cpd-line-table td:nth-child(4)::before { content: "Total: "; font-weight: 950; } .cpd-footer { flex-direction: column; } }
 @media print { .cpd-actions { display: none !important; } .cpd-shell { padding: 0; background: #fff !important; } .cpd-document { box-shadow: none; border-radius: 0; border: 0; } }
+
+/* CHURVOX_PUBLIC_QUOTE_APPROVAL_POLISH_20260621 */
+.cpd-quote-shell {
+  background:
+    radial-gradient(circle at 92% -15%, rgba(249, 115, 22, .20), transparent 32%),
+    linear-gradient(180deg, #fff7ed 0%, #f8fafc 100%) !important;
+}
+
+.cpd-quote-actions .cpd-accept,
+.cpd-quote-bottom-actions .cpd-accept {
+  background: #16a34a !important;
+  color: #052e16 !important;
+  -webkit-text-fill-color: #052e16 !important;
+}
+
+.cpd-quote-actions .cpd-decline,
+.cpd-secondary-action {
+  background: #fff !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+}
+
+.cpd-quote-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+.cpd-quote-approval-card {
+  border: 1px solid rgba(255, 255, 255, .14) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, .08) !important;
+  padding: 18px !important;
+  display: grid !important;
+  align-content: center !important;
+}
+
+.cpd-quote-approval-card span {
+  display: inline-flex !important;
+  width: max-content !important;
+  border-radius: 999px !important;
+  background: rgba(249, 115, 22, .18) !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+  text-transform: uppercase !important;
+}
+
+.cpd-quote-approval-card b {
+  display: block !important;
+  margin-top: 10px !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: 22px !important;
+  font-weight: 1000 !important;
+}
+
+.cpd-quote-approval-card strong {
+  display: block !important;
+  margin-top: 8px !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+  font-size: clamp(34px, 5vw, 58px) !important;
+  line-height: .9 !important;
+  letter-spacing: -.06em !important;
+  font-weight: 1000 !important;
+}
+
+.cpd-quote-approval-card p {
+  margin: 10px 0 0 !important;
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.cpd-quote-bottom-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin-top: 16px !important;
+}
+
+.cpd-quote-bottom-actions button,
+.cpd-secondary-action {
+  border-radius: 16px !important;
+  min-height: 48px !important;
+  padding: 0 16px !important;
+  font-size: 14px !important;
+  font-weight: 1000 !important;
+  cursor: pointer !important;
+}
+
+.cpd-quote-bottom-actions button:disabled,
+.cpd-quote-actions button:disabled {
+  opacity: .55 !important;
+  cursor: not-allowed !important;
+}
+
+@media (max-width: 820px) {
+  .cpd-quote-head {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cpd-quote-bottom-actions {
+    display: grid !important;
+  }
+}
