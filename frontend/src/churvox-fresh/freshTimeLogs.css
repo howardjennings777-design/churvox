@@ -337,3 +337,122 @@
     display: grid;
   }
 }
+
+/* CHURVOX_TIME_EMPTY_STATE_POLISH_20260621 */
+.freshTimeEmptyHero {
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-left: 7px solid #f97316;
+  border-radius: 28px;
+  background: rgba(255, 250, 240, .92);
+  box-shadow: 0 18px 48px rgba(2, 6, 23, .08);
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.freshTimeEmptyHero > div:first-child > span {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.freshTimeEmptyHero h2 {
+  margin: 10px 0 6px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: .95;
+  letter-spacing: -.06em;
+  font-weight: 1000;
+}
+
+.freshTimeEmptyHero p {
+  margin: 0;
+  max-width: 780px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshTimeEmptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.freshTimeEmptyActions button {
+  border: 0;
+  border-radius: 15px;
+  min-height: 42px;
+  padding: 0 14px;
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshTimeEmptyActions button:first-child {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshTimeEmptySteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshTimeEmptySteps section {
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 13px;
+}
+
+.freshTimeEmptySteps b {
+  width: 25px;
+  height: 25px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f97316;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.freshTimeEmptySteps span {
+  display: block;
+  margin-top: 8px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-weight: 1000;
+}
+
+.freshTimeEmptySteps small {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .freshTimeEmptySteps {
+    grid-template-columns: 1fr;
+  }
+}

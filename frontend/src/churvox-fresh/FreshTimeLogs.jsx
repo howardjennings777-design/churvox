@@ -310,7 +310,7 @@ export default function FreshTimeLogs({ onNavigate }) {
         <div>
           <span>Time sheets</span>
           <h1>Approve worker time before payroll</h1>
-          <p>Live job time appears here for owner review. Approved time feeds the payroll review workspace; Churvox keeps tax filing outside Churvox or payment files.</p>
+          <p>Live job time appears here for owner review. Approved time feeds the payroll review workspace. Churvox does not file tax or create payment files.</p>
         </div>
 
         <div className="freshTimeStats">
@@ -322,6 +322,28 @@ export default function FreshTimeLogs({ onNavigate }) {
       </div>
 
       {error && <div className="freshXeroNotice need"><b>Time sheets need attention</b><span>{error}</span></div>}
+
+      {!loading && !allItems.length ? (
+        <section className="freshTimeEmptyHero">
+          <div>
+            <span>Start here</span>
+            <h2>No captured time yet</h2>
+            <p>Worker clock-ins, job timers and approved job hours will appear here before payroll. Nothing goes to tax or bank files from Churvox.</p>
+          </div>
+
+          <div className="freshTimeEmptyActions">
+            <button type="button" onClick={() => onNavigate?.("workercommand")}>Open Worker View</button>
+            <button type="button" onClick={() => onNavigate?.("jobs")}>Open Jobs</button>
+            <button type="button" onClick={addLog}>Add manual review row</button>
+          </div>
+
+          <div className="freshTimeEmptySteps">
+            <section><b>1</b><span>Worker clocks in</span><small>Live worker time or job time is captured.</small></section>
+            <section><b>2</b><span>Owner reviews</span><small>Approve, edit, block, or send to Command.</small></section>
+            <section><b>3</b><span>Payroll review</span><small>Approved time feeds payroll review only.</small></section>
+          </div>
+        </section>
+      ) : null}
 
       <div className="freshTimeLayout">
         <aside className="freshTimeList">
