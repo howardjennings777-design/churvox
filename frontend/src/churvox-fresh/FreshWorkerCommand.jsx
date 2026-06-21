@@ -268,6 +268,58 @@ function jobSiteMapUrl(job) {
   return address && address !== "No address" ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : "";
 }
 
+
+function jobSitePoint(job) {
+  if (!job) return null;
+  const lat = Number(pick(job, "site_lat", "job_lat", "job_site_lat", "service_lat", "latitude", "lat"));
+  const lng = Number(pick(job, "site_lng", "job_lng", "job_site_lng", "service_lng", "longitude", "lng"));
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+  return null;
+}
+
+function distanceMeters(pointA, pointB) {
+  if (!pointA || !pointB) return null;
+
+  const earthRadius = 6371000;
+  const toRad = (value) => (Number(value) * Math.PI) / 180;
+
+  const lat1 = toRad(pointA.lat);
+  const lat2 = toRad(pointB.lat);
+  const dLat = toRad(pointB.lat - pointA.lat);
+  const dLng = toRad(pointB.lng - pointA.lng);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function workerJobDistanceWarning(worker, job) {
+  if (!worker || !job) return "";
+
+  const workerPoint = gpsPoint(worker);
+  const sitePoint = jobSitePoint(job);
+
+  // Only warn when both sides have real coordinates.
+  // If a job only has an address, do not guess and create false panic.
+  if (!workerPoint || !sitePoint) return "";
+
+  const distance = distanceMeters(workerPoint, sitePoint);
+  if (!Number.isFinite(distance)) return "";
+
+  if (distance >= 250) {
+    return `Off-site warning: worker GPS is about ${Math.round(distance)}m from the job site.`;
+  }
+
+  if (distance >= 120) {
+    return `GPS check: worker appears about ${Math.round(distance)}m from the job site.`;
+  }
+
+  return "";
+}
+
 function actionText(job) {
   const status = statusOf(job);
   if (!isAcknowledged(job)) return "Acknowledge";
@@ -481,6 +533,8 @@ function buildWorkerView(worker, jobs) {
 
   if (clockStatus(worker) === "Not clocked in" && todayJobs.length) alerts.push("Jobs assigned but not clocked in yet.");
   if (!gpsPoint(worker)) alerts.push("No GPS coordinates recorded yet.");
+  const distanceWarning = workerJobDistanceWarning(worker, currentJob);
+  if (distanceWarning) alerts.push(distanceWarning);
   if (todayJobs.some((job) => !isComplete(job) && !pick(job, "acknowledged_at", "worker_acknowledged_at"))) alerts.push("One or more jobs still need acknowledgement.");
   if (todayJobs.some((job) => isComplete(job) && photosForJob(job).length === 0)) alerts.push("Finished jobs may need completion photos.");
 
