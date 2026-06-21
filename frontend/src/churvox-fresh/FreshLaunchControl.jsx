@@ -112,8 +112,16 @@ function statusRank(status) {
   return 3;
 }
 
-function autoStatus(ok, testNeeded = false) {
-  return ok ? (testNeeded ? "Needs check" : "Ready") : "Needs attention";
+function autoStatus(ok, checkNeeded = false) {
+  return ok ? (checkNeeded ? "Needs check" : "Ready") : "Needs attention";
+}
+
+function displayLaunchStatus(status) {
+  return String(status || "").replace(/Needs test/gi, "Needs check").replace(/test/gi, "check");
+}
+
+function statusClass(status) {
+  return displayLaunchStatus(status).toLowerCase().replace(/\s+/g, "-");
 }
 
 function buildChecks(data, settings, manual) {
@@ -165,7 +173,7 @@ function buildChecks(data, settings, manual) {
       id: "team",
       group: "Team",
       area: "Team / workers",
-      check: "At least one worker exists for assignment and field testing.",
+      check: "At least one worker exists for assignment and field checking.",
       status: autoStatus(workers.length > 0, true),
       page: "team",
       proof: `${workers.length} worker records.`,
@@ -192,7 +200,7 @@ function buildChecks(data, settings, manual) {
       id: "quote-flow",
       group: "Money",
       area: "Quote workflow",
-      check: "Create a quote from a request/client and test the public quote link.",
+      check: "Create a quote from a request/client and check the public quote link.",
       status: autoStatus(quotes.length > 0, true),
       page: "quotes",
       proof: `${quotes.length} quotes available.`,
@@ -258,7 +266,7 @@ function buildChecks(data, settings, manual) {
       check: "Phone/tablet hard refresh, tap checks, text visibility and core workflows pass.",
       status: manual.mobile || "Needs check",
       page: "today",
-      proof: "Manual device test still matters before paid launch.",
+      proof: "Manual device check still matters before paid launch.",
     },
     {
       id: "billing",
@@ -288,13 +296,13 @@ function sendLaunchControlToCommand(items, onNavigate) {
       group: "Launch Readiness",
       area: "Launch Readiness",
       page: "launchcontrol",
-      title: blocked.length ? "Launch blocked" : attention.length ? "Launch needs fixes" : needs.length ? "Launch needs final tests" : "Launch looks ready",
-      info: `${blocked.length} blocked · ${attention.length} attention · ${needs.length} tests`,
+      title: blocked.length ? "Launch blocked" : attention.length ? "Launch needs fixes" : needs.length ? "Launch needs final checks" : "Launch looks ready",
+      info: `${blocked.length} blocked · ${attention.length} attention · ${needs.length} checks`,
       urgency: blocked.length ? "High" : attention.length ? "Medium" : needs.length ? "Medium" : "Low",
       found: [...blocked, ...attention].length ? [...blocked, ...attention].map((item) => `${item.area}: ${item.proof}`).join(" | ") : "No hard launch blockers marked.",
       prepared: needs.length ? `Check next: ${needs.map((item) => item.area).join(", ")}` : "Controlled beta can start when owner is comfortable.",
       why: "Launch should be decided from core workflow readiness, not page count.",
-      owner: "Fix blockers, test needs, then approve a controlled beta.",
+      owner: "Fix blockers, check needs, then approve a controlled beta.",
       fromInbox: true,
       createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
@@ -422,9 +430,9 @@ export default function FreshLaunchControl({ onNavigate }) {
 
       <div className="freshLaunchControlBoard">
         {items.map((item) => (
-          <article key={item.id} className={`freshLaunchControlCard ${item.status.toLowerCase().replace(/\s+/g, "-")}`}>
+          <article key={item.id} className={`freshLaunchControlCard ${statusClass(item.status)}`}>
             <header>
-              <span>{item.status}</span>
+              <span>{displayLaunchStatus(item.status)}</span>
               <small>{item.group}</small>
               <h2>{item.area}</h2>
             </header>
@@ -437,7 +445,7 @@ export default function FreshLaunchControl({ onNavigate }) {
             </div>
 
             <div className="freshLaunchControlControls">
-              <select value={item.status} onChange={(event) => updateStatus(item.id, event.target.value)}>
+              <select value={displayLaunchStatus(item.status)} onChange={(event) => updateStatus(item.id, displayLaunchStatus(event.target.value))}>
                 <option>Ready</option>
                 <option>Needs check</option>
                 <option>Needs attention</option>

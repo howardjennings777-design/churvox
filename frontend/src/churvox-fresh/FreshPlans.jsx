@@ -5,7 +5,7 @@ import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { COUNTRY_OPTIONS, addonPriceForCountry, detectCountryCode, getCountryMeta, normalizeCountry, pricePlanForCountry } from "../config/churvoxPlans";
 
-const CHECKOUT_TRACE_MARKER = "stable-current-plan-v40";
+const CHECKOUT_TRACE_MARKER = "stable-current-plan-auth-recover-v41";
 const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
 const PLAN_CACHE_KEY = "churvox:stable-current-plan:v1";
 const COUNTRY_CACHE_KEY = "churvox:billing-country";
