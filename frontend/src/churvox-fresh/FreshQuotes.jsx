@@ -158,6 +158,70 @@ export default function FreshQuotes({ onNavigate }) {
     setQuotePopupOpen(true);
   }
 
+  function sendSelectedQuoteToCommand() {
+    if (!selected) return;
+
+    const reviewKey = "churvox:review-inbox:v1";
+    const item = {
+      id: `quote-review-${selected.id}-${Date.now()}`,
+      title: `Quote follow-up: ${selected.title}`,
+      category: "money",
+      type: "quote",
+      summary: selected.status === "Sent"
+        ? "Quote has been sent and may need a follow-up."
+        : selected.status === "Accepted"
+          ? "Quote accepted — ready to convert into a job."
+          : "Owner review needed for this quote.",
+      source: "Quotes",
+      status: "open",
+      createdAt: new Date().toLocaleString("en-NZ", { day: "2-digit", month: "short", hour: "numeric", minute: "2-digit" }),
+      details: {
+        "What Churvox found": `${selected.title} for ${selected.client}`,
+        "Quote status": selected.status,
+        "Value": money(selected.amount),
+        "Next action": selected.followUp,
+        "Owner note": selected.note || "No notes yet",
+        "Why it needs approval": "Quote follow-ups and customer messages should be reviewed by the owner first."
+      }
+    };
+
+    try {
+      const current = JSON.parse(window.localStorage.getItem(reviewKey) || "[]");
+      window.localStorage.setItem(reviewKey, JSON.stringify([item, ...current].slice(0, 80)));
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "review-tray", source: "quotes" } }));
+    } catch {}
+
+    onNavigate?.("command");
+  }
+
+  function convertSelectedQuoteToJob() {
+    if (!selected) return;
+    try {
+      window.localStorage.setItem("churvox:selected-quote-for-job", JSON.stringify({
+        id: selected.id,
+        title: selected.title,
+        client: selected.client,
+        amount: selected.amount,
+        note: selected.note,
+        lines: selected.lines,
+      }));
+    } catch {}
+
+    onNavigate?.("jobs");
+    window.setTimeout(() => {
+      try {
+        window.dispatchEvent(new CustomEvent("churvox:open-job-popup", {
+          detail: {
+            source: "quote",
+            quote: selected,
+            instruction: `Create job from accepted quote: ${selected.title}`,
+          },
+        }));
+      } catch {}
+    }, 200);
+  }
+
+
   const filterPillStyle = (active) => active ? {
     background: "#111827",
     borderColor: "#111827",
@@ -179,7 +243,7 @@ export default function FreshQuotes({ onNavigate }) {
   } : undefined;
 
   return (
-    <section>
+    <section className="freshQuotesPage">
       <header className="freshHero">
         <span>Churvox fresh · Quotes</span>
         <h1>Quotes</h1>
@@ -260,50 +324,57 @@ export default function FreshQuotes({ onNavigate }) {
           ) : null}
         </aside>
 
-        <section className="freshCard">
-          <h2>{selected?.title || "Select quote"}</h2>
+<section className="freshCard freshQuotesDetailCard">
+  <div className="freshJobsDetailHeader">
+    <div>
+      <small>Selected quote</small>
+      <h2>{selected?.title || "Select quote"}</h2>
+    </div>
+    {selected ? <span className={selected.status === "Accepted" ? "ready" : selected.status === "Sent" ? "need" : ""}>{selected.status}</span> : null}
+  </div>
 
-          {selected ? (
-            <>
-              <div className="freshMiniGrid">
-                <div><span>Quote</span><b>{selected.id}</b></div>
-                <div><span>Status</span><b>{selected.status}</b></div>
-                <div><span>Client</span><b>{selected.client}</b></div>
-                <div><span>Amount</span><b>{money(selected.amount)}</b></div>
-              </div>
+  {selected ? (
+    <>
+      <div className="freshMiniGrid freshJobsMiniGrid">
+        <div><span>Quote</span><b>{selected.id}</b></div>
+        <div><span>Status</span><b>{selected.status}</b></div>
+        <div><span>Client</span><b>{selected.client}</b></div>
+        <div><span>Value</span><b>{money(selected.amount)}</b></div>
+      </div>
 
-              <div className={`freshQuoteStatus ${selected.status.toLowerCase()}`}>
-                <b>{selected.age}</b>
-                <span>{selected.followUp}</span>
-              </div>
+      <section className={`freshQuoteNextBox ${selected.status.toLowerCase()}`}>
+        <span>Next owner move</span>
+        <b>{selected.followUp}</b>
+        <p>{selected.status === "Sent" ? "Check if this needs a follow-up before the customer goes cold." : selected.status === "Accepted" ? "This can become a job once the owner is ready." : "Review the quote details before sending."}</p>
+      </section>
 
-              <div className="freshQuoteLines">
-                {selected.lines.map((line, index) => (
-                  <div key={`${selected.id}-${index}`}>
-                    <span>{String(line)}</span>
-                  </div>
-                ))}
-              </div>
+      <section className="freshJobsDetailBox notes">
+        <span>Quote lines</span>
+        {selected.lines.map((line, index) => <p key={`${selected.id}-${index}`}>{String(line)}</p>)}
+      </section>
 
-              <label className="freshField">
-                <span>Owner quote note</span>
-                <textarea value={selected.note} readOnly />
-              </label>
-            </>
-          ) : (
-            <div className="freshItem">
-              <b>No quote selected</b>
-              <span>Create a quote to see the connected detail record.</span>
-            </div>
-          )}
-        </section>
+      <section className="freshJobsDetailBox notes">
+        <span>Owner quote note</span>
+        <p>{selected.note}</p>
+      </section>
+    </>
+  ) : (
+    <div className="freshEmptyStateBig">
+      <b>No quote selected</b>
+      <span>Create a quote, send it to a customer, then track accepted/declined work here.</span>
+      <button type="button" className="freshPrimary" onClick={openQuotePopup}>Create first quote</button>
+    </div>
+  )}
+</section>
 
-        <aside className="freshCard">
+<aside className="freshCard freshQuotesActionsCard">
           <h2>Owner actions</h2>
-          <div className="freshActions">
+          <p className="freshJobsActionHint">Use these for the selected quote. Nothing contacts the customer unless you approve it.</p>
+          <div className="freshActions freshJobsActionStack">
             <button className="freshPrimary" type="button" onClick={openQuotePopup}>New quote</button>
-            <button className="freshPrimary" type="button" onClick={loadQuotes}>Refresh quotes</button>
-            <button className="freshGhost" type="button" onClick={() => onNavigate?.("command")}>Send follow-up to Command</button>
+            <button className="freshOrange" type="button" disabled={!selected || selected.status !== "Accepted"} onClick={convertSelectedQuoteToJob}>Convert to job</button>
+            <button className="freshDark" type="button" disabled={!selected} onClick={sendSelectedQuoteToCommand}>Send selected to Command</button>
+            <button className="freshGhost" type="button" onClick={loadQuotes}>Refresh quotes</button>
           </div>
         </aside>
       </section>
