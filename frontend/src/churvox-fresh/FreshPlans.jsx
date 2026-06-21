@@ -318,7 +318,7 @@ export default function FreshPlans({ onNavigate }) {
       </header>
 
       <section className="freshPlanNotice proper freshPlanNoticeV2"><b>14-day trial</b><span>Start testing Churvox with real jobs, clients, quotes and invoices. Billing actions stay owner-approved.</span></section>
-      <section className="freshPlanNotice proper freshPlanNoticeV2"><b>Safe money rules</b><span>Invoices stay draft-only until approved. Accounting sync is owner-approved. Churvox keeps invoices approval-only, mark paid, file tax or create payment files.</span></section>
+      <section className="freshPlanNotice proper freshPlanNoticeV2"><b>Safe money rules</b><span>Invoices stay draft-only until approved. Accounting sync is owner-approved. Churvox keeps invoices approval-only, mark paid, keep tax filing outside Churvox or create payment files.</span></section>
 
       {error && !/not authenticated|401|403/i.test(error) && <section className="freshCard freshNotice need"><b>Plans need attention</b><span>{error}</span></section>}
 

@@ -81,7 +81,7 @@ function sendXeroToCommand({ status, invoice, syncResult, message }) {
       found: `Xero configured: ${configured ? "yes" : "no"}. Add-on active: ${addonActive ? "yes" : "no"}. Connected: ${connected ? "yes" : "no"}. Latest invoice: ${invoiceText}.`,
       prepared: syncResult?.success ? "Churvox created a Xero draft invoice only. It was not sent to the customer and was not marked paid automatically." : "Churvox prepared an owner accounting sync check before any draft invoice sync.",
       why: message || "Accounting sync should be the final controlled step after invoice/payment review.",
-      owner: "Open Xero, review the draft invoice, then send or reconcile inside Xero if correct. Churvox does not file tax or create payment files.",
+      owner: "Open Xero, review the draft invoice, then send or reconcile inside Xero if correct. Churvox does not keep tax filing outside Churvox or create payment files.",
       payload: {
         tenant,
         invoice: invoiceText,
