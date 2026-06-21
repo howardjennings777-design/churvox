@@ -497,9 +497,12 @@ function sortLiveWorkers(list) {
 function preferredWorkerId(list, currentId = "") {
   const ordered = sortLiveWorkers(list);
   const current = ordered.find((worker, index) => idOf(worker, `worker-${index}`) === currentId);
-  const active = ordered.find(isLiveActiveWorker);
-  if (active && (!current || !isLiveActiveWorker(current))) return idOf(active);
+
+  // Respect owner choice. If they clicked a worker, do not jump back to the live worker
+  // on every auto-refresh. Only auto-pick the active worker when nothing is selected yet.
   if (current) return currentId;
+
+  const active = ordered.find(isLiveActiveWorker);
   return idOf(active || ordered[0] || "");
 }
 
@@ -567,7 +570,9 @@ export default function FreshWorkerCommand() {
   const { get } = useApi();
   const [workers, setWorkers] = React.useState([]);
   const [jobs, setJobs] = React.useState([]);
-  const [selectedId, setSelectedId] = React.useState("");
+  const [selectedId, setSelectedId] = React.useState(() => {
+    try { return window.localStorage.getItem("churvox:owner-worker-view-selected") || ""; } catch { return ""; }
+  });
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [autoRefresh, setAutoRefresh] = React.useState(true);
@@ -641,7 +646,11 @@ export default function FreshWorkerCommand() {
       const ordered = sortLiveWorkers(nextWorkers);
       setWorkers(ordered);
       setJobs(nextJobs);
-      setSelectedId((current) => preferredWorkerId(ordered, current));
+      setSelectedId((current) => {
+        const next = preferredWorkerId(ordered, current);
+        try { if (next) window.localStorage.setItem("churvox:owner-worker-view-selected", next); } catch {}
+        return next;
+      });
       if (!nextWorkers.length && lastWorkerError) setError(lastWorkerError);
       setLastUpdated(new Date());
     } finally {
