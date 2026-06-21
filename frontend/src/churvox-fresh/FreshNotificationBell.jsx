@@ -24,6 +24,16 @@ function bodyOf(item) {
   return item?.message || item?.body || item?.text || item?.description || "";
 }
 
+function iconOf(item) {
+  const type = String(item?.type || item?.event_type || "").toLowerCase();
+  if (type.includes("customer") || type.includes("request")) return "RQ";
+  if (type.includes("quote")) return "QT";
+  if (type.includes("invoice") || type.includes("payment")) return "IV";
+  if (type.includes("worker") || type.includes("shift") || type.includes("time")) return "TS";
+  if (type.includes("xero") || type.includes("myob")) return "XE";
+  return "AI";
+}
+
 function routeOf(item) {
   return item?.route || item?.target_route || item?.url || "";
 }
@@ -129,6 +139,7 @@ export default function FreshNotificationBell() {
 
             {items.map((item) => (
               <button key={idOf(item) || `${titleOf(item)}-${item?.created_at}`} type="button" className={isUnread(item) ? "unread" : ""} onClick={() => openNotification(item)}>
+                <em>{iconOf(item)}</em>
                 <span>{titleOf(item)}</span>
                 <b>{bodyOf(item) || "Open notification"}</b>
                 <small>{timeAgo(item?.created_at || item?.createdAt || item?.updated_at)}</small>

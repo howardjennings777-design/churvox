@@ -6686,7 +6686,69 @@ def _cv_shift_row(doc: dict):
 
     hours = round(seconds / 3600, 2)
 
-    return {
+    
+    # CHURVOX_SYNTHETIC_NOTIFY_EVENTS_20260621
+    # Add a few current business events to the bell without changing the underlying records.
+    try:
+        synthetic = []
+        business_id = str((locals().get("current_user") or {}).get("business_id") or (locals().get("current_user") or {}).get("id") or "")
+        owner_email = str((locals().get("current_user") or {}).get("email") or "").lower()
+
+        try:
+            cursor = db.customer_requests.find({
+                "$or": [{"business_id": business_id}, {"owner_email": owner_email}],
+                "status": {"$in": ["New", "Needs info", "Ready"]},
+            }).sort("created_at", -1).limit(5)
+            async for req in cursor:
+                synthetic.append({
+                    "id": f"request-{req.get('_id')}",
+                    "title": "New customer request",
+                    "message": f"{req.get('customer_name') or 'Customer'}: {req.get('service_needed') or 'Work request'}",
+                    "type": "customer_request",
+                    "route": "/dashboard#leads",
+                    "read": False,
+                    "is_read": False,
+                    "created_at": req.get("created_at"),
+                })
+        except Exception:
+            pass
+
+        try:
+            cursor = db.worker_shift_records.find({
+                "business_id": business_id,
+                "review_status": "Needs review",
+            }).sort("clock_out_at", -1).limit(5)
+            async for row in cursor:
+                synthetic.append({
+                    "id": f"shift-{row.get('_id')}",
+                    "title": "Worker time ready",
+                    "message": f"{row.get('worker_name') or 'Worker'} clocked out. Review time sheet.",
+                    "type": "worker_clock_out",
+                    "route": "/dashboard#time",
+                    "read": False,
+                    "is_read": False,
+                    "created_at": row.get("clock_out_at") or row.get("updated_at"),
+                })
+        except Exception:
+            pass
+
+        try:
+            existing_items = locals().get("items") or locals().get("notifications") or []
+            if isinstance(existing_items, list):
+                seen_ids = {str(item.get("id") or item.get("_id") or "") for item in existing_items if isinstance(item, dict)}
+                for event in synthetic:
+                    if str(event.get("id")) not in seen_ids:
+                        existing_items.insert(0, event)
+                if "items" in locals():
+                    items = existing_items[: int(locals().get("limit") or 20)]
+                elif "notifications" in locals():
+                    notifications = existing_items[: int(locals().get("limit") or 20)]
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+return {
         "id": str(doc.get("_id") or doc.get("id") or ""),
         "worker_id": str(doc.get("worker_id") or ""),
         "worker": doc.get("worker_name") or "Worker",
@@ -6816,6 +6878,18 @@ async def worker_shift_clock_out(payload: dict = Body(default_factory=dict), cur
         "gps_tracking_enabled": False,
         "updated_at": now,
     })
+
+    try:
+        await cv_notify_owner_event(
+            business_id=business_id,
+            title="Worker clocked out",
+            message=f"{shift.get('worker_name') or 'Worker'} clocked out. Time sheet is ready for review.",
+            event_type="worker_clock_out",
+            route="/dashboard#time",
+            source_id=str(shift.get("_id") or ""),
+        )
+    except Exception:
+        pass
 
     return {
         "success": True,
@@ -6996,6 +7070,44 @@ async def update_customer_request(request_id: str, payload: dict = Body(default_
 
     result = await db.customer_requests.update_one(query, {"$set": updates})
     return {"success": True, "updated": result.modified_count}
+
+
+
+
+# =========================
+# CHURVOX OWNER NOTIFICATION EVENTS
+# Bell events are owner-facing only. They do not approve, send, pay, file tax, or sync anything automatically.
+# =========================
+
+async def cv_notify_owner_event(
+    *,
+    business_id: str = "",
+    owner_email: str = "",
+    title: str = "Churvox update",
+    message: str = "",
+    event_type: str = "general",
+    route: str = "/dashboard#command",
+    source_id: str = "",
+):
+    try:
+        now = datetime.now(timezone.utc)
+        doc = {
+            "business_id": str(business_id or ""),
+            "owner_email": str(owner_email or "").lower(),
+            "title": str(title or "Churvox update"),
+            "message": str(message or ""),
+            "type": str(event_type or "general"),
+            "route": str(route or "/dashboard#command"),
+            "source_id": str(source_id or ""),
+            "read": False,
+            "is_read": False,
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.notifications.insert_one(doc)
+    except Exception:
+        # Notifications must never block the main business action.
+        pass
 
 
 # =========================
