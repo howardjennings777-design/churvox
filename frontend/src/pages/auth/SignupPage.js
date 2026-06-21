@@ -104,7 +104,7 @@ export default function SignupPage() {
         <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
           <p className="cvPublicAuthKicker">Create account</p>
           <h1>Start your Churvox trial.</h1>
-          <p className="cvPublicAuthIntro">Create your account first, then choose a plan and add card details in Stripe to start the 14-day trial.</p>
+          <p className="cvPublicAuthIntro">Create your account first. Next you choose Start, Crew, Operator or Command, then Stripe starts the 14-day trial for that plan.</p>
           {error ? <p className="cvPublicAuthError">{error}</p> : null}
           <label>Full name<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="name" autoComplete="name" placeholder="Your name" required /></label>
           <label>Email<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="hello@churvox.com" required /></label>
@@ -115,7 +115,7 @@ export default function SignupPage() {
           <button className="cvPublicAuthSubmit" type="submit" disabled={loading}>{loading ? "Creating account..." : "Create account and choose plan"}</button>
           <p className="cvPublicAuthBottom">Already have an account? <Link to="/login">Sign in</Link></p>
         </form>
-        <aside className="cvPublicAuthPanel"><p>Choose your plan after signup</p><h2>Pick Start, Crew, Operator or Command before entering the app.</h2><ul><li>14-day Stripe trial with card details</li><li>Your plan controls which features are available</li><li>After choosing, Churvox opens the setup guide</li></ul></aside>
+        <aside className="cvPublicAuthPanel"><p>Plan first, then trial</p><h2>Pick Start, Crew, Operator or Command before entering the app.</h2><ul><li>Create the account first</li><li>Choose the plan that matches your business</li><li>Stripe starts the 14-day trial for that chosen plan</li><li>After checkout, Churvox opens the setup guide</li></ul></aside>
       </section>
     </main>
   );
