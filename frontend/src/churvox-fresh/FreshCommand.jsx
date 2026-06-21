@@ -1,4 +1,5 @@
 import React from "react";
+import { useApi } from "../hooks/useApi";
 import { readFreshFocus } from "./freshFocus";
 import "./freshPayrollCompact.css";
 
@@ -166,6 +167,16 @@ function money(value) {
   return `$${Number(value || 0).toFixed(0)}`;
 }
 
+function reviewListFrom(payload) {
+  const data = payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.review_items)) return data.review_items;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
 function buildRiskScanIssues() {
   const jobs = readFreshRiskList("churvox:fresh-jobs:v1");
   const clients = readFreshRiskList("churvox:fresh-clients:v1");
@@ -303,12 +314,47 @@ const selectedFilterCountStyle = {
 };
 
 export default function FreshCommand({ onNavigate }) {
+  const { get } = useApi();
+  const [backendReviewItems, setBackendReviewItems] = React.useState([]);
+  const [backendReviewStatus, setBackendReviewStatus] = React.useState("Checking backend Review.");
   const [boxes, setBoxes] = React.useState(loadCommandBoxes);
   const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("command", null));
   const [activity, setActivity] = React.useState(loadCommandActivity);
   const [filter, setFilter] = React.useState("Pending");
 
   const selected = boxes.find((box) => box.id === selectedId);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function loadBackendReviewItems() {
+      try {
+        const result = await get("/ai-review-items?limit=20");
+        if (cancelled) return;
+
+        if (result?.success === false) {
+          setBackendReviewStatus("Backend Review is protected or not ready.");
+          setBackendReviewItems([]);
+          return;
+        }
+
+        const rows = reviewListFrom(result);
+        setBackendReviewItems(rows);
+        setBackendReviewStatus(rows.length ? `${rows.length} backend Review item${rows.length === 1 ? "" : "s"} ready.` : "Backend Review checked. No open Review items right now.");
+      } catch {
+        if (!cancelled) {
+          setBackendReviewStatus("Backend Review is protected or not ready.");
+          setBackendReviewItems([]);
+        }
+      }
+    }
+
+    loadBackendReviewItems();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [get]);
 
 
   React.useEffect(() => {
@@ -460,6 +506,33 @@ export default function FreshCommand({ onNavigate }) {
           <p>Money watched</p>
         </aside>
       </section>
+
+      <section className="freshBackendReviewSource" data-review-source="backend">
+        <div>
+          <span>Backend-owned Review only</span>
+          <h2>Approve what Churvox AI prepared</h2>
+          <p>
+            Command can show owner decisions, but AI Review items come from the backend Review list.
+            Nothing is created from a local shortcut and nothing runs until the owner approves.
+          </p>
+        </div>
+
+        <aside>
+          <b>{backendReviewItems.length}</b>
+          <small>{backendReviewStatus}</small>
+        </aside>
+      </section>
+
+      {backendReviewItems.length ? (
+        <section className="freshBackendReviewList" aria-label="Backend Review items">
+          {backendReviewItems.slice(0, 4).map((item, index) => (
+            <article key={item.id || item._id || index}>
+              <b>{item.title || item.summary || item.type || "Backend Review item"}</b>
+              <span>{item.message || item.description || item.status || "Waiting for owner approval."}</span>
+            </article>
+          ))}
+        </section>
+      ) : null}
 
 
       <section className="freshCommandFilterBar">
