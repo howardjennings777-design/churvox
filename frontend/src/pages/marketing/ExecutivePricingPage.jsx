@@ -43,6 +43,20 @@ const safety = [
   ["Trial first", "Start with the plan that fits, test the workflow, then keep or upgrade when it makes sense."],
 ];
 
+const buyerProof = [
+  ["No card upfront", "Start the 14-day trial before committing."],
+  ["Clear upgrade path", "Start, Crew, Operator and Command match how much admin help you need."],
+  ["Owner control", "Churvox prepares admin work, but you approve important actions."],
+  ["Accounting options", "Add Xero/MYOB sync where available, or use export packs as the safe fallback."],
+];
+
+const planCompare = [
+  ["Start", "Solo operator", "Core jobs, clients, quotes and invoices"],
+  ["Crew", "Small team", "Assign work, track time and keep workers clear"],
+  ["Operator", "Growing owner", "AI Operator Actions prepared for approval"],
+  ["Command", "Larger operation", "Accounting sync included, payroll workspace and higher control"],
+];
+
 export default function ExecutivePricingPage() {
   const [country, setCountry] = React.useState(() => {
     try {
@@ -64,7 +78,7 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="simplePublic" data-version="CHURVOX_PRICING_STRONGER_20260622">
+    <main className="simplePublic" data-version="CHURVOX_PRICING_TRUST_STRONGER_20260622">
       <Nav />
 
       <section className="simpleHero">
@@ -103,6 +117,17 @@ export default function ExecutivePricingPage() {
         </aside>
       </section>
 
+      <section className="simpleBand simpleTrustBand">
+        <span className="simpleSectionLabel">Before checkout</span>
+        <h2>Start safe. Upgrade when the admin gets heavier.</h2>
+        <p className="simpleLead">
+          Churvox pricing is built around how much of the business you want connected: core workflow first, then team control, then owner-approved AI admin, then Command-level operations.
+        </p>
+        <div className="simpleGrid">
+          {buyerProof.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
+        </div>
+      </section>
+
       <section className="simpleBand">
         <h2>Which plan fits?</h2>
         <div className="simpleGrid">
@@ -112,6 +137,25 @@ export default function ExecutivePricingPage() {
               <b>{title}</b>
               <span>{text}</span>
             </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="simpleBand simpleCompareBand">
+        <span className="simpleSectionLabel">Quick comparison</span>
+        <h2>Choose by how you work.</h2>
+        <div className="simpleCompareTable simplePlanCompare" role="table" aria-label="Churvox plan comparison">
+          <div role="row" className="simpleCompareHead">
+            <b role="columnheader">Plan</b>
+            <b role="columnheader">Best for</b>
+            <b role="columnheader">Main job</b>
+          </div>
+          {planCompare.map(([plan, best, main]) => (
+            <div role="row" key={plan} className={plan === "Operator" ? "simpleCompareFeatured" : ""}>
+              <span role="cell">{plan}</span>
+              <span role="cell">{best}</span>
+              <span role="cell">{main}</span>
+            </div>
           ))}
         </div>
       </section>
