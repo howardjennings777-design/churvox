@@ -338,7 +338,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
               <section className="freshNavGroup" key={group.title}>
                 <p>{group.title}</p>
                 {group.items.map(([key, mark, label]) => (
-                  <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}>
+                  <button key={key} type="button" aria-label={label} title={label} className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}>
                     <i>{mark}</i>
                     <span>{label}</span>
                   </button>
@@ -349,13 +349,13 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
             {safeMoreItems.length ? (
               <section className="freshNavGroup freshNavMoreGroup">
                 <details className="freshNavMore" open={moreHasActiveItem}>
-                  <summary>
+                  <summary aria-label="More tools" title="More tools">
                     <span>More tools</span>
                     <small>{safeMoreItems.length}</small>
                   </summary>
                   <div className="freshNavMoreItems">
                     {safeMoreItems.map(([key, mark, label]) => (
-                      <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}>
+                      <button key={key} type="button" aria-label={label} title={label} className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}>
                         <i>{mark}</i>
                         <span>{label}</span>
                       </button>
@@ -377,10 +377,10 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
           </header>
 
           <section className="freshMobileQuickActions" aria-label="Mobile quick actions">
-            <button type="button" onClick={openMobileJob}><b>+</b><span>New job</span></button>
-            <button type="button" onClick={openMobileClient}><b>CL</b><span>Add client</span></button>
-            <button type="button" onClick={() => go("command")}><b>OK</b><span>Approve</span></button>
-            <button type="button" onClick={() => go("payments")}><b>$</b><span>Unpaid</span></button>
+            <button type="button" aria-label="New job" title="New job" onClick={openMobileJob}><b>+</b><span>New job</span></button>
+            <button type="button" aria-label="Add client" title="Add client" onClick={openMobileClient}><b>CL</b><span>Add client</span></button>
+            <button type="button" aria-label="Open approvals" title="Open approvals" onClick={() => go("command")}><b>OK</b><span>Approve</span></button>
+            <button type="button" aria-label="Open unpaid invoices" title="Open unpaid invoices" onClick={() => go("payments")}><b>$</b><span>Unpaid</span></button>
           </section>
 
           {showGlobalAsk ? (
@@ -403,7 +403,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
         {moreOpen && (
           <div className="freshMobileMore">
             {safeExtraMobile.map(([key, mark, label]) => (
-              <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}>
+              <button key={key} type="button" aria-label={label} title={label} className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}>
                 <i>{mark}</i>
                 <span>{label}</span>
               </button>
@@ -417,7 +417,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
 
         <nav className="freshMobileNav" aria-label="Mobile navigation">
           {safeMobileItems.map(([key, mark, label]) => (
-            <button key={key} type="button" className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}>
+            <button key={key} type="button" aria-label={label} title={label} className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}>
               <i>{mark}</i>
               <span>{label}</span>
             </button>
