@@ -14,6 +14,10 @@ try:
     import xero_routes
 except Exception:
     from . import xero_routes
+try:
+    from churvox_accounting_routes import build_accounting_router
+except Exception:
+    from .churvox_accounting_routes import build_accounting_router
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -863,6 +867,10 @@ app.include_router(build_platform_owner_router(db, get_current_user, is_platform
 app.include_router(build_onboarding_router(db, get_current_user, ObjectId), prefix="/api")
 
 xero_routes.install(app, db, get_current_user)
+    try:
+        app.include_router(build_accounting_router(db, get_current_user, ObjectId), prefix="/api")
+    except Exception as exc:
+        print(f"Accounting routes not wired yet: {exc}")
 
 async def require_employer(request: Request) -> dict:
     user = await get_current_user(request)
