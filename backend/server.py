@@ -12,10 +12,8 @@ except Exception:
     from .churvox_onboarding_routes import build_onboarding_router
 try:
     import xero_routes
-import accounting_export_routes
 except Exception:
     from . import xero_routes
-import accounting_export_routes
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
