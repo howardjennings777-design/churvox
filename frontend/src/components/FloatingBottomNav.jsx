@@ -13,7 +13,15 @@ const NAV_ITEMS = [
   ["Reports", "/reports-board", "RP", "Crew & Admin"],
   ["Plans", "/plans", "PL", "System"],
   ["Settings", "/settings-board", "ST", "System"],
-  ["Support", "/support-board", "?", "System"],
+  ["Support", "/support-board", "SP", "System"],
+];
+
+const MOBILE_NAV_ITEMS = [
+  ["Command", "/command-board", "CM"],
+  ["Jobs", "/jobs-board", "JB"],
+  ["Dispatch", "/dispatch-board", "DP"],
+  ["Invoices", "/invoices-board", "$"],
+  ["Support", "/support-board", "SP"],
 ];
 
 const COMMAND_PATHS = [
@@ -52,27 +60,14 @@ function isActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function groupedItems() {
-  return NAV_ITEMS.reduce((groups, item) => {
-    const group = item[3];
-    if (!groups[group]) groups[group] = [];
-    groups[group].push(item);
-    return groups;
-  }, {});
-}
-
-function ChurvoxSidebar({ pathname }) {
-  const groups = groupedItems();
-
-  return (
-    
-  );
+function ChurvoxSidebar() {
+  return null;
 }
 
 function ChurvoxMobileNav({ pathname }) {
   return (
     <nav className="cvxMobileNav" aria-label="Churvox mobile command navigation">
-      {NAV_ITEMS.map(([label, href, icon]) => (
+      {MOBILE_NAV_ITEMS.map(([label, href, icon]) => (
         <Link key={href} to={href} className={isActive(pathname, href) ? "cvxActive" : ""}>
           <i aria-hidden="true">{icon}</i>
           <span>{label}</span>
@@ -88,8 +83,6 @@ export default function FloatingBottomNav() {
 
   useEffect(() => {
     document.body.classList.toggle("cvx-command-shell", commandVisible);
-
-    // Kill the old sidebar shell class so old CSS cannot control the sidebar/content.
     document.body.classList.remove("cv-industrial-shell");
 
     return () => {
@@ -102,7 +95,7 @@ export default function FloatingBottomNav() {
 
   return (
     <>
-      <ChurvoxSidebar pathname={pathname} />
+      <ChurvoxSidebar />
       <ChurvoxMobileNav pathname={pathname} />
     </>
   );
