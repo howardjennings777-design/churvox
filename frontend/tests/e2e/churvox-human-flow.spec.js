@@ -157,7 +157,7 @@ async function checkReadableAndClickable(page, label) {
       const label = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('title') || '').trim();
 
       if (!label && !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) issues.push(`unlabelled control ${i + 1}`);
-      if (r.width < 14 || r.height < 14) issues.push(`tiny control ${label || i + 1}`);
+      if (r.width < 14 || r.height < 14) issues.push(`tiny control ${label || i + 1} tag=${el.tagName} class=${el.className || ""} aria=${el.getAttribute("aria-label") || ""} title=${el.getAttribute("title") || ""} size=${Math.round(r.width)}x${Math.round(r.height)}`);
       if (s.pointerEvents === 'none') issues.push(`unclickable pointer-events none ${label || i + 1}`);
     });
 
