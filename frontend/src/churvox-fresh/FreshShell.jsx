@@ -204,7 +204,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
 
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
   const safeMoreItems = React.useMemo(() => cleanGroups([moreGroup], guideComplete)[0]?.items || [], [guideComplete]);
-  const moreHasActiveItem = safeMoreItems.some(([key]) => currentPrimary === key) || mobileMoreOrder.includes(currentPrimary);
+  const moreHasActiveItem = safeMoreItems.some(([key]) => currentPrimary === key);
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
   const safeExtraMobile = React.useMemo(() => {
     const byKey = new Map(uniqueItems([...safeGroups.flatMap((group) => group.items), ...safeMoreItems]).map((item) => [item[0], item]));
