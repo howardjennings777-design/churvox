@@ -3748,6 +3748,86 @@ async def worker_live_ping(payload: dict = Body(default_factory=dict), current_u
 
 
 
+
+
+async def save_owner_send_back(job_id: str, payload: dict, current_user: dict):
+    if current_user.get("role") == "worker":
+        raise HTTPException(status_code=403, detail="Owner access required")
+
+    try:
+        job_oid = ObjectId(job_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid job_id")
+
+    note = str(
+        payload.get("boss_note")
+        or payload.get("send_back_note")
+        or payload.get("owner_note")
+        or payload.get("message")
+        or ""
+    ).strip()
+
+    if not note:
+        raise HTTPException(status_code=400, detail="send-back note is required")
+
+    now = datetime.utcnow()
+    user_id = str(current_user.get("id") or current_user.get("_id") or "")
+    business_id = str(current_user.get("business_id") or user_id)
+
+    job = await db.jobs.find_one({"_id": job_oid})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if business_id and str(job.get("business_id") or job.get("contractor_id") or "") != business_id:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    update = {
+        "boss_note": note,
+        "send_back_note": note,
+        "owner_note": note,
+        "worker_reply_required": True,
+        "worker_action_required": True,
+        "work_review_status": "sent_back",
+        "review_status": "sent_back",
+        "owner_review_status": "sent_back",
+        "status": payload.get("status") or "assigned",
+        "updated_at": now,
+    }
+
+    event = {
+        "type": "boss_send_back",
+        "message": note,
+        "owner_id": user_id,
+        "created_at": now,
+    }
+
+    await db.jobs.update_one(
+        {"_id": job_oid},
+        {
+            "$set": update,
+            "$push": {"owner_messages": event, "worker_visible_messages": event},
+        },
+    )
+
+    return {
+        "success": True,
+        "message": "Sent back to worker",
+        "job_id": str(job_oid),
+        "boss_note": note,
+        "send_back_note": note,
+    }
+
+
+@api_router.post("/jobs/{job_id}/send-back")
+async def send_job_back_to_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    return await save_owner_send_back(job_id, payload, current_user)
+
+
+@api_router.post("/worker/jobs/{job_id}/send-back")
+async def send_worker_job_back_to_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    return await save_owner_send_back(job_id, payload, current_user)
+
+
 @api_router.post("/worker/contact-office")
 async def worker_contact_office(payload: dict, current_user: dict = Depends(get_current_user)):
     """Let a worker send a job-linked message back to the owner office."""

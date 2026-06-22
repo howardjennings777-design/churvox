@@ -32,14 +32,23 @@ function textHas(value, token) {
   return JSON.stringify(value || {}).toLowerCase().includes(String(token || "").toLowerCase());
 }
 
-async function login(page, email, password) {
+async function login(page, email, password, label = "user") {
   await page.goto("/login");
   await page.locator('input[type="email"], input[name*="email" i]').first().fill(email);
   await page.locator('input[type="password"]').first().fill(password);
   await page.getByRole("button", { name: /log in|login|sign in/i }).first().click();
   await page.waitForURL(/dashboard|plans|setup|guide|worker/i, { timeout: 35000 }).catch(() => null);
   await page.waitForLoadState("domcontentloaded").catch(() => null);
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1200);
+
+  const token = await page.evaluate(() => window.localStorage.getItem("token") || "");
+  const body = await page.locator("body").innerText().catch(() => "");
+  console.log(`${label.toUpperCase()}_LOGIN_URL`, page.url());
+  console.log(`${label.toUpperCase()}_TOKEN_PRESENT`, Boolean(token));
+
+  if (!token) {
+    throw new Error(`${label} login did not produce a token. URL=${page.url()} BODY=${body.slice(0, 700)}`);
+  }
 }
 
 async function apiSession(page) {
@@ -113,7 +122,7 @@ test.describe("Churvox worker boss message loop", () => {
     const ownerPage = await ownerContext.newPage();
     const workerPage = await workerContext.newPage();
 
-    await login(ownerPage, OWNER_EMAIL, OWNER_PASSWORD);
+    await login(ownerPage, OWNER_EMAIL, OWNER_PASSWORD, "owner");
     const ownerRequest = await apiSession(ownerPage);
 
     const worker = await findWorker(ownerRequest);
@@ -147,8 +156,12 @@ test.describe("Churvox worker boss message loop", () => {
 
     expect(jobId, "created job id").toBeTruthy();
 
-    await login(workerPage, WORKER_EMAIL, WORKER_PASSWORD);
+    await login(workerPage, WORKER_EMAIL, WORKER_PASSWORD, "worker");
     const workerRequest = await apiSession(workerPage);
+    console.log("WORKER_SESSION_TOKEN_PRESENT", Boolean(workerRequest.token));
+    const workerMe = await getJson(workerRequest, "/api/auth/me");
+    console.log("WORKER_ME_STATUS", workerMe.status);
+    console.log("WORKER_ME_BODY", JSON.stringify(workerMe.body, null, 2).slice(0, 1500));
 
     
     console.log("CREATED_JOB_ID", jobId);
@@ -214,22 +227,21 @@ test.describe("Churvox worker boss message loop", () => {
     };
 
     const sendBackAttempts = [
-      () => patchJson(ownerRequest, "/api/worker/jobs/" + encodeURIComponent(jobId) + "/field-update", sendBackPayload),
-      () => patchJson(ownerRequest, "/api/jobs/" + encodeURIComponent(jobId), sendBackPayload),
-      () => postJson(ownerRequest, "/api/worker/jobs/" + encodeURIComponent(jobId) + "/send-back", sendBackPayload),
-      () => postJson(ownerRequest, "/api/jobs/" + encodeURIComponent(jobId) + "/send-back", sendBackPayload),
+      ["worker send-back", () => postJson(ownerRequest, "/api/worker/jobs/" + encodeURIComponent(jobId) + "/send-back", sendBackPayload)],
+      ["job send-back", () => postJson(ownerRequest, "/api/jobs/" + encodeURIComponent(jobId) + "/send-back", sendBackPayload)],
     ];
 
     let sendBack = null;
-    for (const attempt of sendBackAttempts) {
+    for (const [label, attempt] of sendBackAttempts) {
       const res = await attempt();
-      if (res.ok && res.body?.success !== false) {
+      console.log("SEND_BACK_ATTEMPT", label, res.status, JSON.stringify(res.body, null, 2).slice(0, 1200));
+      if (res.ok && res.body?.success !== false && textHas(res.body, bossToken + " sent back")) {
         sendBack = res;
         break;
       }
     }
 
-    expect(sendBack, "boss send-back endpoint exists and succeeds").toBeTruthy();
+    expect(sendBack, "real boss send-back endpoint saves and returns the note").toBeTruthy();
 
     const workerSeesSendBack = await getJob(workerRequest, jobId, bossToken + " sent back");
     expect(textHas(workerSeesSendBack, bossToken + " sent back"), "worker receives boss sent-back message").toBeTruthy();
