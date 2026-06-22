@@ -77,7 +77,7 @@ def _clean_xero_scopes(value: str | None = None) -> str:
 
     return " ".join(scope for scope in XERO_SAFE_SCOPES if scope in ordered)
 
-XERO_DEFAULT_SCOPES = _clean_xero_scopes()
+XERO_DEFAULT_SCOPES = "openid profile email offline_access accounting.invoices"
 XERO_SALES_ACCOUNT_CODE = os.environ.get("XERO_SALES_ACCOUNT_CODE", "200").strip()
 XERO_SALES_TAX_TYPE = os.environ.get("XERO_SALES_TAX_TYPE", "OUTPUT2").strip()
 
@@ -465,6 +465,8 @@ async def _refresh_xero_invoice_status(db, bid, invoice):
     await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": update})
     return {"success": True, "invoice_id": str(invoice["_id"]), "xero_invoice": xero_invoice, "local_update": _safe(update)}
 
+
+XERO_DEFAULT_SCOPES = "openid profile email offline_access accounting.invoices"
 
 def install(app, db, get_current_user):
     _install_ai_operator_routes(app, db, get_current_user)

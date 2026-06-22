@@ -165,7 +165,7 @@ export default function FreshXero({ onNavigate }) {
     try {
       const data = unwrap(await post("/xero/connect/start", {}));
       if (!data?.url) throw new Error("Xero did not return a connect URL.");
-      window.location.href = sanitiseXeroConnectUrl(data.url);
+      window.location.href = data.url;
     } catch (err) {
       setMessage(err?.message || "Xero connection could not start.");
     } finally {
