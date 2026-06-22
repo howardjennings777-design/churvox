@@ -6898,10 +6898,61 @@ def _cv_shift_row(doc: dict):
     }
 
 
+
+def _safe_shift_seconds(started_at):
+    try:
+        if not started_at:
+            return 0
+        if started_at.tzinfo is None:
+            started_at = started_at.replace(tzinfo=timezone.utc)
+        return max(0, int((datetime.now(timezone.utc) - started_at).total_seconds()))
+    except Exception:
+        return 0
+
+
+def _safe_shift_payload(doc, status="clocked_in"):
+    if not doc:
+        return None
+    seconds = int(doc.get("shift_seconds") or doc.get("total_shift_seconds") or 0)
+    if status == "clocked_in":
+        seconds = max(seconds, _safe_shift_seconds(doc.get("clock_in_at") or doc.get("started_at")))
+    return {
+        "id": str(doc.get("_id") or doc.get("id") or ""),
+        "business_id": str(doc.get("business_id") or ""),
+        "worker_id": str(doc.get("worker_id") or ""),
+        "worker_name": doc.get("worker_name") or "Worker",
+        "worker_email": doc.get("worker_email") or "",
+        "clock_in_at": (doc.get("clock_in_at") or doc.get("started_at") or datetime.now(timezone.utc)).isoformat(),
+        "clock_out_at": doc.get("clock_out_at").isoformat() if doc.get("clock_out_at") else None,
+        "shift_seconds": seconds,
+        "total_shift_seconds": seconds,
+        "duration_hours": round(seconds / 3600, 2),
+        "hours": round(seconds / 3600, 2),
+        "review_status": doc.get("review_status") or ("Clocked in" if status == "clocked_in" else "Needs review"),
+        "note": doc.get("note") or "",
+        "source": doc.get("source") or "worker_clock",
+        "gps_tracking_enabled": bool(doc.get("gps_tracking_enabled", status == "clocked_in")),
+        "clock_in_location": doc.get("clock_in_location"),
+        "clock_out_location": doc.get("clock_out_location"),
+    }
+
+
+async def _safe_open_worker_shift(current_user):
+    business_id = _cv_shift_business_id(current_user)
+    worker_id = _cv_shift_worker_id(current_user)
+    return await db.worker_shift_records.find_one({
+        "business_id": business_id,
+        "worker_id": worker_id,
+        "clock_out_at": None,
+    })
+
+
 @api_router.get("/worker/shift/status-v2")
 async def worker_shift_status_v2(current_user: dict = Depends(get_current_user)):
-    shift = await _cv_shift_current(current_user)
+    if current_user.get("role") != "worker":
+        raise HTTPException(status_code=403, detail="Worker access required")
 
+    shift = await _safe_open_worker_shift(current_user)
     if not shift:
         return {
             "success": True,
@@ -6909,32 +6960,47 @@ async def worker_shift_status_v2(current_user: dict = Depends(get_current_user))
             "shift_seconds": 0,
             "gps_tracking_enabled": False,
             "shift": None,
+            "data": {
+                "status": "clocked_out",
+                "shift_seconds": 0,
+                "gps_tracking_enabled": False,
+            },
         }
 
-    row = _cv_shift_row(shift)
-
+    row = _safe_shift_payload(shift, "clocked_in")
     return {
         "success": True,
         "status": "clocked_in",
         "shift_seconds": row["shift_seconds"],
         "gps_tracking_enabled": True,
         "shift": row,
+        "data": {
+            "status": "clocked_in",
+            "shift_seconds": row["shift_seconds"],
+            "gps_tracking_enabled": True,
+            "shift": row,
+        },
     }
 
 
 @api_router.post("/worker/shift-clock-in")
 async def worker_shift_clock_in(payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "worker":
+        raise HTTPException(status_code=403, detail="Worker access required")
+
+    payload = payload or {}
     business_id = _cv_shift_business_id(current_user)
     worker_id = _cv_shift_worker_id(current_user)
     worker_name = _cv_shift_worker_name(current_user)
     now = datetime.now(timezone.utc)
 
-    existing = await _cv_shift_current(current_user)
+    existing = await _safe_open_worker_shift(current_user)
     if existing:
         return {
             "success": True,
-            "status": "already_clocked_in",
-            "shift": _cv_shift_row(existing),
+            "status": "clocked_in",
+            "message": "Already clocked in",
+            "shift": _safe_shift_payload(existing, "clocked_in"),
         }
 
     doc = {
@@ -6958,88 +7024,57 @@ async def worker_shift_clock_in(payload: dict = Body(default_factory=dict), curr
     return {
         "success": True,
         "status": "clocked_in",
-        "shift": {
-            "id": str(result.inserted_id),
-            "business_id": business_id,
-            "worker_id": worker_id,
-            "worker_name": worker_name,
-            "worker_email": current_user.get("email"),
-            "clock_in_at": now.isoformat(),
-            "clock_out_at": None,
-            "shift_seconds": 0,
-            "duration_hours": 0,
-            "hours": 0,
-            "review_status": "Clocked in",
-            "gps_tracking_enabled": True,
-            "clock_in_location": payload.get("location"),
-            "clock_out_location": None,
-            "source": "worker_clock",
-        },
+        "message": "Clocked in",
+        "shift": _safe_shift_payload(doc, "clocked_in"),
     }
 
 
 @api_router.post("/worker/shift-clock-out")
 async def worker_shift_clock_out(payload: dict = Body(default_factory=dict), current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "worker":
+        raise HTTPException(status_code=403, detail="Worker access required")
+
+    payload = payload or {}
     business_id = _cv_shift_business_id(current_user)
     worker_id = _cv_shift_worker_id(current_user)
     now = datetime.now(timezone.utc)
 
-    shift = await _cv_shift_current(current_user)
+    shift = await _safe_open_worker_shift(current_user)
     if not shift:
         return {
-            "success": False,
-            "error": "No open shift to clock out.",
+            "success": True,
             "status": "clocked_out",
+            "message": "Already clocked out",
+            "shift": None,
         }
 
-    clock_in = _cv_shift_dt(shift.get("clock_in_at"))
-    seconds = max(0, int((now - clock_in).total_seconds()))
-    hours = round(seconds / 3600, 2)
-
-    await db.worker_shift_records.update_one(
-        {"_id": shift["_id"], "business_id": business_id, "worker_id": worker_id},
-        {
-            "$set": {
-                "clock_out_at": now,
-                "clock_out_location": payload.get("location"),
-                "shift_seconds": seconds,
-                "duration_hours": hours,
-                "review_status": "Needs review",
-                "note": "Clock-out captured. Owner review required before payroll.",
-                "gps_tracking_enabled": False,
-                "updated_at": now,
-            }
-        },
-    )
-
-    shift.update({
+    seconds = _safe_shift_seconds(shift.get("clock_in_at") or shift.get("started_at"))
+    update = {
         "clock_out_at": now,
         "clock_out_location": payload.get("location"),
         "shift_seconds": seconds,
-        "duration_hours": hours,
+        "duration_hours": round(seconds / 3600, 2),
         "review_status": "Needs review",
         "note": "Clock-out captured. Owner review required before payroll.",
         "gps_tracking_enabled": False,
         "updated_at": now,
-    })
+    }
 
-    try:
-        await cv_notify_owner_event(
-            business_id=business_id,
-            title="Worker clocked out",
-            message=f"{shift.get('worker_name') or 'Worker'} clocked out. Time sheet is ready for review.",
-            event_type="worker_clock_out",
-            route="/dashboard#time",
-            source_id=str(shift.get("_id") or ""),
-        )
-    except Exception:
-        pass
+    await db.worker_shift_records.update_one(
+        {"_id": shift["_id"]},
+        {"$set": update},
+    )
+
+    shift.update(update)
 
     return {
         "success": True,
         "status": "clocked_out",
-        "shift": _cv_shift_row(shift),
+        "message": "Clocked out",
+        "shift": _safe_shift_payload(shift, "clocked_out"),
     }
+
+
 
 
 @api_router.get("/worker/shift-records")
