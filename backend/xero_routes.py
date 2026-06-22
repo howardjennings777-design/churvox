@@ -29,9 +29,6 @@ XERO_TOKEN_URL = "https://identity.xero.com/connect/token"
 XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
 XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
 XERO_REQUIRED_SCOPES = [
-    "openid",
-    "profile",
-    "email",
     "offline_access",
 ]
 
@@ -53,7 +50,7 @@ def _clean_xero_scopes(value: str | None = None) -> str:
     """
     Xero rejects the whole OAuth request if one scope is bad.
     Keep phase-one Churvox scope safe and predictable.
-    Always include the required identity/offline scopes, then the approved
+    Always include offline access, then the approved
     phase-one accounting scopes. Unknown Render env scope values are ignored.
     """
     raw = str(value or os.environ.get("XERO_SCOPES") or "").replace(",", " ").split()
@@ -66,7 +63,7 @@ def _clean_xero_scopes(value: str | None = None) -> str:
     if not cleaned:
         cleaned = list(XERO_SAFE_SCOPES)
 
-    # Always include identity/offline scopes.
+    # Always include offline access for long-lived Xero sync.
     ordered = []
     for scope in XERO_REQUIRED_SCOPES + cleaned:
         if scope not in ordered:
