@@ -1,5 +1,6 @@
 import React from "react";
 import { Briefcase, CalendarDays, HelpCircle, Settings } from "lucide-react";
+import "./WorkerIphoneFix.css";
 
 const items = [
   { key: "today", label: "Today", to: "/worker/jobs#today", icon: CalendarDays },
