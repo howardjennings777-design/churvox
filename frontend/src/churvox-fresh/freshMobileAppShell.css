@@ -615,3 +615,23 @@
   }
 }
 
+/* CHURVOX_MOBILE_FORM_WIDTH_FIX_20260623 */
+@media (max-width: 900px) {
+  .freshApp input:not([type="checkbox"]):not([type="radio"]),
+  .freshApp textarea,
+  .freshApp select {
+    width: 100% !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    box-sizing: border-box !important;
+  }
+
+  .freshApp input[type="checkbox"],
+  .freshApp input[type="radio"] {
+    width: 22px !important;
+    min-width: 22px !important;
+    height: 22px !important;
+    min-height: 22px !important;
+  }
+}
+
