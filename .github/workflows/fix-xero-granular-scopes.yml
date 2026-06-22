@@ -68,9 +68,6 @@ XERO_SCOPE_ALIASES = {
 '''
           text = text.replace(old_comment, new_comment)
 
-          old_marker = '''"Expected scopes: openid profile email offline_access accounting.transactions accounting.contacts accounting.settings\n"'''
-          # Only xero_routes.py is patched here; marker file is left alone if present.
-
           path.write_text(text)
           PY
       - name: Commit fix if changed
@@ -84,3 +81,4 @@ XERO_SCOPE_ALIASES = {
           git add backend/xero_routes.py
           git commit -m "Use Xero granular invoice scopes"
           git push
+# trigger: 2026-06-22T00:56Z
