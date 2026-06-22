@@ -2,6 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import { readFreshFocus } from "./freshFocus";
 import "./freshPayrollCompact.css";
+import "./freshJobsPolish.css";
 
 const commandFilters = ["Open", "Edited", "Local", "Handled", "All"];
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
