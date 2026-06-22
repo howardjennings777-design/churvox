@@ -3,171 +3,11 @@ import { useApi } from "../hooks/useApi";
 import { readFreshFocus } from "./freshFocus";
 import "./freshPayrollCompact.css";
 
-const commandFilters = ["Pending", "Approved", "Edited", "Declined", "All"];
-
-const seedBoxes = [
-  {
-    id: "invoice-ready",
-    group: "Money",
-    title: "Invoice ready",
-    info: "Completed job · $85 draft invoice",
-    urgency: "Approve today",
-    found: "Completed lawn service has price, job notes and GST ready.",
-    prepared: "Churvox prepared a draft invoice from the completed job record.",
-    why: "The customer should not receive anything until the owner approves the money.",
-    owner: "Approve invoice, save an edit, or decline the draft.",
-    area: "Invoices",
-    page: "invoices",
-  },
-  {
-    id: "quote-follow-up",
-    group: "Quotes",
-    title: "Follow-up needed",
-    info: "Sent quote · 6 days no reply",
-    urgency: "Could recover work",
-    found: "A sent quote has had no response for 6 days.",
-    prepared: "Churvox prepared a polite follow-up message.",
-    why: "A follow-up can recover the job without you digging through old quotes.",
-    owner: "Approve follow-up, edit wording, or ignore for now.",
-    area: "Quotes",
-    page: "quotes",
-  },
-  {
-    id: "client-billing",
-    group: "Clients",
-    title: "Billing detail missing",
-    info: "Client record · billing email blank",
-    urgency: "Setup issue",
-    found: "The client has service details but no billing email.",
-    prepared: "Churvox paused invoice automation for this client.",
-    why: "Invoices and reminders should not run with missing billing details.",
-    owner: "Open client and complete billing details.",
-    area: "Clients",
-    page: "clients",
-  },
-  {
-    id: "job-access",
-    group: "Jobs",
-    title: "Job needs access",
-    info: "Job access · access not confirmed",
-    urgency: "Blocked",
-    found: "A requested job has no confirmed access instructions.",
-    prepared: "Churvox marked the job as blocked before dispatch.",
-    why: "Sending a worker without access wastes time and looks unprofessional.",
-    owner: "Confirm access, move the job, or send message to client.",
-    area: "Jobs",
-    page: "jobs",
-  },
-  {
-    id: "worker-ack",
-    group: "Team",
-    title: "Worker not acknowledged",
-    info: "Today route · one job not accepted",
-    urgency: "Before route starts",
-    found: "A worker has not acknowledged an assigned job.",
-    prepared: "Churvox prepared an owner warning before the day starts.",
-    why: "You need to know the job is accepted before relying on the route.",
-    owner: "Message worker, reassign, or leave as watched.",
-    area: "Dispatch",
-    page: "dispatch",
-  },
-  {
-    id: "setup-paused",
-    group: "Setup",
-    title: "Automation paused",
-    info: "1 client missing billing setup",
-    urgency: "Safe hold",
-    found: "Automation is ready but the record is not clean enough.",
-    prepared: "Churvox held the action back and created a setup warning.",
-    why: "Bad setup should never trigger customer-facing automation.",
-    owner: "Fix setup, then approve automation.",
-    area: "Settings",
-    page: "settings",
-  },
-];
-
-const COMMAND_STORAGE_KEY = "churvox:fresh-command-boxes:v1";
+const commandFilters = ["Open", "Edited", "Local", "Handled", "All"];
+const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 const COMMAND_ACTIVITY_KEY = "churvox:fresh-command-activity:v1";
 
-function withState(box) {
-  return {
-    ...box,
-    status: "Pending",
-    editedInstruction: box.owner,
-  };
-}
-
-function loadCommandBoxes() {
-  const fallback = seedBoxes.map(withState);
-
-  try {
-    if (typeof window === "undefined") return fallback;
-
-    const saved = window.localStorage.getItem(COMMAND_STORAGE_KEY);
-    if (!saved) return fallback;
-
-    const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return fallback;
-
-    return fallback.map((baseBox) => {
-      const savedBox = parsed.find((item) => item.id === baseBox.id);
-      if (!savedBox) return baseBox;
-
-      return {
-        ...baseBox,
-        status: savedBox.status || baseBox.status,
-        editedInstruction: savedBox.editedInstruction || baseBox.editedInstruction,
-      };
-    });
-  } catch {
-    return fallback;
-  }
-}
-
-function loadCommandActivity() {
-  try {
-    if (typeof window === "undefined") return [];
-
-    const saved = window.localStorage.getItem(COMMAND_ACTIVITY_KEY);
-    if (!saved) return [];
-
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
-  } catch {
-    return [];
-  }
-}
-
-function makeActivity(box, status) {
-  return {
-    id: `${box.id}-${Date.now()}`,
-    status,
-    title: box.title,
-    group: box.group,
-    info: box.info,
-    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-  };
-}
-
-function readFreshRiskList(key) {
-  try {
-    if (typeof window === "undefined") return [];
-
-    const saved = window.localStorage.getItem(key);
-    if (!saved) return [];
-
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function money(value) {
-  return `$${Number(value || 0).toFixed(0)}`;
-}
-
-function reviewListFrom(payload) {
+function asArray(payload) {
   const data = payload?.data ?? payload;
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.items)) return data.items;
@@ -177,108 +17,112 @@ function reviewListFrom(payload) {
   return [];
 }
 
-function buildRiskScanIssues() {
-  const jobs = readFreshRiskList("churvox:fresh-jobs:v1");
-  const clients = readFreshRiskList("churvox:fresh-clients:v1");
-  const quotes = readFreshRiskList("churvox:fresh-quotes:v1");
-  const invoices = readFreshRiskList("churvox:fresh-invoices:v1");
-  const payroll = readFreshRiskList("churvox:fresh-payroll:v1");
-
-  return [
-    ...jobs
-      .filter((job) => job.status === "Blocked")
-      .map((job) => ({
-        id: `scan-job-${job.id}`,
-        group: "Scan",
-        title: "Blocked job found",
-        info: `${job.client} · ${job.title}`,
-        urgency: "Owner review",
-        found: `The job "${job.title}" is blocked.`,
-        prepared: "Churvox prepared a Command review slip instead of sending it to dispatch.",
-        why: job.risk || "A blocked job can waste worker time if it is dispatched.",
-        owner: "Fix access, reschedule, reassign, or decline the job.",
-        area: "Jobs",
-        page: "jobs",
-        fromInbox: true,
-        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      })),
-
-    ...clients
-      .filter((client) => client.status === "Needs setup" || !client.billingEmail)
-      .map((client) => ({
-        id: `scan-client-${client.id}`,
-        group: "Scan",
-        title: "Client setup gap",
-        info: `${client.name} · billing not clean`,
-        urgency: "Setup issue",
-        found: `${client.name} is missing clean billing setup.`,
-        prepared: "Churvox paused customer-facing automation for this client.",
-        why: "Invoices and reminders should not run until billing details are clean.",
-        owner: "Open the client and complete billing details.",
-        area: "Clients",
-        page: "clients",
-        fromInbox: true,
-        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      })),
-
-    ...quotes
-      .filter((quote) => quote.status === "Sent")
-      .map((quote) => ({
-        id: `scan-quote-${quote.id}`,
-        group: "Scan",
-        title: "Quote follow-up found",
-        info: `${quote.client} · ${quote.id}`,
-        urgency: "Could recover work",
-        found: `Quote ${quote.id} is sent and waiting.`,
-        prepared: "Churvox prepared a follow-up review slip.",
-        why: "Follow-ups can recover work, but the owner should approve the message first.",
-        owner: "Approve follow-up, edit wording, or leave it watched.",
-        area: "Quotes",
-        page: "quotes",
-        fromInbox: true,
-        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      })),
-
-    ...invoices
-      .filter((invoice) => invoice.status === "Overdue" || invoice.status === "Draft")
-      .map((invoice) => ({
-        id: `scan-invoice-${invoice.id}`,
-        group: "Scan",
-        title: invoice.status === "Overdue" ? "Overdue invoice found" : "Draft invoice ready",
-        info: `${invoice.client} · ${invoice.id} · ${money(invoice.amount)}`,
-        urgency: invoice.status === "Overdue" ? "Money risk" : "Approve today",
-        found: `Invoice ${invoice.id} is ${invoice.status.toLowerCase()}.`,
-        prepared: "Churvox prepared an invoice review slip.",
-        why: invoice.status === "Overdue"
-          ? "Overdue money should be reviewed before another reminder is sent."
-          : "Draft invoices should not be sent without owner approval.",
-        owner: "Approve, edit, mark paid, or send a follow-up.",
-        area: "Invoices",
-        page: "invoices",
-        fromInbox: true,
-        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      })),
-
-    ...payroll
-      .filter((person) => person.status === "Needs review")
-      .map((person) => ({
-        id: `scan-payroll-${person.id}`,
-        group: "Scan",
-        title: "Payroll review found",
-        info: `${person.name} · needs review`,
-        urgency: "Owner review",
-        found: `${person.name} has payroll marked as needs review.`,
-        prepared: "Churvox prepared a payroll workspace review slip.",
-        why: "Payroll should be checked by the owner before export.",
-        owner: "Review hours, adjustment and gross pay. Tax filing stays outside Churvox or payment files.",
-        area: "Payroll",
-        page: "payroll",
-        fromInbox: true,
-        createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      })),
-  ];
+function idOf(value, fallback = "") {
+  if (!value) return fallback;
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "object") return idOf(value.$oid || value.oid || value.id || value._id, fallback);
+  return fallback;
 }
 
+function titleOf(item) {
+  return item?.title || item?.summary || item?.type || item?.action || "Review item";
+}
+
+function summaryOf(item) {
+  return item?.summary || item?.message || item?.description || item?.original_text || "Waiting for owner review.";
+}
+
+function statusOf(item) {
+  return String(item?.status || "open").trim().toLowerCase();
+}
+
+function categoryOf(item) {
+  return item?.category || item?.group || item?.source || "review";
+}
+
+function readLegacyInbox() {
+  try {
+    if (typeof window === "undefined") return [];
+
+    return LEGACY_INBOX_KEYS.flatMap((key) => {
+      const raw = window.localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map((item, index) => ({ ...item, localKey: key, localIndex: index, localOnly: true }));
+    });
+  } catch {
+    return [];
+  }
+}
+
+function clearLegacyInbox() {
+  try {
+    if (typeof window === "undefined") return;
+    LEGACY_INBOX_KEYS.forEach((key) => window.localStorage.removeItem(key));
+  } catch {
+    // Keep Command usable without local storage.
+  }
+}
+
+function loadActivity() {
+  try {
+    if (typeof window === "undefined") return [];
+    const raw = window.localStorage.getItem(COMMAND_ACTIVITY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.slice(0, 10) : [];
+  } catch {
+    return [];
+  }
+}
+
+function actionPage(item) {
+  const text = `${item?.action || ""} ${item?.category || ""} ${item?.group || ""} ${item?.page || ""}`.toLowerCase();
+  if (text.includes("invoice") || text.includes("money")) return "invoices";
+  if (text.includes("payment")) return "payments";
+  if (text.includes("quote")) return "quotes";
+  if (text.includes("client") || text.includes("customer")) return "clients";
+  if (text.includes("payroll")) return "payroll";
+  if (text.includes("xero") || text.includes("accounting")) return "xero";
+  if (text.includes("worker") || text.includes("dispatch")) return "workercommand";
+  return item?.page || "jobs";
+}
+
+function legacyText(item) {
+  const details = item?.details && typeof item.details === "object"
+    ? Object.entries(item.details).map(([key, value]) => `${key}: ${value}`).join(". ")
+    : "";
+  const payload = item?.payload && typeof item.payload === "object"
+    ? Object.entries(item.payload).map(([key, value]) => `${key}: ${value}`).join(". ")
+    : "";
+
+  return [
+    item?.title,
+    item?.summary,
+    item?.info,
+    item?.found,
+    item?.prepared,
+    item?.why,
+    item?.owner,
+    details,
+    payload,
+  ].filter(Boolean).join(". ");
+}
+
+function detailRows(item) {
+  if (item?.details && typeof item.details === "object") {
+    return Object.entries(item.details).map(([label, value]) => ({ label, value: String(value || "") }));
+  }
+
+  const rows = [];
+  if (item?.found) rows.push({ label: "What Churvox found", value: item.found });
+  if (item?.prepared) rows.push({ label: "What Churvox prepared", value: item.prepared });
+  if (item?.why) rows.push({ label: "Why it needs approval", value: item.why });
+  if (item?.owner) rows.push({ label: "Owner move", value: item.owner });
+  if (item?.payload && typeof item.payload === "object") {
+    rows.push({ label: "Payload", value: Object.entries(item.payload).map(([k, v]) => `${k}: ${v}`).join(". ") });
+  }
+  return rows.length ? rows : [{ label: "Review", value: summaryOf(item) }];
+}
 
 const selectedFilterButtonStyle = {
   background: "#f97316",
@@ -288,8 +132,6 @@ const selectedFilterButtonStyle = {
   WebkitTextFillColor: "#111827",
   opacity: 1,
   fontWeight: 950,
-  textShadow: "none",
-  mixBlendMode: "normal",
 };
 
 const selectedFilterTextStyle = {
@@ -297,8 +139,6 @@ const selectedFilterTextStyle = {
   WebkitTextFillColor: "#111827",
   opacity: 1,
   fontWeight: 950,
-  textShadow: "none",
-  mixBlendMode: "normal",
 };
 
 const selectedFilterCountStyle = {
@@ -309,380 +149,287 @@ const selectedFilterCountStyle = {
   opacity: 1,
   fontWeight: 950,
   borderRadius: "999px",
-  textShadow: "none",
-  mixBlendMode: "normal",
 };
 
 export default function FreshCommand({ onNavigate }) {
-  const { get } = useApi();
-  const [backendReviewItems, setBackendReviewItems] = React.useState([]);
-  const [backendReviewStatus, setBackendReviewStatus] = React.useState("Checking backend Review.");
-  const [boxes, setBoxes] = React.useState(loadCommandBoxes);
-  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("command", null));
-  const [activity, setActivity] = React.useState(loadCommandActivity);
-  const [filter, setFilter] = React.useState("Pending");
+  const { get, post, patch } = useApi();
+  const [backendItems, setBackendItems] = React.useState([]);
+  const [localItems, setLocalItems] = React.useState(readLegacyInbox);
+  const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("command", ""));
+  const [filter, setFilter] = React.useState("Open");
+  const [activity, setActivity] = React.useState(loadActivity);
+  const [loading, setLoading] = React.useState(true);
+  const [busy, setBusy] = React.useState("");
+  const [message, setMessage] = React.useState("Checking backend Review.");
+  const [ownerNote, setOwnerNote] = React.useState("");
 
-  const selected = boxes.find((box) => box.id === selectedId);
+  const backendRows = backendItems.map((item) => ({ ...item, sourceMode: "backend", listStatus: statusOf(item) }));
+  const localRows = localItems.map((item) => ({ ...item, sourceMode: "local", listStatus: "local" }));
+  const rows = [...backendRows, ...localRows];
 
-  React.useEffect(() => {
-    let cancelled = false;
+  const visibleRows = rows.filter((item) => {
+    if (filter === "All") return true;
+    if (filter === "Local") return item.sourceMode === "local";
+    if (filter === "Handled") return ["approved", "ignored", "declined", "closed"].includes(item.listStatus);
+    if (filter === "Edited") return item.listStatus === "edited";
+    return item.sourceMode === "backend" && ["open", "edited"].includes(item.listStatus);
+  });
 
-    async function loadBackendReviewItems() {
-      try {
-        const result = await get("/ai-review-items?limit=20");
-        if (cancelled) return;
+  const selected = rows.find((item) => `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex)}` === selectedId) || visibleRows[0] || rows[0];
+  const selectedKey = selected ? `${selected.sourceMode}-${idOf(selected.id || selected._id, selected.localIndex)}` : "";
 
-        if (result?.success === false) {
-          setBackendReviewStatus("Backend Review is protected or not ready.");
-          setBackendReviewItems([]);
-          return;
-        }
+  const counts = {
+    Open: backendRows.filter((item) => ["open", "edited"].includes(item.listStatus)).length,
+    Edited: backendRows.filter((item) => item.listStatus === "edited").length,
+    Local: localRows.length,
+    Handled: backendRows.filter((item) => ["approved", "ignored", "declined", "closed"].includes(item.listStatus)).length,
+    All: rows.length,
+  };
 
-        const rows = reviewListFrom(result);
-        setBackendReviewItems(rows);
-        setBackendReviewStatus(rows.length ? `${rows.length} backend Review item${rows.length === 1 ? "" : "s"} ready.` : "Backend Review checked. No open Review items right now.");
-      } catch {
-        if (!cancelled) {
-          setBackendReviewStatus("Backend Review is protected or not ready.");
-          setBackendReviewItems([]);
-        }
-      }
+  const moneyWatched = backendRows.filter((item) => String(item.category || item.action || "").toLowerCase().includes("money")).length;
+
+  const loadReview = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await get("/ai-review-items?limit=200", { timeout: 25000 });
+      if (!result?.success) throw new Error(result?.error || "Backend Review is protected or not ready.");
+      const next = asArray(result.data ?? result);
+      setBackendItems(next);
+      setMessage(next.length ? `${next.length} backend Review item${next.length === 1 ? "" : "s"} ready.` : "Backend Review checked. No open Review items right now.");
+    } catch (err) {
+      setBackendItems([]);
+      setMessage(err?.message || "Backend Review is protected or not ready.");
+    } finally {
+      setLocalItems(readLegacyInbox());
+      setLoading(false);
     }
-
-    loadBackendReviewItems();
-
-    return () => {
-      cancelled = true;
-    };
   }, [get]);
 
+  React.useEffect(() => { loadReview(); }, [loadReview]);
+
+  React.useEffect(() => {
+    const refresh = () => {
+      setLocalItems(readLegacyInbox());
+      loadReview();
+    };
+    window.addEventListener("churvox:fresh-data-updated", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("churvox:fresh-data-updated", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [loadReview]);
+
+  React.useEffect(() => {
+    setOwnerNote(selected?.owner_note || selected?.owner || "");
+  }, [selectedKey]);
 
   React.useEffect(() => {
     try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(COMMAND_STORAGE_KEY, JSON.stringify(boxes));
-      }
+      if (typeof window !== "undefined") window.localStorage.setItem(COMMAND_ACTIVITY_KEY, JSON.stringify(activity));
     } catch {
-      // Fresh preview can still run without local storage.
-    }
-  }, [boxes]);
-
-  React.useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(COMMAND_ACTIVITY_KEY, JSON.stringify(activity));
-      }
-    } catch {
-      // Fresh preview can still run without local storage.
+      // Keep page usable without local storage.
     }
   }, [activity]);
 
-  const pendingCount = boxes.filter((box) => box.status === "Pending").length;
-  const doneCount = boxes.filter((box) => box.status !== "Pending").length;
-  const moneyWatched = "$695";
-  const visibleBoxes =
-    filter === "All"
-      ? boxes
-      : boxes.filter((box) => box.status === filter);
-
-  const filterCounts = commandFilters.reduce((counts, item) => {
-    counts[item] = item === "All"
-      ? boxes.length
-      : boxes.filter((box) => box.status === item).length;
-
-    return counts;
-  }, {});
-
-  function updateSelected(status) {
-    if (!selected) return;
-
-    setBoxes((current) =>
-      current.map((box) =>
-        box.id === selected.id
-          ? { ...box, status }
-          : box
-      )
-    );
-
-    setActivity((current) => [makeActivity(selected, status), ...current].slice(0, 8));
-    setSelectedId(null);
+  function addActivity(title, status) {
+    setActivity((current) => [{
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      title,
+      status,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    }, ...current].slice(0, 10));
   }
 
-  function saveInstruction(value) {
-    if (!selected) return;
-
-    setBoxes((current) =>
-      current.map((box) =>
-        box.id === selected.id
-          ? { ...box, editedInstruction: value, status: "Edited" }
-          : box
-      )
-    );
-  }
-
-  function openArea() {
-    if (!selected) return;
-    onNavigate?.(selected.page);
-    setSelectedId(null);
-  }
-
-  function scanFreshRisks() {
-    const scanIssues = buildRiskScanIssues();
-
+  async function approveSelected() {
+    if (!selected || selected.sourceMode !== "backend") return;
+    const id = idOf(selected.id || selected._id);
+    if (!id) return;
+    setBusy("approve");
     try {
-      if (typeof window !== "undefined") {
-        const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
-        const existing = saved ? JSON.parse(saved) : [];
-        const safeExisting = Array.isArray(existing) ? existing : [];
-        const existingIds = new Set(safeExisting.map((item) => item.id));
-
-        const newIssues = scanIssues.filter((item) => !existingIds.has(item.id));
-        const merged = [...newIssues, ...safeExisting].slice(0, 20);
-
-        window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify(merged));
-
-        window.dispatchEvent(
-          new CustomEvent("churvox:fresh-data-updated", {
-            detail: { type: "risk-scan" },
-          })
-        );
-      }
-    } catch {
-      // Fresh preview keeps working without local storage.
-    }
-
-    setBoxes(loadCommandBoxes());
-    setFilter("Pending");
-
-    if (scanIssues.length) {
-      setActivity((current) => [
-        {
-          id: `scan-${Date.now()}`,
-          status: "Scanned",
-          title: `${scanIssues.length} risks checked`,
-          group: "Command",
-          info: "Fresh data risk scan",
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        },
-        ...current,
-      ].slice(0, 8));
+      const result = await post(`/ai-review-items/${encodeURIComponent(id)}/approve`, { note: ownerNote }, { timeout: 30000 });
+      if (!result?.success) throw new Error(result?.error || "Could not approve Review item.");
+      addActivity(titleOf(selected), "Approved");
+      setMessage("Approved. Churvox executed the owner-approved backend action.");
+      setSelectedId("");
+      await loadReview();
+    } catch (err) {
+      setMessage(err?.message || "Could not approve Review item.");
+    } finally {
+      setBusy("");
     }
   }
 
-  function resetCommand() {
+  async function saveSelected() {
+    if (!selected || selected.sourceMode !== "backend") return;
+    const id = idOf(selected.id || selected._id);
+    if (!id) return;
+    setBusy("save");
     try {
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(COMMAND_STORAGE_KEY);
-        window.localStorage.removeItem(COMMAND_ACTIVITY_KEY);
-      }
-    } catch {
-      // Ignore storage reset errors in preview.
+      const result = await patch(`/ai-review-items/${encodeURIComponent(id)}`, { note: ownerNote }, { timeout: 25000 });
+      if (!result?.success) throw new Error(result?.error || "Could not save Review item.");
+      addActivity(titleOf(selected), "Edited");
+      setMessage("Saved. Review item stays owner-controlled.");
+      await loadReview();
+    } catch (err) {
+      setMessage(err?.message || "Could not save Review item.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function ignoreSelected() {
+    if (!selected || selected.sourceMode !== "backend") return;
+    const id = idOf(selected.id || selected._id);
+    if (!id) return;
+    setBusy("ignore");
+    try {
+      const result = await post(`/ai-review-items/${encodeURIComponent(id)}/ignore`, { note: ownerNote }, { timeout: 25000 });
+      if (!result?.success) throw new Error(result?.error || "Could not ignore Review item.");
+      addActivity(titleOf(selected), "Ignored");
+      setMessage("Ignored. No action was executed.");
+      setSelectedId("");
+      await loadReview();
+    } catch (err) {
+      setMessage(err?.message || "Could not ignore Review item.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function promoteLocalItems() {
+    if (!localItems.length) {
+      setMessage("No browser-only slips to promote.");
+      return;
     }
 
-    setBoxes(seedBoxes.map(withState));
-    setActivity([]);
-    setSelectedId(null);
+    setBusy("promote");
+    let promoted = 0;
+    let failed = 0;
+
+    for (const item of localItems.slice(0, 20)) {
+      try {
+        const text = legacyText(item) || titleOf(item);
+        const result = await post("/tell-churvox/prepare", { text }, { timeout: 30000 });
+        if (result?.success) promoted += 1;
+        else failed += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+
+    if (promoted) clearLegacyInbox();
+    setLocalItems(readLegacyInbox());
+    addActivity("Browser slips promoted", promoted ? "Promoted" : "Failed");
+    setMessage(promoted ? `Promoted ${promoted} local slip${promoted === 1 ? "" : "s"} into backend Review.${failed ? ` ${failed} failed.` : ""}` : "Could not promote local slips into backend Review.");
+    setBusy("");
+    await loadReview();
+  }
+
+  async function scanBackendRisks() {
+    setBusy("scan");
+    try {
+      const text = "Prepare owner review items for completed jobs needing draft invoices, overdue invoices needing follow-up, quotes waiting for reply, clients missing billing details, worker acknowledgement risks, payroll review items, and Xero draft sync checks. Owner approval required. Do not send invoices, do not file tax, do not create bank payout files, and do not mark paid automatically.";
+      const result = await post("/tell-churvox/prepare", { text }, { timeout: 30000 });
+      if (!result?.success) throw new Error(result?.error || "Could not prepare backend Review scan.");
+      addActivity("Backend Review scan", "Prepared");
+      setMessage("Backend Review scan prepared. Check the open item before approving anything.");
+      await loadReview();
+    } catch (err) {
+      setMessage(err?.message || "Could not prepare backend Review scan.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  function openSelectedArea() {
+    if (!selected) return;
+    onNavigate?.(actionPage(selected));
   }
 
   return (
     <section className="freshCommandStablePage freshPayrollCompactPage">
       <header className="freshHero">
-        <span>Churvox fresh · Command</span>
+        <span>Churvox fresh - Command</span>
         <h1>Command</h1>
-        <p>Only the work that needs your decision. Review the slip, approve it, edit it, or open the right area.</p>
+        <p>Real backend Review is now the main owner cockpit. Churvox prepares admin work; the owner approves, edits, ignores, or opens the source record.</p>
       </header>
 
       <section className="freshCommandPulse">
-        <aside className="freshCard">
-          <h2>{pendingCount}</h2>
-          <p>Needs decision</p>
-        </aside>
-        <aside className="freshCard">
-          <h2>{doneCount}</h2>
-          <p>Handled today</p>
-        </aside>
-        <aside className="freshCard">
-          <h2>{moneyWatched}</h2>
-          <p>Money watched</p>
-        </aside>
+        <aside className="freshCard"><h2>{loading ? "..." : counts.Open}</h2><p>Backend decisions</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : counts.Local}</h2><p>Browser slips to promote</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : moneyWatched}</h2><p>Money review items</p></aside>
       </section>
 
-      <section className="freshBackendReviewSource" data-review-source="backend">
-        <div>
-          <span>Backend-owned Review only</span>
-          <h2>Approve what Churvox AI prepared</h2>
-          <p>
-            Command can show owner decisions, but AI Review items come from the backend Review list.
-            Nothing is created from a local shortcut and nothing runs until the owner approves.
-          </p>
-        </div>
-
-        <aside>
-          <b>{backendReviewItems.length}</b>
-          <small>{backendReviewStatus}</small>
-        </aside>
-      </section>
-
-      {backendReviewItems.length ? (
-        <section className="freshBackendReviewList" aria-label="Backend Review items">
-          {backendReviewItems.slice(0, 4).map((item, index) => (
-            <article key={item.id || item._id || index}>
-              <b>{item.title || item.summary || item.type || "Backend Review item"}</b>
-              <span>{item.message || item.description || item.status || "Waiting for owner approval."}</span>
-            </article>
-          ))}
-        </section>
-      ) : null}
-
+      {message ? <section className="freshBackendReviewSource" data-review-source="backend"><div><span>Backend-owned Review</span><h2>{message}</h2><p>Approvals execute through backend Review endpoints. Local page handoffs can be promoted into backend Review before owner action.</p></div><aside><b>{counts.Open}</b><small>open backend item{counts.Open === 1 ? "" : "s"}</small></aside></section> : null}
 
       <section className="freshCommandFilterBar">
         {commandFilters.map((item) => (
-          <button
-            type="button"
-            key={item}
-            className={filter === item ? "commandFilterSelected" : ""}
-            style={filter === item ? selectedFilterButtonStyle : undefined}
-            onClick={() => setFilter(item)}
-          >
+          <button type="button" key={item} className={filter === item ? "commandFilterSelected" : ""} style={filter === item ? selectedFilterButtonStyle : undefined} onClick={() => setFilter(item)}>
             <span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span>
-            <b style={filter === item ? selectedFilterCountStyle : undefined}>{filterCounts[item]}</b>
+            <b style={filter === item ? selectedFilterCountStyle : undefined}>{counts[item] ?? rows.length}</b>
           </button>
         ))}
       </section>
 
-      <section className="freshCommandBoard" aria-label="Command decisions">
-        {visibleBoxes.map((box) => (
-          <button
-            type="button"
-            className={`freshCommandBox ${box.status !== "Pending" ? "isDone" : ""}`}
-            key={box.id}
-            onClick={() => setSelectedId(box.id)}
-          >
-            <span className="freshCommandPill">{box.group}</span>
-            <strong>{box.title}</strong>
-            
-          </button>
-        ))}
+      <section className="freshGrid">
+        <aside className="freshCard freshJobsListCard">
+          <h2>Review queue</h2>
+          {loading && !visibleRows.length ? <div className="freshItem"><b>Checking backend Review...</b><span>Loading owner decisions.</span></div> : null}
+          {!loading && !visibleRows.length ? <div className="freshItem"><b>No items in this filter</b><span>Run a backend scan or promote browser slips.</span></div> : null}
+          {visibleRows.map((item, index) => {
+            const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`;
+            return (
+              <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "local" ? "need" : ""}`} key={key} onClick={() => setSelectedId(key)}>
+                <b>{titleOf(item)}</b>
+                <span>{categoryOf(item)} - {item.sourceMode === "local" ? "browser-only" : statusOf(item)} - {summaryOf(item)}</span>
+              </button>
+            );
+          })}
+        </aside>
 
-        {visibleBoxes.length === 0 && (
-          <aside className="freshCommandEmpty">
-            <b>No {filter.toLowerCase()} boxes</b>
-            <span>Change filter or reset Command boxes.</span>
-          </aside>
-        )}
-      </section>
-
-      <section className="freshGrid two" style={{ marginTop: 14 }}>
-        <section className="freshCard">
-          <h2>Quick owner moves</h2>
-          <p>Command stays clean. It only shows decisions, risk and admin ready for approval.</p>
-          <div className="freshActions">
-            <button className="freshPrimary" onClick={scanFreshRisks}>Scan fresh data</button>
-            <button className="freshPrimary" onClick={() => onNavigate?.("jobs")}>New job</button>
-            <button className="freshOrange" onClick={() => onNavigate?.("quotes")}>Create quote</button>
-            <button className="freshDark" onClick={() => onNavigate?.("clients")}>Add client</button>
+        <section className="freshCard freshJobsDetailCard">
+          <div className="freshJobsDetailHeader">
+            <div><small>{selected?.sourceMode === "local" ? "Browser-only slip" : "Backend Review item"}</small><h2>{selected ? titleOf(selected) : "Select Review item"}</h2></div>
+            {selected ? <span className={selected.sourceMode === "local" ? "need" : "ready"}>{selected.sourceMode === "local" ? "Promote first" : statusOf(selected)}</span> : null}
           </div>
+
+          {selected ? (
+            <>
+              <div className="freshMiniGrid freshJobsMiniGrid">
+                <div><span>Source</span><b>{selected.sourceMode === "local" ? "Browser slip" : "Backend"}</b></div>
+                <div><span>Category</span><b>{categoryOf(selected)}</b></div>
+                <div><span>Action</span><b>{selected.action || selected.type || "review"}</b></div>
+                <div><span>Owner rule</span><b>{selected.sourceMode === "local" ? "Promote first" : "Approval required"}</b></div>
+              </div>
+
+              <section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>
+              {detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}
+
+              <label className="freshField"><span>Owner note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Add approval note, edit instruction, or reason for ignoring" /></label>
+            </>
+          ) : <div className="freshItem"><b>No Review item selected</b><span>When Churvox prepares work, it will appear here for approval.</span></div>}
         </section>
 
-        <aside className="freshCard">
-          <h2>Owner activity</h2>
-
-          {activity.length === 0 && (
-            <div className="freshItem">
-              <b>No decisions yet</b>
-              <span>Approve, decline or edit a Command slip to create activity.</span>
-            </div>
-          )}
-
-          {activity.map((item) => (
-            <div className="freshItem freshActivityItem" key={item.id}>
-              <b>{item.status} · {item.title}</b>
-              <span>{item.group} · {item.info} · {item.time}</span>
-            </div>
-          ))}
-
-          <div className="freshActions">
-            <button className="freshGhost" onClick={resetCommand}>Reset Command boxes</button>
+        <aside className="freshCard freshJobsActionsCard">
+          <h2>Owner controls</h2>
+          <p className="freshJobsActionHint">Backend items can execute only after owner approval. Browser slips must be promoted first.</p>
+          <div className="freshActions freshJobsActionStack">
+            <button className="freshPrimary" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : "Approve backend action"}</button>
+            <button className="freshDark" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button>
+            <button className="freshGhost" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>Ignore</button>
+            <button className="freshOrange" type="button" disabled={!localItems.length || busy === "promote"} onClick={promoteLocalItems}>{busy === "promote" ? "Promoting..." : "Promote local slips"}</button>
+            <button className="freshDark" type="button" disabled={busy === "scan"} onClick={scanBackendRisks}>{busy === "scan" ? "Preparing..." : "Run backend scan"}</button>
+            <button className="freshGhost" type="button" disabled={!selected} onClick={openSelectedArea}>Open area</button>
+            <button className="freshGhost" type="button" onClick={loadReview}>Refresh Review</button>
           </div>
         </aside>
       </section>
 
-      {selected && (
-        <div className="freshSlipOverlay" onClick={() => setSelectedId(null)}>
-          <section className="freshSlipModal freshWorkModal" onClick={(event) => event.stopPropagation()}>
-            <header className="freshSlipHead">
-              <span>{selected.group}</span>
-              <h2>{selected.page === "invoices" ? "Draft invoice" : selected.page === "jobs" || selected.page === "dispatch" ? "Job detail" : selected.page === "clients" ? "Client details" : selected.page === "quotes" ? "Quote follow-up" : selected.title}</h2>
-              <p>{selected.info}</p>
-            </header>
-
-            <div className="freshWorkForm">
-              {selected.page === "invoices" && (
-                <>
-                  <label><span>Customer</span><input defaultValue="Aroha Property Care" /></label>
-                  <label><span>Invoice amount</span><input defaultValue="$85.00" /></label>
-                  <label><span>Description</span><textarea defaultValue="Completed lawn service. GST ready. Draft only until owner approves." /></label>
-                  <label><span>Status</span><select defaultValue="draft"><option value="draft">Draft — owner review</option><option value="sent">Ready to send</option></select></label>
-                </>
-              )}
-
-              {(selected.page === "jobs" || selected.page === "dispatch") && (
-                <>
-                  <label><span>Job</span><input defaultValue={selected.info} /></label>
-                  <label><span>Access / issue</span><textarea defaultValue={selected.owner} /></label>
-                  <label><span>Status</span><select defaultValue="blocked"><option value="blocked">Blocked</option><option value="assigned">Assigned</option><option value="ready">Ready for worker</option></select></label>
-                  <label><span>Owner note</span><textarea defaultValue="Confirm access before sending worker." /></label>
-                </>
-              )}
-
-              {selected.page === "clients" && (
-                <>
-                  <label><span>Client</span><input defaultValue="Birchville Rentals" /></label>
-                  <label><span>Billing email</span><input placeholder="Add billing email" /></label>
-                  <label><span>Setup note</span><textarea defaultValue="Billing details missing. Add email before invoice automation continues." /></label>
-                </>
-              )}
-
-              {selected.page === "quotes" && (
-                <>
-                  <label><span>Client</span><input defaultValue="Birchville Rentals" /></label>
-                  <label><span>Follow-up message</span><textarea defaultValue="Hi, just checking whether you would like us to go ahead with the quote. Happy to help when you're ready." /></label>
-                  <label><span>Status</span><select defaultValue="waiting"><option value="waiting">Waiting reply</option><option value="send">Ready to send</option></select></label>
-                </>
-              )}
-
-              {selected.page === "payroll" && (
-                <>
-                  <label><span>Payroll item</span><input defaultValue={selected.info} /></label>
-                  <label><span>Owner check</span><textarea defaultValue="Review hours and export CSV only. Tax filing and payment files stay outside Churvox." /></label>
-                </>
-              )}
-
-              {selected.page === "settings" && (
-                <>
-                  <label><span>Setup issue</span><input defaultValue={selected.title} /></label>
-                  <label><span>Fix needed</span><textarea defaultValue={selected.owner} /></label>
-                </>
-              )}
-
-              {!["invoices", "jobs", "dispatch", "clients", "quotes", "payroll", "settings"].includes(selected.page) && (
-                <label><span>Details</span><textarea defaultValue={selected.owner} /></label>
-              )}
-
-              <div className="freshSlipActions">
-                <button className="freshPrimary" onClick={() => updateSelected("Approved")}>{selected.page === "invoices" ? "Approve draft" : "Approve"}</button>
-                <button className="freshDark" onClick={() => updateSelected("Edited")}>Save changes</button>
-                <button className="freshGhost" onClick={() => updateSelected("Declined")}>Decline</button>
-                <button className="freshOrange" onClick={openArea}>Open {selected.area}</button>
-              </div>
-
-              <button type="button" className="freshClose" onClick={() => setSelectedId(null)}>
-                Close
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
+      <section className="freshGrid two" style={{ marginTop: 14 }}>
+        <section className="freshCard"><h2>Safe accounting rule</h2><p>Draft invoice sync only. No automatic invoice sending, no tax filing, no bank payout files, and no automatic paid status from Command.</p></section>
+        <aside className="freshCard"><h2>Owner activity</h2>{activity.length ? activity.map((item) => <div className="freshItem freshActivityItem" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></div>) : <div className="freshItem"><b>No decisions yet</b><span>Approve, edit, ignore, scan, or promote to create activity.</span></div>}</aside>
+      </section>
     </section>
   );
 }
