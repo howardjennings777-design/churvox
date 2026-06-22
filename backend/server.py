@@ -3916,7 +3916,10 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
         except Exception:
             notification["user_id"] = str(owner_id)
 
-    await db.notifications.insert_one(notification)
+    try:
+        await db.notifications.insert_one(notification)
+    except Exception as exc:
+        print(f"Worker office notification insert failed: {exc}")
 
     return {
         "success": True,
