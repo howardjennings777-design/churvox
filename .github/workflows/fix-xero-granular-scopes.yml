@@ -1,0 +1,86 @@
+name: Fix Xero granular scopes
+
+on:
+  push:
+    paths:
+      - ".github/workflows/fix-xero-granular-scopes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-xero-scopes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Xero OAuth scopes for granular API scopes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('backend/xero_routes.py')
+          text = path.read_text()
+
+          old_block = '''XERO_ACCOUNTING_SCOPES = [
+    "accounting.transactions",
+    "accounting.contacts",
+    "accounting.settings",
+]
+'''
+          new_block = '''XERO_ACCOUNTING_SCOPES = [
+    "accounting.invoices",
+    "accounting.contacts",
+]
+
+XERO_SCOPE_ALIASES = {
+    "accounting.transactions": "accounting.invoices",
+    "accounting.transactions.read": "accounting.invoices.read",
+    "accounting.settings": "",
+    "projects.read": "",
+}
+'''
+          if old_block in text:
+              text = text.replace(old_block, new_block)
+
+          old_clean = '''    raw = str(value or os.environ.get("XERO_SCOPES") or "").replace(",", " ").split()
+    cleaned = [scope for scope in raw if scope in XERO_SAFE_SCOPES]
+
+    if not cleaned:
+        cleaned = list(XERO_SAFE_SCOPES)
+'''
+          new_clean = '''    raw = str(value or os.environ.get("XERO_SCOPES") or "").replace(",", " ").split()
+    cleaned = []
+    for scope in raw:
+        mapped = XERO_SCOPE_ALIASES.get(scope, scope)
+        if mapped and mapped in XERO_SAFE_SCOPES and mapped not in cleaned:
+            cleaned.append(mapped)
+
+    if not cleaned:
+        cleaned = list(XERO_SAFE_SCOPES)
+'''
+          if old_clean in text:
+              text = text.replace(old_clean, new_clean)
+
+          old_comment = '''    # Phase one needs these accounting scopes for draft invoice/contact/settings sync.
+'''
+          new_comment = '''    # Phase one needs invoice/contact scopes for draft invoice sync.
+'''
+          text = text.replace(old_comment, new_comment)
+
+          old_marker = '''"Expected scopes: openid profile email offline_access accounting.transactions accounting.contacts accounting.settings\n"'''
+          # Only xero_routes.py is patched here; marker file is left alone if present.
+
+          path.write_text(text)
+          PY
+      - name: Commit fix if changed
+        run: |
+          if git diff --quiet -- backend/xero_routes.py; then
+            echo "No Xero scope changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/xero_routes.py
+          git commit -m "Use Xero granular invoice scopes"
+          git push
