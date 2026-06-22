@@ -154,6 +154,20 @@ function hoursText(totalSeconds) {
   return `${h}h ${m}m`;
 }
 
+function jobSortValue(job) {
+  const date = dateOf(job) || "9999-12-31";
+  const time = timeOf(job) || "99:99";
+  return `${date} ${time}`;
+}
+
+function nextJobLabel(job) {
+  if (!job) return "No job ready";
+  if (isSentBack(job)) return "Fix needed";
+  if (isActive(job)) return "Active now";
+  if (dateOf(job) === localDateKey()) return timeOf(job) || "Today";
+  return dateOf(job) || "Open job";
+}
+
 async function reverseGeocodeLocation(location) {
   const lat = location?.lat ?? location?.latitude;
   const lng = location?.lng ?? location?.longitude;
@@ -203,7 +217,6 @@ function getGpsPosition() {
     );
   });
 }
-
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -472,9 +485,27 @@ export default function WorkerJobsPage() {
   const today = localDateKey();
   const todayJobs = useMemo(() => jobs.filter((job) => dateOf(job) === today), [jobs, today]);
   const openJobs = jobs.filter((job) => !isComplete(job));
-  const visibleJobs = todayJobs.length ? todayJobs : openJobs;
+  const activeJobs = jobs.filter(isActive);
+  const visibleJobs = useMemo(() => {
+    const base = todayJobs.length ? todayJobs : openJobs;
+    return [...base].sort((a, b) => {
+      if (isSentBack(a) !== isSentBack(b)) return isSentBack(a) ? -1 : 1;
+      if (isActive(a) !== isActive(b)) return isActive(a) ? -1 : 1;
+      return jobSortValue(a).localeCompare(jobSortValue(b));
+    });
+  }, [todayJobs, openJobs]);
   const doneToday = jobs.filter((job) => isComplete(job) && dateOf(job) === today).length;
   const sentBackJobs = jobs.filter(isSentBack);
+  const nextJob = sentBackJobs[0] || activeJobs[0] || visibleJobs.find((job) => !isComplete(job)) || null;
+  const nextAddress = nextJob ? addressOf(nextJob) : "";
+  const nextInstructions = nextJob ? instructionsOf(nextJob) : "";
+  const clockedIn = shiftStatus === "clocked_in";
+  const readySteps = [
+    { label: "Clock", detail: clockedIn ? "Clocked in" : "Clock in first", done: clockedIn },
+    { label: "GPS", detail: gpsTracking ? "GPS on" : "GPS starts with clock in", done: gpsTracking },
+    { label: "Next job", detail: nextJob ? jobTitle(nextJob) : "No job ready", done: Boolean(nextJob) },
+    { label: "Proof", detail: "Photo or message before finish", done: false },
+  ];
 
   return (
     <div className="wc-screen">
@@ -491,10 +522,10 @@ export default function WorkerJobsPage() {
       </header>
 
       <main className="wc-main">
-        <section className="wc-welcome">
-          <span>Today</span>
-          <h1>Your jobs</h1>
-          <p>Open a job, read the instructions, do the work, then send proof to the boss.</p>
+        <section className="wc-welcome wc-welcome-compact">
+          <span>Worker app</span>
+          <h1>Today</h1>
+          <p>Clock in, open the next job, follow instructions, add proof, then send it to the boss.</p>
         </section>
 
         <section className="wc-clock-card">
@@ -513,6 +544,31 @@ export default function WorkerJobsPage() {
               {shiftBusy ? "Clocking out…" : "Clock out"}
             </button>
           )}
+        </section>
+
+        <section className={`wc-next-job ${nextJob ? "ready" : "empty"}`} id="today">
+          <div className="wc-next-job-copy">
+            <span>{nextJobLabel(nextJob)}</span>
+            <h2>{nextJob ? jobTitle(nextJob) : "No job assigned yet"}</h2>
+            <p>{nextJob ? clientName(nextJob) : "Refresh or message the boss if you are expecting work."}</p>
+            {nextAddress ? <small><MapPin size={15} /> {nextAddress}</small> : <small><MapPin size={15} /> No address added</small>}
+            {nextInstructions ? <em>{String(nextInstructions).slice(0, 150)}</em> : null}
+          </div>
+          <div className="wc-next-job-actions">
+            {nextJob ? <Link to={`/worker/jobs/${idOf(nextJob)}`}>Open next job</Link> : <button type="button" onClick={fetchJobs}>Refresh jobs</button>}
+            {nextAddress ? <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextAddress)}`} target="_blank" rel="noreferrer"><Navigation size={16} /> Directions</a> : null}
+            <button type="button" onClick={() => setShowContactOffice(true)}><MessageCircle size={16} /> Message boss</button>
+          </div>
+        </section>
+
+        <section className="wc-ready-steps" aria-label="Worker readiness checklist">
+          {readySteps.map((step) => (
+            <article key={step.label} className={step.done ? "done" : ""}>
+              <b>{step.done ? "✓" : "•"}</b>
+              <span>{step.label}</span>
+              <small>{step.detail}</small>
+            </article>
+          ))}
         </section>
 
         {!workerPushEnabled ? (
@@ -589,7 +645,7 @@ export default function WorkerJobsPage() {
           </section>
         ) : null}
 
-        <section className="wc-list">
+        <section className="wc-list" id="jobs">
           <div className="wc-section-head">
             <span>Job list</span>
             <h2>{todayJobs.length ? "Today’s jobs" : "Open jobs"}</h2>
