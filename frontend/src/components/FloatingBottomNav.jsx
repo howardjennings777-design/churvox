@@ -1,21 +1,6 @@
 import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-const NAV_ITEMS = [
-  ["Command Board", "/command-board", "CM", "Command"],
-  ["Jobs", "/jobs-board", "JB", "Work"],
-  ["Crew Dispatch", "/dispatch-board", "DP", "Work"],
-  ["Clients", "/clients-board", "CL", "Work"],
-  ["Quotes", "/quotes-board", "QT", "Work"],
-  ["Invoices", "/invoices-board", "IV", "Work"],
-  ["Team", "/team-board", "TM", "Crew & Admin"],
-  ["Payroll", "/payroll-board", "PR", "Crew & Admin"],
-  ["Reports", "/reports-board", "RP", "Crew & Admin"],
-  ["Plans", "/plans", "PL", "System"],
-  ["Settings", "/settings-board", "ST", "System"],
-  ["Support", "/support-board", "SP", "System"],
-];
-
 const MOBILE_NAV_ITEMS = [
   ["Command", "/command-board", "CM"],
   ["Jobs", "/jobs-board", "JB"],
@@ -60,10 +45,6 @@ function isActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function ChurvoxSidebar() {
-  return null;
-}
-
 function ChurvoxMobileNav({ pathname }) {
   return (
     <nav className="cvxMobileNav" aria-label="Churvox mobile command navigation">
@@ -93,10 +74,5 @@ export default function FloatingBottomNav() {
 
   if (!commandVisible) return null;
 
-  return (
-    <>
-      <ChurvoxSidebar />
-      <ChurvoxMobileNav pathname={pathname} />
-    </>
-  );
+  return <ChurvoxMobileNav pathname={pathname} />;
 }
