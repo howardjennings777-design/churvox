@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import os
 
-# Xero rejects the OAuth request if any scope is invalid. Force the launch-safe
-# phase-one scope set before xero_routes reads XERO_SCOPES from the environment.
-# Do not request accounting.settings here; draft invoice/contact sync does not
-# need it and some Xero app setups reject it.
-os.environ["XERO_SCOPES"] = "openid profile email offline_access accounting.invoices accounting.contacts"
+# Xero rejects the OAuth request if any scope is invalid. Let Render's XERO_SCOPES
+# win when it is configured, and only fall back to the minimum phase-one scope set.
+os.environ.setdefault("XERO_SCOPES", "offline_access accounting.invoices")
 os.environ.setdefault("BACKEND_PUBLIC_URL", "https://churvox-backend.onrender.com")
 os.environ.setdefault("FRONTEND_URL", "https://www.churvox.com")
 
