@@ -4,7 +4,7 @@ const { test, expect } = require("@playwright/test");
 const OWNER_EMAIL = process.env.CHURVOX_E2E_EMAIL || "";
 const OWNER_PASSWORD = process.env.CHURVOX_E2E_PASSWORD || "";
 const WORKER_EMAIL = process.env.CHURVOX_E2E_WORKER_EMAIL || "";
-const WORKER_PASSWORD = process.env.CHURVOX_E2E_WORKER_PASSWORD || "";
+const WORKER_PASSWORD = process.env.CHURVOX_E2E_WORKER_PASSWORD || "";\nconst API_BASE = (process.env.PLAYWRIGHT_API_BASE || "https://grassley-backend.onrender.com").replace(/\\/+$/, "");\nfunction apiUrl(url) { return `${API_BASE}${url.startsWith("/api") ? url : `/api${url}`}`; }
 
 function stamp() {
   return new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
@@ -41,19 +41,19 @@ async function login(page, email, password) {
 }
 
 async function getJson(request, url) {
-  const res = await request.get(url);
+  const res = await request.get(apiUrl(url));
   const body = await res.json().catch(() => ({}));
   return { ok: res.ok(), status: res.status(), body };
 }
 
 async function postJson(request, url, data) {
-  const res = await request.post(url, { data });
+  const res = await request.post(apiUrl(url), { data });
   const body = await res.json().catch(() => ({}));
   return { ok: res.ok(), status: res.status(), body };
 }
 
 async function patchJson(request, url, data) {
-  const res = await request.patch(url, { data });
+  const res = await request.patch(apiUrl(url), { data });
   const body = await res.json().catch(() => ({}));
   return { ok: res.ok(), status: res.status(), body };
 }
