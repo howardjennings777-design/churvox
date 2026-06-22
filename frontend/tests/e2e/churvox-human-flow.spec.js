@@ -180,29 +180,28 @@ async function visitArea(page, area) {
 }
 
 async function safeButtonWalk(page, label) {
-  const candidates = await page.locator('button, a[href], [role="button"]').evaluateAll((els) =>
-    els.map((el) => {
-      const r = el.getBoundingClientRect();
-      const s = getComputedStyle(el);
-      const label = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim().replace(/\s+/g, ' ');
-      return { label, visible: r.width > 1 && r.height > 1 && s.display !== 'none' && s.visibility !== 'hidden' };
-    }).filter(x => x.visible && x.label).slice(0, 25)
-  );
-
+  const controls = page.locator('.freshPageScroll button, .freshPageScroll a[href], .freshPageScroll [role="button"], .freshMobileQuickActions button, .freshMobileNav button');
+  const count = await controls.count().catch(() => 0);
   let clicked = 0;
 
-  for (const item of candidates) {
-    if (clicked >= 1) break;
+  for (let i = 0; i < count && clicked < 1; i++) {
+    const loc = controls.nth(i);
+    if (!(await loc.isVisible().catch(() => false))) continue;
+
+    const item = await loc.evaluate((el) => {
+      const text = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim().replace(/\s+/g, ' ');
+      return {
+        label: text,
+        disabled: Boolean(el.disabled || el.getAttribute('aria-disabled') === 'true'),
+      };
+    }).catch(() => null);
+
+    if (!item || item.disabled || !item.label) continue;
     if (dangerous.test(item.label)) continue;
-    // Prefer known safe labels, but still click ordinary visible non-dangerous controls like a human would.
-    if (!safeClick.test(item.label) && item.label.length < 2) continue;
+    if (!safeClick.test(item.label)) continue;
 
     const before = page.url();
-    const loc = page.getByText(item.label, { exact: false }).first();
-
-    if (!(await loc.count().catch(() => 0)) || !(await loc.isVisible().catch(() => false))) continue;
-
-    await loc.click().catch(() => null);
+    await loc.click({ timeout: 5000 }).catch(() => null);
     await waitHuman(page);
     clicked++;
 
@@ -211,13 +210,20 @@ async function safeButtonWalk(page, label) {
       await waitHuman(page);
     }
 
-    await page.keyboard.press('Escape').catch(() => null);
+    const close = page.getByRole('button', { name: /cancel|close/i }).first();
+    if (await close.isVisible().catch(() => false)) {
+      await close.click().catch(() => null);
+      await waitHuman(page);
+    } else {
+      await page.keyboard.press('Escape').catch(() => null);
+    }
   }
 
   if (clicked === 0) {
     console.warn(`${label}: no safe non-destructive controls found to click`);
   }
 }
+
 
 test.describe('Churvox human flow', () => {
   test.setTimeout(180000);

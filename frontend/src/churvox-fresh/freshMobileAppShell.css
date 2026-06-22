@@ -575,3 +575,23 @@
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+/* CHURVOX_MOBILE_TOUCH_TARGETS_20260623 */
+@media (max-width: 900px) {
+  .freshPageScroll button,
+  .freshPageScroll a[href],
+  .freshPageScroll [role="button"],
+  .freshPageScroll input,
+  .freshPageScroll textarea,
+  .freshPageScroll select {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .freshCommandFilterBar button,
+  .freshActions button,
+  .freshJobsActionStack button {
+    min-height: 44px !important;
+  }
+}
+
