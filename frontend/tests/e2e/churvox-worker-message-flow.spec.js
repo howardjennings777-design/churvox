@@ -42,20 +42,35 @@ async function login(page, email, password) {
   await page.waitForTimeout(800);
 }
 
-async function getJson(request, url) {
-  const res = await request.get(apiUrl(url));
+async function apiSession(page) {
+  const token = await page.evaluate(() => window.localStorage.getItem("token") || "");
+  return { request: page.context().request, token };
+}
+
+function apiOptions(session, extra = {}) {
+  return {
+    ...extra,
+    headers: {
+      ...(extra.headers || {}),
+      ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {}),
+    },
+  };
+}
+
+async function getJson(session, url) {
+  const res = await session.request.get(apiUrl(url), apiOptions(session));
   const body = await res.json().catch(() => ({}));
   return { ok: res.ok(), status: res.status(), body };
 }
 
-async function postJson(request, url, data) {
-  const res = await request.post(apiUrl(url), { data });
+async function postJson(session, url, data) {
+  const res = await session.request.post(apiUrl(url), apiOptions(session, { data }));
   const body = await res.json().catch(() => ({}));
   return { ok: res.ok(), status: res.status(), body };
 }
 
-async function patchJson(request, url, data) {
-  const res = await request.patch(apiUrl(url), { data });
+async function patchJson(session, url, data) {
+  const res = await session.request.patch(apiUrl(url), apiOptions(session, { data }));
   const body = await res.json().catch(() => ({}));
   return { ok: res.ok(), status: res.status(), body };
 }
@@ -99,7 +114,7 @@ test.describe("Churvox worker boss message loop", () => {
     const workerPage = await workerContext.newPage();
 
     await login(ownerPage, OWNER_EMAIL, OWNER_PASSWORD);
-    const ownerRequest = ownerContext.request;
+    const ownerRequest = await apiSession(ownerPage);
 
     const worker = await findWorker(ownerRequest);
     const workerId = idOf(worker);
@@ -133,7 +148,7 @@ test.describe("Churvox worker boss message loop", () => {
     expect(jobId, "created job id").toBeTruthy();
 
     await login(workerPage, WORKER_EMAIL, WORKER_PASSWORD);
-    const workerRequest = workerContext.request;
+    const workerRequest = await apiSession(workerPage);
 
     
     console.log("CREATED_JOB_ID", jobId);
