@@ -135,6 +135,24 @@ test.describe("Churvox worker boss message loop", () => {
     await login(workerPage, WORKER_EMAIL, WORKER_PASSWORD);
     const workerRequest = workerContext.request;
 
+    
+    console.log("CREATED_JOB_ID", jobId);
+    console.log("WORKER_ID", workerId);
+    console.log("WORKER_RECORD", JSON.stringify(worker, null, 2).slice(0, 1200));
+    console.log("OWNER_CREATED_JOB", JSON.stringify(job, null, 2).slice(0, 1800));
+
+    const workerJobsRaw = await getJson(workerRequest, "/api/jobs?ts=" + Date.now());
+    console.log("WORKER_JOBS_STATUS", workerJobsRaw.status);
+    console.log("WORKER_JOBS_BODY", JSON.stringify(workerJobsRaw.body, null, 2).slice(0, 4000));
+
+    const ownerJobRaw = await getJson(ownerRequest, "/api/jobs/" + encodeURIComponent(jobId));
+    console.log("OWNER_JOB_DIRECT_STATUS", ownerJobRaw.status);
+    console.log("OWNER_JOB_DIRECT_BODY", JSON.stringify(ownerJobRaw.body, null, 2).slice(0, 3000));
+
+    const workerDirectRaw = await getJson(workerRequest, "/api/jobs/" + encodeURIComponent(jobId));
+    console.log("WORKER_JOB_DIRECT_STATUS", workerDirectRaw.status);
+    console.log("WORKER_JOB_DIRECT_BODY", JSON.stringify(workerDirectRaw.body, null, 2).slice(0, 3000));
+
     const workerSeesJob = await getJob(workerRequest, jobId, bossToken);
     expect(workerSeesJob, "worker can load assigned job").toBeTruthy();
     expect(textHas(workerSeesJob, bossToken), "worker receives boss instructions").toBeTruthy();
