@@ -32,7 +32,8 @@ const moreGroup = {
   ],
 };
 
-const mobileItems = [["today", "TW", "Today"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["invoices", "IV", "Money"], ["more", "••", "More"]];
+const mobileItems = [["today", "TW", "Today"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
+const mobileMoreOrder = ["clients", "quotes", "payments", "xero", "team", "workercommand", "time", "support", "settings"];
 
 const mobileLabels = {
   today: "Today’s Work",
@@ -201,15 +202,14 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   React.useLayoutEffect(() => { resetScroll(); }, [active]);
   React.useEffect(() => { resetScroll(); }, [active]);
 
-
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
   const safeMoreItems = React.useMemo(() => cleanGroups([moreGroup], guideComplete)[0]?.items || [], [guideComplete]);
-  const moreHasActiveItem = safeMoreItems.some(([key]) => currentPrimary === key);
+  const moreHasActiveItem = safeMoreItems.some(([key]) => currentPrimary === key) || mobileMoreOrder.includes(currentPrimary);
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
   const safeExtraMobile = React.useMemo(() => {
-    const main = new Set(safeMobileItems.map(([key]) => key));
-    return uniqueItems([...safeGroups.flatMap((group) => group.items), ...safeMoreItems]).filter(([key]) => !main.has(key) && key !== "askchurvox");
-  }, [safeMobileItems, safeGroups, safeMoreItems]);
+    const byKey = new Map(uniqueItems([...safeGroups.flatMap((group) => group.items), ...safeMoreItems]).map((item) => [item[0], item]));
+    return mobileMoreOrder.map((key) => byKey.get(key)).filter(Boolean);
+  }, [safeGroups, safeMoreItems]);
 
   function go(key) {
     if (key === "more") return;
@@ -232,6 +232,25 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
       return;
     }
     go(key);
+  }
+
+  function openMobileJob() {
+    const text = "New job";
+    try {
+      window.localStorage.setItem(OPEN_JOB_MODAL_KEY, JSON.stringify({ open: true, instruction: text, text, at: Date.now() }));
+    } catch {}
+
+    if (currentPrimary === "jobs") fireJobAsk(text);
+    else {
+      go("jobs");
+      [120, 350, 800].forEach((delay) => window.setTimeout(() => fireJobAsk(text), delay));
+    }
+  }
+
+  function openMobileClient() {
+    try { window.localStorage.setItem(OPEN_CLIENT_MODAL_KEY, "true"); } catch {}
+    if (currentPrimary === "clients") window.dispatchEvent(new CustomEvent("churvox:open-client-popup", { detail: { source: "mobile-quick-action" } }));
+    else go("clients");
   }
 
   function submitAsk(event) {
@@ -333,10 +352,17 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
           <header className="freshMobileAppTop">
             <div>
               <b>Churvox</b>
-              <span>{mobileTitle} · ready</span>
+              <span>{mobileTitle} - field mode</span>
             </div>
             <button className="freshMobileLogout" type="button" onClick={handleLogout}>Log out</button>
           </header>
+
+          <section className="freshMobileQuickActions" aria-label="Mobile quick actions">
+            <button type="button" onClick={openMobileJob}><b>+</b><span>New job</span></button>
+            <button type="button" onClick={openMobileClient}><b>CL</b><span>Add client</span></button>
+            <button type="button" onClick={() => go("command")}><b>OK</b><span>Approve</span></button>
+            <button type="button" onClick={() => go("payments")}><b>$</b><span>Unpaid</span></button>
+          </section>
 
           {showGlobalAsk ? (
             <form className="freshGlobalAsk" onSubmit={submitAsk}>
@@ -345,7 +371,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
                   <input
                     value={globalAsk}
                     onChange={(event) => setGlobalAsk(event.target.value)}
-                    placeholder="open jobs, add client, show unpaid invoices…"
+                    placeholder="open jobs, add client, show unpaid invoices..."
                   />
                 </label>
                 <button type="submit">Ask Churvox</button>
@@ -363,6 +389,10 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
                 <span>{label}</span>
               </button>
             ))}
+            <div className="freshMobileMoreNote">
+              <b>Desktop tools</b>
+              <span>Payroll, reports, imports, exports, plans and launch controls are cleaner on PC.</span>
+            </div>
           </div>
         )}
 
