@@ -635,3 +635,21 @@
   }
 }
 
+/* CHURVOX_MOBILE_CHECKBOX_TOUCH_FIX_20260623 */
+@media (max-width: 900px) {
+  .freshApp input[type="checkbox"],
+  .freshApp input[type="radio"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    flex: 0 0 44px !important;
+    box-sizing: border-box !important;
+    accent-color: #f97316;
+  }
+}
+
