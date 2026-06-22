@@ -1,10 +1,10 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import API_BASE from "../lib/apiBase";
 import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshXero.css";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
-const XERO_PHASE_ONE_SCOPES = ["openid", "profile", "email", "offline_access", "accounting.transactions", "accounting.contacts"];
 
 function unwrap(result) {
   return result?.data ?? result;
@@ -51,16 +51,6 @@ function isPaid(invoice) {
 
 function money(value) {
   return `$${Number(value || 0).toLocaleString("en-NZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function sanitiseXeroConnectUrl(url) {
-  try {
-    const next = new URL(String(url || ""));
-    next.searchParams.set("scope", XERO_PHASE_ONE_SCOPES.join(" "));
-    return next.toString();
-  } catch {
-    return url;
-  }
 }
 
 function readCommandInbox() {
@@ -111,6 +101,11 @@ function sendXeroToCommand({ status, invoice, syncResult, message }) {
   }
 }
 
+function accountingPackUrl(system) {
+  const base = API_BASE || window.location.origin;
+  return `${base}/api/accounting/export/pack?system=${encodeURIComponent(system)}`;
+}
+
 export default function FreshXero({ onNavigate }) {
   const { get, post } = useApi();
   const [status, setStatus] = React.useState(null);
@@ -118,6 +113,9 @@ export default function FreshXero({ onNavigate }) {
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState(false);
   const [syncing, setSyncing] = React.useState(false);
+  const [accountingBusy, setAccountingBusy] = React.useState("");
+  const [accountingHealth, setAccountingHealth] = React.useState(null);
+  const [paymentRows, setPaymentRows] = React.useState([]);
   const [message, setMessage] = React.useState("");
   const [syncResult, setSyncResult] = React.useState(null);
 
@@ -214,6 +212,40 @@ export default function FreshXero({ onNavigate }) {
     onNavigate?.("command");
   }
 
+  function downloadAccountingPack(system) {
+    window.open(accountingPackUrl(system), "_blank", "noopener,noreferrer");
+  }
+
+  async function loadAccountingHealth() {
+    setAccountingBusy("health");
+    setMessage("");
+    try {
+      const data = unwrap(await get("/accounting/health", { timeout: 25000 }));
+      setAccountingHealth(data);
+      const connectedText = data?.live_sync?.xero_connected ? "Xero live sync ready" : "Xero live sync not ready";
+      setMessage(`${connectedText}. Export pack and bookkeeper handoff are ready.`);
+    } catch (err) {
+      setMessage(err?.message || "Could not load accounting health.");
+    } finally {
+      setAccountingBusy("");
+    }
+  }
+
+  async function loadPaymentStatus() {
+    setAccountingBusy("payments");
+    setMessage("");
+    try {
+      const data = unwrap(await get("/accounting/payment-status", { timeout: 25000 }));
+      const rows = Array.isArray(data?.invoices) ? data.invoices : [];
+      setPaymentRows(rows);
+      setMessage(`Payment status loaded for ${rows.length} invoice${rows.length === 1 ? "" : "s"}. Paid stays manual until accounting refresh confirms it.`);
+    } catch (err) {
+      setMessage(err?.message || "Could not load payment status.");
+    } finally {
+      setAccountingBusy("");
+    }
+  }
+
   const configured = Boolean(status?.configured);
   const connected = Boolean(status?.connected);
   const addonActive = Boolean(status?.addon_active);
@@ -224,6 +256,14 @@ export default function FreshXero({ onNavigate }) {
   const latestInvoiceLabel = latestInvoice ? `${invoiceNumber(latestInvoice)} · ${invoiceCustomer(latestInvoice)}` : "No invoice yet";
   const latestInvoiceTotal = latestInvoice ? money(amountOf(latestInvoice)) : "—";
   const latestInvoicePaid = latestInvoice ? isPaid(latestInvoice) : false;
+  const healthCounts = accountingHealth?.counts || {};
+  const guardrails = accountingHealth?.guardrails || [
+    "Draft invoice sync only",
+    "No automatic invoice sending",
+    "No tax filing",
+    "No bank payout files",
+    "Owner approval stays required",
+  ];
 
   return (
     <section className="freshXeroPage">
@@ -243,8 +283,8 @@ export default function FreshXero({ onNavigate }) {
       </div>
 
       {message && (
-        <div className={`freshXeroNotice ${syncResult?.success ? "proper" : "need"}`}>
-          <b>Xero notice</b>
+        <div className={`freshXeroNotice ${syncResult?.success || connected ? "proper" : "need"}`}>
+          <b>Accounting notice</b>
           <span>{message}</span>
         </div>
       )}
@@ -291,6 +331,12 @@ export default function FreshXero({ onNavigate }) {
             <span>Owner sends latest Churvox invoice as Xero draft</span>
             <small>{draftReady ? "Ready" : "Connect first"}</small>
           </button>
+
+          <button type="button" className="active" onClick={() => downloadAccountingPack("both")}>
+            <b>5. Bookkeeper pack</b>
+            <span>Xero CSV, MYOB CSV, clients, jobs, and notes</span>
+            <small>Download</small>
+          </button>
         </aside>
 
         <article className="freshXeroDetail">
@@ -316,14 +362,17 @@ export default function FreshXero({ onNavigate }) {
                   {syncing ? "Syncing draft..." : "Sync latest invoice draft"}
                 </button>
               )}
+              <button type="button" onClick={() => downloadAccountingPack("xero")}>Xero CSV</button>
+              <button type="button" onClick={() => downloadAccountingPack("myob")}>MYOB CSV</button>
+              <button type="button" onClick={() => downloadAccountingPack("both")}>Bookkeeper pack</button>
+              <button type="button" onClick={loadAccountingHealth} disabled={accountingBusy === "health"}>{accountingBusy === "health" ? "Checking..." : "Accounting health"}</button>
+              <button type="button" onClick={loadPaymentStatus} disabled={accountingBusy === "payments"}>{accountingBusy === "payments" ? "Loading..." : "Payment status"}</button>
               {connected && (
                 <button type="button" onClick={disconnectXero} disabled={busy || syncing}>
                   Disconnect Xero
                 </button>
               )}
               <button type="button" onClick={sendCheckToCommand}>Send check to Command</button>
-              <button type="button" onClick={() => onNavigate?.("invoices")}>Open Invoices</button>
-              <button type="button" onClick={() => onNavigate?.("payments")}>Open Payments</button>
             </div>
           </div>
 
@@ -345,6 +394,24 @@ export default function FreshXero({ onNavigate }) {
               <b>{settings.payment_sync_enabled ? "Read-back available" : "Manual/refresh"}</b>
               <p>Payment status should be checked after a Xero invoice ID exists.</p>
             </section>
+
+            <section>
+              <span>Accounting export</span>
+              <b>CSV ready</b>
+              <p>Xero, MYOB, clients, jobs, and bookkeeper notes are available as a controlled export pack.</p>
+            </section>
+
+            <section>
+              <span>Health panel</span>
+              <b>{accountingHealth ? "Loaded" : "Ready"}</b>
+              <p>{accountingHealth ? `${healthCounts.invoices || 0} invoices checked.` : "Run Accounting health to check live sync and handoff readiness."}</p>
+            </section>
+
+            <section>
+              <span>Bookkeeper mode</span>
+              <b>Owner controlled</b>
+              <p>Downloadable handoff pack for Xero/MYOB without auto-filing, auto-sending, or payout files.</p>
+            </section>
           </div>
 
           <div className="freshXeroForm">
@@ -356,10 +423,18 @@ export default function FreshXero({ onNavigate }) {
             <label><span>Tax type</span><input readOnly value={status?.sales_tax_type || ""} /></label>
             <label><span>Latest invoice</span><input readOnly value={latestInvoiceLabel} /></label>
             <label><span>Latest total</span><input readOnly value={latestInvoiceTotal} /></label>
+            <label><span>Payment rows loaded</span><input readOnly value={paymentRows.length ? `${paymentRows.length} invoice${paymentRows.length === 1 ? "" : "s"}` : "Not loaded"} /></label>
+
+            <section className="freshXeroSafeRule">
+              <span>Top player accounting layer</span>
+              <b>CSV export + live draft sync + payment check + health + bookkeeper handoff</b>
+              <p>Churvox now keeps a fallback export pack for Xero/MYOB, live Xero draft invoice sync, manual payment status checks, a health panel, and a bookkeeper-ready download path.</p>
+            </section>
+
             <section className="freshXeroSafeRule">
               <span>Safety rule</span>
               <b>Draft invoice only</b>
-              <p>Owner approval is required before invoices are sent. Tax filing stays outside Churvox. Churvox does not create payment files. Mark paid only after owner/accounting status check.</p>
+              <p>{guardrails.join(". ")}.</p>
             </section>
 
             <section className="freshXeroTechBox">
@@ -373,14 +448,6 @@ export default function FreshXero({ onNavigate }) {
                 <textarea readOnly value={`Invoice: ${xeroInvoice.InvoiceNumber || ""}\nXero ID: ${xeroInvoice.InvoiceID || ""}\nStatus: ${xeroInvoice.Status || ""}`} />
               </label>
             )}
-          </div>
-
-          <div className="freshXeroActions">
-            <button type="button" onClick={loadStatus}>Reload status</button>
-            <button type="button" onClick={syncLatestInvoice} disabled={syncing || !draftReady || !latestInvoice}>Sync latest invoice draft</button>
-            <button type="button" onClick={sendCheckToCommand}>Send check to Command</button>
-            <button type="button" onClick={() => onNavigate?.("payments")}>Open Payments</button>
-            <button type="button" onClick={() => onNavigate?.("settings")}>Open Settings</button>
           </div>
         </article>
       </div>
