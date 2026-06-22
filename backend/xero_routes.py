@@ -2,7 +2,7 @@ import base64
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode, parse_qs, quote, quote
+from urllib.parse import urlencode, parse_qs
 
 import httpx
 import stripe
@@ -28,13 +28,10 @@ XERO_AUTHORIZE_URL = "https://login.xero.com/identity/connect/authorize"
 XERO_TOKEN_URL = "https://identity.xero.com/connect/token"
 XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
 XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
-XERO_REQUIRED_SCOPES = [
-    "offline_access",
-]
+XERO_REQUIRED_SCOPES = ["offline_access"]
 
 XERO_ACCOUNTING_SCOPES = [
     "accounting.invoices",
-    "accounting.contacts",
 ]
 
 XERO_SCOPE_ALIASES = {
@@ -689,7 +686,7 @@ def install(app, db, get_current_user):
         state = secrets.token_urlsafe(32)
         await db.xero_oauth_states.insert_one({"state": state, "business_id": bid, "user_id": str(current_user.get("id")), "created_at": datetime.now(timezone.utc), "used": False})
         params = {"response_type": "code", "client_id": XERO_CLIENT_ID, "redirect_uri": XERO_REDIRECT_URI, "scope": XERO_DEFAULT_SCOPES, "state": state}
-        return {"success": True, "url": f"{XERO_AUTHORIZE_URL}?{urlencode(params, quote_via=quote)}"}
+        return {"success": True, "url": f"{XERO_AUTHORIZE_URL}?{urlencode(params)}"}
 
     @router.get("/xero/callback")
     async def xero_callback(code: str | None = Query(None), state: str | None = Query(None), error: str | None = Query(None)):
