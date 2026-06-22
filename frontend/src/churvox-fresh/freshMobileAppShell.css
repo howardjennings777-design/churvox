@@ -260,3 +260,318 @@
 .freshMobileNav button span {
   font-size: 12px !important;
 }
+
+/* CHURVOX_MOBILE_FIELD_MODE_20260622 */
+.freshMobileQuickActions {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  html,
+  body {
+    overflow-x: hidden !important;
+  }
+
+  .freshApp {
+    min-height: 100dvh !important;
+    background: #f8f3ea !important;
+  }
+
+  .freshSide {
+    display: none !important;
+  }
+
+  .freshMain {
+    width: 100% !important;
+    min-height: 100dvh !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .freshMobileAppTop {
+    min-height: 58px !important;
+    border-radius: 0 0 18px 18px !important;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 8px !important;
+    background: linear-gradient(135deg, #111827 0%, #1f2937 72%, #7c2d12 100%) !important;
+  }
+
+  .freshMobileAppTop b {
+    font-size: 17px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .freshMobileAppTop button.freshMobileLogout {
+    min-width: 64px !important;
+    min-height: 34px !important;
+    font-size: 11px !important;
+    box-shadow: none !important;
+  }
+
+  .freshMobileQuickActions {
+    position: sticky;
+    top: 58px;
+    z-index: 2147481800;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 10px 10px 8px;
+    padding: 8px;
+    border: 1px solid rgba(15, 23, 42, .08);
+    border-radius: 22px;
+    background: rgba(255, 250, 240, .94);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .10);
+    backdrop-filter: blur(14px);
+  }
+
+  .freshMobileQuickActions button {
+    min-height: 58px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    border: 1px solid rgba(249, 115, 22, .18);
+    border-radius: 17px;
+    background: #fff7ed;
+    color: #111827;
+    -webkit-text-fill-color: #111827;
+    font-weight: 1000;
+    cursor: pointer;
+  }
+
+  .freshMobileQuickActions b {
+    width: 25px;
+    height: 25px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: #111827;
+    color: #fffaf0;
+    -webkit-text-fill-color: #fffaf0;
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  .freshMobileQuickActions span {
+    max-width: 100%;
+    color: #7c2d12;
+    -webkit-text-fill-color: #7c2d12;
+    font-size: 10px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .freshMain > .freshGlobalAsk {
+    margin: 8px 10px 10px !important;
+    width: calc(100% - 20px) !important;
+    grid-template-columns: 1fr !important;
+    border-radius: 20px !important;
+    padding: 10px !important;
+  }
+
+  .freshGlobalAsk input {
+    min-height: 42px !important;
+    font-size: 13px !important;
+  }
+
+  .freshGlobalAsk button {
+    min-height: 40px !important;
+    width: 100% !important;
+  }
+
+  .freshPageScroll {
+    width: 100% !important;
+    padding: 8px 10px calc(118px + env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
+  }
+
+  .freshPageScroll .freshHero {
+    min-height: auto !important;
+    margin: 0 0 10px !important;
+    padding: 16px !important;
+    border-radius: 20px !important;
+  }
+
+  .freshPageScroll .freshHero h1 {
+    font-size: clamp(34px, 12vw, 46px) !important;
+    line-height: .92 !important;
+    margin: 6px 0 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .freshPageScroll .freshHero p {
+    max-width: 100% !important;
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+  }
+
+  .freshCommandPulse,
+  .freshGrid,
+  .freshMiniGrid,
+  .freshStoryRail,
+  .freshStoryLinks,
+  .freshOptionGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshCard,
+  .freshGrid .freshCard {
+    border-radius: 20px !important;
+    padding: 14px !important;
+  }
+
+  .freshMobileNav {
+    position: fixed !important;
+    z-index: 2147481900 !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    min-height: 70px !important;
+    padding: 7px !important;
+    border: 1px solid rgba(15, 23, 42, .12) !important;
+    border-radius: 24px !important;
+    background: rgba(17, 24, 39, .96) !important;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, .32) !important;
+    backdrop-filter: blur(18px) !important;
+  }
+
+  .freshMobileNav button {
+    min-width: 0 !important;
+    min-height: 56px !important;
+    display: grid !important;
+    place-items: center !important;
+    align-content: center !important;
+    gap: 3px !important;
+    border: 0 !important;
+    border-radius: 18px !important;
+    background: transparent !important;
+    color: #e5e7eb !important;
+    -webkit-text-fill-color: #e5e7eb !important;
+  }
+
+  .freshMobileNav button.active {
+    background: #f97316 !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+  }
+
+  .freshMobileNav button i {
+    width: 24px !important;
+    height: 22px !important;
+    display: grid !important;
+    place-items: center !important;
+    font-style: normal !important;
+    font-size: 10px !important;
+    font-weight: 1000 !important;
+    line-height: 1 !important;
+  }
+
+  .freshMobileNav button span {
+    max-width: 100% !important;
+    font-size: 10px !important;
+    font-weight: 1000 !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .freshMobileMore {
+    position: fixed !important;
+    z-index: 2147481890 !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    max-height: min(58dvh, 440px) !important;
+    overflow: auto !important;
+    padding: 12px !important;
+    border: 1px solid rgba(15, 23, 42, .12) !important;
+    border-radius: 24px !important;
+    background: rgba(255, 250, 240, .98) !important;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .28) !important;
+    backdrop-filter: blur(18px) !important;
+  }
+
+  .freshMobileMore button {
+    min-height: 64px !important;
+    display: grid !important;
+    place-items: center !important;
+    align-content: center !important;
+    gap: 4px !important;
+    border: 1px solid rgba(15, 23, 42, .10) !important;
+    border-radius: 17px !important;
+    background: #fff !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    font-weight: 1000 !important;
+  }
+
+  .freshMobileMore button.active {
+    border-color: rgba(249, 115, 22, .45) !important;
+    background: #fff7ed !important;
+  }
+
+  .freshMobileMore button i {
+    font-style: normal !important;
+    color: #9a3412 !important;
+    -webkit-text-fill-color: #9a3412 !important;
+    font-size: 10px !important;
+    font-weight: 1000 !important;
+  }
+
+  .freshMobileMore button span {
+    max-width: 100% !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    font-size: 10px !important;
+    font-weight: 1000 !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+  }
+
+  .freshMobileMoreNote {
+    grid-column: 1 / -1;
+    border: 1px dashed rgba(15, 23, 42, .18);
+    border-radius: 17px;
+    background: #f8fafc;
+    padding: 10px 12px;
+  }
+
+  .freshMobileMoreNote b {
+    display: block;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 1000;
+  }
+
+  .freshMobileMoreNote span {
+    display: block;
+    margin-top: 3px;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: 420px) {
+  .freshMobileQuickActions {
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .freshMobileQuickActions button {
+    min-height: 54px;
+  }
+
+  .freshMobileMore {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
