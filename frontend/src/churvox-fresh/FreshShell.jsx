@@ -2,6 +2,7 @@ import React from "react";
 import FreshNotificationBell from "./FreshNotificationBell";
 import { useAuth } from "../context/AuthContext";
 import "./freshMobileAppShell.css";
+import "./freshSidebarCompact.css";
 
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
@@ -9,13 +10,27 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Home", items: [["today", "TW", "Today’s Work"], ["command", "CM", "Command"], ["askchurvox", "AI", "AI Guide"]] },
+  { title: "Home", items: [["today", "TW", "Today’s Work"], ["command", "CM", "Command"]] },
   { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
-  { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
-  { title: "Tools", items: [["automation", "AT", "Automation"], ["reports", "RP", "Reports"], ["launchcontrol", "LC", "Launch"]] },
-  { title: "Setup", items: [["settings", "SG", "Settings"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["plans", "PL", "Plans"], ["support", "SP", "Support"]] },
+  { title: "Team", items: [["team", "TM", "Team"], ["payroll", "PR", "Payroll"], ["settings", "SG", "Settings"]] },
 ];
+
+const moreGroup = {
+  title: "More tools",
+  items: [
+    ["askchurvox", "AI", "AI Guide"],
+    ["workercommand", "WC", "Worker View"],
+    ["time", "TS", "Time Sheets"],
+    ["automation", "AT", "Automation"],
+    ["reports", "RP", "Reports"],
+    ["launchcontrol", "LC", "Launch"],
+    ["imports", "IM", "Imports"],
+    ["exports", "EX", "Exports"],
+    ["plans", "PL", "Plans"],
+    ["support", "SP", "Support"],
+  ],
+};
 
 const mobileItems = [["today", "TW", "Today"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["invoices", "IV", "Money"], ["more", "••", "More"]];
 
@@ -70,7 +85,7 @@ const parentByKey = {
   reviewbooster: "clients",
 };
 
-groups.forEach((group) => group.items.forEach(([key]) => { parentByKey[key] = key; }));
+[...groups, moreGroup].forEach((group) => group.items.forEach(([key]) => { parentByKey[key] = key; }));
 
 function guideIsComplete() {
   try {
@@ -188,11 +203,13 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
 
 
   const safeGroups = React.useMemo(() => cleanGroups(groups, guideComplete), [guideComplete]);
+  const safeMoreItems = React.useMemo(() => cleanGroups([moreGroup], guideComplete)[0]?.items || [], [guideComplete]);
+  const moreHasActiveItem = safeMoreItems.some(([key]) => currentPrimary === key);
   const safeMobileItems = React.useMemo(() => uniqueItems(mobileItems), []);
   const safeExtraMobile = React.useMemo(() => {
     const main = new Set(safeMobileItems.map(([key]) => key));
-    return uniqueItems(safeGroups.flatMap((group) => group.items)).filter(([key]) => !main.has(key) && key !== "askchurvox");
-  }, [safeMobileItems, safeGroups]);
+    return uniqueItems([...safeGroups.flatMap((group) => group.items), ...safeMoreItems]).filter(([key]) => !main.has(key) && key !== "askchurvox");
+  }, [safeMobileItems, safeGroups, safeMoreItems]);
 
   function go(key) {
     if (key === "more") return;
@@ -290,6 +307,25 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
                 ))}
               </section>
             ))}
+
+            {safeMoreItems.length ? (
+              <section className="freshNavGroup freshNavMoreGroup">
+                <details className="freshNavMore" open={moreHasActiveItem}>
+                  <summary>
+                    <span>More tools</span>
+                    <small>{safeMoreItems.length}</small>
+                  </summary>
+                  <div className="freshNavMoreItems">
+                    {safeMoreItems.map(([key, mark, label]) => (
+                      <button key={key} type="button" className={currentPrimary === key ? "active" : ""} onClick={() => go(key)}>
+                        <i>{mark}</i>
+                        <span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </details>
+              </section>
+            ) : null}
           </nav>
         </aside>
 
