@@ -595,3 +595,23 @@
   }
 }
 
+/* CHURVOX_GLOBAL_MOBILE_TOUCH_TARGET_FIX_20260623 */
+@media (max-width: 900px) {
+  .freshApp button,
+  .freshApp a[href],
+  .freshApp [role="button"],
+  .freshApp input,
+  .freshApp textarea,
+  .freshApp select,
+  .freshNotifyBell button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .freshApp svg,
+  .freshApp i,
+  .freshApp em {
+    pointer-events: none;
+  }
+}
+
