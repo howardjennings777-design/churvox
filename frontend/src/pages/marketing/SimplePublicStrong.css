@@ -6,6 +6,7 @@
   border-radius: 999px;
   background: #111827;
   color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
   padding: 8px 12px;
   font-size: 10px;
   font-weight: 1000;
@@ -27,35 +28,33 @@
   margin-top: 24px;
 }
 
-.simpleProductShowcase article {
+.simpleProductShowcase article,
+.simpleProductShowcase article:nth-child(even) {
   min-height: 230px;
   display: grid;
   align-content: space-between;
   gap: 16px;
   border-radius: 28px;
-  border: 1px solid rgba(15, 23, 42, .14);
+  border: 1px solid rgba(249, 115, 22, .28);
   background:
-    linear-gradient(180deg, rgba(17, 24, 39, .96), rgba(15, 23, 42, .92)),
-    #111827;
-  color: #fff;
+    radial-gradient(circle at 90% 0%, rgba(249, 115, 22, .26), transparent 42%),
+    linear-gradient(180deg, #111827 0%, #0f172a 100%) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   padding: 18px;
   box-shadow: 0 18px 44px rgba(15, 23, 42, .16);
   overflow: hidden;
 }
 
-.simpleProductShowcase article:nth-child(even) {
-  background:
-    radial-gradient(circle at 90% 0%, rgba(249, 115, 22, .32), transparent 40%),
-    linear-gradient(180deg, #fff7ed, #ffffff);
-  color: #111827;
-}
-
-.simpleProductShowcase small {
+.simpleProductShowcase small,
+.simpleProductShowcase article:nth-child(even) small {
   display: inline-flex;
   width: max-content;
+  max-width: 100%;
   border-radius: 999px;
-  background: rgba(249, 115, 22, .18);
-  color: #fed7aa;
+  background: rgba(249, 115, 22, .18) !important;
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
   padding: 7px 10px;
   font-size: 10px;
   font-weight: 1000;
@@ -63,26 +62,23 @@
   text-transform: uppercase;
 }
 
-.simpleProductShowcase article:nth-child(even) small {
-  background: #ffedd5;
-  color: #9a3412;
-}
-
 .simpleProductShowcase b {
   display: block;
   margin-top: 16px;
-  color: inherit;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   font-size: clamp(26px, 2.7vw, 42px);
   line-height: .92;
   letter-spacing: -.06em;
 }
 
 .simpleProductShowcase p {
-  color: inherit;
+  color: #e5e7eb !important;
+  -webkit-text-fill-color: #e5e7eb !important;
   font-size: 14px;
   font-weight: 850;
   line-height: 1.42;
-  opacity: .9;
+  opacity: 1;
   margin: 0;
 }
 
@@ -110,11 +106,13 @@
 .simpleDifferenceBand .simpleGrid b,
 .simpleTrustBand .simpleGrid b {
   color: #fff;
+  -webkit-text-fill-color: #fff;
 }
 
 .simpleDifferenceBand .simpleGrid span,
 .simpleTrustBand .simpleGrid span {
   color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
 }
 
 .simpleCompareTable {
@@ -147,30 +145,35 @@
 .simpleCompareTable b {
   background: #111827;
   color: #fff;
+  -webkit-text-fill-color: #fff;
 }
 
 .simpleCompareTable span {
   background: #fff7ed;
   border: 1px solid rgba(249, 115, 22, .18);
   color: #374151;
+  -webkit-text-fill-color: #374151;
 }
 
 .simpleCompareTable > div span:last-child {
   background: #ecfdf5;
   border-color: rgba(22, 163, 74, .22);
   color: #14532d;
+  -webkit-text-fill-color: #14532d;
 }
 
 .simpleCompareTable.simplePlanCompare > div span:last-child {
   background: #fff7ed;
   border-color: rgba(249, 115, 22, .18);
   color: #374151;
+  -webkit-text-fill-color: #374151;
 }
 
 .simpleCompareTable .simpleCompareFeatured span {
   background: #ffedd5;
   border-color: rgba(249, 115, 22, .42);
   color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
 }
 
 .simplePlanGrid article {
