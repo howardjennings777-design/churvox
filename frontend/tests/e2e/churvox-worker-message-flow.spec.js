@@ -4,7 +4,9 @@ const { test, expect } = require("@playwright/test");
 const OWNER_EMAIL = process.env.CHURVOX_E2E_EMAIL || "";
 const OWNER_PASSWORD = process.env.CHURVOX_E2E_PASSWORD || "";
 const WORKER_EMAIL = process.env.CHURVOX_E2E_WORKER_EMAIL || "";
-const WORKER_PASSWORD = process.env.CHURVOX_E2E_WORKER_PASSWORD || "";\nconst API_BASE = (process.env.PLAYWRIGHT_API_BASE || "https://grassley-backend.onrender.com").replace(/\\/+$/, "");\nfunction apiUrl(url) { return `${API_BASE}${url.startsWith("/api") ? url : `/api${url}`}`; }
+const WORKER_PASSWORD = process.env.CHURVOX_E2E_WORKER_PASSWORD || "";
+const API_BASE = (process.env.PLAYWRIGHT_API_BASE || "https://grassley-backend.onrender.com").replace(/\/+$/, "");
+function apiUrl(url) { return `${API_BASE}${url.startsWith("/api") ? url : `/api${url}`}`; }
 
 function stamp() {
   return new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
