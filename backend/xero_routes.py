@@ -36,10 +36,16 @@ XERO_REQUIRED_SCOPES = [
 ]
 
 XERO_ACCOUNTING_SCOPES = [
-    "accounting.transactions",
+    "accounting.invoices",
     "accounting.contacts",
-    "accounting.settings",
 ]
+
+XERO_SCOPE_ALIASES = {
+    "accounting.transactions": "accounting.invoices",
+    "accounting.transactions.read": "accounting.invoices.read",
+    "accounting.settings": "",
+    "projects.read": "",
+}
 
 XERO_SAFE_SCOPES = XERO_REQUIRED_SCOPES + XERO_ACCOUNTING_SCOPES
 
@@ -51,7 +57,11 @@ def _clean_xero_scopes(value: str | None = None) -> str:
     phase-one accounting scopes. Unknown Render env scope values are ignored.
     """
     raw = str(value or os.environ.get("XERO_SCOPES") or "").replace(",", " ").split()
-    cleaned = [scope for scope in raw if scope in XERO_SAFE_SCOPES]
+    cleaned = []
+    for scope in raw:
+        mapped = XERO_SCOPE_ALIASES.get(scope, scope)
+        if mapped and mapped in XERO_SAFE_SCOPES and mapped not in cleaned:
+            cleaned.append(mapped)
 
     if not cleaned:
         cleaned = list(XERO_SAFE_SCOPES)
@@ -62,7 +72,7 @@ def _clean_xero_scopes(value: str | None = None) -> str:
         if scope not in ordered:
             ordered.append(scope)
 
-    # Phase one needs these accounting scopes for draft invoice/contact/settings sync.
+    # Phase one needs invoice/contact scopes for draft invoice sync.
     if not any(scope in ordered for scope in XERO_ACCOUNTING_SCOPES):
         ordered.extend(XERO_ACCOUNTING_SCOPES)
 
