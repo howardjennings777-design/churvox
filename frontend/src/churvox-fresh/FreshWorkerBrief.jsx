@@ -13,7 +13,7 @@ const briefs = [
     brief: "Front and back lawn. Trim hedge along driveway. Take before and after photos. Leave green waste beside garage unless customer asks for removal.",
     safety: "Check gate latch and watch for dog in backyard.",
     customerMemory: "Customer prefers tidy edging and photos after completion.",
-    page: "worker",
+    page: "workercommand",
   },
   {
     id: "brief-2",
@@ -148,7 +148,7 @@ export default function FreshWorkerBrief({ onNavigate }) {
 
           <div className="freshWorkerBriefButtons">
             <button type="button" onClick={() => sendBriefToCommand({ ...selected, brief: briefText }, onNavigate)}>Send to Command</button>
-            <button type="button" onClick={() => onNavigate?.("worker")}>Open Worker</button>
+            <button type="button" onClick={() => onNavigate?.(selected.page || "workercommand")}>Open Worker View</button>
             <button type="button" onClick={() => onNavigate?.("jobs")}>Open Jobs</button>
             <button type="button" onClick={() => onNavigate?.("dispatch")}>Open Dispatch</button>
           </div>
