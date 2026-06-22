@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Briefcase, CheckCircle2, Clock3, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, Settings } from "lucide-react";
+import { AlertTriangle, Briefcase, CheckCircle2, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
