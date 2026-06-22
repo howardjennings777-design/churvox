@@ -3746,6 +3746,94 @@ async def worker_live_ping(payload: dict = Body(default_factory=dict), current_u
     return {"success": True, "live": _live_serial(live_doc)}
 
 
+
+
+@api_router.post("/worker/contact-office")
+async def worker_contact_office(payload: dict, current_user: dict = Depends(get_current_user)):
+    """Let a worker send a job-linked message back to the owner office."""
+    if current_user.get("role") != "worker":
+        raise HTTPException(status_code=403, detail="Worker access required")
+
+    job_id = payload.get("job_id") or payload.get("jobId")
+    message = str(payload.get("message") or payload.get("note") or "").strip()
+
+    if not job_id:
+        raise HTTPException(status_code=400, detail="job_id is required")
+    if not message:
+        raise HTTPException(status_code=400, detail="message is required")
+
+    try:
+        job_oid = ObjectId(job_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid job_id")
+
+    worker_id = str(current_user.get("id") or current_user.get("_id"))
+    business_id = current_user.get("business_id")
+    now = datetime.utcnow()
+
+    query = {
+        "_id": job_oid,
+        "assigned_worker_id": worker_id,
+    }
+    if business_id:
+        query["business_id"] = str(business_id)
+
+    job = await db.jobs.find_one(query)
+    if not job:
+        raise HTTPException(status_code=404, detail="Assigned job not found")
+
+    worker_name = current_user.get("name") or current_user.get("email") or "Worker"
+    owner_id = job.get("created_by") or job.get("contractor_id") or job.get("business_id")
+
+    worker_message = {
+        "message": message,
+        "worker_id": worker_id,
+        "worker_name": worker_name,
+        "created_at": now,
+    }
+
+    await db.jobs.update_one(
+        {"_id": job_oid},
+        {
+            "$set": {
+                "worker_message": message,
+                "worker_message_at": now,
+                "updated_at": now,
+            },
+            "$push": {
+                "worker_messages": worker_message,
+            },
+        },
+    )
+
+    notification = {
+        "type": "worker_message",
+        "title": "Worker message",
+        "message": f"{worker_name}: {message}",
+        "job_id": str(job_oid),
+        "job_title": job.get("title") or "",
+        "worker_id": worker_id,
+        "worker_name": worker_name,
+        "business_id": str(job.get("business_id") or business_id or ""),
+        "read": False,
+        "created_at": now,
+    }
+
+    if owner_id:
+        try:
+            notification["user_id"] = ObjectId(str(owner_id))
+        except Exception:
+            notification["user_id"] = str(owner_id)
+
+    await db.notifications.insert_one(notification)
+
+    return {
+        "success": True,
+        "message": "Message sent to office",
+        "job_id": str(job_oid),
+    }
+
+
 @api_router.get("/worker/live-status")
 async def worker_live_status(request: Request, current_user: dict = Depends(get_current_user)):
     try:
