@@ -10,9 +10,10 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Home", items: [["today", "TW", "Today’s Work"], ["command", "CM", "Command"]] },
+  { title: "Home", items: [["today", "TW", "Today's Work"], ["command", "CM", "Command"]] },
   { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
+  { title: "Operator OS", items: [["planday", "PD", "Plan My Day"], ["workerbrief", "WB", "Worker Brief"], ["invoicecheck", "IC", "Invoice Check"], ["quoteai", "QA", "Quote AI"], ["portal", "PT", "Portal Links"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["payroll", "PR", "Payroll"], ["settings", "SG", "Settings"]] },
 ];
 
@@ -20,6 +21,9 @@ const moreGroup = {
   title: "More tools",
   items: [
     ["askchurvox", "AI", "AI Guide"],
+    ["aioperatorstudio", "AO", "AI Studio"],
+    ["quickcreateai", "QC", "Quick Create"],
+    ["followupwriter", "FU", "Follow-up Writer"],
     ["workercommand", "WC", "Worker View"],
     ["time", "TS", "Time Sheets"],
     ["automation", "AT", "Automation"],
@@ -33,18 +37,18 @@ const moreGroup = {
 };
 
 const mobileItems = [["today", "TW", "Today"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
-const mobileMoreOrder = ["clients", "quotes", "payments", "xero", "team", "workercommand", "time", "support", "settings"];
+const mobileMoreOrder = ["planday", "workerbrief", "invoicecheck", "quoteai", "portal", "clients", "payments", "xero", "team", "workercommand", "time", "support", "settings"];
 
 const mobileLabels = {
-  today: "Today’s Work",
-  todayswork: "Today’s Work",
-  worktoday: "Today’s Work",
-  smart: "Today’s Work",
-  hub: "Today’s Work",
-  dashboard: "Today’s Work",
-  dispatch: "Today’s Work",
-  schedule: "Today’s Work",
-  calendar: "Today’s Work",
+  today: "Today's Work",
+  todayswork: "Today's Work",
+  worktoday: "Today's Work",
+  smart: "Today's Work",
+  hub: "Today's Work",
+  dashboard: "Today's Work",
+  dispatch: "Today's Work",
+  schedule: "Today's Work",
+  calendar: "Today's Work",
   jobs: "Jobs",
   clients: "Clients",
   leads: "Requests",
@@ -52,6 +56,11 @@ const mobileLabels = {
   invoices: "Money",
   payments: "Money",
   xero: "Xero",
+  planday: "Plan My Day",
+  workerbrief: "Worker Brief",
+  invoicecheck: "Invoice Check",
+  quoteai: "Quote AI",
+  portal: "Portal Links",
   team: "Team",
   workercommand: "Worker View",
   time: "Time Sheets",
@@ -66,6 +75,9 @@ const mobileLabels = {
   plans: "Plans",
   support: "Support",
   askchurvox: "AI Guide",
+  aioperatorstudio: "AI Studio",
+  quickcreateai: "Quick Create",
+  followupwriter: "Follow-up Writer",
 };
 
 const parentByKey = {
@@ -81,8 +93,10 @@ const parentByKey = {
   areas: "today",
   schedulerai: "today",
   gps: "time",
-  portal: "clients",
-  followupwriter: "clients",
+  customerportal: "portal",
+  clientportal: "portal",
+  proofpack: "portal",
+  followupwriter: "followupwriter",
   reviewbooster: "clients",
 };
 
@@ -162,6 +176,11 @@ function askRoute(text) {
   const lower = cleanAsk(text);
   if (isJobCommand(text)) return "jobs";
   if (isClientCommand(text)) return "clients";
+  if (lower.includes("worker brief") || lower.includes("brief worker") || lower.includes("staff brief")) return "workerbrief";
+  if (lower.includes("plan my day") || lower.includes("day plan") || lower.includes("route today") || lower.includes("plan today")) return "planday";
+  if (lower.includes("invoice check") || lower.includes("missing money") || lower.includes("missing extra")) return "invoicecheck";
+  if (lower.includes("quote option") || lower.includes("quote ai") || lower.includes("quote draft")) return "quoteai";
+  if (lower.includes("proof pack") || lower.includes("customer link") || lower.includes("client portal") || lower.includes("portal")) return "portal";
   if (lower.includes("unpaid") || lower.includes("overdue") || lower.includes("payment")) return "payments";
   if (lower.includes("xero") || lower.includes("myob")) return "xero";
   if (lower.includes("payroll")) return "payroll";
@@ -371,7 +390,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
                   <input
                     value={globalAsk}
                     onChange={(event) => setGlobalAsk(event.target.value)}
-                    placeholder="open jobs, add client, show unpaid invoices..."
+                    placeholder="book a job, plan my day, check invoices, prepare worker brief..."
                   />
                 </label>
                 <button type="submit">Ask Churvox</button>
@@ -391,7 +410,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
             ))}
             <div className="freshMobileMoreNote">
               <b>Desktop tools</b>
-              <span>Payroll, reports, imports, exports, plans and launch controls are cleaner on PC.</span>
+              <span>Payroll, reports, imports, exports, plans and launch controls are cleaner on PC. Phone mode keeps the fast owner actions up front.</span>
             </div>
           </div>
         )}
