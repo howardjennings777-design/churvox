@@ -26,11 +26,21 @@ function featureList(plan) {
   return Array.isArray(list) ? list.slice(0, 6) : [];
 }
 
+function isOperator(plan) {
+  return String(plan?.name || "").toLowerCase() === "operator";
+}
+
 const chooser = [
-  ["Start", "For solo operators who need jobs, clients, quotes and invoices organised."],
-  ["Crew", "For small crews that assign work and need time tracking."],
-  ["Operator", "For owners who want AI Operator Actions prepared for review and approval."],
-  ["Command", "For larger teams that need accounting sync, roles, payroll workspace, exports and priority support."],
+  ["Start", "Best when you are solo and need clients, jobs, quotes and invoices organised."],
+  ["Crew", "Best when you assign work, track time and need the team to stay clear."],
+  ["Operator", "Most popular. Best when you want Churvox to prepare admin actions for review and approval."],
+  ["Command", "Best when you need accounting sync included, payroll workspace, roles, exports and higher control."],
+];
+
+const safety = [
+  ["Owner-approved", "Important admin actions stay reviewed by the owner before they move."],
+  ["Accounting safe", "Xero/MYOB is a controlled handoff path. No auto tax filing and no bank payout files."],
+  ["Trial first", "Start with the plan that fits, test the workflow, then keep or upgrade when it makes sense."],
 ];
 
 export default function ExecutivePricingPage() {
@@ -54,16 +64,15 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="simplePublic" data-version="CHURVOX_COUNTRY_PRICING_PLAN_FIRST_20260621">
+    <main className="simplePublic" data-version="CHURVOX_PRICING_STRONGER_20260622">
       <Nav />
 
       <section className="simpleHero">
         <div>
           <span className="simpleKicker">Plans for real service businesses</span>
-          <h1>Choose the plan that matches how you run jobs.</h1>
+          <h1>Pick the level of admin help you want Churvox to run.</h1>
           <p className="simpleLead">
-            Create your account, choose Start, Crew, Operator or Command, then Stripe starts the 14-day trial for that plan.
-            Start with the basics, then move up when you need workers, AI Operator Actions, accounting sync, payroll workspace or bigger team control.
+            Start with the core workflow, add workers when you need them, then move into Operator when you want Churvox preparing admin actions for you to approve.
           </p>
 
           <label className="simpleCountrySelect">
@@ -76,20 +85,20 @@ export default function ExecutivePricingPage() {
           </label>
 
           <p className="simpleLead">
-            Showing {countryMeta.currency} pricing for {countryMeta.label}.
+            Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes[0]} {notes[1]}
           </p>
 
           <div className="simpleActions">
-            <Link to={signupTo} className="simpleBtn simplePrimary">Start trial</Link>
-            <Link to="/login" className="simpleBtn simpleGhost">Log in</Link>
+            <Link to={signupTo} className="simpleBtn simplePrimary">Start 14-day trial</Link>
+            <Link to="/features" className="simpleBtn simpleGhost">See how it works</Link>
           </div>
         </div>
 
-        <aside className="simpleCard">
-          <h2>Most growing businesses should look at Operator.</h2>
+        <aside className="simpleCard simpleOperatorCard">
+          <span className="simplePlanBadge">Most popular</span>
+          <h2>Operator is the plan to look at first.</h2>
           <p>
-            Operator is where Churvox starts preparing admin actions for you to approve.
-            Start or Crew are better if you only need the core workflow first. Accounting sync can be added where available.
+            Operator is where Churvox starts feeling different: admin actions are prepared for review, while the owner keeps the final approval.
           </p>
         </aside>
       </section>
@@ -98,7 +107,8 @@ export default function ExecutivePricingPage() {
         <h2>Which plan fits?</h2>
         <div className="simpleGrid">
           {chooser.map(([title, text]) => (
-            <article key={title}>
+            <article key={title} className={title === "Operator" ? "simpleFeaturedPlan" : ""}>
+              {title === "Operator" ? <small>Most popular</small> : null}
               <b>{title}</b>
               <span>{text}</span>
             </article>
@@ -108,18 +118,19 @@ export default function ExecutivePricingPage() {
 
       <section className="simpleBand">
         <h2>Monthly plans</h2>
-        <p className="simpleLead">{notes[0]} {notes[1]}</p>
+        <p className="simpleLead">Start simple. Upgrade when the admin load gets heavier.</p>
 
-        <div className="simpleGrid">
+        <div className="simpleGrid simplePlanGrid">
           {displayPlans.map((plan) => (
-            <article key={plan.name}>
+            <article key={plan.name} className={isOperator(plan) ? "simpleFeaturedPlan" : ""}>
+              {isOperator(plan) ? <small>Most popular</small> : null}
               <b>{plan.name}</b>
-              <span>{priceLabel(plan)}</span>
+              <span className="simplePriceLine">{priceLabel(plan)}</span>
               {taxLabel(plan) ? <span>{taxLabel(plan)}</span> : null}
               <span>{plan.summary}</span>
               {featureList(plan).map((item) => <span key={item}>• {item}</span>)}
               <div className="simpleActions">
-                <Link to={signupTo} className="simpleBtn simplePrimary">Start trial</Link>
+                <Link to={signupTo} className="simpleBtn simplePrimary">Start 14-day trial</Link>
               </div>
             </article>
           ))}
@@ -130,8 +141,15 @@ export default function ExecutivePricingPage() {
         <h2>Accounting Sync Add-on</h2>
         <p className="simpleLead">
           Start, Crew and Operator can add accounting sync for {accountingAddon.priceLabel} where available.
-          Command includes one accounting sync option.
+          Command includes one accounting sync option, Xero or MYOB, where available.
         </p>
+      </section>
+
+      <section className="simpleBand">
+        <h2>Safe by design.</h2>
+        <div className="simpleGrid">
+          {safety.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
+        </div>
       </section>
 
       <Footer />
