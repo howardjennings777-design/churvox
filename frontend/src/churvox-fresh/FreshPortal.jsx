@@ -19,14 +19,14 @@ const portalMoves = [
   {
     id: "invoice",
     title: "Invoice/payment link",
-    detail: "Customer gets the invoice after owner review. Payment status still stays checked before marking paid.",
+    detail: "Customer gets the invoice after owner review. Payment status stays checked before marking paid.",
     route: "invoices",
     actionType: "review_invoice",
   },
   {
     id: "request",
     title: "New job request link",
-    detail: "Customer can request another job and Churvox queues it for owner approval.",
+    detail: "Customer requests another job and Churvox queues it for owner approval.",
     route: "leads",
     actionType: "owner_review",
   },
@@ -39,8 +39,8 @@ function sendPortalMoveToCommand(move, onNavigate) {
     title: `${move.title} ready for owner review`,
     info: move.detail,
     urgency: move.id === "invoice" ? "High" : "Medium",
-    found: "Churvox found a customer-facing action that should be handled with an owner-approved link, not manual copy/paste.",
-    prepared: `Prepare ${move.title.toLowerCase()} with clear wording, customer-safe details and no automatic send until owner approves.`,
+    found: "This customer-facing action belongs in an owner-approved link, not a manual copy-paste message.",
+    prepared: `Build ${move.title.toLowerCase()} with clear wording, customer-safe details and no automatic send.`,
     why: "Customer-facing links affect trust, payments and expectations, so the owner stays in control.",
     owner: "Review the link, edit wording, approve sending, or open the source area.",
     area: "Portal Links",
@@ -57,7 +57,7 @@ export default function FreshPortal({ onNavigate }) {
       <header className="freshHero">
         <span>Portal Links</span>
         <h1>Customer links without losing owner control</h1>
-        <p>Quotes, proof packs, invoices and new requests should be clean customer links, but Churvox still prepares them for owner approval first.</p>
+        <p>Quotes, proof packs, invoices and new requests stay clean, customer-ready and owner approved.</p>
       </header>
 
       <section className="freshCommandPulse">
@@ -86,12 +86,12 @@ export default function FreshPortal({ onNavigate }) {
 
           <section className="freshJobsDetailBox notes">
             <span>Rule</span>
-            <p>Portal links should make Churvox feel premium, but they must not send invoices, mark invoices paid, file tax, or touch bank payout files automatically.</p>
+            <p>Portal links make Churvox feel polished while the safety rules stay locked: no automatic invoice sends, no paid status changes, no tax filing, and no bank payout files.</p>
           </section>
         </article>
 
         <article className="freshCard">
-          <h2>Prepare link</h2>
+          <h2>Customer links</h2>
           <div className="freshTimelineList">
             {portalMoves.map((move) => (
               <article key={move.id}>
