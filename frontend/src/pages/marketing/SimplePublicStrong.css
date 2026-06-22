@@ -1,0 +1,220 @@
+/* CHURVOX_PUBLIC_STRONG_PROOF_20260622 */
+.simpleSectionLabel {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #111827;
+  color: #fed7aa;
+  padding: 8px 12px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.simpleInsideBand,
+.simpleDifferenceBand,
+.simpleTrustBand {
+  border-left: 8px solid #f97316;
+}
+
+.simpleProductShowcase {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.simpleProductShowcase article {
+  min-height: 230px;
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+  border-radius: 28px;
+  border: 1px solid rgba(15, 23, 42, .14);
+  background:
+    linear-gradient(180deg, rgba(17, 24, 39, .96), rgba(15, 23, 42, .92)),
+    #111827;
+  color: #fff;
+  padding: 18px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, .16);
+  overflow: hidden;
+}
+
+.simpleProductShowcase article:nth-child(even) {
+  background:
+    radial-gradient(circle at 90% 0%, rgba(249, 115, 22, .32), transparent 40%),
+    linear-gradient(180deg, #fff7ed, #ffffff);
+  color: #111827;
+}
+
+.simpleProductShowcase small {
+  display: inline-flex;
+  width: max-content;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .18);
+  color: #fed7aa;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.simpleProductShowcase article:nth-child(even) small {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.simpleProductShowcase b {
+  display: block;
+  margin-top: 16px;
+  color: inherit;
+  font-size: clamp(26px, 2.7vw, 42px);
+  line-height: .92;
+  letter-spacing: -.06em;
+}
+
+.simpleProductShowcase p {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.42;
+  opacity: .9;
+  margin: 0;
+}
+
+.simpleIndustryGrid article {
+  position: relative;
+  overflow: hidden;
+}
+
+.simpleIndustryGrid article::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: #f97316;
+}
+
+.simpleDifferenceBand .simpleGrid article,
+.simpleTrustBand .simpleGrid article {
+  background: #111827;
+  border-color: rgba(249, 115, 22, .28);
+}
+
+.simpleDifferenceBand .simpleGrid b,
+.simpleTrustBand .simpleGrid b {
+  color: #fff;
+}
+
+.simpleDifferenceBand .simpleGrid span,
+.simpleTrustBand .simpleGrid span {
+  color: #e5e7eb;
+}
+
+.simpleCompareTable {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.simpleCompareTable > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.simpleCompareTable.simplePlanCompare > div {
+  grid-template-columns: minmax(120px, .6fr) minmax(150px, .9fr) minmax(0, 1.5fr);
+}
+
+.simpleCompareTable b,
+.simpleCompareTable span {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-weight: 950;
+}
+
+.simpleCompareTable b {
+  background: #111827;
+  color: #fff;
+}
+
+.simpleCompareTable span {
+  background: #fff7ed;
+  border: 1px solid rgba(249, 115, 22, .18);
+  color: #374151;
+}
+
+.simpleCompareTable > div span:last-child {
+  background: #ecfdf5;
+  border-color: rgba(22, 163, 74, .22);
+  color: #14532d;
+}
+
+.simpleCompareTable.simplePlanCompare > div span:last-child {
+  background: #fff7ed;
+  border-color: rgba(249, 115, 22, .18);
+  color: #374151;
+}
+
+.simpleCompareTable .simpleCompareFeatured span {
+  background: #ffedd5;
+  border-color: rgba(249, 115, 22, .42);
+  color: #9a3412;
+}
+
+.simplePlanGrid article {
+  display: grid;
+  align-content: start;
+}
+
+.simplePlanCompare {
+  margin-top: 22px;
+}
+
+@media (max-width: 1180px) {
+  .simpleProductShowcase {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .simpleSectionLabel {
+    font-size: 9px;
+    padding: 7px 10px;
+  }
+
+  .simpleProductShowcase,
+  .simpleCompareTable > div,
+  .simpleCompareTable.simplePlanCompare > div {
+    grid-template-columns: 1fr;
+  }
+
+  .simpleProductShowcase article {
+    min-height: auto;
+    border-radius: 22px;
+    padding: 16px;
+  }
+
+  .simpleProductShowcase b {
+    font-size: 28px;
+  }
+
+  .simpleCompareTable b,
+  .simpleCompareTable span {
+    min-height: 44px;
+    border-radius: 14px;
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+}
