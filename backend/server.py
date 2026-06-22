@@ -6958,7 +6958,23 @@ async def worker_shift_clock_in(payload: dict = Body(default_factory=dict), curr
     return {
         "success": True,
         "status": "clocked_in",
-        "shift": _cv_shift_row(doc),
+        "shift": {
+            "id": str(result.inserted_id),
+            "business_id": business_id,
+            "worker_id": worker_id,
+            "worker_name": worker_name,
+            "worker_email": current_user.get("email"),
+            "clock_in_at": now.isoformat(),
+            "clock_out_at": None,
+            "shift_seconds": 0,
+            "duration_hours": 0,
+            "hours": 0,
+            "review_status": "Clocked in",
+            "gps_tracking_enabled": True,
+            "clock_in_location": payload.get("location"),
+            "clock_out_location": None,
+            "source": "worker_clock",
+        },
     }
 
 
