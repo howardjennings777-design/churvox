@@ -1,7 +1,6 @@
 import React from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import API_BASE from "../lib/apiBase";
 
 const defaultSettings = {
   invoice_sync_enabled: false,
@@ -79,9 +78,24 @@ export default function XeroConnectionPanel({ compact = false }) {
     setBusy(false);
   };
 
-  const connectXero = () => {
-    const returnTo = encodeURIComponent(window.location.href);
-    window.location.href = `${API_BASE}/api/xero/connect?return_to=${returnTo}`;
+  const connectXero = async () => {
+    setBusy(true);
+    try {
+      const result = await api.post("/xero/connect/start", {});
+      const payload = result?.data?.data || result?.data || result || {};
+      const url = payload.url || payload?.data?.url;
+
+      if (!url) {
+        throw new Error(payload?.error || result?.error || "Could not start Xero connection");
+      }
+
+      window.location.href = url;
+    } catch (error) {
+      console.error("Xero connect failed", error);
+      alert(error?.message || "Could not start Xero connection");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const disconnectXero = async () => {
