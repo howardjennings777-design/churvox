@@ -71,7 +71,7 @@ export default function FreshPortal({ onNavigate }) {
           <div className="freshJobsDetailHeader">
             <div>
               <small>Customer flow</small>
-              <h2>Job → proof → invoice → paid</h2>
+              <h2>Job - proof - invoice - paid</h2>
             </div>
             <span className="ready">Owner approved</span>
           </div>
