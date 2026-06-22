@@ -6,7 +6,7 @@ import os
 
 # Xero rejects the OAuth request if any scope is invalid. Let Render's XERO_SCOPES
 # win when it is configured, and only fall back to the minimum phase-one scope set.
-os.environ.setdefault("XERO_SCOPES", "accounting.invoices")
+os.environ.setdefault("XERO_SCOPES", "openid profile email offline_access accounting.invoices")
 os.environ.setdefault("BACKEND_PUBLIC_URL", "https://churvox-backend.onrender.com")
 os.environ.setdefault("FRONTEND_URL", "https://www.churvox.com")
 

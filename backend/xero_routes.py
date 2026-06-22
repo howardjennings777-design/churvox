@@ -28,7 +28,12 @@ XERO_AUTHORIZE_URL = "https://login.xero.com/identity/connect/authorize"
 XERO_TOKEN_URL = "https://identity.xero.com/connect/token"
 XERO_CONNECTIONS_URL = "https://api.xero.com/connections"
 XERO_INVOICES_URL = "https://api.xero.com/api.xro/2.0/Invoices"
-XERO_REQUIRED_SCOPES = []
+XERO_REQUIRED_SCOPES = [
+    "openid",
+    "profile",
+    "email",
+    "offline_access",
+]
 
 XERO_ACCOUNTING_SCOPES = [
     "accounting.invoices",
