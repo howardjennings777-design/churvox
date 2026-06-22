@@ -8,7 +8,7 @@ import os
 # phase-one scope set before xero_routes reads XERO_SCOPES from the environment.
 # Do not request accounting.settings here; draft invoice/contact sync does not
 # need it and some Xero app setups reject it.
-os.environ["XERO_SCOPES"] = "openid profile email offline_access accounting.transactions accounting.contacts"
+os.environ["XERO_SCOPES"] = "openid profile email offline_access accounting.invoices accounting.contacts"
 os.environ.setdefault("BACKEND_PUBLIC_URL", "https://churvox-backend.onrender.com")
 os.environ.setdefault("FRONTEND_URL", "https://www.churvox.com")
 

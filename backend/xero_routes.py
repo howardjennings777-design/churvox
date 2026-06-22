@@ -2,7 +2,7 @@ import base64
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode, parse_qs, quote
+from urllib.parse import urlencode, parse_qs, quote, quote
 
 import httpx
 import stripe
