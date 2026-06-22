@@ -72,7 +72,8 @@
     "test:ai:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-ai-loop.spec.js --project=desktop-chromium",
     "test:plans": "playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g \"Plans page loads billing JSON\"",
     "test:cleanup": "playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g \"cleanup live Playwright test records\"",
-    "test:signup:live": "playwright test tests/e2e/churvox-signup-to-stripe.spec.js --project=desktop-chromium"
+    "test:signup:live": "playwright test tests/e2e/churvox-signup-to-stripe.spec.js --project=desktop-chromium",
+    "test:worker-messages": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-worker-message-flow.spec.js --project=desktop-chromium"
   },
   "browserslist": {
     "production": [
@@ -104,4 +105,4 @@
   "optionalDependencies": {
     "@playwright/test": "^1.54.2"
   }
-}
+}\n
