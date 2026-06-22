@@ -6,14 +6,14 @@ import { sendFreshSlipToCommand } from "./commandBridge";
 const fallbackInvoices = [
   {
     id: "inv-check-1",
-    invoice: "Example invoice",
-    client: "Real invoices will appear here",
-    job: "Completed job proof check",
+    invoice: "No invoices found",
+    client: "Add an invoice to run the checker.",
+    job: "Invoice readiness check",
     currentTotal: 0,
     suggestedExtra: 0,
-    issue: "No real invoices loaded yet.",
-    prepared: "Create or load invoices to run the checker against real job notes, photos and status.",
-    status: "Needs owner review",
+    issue: "No invoices are saved in this account yet.",
+    prepared: "Create a draft invoice or refresh this page after invoices are added.",
+    status: "No invoices",
     source: "fallback",
   },
 ];
@@ -133,7 +133,7 @@ function buildCheck(invoice, jobs, index) {
     suggestedExtra,
     gst,
     issue: ready ? "Invoice looks ready for owner review." : blockers.join(". "),
-    prepared: ready ? "Owner can review and send/sync as the next controlled step." : `Fix before sending: ${blockers.join("; ")}.`,
+    prepared: ready ? "Owner review is the next controlled step before sending or syncing." : `Fix before sending: ${blockers.join("; ")}.`,
     status: ready ? "Ready" : "Needs owner review",
     blockers,
     source: "real",
@@ -151,7 +151,7 @@ function sendToCommand(item, onNavigate) {
     urgency: item.status === "Ready" ? "Medium" : "High",
     found: item.issue,
     prepared: item.prepared,
-    why: item.suggestedExtra ? "Churvox may have found unbilled work before the invoice is sent." : "Invoices should be checked before customer send, accounting sync, or payment follow-up.",
+    why: item.suggestedExtra ? "Churvox found a possible unbilled item before the invoice goes out." : "Invoices stay checked before customer send, accounting sync, or payment follow-up.",
     owner: "Review invoice, edit lines, approve, ignore, or open the source record. Do not auto-send or mark paid.",
     area: "Invoice Checker",
     page: "invoicecheck",
@@ -200,14 +200,14 @@ export default function FreshInvoiceChecker({ onNavigate }) {
     <section className="freshInvoiceCheckPage">
       <div className="freshInvoiceCheckHero">
         <div>
-          <span>AI Invoice Checker</span>
+          <span>Invoice Checker</span>
           <h1>Catch missing money before invoices go out</h1>
-          <p>Churvox checks real invoices against job notes, proof photos, status and possible extras before the owner sends or syncs anything.</p>
+          <p>Churvox checks saved invoices against job notes, proof photos, status and possible extras before the owner sends or syncs anything.</p>
         </div>
 
         <div className="freshInvoiceCheckStats">
           <div><b>{loading ? "..." : checks.length}</b><small>checked</small></div>
-          <div><b>{review}</b><small>review</small></div>
+          <div><b>{review}</b><small>need review</small></div>
           <div><b>{money(risk)}</b><small>possible extras</small></div>
           <div><b>Approve</b><small>owner control</small></div>
         </div>
@@ -218,8 +218,8 @@ export default function FreshInvoiceChecker({ onNavigate }) {
       <div className="freshInvoiceCheckLayout">
         <aside className="freshInvoiceCheckList">
           <header>
-            <b>Invoices scanned</b>
-            <span>{review} need review</span>
+            <b>Invoices checked</b>
+            <span>{review} need owner review</span>
           </header>
 
           {checks.map((item) => (
@@ -241,13 +241,13 @@ export default function FreshInvoiceChecker({ onNavigate }) {
           <div className="freshInvoiceCheckCards">
             <section><b>Current invoice</b><p>{money(selected.currentTotal)}</p></section>
             <section><b>Possible extra</b><p>{money(selected.suggestedExtra)}</p></section>
-            <section><b>New total</b><p>{money(selected.currentTotal + selected.suggestedExtra)}</p></section>
+            <section><b>Checked total</b><p>{money(selected.currentTotal + selected.suggestedExtra)}</p></section>
           </div>
 
           <div className="freshInvoiceCheckFinding">
             <b>Churvox found</b>
             <p>{selected.issue}</p>
-            <b>Churvox prepared</b>
+            <b>Owner move</b>
             <p>{selected.prepared}</p>
           </div>
 
