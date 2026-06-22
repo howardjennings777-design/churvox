@@ -3892,14 +3892,21 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
 
     notification = {
         "type": "worker_message",
+        "source": "worker_office_contact",
         "title": "Worker message",
         "message": f"{worker_name}: {message}",
+        "body": message,
+        "summary": message,
         "job_id": str(job_oid),
         "job_title": job.get("title") or "",
         "worker_id": worker_id,
         "worker_name": worker_name,
         "business_id": str(job.get("business_id") or business_id or ""),
         "read": False,
+        "is_read": False,
+        "status": "unread",
+        "url": f"/dashboard#worker",
+        "href": f"/dashboard#worker",
         "created_at": now,
     }
 
