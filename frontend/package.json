@@ -105,4 +105,4 @@
   "optionalDependencies": {
     "@playwright/test": "^1.54.2"
   }
-}\n
+}
