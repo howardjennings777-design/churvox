@@ -869,7 +869,14 @@ try:
         from backend import accounting_export_routes as _accounting_export_routes
     except Exception:
         import accounting_export_routes as _accounting_export_routes
+    _try:
+    try:
+        from backend import accounting_export_routes as _accounting_export_routes
+    except Exception:
+        import accounting_export_routes as _accounting_export_routes
     _accounting_export_routes.install(app, db, get_current_user)
+except Exception as exc:
+    print(f"Accounting export routes not wired yet: {exc}")
 except Exception as exc:
     print(f"Accounting export routes not wired yet: {exc}")
 
