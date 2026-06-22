@@ -602,3 +602,74 @@
 .freshPageScroll:has(.freshXeroPage) .freshGlobalAsk {
   display: none !important;
 }
+
+/* CHURVOX_XERO_ACCOUNTING_BUTTON_POLISH_20260622 */
+.freshXeroHeadActions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(138px, 1fr));
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 8px;
+  width: min(100%, 460px);
+  max-width: 460px;
+}
+
+.freshXeroHeadActions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.freshXeroHeadActions button:nth-child(1),
+.freshXeroHeadActions button:nth-child(4),
+.freshXeroHeadActions button:nth-child(5),
+.freshXeroHeadActions button:nth-child(6) {
+  grid-column: span 2;
+}
+
+.freshXeroHeadActions button:nth-child(2),
+.freshXeroHeadActions button:nth-child(3) {
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  border: 1px solid rgba(249, 115, 22, .26);
+}
+
+.freshXeroHeadActions button:nth-child(4),
+.freshXeroHeadActions button:nth-child(5) {
+  background: #0f172a;
+}
+
+.freshXeroHeadActions button:nth-last-child(1) {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+@media (max-width: 1050px) {
+  .freshXeroHeadActions {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .freshXeroDetail {
+    padding: 14px;
+    border-radius: 22px;
+  }
+
+  .freshXeroHeadActions {
+    grid-template-columns: 1fr;
+  }
+
+  .freshXeroHeadActions button,
+  .freshXeroHeadActions button:nth-child(1),
+  .freshXeroHeadActions button:nth-child(4),
+  .freshXeroHeadActions button:nth-child(5),
+  .freshXeroHeadActions button:nth-child(6) {
+    grid-column: 1;
+  }
+}
