@@ -19,7 +19,7 @@ const route = [
     title: "Belmont lawn reset",
     area: "Belmont",
     type: "Job",
-    reason: "Higher value job with invoice ready after photos.",
+    reason: "Higher value job with invoice review after photos.",
     duration: "1 hr 30 min",
     action: "Check photos before invoice",
   },
@@ -29,9 +29,9 @@ const route = [
     title: "Upper Hutt quote visit",
     area: "Upper Hutt",
     type: "Quote",
-    reason: "Lead is warm and quote can be sent today.",
+    reason: "Lead is warm and quote follow-up is ready for owner review.",
     duration: "30 min",
-    action: "Prepare quote follow-up",
+    action: "Build quote follow-up",
   },
   {
     id: "day-4",
@@ -49,7 +49,7 @@ const route = [
     title: "Invoice admin block",
     area: "Office",
     type: "Admin",
-    reason: "$780 can be invoiced before end of day.",
+    reason: "Completed work is ready for invoice review before end of day.",
     duration: "25 min",
     action: "Open invoice checker",
   },
@@ -64,13 +64,13 @@ function sendPlanToCommand(onNavigate) {
     const slip = {
       id: `plan-day-${Date.now()}`,
       group: "AI Plan My Day",
-      title: "Today’s route is ready for approval",
-      info: "5 stops · jobs, quote, recurring and invoice block",
+      title: "Today's route is ready for approval",
+      info: "5 stops - jobs, quote, recurring and invoice block",
       urgency: "High",
       found: "Churvox found scheduled work, quote visit, recurring risk and invoice admin for today.",
-      prepared: route.map((item) => `${item.time} — ${item.title}`).join(" | "),
-      why: "The owner should start the day with the best order and clear actions, not hunt across pages.",
-      owner: "Approve route, edit order, open dispatch, or send worker briefs.",
+      prepared: route.map((item) => `${item.time} - ${item.title}`).join(" | "),
+      why: "The owner starts the day with the best order and clear actions from one screen.",
+      owner: "Approve plan, edit order, open dispatch, or send worker briefs.",
       area: "AI Plan My Day",
       page: "planday",
       fromInbox: true,
@@ -96,8 +96,8 @@ export default function FreshPlanMyDay({ onNavigate }) {
       <div className="freshPlanDayHero">
         <div>
           <span>AI Plan My Day</span>
-          <h1>The user opens Churvox and knows what to do first</h1>
-          <p>Not just a calendar. Churvox turns jobs, quotes, admin and follow-ups into a plain-English daily plan.</p>
+          <h1>Open Churvox and know what to do first</h1>
+          <p>Churvox turns jobs, quotes, admin and follow-ups into a plain-English daily plan.</p>
         </div>
 
         <div className="freshPlanDayStats">
@@ -112,8 +112,8 @@ export default function FreshPlanMyDay({ onNavigate }) {
         <article className="freshPlanDayPanel freshPlanDayWide">
           <header>
             <span>Recommended order</span>
-            <h2>Today’s plan</h2>
-            <p>Each stop has a reason and a next action, so the owner can approve the whole plan quickly.</p>
+            <h2>Today's plan</h2>
+            <p>Each stop has a reason and a next action, so the owner approves the whole plan quickly.</p>
           </header>
 
           <div className="freshPlanDayTimeline">
@@ -121,8 +121,8 @@ export default function FreshPlanMyDay({ onNavigate }) {
               <section key={item.id}>
                 <div className="freshPlanDayNumber">{index + 1}</div>
                 <div>
-                  <b>{item.time} · {item.title}</b>
-                  <p>{item.area} · {item.type} · {item.duration}</p>
+                  <b>{item.time} - {item.title}</b>
+                  <p>{item.area} - {item.type} - {item.duration}</p>
                   <small><strong>Why:</strong> {item.reason}</small>
                   <small><strong>Next:</strong> {item.action}</small>
                 </div>
@@ -135,12 +135,12 @@ export default function FreshPlanMyDay({ onNavigate }) {
           <header>
             <span>AI reasoning</span>
             <h2>Why this helps</h2>
-            <p>Users should not plan from scratch every morning. Churvox should give them the safest, most useful next order.</p>
+            <p>Owners start the day with the safest, most useful order already laid out.</p>
           </header>
 
           <div className="freshPlanDayReason">
-            <section><b>Less hunting</b><p>Jobs, quotes and invoices are pulled into one day plan.</p></section>
-            <section><b>More money</b><p>Invoice block keeps completed work moving to paid.</p></section>
+            <section><b>Less hunting</b><p>Jobs, quotes and invoices sit in one day plan.</p></section>
+            <section><b>More money</b><p>Invoice blocks keep completed work moving to paid.</p></section>
             <section><b>Less missed work</b><p>Recurring and follow-up risks show before they become lost jobs.</p></section>
           </div>
 
