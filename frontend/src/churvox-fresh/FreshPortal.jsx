@@ -35,7 +35,7 @@ const portalMoves = [
 function sendPortalMoveToCommand(move, onNavigate) {
   sendFreshSlipToCommand({
     id: `portal-link-${move.id}-${Date.now()}`,
-    group: "Customer Portal",
+    group: "Portal Links",
     title: `${move.title} ready for owner review`,
     info: move.detail,
     urgency: move.id === "invoice" ? "High" : "Medium",
@@ -43,9 +43,9 @@ function sendPortalMoveToCommand(move, onNavigate) {
     prepared: `Prepare ${move.title.toLowerCase()} with clear wording, customer-safe details and no automatic send until owner approves.`,
     why: "Customer-facing links affect trust, payments and expectations, so the owner stays in control.",
     owner: "Review the link, edit wording, approve sending, or open the source area.",
-    area: "Customer Portal",
+    area: "Portal Links",
     page: "portal",
-    sourceType: "client",
+    sourceType: "system",
     actionType: move.actionType,
   }, { type: "portal-link-review" });
   onNavigate?.("command");
