@@ -9,9 +9,9 @@ export default function FreshQuoteAI({ onNavigate }) {
       title: "Quote needs owner review",
       info: "Quote prep",
       urgency: "Medium",
-      found: "A quote can be prepared from the job details, but the owner should review price and wording first.",
-      prepared: "Draft quote review item prepared for Command.",
-      why: "Quotes affect customer price and should stay owner-approved.",
+      found: "Churvox builds the quote from the job details. The owner checks price and wording before the customer sees it.",
+      prepared: "Quote review is ready in Command.",
+      why: "Quotes affect customer price and stay owner-approved.",
       owner: "Review quote details, edit price, approve, or ignore for now.",
       area: "Quotes",
       page: "quoteai",
@@ -26,7 +26,7 @@ export default function FreshQuoteAI({ onNavigate }) {
       <header className="freshHero">
         <span>Quote AI</span>
         <h1>Quote AI</h1>
-        <p>Prepare quote drafts from job details, then send them to Command for owner approval.</p>
+        <p>Build quote drafts from job details and send them to Command for owner approval.</p>
       </header>
 
       <section className="freshGrid">
@@ -34,13 +34,13 @@ export default function FreshQuoteAI({ onNavigate }) {
           <h2>Quote flow</h2>
           <div className="freshItem"><b>Job details</b><span>Start from customer, site, scope, photos and notes.</span></div>
           <div className="freshItem"><b>Price review</b><span>Check labour, travel, materials and risk before sending.</span></div>
-          <div className="freshItem"><b>Owner approval</b><span>Quote drafts should be reviewed before customers see them.</span></div>
+          <div className="freshItem"><b>Owner approval</b><span>Owner checks price and wording before the customer sees it.</span></div>
         </article>
 
         <article className="freshCard">
           <h2>Useful actions</h2>
-          <div className="freshItem"><b>Create quote</b><span>Open Quotes to create or edit a real quote.</span></div>
-          <div className="freshItem"><b>Use Tell Churvox</b><span>Type the job details and let Churvox open the right next step.</span></div>
+          <div className="freshItem"><b>Create quote</b><span>Open Quotes to create or edit a quote.</span></div>
+          <div className="freshItem"><b>Use Tell Churvox</b><span>Type the job details and Churvox opens the right next step.</span></div>
         </article>
 
         <aside className="freshCard">
