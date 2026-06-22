@@ -12,10 +12,8 @@ except Exception:
     from .churvox_onboarding_routes import build_onboarding_router
 try:
     import xero_routes
-import accounting_export_routes
 except Exception:
     from . import xero_routes
-import accounting_export_routes
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -865,8 +863,6 @@ app.include_router(build_platform_owner_router(db, get_current_user, is_platform
 app.include_router(build_onboarding_router(db, get_current_user, ObjectId), prefix="/api")
 
 xero_routes.install(app, db, get_current_user)
-
-accounting_export_routes.install(app, db, get_current_user)
 
 async def require_employer(request: Request) -> dict:
     user = await get_current_user(request)
