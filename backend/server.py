@@ -3771,15 +3771,19 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
     business_id = current_user.get("business_id")
     now = datetime.utcnow()
 
-    query = {
-        "_id": job_oid,
-        "assigned_worker_id": worker_id,
-    }
-    if business_id:
-        query["business_id"] = str(business_id)
-
-    job = await db.jobs.find_one(query)
+    job = await db.jobs.find_one({"_id": job_oid})
     if not job:
+        raise HTTPException(status_code=404, detail="Assigned job not found")
+
+    def same_id(left, right):
+        if left is None or right is None:
+            return False
+        return str(left) == str(right)
+
+    if not same_id(job.get("assigned_worker_id"), worker_id):
+        raise HTTPException(status_code=404, detail="Assigned job not found")
+
+    if business_id and not same_id(job.get("business_id"), business_id):
         raise HTTPException(status_code=404, detail="Assigned job not found")
 
     worker_name = current_user.get("name") or current_user.get("email") or "Worker"
