@@ -1,0 +1,210 @@
+/* CHURVOX_WORKER_IPHONE_FIX_20260622
+   iPhone/Safari/PWA layer for worker pages. */
+
+.wc-screen,
+.wc-screen * {
+  -webkit-tap-highlight-color: rgba(249, 115, 22, 0.22);
+}
+
+.wc-screen {
+  min-height: 100svh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+body:has(.wc-screen),
+html:has(.wc-screen) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  background: #f6efe4;
+}
+
+.wc-topbar {
+  padding-top: max(12px, calc(8px + env(safe-area-inset-top))) !important;
+  padding-left: max(12px, calc(10px + env(safe-area-inset-left))) !important;
+  padding-right: max(12px, calc(10px + env(safe-area-inset-right))) !important;
+}
+
+.wc-main {
+  padding-left: max(10px, calc(10px + env(safe-area-inset-left))) !important;
+  padding-right: max(10px, calc(10px + env(safe-area-inset-right))) !important;
+  padding-bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+}
+
+.worker-bottom-nav {
+  left: max(10px, calc(10px + env(safe-area-inset-left))) !important;
+  right: max(10px, calc(10px + env(safe-area-inset-right))) !important;
+  bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+  z-index: 2147482000 !important;
+  padding: 7px !important;
+  border-radius: 26px !important;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.worker-bottom-nav > div {
+  gap: 5px !important;
+}
+
+.worker-bottom-nav__item {
+  min-height: 58px !important;
+  border-radius: 19px !important;
+  touch-action: manipulation !important;
+}
+
+.worker-bottom-nav__item svg,
+.worker-bottom-nav__item span {
+  pointer-events: none !important;
+}
+
+.wc-screen button,
+.wc-screen a,
+.wc-screen label {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.wc-screen input,
+.wc-screen textarea,
+.wc-screen select {
+  font-size: 16px !important;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.wc-textarea,
+.wc-screen textarea {
+  line-height: 1.4 !important;
+}
+
+.wc-photo-button {
+  cursor: pointer;
+}
+
+.wc-topbar,
+.worker-bottom-nav {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.wc-next-job,
+.wc-clock-card,
+.wc-card,
+.wc-job-card,
+.wc-finish,
+.wc-alert,
+.wc-empty {
+  scroll-margin-top: calc(82px + env(safe-area-inset-top));
+}
+
+@supports (-webkit-touch-callout: none) {
+  html:has(.wc-screen),
+  body:has(.wc-screen),
+  #root:has(.wc-screen) {
+    min-height: -webkit-fill-available;
+  }
+
+  .wc-screen {
+    min-height: -webkit-fill-available;
+  }
+
+  .wc-topbar {
+    position: sticky !important;
+    top: 0 !important;
+  }
+
+  .worker-bottom-nav {
+    position: fixed !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .wc-topbar {
+    min-height: 62px !important;
+    padding-bottom: 9px !important;
+  }
+
+  .wc-topbar b {
+    font-size: 17px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .wc-topbar span {
+    max-width: 190px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wc-topbar button,
+  .wc-topbar a {
+    width: 39px !important;
+    height: 39px !important;
+    min-width: 39px !important;
+  }
+
+  .wc-main {
+    gap: 10px !important;
+  }
+
+  .wc-welcome,
+  .wc-job-hero,
+  .wc-next-job,
+  .wc-clock-card,
+  .wc-card,
+  .wc-job-card,
+  .wc-finish,
+  .wc-alert,
+  .wc-empty {
+    border-radius: 21px !important;
+  }
+
+  .wc-next-job h2,
+  .wc-job-card h2,
+  .wc-finish h2,
+  .wc-section-head h2 {
+    letter-spacing: 0 !important;
+  }
+
+  .wc-next-job-actions a,
+  .wc-next-job-actions button,
+  .wc-job-actions a,
+  .wc-clock-card button,
+  .wc-finish button,
+  .wc-photo-button,
+  .wc-save-note,
+  .wc-map-button {
+    width: 100% !important;
+    min-height: 50px !important;
+  }
+
+  .wc-job-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .worker-bottom-nav__item {
+    min-height: 56px !important;
+  }
+
+  .worker-bottom-nav__item span {
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+  }
+}
+
+@media (display-mode: standalone) {
+  .wc-topbar {
+    padding-top: max(14px, calc(10px + env(safe-area-inset-top))) !important;
+  }
+
+  .wc-main {
+    padding-bottom: calc(142px + env(safe-area-inset-bottom)) !important;
+  }
+}
