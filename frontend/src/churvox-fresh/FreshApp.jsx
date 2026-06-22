@@ -61,6 +61,7 @@ import "./freshAiOperatorStudio.css";
 import "./freshAiQuickCreate.css";
 import "./freshAiFollowUpWriter.css";
 import "./freshPlanMyDay.css";
+import "./freshOperatorTools.css";
 import "./freshSubcontractors.css";
 import "./freshTeamLive.css";
 import "./freshTemplates.css";
