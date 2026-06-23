@@ -11,7 +11,7 @@ const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
   { title: "Start", items: [["planday", "PD", "Plan My Day"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
-  { title: "Customers", items: [["leads", "RQ", "Requests"], ["clients", "CL", "Clients"], ["jobs", "JB", "Jobs"]] },
+  { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
 ];
@@ -32,7 +32,7 @@ const moreGroup = {
 };
 
 const mobileItems = [["planday", "PD", "Plan"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
-const mobileMoreOrder = ["messages", "clients", "leads", "quotes", "payments", "xero", "team", "workercommand", "time", "payroll", "portal", "automation", "reports", "settings", "support"];
+const mobileMoreOrder = ["messages", "leads", "clients", "quotes", "payments", "xero", "team", "workercommand", "time", "payroll", "portal", "automation", "reports", "settings", "support"];
 
 const mobileLabels = {
   planday: "Plan My Day",
@@ -418,8 +418,8 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
               </button>
             ))}
             <div className="freshMobileMoreNote">
-              <b>Desktop tools</b>
-              <span>Reports, imports, exports, settings, plans and launch controls are cleaner on PC. Phone mode keeps the fast owner actions up front.</span>
+              <b>More tools</b>
+              <span>Use these when the main flow does not cover the job: accounting, team admin, reports, imports, settings and support.</span>
             </div>
           </div>
         )}
