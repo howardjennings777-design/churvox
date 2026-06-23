@@ -67,9 +67,9 @@
     "test:business:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-business-audit.spec.js",
     "test:human": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-human-flow.spec.js --project=desktop-chromium",
     "test:human:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-human-flow.spec.js --project=mobile-chromium",
-    "test:human:full": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v3.spec.js --project=desktop-chromium",
-    "test:human:full:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v3.spec.js --project=mobile-chromium",
-    "test:human:full:all": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v3.spec.js",
+    "test:human:full": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v4.spec.js --project=desktop-chromium",
+    "test:human:full:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v4.spec.js --project=mobile-chromium",
+    "test:human:full:all": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v4.spec.js",
     "test:ai": "playwright test tests/e2e/churvox-real-ai-loop.spec.js",
     "test:ai:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-ai-loop.spec.js --project=desktop-chromium",
     "test:plans": "playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g \"Plans page loads billing JSON\"",
@@ -103,7 +103,7 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6fd140556e2bb3137e",
   "optionalDependencies": {
     "@playwright/test": "^1.54.2"
   }
