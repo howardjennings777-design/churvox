@@ -10,29 +10,29 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Home", items: [["planday", "PD", "Plan My Day"], ["command", "CM", "Command"]] },
-  { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
+  { title: "Start", items: [["planday", "PD", "Plan My Day"], ["command", "CM", "Command"]] },
+  { title: "Customers", items: [["leads", "RQ", "Requests"], ["clients", "CL", "Clients"], ["jobs", "JB", "Jobs"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
-  { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["payroll", "PR", "Payroll"], ["settings", "SG", "Settings"]] },
+  { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
 ];
 
 const moreGroup = {
   title: "More tools",
   items: [
     ["portal", "PT", "Portal Links"],
-    ["time", "TS", "Time Sheets"],
     ["automation", "AT", "Automation"],
     ["reports", "RP", "Reports"],
-    ["launchcontrol", "LC", "Launch"],
     ["imports", "IM", "Imports"],
     ["exports", "EX", "Exports"],
+    ["settings", "SG", "Settings"],
     ["plans", "PL", "Plans"],
     ["support", "SP", "Support"],
+    ["launchcontrol", "LC", "Launch"],
   ],
 };
 
 const mobileItems = [["planday", "PD", "Plan"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
-const mobileMoreOrder = ["clients", "payments", "xero", "quotes", "team", "workercommand", "time", "portal", "support", "settings"];
+const mobileMoreOrder = ["clients", "leads", "quotes", "payments", "xero", "team", "workercommand", "time", "payroll", "portal", "automation", "reports", "settings", "support"];
 
 const mobileLabels = {
   planday: "Plan My Day",
@@ -413,7 +413,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
             ))}
             <div className="freshMobileMoreNote">
               <b>Desktop tools</b>
-              <span>Payroll, reports, imports, exports, plans and launch controls are cleaner on PC. Phone mode keeps the fast owner actions up front.</span>
+              <span>Reports, imports, exports, settings, plans and launch controls are cleaner on PC. Phone mode keeps the fast owner actions up front.</span>
             </div>
           </div>
         )}
