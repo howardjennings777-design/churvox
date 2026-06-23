@@ -10,10 +10,10 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Home", items: [["today", "TW", "Today's Work"], ["command", "CM", "Command"]] },
+  { title: "Home", items: [["planday", "PD", "Plan My Day"], ["command", "CM", "Command"]] },
   { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
-  { title: "Operator OS", items: [["planday", "PD", "Plan My Day"], ["workerbrief", "WB", "Worker Brief"], ["invoicecheck", "IC", "Invoice Check"], ["quoteai", "QA", "Quote AI"], ["portal", "PT", "Portal Links"]] },
+  { title: "Operator OS", items: [["workerbrief", "WB", "Worker Brief"], ["invoicecheck", "IC", "Invoice Check"], ["quoteai", "QA", "Quote AI"], ["portal", "PT", "Portal Links"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["payroll", "PR", "Payroll"], ["settings", "SG", "Settings"]] },
 ];
 
@@ -36,19 +36,20 @@ const moreGroup = {
   ],
 };
 
-const mobileItems = [["today", "TW", "Today"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
-const mobileMoreOrder = ["planday", "workerbrief", "invoicecheck", "quoteai", "portal", "clients", "payments", "xero", "team", "workercommand", "time", "support", "settings"];
+const mobileItems = [["planday", "PD", "Plan"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
+const mobileMoreOrder = ["workerbrief", "invoicecheck", "quoteai", "portal", "clients", "payments", "xero", "team", "workercommand", "time", "support", "settings"];
 
 const mobileLabels = {
-  today: "Today's Work",
-  todayswork: "Today's Work",
-  worktoday: "Today's Work",
-  smart: "Today's Work",
-  hub: "Today's Work",
-  dashboard: "Today's Work",
-  dispatch: "Today's Work",
-  schedule: "Today's Work",
-  calendar: "Today's Work",
+  planday: "Plan My Day",
+  today: "Plan My Day",
+  todayswork: "Plan My Day",
+  worktoday: "Plan My Day",
+  smart: "Plan My Day",
+  hub: "Plan My Day",
+  dashboard: "Plan My Day",
+  dispatch: "Plan My Day",
+  schedule: "Plan My Day",
+  calendar: "Plan My Day",
   jobs: "Jobs",
   clients: "Clients",
   leads: "Requests",
@@ -56,7 +57,6 @@ const mobileLabels = {
   invoices: "Money",
   payments: "Money",
   xero: "Xero",
-  planday: "Plan My Day",
   workerbrief: "Worker Brief",
   invoicecheck: "Invoice Check",
   quoteai: "Quote AI",
@@ -81,17 +81,17 @@ const mobileLabels = {
 };
 
 const parentByKey = {
-  smart: "today",
-  hub: "today",
-  dashboard: "today",
-  dispatch: "today",
-  schedule: "today",
-  calendar: "today",
-  todayswork: "today",
-  worktoday: "today",
-  routes: "today",
-  areas: "today",
-  schedulerai: "today",
+  today: "planday",
+  smart: "planday",
+  hub: "planday",
+  dashboard: "planday",
+  dispatch: "planday",
+  schedule: "planday",
+  calendar: "planday",
+  todayswork: "planday",
+  worktoday: "planday",
+  areas: "planday",
+  schedulerai: "planday",
   gps: "time",
   customerportal: "portal",
   clientportal: "portal",
@@ -177,7 +177,7 @@ function askRoute(text) {
   if (isJobCommand(text)) return "jobs";
   if (isClientCommand(text)) return "clients";
   if (lower.includes("worker brief") || lower.includes("brief worker") || lower.includes("staff brief")) return "workerbrief";
-  if (lower.includes("plan my day") || lower.includes("day plan") || lower.includes("route today") || lower.includes("plan today")) return "planday";
+  if (lower.includes("today") || lower.includes("plan my day") || lower.includes("day plan") || lower.includes("route today") || lower.includes("plan today")) return "planday";
   if (lower.includes("invoice check") || lower.includes("missing money") || lower.includes("missing extra")) return "invoicecheck";
   if (lower.includes("quote option") || lower.includes("quote ai") || lower.includes("quote draft")) return "quoteai";
   if (lower.includes("proof pack") || lower.includes("customer link") || lower.includes("client portal") || lower.includes("portal")) return "portal";
@@ -204,7 +204,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const [globalAsk, setGlobalAsk] = React.useState("");
   const currentPrimary = parentByKey[active] || active;
   const mobileTitle = mobileLabels[currentPrimary] || mobileLabels[active] || "Churvox";
-  const showGlobalAsk = currentPrimary === "today";
+  const showGlobalAsk = currentPrimary === "planday";
 
   React.useEffect(() => {
     const refresh = () => setGuideComplete(guideIsComplete());
