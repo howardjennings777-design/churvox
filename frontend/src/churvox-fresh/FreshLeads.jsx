@@ -7,48 +7,12 @@ const QUOTES_KEY = "churvox:fresh-quotes:v1";
 const JOBS_KEY = "churvox:fresh-jobs:v1";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
-const defaults = [
-  {
-    id: "lead-1",
-    name: "Sarah from Naenae",
-    source: "Website",
-    status: "New",
-    service: "Fortnightly lawn service",
-    area: "Naenae, Lower Hutt",
-    phone: "021 000 111",
-    email: "hello@churvox.com",
-    estimate: 65,
-    note: "Small lawn, wants regular fortnightly service. Asked for price and next available slot.",
-    nextStep: "Prepare quote",
-  },
-  {
-    id: "lead-2",
-    name: "Birchville Rentals",
-    source: "Phone",
-    status: "Needs info",
-    service: "Driveway clean",
-    area: "Upper Hutt",
-    phone: "04 000 222",
-    email: "hello@churvox.com",
-    estimate: 140,
-    note: "Needs tenant access confirmed before booking.",
-    nextStep: "Confirm access",
-  },
-  {
-    id: "lead-3",
-    name: "Lower Hutt Medical Centre",
-    source: "Referral",
-    status: "Ready",
-    service: "Garden tidy",
-    area: "Lower Hutt",
-    phone: "04 000 333",
-    email: "hello@churvox.com",
-    estimate: 240,
-    note: "Commercial garden tidy. Wants a written quote first.",
-    nextStep: "Create quote",
-  },
-];
+const defaults = [];
+const demoLeadIds = new Set(["lead-1", "lead-2", "lead-3"]);
 
+function isDemoLead(item) {
+  return demoLeadIds.has(item?.id) || String(item?.email || "").toLowerCase() === "hello@churvox.com";
+}
 
 function requestToLead(request) {
   const id = request.id || request._id || `request-${Date.now()}`;
@@ -85,7 +49,8 @@ function readList(key, fallback = []) {
     if (!saved) return fallback;
 
     const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : fallback;
+    if (!Array.isArray(parsed)) return fallback;
+    return key === LEADS_KEY ? parsed.filter((item) => !isDemoLead(item)) : parsed;
   } catch {
     return fallback;
   }
@@ -109,13 +74,13 @@ function sendLeadToCommand(lead) {
     const slip = {
       id: `lead-${lead.id}-${Date.now()}`,
       group: "Leads",
-      title: "New lead needs review",
+      title: "Request ready for owner review",
       info: `${lead.name} · ${lead.service} · $${lead.estimate}`,
       urgency: lead.status === "New" ? "New request" : lead.status,
       found: `${lead.name} came from ${lead.source}.`,
       prepared: `Churvox prepared next step: ${lead.nextStep}.`,
       why: "New enquiries need quick follow-up so they do not go cold.",
-      owner: "Create quote, create job, request more info, or mark handled.",
+      owner: "Approve a quote, prepare a job, request more info, or mark handled.",
       area: "Leads",
       page: "leads",
       fromInbox: true,
@@ -132,8 +97,9 @@ export default function FreshLeads({ onNavigate }) {
   const { get } = useApi();
   const { user } = useAuth();
   const [requestLoading, setRequestLoading] = React.useState(false);
-  const [leads, setLeads] = React.useState(() => readList(LEADS_KEY, defaults));
-  const [selectedId, setSelectedId] = React.useState(() => readList(LEADS_KEY, defaults)[0]?.id || "");
+  const initialLeads = React.useMemo(() => readList(LEADS_KEY, defaults), []);
+  const [leads, setLeads] = React.useState(initialLeads);
+  const [selectedId, setSelectedId] = React.useState(initialLeads[0]?.id || "");
   const selected = leads.find((item) => item.id === selectedId) || leads[0];
   const ownerEmail = String(user?.email || "").trim();
   const publicRequestLink = React.useMemo(() => {
@@ -151,8 +117,9 @@ export default function FreshLeads({ onNavigate }) {
   const totalValue = leads.reduce((sum, item) => sum + Number(item.estimate || 0), 0);
 
   function saveLeads(next) {
-    setLeads(next);
-    saveList(LEADS_KEY, next, "leads");
+    const realLeads = next.filter((item) => !isDemoLead(item));
+    setLeads(realLeads);
+    saveList(LEADS_KEY, realLeads, "leads");
   }
 
   React.useEffect(() => {
@@ -164,15 +131,16 @@ export default function FreshLeads({ onNavigate }) {
         const result = await get("/customer-requests", { timeout: 25000 });
         const data = result?.data ?? result;
         const requests = Array.isArray(data?.requests) ? data.requests : Array.isArray(data?.items) ? data.items : Array.isArray(data?.data) ? data.data : [];
-        const requestLeads = requests.map(requestToLead);
+        const requestLeads = requests.map(requestToLead).filter((item) => !isDemoLead(item));
 
         if (!alive || !requestLeads.length) return;
 
         setLeads((current) => {
-          const seen = new Set(current.map((item) => item.id));
+          const cleaned = current.filter((item) => !isDemoLead(item));
+          const seen = new Set(cleaned.map((item) => item.id));
           const fresh = requestLeads.filter((item) => !seen.has(item.id));
-          if (!fresh.length) return current;
-          const next = [...fresh, ...current];
+          if (!fresh.length) return cleaned;
+          const next = [...fresh, ...cleaned];
           saveList(LEADS_KEY, next, "customer-requests");
           setSelectedId((existing) => existing || fresh[0]?.id || "");
           return next;
@@ -207,15 +175,15 @@ export default function FreshLeads({ onNavigate }) {
   function addLead() {
     const nextLead = {
       id: `lead-${Date.now()}`,
-      name: "New lead",
+      name: "Customer request",
       source: "Website",
       status: "New",
-      service: "New service request",
+      service: "Service requested",
       area: "Add area",
       phone: "",
       email: "",
       estimate: 0,
-      note: "Add lead details here.",
+      note: "Add the customer request details Churvox should prepare for review.",
       nextStep: "Prepare quote",
     };
 
@@ -225,8 +193,8 @@ export default function FreshLeads({ onNavigate }) {
   }
 
   function resetLeads() {
-    saveLeads(defaults);
-    setSelectedId(defaults[0]?.id || "");
+    saveLeads([]);
+    setSelectedId("");
   }
 
   function createQuoteFromLead() {
@@ -240,7 +208,7 @@ export default function FreshLeads({ onNavigate }) {
       status: "Draft",
       amount: Number(selected.estimate || 0),
       area: selected.area,
-      note: `Created from lead: ${selected.note}`,
+      note: `Prepared from request: ${selected.note}`,
       lines: [`${selected.service} · $${Number(selected.estimate || 0).toFixed(2)}`],
     };
 
@@ -261,7 +229,7 @@ export default function FreshLeads({ onNavigate }) {
       area: selected.area,
       worker: "Unassigned",
       price: Number(selected.estimate || 0),
-      note: `Created from lead: ${selected.note}`,
+      note: `Prepared from request: ${selected.note}`,
     };
 
     saveList(JOBS_KEY, [job, ...jobs], "lead-job");
@@ -279,9 +247,9 @@ export default function FreshLeads({ onNavigate }) {
     <section className="freshLeadsPage">
       <div className="freshLeadsHero">
         <div>
-          <span>Leads / requests</span>
-          <h1>Turn enquiries into real work</h1>
-          <p>Capture new requests, prepare quotes, create jobs, and keep every new customer follow-up visible.</p>
+          <span>Requests ready to review</span>
+          <h1>Leads</h1>
+          <p>Churvox pulls in website requests, keeps the customer details visible, and prepares the quote, job, or follow-up for owner approval.</p>
         </div>
 
         <div className="freshLeadsStats">
@@ -295,7 +263,7 @@ export default function FreshLeads({ onNavigate }) {
       <section className="freshPublicRequestLink">
         <div>
           <b>Public request form</b>
-          <span>Share this link so customers can request work. Requests come here first for owner review.</span>
+          <span>Share this link so customers can request work. Real requests come here first for owner review.</span>
         </div>
         <div>
           <a href={publicRequestLink} target="_blank" rel="noreferrer">Open request form</a>
@@ -307,10 +275,10 @@ export default function FreshLeads({ onNavigate }) {
         <aside className="freshLeadsList">
           <header>
             <div>
-              <b>Lead queue</b>
-              <span>{requestLoading ? "Checking website requests..." : "New work before quote/job"}</span>
+              <b>Request queue</b>
+              <span>{requestLoading ? "Checking website requests..." : "Real requests before quote/job"}</span>
             </div>
-            <button type="button" onClick={addLead}>Add</button>
+            <button type="button" onClick={addLead}>Add request</button>
           </header>
 
           {leads.map((lead) => (
@@ -326,12 +294,21 @@ export default function FreshLeads({ onNavigate }) {
             </button>
           ))}
 
-          <button type="button" className="freshLeadsReset" onClick={resetLeads}>
-            Reset leads
-          </button>
+          {!leads.length ? (
+            <div className="freshLeadsEmpty">
+              <b>No real requests waiting</b>
+              <span>Website requests will appear here. You can also add a customer request manually.</span>
+            </div>
+          ) : null}
+
+          {leads.length ? (
+            <button type="button" className="freshLeadsReset" onClick={resetLeads}>
+              Clear local requests
+            </button>
+          ) : null}
         </aside>
 
-        {selected && (
+        {selected ? (
           <article className="freshLeadsDetail">
             <div className="freshLeadsHead">
               <div>
@@ -341,9 +318,9 @@ export default function FreshLeads({ onNavigate }) {
               </div>
 
               <div className="freshLeadsHeadActions">
-                <button type="button" onClick={sendToCommand}>Send to Command</button>
-                <button type="button" onClick={createQuoteFromLead}>Create quote</button>
-                <button type="button" onClick={createJobFromLead}>Create job</button>
+                <button type="button" onClick={sendToCommand}>Prepare for approval</button>
+                <button type="button" onClick={createQuoteFromLead}>Prepare quote</button>
+                <button type="button" onClick={createJobFromLead}>Prepare job</button>
               </div>
             </div>
 
@@ -357,7 +334,7 @@ export default function FreshLeads({ onNavigate }) {
               <section>
                 <span>Estimate</span>
                 <b>${selected.estimate}</b>
-                <p>Use this as the quote or job starting price.</p>
+                <p>Churvox uses this as the starting price for owner review.</p>
               </section>
 
               {selected.photos?.length ? (
@@ -371,13 +348,13 @@ export default function FreshLeads({ onNavigate }) {
               <section>
                 <span>Next step</span>
                 <b>{selected.nextStep}</b>
-                <p>Command can remind the owner to follow this up.</p>
+                <p>Churvox keeps this waiting for owner approval.</p>
               </section>
             </div>
 
             <div className="freshLeadsForm">
               <label>
-                <span>Name</span>
+                <span>Customer</span>
                 <input value={selected.name} onChange={(event) => updateLead(selected.id, { name: event.target.value })} />
               </label>
 
@@ -436,7 +413,7 @@ export default function FreshLeads({ onNavigate }) {
               </label>
 
               <label className="wide">
-                <span>Notes</span>
+                <span>Request details</span>
                 <textarea value={selected.note} onChange={(event) => updateLead(selected.id, { note: event.target.value })} />
               </label>
             </div>
@@ -446,6 +423,20 @@ export default function FreshLeads({ onNavigate }) {
               <button type="button" onClick={() => onNavigate?.("clients")}>Open Clients</button>
               <button type="button" onClick={() => onNavigate?.("quotes")}>Open Quotes</button>
               <button type="button" onClick={() => onNavigate?.("jobs")}>Open Jobs</button>
+            </div>
+          </article>
+        ) : (
+          <article className="freshLeadsDetail">
+            <div className="freshLeadsHead">
+              <div>
+                <span>Waiting</span>
+                <h2>No request selected</h2>
+                <p>Churvox will show real website requests here when they arrive.</p>
+              </div>
+              <div className="freshLeadsHeadActions">
+                <button type="button" onClick={addLead}>Add request</button>
+                <button type="button" onClick={copyRequestLink}>Copy request link</button>
+              </div>
             </div>
           </article>
         )}
