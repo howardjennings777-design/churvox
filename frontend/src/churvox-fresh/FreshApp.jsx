@@ -126,6 +126,7 @@ import "./freshOwnerShellFinal.css";
 
 const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch", "routes"];
 const COMMAND_ALIASES = ["askchurvox", "aioperatorstudio", "quickcreateai", "followupwriter", "quoteai", "invoicecheck", "workerbrief"];
+const MESSAGE_ALIASES = ["inbox", "workermessages", "worker-messages", "workerinbox", "worker-inbox"];
 
 const pages = {
   planday: FreshPlanMyDay,
@@ -166,6 +167,9 @@ const pages = {
   contractors: FreshContractorHub,
   subcontractors: FreshContractorHub,
   messages: FreshMessages,
+  inbox: FreshMessages,
+  workermessages: FreshMessages,
+  workerinbox: FreshMessages,
   reviews: FreshReviews,
   variations: FreshVariations,
   leads: FreshLeads,
@@ -196,6 +200,7 @@ function canonicalPage(value, fallback = "planday") {
   const key = String(value || "").trim().toLowerCase();
   if (PLAN_DAY_ALIASES.includes(key)) return "planday";
   if (COMMAND_ALIASES.includes(key)) return "command";
+  if (MESSAGE_ALIASES.includes(key)) return "messages";
   return key || fallback;
 }
 
