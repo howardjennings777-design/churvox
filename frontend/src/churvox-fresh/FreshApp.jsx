@@ -226,6 +226,10 @@ function getInitialPage() {
     if (path === "/dashboard" || path === "/fresh") return "planday";
     if (path === "/plans") return "plans";
 
+    const pathKey = path.replace(/^\/+/, "").split("/")[0];
+    const pathPage = canonicalPage(pathKey, "");
+    if (pathPage && pages[pathPage]) return pathPage;
+
     const saved = canonicalPage(window.localStorage.getItem("churvox:fresh-page") || "planday");
     return pages[saved] ? saved : "planday";
   } catch {
