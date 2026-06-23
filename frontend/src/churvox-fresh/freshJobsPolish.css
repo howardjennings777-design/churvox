@@ -812,3 +812,43 @@ html body .jobModalOverlay .jobModalCard {
     display: grid !important;
   }
 }
+
+/* CHURVOX_JOBS_DESKTOP_SCROLL_RESTORE_20260624 */
+@media (min-width: 901px) {
+  html:has(.freshJobsPage),
+  body:has(.freshJobsPage) {
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .freshMain:has(.freshJobsPage),
+  .freshPageScroll:has(.freshJobsPage) {
+    min-height: 100dvh !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+  }
+
+  .freshJobsPage {
+    min-height: calc(100dvh - 110px) !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .freshJobsPage .freshGrid {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    align-items: start !important;
+  }
+
+  .freshJobsListCard,
+  .freshJobsDetailCard,
+  .freshJobsActionsCard {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
