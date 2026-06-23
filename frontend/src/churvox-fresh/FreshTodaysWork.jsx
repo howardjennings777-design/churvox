@@ -103,10 +103,6 @@ function isCancelledJob(job) {
   return ["cancelled", "canceled", "archived", "void"].includes(lower(job?.status || job?.job_status));
 }
 
-function isPaidInvoice(invoice) {
-  return ["paid", "complete", "completed", "closed"].includes(lower(invoice?.status || invoice?.payment_status));
-}
-
 function invoiceJobId(invoice) {
   return recordId(invoice, "job_id", "linked_job_id", "jobId", "linkedJobId", "source_job_id", "sourceJobId");
 }
@@ -153,12 +149,12 @@ function statusLabel(job) {
   return pick(job, "status", "job_status") || "Ready";
 }
 
-function openJobModal(text = "Create job from Today’s Work") {
+function openJobModal(text = "Create job from Plan My Day") {
   try {
     window.localStorage.setItem("churvox:fresh-open-job-modal:v1", JSON.stringify({ open: true, instruction: text, text, at: Date.now() }));
   } catch {}
   try {
-    window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text, source: "todays-work" } }));
+    window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text, source: "plan-my-day" } }));
   } catch {}
 }
 
@@ -314,10 +310,10 @@ export default function FreshTodaysWork({ onNavigate }) {
       <header className="freshTodayWorkHero">
         <div>
           <span>Home</span>
-          <h1>Today’s Work</h1>
-          <p>Jobs for {longDay(selectedDate)}. This is the first screen after login so owners know exactly what work is on today.</p>
+          <h1>Plan My Day</h1>
+          <p>Jobs, worker gaps and invoice admin for {longDay(selectedDate)} in one owner cockpit.</p>
           <div className="freshTodayWorkSync">
-            <b>{loading ? "Checking jobs..." : "Live jobs loaded"}</b>
+            <b>{loading ? "Checking day plan..." : "Live day plan loaded"}</b>
             {lastSynced ? <small>Updated {lastSynced}</small> : null}
             <button type="button" onClick={load} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</button>
           </div>
@@ -356,14 +352,14 @@ export default function FreshTodaysWork({ onNavigate }) {
       <section className="freshTodayWorkBoard">
         <article className="freshTodayWorkMain">
           <header>
-            <span>Day list</span>
+            <span>Daily plan</span>
             <h2>{longDay(selectedDate)}</h2>
             <p>{dayJobs.length ? `${dayJobs.length} job${dayJobs.length === 1 ? "" : "s"} booked.` : "No jobs booked for this day."}</p>
           </header>
 
           <div className="freshTodayWorkList">
             {loading && !dayJobs.length ? (
-              <div className="freshTodayWorkEmpty">Checking today’s jobs...</div>
+              <div className="freshTodayWorkEmpty">Checking day jobs...</div>
             ) : dayJobs.length ? (
               dayJobs.map((job, index) => <JobCard key={recordId(job, "id", "_id") || index} job={job} invoicedJobIds={invoicedJobIds} onNavigate={onNavigate} />)
             ) : (
@@ -380,7 +376,7 @@ export default function FreshTodaysWork({ onNavigate }) {
           <article>
             <span>Progress</span>
             <h3>{completed.length}/{dayJobs.length}</h3>
-            <p>Completed jobs today</p>
+            <p>Completed jobs for this day</p>
           </article>
           <article>
             <span>Money next</span>
