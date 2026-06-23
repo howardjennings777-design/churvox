@@ -75,7 +75,6 @@ import "./freshWarranties.css";
 import FreshShell from "./FreshShell";
 import FreshPlanGate from "./FreshPlanGate";
 import FreshSimple from "./FreshSimple";
-import FreshTodaysWork from "./FreshTodaysWork";
 import FreshJobs from "./FreshJobs";
 import FreshClients from "./FreshClients";
 import FreshQuotes from "./FreshQuotes";
@@ -134,20 +133,23 @@ import "./freshFinalContrastLock.css";
 import "./freshPillContrastSystem.css";
 import "./freshOwnerShellFinal.css";
 
+const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch"];
+
 const pages = {
-  today: FreshTodaysWork,
-  todayswork: FreshTodaysWork,
-  worktoday: FreshTodaysWork,
-  smart: FreshTodaysWork,
-  hub: FreshTodaysWork,
-  dashboard: FreshTodaysWork,
+  planday: FreshPlanMyDay,
+  today: FreshPlanMyDay,
+  todayswork: FreshPlanMyDay,
+  worktoday: FreshPlanMyDay,
+  smart: FreshPlanMyDay,
+  hub: FreshPlanMyDay,
+  dashboard: FreshPlanMyDay,
+  calendar: FreshPlanMyDay,
+  schedule: FreshPlanMyDay,
+  dispatch: FreshPlanMyDay,
   jobs: FreshJobs,
   clients: FreshClients,
   quotes: FreshQuotes,
   invoices: FreshInvoices,
-  calendar: FreshTodaysWork,
-  schedule: FreshTodaysWork,
-  dispatch: FreshTodaysWork,
   team: FreshTeam,
   settings: FreshSettings,
   plans: FreshPlans,
@@ -187,7 +189,6 @@ const pages = {
   askchurvox: FreshAskChurvox,
   quoteai: FreshQuoteAI,
   invoicecheck: FreshInvoiceChecker,
-  planday: FreshPlanMyDay,
   workerbrief: FreshWorkerBrief,
   command: FreshCommand,
   aioperatorstudio: FreshAiOperatorStudio,
@@ -199,20 +200,26 @@ const pages = {
   portal: FreshPortal,
 };
 
+function canonicalPage(value, fallback = "planday") {
+  const key = String(value || "").trim().toLowerCase();
+  if (PLAN_DAY_ALIASES.includes(key)) return "planday";
+  return key || fallback;
+}
+
 function getInitialPage() {
   try {
     const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
-    if (["smart", "hub", "dashboard"].includes(hash)) return "today";
-    if (hash && pages[hash]) return hash;
+    const hashPage = canonicalPage(hash, "");
+    if (hashPage && pages[hashPage]) return hashPage;
 
     const path = String(window.location.pathname || "").trim().toLowerCase();
-    if (path === "/dashboard" || path === "/fresh") return "today";
+    if (path === "/dashboard" || path === "/fresh") return "planday";
     if (path === "/plans") return "plans";
 
-    const saved = window.localStorage.getItem("churvox:fresh-page") || "command";
-    return ["smart", "hub", "dashboard"].includes(saved) ? "command" : saved;
+    const saved = canonicalPage(window.localStorage.getItem("churvox:fresh-page") || "planday");
+    return pages[saved] ? saved : "planday";
   } catch {
-    return "today";
+    return "planday";
   }
 }
 
@@ -226,9 +233,9 @@ export default function FreshApp() {
   React.useEffect(() => {
     const applyHashRoute = () => {
       const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
-      if (["smart", "hub", "dashboard"].includes(hash)) setPage("today");
-      else if (hash && pages[hash]) setPage(hash);
-      else if (window.location.pathname === "/dashboard") setPage("today");
+      const hashPage = canonicalPage(hash, "");
+      if (hashPage && pages[hashPage]) setPage(hashPage);
+      else if (window.location.pathname === "/dashboard") setPage("planday");
     };
 
     applyHashRoute();
@@ -237,7 +244,7 @@ export default function FreshApp() {
   }, []);
 
   function navigate(next) {
-    const safeNext = ["smart", "hub", "dashboard"].includes(next) ? "today" : (next || "today");
+    const safeNext = canonicalPage(next);
     setPage(safeNext);
     try {
       window.localStorage.setItem("churvox:fresh-page", safeNext);
