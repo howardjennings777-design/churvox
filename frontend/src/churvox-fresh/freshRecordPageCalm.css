@@ -1,51 +1,8 @@
 /* CHURVOX_RECORD_PAGE_CALM_20260624
-   Record pages should show records. Command owns approvals, diagnostics, and prepared next-step work. */
-
-.freshJobsPage .freshQuoteNextBox,
-.freshQuotesPage .freshQuoteNextBox,
-.freshQuotesPage .freshOptionGrid,
-.freshInvoicesPage .freshInvoiceNextBox,
-.freshPaymentsPage .freshXeroNotice.need,
-.freshPageScroll > section:has(> label.freshField input[type="search"]) .freshQuoteNextBox {
-  display: none !important;
-}
-
-.freshJobsPage .freshJobsActionsCard .freshDark,
-.freshQuotesPage .freshQuotesActionsCard .freshDark,
-.freshInvoicesPage .freshInvoicesActionsCard .freshDark,
-.freshPageScroll > section:has(> label.freshField input[type="search"]) .freshJobsActionStack button:nth-child(4),
-.freshPaymentsPage .freshPaymentsHeadActions button:first-child,
-.freshPaymentsPage .freshPaymentsActions button:first-child,
-.freshPaymentsPage .freshPaymentsActions button:nth-child(3),
-.freshPaymentsPage .freshPaymentsActions button:nth-child(4) {
-  display: none !important;
-}
-
-.freshJobsPage .freshJobsActionHint,
-.freshQuotesPage .freshJobsActionHint,
-.freshInvoicesPage .freshJobsActionHint,
-.freshPaymentsPage .freshPaymentsForm label.wide {
-  display: none !important;
-}
+   Record pages now keep record details in-page. Command owns approvals, diagnostics, and prepared next-step work. */
 
 .freshJobsPage .freshJobsDetailBox.notes p,
 .freshQuotesPage .freshJobsDetailBox.notes p,
 .freshInvoicesPage .freshJobsDetailBox.notes p {
   min-height: 0 !important;
-}
-
-.freshJobsPage .freshJobsActionsCard h2,
-.freshQuotesPage .freshQuotesActionsCard h2,
-.freshInvoicesPage .freshInvoicesActionsCard h2,
-.freshPageScroll > section:has(> label.freshField input[type="search"]) .freshGrid > aside.freshCard:last-child h2 {
-  font-size: 24px !important;
-}
-
-.freshPaymentsPage .freshPaymentsStats div:last-child small {
-  font-size: 0 !important;
-}
-
-.freshPaymentsPage .freshPaymentsStats div:last-child small::after {
-  content: "owing checks";
-  font-size: 11px !important;
 }
