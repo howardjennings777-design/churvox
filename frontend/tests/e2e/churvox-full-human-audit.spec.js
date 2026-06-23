@@ -1,9 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
-const OWNER_EMAIL = process.env.CHURVOX_E2E_EMAIL || process.env.CHURVOX_OWNER_EMAIL || '';
-const OWNER_PASSWORD = process.env.CHURVOX_E2E_PASSWORD || process.env.CHURVOX_OWNER_PASSWORD || '';
-const WORKER_EMAIL = process.env.CHURVOX_E2E_WORKER_EMAIL || process.env.CHURVOX_WORKER_EMAIL || '';
-const WORKER_PASSWORD = process.env.CHURVOX_E2E_WORKER_PASSWORD || process.env.CHURVOX_WORKER_PASSWORD || '';
+const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || process.env.CHURVOX_E2E_EMAIL || '';
+const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX_E2E_PASSWORD || '';
+const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || process.env.CHURVOX_E2E_WORKER_EMAIL || '';
+const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURVOX_E2E_WORKER_PASSWORD || '';
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 const MUTATE = process.env.CHURVOX_E2E_MUTATE === '1';
 const DANGEROUS_GUARD_CLICKS = process.env.CHURVOX_FULL_AUDIT_DANGEROUS === '1';
@@ -185,7 +185,8 @@ async function login(page, email, password, label) {
 
   const body = await pageText(page);
   const token = await page.evaluate(() => window.localStorage.getItem('token') || '').catch(() => '');
-  const stillOnLogin = /\/login(?:$|[?#])/i.test(new URL(page.url()).pathname);
+  const path = new URL(page.url()).pathname;
+  const stillOnLogin = /\/login(?:$|[?#])/i.test(path);
   const hasLoginError = /invalid|incorrect|wrong|failed|try again|required|not found/i.test(body);
 
   expect(body, `${label} login should render app text`).toMatch(/Churvox|Plan|Dashboard|Business|Worker|Job|Client|Command/i);
@@ -219,16 +220,39 @@ async function tagControls(page) {
     const controls = [];
     let index = 0;
 
+    function canSee(el, rect, style) {
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
+      if (el.closest('[hidden], [aria-hidden="true"]')) return false;
+      if (rect.width <= 1 || rect.height <= 1) return false;
+      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity || '1') <= 0.03) return false;
+      return true;
+    }
+
+    function hitState(el, rect) {
+      const x = Math.min(Math.max(rect.left + rect.width / 2, 1), window.innerWidth - 1);
+      const y = Math.min(Math.max(rect.top + rect.height / 2, 1), window.innerHeight - 1);
+      const hit = document.elementFromPoint(x, y);
+      const reachable = Boolean(hit && (hit === el || el.contains(hit)));
+      return {
+        x: Math.round(x),
+        y: Math.round(y),
+        reachable,
+        hitTag: hit?.tagName || '',
+        hitText: (hit?.innerText || hit?.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80),
+        hitClass: String(hit?.className || '').slice(0, 80),
+      };
+    }
+
     for (const el of nodes) {
       const rect = el.getBoundingClientRect();
       const style = getComputedStyle(el);
-      const visible = rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0.03;
-      if (!visible) continue;
+      if (!canSee(el, rect, style)) continue;
 
       const label = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('name') || el.getAttribute('value') || el.getAttribute('href') || '').trim().replace(/\s+/g, ' ');
       const href = el.getAttribute('href') || '';
       const id = `qa-control-${index}`;
       el.setAttribute('data-churvox-qa-control', id);
+
       controls.push({
         id,
         index,
@@ -238,6 +262,7 @@ async function tagControls(page) {
         disabled: Boolean(el.disabled || el.getAttribute('aria-disabled') === 'true'),
         pointerEvents: style.pointerEvents,
         size: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
+        hit: hitState(el, rect),
       });
       index += 1;
     }
@@ -270,8 +295,9 @@ async function assertLayoutHealth(page, route, routeReport) {
     for (const el of document.querySelectorAll('button, a[href], [role="button"], input, textarea, select')) {
       const rect = el.getBoundingClientRect();
       const style = getComputedStyle(el);
-      const visible = rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden';
+      const visible = rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0.03;
       if (!visible) continue;
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
       const label = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('title') || '').trim().replace(/\s+/g, ' ');
       if (!label && !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) issues.push(`unlabelled ${el.tagName}`);
       if (rect.width < 14 || rect.height < 14) issues.push(`tiny control "${label || el.tagName}" ${Math.round(rect.width)}x${Math.round(rect.height)}`);
@@ -292,6 +318,7 @@ async function sweepRoute(page, route, report) {
     controls: [],
     clicked: [],
     dangerousSkipped: [],
+    unavailableSkipped: [],
     failedClicks: [],
     missingLabels: [],
   };
@@ -321,26 +348,26 @@ async function sweepRoute(page, route, report) {
     const controls = await tagControls(page);
     const match = controls.find(c => c.label === control.label && c.href === control.href && c.tag === control.tag) || controls[control.index];
     if (!match) {
-      routeReport.clicked.push({
-        label,
-        href: control.href,
-        skippedAfterReload: true,
-        reason: 'control was not found after reload, likely because the live list changed order',
-      });
+      routeReport.unavailableSkipped.push({ label, href: control.href, reason: 'not found after reload' });
       continue;
     }
 
     if (match.disabled || match.pointerEvents === 'none') {
-      routeReport.clicked.push({
-        label,
-        href: control.href,
-        skippedAfterReload: true,
-        reason: 'control became disabled or unclickable after reload',
-      });
+      routeReport.unavailableSkipped.push({ label, href: control.href, reason: 'disabled or pointer-events none after reload' });
+      continue;
+    }
+
+    if (!match.hit?.reachable) {
+      routeReport.failedClicks.push({ control: match, reason: `click point is blocked by ${match.hit?.hitTag || 'unknown'} ${match.hit?.hitText || match.hit?.hitClass || ''}`.trim() });
       continue;
     }
 
     const locator = page.locator(`[data-churvox-qa-control="${match.id}"]`).first();
+    if (!(await locator.isVisible().catch(() => false))) {
+      routeReport.unavailableSkipped.push({ label, href: control.href, reason: 'locator not visible after reload' });
+      continue;
+    }
+
     const beforeUrl = page.url();
     const beforeText = await pageText(page);
     let popup = null;
@@ -374,7 +401,7 @@ async function sweepRoute(page, route, report) {
 
       await closeOverlays(page);
     } catch (error) {
-      routeReport.failedClicks.push({ control, reason: error.message });
+      routeReport.failedClicks.push({ control: match, reason: error.message });
     }
   }
 
