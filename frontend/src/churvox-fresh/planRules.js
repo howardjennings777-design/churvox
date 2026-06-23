@@ -24,7 +24,7 @@ export const GROWTH_PACK_NAME = "Command Growth Pack";
 export const GROWTH_PACK_PRICE = "$99/month + GST";
 
 export const FEATURE_RULES = {
-  today: { area: "Today’s Work", open: "start", reason: "Every plan needs today’s work." },
+  planday: { area: "Plan My Day", open: "start", reason: "Every plan needs one daily owner cockpit for jobs, admin, priorities and follow-ups." },
   jobs: { area: "Jobs", open: "start", reason: "Core job workflow is included from Start." },
   clients: { area: "Clients", open: "start", reason: "Customer records are included from Start." },
   quotes: { area: "Quotes", open: "start", reason: "Quotes are included from Start." },
@@ -56,7 +56,7 @@ export const FEATURE_RULES = {
 };
 
 export const PLAN_FEATURE_MATRIX = [
-  { area: "Today’s Work", start: "Open", crew: "Open", operator: "Open", command: "Open" },
+  { area: "Plan My Day", start: "Open", crew: "Open", operator: "Open", command: "Open" },
   { area: "Jobs / Clients / Quotes / Invoices", start: "Open", crew: "Open", operator: "Open", command: "Open" },
   { area: "Payments", start: "Open", crew: "Open", operator: "Open", command: "Open" },
   { area: "Team", start: "Locked", crew: "Open", operator: "Open", command: "Open" },
@@ -178,13 +178,15 @@ export function activeTeamMemberLimit(user) {
 export function ruleForPage(page) {
   const key = String(page || "").toLowerCase();
   const aliases = {
-    dashboard: "today",
-    smart: "today",
-    hub: "today",
-    schedule: "today",
-    calendar: "today",
-    todayswork: "today",
-    worktoday: "today",
+    today: "planday",
+    dashboard: "planday",
+    smart: "planday",
+    hub: "planday",
+    schedule: "planday",
+    calendar: "planday",
+    dispatch: "planday",
+    todayswork: "planday",
+    worktoday: "planday",
     worker: "workercommand",
     workers: "workercommand",
     xero: "xero",
