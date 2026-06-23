@@ -61,7 +61,7 @@ function normalizeQuote(quote, index) {
     status,
     amount,
     age: quote?.created_at ? `Created ${new Date(quote.created_at).toLocaleDateString()}` : "Real quote",
-    followUp: status === "Sent" ? "Follow-up watch" : status === "Accepted" ? "Ready to convert to job" : "Owner review",
+    followUp: status === "Sent" ? "Follow-up ready to check" : status === "Accepted" ? "Ready to become a job" : "Ready for owner review",
     note: quote?.notes || quote?.note || "No notes yet",
     lines: Array.isArray(quote?.lines) ? quote.lines : [quote?.job_description || quote?.description || quote?.notes || "Quote item"],
     sortTime: dateScore(quote),
@@ -131,10 +131,10 @@ export default function FreshQuotes({ onNavigate }) {
         ? `Prepare owner review to convert accepted quote ${selected.title} for ${selected.client} into a job. Value ${money(selected.amount)}. Owner approval required.`
         : `Prepare owner-approved quote follow-up for ${selected.title} for ${selected.client}. Status ${selected.status}. Value ${money(selected.amount)}. Do not auto-send.`;
       const result = await post("/tell-churvox/prepare", { text }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || "Could not send quote to Command.");
+      if (!result?.success) throw new Error(result?.error || "Could not prepare quote for approval.");
       onNavigate?.("command");
     } catch (err) {
-      setError(err?.message || "Could not send quote to Command.");
+      setError(err?.message || "Could not prepare quote for approval.");
     } finally {
       setBusy("");
     }
@@ -145,10 +145,10 @@ export default function FreshQuotes({ onNavigate }) {
     setBusy("options");
     try {
       const result = await post("/tell-churvox/prepare", { text: optionsText(selected, options) }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || "Could not send quote options to Command.");
+      if (!result?.success) throw new Error(result?.error || "Could not prepare quote options.");
       onNavigate?.("command");
     } catch (err) {
-      setError(err?.message || "Could not send quote options to Command.");
+      setError(err?.message || "Could not prepare quote options.");
     } finally {
       setBusy("");
     }
@@ -169,29 +169,29 @@ export default function FreshQuotes({ onNavigate }) {
 
   return (
     <section className="freshQuotesPage">
-      <header className="freshHero"><span>Churvox fresh - Quotes</span><h1>Quotes</h1><p>Quote Options gives owners Basic, Recommended and Premium choices to approve before anything is sent.</p></header>
-      <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(sentTotal)}</h2><p>Sent quote value</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(acceptedTotal)}</h2><p>Accepted value</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : quotes.length}</h2><p>Total quotes</p></aside></section>
+      <header className="freshHero"><span>Quotes ready to review</span><h1>Quotes</h1><p>Churvox keeps quote drafts, follow-ups, and accepted work in one place. You approve the next move before anything goes out.</p></header>
+      <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(sentTotal)}</h2><p>Sent value to watch</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(acceptedTotal)}</h2><p>Accepted value ready</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : quotes.length}</h2><p>Quotes Churvox found</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Could not load quotes</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadQuotes}>Retry</button></section> : null}
       <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{item === "All" ? quotes.length : quotes.filter((quote) => quote.status === item).length}</b></button>)}</section>
 
       <section className="freshGrid">
-        <aside className="freshCard"><h2>Quote list</h2>{loading && quotes.length === 0 ? <div className="freshItem"><b>Loading real quotes...</b><span>Checking your business account.</span></div> : visibleQuotes.map((quote) => <button type="button" className={`freshItem ${selected?.id === quote.id ? "active" : ""} ${quote.status === "Sent" ? "need" : ""}`} key={quote.id} onClick={() => setSelectedId(quote.id)}><b>{quote.title}</b><span>{quote.client} - {quote.status} - {money(quote.amount)}</span></button>)}{loading && quotes.length > 0 ? <div className="freshItem"><b>Refreshing quotes...</b><span>Showing saved quotes while Churvox refreshes.</span></div> : null}{!loading && visibleQuotes.length === 0 ? <div className="freshItem"><b>No quotes</b><span>Create your first real quote to start the workflow.</span></div> : null}</aside>
+        <aside className="freshCard"><h2>Quote work</h2>{loading && quotes.length === 0 ? <div className="freshItem"><b>Loading real quotes...</b><span>Checking your business account.</span></div> : visibleQuotes.map((quote) => <button type="button" className={`freshItem ${selected?.id === quote.id ? "active" : ""} ${quote.status === "Sent" ? "need" : ""}`} key={quote.id} onClick={() => setSelectedId(quote.id)}><b>{quote.title}</b><span>{quote.client} - {quote.status} - {money(quote.amount)}</span></button>)}{loading && quotes.length > 0 ? <div className="freshItem"><b>Refreshing quotes...</b><span>Showing saved quotes while Churvox refreshes.</span></div> : null}{!loading && visibleQuotes.length === 0 ? <div className="freshItem"><b>No quote work waiting</b><span>When quotes exist, Churvox will show what needs review or follow-up here.</span></div> : null}</aside>
 
         <section className="freshCard freshQuotesDetailCard">
-          <div className="freshJobsDetailHeader"><div><small>Selected quote</small><h2>{selected?.title || "Select quote"}</h2></div>{selected ? <span className={selected.status === "Accepted" ? "ready" : selected.status === "Sent" ? "need" : ""}>{selected.status}</span> : null}</div>
+          <div className="freshJobsDetailHeader"><div><small>Quote Churvox found</small><h2>{selected?.title || "Select quote"}</h2></div>{selected ? <span className={selected.status === "Accepted" ? "ready" : selected.status === "Sent" ? "need" : ""}>{selected.status}</span> : null}</div>
           {selected ? (<>
             <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Quote</span><b>{selected.id}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Client</span><b>{selected.client}</b></div><div><span>Value</span><b>{money(selected.amount)}</b></div></div>
-            <section className={`freshQuoteNextBox ${selected.status.toLowerCase()}`}><span>Next owner move</span><b>{selected.followUp}</b><p>{selected.status === "Sent" ? "Check if this needs a follow-up before the customer goes cold." : selected.status === "Accepted" ? "This can become a job once the owner is ready." : "Review the quote details before sending."}</p></section>
+            <section className={`freshQuoteNextBox ${selected.status.toLowerCase()}`}><span>Next owner move</span><b>{selected.followUp}</b><p>{selected.status === "Sent" ? "Churvox has the follow-up ready to review before the customer goes cold." : selected.status === "Accepted" ? "Churvox can turn this accepted quote into job admin once you approve it." : "Review the prepared quote details before sending."}</p></section>
             <section className="freshOptionGrid">{options.map((option) => <article key={option.name} className={option.name === "Recommended" ? "recommended" : ""}><span>{option.name}</span><b>{money(option.amount)}</b><p>{option.note}</p></article>)}</section>
-            <section className="freshJobsDetailBox notes"><span>Quote lines</span>{selected.lines.map((line, index) => <p key={`${selected.id}-${index}`}>{String(line)}</p>)}</section>
+            <section className="freshJobsDetailBox notes"><span>Prepared quote lines</span>{selected.lines.map((line, index) => <p key={`${selected.id}-${index}`}>{String(line)}</p>)}</section>
             <section className="freshJobsDetailBox notes"><span>Owner quote note</span><p>{selected.note}</p></section>
-          </>) : <div className="freshEmptyStateBig"><b>No quote selected</b><span>Create a quote, send it to a customer, then track accepted/declined work here.</span><button type="button" className="freshPrimary" onClick={openQuotePopup}>Create first quote</button></div>}
+          </>) : <div className="freshEmptyStateBig"><b>No quote selected</b><span>When a quote is ready, Churvox will show the prepared options and the next owner decision here.</span><button type="button" className="freshPrimary" onClick={openQuotePopup}>Prepare quote</button></div>}
         </section>
 
-        <aside className="freshCard freshQuotesActionsCard"><h2>Owner actions</h2><p className="freshJobsActionHint">Use these for the selected quote. Nothing contacts the customer unless you approve it.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openQuotePopup}>New quote</button><button className="freshOrange" type="button" disabled={!selected || selected.status !== "Accepted"} onClick={convertSelectedQuoteToJob}>Convert to job</button><button className="freshDark" type="button" disabled={!selected || busy === "options"} onClick={sendOptionsToCommand}>{busy === "options" ? "Sending..." : "Send options to Command"}</button><button className="freshDark" type="button" disabled={!selected || busy === "command"} onClick={sendSelectedQuoteToCommand}>{busy === "command" ? "Sending..." : "Send selected to Command"}</button><button className="freshGhost" type="button" onClick={loadQuotes}>Refresh quotes</button></div></aside>
+        <aside className="freshCard freshQuotesActionsCard"><h2>Owner actions</h2><p className="freshJobsActionHint">Approve, adjust, or ask Churvox to prepare the next step. Nothing contacts the customer unless you approve it.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openQuotePopup}>Prepare quote</button><button className="freshOrange" type="button" disabled={!selected || selected.status !== "Accepted"} onClick={convertSelectedQuoteToJob}>Prepare job from quote</button><button className="freshDark" type="button" disabled={!selected || busy === "options"} onClick={sendOptionsToCommand}>{busy === "options" ? "Preparing..." : "Prepare quote options"}</button><button className="freshDark" type="button" disabled={!selected || busy === "command"} onClick={sendSelectedQuoteToCommand}>{busy === "command" ? "Preparing..." : "Prepare next move"}</button><button className="freshGhost" type="button" onClick={loadQuotes}>Refresh quotes</button></div></aside>
       </section>
 
-      {quotePopupOpen ? <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setQuotePopupOpen(false); }}><section className="freshCard freshRoutePopupCard"><button className="freshRoutePopupClose" type="button" onClick={() => setQuotePopupOpen(false)}>x</button><header className="freshHero freshRoutePopupHero"><span>New quote</span><h1>Create quote</h1><p>Add the real quote here without leaving the Quotes area.</p></header><QuoteCreateForm submitLabel="Create quote" onCancel={() => setQuotePopupOpen(false)} onSuccess={() => { setQuotePopupOpen(false); loadQuotes(); try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "quote-created" } })); } catch {} }} /></section></div> : null}
+      {quotePopupOpen ? <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setQuotePopupOpen(false); }}><section className="freshCard freshRoutePopupCard"><button className="freshRoutePopupClose" type="button" onClick={() => setQuotePopupOpen(false)}>x</button><header className="freshHero freshRoutePopupHero"><span>Prepare quote</span><h1>Quote for review</h1><p>Add the job details Churvox should turn into a quote draft for owner approval.</p></header><QuoteCreateForm submitLabel="Prepare quote" onCancel={() => setQuotePopupOpen(false)} onSuccess={() => { setQuotePopupOpen(false); loadQuotes(); try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "quote-created" } })); } catch {} }} /></section></div> : null}
     </section>
   );
 }
