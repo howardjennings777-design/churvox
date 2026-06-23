@@ -111,7 +111,7 @@ function rowFromInvoice(invoice) {
     status: statusOf(invoice),
     due: dueText(invoice),
     note: owing > 0
-      ? "Payment still owing. Owner can prepare a follow-up or run accounting refresh."
+      ? "Payment still owing. Churvox can prepare the follow-up for owner approval."
       : "Paid-looking invoice. Confirm with accounting refresh before treating it as paid.",
   };
 }
@@ -148,7 +148,7 @@ export default function FreshPayments({ onNavigate }) {
       const rows = hideDemoRecords(asArray(result.data)).map(rowFromInvoice).sort((a, b) => b.owing - a.owing || String(a.customer).localeCompare(String(b.customer)));
       setItems(rows);
       setSelectedId((current) => current && rows.some((item) => item.id === current) ? current : rows[0]?.id || "");
-      if (!rows.length) setMessage("No invoices yet. Create an invoice first, then payment tracking will appear here.");
+      if (!rows.length) setMessage("No invoices waiting yet. Once invoices exist, Churvox will show what is owing and what needs approval.");
     } catch (err) {
       setItems([]);
       setSelectedId("");
@@ -192,11 +192,11 @@ export default function FreshPayments({ onNavigate }) {
     setBusy(intent);
     try {
       const result = await post("/tell-churvox/prepare", { text: paymentReviewText(selected, intent) }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || "Could not send payment item to backend Review.");
-      setMessage(intent === "paid-check" ? "Paid-status check sent to backend Review." : "Payment follow-up sent to backend Review.");
+      if (!result?.success) throw new Error(result?.error || "Could not prepare payment item for approval.");
+      setMessage(intent === "paid-check" ? "Paid-status check prepared for approval." : "Payment follow-up prepared for approval.");
       onNavigate?.("command");
     } catch (err) {
-      setMessage(err?.message || "Could not send payment item to backend Review.");
+      setMessage(err?.message || "Could not prepare payment item for approval.");
     } finally {
       setBusy("");
     }
@@ -222,37 +222,37 @@ export default function FreshPayments({ onNavigate }) {
     <section className="freshPaymentsPage">
       <div className="freshPaymentsHero">
         <div>
-          <span>Payments / deposits</span>
+          <span>Money ready to check</span>
           <h1>Payments</h1>
-          <p>See who owes money, prepare owner-approved follow-ups, and refresh accounting payment status. Paid is only trusted after an accounting check confirms it.</p>
+          <p>Churvox shows what is owed, what looks paid, and the follow-up it can prepare. Paid is only trusted after an accounting check confirms it.</p>
         </div>
         <div className="freshPaymentsStats">
           <div><b>{money(total)}</b><small>invoiced</small></div>
           <div><b>{money(paid)}</b><small>paid-looking</small></div>
           <div><b>{money(owing)}</b><small>owing</small></div>
-          <div><b>{risks}</b><small>follow up</small></div>
+          <div><b>{risks}</b><small>need approval</small></div>
         </div>
       </div>
 
       <div className="freshXeroNotice need">
         <b>Safety rule</b>
-        <span>No one-click paid marking here. Use accounting refresh/check first, then review the result in Command or the accounting system.</span>
+        <span>No one-click paid marking here. Use accounting refresh/check first, then approve the result in Command or the accounting system.</span>
       </div>
 
       {message ? <div className={`freshXeroNotice ${risks ? "need" : "proper"}`}><b>Payment status</b><span>{message}</span></div> : null}
 
       {!loading && !items.length ? (
         <section className="freshPaymentsEmptyState">
-          <div><span>Start here</span><h2>No invoices yet</h2><p>Create an invoice first. Once invoices exist, Churvox will show what is paid-looking, what is owing, and what needs follow-up.</p></div>
+          <div><span>Nothing waiting</span><h2>No invoices yet</h2><p>Once invoice records exist, Churvox will show what is paid-looking, what is owing, and what follow-up needs approval.</p></div>
           <div className="freshPaymentsEmptyActions">
-            <button type="button" onClick={() => onNavigate?.("invoices")}>Create / open invoices</button>
-            <button type="button" onClick={() => onNavigate?.("today")}>Open Today's Work</button>
-            <button type="button" onClick={() => onNavigate?.("command")}>Open Command</button>
+            <button type="button" onClick={() => onNavigate?.("invoices")}>Prepare invoice</button>
+            <button type="button" onClick={() => onNavigate?.("planday")}>Open Plan My Day</button>
+            <button type="button" onClick={() => onNavigate?.("command")}>Open approval queue</button>
           </div>
           <div className="freshPaymentsEmptySteps">
-            <section><b>1</b><span>Complete work</span><small>Finish the job first.</small></section>
-            <section><b>2</b><span>Create invoice</span><small>Turn completed work into an invoice.</small></section>
-            <section><b>3</b><span>Refresh/check payment</span><small>Paid only after accounting confirmation.</small></section>
+            <section><b>1</b><span>Work finished</span><small>Completed work becomes invoice admin.</small></section>
+            <section><b>2</b><span>Invoice prepared</span><small>Churvox shows the draft or saved invoice.</small></section>
+            <section><b>3</b><span>Payment checked</span><small>Paid only after accounting confirmation.</small></section>
           </div>
         </section>
       ) : null}
@@ -260,8 +260,8 @@ export default function FreshPayments({ onNavigate }) {
       <div className={`freshPaymentsLayout ${!items.length ? "freshPaymentsLayout--empty" : ""}`}>
         <aside className="freshPaymentsList">
           <header>
-            <div><b>Invoice payment queue</b><span>{loading ? "Loading invoices..." : `${risks} needs action`}</span></div>
-            <button type="button" onClick={loadInvoices} disabled={loading}>{loading ? "Loading..." : "Reload"}</button>
+            <div><b>Money work</b><span>{loading ? "Loading invoices..." : `${risks} needs approval`}</span></div>
+            <button type="button" onClick={loadInvoices} disabled={loading}>{loading ? "Loading..." : "Refresh"}</button>
           </header>
           {items.map((item) => (
             <button type="button" key={item.id} className={selected?.id === item.id ? "active" : ""} onClick={() => setSelectedId(item.id)}>
@@ -270,8 +270,8 @@ export default function FreshPayments({ onNavigate }) {
               <small>{money(item.owing)} owing - {item.status}</small>
             </button>
           ))}
-          {!loading && !items.length ? <div className="freshPaymentsEmpty"><b>No invoices yet</b><span>Create an invoice first, then payments will show here.</span></div> : null}
-          <button type="button" className="freshPaymentsReset" onClick={() => onNavigate?.("invoices")}>Create / open invoices</button>
+          {!loading && !items.length ? <div className="freshPaymentsEmpty"><b>No invoices yet</b><span>When invoice records exist, payments will show here.</span></div> : null}
+          <button type="button" className="freshPaymentsReset" onClick={() => onNavigate?.("invoices")}>Prepare invoice</button>
         </aside>
 
         {selected && (
@@ -279,7 +279,7 @@ export default function FreshPayments({ onNavigate }) {
             <div className="freshPaymentsHead">
               <div><span>{selected.status}</span><h2>{selected.customer}</h2><p>{selected.invoice} - {selected.job}</p></div>
               <div className="freshPaymentsHeadActions">
-                <button type="button" onClick={() => sendToBackendReview("follow-up")} disabled={busy === "follow-up"}>{busy === "follow-up" ? "Sending..." : "Send to Command"}</button>
+                <button type="button" onClick={() => sendToBackendReview("follow-up")} disabled={busy === "follow-up"}>{busy === "follow-up" ? "Preparing..." : "Prepare follow-up"}</button>
                 <button type="button" onClick={refreshAccountingPayments} disabled={busy === "accounting"}>{busy === "accounting" ? "Checking..." : "Refresh accounting"}</button>
                 <button type="button" onClick={() => onNavigate?.("invoices")}>Open Invoices</button>
                 <button type="button" onClick={() => onNavigate?.("xero")}>Open Xero</button>
@@ -289,7 +289,7 @@ export default function FreshPayments({ onNavigate }) {
             <div className="freshPaymentsCards">
               <section><span>Total</span><b>{money(selected.total)}</b><p>Invoice total from live invoice data.</p></section>
               <section><span>Paid-looking</span><b>{money(selected.paid)}</b><p>{selected.method} - due {selected.due}</p></section>
-              <section><span>Balance</span><b>{money(selected.owing)}</b><p>{selected.owing > 0 ? "Needs payment follow-up." : "Needs accounting confirmation before paid close-out."}</p></section>
+              <section><span>Balance</span><b>{money(selected.owing)}</b><p>{selected.owing > 0 ? "Churvox can prepare the payment follow-up." : "Needs accounting confirmation before paid close-out."}</p></section>
             </div>
 
             <div className="freshPaymentsForm">
@@ -301,14 +301,14 @@ export default function FreshPayments({ onNavigate }) {
               <label><span>Status</span><input readOnly value={selected.status} /></label>
               <label><span>Due</span><input readOnly value={selected.due} /></label>
               <label><span>Accounting rows loaded</span><input readOnly value={accountingRows.length ? `${accountingRows.length} invoice${accountingRows.length === 1 ? "" : "s"}` : "Not loaded"} /></label>
-              <label className="wide"><span>Note</span><textarea readOnly value={selected.note} /></label>
+              <label className="wide"><span>Prepared note</span><textarea readOnly value={selected.note} /></label>
             </div>
 
             <div className="freshPaymentsActions">
-              <button type="button" onClick={() => sendToBackendReview("paid-check")} disabled={busy === "paid-check"}>{busy === "paid-check" ? "Sending..." : "Request paid check"}</button>
+              <button type="button" onClick={() => sendToBackendReview("paid-check")} disabled={busy === "paid-check"}>{busy === "paid-check" ? "Preparing..." : "Prepare paid check"}</button>
               <button type="button" onClick={() => updateInvoicePayment(selected, { status: "overdue", payment_status: "overdue" })} disabled={busy === "update"}>Mark overdue</button>
               <button type="button" onClick={() => sendToBackendReview("follow-up")} disabled={busy === "follow-up"}>Prepare follow-up</button>
-              <button type="button" onClick={() => onNavigate?.("command")}>Open Command</button>
+              <button type="button" onClick={() => onNavigate?.("command")}>Open approval queue</button>
               <button type="button" onClick={() => onNavigate?.("xero")}>Xero draft sync</button>
             </div>
           </article>
