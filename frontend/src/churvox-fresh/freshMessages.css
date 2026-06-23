@@ -96,10 +96,15 @@
   display: grid;
   gap: 9px;
   align-content: start;
+  max-height: calc(100vh - 230px);
+  overflow: auto;
   padding: 14px;
 }
 
 .freshMessagesList header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   gap: 10px;
@@ -144,8 +149,16 @@
   -webkit-text-fill-color: #111827;
 }
 
+.freshMessagesList button:disabled,
+.freshMessagesHeadActions button:disabled,
+.freshMessagesActions button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
 .freshMessagesList > button:not(.freshMessagesReset) {
   border: 1px solid rgba(15,23,42,.10);
+  border-left: 5px solid #94a3b8;
   border-radius: 20px;
   background: #ffffff;
   padding: 13px;
@@ -153,15 +166,23 @@
   cursor: pointer;
 }
 
+.freshMessagesList > button.unread {
+  border-left-color: #f97316;
+  background: #fff7ed;
+}
+
 .freshMessagesList > button.active {
   background: #ffedd5;
   border-color: rgba(249,115,22,.36);
+  border-left-color: #f97316;
 }
 
 .freshMessagesList > button b,
 .freshMessagesHead h2,
 .freshMessagesConversation span,
-.freshMessagesForm label span {
+.freshMessagesForm label span,
+.freshMessagesEmpty b,
+.freshMessagesEmptyDetail b {
   display: block;
   color: #101827;
   -webkit-text-fill-color: #101827;
@@ -170,7 +191,9 @@
 .freshMessagesList > button span,
 .freshMessagesList > button small,
 .freshMessagesHead p,
-.freshMessagesConversation p {
+.freshMessagesConversation p,
+.freshMessagesEmpty span,
+.freshMessagesEmptyDetail span {
   display: block;
   margin-top: 4px;
   color: #475569;
@@ -178,15 +201,29 @@
   font-weight: 850;
 }
 
-.freshMessagesReset {
+.freshMessagesReset,
+.freshMessagesEmpty {
   background: #ffffff;
   color: #334155;
   -webkit-text-fill-color: #334155;
   border: 1px solid rgba(15,23,42,.12);
 }
 
+.freshMessagesEmpty {
+  border-radius: 20px;
+  padding: 14px;
+}
+
 .freshMessagesDetail {
   padding: 18px;
+}
+
+.freshMessagesEmptyDetail {
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  min-height: 280px;
+  text-align: center;
 }
 
 .freshMessagesHead {
@@ -239,7 +276,7 @@
 
 .freshMessagesConversation {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.15fr .85fr;
   gap: 12px;
   margin-top: 14px;
 }
@@ -249,6 +286,41 @@
   border-radius: 22px;
   background: #ffffff;
   padding: 15px;
+}
+
+.freshMessagesBubbles {
+  display: grid;
+  gap: 10px;
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.freshMessagesBubbles article {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 18px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.freshMessagesBubbles article.outbound {
+  background: #fff7ed;
+  border-color: rgba(249,115,22,.22);
+}
+
+.freshMessagesBubbles article b,
+.freshMessagesBubbles article small {
+  display: block;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+}
+
+.freshMessagesBubbles article small {
+  margin-top: 6px;
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .freshMessagesConversation textarea,
@@ -267,7 +339,7 @@
 }
 
 .freshMessagesConversation textarea {
-  min-height: 130px;
+  min-height: 170px;
   resize: vertical;
   margin-top: 10px;
 }
@@ -282,6 +354,17 @@
 .freshMessagesForm label {
   display: grid;
   gap: 6px;
+}
+
+.freshMessagesStatus {
+  margin: 14px 0 0;
+  border: 1px solid rgba(249,115,22,.22);
+  border-radius: 18px;
+  background: #fff7ed;
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
+  padding: 12px;
+  font-weight: 950;
 }
 
 .freshMessagesActions {
@@ -319,6 +402,10 @@
 
   .freshMessagesStats {
     min-width: 0;
+  }
+
+  .freshMessagesList {
+    max-height: 430px;
   }
 
   .freshMessagesHeadActions,
