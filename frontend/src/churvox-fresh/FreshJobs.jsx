@@ -70,7 +70,7 @@ function money(value) {
 
 function moneyText(job) {
   const amount = moneyNumber(job?.fixed_price ?? job?.price ?? job?.amount ?? job?.total ?? "");
-  if (amount <= 0) return "Price missing";
+  if (amount <= 0) return "No price saved";
   return money(amount);
 }
 
@@ -80,7 +80,6 @@ function normalizeJob(job, index) {
   const worker = pick(job, "assigned_worker_name", "worker_name", "worker", "assigned_worker", "assigned_to") || "Unassigned";
   const status = statusLabel(job?.status || job?.job_status);
   const price = moneyText(job);
-  const missingPrice = price === "Price missing";
   return {
     ...job,
     id: normalizeId(job?.id || job?._id || job?.job_id) || `job-${index}`,
@@ -94,9 +93,7 @@ function normalizeJob(job, index) {
     scheduled: scheduleText(job),
     price,
     priceAmount: moneyNumber(job?.fixed_price ?? job?.price ?? job?.amount ?? job?.total),
-    priceMissing: missingPrice,
     notes: pick(job, "worker_notes", "notes", "description", "job_notes") || "No notes yet",
-    risk: status === "Blocked" ? "Needs owner review" : missingPrice ? "Price missing before invoice" : worker === "Unassigned" ? "Worker not assigned" : "Ready to dispatch",
     sortTime: dateScore(job),
   };
 }
@@ -107,10 +104,6 @@ function recordClientName(record) {
 
 function recordJobId(record) {
   return normalizeId(record?.job_id || record?.linked_job_id || record?.source_job_id || record?.jobId || record?.id || "");
-}
-
-function recordAmount(record) {
-  return moneyNumber(record?.total ?? record?.amount ?? record?.price ?? record?.subtotal ?? record?.fixed_price ?? 0);
 }
 
 function recordStatus(record, fallback = "draft") {
@@ -140,20 +133,8 @@ function storyStepState({ selected, quotes, invoices }) {
     { label: "Quote", state: hasQuote ? "done" : "open", detail: hasQuote ? `${quotes.length} linked` : "No quote linked" },
     { label: "Job", state: selected?.status === "Completed" ? "done" : "open", detail: selected?.status || "Not started" },
     { label: "Invoice", state: hasInvoice ? "done" : "open", detail: hasInvoice ? `${invoices.length} linked` : "Not invoiced" },
-    { label: "Paid", state: paid ? "done" : "open", detail: paid ? "Payment confirmed" : "Needs check" },
+    { label: "Paid", state: paid ? "done" : "open", detail: paid ? "Payment confirmed" : "Not paid" },
   ];
-}
-
-function profitSignal(selected, invoices) {
-  if (!selected) return { label: "No job selected", tone: "need", detail: "Select a job first." };
-  const revenue = invoices.reduce((sum, invoice) => sum + recordAmount(invoice), 0) || selected.priceAmount;
-  const labourHours = moneyNumber(selected.hours || selected.total_hours || selected.duration_hours || selected.estimated_hours || 0);
-  const labourCost = labourHours ? labourHours * 35 : 0;
-  const materialCost = moneyNumber(selected.material_cost || selected.expense_total || selected.costs || 0);
-  const profit = revenue - labourCost - materialCost;
-  if (!revenue) return { label: "Price missing", tone: "need", detail: "Add a price before invoice or profit checks." };
-  if (profit < revenue * 0.25) return { label: "Watch margin", tone: "need", detail: `${money(profit)} est. profit after known labour/material costs.` };
-  return { label: "Healthy margin", tone: "ready", detail: `${money(profit)} est. profit from known data.` };
 }
 
 function photoCount(job) {
@@ -163,59 +144,18 @@ function photoCount(job) {
   return Number(job?.photo_count || job?.photos_count || 0) || 0;
 }
 
-function proofPackSignal(selected) {
-  if (!selected) return { label: "No job selected", tone: "need", detail: "Select a job first.", blockers: ["No job selected"] };
-  const blockers = [];
-  const photos = photoCount(selected);
-  const hasNote = String(selected.notes || "").trim() && selected.notes !== "No notes yet";
-  if (selected.status !== "Completed") blockers.push("Job not completed yet");
-  if (!photos) blockers.push("No photo proof");
-  if (!hasNote) blockers.push("No worker note");
-  if (!selected.address || selected.address === "No address") blockers.push("No address");
-  if (!blockers.length) return { label: "Proof Pack ready", tone: "ready", detail: `${photos} photo${photos === 1 ? "" : "s"}, notes and address ready for owner review.`, blockers };
-  return { label: "Proof needs work", tone: "need", detail: blockers.join(". "), blockers };
-}
-
-function invoiceReadiness(selected, related) {
-  if (!selected) return { label: "No job selected", tone: "need", blockers: ["No job selected"], detail: "Select a job first." };
-  const blockers = [];
-  if (selected.priceMissing) blockers.push("Price missing");
-  if (!selected.client || selected.client === "No client linked") blockers.push("Client missing");
-  if (selected.status !== "Completed") blockers.push("Job not completed");
-  if (!related.invoices.length && photoCount(selected) === 0) blockers.push("No proof attached");
-  if (related.invoices.length) blockers.push("Invoice already linked - review before creating another");
-  if (!blockers.length) return { label: "Ready to draft invoice", tone: "ready", blockers, detail: "Price, client, completed job and proof checks look clean." };
-  return { label: "Fix before invoice", tone: "need", blockers, detail: blockers.join(". ") };
-}
-
-function commandText(selected, related) {
-  const profit = profitSignal(selected, related.invoices);
-  const proof = proofPackSignal(selected);
-  const ready = invoiceReadiness(selected, related);
-  return `Prepare owner review for job ${selected.title} for ${selected.client}. Status ${selected.status}. Worker ${selected.worker}. Price ${selected.price}. Address ${selected.address}. Quote count ${related.quotes.length}. Invoice count ${related.invoices.length}. Profit signal ${profit.label}: ${profit.detail}. Proof Pack ${proof.label}: ${proof.detail}. Invoice readiness ${ready.label}: ${ready.detail}. Owner approval required before customer contact, invoice send, Xero sync, or payment status change.`;
-}
-
-function proofCommandText(selected, proof) {
-  return `Prepare a customer Proof Pack for job ${selected.title} for ${selected.client}. Include job summary, address ${selected.address}, worker ${selected.worker}, notes ${selected.notes}, photo count ${photoCount(selected)}, and status ${selected.status}. Readiness: ${proof.label}. Blockers: ${proof.blockers.join("; ") || "none"}. Owner must review before sharing any customer link.`;
-}
-
-function invoiceCommandText(selected, related, ready) {
-  return `Prepare invoice readiness check for job ${selected.title} for ${selected.client}. Price ${selected.price}. Status ${selected.status}. Existing linked invoices ${related.invoices.length}. Proof photos ${photoCount(selected)}. Result ${ready.label}: ${ready.detail}. Keep invoice draft-only until owner approves. Do not auto-send, do not mark paid, do not sync accounting without owner approval.`;
-}
-
 const selectedFilterButtonStyle = { background: "#111827", backgroundColor: "#111827", borderColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff" };
 const selectedFilterTextStyle = { color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1 };
 const selectedFilterCountStyle = { background: "#f97316", backgroundColor: "#f97316", color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, borderRadius: "999px" };
 
 export default function FreshJobs({ onNavigate }) {
-  const { get, post } = useApi();
+  const { get } = useApi();
   const [jobs, setJobs] = React.useState([]);
   const [story, setStory] = React.useState({ quotes: [], invoices: [], clients: [], workers: [] });
   const [selectedId, setSelectedId] = React.useState("");
   const [filter, setFilter] = React.useState("All");
   const [loading, setLoading] = React.useState(true);
   const [storyLoading, setStoryLoading] = React.useState(true);
-  const [busy, setBusy] = React.useState("");
   const [error, setError] = React.useState("");
 
   const visibleJobs = filter === "All" ? jobs : jobs.filter((job) => job.status === filter);
@@ -227,9 +167,6 @@ export default function FreshJobs({ onNavigate }) {
     workers: story.workers.filter((worker) => selected && (normalizeId(worker.id || worker._id || worker.worker_id || worker.user_id) === selected.workerId || lower(pick(worker, "name", "full_name", "email")) === lower(selected.worker))),
   }), [story, selected]);
   const steps = React.useMemo(() => storyStepState({ selected, quotes: related.quotes, invoices: related.invoices }), [selected, related]);
-  const profit = React.useMemo(() => profitSignal(selected, related.invoices), [selected, related.invoices]);
-  const proof = React.useMemo(() => proofPackSignal(selected), [selected]);
-  const invoiceReady = React.useMemo(() => invoiceReadiness(selected, related), [selected, related]);
 
   const loadJobs = React.useCallback(async () => {
     setLoading(true);
@@ -276,66 +213,34 @@ export default function FreshJobs({ onNavigate }) {
     onNavigate?.("invoices");
   }
 
-  async function prepareCommand(text, busyKey, fallback) {
-    if (!selected) return;
-    setBusy(busyKey);
-    try {
-      const result = await post("/tell-churvox/prepare", { text }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || fallback);
-      onNavigate?.("command");
-    } catch (err) {
-      setError(err?.message || fallback);
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function sendSelectedToCommand() {
-    if (!selected) return;
-    await prepareCommand(commandText(selected, related), "command", "Could not prepare job story for approval.");
-  }
-
-  async function prepareProofPack() {
-    if (!selected) return;
-    await prepareCommand(proofCommandText(selected, proof), "proof", "Could not prepare Proof Pack review.");
-  }
-
-  async function prepareInvoiceReadiness() {
-    if (!selected) return;
-    await prepareCommand(invoiceCommandText(selected, related, invoiceReady), "invoice-check", "Could not prepare invoice readiness check.");
-  }
-
   const filterPillStyle = (active) => active ? selectedFilterButtonStyle : undefined;
   const filterTextStyle = (active) => active ? selectedFilterTextStyle : undefined;
   const filterCountStyle = (active) => active ? selectedFilterCountStyle : undefined;
 
   return (
     <section className="freshJobsPage">
-      <header className="freshHero"><span>Jobs ready to review</span><h1>Jobs</h1><p>Churvox connects the client, quote, worker, proof, invoice, payment check and next owner decision in one job story.</p></header>
-      <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Jobs Churvox found</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready to check</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Blocked").length}</h2><p>Need owner review</p></aside></section>
+      <header className="freshHero"><span>Jobs</span><h1>Jobs</h1><p>Job records with customer, worker, schedule, price, notes and linked quote/invoice history.</p></header>
+      <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Total jobs</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Jobs need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadJobs(); loadStory(); }}>Retry</button></section> : null}
       <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{item === "All" ? jobs.length : jobs.filter((job) => job.status === item).length}</b></button>)}</section>
 
       <section className="freshGrid">
-        <aside className="freshCard freshJobsListCard"><h2>Job work</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking your business account.</span></div> : visibleJobs.map((job) => <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" ? "need" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}</b><span>{job.client} - {job.status} - {job.scheduled}</span></button>)}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No job work waiting</b><span>When jobs exist, Churvox will show the connected admin and next owner decision here.</span></div> : null}</aside>
+        <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking saved job records.</span></div> : visibleJobs.map((job) => <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" ? "need" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}</b><span>{job.client} - {job.status} - {job.scheduled}</span></button>)}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No jobs found</b><span>Create a job or clear the filter.</span></div> : null}</aside>
 
         <section className="freshCard freshJobsDetailCard">
-          <div className="freshJobsDetailHeader"><div><small>Job story Churvox found</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selected.priceMissing ? "need" : "ready"}>{selected.priceMissing ? "Price needed" : "Story ready"}</span> : null}</div>
+          <div className="freshJobsDetailHeader"><div><small>Job record</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selected.status === "Completed" ? "ready" : selected.status === "Blocked" ? "need" : ""}>{selected.status}</span> : null}</div>
           {selected ? (<>
-            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div className={selected.priceMissing ? "need" : ""}><span>Invoice readiness</span><b>{selected.priceMissing ? "Need price" : selected.price}</b></div></div>
+            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div><span>Price</span><b>{selected.price}</b></div></div>
             <section className="freshStoryRail">{steps.map((step) => <article key={step.label} className={step.state}><b>{step.label}</b><span>{step.detail}</span></article>)}</section>
-            <section className={`freshQuoteNextBox ${profit.tone === "ready" ? "accepted" : "sent"}`}><span>Profit check</span><b>{profit.label}</b><p>{profit.detail}</p></section>
-            <section className={`freshQuoteNextBox ${proof.tone === "ready" ? "accepted" : "sent"}`}><span>Proof Pack</span><b>{proof.label}</b><p>{proof.detail}</p></section>
-            <section className={`freshQuoteNextBox ${invoiceReady.tone === "ready" ? "accepted" : "sent"}`}><span>Invoice check</span><b>{invoiceReady.label}</b><p>{invoiceReady.detail}</p></section>
             <section className="freshJobsDetailBox"><span>Address</span><b>{selected.address}</b></section>
             <section className="freshJobsDetailBox"><span>Scheduled</span><b>{selected.scheduled}</b></section>
-            <section className="freshJobsDetailBox notes"><span>Prepared job notes</span><p>{selected.notes}</p></section>
+            <section className="freshJobsDetailBox notes"><span>Job notes</span><p>{selected.notes}</p></section>
             <section className="freshStoryLinks"><article><b>{related.quotes.length}</b><span>linked quote{related.quotes.length === 1 ? "" : "s"}</span></article><article><b>{related.invoices.length}</b><span>linked invoice{related.invoices.length === 1 ? "" : "s"}</span></article><article><b>{photoCount(selected)}</b><span>proof photo{photoCount(selected) === 1 ? "" : "s"}</span></article><article><b>{related.workers.length}</b><span>worker match</span></article></section>
-            {storyLoading ? <div className="freshItem"><b>Refreshing Job Story...</b><span>Checking quotes, invoices, clients and workers.</span></div> : null}
-          </>) : <div className="freshItem"><b>No job selected</b><span>When a job is ready, Churvox will show the connected quote, proof, invoice, payment and next decision here.</span></div>}
+            {storyLoading ? <div className="freshItem"><b>Refreshing job links...</b><span>Checking quotes, invoices, clients and workers.</span></div> : null}
+          </>) : <div className="freshItem"><b>No job selected</b><span>When a job is saved, its details will show here.</span></div>}
         </section>
 
-        <aside className="freshCard freshJobsActionsCard"><h2>Owner actions</h2><p className="freshJobsActionHint">Churvox prepares the job admin. The owner approves the next move.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Prepare job</button><button className="freshOrange" type="button" disabled={!selected || selected.priceMissing} onClick={createInvoiceForSelected}>Prepare invoice</button><button className="freshDark" type="button" disabled={!selected || busy === "proof"} onClick={prepareProofPack}>{busy === "proof" ? "Preparing..." : "Prepare Proof Pack"}</button><button className="freshDark" type="button" disabled={!selected || busy === "invoice-check"} onClick={prepareInvoiceReadiness}>{busy === "invoice-check" ? "Checking..." : "Prepare invoice check"}</button><button className="freshDark" type="button" disabled={!selected || busy === "command"} onClick={sendSelectedToCommand}>{busy === "command" ? "Preparing..." : "Prepare next move"}</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Prepare customer link</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh story</button></div></aside>
+        <aside className="freshCard freshJobsActionsCard"><h2>Job actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Create job</button><button className="freshOrange" type="button" disabled={!selected || !selected.priceAmount} onClick={createInvoiceForSelected}>Create invoice</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Open customer links</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh jobs</button></div></aside>
       </section>
     </section>
   );
