@@ -85,6 +85,13 @@
 .cv-help-actions a { display: inline-grid; place-items: center; border: 1px solid #cbd5e1; background: #fff; color: #0f172a; }
 .cv-help-strip { display: flex; flex-wrap: wrap; gap: 10px; border-top: 1px solid #e2e8f0; padding: 14px 20px 20px; color: #64748b; font-size: 12px; font-weight: 850; }
 .cv-help-strip span { border-radius: 999px; background: #e2e8f0; padding: 8px 10px; }
+
+/* Fresh app has its own Support area. The public support bubble must not cover app controls. */
+body:has(.freshApp) .cv-help-fab {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 @media (max-width: 820px) {
   .cv-help-fab { left: 16px; right: 16px; bottom: calc(82px + env(safe-area-inset-bottom)); min-width: 0; }
   .cv-help-overlay { place-items: end center; padding: 10px; }
