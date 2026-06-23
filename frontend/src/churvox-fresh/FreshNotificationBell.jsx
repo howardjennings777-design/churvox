@@ -29,13 +29,13 @@ function iconOf(item) {
   if (type.includes("customer") || type.includes("request")) return "RQ";
   if (type.includes("quote")) return "QT";
   if (type.includes("invoice") || type.includes("payment")) return "IV";
-  if (type.includes("worker") || type.includes("shift") || type.includes("time")) return "TS";
+  if (type.includes("worker") || type.includes("shift") || type.includes("time")) return "WK";
   if (type.includes("xero") || type.includes("myob")) return "XE";
   return "AI";
 }
 
 function routeOf(item) {
-  return item?.route || item?.target_route || item?.url || "";
+  return item?.route || item?.target_route || item?.url || item?.href || "";
 }
 
 function isUnread(item) {
@@ -128,7 +128,7 @@ export default function FreshNotificationBell() {
           </header>
 
           <div className="freshNotifyList">
-            {loading && !items.length ? <p>Loading notifications…</p> : null}
+            {loading && !items.length ? <p>Loading notifications...</p> : null}
 
             {!loading && !items.length ? (
               <article className="empty">
@@ -139,8 +139,6 @@ export default function FreshNotificationBell() {
 
             {items.map((item) => (
               <button key={idOf(item) || `${titleOf(item)}-${item?.created_at}`} type="button" className={isUnread(item) ? "unread" : ""} onClick={() => openNotification(item)}>
-                <em>{iconOf(item)}</em>
-                <em>{iconOf(item)}</em>
                 <em>{iconOf(item)}</em>
                 <span>{titleOf(item)}</span>
                 <b>{bodyOf(item) || "Open notification"}</b>
