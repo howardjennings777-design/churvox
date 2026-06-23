@@ -10,7 +10,7 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Start", items: [["planday", "PD", "Plan My Day"], ["command", "CM", "Command"]] },
+  { title: "Start", items: [["planday", "PD", "Plan My Day"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
   { title: "Customers", items: [["leads", "RQ", "Requests"], ["clients", "CL", "Clients"], ["jobs", "JB", "Jobs"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
@@ -32,7 +32,7 @@ const moreGroup = {
 };
 
 const mobileItems = [["planday", "PD", "Plan"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
-const mobileMoreOrder = ["clients", "leads", "quotes", "payments", "xero", "team", "workercommand", "time", "payroll", "portal", "automation", "reports", "settings", "support"];
+const mobileMoreOrder = ["messages", "clients", "leads", "quotes", "payments", "xero", "team", "workercommand", "time", "payroll", "portal", "automation", "reports", "settings", "support"];
 
 const mobileLabels = {
   planday: "Plan My Day",
@@ -56,6 +56,8 @@ const mobileLabels = {
   jobs: "Jobs",
   clients: "Clients",
   leads: "Requests",
+  messages: "Messages",
+  inbox: "Messages",
   quotes: "Quotes",
   invoices: "Money",
   payments: "Money",
@@ -96,6 +98,9 @@ const parentByKey = {
   quoteai: "command",
   invoicecheck: "command",
   workerbrief: "command",
+  inbox: "messages",
+  workermessages: "messages",
+  workerinbox: "messages",
   gps: "time",
   customerportal: "portal",
   clientportal: "portal",
@@ -179,6 +184,7 @@ function askRoute(text) {
   const lower = cleanAsk(text);
   if (isJobCommand(text)) return "jobs";
   if (isClientCommand(text)) return "clients";
+  if (lower.includes("message") || lower.includes("inbox") || lower.includes("worker note") || lower.includes("contact office")) return "messages";
   if (lower.includes("worker brief") || lower.includes("brief worker") || lower.includes("staff brief")) return "command";
   if (lower.includes("today") || lower.includes("plan my day") || lower.includes("day plan") || lower.includes("route today") || lower.includes("plan today")) return "planday";
   if (lower.includes("invoice check") || lower.includes("missing money") || lower.includes("missing extra")) return "command";
@@ -383,7 +389,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
             <button type="button" aria-label="New job" title="New job" onClick={openMobileJob}><b>+</b><span>New job</span></button>
             <button type="button" aria-label="Add client" title="Add client" onClick={openMobileClient}><b>CL</b><span>Add client</span></button>
             <button type="button" aria-label="Open approvals" title="Open approvals" onClick={() => go("command")}><b>OK</b><span>Approve</span></button>
-            <button type="button" aria-label="Open unpaid invoices" title="Open unpaid invoices" onClick={() => go("payments")}><b>$</b><span>Unpaid</span></button>
+            <button type="button" aria-label="Open messages" title="Open messages" onClick={() => go("messages")}><b>MS</b><span>Messages</span></button>
           </section>
 
           {showGlobalAsk ? (
@@ -393,7 +399,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
                   <input
                     value={globalAsk}
                     onChange={(event) => setGlobalAsk(event.target.value)}
-                    placeholder="book a job, plan my day, check invoices, prepare worker brief..."
+                    placeholder="book a job, check messages, plan my day, prepare worker brief..."
                   />
                 </label>
                 <button type="submit">Ask Churvox</button>
