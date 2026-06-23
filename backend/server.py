@@ -3848,7 +3848,7 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
         raise HTTPException(status_code=400, detail="Invalid job_id")
 
     worker_id = str(current_user.get("id") or current_user.get("_id"))
-    business_id = current_user.get("business_id")
+    business_id = str(current_user.get("business_id") or "")
     now = datetime.utcnow()
 
     job = await db.jobs.find_one({"_id": job_oid})
@@ -3868,12 +3868,17 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
 
     worker_name = current_user.get("name") or current_user.get("email") or "Worker"
     owner_id = job.get("created_by") or job.get("contractor_id") or job.get("business_id")
+    job_title = job.get("title") or job.get("job_name") or "Job"
 
     worker_message = {
+        "type": "worker_message",
         "message": message,
+        "body": message,
         "worker_id": worker_id,
         "worker_name": worker_name,
         "created_at": now,
+        "read": False,
+        "is_read": False,
     }
 
     await db.jobs.update_one(
@@ -3881,11 +3886,18 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
         {
             "$set": {
                 "worker_message": message,
+                "last_worker_message": message,
+                "worker_message_preview": message,
                 "worker_message_at": now,
+                "last_worker_message_at": now,
+                "worker_message_unread": True,
+                "owner_unread_worker_message": True,
+                "worker_needs_owner_attention": True,
                 "updated_at": now,
             },
             "$push": {
                 "worker_messages": worker_message,
+                "owner_visible_messages": worker_message,
             },
         },
     )
@@ -3893,28 +3905,25 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
     notification = {
         "type": "worker_message",
         "source": "worker_office_contact",
-        "title": "Worker message",
+        "title": f"Message from {worker_name}",
         "message": f"{worker_name}: {message}",
         "body": message,
         "summary": message,
         "job_id": str(job_oid),
-        "job_title": job.get("title") or "",
+        "job_title": job_title,
         "worker_id": worker_id,
         "worker_name": worker_name,
         "business_id": str(job.get("business_id") or business_id or ""),
+        "user_id": str(owner_id or ""),
         "read": False,
         "is_read": False,
         "status": "unread",
-        "url": f"/dashboard#worker",
-        "href": f"/dashboard#worker",
+        "route": "/dashboard#worker",
+        "url": "/dashboard#worker",
+        "href": "/dashboard#worker",
         "created_at": now,
+        "updated_at": now,
     }
-
-    if owner_id:
-        try:
-            notification["user_id"] = ObjectId(str(owner_id))
-        except Exception:
-            notification["user_id"] = str(owner_id)
 
     try:
         await db.notifications.insert_one(notification)
@@ -3925,7 +3934,13 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
         "success": True,
         "message": "Message sent to office",
         "job_id": str(job_oid),
+        "worker_message": message,
+        "notification": {
+            "title": notification["title"],
+            "message": notification["message"],
+        },
     }
+
 
 
 @api_router.get("/worker/live-status")
