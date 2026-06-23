@@ -10,6 +10,9 @@
     "test:business:v2": "npm --prefix frontend exec playwright test tests/e2e/churvox-real-business-audit-v2.spec.js",
     "test:human": "npm --prefix frontend run test:human",
     "test:human:mobile": "npm --prefix frontend run test:human:mobile",
+    "test:human:full": "npm --prefix frontend run test:human:full",
+    "test:human:full:mobile": "npm --prefix frontend run test:human:full:mobile",
+    "test:human:full:all": "npm --prefix frontend run test:human:full:all",
     "test:ai": "npm --prefix frontend run test:ai",
     "test:ai:live": "npm --prefix frontend run test:ai:live"
   },
