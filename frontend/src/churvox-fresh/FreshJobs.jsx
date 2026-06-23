@@ -32,7 +32,7 @@ function lower(value) {
 function pick(record, ...keys) {
   for (const key of keys) {
     const value = record?.[key];
-    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+    if (value !== undefined && value !== null && String(value).trim() !== "") return String(value).trim();
   }
   return "";
 }
@@ -79,7 +79,7 @@ function normalizeJob(job, index) {
   const client = pick(job, "client_name", "customer_name", "client", "customer", "name") || "No client linked";
   const worker = pick(job, "assigned_worker_name", "worker_name", "worker", "assigned_worker", "assigned_to") || "Unassigned";
   const status = statusLabel(job?.status || job?.job_status);
-  const price = moneyText(job);
+  const priceAmount = moneyNumber(job?.fixed_price ?? job?.price ?? job?.amount ?? job?.total);
   return {
     ...job,
     id: normalizeId(job?.id || job?._id || job?.job_id) || `job-${index}`,
@@ -91,8 +91,8 @@ function normalizeJob(job, index) {
     status,
     worker,
     scheduled: scheduleText(job),
-    price,
-    priceAmount: moneyNumber(job?.fixed_price ?? job?.price ?? job?.amount ?? job?.total),
+    price: priceAmount > 0 ? money(priceAmount) : "No price saved",
+    priceAmount,
     notes: pick(job, "worker_notes", "notes", "description", "job_notes") || "No notes yet",
     sortTime: dateScore(job),
   };
@@ -160,6 +160,7 @@ export default function FreshJobs({ onNavigate }) {
 
   const visibleJobs = filter === "All" ? jobs : jobs.filter((job) => job.status === filter);
   const selected = jobs.find((job) => job.id === selectedId) || visibleJobs[0] || jobs[0];
+  const canCreateInvoice = Boolean(selected?.priceAmount > 0);
   const related = React.useMemo(() => ({
     quotes: normalizeRelated(story.quotes, selected),
     invoices: normalizeRelated(story.invoices, selected),
@@ -208,7 +209,7 @@ export default function FreshJobs({ onNavigate }) {
   }
 
   function createInvoiceForSelected() {
-    if (!selected) return;
+    if (!selected || !canCreateInvoice) return;
     try { window.localStorage.setItem("churvox:selected-job-for-invoice", JSON.stringify({ id: selected.id, title: selected.title, client: selected.client, address: selected.address, price: selected.price, scheduled: selected.scheduled })); } catch {}
     onNavigate?.("invoices");
   }
@@ -230,7 +231,7 @@ export default function FreshJobs({ onNavigate }) {
         <section className="freshCard freshJobsDetailCard">
           <div className="freshJobsDetailHeader"><div><small>Job record</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selected.status === "Completed" ? "ready" : selected.status === "Blocked" ? "need" : ""}>{selected.status}</span> : null}</div>
           {selected ? (<>
-            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div><span>Price</span><b>{selected.price}</b></div></div>
+            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div className={canCreateInvoice ? "" : "need"}><span>Price</span><b>{selected.price}</b></div></div>
             <section className="freshStoryRail">{steps.map((step) => <article key={step.label} className={step.state}><b>{step.label}</b><span>{step.detail}</span></article>)}</section>
             <section className="freshJobsDetailBox"><span>Address</span><b>{selected.address}</b></section>
             <section className="freshJobsDetailBox"><span>Scheduled</span><b>{selected.scheduled}</b></section>
@@ -240,7 +241,7 @@ export default function FreshJobs({ onNavigate }) {
           </>) : <div className="freshItem"><b>No job selected</b><span>When a job is saved, its details will show here.</span></div>}
         </section>
 
-        <aside className="freshCard freshJobsActionsCard"><h2>Job actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Create job</button><button className="freshOrange" type="button" disabled={!selected || !selected.priceAmount} onClick={createInvoiceForSelected}>Create invoice</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Open customer links</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh jobs</button></div></aside>
+        <aside className="freshCard freshJobsActionsCard"><h2>Job actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Create job</button><button className="freshOrange" type="button" disabled={!canCreateInvoice} onClick={createInvoiceForSelected}>{canCreateInvoice ? "Create invoice" : "Add price before invoice"}</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Open customer links</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh jobs</button></div></aside>
       </section>
     </section>
   );
