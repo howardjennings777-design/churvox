@@ -100,7 +100,6 @@ function rowFromInvoice(invoice) {
   return {
     id: id || `invoice-${invoiceNumber(invoice)}`,
     invoiceId: id,
-    source: invoice,
     customer: customerName(invoice),
     invoice: invoiceNumber(invoice),
     job: jobName(invoice),
@@ -110,22 +109,12 @@ function rowFromInvoice(invoice) {
     method: pick(invoice, "payment_method", "method") || "Bank transfer",
     status: statusOf(invoice),
     due: dueText(invoice),
-    note: owing > 0
-      ? "Payment still owing. Churvox can prepare the follow-up for owner approval."
-      : "Paid-looking invoice. Confirm with accounting refresh before treating it as paid.",
+    note: owing > 0 ? "Payment is still owing." : "Paid-looking invoice. Confirm with accounting refresh before closing it out.",
   };
 }
 
-function paymentReviewText(item, intent = "follow-up") {
-  if (!item) return "Prepare payment review.";
-  if (intent === "paid-check") {
-    return `Check paid status for invoice ${item.invoice} for ${item.customer}. Total ${money(item.total)}, paid ${money(item.paid)}, balance ${money(item.owing)}. Only mark paid after Xero or MYOB refresh confirms PAID. Do not send invoice, do not file tax, and do not create bank payout files.`;
-  }
-  return `Prepare owner-approved payment follow-up for invoice ${item.invoice} for ${item.customer}. Total ${money(item.total)}, paid ${money(item.paid)}, balance ${money(item.owing)}, status ${item.status}. Owner must approve before any customer contact. Do not mark paid automatically.`;
-}
-
 export default function FreshPayments({ onNavigate }) {
-  const { get, patch, post } = useApi();
+  const { get, patch } = useApi();
   const [items, setItems] = React.useState([]);
   const [selectedId, setSelectedId] = React.useState("");
   const [loading, setLoading] = React.useState(true);
@@ -137,7 +126,7 @@ export default function FreshPayments({ onNavigate }) {
   const total = items.reduce((sum, item) => sum + Number(item.total || 0), 0);
   const paid = items.reduce((sum, item) => sum + Number(item.paid || 0), 0);
   const owing = items.reduce((sum, item) => sum + Number(item.owing || 0), 0);
-  const risks = items.filter((item) => item.owing > 0 && item.status !== "Paid").length;
+  const checks = items.filter((item) => item.owing > 0 && item.status !== "Paid").length;
 
   const loadInvoices = React.useCallback(async () => {
     setLoading(true);
@@ -148,7 +137,7 @@ export default function FreshPayments({ onNavigate }) {
       const rows = hideDemoRecords(asArray(result.data)).map(rowFromInvoice).sort((a, b) => b.owing - a.owing || String(a.customer).localeCompare(String(b.customer)));
       setItems(rows);
       setSelectedId((current) => current && rows.some((item) => item.id === current) ? current : rows[0]?.id || "");
-      if (!rows.length) setMessage("No invoices waiting yet. Once invoices exist, Churvox will show what is owing and what needs approval.");
+      if (!rows.length) setMessage("No invoices waiting yet. Once invoices exist, payments will show what is paid and what is owing.");
     } catch (err) {
       setItems([]);
       setSelectedId("");
@@ -182,24 +171,9 @@ export default function FreshPayments({ onNavigate }) {
       setMessage(result?.error || "Could not update invoice status.");
       return;
     }
-    setMessage("Invoice status updated. Paid status still requires accounting refresh confirmation.");
+    setMessage("Invoice status updated. Paid status still needs accounting confirmation.");
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "invoice-payment" } }));
     await loadInvoices();
-  }
-
-  async function sendToBackendReview(intent = "follow-up") {
-    if (!selected) return;
-    setBusy(intent);
-    try {
-      const result = await post("/tell-churvox/prepare", { text: paymentReviewText(selected, intent) }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || "Could not prepare payment item for approval.");
-      setMessage(intent === "paid-check" ? "Paid-status check prepared for approval." : "Payment follow-up prepared for approval.");
-      onNavigate?.("command");
-    } catch (err) {
-      setMessage(err?.message || "Could not prepare payment item for approval.");
-    } finally {
-      setBusy("");
-    }
   }
 
   async function refreshAccountingPayments() {
@@ -210,7 +184,7 @@ export default function FreshPayments({ onNavigate }) {
       const rows = asArray(result.data?.invoices || result.data || result);
       setAccountingRows(rows);
       const paidRows = rows.filter((row) => ["paid", "complete", "completed", "closed"].includes(lower(row.status || row.payment_status || row.xero_status || row.myob_status)));
-      setMessage(`Accounting payment refresh loaded ${rows.length} invoice${rows.length === 1 ? "" : "s"}. ${paidRows.length} look paid from refresh. Churvox still does not auto-mark paid from this page.`);
+      setMessage(`Accounting refresh loaded ${rows.length} invoice${rows.length === 1 ? "" : "s"}. ${paidRows.length} look paid from accounting.`);
     } catch (err) {
       setMessage(err?.message || "Could not load accounting payment status.");
     } finally {
@@ -221,98 +195,32 @@ export default function FreshPayments({ onNavigate }) {
   return (
     <section className="freshPaymentsPage">
       <div className="freshPaymentsHero">
-        <div>
-          <span>Money ready to check</span>
-          <h1>Payments</h1>
-          <p>Churvox shows what is owed, what looks paid, and the follow-up it can prepare. Paid is only trusted after an accounting check confirms it.</p>
-        </div>
-        <div className="freshPaymentsStats">
-          <div><b>{money(total)}</b><small>invoiced</small></div>
-          <div><b>{money(paid)}</b><small>paid-looking</small></div>
-          <div><b>{money(owing)}</b><small>owing</small></div>
-          <div><b>{risks}</b><small>need approval</small></div>
-        </div>
+        <div><span>Payments</span><h1>Payments</h1><p>Invoice totals, paid-looking amounts, balances owing and accounting refresh results.</p></div>
+        <div className="freshPaymentsStats"><div><b>{money(total)}</b><small>invoiced</small></div><div><b>{money(paid)}</b><small>paid-looking</small></div><div><b>{money(owing)}</b><small>owing</small></div><div><b>{checks}</b><small>owing checks</small></div></div>
       </div>
 
-      <div className="freshXeroNotice need">
-        <b>Safety rule</b>
-        <span>No one-click paid marking here. Use accounting refresh/check first, then approve the result in Command or the accounting system.</span>
-      </div>
+      <div className="freshXeroNotice proper"><b>Payment rule</b><span>Only treat an invoice as paid after Xero, MYOB, or your accounting record confirms it.</span></div>
+      {message ? <div className={`freshXeroNotice ${checks ? "need" : "proper"}`}><b>Payment status</b><span>{message}</span></div> : null}
 
-      {message ? <div className={`freshXeroNotice ${risks ? "need" : "proper"}`}><b>Payment status</b><span>{message}</span></div> : null}
-
-      {!loading && !items.length ? (
-        <section className="freshPaymentsEmptyState">
-          <div><span>Nothing waiting</span><h2>No invoices yet</h2><p>Once invoice records exist, Churvox will show what is paid-looking, what is owing, and what follow-up needs approval.</p></div>
-          <div className="freshPaymentsEmptyActions">
-            <button type="button" onClick={() => onNavigate?.("invoices")}>Prepare invoice</button>
-            <button type="button" onClick={() => onNavigate?.("planday")}>Open Plan My Day</button>
-            <button type="button" onClick={() => onNavigate?.("command")}>Open approval queue</button>
-          </div>
-          <div className="freshPaymentsEmptySteps">
-            <section><b>1</b><span>Work finished</span><small>Completed work becomes invoice admin.</small></section>
-            <section><b>2</b><span>Invoice prepared</span><small>Churvox shows the draft or saved invoice.</small></section>
-            <section><b>3</b><span>Payment checked</span><small>Paid only after accounting confirmation.</small></section>
-          </div>
-        </section>
-      ) : null}
+      {!loading && !items.length ? <section className="freshPaymentsEmptyState"><div><span>Nothing waiting</span><h2>No invoices yet</h2><p>Once invoice records exist, payments will show balances and accounting status here.</p></div><div className="freshPaymentsEmptyActions"><button type="button" onClick={() => onNavigate?.("invoices")}>Create invoice</button><button type="button" onClick={loadInvoices}>Refresh</button></div></section> : null}
 
       <div className={`freshPaymentsLayout ${!items.length ? "freshPaymentsLayout--empty" : ""}`}>
         <aside className="freshPaymentsList">
-          <header>
-            <div><b>Money work</b><span>{loading ? "Loading invoices..." : `${risks} needs approval`}</span></div>
-            <button type="button" onClick={loadInvoices} disabled={loading}>{loading ? "Loading..." : "Refresh"}</button>
-          </header>
-          {items.map((item) => (
-            <button type="button" key={item.id} className={selected?.id === item.id ? "active" : ""} onClick={() => setSelectedId(item.id)}>
-              <b>{item.customer}</b>
-              <span>{item.invoice}</span>
-              <small>{money(item.owing)} owing - {item.status}</small>
-            </button>
-          ))}
+          <header><div><b>Invoice balances</b><span>{loading ? "Loading invoices..." : `${checks} owing check${checks === 1 ? "" : "s"}`}</span></div><button type="button" onClick={loadInvoices} disabled={loading}>{loading ? "Loading..." : "Refresh"}</button></header>
+          {items.map((item) => <button type="button" key={item.id} className={selected?.id === item.id ? "active" : ""} onClick={() => setSelectedId(item.id)}><b>{item.customer}</b><span>{item.invoice}</span><small>{money(item.owing)} owing - {item.status}</small></button>)}
           {!loading && !items.length ? <div className="freshPaymentsEmpty"><b>No invoices yet</b><span>When invoice records exist, payments will show here.</span></div> : null}
-          <button type="button" className="freshPaymentsReset" onClick={() => onNavigate?.("invoices")}>Prepare invoice</button>
+          <button type="button" className="freshPaymentsReset" onClick={() => onNavigate?.("invoices")}>Open Invoices</button>
         </aside>
 
-        {selected && (
-          <article className="freshPaymentsDetail">
-            <div className="freshPaymentsHead">
-              <div><span>{selected.status}</span><h2>{selected.customer}</h2><p>{selected.invoice} - {selected.job}</p></div>
-              <div className="freshPaymentsHeadActions">
-                <button type="button" onClick={() => sendToBackendReview("follow-up")} disabled={busy === "follow-up"}>{busy === "follow-up" ? "Preparing..." : "Prepare follow-up"}</button>
-                <button type="button" onClick={refreshAccountingPayments} disabled={busy === "accounting"}>{busy === "accounting" ? "Checking..." : "Refresh accounting"}</button>
-                <button type="button" onClick={() => onNavigate?.("invoices")}>Open Invoices</button>
-                <button type="button" onClick={() => onNavigate?.("xero")}>Open Xero</button>
-              </div>
-            </div>
+        {selected && <article className="freshPaymentsDetail">
+          <div className="freshPaymentsHead"><div><span>{selected.status}</span><h2>{selected.customer}</h2><p>{selected.invoice} - {selected.job}</p></div><div className="freshPaymentsHeadActions"><button type="button" onClick={refreshAccountingPayments} disabled={busy === "accounting"}>{busy === "accounting" ? "Checking..." : "Refresh accounting"}</button><button type="button" onClick={() => onNavigate?.("invoices")}>Open Invoices</button><button type="button" onClick={() => onNavigate?.("xero")}>Open Xero</button></div></div>
 
-            <div className="freshPaymentsCards">
-              <section><span>Total</span><b>{money(selected.total)}</b><p>Invoice total from live invoice data.</p></section>
-              <section><span>Paid-looking</span><b>{money(selected.paid)}</b><p>{selected.method} - due {selected.due}</p></section>
-              <section><span>Balance</span><b>{money(selected.owing)}</b><p>{selected.owing > 0 ? "Churvox can prepare the payment follow-up." : "Needs accounting confirmation before paid close-out."}</p></section>
-            </div>
+          <div className="freshPaymentsCards"><section><span>Total</span><b>{money(selected.total)}</b><p>Invoice total from live invoice data.</p></section><section><span>Paid-looking</span><b>{money(selected.paid)}</b><p>{selected.method} - due {selected.due}</p></section><section><span>Balance</span><b>{money(selected.owing)}</b><p>{selected.note}</p></section></div>
 
-            <div className="freshPaymentsForm">
-              <label><span>Customer</span><input readOnly value={selected.customer} /></label>
-              <label><span>Invoice</span><input readOnly value={selected.invoice} /></label>
-              <label><span>Linked work</span><input readOnly value={selected.job} /></label>
-              <label><span>Total</span><input readOnly value={money(selected.total)} /></label>
-              <label><span>Paid-looking</span><input readOnly value={money(selected.paid)} /></label>
-              <label><span>Status</span><input readOnly value={selected.status} /></label>
-              <label><span>Due</span><input readOnly value={selected.due} /></label>
-              <label><span>Accounting rows loaded</span><input readOnly value={accountingRows.length ? `${accountingRows.length} invoice${accountingRows.length === 1 ? "" : "s"}` : "Not loaded"} /></label>
-              <label className="wide"><span>Prepared note</span><textarea readOnly value={selected.note} /></label>
-            </div>
+          <div className="freshPaymentsForm"><label><span>Customer</span><input readOnly value={selected.customer} /></label><label><span>Invoice</span><input readOnly value={selected.invoice} /></label><label><span>Linked work</span><input readOnly value={selected.job} /></label><label><span>Total</span><input readOnly value={money(selected.total)} /></label><label><span>Paid-looking</span><input readOnly value={money(selected.paid)} /></label><label><span>Status</span><input readOnly value={selected.status} /></label><label><span>Due</span><input readOnly value={selected.due} /></label><label><span>Accounting rows loaded</span><input readOnly value={accountingRows.length ? `${accountingRows.length} invoice${accountingRows.length === 1 ? "" : "s"}` : "Not loaded"} /></label></div>
 
-            <div className="freshPaymentsActions">
-              <button type="button" onClick={() => sendToBackendReview("paid-check")} disabled={busy === "paid-check"}>{busy === "paid-check" ? "Preparing..." : "Prepare paid check"}</button>
-              <button type="button" onClick={() => updateInvoicePayment(selected, { status: "overdue", payment_status: "overdue" })} disabled={busy === "update"}>Mark overdue</button>
-              <button type="button" onClick={() => sendToBackendReview("follow-up")} disabled={busy === "follow-up"}>Prepare follow-up</button>
-              <button type="button" onClick={() => onNavigate?.("command")}>Open approval queue</button>
-              <button type="button" onClick={() => onNavigate?.("xero")}>Xero draft sync</button>
-            </div>
-          </article>
-        )}
+          <div className="freshPaymentsActions"><button type="button" onClick={() => updateInvoicePayment(selected, { status: "overdue", payment_status: "overdue" })} disabled={busy === "update"}>Mark overdue</button><button type="button" onClick={refreshAccountingPayments} disabled={busy === "accounting"}>Refresh accounting</button><button type="button" onClick={() => onNavigate?.("xero")}>Xero draft sync</button></div>
+        </article>}
       </div>
     </section>
   );
