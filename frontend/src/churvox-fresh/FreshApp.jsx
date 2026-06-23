@@ -79,7 +79,6 @@ import FreshJobs from "./FreshJobs";
 import FreshClients from "./FreshClients";
 import FreshQuotes from "./FreshQuotes";
 import FreshInvoices from "./FreshInvoices";
-import FreshCalendar from "./FreshCalendar";
 import FreshTeam from "./FreshTeam";
 import FreshSettings from "./FreshSettings";
 import FreshPlans from "./FreshPlans";
@@ -98,7 +97,6 @@ import FreshAutomation from "./FreshAutomation";
 import FreshTopStatus from "./FreshTopStatus";
 import FreshDocuments from "./FreshDocuments";
 import FreshPhotos from "./FreshPhotos";
-import FreshRoutes from "./FreshRoutes";
 import FreshInventory from "./FreshInventory";
 import FreshXero from "./FreshXero";
 import FreshContractorHub from "./FreshContractorHub";
@@ -115,15 +113,8 @@ import FreshQuality from "./FreshQuality";
 import FreshSafety from "./FreshSafety";
 import FreshRoadmap from "./FreshRoadmap";
 import FreshExtras from "./FreshExtras";
-import FreshAskChurvox from "./FreshAskChurvox";
-import FreshQuoteAI from "./FreshQuoteAI";
-import FreshInvoiceChecker from "./FreshInvoiceChecker";
 import FreshPlanMyDay from "./FreshPlanMyDay";
-import FreshWorkerBrief from "./FreshWorkerBrief";
 import FreshCommand from "./FreshCommand";
-import FreshAiOperatorStudio from "./FreshAiOperatorStudio";
-import FreshAiQuickCreate from "./FreshAiQuickCreate";
-import FreshAiFollowUpWriter from "./FreshAiFollowUpWriter";
 import FreshMaterialsReminder from "./FreshMaterialsReminder";
 import FreshMaterialsAI from "./FreshMaterialsAI";
 import FreshNz from "./FreshNz";
@@ -133,7 +124,8 @@ import "./freshFinalContrastLock.css";
 import "./freshPillContrastSystem.css";
 import "./freshOwnerShellFinal.css";
 
-const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch"];
+const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch", "routes"];
+const COMMAND_ALIASES = ["askchurvox", "aioperatorstudio", "quickcreateai", "followupwriter", "quoteai", "invoicecheck", "workerbrief"];
 
 const pages = {
   planday: FreshPlanMyDay,
@@ -146,6 +138,7 @@ const pages = {
   calendar: FreshPlanMyDay,
   schedule: FreshPlanMyDay,
   dispatch: FreshPlanMyDay,
+  routes: FreshPlanMyDay,
   jobs: FreshJobs,
   clients: FreshClients,
   quotes: FreshQuotes,
@@ -168,7 +161,6 @@ const pages = {
   topstatus: FreshTopStatus,
   documents: FreshDocuments,
   photos: FreshPhotos,
-  routes: FreshRoutes,
   inventory: FreshInventory,
   xero: FreshXero,
   contractors: FreshContractorHub,
@@ -186,14 +178,14 @@ const pages = {
   safety: FreshSafety,
   roadmap: FreshRoadmap,
   extras: FreshExtras,
-  askchurvox: FreshAskChurvox,
-  quoteai: FreshQuoteAI,
-  invoicecheck: FreshInvoiceChecker,
-  workerbrief: FreshWorkerBrief,
   command: FreshCommand,
-  aioperatorstudio: FreshAiOperatorStudio,
-  quickcreateai: FreshAiQuickCreate,
-  followupwriter: FreshAiFollowUpWriter,
+  askchurvox: FreshCommand,
+  aioperatorstudio: FreshCommand,
+  quickcreateai: FreshCommand,
+  followupwriter: FreshCommand,
+  quoteai: FreshCommand,
+  invoicecheck: FreshCommand,
+  workerbrief: FreshCommand,
   materialsreminder: FreshMaterialsReminder,
   materialsai: FreshMaterialsAI,
   nz: FreshNz,
@@ -203,6 +195,7 @@ const pages = {
 function canonicalPage(value, fallback = "planday") {
   const key = String(value || "").trim().toLowerCase();
   if (PLAN_DAY_ALIASES.includes(key)) return "planday";
+  if (COMMAND_ALIASES.includes(key)) return "command";
   return key || fallback;
 }
 
