@@ -192,15 +192,15 @@ function commandText(selected, related) {
   const profit = profitSignal(selected, related.invoices);
   const proof = proofPackSignal(selected);
   const ready = invoiceReadiness(selected, related);
-  return `Build owner review for job ${selected.title} for ${selected.client}. Status ${selected.status}. Worker ${selected.worker}. Price ${selected.price}. Address ${selected.address}. Quote count ${related.quotes.length}. Invoice count ${related.invoices.length}. Profit signal ${profit.label}: ${profit.detail}. Proof Pack ${proof.label}: ${proof.detail}. Invoice readiness ${ready.label}: ${ready.detail}. Owner approval required before customer contact, invoice send, Xero sync, or payment status change.`;
+  return `Prepare owner review for job ${selected.title} for ${selected.client}. Status ${selected.status}. Worker ${selected.worker}. Price ${selected.price}. Address ${selected.address}. Quote count ${related.quotes.length}. Invoice count ${related.invoices.length}. Profit signal ${profit.label}: ${profit.detail}. Proof Pack ${proof.label}: ${proof.detail}. Invoice readiness ${ready.label}: ${ready.detail}. Owner approval required before customer contact, invoice send, Xero sync, or payment status change.`;
 }
 
 function proofCommandText(selected, proof) {
-  return `Build a customer Proof Pack for job ${selected.title} for ${selected.client}. Include job summary, address ${selected.address}, worker ${selected.worker}, notes ${selected.notes}, photo count ${photoCount(selected)}, and status ${selected.status}. Readiness: ${proof.label}. Blockers: ${proof.blockers.join("; ") || "none"}. Owner must review before sharing any customer link.`;
+  return `Prepare a customer Proof Pack for job ${selected.title} for ${selected.client}. Include job summary, address ${selected.address}, worker ${selected.worker}, notes ${selected.notes}, photo count ${photoCount(selected)}, and status ${selected.status}. Readiness: ${proof.label}. Blockers: ${proof.blockers.join("; ") || "none"}. Owner must review before sharing any customer link.`;
 }
 
 function invoiceCommandText(selected, related, ready) {
-  return `Run invoice readiness check for job ${selected.title} for ${selected.client}. Price ${selected.price}. Status ${selected.status}. Existing linked invoices ${related.invoices.length}. Proof photos ${photoCount(selected)}. Result ${ready.label}: ${ready.detail}. Keep invoice draft-only until owner approves. Do not auto-send, do not mark paid, do not sync accounting without owner approval.`;
+  return `Prepare invoice readiness check for job ${selected.title} for ${selected.client}. Price ${selected.price}. Status ${selected.status}. Existing linked invoices ${related.invoices.length}. Proof photos ${photoCount(selected)}. Result ${ready.label}: ${ready.detail}. Keep invoice draft-only until owner approves. Do not auto-send, do not mark paid, do not sync accounting without owner approval.`;
 }
 
 const selectedFilterButtonStyle = { background: "#111827", backgroundColor: "#111827", borderColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff" };
@@ -292,17 +292,17 @@ export default function FreshJobs({ onNavigate }) {
 
   async function sendSelectedToCommand() {
     if (!selected) return;
-    await prepareCommand(commandText(selected, related), "command", "Could not send job story to Command.");
+    await prepareCommand(commandText(selected, related), "command", "Could not prepare job story for approval.");
   }
 
   async function prepareProofPack() {
     if (!selected) return;
-    await prepareCommand(proofCommandText(selected, proof), "proof", "Could not build Proof Pack review.");
+    await prepareCommand(proofCommandText(selected, proof), "proof", "Could not prepare Proof Pack review.");
   }
 
   async function prepareInvoiceReadiness() {
     if (!selected) return;
-    await prepareCommand(invoiceCommandText(selected, related, invoiceReady), "invoice-check", "Could not run invoice readiness check.");
+    await prepareCommand(invoiceCommandText(selected, related, invoiceReady), "invoice-check", "Could not prepare invoice readiness check.");
   }
 
   const filterPillStyle = (active) => active ? selectedFilterButtonStyle : undefined;
@@ -311,31 +311,31 @@ export default function FreshJobs({ onNavigate }) {
 
   return (
     <section className="freshJobsPage">
-      <header className="freshHero"><span>Jobs</span><h1>Jobs</h1><p>Job Story connects the client, quote, worker, proof pack, invoice, payment check and next owner decision in one place.</p></header>
-      <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Total jobs</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Blocked").length}</h2><p>Blocked</p></aside></section>
+      <header className="freshHero"><span>Jobs ready to review</span><h1>Jobs</h1><p>Churvox connects the client, quote, worker, proof, invoice, payment check and next owner decision in one job story.</p></header>
+      <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Jobs Churvox found</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready to check</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Blocked").length}</h2><p>Need owner review</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Jobs need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadJobs(); loadStory(); }}>Retry</button></section> : null}
       <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{item === "All" ? jobs.length : jobs.filter((job) => job.status === item).length}</b></button>)}</section>
 
       <section className="freshGrid">
-        <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking your business account.</span></div> : visibleJobs.map((job) => <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" ? "need" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}</b><span>{job.client} - {job.status} - {job.scheduled}</span></button>)}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No jobs yet</b><span>Create your first job to start the workflow.</span></div> : null}</aside>
+        <aside className="freshCard freshJobsListCard"><h2>Job work</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking your business account.</span></div> : visibleJobs.map((job) => <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" ? "need" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}</b><span>{job.client} - {job.status} - {job.scheduled}</span></button>)}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No job work waiting</b><span>When jobs exist, Churvox will show the connected admin and next owner decision here.</span></div> : null}</aside>
 
         <section className="freshCard freshJobsDetailCard">
-          <div className="freshJobsDetailHeader"><div><small>Selected job story</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selected.priceMissing ? "need" : "ready"}>{selected.priceMissing ? "Price needed" : "Story ready"}</span> : null}</div>
+          <div className="freshJobsDetailHeader"><div><small>Job story Churvox found</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selected.priceMissing ? "need" : "ready"}>{selected.priceMissing ? "Price needed" : "Story ready"}</span> : null}</div>
           {selected ? (<>
             <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div className={selected.priceMissing ? "need" : ""}><span>Invoice readiness</span><b>{selected.priceMissing ? "Need price" : selected.price}</b></div></div>
             <section className="freshStoryRail">{steps.map((step) => <article key={step.label} className={step.state}><b>{step.label}</b><span>{step.detail}</span></article>)}</section>
-            <section className={`freshQuoteNextBox ${profit.tone === "ready" ? "accepted" : "sent"}`}><span>Profit Sense</span><b>{profit.label}</b><p>{profit.detail}</p></section>
+            <section className={`freshQuoteNextBox ${profit.tone === "ready" ? "accepted" : "sent"}`}><span>Profit check</span><b>{profit.label}</b><p>{profit.detail}</p></section>
             <section className={`freshQuoteNextBox ${proof.tone === "ready" ? "accepted" : "sent"}`}><span>Proof Pack</span><b>{proof.label}</b><p>{proof.detail}</p></section>
-            <section className={`freshQuoteNextBox ${invoiceReady.tone === "ready" ? "accepted" : "sent"}`}><span>Ready-to-invoice check</span><b>{invoiceReady.label}</b><p>{invoiceReady.detail}</p></section>
+            <section className={`freshQuoteNextBox ${invoiceReady.tone === "ready" ? "accepted" : "sent"}`}><span>Invoice check</span><b>{invoiceReady.label}</b><p>{invoiceReady.detail}</p></section>
             <section className="freshJobsDetailBox"><span>Address</span><b>{selected.address}</b></section>
             <section className="freshJobsDetailBox"><span>Scheduled</span><b>{selected.scheduled}</b></section>
-            <section className="freshJobsDetailBox notes"><span>Job notes</span><p>{selected.notes}</p></section>
+            <section className="freshJobsDetailBox notes"><span>Prepared job notes</span><p>{selected.notes}</p></section>
             <section className="freshStoryLinks"><article><b>{related.quotes.length}</b><span>linked quote{related.quotes.length === 1 ? "" : "s"}</span></article><article><b>{related.invoices.length}</b><span>linked invoice{related.invoices.length === 1 ? "" : "s"}</span></article><article><b>{photoCount(selected)}</b><span>proof photo{photoCount(selected) === 1 ? "" : "s"}</span></article><article><b>{related.workers.length}</b><span>worker match</span></article></section>
             {storyLoading ? <div className="freshItem"><b>Refreshing Job Story...</b><span>Checking quotes, invoices, clients and workers.</span></div> : null}
-          </>) : <div className="freshItem"><b>No job selected</b><span>Create a job to see the connected story.</span></div>}
+          </>) : <div className="freshItem"><b>No job selected</b><span>When a job is ready, Churvox will show the connected quote, proof, invoice, payment and next decision here.</span></div>}
         </section>
 
-        <aside className="freshCard freshJobsActionsCard"><h2>Owner actions</h2><p className="freshJobsActionHint">Use these for the selected job. Churvox prepares; owner decides.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>New job</button><button className="freshOrange" type="button" disabled={!selected || selected.priceMissing} onClick={createInvoiceForSelected}>Create invoice</button><button className="freshDark" type="button" disabled={!selected || busy === "proof"} onClick={prepareProofPack}>{busy === "proof" ? "Building..." : "Build Proof Pack"}</button><button className="freshDark" type="button" disabled={!selected || busy === "invoice-check"} onClick={prepareInvoiceReadiness}>{busy === "invoice-check" ? "Checking..." : "Check invoice readiness"}</button><button className="freshDark" type="button" disabled={!selected || busy === "command"} onClick={sendSelectedToCommand}>{busy === "command" ? "Sending..." : "Send story to Command"}</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Build customer link</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh story</button></div></aside>
+        <aside className="freshCard freshJobsActionsCard"><h2>Owner actions</h2><p className="freshJobsActionHint">Churvox prepares the job admin. The owner approves the next move.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Prepare job</button><button className="freshOrange" type="button" disabled={!selected || selected.priceMissing} onClick={createInvoiceForSelected}>Prepare invoice</button><button className="freshDark" type="button" disabled={!selected || busy === "proof"} onClick={prepareProofPack}>{busy === "proof" ? "Preparing..." : "Prepare Proof Pack"}</button><button className="freshDark" type="button" disabled={!selected || busy === "invoice-check"} onClick={prepareInvoiceReadiness}>{busy === "invoice-check" ? "Checking..." : "Prepare invoice check"}</button><button className="freshDark" type="button" disabled={!selected || busy === "command"} onClick={sendSelectedToCommand}>{busy === "command" ? "Preparing..." : "Prepare next move"}</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Prepare customer link</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh story</button></div></aside>
       </section>
     </section>
   );
