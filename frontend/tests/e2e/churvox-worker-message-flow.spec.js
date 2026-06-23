@@ -1,10 +1,10 @@
 
 const { test, expect } = require("@playwright/test");
 
-const OWNER_EMAIL = process.env.CHURVOX_E2E_EMAIL || "";
-const OWNER_PASSWORD = process.env.CHURVOX_E2E_PASSWORD || "";
-const WORKER_EMAIL = process.env.CHURVOX_E2E_WORKER_EMAIL || "";
-const WORKER_PASSWORD = process.env.CHURVOX_E2E_WORKER_PASSWORD || "";
+const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || process.env.CHURVOX_E2E_EMAIL || "";
+const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX_E2E_PASSWORD || "";
+const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || process.env.CHURVOX_E2E_WORKER_EMAIL || "";
+const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURVOX_E2E_WORKER_PASSWORD || "";
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || "https://grassley-backend.onrender.com").replace(/\/+$/, "");
 function apiUrl(url) { return `${API_BASE}${url.startsWith("/api") ? url : `/api${url}`}`; }
 
@@ -93,7 +93,7 @@ async function findWorker(ownerRequest) {
     const wanted = workers.find((w) => String(w.email || w.worker_email || "").toLowerCase() === WORKER_EMAIL.toLowerCase());
     if (wanted) return wanted;
   }
-  throw new Error("Could not find worker by CHURVOX_E2E_WORKER_EMAIL. Check Team has that worker.");
+  throw new Error("Could not find worker by worker email. Check Team has that worker.");
 }
 
 async function getJob(request, jobId, titleToken = "") {
@@ -163,7 +163,6 @@ test.describe("Churvox worker boss message loop", () => {
     console.log("WORKER_ME_STATUS", workerMe.status);
     console.log("WORKER_ME_BODY", JSON.stringify(workerMe.body, null, 2).slice(0, 1500));
 
-    
     console.log("CREATED_JOB_ID", jobId);
     console.log("WORKER_ID", workerId);
     console.log("WORKER_RECORD", JSON.stringify(worker, null, 2).slice(0, 1200));
