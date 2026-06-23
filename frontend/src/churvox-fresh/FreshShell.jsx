@@ -13,18 +13,13 @@ const groups = [
   { title: "Home", items: [["planday", "PD", "Plan My Day"], ["command", "CM", "Command"]] },
   { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
-  { title: "Operator OS", items: [["workerbrief", "WB", "Worker Brief"], ["invoicecheck", "IC", "Invoice Check"], ["quoteai", "QA", "Quote AI"], ["portal", "PT", "Portal Links"]] },
-  { title: "Team", items: [["team", "TM", "Team"], ["payroll", "PR", "Payroll"], ["settings", "SG", "Settings"]] },
+  { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["payroll", "PR", "Payroll"], ["settings", "SG", "Settings"]] },
 ];
 
 const moreGroup = {
   title: "More tools",
   items: [
-    ["askchurvox", "AI", "AI Guide"],
-    ["aioperatorstudio", "AO", "AI Studio"],
-    ["quickcreateai", "QC", "Quick Create"],
-    ["followupwriter", "FU", "Follow-up Writer"],
-    ["workercommand", "WC", "Worker View"],
+    ["portal", "PT", "Portal Links"],
     ["time", "TS", "Time Sheets"],
     ["automation", "AT", "Automation"],
     ["reports", "RP", "Reports"],
@@ -37,7 +32,7 @@ const moreGroup = {
 };
 
 const mobileItems = [["planday", "PD", "Plan"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
-const mobileMoreOrder = ["workerbrief", "invoicecheck", "quoteai", "portal", "clients", "payments", "xero", "team", "workercommand", "time", "support", "settings"];
+const mobileMoreOrder = ["clients", "payments", "xero", "quotes", "team", "workercommand", "time", "portal", "support", "settings"];
 
 const mobileLabels = {
   planday: "Plan My Day",
@@ -50,6 +45,14 @@ const mobileLabels = {
   dispatch: "Plan My Day",
   schedule: "Plan My Day",
   calendar: "Plan My Day",
+  routes: "Plan My Day",
+  askchurvox: "Command",
+  aioperatorstudio: "Command",
+  quickcreateai: "Command",
+  followupwriter: "Command",
+  quoteai: "Command",
+  invoicecheck: "Command",
+  workerbrief: "Command",
   jobs: "Jobs",
   clients: "Clients",
   leads: "Requests",
@@ -57,9 +60,6 @@ const mobileLabels = {
   invoices: "Money",
   payments: "Money",
   xero: "Xero",
-  workerbrief: "Worker Brief",
-  invoicecheck: "Invoice Check",
-  quoteai: "Quote AI",
   portal: "Portal Links",
   team: "Team",
   workercommand: "Worker View",
@@ -74,10 +74,6 @@ const mobileLabels = {
   exports: "Exports",
   plans: "Plans",
   support: "Support",
-  askchurvox: "AI Guide",
-  aioperatorstudio: "AI Studio",
-  quickcreateai: "Quick Create",
-  followupwriter: "Follow-up Writer",
 };
 
 const parentByKey = {
@@ -90,13 +86,20 @@ const parentByKey = {
   calendar: "planday",
   todayswork: "planday",
   worktoday: "planday",
+  routes: "planday",
   areas: "planday",
   schedulerai: "planday",
+  askchurvox: "command",
+  aioperatorstudio: "command",
+  quickcreateai: "command",
+  followupwriter: "command",
+  quoteai: "command",
+  invoicecheck: "command",
+  workerbrief: "command",
   gps: "time",
   customerportal: "portal",
   clientportal: "portal",
   proofpack: "portal",
-  followupwriter: "followupwriter",
   reviewbooster: "clients",
 };
 
@@ -176,10 +179,10 @@ function askRoute(text) {
   const lower = cleanAsk(text);
   if (isJobCommand(text)) return "jobs";
   if (isClientCommand(text)) return "clients";
-  if (lower.includes("worker brief") || lower.includes("brief worker") || lower.includes("staff brief")) return "workerbrief";
+  if (lower.includes("worker brief") || lower.includes("brief worker") || lower.includes("staff brief")) return "command";
   if (lower.includes("today") || lower.includes("plan my day") || lower.includes("day plan") || lower.includes("route today") || lower.includes("plan today")) return "planday";
-  if (lower.includes("invoice check") || lower.includes("missing money") || lower.includes("missing extra")) return "invoicecheck";
-  if (lower.includes("quote option") || lower.includes("quote ai") || lower.includes("quote draft")) return "quoteai";
+  if (lower.includes("invoice check") || lower.includes("missing money") || lower.includes("missing extra")) return "command";
+  if (lower.includes("quote option") || lower.includes("quote ai") || lower.includes("quote draft")) return "command";
   if (lower.includes("proof pack") || lower.includes("customer link") || lower.includes("client portal") || lower.includes("portal")) return "portal";
   if (lower.includes("unpaid") || lower.includes("overdue") || lower.includes("payment")) return "payments";
   if (lower.includes("xero") || lower.includes("myob")) return "xero";
@@ -187,7 +190,7 @@ function askRoute(text) {
   if (lower.includes("import") || lower.includes("csv")) return "imports";
   if (lower.includes("command") || lower.includes("review") || lower.includes("approve") || lower.includes("follow up")) return "command";
   if (lower.includes("job")) return "jobs";
-  return "askchurvox";
+  return "command";
 }
 
 function fireJobAsk(text) {
