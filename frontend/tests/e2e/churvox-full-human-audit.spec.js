@@ -50,7 +50,7 @@ const workerRoutes = [
 
 const hardDanger = /delete|remove|archive|trash|clear|pay now|checkout|stripe|send invoice|send quote|send email|send sms|approve|decline|disconnect|revoke|sync to xero|sync to myob|file tax|bank payout|log out|logout/i;
 const allowedDangerProbe = /delete|remove|archive|trash|clear|approve|decline|disconnect|revoke/i;
-const uselessControl = /^(|×|x|menu|open menu|close menu)$/i;
+const uselessControl = /^(|x|menu|open menu|close menu)$/i;
 
 function apiUrl(url) {
   return `${API_BASE}${url.startsWith('/api') ? url : `/api${url}`}`;
@@ -155,20 +155,42 @@ async function clickAny(page, patterns) {
   return false;
 }
 
+async function clickLogin(page) {
+  const submit = page.locator('form button[type="submit"], button[type="submit"], input[type="submit"]').first();
+  if (await submit.isVisible().catch(() => false)) {
+    await submit.click();
+    await waitSettled(page);
+    return;
+  }
+
+  const button = page.getByRole('button', { name: /log in|login|sign in/i }).first();
+  if (await button.isVisible().catch(() => false)) {
+    await button.click();
+    await waitSettled(page);
+    return;
+  }
+
+  throw new Error('No login submit button found');
+}
+
 async function login(page, email, password, label) {
   test.skip(!email || !password, `Set ${label} email/password env vars.`);
   await page.goto('/login');
   await waitSettled(page);
   await fillAny(page, ['email'], email);
   await fillAny(page, ['password'], password);
-  await clickAny(page, [/log in/i, /login/i, /sign in/i]);
+  await clickLogin(page);
   await page.waitForURL(/dashboard|plans|setup|guide|worker|admin/i, { timeout: 40000 }).catch(() => null);
   await waitSettled(page);
 
   const body = await pageText(page);
   const token = await page.evaluate(() => window.localStorage.getItem('token') || '').catch(() => '');
+  const stillOnLogin = /\/login(?:$|[?#])/i.test(new URL(page.url()).pathname);
+  const hasLoginError = /invalid|incorrect|wrong|failed|try again|required|not found/i.test(body);
+
   expect(body, `${label} login should render app text`).toMatch(/Churvox|Plan|Dashboard|Business|Worker|Job|Client|Command/i);
-  expect(token || !/login/i.test(page.url()), `${label} login should leave login screen or create token`).toBeTruthy();
+  expect(!stillOnLogin || Boolean(token), `${label} login should leave login screen or create token. URL=${page.url()} BODY=${body.slice(0, 500)}`).toBeTruthy();
+  expect(hasLoginError, `${label} login should not show an auth error. URL=${page.url()} BODY=${body.slice(0, 500)}`).toBeFalsy();
 }
 
 async function watchPage(page, report) {
@@ -300,6 +322,16 @@ async function sweepRoute(page, route, report) {
     const match = controls.find(c => c.label === control.label && c.href === control.href && c.tag === control.tag) || controls[control.index];
     if (!match) {
       routeReport.failedClicks.push({ control, reason: 'control not found after reload' });
+      continue;
+    }
+
+    if (match.disabled || match.pointerEvents === 'none') {
+      routeReport.clicked.push({
+        label,
+        href: control.href,
+        skippedAfterReload: true,
+        reason: 'control became disabled or unclickable after reload',
+      });
       continue;
     }
 
