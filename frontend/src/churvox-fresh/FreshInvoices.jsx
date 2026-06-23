@@ -33,7 +33,7 @@ function statusOf(value) {
 }
 
 function money(value) {
-  return `$${Number(value || 0).toFixed(2)}`;
+  return `$${Number(value || 0).toLocaleString("en-NZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function dateScore(invoice) {
@@ -47,7 +47,6 @@ function normalizeInvoice(invoice, index) {
   const status = statusOf(invoice?.status);
   const amount = Number(invoice?.total ?? invoice?.amount ?? invoice?.subtotal ?? 0) || 0;
   const gst = Number(invoice?.gst_amount ?? invoice?.tax_amount ?? 0) || 0;
-
   return {
     ...invoice,
     id,
@@ -56,39 +55,19 @@ function normalizeInvoice(invoice, index) {
     status,
     amount,
     gst,
-    due: invoice?.due_date ? `Due ${new Date(invoice.due_date).toLocaleDateString()}` : "Draft invoice",
-    sync: invoice?.myob_sync_status || invoice?.sync || "Not synced yet",
+    due: invoice?.due_date ? `Due ${new Date(invoice.due_date).toLocaleDateString()}` : "No due date",
+    sync: invoice?.xero_sync_status || invoice?.myob_sync_status || invoice?.sync || "Not synced",
     note: invoice?.description || invoice?.notes || "No notes yet",
     lines: Array.isArray(invoice?.line_items)
-      ? invoice.line_items.map((line) => `${line.description || "Invoice item"} · ${money(line.amount || line.unit_price || 0)}`)
+      ? invoice.line_items.map((line) => `${line.description || "Invoice item"} - ${money(line.amount || line.unit_price || 0)}`)
       : [invoice?.description || invoice?.notes || "Invoice item"],
     sortTime: dateScore(invoice),
   };
 }
 
-
-const selectedFilterButtonStyle = {
-  background: "#111827",
-  backgroundColor: "#111827",
-  borderColor: "#111827",
-  color: "#ffffff",
-  WebkitTextFillColor: "#ffffff",
-};
-
-const selectedFilterTextStyle = {
-  color: "#ffffff",
-  WebkitTextFillColor: "#ffffff",
-  opacity: 1,
-};
-
-const selectedFilterCountStyle = {
-  background: "#f97316",
-  backgroundColor: "#f97316",
-  color: "#ffffff",
-  WebkitTextFillColor: "#ffffff",
-  opacity: 1,
-  borderRadius: "999px",
-};
+const selectedFilterButtonStyle = { background: "#111827", backgroundColor: "#111827", borderColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff" };
+const selectedFilterTextStyle = { color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1 };
+const selectedFilterCountStyle = { background: "#f97316", backgroundColor: "#f97316", color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, borderRadius: "999px" };
 
 export default function FreshInvoices({ onNavigate }) {
   const { get } = useApi();
@@ -102,305 +81,74 @@ export default function FreshInvoices({ onNavigate }) {
   const visibleInvoices = filter === "All" ? invoices : invoices.filter((invoice) => invoice.status === filter);
   const selected = invoices.find((invoice) => invoice.id === selectedId) || visibleInvoices[0] || invoices[0];
   const draftTotal = invoices.filter((invoice) => invoice.status === "Draft").reduce((sum, invoice) => sum + invoice.amount, 0);
+  const sentTotal = invoices.filter((invoice) => invoice.status === "Sent").reduce((sum, invoice) => sum + invoice.amount, 0);
   const overdueTotal = invoices.filter((invoice) => invoice.status === "Overdue").reduce((sum, invoice) => sum + invoice.amount, 0);
 
   const loadInvoices = React.useCallback(async () => {
     setLoading(true);
     setError("");
-
     const res = await get("/invoices", { timeout: 25000 });
-
     if (!res.success) {
       setInvoices([]);
       setSelectedId("");
-      setError(res.error || "Could not load real invoices");
+      setError(res.error || "Could not load invoices");
       setLoading(false);
       return;
     }
-
-    const nextInvoices = hideDemoRecords(listFrom(res.data))
-      .map(normalizeInvoice)
-      .sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
-
+    const nextInvoices = hideDemoRecords(listFrom(res.data)).map(normalizeInvoice).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
     setInvoices(nextInvoices);
     setSelectedId((current) => nextInvoices.some((invoice) => invoice.id === current) ? current : nextInvoices[0]?.id || "");
     setLoading(false);
   }, [get]);
 
-  React.useEffect(() => {
-    loadInvoices();
-  }, [loadInvoices]);
-
+  React.useEffect(() => { loadInvoices(); }, [loadInvoices]);
   React.useEffect(() => {
     const onFreshDataUpdated = () => loadInvoices();
     window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
-    const filterPillStyle = (active) => active ? {
-    background: "#111827",
-    borderColor: "#111827",
-    color: "#ffffff",
-    WebkitTextFillColor: "#ffffff",
-  } : undefined;
-
-  const filterTextStyle = (active) => active ? {
-    color: "#ffffff",
-    WebkitTextFillColor: "#ffffff",
-    opacity: 1,
-  } : undefined;
-
-  const filterCountStyle = (active) => active ? {
-    background: "#f97316",
-    color: "#ffffff",
-    WebkitTextFillColor: "#ffffff",
-    opacity: 1,
-  } : undefined;
-
-  return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, [loadInvoices]);
 
-  function openInvoicePopup() {
-    setInvoicePopupOpen(true);
-  }
-
-  function invoiceNextMove(invoice) {
-    if (!invoice) return "Select an invoice for review.";
-    if (invoice.status === "Draft") return "Draft ready for owner check.";
-    if (invoice.status === "Sent") return "Watch payment and prepare follow-up if needed.";
-    if (invoice.status === "Overdue") return "Needs owner-approved follow-up.";
-    if (invoice.status === "Paid") return "Paid - check accounting sync.";
-    return "Review invoice.";
-  }
-
-  function sendSelectedInvoiceToCommand() {
-    if (!selected) return;
-
-    const reviewKey = "churvox:review-inbox:v1";
-    const item = {
-      id: `invoice-review-${selected.id}-${Date.now()}`,
-      title: `Invoice review: ${selected.id}`,
-      category: "money",
-      type: "invoice",
-      summary: invoiceNextMove(selected),
-      source: "Invoices",
-      status: "open",
-      createdAt: new Date().toLocaleString("en-NZ", { day: "2-digit", month: "short", hour: "numeric", minute: "2-digit" }),
-      details: {
-        "What Churvox found": `${selected.id} for ${selected.client}`,
-        "Invoice status": selected.status,
-        "Amount": money(selected.amount),
-        "GST": money(selected.gst),
-        "Due": selected.due,
-        "Sync": selected.sync,
-        "Next action": invoiceNextMove(selected),
-        "Why it needs approval": "Money follow-ups, sends and accounting changes should be reviewed by the owner first."
-      }
-    };
-
-    try {
-      const current = JSON.parse(window.localStorage.getItem(reviewKey) || "[]");
-      window.localStorage.setItem(reviewKey, JSON.stringify([item, ...current].slice(0, 80)));
-      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "review-tray", source: "invoices" } }));
-    } catch {}
-
-    onNavigate?.("command");
-  }
+  function openInvoicePopup() { setInvoicePopupOpen(true); }
 
   function openPaymentsForSelected() {
     if (!selected) return;
     try {
-      window.localStorage.setItem("churvox:selected-invoice-for-payment", JSON.stringify({
-        id: selected.id,
-        client: selected.client,
-        amount: selected.amount,
-        status: selected.status,
-      }));
+      window.localStorage.setItem("churvox:selected-invoice-for-payment", JSON.stringify({ id: selected.id, client: selected.client, amount: selected.amount, status: selected.status }));
     } catch {}
-
     onNavigate?.("payments");
   }
 
-
-  const filterPillStyle = (active) => active ? {
-    background: "#111827",
-    borderColor: "#111827",
-    color: "#ffffff",
-    WebkitTextFillColor: "#ffffff",
-  } : undefined;
-
-  const filterTextStyle = (active) => active ? {
-    color: "#ffffff",
-    WebkitTextFillColor: "#ffffff",
-    opacity: 1,
-  } : undefined;
-
-  const filterCountStyle = (active) => active ? {
-    background: "#f97316",
-    color: "#ffffff",
-    WebkitTextFillColor: "#ffffff",
-    opacity: 1,
-  } : undefined;
-
   return (
     <section className="freshInvoicesPage">
-      <header className="freshHero">
-        <span>Invoices ready to check</span>
-        <h1>Invoices</h1>
-        <p>Churvox shows draft, sent, overdue, and paid-looking invoice work so you can approve the next money move.</p>
-      </header>
+      <header className="freshHero"><span>Invoices</span><h1>Invoices</h1><p>Saved invoice records, customer, amount, status, due date and accounting sync state.</p></header>
 
       <section className="freshCommandPulse">
-        <aside className="freshCard">
-          <h2>{loading && invoices.length === 0 ? "..." : money(draftTotal)}</h2>
-          <p>Draft value ready</p>
-        </aside>
-        <aside className="freshCard">
-          <h2>{loading && invoices.length === 0 ? "..." : money(overdueTotal)}</h2>
-          <p>Overdue value to approve</p>
-        </aside>
-        <aside className="freshCard">
-          <h2>{loading && invoices.length === 0 ? "..." : invoices.length}</h2>
-          <p>Invoices Churvox found</p>
-        </aside>
+        <aside className="freshCard"><h2>{loading && invoices.length === 0 ? "..." : money(draftTotal)}</h2><p>Draft value</p></aside>
+        <aside className="freshCard"><h2>{loading && invoices.length === 0 ? "..." : money(sentTotal)}</h2><p>Sent value</p></aside>
+        <aside className="freshCard"><h2>{loading && invoices.length === 0 ? "..." : money(overdueTotal)}</h2><p>Overdue value</p></aside>
       </section>
 
-      {error ? (
-        <section className="freshCard freshItem need">
-          <b>Could not load invoices</b>
-          <span>{error}</span>
-          <button type="button" className="freshPrimary" onClick={loadInvoices}>Retry</button>
-        </section>
-      ) : null}
+      {error ? <section className="freshCard freshItem need"><b>Could not load invoices</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadInvoices}>Retry</button></section> : null}
 
-      <section className="freshCommandFilterBar">
-        {filters.map((item) => (
-          <button
-            type="button"
-            key={item}
-            className={filter === item ? "active" : ""}
-            style={filter === item ? selectedFilterButtonStyle : undefined}
-            onClick={() => setFilter(item)}
-          >
-            <span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span>
-            <b style={filter === item ? selectedFilterCountStyle : undefined}>{item === "All" ? invoices.length : invoices.filter((invoice) => invoice.status === item).length}</b>
-          </button>
-        ))}
-      </section>
+      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filter === item ? selectedFilterButtonStyle : undefined} onClick={() => setFilter(item)}><span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span><b style={filter === item ? selectedFilterCountStyle : undefined}>{item === "All" ? invoices.length : invoices.filter((invoice) => invoice.status === item).length}</b></button>)}</section>
 
       <section className="freshGrid">
-        <aside className="freshCard">
-          <h2>Invoice work</h2>
+        <aside className="freshCard"><h2>Invoice list</h2>{loading && invoices.length === 0 ? <div className="freshItem"><b>Loading invoices...</b><span>Checking saved invoice records.</span></div> : visibleInvoices.map((invoice) => <button type="button" className={`freshItem ${selected?.id === invoice.id ? "active" : ""} ${invoice.status === "Overdue" ? "need" : ""}`} key={invoice.id} onClick={() => setSelectedId(invoice.id)}><b>{invoice.id}</b><span>{invoice.client} - {invoice.status} - {money(invoice.amount)}</span></button>)}{loading && invoices.length > 0 ? <div className="freshItem"><b>Refreshing invoices...</b><span>Showing saved invoices while Churvox refreshes.</span></div> : null}{!loading && visibleInvoices.length === 0 ? <div className="freshItem"><b>No invoices found</b><span>Create an invoice or clear the filter.</span></div> : null}</aside>
 
-          {loading && invoices.length === 0 ? (
-            <div className="freshItem">
-              <b>Loading real invoices...</b>
-              <span>Checking your business account.</span>
-            </div>
-          ) : visibleInvoices.map((invoice) => (
-            <button
-              type="button"
-              className={`freshItem ${selected?.id === invoice.id ? "active" : ""} ${invoice.status === "Overdue" ? "need" : ""}`}
-              key={invoice.id}
-              onClick={() => setSelectedId(invoice.id)}
-            >
-              <b>{invoice.id}</b>
-              <span>{invoice.client} - {invoice.status} - {money(invoice.amount)}</span>
-            </button>
-          ))}
+        <section className="freshCard freshInvoicesDetailCard">
+          <div className="freshJobsDetailHeader"><div><small>Invoice record</small><h2>{selected?.id || "Select invoice"}</h2></div>{selected ? <span className={selected.status === "Paid" ? "ready" : selected.status === "Overdue" ? "need" : ""}>{selected.status}</span> : null}</div>
+          {selected ? (<>
+            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Amount</span><b>{money(selected.amount)}</b></div><div><span>GST</span><b>{money(selected.gst)}</b></div></div>
+            <section className="freshJobsDetailBox"><span>Due / sync</span><b>{selected.due} - {selected.sync}</b></section>
+            <section className="freshJobsDetailBox notes"><span>Invoice lines</span>{selected.lines.map((line, index) => <p key={`${selected.id}-${index}`}>{String(line)}</p>)}</section>
+            <section className="freshJobsDetailBox notes"><span>Invoice note</span><p>{selected.note}</p></section>
+          </>) : <div className="freshEmptyStateBig"><b>No invoice selected</b><span>When invoice records exist, details will show here.</span><button type="button" className="freshPrimary" onClick={openInvoicePopup}>Create invoice</button></div>}
+        </section>
 
-          {loading && invoices.length > 0 ? (
-            <div className="freshItem">
-              <b>Refreshing invoices...</b>
-              <span>Showing saved invoices while Churvox refreshes.</span>
-            </div>
-          ) : null}
-
-          {!loading && visibleInvoices.length === 0 ? (
-            <div className="freshItem">
-              <b>No invoice work waiting</b>
-              <span>When invoice records exist, Churvox will show what needs review, sending, sync, or follow-up.</span>
-            </div>
-          ) : null}
-        </aside>
-
-<section className="freshCard freshInvoicesDetailCard">
-  <div className="freshJobsDetailHeader">
-    <div>
-      <small>Invoice Churvox found</small>
-      <h2>{selected?.id || "Select invoice"}</h2>
-    </div>
-    {selected ? <span className={selected.status === "Paid" ? "ready" : selected.status === "Overdue" ? "need" : ""}>{selected.status}</span> : null}
-  </div>
-
-  {selected ? (
-    <>
-      <div className="freshMiniGrid freshJobsMiniGrid">
-        <div><span>Client</span><b>{selected.client}</b></div>
-        <div><span>Status</span><b>{selected.status}</b></div>
-        <div><span>Amount</span><b>{money(selected.amount)}</b></div>
-        <div><span>GST</span><b>{money(selected.gst)}</b></div>
-      </div>
-
-      <section className={`freshInvoiceNextBox ${selected.status.toLowerCase()}`}>
-        <span>Next owner move</span>
-        <b>{invoiceNextMove(selected)}</b>
-        <p>{selected.status === "Draft" ? "Draft invoices stay draft-only until the owner approves send or sync." : selected.status === "Overdue" ? "Churvox can prepare the follow-up so nothing contacts the customer by mistake." : selected.status === "Paid" ? "Payment looks done. Check sync/status only." : "Keep watching this invoice until paid."}</p>
+        <aside className="freshCard freshInvoicesActionsCard"><h2>Invoice actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openInvoicePopup}>Create invoice</button><button className="freshOrange" type="button" disabled={!selected} onClick={openPaymentsForSelected}>Open payment check</button><button className="freshGhost" type="button" onClick={loadInvoices}>Refresh invoices</button></div></aside>
       </section>
 
-      <section className="freshJobsDetailBox">
-        <span>Due / sync</span>
-        <b>{selected.due} · {selected.sync}</b>
-      </section>
-
-      <section className="freshJobsDetailBox notes">
-        <span>Prepared invoice lines</span>
-        {selected.lines.map((line, index) => <p key={`${selected.id}-${index}`}>{String(line)}</p>)}
-      </section>
-
-      <section className="freshJobsDetailBox notes">
-        <span>Owner invoice note</span>
-        <p>{selected.note}</p>
-      </section>
-    </>
-  ) : (
-    <div className="freshEmptyStateBig">
-      <b>No invoice selected</b>
-      <span>When invoice work is ready, Churvox will show the draft, status, amount, due date, and next owner decision here.</span>
-      <button type="button" className="freshPrimary" onClick={openInvoicePopup}>Prepare invoice</button>
-    </div>
-  )}
-</section>
-
-<aside className="freshCard freshInvoicesActionsCard">
-          <h2>Owner actions</h2>
-          <p className="freshJobsActionHint">Invoices stay draft-only until the owner approves the next move.</p>
-          <div className="freshActions freshJobsActionStack">
-            <button className="freshPrimary" type="button" onClick={openInvoicePopup}>Prepare invoice</button>
-            <button className="freshOrange" type="button" disabled={!selected || selected.status === "Paid"} onClick={openPaymentsForSelected}>Prepare payment follow-up</button>
-            <button className="freshDark" type="button" disabled={!selected} onClick={sendSelectedInvoiceToCommand}>Prepare next move</button>
-            <button className="freshGhost" type="button" onClick={loadInvoices}>Refresh invoices</button>
-          </div>
-        </aside>
-      </section>
-      {invoicePopupOpen ? (
-        <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setInvoicePopupOpen(false); }}>
-          <section className="freshCard freshRoutePopupCard">
-            <button className="freshRoutePopupClose" type="button" onClick={() => setInvoicePopupOpen(false)}>x</button>
-            <header className="freshHero freshRoutePopupHero">
-              <span>Prepare invoice</span>
-              <h1>Invoice for review</h1>
-              <p>Add the completed work Churvox should turn into invoice admin for owner approval.</p>
-            </header>
-            <InvoiceQuickCreateForm
-              onCancel={() => setInvoicePopupOpen(false)}
-              onSuccess={() => {
-                setInvoicePopupOpen(false);
-                loadInvoices();
-                try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "invoice-created" } })); } catch {}
-              }}
-            />
-          </section>
-        </div>
-      ) : null}
-
+      {invoicePopupOpen ? <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setInvoicePopupOpen(false); }}><section className="freshCard freshRoutePopupCard"><button className="freshRoutePopupClose" type="button" onClick={() => setInvoicePopupOpen(false)}>x</button><header className="freshHero freshRoutePopupHero"><span>Invoice</span><h1>Create invoice</h1><p>Add the invoice details.</p></header><InvoiceQuickCreateForm onCancel={() => setInvoicePopupOpen(false)} onSuccess={() => { setInvoicePopupOpen(false); loadInvoices(); try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "invoice-created" } })); } catch {} }} /></section></div> : null}
     </section>
   );
 }
