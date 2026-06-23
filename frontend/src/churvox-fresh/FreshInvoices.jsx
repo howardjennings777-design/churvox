@@ -162,11 +162,11 @@ export default function FreshInvoices({ onNavigate }) {
   }
 
   function invoiceNextMove(invoice) {
-    if (!invoice) return "Create or select an invoice.";
-    if (invoice.status === "Draft") return "Review draft before sending.";
-    if (invoice.status === "Sent") return "Watch payment and follow up if needed.";
+    if (!invoice) return "Select an invoice for review.";
+    if (invoice.status === "Draft") return "Draft ready for owner check.";
+    if (invoice.status === "Sent") return "Watch payment and prepare follow-up if needed.";
     if (invoice.status === "Overdue") return "Needs owner-approved follow-up.";
-    if (invoice.status === "Paid") return "Paid — check accounting sync.";
+    if (invoice.status === "Paid") return "Paid - check accounting sync.";
     return "Review invoice.";
   }
 
@@ -242,23 +242,23 @@ export default function FreshInvoices({ onNavigate }) {
   return (
     <section className="freshInvoicesPage">
       <header className="freshHero">
-        <span>Churvox fresh · Invoices</span>
+        <span>Invoices ready to check</span>
         <h1>Invoices</h1>
-        <p>Real invoice records from your business account. New invoices should appear here after save.</p>
+        <p>Churvox shows draft, sent, overdue, and paid-looking invoice work so you can approve the next money move.</p>
       </header>
 
       <section className="freshCommandPulse">
         <aside className="freshCard">
-          <h2>{loading && invoices.length === 0 ? "…" : money(draftTotal)}</h2>
-          <p>Draft money</p>
+          <h2>{loading && invoices.length === 0 ? "..." : money(draftTotal)}</h2>
+          <p>Draft value ready</p>
         </aside>
         <aside className="freshCard">
-          <h2>{loading && invoices.length === 0 ? "…" : money(overdueTotal)}</h2>
-          <p>Overdue money</p>
+          <h2>{loading && invoices.length === 0 ? "..." : money(overdueTotal)}</h2>
+          <p>Overdue value to approve</p>
         </aside>
         <aside className="freshCard">
-          <h2>{loading && invoices.length === 0 ? "…" : invoices.length}</h2>
-          <p>Total invoices</p>
+          <h2>{loading && invoices.length === 0 ? "..." : invoices.length}</h2>
+          <p>Invoices Churvox found</p>
         </aside>
       </section>
 
@@ -287,11 +287,11 @@ export default function FreshInvoices({ onNavigate }) {
 
       <section className="freshGrid">
         <aside className="freshCard">
-          <h2>Invoice list</h2>
+          <h2>Invoice work</h2>
 
           {loading && invoices.length === 0 ? (
             <div className="freshItem">
-              <b>Loading real invoices…</b>
+              <b>Loading real invoices...</b>
               <span>Checking your business account.</span>
             </div>
           ) : visibleInvoices.map((invoice) => (
@@ -302,21 +302,21 @@ export default function FreshInvoices({ onNavigate }) {
               onClick={() => setSelectedId(invoice.id)}
             >
               <b>{invoice.id}</b>
-              <span>{invoice.client} · {invoice.status} · {money(invoice.amount)}</span>
+              <span>{invoice.client} - {invoice.status} - {money(invoice.amount)}</span>
             </button>
           ))}
 
           {loading && invoices.length > 0 ? (
             <div className="freshItem">
-              <b>Refreshing invoices…</b>
+              <b>Refreshing invoices...</b>
               <span>Showing saved invoices while Churvox refreshes.</span>
             </div>
           ) : null}
 
           {!loading && visibleInvoices.length === 0 ? (
             <div className="freshItem">
-              <b>No invoices</b>
-              <span>Create your first real invoice to start the workflow.</span>
+              <b>No invoice work waiting</b>
+              <span>When invoice records exist, Churvox will show what needs review, sending, sync, or follow-up.</span>
             </div>
           ) : null}
         </aside>
@@ -324,7 +324,7 @@ export default function FreshInvoices({ onNavigate }) {
 <section className="freshCard freshInvoicesDetailCard">
   <div className="freshJobsDetailHeader">
     <div>
-      <small>Selected invoice</small>
+      <small>Invoice Churvox found</small>
       <h2>{selected?.id || "Select invoice"}</h2>
     </div>
     {selected ? <span className={selected.status === "Paid" ? "ready" : selected.status === "Overdue" ? "need" : ""}>{selected.status}</span> : null}
@@ -342,7 +342,7 @@ export default function FreshInvoices({ onNavigate }) {
       <section className={`freshInvoiceNextBox ${selected.status.toLowerCase()}`}>
         <span>Next owner move</span>
         <b>{invoiceNextMove(selected)}</b>
-        <p>{selected.status === "Draft" ? "Draft invoices stay draft-only until the owner sends or syncs them." : selected.status === "Overdue" ? "Follow-up should go through Command so nothing contacts the customer by mistake." : selected.status === "Paid" ? "Payment is done. Check sync/status only." : "Keep watching this invoice until paid."}</p>
+        <p>{selected.status === "Draft" ? "Draft invoices stay draft-only until the owner approves send or sync." : selected.status === "Overdue" ? "Churvox can prepare the follow-up so nothing contacts the customer by mistake." : selected.status === "Paid" ? "Payment looks done. Check sync/status only." : "Keep watching this invoice until paid."}</p>
       </section>
 
       <section className="freshJobsDetailBox">
@@ -351,7 +351,7 @@ export default function FreshInvoices({ onNavigate }) {
       </section>
 
       <section className="freshJobsDetailBox notes">
-        <span>Invoice lines</span>
+        <span>Prepared invoice lines</span>
         {selected.lines.map((line, index) => <p key={`${selected.id}-${index}`}>{String(line)}</p>)}
       </section>
 
@@ -363,8 +363,8 @@ export default function FreshInvoices({ onNavigate }) {
   ) : (
     <div className="freshEmptyStateBig">
       <b>No invoice selected</b>
-      <span>Create a draft invoice after work is complete. Churvox keeps invoices owner-approved.</span>
-      <button type="button" className="freshPrimary" onClick={openInvoicePopup}>Create first draft invoice</button>
+      <span>When invoice work is ready, Churvox will show the draft, status, amount, due date, and next owner decision here.</span>
+      <button type="button" className="freshPrimary" onClick={openInvoicePopup}>Prepare invoice</button>
     </div>
   )}
 </section>
@@ -373,9 +373,9 @@ export default function FreshInvoices({ onNavigate }) {
           <h2>Owner actions</h2>
           <p className="freshJobsActionHint">Invoices stay draft-only until the owner approves the next move.</p>
           <div className="freshActions freshJobsActionStack">
-            <button className="freshPrimary" type="button" onClick={openInvoicePopup}>New draft invoice</button>
-            <button className="freshOrange" type="button" disabled={!selected || selected.status === "Paid"} onClick={openPaymentsForSelected}>Open payment follow-up</button>
-            <button className="freshDark" type="button" disabled={!selected} onClick={sendSelectedInvoiceToCommand}>Send selected to Command</button>
+            <button className="freshPrimary" type="button" onClick={openInvoicePopup}>Prepare invoice</button>
+            <button className="freshOrange" type="button" disabled={!selected || selected.status === "Paid"} onClick={openPaymentsForSelected}>Prepare payment follow-up</button>
+            <button className="freshDark" type="button" disabled={!selected} onClick={sendSelectedInvoiceToCommand}>Prepare next move</button>
             <button className="freshGhost" type="button" onClick={loadInvoices}>Refresh invoices</button>
           </div>
         </aside>
@@ -383,11 +383,11 @@ export default function FreshInvoices({ onNavigate }) {
       {invoicePopupOpen ? (
         <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setInvoicePopupOpen(false); }}>
           <section className="freshCard freshRoutePopupCard">
-            <button className="freshRoutePopupClose" type="button" onClick={() => setInvoicePopupOpen(false)}>×</button>
+            <button className="freshRoutePopupClose" type="button" onClick={() => setInvoicePopupOpen(false)}>x</button>
             <header className="freshHero freshRoutePopupHero">
-              <span>New invoice</span>
-              <h1>Create draft invoice</h1>
-              <p>Add the real invoice here without leaving the Invoices area.</p>
+              <span>Prepare invoice</span>
+              <h1>Invoice for review</h1>
+              <p>Add the completed work Churvox should turn into invoice admin for owner approval.</p>
             </header>
             <InvoiceQuickCreateForm
               onCancel={() => setInvoicePopupOpen(false)}
