@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import { hideDemoRecords } from "./freshDemoRecords";
 
 function listFrom(value, keys = []) {
   const data = value?.data ?? value;
@@ -65,14 +66,26 @@ function isMessageNotification(item) {
   return /message|contact office|worker note|worker update|sent back|needs fix|reply/.test(haystack);
 }
 
-function routeToMessages() {
-  try {
-    window.location.href = "/dashboard#messages";
-  } catch {}
+function extractJobIdFromText(value) {
+  const text = cleanText(value);
+  if (!text) return "";
+  const objectId = text.match(/\b[a-f0-9]{24}\b/i)?.[0];
+  if (objectId) return objectId;
+  const afterJob = text.match(/\bjob\s*(?:id|#|number|no\.)?\s*[:#-]?\s*([a-z0-9_-]{8,})\b/i)?.[1];
+  return afterJob || "";
 }
 
 function jobIdOf(value) {
-  return String(value?.job_id || value?.jobId || value?.job?.id || value?.job?._id || value?.linked_job_id || value?.linkedJobId || idOf(value?.job) || "");
+  const direct = String(value?.job_id || value?.jobId || value?.job?.id || value?.job?._id || value?.linked_job_id || value?.linkedJobId || idOf(value?.job) || "");
+  if (direct) return direct;
+  return extractJobIdFromText([
+    value?.title,
+    value?.subject,
+    value?.message,
+    value?.body,
+    value?.text,
+    value?.description,
+  ].filter(Boolean).join(" "));
 }
 
 function workerNameOf(value) {
@@ -244,8 +257,8 @@ export default function FreshMessages({ onNavigate }) {
         get(`/jobs?limit=120&ts=${Date.now()}`),
       ]);
 
-      const notifications = notificationRes?.success ? listFrom(notificationRes.data, ["notifications"]) : [];
-      const jobs = jobsRes?.success ? listFrom(jobsRes.data, ["jobs"]) : [];
+      const notifications = notificationRes?.success ? hideDemoRecords(listFrom(notificationRes.data, ["notifications"])) : [];
+      const jobs = jobsRes?.success ? hideDemoRecords(listFrom(jobsRes.data, ["jobs"])) : [];
       const next = mergeThreads(
         notifications.map(notificationMessage),
         jobs.map(jobMessages),
@@ -253,7 +266,7 @@ export default function FreshMessages({ onNavigate }) {
 
       setThreads(next);
       setSelectedId((current) => next.some((thread) => thread.id === current) ? current : next[0]?.id || "");
-      if (!next.length) setStatus("No worker messages found in live notifications or job records yet.");
+      if (!next.length) setStatus("No worker messages need owner action right now.");
     } finally {
       setLoading(false);
     }
@@ -276,9 +289,11 @@ export default function FreshMessages({ onNavigate }) {
   }
 
   function openLinkedJob() {
-    if (selected?.jobId) {
-      try { window.localStorage.setItem("churvox:fresh-open-job-id:v1", selected.jobId); } catch {}
+    if (!selected?.jobId) {
+      setStatus("No linked job on this message yet.");
+      return;
     }
+    try { window.localStorage.setItem("churvox:fresh-open-job-id:v1", selected.jobId); } catch {}
     if (onNavigate) onNavigate("jobs");
     else window.location.href = "/dashboard#jobs";
   }
@@ -291,7 +306,7 @@ export default function FreshMessages({ onNavigate }) {
       return;
     }
     if (!selected.jobId) {
-      setStatus("This message has no linked job id, so Churvox cannot send a worker reply from here.");
+      setStatus("This message has no linked job yet, so Churvox cannot send the worker reply from here.");
       return;
     }
 
@@ -335,7 +350,7 @@ export default function FreshMessages({ onNavigate }) {
         <div>
           <span>Owner inbox</span>
           <h1>Messages</h1>
-          <p>Worker messages, job notes, and send-back replies are kept here so Jobs, Clients, Quotes, and Invoices stay as clean records.</p>
+          <p>Worker messages stay here. Jobs, Clients, Quotes, and Invoices stay as clean records.</p>
         </div>
 
         <div className="freshMessagesStats">
@@ -351,7 +366,7 @@ export default function FreshMessages({ onNavigate }) {
           <header>
             <div>
               <b>Worker board</b>
-              <span>{loading ? "Refreshing live messages" : "Live from notifications and jobs"}</span>
+              <span>{loading ? "Refreshing messages" : "Worker messages only"}</span>
             </div>
             <button type="button" onClick={load} disabled={loading}>{loading ? "Wait" : "Refresh"}</button>
           </header>
@@ -386,12 +401,12 @@ export default function FreshMessages({ onNavigate }) {
               <div>
                 <span>{selected.unread ? "Needs attention" : "Thread"}</span>
                 <h2>{selected.workerName}</h2>
-                <p>{selected.jobTitle}{selected.jobId ? ` - job ${selected.jobId}` : " - no linked job id"}</p>
+                <p>{selected.jobTitle}{selected.jobId ? ` - linked job` : " - no linked job yet"}</p>
               </div>
 
               <div className="freshMessagesHeadActions">
-                <button type="button" onClick={sendReply} disabled={loading || !selectedDraft.trim()}>Send reply</button>
-                <button type="button" onClick={openLinkedJob}>Open job</button>
+                <button type="button" onClick={sendReply} disabled={loading || !selectedDraft.trim() || !selected.jobId}>Send reply</button>
+                <button type="button" onClick={openLinkedJob} disabled={!selected.jobId}>Open job</button>
               </div>
             </div>
 
@@ -411,7 +426,7 @@ export default function FreshMessages({ onNavigate }) {
 
               <section>
                 <span>Owner reply</span>
-                <p>Use this when the worker needs a fix, answer, or clarification. It sends back on the linked job.</p>
+                <p>{selected.jobId ? "Reply sends back on the linked job." : "Link this message to a job before sending a reply."}</p>
                 <textarea
                   value={selectedDraft}
                   onChange={(event) => updateDraft(event.target.value)}
@@ -423,10 +438,10 @@ export default function FreshMessages({ onNavigate }) {
             {status ? <p className="freshMessagesStatus">{status}</p> : null}
 
             <div className="freshMessagesActions">
-              <button type="button" onClick={sendReply} disabled={loading || !selectedDraft.trim()}>Send reply to worker</button>
+              <button type="button" onClick={sendReply} disabled={loading || !selectedDraft.trim() || !selected.jobId}>Send reply to worker</button>
               <button type="button" onClick={markSelectedRead}>Mark read</button>
-              <button type="button" onClick={openLinkedJob}>Open linked job</button>
-              <button type="button" onClick={routeToMessages}>Copy messages link</button>
+              <button type="button" onClick={openLinkedJob} disabled={!selected.jobId}>Open linked job</button>
+              <button type="button" onClick={load} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</button>
             </div>
           </article>
         ) : (
