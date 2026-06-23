@@ -29,12 +29,29 @@ function iconOf(item) {
   if (type.includes("customer") || type.includes("request")) return "RQ";
   if (type.includes("quote")) return "QT";
   if (type.includes("invoice") || type.includes("payment")) return "IV";
+  if (type.includes("message") || type.includes("contact")) return "MS";
   if (type.includes("worker") || type.includes("shift") || type.includes("time")) return "WK";
   if (type.includes("xero") || type.includes("myob")) return "XE";
   return "AI";
 }
 
+function isMessageItem(item) {
+  const haystack = [
+    item?.type,
+    item?.event_type,
+    item?.title,
+    item?.subject,
+    item?.message,
+    item?.body,
+    item?.text,
+    item?.description,
+  ].map((part) => String(part || "").toLowerCase()).join(" ");
+
+  return /message|contact office|worker note|worker update|sent back|reply/.test(haystack);
+}
+
 function routeOf(item) {
+  if (isMessageItem(item)) return "/dashboard#messages";
   return item?.route || item?.target_route || item?.url || item?.href || "";
 }
 
@@ -133,7 +150,7 @@ export default function FreshNotificationBell() {
             {!loading && !items.length ? (
               <article className="empty">
                 <b>No notifications yet</b>
-                <span>Worker messages, finished jobs, uploaded photos and issues will show here.</span>
+                <span>Alerts show here. Worker conversations live in Messages.</span>
               </article>
             ) : null}
 
