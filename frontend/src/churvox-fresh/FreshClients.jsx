@@ -28,24 +28,10 @@ function unpackList(payload, key = "") {
   return [];
 }
 
-function cleanStatus(value, client) {
-  const text = String(value || client?.client_status || client?.customer_status || "").trim();
-  if (!text) return client?.email ? "Active" : "Needs setup";
-  if (/paused|inactive|archived/i.test(text)) return "Paused";
-  if (/setup|missing|draft|incomplete/i.test(text)) return "Needs setup";
-  return "Active";
-}
-
-function timeValue(record) {
-  const raw = record?.created_at || record?.createdAt || record?.updated_at || record?.updatedAt || record?.scheduled_date || record?.date || "";
-  const parsed = Date.parse(raw);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function pick(record, ...keys) {
   for (const key of keys) {
     const value = record?.[key];
-    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+    if (value !== undefined && value !== null && String(value).trim() !== "") return String(value).trim();
   }
   return "";
 }
@@ -63,15 +49,44 @@ function money(value) {
   return `$${Number(value || 0).toLocaleString("en-NZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function timeValue(record) {
+  const raw = record?.created_at || record?.createdAt || record?.updated_at || record?.updatedAt || record?.scheduled_date || record?.date || "";
+  const parsed = Date.parse(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function cleanStatus(value, client) {
+  const text = String(value || client?.client_status || client?.customer_status || "").trim();
+  if (!text) return client?.email || client?.phone || client?.address ? "Active" : "Needs setup";
+  if (/paused|inactive|archived/i.test(text)) return "Paused";
+  if (/setup|missing|draft|incomplete/i.test(text)) return "Needs setup";
+  return "Active";
+}
+
+function isGenericClientName(value) {
+  return ["customer", "client", "unnamed client", "for"].includes(lower(value));
+}
+
+function displayClientName(client) {
+  if (!client) return "Select client";
+  if (isGenericClientName(client.name) && !client.email && !client.phone && !client.address) return "Customer details needed";
+  return client.name || "Customer details needed";
+}
+
+function clientReady(client) {
+  if (!client) return false;
+  return Boolean(!isGenericClientName(client.name) && (client.email || client.phone || client.address));
+}
+
 function normalizeClient(client, index) {
   const id = normalizeId(client?.id || client?._id || client?.client_id || client?.customer_id) || `client-${index}`;
-  const name = client?.name || client?.client_name || client?.customer_name || client?.contact_name || client?.business_name || "Unnamed client";
-  const email = client?.email || client?.client_email || client?.customer_email || client?.billing_email || "";
-  const phone = client?.phone || client?.mobile || client?.client_phone || client?.customer_phone || "";
-  const address = client?.address || client?.site_address || client?.service_address || client?.customer_address || "";
-  const notes = client?.notes || client?.internal_notes || client?.client_notes || "";
-  const type = client?.type || client?.client_type || client?.customer_type || "Client";
-  const status = cleanStatus(client?.status, { ...client, email });
+  const name = pick(client, "name", "client_name", "customer_name", "contact_name", "business_name") || "Customer";
+  const email = pick(client, "email", "client_email", "customer_email", "billing_email");
+  const phone = pick(client, "phone", "mobile", "client_phone", "customer_phone");
+  const address = pick(client, "address", "site_address", "service_address", "customer_address");
+  const notes = pick(client, "notes", "internal_notes", "client_notes");
+  const type = pick(client, "type", "client_type", "customer_type") || "Client";
+  const status = cleanStatus(client?.status, { ...client, email, phone, address });
   const contact = [email, phone].filter(Boolean).join(" / ") || "No contact saved";
   return { ...client, id, name, type, status, email, phone, address, notes, contact, value: client?.value || client?.lifetime_value || client?.amount_due || "Saved client", sortTime: timeValue(client) };
 }
@@ -104,7 +119,7 @@ function belongsToClient(record, client) {
   const email = lower(client.email);
   const address = lower(client.address);
   const haystack = lower(`${recordClientName(record)} ${pick(record, "email", "customer_email", "client_email", "address", "site_address", "service_address", "notes", "description")}`);
-  return Boolean(name && haystack.includes(name)) || Boolean(email && haystack.includes(email)) || Boolean(address && haystack.includes(address));
+  return Boolean(name && !isGenericClientName(name) && haystack.includes(name)) || Boolean(email && haystack.includes(email)) || Boolean(address && haystack.includes(address));
 }
 
 function timelineRows(data, client) {
@@ -131,8 +146,7 @@ export default function FreshClients({ onNavigate }) {
   const [saving, setSaving] = React.useState(false);
   const [savedAt, setSavedAt] = React.useState("");
   const [addOpen, setAddOpen] = React.useState(false);
-  const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const [deleteName, setDeleteName] = React.useState("");
+  const [editOpen, setEditOpen] = React.useState(false);
   const [newClient, setNewClient] = React.useState(emptyClient);
   const [addError, setAddError] = React.useState("");
 
@@ -145,8 +159,8 @@ export default function FreshClients({ onNavigate }) {
     return matchesFilter && (!query || haystack.includes(query));
   });
   const activeClients = clients.filter((client) => client.status === "Active").length;
-  const needsSetup = clients.filter((client) => client.status === "Needs setup").length;
   const timelineValue = rows.reduce((sum, row) => sum + row.amount, 0);
+  const selectedReady = clientReady(selected);
 
   const loadClients = React.useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) setLoading(true);
@@ -188,8 +202,13 @@ export default function FreshClients({ onNavigate }) {
     return () => window.removeEventListener("churvox:open-client-popup", openPopup);
   }, []);
   React.useEffect(() => { if (visibleClients.length && (!selectedId || !visibleClients.some((client) => client.id === selectedId))) setSelectedId(visibleClients[0].id); }, [visibleClients, selectedId]);
+  React.useEffect(() => { setEditOpen(false); }, [selected?.id]);
 
-  function updateSelectedClient(patchData) { if (!selected) return; setClients((current) => current.map((client) => client.id === selected.id ? { ...client, ...patchData } : client)); setSavedAt("Unsaved changes"); }
+  function updateSelectedClient(patchData) {
+    if (!selected) return;
+    setClients((current) => current.map((client) => client.id === selected.id ? { ...client, ...patchData } : client));
+    setSavedAt("Unsaved changes");
+  }
 
   async function saveSelectedClient() {
     if (!selected?.id) return;
@@ -199,18 +218,18 @@ export default function FreshClients({ onNavigate }) {
     setSaving(false);
     if (!res.success) { setError(res.error || "Could not update client"); setSavedAt("Save failed"); return; }
     setSavedAt(`Saved ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
+    setEditOpen(false);
     await loadClients({ quiet: true });
   }
 
   async function deleteSelectedClient() {
     if (!selected?.id) return;
-    if (deleteName.trim() !== selected.name) { setError("Type the client name exactly before deleting."); return; }
+    if (!window.confirm(`Delete ${displayClientName(selected)}?`)) return;
     setSaving(true); setError("");
     const res = await del(`/clients/${encodeURIComponent(selected.id)}`, { timeout: 25000 });
     setSaving(false);
     if (!res.success) { setError(res.error || "Could not delete client."); return; }
-    setSavedAt(`Deleted ${selected.name}`); setDeleteOpen(false); setDeleteName("");
-    setClients((current) => current.filter((client) => client.id !== selected.id));
+    setSavedAt(`Deleted ${displayClientName(selected)}`);
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "client-deleted", id: selected.id } }));
     await loadClients({ quiet: true });
   }
@@ -250,16 +269,14 @@ export default function FreshClients({ onNavigate }) {
       <label className="freshField"><span>Search clients</span><input type="search" value={search} placeholder="Search by name, email, phone or address" onChange={(event) => setSearch(event.target.value)} /></label>
 
       <section className="freshGrid">
-        <aside className="freshCard"><h2>Client list</h2>{loading && clients.length === 0 ? <div className="freshItem"><b>Loading clients...</b><span>Checking your business account.</span></div> : visibleClients.map((client) => <button type="button" className={`freshItem ${selected?.id === client.id ? "active" : ""} ${client.status === "Needs setup" ? "need" : ""}`} key={client.id} onClick={() => setSelectedId(client.id)}><b>{client.name}</b><span>{client.type} - {client.status} - {client.value}</span></button>)}{loading && clients.length > 0 ? <div className="freshItem"><b>Refreshing clients...</b><span>Showing saved records while Churvox refreshes.</span></div> : null}{!loading && visibleClients.length === 0 ? <div className="freshItem"><b>No matching clients</b><span>Create a client or clear the search/filter.</span></div> : null}</aside>
+        <aside className="freshCard freshJobsListCard"><h2>Client list</h2>{loading && clients.length === 0 ? <div className="freshItem"><b>Loading clients...</b><span>Checking your business account.</span></div> : visibleClients.map((client) => <button type="button" className={`freshItem ${selected?.id === client.id ? "active" : ""} ${client.status === "Needs setup" ? "need" : ""}`} key={client.id} onClick={() => setSelectedId(client.id)}><b>{displayClientName(client)}</b><span>{client.type} - {client.status} - {client.value}</span></button>)}{loading && clients.length > 0 ? <div className="freshItem"><b>Refreshing clients...</b><span>Showing saved records while Churvox refreshes.</span></div> : null}{!loading && visibleClients.length === 0 ? <div className="freshItem"><b>No matching clients</b><span>Create a client or clear the search/filter.</span></div> : null}</aside>
 
-        <section className="freshCard"><h2>{selected?.name || "Select client"}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Status</span><b>{selected.status}</b></div><div><span>Timeline</span><b>{rows.length} records</b></div><div><span>Value</span><b>{money(timelineValue)}</b></div><div><span>Contact</span><b>{selected.contact}</b></div></div><section className="freshTimelineList">{timelineLoading ? <article><b>Refreshing timeline...</b><span>Checking jobs, quotes and invoices.</span></article> : rows.length ? rows.slice(0, 8).map((row, index) => <article key={`${row.type}-${index}`}><b>{row.type}: {row.title}</b><span>{row.status} - {money(row.amount)} - {row.note}</span></article>) : <article><b>No linked records yet</b><span>Create a job, quote or invoice for this client.</span></article>}</section><label className="freshField"><span>Client name</span><input value={selected.name} onChange={(event) => updateSelectedClient({ name: event.target.value })} /></label><label className="freshField"><span>Invoice/customer email</span><input value={selected.email} onChange={(event) => updateSelectedClient({ email: event.target.value })} /></label><label className="freshField"><span>Phone</span><input value={selected.phone} onChange={(event) => updateSelectedClient({ phone: event.target.value })} /></label><label className="freshField"><span>Service address</span><input value={selected.address} onChange={(event) => updateSelectedClient({ address: event.target.value })} /></label><label className="freshField"><span>Client notes</span><textarea value={selected.notes} onChange={(event) => updateSelectedClient({ notes: event.target.value })} /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveSelectedClient}>{saving ? "Saving..." : "Save client"}</button><button className="freshGhost" type="button" disabled={saving} onClick={() => { setDeleteOpen(true); setDeleteName(""); setError(""); }}>Delete client</button></div></> : <div className="freshItem"><b>No client selected</b><span>Add your first client to start the workflow.</span></div>}</section>
+        <section className="freshCard freshJobsDetailCard"><h2>{displayClientName(selected)}</h2>{selected ? <><div className="freshMiniGrid"><div className={selectedReady ? "" : "need"}><span>Status</span><b>{selectedReady ? selected.status : "Needs setup"}</b></div><div><span>Timeline</span><b>{rows.length} records</b></div><div><span>Value</span><b>{money(timelineValue)}</b></div><div className={selected.contact === "No contact saved" ? "need" : ""}><span>Contact</span><b>{selected.contact}</b></div></div>{!selectedReady ? <section className="freshJobsDetailBox notes"><span>Next owner decision</span><p>Add the missing customer name, contact, or service address before using this client for jobs, quotes, or invoices.</p></section> : null}<section className="freshJobsDetailBox"><span>Service address</span><b>{selected.address || "No address saved"}</b></section>{selected.notes ? <section className="freshJobsDetailBox notes"><span>Client notes</span><p>{selected.notes}</p></section> : null}<section className="freshTimelineList">{timelineLoading ? <article><b>Refreshing timeline...</b><span>Checking jobs, quotes and invoices.</span></article> : rows.length ? rows.slice(0, 5).map((row, index) => <article key={`${row.type}-${index}`}><b>{row.type}: {row.title}</b><span>{row.status} - {money(row.amount)} - {row.note}</span></article>) : <article><b>No linked records yet</b><span>Create a job, quote or invoice for this client.</span></article>}</section>{editOpen ? <section className="freshClientEditPanel"><label className="freshField"><span>Client name</span><input value={selected.name} onChange={(event) => updateSelectedClient({ name: event.target.value })} /></label><label className="freshField"><span>Invoice/customer email</span><input value={selected.email} onChange={(event) => updateSelectedClient({ email: event.target.value })} /></label><label className="freshField"><span>Phone</span><input value={selected.phone} onChange={(event) => updateSelectedClient({ phone: event.target.value })} /></label><label className="freshField"><span>Service address</span><input value={selected.address} onChange={(event) => updateSelectedClient({ address: event.target.value })} /></label><label className="freshField"><span>Client notes</span><textarea value={selected.notes} onChange={(event) => updateSelectedClient({ notes: event.target.value })} /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveSelectedClient}>{saving ? "Saving..." : "Save client"}</button><button className="freshGhost" type="button" onClick={() => setEditOpen(false)}>Cancel</button></div></section> : <div className="freshActions"><button className="freshDark" type="button" onClick={() => setEditOpen(true)}>Edit details</button></div>}</> : <div className="freshItem"><b>No client selected</b><span>Add your first client to start the workflow.</span></div>}</section>
 
-        <aside className="freshCard"><h2>Client actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add client</button><button className="freshOrange" type="button" disabled={!selected} onClick={() => openJobPopup(selected?.id || "")}>Create job</button><button className="freshDark" type="button" disabled={!selected} onClick={() => window.location.href = selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new"}>Create quote</button><button className="freshGhost" type="button" disabled={!selected || saving} onClick={() => { setDeleteOpen(true); setDeleteName(""); setError(""); }}>Delete client</button><button className="freshGhost" type="button" onClick={() => { loadClients(); loadTimeline(); }}>Refresh timeline</button></div></aside>
+        <aside className="freshCard freshJobsActionsCard"><h2>Client actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add client</button><button className="freshOrange" type="button" disabled={!selected || !selectedReady} onClick={() => openJobPopup(selected?.id || "")}>{selectedReady ? "Create job" : "Complete setup first"}</button><button className="freshDark" type="button" disabled={!selected || !selectedReady} onClick={() => window.location.href = selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new"}>Create quote</button><button className="freshGhost" type="button" disabled={!selected || saving} onClick={deleteSelectedClient}>Delete client</button><button className="freshGhost" type="button" onClick={() => { loadClients(); loadTimeline(); }}>Refresh timeline</button></div></aside>
       </section>
 
       {addOpen ? <div className="freshPopupBackdrop freshClientPopupBackdrop" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,.62)", display: "grid", placeItems: "center", padding: 16 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setAddOpen(false); }}><section className="freshCard freshClientPopupCard" style={{ width: "min(1040px, calc(100vw - 56px))", maxHeight: "90dvh", overflow: "auto", boxShadow: "0 30px 80px rgba(0,0,0,.35)" }}><header className="freshHero freshClientPopupHero" style={{ marginBottom: 12 }}><span>Client</span><h1>Add client</h1><p>Add the customer details.</p></header>{addError ? <div className="freshItem need"><b>Client needs attention</b><span>{addError}</span></div> : null}<label className="freshField"><span>Client name</span><input autoFocus value={newClient.name} onChange={(e) => setNewClient((c) => ({ ...c, name: e.target.value }))} placeholder="Customer or business name" /></label><label className="freshField"><span>Invoice/customer email</span><input value={newClient.email} onChange={(e) => setNewClient((c) => ({ ...c, email: e.target.value }))} placeholder="hello@churvox.com" /></label><label className="freshField"><span>Phone</span><input value={newClient.phone} onChange={(e) => setNewClient((c) => ({ ...c, phone: e.target.value }))} placeholder="phone number" /></label><label className="freshField"><span>Service address</span><input value={newClient.address} onChange={(e) => setNewClient((c) => ({ ...c, address: e.target.value }))} placeholder="job/site address" /></label><label className="freshField"><span>Notes</span><textarea value={newClient.notes} onChange={(e) => setNewClient((c) => ({ ...c, notes: e.target.value }))} placeholder="gate code, pets, preferences, anything useful" /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveNewClient}>{saving ? "Saving..." : "Save client"}</button><button className="freshGhost" type="button" onClick={() => setAddOpen(false)}>Cancel</button></div></section></div> : null}
-
-      {deleteOpen && selected ? <div className="freshPopupBackdrop freshClientPopupBackdrop" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,.66)", display: "grid", placeItems: "center", padding: 16 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setDeleteOpen(false); }}><section className="freshCard freshClientPopupCard" style={{ width: "min(760px, calc(100vw - 42px))", maxHeight: "90dvh", overflow: "auto", boxShadow: "0 30px 80px rgba(0,0,0,.35)" }}><header className="freshHero freshClientPopupHero" style={{ marginBottom: 12 }}><span>Delete client</span><h1>Delete {selected.name}</h1><p>This removes the client record from Churvox.</p></header><div className="freshItem need"><b>Confirm delete</b><span>Type the client name exactly to unlock delete: {selected.name}</span></div><label className="freshField"><span>Type client name</span><input autoFocus value={deleteName} onChange={(event) => setDeleteName(event.target.value)} placeholder={selected.name} /></label><div className="freshActions"><button className="freshOrange" type="button" disabled={saving || deleteName.trim() !== selected.name} onClick={deleteSelectedClient}>{saving ? "Deleting..." : "Delete client"}</button><button className="freshGhost" type="button" onClick={() => { setDeleteOpen(false); setDeleteName(""); }}>Cancel</button></div></section></div> : null}
     </section>
   );
 }
