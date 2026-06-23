@@ -109,8 +109,8 @@ test.describe("Churvox worker boss message loop", () => {
   test.setTimeout(180000);
 
   test("boss to worker and worker to boss messages arrive", async ({ browser }) => {
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, "Set owner login env vars.");
-    test.skip(!WORKER_EMAIL || !WORKER_PASSWORD, "Set worker login env vars.");
+    if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error("Missing owner login env vars. Worker-message test must fail instead of skipping because skipped tests prove nothing.");
+    if (!WORKER_EMAIL || !WORKER_PASSWORD) throw new Error("Missing worker login env vars. Worker-message test must fail instead of skipping because skipped tests prove nothing.");
 
     const id = stamp();
     const bossToken = "Boss to worker test " + id;
