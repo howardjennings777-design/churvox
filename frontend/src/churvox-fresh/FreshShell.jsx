@@ -20,7 +20,6 @@ const moreGroup = {
   title: "More tools",
   items: [
     ["portal", "PT", "Portal Links"],
-    ["automation", "AT", "Automation"],
     ["reports", "RP", "Reports"],
     ["imports", "IM", "Imports"],
     ["exports", "EX", "Exports"],
@@ -32,7 +31,7 @@ const moreGroup = {
 };
 
 const mobileItems = [["planday", "PD", "Plan"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
-const mobileMoreOrder = ["messages", "leads", "clients", "quotes", "payments", "xero", "team", "workercommand", "time", "payroll", "portal", "automation", "reports", "settings", "support"];
+const mobileMoreOrder = ["messages", "leads", "clients", "quotes", "payments", "xero", "team", "workercommand", "time", "payroll", "portal", "reports", "settings", "support"];
 
 const mobileLabels = {
   planday: "Plan My Day",
@@ -53,6 +52,7 @@ const mobileLabels = {
   quoteai: "Command",
   invoicecheck: "Command",
   workerbrief: "Command",
+  automation: "Command",
   jobs: "Jobs",
   clients: "Clients",
   leads: "Requests",
@@ -68,7 +68,6 @@ const mobileLabels = {
   time: "Time Sheets",
   payroll: "Payroll",
   command: "Command",
-  automation: "Automation",
   reports: "Reports",
   launchcontrol: "Launch",
   settings: "Settings",
@@ -98,6 +97,7 @@ const parentByKey = {
   quoteai: "command",
   invoicecheck: "command",
   workerbrief: "command",
+  automation: "command",
   inbox: "messages",
   workermessages: "messages",
   workerinbox: "messages",
@@ -185,6 +185,7 @@ function askRoute(text) {
   if (isJobCommand(text)) return "jobs";
   if (isClientCommand(text)) return "clients";
   if (lower.includes("message") || lower.includes("inbox") || lower.includes("worker note") || lower.includes("contact office")) return "messages";
+  if (lower.includes("automation")) return "command";
   if (lower.includes("worker brief") || lower.includes("brief worker") || lower.includes("staff brief")) return "command";
   if (lower.includes("today") || lower.includes("plan my day") || lower.includes("day plan") || lower.includes("route today") || lower.includes("plan today")) return "planday";
   if (lower.includes("invoice check") || lower.includes("missing money") || lower.includes("missing extra")) return "command";
