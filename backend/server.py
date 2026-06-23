@@ -2133,15 +2133,30 @@ async def delete_client(client_id: str, request: Request, current_user: dict = D
 async def get_client_jobs(client_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    # Verify client belongs to business
-    client = await db.clients.find_one({"business_id": str(business_id), 
-        "_id": ObjectId(client_id),
-        "contractor_id": ObjectId(user["business_id"])
+
+    try:
+        client_oid = ObjectId(client_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid client id")
+
+    client = await db.clients.find_one({
+        "business_id": str(business_id),
+        "_id": client_oid,
+        "contractor_id": ObjectId(user["business_id"]),
     })
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    jobs = await db.jobs.find({"business_id": str(business_id), "contractor_id": ObjectId(user["business_id"]), "client_id": ObjectId(client_id)}
-    ).sort("scheduled_date", -1).to_list(100)
+
+    jobs = await db.jobs.find({
+        "business_id": str(business_id),
+        "contractor_id": ObjectId(user["business_id"]),
+        "$or": [
+            {"client_id": client_oid},
+            {"client_id": client_id},
+            {"customer_name": client.get("name")},
+        ],
+    }).sort("scheduled_date", -1).to_list(100)
+
     return [serialize_doc(j) for j in jobs]
 
 # ===================== JOBS =====================
