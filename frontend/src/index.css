@@ -511,3 +511,22 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* CHURVOX_HELP_FAB_APP_CONTROL_FIX_20260624 */
+body:has(.freshApp) .cv-help-fab,
+body:has(.freshApp) .cv-help-panel,
+body:has(.freshApp) .churvox-help-widget,
+body:has(.freshApp) .help-widget,
+body:has(.freshApp) [data-testid="churvox-help-widget"],
+body:has(.freshApp) [aria-label="Need help?"],
+body:has([class*="Invoice" i]) .cv-help-fab,
+body:has([class*="Invoice" i]) .cv-help-panel,
+body:has([class*="invoice" i]) .cv-help-fab,
+body:has([class*="invoice" i]) .cv-help-panel,
+body:has([class*="Worker" i]) .cv-help-fab,
+body:has([class*="Worker" i]) .cv-help-panel,
+body:has([class*="worker" i]) .cv-help-fab,
+body:has([class*="worker" i]) .cv-help-panel {
+  display: none !important;
+  pointer-events: none !important;
+}
