@@ -1,176 +1,348 @@
 import React from "react";
+import { useApi } from "../hooks/useApi";
 
-const MESSAGES_KEY = "churvox:fresh-messages:v1";
-const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+function listFrom(value, keys = []) {
+  const data = value?.data ?? value;
+  if (Array.isArray(data)) return data;
+  for (const key of keys) if (Array.isArray(data?.[key])) return data[key];
+  for (const key of ["notifications", "items", "results", "records", "jobs", "data"]) {
+    if (Array.isArray(data?.[key])) return data[key];
+  }
+  return [];
+}
 
-const defaults = [
-  {
-    id: "msg-1",
-    from: "Aroha Property Care",
-    type: "Customer",
-    status: "Needs reply",
-    subject: "Can we move next visit?",
-    lastMessage: "Can we make the next lawn visit Thursday morning instead?",
-    reply: "",
-    linkedArea: "Jobs",
-    priority: "Medium",
-  },
-  {
-    id: "msg-2",
-    from: "Matiu Rangi",
-    type: "Worker",
-    status: "Open",
-    subject: "Green waste extra",
-    lastMessage: "There is extra green waste on the lawn job. Should I add it?",
-    reply: "",
-    linkedArea: "Extras",
-    priority: "High",
-  },
-  {
-    id: "msg-3",
-    from: "Birchville Rentals",
-    type: "Customer",
-    status: "Watching",
-    subject: "Access for driveway clean",
-    lastMessage: "Tenant has not confirmed gate access yet.",
-    reply: "",
-    linkedArea: "Dispatch",
-    priority: "High",
-  },
+function idOf(value) {
+  if (!value) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  return String(value.id || value._id || value.$oid || value.oid || value.job_id || value.notification_id || "");
+}
+
+function firstText(value, keys) {
+  for (const key of keys) {
+    const found = value?.[key];
+    if (found !== undefined && found !== null && String(found).trim()) return String(found).trim();
+  }
+  return "";
+}
+
+function cleanText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function usefulText(value) {
+  const text = cleanText(value);
+  if (!text) return "";
+  if (/^(none|null|undefined|n\/a|no notes?|no message)$/i.test(text)) return "";
+  return text;
+}
+
+function dateValue(value) {
+  return value?.created_at || value?.createdAt || value?.updated_at || value?.updatedAt || value?.completed_at || value?.scheduled_date || "";
+}
+
+function timeLabel(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function isUnread(item) {
+  return item?.read !== true && item?.is_read !== true && item?.read_at == null;
+}
+
+function isMessageNotification(item) {
+  const haystack = [
+    item?.type,
+    item?.event_type,
+    item?.title,
+    item?.subject,
+    item?.message,
+    item?.body,
+    item?.text,
+    item?.description,
+  ].map((part) => String(part || "").toLowerCase()).join(" ");
+
+  return /message|contact office|worker note|worker update|sent back|needs fix|reply/.test(haystack);
+}
+
+function routeToMessages() {
+  try {
+    window.location.href = "/dashboard#messages";
+  } catch {}
+}
+
+function jobIdOf(value) {
+  return String(value?.job_id || value?.jobId || value?.job?.id || value?.job?._id || value?.linked_job_id || value?.linkedJobId || idOf(value?.job) || "");
+}
+
+function workerNameOf(value) {
+  return firstText(value, [
+    "worker_name",
+    "workerName",
+    "assigned_worker_name",
+    "assignedWorkerName",
+    "staff_name",
+    "from",
+    "created_by_name",
+    "user_name",
+    "name",
+  ]) || "Worker";
+}
+
+function jobTitleOf(value) {
+  return firstText(value, ["job_title", "jobTitle", "title", "name", "service_name"]) || "Job message";
+}
+
+function notificationMessage(item, index) {
+  const text = usefulText(firstText(item, ["message", "body", "text", "description"]) || firstText(item, ["title", "subject"]));
+  if (!text || !isMessageNotification(item)) return null;
+
+  const notificationId = idOf(item) || `notification-${index}`;
+  const jobId = jobIdOf(item);
+  const workerName = workerNameOf(item);
+  const createdAt = dateValue(item) || new Date().toISOString();
+
+  return {
+    threadKey: jobId ? `job:${jobId}` : `notification:${notificationId}`,
+    notificationId,
+    jobId,
+    jobTitle: jobTitleOf(item),
+    workerName,
+    unread: isUnread(item),
+    message: {
+      id: `notification-${notificationId}`,
+      direction: "from_worker",
+      label: "Worker message",
+      text,
+      at: createdAt,
+      source: "Notification",
+      unread: isUnread(item),
+    },
+  };
+}
+
+const JOB_MESSAGE_FIELDS = [
+  ["worker_notes", "from_worker", "Worker note"],
+  ["worker_note", "from_worker", "Worker note"],
+  ["message_to_boss", "from_worker", "Message to owner"],
+  ["worker_message", "from_worker", "Worker message"],
+  ["completion_message", "from_worker", "Completion message"],
+  ["completion_notes", "from_worker", "Completion notes"],
+  ["field_notes", "from_worker", "Field note"],
+  ["contact_office_message", "from_worker", "Contact office"],
+  ["office_message", "from_worker", "Contact office"],
+  ["owner_note", "to_worker", "Owner reply"],
+  ["boss_note", "to_worker", "Owner reply"],
+  ["send_back_note", "to_worker", "Sent back"],
 ];
 
-function readMessages() {
-  try {
-    if (typeof window === "undefined") return defaults;
+function jobMessages(job, index) {
+  const jobId = jobIdOf(job) || idOf(job) || `job-${index}`;
+  const jobTitle = jobTitleOf(job);
+  const workerName = workerNameOf(job);
+  const baseTime = dateValue(job) || new Date().toISOString();
+  const seen = new Set();
+  const messages = [];
 
-    const saved = window.localStorage.getItem(MESSAGES_KEY);
-    if (!saved) return defaults;
+  JOB_MESSAGE_FIELDS.forEach(([field, direction, label]) => {
+    const text = usefulText(job?.[field]);
+    const key = `${direction}:${cleanText(text).toLowerCase()}`;
+    if (!text || seen.has(key)) return;
+    seen.add(key);
+    messages.push({
+      id: `${jobId}-${field}`,
+      direction,
+      label,
+      text,
+      at: baseTime,
+      source: "Job record",
+      unread: false,
+    });
+  });
 
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : defaults;
-  } catch {
-    return defaults;
-  }
+  if (!messages.length) return null;
+  return {
+    threadKey: `job:${jobId}`,
+    notificationId: "",
+    jobId,
+    jobTitle,
+    workerName,
+    unread: false,
+    messages,
+  };
 }
 
-function saveMessages(items) {
-  try {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(MESSAGES_KEY, JSON.stringify(items));
-      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "messages" } }));
+function mergeThreads(notificationRows, jobRows) {
+  const map = new Map();
+
+  function ensure(row) {
+    const key = row.threadKey;
+    if (!map.has(key)) {
+      map.set(key, {
+        id: key,
+        jobId: row.jobId || "",
+        jobTitle: row.jobTitle || "Job message",
+        workerName: row.workerName || "Worker",
+        unread: false,
+        notificationIds: [],
+        messages: [],
+      });
     }
-  } catch {
-    // Fresh preview keeps working without local storage.
-  }
-}
 
-function sendMessageToCommand(message) {
-  try {
-    const saved = window.localStorage.getItem(COMMAND_INBOX_KEY);
-    const current = saved ? JSON.parse(saved) : [];
-    const safeCurrent = Array.isArray(current) ? current : [];
+    const thread = map.get(key);
+    if (row.jobId && !thread.jobId) thread.jobId = row.jobId;
+    if (row.jobTitle && thread.jobTitle === "Job message") thread.jobTitle = row.jobTitle;
+    if (row.workerName && thread.workerName === "Worker") thread.workerName = row.workerName;
+    if (row.notificationId) thread.notificationIds.push(row.notificationId);
+    thread.unread = thread.unread || Boolean(row.unread);
 
-    const slip = {
-      id: `message-${message.id}-${Date.now()}`,
-      group: "Messages",
-      title: "Message needs owner review",
-      info: `${message.from} · ${message.subject}`,
-      urgency: message.priority,
-      found: `${message.from} sent a ${message.type.toLowerCase()} message.`,
-      prepared: message.reply
-        ? `Draft reply prepared: ${message.reply}`
-        : "Churvox prepared a reply review slip.",
-      why: "Messages can affect jobs, invoices, quotes or customer expectations, so the owner should approve first.",
-      owner: "Approve reply, edit it, mark handled, or open the linked area.",
-      area: "Messages",
-      page: "messages",
-      fromInbox: true,
-      createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...safeCurrent].slice(0, 20)));
-    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "message-command" } }));
-  } catch {
-    // Fresh preview keeps working without local storage.
-  }
-}
-
-function pageForArea(area) {
-  const clean = String(area || "").toLowerCase();
-
-  if (clean.includes("job")) return "jobs";
-  if (clean.includes("extra")) return "extras";
-  if (clean.includes("dispatch")) return "dispatch";
-  if (clean.includes("invoice")) return "invoices";
-  if (clean.includes("quote")) return "quotes";
-  if (clean.includes("client")) return "clients";
-  if (clean.includes("worker")) return "worker";
-
-  return "command";
-}
-
-export default function FreshMessages({ onNavigate }) {
-  const [messages, setMessages] = React.useState(readMessages);
-  const [selectedId, setSelectedId] = React.useState(() => readMessages()[0]?.id || "");
-  const selected = messages.find((item) => item.id === selectedId) || messages[0];
-
-  const needsReply = messages.filter((item) => item.status === "Needs reply").length;
-  const highPriority = messages.filter((item) => item.priority === "High").length;
-  const handled = messages.filter((item) => item.status === "Handled").length;
-
-  function updateMessage(id, patch) {
-    setMessages((current) => {
-      const next = current.map((item) => (item.id === id ? { ...item, ...patch } : item));
-      saveMessages(next);
-      return next;
+    const incoming = row.messages || (row.message ? [row.message] : []);
+    incoming.forEach((message) => {
+      const messageKey = `${message.direction}:${cleanText(message.text).toLowerCase()}`;
+      if (!thread.messages.some((existing) => `${existing.direction}:${cleanText(existing.text).toLowerCase()}` === messageKey)) {
+        thread.messages.push(message);
+      }
     });
   }
 
-  function addMessage() {
-    const next = {
-      id: `msg-${Date.now()}`,
-      from: "New customer",
-      type: "Customer",
-      status: "Needs reply",
-      subject: "New message",
-      lastMessage: "Type the message details here.",
-      reply: "",
-      linkedArea: "Jobs",
-      priority: "Medium",
+  notificationRows.filter(Boolean).forEach(ensure);
+  jobRows.filter(Boolean).forEach(ensure);
+
+  return Array.from(map.values())
+    .map((thread) => ({
+      ...thread,
+      messages: thread.messages.sort((a, b) => new Date(a.at || 0) - new Date(b.at || 0)),
+    }))
+    .sort((a, b) => {
+      const aTime = new Date(a.messages.at(-1)?.at || 0).getTime();
+      const bTime = new Date(b.messages.at(-1)?.at || 0).getTime();
+      if (a.unread !== b.unread) return a.unread ? -1 : 1;
+      return bTime - aTime;
+    });
+}
+
+export default function FreshMessages({ onNavigate }) {
+  const { get, post, patch } = useApi();
+  const [threads, setThreads] = React.useState([]);
+  const [selectedId, setSelectedId] = React.useState("");
+  const [drafts, setDrafts] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
+  const [status, setStatus] = React.useState("");
+
+  const selected = threads.find((thread) => thread.id === selectedId) || threads[0] || null;
+  const selectedDraft = selected ? drafts[selected.id] || "" : "";
+  const unread = threads.filter((thread) => thread.unread).length;
+  const needsReply = threads.filter((thread) => thread.messages.at(-1)?.direction === "from_worker").length;
+  const jobLinked = threads.filter((thread) => thread.jobId).length;
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    setStatus("");
+    try {
+      const [notificationRes, jobsRes] = await Promise.all([
+        get(`/notifications?limit=80&ts=${Date.now()}`),
+        get(`/jobs?limit=120&ts=${Date.now()}`),
+      ]);
+
+      const notifications = notificationRes?.success ? listFrom(notificationRes.data, ["notifications"]) : [];
+      const jobs = jobsRes?.success ? listFrom(jobsRes.data, ["jobs"]) : [];
+      const next = mergeThreads(
+        notifications.map(notificationMessage),
+        jobs.map(jobMessages),
+      );
+
+      setThreads(next);
+      setSelectedId((current) => next.some((thread) => thread.id === current) ? current : next[0]?.id || "");
+      if (!next.length) setStatus("No worker messages found in live notifications or job records yet.");
+    } finally {
+      setLoading(false);
+    }
+  }, [get]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  function updateDraft(value) {
+    if (!selected) return;
+    setDrafts((current) => ({ ...current, [selected.id]: value }));
+  }
+
+  async function markSelectedRead() {
+    if (!selected) return;
+    setThreads((current) => current.map((thread) => thread.id === selected.id ? { ...thread, unread: false } : thread));
+    await Promise.all(selected.notificationIds.map((id) => patch(`/notifications/${encodeURIComponent(id)}/read`, {}).catch(() => null)));
+    setStatus("Marked as read.");
+  }
+
+  function openLinkedJob() {
+    if (selected?.jobId) {
+      try { window.localStorage.setItem("churvox:fresh-open-job-id:v1", selected.jobId); } catch {}
+    }
+    if (onNavigate) onNavigate("jobs");
+    else window.location.href = "/dashboard#jobs";
+  }
+
+  async function sendReply() {
+    if (!selected) return;
+    const note = selectedDraft.trim();
+    if (!note) {
+      setStatus("Write the owner reply first.");
+      return;
+    }
+    if (!selected.jobId) {
+      setStatus("This message has no linked job id, so Churvox cannot send a worker reply from here.");
+      return;
+    }
+
+    const payload = {
+      owner_note: note,
+      boss_note: note,
+      send_back_note: note,
+      work_review_status: "sent_back",
+      review_status: "sent_back",
+      owner_review_status: "sent_back",
+      worker_action_required: true,
+      status: "assigned",
     };
 
-    const updated = [next, ...messages];
-    setMessages(updated);
-    setSelectedId(next.id);
-    saveMessages(updated);
-  }
+    const endpoints = [
+      `/worker/jobs/${encodeURIComponent(selected.jobId)}/send-back`,
+      `/jobs/${encodeURIComponent(selected.jobId)}/send-back`,
+    ];
 
-  function resetMessages() {
-    saveMessages(defaults);
-    setMessages(defaults);
-    setSelectedId(defaults[0]?.id || "");
-  }
-
-  function sendToCommand() {
-    if (!selected) return;
-    sendMessageToCommand(selected);
-    onNavigate?.("command");
+    setLoading(true);
+    try {
+      for (const endpoint of endpoints) {
+        const res = await post(endpoint, payload);
+        if (res?.success && res.data?.success !== false) {
+          setDrafts((current) => ({ ...current, [selected.id]: "" }));
+          setStatus("Reply sent back to the worker.");
+          await markSelectedRead();
+          await load();
+          return;
+        }
+      }
+      setStatus("Reply could not be sent. Open the linked job and try from the job review controls.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <section className="freshMessagesPage">
       <div className="freshMessagesHero">
         <div>
-          <span>Messages</span>
-          <h1>Customer and worker messages</h1>
-          <p>Keep replies controlled. Worker and customer messages can be reviewed in Command before they become promises.</p>
+          <span>Owner inbox</span>
+          <h1>Messages</h1>
+          <p>Worker messages, job notes, and send-back replies are kept here so Jobs, Clients, Quotes, and Invoices stay as clean records.</p>
         </div>
 
         <div className="freshMessagesStats">
-          <div><b>{messages.length}</b><small>threads</small></div>
-          <div><b>{needsReply}</b><small>needs reply</small></div>
-          <div><b>{highPriority}</b><small>high priority</small></div>
-          <div><b>{handled}</b><small>handled</small></div>
+          <div><b>{threads.length}</b><small>threads</small></div>
+          <div><b>{unread}</b><small>unread</small></div>
+          <div><b>{needsReply}</b><small>need reply</small></div>
+          <div><b>{jobLinked}</b><small>linked jobs</small></div>
         </div>
       </div>
 
@@ -178,116 +350,89 @@ export default function FreshMessages({ onNavigate }) {
         <aside className="freshMessagesList">
           <header>
             <div>
-              <b>Inbox</b>
-              <span>Owner controlled replies</span>
+              <b>Worker board</b>
+              <span>{loading ? "Refreshing live messages" : "Live from notifications and jobs"}</span>
             </div>
-
-            <button type="button" onClick={addMessage}>Add</button>
+            <button type="button" onClick={load} disabled={loading}>{loading ? "Wait" : "Refresh"}</button>
           </header>
 
-          {messages.map((message) => (
-            <button
-              type="button"
-              key={message.id}
-              className={selected?.id === message.id ? "active" : ""}
-              onClick={() => setSelectedId(message.id)}
-            >
-              <b>{message.subject}</b>
-              <span>{message.from}</span>
-              <small>{message.status} · {message.priority}</small>
-            </button>
-          ))}
+          {!loading && !threads.length ? (
+            <article className="freshMessagesEmpty">
+              <b>No messages found</b>
+              <span>When a worker contacts the office or leaves completion notes, the thread will appear here.</span>
+            </article>
+          ) : null}
 
-          <button type="button" className="freshMessagesReset" onClick={resetMessages}>
-            Reset messages
-          </button>
+          {threads.map((thread) => {
+            const last = thread.messages.at(-1);
+            return (
+              <button
+                type="button"
+                key={thread.id}
+                className={`${selected?.id === thread.id ? "active" : ""} ${thread.unread ? "unread" : ""}`}
+                onClick={() => setSelectedId(thread.id)}
+              >
+                <b>{thread.workerName}</b>
+                <span>{thread.jobTitle}</span>
+                <small>{thread.unread ? "Unread" : "Open"} - {last?.label || "Message"}{last?.at ? ` - ${timeLabel(last.at)}` : ""}</small>
+              </button>
+            );
+          })}
         </aside>
 
-        {selected && (
+        {selected ? (
           <article className="freshMessagesDetail">
             <div className="freshMessagesHead">
               <div>
-                <span>{selected.type}</span>
-                <h2>{selected.subject}</h2>
-                <p>{selected.from} · linked to {selected.linkedArea}</p>
+                <span>{selected.unread ? "Needs attention" : "Thread"}</span>
+                <h2>{selected.workerName}</h2>
+                <p>{selected.jobTitle}{selected.jobId ? ` - job ${selected.jobId}` : " - no linked job id"}</p>
               </div>
 
               <div className="freshMessagesHeadActions">
-                <button type="button" onClick={sendToCommand}>Send to Command</button>
-                <button type="button" onClick={() => onNavigate?.(pageForArea(selected.linkedArea))}>Open linked area</button>
+                <button type="button" onClick={sendReply} disabled={loading || !selectedDraft.trim()}>Send reply</button>
+                <button type="button" onClick={openLinkedJob}>Open job</button>
               </div>
             </div>
 
-            <div className="freshMessagesConversation">
+            <div className="freshMessagesConversation freshMessagesMessageList">
               <section>
-                <span>Incoming</span>
-                <p>{selected.lastMessage}</p>
+                <span>Thread</span>
+                <div className="freshMessagesBubbles">
+                  {selected.messages.map((message) => (
+                    <article key={message.id} className={message.direction === "to_worker" ? "outbound" : "inbound"}>
+                      <b>{message.label}</b>
+                      <p>{message.text}</p>
+                      <small>{message.source}{message.at ? ` - ${timeLabel(message.at)}` : ""}</small>
+                    </article>
+                  ))}
+                </div>
               </section>
 
               <section>
-                <span>Draft reply</span>
+                <span>Owner reply</span>
+                <p>Use this when the worker needs a fix, answer, or clarification. It sends back on the linked job.</p>
                 <textarea
-                  value={selected.reply}
-                  onChange={(event) => updateMessage(selected.id, { reply: event.target.value })}
-                  placeholder="Write the reply here before sending to Command..."
+                  value={selectedDraft}
+                  onChange={(event) => updateDraft(event.target.value)}
+                  placeholder="Write the reply for the worker..."
                 />
               </section>
             </div>
 
-            <div className="freshMessagesForm">
-              <label>
-                <span>From</span>
-                <input value={selected.from} onChange={(event) => updateMessage(selected.id, { from: event.target.value })} />
-              </label>
-
-              <label>
-                <span>Type</span>
-                <select value={selected.type} onChange={(event) => updateMessage(selected.id, { type: event.target.value })}>
-                  <option>Customer</option>
-                  <option>Worker</option>
-                  <option>Internal</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Status</span>
-                <select value={selected.status} onChange={(event) => updateMessage(selected.id, { status: event.target.value })}>
-                  <option>Needs reply</option>
-                  <option>Open</option>
-                  <option>Watching</option>
-                  <option>Handled</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Priority</span>
-                <select value={selected.priority} onChange={(event) => updateMessage(selected.id, { priority: event.target.value })}>
-                  <option>Low</option>
-                  <option>Medium</option>
-                  <option>High</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Linked area</span>
-                <select value={selected.linkedArea} onChange={(event) => updateMessage(selected.id, { linkedArea: event.target.value })}>
-                  <option>Jobs</option>
-                  <option>Dispatch</option>
-                  <option>Extras</option>
-                  <option>Invoices</option>
-                  <option>Quotes</option>
-                  <option>Clients</option>
-                  <option>Worker</option>
-                </select>
-              </label>
-            </div>
+            {status ? <p className="freshMessagesStatus">{status}</p> : null}
 
             <div className="freshMessagesActions">
-              <button type="button" onClick={() => updateMessage(selected.id, { status: "Handled" })}>Mark handled</button>
-              <button type="button" onClick={() => updateMessage(selected.id, { status: "Watching" })}>Watch</button>
-              <button type="button" onClick={() => updateMessage(selected.id, { status: "Needs reply" })}>Needs reply</button>
-              <button type="button" onClick={() => onNavigate?.("command")}>Open Command</button>
+              <button type="button" onClick={sendReply} disabled={loading || !selectedDraft.trim()}>Send reply to worker</button>
+              <button type="button" onClick={markSelectedRead}>Mark read</button>
+              <button type="button" onClick={openLinkedJob}>Open linked job</button>
+              <button type="button" onClick={routeToMessages}>Copy messages link</button>
             </div>
+          </article>
+        ) : (
+          <article className="freshMessagesDetail freshMessagesEmptyDetail">
+            <b>Messages board</b>
+            <span>{status || "Loading live worker messages..."}</span>
           </article>
         )}
       </div>
