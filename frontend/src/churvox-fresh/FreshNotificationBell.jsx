@@ -59,14 +59,48 @@ function isUnread(item) {
   return item?.read !== true && item?.is_read !== true && item?.read_at == null;
 }
 
+function parseBackendDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value === "object") {
+    if (value.$date) return parseBackendDate(value.$date);
+    if (value.date) return parseBackendDate(value.date);
+  }
+
+  if (typeof value === "number") {
+    const millis = value < 10000000000 ? value * 1000 : value;
+    const date = new Date(millis);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  let raw = String(value || "").trim();
+  if (!raw) return null;
+
+  if (/^\d+$/.test(raw)) return parseBackendDate(Number(raw));
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw)) raw = raw.replace(" ", "T");
+
+  const looksLikeIsoDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw);
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(raw);
+  const normalized = looksLikeIsoDateTime && !hasTimezone ? `${raw}Z` : raw;
+  const date = new Date(normalized);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function timeAgo(value) {
-  const date = value ? new Date(value) : null;
-  if (!date || Number.isNaN(date.getTime())) return "";
-  const diff = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  const date = parseBackendDate(value);
+  if (!date) return "";
+
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
   if (diff < 60) return "now";
   if (diff < 3600) return `${Math.floor(diff / 60)}m`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  return `${Math.floor(diff / 86400)}d`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function createdAtOf(item) {
+  return item?.created_at || item?.createdAt || item?.updated_at || item?.updatedAt || item?.sent_at || item?.sentAt || item?.read_at || item?.readAt || "";
 }
 
 export default function FreshNotificationBell() {
@@ -155,11 +189,11 @@ export default function FreshNotificationBell() {
             ) : null}
 
             {items.map((item) => (
-              <button key={idOf(item) || `${titleOf(item)}-${item?.created_at}`} type="button" className={isUnread(item) ? "unread" : ""} onClick={() => openNotification(item)}>
+              <button key={idOf(item) || `${titleOf(item)}-${createdAtOf(item)}`} type="button" className={isUnread(item) ? "unread" : ""} onClick={() => openNotification(item)}>
                 <em>{iconOf(item)}</em>
                 <span>{titleOf(item)}</span>
                 <b>{bodyOf(item) || "Open notification"}</b>
-                <small>{timeAgo(item?.created_at || item?.createdAt || item?.updated_at)}</small>
+                <small>{timeAgo(createdAtOf(item))}</small>
               </button>
             ))}
           </div>
