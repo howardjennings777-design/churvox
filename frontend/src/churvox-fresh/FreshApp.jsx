@@ -127,6 +127,12 @@ import "./freshOwnerShellFinal.css";
 const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch", "routes"];
 const COMMAND_ALIASES = ["askchurvox", "aioperatorstudio", "quickcreateai", "followupwriter", "quoteai", "invoicecheck", "workerbrief"];
 const MESSAGE_ALIASES = ["inbox", "workermessages", "worker-messages", "workerinbox", "worker-inbox"];
+const JOB_RECORD_ALIASES = ["topstatus", "documents", "photos", "inventory", "recurring", "services", "quality", "safety", "warranties", "materialsreminder", "materialsai", "extras"];
+const CLIENT_RECORD_ALIASES = ["feedback", "reviews", "reviewbooster"];
+const QUOTE_RECORD_ALIASES = ["variations"];
+const PAYMENT_RECORD_ALIASES = ["expenses"];
+const TEAM_RECORD_ALIASES = ["contractors", "subcontractors"];
+const SUPPORT_ALIASES = ["helpdesk", "trust", "roadmap"];
 
 const pages = {
   planday: FreshPlanMyDay,
@@ -201,6 +207,12 @@ function canonicalPage(value, fallback = "planday") {
   if (PLAN_DAY_ALIASES.includes(key)) return "planday";
   if (COMMAND_ALIASES.includes(key)) return "command";
   if (MESSAGE_ALIASES.includes(key)) return "messages";
+  if (JOB_RECORD_ALIASES.includes(key)) return "jobs";
+  if (CLIENT_RECORD_ALIASES.includes(key)) return "clients";
+  if (QUOTE_RECORD_ALIASES.includes(key)) return "quotes";
+  if (PAYMENT_RECORD_ALIASES.includes(key)) return "payments";
+  if (TEAM_RECORD_ALIASES.includes(key)) return "team";
+  if (SUPPORT_ALIASES.includes(key)) return "support";
   return key || fallback;
 }
 
