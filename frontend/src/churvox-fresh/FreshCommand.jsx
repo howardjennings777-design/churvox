@@ -117,20 +117,30 @@ function idOf(value, fallback = "") {
   return fallback;
 }
 
+function readableAction(value) {
+  const text = cleanString(value || "");
+  if (!text) return "Ready to approve";
+  return text
+    .replace(/^create job$/i, "Create job")
+    .replace(/^create invoice$/i, "Create invoice")
+    .replace(/^send payment followup$/i, "Send payment follow-up")
+    .replace(/^prepare quote followup$/i, "Send quote follow-up");
+}
+
 function titleOf(item) {
   const title = usefulValue(item?.title || item?.summary);
   if (title) return title;
   const category = usefulValue(item?.category || item?.group);
   const action = usefulValue(item?.action || item?.type);
-  if (category || action) return [category, action].filter(Boolean).join(" - ");
-  return item?.preparedForApproval === false ? "Scan diagnostic" : "Prepared admin action";
+  if (category || action) return readableAction([action, category].filter(Boolean).join(" "));
+  return item?.preparedForApproval === false ? "Not ready" : "Ready to approve";
 }
 
 function summaryOf(item) {
   const summary = usefulValue(item?.summary || item?.message || item?.description || item?.original_text);
   if (summary) return summary;
-  if (item?.preparedForApproval === false) return "Hidden from the owner approval queue because it is not a concrete prepared action.";
-  return "Prepared for owner approval.";
+  if (item?.preparedForApproval === false) return "This is not ready for approval yet.";
+  return "Ready for your decision.";
 }
 
 function statusOf(item) {
@@ -220,8 +230,8 @@ function detailRows(item) {
   if (!item) return [];
   if (item.preparedForApproval === false) {
     return [{
-      label: "Diagnostic only",
-      value: "This backend row is not shown as owner work because Churvox has not prepared a concrete draft, message, record change, amount, date, or next action for approval.",
+      label: "Not ready",
+      value: "Churvox has not prepared a clear action for this yet.",
     }];
   }
 
@@ -231,16 +241,16 @@ function detailRows(item) {
   const reason = usefulValue(item?.why || item?.reason);
   const owner = usefulValue(item?.owner || item?.owner_note || item?.owner_instruction);
 
-  if (found) rows.push({ label: "Record found", value: found });
-  if (prepared) rows.push({ label: "Prepared action", value: prepared });
+  if (found) rows.push({ label: "What Churvox found", value: found });
+  if (prepared) rows.push({ label: "Ready for you", value: prepared });
   rows.push(...objectRows("Draft", item?.draft));
-  rows.push(...objectRows("Prepared fields", item?.payload));
-  rows.push(...objectRows("Prepared fields", item?.details));
+  rows.push(...objectRows("Details", item?.payload));
+  rows.push(...objectRows("Details", item?.details));
   rows.push(...objectRows("Preview", item?.preview));
-  if (reason) rows.push({ label: "Why approval is needed", value: reason });
-  if (owner) rows.push({ label: "Owner instruction", value: owner });
+  if (reason) rows.push({ label: "Why this matters", value: reason });
+  if (owner) rows.push({ label: "Your note", value: owner });
 
-  return rows.length ? rows : [{ label: "Prepared action", value: summaryOf(item) }];
+  return rows.length ? rows : [{ label: "Ready for you", value: summaryOf(item) }];
 }
 
 const selectedFilterButtonStyle = {
@@ -279,7 +289,7 @@ export default function FreshCommand({ onNavigate }) {
   const [activity, setActivity] = React.useState(loadActivity);
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState("");
-  const [message, setMessage] = React.useState("Checking prepared admin.");
+  const [message, setMessage] = React.useState("Checking work for you.");
   const [ownerNote, setOwnerNote] = React.useState("");
 
   const backendRows = backendItems.map((item) => {
@@ -319,21 +329,21 @@ export default function FreshCommand({ onNavigate }) {
     setLoading(true);
     try {
       const result = await get("/ai-review-items?limit=200", { timeout: 25000 });
-      if (!result?.success) throw new Error(result?.error || "Backend Review is protected or not ready.");
+      if (!result?.success) throw new Error(result?.error || "Command is protected or not ready.");
       const next = asArray(result.data ?? result);
-      const preparedCount = next.filter((item) => hasConcretePreparedAction({ ...item, sourceMode: "backend" })).length;
-      const hiddenCount = Math.max(0, next.length - preparedCount);
+      const readyCount = next.filter((item) => hasConcretePreparedAction({ ...item, sourceMode: "backend" })).length;
+      const waitingCount = Math.max(0, next.length - readyCount);
       setBackendItems(next);
-      if (preparedCount) {
-        setMessage(`${preparedCount} prepared admin action${preparedCount === 1 ? "" : "s"} ready for owner approval.${hiddenCount ? ` ${hiddenCount} diagnostic row${hiddenCount === 1 ? "" : "s"} hidden from Open.` : ""}`);
-      } else if (hiddenCount) {
-        setMessage(`No prepared admin waiting. ${hiddenCount} backend diagnostic row${hiddenCount === 1 ? "" : "s"} hidden from the owner approval queue.`);
+      if (readyCount) {
+        setMessage(`${readyCount} item${readyCount === 1 ? "" : "s"} ready for your decision.`);
+      } else if (waitingCount) {
+        setMessage("Nothing is ready for approval yet.");
       } else {
-        setMessage("No prepared admin waiting right now.");
+        setMessage("No work waiting for you right now.");
       }
     } catch (err) {
       setBackendItems([]);
-      setMessage(err?.message || "Backend Review is protected or not ready.");
+      setMessage(err?.message || "Command is protected or not ready.");
     } finally {
       setLocalItems(readLegacyInbox());
       setLoading(false);
@@ -383,13 +393,13 @@ export default function FreshCommand({ onNavigate }) {
     setBusy("approve");
     try {
       const result = await post(`/ai-review-items/${encodeURIComponent(id)}/approve`, { note: ownerNote }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || "Could not approve prepared action.");
+      if (!result?.success) throw new Error(result?.error || "Could not approve this.");
       addActivity(titleOf(selected), "Approved");
-      setMessage("Approved. Churvox executed the owner-approved backend action.");
+      setMessage("Approved. Churvox handled it.");
       setSelectedId("");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not approve prepared action.");
+      setMessage(err?.message || "Could not approve this.");
     } finally {
       setBusy("");
     }
@@ -402,12 +412,12 @@ export default function FreshCommand({ onNavigate }) {
     setBusy("save");
     try {
       const result = await patch(`/ai-review-items/${encodeURIComponent(id)}`, { note: ownerNote }, { timeout: 25000 });
-      if (!result?.success) throw new Error(result?.error || "Could not save owner edit.");
+      if (!result?.success) throw new Error(result?.error || "Could not save your edit.");
       addActivity(titleOf(selected), "Edited");
-      setMessage("Saved. Prepared admin stays owner-controlled.");
+      setMessage("Saved. It is still waiting for your approval.");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not save owner edit.");
+      setMessage(err?.message || "Could not save your edit.");
     } finally {
       setBusy("");
     }
@@ -420,13 +430,13 @@ export default function FreshCommand({ onNavigate }) {
     setBusy("ignore");
     try {
       const result = await post(`/ai-review-items/${encodeURIComponent(id)}/ignore`, { note: ownerNote }, { timeout: 25000 });
-      if (!result?.success) throw new Error(result?.error || "Could not ignore item.");
+      if (!result?.success) throw new Error(result?.error || "Could not ignore this.");
       addActivity(titleOf(selected), "Ignored");
-      setMessage("Ignored. No action was executed.");
+      setMessage("Ignored. Nothing was changed.");
       setSelectedId("");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not ignore item.");
+      setMessage(err?.message || "Could not ignore this.");
     } finally {
       setBusy("");
     }
@@ -434,7 +444,7 @@ export default function FreshCommand({ onNavigate }) {
 
   async function promoteLocalItems() {
     if (!localItems.length) {
-      setMessage("No browser-only slips to promote.");
+      setMessage("No saved browser notes to move into Command.");
       return;
     }
 
@@ -455,8 +465,8 @@ export default function FreshCommand({ onNavigate }) {
 
     if (promoted) clearLegacyInbox();
     setLocalItems(readLegacyInbox());
-    addActivity("Browser slips promoted", promoted ? "Promoted" : "Failed");
-    setMessage(promoted ? `Promoted ${promoted} local slip${promoted === 1 ? "" : "s"}. Only concrete prepared actions will appear in Open.${failed ? ` ${failed} failed.` : ""}` : "Could not promote local slips into prepared admin.");
+    addActivity("Saved notes moved in", promoted ? "Moved" : "Failed");
+    setMessage(promoted ? `Moved ${promoted} saved note${promoted === 1 ? "" : "s"} into Command.${failed ? ` ${failed} failed.` : ""}` : "Could not move saved notes into Command.");
     setBusy("");
     await loadReview();
   }
@@ -466,12 +476,12 @@ export default function FreshCommand({ onNavigate }) {
     try {
       const text = "Prepare completed admin work for owner approval from real Churvox records. Return only concrete approval-ready items: draft invoice from completed job, payment follow-up message for unpaid invoice, quote follow-up message, client detail request, worker acknowledgement reminder, payroll review summary, or Xero draft sync check. Each item must include the exact record, customer or worker, amount/date/status where relevant, and the prepared draft/message/change. Do not create explanation-only or needs-clarification cards. Owner approval required. Do not send invoices, file tax, create bank payout files, or mark paid automatically.";
       const result = await post("/tell-churvox/prepare", { text }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || "Could not prepare backend admin scan.");
-      addActivity("Backend admin scan", "Prepared");
-      setMessage("Backend scan finished. Command will show only concrete prepared admin actions in Open.");
+      if (!result?.success) throw new Error(result?.error || "Could not check for work.");
+      addActivity("Checked for work", "Done");
+      setMessage("Checked. Anything ready for you will appear in Open.");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not prepare backend admin scan.");
+      setMessage(err?.message || "Could not check for work.");
     } finally {
       setBusy("");
     }
@@ -485,18 +495,18 @@ export default function FreshCommand({ onNavigate }) {
   return (
     <section className="freshCommandStablePage freshPayrollCompactPage">
       <header className="freshHero">
-        <span>Churvox fresh - Command</span>
-        <h1>Command</h1>
-        <p>Churvox prepares the admin. The owner approves, edits, ignores, or opens the source record.</p>
+        <span>Command</span>
+        <h1>Ready for approval</h1>
+        <p>Churvox does the admin first. You approve, edit, ignore, or open the job it came from.</p>
       </header>
 
       <section className="freshCommandPulse">
-        <aside className="freshCard"><h2>{loading ? "..." : counts.Open}</h2><p>Prepared admin actions</p></aside>
-        <aside className="freshCard"><h2>{loading ? "..." : counts.Local}</h2><p>Browser slips to promote</p></aside>
-        <aside className="freshCard"><h2>{loading ? "..." : moneyWatched}</h2><p>Money actions ready</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : counts.Open}</h2><p>Waiting for you</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : counts.Local}</h2><p>Saved notes</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : moneyWatched}</h2><p>Money items</p></aside>
       </section>
 
-      {message ? <section className="freshBackendReviewSource" data-review-source="backend"><div><span>Backend-owned approval queue</span><h2>{message}</h2><p>Open only shows real prepared admin. Generic scan diagnostics stay out of the owner approval flow.</p></div><aside><b>{counts.Open}</b><small>prepared item{counts.Open === 1 ? "" : "s"}</small></aside></section> : null}
+      {message ? <section className="freshBackendReviewSource" data-review-source="backend"><div><span>Your approval queue</span><h2>{message}</h2><p>Only clear, ready-to-approve work appears in Open.</p></div><aside><b>{counts.Open}</b><small>waiting</small></aside></section> : null}
 
       <section className="freshCommandFilterBar">
         {commandFilters.map((item) => (
@@ -509,16 +519,16 @@ export default function FreshCommand({ onNavigate }) {
 
       <section className="freshGrid">
         <aside className="freshCard freshJobsListCard">
-          <h2>{filter === "All" ? "Prepared queue and diagnostics" : "Prepared approval queue"}</h2>
-          {loading && !visibleRows.length ? <div className="freshItem"><b>Checking prepared admin...</b><span>Loading owner approval work.</span></div> : null}
-          {!loading && !visibleRows.length ? <div className="freshItem"><b>No prepared admin in this filter</b><span>Run backend scan or promote browser slips. Explanation-only diagnostics stay out of Open.</span></div> : null}
+          <h2>{filter === "All" ? "All items" : "Waiting for approval"}</h2>
+          {loading && !visibleRows.length ? <div className="freshItem"><b>Checking...</b><span>Looking for work waiting on you.</span></div> : null}
+          {!loading && !visibleRows.length ? <div className="freshItem"><b>Nothing waiting here</b><span>Run Check for work or move saved notes into Command.</span></div> : null}
           {visibleRows.map((item, index) => {
             const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`;
             const diagnostic = item.sourceMode === "backend" && !item.preparedForApproval;
             return (
               <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "local" || diagnostic ? "need" : ""}`} key={key} onClick={() => setSelectedId(key)}>
                 <b>{titleOf(item)}</b>
-                <span>{categoryOf(item)} - {item.sourceMode === "local" ? "browser-only" : diagnostic ? "diagnostic only" : statusOf(item)} - {summaryOf(item)}</span>
+                <span>{item.sourceMode === "local" ? "saved note" : diagnostic ? "not ready" : "ready"} - {summaryOf(item)}</span>
               </button>
             );
           })}
@@ -526,45 +536,45 @@ export default function FreshCommand({ onNavigate }) {
 
         <section className="freshCard freshJobsDetailCard">
           <div className="freshJobsDetailHeader">
-            <div><small>{selected?.sourceMode === "local" ? "Browser-only slip" : selectedDiagnosticOnly ? "Backend diagnostic" : "Prepared backend action"}</small><h2>{selected ? titleOf(selected) : "No prepared admin selected"}</h2></div>
-            {selected ? <span className={selected.sourceMode === "local" || selectedDiagnosticOnly ? "need" : "ready"}>{selected.sourceMode === "local" ? "Promote first" : selectedDiagnosticOnly ? "Diagnostic only" : statusOf(selected)}</span> : null}
+            <div><small>{selected?.sourceMode === "local" ? "Saved note" : selectedDiagnosticOnly ? "Not ready" : "Ready for your decision"}</small><h2>{selected ? titleOf(selected) : "Nothing selected"}</h2></div>
+            {selected ? <span className={selected.sourceMode === "local" || selectedDiagnosticOnly ? "need" : "ready"}>{selected.sourceMode === "local" ? "Move first" : selectedDiagnosticOnly ? "Not ready" : "Ready"}</span> : null}
           </div>
 
           {selected ? (
             <>
               <div className="freshMiniGrid freshJobsMiniGrid">
-                <div><span>Source</span><b>{selected.sourceMode === "local" ? "Browser slip" : "Backend"}</b></div>
-                <div><span>Category</span><b>{categoryOf(selected)}</b></div>
-                <div><span>Action</span><b>{selectedDiagnosticOnly ? "No approval action" : selected.action || selected.type || "prepared action"}</b></div>
-                <div><span>Owner rule</span><b>{selected.sourceMode === "local" ? "Promote first" : selectedDiagnosticOnly ? "Hidden from Open" : "Approve to execute"}</b></div>
+                <div><span>From</span><b>{selected.sourceMode === "local" ? "Saved note" : "Churvox"}</b></div>
+                <div><span>Type</span><b>{categoryOf(selected)}</b></div>
+                <div><span>What will happen</span><b>{selectedDiagnosticOnly ? "Nothing yet" : readableAction(selected.action || selected.type)}</b></div>
+                <div><span>Your choice</span><b>{selected.sourceMode === "local" ? "Move into Command" : selectedDiagnosticOnly ? "Skip for now" : "Approve, edit, or ignore"}</b></div>
               </div>
 
               <section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>
               {detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}
 
-              <label className="freshField"><span>Owner note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Add approval note, edit instruction, or reason for ignoring" /></label>
+              <label className="freshField"><span>Your note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Add a note, edit instruction, or reason for ignoring" /></label>
             </>
-          ) : <div className="freshItem"><b>No prepared admin waiting</b><span>The approval panel stays empty until Churvox has a real draft, message, record change, or review summary ready for you.</span></div>}
+          ) : <div className="freshItem"><b>Nothing waiting</b><span>When Churvox has a real draft, message, job change, or invoice check ready, it will appear here.</span></div>}
         </section>
 
         <aside className="freshCard freshJobsActionsCard">
-          <h2>Owner controls</h2>
-          <p className="freshJobsActionHint">Prepared backend actions execute only after owner approval.</p>
+          <h2>Your controls</h2>
+          <p className="freshJobsActionHint">Nothing changes until you approve it.</p>
           <div className="freshActions freshJobsActionStack">
-            <button className="freshPrimary" type="button" disabled={!selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedDiagnosticOnly ? "Diagnostic only" : "Approve prepared action"}</button>
+            <button className="freshPrimary" type="button" disabled={!selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedDiagnosticOnly ? "Not ready" : "Approve"}</button>
             <button className="freshDark" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button>
             <button className="freshGhost" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>Ignore</button>
-            <button className="freshOrange" type="button" disabled={!localItems.length || busy === "promote"} onClick={promoteLocalItems}>{busy === "promote" ? "Promoting..." : "Promote local slips"}</button>
-            <button className="freshDark" type="button" disabled={busy === "scan"} onClick={scanBackendRisks}>{busy === "scan" ? "Preparing..." : "Run backend scan"}</button>
-            <button className="freshGhost" type="button" disabled={!selected} onClick={openSelectedArea}>Open source area</button>
-            <button className="freshGhost" type="button" onClick={loadReview}>Refresh Review</button>
+            <button className="freshOrange" type="button" disabled={!localItems.length || busy === "promote"} onClick={promoteLocalItems}>{busy === "promote" ? "Moving..." : "Move saved notes"}</button>
+            <button className="freshDark" type="button" disabled={busy === "scan"} onClick={scanBackendRisks}>{busy === "scan" ? "Checking..." : "Check for work"}</button>
+            <button className="freshGhost" type="button" disabled={!selected} onClick={openSelectedArea}>Open source</button>
+            <button className="freshGhost" type="button" onClick={loadReview}>Refresh</button>
           </div>
         </aside>
       </section>
 
       <section className="freshGrid two" style={{ marginTop: 14 }}>
-        <section className="freshCard"><h2>Safe accounting rule</h2><p>Draft invoice sync only. No automatic invoice sending, no tax filing, no bank payout files, and no automatic paid status from Command.</p></section>
-        <aside className="freshCard"><h2>Owner activity</h2>{activity.length ? activity.map((item) => <div className="freshItem freshActivityItem" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></div>) : <div className="freshItem"><b>No decisions yet</b><span>Approve, edit, ignore, scan, or promote to create activity.</span></div>}</aside>
+        <section className="freshCard"><h2>Safety rule</h2><p>Churvox can prepare draft invoices and checks. It will not send invoices, file tax, create bank payout files, or mark anything paid unless you approve the allowed action.</p></section>
+        <aside className="freshCard"><h2>Recent decisions</h2>{activity.length ? activity.map((item) => <div className="freshItem freshActivityItem" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></div>) : <div className="freshItem"><b>No decisions yet</b><span>Approve, edit, ignore, check for work, or move saved notes to create activity.</span></div>}</aside>
       </section>
     </section>
   );
