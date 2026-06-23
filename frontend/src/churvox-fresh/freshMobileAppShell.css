@@ -1,4 +1,7 @@
-.freshMobileAppTop {
+.freshMobileAppTop,
+.freshMobileNav,
+.freshMobileMore,
+.freshMobileQuickActions {
   display: none;
 }
 
@@ -262,10 +265,6 @@
 }
 
 /* CHURVOX_MOBILE_FIELD_MODE_20260622 */
-.freshMobileQuickActions {
-  display: none;
-}
-
 @media (max-width: 900px) {
   html,
   body {
