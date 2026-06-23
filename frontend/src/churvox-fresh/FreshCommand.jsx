@@ -20,6 +20,7 @@ const GENERIC_REVIEW_PHRASES = [
   "needs preparation",
   "needs concrete draft",
   "this card does not include",
+  "came from the instruction",
 ];
 
 const NON_BUSINESS_FIELDS = [
@@ -36,12 +37,69 @@ const NON_BUSINESS_FIELDS = [
   "user_id",
 ];
 
+const HIDDEN_DETAIL_FIELDS = [
+  "what churvox found",
+  "what churvox prepared",
+  "why it needs approval",
+  "owner rule",
+  "owner note",
+  "owner instruction",
+  "summary",
+  "reason",
+];
+
+const EMPTY_BUSINESS_VALUES = ["for", "customer", "client", "none", "n/a", "na", "unknown", "undefined", "null"];
+
+const DETAIL_LABELS = {
+  customer_name: "Customer",
+  customer: "Customer",
+  client_name: "Customer",
+  client: "Customer",
+  contact_name: "Contact",
+  address: "Address",
+  site_address: "Address",
+  service_address: "Address",
+  job_address: "Address",
+  job_title: "Job",
+  job_name: "Job",
+  service: "Work",
+  service_type: "Work",
+  amount: "Amount",
+  total: "Amount",
+  price: "Price",
+  fixed_price: "Price",
+  scheduled_date: "Date",
+  due_date: "Due",
+  worker_name: "Worker",
+  assigned_worker_name: "Worker",
+  phone: "Phone",
+  email: "Email",
+  message_text: "Message",
+  prepared_message: "Message",
+};
+
 function cleanString(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function cleanBusinessText(value) {
+  return cleanString(value)
+    .replace(/^for\s*[-:·•]\s*/i, "")
+    .replace(/^customer\s*[:=-]?\s*$/i, "")
+    .trim();
+}
+
 function normalizedText(value) {
   return cleanString(value).toLowerCase();
+}
+
+function normalizedKey(value) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function isEmptyBusinessValue(value) {
+  const text = normalizedText(value);
+  return !text || EMPTY_BUSINESS_VALUES.includes(text);
 }
 
 function isGenericReviewText(value) {
@@ -63,8 +121,9 @@ function usefulValue(value) {
       .join(". ");
     return isGenericReviewText(text) ? "" : text;
   }
-  const text = cleanString(value);
-  return isGenericReviewText(text) ? "" : text;
+  const text = cleanBusinessText(value);
+  if (isEmptyBusinessValue(text) || isGenericReviewText(text)) return "";
+  return text;
 }
 
 function hasUsefulObject(value) {
@@ -72,6 +131,7 @@ function hasUsefulObject(value) {
   return Object.entries(value).some(([key, v]) => {
     const label = normalizedText(key);
     if (NON_BUSINESS_FIELDS.includes(label)) return false;
+    if (HIDDEN_DETAIL_FIELDS.some((hidden) => label.includes(hidden))) return false;
     return Boolean(usefulValue(v));
   });
 }
@@ -219,11 +279,45 @@ function legacyText(item) {
   ].filter(Boolean).join(". ");
 }
 
-function objectRows(label, value) {
+function displayLabel(key) {
+  const normalized = normalizedKey(key);
+  return DETAIL_LABELS[normalized] || cleanString(key).replace(/^details\s*/i, "");
+}
+
+function shouldShowDetailField(key, value) {
+  const label = normalizedText(key);
+  if (!label || NON_BUSINESS_FIELDS.includes(label)) return false;
+  if (HIDDEN_DETAIL_FIELDS.some((hidden) => label.includes(hidden))) return false;
+  return Boolean(usefulValue(value));
+}
+
+function collectDetailFields(value, seen = new Set()) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  return Object.entries(value)
-    .map(([key, v]) => ({ label: `${label}: ${cleanString(key)}`, value: usefulValue(v) }))
-    .filter((row) => row.value);
+  return Object.entries(value).flatMap(([key, raw]) => {
+    if (!shouldShowDetailField(key, raw)) return [];
+    const val = usefulValue(raw);
+    if (!val) return [];
+    const dedupeKey = `${displayLabel(key)}:${val}`.toLowerCase();
+    if (seen.has(dedupeKey)) return [];
+    seen.add(dedupeKey);
+    return [{ label: displayLabel(key), value: val }];
+  });
+}
+
+function compactDetails(item) {
+  const seen = new Set();
+  return [
+    ...collectDetailFields(item?.payload, seen),
+    ...collectDetailFields(item?.details, seen),
+    ...collectDetailFields(item?.preview, seen),
+    ...collectDetailFields(typeof item?.draft === "object" ? item.draft : null, seen),
+  ].slice(0, 6);
+}
+
+function sameMeaning(a, b) {
+  const left = normalizedText(a);
+  const right = normalizedText(b);
+  return Boolean(left && right && (left === right || left.includes(right) || right.includes(left)));
 }
 
 function detailRows(item) {
@@ -231,26 +325,32 @@ function detailRows(item) {
   if (item.preparedForApproval === false) {
     return [{
       label: "Not ready",
-      value: "Churvox has not prepared a clear action for this yet.",
+      value: "No clear action is ready to approve yet.",
     }];
   }
 
   const rows = [];
-  const found = usefulValue(item?.found || item?.matched_record || item?.source_record);
+  const summary = summaryOf(item);
+  const details = compactDetails(item);
   const prepared = usefulValue(item?.prepared || item?.draft || item?.next_action || item?.recommended_action || item?.approval_action || item?.message_text || item?.prepared_message);
   const reason = usefulValue(item?.why || item?.reason);
-  const owner = usefulValue(item?.owner || item?.owner_note || item?.owner_instruction);
 
-  if (found) rows.push({ label: "What Churvox found", value: found });
-  if (prepared) rows.push({ label: "Ready for you", value: prepared });
-  rows.push(...objectRows("Draft", item?.draft));
-  rows.push(...objectRows("Details", item?.payload));
-  rows.push(...objectRows("Details", item?.details));
-  rows.push(...objectRows("Preview", item?.preview));
-  if (reason) rows.push({ label: "Why this matters", value: reason });
-  if (owner) rows.push({ label: "Your note", value: owner });
+  if (details.length) {
+    rows.push({
+      label: "Details",
+      value: details.map((row) => `${row.label}: ${row.value}`).join(" · "),
+    });
+  }
 
-  return rows.length ? rows : [{ label: "Ready for you", value: summaryOf(item) }];
+  if (prepared && !sameMeaning(prepared, summary) && !sameMeaning(prepared, rows[0]?.value)) {
+    rows.push({ label: "Next step", value: prepared });
+  }
+
+  if (reason && !sameMeaning(reason, summary) && !sameMeaning(reason, prepared)) {
+    rows.push({ label: "Owner check", value: reason });
+  }
+
+  return rows.length ? rows : [{ label: "Ready", value: summary }];
 }
 
 const selectedFilterButtonStyle = {
@@ -543,16 +643,16 @@ export default function FreshCommand({ onNavigate }) {
           {selected ? (
             <>
               <div className="freshMiniGrid freshJobsMiniGrid">
-                <div><span>From</span><b>{selected.sourceMode === "local" ? "Saved note" : "Churvox"}</b></div>
                 <div><span>Type</span><b>{categoryOf(selected)}</b></div>
-                <div><span>What will happen</span><b>{selectedDiagnosticOnly ? "Nothing yet" : readableAction(selected.action || selected.type)}</b></div>
-                <div><span>Your choice</span><b>{selected.sourceMode === "local" ? "Move into Command" : selectedDiagnosticOnly ? "Skip for now" : "Approve, edit, or ignore"}</b></div>
+                <div><span>Action</span><b>{selectedDiagnosticOnly ? "Nothing yet" : readableAction(selected.action || selected.type)}</b></div>
+                <div><span>Status</span><b>{selected.sourceMode === "local" ? "Saved note" : selectedDiagnosticOnly ? "Not ready" : "Ready"}</b></div>
+                <div><span>Decision</span><b>{selected.sourceMode === "local" ? "Move first" : selectedDiagnosticOnly ? "Skip" : "Approve or edit"}</b></div>
               </div>
 
               <section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>
               {detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}
 
-              <label className="freshField"><span>Your note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Add a note, edit instruction, or reason for ignoring" /></label>
+              <label className="freshField"><span>Your note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Optional note before approving or ignoring" /></label>
             </>
           ) : <div className="freshItem"><b>Nothing waiting</b><span>When Churvox has a real draft, message, job change, or invoice check ready, it will appear here.</span></div>}
         </section>
