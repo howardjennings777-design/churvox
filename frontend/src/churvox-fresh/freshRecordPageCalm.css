@@ -6,3 +6,38 @@
 .freshInvoicesPage .freshJobsDetailBox.notes p {
   min-height: 0 !important;
 }
+
+/* CHURVOX_JOBS_LIST_FIVE_VISIBLE_20260624 */
+@media (min-width: 901px) {
+  .freshJobsPage .freshGrid > .freshJobsListCard {
+    max-height: 640px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 10px !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(249, 115, 22, .55) rgba(15, 23, 42, .08) !important;
+  }
+
+  .freshJobsPage .freshGrid > .freshJobsListCard::-webkit-scrollbar {
+    display: block !important;
+    width: 10px !important;
+  }
+
+  .freshJobsPage .freshGrid > .freshJobsListCard::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, .08) !important;
+    border-radius: 999px !important;
+  }
+
+  .freshJobsPage .freshGrid > .freshJobsListCard::-webkit-scrollbar-thumb {
+    background: rgba(249, 115, 22, .55) !important;
+    border-radius: 999px !important;
+  }
+
+  .freshJobsPage .freshGrid > .freshJobsListCard > h2 {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    padding-bottom: 10px !important;
+    background: #fffaf0 !important;
+  }
+}
