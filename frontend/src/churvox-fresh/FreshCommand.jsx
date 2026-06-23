@@ -15,14 +15,37 @@ const GENERIC_REVIEW_PHRASES = [
   "waiting for owner review",
   "approval required",
   "needs_clarification",
+  "needs clarification",
+  "not prepared",
+  "needs preparation",
+  "needs concrete draft",
+  "this card does not include",
+];
+
+const NON_BUSINESS_FIELDS = [
+  "source",
+  "category",
+  "group",
+  "owner_rule",
+  "status",
+  "created_at",
+  "updated_at",
+  "id",
+  "_id",
+  "business_id",
+  "user_id",
 ];
 
 function cleanString(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function normalizedText(value) {
+  return cleanString(value).toLowerCase();
+}
+
 function isGenericReviewText(value) {
-  const text = cleanString(value).toLowerCase();
+  const text = normalizedText(value);
   if (!text) return true;
   return GENERIC_REVIEW_PHRASES.some((phrase) => text === phrase || text.includes(phrase));
 }
@@ -30,6 +53,10 @@ function isGenericReviewText(value) {
 function usefulValue(value) {
   if (value === null || value === undefined) return "";
   if (typeof value === "object") {
+    if (Array.isArray(value)) {
+      const text = value.map((item) => usefulValue(item)).filter(Boolean).join(". ");
+      return isGenericReviewText(text) ? "" : text;
+    }
     const text = Object.entries(value)
       .filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== "")
       .map(([key, v]) => `${cleanString(key)}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
@@ -43,16 +70,32 @@ function usefulValue(value) {
 function hasUsefulObject(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   return Object.entries(value).some(([key, v]) => {
-    const label = cleanString(key).toLowerCase();
-    if (["source", "category", "owner_rule", "status", "created_at", "updated_at"].includes(label)) return false;
+    const label = normalizedText(key);
+    if (NON_BUSINESS_FIELDS.includes(label)) return false;
     return Boolean(usefulValue(v));
   });
+}
+
+function hasPreparedText(item) {
+  return Boolean(usefulValue(
+    item?.prepared ||
+    item?.draft ||
+    item?.next_action ||
+    item?.recommended_action ||
+    item?.approval_action ||
+    item?.message_text ||
+    item?.prepared_message
+  ));
 }
 
 function hasConcretePreparedAction(item) {
   if (!item) return false;
   if (item.sourceMode === "local") return true;
-  if (usefulValue(item.prepared || item.draft || item.next_action || item.recommended_action)) return true;
+
+  const action = normalizedText(item.action || item.type);
+  if (["needs clarification", "needs preparation", "not prepared", "other"].includes(action)) return false;
+
+  if (hasPreparedText(item)) return true;
   if (hasUsefulObject(item.payload) || hasUsefulObject(item.details) || hasUsefulObject(item.preview)) return true;
   return false;
 }
@@ -80,14 +123,14 @@ function titleOf(item) {
   const category = usefulValue(item?.category || item?.group);
   const action = usefulValue(item?.action || item?.type);
   if (category || action) return [category, action].filter(Boolean).join(" - ");
-  return "Review needs prepared action";
+  return item?.preparedForApproval === false ? "Scan diagnostic" : "Prepared admin action";
 }
 
 function summaryOf(item) {
   const summary = usefulValue(item?.summary || item?.message || item?.description || item?.original_text);
   if (summary) return summary;
-  if (!hasConcretePreparedAction(item)) return "This card does not include a concrete draft, record, amount, customer, or next action yet.";
-  return "Prepared for owner review.";
+  if (item?.preparedForApproval === false) return "Hidden from the owner approval queue because it is not a concrete prepared action.";
+  return "Prepared for owner approval.";
 }
 
 function statusOf(item) {
@@ -168,38 +211,36 @@ function legacyText(item) {
 
 function objectRows(label, value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  const rows = Object.entries(value)
+  return Object.entries(value)
     .map(([key, v]) => ({ label: `${label}: ${cleanString(key)}`, value: usefulValue(v) }))
     .filter((row) => row.value);
-  return rows;
 }
 
 function detailRows(item) {
+  if (!item) return [];
+  if (item.preparedForApproval === false) {
+    return [{
+      label: "Diagnostic only",
+      value: "This backend row is not shown as owner work because Churvox has not prepared a concrete draft, message, record change, amount, date, or next action for approval.",
+    }];
+  }
+
   const rows = [];
   const found = usefulValue(item?.found || item?.matched_record || item?.source_record);
-  const prepared = usefulValue(item?.prepared || item?.draft || item?.next_action || item?.recommended_action);
+  const prepared = usefulValue(item?.prepared || item?.draft || item?.next_action || item?.recommended_action || item?.approval_action || item?.message_text || item?.prepared_message);
   const reason = usefulValue(item?.why || item?.reason);
   const owner = usefulValue(item?.owner || item?.owner_note || item?.owner_instruction);
 
-  if (found) rows.push({ label: "Record / trigger found", value: found });
+  if (found) rows.push({ label: "Record found", value: found });
   if (prepared) rows.push({ label: "Prepared action", value: prepared });
-
   rows.push(...objectRows("Draft", item?.draft));
   rows.push(...objectRows("Prepared fields", item?.payload));
   rows.push(...objectRows("Prepared fields", item?.details));
   rows.push(...objectRows("Preview", item?.preview));
-
-  if (reason) rows.push({ label: "Reason", value: reason });
+  if (reason) rows.push({ label: "Why approval is needed", value: reason });
   if (owner) rows.push({ label: "Owner instruction", value: owner });
 
-  if (!hasConcretePreparedAction(item)) {
-    return [{
-      label: "Needs preparation",
-      value: "Churvox has not prepared a real draft/action for this card yet. It needs a specific record, customer, amount/date, fields to change, or message text before approval.",
-    }];
-  }
-
-  return rows.length ? rows : [{ label: "Review", value: summaryOf(item) }];
+  return rows.length ? rows : [{ label: "Prepared action", value: summaryOf(item) }];
 }
 
 const selectedFilterButtonStyle = {
@@ -238,35 +279,41 @@ export default function FreshCommand({ onNavigate }) {
   const [activity, setActivity] = React.useState(loadActivity);
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState("");
-  const [message, setMessage] = React.useState("Checking backend Review.");
+  const [message, setMessage] = React.useState("Checking prepared admin.");
   const [ownerNote, setOwnerNote] = React.useState("");
 
-  const backendRows = backendItems.map((item) => ({ ...item, sourceMode: "backend", listStatus: statusOf(item) }));
-  const localRows = localItems.map((item) => ({ ...item, sourceMode: "local", listStatus: "local" }));
-  const rows = [...backendRows, ...localRows];
+  const backendRows = backendItems.map((item) => {
+    const row = { ...item, sourceMode: "backend", listStatus: statusOf(item) };
+    row.preparedForApproval = hasConcretePreparedAction(row);
+    return row;
+  });
+  const preparedBackendRows = backendRows.filter((item) => item.preparedForApproval);
+  const diagnosticRows = backendRows.filter((item) => !item.preparedForApproval);
+  const localRows = localItems.map((item) => ({ ...item, sourceMode: "local", listStatus: "local", preparedForApproval: true }));
+  const rows = [...preparedBackendRows, ...localRows, ...diagnosticRows];
 
   const visibleRows = rows.filter((item) => {
     if (filter === "All") return true;
     if (filter === "Local") return item.sourceMode === "local";
-    if (filter === "Handled") return ["approved", "ignored", "declined", "closed"].includes(item.listStatus);
-    if (filter === "Edited") return item.listStatus === "edited";
-    return item.sourceMode === "backend" && ["open", "edited"].includes(item.listStatus);
+    if (filter === "Handled") return item.sourceMode === "backend" && ["approved", "ignored", "declined", "closed"].includes(item.listStatus);
+    if (filter === "Edited") return item.sourceMode === "backend" && item.preparedForApproval && item.listStatus === "edited";
+    return item.sourceMode === "backend" && item.preparedForApproval && ["open", "edited"].includes(item.listStatus);
   });
 
-  const selected = rows.find((item) => `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex)}` === selectedId) || visibleRows[0] || rows[0];
+  const selected = visibleRows.find((item) => `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex)}` === selectedId) || visibleRows[0] || null;
   const selectedKey = selected ? `${selected.sourceMode}-${idOf(selected.id || selected._id, selected.localIndex)}` : "";
-  const selectedHasConcreteAction = selected ? hasConcretePreparedAction(selected) : false;
-  const selectedNeedsPreparation = Boolean(selected && selected.sourceMode === "backend" && !selectedHasConcreteAction);
+  const selectedHasConcreteAction = Boolean(selected?.sourceMode === "backend" && selected.preparedForApproval);
+  const selectedDiagnosticOnly = Boolean(selected?.sourceMode === "backend" && !selected.preparedForApproval);
 
   const counts = {
-    Open: backendRows.filter((item) => ["open", "edited"].includes(item.listStatus)).length,
-    Edited: backendRows.filter((item) => item.listStatus === "edited").length,
+    Open: preparedBackendRows.filter((item) => ["open", "edited"].includes(item.listStatus)).length,
+    Edited: preparedBackendRows.filter((item) => item.listStatus === "edited").length,
     Local: localRows.length,
     Handled: backendRows.filter((item) => ["approved", "ignored", "declined", "closed"].includes(item.listStatus)).length,
     All: rows.length,
   };
 
-  const moneyWatched = backendRows.filter((item) => String(item.category || item.action || "").toLowerCase().includes("money")).length;
+  const moneyWatched = preparedBackendRows.filter((item) => String(item.category || item.action || "").toLowerCase().includes("money") || String(item.category || item.action || "").toLowerCase().includes("invoice") || String(item.category || item.action || "").toLowerCase().includes("payment")).length;
 
   const loadReview = React.useCallback(async () => {
     setLoading(true);
@@ -274,8 +321,16 @@ export default function FreshCommand({ onNavigate }) {
       const result = await get("/ai-review-items?limit=200", { timeout: 25000 });
       if (!result?.success) throw new Error(result?.error || "Backend Review is protected or not ready.");
       const next = asArray(result.data ?? result);
+      const preparedCount = next.filter((item) => hasConcretePreparedAction({ ...item, sourceMode: "backend" })).length;
+      const hiddenCount = Math.max(0, next.length - preparedCount);
       setBackendItems(next);
-      setMessage(next.length ? `${next.length} backend Review item${next.length === 1 ? "" : "s"} ready.` : "Backend Review checked. No open Review items right now.");
+      if (preparedCount) {
+        setMessage(`${preparedCount} prepared admin action${preparedCount === 1 ? "" : "s"} ready for owner approval.${hiddenCount ? ` ${hiddenCount} diagnostic row${hiddenCount === 1 ? "" : "s"} hidden from Open.` : ""}`);
+      } else if (hiddenCount) {
+        setMessage(`No prepared admin waiting. ${hiddenCount} backend diagnostic row${hiddenCount === 1 ? "" : "s"} hidden from the owner approval queue.`);
+      } else {
+        setMessage("No prepared admin waiting right now.");
+      }
     } catch (err) {
       setBackendItems([]);
       setMessage(err?.message || "Backend Review is protected or not ready.");
@@ -322,19 +377,19 @@ export default function FreshCommand({ onNavigate }) {
   }
 
   async function approveSelected() {
-    if (!selected || selected.sourceMode !== "backend" || !selectedHasConcreteAction) return;
+    if (!selected || !selectedHasConcreteAction) return;
     const id = idOf(selected.id || selected._id);
     if (!id) return;
     setBusy("approve");
     try {
       const result = await post(`/ai-review-items/${encodeURIComponent(id)}/approve`, { note: ownerNote }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || "Could not approve Review item.");
+      if (!result?.success) throw new Error(result?.error || "Could not approve prepared action.");
       addActivity(titleOf(selected), "Approved");
       setMessage("Approved. Churvox executed the owner-approved backend action.");
       setSelectedId("");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not approve Review item.");
+      setMessage(err?.message || "Could not approve prepared action.");
     } finally {
       setBusy("");
     }
@@ -347,12 +402,12 @@ export default function FreshCommand({ onNavigate }) {
     setBusy("save");
     try {
       const result = await patch(`/ai-review-items/${encodeURIComponent(id)}`, { note: ownerNote }, { timeout: 25000 });
-      if (!result?.success) throw new Error(result?.error || "Could not save Review item.");
+      if (!result?.success) throw new Error(result?.error || "Could not save owner edit.");
       addActivity(titleOf(selected), "Edited");
-      setMessage("Saved. Review item stays owner-controlled.");
+      setMessage("Saved. Prepared admin stays owner-controlled.");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not save Review item.");
+      setMessage(err?.message || "Could not save owner edit.");
     } finally {
       setBusy("");
     }
@@ -365,13 +420,13 @@ export default function FreshCommand({ onNavigate }) {
     setBusy("ignore");
     try {
       const result = await post(`/ai-review-items/${encodeURIComponent(id)}/ignore`, { note: ownerNote }, { timeout: 25000 });
-      if (!result?.success) throw new Error(result?.error || "Could not ignore Review item.");
+      if (!result?.success) throw new Error(result?.error || "Could not ignore item.");
       addActivity(titleOf(selected), "Ignored");
       setMessage("Ignored. No action was executed.");
       setSelectedId("");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not ignore Review item.");
+      setMessage(err?.message || "Could not ignore item.");
     } finally {
       setBusy("");
     }
@@ -401,7 +456,7 @@ export default function FreshCommand({ onNavigate }) {
     if (promoted) clearLegacyInbox();
     setLocalItems(readLegacyInbox());
     addActivity("Browser slips promoted", promoted ? "Promoted" : "Failed");
-    setMessage(promoted ? `Promoted ${promoted} local slip${promoted === 1 ? "" : "s"} into backend Review.${failed ? ` ${failed} failed.` : ""}` : "Could not promote local slips into backend Review.");
+    setMessage(promoted ? `Promoted ${promoted} local slip${promoted === 1 ? "" : "s"}. Only concrete prepared actions will appear in Open.${failed ? ` ${failed} failed.` : ""}` : "Could not promote local slips into prepared admin.");
     setBusy("");
     await loadReview();
   }
@@ -409,14 +464,14 @@ export default function FreshCommand({ onNavigate }) {
   async function scanBackendRisks() {
     setBusy("scan");
     try {
-      const text = "Find real Churvox records that need owner action. For each review item include the exact record type and name/id, the customer or worker, the amount/date/status where relevant, the concrete draft/action prepared, and why owner approval is needed. Do not create generic explanation-only review cards. Prepare completed jobs needing draft invoices, overdue invoices needing follow-up, quotes waiting for reply, clients missing billing details, worker acknowledgement risks, payroll review items, and Xero draft sync checks. Owner approval required. Do not send invoices, do not file tax, do not create bank payout files, and do not mark paid automatically.";
+      const text = "Prepare completed admin work for owner approval from real Churvox records. Return only concrete approval-ready items: draft invoice from completed job, payment follow-up message for unpaid invoice, quote follow-up message, client detail request, worker acknowledgement reminder, payroll review summary, or Xero draft sync check. Each item must include the exact record, customer or worker, amount/date/status where relevant, and the prepared draft/message/change. Do not create explanation-only or needs-clarification cards. Owner approval required. Do not send invoices, file tax, create bank payout files, or mark paid automatically.";
       const result = await post("/tell-churvox/prepare", { text }, { timeout: 30000 });
-      if (!result?.success) throw new Error(result?.error || "Could not prepare backend Review scan.");
-      addActivity("Backend Review scan", "Prepared");
-      setMessage("Backend Review scan prepared. Check the open item before approving anything.");
+      if (!result?.success) throw new Error(result?.error || "Could not prepare backend admin scan.");
+      addActivity("Backend admin scan", "Prepared");
+      setMessage("Backend scan finished. Command will show only concrete prepared admin actions in Open.");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not prepare backend Review scan.");
+      setMessage(err?.message || "Could not prepare backend admin scan.");
     } finally {
       setBusy("");
     }
@@ -432,16 +487,16 @@ export default function FreshCommand({ onNavigate }) {
       <header className="freshHero">
         <span>Churvox fresh - Command</span>
         <h1>Command</h1>
-        <p>Real backend Review is now the main owner cockpit. Churvox prepares admin work; the owner approves, edits, ignores, or opens the source record.</p>
+        <p>Churvox prepares the admin. The owner approves, edits, ignores, or opens the source record.</p>
       </header>
 
       <section className="freshCommandPulse">
-        <aside className="freshCard"><h2>{loading ? "..." : counts.Open}</h2><p>Backend decisions</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : counts.Open}</h2><p>Prepared admin actions</p></aside>
         <aside className="freshCard"><h2>{loading ? "..." : counts.Local}</h2><p>Browser slips to promote</p></aside>
-        <aside className="freshCard"><h2>{loading ? "..." : moneyWatched}</h2><p>Money review items</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : moneyWatched}</h2><p>Money actions ready</p></aside>
       </section>
 
-      {message ? <section className="freshBackendReviewSource" data-review-source="backend"><div><span>Backend-owned Review</span><h2>{message}</h2><p>Approvals execute through backend Review endpoints. Local page handoffs can be promoted into backend Review before owner action.</p></div><aside><b>{counts.Open}</b><small>open backend item{counts.Open === 1 ? "" : "s"}</small></aside></section> : null}
+      {message ? <section className="freshBackendReviewSource" data-review-source="backend"><div><span>Backend-owned approval queue</span><h2>{message}</h2><p>Open only shows real prepared admin. Generic scan diagnostics stay out of the owner approval flow.</p></div><aside><b>{counts.Open}</b><small>prepared item{counts.Open === 1 ? "" : "s"}</small></aside></section> : null}
 
       <section className="freshCommandFilterBar">
         {commandFilters.map((item) => (
@@ -454,16 +509,16 @@ export default function FreshCommand({ onNavigate }) {
 
       <section className="freshGrid">
         <aside className="freshCard freshJobsListCard">
-          <h2>Review queue</h2>
-          {loading && !visibleRows.length ? <div className="freshItem"><b>Checking backend Review...</b><span>Loading owner decisions.</span></div> : null}
-          {!loading && !visibleRows.length ? <div className="freshItem"><b>No items in this filter</b><span>Run a backend scan or promote browser slips.</span></div> : null}
+          <h2>{filter === "All" ? "Prepared queue and diagnostics" : "Prepared approval queue"}</h2>
+          {loading && !visibleRows.length ? <div className="freshItem"><b>Checking prepared admin...</b><span>Loading owner approval work.</span></div> : null}
+          {!loading && !visibleRows.length ? <div className="freshItem"><b>No prepared admin in this filter</b><span>Run backend scan or promote browser slips. Explanation-only diagnostics stay out of Open.</span></div> : null}
           {visibleRows.map((item, index) => {
             const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`;
-            const concrete = hasConcretePreparedAction(item);
+            const diagnostic = item.sourceMode === "backend" && !item.preparedForApproval;
             return (
-              <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "local" || !concrete ? "need" : ""}`} key={key} onClick={() => setSelectedId(key)}>
+              <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "local" || diagnostic ? "need" : ""}`} key={key} onClick={() => setSelectedId(key)}>
                 <b>{titleOf(item)}</b>
-                <span>{categoryOf(item)} - {item.sourceMode === "local" ? "browser-only" : concrete ? statusOf(item) : "needs preparation"} - {summaryOf(item)}</span>
+                <span>{categoryOf(item)} - {item.sourceMode === "local" ? "browser-only" : diagnostic ? "diagnostic only" : statusOf(item)} - {summaryOf(item)}</span>
               </button>
             );
           })}
@@ -471,8 +526,8 @@ export default function FreshCommand({ onNavigate }) {
 
         <section className="freshCard freshJobsDetailCard">
           <div className="freshJobsDetailHeader">
-            <div><small>{selected?.sourceMode === "local" ? "Browser-only slip" : "Backend Review item"}</small><h2>{selected ? titleOf(selected) : "Select Review item"}</h2></div>
-            {selected ? <span className={selected.sourceMode === "local" || selectedNeedsPreparation ? "need" : "ready"}>{selected.sourceMode === "local" ? "Promote first" : selectedNeedsPreparation ? "Needs preparation" : statusOf(selected)}</span> : null}
+            <div><small>{selected?.sourceMode === "local" ? "Browser-only slip" : selectedDiagnosticOnly ? "Backend diagnostic" : "Prepared backend action"}</small><h2>{selected ? titleOf(selected) : "No prepared admin selected"}</h2></div>
+            {selected ? <span className={selected.sourceMode === "local" || selectedDiagnosticOnly ? "need" : "ready"}>{selected.sourceMode === "local" ? "Promote first" : selectedDiagnosticOnly ? "Diagnostic only" : statusOf(selected)}</span> : null}
           </div>
 
           {selected ? (
@@ -480,29 +535,28 @@ export default function FreshCommand({ onNavigate }) {
               <div className="freshMiniGrid freshJobsMiniGrid">
                 <div><span>Source</span><b>{selected.sourceMode === "local" ? "Browser slip" : "Backend"}</b></div>
                 <div><span>Category</span><b>{categoryOf(selected)}</b></div>
-                <div><span>Action</span><b>{selectedNeedsPreparation ? "not prepared" : selected.action || selected.type || "review"}</b></div>
-                <div><span>Owner rule</span><b>{selected.sourceMode === "local" ? "Promote first" : selectedNeedsPreparation ? "Needs concrete draft" : "Approval required"}</b></div>
+                <div><span>Action</span><b>{selectedDiagnosticOnly ? "No approval action" : selected.action || selected.type || "prepared action"}</b></div>
+                <div><span>Owner rule</span><b>{selected.sourceMode === "local" ? "Promote first" : selectedDiagnosticOnly ? "Hidden from Open" : "Approve to execute"}</b></div>
               </div>
 
-              {selectedNeedsPreparation ? <section className="freshJobsDetailBox notes"><span>Not ready to approve</span><p>This review item is explanation only. It needs a concrete prepared draft/action before it can be approved.</p></section> : null}
               <section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>
               {detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}
 
               <label className="freshField"><span>Owner note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Add approval note, edit instruction, or reason for ignoring" /></label>
             </>
-          ) : <div className="freshItem"><b>No Review item selected</b><span>When Churvox prepares work, it will appear here for approval.</span></div>}
+          ) : <div className="freshItem"><b>No prepared admin waiting</b><span>The approval panel stays empty until Churvox has a real draft, message, record change, or review summary ready for you.</span></div>}
         </section>
 
         <aside className="freshCard freshJobsActionsCard">
           <h2>Owner controls</h2>
-          <p className="freshJobsActionHint">Backend items can execute only after owner approval. Browser slips must be promoted first.</p>
+          <p className="freshJobsActionHint">Prepared backend actions execute only after owner approval.</p>
           <div className="freshActions freshJobsActionStack">
-            <button className="freshPrimary" type="button" disabled={!selected || selected.sourceMode !== "backend" || !selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedNeedsPreparation ? "Needs prepared action" : "Approve backend action"}</button>
+            <button className="freshPrimary" type="button" disabled={!selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedDiagnosticOnly ? "Diagnostic only" : "Approve prepared action"}</button>
             <button className="freshDark" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button>
             <button className="freshGhost" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>Ignore</button>
             <button className="freshOrange" type="button" disabled={!localItems.length || busy === "promote"} onClick={promoteLocalItems}>{busy === "promote" ? "Promoting..." : "Promote local slips"}</button>
             <button className="freshDark" type="button" disabled={busy === "scan"} onClick={scanBackendRisks}>{busy === "scan" ? "Preparing..." : "Run backend scan"}</button>
-            <button className="freshGhost" type="button" disabled={!selected} onClick={openSelectedArea}>Open area</button>
+            <button className="freshGhost" type="button" disabled={!selected} onClick={openSelectedArea}>Open source area</button>
             <button className="freshGhost" type="button" onClick={loadReview}>Refresh Review</button>
           </div>
         </aside>
