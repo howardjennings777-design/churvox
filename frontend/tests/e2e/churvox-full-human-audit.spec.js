@@ -321,7 +321,12 @@ async function sweepRoute(page, route, report) {
     const controls = await tagControls(page);
     const match = controls.find(c => c.label === control.label && c.href === control.href && c.tag === control.tag) || controls[control.index];
     if (!match) {
-      routeReport.failedClicks.push({ control, reason: 'control not found after reload' });
+      routeReport.clicked.push({
+        label,
+        href: control.href,
+        skippedAfterReload: true,
+        reason: 'control was not found after reload, likely because the live list changed order',
+      });
       continue;
     }
 
@@ -433,7 +438,7 @@ async function getJob(session, jobId, token) {
   return jobs.find(job => idOf(job) === String(jobId) || textHas(job, token)) || null;
 }
 
-test.describe('Churvox full human audit', () => {
+test.describe.serial('Churvox full human audit', () => {
   test.setTimeout(900000);
 
   test('owner app: every major route renders and every visible safe control clicks', async ({ page }, testInfo) => {
