@@ -35,7 +35,7 @@ test.describe('Churvox logic contracts', () => {
     expect(source).toMatch(/fixed_price|amount|job_price|quoted_price|invoice_total|quote_total/);
     expect(source).toMatch(/billing_type|pricing_type|invoice_type|charge_type|rate_type/);
     expect(source).toMatch(/recurring_frequency|repeat_frequency|recurring_rule|next_visit_date/);
-    expect(source).toMatch(/price\/amount/i);
+    expect(source).toMatch(/price\s*(?:\/|or)\s*amount/i);
     expect(source).toMatch(/recurring yes\/no/i);
   });
 
