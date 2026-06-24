@@ -3,7 +3,6 @@ import API_BASE from "../lib/apiBase";
 import { useApi } from "../hooks/useApi";
 import FreshTeamAddPerson from "./FreshTeamAddPerson";
 
-const filters = ["All", "Active", "Invite sent", "Paused"];
 const loadEndpoints = ["/team/workers", "/team", "/workers"];
 
 function listFrom(payload) {
@@ -28,9 +27,9 @@ function idOf(member, fallback) {
 function statusOf(member) {
   const text = String(member?.status || member?.invite_status || member?.worker_status || "").toLowerCase();
   if (text.includes("pause") || text.includes("disabled") || text.includes("inactive") || member?.is_active === false || member?.active === false) return "Paused";
-  if (text.includes("invite") || text.includes("pending") || member?.invite_pending === true || member?.invited === true) return "Invite sent";
+  if (text.includes("invite") || text.includes("pending") || member?.invite_pending === true || member?.invited === true) return "Invite pending";
   if (text.includes("active") || member?.is_active === true || member?.active === true || member?.email_verified === true) return "Active";
-  return member?.email ? "Active" : "Invite sent";
+  return member?.email ? "Active" : "Invite pending";
 }
 
 function roleOf(value) {
@@ -48,10 +47,16 @@ function dateScore(member) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function normalizePayRate(member) {
+  const raw = member?.pay_rate || member?.payRate || member?.hourly_rate;
+  return raw ? `$${raw}/hr` : "Not set";
+}
+
 function normalizeMember(member, index) {
   const id = idOf(member, `worker-${index}`);
   const role = roleOf(member?.team_role || member?.worker_role || member?.role);
   const status = statusOf(member);
+  const access = role === "Payroll only" ? "Payroll workspace" : status === "Invite pending" ? "Invite pending" : "Worker app";
   return {
     ...member,
     id,
@@ -60,11 +65,11 @@ function normalizeMember(member, index) {
     status,
     phone: member?.phone || member?.mobile || "",
     email: member?.email || "",
-    payRate: member?.pay_rate || member?.payRate || member?.hourly_rate ? `$${member?.pay_rate || member?.payRate || member?.hourly_rate}/hr` : "Not set",
+    payRate: normalizePayRate(member),
     availability: member?.availability || member?.available_today || "Not set",
     currentJob: member?.current_job || member?.currentJob || member?.current_job_title || "Not assigned",
-    access: role === "Payroll only" ? "Payroll workspace only" : status === "Invite sent" ? "Invite pending" : "Worker app access",
-    notes: member?.notes || member?.team_notes || "No notes yet",
+    access,
+    notes: member?.notes || member?.team_notes || "No notes saved",
     sortTime: dateScore(member),
   };
 }
@@ -80,29 +85,14 @@ async function deleteFallback(endpoint) {
   return response.ok ? { success: true, data } : { success: false, error: data.detail || data.message || data.error || "Delete failed" };
 }
 
-
-const selectedFilterButtonStyle = {
-  background: "#111827",
-  backgroundColor: "#111827",
-  borderColor: "#111827",
-  color: "#ffffff",
-  WebkitTextFillColor: "#ffffff",
-};
-
-const selectedFilterTextStyle = {
-  color: "#ffffff",
-  WebkitTextFillColor: "#ffffff",
-  opacity: 1,
-};
-
-const selectedFilterCountStyle = {
-  background: "#f97316",
-  backgroundColor: "#f97316",
-  color: "#ffffff",
-  WebkitTextFillColor: "#ffffff",
-  opacity: 1,
-  borderRadius: "999px",
-};
+function DetailBox({ label, value }) {
+  return (
+    <div>
+      <span>{label}</span>
+      <b>{value || "Not set"}</b>
+    </div>
+  );
+}
 
 export default function FreshTeam({ onNavigate }) {
   const api = useApi();
@@ -110,16 +100,14 @@ export default function FreshTeam({ onNavigate }) {
   const deleteMethod = api.del || api.delete || null;
   const [team, setTeam] = React.useState([]);
   const [selectedId, setSelectedId] = React.useState("");
-  const [filter, setFilter] = React.useState("All");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [actionMessage, setActionMessage] = React.useState("");
+  const [addOpen, setAddOpen] = React.useState(false);
 
-  const visibleTeam = filter === "All" ? team : team.filter((member) => member.status === filter);
-  const selected = team.find((member) => member.id === selectedId) || visibleTeam[0] || team[0];
-  const activeCount = team.filter((member) => member.status === "Active").length;
-  const inviteCount = team.filter((member) => member.status === "Invite sent").length;
-  const pausedCount = team.filter((member) => member.status === "Paused").length;
+  const selected = team.find((member) => member.id === selectedId) || team[0];
+  const workerAccessCount = team.filter((member) => member.access === "Worker app").length;
+  const payrollOnlyCount = team.filter((member) => member.role === "Payroll only").length;
 
   const loadTeam = React.useCallback(async () => {
     setLoading(true);
@@ -133,7 +121,9 @@ export default function FreshTeam({ onNavigate }) {
           lastError = res?.error || res?.detail || lastError;
           continue;
         }
-        const nextTeam = listFrom(res.data).map(normalizeMember).sort((a, b) => b.sortTime - a.sortTime || String(a.name).localeCompare(String(b.name)));
+        const nextTeam = listFrom(res.data)
+          .map(normalizeMember)
+          .sort((a, b) => b.sortTime - a.sortTime || String(a.name).localeCompare(String(b.name)));
         setTeam(nextTeam);
         setSelectedId((current) => nextTeam.some((member) => member.id === current) ? current : nextTeam[0]?.id || "");
         setLoading(false);
@@ -212,30 +202,103 @@ export default function FreshTeam({ onNavigate }) {
       return;
     }
     setActionMessage(`${selected.name} was removed.`);
-    setTeam((current) => current.filter((member) => member.id !== selected.id));
-    setSelectedId("");
+    await loadTeam();
+  }
+
+  function handlePersonAdded() {
+    setAddOpen(false);
+    loadTeam();
   }
 
   return (
     <section>
-      <header className="freshHero"><span>Team</span><h1>Team access</h1><p>Team is your people directory: add workers, send invites, check access, and open the connected worker, schedule, time and payroll areas.</p></header>
+      <header className="freshHero">
+        <span>Team</span>
+        <h1>Team</h1>
+        <p>People directory, worker app access, and payroll links.</p>
+      </header>
 
-      <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && team.length === 0 ? "…" : activeCount}</h2><p>Active people</p></aside><aside className="freshCard"><h2>{loading && team.length === 0 ? "…" : inviteCount}</h2><p>Invites pending</p></aside><aside className="freshCard"><h2>{loading && team.length === 0 ? "…" : pausedCount}</h2><p>Paused</p></aside></section>
+      <section className="freshCommandPulse">
+        <aside className="freshCard"><h2>{loading && team.length === 0 ? "..." : team.length}</h2><p>People</p></aside>
+        <aside className="freshCard"><h2>{loading && team.length === 0 ? "..." : workerAccessCount}</h2><p>Worker access</p></aside>
+        <aside className="freshCard"><h2>{loading && team.length === 0 ? "..." : payrollOnlyCount}</h2><p>Payroll only</p></aside>
+      </section>
 
-      {error ? <section className="freshCard freshItem need"><b>Team needs attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadTeam}>Retry</button></section> : null}
+      {error ? <section className="freshCard freshItem need"><b>Team could not load</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadTeam}>Retry</button></section> : null}
       {actionMessage ? <section className="freshCard freshItem"><b>Done</b><span>{actionMessage}</span></section> : null}
 
-      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filter === item ? selectedFilterButtonStyle : undefined} onClick={() => setFilter(item)}><span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span><b style={filter === item ? selectedFilterCountStyle : undefined}>{item === "All" ? team.length : team.filter((member) => member.status === item).length}</b></button>)}</section>
-
       <section className="freshGrid">
-        <aside className="freshCard"><h2>Add person</h2><p className="freshMuted">Adding someone creates their team record and prepares worker access. Payroll-only users stay out of reports and owner tools.</p><FreshTeamAddPerson onAdded={loadTeam} onNavigate={onNavigate} /></aside>
+        <aside className="freshCard freshJobsListCard">
+          <h2>People</h2>
+          {loading && team.length === 0 ? <div className="freshItem"><b>Loading team</b><span>Checking your people list.</span></div> : null}
+          {!loading && team.length === 0 ? <div className="freshItem"><b>No people yet</b><span>Add a worker when you are ready.</span></div> : null}
+          {team.map((member) => (
+            <button type="button" className={`freshItem ${selected?.id === member.id ? "active" : ""}`} key={member.id} onClick={() => setSelectedId(member.id)}>
+              <b>{member.name}</b>
+              <span>{member.role} - {member.access}</span>
+            </button>
+          ))}
+        </aside>
 
-        <aside className="freshCard"><h2>People</h2>{loading && team.length === 0 ? <div className="freshItem"><b>Loading team…</b><span>Checking your business account.</span></div> : visibleTeam.map((member) => <button type="button" className={`freshItem ${selected?.id === member.id ? "active" : ""} ${member.status === "Invite sent" ? "need" : ""}`} key={member.id} onClick={() => setSelectedId(member.id)}><b>{member.name}</b><span>{member.role} · {member.status} · {member.access}</span></button>)}{loading && team.length > 0 ? <div className="freshItem"><b>Refreshing team…</b><span>Showing saved people while Churvox refreshes.</span></div> : null}{!loading && visibleTeam.length === 0 ? <div className="freshItem"><b>No people here</b><span>Change the filter or add a person.</span></div> : null}</aside>
+        <section className="freshCard freshJobsDetailCard">
+          <div className="freshJobsDetailHeader">
+            <div>
+              <span>Person record</span>
+              <h2>{selected?.name || "Select person"}</h2>
+            </div>
+            {selected ? <em>{selected.status}</em> : null}
+          </div>
 
-        <section className="freshCard"><h2>{selected?.name || "Select person"}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Status</span><b>{selected.status}</b></div><div><span>Role</span><b>{selected.role}</b></div><div><span>Access</span><b>{selected.access}</b></div><div><span>Current job</span><b>{selected.currentJob}</b></div></div><label className="freshField"><span>Name</span><input value={selected.name} readOnly /></label><label className="freshField"><span>Email</span><input value={selected.email || "Not set"} readOnly /></label><label className="freshField"><span>Phone</span><input value={selected.phone || "Not set"} readOnly /></label><label className="freshField"><span>Pay rate</span><input value={selected.payRate} readOnly /></label><label className="freshField"><span>Availability</span><input value={selected.availability} readOnly /></label><label className="freshField"><span>Team notes</span><textarea value={selected.notes} readOnly /></label></> : <div className="freshItem"><b>No team member selected</b><span>Add a person to see their connected record.</span></div>}</section>
+          {selected ? (
+            <>
+              <div className="freshMiniGrid">
+                <DetailBox label="Role" value={selected.role} />
+                <DetailBox label="Access" value={selected.access} />
+                <DetailBox label="Current job" value={selected.currentJob} />
+                <DetailBox label="Pay rate" value={selected.payRate} />
+              </div>
 
-        <aside className="freshCard"><h2>Owner actions</h2><p className="freshMuted">Team does not run payroll or dispatch by itself. It opens the right connected area.</p><div className="freshActions"><button className="freshPrimary" type="button" onClick={loadTeam}>Refresh team</button><button className="freshOrange" type="button" disabled={!selected?.id || !selected.email || selected.status === "Active"} onClick={resendInvite}>Resend invite</button><button className="freshDark" type="button" disabled={!selected?.id} onClick={removeSelected}>Remove person</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("workercommand")}>Open worker command</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("time")}>Open time logs</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("dispatch")}>Open Schedule</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("payroll")}>Open Payroll</button></div></aside>
+              <div className="freshTimelineList">
+                <div className="freshTimelineItem"><b>Email</b><span>{selected.email || "Not set"}</span></div>
+                <div className="freshTimelineItem"><b>Phone</b><span>{selected.phone || "Not set"}</span></div>
+                <div className="freshTimelineItem"><b>Availability</b><span>{selected.availability}</span></div>
+                <div className="freshTimelineItem"><b>Notes</b><span>{selected.notes}</span></div>
+              </div>
+            </>
+          ) : (
+            <div className="freshItem"><b>No person selected</b><span>Add someone or select a person from the list.</span></div>
+          )}
+        </section>
+
+        <aside className="freshCard freshJobsActionsCard">
+          <h2>Team actions</h2>
+          <p className="freshMuted">Use Team for people and access. Job problems, missing setup, and admin follow-up stay in Command.</p>
+          <div className="freshActions">
+            <button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add person</button>
+            <button className="freshOrange" type="button" disabled={!selected?.id || !selected.email || selected.status === "Active"} onClick={resendInvite}>Resend invite</button>
+            <button className="freshDark" type="button" disabled={!selected?.id} onClick={removeSelected}>Remove person</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("workercommand")}>Open worker view</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("time")}>Open time</button>
+            <button className="freshGhost" type="button" onClick={() => onNavigate?.("payroll")}>Open payroll</button>
+            <button className="freshGhost" type="button" onClick={loadTeam}>Refresh team</button>
+          </div>
+        </aside>
       </section>
+
+      {addOpen ? (
+        <div className="freshModalBackdrop" role="presentation" onClick={() => setAddOpen(false)}>
+          <section className="freshCard freshModalPanel" role="dialog" aria-modal="true" aria-label="Add person" onClick={(event) => event.stopPropagation()}>
+            <div className="freshJobsDetailHeader">
+              <div>
+                <span>Team</span>
+                <h2>Add person</h2>
+              </div>
+              <button type="button" className="freshGhost" onClick={() => setAddOpen(false)}>Close</button>
+            </div>
+            <FreshTeamAddPerson onAdded={handlePersonAdded} onNavigate={onNavigate} />
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }
