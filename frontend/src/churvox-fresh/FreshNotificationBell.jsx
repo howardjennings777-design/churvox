@@ -156,6 +156,7 @@ export default function FreshNotificationBell() {
   const [clearBefore, setClearBefore] = React.useState(getStoredClearBefore);
 
   const unread = items.filter(isUnread).length;
+  const statusText = unread ? `${unread} unread` : clearBefore && !items.length ? "Cleared" : "All caught up";
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -230,7 +231,7 @@ export default function FreshNotificationBell() {
           <header>
             <div>
               <b>Notifications</b>
-              <small>{unread ? `${unread} unread` : clearBefore ? "Cleared" : "All caught up"}</small>
+              <small>{statusText}</small>
             </div>
             <div>
               <button type="button" onClick={markAllRead} title="Mark all read"><CheckCheck size={16} /></button>
