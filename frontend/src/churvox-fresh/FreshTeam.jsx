@@ -162,6 +162,14 @@ export default function FreshTeam({ onNavigate }) {
     window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
     return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, [loadTeam]);
+  React.useEffect(() => {
+    if (!addOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setAddOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [addOpen]);
 
   async function tryPost(endpoints, body) {
     let last = "Action failed";
@@ -305,7 +313,7 @@ export default function FreshTeam({ onNavigate }) {
       </section>
 
       {addOpen ? (
-        <div className="freshModalBackdrop" style={modalBackdropStyle} role="presentation" onClick={() => setAddOpen(false)}>
+        <div className="freshPopupBackdrop freshModalBackdrop" style={modalBackdropStyle} role="presentation" onClick={() => setAddOpen(false)}>
           <section className="freshCard freshModalPanel" style={modalPanelStyle} role="dialog" aria-modal="true" aria-label="Add person" onClick={(event) => event.stopPropagation()}>
             <div className="freshJobsDetailHeader">
               <div>
