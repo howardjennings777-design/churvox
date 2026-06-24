@@ -2,6 +2,7 @@ import React from "react";
 import API_BASE from "../lib/apiBase";
 import { useApi } from "../hooks/useApi";
 import FreshTeamAddPerson from "./FreshTeamAddPerson";
+import FreshCsvImportButton from "./FreshCsvImportButton";
 
 const loadEndpoints = ["/team/workers", "/team", "/workers"];
 
@@ -292,6 +293,7 @@ export default function FreshTeam({ onNavigate }) {
           <p className="freshMuted">Use Team for people and access. Job problems, missing setup, and admin follow-up stay in Command.</p>
           <div className="freshActions">
             <button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add person</button>
+            <FreshCsvImportButton endpoint="/team/import-csv" label="Import team CSV" onDone={async (data) => { setActionMessage(data?.message || "Team imported from CSV."); await loadTeam({ keepMessage: true }); }} onError={(message) => setError(message || "Could not import team CSV.")} />
             <button className="freshOrange" type="button" disabled={!selected?.id || !selected.email || selected.status === "Active"} onClick={resendInvite}>Resend invite</button>
             <button className="freshDark" type="button" disabled={!selected?.id} onClick={removeSelected}>Remove person</button>
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("workercommand")}>Open worker view</button>
