@@ -1,7 +1,9 @@
 import React from "react";
-import { Bell, CheckCheck, X } from "lucide-react";
+import { Bell, CheckCheck, Trash2, X } from "lucide-react";
 import { useApi } from "../hooks/useApi";
 import "./freshNotificationBell.css";
+
+const CLEAR_BEFORE_KEY = "churvox:notifications-clear-before:v1";
 
 function listFrom(value) {
   const data = value?.data ?? value;
@@ -131,11 +133,27 @@ function createdAtOf(item) {
   return item?.created_at || item?.createdAt || item?.updated_at || item?.updatedAt || item?.sent_at || item?.sentAt || item?.read_at || item?.readAt || "";
 }
 
+function getStoredClearBefore() {
+  try {
+    const value = Number(window.localStorage.getItem(CLEAR_BEFORE_KEY) || 0);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function shouldShowItem(item, clearBefore) {
+  if (!clearBefore) return true;
+  const created = parseBackendDate(createdAtOf(item));
+  return created ? created.getTime() > clearBefore : false;
+}
+
 export default function FreshNotificationBell() {
   const { get, post, patch } = useApi();
   const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
+  const [clearBefore, setClearBefore] = React.useState(getStoredClearBefore);
 
   const unread = items.filter(isUnread).length;
 
@@ -143,7 +161,11 @@ export default function FreshNotificationBell() {
     setLoading(true);
     try {
       const res = await get(`/notifications?limit=20&ts=${Date.now()}`);
-      if (res?.success) setItems(listFrom(res.data));
+      if (res?.success) {
+        const clearPoint = getStoredClearBefore();
+        setClearBefore(clearPoint);
+        setItems(listFrom(res.data).filter((item) => shouldShowItem(item, clearPoint)));
+      }
     } finally {
       setLoading(false);
     }
@@ -178,6 +200,16 @@ export default function FreshNotificationBell() {
     } catch {}
   }
 
+  async function clearNotifications() {
+    const clearPoint = Date.now();
+    setClearBefore(clearPoint);
+    setItems([]);
+    try { window.localStorage.setItem(CLEAR_BEFORE_KEY, String(clearPoint)); } catch {}
+    try {
+      await post("/notifications/mark-all-read", {});
+    } catch {}
+  }
+
   function openNotification(item) {
     markRead(item);
     const route = routeOf(item);
@@ -198,10 +230,11 @@ export default function FreshNotificationBell() {
           <header>
             <div>
               <b>Notifications</b>
-              <small>{unread ? `${unread} unread` : "All caught up"}</small>
+              <small>{unread ? `${unread} unread` : clearBefore ? "Cleared" : "All caught up"}</small>
             </div>
             <div>
               <button type="button" onClick={markAllRead} title="Mark all read"><CheckCheck size={16} /></button>
+              <button type="button" onClick={clearNotifications} title="Clear notifications"><Trash2 size={16} /></button>
               <button type="button" onClick={() => setOpen(false)} title="Close"><X size={16} /></button>
             </div>
           </header>
