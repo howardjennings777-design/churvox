@@ -216,6 +216,23 @@ function canonicalPage(value, fallback = "planday") {
   return key || fallback;
 }
 
+function pageHash(page) {
+  return page === "planday" ? "dashboard" : page;
+}
+
+function syncPageHash(page) {
+  try {
+    if (typeof window === "undefined") return;
+    const safePage = pages[page] ? page : "planday";
+    const hash = pageHash(safePage);
+    const currentHash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
+    if (canonicalPage(currentHash, "") === safePage) return;
+
+    const nextUrl = `${window.location.pathname}${window.location.search}#${hash}`;
+    window.history.replaceState({}, "", nextUrl);
+  } catch {}
+}
+
 function getInitialPage() {
   try {
     const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
@@ -260,6 +277,7 @@ export default function FreshApp() {
   function navigate(next) {
     const safeNext = canonicalPage(next);
     setPage(safeNext);
+    syncPageHash(safeNext);
     try {
       window.localStorage.setItem("churvox:fresh-page", safeNext);
     } catch {}
