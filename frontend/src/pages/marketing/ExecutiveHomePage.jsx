@@ -8,7 +8,7 @@ const proof = [
   "14-day free trial",
   "No card upfront",
   "Owner approval built in",
-  "Xero/MYOB handoff ready",
+  "Accounting handoff ready",
 ];
 
 const trades = [
@@ -25,7 +25,7 @@ const steps = [
   ["Add the work", "Create the client, quote or job once, then keep the details in one place."],
   ["Run the job", "Schedule it, assign a worker, track time and capture notes or photos."],
   ["Review the admin", "Churvox prepares the next step, but important actions stay owner-approved."],
-  ["Invoice and sync", "Send invoices, check payment status and hand off to Xero or MYOB where available."],
+  ["Invoice and sync", "Send invoices, check payment status and hand off to Xero or accounting export where available."],
 ];
 
 const trust = [
@@ -46,7 +46,7 @@ const productScreens = [
   ["Smart Hub", "See today’s jobs, unpaid invoices, requests and what needs attention next."],
   ["Command", "Churvox prepares admin actions. You review, edit, approve or ignore."],
   ["Jobs", "Keep job details, notes, workers, photos, time and status in one place."],
-  ["Accounting", "Export or draft-sync Xero/MYOB where available, with owner approval kept in the loop."],
+  ["Accounting", "Export or draft-sync accounting where available, with owner approval kept in the loop."],
 ];
 
 const industries = [
@@ -61,14 +61,14 @@ const industries = [
 const difference = [
   ["Most apps store the work", "Churvox helps move the admin forward after the work is added."],
   ["AI with owner control", "Admin actions can be prepared, but important steps stay reviewed by you."],
-  ["Accounting is a handoff", "Xero/MYOB support is controlled: draft sync, exports and payment checks, not risky automation."],
+  ["Accounting is a handoff", "Accounting support is controlled: draft sync, exports and payment checks, not risky automation."],
 ];
 
 const compareRows = [
   ["Jobs scattered in texts", "Jobs visible in one workspace"],
   ["Invoices delayed or forgotten", "Invoice flow ready after the job"],
   ["Workers ask what is next", "Worker view shows the job"],
-  ["Accounting feels messy", "Xero/MYOB handoff ready"],
+  ["Accounting feels messy", "Accounting handoff ready"],
   ["Owner does every admin step", "Churvox prepares, owner approves"],
 ];
 
