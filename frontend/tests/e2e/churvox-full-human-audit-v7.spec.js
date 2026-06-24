@@ -12,6 +12,20 @@ source = source
   .replace("Churvox full human audit v6", "Churvox full human audit v7")
   .replace("worker-employer-full-loop-v6-", "worker-employer-full-loop-v7-")
   .replace(
+    `    await locator.click({ trial: true, timeout: 2500 }).catch(async error => {
+      await closeTransientUI(page);
+      await centerControl(page, locator);
+      throw error;
+    });`,
+    `    try {
+      await locator.click({ trial: true, timeout: 2500 });
+    } catch (error) {
+      await closeTransientUI(page);
+      await centerControl(page, locator);
+      await locator.click({ trial: true, timeout: 2500 });
+    }`
+  )
+  .replace(
     "test.skip(!email || !password, `Set ${label} email/password env vars.`);",
     "if (!email || !password) throw new Error(`Missing ${label} email/password env vars. This audit must fail instead of skipping because skipped tests prove nothing.`);"
   )
