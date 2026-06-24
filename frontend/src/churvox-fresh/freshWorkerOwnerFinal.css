@@ -231,3 +231,26 @@
 .cvWorkerPage .cvWorkerStickyBar {
   display: none !important;
 }
+
+/* Worker View is a live worker record. General problems belong in Command. */
+.cvWorkerDetailGrid > .cvWorkerPanel:nth-of-type(5) {
+  display: none !important;
+}
+
+/* Modal used by Team add-person so the normal Team page stays a directory. */
+.freshModalBackdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 20px !important;
+  background: rgba(15, 23, 42, .56) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.freshModalPanel {
+  width: min(720px, calc(100vw - 32px)) !important;
+  max-height: calc(100vh - 48px) !important;
+  overflow: auto !important;
+}
