@@ -186,4 +186,13 @@ test.describe('Churvox logic contracts', () => {
     expect(help).toContain('APP_ROUTE_PREFIXES.some');
     expect(help).toContain('return false;');
   });
+
+  test('Accounting UI does not show MYOB wording', () => {
+    const xero = readFreshSource('FreshXero.jsx');
+
+    expect(xero).toContain('Accounting CSV');
+    expect(xero).toContain('accounting CSV');
+    expect(xero).not.toContain('MYOB');
+    expect(xero).not.toContain('MYOB CSV');
+  });
 });
