@@ -170,3 +170,44 @@ body {
     display: none !important;
   }
 }
+
+/* CHURVOX_SIDE_NAV_ACTIVE_STATE_20260624
+   Keep the current owner section obvious after clicking a side-nav item. */
+.freshSide .freshNav button.active,
+.freshSide .freshNav button.active:hover,
+.freshSide .freshNav button.active:focus-visible {
+  position: relative !important;
+  background: linear-gradient(90deg, #fb923c 0%, #f97316 100%) !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  box-shadow: 0 10px 28px rgba(249, 115, 22, .26) !important;
+  outline: none !important;
+}
+
+.freshSide .freshNav button.active::before {
+  content: "" !important;
+  position: absolute !important;
+  left: -8px !important;
+  top: 8px !important;
+  bottom: 8px !important;
+  width: 4px !important;
+  border-radius: 999px !important;
+  background: #fff7ed !important;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, .22) !important;
+}
+
+.freshSide .freshNav button.active i,
+.freshSide .freshNav button.active:hover i,
+.freshSide .freshNav button.active:focus-visible i {
+  background: #111827 !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+}
+
+.freshSide .freshNav button.active span,
+.freshSide .freshNav button.active:hover span,
+.freshSide .freshNav button.active:focus-visible span {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-weight: 1000 !important;
+}
