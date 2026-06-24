@@ -54,6 +54,17 @@ const DETAIL_LABELS = {
   prepared_message: "Message",
 };
 
+const APPROVAL_DETAIL_FIELDS = [
+  { label: "Customer", keys: ["customer_name", "client_name", "customer", "client", "contact_name", "name"] },
+  { label: "Job", keys: ["job_title", "job_name", "title", "service", "service_type", "work_type", "job_type"] },
+  { label: "Address", keys: ["service_address", "job_address", "site_address", "address", "customer_address", "client_address"] },
+  { label: "Price", keys: ["price", "fixed_price", "amount", "total", "job_price", "quoted_price", "invoice_total", "quote_total"] },
+  { label: "Billing", keys: ["billing_type", "pricing_type", "invoice_type", "charge_type", "rate_type"] },
+  { label: "Date", keys: ["scheduled_date", "date", "due_date", "start_date", "job_date", "next_visit_date"] },
+  { label: "Worker", keys: ["worker_name", "assigned_worker_name", "assigned_to_name", "assigned_worker", "team_member", "worker"] },
+  { label: "Recurring", keys: ["recurring", "is_recurring", "isRecurring", "repeat", "repeats", "recurring_frequency", "frequency", "repeat_frequency", "recurrence", "recurring_rule"] },
+];
+
 function cleanString(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -251,6 +262,86 @@ function compactDetails(item) {
   ].slice(0, 5);
 }
 
+function detailSources(item) {
+  return [item?.payload, item?.details, item?.preview, item?.form, item?.raw, typeof item?.draft === "object" ? item.draft : null, item].filter((value) => value && typeof value === "object");
+}
+
+function findFieldValue(value, keys, depth = 0) {
+  if (!value || typeof value !== "object" || depth > 5) return undefined;
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const found = findFieldValue(entry, keys, depth + 1);
+      if (found !== undefined && found !== null && String(found).trim() !== "") return found;
+    }
+    return undefined;
+  }
+
+  const wanted = new Set(keys.map(normalizedKey));
+  for (const [key, raw] of Object.entries(value)) {
+    if (wanted.has(normalizedKey(key)) && raw !== null && raw !== undefined && String(raw).trim() !== "") return raw;
+  }
+
+  for (const raw of Object.values(value)) {
+    if (raw && typeof raw === "object") {
+      const found = findFieldValue(raw, keys, depth + 1);
+      if (found !== undefined && found !== null && String(found).trim() !== "") return found;
+    }
+  }
+
+  return undefined;
+}
+
+function formatApprovalValue(label, value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number" && /price|amount|total/i.test(label)) return `$${value.toFixed(2)}`;
+  if (Array.isArray(value)) return value.map((entry) => formatApprovalValue(label, entry)).filter(Boolean).join(", ");
+  if (typeof value === "object") return usefulValue(value) || JSON.stringify(value);
+  return usefulValue(value);
+}
+
+function recurringApprovalText(item) {
+  const sources = detailSources(item);
+  const enabledKeys = ["recurring", "is_recurring", "isRecurring", "repeat", "repeats"];
+  const frequencyKeys = ["recurring_frequency", "frequency", "repeat_frequency", "repeat_every", "recurrence", "recurring_rule", "rrule"];
+  const enabled = sources.map((source) => findFieldValue(source, enabledKeys)).find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+  const frequency = sources.map((source) => findFieldValue(source, frequencyKeys)).find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+  const enabledText = formatApprovalValue("Recurring", enabled);
+  const frequencyText = formatApprovalValue("Recurring", frequency);
+
+  if (frequencyText && enabledText && !sameMeaning(frequencyText, enabledText)) return `${enabledText === "No" ? "No" : "Yes"} - ${frequencyText}`;
+  if (frequencyText) return frequencyText;
+  if (enabledText) return enabledText;
+  return "";
+}
+
+function approvalDetailRows(item) {
+  if (!item) return [];
+  const rows = [];
+  const seen = new Set();
+  const sources = detailSources(item);
+
+  APPROVAL_DETAIL_FIELDS.forEach(({ label, keys }) => {
+    let value = "";
+    if (label === "Recurring") {
+      value = recurringApprovalText(item);
+    } else {
+      for (const source of sources) {
+        value = formatApprovalValue(label, findFieldValue(source, keys));
+        if (value) break;
+      }
+    }
+
+    if (!value) return;
+    const dedupeKey = `${label}:${value}`.toLowerCase();
+    if (seen.has(dedupeKey)) return;
+    seen.add(dedupeKey);
+    rows.push({ label, value });
+  });
+
+  return rows;
+}
+
 function sameMeaning(a, b) {
   const left = normalizedText(a);
   const right = normalizedText(b);
@@ -327,6 +418,7 @@ export default function FreshCommand({ onNavigate }) {
   const selectedKey = selected ? `${selected.sourceMode}-${idOf(selected.id || selected._id, selected.localIndex)}` : "";
   const selectedHasConcreteAction = Boolean(selected?.sourceMode === "backend" && selected.preparedForApproval);
   const selectedDiagnosticOnly = Boolean(selected?.sourceMode === "backend" && !selected.preparedForApproval);
+  const selectedApprovalDetails = approvalDetailRows(selected);
   const moneyWatched = preparedBackendRows.filter((item) => /money|invoice|payment/i.test(`${item.category || ""} ${item.action || ""}`)).length;
 
   const loadReview = React.useCallback(async () => {
@@ -450,7 +542,7 @@ export default function FreshCommand({ onNavigate }) {
   async function checkForWork() {
     setBusy("scan");
     try {
-      const text = "Prepare completed admin work for owner approval from real Churvox records. Return only concrete approval-ready items: draft invoice from completed job, payment follow-up message for unpaid invoice, quote follow-up message, client detail request, worker acknowledgement reminder, payroll review summary, or Xero draft sync check. Each item must include the exact record, customer or worker, amount/date/status where relevant, and the prepared draft/message/change. Do not create explanation-only or needs-clarification cards. Owner approval required. Do not send invoices, file tax, create bank payout files, or mark paid automatically.";
+      const text = "Prepare completed admin work for owner approval from real Churvox records. Return only concrete approval-ready items. For any job approval item, include exact customer/client, job title or service, service address, scheduled date, worker, price or amount, billing type, recurring yes/no, recurring frequency or next visit date, current status, and the prepared draft/message/change. Include draft invoice from completed job, payment follow-up message for unpaid invoice, quote follow-up message, client detail request, worker acknowledgement reminder, payroll review summary, or Xero draft sync check where relevant. Do not create explanation-only or needs-clarification cards. Owner approval required. Do not send invoices, file tax, create bank payout files, or mark paid automatically.";
       const result = await post("/tell-churvox/prepare", { text }, { timeout: 30000 });
       if (!result?.success) throw new Error(result?.error || "Could not check for work.");
       addActivity("Checked for work", "Done");
@@ -476,7 +568,7 @@ export default function FreshCommand({ onNavigate }) {
       <section className="freshCommandFilterBar">{commandFilters.map((item) => <button type="button" key={item} className={filter === item ? "commandFilterSelected" : ""} style={filter === item ? selectedFilterButtonStyle : undefined} onClick={() => setFilter(item)}><span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span><b style={filter === item ? selectedFilterCountStyle : undefined}>{counts[item] ?? rows.length}</b></button>)}</section>
       <section className="freshGrid">
         <aside className="freshCard freshJobsListCard"><h2>{filter === "All" ? "All items" : filter === "Notes" ? "Notes to prepare" : "Waiting for approval"}</h2>{loading && !visibleRows.length ? <div className="freshItem"><b>Checking...</b><span>Looking for work waiting on you.</span></div> : null}{!loading && !visibleRows.length ? <div className="freshItem"><b>Nothing waiting here</b><span>Run Check for work when you want Churvox to prepare the next admin actions.</span></div> : null}{visibleRows.map((item, index) => { const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`; const diagnostic = item.sourceMode === "backend" && !item.preparedForApproval; return <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "note" || diagnostic ? "need" : ""}`} key={key} onClick={() => setSelectedId(key)}><b>{titleOf(item)}</b><span>{item.sourceMode === "note" ? "note to prepare" : diagnostic ? "needs preparation" : "ready"} - {summaryOf(item)}</span></button>; })}</aside>
-        <section className="freshCard freshJobsDetailCard"><div className="freshJobsDetailHeader"><div><small>{selected?.sourceMode === "note" ? "Note to prepare" : selectedDiagnosticOnly ? "Needs preparation" : "Ready for your decision"}</small><h2>{selected ? titleOf(selected) : "Nothing selected"}</h2></div>{selected ? <span className={selected.sourceMode === "note" || selectedDiagnosticOnly ? "need" : "ready"}>{selected.sourceMode === "note" ? "Prepare" : selectedDiagnosticOnly ? "Needs work" : "Ready"}</span> : null}</div>{selected ? <><div className="freshMiniGrid freshJobsMiniGrid"><div><span>Type</span><b>{categoryOf(selected)}</b></div><div><span>Action</span><b>{selectedDiagnosticOnly ? "Not ready yet" : readableAction(selected.action || selected.type)}</b></div><div><span>Status</span><b>{selected.sourceMode === "note" ? "Note" : selectedDiagnosticOnly ? "Needs preparation" : "Ready"}</b></div><div><span>Decision</span><b>{selected.sourceMode === "note" ? "Prepare first" : selectedDiagnosticOnly ? "Skip" : "Approve or edit"}</b></div></div><section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>{detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}<label className="freshField"><span>Your note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Optional note before approving or ignoring" /></label></> : <div className="freshItem"><b>Nothing waiting</b><span>When Churvox has a real draft, message, job change, or invoice check ready, it will appear here.</span></div>}</section>
+        <section className="freshCard freshJobsDetailCard"><div className="freshJobsDetailHeader"><div><small>{selected?.sourceMode === "note" ? "Note to prepare" : selectedDiagnosticOnly ? "Needs preparation" : "Ready for your decision"}</small><h2>{selected ? titleOf(selected) : "Nothing selected"}</h2></div>{selected ? <span className={selected.sourceMode === "note" || selectedDiagnosticOnly ? "need" : "ready"}>{selected.sourceMode === "note" ? "Prepare" : selectedDiagnosticOnly ? "Needs work" : "Ready"}</span> : null}</div>{selected ? <><div className="freshMiniGrid freshJobsMiniGrid"><div><span>Type</span><b>{categoryOf(selected)}</b></div><div><span>Action</span><b>{selectedDiagnosticOnly ? "Not ready yet" : readableAction(selected.action || selected.type)}</b></div><div><span>Status</span><b>{selected.sourceMode === "note" ? "Note" : selectedDiagnosticOnly ? "Needs preparation" : "Ready"}</b></div><div><span>Decision</span><b>{selected.sourceMode === "note" ? "Prepare first" : selectedDiagnosticOnly ? "Skip" : "Approve or edit"}</b></div></div>{selectedApprovalDetails.length ? <section className="freshJobsDetailBox notes freshCommandApprovalDetails"><span>Job approval details</span><div>{selectedApprovalDetails.map((row) => <article key={`${row.label}-${row.value}`}><small>{row.label}</small><b>{row.value}</b></article>)}</div></section> : null}<section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>{detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}<label className="freshField"><span>Your note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Optional note before approving or ignoring" /></label></> : <div className="freshItem"><b>Nothing waiting</b><span>When Churvox has a real draft, message, job change, or invoice check ready, it will appear here.</span></div>}</section>
         <aside className="freshCard freshJobsActionsCard"><h2>Your controls</h2><p className="freshJobsActionHint">Nothing changes until you approve it.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" disabled={!selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedDiagnosticOnly ? "Not ready" : "Approve"}</button><button className="freshDark" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>Ignore</button><button className="freshOrange" type="button" disabled={!noteItems.length || busy === "prepare"} onClick={prepareNotes}>{busy === "prepare" ? "Preparing..." : "Prepare notes"}</button><button className="freshDark" type="button" disabled={busy === "scan"} onClick={checkForWork}>{busy === "scan" ? "Checking..." : "Check for work"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode === "note"} onClick={openSelectedRecord}>Open record</button><button className="freshGhost" type="button" onClick={loadReview}>Refresh</button></div></aside>
       </section>
       <section className="freshGrid two" style={{ marginTop: 14 }}><section className="freshCard"><h2>Safety rule</h2><p>Churvox can prepare draft invoices and checks. It will not send invoices, file tax, create bank payout files, or mark anything paid unless you approve the allowed action.</p></section><aside className="freshCard"><h2>Recent decisions</h2>{activity.length ? activity.map((item) => <div className="freshItem freshActivityItem" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></div>) : <div className="freshItem"><b>No decisions yet</b><span>Approve, edit, ignore, check for work, or prepare notes to create activity.</span></div>}</aside></section>
