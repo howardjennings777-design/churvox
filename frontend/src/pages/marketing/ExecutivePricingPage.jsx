@@ -39,7 +39,7 @@ const chooser = [
 
 const safety = [
   ["Owner-approved", "Important admin actions stay reviewed by the owner before they move."],
-  ["Accounting safe", "Xero/MYOB is a controlled handoff path. No auto tax filing and no bank payout files."],
+  ["Accounting safe", "Accounting sync is a controlled handoff path. No auto tax filing and no bank payout files."],
   ["Trial first", "Start with the plan that fits, test the workflow, then keep or upgrade when it makes sense."],
 ];
 
@@ -47,7 +47,7 @@ const buyerProof = [
   ["No card upfront", "Start the 14-day trial before committing."],
   ["Clear upgrade path", "Start, Crew, Operator and Command match how much admin help you need."],
   ["Owner control", "Churvox prepares admin work, but you approve important actions."],
-  ["Accounting options", "Add Xero/MYOB sync where available, or use export packs as the safe fallback."],
+  ["Accounting options", "Add Xero sync where available, or use export packs as the safe fallback."],
 ];
 
 const planCompare = [
@@ -185,7 +185,7 @@ export default function ExecutivePricingPage() {
         <h2>Accounting Sync Add-on</h2>
         <p className="simpleLead">
           Start, Crew and Operator can add accounting sync for {accountingAddon.priceLabel} where available.
-          Command includes one accounting sync option, Xero or MYOB, where available.
+          Command includes one accounting sync option where available.
         </p>
       </section>
 
