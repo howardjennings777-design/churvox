@@ -59,9 +59,13 @@ function isUnread(item) {
   return item?.read !== true && item?.is_read !== true && item?.read_at == null;
 }
 
+function validDate(date) {
+  return date instanceof Date && !Number.isNaN(date.getTime());
+}
+
 function parseBackendDate(value) {
   if (!value) return null;
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (value instanceof Date) return validDate(value) ? value : null;
   if (typeof value === "object") {
     if (value.$date) return parseBackendDate(value.$date);
     if (value.date) return parseBackendDate(value.date);
@@ -70,7 +74,7 @@ function parseBackendDate(value) {
   if (typeof value === "number") {
     const millis = value < 10000000000 ? value * 1000 : value;
     const date = new Date(millis);
-    return Number.isNaN(date.getTime()) ? null : date;
+    return validDate(date) ? date : null;
   }
 
   let raw = String(value || "").trim();
@@ -81,10 +85,34 @@ function parseBackendDate(value) {
 
   const looksLikeIsoDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw);
   const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(raw);
-  const normalized = looksLikeIsoDateTime && !hasTimezone ? `${raw}Z` : raw;
-  const date = new Date(normalized);
 
-  return Number.isNaN(date.getTime()) ? null : date;
+  if (looksLikeIsoDateTime && !hasTimezone) {
+    const utcDate = new Date(`${raw}Z`);
+    const localDate = new Date(raw);
+
+    if (validDate(utcDate) && validDate(localDate)) {
+      const graceMs = 2 * 60 * 1000;
+      const utcLooksFuture = utcDate.getTime() - Date.now() > graceMs;
+      const localIsReasonable = localDate.getTime() - Date.now() <= graceMs;
+      return utcLooksFuture && localIsReasonable ? localDate : utcDate;
+    }
+
+    return validDate(utcDate) ? utcDate : null;
+  }
+
+  const date = new Date(raw);
+  return validDate(date) ? date : null;
+}
+
+function absoluteTime(value) {
+  const date = parseBackendDate(value);
+  if (!date) return "";
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function timeAgo(value) {
@@ -92,10 +120,10 @@ function timeAgo(value) {
   if (!date) return "";
 
   const diff = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (diff < 60) return "now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) === 1 ? "" : "s"} ago`;
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
@@ -188,14 +216,20 @@ export default function FreshNotificationBell() {
               </article>
             ) : null}
 
-            {items.map((item) => (
-              <button key={idOf(item) || `${titleOf(item)}-${createdAtOf(item)}`} type="button" className={isUnread(item) ? "unread" : ""} onClick={() => openNotification(item)}>
-                <em>{iconOf(item)}</em>
-                <span>{titleOf(item)}</span>
-                <b>{bodyOf(item) || "Open notification"}</b>
-                <small>{timeAgo(createdAtOf(item))}</small>
-              </button>
-            ))}
+            {items.map((item) => {
+              const createdAt = createdAtOf(item);
+              const when = timeAgo(createdAt);
+              const exactWhen = absoluteTime(createdAt);
+
+              return (
+                <button key={idOf(item) || `${titleOf(item)}-${createdAt}`} type="button" className={isUnread(item) ? "unread" : ""} onClick={() => openNotification(item)}>
+                  <em>{iconOf(item)}</em>
+                  <span>{titleOf(item)}</span>
+                  <b>{bodyOf(item) || "Open notification"}</b>
+                  <small title={exactWhen}>{when || "New"}</small>
+                </button>
+              );
+            })}
           </div>
         </section>
       ) : null}
