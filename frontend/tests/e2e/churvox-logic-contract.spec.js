@@ -19,6 +19,23 @@ function readFreshSource(filename) {
   throw new Error(`Unable to find frontend/src/churvox-fresh/${filename} from ${process.cwd()}`);
 }
 
+function readBackendSource(filename) {
+  const roots = [process.cwd(), path.join(process.cwd(), '..'), path.join(process.cwd(), '..', '..')];
+
+  for (const root of roots) {
+    const candidates = [
+      path.join(root, 'backend', filename),
+      path.join(root, 'frontend', '..', 'backend', filename),
+    ];
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) return fs.readFileSync(candidate, 'utf8');
+    }
+  }
+
+  throw new Error(`Unable to find backend/${filename} from ${process.cwd()}`);
+}
+
 test.describe('Churvox logic contracts', () => {
   test('Command approval cards keep concrete job facts visible', () => {
     const source = readFreshSource('FreshCommand.jsx');
@@ -65,5 +82,32 @@ test.describe('Churvox logic contracts', () => {
     expect(bell).toContain('setItems([])');
     expect(bell).toContain('title="Clear notifications"');
     expect(bell).toContain('<Trash2 size={16} />');
+  });
+
+  test('Command approval executor updates real records, not just the slip status', () => {
+    const source = readBackendSource('ai_operator_routes.py');
+
+    expect(source).toContain('async def _execute');
+    expect(source).toMatch(/result = await _execute\(db, business_id, current_user, action\)/);
+    expect(source).toMatch(/"status": "approved"[\s\S]*"result": result/);
+
+    for (const actionKey of [
+      'assign_worker_to_job',
+      'fix_job_blocker',
+      'fix_client_record',
+      'approve_quote_action',
+      'approve_money_action',
+      'accept_worker_update',
+      'approve_time_review',
+    ]) {
+      expect(source, `${actionKey} should stay wired into the approval executor`).toContain(`action_key == "${actionKey}"`);
+    }
+
+    expect(source).toContain('db.jobs.update_one');
+    expect(source).toContain('db.clients.update_one');
+    expect(source).toContain('db.quotes.update_one');
+    expect(source).toContain('db.invoices.update_one');
+    expect(source).toContain('db.xero_sync_queue.insert_one');
+    expect(source).toContain('db.field_activity_events.insert_one');
   });
 });
