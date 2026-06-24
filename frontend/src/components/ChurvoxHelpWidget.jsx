@@ -14,11 +14,29 @@ const HELP_TYPES = [
   "Before I sign up",
 ];
 
+const APP_ROUTE_PREFIXES = [
+  "/dashboard",
+  "/jobs",
+  "/clients",
+  "/quotes",
+  "/invoices",
+  "/team",
+  "/calendar",
+  "/payroll",
+  "/payments",
+  "/automation",
+  "/settings",
+  "/plans",
+  "/support",
+  "/help",
+  "/worker",
+];
+
 function shouldShow(pathname = "") {
   const path = String(pathname || "");
-  // Worker pages already have their own Contact office/help flow.
-  // Keep this global public support bubble off worker mobile screens.
-  if (path.startsWith("/worker")) return false;
+  // App pages already have their own navigation and support areas.
+  // Keep this public support bubble off app screens so it cannot cover controls.
+  if (APP_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return false;
   return true;
 }
 
