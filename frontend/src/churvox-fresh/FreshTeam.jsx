@@ -5,6 +5,23 @@ import FreshTeamAddPerson from "./FreshTeamAddPerson";
 
 const loadEndpoints = ["/team/workers", "/team", "/workers"];
 
+const modalBackdropStyle = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 9999,
+  display: "grid",
+  placeItems: "center",
+  padding: 20,
+  background: "rgba(15, 23, 42, .56)",
+  backdropFilter: "blur(8px)",
+};
+
+const modalPanelStyle = {
+  width: "min(720px, calc(100vw - 32px))",
+  maxHeight: "calc(100vh - 48px)",
+  overflow: "auto",
+};
+
 function listFrom(payload) {
   const data = payload?.data ?? payload;
   if (Array.isArray(data)) return data;
@@ -109,10 +126,10 @@ export default function FreshTeam({ onNavigate }) {
   const workerAccessCount = team.filter((member) => member.access === "Worker app").length;
   const payrollOnlyCount = team.filter((member) => member.role === "Payroll only").length;
 
-  const loadTeam = React.useCallback(async () => {
+  const loadTeam = React.useCallback(async ({ keepMessage = false } = {}) => {
     setLoading(true);
     setError("");
-    setActionMessage("");
+    if (!keepMessage) setActionMessage("");
     let lastError = "Could not load team members";
     for (const endpoint of loadEndpoints) {
       try {
@@ -187,7 +204,7 @@ export default function FreshTeam({ onNavigate }) {
       return;
     }
     setActionMessage(`Invite sent again to ${selected.email}.`);
-    loadTeam();
+    loadTeam({ keepMessage: true });
   }
 
   async function removeSelected() {
@@ -202,7 +219,7 @@ export default function FreshTeam({ onNavigate }) {
       return;
     }
     setActionMessage(`${selected.name} was removed.`);
-    await loadTeam();
+    await loadTeam({ keepMessage: true });
   }
 
   function handlePersonAdded() {
@@ -224,7 +241,7 @@ export default function FreshTeam({ onNavigate }) {
         <aside className="freshCard"><h2>{loading && team.length === 0 ? "..." : payrollOnlyCount}</h2><p>Payroll only</p></aside>
       </section>
 
-      {error ? <section className="freshCard freshItem need"><b>Team could not load</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadTeam}>Retry</button></section> : null}
+      {error ? <section className="freshCard freshItem need"><b>Team could not load</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => loadTeam()}>Retry</button></section> : null}
       {actionMessage ? <section className="freshCard freshItem"><b>Done</b><span>{actionMessage}</span></section> : null}
 
       <section className="freshGrid">
@@ -280,14 +297,14 @@ export default function FreshTeam({ onNavigate }) {
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("workercommand")}>Open worker view</button>
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("time")}>Open time</button>
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("payroll")}>Open payroll</button>
-            <button className="freshGhost" type="button" onClick={loadTeam}>Refresh team</button>
+            <button className="freshGhost" type="button" onClick={() => loadTeam()}>Refresh team</button>
           </div>
         </aside>
       </section>
 
       {addOpen ? (
-        <div className="freshModalBackdrop" role="presentation" onClick={() => setAddOpen(false)}>
-          <section className="freshCard freshModalPanel" role="dialog" aria-modal="true" aria-label="Add person" onClick={(event) => event.stopPropagation()}>
+        <div className="freshModalBackdrop" style={modalBackdropStyle} role="presentation" onClick={() => setAddOpen(false)}>
+          <section className="freshCard freshModalPanel" style={modalPanelStyle} role="dialog" aria-modal="true" aria-label="Add person" onClick={(event) => event.stopPropagation()}>
             <div className="freshJobsDetailHeader">
               <div>
                 <span>Team</span>
