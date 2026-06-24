@@ -122,4 +122,30 @@ test.describe('Churvox logic contracts', () => {
     expect(source).toContain('item["status"] = "needs_preparation"');
     expect(source).toMatch(/if item\.get\("preparedForApproval"\):\s*\n\s*items\.append\(item\)/);
   });
+
+  test('CSV import stays on setup record pages only', () => {
+    const clients = readFreshSource('FreshClients.jsx');
+    const team = readFreshSource('FreshTeam.jsx');
+    const importer = readFreshSource('FreshCsvImportButton.jsx');
+    const backend = readBackendSource('server.py');
+
+    expect(backend).toContain('@api_router.post("/clients/import-csv")');
+    expect(backend).toContain('@api_router.post("/team/import-csv")');
+
+    expect(clients).toContain('FreshCsvImportButton');
+    expect(clients).toContain('endpoint="/clients/import-csv"');
+    expect(clients).toContain('Import clients CSV');
+
+    expect(team).toContain('FreshCsvImportButton');
+    expect(team).toContain('endpoint="/team/import-csv"');
+    expect(team).toContain('Import team CSV');
+
+    expect(importer).toContain('accept=".csv,text/csv"');
+    expect(importer).toContain('data-churvox-csv-import={endpoint}');
+    expect(importer).toContain('formData.append("file", file)');
+
+    for (const filename of ['FreshJobs.jsx', 'FreshQuotes.jsx', 'FreshInvoices.jsx', 'FreshCommand.jsx']) {
+      expect(readFreshSource(filename), `${filename} should stay a clean record or approval page, not a CSV import surface`).not.toContain('import-csv');
+    }
+  });
 });
