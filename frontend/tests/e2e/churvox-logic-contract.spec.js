@@ -110,4 +110,16 @@ test.describe('Churvox logic contracts', () => {
     expect(source).toContain('db.xero_sync_queue.insert_one');
     expect(source).toContain('db.field_activity_events.insert_one');
   });
+
+  test('AI review feed keeps generic non-approvals out of Command Open', () => {
+    const source = readBackendSource('churvox_ai_operator_routes.py');
+
+    expect(source).toContain('GENERIC_REVIEW_PHRASES');
+    expect(source).toContain('"ai prepared admin work"');
+    expect(source).toContain('"needs_clarification"');
+    expect(source).toContain('def is_approval_ready');
+    expect(source).toContain('item["preparedForApproval"] = is_approval_ready(item)');
+    expect(source).toContain('item["status"] = "needs_preparation"');
+    expect(source).toMatch(/if item\.get\("preparedForApproval"\):\s*\n\s*items\.append\(item\)/);
+  });
 });
