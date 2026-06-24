@@ -19,6 +19,23 @@ function readFreshSource(filename) {
   throw new Error(`Unable to find frontend/src/churvox-fresh/${filename} from ${process.cwd()}`);
 }
 
+function readFrontendSource(filename) {
+  const roots = [process.cwd(), path.join(process.cwd(), 'frontend'), path.join(process.cwd(), '..'), path.join(process.cwd(), '..', 'frontend')];
+
+  for (const root of roots) {
+    const candidates = [
+      path.join(root, 'src', filename),
+      path.join(root, 'frontend', 'src', filename),
+    ];
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) return fs.readFileSync(candidate, 'utf8');
+    }
+  }
+
+  throw new Error(`Unable to find frontend/src/${filename} from ${process.cwd()}`);
+}
+
 function readBackendSource(filename) {
   const roots = [process.cwd(), path.join(process.cwd(), '..'), path.join(process.cwd(), '..', '..')];
 
@@ -147,5 +164,26 @@ test.describe('Churvox logic contracts', () => {
     for (const filename of ['FreshJobs.jsx', 'FreshQuotes.jsx', 'FreshInvoices.jsx', 'FreshCommand.jsx']) {
       expect(readFreshSource(filename), `${filename} should stay a clean record or approval page, not a CSV import surface`).not.toContain('import-csv');
     }
+  });
+
+  test('Team modal stays closable during human audit sweeps', () => {
+    const team = readFreshSource('FreshTeam.jsx');
+
+    expect(team).toContain('freshPopupBackdrop freshModalBackdrop');
+    expect(team).toContain('aria-modal="true"');
+    expect(team).toContain('aria-label="Add person"');
+    expect(team).toContain('if (event.key === "Escape") setAddOpen(false)');
+    expect(team).toContain('onClick={() => setAddOpen(false)}>Close</button>');
+  });
+
+  test('Public help widget stays off app routes so it cannot cover controls', () => {
+    const help = readFrontendSource('components/ChurvoxHelpWidget.jsx');
+
+    expect(help).toContain('APP_ROUTE_PREFIXES');
+    for (const route of ['/dashboard', '/jobs', '/clients', '/quotes', '/invoices', '/team', '/calendar', '/payroll', '/worker']) {
+      expect(help).toContain(`"${route}"`);
+    }
+    expect(help).toContain('APP_ROUTE_PREFIXES.some');
+    expect(help).toContain('return false;');
   });
 });
