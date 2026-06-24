@@ -736,3 +736,50 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* CHURVOX_COMMAND_APPROVAL_DETAIL_GRID_20260624 */
+.freshCommandApprovalDetails {
+  border-left: 6px solid #f97316 !important;
+  background: #fff7ed !important;
+}
+
+.freshCommandApprovalDetails > div {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  margin-top: 8px !important;
+}
+
+.freshCommandApprovalDetails article {
+  min-width: 0 !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  padding: 10px !important;
+}
+
+.freshCommandApprovalDetails article small {
+  display: block !important;
+  margin: 0 0 4px !important;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .10em !important;
+  text-transform: uppercase !important;
+}
+
+.freshCommandApprovalDetails article b {
+  display: block !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+  word-break: break-word !important;
+}
+
+@media (max-width: 760px) {
+  .freshCommandApprovalDetails > div {
+    grid-template-columns: 1fr !important;
+  }
+}
