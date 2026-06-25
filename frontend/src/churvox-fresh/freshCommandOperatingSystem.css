@@ -80,7 +80,8 @@
 /* CHURVOX_COMMAND_PILL_CONTRAST_20260625 */
 .freshCommandOperatingSystem span,
 .freshCommandSelectedIntelligence span,
-.freshCommandNoClutter span {
+.freshCommandNoClutter span,
+.freshCommandFocusSlip span {
   display: inline-flex;
   width: fit-content;
   align-items: center;
@@ -122,6 +123,29 @@
   font-size: 13px;
   font-weight: 800;
   line-height: 1.45;
+}
+
+/* CHURVOX_COMMAND_TAPPABLE_CARDS_20260626 */
+.freshCommandTapCard {
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.freshCommandTapCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, .36) !important;
+  box-shadow: 0 22px 52px rgba(15, 23, 42, .12) !important;
+}
+
+.freshCommandTapCard:active {
+  transform: translateY(0);
+}
+
+.freshCommandTapCard:focus-visible {
+  outline: 4px solid rgba(249, 115, 22, .26);
+  outline-offset: 3px;
 }
 
 .freshCommandDebtMeter {
@@ -327,6 +351,82 @@
   font-weight: 1000;
 }
 
+/* CHURVOX_COMMAND_FOCUS_SLIP_20260626 */
+.freshCommandFocusShade {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, .58);
+  backdrop-filter: blur(10px);
+}
+
+.freshCommandFocusSlip {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  width: min(820px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  padding: 22px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-top: 6px solid #f97316;
+  border-radius: 30px;
+  background: #fffaf0;
+  box-shadow: 0 30px 90px rgba(2, 6, 23, .36);
+}
+
+.freshCommandFocusSlip.ready {
+  border-top-color: #16a34a;
+}
+
+.freshCommandFocusSlip.check {
+  border-top-color: #fbbf24;
+}
+
+.freshCommandFocusSlip.needsEdit {
+  border-top-color: #f97316;
+}
+
+.freshCommandFocusSlip.blocked {
+  border-top-color: #991b1b;
+}
+
+.freshCommandFocusSlip h2 {
+  margin: 8px 48px 2px 0;
+  color: #111827;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshCommandFocusSlip > p {
+  margin: 0 48px 4px 0;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshCommandFocusClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
 /* CHURVOX_COMMAND_NO_CLUTTER_WRAP_20260625 */
 .freshCommandNoClutter {
   display: grid;
@@ -403,5 +503,16 @@
 
   .freshCommandNoClutter h2 {
     font-size: 21px !important;
+  }
+
+  .freshCommandFocusShade {
+    align-items: start;
+    overflow: auto;
+    padding: 14px;
+  }
+
+  .freshCommandFocusSlip {
+    border-radius: 24px;
+    padding: 18px;
   }
 }
