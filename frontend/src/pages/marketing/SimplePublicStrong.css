@@ -185,6 +185,192 @@
   margin-top: 22px;
 }
 
+/* CHURVOX_PUBLIC_COMMAND_VISUAL_POLISH_20260625 */
+.simpleHeroStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 760px;
+  margin-top: 24px;
+}
+
+.simpleHeroStats div {
+  min-height: 82px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 237, 213, .20);
+  background: rgba(17, 24, 39, .58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+  padding: 14px 16px;
+}
+
+.simpleHeroStats small {
+  display: block;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.simpleHeroStats b {
+  display: block;
+  margin-top: 8px;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: clamp(18px, 1.5vw, 24px);
+  line-height: 1.05;
+  letter-spacing: -.03em;
+}
+
+.simpleCommandMock {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 85% 0%, rgba(249, 115, 22, .30), transparent 34%),
+    linear-gradient(180deg, #fffaf0 0%, #fff7ed 100%);
+  padding: 18px;
+  border-radius: 30px;
+  transform: translateY(-4px);
+}
+
+.simpleCommandMock::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  z-index: -1;
+  border-radius: 24px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  pointer-events: none;
+}
+
+.simpleCommandMock .simplePreviewTop {
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, #111827 0%, #172033 52%, #3b2414 100%);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, .18);
+}
+
+.simplePreviewQueue {
+  display: grid;
+  gap: 10px;
+}
+
+.simplePreviewQueue article {
+  display: grid;
+  gap: 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: #fff;
+  padding: 13px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .08);
+}
+
+.simplePreviewQueue article:first-child {
+  border-color: rgba(249, 115, 22, .42);
+  box-shadow: 0 16px 34px rgba(249, 115, 22, .16);
+}
+
+.simplePreviewQueue small {
+  display: inline-flex;
+  width: max-content;
+  border-radius: 999px;
+  background: #ffedd5;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 5px 8px;
+  font-size: 9px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.simplePreviewQueue b {
+  display: block;
+  margin-top: 7px;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+
+.simplePreviewQueue p {
+  margin: 0;
+  color: #374151;
+  -webkit-text-fill-color: #374151;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.simplePreviewFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.simplePreviewFacts span,
+.simplePreviewActions span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.simplePreviewFacts span {
+  background: #f3f4f6;
+  color: #374151;
+  -webkit-text-fill-color: #374151;
+}
+
+.simplePreviewFacts span:first-child {
+  background: #ecfdf5;
+  color: #14532d;
+  -webkit-text-fill-color: #14532d;
+}
+
+.simplePreviewActions {
+  display: grid;
+  grid-template-columns: .75fr .75fr 1fr;
+  gap: 8px;
+}
+
+.simplePreviewActions span {
+  min-height: 38px;
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.simplePreviewActions span:last-child {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  box-shadow: 0 12px 22px rgba(249, 115, 22, .22);
+}
+
+.simplePlanGrid article {
+  position: relative;
+  overflow: hidden;
+}
+
+.simplePlanGrid article::after {
+  content: "";
+  position: absolute;
+  inset: auto 18px 14px 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .28);
+}
+
+.simplePlanGrid .simpleFeaturedPlan::after {
+  background: #f97316;
+}
+
 @media (max-width: 1180px) {
   .simpleProductShowcase {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -219,5 +405,52 @@
     border-radius: 14px;
     padding: 11px 12px;
     font-size: 14px;
+  }
+}
+
+@media (max-width: 620px) {
+  .simpleHeroStats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .simpleHeroStats div {
+    min-height: 58px;
+    border-radius: 18px;
+    padding: 11px 12px;
+  }
+
+  .simpleHeroStats b {
+    font-size: 17px;
+  }
+
+  .simpleHero>.simpleCommandMock,
+  .simpleHero aside.simpleCommandMock {
+    display: grid;
+    margin-top: 22px;
+    border-radius: 24px;
+    padding: 14px;
+  }
+
+  .simpleCommandMock .simplePreviewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .simpleCommandMock .simplePreviewGrid div {
+    padding: 11px;
+    border-radius: 16px;
+  }
+
+  .simpleCommandMock .simplePreviewGrid strong {
+    font-size: 18px;
+  }
+
+  .simplePreviewQueue article:nth-child(n+3) {
+    display: none;
+  }
+
+  .simplePreviewActions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
