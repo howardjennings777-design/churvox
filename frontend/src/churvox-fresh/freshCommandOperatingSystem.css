@@ -1,28 +1,371 @@
-/* CHURVOX_COMMAND_OS_20260625 */
+/* CHURVOX_COMMAND_FIX_DESK_20260626 */
+.freshCommandOsWrap,
+.freshCommandOsWrap * {
+  box-sizing: border-box;
+}
+
 .freshCommandOsWrap {
   display: grid;
   gap: 14px;
   margin: 0 0 16px;
 }
 
-.freshCommandOperatingSystem,
-.freshCommandSelectedIntelligence {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.freshCommandFixDesk {
+  color: #111827;
 }
 
-.freshCommandOperatingSystem .freshCard,
-.freshCommandSelectedIntelligence .freshCard,
-.freshCommandNoClutter {
-  padding: 18px;
+.freshCommandFixHeader {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-left: 7px solid #f97316;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(249, 115, 22, .18), transparent 32%),
+    #111827;
+  box-shadow: 0 22px 58px rgba(15, 23, 42, .18);
+}
+
+.freshCommandFixHeader span,
+.freshCommandFixTabs button,
+.freshCommandPanelTitle span,
+.freshCommandFixSections small,
+.freshCommandProofRows small,
+.freshCommandBusinessHealth small {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ffedd5;
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.freshCommandFixHeader h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(32px, 4.5vw, 58px);
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshCommandFixHeader p {
+  max-width: 920px;
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshCommandFixStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.freshCommandFixStats div {
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .08);
+}
+
+.freshCommandFixStats b,
+.freshCommandFixStats small {
+  display: block;
+}
+
+.freshCommandFixStats b {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.freshCommandFixStats small {
+  margin-top: 5px;
+  color: #fed7aa;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.freshCommandFixTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.freshCommandFixTabs button {
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: #fffaf0;
+  cursor: pointer;
+}
+
+.freshCommandFixTabs button.active {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.freshCommandFixGrid {
+  display: grid;
+  grid-template-columns: minmax(250px, .78fr) minmax(360px, 1.25fr) minmax(280px, .85fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.freshCommandFixQueue,
+.freshCommandFixDetail,
+.freshCommandFixProof,
+.freshCommandBusinessHealth {
+  min-width: 0;
+  padding: 16px;
   border: 1px solid rgba(15, 23, 42, .08);
   border-radius: 24px;
   background: rgba(255, 255, 255, .95);
   box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
 }
 
-/* CHURVOX_COMMAND_WAITING_LIST_SCROLL_20260625 */
+.freshCommandFixQueue,
+.freshCommandFixProof {
+  position: sticky;
+  top: 16px;
+}
+
+.freshCommandPanelTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.freshCommandPanelTitle b {
+  display: inline-flex;
+  min-width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.freshCommandFixItem {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  margin-bottom: 9px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, .09);
+  border-left: 5px solid #f97316;
+  border-radius: 18px;
+  background: #fffaf0;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.freshCommandFixItem:hover,
+.freshCommandFixItem.active {
+  transform: translateY(-1px);
+  border-color: rgba(249, 115, 22, .42);
+  box-shadow: 0 15px 30px rgba(15, 23, 42, .10);
+}
+
+.freshCommandFixItem.active {
+  background: #fff7ed;
+}
+
+.freshCommandFixItem em {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshCommandFixItem b,
+.freshCommandFixItem small,
+.freshCommandFixItem strong {
+  display: block;
+}
+
+.freshCommandFixItem b {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 1000;
+  line-height: 1.1;
+}
+
+.freshCommandFixItem small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.freshCommandFixItem strong {
+  width: fit-content;
+  margin-top: 2px;
+  color: #c2410c;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.freshCommandFixDetail h3 {
+  margin: 0 0 7px;
+  color: #111827;
+  font-size: clamp(28px, 3.4vw, 44px);
+  line-height: .96;
+  letter-spacing: -.052em;
+}
+
+.freshCommandFixDetail > p {
+  margin: 0 0 14px;
+  color: #475569;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.42;
+}
+
+.freshCommandFixSections,
+.freshCommandProofRows {
+  display: grid;
+  gap: 9px;
+}
+
+.freshCommandFixSections section,
+.freshCommandProofRows section,
+.freshCommandBusinessHealth section {
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 17px;
+  background: #f8fafc;
+}
+
+.freshCommandFixSections b,
+.freshCommandProofRows b,
+.freshCommandBusinessHealth b {
+  display: block;
+  margin-top: 7px;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.38;
+  word-break: break-word;
+}
+
+.freshCommandFixActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.freshCommandFixActions button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 15px;
+  background: #111827;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshCommandFixActions button:first-child {
+  background: #f97316;
+  color: #111827;
+}
+
+.freshCommandFixActions button:last-child {
+  border: 1px solid rgba(15, 23, 42, .14);
+  background: #fff;
+  color: #111827;
+}
+
+.freshCommandOutcome {
+  margin: 10px 0 0 !important;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #ffedd5;
+  color: #7c2d12 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+.freshCommandEmptyFix {
+  padding: 14px;
+  border: 1px dashed rgba(15, 23, 42, .18);
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.freshCommandEmptyFix b,
+.freshCommandEmptyFix small {
+  display: block;
+}
+
+.freshCommandEmptyFix b {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 1000;
+}
+
+.freshCommandEmptyFix small {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.freshCommandBusinessHealth {
+  background: #111827;
+  color: #fff;
+}
+
+.freshCommandBusinessHealth summary {
+  cursor: pointer;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 1000;
+}
+
+.freshCommandBusinessHealth div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.freshCommandBusinessHealth section {
+  border-color: rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .08);
+}
+
+.freshCommandBusinessHealth b {
+  color: #fff;
+}
+
+/* keep previous waiting approval scrollbar guard */
 .freshCommandStablePage .freshGrid > .freshJobsListCard {
   max-height: 430px !important;
   overflow-y: scroll !important;
@@ -53,7 +396,6 @@
   border-radius: 999px !important;
 }
 
-/* CHURVOX_COMMAND_GROUPED_APPROVALS_20260625 */
 .freshCommandGroupCount {
   display: inline-flex !important;
   width: fit-content !important;
@@ -77,442 +419,42 @@
   line-height: 1.2 !important;
 }
 
-/* CHURVOX_COMMAND_PILL_CONTRAST_20260625 */
-.freshCommandOperatingSystem span,
-.freshCommandSelectedIntelligence span,
-.freshCommandNoClutter span,
-.freshCommandFocusSlip span {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  padding: 6px 10px;
-  border: 1px solid rgba(154, 52, 18, .2);
-  border-radius: 999px;
-  background: #ffedd5;
-  color: #7c2d12;
-  -webkit-text-fill-color: #7c2d12;
-  font-size: 10px;
-  font-weight: 1000;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-}
+@media (max-width: 1180px) {
+  .freshCommandFixGrid {
+    grid-template-columns: 1fr;
+  }
 
-.freshCommandNoClutter span {
-  border-color: rgba(251, 191, 36, .65) !important;
-  background: #f97316 !important;
-  color: #111827 !important;
-  -webkit-text-fill-color: #111827 !important;
-  box-shadow: 0 8px 22px rgba(249, 115, 22, .26) !important;
-}
+  .freshCommandFixQueue,
+  .freshCommandFixProof {
+    position: static;
+  }
 
-.freshCommandOperatingSystem h2,
-.freshCommandSelectedIntelligence h2,
-.freshCommandNoClutter h2 {
-  margin: 10px 0 7px;
-  color: #111827;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: -.035em;
-}
-
-.freshCommandOperatingSystem p,
-.freshCommandSelectedIntelligence p,
-.freshCommandNoClutter p {
-  margin: 0;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.45;
-}
-
-/* CHURVOX_COMMAND_TAPPABLE_CARDS_20260626 */
-.freshCommandTapCard {
-  cursor: pointer;
-  user-select: none;
-  touch-action: manipulation;
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
-}
-
-.freshCommandTapCard:hover {
-  transform: translateY(-2px);
-  border-color: rgba(249, 115, 22, .36) !important;
-  box-shadow: 0 22px 52px rgba(15, 23, 42, .12) !important;
-}
-
-.freshCommandTapCard:active {
-  transform: translateY(0);
-}
-
-.freshCommandTapCard:focus-visible {
-  outline: 4px solid rgba(249, 115, 22, .26);
-  outline-offset: 3px;
-}
-
-.freshCommandDebtMeter {
-  background:
-    radial-gradient(circle at 88% 0%, rgba(249, 115, 22, .18), transparent 34%),
-    #fff !important;
-}
-
-.freshCommandDebtMeter h2 {
-  font-size: 34px;
-}
-
-.freshCommandBrief {
-  border-top: 4px solid #f97316 !important;
-}
-
-.freshCommandMemory {
-  border-top: 4px solid #111827 !important;
-}
-
-.freshCommandProofPack {
-  border-top: 4px solid #fbbf24 !important;
-}
-
-.freshCommandMoneyLeaks {
-  border-top: 4px solid #16a34a !important;
-}
-
-/* CHURVOX_COMMAND_APPROVAL_QUALITY_GUARD_20260626 */
-.freshCommandQualityGuard {
-  position: relative;
-  overflow: hidden;
-  border-top: 4px solid #111827 !important;
-}
-
-.freshCommandQualityGuard::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto auto;
-  width: 120px;
-  height: 120px;
-  border-radius: 999px;
-  opacity: .16;
-  transform: translate(38px, -52px);
-  pointer-events: none;
-}
-
-.freshCommandQualityGuard.ready {
-  border-top-color: #16a34a !important;
-}
-
-.freshCommandQualityGuard.ready::after {
-  background: #16a34a;
-}
-
-.freshCommandQualityGuard.check {
-  border-top-color: #fbbf24 !important;
-}
-
-.freshCommandQualityGuard.check::after {
-  background: #fbbf24;
-}
-
-.freshCommandQualityGuard.needsEdit {
-  border-top-color: #f97316 !important;
-}
-
-.freshCommandQualityGuard.needsEdit::after {
-  background: #f97316;
-}
-
-.freshCommandQualityGuard.blocked {
-  border-top-color: #991b1b !important;
-}
-
-.freshCommandQualityGuard.blocked::after {
-  background: #991b1b;
-}
-
-.freshCommandQualityGuard h2 {
-  font-size: 28px;
-}
-
-.freshCommandOsRows {
-  display: grid;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.freshCommandOsRows div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 16px;
-  background: #f8fafc;
-}
-
-.freshCommandOsRows b,
-.freshCommandOsRows small,
-.freshCommandOsRows strong {
-  display: block;
-}
-
-.freshCommandOsRows b {
-  color: #111827;
-  font-size: 13px;
-  font-weight: 1000;
-}
-
-.freshCommandOsRows small {
-  grid-column: 1 / -1;
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-.freshCommandOsRows strong {
-  color: #c2410c;
-  font-size: 13px;
-  font-weight: 1000;
-}
-
-.freshCommandOsRows.compact div {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.freshCommandReasoningCard {
-  grid-column: span 1;
-}
-
-.freshCommandReasoningGrid,
-.freshCommandProofGrid {
-  display: grid;
-  gap: 9px;
-  margin-top: 12px;
-}
-
-.freshCommandReasoningGrid div,
-.freshCommandProofGrid div {
-  padding: 11px;
-  border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 16px;
-  background: #f8fafc;
-}
-
-.freshCommandReasoningGrid b,
-.freshCommandProofGrid b,
-.freshCommandProofGrid small {
-  display: block;
-}
-
-.freshCommandReasoningGrid b,
-.freshCommandProofGrid small {
-  margin-bottom: 5px;
-  color: #9a3412;
-  font-size: 10px;
-  font-weight: 1000;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-}
-
-.freshCommandProofGrid b {
-  color: #111827;
-  font-size: 13px;
-  line-height: 1.3;
-  word-break: break-word;
-}
-
-.freshCommandJobToCash > div {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.freshCommandJobToCash p {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
-  padding: 10px;
-  border-radius: 999px;
-  background: #f8fafc;
-}
-
-.freshCommandJobToCash b,
-.freshCommandJobToCash small {
-  display: block;
-}
-
-.freshCommandJobToCash b {
-  color: #111827;
-  font-size: 12px;
-  font-weight: 1000;
-}
-
-.freshCommandJobToCash small {
-  color: #c2410c;
-  font-size: 11px;
-  font-weight: 1000;
-}
-
-/* CHURVOX_COMMAND_FOCUS_SLIP_20260626 */
-.freshCommandFocusShade {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483600;
-  display: grid;
-  place-items: center;
-  padding: 18px;
-  background: rgba(15, 23, 42, .58);
-  backdrop-filter: blur(10px);
-}
-
-.freshCommandFocusSlip {
-  position: relative;
-  display: grid;
-  gap: 10px;
-  width: min(820px, 100%);
-  max-height: 88vh;
-  overflow: auto;
-  padding: 22px;
-  border: 1px solid rgba(15, 23, 42, .12);
-  border-top: 6px solid #f97316;
-  border-radius: 30px;
-  background: #fffaf0;
-  box-shadow: 0 30px 90px rgba(2, 6, 23, .36);
-}
-
-.freshCommandFocusSlip.ready {
-  border-top-color: #16a34a;
-}
-
-.freshCommandFocusSlip.check {
-  border-top-color: #fbbf24;
-}
-
-.freshCommandFocusSlip.needsEdit {
-  border-top-color: #f97316;
-}
-
-.freshCommandFocusSlip.blocked {
-  border-top-color: #991b1b;
-}
-
-.freshCommandFocusSlip h2 {
-  margin: 8px 48px 2px 0;
-  color: #111827;
-  font-size: clamp(30px, 4vw, 48px);
-  line-height: .95;
-  letter-spacing: -.055em;
-}
-
-.freshCommandFocusSlip > p {
-  margin: 0 48px 4px 0;
-  color: #475569;
-  font-size: 14px;
-  font-weight: 850;
-  line-height: 1.45;
-}
-
-.freshCommandFocusClose {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 0;
-  border-radius: 999px;
-  background: #111827;
-  color: #fff;
-  font-size: 24px;
-  font-weight: 1000;
-  cursor: pointer;
-}
-
-/* CHURVOX_COMMAND_NO_CLUTTER_WRAP_20260625 */
-.freshCommandNoClutter {
-  display: grid;
-  grid-template-columns: 1fr !important;
-  gap: 14px;
-  align-items: start;
-  overflow: hidden;
-  background: #111827;
-  color: #fff;
-}
-
-.freshCommandNoClutter > div {
-  min-width: 0;
-  max-width: 100%;
-}
-
-.freshCommandNoClutter h2 {
-  width: 100%;
-  max-width: 100%;
-  color: #fff;
-  font-size: clamp(20px, 2.4vw, 30px) !important;
-  overflow-wrap: anywhere;
-  word-break: normal;
-  white-space: normal;
-  line-height: 1.12;
-}
-
-.freshCommandNoClutter li {
-  color: #fff;
-}
-
-.freshCommandNoClutter ul {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.freshCommandNoClutter li {
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, .16);
-  font-size: 13px;
-  font-weight: 900;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 1250px) {
-  .freshCommandOperatingSystem,
-  .freshCommandSelectedIntelligence {
+  .freshCommandBusinessHealth div,
+  .freshCommandFixStats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 1100px) {
-  .freshCommandOperatingSystem,
-  .freshCommandSelectedIntelligence {
-    grid-template-columns: 1fr;
-  }
-
-  .freshCommandNoClutter ul {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 760px) {
+  .freshCommandFixHeader {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .freshCommandFixStats,
+  .freshCommandBusinessHealth div {
+    grid-template-columns: 1fr;
+  }
+
+  .freshCommandFixActions {
+    display: grid;
+  }
+
+  .freshCommandFixActions button {
+    width: 100%;
+  }
+
   .freshCommandStablePage .freshGrid > .freshJobsListCard {
     max-height: 390px !important;
-  }
-
-  .freshCommandNoClutter h2 {
-    font-size: 21px !important;
-  }
-
-  .freshCommandFocusShade {
-    align-items: start;
-    overflow: auto;
-    padding: 14px;
-  }
-
-  .freshCommandFocusSlip {
-    border-radius: 24px;
-    padding: 18px;
   }
 }
