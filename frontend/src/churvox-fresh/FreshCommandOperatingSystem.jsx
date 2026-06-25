@@ -13,6 +13,7 @@ export const COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626 = "COMMAND_FIX_DE
 export const COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626 = "COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626";
 export const COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626 = "COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626";
 export const COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626 = "COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626";
+export const COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626 = "COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 const PRIORITY_ORDER = { "Fix first": 0, "Check today": 1, "Needs proof": 2, "Setup check": 3, "Watching": 4 };
@@ -71,6 +72,17 @@ const riskBadgeLabelStyle = {
 
 const riskBadgeTextStyle = {
   fontSize: 13,
+  fontWeight: 900,
+  lineHeight: 1.35,
+};
+
+const approveGuardHintStyle = {
+  margin: "10px 0 0",
+  padding: "10px 12px",
+  borderRadius: 14,
+  background: "#fef3c7",
+  color: "#92400e",
+  fontSize: 12,
   fontWeight: 900,
   lineHeight: 1.35,
 };
@@ -449,6 +461,9 @@ export default function FreshCommandOperatingSystem({
   const activeProofRows = activeFix ? buildProofRows(activeFix, selectedApprovalDetails, selectedDetails) : [];
   const decisionTrail = activeFix ? buildDecisionTrail(activeFix, activeProofRows, selectedDiagnosticOnly) : [];
   const activeRiskBadge = activeFix ? buildRiskBadge(activeFix, activeProofRows, selectedDiagnosticOnly, selectedHasConcreteAction, selectedScore) : null;
+  const approveBlocked = Boolean(activeFix?.source?.sourceMode !== "note" && (activeRiskBadge?.label === "Draft needed" || activeRiskBadge?.label === "Needs proof"));
+  const approveBlockHint = activeRiskBadge?.label === "Draft needed" ? "Approval is blocked until Churvox has a concrete draft or action ready." : activeRiskBadge?.label === "Needs proof" ? "Approval is blocked until stronger proof or linked context is added." : "";
+  const approveButtonText = actionBusy === "approve" || externalBusy === "approve" ? "Approving..." : activeFix?.source?.sourceMode === "note" ? "Prepare note" : approveBlocked && activeRiskBadge?.label === "Draft needed" ? "Draft needed first" : approveBlocked ? "Proof needed first" : "Approve fix";
   const adminDebtTotal = preparedBackendRows.reduce((sum, item) => sum + moneyAmount(item), 0);
   const moneyItems = fixItems.filter((item) => item.bucket === "Money");
   const highItems = fixItems.filter((item) => item.severity === "Fix first");
@@ -470,6 +485,7 @@ export default function FreshCommandOperatingSystem({
 
   async function runFixAction(kind) {
     if (!activeFix?.source) return;
+    if (kind === "approve" && approveBlocked) return;
     const source = activeFix.source;
     const note = noteValue || `${kind} from Command Fix Desk.`;
     setActionBusy(kind);
@@ -567,7 +583,7 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626} data-command-approve-guard={COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
@@ -636,10 +652,11 @@ export default function FreshCommandOperatingSystem({
             </div>
             <label className="freshCommandOwnerNote"><span>Owner note / edit</span><textarea value={noteValue} onChange={(event) => updateNote(event.target.value)} placeholder="Add a note before approving, marking needs edit, or ignoring" /></label>
             <div className="freshCommandFixActions">
-              <button type="button" disabled={busy} onClick={() => runFixAction("approve")}>{actionBusy === "approve" || externalBusy === "approve" ? "Approving..." : activeFix?.source?.sourceMode === "note" ? "Prepare note" : "Approve fix"}</button>
+              <button type="button" disabled={busy || approveBlocked} onClick={() => runFixAction("approve")}>{approveButtonText}</button>
               <button type="button" disabled={busy} onClick={() => runFixAction("save")}>{actionBusy === "save" || externalBusy === "save" ? "Saving..." : "Needs edit"}</button>
               <button type="button" disabled={busy} onClick={() => runFixAction("ignore")}>{actionBusy === "ignore" || externalBusy === "ignore" ? "Ignoring..." : "Ignore for now"}</button>
             </div>
+            {approveBlocked ? <p style={approveGuardHintStyle}>{approveBlockHint}</p> : null}
             {activeOutcome ? <p className="freshCommandOutcome">{activeOutcome}</p> : null}
           </> : <div className="freshCommandEmptyFix"><b>Nothing selected</b><small>Choose a fix from the left list.</small></div>}
         </main>
