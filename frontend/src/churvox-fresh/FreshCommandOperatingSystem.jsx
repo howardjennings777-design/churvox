@@ -11,6 +11,7 @@ export const COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626 = "COMMAND_FIX_DESK_
 export const COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626 = "COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626";
 export const COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626 = "COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626";
 export const COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626 = "COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626";
+export const COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626 = "COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 const PRIORITY_ORDER = { "Fix first": 0, "Check today": 1, "Needs proof": 2, "Setup check": 3, "Watching": 4 };
@@ -46,6 +47,52 @@ const commandExplainerTextStyle = {
   fontSize: 13,
   fontWeight: 900,
   lineHeight: 1.42,
+};
+
+const decisionTrailStyle = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginTop: 12,
+};
+
+const decisionTrailCardStyle = {
+  flex: "1 1 145px",
+  minWidth: 0,
+  padding: 11,
+  border: "1px solid rgba(15,23,42,.08)",
+  borderRadius: 16,
+  background: "#fffaf0",
+};
+
+const decisionTrailStepStyle = {
+  display: "inline-flex",
+  width: "fit-content",
+  padding: "5px 8px",
+  borderRadius: 999,
+  background: "#111827",
+  color: "#fff",
+  fontSize: 10,
+  fontWeight: 1000,
+  letterSpacing: ".07em",
+  textTransform: "uppercase",
+};
+
+const decisionTrailTitleStyle = {
+  display: "block",
+  marginTop: 8,
+  color: "#111827",
+  fontSize: 13,
+  fontWeight: 1000,
+  lineHeight: 1.15,
+};
+
+const decisionTrailTextStyle = {
+  marginTop: 5,
+  color: "#64748b",
+  fontSize: 12,
+  fontWeight: 850,
+  lineHeight: 1.35,
 };
 
 function cleanText(value) {
@@ -255,6 +302,15 @@ function buildProofRows(fix, selectedApprovalDetails, selectedDetails) {
   return rows.filter((row) => cleanText(row.value));
 }
 
+function buildDecisionTrail(fix, proofRows, selectedDiagnosticOnly) {
+  return [
+    { step: "Found", title: "Issue spotted", text: fix?.problem || "Churvox found work needing a decision." },
+    { step: "Prepared", title: selectedDiagnosticOnly ? "Draft still needed" : "Action prepared", text: fix?.prepared || "Churvox prepared the next safe step." },
+    { step: "Proof checked", title: proofRows?.length ? `${proofRows.length} proof links` : "Proof is weak", text: proofRows?.length ? "Linked context is ready for owner review." : "Check the record before approving." },
+    { step: "Owner", title: "Waiting on you", text: "Approve, mark needs edit, or ignore from Command." },
+  ];
+}
+
 export default function FreshCommandOperatingSystem({
   selected,
   selectedApprovalDetails = [],
@@ -320,6 +376,7 @@ export default function FreshCommandOperatingSystem({
   const visibleItems = tab === "All" ? fixItems : fixItems.filter((item) => item.bucket === tab);
   const activeFix = fixItems.find((item) => item.id === activeId) || visibleItems[0] || fixItems[0] || null;
   const activeProofRows = activeFix ? buildProofRows(activeFix, selectedApprovalDetails, selectedDetails) : [];
+  const decisionTrail = activeFix ? buildDecisionTrail(activeFix, activeProofRows, selectedDiagnosticOnly) : [];
   const adminDebtTotal = preparedBackendRows.reduce((sum, item) => sum + moneyAmount(item), 0);
   const moneyItems = fixItems.filter((item) => item.bucket === "Money");
   const highItems = fixItems.filter((item) => item.severity === "Fix first");
@@ -438,7 +495,7 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
@@ -500,6 +557,9 @@ export default function FreshCommandOperatingSystem({
               <section><small>Churvox prepared</small><b>{activeFix.prepared}</b></section>
               <section><small>Safe next step</small><b>{activeFix.nextStep}</b></section>
               <section><small>Approval quality</small><b>{confidenceLabel(selectedScore)} · {selectedScore}%</b></section>
+            </div>
+            <div style={decisionTrailStyle} aria-label="Decision trail">
+              {decisionTrail.map((item) => <section key={item.step} style={decisionTrailCardStyle}><small style={decisionTrailStepStyle}>{item.step}</small><b style={decisionTrailTitleStyle}>{item.title}</b><p style={decisionTrailTextStyle}>{item.text}</p></section>)}
             </div>
             <label className="freshCommandOwnerNote"><span>Owner note / edit</span><textarea value={noteValue} onChange={(event) => updateNote(event.target.value)} placeholder="Add a note before approving, marking needs edit, or ignoring" /></label>
             <div className="freshCommandFixActions">
