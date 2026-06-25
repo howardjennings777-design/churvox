@@ -7,6 +7,9 @@ export const COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626 = "COMMAND_APPROVAL_
 export const COMMAND_TAPPABLE_CARDS_MARKER_20260626 = "COMMAND_TAPPABLE_CARDS_MARKER_20260626";
 export const COMMAND_FIX_DESK_MARKER_20260626 = "COMMAND_FIX_DESK_MARKER_20260626";
 export const COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626 = "COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626";
+export const COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626 = "COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626";
+
+const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 
 function cleanText(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -112,6 +115,12 @@ function notifyCommandUpdated() {
   } catch {}
 }
 
+function clearLegacyNotes() {
+  try {
+    LEGACY_INBOX_KEYS.forEach((key) => window.localStorage.removeItem(key));
+  } catch {}
+}
+
 function classifyFix(item, overrides = {}) {
   const text = itemText(item);
   const amount = moneyAmount(item);
@@ -213,11 +222,23 @@ export default function FreshCommandOperatingSystem({
   summaryOf = () => "Ready for your decision.",
   readableAction = (value) => cleanText(value || "Ready to approve"),
   categoryOf = () => "Review",
+  ownerNote = "",
+  onOwnerNoteChange,
+  onApproveFix,
+  onSaveFix,
+  onIgnoreFix,
+  onCheckForWork,
+  onPrepareNotes,
+  onRefresh,
+  onOpenRecord,
+  externalBusy = "",
 }) {
   const [tab, setTab] = React.useState("All");
   const [activeId, setActiveId] = React.useState("");
   const [localOutcome, setLocalOutcome] = React.useState({});
   const [actionBusy, setActionBusy] = React.useState("");
+  const [toolBusy, setToolBusy] = React.useState("");
+  const [localNote, setLocalNote] = React.useState("");
   const selectedDetails = selected ? detailRows(selected) : [];
   const selectedGaps = selected ? selectedProofGaps(selectedApprovalDetails) : [];
   const selectedScore = scoreItem(selected, selectedApprovalDetails, selectedHasConcreteAction);
@@ -257,12 +278,41 @@ export default function FreshCommandOperatingSystem({
   const highItems = fixItems.filter((item) => item.severity === "High");
   const missingProofText = selectedGaps.length ? selectedGaps.join(", ") : "No major proof gaps on the selected item.";
   const activeOutcome = activeFix ? localOutcome[activeFix.id] : "";
+  const noteValue = typeof ownerNote === "string" ? ownerNote : localNote;
+  const busy = Boolean(actionBusy || toolBusy || externalBusy);
+
+  React.useEffect(() => {
+    if (typeof ownerNote === "string") return;
+    setLocalNote(activeFix?.source?.owner_note || activeFix?.source?.owner || "");
+  }, [activeFix?.id, ownerNote]);
+
+  function updateNote(value) {
+    if (onOwnerNoteChange) onOwnerNoteChange(value);
+    else setLocalNote(value);
+  }
 
   async function runFixAction(kind) {
     if (!activeFix?.source) return;
     const source = activeFix.source;
+    const note = noteValue || `${kind} from Command Fix Desk.`;
     setActionBusy(kind);
     try {
+      if (kind === "approve" && onApproveFix) {
+        await onApproveFix({ fix: activeFix, note });
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: source.sourceMode === "note" ? "Prepared note for approval." : "Approved. Churvox handled it." }));
+        return;
+      }
+      if (kind === "save" && onSaveFix) {
+        await onSaveFix({ fix: activeFix, note });
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Saved as needs edit." }));
+        return;
+      }
+      if (kind === "ignore" && onIgnoreFix) {
+        await onIgnoreFix({ fix: activeFix, note });
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Ignored. Nothing was changed." }));
+        return;
+      }
+
       if (source.sourceMode === "note") {
         if (kind !== "approve") {
           setLocalOutcome((current) => ({ ...current, [activeFix.id]: kind === "save" ? "Note marked for edit" : "Note ignored locally" }));
@@ -284,13 +334,13 @@ export default function FreshCommandOperatingSystem({
 
       if (kind === "approve") {
         if (!source.preparedForApproval) throw new Error("This item needs a concrete draft before approval.");
-        await commandApiRequest("POST", `/ai-review-items/${encodeURIComponent(id)}/approve`, { note: "Approved from Command Fix Desk." });
+        await commandApiRequest("POST", `/ai-review-items/${encodeURIComponent(id)}/approve`, { note });
         setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Approved. Churvox handled it." }));
       } else if (kind === "save") {
-        await commandApiRequest("PATCH", `/ai-review-items/${encodeURIComponent(id)}`, { note: "Needs edit from Command Fix Desk." });
+        await commandApiRequest("PATCH", `/ai-review-items/${encodeURIComponent(id)}`, { note });
         setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Saved as needs edit." }));
       } else if (kind === "ignore") {
-        await commandApiRequest("POST", `/ai-review-items/${encodeURIComponent(id)}/ignore`, { note: "Ignored from Command Fix Desk." });
+        await commandApiRequest("POST", `/ai-review-items/${encodeURIComponent(id)}/ignore`, { note });
         setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Ignored. Nothing was changed." }));
       }
       notifyCommandUpdated();
@@ -301,8 +351,46 @@ export default function FreshCommandOperatingSystem({
     }
   }
 
+  async function runTool(kind) {
+    setToolBusy(kind);
+    try {
+      if (kind === "scan") {
+        if (onCheckForWork) await onCheckForWork();
+        else {
+          const text = "Prepare completed admin work for owner approval from real Churvox records. Return only concrete approval-ready items with customer, job, proof, price, billing, and prepared action. Owner approval required.";
+          await commandApiRequest("POST", "/tell-churvox/prepare", { text });
+          notifyCommandUpdated();
+        }
+        setLocalOutcome((current) => ({ ...current, toolbar: "Checked for work. Ready items will appear in the Fix Desk." }));
+      } else if (kind === "refresh") {
+        if (onRefresh) await onRefresh();
+        else notifyCommandUpdated();
+        setLocalOutcome((current) => ({ ...current, toolbar: "Command refreshed." }));
+      } else if (kind === "prepare") {
+        if (onPrepareNotes) await onPrepareNotes();
+        else {
+          let prepared = 0;
+          for (const item of noteRows.slice(0, 20)) {
+            await commandApiRequest("POST", "/tell-churvox/prepare", { text: sourceText(item) || compactValue(item?.title || item?.summary, "Saved note") });
+            prepared += 1;
+          }
+          if (prepared) clearLegacyNotes();
+          notifyCommandUpdated();
+        }
+        setLocalOutcome((current) => ({ ...current, toolbar: noteRows.length ? "Prepared saved notes." : "No saved notes to prepare." }));
+      } else if (kind === "open") {
+        if (onOpenRecord) onOpenRecord({ fix: activeFix });
+        else setLocalOutcome((current) => ({ ...current, toolbar: "Linked record opening is not wired here yet." }));
+      }
+    } catch (err) {
+      setLocalOutcome((current) => ({ ...current, toolbar: err?.message || "Command tool failed." }));
+    } finally {
+      setToolBusy("");
+    }
+  }
+
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{fixItems.length ? `${fixItems.length} things need attention` : "Nothing urgent needs fixing"}</h2>
@@ -313,6 +401,13 @@ export default function FreshCommandOperatingSystem({
           <div><b>{formatMoney(adminDebtTotal)}</b><small>Admin debt</small></div>
           <div><b>{counts.Open || 0}</b><small>Waiting approval</small></div>
         </div>
+        <div className="freshCommandDeskToolbar">
+          <button type="button" disabled={busy} onClick={() => runTool("scan")}>{toolBusy === "scan" ? "Checking..." : "Check for work"}</button>
+          <button type="button" disabled={busy || !noteRows.length} onClick={() => runTool("prepare")}>{toolBusy === "prepare" ? "Preparing..." : `Prepare notes${noteRows.length ? ` (${noteRows.length})` : ""}`}</button>
+          <button type="button" disabled={busy || !activeFix || activeFix?.source?.sourceMode === "note"} onClick={() => runTool("open")}>Open linked record</button>
+          <button type="button" disabled={busy} onClick={() => runTool("refresh")}>{toolBusy === "refresh" ? "Refreshing..." : "Refresh"}</button>
+        </div>
+        {localOutcome.toolbar ? <p className="freshCommandToolOutcome">{localOutcome.toolbar}</p> : null}
       </header>
 
       <nav className="freshCommandFixTabs" aria-label="Command fix filters">
@@ -343,10 +438,11 @@ export default function FreshCommandOperatingSystem({
               <section><small>Safe next step</small><b>{activeFix.nextStep}</b></section>
               <section><small>Approval quality</small><b>{confidenceLabel(selectedScore)} · {selectedScore}%</b></section>
             </div>
+            <label className="freshCommandOwnerNote"><span>Owner note / edit</span><textarea value={noteValue} onChange={(event) => updateNote(event.target.value)} placeholder="Add a note before approving, marking needs edit, or ignoring" /></label>
             <div className="freshCommandFixActions">
-              <button type="button" disabled={Boolean(actionBusy)} onClick={() => runFixAction("approve")}>{actionBusy === "approve" ? "Approving..." : activeFix?.source?.sourceMode === "note" ? "Prepare note" : "Approve fix"}</button>
-              <button type="button" disabled={Boolean(actionBusy)} onClick={() => runFixAction("save")}>{actionBusy === "save" ? "Saving..." : "Needs edit"}</button>
-              <button type="button" disabled={Boolean(actionBusy)} onClick={() => runFixAction("ignore")}>{actionBusy === "ignore" ? "Ignoring..." : "Ignore for now"}</button>
+              <button type="button" disabled={busy} onClick={() => runFixAction("approve")}>{actionBusy === "approve" || externalBusy === "approve" ? "Approving..." : activeFix?.source?.sourceMode === "note" ? "Prepare note" : "Approve fix"}</button>
+              <button type="button" disabled={busy} onClick={() => runFixAction("save")}>{actionBusy === "save" || externalBusy === "save" ? "Saving..." : "Needs edit"}</button>
+              <button type="button" disabled={busy} onClick={() => runFixAction("ignore")}>{actionBusy === "ignore" || externalBusy === "ignore" ? "Ignoring..." : "Ignore for now"}</button>
             </div>
             {activeOutcome ? <p className="freshCommandOutcome">{activeOutcome}</p> : null}
           </> : <div className="freshCommandEmptyFix"><b>Nothing selected</b><small>Choose a fix from the left list.</small></div>}
