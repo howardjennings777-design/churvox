@@ -10,6 +10,7 @@ export const COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626 = "COMMAND_FIX_DESK_AP
 export const COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626 = "COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626";
 export const COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626 = "COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626";
 export const COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626 = "COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626";
+export const COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626 = "COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 const PRIORITY_ORDER = { "Fix first": 0, "Check today": 1, "Needs proof": 2, "Setup check": 3, "Watching": 4 };
@@ -21,6 +22,31 @@ const FIX_TABS = [
   { key: "Proof", label: "Proof missing" },
   { key: "Setup", label: "Setup gaps" },
 ];
+
+const commandExplainerStyle = {
+  display: "grid",
+  gap: 6,
+  maxWidth: 1040,
+  padding: "12px 14px",
+  border: "1px solid rgba(255,255,255,.14)",
+  borderRadius: 18,
+  background: "rgba(255,255,255,.09)",
+};
+
+const commandExplainerTitleStyle = {
+  color: "#fff",
+  fontSize: 12,
+  fontWeight: 1000,
+  letterSpacing: ".08em",
+  textTransform: "uppercase",
+};
+
+const commandExplainerTextStyle = {
+  color: "#fed7aa",
+  fontSize: 13,
+  fontWeight: 900,
+  lineHeight: 1.42,
+};
 
 function cleanText(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -412,11 +438,15 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
         <p>{hasAnyFixes ? "Pick one issue, see why it matters, check the proof, and fix it on this page." : "No urgent fixes are waiting. You can still scan for new admin work, prepare saved notes, or refresh the queue before you move on."}</p>
+        <aside style={commandExplainerStyle}>
+          <b style={commandExplainerTitleStyle}>Decision-only page</b>
+          <span style={commandExplainerTextStyle}>Command only shows work that needs a decision. Jobs, clients, quotes, invoices, and team records stay on their own pages until Churvox finds something you need to approve, fix, or chase.</span>
+        </aside>
         <div className="freshCommandFixStats">
           <div><b>{highItems.length}</b><small>Fix first</small></div>
           <div><b>{moneyItems.length}</b><small>Money waiting</small></div>
