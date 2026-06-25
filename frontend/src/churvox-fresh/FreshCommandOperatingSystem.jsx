@@ -12,6 +12,7 @@ export const COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626 = "COMMAND_FIX_DESK_EM
 export const COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626 = "COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626";
 export const COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626 = "COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626";
 export const COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626 = "COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626";
+export const COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626 = "COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 const PRIORITY_ORDER = { "Fix first": 0, "Check today": 1, "Needs proof": 2, "Setup check": 3, "Watching": 4 };
@@ -47,6 +48,31 @@ const commandExplainerTextStyle = {
   fontSize: 13,
   fontWeight: 900,
   lineHeight: 1.42,
+};
+
+const riskBadgeStyle = {
+  display: "grid",
+  gap: 6,
+  margin: "10px 0 12px",
+  padding: "12px 13px",
+  borderRadius: 17,
+};
+
+const riskBadgeLabelStyle = {
+  display: "inline-flex",
+  width: "fit-content",
+  padding: "5px 9px",
+  borderRadius: 999,
+  fontSize: 10,
+  fontWeight: 1000,
+  letterSpacing: ".08em",
+  textTransform: "uppercase",
+};
+
+const riskBadgeTextStyle = {
+  fontSize: 13,
+  fontWeight: 900,
+  lineHeight: 1.35,
 };
 
 const decisionTrailStyle = {
@@ -311,6 +337,51 @@ function buildDecisionTrail(fix, proofRows, selectedDiagnosticOnly) {
   ];
 }
 
+function buildRiskBadge(fix, proofRows, selectedDiagnosticOnly, selectedHasConcreteAction, score) {
+  if (selectedDiagnosticOnly || !selectedHasConcreteAction) {
+    return {
+      label: "Draft needed",
+      text: "This is not safe to approve yet because Churvox still needs a concrete action or draft.",
+      background: "#fee2e2",
+      border: "rgba(220,38,38,.18)",
+      color: "#991b1b",
+      labelBackground: "#991b1b",
+      labelColor: "#fff",
+    };
+  }
+  if (fix?.severity === "Needs proof" || !proofRows?.length || score < 50) {
+    return {
+      label: "Needs proof",
+      text: "Get stronger proof or linked context before approving this one.",
+      background: "#fef3c7",
+      border: "rgba(217,119,6,.22)",
+      color: "#92400e",
+      labelBackground: "#92400e",
+      labelColor: "#fff",
+    };
+  }
+  if (fix?.severity === "Fix first" || score < 85) {
+    return {
+      label: "Check first",
+      text: "This looks actionable, but check the customer, proof, and amount before approving.",
+      background: "#ffedd5",
+      border: "rgba(249,115,22,.24)",
+      color: "#9a3412",
+      labelBackground: "#f97316",
+      labelColor: "#111827",
+    };
+  }
+  return {
+    label: "Safe to approve",
+    text: "Proof and action look strong. Owner approval is still required before anything changes.",
+    background: "#dcfce7",
+    border: "rgba(22,163,74,.20)",
+    color: "#166534",
+    labelBackground: "#166534",
+    labelColor: "#fff",
+  };
+}
+
 export default function FreshCommandOperatingSystem({
   selected,
   selectedApprovalDetails = [],
@@ -377,6 +448,7 @@ export default function FreshCommandOperatingSystem({
   const activeFix = fixItems.find((item) => item.id === activeId) || visibleItems[0] || fixItems[0] || null;
   const activeProofRows = activeFix ? buildProofRows(activeFix, selectedApprovalDetails, selectedDetails) : [];
   const decisionTrail = activeFix ? buildDecisionTrail(activeFix, activeProofRows, selectedDiagnosticOnly) : [];
+  const activeRiskBadge = activeFix ? buildRiskBadge(activeFix, activeProofRows, selectedDiagnosticOnly, selectedHasConcreteAction, selectedScore) : null;
   const adminDebtTotal = preparedBackendRows.reduce((sum, item) => sum + moneyAmount(item), 0);
   const moneyItems = fixItems.filter((item) => item.bucket === "Money");
   const highItems = fixItems.filter((item) => item.severity === "Fix first");
@@ -495,7 +567,7 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
@@ -552,6 +624,7 @@ export default function FreshCommandOperatingSystem({
             <div className="freshCommandPanelTitle"><span>{activeFix.categoryLabel || "Selected fix"}</span><b>{activeFix.severity}</b></div>
             <h3>{activeFix.problem}</h3>
             <p>{activeFix.title}</p>
+            {activeRiskBadge ? <div style={{ ...riskBadgeStyle, background: activeRiskBadge.background, border: `1px solid ${activeRiskBadge.border}` }}><strong style={{ ...riskBadgeLabelStyle, background: activeRiskBadge.labelBackground, color: activeRiskBadge.labelColor }}>{activeRiskBadge.label}</strong><span style={{ ...riskBadgeTextStyle, color: activeRiskBadge.color }}>{activeRiskBadge.text}</span></div> : null}
             <div className="freshCommandFixSections">
               <section><small>Why it matters</small><b>{activeFix.why}</b></section>
               <section><small>Churvox prepared</small><b>{activeFix.prepared}</b></section>
