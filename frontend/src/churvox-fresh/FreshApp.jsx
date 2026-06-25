@@ -123,6 +123,7 @@ import { installPillContrastRuntime } from "./freshPillContrastRuntime";
 import "./freshFinalContrastLock.css";
 import "./freshPillContrastSystem.css";
 import "./freshOwnerShellFinal.css";
+import "./freshCommandOperatingSystem.css";
 
 const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch", "routes"];
 const COMMAND_ALIASES = ["askchurvox", "aioperatorstudio", "quickcreateai", "followupwriter", "quoteai", "invoicecheck", "workerbrief", "automation"];
