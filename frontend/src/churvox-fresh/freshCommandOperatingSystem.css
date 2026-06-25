@@ -22,25 +22,35 @@
   box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
 }
 
-.freshCommandStablePage .freshJobsListCard {
-  max-height: 560px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+/* CHURVOX_COMMAND_WAITING_LIST_SCROLL_20260625 */
+.freshCommandStablePage .freshGrid > .freshJobsListCard {
+  max-height: 430px !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  scrollbar-width: auto !important;
+  scrollbar-gutter: stable !important;
+  -ms-overflow-style: auto !important;
 }
 
-.freshCommandStablePage .freshJobsListCard::-webkit-scrollbar {
-  width: 10px;
+.freshCommandStablePage .freshGrid > .freshJobsListCard .freshItem {
+  margin-bottom: 8px !important;
 }
 
-.freshCommandStablePage .freshJobsListCard::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, .06);
-  border-radius: 999px;
+.freshCommandStablePage .freshGrid > .freshJobsListCard::-webkit-scrollbar {
+  display: block !important;
+  width: 10px !important;
+  height: 10px !important;
 }
 
-.freshCommandStablePage .freshJobsListCard::-webkit-scrollbar-thumb {
-  background: rgba(249, 115, 22, .55);
-  border-radius: 999px;
+.freshCommandStablePage .freshGrid > .freshJobsListCard::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, .08) !important;
+  border-radius: 999px !important;
+}
+
+.freshCommandStablePage .freshGrid > .freshJobsListCard::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, .72) !important;
+  border-radius: 999px !important;
 }
 
 .freshCommandOperatingSystem span,
@@ -279,8 +289,8 @@
 }
 
 @media (max-width: 760px) {
-  .freshCommandStablePage .freshJobsListCard {
-    max-height: 460px;
+  .freshCommandStablePage .freshGrid > .freshJobsListCard {
+    max-height: 390px !important;
   }
 
   .freshCommandNoClutter h2 {
