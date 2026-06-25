@@ -32,7 +32,8 @@
 .freshCommandPanelTitle span,
 .freshCommandFixSections small,
 .freshCommandProofRows small,
-.freshCommandBusinessHealth small {
+.freshCommandBusinessHealth small,
+.freshCommandOwnerNote span {
   display: inline-flex;
   width: fit-content;
   align-items: center;
@@ -95,6 +96,48 @@
   color: #fed7aa;
   font-size: 11px;
   font-weight: 900;
+}
+
+/* CHURVOX_COMMAND_FULL_CONTROLS_20260626 */
+.freshCommandDeskToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.freshCommandDeskToolbar button {
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .10);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshCommandDeskToolbar button:first-child {
+  background: #f97316;
+  color: #111827;
+}
+
+.freshCommandDeskToolbar button:disabled,
+.freshCommandFixActions button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.freshCommandToolOutcome {
+  width: fit-content;
+  max-width: 100%;
+  padding: 9px 11px;
+  border-radius: 14px;
+  background: rgba(255, 237, 213, .16);
+  color: #fed7aa !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
 }
 
 .freshCommandFixTabs {
@@ -270,6 +313,32 @@
   font-weight: 950;
   line-height: 1.38;
   word-break: break-word;
+}
+
+.freshCommandOwnerNote {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.freshCommandOwnerNote textarea {
+  width: 100%;
+  min-height: 92px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 17px;
+  background: #fffaf0;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
+}
+
+.freshCommandOwnerNote textarea:focus {
+  border-color: rgba(249, 115, 22, .62);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .14);
 }
 
 .freshCommandFixActions {
@@ -454,10 +523,12 @@
     grid-template-columns: 1fr;
   }
 
+  .freshCommandDeskToolbar,
   .freshCommandFixActions {
     display: grid;
   }
 
+  .freshCommandDeskToolbar button,
   .freshCommandFixActions button {
     width: 100%;
   }
