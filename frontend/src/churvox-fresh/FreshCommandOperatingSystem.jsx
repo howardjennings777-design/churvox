@@ -257,17 +257,15 @@ export default function FreshCommandOperatingSystem({
             {businessMemorySignals.map((row) => <div key={row.label}><b>{row.label}</b><small>{row.value}</small></div>)}
           </div>
         </article>
-      </section>
 
-      <section className="freshCard freshCommandMoneyLeaks">
-        <div>
+        <article className="freshCard freshCommandMoneyLeaks freshCommandBrainCard">
           <span>Money Leak Detector</span>
           <h2>{moneyLeakSignals.length ? `${moneyLeakSignals.length} money checks` : "No money leaks showing"}</h2>
-          <p>Churvox watches for completed work, unpaid invoices, quote follow-ups, extras, and repeat work that could cost you if missed.</p>
-        </div>
-        <div className="freshCommandOsRows compact">
-          {moneyLeakSignals.length ? moneyLeakSignals.map((signal) => <div key={`${signal.label}-${signal.title}`}><b>{signal.label}</b><small>{signal.reason}</small><strong>{signal.amount ? formatMoney(signal.amount) : signal.action}</strong></div>) : <div><b>Clear</b><small>No invoice, quote, or payment leak detected in the current prepared work.</small><strong>Watched</strong></div>}
-        </div>
+          <p>Watches completed work, unpaid invoices, quote follow-ups, extras, and repeat work that could cost you if missed.</p>
+          <div className="freshCommandOsRows compact">
+            {moneyLeakSignals.length ? moneyLeakSignals.map((signal) => <div key={`${signal.label}-${signal.title}`}><b>{signal.label}</b><small>{signal.reason}</small><strong>{signal.amount ? formatMoney(signal.amount) : signal.action}</strong></div>) : <div><b>Clear</b><small>No invoice, quote, or payment leak detected in the current prepared work.</small><strong>Watched</strong></div>}
+          </div>
+        </article>
       </section>
 
       {selected ? <section className="freshCommandSelectedIntelligence">
