@@ -8,6 +8,7 @@ export const COMMAND_TAPPABLE_CARDS_MARKER_20260626 = "COMMAND_TAPPABLE_CARDS_MA
 export const COMMAND_FIX_DESK_MARKER_20260626 = "COMMAND_FIX_DESK_MARKER_20260626";
 export const COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626 = "COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626";
 export const COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626 = "COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626";
+export const COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626 = "COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 
@@ -280,6 +281,7 @@ export default function FreshCommandOperatingSystem({
   const activeOutcome = activeFix ? localOutcome[activeFix.id] : "";
   const noteValue = onOwnerNoteChange ? String(ownerNote || "") : localNote;
   const busy = Boolean(actionBusy || toolBusy || externalBusy);
+  const hasAnyFixes = fixItems.length > 0;
 
   React.useEffect(() => {
     if (onOwnerNoteChange) return;
@@ -390,11 +392,11 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
-        <h2>{fixItems.length ? `${fixItems.length} things need attention` : "Nothing urgent needs fixing"}</h2>
-        <p>Command is now the workbench: pick one issue, see why it matters, check the proof, and fix it on this page.</p>
+        <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
+        <p>{hasAnyFixes ? "Pick one issue, see why it matters, check the proof, and fix it on this page." : "No urgent fixes are waiting. You can still scan for new admin work, prepare saved notes, or refresh the queue before you move on."}</p>
         <div className="freshCommandFixStats">
           <div><b>{highItems.length}</b><small>High priority</small></div>
           <div><b>{moneyItems.length}</b><small>Money checks</small></div>
@@ -414,7 +416,18 @@ export default function FreshCommandOperatingSystem({
         {tabs.map((key) => <button key={key} type="button" className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{key}</button>)}
       </nav>
 
-      <section className="freshCommandFixGrid">
+      {!hasAnyFixes ? <section className="freshCommandEmptyCommand">
+        <div>
+          <span>Nothing waiting</span>
+          <h3>Command has no fixes queued.</h3>
+          <p>This is the good version of boring: no prepared admin action needs your approval right now.</p>
+        </div>
+        <div className="freshCommandEmptySteps">
+          <section><b>1</b><span>Check for work</span><p>Ask Churvox to scan completed jobs, invoices, quotes, proof gaps, and setup issues.</p></section>
+          <section><b>2</b><span>Prepare notes</span><p>Turn saved owner notes into approval-ready actions when there are notes waiting.</p></section>
+          <section><b>3</b><span>Keep records clean</span><p>Jobs, clients, quotes, invoices, and team stay on their own pages unless something needs a decision.</p></section>
+        </div>
+      </section> : <section className="freshCommandFixGrid">
         <aside className="freshCommandFixQueue">
           <div className="freshCommandPanelTitle"><span>Fix list</span><b>{visibleItems.length || 0}</b></div>
           {visibleItems.length ? visibleItems.map((item) => (
@@ -456,7 +469,7 @@ export default function FreshCommandOperatingSystem({
             <section><small>Guard rule</small><b>{selectedDiagnosticOnly ? "Prepare a concrete draft before approval." : selectedHasConcreteAction ? "Owner approval required before records change." : "Review only until a real action is matched."}</b></section>
           </div>
         </aside>
-      </section>
+      </section>}
 
       <details className="freshCommandBusinessHealth">
         <summary>Business Health / view-only intelligence</summary>
