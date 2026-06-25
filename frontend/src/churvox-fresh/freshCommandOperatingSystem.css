@@ -9,7 +9,7 @@
 .freshCommandSelectedIntelligence {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .freshCommandOperatingSystem .freshCard,
@@ -144,6 +144,65 @@
 
 .freshCommandProofPack {
   border-top: 4px solid #fbbf24 !important;
+}
+
+.freshCommandMoneyLeaks {
+  border-top: 4px solid #16a34a !important;
+}
+
+/* CHURVOX_COMMAND_APPROVAL_QUALITY_GUARD_20260626 */
+.freshCommandQualityGuard {
+  position: relative;
+  overflow: hidden;
+  border-top: 4px solid #111827 !important;
+}
+
+.freshCommandQualityGuard::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  opacity: .16;
+  transform: translate(38px, -52px);
+  pointer-events: none;
+}
+
+.freshCommandQualityGuard.ready {
+  border-top-color: #16a34a !important;
+}
+
+.freshCommandQualityGuard.ready::after {
+  background: #16a34a;
+}
+
+.freshCommandQualityGuard.check {
+  border-top-color: #fbbf24 !important;
+}
+
+.freshCommandQualityGuard.check::after {
+  background: #fbbf24;
+}
+
+.freshCommandQualityGuard.needsEdit {
+  border-top-color: #f97316 !important;
+}
+
+.freshCommandQualityGuard.needsEdit::after {
+  background: #f97316;
+}
+
+.freshCommandQualityGuard.blocked {
+  border-top-color: #991b1b !important;
+}
+
+.freshCommandQualityGuard.blocked::after {
+  background: #991b1b;
+}
+
+.freshCommandQualityGuard h2 {
+  font-size: 28px;
 }
 
 .freshCommandOsRows {
@@ -317,6 +376,13 @@
   font-weight: 900;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 1250px) {
+  .freshCommandOperatingSystem,
+  .freshCommandSelectedIntelligence {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1100px) {
