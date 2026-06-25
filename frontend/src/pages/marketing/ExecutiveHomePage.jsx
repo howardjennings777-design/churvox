@@ -51,6 +51,18 @@ const previewItems = [
   ["Accounting", "Handoff ready"],
 ];
 
+const heroMetrics = [
+  ["Command", "One approval desk"],
+  ["Records", "Clean job pages"],
+  ["Safety", "No auto-send"],
+];
+
+const previewCards = [
+  ["Draft invoice ready", "Belmont hedge trim", "$185.00", "Recurring: No"],
+  ["Follow-up prepared", "Invoice INV-1042", "$420.00", "Send only after approval"],
+  ["Blocked job review", "Wainuiomata lawn run", "Needs decision", "Worker note attached"],
+];
+
 const productScreens = [
   ["Today’s Plan", "See the work that is already planned, assigned and ready to run."],
   ["Command", "Unfinished admin lands in one approval desk: review, edit, approve or ignore."],
@@ -121,7 +133,7 @@ export function Footer() {
 
 function AppPreview() {
   return (
-    <aside className="simpleCard simpleHeroPreview" aria-label="Churvox Command preview">
+    <aside className="simpleCard simpleHeroPreview simpleCommandMock" aria-label="Churvox Command preview">
       <div className="simplePreviewTop">
         <span>Command</span>
         <b>Approval desk</b>
@@ -134,15 +146,29 @@ function AppPreview() {
           </div>
         ))}
       </div>
-      <div className="simplePreviewFlow">
-        <span>Find</span>
-        <span>Prepare</span>
+      <div className="simplePreviewQueue" aria-label="Example Command approval cards">
+        {previewCards.map(([title, job, price, note]) => (
+          <article key={title}>
+            <div>
+              <small>Prepared</small>
+              <b>{title}</b>
+            </div>
+            <p>{job}</p>
+            <div className="simplePreviewFacts">
+              <span>{price}</span>
+              <span>{note}</span>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="simplePreviewActions" aria-label="Approval controls">
         <span>Review</span>
+        <span>Edit</span>
         <span>Approve</span>
       </div>
       <div className="simplePreviewApproval">
-        <b>Draft invoice ready</b>
-        <p>Completed job found. Price, customer, recurring status and job facts are ready for owner approval.</p>
+        <b>Owner approval first</b>
+        <p>Churvox prepares the admin. Nothing important moves until you approve it.</p>
       </div>
     </aside>
   );
@@ -150,7 +176,7 @@ function AppPreview() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_PUBLIC_COMMAND_POSITIONING_20260625">
+    <main className="simplePublic" data-version="CHURVOX_PUBLIC_VISUAL_PROOF_20260625">
       <Nav />
 
       <section className="simpleHero">
@@ -163,6 +189,14 @@ export default function ExecutiveHomePage() {
           <div className="simpleActions">
             <Link to="/signup" className="simpleBtn simplePrimary">Start 14-day trial</Link>
             <Link to="/features" className="simpleBtn simpleGhost">See how it works</Link>
+          </div>
+          <div className="simpleHeroStats" aria-label="Churvox proof points">
+            {heroMetrics.map(([label, value]) => (
+              <div key={label}>
+                <small>{label}</small>
+                <b>{value}</b>
+              </div>
+            ))}
           </div>
           <div className="simpleProof">{proof.map((item) => <span key={item}>{item}</span>)}</div>
         </div>
