@@ -1,5 +1,4 @@
 import React from "react";
-import "./freshCommandOperatingSystem.css";
 
 export const COMMAND_OS_MARKER_20260625 = "COMMAND_OS_MARKER_20260625";
 
