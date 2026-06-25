@@ -174,7 +174,7 @@ export default function ExecutiveHomePage() {
         <span className="simpleSectionLabel">Why it is different</span>
         <h2>Field service software stores records. Churvox moves the admin forward.</h2>
         <p className="simpleLead">
-          Jobber-style tools help manage quotes, schedules and invoices. Churvox keeps those basics clean, then sends unfinished admin to Command so the owner can approve the next step instead of hunting for it.
+          Traditional field-service tools help manage quotes, schedules and invoices. Churvox keeps those basics clean, then sends unfinished admin to Command so the owner can approve the next step instead of hunting for it.
         </p>
         <div className="simpleGrid">
           {difference.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
