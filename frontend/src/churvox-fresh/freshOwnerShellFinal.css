@@ -211,3 +211,95 @@ body {
   -webkit-text-fill-color: #111827 !important;
   font-weight: 1000 !important;
 }
+
+/* CHURVOX_MOBILE_BELL_LOGOUT_CLEARANCE_20260625
+   Reserve fixed-header space for the bell so it cannot cover Log out. */
+@media (max-width: 900px) {
+  .freshMobileAppTop {
+    padding-right: 92px !important;
+    z-index: 2147481900 !important;
+  }
+
+  .freshMobileAppTop > div {
+    max-width: calc(100% - 86px) !important;
+  }
+
+  .freshMobileAppTop button.freshMobileLogout {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 2 !important;
+    margin-right: 0 !important;
+  }
+
+  .freshNotifyBell {
+    position: fixed !important;
+    top: calc(13px + env(safe-area-inset-top)) !important;
+    right: max(14px, calc(env(safe-area-inset-right) + 14px)) !important;
+    z-index: 2147482500 !important;
+  }
+
+  .freshNotifyButton {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  .freshNotifyPanel {
+    right: -4px !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+}
+
+/* CHURVOX_MOBILE_BOTTOM_NAV_CONTRAST_20260625
+   Keep bottom mobile nav labels and icon initials readable on dark glass. */
+@media (max-width: 900px) {
+  html body .freshMobileNav button {
+    opacity: 1 !important;
+    text-shadow: none !important;
+    filter: none !important;
+    mix-blend-mode: normal !important;
+  }
+
+  html body .freshMobileNav button:not(.active) {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+  }
+
+  html body .freshMobileNav button:not(.active) span {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    opacity: 1 !important;
+  }
+
+  html body .freshMobileNav button:not(.active) i {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 999px !important;
+    background: #f8fafc !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .45) inset !important;
+    opacity: 1 !important;
+  }
+
+  html body .freshMobileNav button.active {
+    background: #f97316 !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+  }
+
+  html body .freshMobileNav button.active span {
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    opacity: 1 !important;
+  }
+
+  html body .freshMobileNav button.active i {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 999px !important;
+    background: #111827 !important;
+    color: #fffaf0 !important;
+    -webkit-text-fill-color: #fffaf0 !important;
+    opacity: 1 !important;
+  }
+}
