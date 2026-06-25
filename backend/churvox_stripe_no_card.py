@@ -94,7 +94,36 @@ def _is_plan_checkout(metadata):
     )
 
 
+def install_command_auto_review_defaults():
+    try:
+        from fastapi import FastAPI
+    except Exception:
+        return True
+
+    original = getattr(FastAPI, "include_router", None)
+    if not original or getattr(original, "_churvox_command_auto_review_hook", False):
+        return True
+
+    def include_router_with_command_auto_review(self, router, *args, **kwargs):
+        try:
+            try:
+                from backend import churvox_command_auto_review_routes
+            except Exception:
+                import churvox_command_auto_review_routes
+            churvox_command_auto_review_routes.install_from_ai_router(self, router, original, *args, **kwargs)
+        except Exception:
+            pass
+        return original(self, router, *args, **kwargs)
+
+    include_router_with_command_auto_review._churvox_command_auto_review_hook = True
+    include_router_with_command_auto_review._churvox_original_include_router = original
+    FastAPI.include_router = include_router_with_command_auto_review
+    return True
+
+
 def install_no_card_trial_defaults():
+    install_command_auto_review_defaults()
+
     try:
         import stripe
     except Exception:
