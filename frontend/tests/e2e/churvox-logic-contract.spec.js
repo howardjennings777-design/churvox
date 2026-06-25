@@ -195,4 +195,36 @@ test.describe('Churvox logic contracts', () => {
     expect(xero).not.toContain('MYOB');
     expect(xero).not.toContain('MYOB CSV');
   });
+
+  test('Command auto review routes unfinished work into Command', () => {
+    const hook = readBackendSource('churvox_stripe_no_card.py');
+    const source = readBackendSource('churvox_command_auto_review_routes.py');
+
+    expect(hook).toContain('install_command_auto_review_defaults');
+    expect(hook).toContain('install_from_ai_router(self, router, original');
+    expect(hook).toContain('_churvox_command_auto_review_hook');
+    expect(hook).toContain('install_command_auto_review_defaults()');
+
+    expect(source).toContain('AUTO_COMMAND_REVIEW_20260625');
+    expect(source).toContain('async def ensure_auto_command_items');
+    expect(source).toContain('"Command Auto Review"');
+    expect(source).toContain('"draft_invoice_from_job"');
+    expect(source).toContain('"prepare_invoice_followups"');
+    expect(source).toContain('"find_records"');
+    expect(source).toContain('"Customer"');
+    expect(source).toContain('"Price"');
+    expect(source).toContain('"Recurring"');
+
+    for (const issue of [
+      'completed_job_needs_invoice',
+      'blocked_job_needs_decision',
+      'doing_job_needs_followup',
+      'unfinished_job_needs_worker',
+      'unfinished_job_needs_review',
+      'invoice_needs_followup',
+      'quote_needs_followup',
+    ]) {
+      expect(source, `${issue} should stay routed to Command`).toContain(issue);
+    }
+  });
 });
