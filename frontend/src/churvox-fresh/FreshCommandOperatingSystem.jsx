@@ -3,6 +3,7 @@ import React from "react";
 export const COMMAND_OS_MARKER_20260625 = "COMMAND_OS_MARKER_20260625";
 export const COMMAND_APPROVAL_BRAIN_MARKER_20260626 = "COMMAND_APPROVAL_BRAIN_MARKER_20260626";
 export const COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626 = "COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626";
+export const COMMAND_TAPPABLE_CARDS_MARKER_20260626 = "COMMAND_TAPPABLE_CARDS_MARKER_20260626";
 
 function cleanText(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -222,6 +223,30 @@ function buildApprovalQualityGuard({ selected, selectedApprovalDetails, selected
   };
 }
 
+function onCardKeyDown(event, open) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    open();
+  }
+}
+
+function CommandFocusSlip({ card, onClose }) {
+  if (!card) return null;
+  return (
+    <div className="freshCommandFocusShade" role="dialog" aria-modal="true" onClick={onClose}>
+      <section className={`freshCommandFocusSlip ${card.tone || ""}`} onClick={(event) => event.stopPropagation()}>
+        <button className="freshCommandFocusClose" type="button" onClick={onClose} aria-label="Close Command slip">×</button>
+        <span>{card.kicker}</span>
+        <h2>{card.title}</h2>
+        <p>{card.summary}</p>
+        <div className="freshCommandReasoningGrid">
+          {(card.rows || []).map((row) => <div key={`${row.label}-${row.value}`}><b>{row.label}</b><p>{row.value}</p></div>)}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function FreshCommandOperatingSystem({
   selected,
   selectedApprovalDetails = [],
@@ -236,6 +261,7 @@ export default function FreshCommandOperatingSystem({
   readableAction = (value) => cleanText(value || "Ready to approve"),
   categoryOf = () => "Review",
 }) {
+  const [focusedCard, setFocusedCard] = React.useState(null);
   const adminSignals = preparedBackendRows.map(classifyAdminSignal);
   const adminDebtItems = adminSignals.slice(0, 4);
   const nextSignal = nextBestSignal(adminSignals);
@@ -306,10 +332,25 @@ export default function FreshCommandOperatingSystem({
     "Unfinished admin, blockers, and follow-ups route to Command.",
   ];
 
+  const adminDebtFocus = {
+    kicker: "Admin Debt Meter",
+    title: formatMoney(adminDebtTotal),
+    summary: "Prepared work waiting for a decision, ranked by money, proof, and risk.",
+    rows: adminDebtItems.length ? adminDebtItems.map((item) => ({ label: item.label, value: `${item.title} · ${item.amount ? formatMoney(item.amount) : item.action}` })) : [{ label: "Clear", value: "No approval debt waiting." }],
+  };
+  const briefFocus = { kicker: "Today's Command Brief", title: `${counts.Open || 0} waiting`, summary: "Money leaks, blockers, proof gaps, and the next approval to make.", rows: commandBriefRows };
+  const memoryFocus = { kicker: "Business Memory", title: selected ? categoryOf(selected) : "Learning", summary: "Pricing, repeat work, customer context, proof quality, and owner rules carried into approvals.", rows: businessMemorySignals };
+  const moneyLeakFocus = { kicker: "Money Leak Detector", title: moneyLeakSignals.length ? `${moneyLeakSignals.length} money checks` : "No money leaks showing", summary: "Completed work, unpaid invoices, quote follow-ups, extras, and repeat work that could cost you if missed.", rows: moneyLeakSignals.length ? moneyLeakSignals.map((signal) => ({ label: signal.label, value: `${signal.reason} · ${signal.amount ? formatMoney(signal.amount) : signal.action}` })) : [{ label: "Clear", value: "No invoice, quote, or payment leak detected in the current prepared work." }] };
+  const qualityFocus = { kicker: "Approval Quality Guard", title: qualityGuard.verdict, summary: qualityGuard.summary, tone: qualityGuard.tone, rows: [{ label: "Gate", value: qualityGuard.gate }, { label: "Safe next step", value: qualityGuard.nextStep }, { label: "Guard reasons", value: qualityGuard.reasons.join(" ") }] };
+  const reasoningFocus = { kicker: "Command Reasoning Card", title: selected ? currentRecordName(selected, selectedApprovalDetails, summaryOf) : "No approval open", summary: "Why Churvox prepared this and what you are approving.", rows: commandReasoningRows };
+  const proofFocus = { kicker: "Proof Pack", title: "Evidence before approve", summary: "The proof Churvox found before asking for owner approval.", rows: proofPackRows.length ? proofPackRows : [{ label: "Proof", value: "No linked proof captured yet." }] };
+  const jobToCashFocus = { kicker: "Job-To-Cash Autopilot", title: "Next safe step", summary: "The safe route from field work to owner approval to invoice or follow-up.", rows: jobToCashSteps.map((step) => ({ label: step.label, value: step.state })) };
+  const noClutterFocus = { kicker: "No-Clutter Intelligence", title: "Command handles unfinished admin", summary: "Normal record pages stay clean while Command holds the work that needs thinking.", rows: noClutterRules.map((rule, index) => ({ label: `Rule ${index + 1}`, value: rule })) };
+
   return (
-    <section className="freshCommandOsWrap" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626}>
+    <section className="freshCommandOsWrap" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626}>
       <section className="freshCommandOperatingSystem">
-        <article className="freshCard freshCommandDebtMeter freshCommandBrainCard">
+        <article className="freshCard freshCommandDebtMeter freshCommandBrainCard freshCommandTapCard" role="button" tabIndex={0} onClick={() => setFocusedCard(adminDebtFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(adminDebtFocus))}>
           <span>Admin Debt Meter</span>
           <h2>{formatMoney(adminDebtTotal)}</h2>
           <p>Prepared work waiting for a decision, ranked by money, proof, and risk.</p>
@@ -318,7 +359,7 @@ export default function FreshCommandOperatingSystem({
           </div>
         </article>
 
-        <article className="freshCard freshCommandBrief freshCommandBrainCard">
+        <article className="freshCard freshCommandBrief freshCommandBrainCard freshCommandTapCard" role="button" tabIndex={0} onClick={() => setFocusedCard(briefFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(briefFocus))}>
           <span>Today's Command Brief</span>
           <h2>{counts.Open || 0} waiting</h2>
           <p>Morning view of money leaks, blockers, proof gaps, and the next approval to make.</p>
@@ -327,7 +368,7 @@ export default function FreshCommandOperatingSystem({
           </div>
         </article>
 
-        <article className="freshCard freshCommandMemory freshCommandBrainCard">
+        <article className="freshCard freshCommandMemory freshCommandBrainCard freshCommandTapCard" role="button" tabIndex={0} onClick={() => setFocusedCard(memoryFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(memoryFocus))}>
           <span>Business Memory</span>
           <h2>{selected ? categoryOf(selected) : "Learning"}</h2>
           <p>Churvox carries pricing, repeat work, customer context, proof quality, and owner rules into approvals.</p>
@@ -336,7 +377,7 @@ export default function FreshCommandOperatingSystem({
           </div>
         </article>
 
-        <article className="freshCard freshCommandMoneyLeaks freshCommandBrainCard">
+        <article className="freshCard freshCommandMoneyLeaks freshCommandBrainCard freshCommandTapCard" role="button" tabIndex={0} onClick={() => setFocusedCard(moneyLeakFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(moneyLeakFocus))}>
           <span>Money Leak Detector</span>
           <h2>{moneyLeakSignals.length ? `${moneyLeakSignals.length} money checks` : "No money leaks showing"}</h2>
           <p>Watches completed work, unpaid invoices, quote follow-ups, extras, and repeat work that could cost you if missed.</p>
@@ -347,7 +388,7 @@ export default function FreshCommandOperatingSystem({
       </section>
 
       {selected ? <section className="freshCommandSelectedIntelligence">
-        <article className={`freshCard freshCommandQualityGuard ${qualityGuard.tone}`}>
+        <article className={`freshCard freshCommandQualityGuard freshCommandTapCard ${qualityGuard.tone}`} role="button" tabIndex={0} onClick={() => setFocusedCard(qualityFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(qualityFocus))}>
           <span>Approval Quality Guard</span>
           <h2>{qualityGuard.verdict}</h2>
           <p>{qualityGuard.summary}</p>
@@ -358,29 +399,30 @@ export default function FreshCommandOperatingSystem({
           </div>
         </article>
 
-        <article className="freshCard freshCommandReasoningCard">
+        <article className="freshCard freshCommandReasoningCard freshCommandTapCard" role="button" tabIndex={0} onClick={() => setFocusedCard(reasoningFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(reasoningFocus))}>
           <span>Command Reasoning Card</span>
           <h2>{currentRecordName(selected, selectedApprovalDetails, summaryOf)}</h2>
           <div className="freshCommandReasoningGrid">{commandReasoningRows.map((row) => <div key={row.label}><b>{row.label}</b><p>{row.value}</p></div>)}</div>
         </article>
 
-        <article className="freshCard freshCommandProofPack">
+        <article className="freshCard freshCommandProofPack freshCommandTapCard" role="button" tabIndex={0} onClick={() => setFocusedCard(proofFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(proofFocus))}>
           <span>Proof Pack</span>
           <h2>Evidence before approve</h2>
           <div className="freshCommandProofGrid">{proofPackRows.length ? proofPackRows.map((row) => <div key={row.label}><small>{row.label}</small><b>{row.value}</b></div>) : <p>No linked proof captured yet.</p>}</div>
         </article>
 
-        <article className="freshCard freshCommandJobToCash">
+        <article className="freshCard freshCommandJobToCash freshCommandTapCard" role="button" tabIndex={0} onClick={() => setFocusedCard(jobToCashFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(jobToCashFocus))}>
           <span>Job-To-Cash Autopilot</span>
           <h2>Next safe step</h2>
           <div>{jobToCashSteps.map((step) => <p key={step.label}><b>{step.label}</b><small>{step.state}</small></p>)}</div>
         </article>
       </section> : null}
 
-      <section className="freshCard freshCommandNoClutter">
+      <section className="freshCard freshCommandNoClutter freshCommandTapCard" role="button" tabIndex={0} onClick={() => setFocusedCard(noClutterFocus)} onKeyDown={(event) => onCardKeyDown(event, () => setFocusedCard(noClutterFocus))}>
         <div><span>No-Clutter Intelligence</span><h2>Normal pages stay clean. Command handles the unfinished admin.</h2></div>
         <ul>{noClutterRules.map((rule) => <li key={rule}>{rule}</li>)}</ul>
       </section>
+      <CommandFocusSlip card={focusedCard} onClose={() => setFocusedCard(null)} />
     </section>
   );
 }
