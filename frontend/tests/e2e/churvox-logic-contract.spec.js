@@ -249,13 +249,22 @@ test.describe('Churvox logic contracts', () => {
     const home = readFrontendSource('pages/marketing/ExecutiveHomePage.jsx');
     const features = readFrontendSource('pages/marketing/ExecutiveFeaturesPage.jsx');
     const pricing = readFrontendSource('pages/marketing/ExecutivePricingPage.jsx');
+    const styles = readFrontendSource('pages/marketing/SimplePublicStrong.css');
     const index = readPublicSource('index.html');
 
     expect(home).toContain('Churvox does the admin. You approve.');
     expect(home).toContain('Traditional field-service tools');
     expect(home).toContain('What Command prepares');
     expect(home).toContain('Clean record pages. One approval desk.');
+    expect(home).toContain('simplePreviewQueue');
+    expect(home).toContain('Draft invoice ready');
+    expect(home).toContain('Owner approval first');
     expect(home).not.toContain('Jobber-style');
+
+    expect(styles).toContain('CHURVOX_PUBLIC_COMMAND_VISUAL_POLISH_20260625');
+    expect(styles).toContain('.simpleHeroStats');
+    expect(styles).toContain('.simplePreviewActions');
+    expect(styles).toMatch(/\.simpleHero>\.simpleCommandMock/);
 
     expect(features).toContain('The job app keeps records. Command moves the admin forward.');
     expect(features).toContain('Command cards');
