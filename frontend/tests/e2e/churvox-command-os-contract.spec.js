@@ -89,5 +89,11 @@ test.describe('Churvox Command operating system', () => {
     expect(styles).toContain('CHURVOX_COMMAND_GROUPED_APPROVALS_20260625');
     expect(styles).toContain('.freshCommandGroupCount');
     expect(styles).toContain('.freshCommandGroupedMeta');
+
+    expect(styles).toContain('CHURVOX_COMMAND_NO_CLUTTER_WRAP_20260625');
+    expect(styles).toContain('grid-template-columns: 1fr !important');
+    expect(styles).toContain('font-size: clamp(20px, 2.4vw, 30px) !important');
+    expect(styles).toContain('white-space: normal');
+    expect(styles).toContain('max-width: 100%');
   });
 });
