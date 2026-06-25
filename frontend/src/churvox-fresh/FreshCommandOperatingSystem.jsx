@@ -9,8 +9,18 @@ export const COMMAND_FIX_DESK_MARKER_20260626 = "COMMAND_FIX_DESK_MARKER_2026062
 export const COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626 = "COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626";
 export const COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626 = "COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626";
 export const COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626 = "COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626";
+export const COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626 = "COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
+const PRIORITY_ORDER = { "Fix first": 0, "Check today": 1, "Needs proof": 2, "Setup check": 3, "Watching": 4 };
+const FIX_TABS = [
+  { key: "All", label: "All" },
+  { key: "Money", label: "Money waiting" },
+  { key: "Jobs", label: "Job blockers" },
+  { key: "Quotes", label: "Quotes to chase" },
+  { key: "Proof", label: "Proof missing" },
+  { key: "Setup", label: "Setup gaps" },
+];
 
 function cleanText(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -126,7 +136,8 @@ function classifyFix(item, overrides = {}) {
   const text = itemText(item);
   const amount = moneyAmount(item);
   let bucket = "Admin";
-  let severity = "Medium";
+  let categoryLabel = "Admin follow-up";
+  let severity = "Check today";
   let problem = "Admin item needs review";
   let why = "This needs a decision so it does not sit unfinished.";
   let prepared = "Churvox prepared the item for owner review.";
@@ -134,49 +145,56 @@ function classifyFix(item, overrides = {}) {
 
   if (/completed|complete|done|finished/.test(text) && /invoice|bill|charge|cash|payment|money/.test(text)) {
     bucket = "Money";
-    severity = "High";
-    problem = "Completed job not invoiced";
-    why = "Finished work can turn into lost money if it is not invoiced quickly.";
-    prepared = "Churvox prepared an invoice check.";
-    nextStep = "Check the proof, then approve or edit the invoice draft.";
+    categoryLabel = "Money waiting";
+    severity = "Fix first";
+    problem = "Finished work needs an invoice";
+    why = "This is the kind of admin that can turn into lost money if it sits.";
+    prepared = "Churvox prepared the invoice check.";
+    nextStep = "Check proof and price, then approve or edit the invoice draft.";
   } else if (/completed|complete|done|finished/.test(text)) {
     bucket = "Money";
-    severity = "High";
-    problem = "Finished work needs invoice check";
-    why = "This job looks complete, but it still needs the money step checked.";
+    categoryLabel = "Money waiting";
+    severity = "Fix first";
+    problem = "Completed job needs money step";
+    why = "The job looks done, but the billing step still needs a decision.";
     prepared = "Churvox prepared the job-to-invoice check.";
     nextStep = "Confirm proof and billing, then approve the next money step.";
   } else if (/overdue|unpaid|payment|paid|invoice|balance/.test(text)) {
     bucket = "Money";
-    severity = "High";
-    problem = "Invoice or payment follow-up needed";
-    why = "Money that is not chased can quietly sit unpaid.";
+    categoryLabel = "Money waiting";
+    severity = "Fix first";
+    problem = "Money needs chasing";
+    why = "Unpaid or overdue money should not quietly sit in the system.";
     prepared = "Churvox prepared a payment follow-up check.";
     nextStep = "Review the customer and amount, then approve the follow-up.";
   } else if (/quote|estimate|proposal/.test(text)) {
     bucket = "Quotes";
-    severity = "Medium";
-    problem = "Quote needs follow-up";
-    why = "Open quotes go cold if they are not followed up.";
+    categoryLabel = "Quote to chase";
+    severity = "Check today";
+    problem = "Quote needs a follow-up";
+    why = "Open quotes go cold when nobody follows them up.";
     prepared = "Churvox prepared a quote follow-up.";
     nextStep = "Check the customer and quote, then approve the follow-up.";
   } else if (/photo|proof|checklist|evidence|missing/.test(text)) {
     bucket = "Proof";
-    severity = "Medium";
-    problem = "Proof is missing";
+    categoryLabel = "Proof missing";
+    severity = "Needs proof";
+    problem = "Missing proof before approval";
     why = "Weak proof makes invoicing and customer questions harder.";
     prepared = "Churvox found the missing proof area.";
     nextStep = "Ask the worker for proof or add the missing detail.";
   } else if (/worker|dispatch|blocked|unfinished|doing|stuck|help|issue/.test(text)) {
     bucket = "Jobs";
-    severity = "Medium";
+    categoryLabel = "Job blocker";
+    severity = "Check today";
     problem = "Job is blocked or unfinished";
     why = "Unfinished work needs clearing before it becomes tomorrow's mess.";
     prepared = "Churvox prepared the blocker for review.";
     nextStep = "Resolve the blocker, contact the worker, or move the job.";
   } else if (/client|customer|phone|email|address|setup|missing field/.test(text)) {
     bucket = "Setup";
-    severity = "Low";
+    categoryLabel = "Setup gap";
+    severity = "Setup check";
     problem = "Record setup needs fixing";
     why = "Missing details create admin friction later.";
     prepared = "Churvox found setup details to complete.";
@@ -186,6 +204,7 @@ function classifyFix(item, overrides = {}) {
   return {
     id: overrides.id || item?.id || `${problem}-${item?.title || item?.summary || Math.random()}`,
     bucket: overrides.bucket || bucket,
+    categoryLabel: overrides.categoryLabel || categoryLabel,
     severity: overrides.severity || severity,
     problem: overrides.problem || problem,
     title: overrides.title || compactValue(item?.title || item?.summary || item?.action, problem),
@@ -255,14 +274,16 @@ export default function FreshCommandOperatingSystem({
     const rows = [];
     if (selectedFix) rows.push(selectedFix);
     preparedBackendRows.forEach((item, index) => rows.push(classifyFix(item, { id: item?.id || `backend-${index}` })));
-    noteRows.forEach((item, index) => rows.push(classifyFix(item, { id: item?.id || `note-${index}`, bucket: "Setup", severity: "Low", problem: "Setup note needs attention" })));
+    noteRows.forEach((item, index) => rows.push(classifyFix(item, { id: item?.id || `note-${index}`, bucket: "Setup", categoryLabel: "Saved note", severity: "Setup check", problem: "Saved note needs preparing" })));
     const seen = new Set();
-    return rows.filter((item) => {
-      const key = `${item.bucket}-${item.problem}-${item.title}`.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    return rows
+      .filter((item) => {
+        const key = `${item.bucket}-${item.problem}-${item.title}`.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => (PRIORITY_ORDER[a.severity] ?? 9) - (PRIORITY_ORDER[b.severity] ?? 9) || (b.amount - a.amount));
   }, [selectedFix, preparedBackendRows, noteRows]);
 
   React.useEffect(() => {
@@ -270,13 +291,12 @@ export default function FreshCommandOperatingSystem({
     if (!activeId || !fixItems.some((item) => item.id === activeId)) setActiveId(fixItems[0].id);
   }, [activeId, fixItems]);
 
-  const tabs = ["All", "Money", "Jobs", "Quotes", "Proof", "Setup"];
   const visibleItems = tab === "All" ? fixItems : fixItems.filter((item) => item.bucket === tab);
   const activeFix = fixItems.find((item) => item.id === activeId) || visibleItems[0] || fixItems[0] || null;
   const activeProofRows = activeFix ? buildProofRows(activeFix, selectedApprovalDetails, selectedDetails) : [];
   const adminDebtTotal = preparedBackendRows.reduce((sum, item) => sum + moneyAmount(item), 0);
   const moneyItems = fixItems.filter((item) => item.bucket === "Money");
-  const highItems = fixItems.filter((item) => item.severity === "High");
+  const highItems = fixItems.filter((item) => item.severity === "Fix first");
   const missingProofText = selectedGaps.length ? selectedGaps.join(", ") : "No major proof gaps on the selected item.";
   const activeOutcome = activeFix ? localOutcome[activeFix.id] : "";
   const noteValue = onOwnerNoteChange ? String(ownerNote || "") : localNote;
@@ -392,14 +412,14 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
         <p>{hasAnyFixes ? "Pick one issue, see why it matters, check the proof, and fix it on this page." : "No urgent fixes are waiting. You can still scan for new admin work, prepare saved notes, or refresh the queue before you move on."}</p>
         <div className="freshCommandFixStats">
-          <div><b>{highItems.length}</b><small>High priority</small></div>
-          <div><b>{moneyItems.length}</b><small>Money checks</small></div>
+          <div><b>{highItems.length}</b><small>Fix first</small></div>
+          <div><b>{moneyItems.length}</b><small>Money waiting</small></div>
           <div><b>{formatMoney(adminDebtTotal)}</b><small>Admin debt</small></div>
           <div><b>{counts.Open || 0}</b><small>Waiting approval</small></div>
         </div>
@@ -413,7 +433,7 @@ export default function FreshCommandOperatingSystem({
       </header>
 
       <nav className="freshCommandFixTabs" aria-label="Command fix filters">
-        {tabs.map((key) => <button key={key} type="button" className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{key}</button>)}
+        {FIX_TABS.map((item) => <button key={item.key} type="button" className={tab === item.key ? "active" : ""} onClick={() => setTab(item.key)}>{item.label}</button>)}
       </nav>
 
       {!hasAnyFixes ? <section className="freshCommandEmptyCommand">
@@ -435,14 +455,14 @@ export default function FreshCommandOperatingSystem({
               <em>{item.severity}</em>
               <b>{item.problem}</b>
               <small>{item.title}</small>
-              {item.amount ? <strong>{formatMoney(item.amount)}</strong> : <strong>{item.bucket}</strong>}
+              {item.amount ? <strong>{formatMoney(item.amount)}</strong> : <strong>{item.categoryLabel || item.bucket}</strong>}
             </button>
-          )) : <div className="freshCommandEmptyFix"><b>No fixes in {tab}</b><small>Try All or check the record pages.</small></div>}
+          )) : <div className="freshCommandEmptyFix"><b>No fixes in {FIX_TABS.find((item) => item.key === tab)?.label || tab}</b><small>Try All or check the record pages.</small></div>}
         </aside>
 
         <main className="freshCommandFixDetail">
           {activeFix ? <>
-            <div className="freshCommandPanelTitle"><span>Selected fix</span><b>{activeFix.severity}</b></div>
+            <div className="freshCommandPanelTitle"><span>{activeFix.categoryLabel || "Selected fix"}</span><b>{activeFix.severity}</b></div>
             <h3>{activeFix.problem}</h3>
             <p>{activeFix.title}</p>
             <div className="freshCommandFixSections">
