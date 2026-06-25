@@ -10,7 +10,7 @@ const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 
 const groups = [
-  { title: "Start", items: [["planday", "PD", "Plan My Day"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
+  { title: "Start", items: [["planday", "PD", "Today's Plan"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
   { title: "Work", items: [["leads", "RQ", "Requests"], ["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["payments", "PY", "Payments"], ["xero", "XE", "Xero"]] },
   { title: "Team", items: [["team", "TM", "Team"], ["workercommand", "WC", "Worker View"], ["time", "TS", "Time Sheets"], ["payroll", "PR", "Payroll"]] },
@@ -30,21 +30,21 @@ const moreGroup = {
   ],
 };
 
-const mobileItems = [["planday", "PD", "Plan"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
+const mobileItems = [["planday", "PD", "Today"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
 const mobileMoreOrder = ["messages", "leads", "clients", "quotes", "payments", "xero", "team", "workercommand", "time", "payroll", "portal", "reports", "settings", "support"];
 
 const mobileLabels = {
-  planday: "Plan My Day",
-  today: "Plan My Day",
-  todayswork: "Plan My Day",
-  worktoday: "Plan My Day",
-  smart: "Plan My Day",
-  hub: "Plan My Day",
-  dashboard: "Plan My Day",
-  dispatch: "Plan My Day",
-  schedule: "Plan My Day",
-  calendar: "Plan My Day",
-  routes: "Plan My Day",
+  planday: "Today's Plan",
+  today: "Today's Plan",
+  todayswork: "Today's Plan",
+  worktoday: "Today's Plan",
+  smart: "Today's Plan",
+  hub: "Today's Plan",
+  dashboard: "Today's Plan",
+  dispatch: "Today's Plan",
+  schedule: "Today's Plan",
+  calendar: "Today's Plan",
+  routes: "Today's Plan",
   askchurvox: "Command",
   aioperatorstudio: "Command",
   quickcreateai: "Command",
@@ -192,7 +192,7 @@ function askRoute(text) {
   if (lower.includes("quote option") || lower.includes("quote ai") || lower.includes("quote draft")) return "command";
   if (lower.includes("proof pack") || lower.includes("customer link") || lower.includes("client portal") || lower.includes("portal")) return "portal";
   if (lower.includes("unpaid") || lower.includes("overdue") || lower.includes("payment")) return "payments";
-  if (lower.includes("xero") || lower.includes("myob")) return "xero";
+  if (lower.includes("xero")) return "xero";
   if (lower.includes("payroll")) return "payroll";
   if (lower.includes("import") || lower.includes("csv")) return "imports";
   if (lower.includes("command") || lower.includes("review") || lower.includes("approve") || lower.includes("follow up")) return "command";
@@ -400,7 +400,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
                   <input
                     value={globalAsk}
                     onChange={(event) => setGlobalAsk(event.target.value)}
-                    placeholder="book a job, check messages, plan my day, prepare worker brief..."
+                    placeholder="book a job, check messages, review today's plan, prepare worker brief..."
                   />
                 </label>
                 <button type="submit">Ask Churvox</button>
