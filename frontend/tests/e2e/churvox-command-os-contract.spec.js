@@ -95,5 +95,12 @@ test.describe('Churvox Command operating system', () => {
     expect(styles).toContain('font-size: clamp(20px, 2.4vw, 30px) !important');
     expect(styles).toContain('white-space: normal');
     expect(styles).toContain('max-width: 100%');
+
+    expect(styles).toContain('CHURVOX_COMMAND_PILL_CONTRAST_20260625');
+    expect(styles).toContain('background: #ffedd5');
+    expect(styles).toContain('color: #7c2d12');
+    expect(styles).toContain('.freshCommandNoClutter span');
+    expect(styles).toContain('background: #f97316 !important');
+    expect(styles).toContain('color: #111827 !important');
   });
 });
