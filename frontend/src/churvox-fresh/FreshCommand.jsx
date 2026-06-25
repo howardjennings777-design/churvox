@@ -351,6 +351,44 @@ function legacyText(item) {
   return [item?.title, item?.summary, item?.info, item?.found, item?.prepared, item?.why, item?.owner, details, payload].filter(Boolean).join(". ");
 }
 
+function scrubApprovalGroupText(value) {
+  return normalizedText(value)
+    .replace(/[a-f0-9]{16,}/gi, "")
+    .replace(/\b\d{8,}\b/g, "")
+    .replace(/\$?\d+(?:\.\d{1,2})?/g, "#")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function approvalGroupKey(item) {
+  if (!item || item.sourceMode === "note" || ["approved", "ignored", "declined", "closed"].includes(item.listStatus)) {
+    return `single:${item?.sourceMode || "item"}:${idOf(item?.id || item?._id, item?.localIndex || Math.random())}`;
+  }
+
+  const details = approvalDetailRows(item)
+    .filter((row) => !["Date", "Worker"].includes(row.label))
+    .map((row) => `${row.label}:${row.value}`)
+    .join("|");
+  const concreteFacts = scrubApprovalGroupText(details);
+  const fallback = scrubApprovalGroupText(`${titleOf(item)} ${summaryOf(item)}`);
+  return [item.sourceMode, item.listStatus, categoryOf(item), readableAction(item.action || item.type), concreteFacts || fallback].map(scrubApprovalGroupText).join("|");
+}
+
+function groupCommandRows(items) {
+  const groups = new Map();
+  items.forEach((item) => {
+    const key = approvalGroupKey(item);
+    const existing = groups.get(key);
+    if (existing) existing.items.push(item);
+    else groups.set(key, { key, item, items: [item] });
+  });
+  return Array.from(groups.values());
+}
+
+function duplicateBackendRows(groups) {
+  return groups.flatMap((group) => group.items.slice(1).filter((item) => item.sourceMode === "backend" && ["open", "edited"].includes(item.listStatus)));
+}
+
 const selectedFilterButtonStyle = { background: "#f97316", backgroundColor: "#f97316", borderColor: "#f97316", color: "#111827", WebkitTextFillColor: "#111827", opacity: 1, fontWeight: 950 };
 const selectedFilterTextStyle = { color: "#111827", WebkitTextFillColor: "#111827", opacity: 1, fontWeight: 950 };
 const selectedFilterCountStyle = { background: "#111827", backgroundColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, fontWeight: 950, borderRadius: "999px" };
@@ -392,8 +430,10 @@ export default function FreshCommand({ onNavigate }) {
     if (filter === "Edited") return item.sourceMode === "backend" && item.preparedForApproval && item.listStatus === "edited";
     return item.sourceMode === "backend" && item.preparedForApproval && ["open", "edited"].includes(item.listStatus);
   });
+  const visibleGroups = groupCommandRows(visibleRows);
+  const duplicateRows = duplicateBackendRows(visibleGroups);
 
-  const selected = visibleRows.find((item) => `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex)}` === selectedId) || visibleRows[0] || null;
+  const selected = visibleRows.find((item) => `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex)}` === selectedId) || visibleGroups[0]?.item || null;
   const selectedKey = selected ? `${selected.sourceMode}-${idOf(selected.id || selected._id, selected.localIndex)}` : "";
   const selectedHasConcreteAction = Boolean(selected?.sourceMode === "backend" && selected.preparedForApproval);
   const selectedDiagnosticOnly = Boolean(selected?.sourceMode === "backend" && !selected.preparedForApproval);
@@ -428,7 +468,7 @@ export default function FreshCommand({ onNavigate }) {
       window.removeEventListener("focus", refresh);
     };
   }, [loadReview]);
-  React.useEffect(() => { setOwnerNote(selected?.owner_note || selected?.owner || ""); }, [selectedKey, selected]);
+  React.useEffect(() => { setOwnerNote(selected?.owner_note || selected?.owner || ""); }, [selectedKey]);
   React.useEffect(() => {
     try { if (typeof window !== "undefined") window.localStorage.setItem(COMMAND_ACTIVITY_KEY, JSON.stringify(activity)); } catch {}
   }, [activity]);
@@ -491,6 +531,34 @@ export default function FreshCommand({ onNavigate }) {
     } finally {
       setBusy("");
     }
+  }
+
+  async function archiveDuplicateApprovals() {
+    if (!duplicateRows.length) {
+      setMessage("No duplicate approval cards found.");
+      return;
+    }
+    setBusy("dedupe");
+    let archived = 0;
+    let failed = 0;
+    for (const item of duplicateRows.slice(0, 75)) {
+      const id = idOf(item.id || item._id);
+      if (!id) {
+        failed += 1;
+        continue;
+      }
+      try {
+        const result = await post(`/ai-review-items/${encodeURIComponent(id)}/ignore`, { note: "Archived as duplicate from grouped Command queue." }, { timeout: 25000 });
+        if (result?.success) archived += 1;
+        else failed += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    addActivity("Archived duplicate approvals", archived ? "Cleaned" : "No change");
+    setMessage(archived ? `Archived ${archived} duplicate approval${archived === 1 ? "" : "s"}.${failed ? ` ${failed} failed.` : ""}` : "Could not archive duplicate approvals.");
+    setBusy("");
+    await loadReview();
   }
 
   async function prepareNotes() {
@@ -576,13 +644,14 @@ export default function FreshCommand({ onNavigate }) {
 
       <section className="freshGrid">
         <aside className="freshCard freshJobsListCard">
-          <h2>{filter === "All" ? "All items" : filter === "Notes" ? "Notes to prepare" : "Waiting for approval"}</h2>
-          {loading && !visibleRows.length ? <div className="freshItem"><b>Checking...</b><span>Looking for work waiting on you.</span></div> : null}
-          {!loading && !visibleRows.length ? <div className="freshItem"><b>Nothing waiting here</b><span>Run Check for work when you want Churvox to prepare the next admin actions.</span></div> : null}
-          {visibleRows.map((item, index) => {
+          <h2>{filter === "All" ? "All items" : filter === "Notes" ? "Notes to prepare" : "Waiting for approval"}{visibleGroups.length !== visibleRows.length ? <small className="freshCommandGroupedMeta">{visibleRows.length} grouped into {visibleGroups.length}</small> : null}</h2>
+          {loading && !visibleGroups.length ? <div className="freshItem"><b>Checking...</b><span>Looking for work waiting on you.</span></div> : null}
+          {!loading && !visibleGroups.length ? <div className="freshItem"><b>Nothing waiting here</b><span>Run Check for work when you want Churvox to prepare the next admin actions.</span></div> : null}
+          {visibleGroups.map((group, index) => {
+            const item = group.item;
             const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`;
             const diagnostic = item.sourceMode === "backend" && !item.preparedForApproval;
-            return <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "note" || diagnostic ? "need" : ""}`} key={key} onClick={() => setSelectedId(key)}><b>{titleOf(item)}</b><span>{item.sourceMode === "note" ? "note to prepare" : diagnostic ? "needs preparation" : "ready"} - {summaryOf(item)}</span></button>;
+            return <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "note" || diagnostic ? "need" : ""}`} key={group.key} onClick={() => setSelectedId(key)}><b>{titleOf(item)}{group.items.length > 1 ? <small className="freshCommandGroupCount">x{group.items.length}</small> : null}</b><span>{item.sourceMode === "note" ? "note to prepare" : diagnostic ? "needs preparation" : "ready"} - {summaryOf(item)}{group.items.length > 1 ? ` - ${group.items.length} similar approvals grouped` : ""}</span></button>;
           })}
         </aside>
 
@@ -597,10 +666,10 @@ export default function FreshCommand({ onNavigate }) {
           </> : <div className="freshItem"><b>Nothing waiting</b><span>When Churvox has a real draft, message, job change, or invoice check ready, it will appear here.</span></div>}
         </section>
 
-        <aside className="freshCard freshJobsActionsCard"><h2>Your controls</h2><p className="freshJobsActionHint">Nothing changes until you approve it.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" disabled={!selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedDiagnosticOnly ? "Not ready" : "Approve"}</button><button className="freshDark" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>Ignore</button><button className="freshOrange" type="button" disabled={!noteItems.length || busy === "prepare"} onClick={prepareNotes}>{busy === "prepare" ? "Preparing..." : "Prepare notes"}</button><button className="freshDark" type="button" disabled={busy === "scan"} onClick={checkForWork}>{busy === "scan" ? "Checking..." : "Check for work"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode === "note"} onClick={openSelectedRecord}>Open record</button><button className="freshGhost" type="button" onClick={loadReview}>Refresh</button></div></aside>
+        <aside className="freshCard freshJobsActionsCard"><h2>Your controls</h2><p className="freshJobsActionHint">Nothing changes until you approve it.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" disabled={!selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedDiagnosticOnly ? "Not ready" : "Approve"}</button><button className="freshDark" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>Ignore</button><button className="freshGhost" type="button" disabled={!duplicateRows.length || busy === "dedupe"} onClick={archiveDuplicateApprovals}>{busy === "dedupe" ? "Archiving..." : duplicateRows.length ? `Archive ${duplicateRows.length} duplicates` : "No duplicates"}</button><button className="freshOrange" type="button" disabled={!noteItems.length || busy === "prepare"} onClick={prepareNotes}>{busy === "prepare" ? "Preparing..." : "Prepare notes"}</button><button className="freshDark" type="button" disabled={busy === "scan"} onClick={checkForWork}>{busy === "scan" ? "Checking..." : "Check for work"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode === "note"} onClick={openSelectedRecord}>Open record</button><button className="freshGhost" type="button" onClick={loadReview}>Refresh</button></div></aside>
       </section>
 
-      <section className="freshGrid two" style={{ marginTop: 14 }}><section className="freshCard"><h2>Safety rule</h2><p>Churvox can prepare draft invoices and checks. It will not send invoices, file tax, create bank payout files, or mark anything paid unless you approve the allowed action.</p></section><aside className="freshCard"><h2>Recent decisions</h2>{activity.length ? activity.map((item) => <div className="freshItem freshActivityItem" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></div>) : <div className="freshItem"><b>No decisions yet</b><span>Approve, edit, ignore, check for work, or prepare notes to create activity.</span></div>}</aside></section>
+      <section className="freshGrid two" style={{ marginTop: 14 }}><section className="freshCard"><h2>Safety rule</h2><p>Churvox can prepare draft invoices and checks. It will not send invoices, file tax, create bank payout files, or mark anything paid unless you approve the allowed action.</p></section><aside className="freshCard"><h2>Recent decisions</h2>{activity.length ? activity.map((item) => <div className="freshItem freshActivityItem" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></div>) : <div className="freshItem"><b>No decisions yet</b><span>Approve, edit, ignore, check for work, archive duplicates, or prepare notes to create activity.</span></div>}</aside></section>
     </section>
   );
 }
