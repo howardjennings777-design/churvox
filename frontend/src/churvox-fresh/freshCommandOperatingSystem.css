@@ -68,6 +68,18 @@
   font-size: 34px;
 }
 
+.freshCommandBrief {
+  border-top: 4px solid #f97316 !important;
+}
+
+.freshCommandMemory {
+  border-top: 4px solid #111827 !important;
+}
+
+.freshCommandProofPack {
+  border-top: 4px solid #fbbf24 !important;
+}
+
 .freshCommandOsRows {
   display: grid;
   gap: 8px;
