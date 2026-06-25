@@ -1,11 +1,14 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, ClipboardList, MapPin, MessageCircle, Navigation, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, ClipboardList, Clock3, MapPin, MessageCircle, Navigation, PauseCircle, Phone, PlayCircle, RefreshCw, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
 import "./WorkerCleanApp.css";
+
+const OFFLINE_QUEUE_KEY = "churvox-worker-offline-queue";
+const FLOW_MARKER = "WORKER_APP_14_FIELD_FLOW_20260625";
 
 async function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -102,6 +105,71 @@ function dateText(job) {
   return [date, time].filter(Boolean).join(" · ") || "No time set";
 }
 
+function customerPhone(job) {
+  return job?.customer_phone || job?.client_phone || job?.phone || job?.mobile || job?.contact_phone || "";
+}
+
+function customerEmail(job) {
+  return job?.customer_email || job?.client_email || job?.email || job?.contact_email || "";
+}
+
+function customerContactAllowed(job) {
+  return Boolean(job?.worker_can_contact_customer || job?.allow_worker_customer_contact || job?.show_customer_contact_to_worker || job?.customer_contact_allowed);
+}
+
+function defaultChecklist(job) {
+  const raw = job?.worker_checklist || job?.checklist || job?.job_checklist || job?.completion_checklist;
+  const source = Array.isArray(raw) && raw.length ? raw : [
+    "Check address and access",
+    "Read boss instructions",
+    "Take before/after photo if useful",
+    "Clean up and confirm the work is done",
+    "Leave notes for owner review",
+  ];
+  return source.map((item, index) => {
+    if (typeof item === "object") {
+      return {
+        id: item.id || item.key || `check-${index}`,
+        label: item.label || item.title || item.text || `Step ${index + 1}`,
+        done: Boolean(item.done || item.completed || item.checked),
+      };
+    }
+    return { id: `check-${index}`, label: String(item), done: false };
+  });
+}
+
+function draftKey(jobId) {
+  return `churvox-worker-job-draft:${jobId}`;
+}
+
+function readJson(key, fallback) {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(key) || "");
+    return parsed || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(key, value) {
+  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+function queuedItems() {
+  return readJson(OFFLINE_QUEUE_KEY, []);
+}
+
+function queueOffline(item) {
+  const next = [...queuedItems(), { ...item, queued_at: new Date().toISOString() }].slice(-40);
+  writeJson(OFFLINE_QUEUE_KEY, next);
+  return next.length;
+}
+
+function minutesFromTimer(startedAt) {
+  if (!startedAt) return 0;
+  return Math.max(0, Math.round((Date.now() - Number(startedAt)) / 60000));
+}
+
 async function reverseGeocodeLocation(location) {
   const lat = location?.lat ?? location?.latitude;
   const lng = location?.lng ?? location?.longitude;
@@ -172,6 +240,14 @@ export default function WorkerJobDetailPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showContactOffice, setShowContactOffice] = useState(false);
   const [proofPrompt, setProofPrompt] = useState(false);
+  const [workerStatus, setWorkerStatus] = useState("assigned");
+  const [checklist, setChecklist] = useState([]);
+  const [materialsText, setMaterialsText] = useState("");
+  const [issueFound, setIssueFound] = useState(false);
+  const [timeMinutes, setTimeMinutes] = useState(0);
+  const [timerStartedAt, setTimerStartedAt] = useState(0);
+  const [queuedCount, setQueuedCount] = useState(() => queuedItems().length);
+  const [elapsedTick, setElapsedTick] = useState(0);
 
   const loadJob = useCallback(async () => {
     setLoading(true);
@@ -191,8 +267,16 @@ export default function WorkerJobDetailPage() {
       }
 
       if (nextJob) {
+        const draft = readJson(draftKey(id), {});
+        const nextChecklist = Array.isArray(draft.checklist) ? draft.checklist : defaultChecklist(nextJob);
         setJob(nextJob);
-        setWorkerNotes(nextJob?.worker_notes || "");
+        setWorkerNotes(draft.worker_notes ?? nextJob?.worker_notes ?? "");
+        setWorkerStatus(draft.worker_status || statusOf(nextJob));
+        setChecklist(nextChecklist);
+        setMaterialsText(draft.materials_used || nextJob?.materials_used || "");
+        setIssueFound(Boolean(draft.issue_found ?? nextJob?.issue_found));
+        setTimeMinutes(Number(draft.worker_time_minutes ?? nextJob?.worker_time_minutes ?? nextJob?.time_spent_minutes ?? 0) || 0);
+        setTimerStartedAt(Number(draft.timer_started_at || 0));
       } else {
         setJob(null);
         toast.error("Could not load this job.");
@@ -209,6 +293,26 @@ export default function WorkerJobDetailPage() {
     loadJob();
   }, [loadJob]);
 
+  useEffect(() => {
+    if (!timerStartedAt) return undefined;
+    const timer = window.setInterval(() => setElapsedTick((value) => value + 1), 15000);
+    return () => window.clearInterval(timer);
+  }, [timerStartedAt]);
+
+  useEffect(() => {
+    if (!job) return;
+    writeJson(draftKey(id), {
+      worker_notes: workerNotes,
+      worker_status: workerStatus,
+      checklist,
+      materials_used: materialsText,
+      issue_found: issueFound,
+      worker_time_minutes: timeMinutes,
+      timer_started_at: timerStartedAt,
+      saved_at: new Date().toISOString(),
+    });
+  }, [checklist, id, issueFound, job, materialsText, timeMinutes, timerStartedAt, workerNotes, workerStatus]);
+
   async function sendLivePing(payload) {
     try {
       await post("/worker/live-ping", payload);
@@ -217,16 +321,92 @@ export default function WorkerJobDetailPage() {
     }
   }
 
-  async function saveFieldUpdate(payload) {
-    return patch(`/worker/jobs/${encodeURIComponent(id)}/field-update`, payload);
+  async function syncOfflineQueue() {
+    const queue = queuedItems();
+    if (!queue.length) {
+      setQueuedCount(0);
+      toast.success("No offline updates waiting");
+      return;
+    }
+
+    const remaining = [];
+    for (const item of queue) {
+      try {
+        const res = item.method === "post" ? await post(item.path, item.payload) : await patch(item.path, item.payload);
+        if (!res?.success) remaining.push(item);
+      } catch {
+        remaining.push(item);
+      }
+    }
+    writeJson(OFFLINE_QUEUE_KEY, remaining);
+    setQueuedCount(remaining.length);
+    if (remaining.length) toast.error(`${remaining.length} update${remaining.length === 1 ? "" : "s"} still waiting for signal`);
+    else toast.success("Offline updates synced");
+    await loadJob();
+  }
+
+  async function saveFieldUpdate(payload, { quiet = false } = {}) {
+    const enriched = { ...payload, worker_app_flow: FLOW_MARKER, worker_updated_at: new Date().toISOString() };
+    try {
+      const res = await patch(`/worker/jobs/${encodeURIComponent(id)}/field-update`, enriched);
+      if (!res?.success) throw new Error(res?.error || "Could not save update");
+      if (!quiet) toast.success("Saved");
+      return true;
+    } catch (err) {
+      const count = queueOffline({ method: "patch", path: `/worker/jobs/${encodeURIComponent(id)}/field-update`, payload: enriched });
+      setQueuedCount(count);
+      if (!quiet) toast.error("No signal. Saved offline and will sync later.");
+      return false;
+    }
   }
 
   async function saveNotes(text = workerNotes) {
     const trimmed = String(text || "").trim();
     setWorkerNotes(trimmed);
-    const res = await saveFieldUpdate({ worker_notes: trimmed });
-    if (!res?.success) toast.error(res?.error || "Could not save message");
-    return Boolean(res?.success);
+    return saveFieldUpdate({ worker_notes: trimmed });
+  }
+
+  async function updateWorkerStatus(nextStatus) {
+    setWorkerStatus(nextStatus);
+    if (nextStatus === "started" && !timerStartedAt) setTimerStartedAt(Date.now());
+    if (nextStatus === "paused" && timerStartedAt) stopTimer(false);
+    await saveFieldUpdate({
+      status: nextStatus === "on_my_way" ? "assigned" : nextStatus,
+      job_status: nextStatus,
+      workflow_status: nextStatus,
+      worker_live_status: nextStatus.replaceAll("_", " "),
+      worker_status: nextStatus,
+      worker_status_updated_at: new Date().toISOString(),
+    }, { quiet: true });
+    await sendLivePing({ source: "worker-status", job_id: id, job_title: jobTitle(job), job_status: nextStatus, live_status: nextStatus.replaceAll("_", " ") });
+    toast.success(nextStatus.replaceAll("_", " "));
+  }
+
+  function startTimer() {
+    setTimerStartedAt(Date.now());
+    if (workerStatus !== "started") updateWorkerStatus("started");
+  }
+
+  function stopTimer(showToast = true) {
+    const added = minutesFromTimer(timerStartedAt);
+    setTimeMinutes((value) => Number(value || 0) + added);
+    setTimerStartedAt(0);
+    if (showToast) toast.success(`Added ${added || 0} min`);
+  }
+
+  async function saveChecklist(nextChecklist = checklist) {
+    setChecklist(nextChecklist);
+    await saveFieldUpdate({ worker_checklist: nextChecklist, checklist: nextChecklist });
+  }
+
+  async function toggleChecklist(index) {
+    const next = checklist.map((item, i) => i === index ? { ...item, done: !item.done } : item);
+    setChecklist(next);
+    await saveFieldUpdate({ worker_checklist: next, checklist: next }, { quiet: true });
+  }
+
+  async function saveMaterials() {
+    await saveFieldUpdate({ materials_used: materialsText, issue_found: issueFound });
   }
 
   async function addPhoto(event) {
@@ -244,14 +424,10 @@ export default function WorkerJobDetailPage() {
     try {
       const dataUrl = await compressImage(file);
       const photos = [...existing, dataUrl];
-      const res = await saveFieldUpdate({ photos });
-      if (res?.success) {
-        setJob((prev) => ({ ...prev, photos }));
-        setProofPrompt(false);
-        toast.success("Photo added");
-      } else {
-        toast.error(res?.error || "Could not upload photo");
-      }
+      const ok = await saveFieldUpdate({ photos }, { quiet: true });
+      setJob((prev) => ({ ...prev, photos }));
+      setProofPrompt(false);
+      toast.success(ok ? "Photo added" : "Photo saved offline");
     } catch {
       toast.error("Could not process this photo");
     } finally {
@@ -261,14 +437,15 @@ export default function WorkerJobDetailPage() {
 
   async function removePhoto(index) {
     const photos = (Array.isArray(job?.photos) ? job.photos : []).filter((_, i) => i !== index);
-    const res = await saveFieldUpdate({ photos });
-    if (res?.success) setJob((prev) => ({ ...prev, photos }));
-    else toast.error(res?.error || "Could not remove photo");
+    const ok = await saveFieldUpdate({ photos }, { quiet: true });
+    setJob((prev) => ({ ...prev, photos }));
+    if (!ok) toast.error("No signal. Photo removal queued.");
   }
 
   async function finishJob() {
     const photos = Array.isArray(job?.photos) ? job.photos : [];
     const note = String(workerNotes || "").trim();
+    const finalTimeMinutes = Number(timeMinutes || 0) + minutesFromTimer(timerStartedAt);
 
     if (!photos.length && !note) {
       setProofPrompt(true);
@@ -280,22 +457,37 @@ export default function WorkerJobDetailPage() {
     setSaving(true);
 
     try {
+      if (timerStartedAt) {
+        setTimeMinutes(finalTimeMinutes);
+        setTimerStartedAt(0);
+      }
       if (note) await saveNotes(note);
 
       const location = await getGpsPosition();
       const payload = {
         worker_notes: note,
         photos,
+        worker_checklist: checklist,
+        checklist,
+        materials_used: materialsText,
+        issue_found: issueFound,
+        worker_time_minutes: finalTimeMinutes,
         completed_by_worker: true,
         work_review_status: "ready_for_review",
         review_status: "ready_for_review",
         owner_review_status: "ready_for_review",
         worker_action_required: false,
         completed_at: new Date().toISOString(),
+        worker_app_flow: FLOW_MARKER,
       };
       if (location) payload.location = location;
 
-      const res = await post(`/worker/jobs/${encodeURIComponent(id)}/complete`, payload);
+      let res = null;
+      try {
+        res = await post(`/worker/jobs/${encodeURIComponent(id)}/complete`, payload);
+      } catch {
+        res = null;
+      }
 
       if (res?.success) {
         await sendLivePing({
@@ -307,15 +499,21 @@ export default function WorkerJobDetailPage() {
           job_status: "completed",
           location,
         });
+        setWorkerStatus("completed");
         toast.success("Job sent to owner");
+        try { window.localStorage.removeItem(draftKey(id)); } catch {}
         await loadJob();
       } else {
-        toast.error(res?.error || "Could not finish job");
+        const count = queueOffline({ method: "post", path: `/worker/jobs/${encodeURIComponent(id)}/complete`, payload });
+        setQueuedCount(count);
+        toast.error("No signal. Completion saved offline.");
       }
     } finally {
       setSaving(false);
     }
   }
+
+  const currentTimerMinutes = timeMinutes + minutesFromTimer(timerStartedAt) + (elapsedTick * 0);
 
   if (loading) {
     return (
@@ -342,11 +540,15 @@ export default function WorkerJobDetailPage() {
   const photos = Array.isArray(job?.photos) ? job.photos : [];
   const noteReady = String(workerNotes || "").trim().length > 0;
   const photoReady = photos.length > 0;
-  const complete = ["completed", "complete", "done", "finished"].includes(statusOf(job));
+  const complete = ["completed", "complete", "done", "finished"].includes(statusOf(job)) || workerStatus === "completed";
   const sentBack = isSentBack(job);
+  const phone = customerPhone(job);
+  const email = customerEmail(job);
+  const canContact = customerContactAllowed(job) && (phone || email);
+  const checkedCount = checklist.filter((item) => item.done).length;
 
   return (
-    <div className="wc-screen wc-job-screen">
+    <div className="wc-screen wc-job-screen" data-worker-flow={FLOW_MARKER}>
       <header className="wc-topbar">
         <div>
           <Link to="/worker/jobs" className="wc-back"><ArrowLeft /> Jobs</Link>
@@ -363,6 +565,17 @@ export default function WorkerJobDetailPage() {
           <small>{dateText(job)}</small>
         </section>
 
+        {queuedCount ? (
+          <section className="wc-alert need">
+            <Send />
+            <div>
+              <b>{queuedCount} offline update{queuedCount === 1 ? "" : "s"} waiting</b>
+              <span>Saved on this phone. Sync when signal is back.</span>
+              <button type="button" className="wc-mini-action" onClick={syncOfflineQueue}>Sync now</button>
+            </div>
+          </section>
+        ) : null}
+
         {sentBack ? (
           <section className="wc-alert">
             <AlertTriangle />
@@ -372,6 +585,25 @@ export default function WorkerJobDetailPage() {
             </div>
           </section>
         ) : null}
+
+        <section className="wc-status-strip" aria-label="Job status buttons">
+          <button type="button" className={workerStatus === "on_my_way" ? "active" : ""} onClick={() => updateWorkerStatus("on_my_way")} disabled={complete}>On my way</button>
+          <button type="button" className={workerStatus === "started" ? "active" : ""} onClick={() => updateWorkerStatus("started")} disabled={complete}>Started</button>
+          <button type="button" className={workerStatus === "paused" ? "active" : ""} onClick={() => updateWorkerStatus("paused")} disabled={complete}>Paused</button>
+          <button type="button" onClick={() => setShowContactOffice(true)} disabled={complete}>Need help</button>
+        </section>
+
+        <section className="wc-card wc-timer-card">
+          <div className="wc-section-head">
+            <span>Time</span>
+            <h2>{currentTimerMinutes} min</h2>
+            <p>Track time for this job. It is included when you send the job to owner review.</p>
+          </div>
+          <div className="wc-two-actions">
+            {!timerStartedAt ? <button type="button" onClick={startTimer}><PlayCircle size={18} /> Start timer</button> : <button type="button" onClick={() => stopTimer()}><PauseCircle size={18} /> Stop timer</button>}
+            <button type="button" onClick={() => saveFieldUpdate({ worker_time_minutes: currentTimerMinutes })}><Clock3 size={18} /> Save time</button>
+          </div>
+        </section>
 
         <section className="wc-card">
           <div className="wc-section-head">
@@ -384,10 +616,42 @@ export default function WorkerJobDetailPage() {
 
         <section className="wc-card">
           <div className="wc-section-head">
+            <span>Customer contact</span>
+            <h2>{canContact ? "Contact allowed" : "Hidden by owner"}</h2>
+            <p>{canContact ? "Use only for job access or arrival updates." : "Customer phone/email stays hidden unless the owner turns it on for workers."}</p>
+          </div>
+          {canContact ? (
+            <div className="wc-two-actions">
+              {phone ? <a href={`tel:${phone}`}><Phone size={18} /> Call customer</a> : null}
+              {phone ? <a href={`sms:${phone}`}><MessageCircle size={18} /> Text customer</a> : null}
+              {email ? <a href={`mailto:${email}`}><Send size={18} /> Email customer</a> : null}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="wc-card">
+          <div className="wc-section-head">
             <span>Instructions</span>
             <h2>What to do</h2>
           </div>
           <p>{instructions || "No special instructions added. Do the job as assigned."}</p>
+        </section>
+
+        <section className="wc-card">
+          <div className="wc-section-head">
+            <span>Checklist</span>
+            <h2>{checkedCount}/{checklist.length || 0} done</h2>
+            <p>Tick off the field steps so the owner gets consistent work back.</p>
+          </div>
+          <div className="wc-checklist">
+            {checklist.map((item, index) => (
+              <button type="button" key={item.id || item.label} className={item.done ? "done" : ""} onClick={() => toggleChecklist(index)}>
+                <b>{item.done ? "✓" : index + 1}</b>
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+          <button type="button" className="wc-save-note" onClick={() => saveChecklist(checklist)}>Save checklist</button>
         </section>
 
         <section className="wc-card" id="worker-proof">
@@ -444,11 +708,36 @@ export default function WorkerJobDetailPage() {
           </button>
         </section>
 
+        <section className="wc-card">
+          <div className="wc-section-head">
+            <span>Materials</span>
+            <h2>Parts or extras used</h2>
+            <p>Add anything the owner should review before invoicing.</p>
+          </div>
+          <textarea className="wc-textarea" rows={3} value={materialsText} onChange={(event) => setMaterialsText(event.target.value)} placeholder="Example: 2 bags mulch, 30 min extra, replacement latch" />
+          <label className="wc-issue-toggle"><input type="checkbox" checked={issueFound} onChange={(event) => setIssueFound(event.target.checked)} /> Issue found or extra owner review needed</label>
+          <button type="button" className="wc-save-note" onClick={saveMaterials}>Save materials</button>
+        </section>
+
+        <section className="wc-card wc-wrap-card">
+          <div className="wc-section-head">
+            <span>Daily wrap-up</span>
+            <h2>Before you finish</h2>
+            <p>Quick summary for owner review.</p>
+          </div>
+          <div className="wc-wrap-grid">
+            <article><span>Time</span><b>{currentTimerMinutes} min</b></article>
+            <article><span>Checklist</span><b>{checkedCount}/{checklist.length || 0}</b></article>
+            <article><span>Photos</span><b>{photos.length}</b></article>
+            <article><span>Issue</span><b>{issueFound ? "Yes" : "No"}</b></article>
+          </div>
+        </section>
+
         <section className={`wc-finish ${noteReady || photoReady ? "ready" : ""}`}>
           <div>
             <span>Finish</span>
             <h2>{complete ? "Sent to owner" : "I’ve finished this job"}</h2>
-            <p>{complete ? "The owner can now review the work." : "This sends the job, photos and message back to the boss."}</p>
+            <p>{complete ? "The owner can now review the work." : "This sends the job, photos, checklist, materials, time and message back to the boss."}</p>
           </div>
           <button type="button" disabled={saving || complete} onClick={finishJob}>
             <CheckCircle2 size={20} />
