@@ -365,7 +365,15 @@
   color: #fff;
 }
 
-/* keep previous waiting approval scrollbar guard */
+/* CHURVOX_COMMAND_MAIN_VIEW_ONLY_20260626 */
+.freshCommandStablePage > .freshCommandPulse,
+.freshCommandStablePage > .freshBackendReviewSource,
+.freshCommandStablePage > .freshCommandFilterBar,
+.freshCommandStablePage > .freshCommandFilterBar + .freshGrid {
+  display: none !important;
+}
+
+/* keep previous waiting approval scrollbar guard for fallback flows */
 .freshCommandStablePage .freshGrid > .freshJobsListCard {
   max-height: 430px !important;
   overflow-y: scroll !important;
