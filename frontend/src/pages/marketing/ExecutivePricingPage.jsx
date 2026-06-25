@@ -33,8 +33,8 @@ function isOperator(plan) {
 const chooser = [
   ["Start", "Best when you are solo and need clients, jobs, quotes and invoices organised."],
   ["Crew", "Best when you assign work, track time and need the team to stay clear."],
-  ["Operator", "Most popular. Best when you want Churvox to prepare admin actions for review and approval."],
-  ["Command", "Best when you need accounting sync included, payroll workspace, roles, exports and higher control."],
+  ["Operator", "Most popular. Best when you want Command preparing admin cards for owner approval."],
+  ["Command", "Best when you need deeper control: accounting sync included, payroll workspace, roles, exports and approval oversight."],
 ];
 
 const safety = [
@@ -47,13 +47,13 @@ const buyerProof = [
   ["No card upfront", "Start the 14-day trial before committing."],
   ["Clear upgrade path", "Start, Crew, Operator and Command match how much admin help you need."],
   ["Owner control", "Churvox prepares admin work, but you approve important actions."],
-  ["Accounting options", "Add Xero sync where available, or use export packs as the safe fallback."],
+  ["Accounting options", "Add accounting sync where available, or use export packs as the safe fallback."],
 ];
 
 const planCompare = [
   ["Start", "Solo operator", "Core jobs, clients, quotes and invoices"],
   ["Crew", "Small team", "Assign work, track time and keep workers clear"],
-  ["Operator", "Growing owner", "AI Operator Actions prepared for approval"],
+  ["Operator", "Growing owner", "Command approval desk for prepared admin"],
   ["Command", "Larger operation", "Accounting sync included, payroll workspace and higher control"],
 ];
 
@@ -78,15 +78,15 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="simplePublic" data-version="CHURVOX_PRICING_TRUST_STRONGER_20260622">
+    <main className="simplePublic" data-version="CHURVOX_PRICING_COMMAND_POSITIONING_20260625">
       <Nav />
 
       <section className="simpleHero">
         <div>
           <span className="simpleKicker">Plans for real service businesses</span>
-          <h1>Pick the level of admin help you want Churvox to run.</h1>
+          <h1>Pick how much admin Churvox should prepare for approval.</h1>
           <p className="simpleLead">
-            Start with the core workflow, add workers when you need them, then move into Operator when you want Churvox preparing admin actions for you to approve.
+            Start with the core workflow, add workers when you need them, then move into Operator when you want Command preparing unfinished admin, follow-ups and draft actions for you to approve.
           </p>
 
           <label className="simpleCountrySelect">
@@ -110,9 +110,9 @@ export default function ExecutivePricingPage() {
 
         <aside className="simpleCard simpleOperatorCard">
           <span className="simplePlanBadge">Most popular</span>
-          <h2>Operator is the plan to look at first.</h2>
+          <h2>Operator is where Command starts doing the admin.</h2>
           <p>
-            Operator is where Churvox starts feeling different: admin actions are prepared for review, while the owner keeps the final approval.
+            Operator is where Churvox starts feeling different: unfinished work and admin actions are prepared for review while the owner keeps final approval.
           </p>
         </aside>
       </section>
@@ -121,7 +121,7 @@ export default function ExecutivePricingPage() {
         <span className="simpleSectionLabel">Before checkout</span>
         <h2>Start safe. Upgrade when the admin gets heavier.</h2>
         <p className="simpleLead">
-          Churvox pricing is built around how much of the business you want connected: core workflow first, then team control, then owner-approved AI admin, then Command-level operations.
+          Churvox pricing is built around how much of the business you want connected: core workflow first, then team control, then owner-approved admin, then Command-level operations.
         </p>
         <div className="simpleGrid">
           {buyerProof.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
