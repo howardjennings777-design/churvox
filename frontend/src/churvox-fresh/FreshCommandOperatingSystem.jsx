@@ -222,7 +222,7 @@ export default function FreshCommandOperatingSystem({
   summaryOf = () => "Ready for your decision.",
   readableAction = (value) => cleanText(value || "Ready to approve"),
   categoryOf = () => "Review",
-  ownerNote = "",
+  ownerNote,
   onOwnerNoteChange,
   onApproveFix,
   onSaveFix,
@@ -278,13 +278,13 @@ export default function FreshCommandOperatingSystem({
   const highItems = fixItems.filter((item) => item.severity === "High");
   const missingProofText = selectedGaps.length ? selectedGaps.join(", ") : "No major proof gaps on the selected item.";
   const activeOutcome = activeFix ? localOutcome[activeFix.id] : "";
-  const noteValue = typeof ownerNote === "string" ? ownerNote : localNote;
+  const noteValue = onOwnerNoteChange ? String(ownerNote || "") : localNote;
   const busy = Boolean(actionBusy || toolBusy || externalBusy);
 
   React.useEffect(() => {
-    if (typeof ownerNote === "string") return;
+    if (onOwnerNoteChange) return;
     setLocalNote(activeFix?.source?.owner_note || activeFix?.source?.owner || "");
-  }, [activeFix?.id, ownerNote]);
+  }, [activeFix?.id, onOwnerNoteChange]);
 
   function updateNote(value) {
     if (onOwnerNoteChange) onOwnerNoteChange(value);
