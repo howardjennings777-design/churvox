@@ -149,12 +149,12 @@ function statusLabel(job) {
   return pick(job, "status", "job_status") || "Ready";
 }
 
-function openJobModal(text = "Create job from Plan My Day") {
+function openJobModal(text = "Create job from Today's Plan") {
   try {
     window.localStorage.setItem("churvox:fresh-open-job-modal:v1", JSON.stringify({ open: true, instruction: text, text, at: Date.now() }));
   } catch {}
   try {
-    window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text, source: "plan-my-day" } }));
+    window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text, source: "todays-plan" } }));
   } catch {}
 }
 
@@ -309,11 +309,11 @@ export default function FreshTodaysWork({ onNavigate }) {
     <section className="freshTodayWorkPage">
       <header className="freshTodayWorkHero">
         <div>
-          <span>Home</span>
-          <h1>Plan My Day</h1>
-          <p>Jobs, worker gaps and invoice admin for {longDay(selectedDate)} in one owner cockpit.</p>
+          <span>Today</span>
+          <h1>Today's Plan</h1>
+          <p>Jobs, worker gaps and invoice admin for {longDay(selectedDate)}. Churvox keeps the day planned; Command handles unfinished, doing, blocked and follow-up work.</p>
           <div className="freshTodayWorkSync">
-            <b>{loading ? "Checking day plan..." : "Live day plan loaded"}</b>
+            <b>{loading ? "Checking today's plan..." : "Today's plan loaded"}</b>
             {lastSynced ? <small>Updated {lastSynced}</small> : null}
             <button type="button" onClick={load} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</button>
           </div>
@@ -346,13 +346,13 @@ export default function FreshTodaysWork({ onNavigate }) {
         <button type="button" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>Tomorrow</button>
         <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
         <button type="button" className="primary" onClick={addJob}>Add job</button>
-        <button type="button" onClick={() => onNavigate?.("command")}>Open Command</button>
+        <button type="button" onClick={() => onNavigate?.("command")}>Review in Command</button>
       </section>
 
       <section className="freshTodayWorkBoard">
         <article className="freshTodayWorkMain">
           <header>
-            <span>Daily plan</span>
+            <span>Today's plan</span>
             <h2>{longDay(selectedDate)}</h2>
             <p>{dayJobs.length ? `${dayJobs.length} job${dayJobs.length === 1 ? "" : "s"} booked.` : "No jobs booked for this day."}</p>
           </header>
