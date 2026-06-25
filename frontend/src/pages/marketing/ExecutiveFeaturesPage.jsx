@@ -4,32 +4,39 @@ import { Nav, Footer } from "./ExecutiveHomePage";
 import "./SimplePublic.css";
 
 const features = [
-  ["Smart Hub", "See what needs attention across jobs, invoices, customers, payments and admin."],
+  ["Command approval", "Unfinished jobs, draft invoices, invoice follow-ups and open quotes move to one owner approval desk."],
+  ["Today’s Plan", "See the work that is planned and ready, separate from admin that still needs a decision."],
   ["Jobs and clients", "Keep customer details, work notes, photos, prices and job history together."],
   ["Quotes and invoices", "Create quotes and invoices from the job information already in the system."],
-  ["Command approval", "Churvox prepares admin actions. You review, edit or approve them before they move."],
   ["Worker flow", "Workers get a simple job view while the owner keeps control of the business."],
   ["Accounting handoff", "Export or draft-sync accounting where available without auto-sending, tax filing or payout files."],
 ];
 
 const flow = [
-  ["1", "Job created", "Add the client, work, price, notes and schedule."],
-  ["2", "Work completed", "Track time, notes, photos and what still needs attention."],
-  ["3", "Invoice prepared", "Turn job details into an invoice with less retyping."],
-  ["4", "Owner approves", "Review what Churvox prepared before anything important moves."],
-  ["5", "Paid and synced", "Check payment status and hand off to Xero or accounting export where available."],
+  ["1", "Work enters Churvox", "Add the client, work, price, notes, worker and schedule."],
+  ["2", "Records stay clean", "Jobs, clients, quotes, invoices and team pages stay focused on facts."],
+  ["3", "Command finds the admin", "Completed work, blocked jobs, unpaid invoices and open quotes become review cards."],
+  ["4", "Owner approves", "Review price, customer, recurring status and job facts before anything important moves."],
+  ["5", "Admin moves forward", "Invoice, follow-up, record update or accounting handoff proceeds only after approval."],
+];
+
+const commandCards = [
+  ["Completed job", "Prepare a draft invoice from the job facts."],
+  ["Unpaid invoice", "Prepare a follow-up without sending it automatically."],
+  ["Open quote", "Surface the next decision before the opportunity goes cold."],
+  ["Blocked job", "Bring the blocker to Command instead of hiding it in the job list."],
 ];
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_FEATURES_STRONGER_20260622">
+    <main className="simplePublic" data-version="CHURVOX_FEATURES_COMMAND_APPROVAL_20260625">
       <Nav />
       <section className="simpleHero">
         <div>
           <span className="simpleKicker">How it works</span>
-          <h1>Churvox connects the work to the admin that follows it.</h1>
+          <h1>The job app keeps records. Command moves the admin forward.</h1>
           <p className="simpleLead">
-            Jobs, clients, workers, quotes, invoices, payment checks and accounting handoff all sit in one owner-controlled workflow.
+            Churvox connects jobs, clients, workers, quotes, invoices, payment checks and accounting handoff in one owner-controlled workflow.
           </p>
           <div className="simpleActions">
             <Link to="/signup" className="simpleBtn simplePrimary">Start 14-day trial</Link>
@@ -37,9 +44,9 @@ export default function ExecutiveFeaturesPage() {
           </div>
         </div>
         <aside className="simpleCard">
-          <h2>Job → Invoice → Paid → Synced.</h2>
+          <h2>Churvox does the admin. You approve.</h2>
           <p>
-            That is the simple Churvox promise. The app keeps the next step visible and keeps the owner in charge.
+            Finished work, follow-ups and blocked admin land in Command with the facts visible before approval.
           </p>
         </aside>
       </section>
@@ -52,6 +59,27 @@ export default function ExecutiveFeaturesPage() {
               <i>{num}</i>
               <b>{title}</b>
               <span>{text}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="simpleBand simpleInsideBand">
+        <div>
+          <span className="simpleSectionLabel">Command cards</span>
+          <h2>What Churvox prepares for approval.</h2>
+          <p className="simpleLead">
+            Command is built for the unfinished doing and follow-up work that normally gets missed when the owner is busy.
+          </p>
+        </div>
+        <div className="simpleProductShowcase">
+          {commandCards.map(([title, text]) => (
+            <article key={title}>
+              <div>
+                <small>Needs approval</small>
+                <b>{title}</b>
+              </div>
+              <p>{text}</p>
             </article>
           ))}
         </div>
