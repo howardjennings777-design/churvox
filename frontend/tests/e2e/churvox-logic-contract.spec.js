@@ -36,6 +36,23 @@ function readFrontendSource(filename) {
   throw new Error(`Unable to find frontend/src/${filename} from ${process.cwd()}`);
 }
 
+function readPublicSource(filename) {
+  const roots = [process.cwd(), path.join(process.cwd(), 'frontend'), path.join(process.cwd(), '..'), path.join(process.cwd(), '..', 'frontend')];
+
+  for (const root of roots) {
+    const candidates = [
+      path.join(root, 'public', filename),
+      path.join(root, 'frontend', 'public', filename),
+    ];
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) return fs.readFileSync(candidate, 'utf8');
+    }
+  }
+
+  throw new Error(`Unable to find frontend/public/${filename} from ${process.cwd()}`);
+}
+
 function readBackendSource(filename) {
   const roots = [process.cwd(), path.join(process.cwd(), '..'), path.join(process.cwd(), '..', '..')];
 
@@ -226,5 +243,26 @@ test.describe('Churvox logic contracts', () => {
     ]) {
       expect(source, `${issue} should stay routed to Command`).toContain(issue);
     }
+  });
+
+  test('Public marketing leads with the Command approval promise', () => {
+    const home = readFrontendSource('pages/marketing/ExecutiveHomePage.jsx');
+    const features = readFrontendSource('pages/marketing/ExecutiveFeaturesPage.jsx');
+    const pricing = readFrontendSource('pages/marketing/ExecutivePricingPage.jsx');
+    const index = readPublicSource('index.html');
+
+    expect(home).toContain('Churvox does the admin. You approve.');
+    expect(home).toContain('Traditional field-service tools');
+    expect(home).toContain('What Command prepares');
+    expect(home).toContain('Clean record pages. One approval desk.');
+    expect(home).not.toContain('Jobber-style');
+
+    expect(features).toContain('The job app keeps records. Command moves the admin forward.');
+    expect(features).toContain('Command cards');
+    expect(pricing).toContain('Pick how much admin Churvox should prepare for approval.');
+    expect(pricing).toContain('Command approval desk for prepared admin');
+
+    expect(index).toContain('Churvox does the admin. You approve.');
+    expect(index).not.toContain('AI Operator Command Desk');
   });
 });
