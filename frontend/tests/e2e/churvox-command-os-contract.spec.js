@@ -65,5 +65,11 @@ test.describe('Churvox Command operating system', () => {
     ]) {
       expect(styles, `${className} should keep its UI styling`).toContain(className);
     }
+
+    expect(styles).toContain('.freshCommandStablePage .freshJobsListCard');
+    expect(styles).toContain('max-height: 560px');
+    expect(styles).toContain('overflow-y: auto');
+    expect(styles).toContain('scrollbar-gutter: stable');
+    expect(styles).toContain('overflow-wrap: anywhere');
   });
 });
