@@ -1,10 +1,12 @@
 import React from "react";
+import API_BASE from "../lib/apiBase";
 
 export const COMMAND_OS_MARKER_20260625 = "COMMAND_OS_MARKER_20260625";
 export const COMMAND_APPROVAL_BRAIN_MARKER_20260626 = "COMMAND_APPROVAL_BRAIN_MARKER_20260626";
 export const COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626 = "COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626";
 export const COMMAND_TAPPABLE_CARDS_MARKER_20260626 = "COMMAND_TAPPABLE_CARDS_MARKER_20260626";
 export const COMMAND_FIX_DESK_MARKER_20260626 = "COMMAND_FIX_DESK_MARKER_20260626";
+export const COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626 = "COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626";
 
 function cleanText(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -70,6 +72,44 @@ function scoreItem(item, selectedApprovalDetails = [], selectedHasConcreteAction
   const linkedRows = ["Customer", "Job", "Price", "Address", "Billing", "Recurring"].filter((label) => approvalValue(selectedApprovalDetails, label)).length;
   const amount = moneyAmount(item);
   return Math.min(99, Math.max(35, 42 + proofRows * 7 + linkedRows * 6 + (amount ? 12 : 0) + (selectedHasConcreteAction ? 14 : 0)));
+}
+
+function idOf(value, fallback = "") {
+  if (!value) return fallback;
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "object") return idOf(value.$oid || value.oid || value.id || value._id, fallback);
+  return fallback;
+}
+
+function sourceText(item) {
+  const details = item?.details && typeof item.details === "object" ? Object.entries(item.details).map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : value}`).join(". ") : "";
+  const payload = item?.payload && typeof item.payload === "object" ? Object.entries(item.payload).map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : value}`).join(". ") : "";
+  return [item?.title, item?.summary, item?.info, item?.found, item?.prepared, item?.why, item?.owner, details, payload].filter(Boolean).join(". ");
+}
+
+async function commandApiRequest(method, endpoint, body) {
+  const headers = { "Content-Type": "application/json" };
+  try {
+    const token = window.localStorage.getItem("token");
+    if (token) headers.Authorization = `Bearer ${token}`;
+  } catch {}
+  const response = await fetch(`${API_BASE}/api${endpoint}`, {
+    method,
+    headers,
+    credentials: "include",
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await response.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!response.ok || data?.success === false) throw new Error(data?.error || data?.detail || data?.message || `Command action failed (${response.status})`);
+  return data;
+}
+
+function notifyCommandUpdated() {
+  try {
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "command-fix-desk" } }));
+  } catch {}
 }
 
 function classifyFix(item, overrides = {}) {
@@ -177,6 +217,7 @@ export default function FreshCommandOperatingSystem({
   const [tab, setTab] = React.useState("All");
   const [activeId, setActiveId] = React.useState("");
   const [localOutcome, setLocalOutcome] = React.useState({});
+  const [actionBusy, setActionBusy] = React.useState("");
   const selectedDetails = selected ? detailRows(selected) : [];
   const selectedGaps = selected ? selectedProofGaps(selectedApprovalDetails) : [];
   const selectedScore = scoreItem(selected, selectedApprovalDetails, selectedHasConcreteAction);
@@ -217,8 +258,51 @@ export default function FreshCommandOperatingSystem({
   const missingProofText = selectedGaps.length ? selectedGaps.join(", ") : "No major proof gaps on the selected item.";
   const activeOutcome = activeFix ? localOutcome[activeFix.id] : "";
 
+  async function runFixAction(kind) {
+    if (!activeFix?.source) return;
+    const source = activeFix.source;
+    setActionBusy(kind);
+    try {
+      if (source.sourceMode === "note") {
+        if (kind !== "approve") {
+          setLocalOutcome((current) => ({ ...current, [activeFix.id]: kind === "save" ? "Note marked for edit" : "Note ignored locally" }));
+          return;
+        }
+        await commandApiRequest("POST", "/tell-churvox/prepare", { text: sourceText(source) || activeFix.title });
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Prepared note for approval" }));
+        notifyCommandUpdated();
+        return;
+      }
+
+      if (source.sourceMode !== "backend") {
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "This fix is view-only" }));
+        return;
+      }
+
+      const id = idOf(source.id || source._id);
+      if (!id) throw new Error("This Command item has no approval id yet.");
+
+      if (kind === "approve") {
+        if (!source.preparedForApproval) throw new Error("This item needs a concrete draft before approval.");
+        await commandApiRequest("POST", `/ai-review-items/${encodeURIComponent(id)}/approve`, { note: "Approved from Command Fix Desk." });
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Approved. Churvox handled it." }));
+      } else if (kind === "save") {
+        await commandApiRequest("PATCH", `/ai-review-items/${encodeURIComponent(id)}`, { note: "Needs edit from Command Fix Desk." });
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Saved as needs edit." }));
+      } else if (kind === "ignore") {
+        await commandApiRequest("POST", `/ai-review-items/${encodeURIComponent(id)}/ignore`, { note: "Ignored from Command Fix Desk." });
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Ignored. Nothing was changed." }));
+      }
+      notifyCommandUpdated();
+    } catch (err) {
+      setLocalOutcome((current) => ({ ...current, [activeFix.id]: err?.message || "Command action failed." }));
+    } finally {
+      setActionBusy("");
+    }
+  }
+
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{fixItems.length ? `${fixItems.length} things need attention` : "Nothing urgent needs fixing"}</h2>
@@ -260,11 +344,11 @@ export default function FreshCommandOperatingSystem({
               <section><small>Approval quality</small><b>{confidenceLabel(selectedScore)} · {selectedScore}%</b></section>
             </div>
             <div className="freshCommandFixActions">
-              <button type="button" onClick={() => setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Ready to approve" }))}>Ready to approve</button>
-              <button type="button" onClick={() => setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Needs edit" }))}>Needs edit</button>
-              <button type="button" onClick={() => setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Ignored for now" }))}>Ignore for now</button>
+              <button type="button" disabled={Boolean(actionBusy)} onClick={() => runFixAction("approve")}>{actionBusy === "approve" ? "Approving..." : activeFix?.source?.sourceMode === "note" ? "Prepare note" : "Approve fix"}</button>
+              <button type="button" disabled={Boolean(actionBusy)} onClick={() => runFixAction("save")}>{actionBusy === "save" ? "Saving..." : "Needs edit"}</button>
+              <button type="button" disabled={Boolean(actionBusy)} onClick={() => runFixAction("ignore")}>{actionBusy === "ignore" ? "Ignoring..." : "Ignore for now"}</button>
             </div>
-            {activeOutcome ? <p className="freshCommandOutcome">Local desk note: {activeOutcome}. Final live approve/edit wiring stays with the real approval controls.</p> : null}
+            {activeOutcome ? <p className="freshCommandOutcome">{activeOutcome}</p> : null}
           </> : <div className="freshCommandEmptyFix"><b>Nothing selected</b><small>Choose a fix from the left list.</small></div>}
         </main>
 
