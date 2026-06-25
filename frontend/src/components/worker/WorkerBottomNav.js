@@ -1,12 +1,12 @@
 import React from "react";
-import { Briefcase, CalendarDays, HelpCircle, Settings } from "lucide-react";
+import { Briefcase, CalendarDays, MessageCircle, UserCircle2 } from "lucide-react";
 import "./WorkerIphoneFix.css";
 
 const items = [
   { key: "today", label: "Today", to: "/worker/jobs#today", icon: CalendarDays },
   { key: "jobs", label: "Jobs", to: "/worker/jobs#jobs", icon: Briefcase },
-  { key: "help", label: "Help", to: "/worker/settings#help", icon: HelpCircle },
-  { key: "settings", label: "Settings", to: "/worker/settings#top", icon: Settings },
+  { key: "messages", label: "Messages", to: "/worker/settings#help", icon: MessageCircle },
+  { key: "profile", label: "Profile", to: "/worker/settings#top", icon: UserCircle2 },
 ];
 
 function go(to) {
