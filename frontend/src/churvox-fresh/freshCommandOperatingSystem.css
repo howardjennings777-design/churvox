@@ -53,6 +53,30 @@
   border-radius: 999px !important;
 }
 
+/* CHURVOX_COMMAND_GROUPED_APPROVALS_20260625 */
+.freshCommandGroupCount {
+  display: inline-flex !important;
+  width: fit-content !important;
+  margin-left: 8px !important;
+  padding: 4px 8px !important;
+  border-radius: 999px !important;
+  background: #111827 !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  letter-spacing: 0 !important;
+  vertical-align: middle !important;
+}
+
+.freshCommandGroupedMeta {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #9a3412 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+}
+
 .freshCommandOperatingSystem span,
 .freshCommandSelectedIntelligence span,
 .freshCommandNoClutter span {
