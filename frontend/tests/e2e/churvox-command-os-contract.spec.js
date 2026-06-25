@@ -76,5 +76,18 @@ test.describe('Churvox Command operating system', () => {
     expect(styles).toContain('scrollbar-width: auto !important');
     expect(styles).toContain('display: block !important');
     expect(styles).toContain('overflow-wrap: anywhere');
+
+    expect(command).toContain('function approvalGroupKey');
+    expect(command).toContain('function groupCommandRows');
+    expect(command).toContain('function duplicateBackendRows');
+    expect(command).toContain('const visibleGroups = groupCommandRows(visibleRows)');
+    expect(command).toContain('async function archiveDuplicateApprovals');
+    expect(command).toContain('Archive ${duplicateRows.length} duplicates');
+    expect(command).toContain('Archived as duplicate from grouped Command queue.');
+    expect(command).toContain('freshCommandGroupCount');
+    expect(command).toContain('freshCommandGroupedMeta');
+    expect(styles).toContain('CHURVOX_COMMAND_GROUPED_APPROVALS_20260625');
+    expect(styles).toContain('.freshCommandGroupCount');
+    expect(styles).toContain('.freshCommandGroupedMeta');
   });
 });
