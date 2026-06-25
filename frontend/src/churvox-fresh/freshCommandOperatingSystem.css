@@ -33,7 +33,8 @@
 .freshCommandFixSections small,
 .freshCommandProofRows small,
 .freshCommandBusinessHealth small,
-.freshCommandOwnerNote span {
+.freshCommandOwnerNote span,
+.freshCommandEmptyCommand span {
   display: inline-flex;
   width: fit-content;
   align-items: center;
@@ -406,6 +407,80 @@
   font-weight: 850;
 }
 
+/* CHURVOX_COMMAND_EMPTY_STATE_20260626 */
+.freshCommandEmptyCommand {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(22, 163, 74, .16), transparent 34%),
+    #fffaf0;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
+}
+
+.freshCommandEmptyCommand h3 {
+  margin: 10px 0 6px;
+  color: #111827;
+  font-size: clamp(28px, 3.2vw, 46px);
+  line-height: .96;
+  letter-spacing: -.052em;
+}
+
+.freshCommandEmptyCommand p {
+  max-width: 760px;
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.freshCommandEmptySteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshCommandEmptySteps section {
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.freshCommandEmptySteps b {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 9px;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.freshCommandEmptySteps span {
+  display: block;
+  width: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.freshCommandEmptySteps p {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
 .freshCommandBusinessHealth {
   background: #111827;
   color: #fff;
@@ -507,19 +582,22 @@
   }
 
   .freshCommandBusinessHealth div,
-  .freshCommandFixStats {
+  .freshCommandFixStats,
+  .freshCommandEmptySteps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 760px) {
-  .freshCommandFixHeader {
+  .freshCommandFixHeader,
+  .freshCommandEmptyCommand {
     padding: 18px;
     border-radius: 22px;
   }
 
   .freshCommandFixStats,
-  .freshCommandBusinessHealth div {
+  .freshCommandBusinessHealth div,
+  .freshCommandEmptySteps {
     grid-template-columns: 1fr;
   }
 
