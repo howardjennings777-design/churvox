@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import FreshCommandOperatingSystem from "./FreshCommandOperatingSystem";
 import "./freshPayrollCompact.css";
 import "./freshJobsPolish.css";
 
@@ -70,10 +71,7 @@ function cleanString(value) {
 }
 
 function cleanBusinessText(value) {
-  return cleanString(value)
-    .replace(/^for\s*[-:]*\s*/i, "")
-    .replace(/^customer\s*[:=-]?\s*$/i, "")
-    .trim();
+  return cleanString(value).replace(/^for\s*[-:]*\s*/i, "").replace(/^customer\s*[:=-]?\s*$/i, "").trim();
 }
 
 function normalizedText(value) {
@@ -95,21 +93,6 @@ function isGenericReviewText(value) {
   return GENERIC_REVIEW_PHRASES.some((phrase) => text === phrase || text.includes(phrase));
 }
 
-function usefulValue(value) {
-  if (value === null || value === undefined) return "";
-  if (typeof value === "object") {
-    if (Array.isArray(value)) return value.map(usefulValue).filter(Boolean).join(". ");
-    const text = Object.entries(value)
-      .filter(([key, v]) => v !== null && v !== undefined && String(v).trim() !== "" && shouldShowDetailField(key, v))
-      .map(([key, v]) => `${displayLabel(key)}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
-      .join(". ");
-    return isGenericReviewText(text) ? "" : text;
-  }
-  const text = cleanBusinessText(value);
-  if (isEmptyBusinessValue(text) || isGenericReviewText(text)) return "";
-  return text;
-}
-
 function displayLabel(key) {
   const normalized = normalizedKey(key);
   return DETAIL_LABELS[normalized] || cleanString(key).replace(/^details\s*/i, "");
@@ -120,6 +103,21 @@ function shouldShowDetailField(key, value) {
   if (!label || NON_BUSINESS_FIELDS.includes(label)) return false;
   if (HIDDEN_DETAIL_FIELDS.some((hidden) => label.includes(hidden))) return false;
   return value !== null && value !== undefined && String(value).trim() !== "";
+}
+
+function usefulValue(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") {
+    if (Array.isArray(value)) return value.map(usefulValue).filter(Boolean).join(". ");
+    const text = Object.entries(value)
+      .filter(([key, v]) => shouldShowDetailField(key, v))
+      .map(([key, v]) => `${displayLabel(key)}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+      .join(". ");
+    return isGenericReviewText(text) ? "" : text;
+  }
+  const text = cleanBusinessText(value);
+  if (isEmptyBusinessValue(text) || isGenericReviewText(text)) return "";
+  return text;
 }
 
 function hasUsefulObject(value) {
@@ -189,14 +187,129 @@ function categoryOf(item) {
   return usefulValue(item?.category || item?.group || item?.source) || "Review";
 }
 
+function detailSources(item) {
+  return [item?.payload, item?.details, item?.preview, item?.form, item?.raw, typeof item?.draft === "object" ? item.draft : null, item].filter((value) => value && typeof value === "object");
+}
+
+function findFieldValue(value, keys, depth = 0) {
+  if (!value || typeof value !== "object" || depth > 5) return undefined;
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const found = findFieldValue(entry, keys, depth + 1);
+      if (found !== undefined && found !== null && String(found).trim() !== "") return found;
+    }
+    return undefined;
+  }
+
+  const wanted = new Set(keys.map(normalizedKey));
+  for (const [key, raw] of Object.entries(value)) {
+    if (wanted.has(normalizedKey(key)) && raw !== null && raw !== undefined && String(raw).trim() !== "") return raw;
+  }
+
+  for (const raw of Object.values(value)) {
+    if (raw && typeof raw === "object") {
+      const found = findFieldValue(raw, keys, depth + 1);
+      if (found !== undefined && found !== null && String(found).trim() !== "") return found;
+    }
+  }
+  return undefined;
+}
+
+function formatApprovalValue(label, value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number" && /price|amount|total/i.test(label)) return `$${value.toFixed(2)}`;
+  if (Array.isArray(value)) return value.map((entry) => formatApprovalValue(label, entry)).filter(Boolean).join(", ");
+  if (typeof value === "object") return usefulValue(value) || JSON.stringify(value);
+  return usefulValue(value);
+}
+
+function sameMeaning(a, b) {
+  const left = normalizedText(a);
+  const right = normalizedText(b);
+  return Boolean(left && right && (left === right || left.includes(right) || right.includes(left)));
+}
+
+function recurringApprovalText(item) {
+  const sources = detailSources(item);
+  const enabledKeys = ["recurring", "is_recurring", "isRecurring", "repeat", "repeats"];
+  const frequencyKeys = ["recurring_frequency", "frequency", "repeat_frequency", "repeat_every", "recurrence", "recurring_rule", "rrule"];
+  const enabled = sources.map((source) => findFieldValue(source, enabledKeys)).find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+  const frequency = sources.map((source) => findFieldValue(source, frequencyKeys)).find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+  const enabledText = formatApprovalValue("Recurring", enabled);
+  const frequencyText = formatApprovalValue("Recurring", frequency);
+  if (frequencyText && enabledText && !sameMeaning(frequencyText, enabledText)) return `${enabledText === "No" ? "No" : "Yes"} - ${frequencyText}`;
+  return frequencyText || enabledText || "";
+}
+
+function approvalDetailRows(item) {
+  if (!item) return [];
+  const rows = [];
+  const seen = new Set();
+  const sources = detailSources(item);
+
+  APPROVAL_DETAIL_FIELDS.forEach(({ label, keys }) => {
+    let value = "";
+    if (label === "Recurring") value = recurringApprovalText(item);
+    else {
+      for (const source of sources) {
+        value = formatApprovalValue(label, findFieldValue(source, keys));
+        if (value) break;
+      }
+    }
+    if (!value) return;
+    const dedupeKey = `${label}:${value}`.toLowerCase();
+    if (seen.has(dedupeKey)) return;
+    seen.add(dedupeKey);
+    rows.push({ label, value });
+  });
+  return rows;
+}
+
+function collectDetailFields(value, seen = new Set()) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.entries(value).flatMap(([key, raw]) => {
+    if (!shouldShowDetailField(key, raw)) return [];
+    const val = usefulValue(raw);
+    if (!val) return [];
+    const dedupeKey = `${displayLabel(key)}:${val}`.toLowerCase();
+    if (seen.has(dedupeKey)) return [];
+    seen.add(dedupeKey);
+    return [{ label: displayLabel(key), value: val }];
+  });
+}
+
+function compactDetails(item) {
+  const seen = new Set();
+  return [
+    ...collectDetailFields(item?.payload, seen),
+    ...collectDetailFields(item?.details, seen),
+    ...collectDetailFields(item?.preview, seen),
+    ...collectDetailFields(typeof item?.draft === "object" ? item.draft : null, seen),
+  ].slice(0, 5);
+}
+
+function detailRows(item) {
+  if (!item) return [];
+  if (item.preparedForApproval === false) return [{ label: "Needs work", value: "This is not shown in Open because no clear action is ready yet." }];
+  const rows = [];
+  const summary = summaryOf(item);
+  const details = compactDetails(item);
+  const prepared = usefulValue(item?.prepared || item?.draft || item?.next_action || item?.recommended_action || item?.approval_action || item?.message_text || item?.prepared_message);
+  const reason = usefulValue(item?.why || item?.reason);
+  if (details.length) rows.push({ label: "Record", value: details.map((row) => `${row.label}: ${row.value}`).join(" - ") });
+  if (prepared && !sameMeaning(prepared, summary) && !sameMeaning(prepared, rows[0]?.value)) rows.push({ label: "Prepared action", value: prepared });
+  if (reason && !sameMeaning(reason, summary) && !sameMeaning(reason, prepared)) rows.push({ label: "Owner check", value: reason });
+  return rows.length ? rows : [{ label: "Ready", value: summary }];
+}
+
 function readLegacyInbox() {
   try {
     if (typeof window === "undefined") return [];
     return LEGACY_INBOX_KEYS.flatMap((key) => {
       const raw = window.localStorage.getItem(key);
       const parsed = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(parsed)) return [];
-      return parsed.map((item, index) => ({ ...item, localKey: key, localIndex: index, localOnly: true }));
+      return Array.isArray(parsed) ? parsed.map((item, index) => ({ ...item, localKey: key, localIndex: index, localOnly: true })) : [];
     });
   } catch {
     return [];
@@ -205,8 +318,7 @@ function readLegacyInbox() {
 
 function clearLegacyInbox() {
   try {
-    if (typeof window === "undefined") return;
-    LEGACY_INBOX_KEYS.forEach((key) => window.localStorage.removeItem(key));
+    if (typeof window !== "undefined") LEGACY_INBOX_KEYS.forEach((key) => window.localStorage.removeItem(key));
   } catch {}
 }
 
@@ -239,140 +351,7 @@ function legacyText(item) {
   return [item?.title, item?.summary, item?.info, item?.found, item?.prepared, item?.why, item?.owner, details, payload].filter(Boolean).join(". ");
 }
 
-function collectDetailFields(value, seen = new Set()) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  return Object.entries(value).flatMap(([key, raw]) => {
-    if (!shouldShowDetailField(key, raw)) return [];
-    const val = usefulValue(raw);
-    if (!val) return [];
-    const dedupeKey = `${displayLabel(key)}:${val}`.toLowerCase();
-    if (seen.has(dedupeKey)) return [];
-    seen.add(dedupeKey);
-    return [{ label: displayLabel(key), value: val }];
-  });
-}
-
-function compactDetails(item) {
-  const seen = new Set();
-  return [
-    ...collectDetailFields(item?.payload, seen),
-    ...collectDetailFields(item?.details, seen),
-    ...collectDetailFields(item?.preview, seen),
-    ...collectDetailFields(typeof item?.draft === "object" ? item.draft : null, seen),
-  ].slice(0, 5);
-}
-
-function detailSources(item) {
-  return [item?.payload, item?.details, item?.preview, item?.form, item?.raw, typeof item?.draft === "object" ? item.draft : null, item].filter((value) => value && typeof value === "object");
-}
-
-function findFieldValue(value, keys, depth = 0) {
-  if (!value || typeof value !== "object" || depth > 5) return undefined;
-  if (Array.isArray(value)) {
-    for (const entry of value) {
-      const found = findFieldValue(entry, keys, depth + 1);
-      if (found !== undefined && found !== null && String(found).trim() !== "") return found;
-    }
-    return undefined;
-  }
-
-  const wanted = new Set(keys.map(normalizedKey));
-  for (const [key, raw] of Object.entries(value)) {
-    if (wanted.has(normalizedKey(key)) && raw !== null && raw !== undefined && String(raw).trim() !== "") return raw;
-  }
-
-  for (const raw of Object.values(value)) {
-    if (raw && typeof raw === "object") {
-      const found = findFieldValue(raw, keys, depth + 1);
-      if (found !== undefined && found !== null && String(found).trim() !== "") return found;
-    }
-  }
-
-  return undefined;
-}
-
-function formatApprovalValue(label, value) {
-  if (value === null || value === undefined) return "";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "number" && /price|amount|total/i.test(label)) return `$${value.toFixed(2)}`;
-  if (Array.isArray(value)) return value.map((entry) => formatApprovalValue(label, entry)).filter(Boolean).join(", ");
-  if (typeof value === "object") return usefulValue(value) || JSON.stringify(value);
-  return usefulValue(value);
-}
-
-function recurringApprovalText(item) {
-  const sources = detailSources(item);
-  const enabledKeys = ["recurring", "is_recurring", "isRecurring", "repeat", "repeats"];
-  const frequencyKeys = ["recurring_frequency", "frequency", "repeat_frequency", "repeat_every", "recurrence", "recurring_rule", "rrule"];
-  const enabled = sources.map((source) => findFieldValue(source, enabledKeys)).find((value) => value !== undefined && value !== null && String(value).trim() !== "");
-  const frequency = sources.map((source) => findFieldValue(source, frequencyKeys)).find((value) => value !== undefined && value !== null && String(value).trim() !== "");
-  const enabledText = formatApprovalValue("Recurring", enabled);
-  const frequencyText = formatApprovalValue("Recurring", frequency);
-
-  if (frequencyText && enabledText && !sameMeaning(frequencyText, enabledText)) return `${enabledText === "No" ? "No" : "Yes"} - ${frequencyText}`;
-  if (frequencyText) return frequencyText;
-  if (enabledText) return enabledText;
-  return "";
-}
-
-function approvalDetailRows(item) {
-  if (!item) return [];
-  const rows = [];
-  const seen = new Set();
-  const sources = detailSources(item);
-
-  APPROVAL_DETAIL_FIELDS.forEach(({ label, keys }) => {
-    let value = "";
-    if (label === "Recurring") {
-      value = recurringApprovalText(item);
-    } else {
-      for (const source of sources) {
-        value = formatApprovalValue(label, findFieldValue(source, keys));
-        if (value) break;
-      }
-    }
-
-    if (!value) return;
-    const dedupeKey = `${label}:${value}`.toLowerCase();
-    if (seen.has(dedupeKey)) return;
-    seen.add(dedupeKey);
-    rows.push({ label, value });
-  });
-
-  return rows;
-}
-
-function sameMeaning(a, b) {
-  const left = normalizedText(a);
-  const right = normalizedText(b);
-  return Boolean(left && right && (left === right || left.includes(right) || right.includes(left)));
-}
-
-function detailRows(item) {
-  if (!item) return [];
-  if (item.preparedForApproval === false) return [{ label: "Needs work", value: "This is not shown in Open because no clear action is ready yet." }];
-
-  const rows = [];
-  const summary = summaryOf(item);
-  const details = compactDetails(item);
-  const prepared = usefulValue(item?.prepared || item?.draft || item?.next_action || item?.recommended_action || item?.approval_action || item?.message_text || item?.prepared_message);
-  const reason = usefulValue(item?.why || item?.reason);
-
-  if (details.length) rows.push({ label: "Record", value: details.map((row) => `${row.label}: ${row.value}`).join(" - ") });
-  if (prepared && !sameMeaning(prepared, summary) && !sameMeaning(prepared, rows[0]?.value)) rows.push({ label: "Prepared action", value: prepared });
-  if (reason && !sameMeaning(reason, summary) && !sameMeaning(reason, prepared)) rows.push({ label: "Owner check", value: reason });
-  return rows.length ? rows : [{ label: "Ready", value: summary }];
-}
-
-const selectedFilterButtonStyle = {
-  background: "#f97316",
-  backgroundColor: "#f97316",
-  borderColor: "#f97316",
-  color: "#111827",
-  WebkitTextFillColor: "#111827",
-  opacity: 1,
-  fontWeight: 950,
-};
+const selectedFilterButtonStyle = { background: "#f97316", backgroundColor: "#f97316", borderColor: "#f97316", color: "#111827", WebkitTextFillColor: "#111827", opacity: 1, fontWeight: 950 };
 const selectedFilterTextStyle = { color: "#111827", WebkitTextFillColor: "#111827", opacity: 1, fontWeight: 950 };
 const selectedFilterCountStyle = { background: "#111827", backgroundColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, fontWeight: 950, borderRadius: "999px" };
 
@@ -449,7 +428,7 @@ export default function FreshCommand({ onNavigate }) {
       window.removeEventListener("focus", refresh);
     };
   }, [loadReview]);
-  React.useEffect(() => { setOwnerNote(selected?.owner_note || selected?.owner || ""); }, [selectedKey]);
+  React.useEffect(() => { setOwnerNote(selected?.owner_note || selected?.owner || ""); }, [selectedKey, selected]);
   React.useEffect(() => {
     try { if (typeof window !== "undefined") window.localStorage.setItem(COMMAND_ACTIVITY_KEY, JSON.stringify(activity)); } catch {}
   }, [activity]);
@@ -562,15 +541,65 @@ export default function FreshCommand({ onNavigate }) {
 
   return (
     <section className="freshCommandStablePage freshPayrollCompactPage">
-      <header className="freshHero"><span>Command</span><h1>Ready for approval</h1><p>Churvox does the admin first. You approve, edit, ignore, or open the record it came from.</p></header>
-      <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading ? "..." : counts.Open}</h2><p>Waiting for you</p></aside><aside className="freshCard"><h2>{loading ? "..." : counts.Notes}</h2><p>Notes to prepare</p></aside><aside className="freshCard"><h2>{loading ? "..." : moneyWatched}</h2><p>Money items</p></aside></section>
+      <header className="freshHero">
+        <span>Command</span>
+        <h1>Ready for approval</h1>
+        <p>Churvox does the admin first. You approve, edit, ignore, or open the record it came from.</p>
+      </header>
+
+      <section className="freshCommandPulse">
+        <aside className="freshCard"><h2>{loading ? "..." : counts.Open}</h2><p>Waiting for you</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : counts.Notes}</h2><p>Notes to prepare</p></aside>
+        <aside className="freshCard"><h2>{loading ? "..." : moneyWatched}</h2><p>Money items</p></aside>
+      </section>
+
+      <FreshCommandOperatingSystem
+        selected={selected}
+        selectedApprovalDetails={selectedApprovalDetails}
+        selectedHasConcreteAction={selectedHasConcreteAction}
+        selectedDiagnosticOnly={selectedDiagnosticOnly}
+        preparedBackendRows={preparedBackendRows}
+        noteRows={noteRows}
+        moneyWatched={moneyWatched}
+        counts={counts}
+        detailRows={detailRows}
+        summaryOf={summaryOf}
+        readableAction={readableAction}
+        categoryOf={categoryOf}
+      />
+
       {message ? <section className="freshBackendReviewSource" data-review-source="backend"><div><span>Your approval queue</span><h2>{message}</h2><p>Only clear, ready-to-approve work appears in Open.</p></div><aside><b>{counts.Open}</b><small>waiting</small></aside></section> : null}
-      <section className="freshCommandFilterBar">{commandFilters.map((item) => <button type="button" key={item} className={filter === item ? "commandFilterSelected" : ""} style={filter === item ? selectedFilterButtonStyle : undefined} onClick={() => setFilter(item)}><span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span><b style={filter === item ? selectedFilterCountStyle : undefined}>{counts[item] ?? rows.length}</b></button>)}</section>
+
+      <section className="freshCommandFilterBar">
+        {commandFilters.map((item) => <button type="button" key={item} className={filter === item ? "commandFilterSelected" : ""} style={filter === item ? selectedFilterButtonStyle : undefined} onClick={() => setFilter(item)}><span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span><b style={filter === item ? selectedFilterCountStyle : undefined}>{counts[item] ?? rows.length}</b></button>)}
+      </section>
+
       <section className="freshGrid">
-        <aside className="freshCard freshJobsListCard"><h2>{filter === "All" ? "All items" : filter === "Notes" ? "Notes to prepare" : "Waiting for approval"}</h2>{loading && !visibleRows.length ? <div className="freshItem"><b>Checking...</b><span>Looking for work waiting on you.</span></div> : null}{!loading && !visibleRows.length ? <div className="freshItem"><b>Nothing waiting here</b><span>Run Check for work when you want Churvox to prepare the next admin actions.</span></div> : null}{visibleRows.map((item, index) => { const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`; const diagnostic = item.sourceMode === "backend" && !item.preparedForApproval; return <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "note" || diagnostic ? "need" : ""}`} key={key} onClick={() => setSelectedId(key)}><b>{titleOf(item)}</b><span>{item.sourceMode === "note" ? "note to prepare" : diagnostic ? "needs preparation" : "ready"} - {summaryOf(item)}</span></button>; })}</aside>
-        <section className="freshCard freshJobsDetailCard"><div className="freshJobsDetailHeader"><div><small>{selected?.sourceMode === "note" ? "Note to prepare" : selectedDiagnosticOnly ? "Needs preparation" : "Ready for your decision"}</small><h2>{selected ? titleOf(selected) : "Nothing selected"}</h2></div>{selected ? <span className={selected.sourceMode === "note" || selectedDiagnosticOnly ? "need" : "ready"}>{selected.sourceMode === "note" ? "Prepare" : selectedDiagnosticOnly ? "Needs work" : "Ready"}</span> : null}</div>{selected ? <><div className="freshMiniGrid freshJobsMiniGrid"><div><span>Type</span><b>{categoryOf(selected)}</b></div><div><span>Action</span><b>{selectedDiagnosticOnly ? "Not ready yet" : readableAction(selected.action || selected.type)}</b></div><div><span>Status</span><b>{selected.sourceMode === "note" ? "Note" : selectedDiagnosticOnly ? "Needs preparation" : "Ready"}</b></div><div><span>Decision</span><b>{selected.sourceMode === "note" ? "Prepare first" : selectedDiagnosticOnly ? "Skip" : "Approve or edit"}</b></div></div>{selectedApprovalDetails.length ? <section className="freshJobsDetailBox notes freshCommandApprovalDetails"><span>Job approval details</span><div>{selectedApprovalDetails.map((row) => <article key={`${row.label}-${row.value}`}><small>{row.label}</small><b>{row.value}</b></article>)}</div></section> : null}<section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>{detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}<label className="freshField"><span>Your note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Optional note before approving or ignoring" /></label></> : <div className="freshItem"><b>Nothing waiting</b><span>When Churvox has a real draft, message, job change, or invoice check ready, it will appear here.</span></div>}</section>
+        <aside className="freshCard freshJobsListCard">
+          <h2>{filter === "All" ? "All items" : filter === "Notes" ? "Notes to prepare" : "Waiting for approval"}</h2>
+          {loading && !visibleRows.length ? <div className="freshItem"><b>Checking...</b><span>Looking for work waiting on you.</span></div> : null}
+          {!loading && !visibleRows.length ? <div className="freshItem"><b>Nothing waiting here</b><span>Run Check for work when you want Churvox to prepare the next admin actions.</span></div> : null}
+          {visibleRows.map((item, index) => {
+            const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`;
+            const diagnostic = item.sourceMode === "backend" && !item.preparedForApproval;
+            return <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "note" || diagnostic ? "need" : ""}`} key={key} onClick={() => setSelectedId(key)}><b>{titleOf(item)}</b><span>{item.sourceMode === "note" ? "note to prepare" : diagnostic ? "needs preparation" : "ready"} - {summaryOf(item)}</span></button>;
+          })}
+        </aside>
+
+        <section className="freshCard freshJobsDetailCard">
+          <div className="freshJobsDetailHeader"><div><small>{selected?.sourceMode === "note" ? "Note to prepare" : selectedDiagnosticOnly ? "Needs preparation" : "Ready for your decision"}</small><h2>{selected ? titleOf(selected) : "Nothing selected"}</h2></div>{selected ? <span className={selected.sourceMode === "note" || selectedDiagnosticOnly ? "need" : "ready"}>{selected.sourceMode === "note" ? "Prepare" : selectedDiagnosticOnly ? "Needs work" : "Ready"}</span> : null}</div>
+          {selected ? <>
+            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Type</span><b>{categoryOf(selected)}</b></div><div><span>Action</span><b>{selectedDiagnosticOnly ? "Not ready yet" : readableAction(selected.action || selected.type)}</b></div><div><span>Status</span><b>{selected.sourceMode === "note" ? "Note" : selectedDiagnosticOnly ? "Needs preparation" : "Ready"}</b></div><div><span>Decision</span><b>{selected.sourceMode === "note" ? "Prepare first" : selectedDiagnosticOnly ? "Skip" : "Approve or edit"}</b></div></div>
+            {selectedApprovalDetails.length ? <section className="freshJobsDetailBox notes freshCommandApprovalDetails"><span>Job approval details</span><div>{selectedApprovalDetails.map((row) => <article key={`${row.label}-${row.value}`}><small>{row.label}</small><b>{row.value}</b></article>)}</div></section> : null}
+            <section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>
+            {detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}
+            <label className="freshField"><span>Your note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Optional note before approving or ignoring" /></label>
+          </> : <div className="freshItem"><b>Nothing waiting</b><span>When Churvox has a real draft, message, job change, or invoice check ready, it will appear here.</span></div>}
+        </section>
+
         <aside className="freshCard freshJobsActionsCard"><h2>Your controls</h2><p className="freshJobsActionHint">Nothing changes until you approve it.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" disabled={!selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedDiagnosticOnly ? "Not ready" : "Approve"}</button><button className="freshDark" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>Ignore</button><button className="freshOrange" type="button" disabled={!noteItems.length || busy === "prepare"} onClick={prepareNotes}>{busy === "prepare" ? "Preparing..." : "Prepare notes"}</button><button className="freshDark" type="button" disabled={busy === "scan"} onClick={checkForWork}>{busy === "scan" ? "Checking..." : "Check for work"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode === "note"} onClick={openSelectedRecord}>Open record</button><button className="freshGhost" type="button" onClick={loadReview}>Refresh</button></div></aside>
       </section>
+
       <section className="freshGrid two" style={{ marginTop: 14 }}><section className="freshCard"><h2>Safety rule</h2><p>Churvox can prepare draft invoices and checks. It will not send invoices, file tax, create bank payout files, or mark anything paid unless you approve the allowed action.</p></section><aside className="freshCard"><h2>Recent decisions</h2>{activity.length ? activity.map((item) => <div className="freshItem freshActivityItem" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></div>) : <div className="freshItem"><b>No decisions yet</b><span>Approve, edit, ignore, check for work, or prepare notes to create activity.</span></div>}</aside></section>
     </section>
   );
