@@ -21,11 +21,20 @@ const trades = [
   "Small trade teams",
 ];
 
+const commandPrepares = [
+  ["Finished job", "Draft invoice prepared from the job details."],
+  ["Unpaid invoice", "Follow-up prepared, nothing sent until approval."],
+  ["Open quote", "Next-step review card created in Command."],
+  ["Blocked job", "Owner decision surfaced before the work stalls."],
+  ["Worker update", "Notes, photos and field updates held for review."],
+  ["Accounting handoff", "Export or draft-sync step prepared safely."],
+];
+
 const steps = [
   ["Add the work", "Create the client, quote or job once, then keep the details in one place."],
   ["Run the job", "Schedule it, assign a worker, track time and capture notes or photos."],
-  ["Review the admin", "Churvox prepares the next step, but important actions stay owner-approved."],
-  ["Invoice and sync", "Send invoices, check payment status and hand off to Xero or accounting export where available."],
+  ["Command prepares", "Unfinished work, invoice drafts, follow-ups and admin checks move to Command automatically."],
+  ["You approve", "Review, edit, approve or ignore before anything important moves."],
 ];
 
 const trust = [
@@ -36,16 +45,16 @@ const trust = [
 ];
 
 const previewItems = [
-  ["Today", "3 jobs ready"],
+  ["Today", "3 jobs planned"],
   ["Invoices", "$1,240 waiting"],
-  ["Command", "2 approvals"],
-  ["Xero", "Draft sync ready"],
+  ["Command", "4 approvals"],
+  ["Accounting", "Handoff ready"],
 ];
 
 const productScreens = [
-  ["Smart Hub", "See today’s jobs, unpaid invoices, requests and what needs attention next."],
-  ["Command", "Churvox prepares admin actions. You review, edit, approve or ignore."],
-  ["Jobs", "Keep job details, notes, workers, photos, time and status in one place."],
+  ["Today’s Plan", "See the work that is already planned, assigned and ready to run."],
+  ["Command", "Unfinished admin lands in one approval desk: review, edit, approve or ignore."],
+  ["Jobs", "Keep job details, notes, workers, photos, time, price and status in one clean record."],
   ["Accounting", "Export or draft-sync accounting where available, with owner approval kept in the loop."],
 ];
 
@@ -59,14 +68,16 @@ const industries = [
 ];
 
 const difference = [
-  ["Most apps store the work", "Churvox helps move the admin forward after the work is added."],
+  ["Most apps store the work", "Churvox also watches for the admin that should happen next."],
   ["AI with owner control", "Admin actions can be prepared, but important steps stay reviewed by you."],
+  ["Command is the approval desk", "Unfinished work, follow-ups and draft admin are gathered in one place instead of scattered across record pages."],
   ["Accounting is a handoff", "Accounting support is controlled: draft sync, exports and payment checks, not risky automation."],
 ];
 
 const compareRows = [
   ["Jobs scattered in texts", "Jobs visible in one workspace"],
-  ["Invoices delayed or forgotten", "Invoice flow ready after the job"],
+  ["Invoices delayed or forgotten", "Draft invoice prepared after completed work"],
+  ["Owner hunts for what is unfinished", "Command shows the unfinished admin queue"],
   ["Workers ask what is next", "Worker view shows the job"],
   ["Accounting feels messy", "Accounting handoff ready"],
   ["Owner does every admin step", "Churvox prepares, owner approves"],
@@ -77,7 +88,7 @@ export function Nav() {
     <nav className="simpleNav">
       <Link to="/" className="simpleBrand">
         <ChurvoxLogo variant="mark" size="lg" />
-        <span><b>Churvox</b><small>Job admin for service businesses</small></span>
+        <span><b>Churvox</b><small>Churvox does the admin. You approve.</small></span>
       </Link>
       <div className="simpleLinks">
         <Link to="/features" className="simpleGhost">How it works</Link>
@@ -110,10 +121,10 @@ export function Footer() {
 
 function AppPreview() {
   return (
-    <aside className="simpleCard simpleHeroPreview" aria-label="Churvox app preview">
+    <aside className="simpleCard simpleHeroPreview" aria-label="Churvox Command preview">
       <div className="simplePreviewTop">
-        <span>Smart Hub</span>
-        <b>Owner view</b>
+        <span>Command</span>
+        <b>Approval desk</b>
       </div>
       <div className="simplePreviewGrid">
         {previewItems.map(([label, value]) => (
@@ -124,14 +135,14 @@ function AppPreview() {
         ))}
       </div>
       <div className="simplePreviewFlow">
-        <span>Job</span>
-        <span>Invoice</span>
-        <span>Paid</span>
-        <span>Synced</span>
+        <span>Find</span>
+        <span>Prepare</span>
+        <span>Review</span>
+        <span>Approve</span>
       </div>
       <div className="simplePreviewApproval">
-        <b>Command approval</b>
-        <p>AI prepared the follow-up. Owner reviews before anything goes out.</p>
+        <b>Draft invoice ready</b>
+        <p>Completed job found. Price, customer, recurring status and job facts are ready for owner approval.</p>
       </div>
     </aside>
   );
@@ -139,19 +150,19 @@ function AppPreview() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_PUBLIC_PRODUCT_PROOF_20260622">
+    <main className="simplePublic" data-version="CHURVOX_PUBLIC_COMMAND_POSITIONING_20260625">
       <Nav />
 
       <section className="simpleHero">
         <div>
-          <span className="simpleKicker">Job admin for service businesses</span>
-          <h1>Run jobs, invoices, workers and admin from one clean workspace.</h1>
+          <span className="simpleKicker">Owner-approved admin for service businesses</span>
+          <h1>Churvox does the admin. You approve.</h1>
           <p className="simpleLead">
-            Churvox helps lawn care, cleaning, handyman and trade service businesses go from job to invoice to paid to synced, with owner-approved AI admin.
+            Churvox keeps jobs, workers, quotes, invoices, follow-ups and accounting handoff moving for service businesses, without taking control away from the owner.
           </p>
           <div className="simpleActions">
             <Link to="/signup" className="simpleBtn simplePrimary">Start 14-day trial</Link>
-            <Link to="/pricing" className="simpleBtn simpleGhost">View pricing</Link>
+            <Link to="/features" className="simpleBtn simpleGhost">See how it works</Link>
           </div>
           <div className="simpleProof">{proof.map((item) => <span key={item}>{item}</span>)}</div>
         </div>
@@ -159,12 +170,44 @@ export default function ExecutiveHomePage() {
         <AppPreview />
       </section>
 
+      <section className="simpleBand simpleDifferenceBand">
+        <span className="simpleSectionLabel">Why it is different</span>
+        <h2>Field service software stores records. Churvox moves the admin forward.</h2>
+        <p className="simpleLead">
+          Jobber-style tools help manage quotes, schedules and invoices. Churvox keeps those basics clean, then sends unfinished admin to Command so the owner can approve the next step instead of hunting for it.
+        </p>
+        <div className="simpleGrid">
+          {difference.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
+        </div>
+      </section>
+
+      <section className="simpleBand simpleInsideBand">
+        <div>
+          <span className="simpleSectionLabel">What Command prepares</span>
+          <h2>The admin queue builds itself from real work.</h2>
+          <p className="simpleLead">
+            Command is the approval desk. Churvox looks for completed work, blocked jobs, unpaid invoices, open quotes and worker updates, then prepares clear cards with the facts you need before approval.
+          </p>
+        </div>
+        <div className="simpleProductShowcase">
+          {commandPrepares.map(([title, text]) => (
+            <article key={title}>
+              <div>
+                <small>Command prepares</small>
+                <b>{title}</b>
+              </div>
+              <p>{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="simpleBand simpleInsideBand">
         <div>
           <span className="simpleSectionLabel">Inside Churvox</span>
-          <h2>The workspace your day runs from.</h2>
+          <h2>Clean record pages. One approval desk.</h2>
           <p className="simpleLead">
-            Churvox is built around the real path of a service job: the customer asks, the work gets done, the invoice goes out, payment gets checked, and accounting is handed off safely.
+            Jobs, clients, quotes, invoices and team pages stay clean. Missing setup, follow-ups and unfinished admin go to Command where they belong.
           </p>
         </div>
         <div className="simpleProductShowcase">
@@ -172,7 +215,7 @@ export default function ExecutiveHomePage() {
             <article key={title}>
               <div>
                 <small>{title}</small>
-                <b>{title === "Smart Hub" ? "Today’s work" : title}</b>
+                <b>{title}</b>
               </div>
               <p>{text}</p>
             </article>
@@ -185,7 +228,7 @@ export default function ExecutiveHomePage() {
           <span className="simpleSectionLabel">Who it is for</span>
           <h2>For owners who are done running the business from texts and memory.</h2>
           <p className="simpleLead">
-            If your jobs are in messages, notebooks, screenshots, unpaid invoices and your head, Churvox gives the business one place to work from.
+            If your jobs are in messages, notebooks, screenshots, unpaid invoices and your head, Churvox gives the business one place to work from and one desk for what needs approval.
           </p>
         </div>
         <div className="simpleProof simpleProofDark">
@@ -204,20 +247,9 @@ export default function ExecutiveHomePage() {
         </div>
       </section>
 
-      <section className="simpleBand simpleDifferenceBand">
-        <span className="simpleSectionLabel">Why Churvox</span>
-        <h2>Churvox does the admin. You approve.</h2>
-        <p className="simpleLead">
-          Job management is the baseline. The stronger idea is owner-approved admin: Churvox helps prepare what should happen next without taking control away from the business owner.
-        </p>
-        <div className="simpleGrid">
-          {difference.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-        </div>
-      </section>
-
       <section className="simpleBand simpleCompareBand">
         <span className="simpleSectionLabel">Before and after</span>
-        <h2>Move from scattered admin to one clear flow.</h2>
+        <h2>Move from scattered admin to one clear approval flow.</h2>
         <div className="simpleCompareTable" role="table" aria-label="Running on texts compared with running on Churvox">
           <div role="row" className="simpleCompareHead">
             <b role="columnheader">Running on texts</b>
@@ -254,7 +286,7 @@ export default function ExecutiveHomePage() {
       </section>
 
       <section className="simpleBand simpleCtaBand">
-        <h2>Ready to run the next job properly?</h2>
+        <h2>Ready to stop chasing the admin?</h2>
         <p className="simpleLead">
           Start the 14-day trial, choose the plan that matches your business, then run the first job-to-paid flow inside Churvox.
         </p>
