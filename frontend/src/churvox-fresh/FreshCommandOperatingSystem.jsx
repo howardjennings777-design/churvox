@@ -2,6 +2,7 @@ import React from "react";
 
 export const COMMAND_OS_MARKER_20260625 = "COMMAND_OS_MARKER_20260625";
 export const COMMAND_APPROVAL_BRAIN_MARKER_20260626 = "COMMAND_APPROVAL_BRAIN_MARKER_20260626";
+export const COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626 = "COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626";
 
 function cleanText(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -150,6 +151,77 @@ function nextBestSignal(signals) {
   return [...signals].sort((a, b) => (b.amount - a.amount) || (b.confidence - a.confidence))[0];
 }
 
+function buildApprovalQualityGuard({ selected, selectedApprovalDetails, selectedHasConcreteAction, selectedDiagnosticOnly, selectedScore, selectedGaps }) {
+  if (!selected) {
+    return {
+      tone: "waiting",
+      verdict: "Waiting for selection",
+      gate: "No approval open",
+      nextStep: "Open an approval to run the guard.",
+      summary: "The quality guard checks the selected AI-prepared work before owner approval.",
+      reasons: ["No selected approval yet."],
+    };
+  }
+
+  const hasCustomer = Boolean(approvalValue(selectedApprovalDetails, "Customer"));
+  const hasJob = Boolean(approvalValue(selectedApprovalDetails, "Job"));
+  const hasPrice = Boolean(approvalValue(selectedApprovalDetails, "Price"));
+  const hasRecordProof = hasCustomer || hasJob || detailCount(selected) >= 2;
+  const seriousGaps = selectedGaps.filter((gap) => ["Customer", "Job"].includes(gap));
+  const minorGaps = selectedGaps.filter((gap) => !seriousGaps.includes(gap));
+  const reasons = [];
+
+  if (selectedDiagnosticOnly) reasons.push("This is diagnostic only, not a real linked action yet.");
+  if (!selectedHasConcreteAction) reasons.push("No concrete live action is matched yet.");
+  if (!hasRecordProof) reasons.push("The matched customer or job is not clear enough.");
+  if (seriousGaps.length) reasons.push(`Missing core proof: ${seriousGaps.join(", ")}.`);
+  if (minorGaps.length) reasons.push(`Needs owner check: ${minorGaps.join(", ")}.`);
+  if (selectedScore < 68) reasons.push(`Proof confidence is ${selectedScore}%, so it should be checked before approval.`);
+  if (!hasPrice && /invoice|quote|payment|money|price/i.test(itemText(selected))) reasons.push("Money action does not show a clear price yet.");
+
+  if (selectedDiagnosticOnly || !selectedHasConcreteAction) {
+    return {
+      tone: "blocked",
+      verdict: "Prepare draft first",
+      gate: "Approve locked",
+      nextStep: "Keep it in Command until Churvox has a real record and action prepared.",
+      summary: "Weak or diagnostic AI work should not be approved as if it can safely change the business.",
+      reasons: reasons.length ? reasons : ["Needs a real action before approval."],
+    };
+  }
+
+  if (!hasRecordProof || seriousGaps.length || selectedScore < 58) {
+    return {
+      tone: "needsEdit",
+      verdict: "Needs edit",
+      gate: "Approval guarded",
+      nextStep: "Add the missing record proof or edit the prepared details before approval.",
+      summary: "Churvox has prepared something useful, but it is not clean enough for one-click approval yet.",
+      reasons: reasons.length ? reasons : ["Missing approval proof."],
+    };
+  }
+
+  if (minorGaps.length || selectedScore < 82) {
+    return {
+      tone: "check",
+      verdict: "Approve with check",
+      gate: "Owner check required",
+      nextStep: "Review the highlighted gaps, then approve if the prepared action looks right.",
+      summary: "The action is matched, but Churvox still wants you to check the missing fields before approval.",
+      reasons: reasons.length ? reasons : ["Looks usable, but should be reviewed."],
+    };
+  }
+
+  return {
+    tone: "ready",
+    verdict: "Ready to approve",
+    gate: "Clean approval",
+    nextStep: "Approve, or edit first if you want to change the prepared action.",
+    summary: "The action is matched, explainable, and has enough proof for owner approval.",
+    reasons: ["Concrete action matched.", "Record proof looks strong.", `${confidenceLabel(selectedScore)} at ${selectedScore}%.`],
+  };
+}
+
 export default function FreshCommandOperatingSystem({
   selected,
   selectedApprovalDetails = [],
@@ -174,10 +246,12 @@ export default function FreshCommandOperatingSystem({
   const selectedScore = selectedApprovalScore(selected, selectedApprovalDetails, selectedHasConcreteAction);
   const selectedGaps = selected ? selectedProofGaps(selectedApprovalDetails) : [];
   const ownerDecision = selectedDiagnosticOnly ? "Hold until Churvox has a real linked action" : selectedHasConcreteAction ? "Approve, edit, or decline the prepared action" : "Review only — no live record change yet";
+  const qualityGuard = buildApprovalQualityGuard({ selected, selectedApprovalDetails, selectedHasConcreteAction, selectedDiagnosticOnly, selectedScore, selectedGaps });
 
   const commandReasoningRows = selected ? uniqueRows([
     { label: "Churvox found", value: summaryOf(selected) },
     { label: "Churvox prepared", value: preparedAction },
+    { label: "Quality guard", value: `${qualityGuard.verdict} · ${qualityGuard.gate}` },
     { label: "Proof confidence", value: `${confidenceLabel(selectedScore)} · ${selectedScore}%` },
     { label: "Owner decision", value: ownerDecision },
     { label: "Why you approve", value: selectedHasConcreteAction ? "This can change a real record, send a prepared follow-up, or queue an accounting action only after your approval." : "This stays out of live work until it has a real linked action and enough proof." },
@@ -196,9 +270,10 @@ export default function FreshCommandOperatingSystem({
 
   const jobToCashSteps = [
     { label: "Work found", state: selected ? "Active" : "Waiting" },
+    { label: "Quality guard", state: selected ? qualityGuard.verdict : "Waiting" },
     { label: "Proof checked", state: selected ? confidenceLabel(selectedScore) : "Waiting" },
     { label: "Draft prepared", state: selectedHasConcreteAction ? "Ready" : "Needed" },
-    { label: "Owner approval", state: selectedHasConcreteAction ? "Your call" : "Blocked" },
+    { label: "Owner approval", state: qualityGuard.gate },
     { label: "Record updated", state: "After approve" },
     { label: "Invoice or follow-up", state: /invoice|payment|money/i.test(`${selected?.category || ""} ${selected?.action || ""}`) ? "In scope" : "Watched" },
   ];
@@ -209,6 +284,7 @@ export default function FreshCommandOperatingSystem({
     { label: "Customer memory", value: approvalValue(selectedApprovalDetails, "Customer") || "Carries customer context into prepared work" },
     { label: "Proof memory", value: selectedGaps.length ? `Needs ${selectedGaps.join(", ")}` : "Tracks proof quality before approval" },
     { label: "Owner rule memory", value: selectedHasConcreteAction ? "Approval stays required before records change" : "Generic work stays out of Open" },
+    { label: "Guard memory", value: qualityGuard.verdict },
   ]);
 
   const commandBriefRows = [
@@ -218,6 +294,7 @@ export default function FreshCommandOperatingSystem({
     { label: "Notes to prepare", value: `${noteRows.length}` },
     { label: "Money watched", value: `${moneyWatched}` },
     { label: "Next best approval", value: nextSignal ? nextSignal.action : "Nothing urgent" },
+    { label: "Quality guard", value: selected ? qualityGuard.verdict : "Open a card" },
     { label: "Safety", value: "Approval first" },
   ];
 
@@ -225,11 +302,12 @@ export default function FreshCommandOperatingSystem({
     "Jobs stay as job records.",
     "Clients stay as client records.",
     "Quotes and invoices stay clean review pages.",
+    "Weak AI work is guarded until the action and proof are clear.",
     "Unfinished admin, blockers, and follow-ups route to Command.",
   ];
 
   return (
-    <section className="freshCommandOsWrap" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626}>
+    <section className="freshCommandOsWrap" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626}>
       <section className="freshCommandOperatingSystem">
         <article className="freshCard freshCommandDebtMeter freshCommandBrainCard">
           <span>Admin Debt Meter</span>
@@ -269,6 +347,17 @@ export default function FreshCommandOperatingSystem({
       </section>
 
       {selected ? <section className="freshCommandSelectedIntelligence">
+        <article className={`freshCard freshCommandQualityGuard ${qualityGuard.tone}`}>
+          <span>Approval Quality Guard</span>
+          <h2>{qualityGuard.verdict}</h2>
+          <p>{qualityGuard.summary}</p>
+          <div className="freshCommandReasoningGrid">
+            <div><b>Gate</b><p>{qualityGuard.gate}</p></div>
+            <div><b>Safe next step</b><p>{qualityGuard.nextStep}</p></div>
+            <div><b>Guard reasons</b><p>{qualityGuard.reasons.join(" ")}</p></div>
+          </div>
+        </article>
+
         <article className="freshCard freshCommandReasoningCard">
           <span>Command Reasoning Card</span>
           <h2>{currentRecordName(selected, selectedApprovalDetails, summaryOf)}</h2>
