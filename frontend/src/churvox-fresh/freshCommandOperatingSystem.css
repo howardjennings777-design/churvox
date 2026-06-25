@@ -22,6 +22,27 @@
   box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
 }
 
+.freshCommandStablePage .freshJobsListCard {
+  max-height: 560px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.freshCommandStablePage .freshJobsListCard::-webkit-scrollbar {
+  width: 10px;
+}
+
+.freshCommandStablePage .freshJobsListCard::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, .06);
+  border-radius: 999px;
+}
+
+.freshCommandStablePage .freshJobsListCard::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, .55);
+  border-radius: 999px;
+}
+
 .freshCommandOperatingSystem span,
 .freshCommandSelectedIntelligence span,
 .freshCommandNoClutter span {
@@ -207,11 +228,22 @@
   grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr);
   gap: 14px;
   align-items: center;
+  overflow: hidden;
   background: #111827;
   color: #fff;
 }
 
-.freshCommandNoClutter h2,
+.freshCommandNoClutter > div {
+  min-width: 0;
+}
+
+.freshCommandNoClutter h2 {
+  max-width: 760px;
+  color: #fff;
+  overflow-wrap: anywhere;
+  line-height: 1.08;
+}
+
 .freshCommandNoClutter li {
   color: #fff;
 }
@@ -219,6 +251,7 @@
 .freshCommandNoClutter ul {
   display: grid;
   gap: 8px;
+  min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -227,9 +260,11 @@
 .freshCommandNoClutter li {
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, .16);
   font-size: 13px;
   font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1100px) {
@@ -240,5 +275,15 @@
 
   .freshCommandNoClutter {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .freshCommandStablePage .freshJobsListCard {
+    max-height: 460px;
+  }
+
+  .freshCommandNoClutter h2 {
+    font-size: 21px;
   }
 }
