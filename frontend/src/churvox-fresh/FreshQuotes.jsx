@@ -57,6 +57,8 @@ function normalizeQuote(quote, index) {
     id,
     title: quote?.title || quote?.job_description || quote?.description || quote?.quote_number || id,
     client: quote?.client_name || quote?.customer_name || quote?.client || "No client linked",
+    clientId: quote?.client_id || quote?.customer_id || "",
+    address: quote?.address || quote?.site_address || quote?.service_address || "",
     status,
     amount,
     age: quote?.created_at ? `Created ${new Date(quote.created_at).toLocaleDateString()}` : "Saved quote",
@@ -113,10 +115,11 @@ export default function FreshQuotes({ onNavigate }) {
 
   function convertSelectedQuoteToJob() {
     if (!selected) return;
-    try { window.localStorage.setItem("churvox:selected-quote-for-job", JSON.stringify({ id: selected.id, title: selected.title, client: selected.client, amount: selected.amount, note: selected.note, lines: selected.lines })); } catch {}
+    const draft = { source: "quote", quote_id: selected.id, title: selected.title, job_title: selected.title, client: selected.client, client_name: selected.client, customer_name: selected.client, client_id: selected.clientId || "", address: selected.address || "", price: selected.amount, amount: selected.amount, notes: `Created from accepted quote ${selected.id}. ${selected.note || ""}`.trim() };
+    try { window.localStorage.setItem("churvox:selected-quote-for-job", JSON.stringify(draft)); window.localStorage.setItem("churvox:fresh-open-job-modal:v1", JSON.stringify(draft)); } catch {}
     onNavigate?.("jobs");
     window.setTimeout(() => {
-      try { window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { source: "quote", quote: selected, instruction: `Create job from accepted quote: ${selected.title}` } })); } catch {}
+      try { window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: draft })); } catch {}
     }, 200);
   }
 
@@ -125,7 +128,7 @@ export default function FreshQuotes({ onNavigate }) {
   const filterCountStyle = (active) => active ? selectedFilterCountStyle : undefined;
 
   return (
-    <section className="freshQuotesPage">
+    <section className="freshQuotesPage" data-quote-job-handoff="20260626">
       <header className="freshHero"><span>Quotes</span><h1>Quotes</h1><p>Saved quote records, customer, value, status and line details.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(draftTotal)}</h2><p>Draft value</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(sentTotal)}</h2><p>Sent value</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(acceptedTotal)}</h2><p>Accepted value</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Could not load quotes</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadQuotes}>Retry</button></section> : null}
