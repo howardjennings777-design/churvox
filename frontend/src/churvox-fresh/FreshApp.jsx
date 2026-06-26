@@ -312,11 +312,13 @@ function installClientQuoteRuntime() {
       if (!draft?.name) return;
       event.preventDefault();
       event.stopPropagation();
+      window.localStorage.removeItem("churvox:fresh-open-quote-modal:v1");
       window.localStorage.setItem("churvox:fresh-open-quote-modal:v1", JSON.stringify(draft));
       window.localStorage.setItem("churvox:fresh-page", "quotes");
       window.location.hash = pageHash("quotes");
       window.setTimeout(() => {
         window.dispatchEvent(new CustomEvent("churvox:open-quote-popup", { detail: draft }));
+        window.localStorage.removeItem("churvox:fresh-open-quote-modal:v1");
       }, 80);
     }, true);
   } catch {}
