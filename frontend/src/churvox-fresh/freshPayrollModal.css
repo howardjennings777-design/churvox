@@ -1,0 +1,217 @@
+.cvPayViewDetails {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, .13);
+  border-radius: 16px;
+  min-height: 42px;
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvPayModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 6, 23, .58);
+  backdrop-filter: blur(10px);
+}
+
+.cvPayModal {
+  width: min(820px, 100%);
+  max-height: min(88vh, 820px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 28px;
+  background: #fffaf0;
+  box-shadow: 0 28px 80px rgba(2, 6, 23, .35);
+  padding: 18px;
+}
+
+.cvPayModal header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  border-radius: 22px;
+  background: #111827;
+  color: #ffffff;
+  padding: 16px;
+}
+
+.cvPayModal header span {
+  display: inline-flex;
+  width: max-content;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .08);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cvPayModal header h2 {
+  margin: 8px 0 4px;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: .95;
+  letter-spacing: -.06em;
+  font-weight: 1000;
+}
+
+.cvPayModal header p {
+  margin: 0;
+  color: #e5e7eb;
+  -webkit-text-fill-color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.cvPayModal header button,
+.cvPayModalActions button {
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 15px;
+  min-height: 42px;
+  padding: 0 14px;
+  background: #ffffff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvPayModalStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.cvPayModalStats article,
+.cvPayModalBody > div {
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.cvPayModalStats span,
+.cvPayModalBody h3,
+.cvPayModalBody b {
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.cvPayModalStats b {
+  display: block;
+  margin-top: 6px;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 18px;
+  letter-spacing: -.02em;
+  text-transform: none;
+}
+
+.cvPayModalBody {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cvPayModalBody h3 {
+  margin: 0 0 12px;
+}
+
+.cvPayModalBody p {
+  margin: 0 0 10px;
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 10px;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.cvPayModalBody p.cvPayModalNote {
+  display: block;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff7ed;
+  line-height: 1.45;
+}
+
+.cvPayModalBody small {
+  display: block;
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.cvPayModalActions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.cvPayModalActions button.green {
+  background: #16a34a;
+  color: #052e16;
+  -webkit-text-fill-color: #052e16;
+}
+
+.cvPayModalActions button.dark,
+.cvPayModalActions button:nth-child(4) {
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.cvPayModalActions button.orange {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+@media (max-width: 760px) {
+  .cvPayModalOverlay {
+    align-items: end;
+    padding: 10px;
+  }
+
+  .cvPayModal {
+    max-height: 92vh;
+    border-radius: 24px 24px 16px 16px;
+    padding: 12px;
+  }
+
+  .cvPayModal header,
+  .cvPayModalStats,
+  .cvPayModalBody,
+  .cvPayModalActions {
+    grid-template-columns: 1fr;
+  }
+
+  .cvPayModalBody p {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+}
