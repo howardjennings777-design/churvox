@@ -1,6 +1,7 @@
 import React from "react";
 import { toast } from "sonner";
 import { useApi } from "../../hooks/useApi";
+import { storeRecentInvoice } from "../../churvox-fresh/freshRecentInvoices";
 
 function arr(value) {
   if (Array.isArray(value)) return value;
@@ -157,8 +158,10 @@ export default function InvoiceQuickCreateForm({ onSuccess, onCancel, initialJob
 
     if (!res?.success) return toast.error(res?.error || "Could not create invoice");
 
+    const savedInvoice = res.data || res.invoice || res.record || payload;
+    storeRecentInvoice({ ...payload, ...savedInvoice, status: savedInvoice?.status || payload.status });
     toast.success("Draft invoice created");
-    onSuccess?.(res.data || res.invoice || res.record || res);
+    onSuccess?.(savedInvoice);
   }
 
   return (
