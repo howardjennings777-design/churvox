@@ -23,53 +23,174 @@ export const ACCOUNTING_ADDON_PRICE = "$39/month + GST";
 export const GROWTH_PACK_NAME = "Command Growth Pack";
 export const GROWTH_PACK_PRICE = "$99/month + GST";
 
+export const CHURVOX_EIGHTEEN_FEATURES = [
+  { id: "command_approval_desk", name: "Command Approval Desk", promise: "One owner desk for what Churvox found, prepared and needs approved." },
+  { id: "ai_operator_actions", name: "AI Operator Actions", promise: "AI prepares real admin actions. The owner approves, edits or declines." },
+  { id: "job_story_timeline", name: "Job Story Timeline", promise: "Request to quote to job to proof to invoice to payment to accounting sync." },
+  { id: "whats_missing_engine", name: "What's Missing? Engine", promise: "Find missing job, client, invoice, worker and sync details before they become problems." },
+  { id: "one_tap_admin_recovery", name: "One-Tap Admin Recovery", promise: "Group the admin mess so the owner can clear it in controlled batches." },
+  { id: "admin_debt_counter", name: "Admin Debt Counter", promise: "Show invoices not created, unpaid money, missing proof and follow-ups building up." },
+  { id: "owner_control_score", name: "Owner Control Score", promise: "A simple percentage showing how under-control the business admin is." },
+  { id: "worker_proof_pack", name: "Worker Proof Pack", promise: "Time, notes, worker, photos and address bundled for proof and trust." },
+  { id: "invoice_confidence_check", name: "Invoice Confidence Check", promise: "Check missing address, missing proof, low pricing and time-vs-invoice mismatch before save/send." },
+  { id: "customer_follow_up_brain", name: "Customer Follow-Up Brain", promise: "Detect quotes, invoices, reviews and regular customers that need attention." },
+  { id: "setup_coach", name: "Setup Coach", promise: "Guide new businesses through logo, GST, clients, workers, invoice terms and accounting." },
+  { id: "quiet_mode", name: "Quiet Mode for Owners", promise: "Only alert urgently; move normal admin into Command." },
+  { id: "approval_memory", name: "Approval Memory", promise: "Safely remember owner preferences while staying approval-only." },
+  { id: "done_properly_checklist", name: "Done Properly Checklist", promise: "Industry-aware job completion checks for lawn care, cleaning, trades and services." },
+  { id: "business_family_roles", name: "Business Family Roles", promise: "Safe helper roles for family-business admin without risky access." },
+  { id: "worker_time_approval", name: "Worker Time Approval", promise: "Review and approve worker time before payroll or invoice checks." },
+  { id: "accounting_approval_sync", name: "Xero/MYOB Approval Sync", promise: "Draft accounting sync only. Owner approval required. No tax filing or bank payout files." },
+  { id: "core_job_management", name: "Core Job Management", promise: "Clients, jobs, calendar, quotes, invoices, workers and settings still work cleanly." },
+];
+
 export const FEATURE_RULES = {
-  planday: { area: "Plan My Day", open: "start", reason: "Every plan needs one daily owner cockpit for jobs, admin, priorities and follow-ups." },
+  planday: { area: "Smart Hub", open: "start", reason: "Every plan gets the daily owner cockpit for jobs, admin, priorities and follow-ups." },
+  command: { area: "Command", open: "start", reason: "Every plan gets Command. Higher tiers unlock deeper AI Operator action limits and bulk admin recovery." },
   jobs: { area: "Jobs", open: "start", reason: "Core job workflow is included from Start." },
   clients: { area: "Clients", open: "start", reason: "Customer records are included from Start." },
   quotes: { area: "Quotes", open: "start", reason: "Quotes are included from Start." },
   invoices: { area: "Invoices", open: "start", reason: "Invoices are included from Start." },
-  payments: { area: "Payments", open: "start", reason: "Payment visibility is included from Start." },
   settings: { area: "Settings", open: "start", reason: "Business setup must stay open." },
   plans: { area: "Plans", open: "start", reason: "Plan and billing controls must stay open." },
   support: { area: "Support", open: "start", reason: "Support must stay open." },
-  imports: { area: "Imports", open: "start", reason: "Owner data import stays open." },
-  exports: { area: "Exports", open: "start", reason: "Owner data export stays open." },
+  launchcontrol: { area: "Setup Coach", open: "start", reason: "Setup Coach helps every plan finish business setup." },
+  leads: { area: "Requests", open: "start", reason: "New job requests are part of the core job flow." },
 
-  team: { area: "Team", open: "crew", reason: "Crew plan unlocks workers and team setup." },
-  workercommand: { area: "Worker View", open: "crew", reason: "Crew plan unlocks worker access." },
-  time: { area: "Time Sheets", open: "crew", reason: "Crew plan unlocks worker time capture." },
+  messages: { area: "Messages", open: "crew", reason: "Crew unlocks team/customer message control." },
+  team: { area: "Team", open: "crew", reason: "Crew unlocks workers and team setup." },
+  workercommand: { area: "Worker Proof", open: "crew", reason: "Crew unlocks worker proof and worker access." },
+  time: { area: "Time Approval", open: "crew", reason: "Crew unlocks worker time capture and approval." },
+  portal: { area: "Proof Pack / Portal Links", open: "crew", reason: "Crew unlocks proof packs and customer-ready proof links." },
 
-  command: { area: "Command", open: "operator", reason: "Operator unlocks the approval desk where Churvox prepares admin and the owner approves." },
-  automation: { area: "Automation", open: "crew", reason: "Crew gets basic automation. Operator and Command get stronger automation." },
-  reports: { area: "Reports", open: "start", reason: "Start gets basic reports. Higher plans unlock deeper views." },
+  payments: { area: "Admin Debt", open: "operator", reason: "Operator unlocks smarter unpaid, follow-up and admin debt work." },
+  automation: { area: "Follow-Ups", open: "operator", reason: "Operator unlocks AI-prepared follow-ups and admin actions." },
+  reports: { area: "Control Score / Reports", open: "command", reason: "Command unlocks deeper owner control reporting." },
 
+  imports: { area: "Imports", open: "command", reason: "Command unlocks heavier migration and back-office controls." },
+  exports: { area: "Exports", open: "command", reason: "Command unlocks deeper export and back-office controls." },
   payroll: { area: "Payroll", open: "command", reason: "Payroll workspace is included in Command only. Churvox never files tax or creates payment files." },
 
   xero: {
-    area: "Xero",
+    area: "Accounting Sync",
     open: "command",
     addon: "accounting_sync",
-    reason: "Xero opens with Command or the Accounting Sync Add-on. Draft invoice sync only. Owner approval required.",
+    reason: "Xero or MYOB opens with Command or the Accounting Sync Add-on. Draft invoice sync only. Owner approval required.",
   },
 };
 
 export const PLAN_FEATURE_MATRIX = [
-  { area: "Plan My Day", start: "Open", crew: "Open", operator: "Open", command: "Open" },
-  { area: "Jobs / Clients / Quotes / Invoices", start: "Open", crew: "Open", operator: "Open", command: "Open" },
-  { area: "Payments", start: "Open", crew: "Open", operator: "Open", command: "Open" },
-  { area: "Team", start: "Locked", crew: "Open", operator: "Open", command: "Open" },
-  { area: "Worker View", start: "Locked", crew: "Open", operator: "Open", command: "Open" },
-  { area: "Time Sheets", start: "Locked", crew: "Open", operator: "Open", command: "Open" },
-  { area: "Command approval desk", start: "Locked", crew: "Locked", operator: "Open", command: "Open" },
-  { area: "AI Operator Actions", start: "Locked", crew: "Locked", operator: "Open", command: "Higher limits" },
-  { area: "Automation", start: "Locked", crew: "Basic", operator: "Open", command: "Advanced" },
-  { area: "Reports", start: "Basic", crew: "Basic", operator: "Better", command: "Full" },
-  { area: "Payroll", start: "Locked", crew: "Locked", operator: "Locked", command: "Open" },
-  { area: "Xero / MYOB", start: "Add-on", crew: "Add-on", operator: "Add-on", command: "Included one sync" },
-  { area: "Accounting Sync Add-on", start: "$39 + GST", crew: "$39 + GST", operator: "$39 + GST", command: "Included" },
-  { area: "Command Growth Pack", start: "Not available", crew: "Not available", operator: "Not available", command: "$99 + GST per 50 active team members" },
+  { area: "Command Approval Desk", start: "Basic desk", crew: "Team desk", operator: "Full approval desk", command: "Full business control desk" },
+  { area: "AI Operator Actions", start: "25/month", crew: "100/month", operator: "500/month", command: "2000/month" },
+  { area: "Job Story Timeline", start: "Basic", crew: "Full", operator: "Full", command: "Full + team/accounting view" },
+  { area: "What's Missing? Engine", start: "Basic job/client checks", crew: "Job/client/team checks", operator: "Full admin checks", command: "Full business checks" },
+  { area: "One-Tap Admin Recovery", start: "One fix at a time", crew: "Batch of 5", operator: "Batch of 25", command: "Bulk recovery" },
+  { area: "Admin Debt Counter", start: "Basic count", crew: "Full count", operator: "Full with action cards", command: "Full with business totals" },
+  { area: "Owner Control Score", start: "Not included", crew: "Basic score", operator: "Full score", command: "Advanced score" },
+  { area: "Worker Proof Pack", start: "Basic photos/notes", crew: "Full proof pack", operator: "Full + invoice backup", command: "Full + dispute/payroll support" },
+  { area: "Invoice Confidence Check", start: "Basic missing info", crew: "Price/proof checks", operator: "Full confidence check", command: "Advanced confidence rules" },
+  { area: "Customer Follow-Up Brain", start: "Manual reminders", crew: "Follow-up drafts", operator: "AI prepared follow-ups", command: "Lifecycle follow-up system" },
+  { area: "Setup Coach", start: "Included", crew: "Included", operator: "Included", command: "Included + team setup" },
+  { area: "Quiet Mode for Owners", start: "Basic", crew: "Included", operator: "Smart urgent mode", command: "Full owner controls" },
+  { area: "Approval Memory", start: "Not included", crew: "Not included", operator: "Included", command: "Advanced" },
+  { area: "Done Properly Checklist", start: "Basic checklist", crew: "Industry checklists", operator: "Smart checklists", command: "Advanced templates" },
+  { area: "Business Family Roles", start: "Helper only", crew: "Admin helper", operator: "Admin + payroll helper", command: "Full family role controls" },
+  { area: "Worker Time Approval", start: "Not included", crew: "Included", operator: "Advanced", command: "Advanced + payroll support" },
+  { area: "Xero/MYOB Approval Sync", start: "$39 add-on", crew: "$39 add-on", operator: "$39 add-on", command: "Included one sync" },
+  { area: "Core Job Management", start: "Included", crew: "Included", operator: "Included", command: "Included" },
 ];
+
+const START_GROUPS = [
+  { title: "Start", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
+  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
+];
+
+const CREW_GROUPS = [
+  { title: "Start", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
+  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
+  { title: "Proof", items: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"]] },
+];
+
+const OPERATOR_GROUPS = [
+  { title: "Start", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
+  { title: "Admin", items: [["payments", "AD", "Admin Debt"], ["automation", "FU", "Follow-Ups"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
+  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
+  { title: "Proof", items: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"]] },
+];
+
+const COMMAND_GROUPS = [
+  { title: "Start", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
+  { title: "Control", items: [["payments", "AD", "Admin Debt"], ["reports", "CS", "Control Score"], ["automation", "FU", "Follow-Ups"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
+  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "AC", "Accounting Sync"], ["payroll", "PR", "Payroll"]] },
+  { title: "Proof", items: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"]] },
+];
+
+const MORE_ITEMS_BY_PLAN = {
+  start: [["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
+  crew: [["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
+  operator: [["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
+  command: [["launchcontrol", "SC", "Setup Coach"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
+};
+
+export const SIDEBAR_GROUPS_BY_PLAN = {
+  start: START_GROUPS,
+  crew: CREW_GROUPS,
+  operator: OPERATOR_GROUPS,
+  command: COMMAND_GROUPS,
+};
+
+export const SIDEBAR_ALL_GROUPS = [
+  ...START_GROUPS,
+  ...CREW_GROUPS,
+  ...OPERATOR_GROUPS,
+  ...COMMAND_GROUPS,
+];
+
+export const SIDEBAR_ALL_MORE_GROUP = {
+  title: "More tools",
+  items: [
+    ["launchcontrol", "SC", "Setup Coach"],
+    ["settings", "SG", "Settings"],
+    ["plans", "PL", "Plans"],
+    ["support", "SP", "Help"],
+    ["imports", "IM", "Imports"],
+    ["exports", "EX", "Exports"],
+  ],
+};
+
+export const SIDEBAR_GROUPS = SIDEBAR_ALL_GROUPS;
+export const SIDEBAR_MORE_GROUP = SIDEBAR_ALL_MORE_GROUP;
+
+export const MOBILE_ITEMS = [["planday", "PD", "Today"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
+export const MOBILE_MORE_ORDER = ["messages", "clients", "quotes", "payments", "automation", "xero", "team", "workercommand", "time", "portal", "payroll", "reports", "launchcontrol", "imports", "exports", "settings", "plans", "support"];
+
+function cloneGroups(groups) {
+  return groups.map((group) => ({
+    ...group,
+    items: group.items.map((item) => [...item]),
+  }));
+}
+
+function uniqueKeys(items) {
+  const seen = new Set();
+  return items.filter(([key]) => {
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function addAccountingIfActive(groups, plan, user) {
+  if (plan === "command" || !hasAccountingSync(user)) return groups;
+  const next = cloneGroups(groups);
+  const moneyGroup = next.find((group) => group.title === "Money") || next[next.length - 1];
+  if (moneyGroup && !moneyGroup.items.some(([key]) => key === "xero")) moneyGroup.items.push(["xero", "AC", "Accounting Sync"]);
+  return next;
+}
 
 export function normalizePlan(value) {
   const key = String(value || "").trim().toLowerCase();
@@ -155,6 +276,38 @@ export function hasAccountingSync(user) {
   }
 }
 
+export function sidebarGroupsForPlan(plan, user = null) {
+  const clean = normalizePlan(plan) || "start";
+  const groups = SIDEBAR_GROUPS_BY_PLAN[clean] || START_GROUPS;
+  return addAccountingIfActive(cloneGroups(groups), clean, user);
+}
+
+export function sidebarGroupsForUser(user) {
+  return sidebarGroupsForPlan(currentPlanForUser(user), user);
+}
+
+export function sidebarMoreItemsForPlan(plan) {
+  const clean = normalizePlan(plan) || "start";
+  return uniqueKeys((MORE_ITEMS_BY_PLAN[clean] || MORE_ITEMS_BY_PLAN.start).map((item) => [...item]));
+}
+
+export function sidebarMoreItemsForUser(user) {
+  return sidebarMoreItemsForPlan(currentPlanForUser(user));
+}
+
+export function mobileItemsForUser() {
+  return MOBILE_ITEMS.map((item) => [...item]);
+}
+
+export function mobileMoreOrderForUser(user) {
+  const primary = new Set(mobileItemsForUser(user).map(([key]) => key));
+  const allowed = uniqueKeys([
+    ...sidebarGroupsForUser(user).flatMap((group) => group.items),
+    ...sidebarMoreItemsForUser(user),
+  ]).map(([key]) => key);
+  return MOBILE_MORE_ORDER.filter((key) => allowed.includes(key) && !primary.has(key));
+}
+
 export function commandGrowthPacks(user) {
   const raw =
     user?.command_growth_packs ||
@@ -196,6 +349,9 @@ export function ruleForPage(page) {
     workerbrief: "command",
     worker: "workercommand",
     workers: "workercommand",
+    proofpack: "portal",
+    clientportal: "portal",
+    customerportal: "portal",
     xero: "xero",
     myob: "xero",
   };
