@@ -223,3 +223,36 @@
     width: 100%;
   }
 }
+
+/* CHURVOX_TOP_NINE_PLAYBOOK_STYLE_20260627 */
+.freshTopNinePlaybook {
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 15px;
+  background: #ffffff;
+  padding: 9px 10px;
+}
+
+.freshTopNinePlaybook summary {
+  cursor: pointer;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  font-size: 12px;
+  font-weight: 1000;
+  list-style-position: inside;
+}
+
+.freshTopNinePlaybook p {
+  margin: 7px 0 0;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 12px;
+  font-weight: 820;
+  line-height: 1.35;
+}
+
+.freshTopNinePlaybook p b {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 12px;
+}
+

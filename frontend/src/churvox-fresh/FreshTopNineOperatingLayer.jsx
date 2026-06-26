@@ -2,6 +2,7 @@ import React from "react";
 import "./freshTopNineOperatingLayer.css";
 
 export const CHURVOX_TOP_NINE_LAYER_MARKER_20260627 = "CHURVOX_TOP_NINE_LAYER_MARKER_20260627";
+export const CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627 = "CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627";
 
 function money(value) {
   const n = Number(value || 0);
@@ -42,6 +43,9 @@ function buildCards({
       action: "Refresh Command",
       onClick: () => runAction?.("refresh"),
       tone: urgent ? "need" : "ok",
+      pain: "Owners hate opening software and still not knowing what needs doing today.",
+      churvox: "Turn the dashboard into a short owner decision list, not a wall of records.",
+      nextBuild: "Keep Today/This Week focused on late jobs, unacknowledged work, ready invoices, and approvals.",
     },
     {
       id: "worker-proof",
@@ -53,6 +57,9 @@ function buildCards({
       onClick: () => runAction?.("open"),
       tone: proofGaps ? "need" : "ok",
       disabled: !activeFix || busy,
+      pain: "Field apps lose trust when proof, notes, or time are missing after the worker says the job is done.",
+      churvox: "Make proof simple for workers and obvious for owners before invoicing or payroll approval.",
+      nextBuild: "Show proof status on jobs and block risky approval when photo/time/context is missing.",
     },
     {
       id: "completed-invoice",
@@ -63,6 +70,9 @@ function buildCards({
       action: "Check for work",
       onClick: () => runAction?.("scan"),
       tone: adminDebtTotal ? "money" : "ok",
+      pain: "Admin debt is invisible until cash flow, customer follow-up, or payroll becomes a mess.",
+      churvox: "Show the owner how much money/admin is waiting before it becomes a problem.",
+      nextBuild: "Break admin debt into money waiting, missing proof, follow-ups, setup gaps, and time approvals.",
     },
     {
       id: "command-desk",
@@ -73,6 +83,9 @@ function buildCards({
       action: "Refresh",
       onClick: () => runAction?.("refresh"),
       tone: commandWaiting ? "command" : "ok",
+      pain: "Normal notifications become noise because they do not explain what to do next.",
+      churvox: "Every Command item must show found, prepared, why it matters, proof, and approval controls.",
+      nextBuild: "Keep Command as the one calm owner approval desk.",
     },
     {
       id: "admin-debt",
@@ -94,6 +107,9 @@ function buildCards({
       onClick: () => runAction?.("open"),
       tone: proofGaps ? "need" : "ok",
       disabled: !activeFix || busy,
+      pain: "Small missing details create big admin delays: no email, no address, no proof, no invoice, no follow-up.",
+      churvox: "Find missing details early and turn them into approval-ready cleanup items.",
+      nextBuild: "Make missing fields and missing proof impossible to ignore.",
     },
     {
       id: "recovery",
@@ -104,6 +120,9 @@ function buildCards({
       action: noteRows.length ? "Prepare notes" : "Check for work",
       onClick: () => runAction?.(noteRows.length ? "prepare" : "scan"),
       tone: noteRows.length || commandWaiting ? "command" : "ok",
+      pain: "Owners fall behind when admin piles up over several days.",
+      churvox: "One tap should prepare the catch-up pile, but still wait for owner approval.",
+      nextBuild: "Batch prepare invoices, follow-ups, notes, and proof requests into Command.",
     },
     {
       id: "support",
@@ -137,7 +156,10 @@ function buildCards({
         runAction?.("refresh");
       },
       tone: "support",
-    },
+      pain: "Bad support and confusing setup make people cancel even when the product is good.",
+      churvox: "Make support feel human, simple, and tied to setup gaps.",
+      nextBuild: "Turn support requests into Command slips and setup guidance.",
+      },
     {
       id: "pricing",
       title: "Transparent pricing / no trap",
@@ -147,6 +169,9 @@ function buildCards({
       action: "Refresh rules",
       onClick: () => runAction?.("refresh"),
       tone: "ok",
+      pain: "Owners hate surprise billing, unclear limits, and add-ons that feel like traps.",
+      churvox: "Keep pricing clear, plan limits honest, and accounting sync owner-approved.",
+      nextBuild: "Keep plan gates helpful, not punishing.",
     },
   ];
 }
@@ -157,7 +182,7 @@ export default function FreshTopNineOperatingLayer(props) {
   const activeCount = cards.filter((card) => ["need", "money", "command"].includes(card.tone)).length;
 
   return (
-    <section className="freshTopNineLayer" data-top-nine-layer={CHURVOX_TOP_NINE_LAYER_MARKER_20260627}>
+    <section className="freshTopNineLayer" data-top-nine-layer={CHURVOX_TOP_NINE_LAYER_MARKER_20260627} data-top-nine-playbook={CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627}>
       <header className="freshTopNineHeader">
         <div>
           <span>Top 9 owner operating layer</span>
@@ -182,6 +207,12 @@ export default function FreshTopNineOperatingLayer(props) {
                 <strong>{card.metric}</strong>
                 <span>{card.status}</span>
               </section>
+              <details className="freshTopNinePlaybook">
+                <summary>Why customers care</summary>
+                <p><b>Pain:</b> {card.pain}</p>
+                <p><b>Churvox answer:</b> {card.churvox}</p>
+                <p><b>Build/test next:</b> {card.nextBuild}</p>
+              </details>
               <button type="button" disabled={props.busy || card.disabled} onClick={card.onClick}>
                 {card.action}
               </button>
