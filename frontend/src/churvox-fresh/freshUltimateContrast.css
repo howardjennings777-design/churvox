@@ -184,6 +184,21 @@
   text-shadow: none !important;
 }
 
+/* CHURVOX_PLANS_SAFE_MONEY_SYNC_LABEL_20260626 */
+.cvPlansPage > .cvPlanNotice:nth-of-type(2) span {
+  font-size: 0 !important;
+}
+
+.cvPlansPage > .cvPlanNotice:nth-of-type(2) span::after {
+  content: "Invoices stay draft-only until approved. Accounting sync is owner-approved.";
+  display: block;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1.35;
+}
+
 /* CHURVOX_COMMAND_QUEUE_LIMIT_20260626 */
 .freshCommandFixQueue {
   max-height: 560px !important;
