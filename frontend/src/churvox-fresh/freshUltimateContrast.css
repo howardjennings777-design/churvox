@@ -236,3 +236,39 @@
     max-height: 430px !important;
   }
 }
+
+/* CHURVOX_SMS_COMING_SOON_NOTICE_STYLE_20260627 */
+.freshSmsComingSoon {
+  border: 1px solid rgba(249, 115, 22, .22) !important;
+  background: linear-gradient(135deg, #fff7ed, #ffffff) !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, .08) !important;
+}
+
+.freshSmsComingSoon span {
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-weight: 1000 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+  font-size: 11px !important;
+}
+
+.freshSmsComingSoon h2 {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  margin: .25rem 0 !important;
+}
+
+.freshSmsComingSoon p {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  max-width: 760px !important;
+}
+
+/* CHURVOX_IMPORT_TEMPLATE_LINK_MOBILE_20260627 */
+@media (max-width: 760px) {
+  .freshImportsActions a {
+    width: 100% !important;
+    min-height: 46px !important;
+  }
+}

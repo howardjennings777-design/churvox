@@ -346,6 +346,14 @@ export default function FreshMessages({ onNavigate }) {
 
   return (
     <section className="freshMessagesPage">
+      <section className="freshCard freshSmsComingSoon" data-sms-coming-soon="CHURVOX_SMS_COMING_SOON_NOTICE_20260627">
+        <div>
+          <span>Customer messaging</span>
+          <h2>SMS and customer texting is coming soon</h2>
+          <p>Worker updates are available now. Customer SMS will stay owner-approved before anything is sent.</p>
+        </div>
+      </section>
+
       <div className="freshMessagesHero">
         <div>
           <span>Owner inbox</span>
