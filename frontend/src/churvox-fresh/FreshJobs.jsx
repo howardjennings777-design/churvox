@@ -12,7 +12,8 @@ const TIMER_OPTIMISTIC = {
   resume: { status: "In progress", job_status: "In Progress", timer_status: "running", timer_running: true },
   complete: { status: "Completed", job_status: "Completed", timer_status: "stopped", timer_running: false, completed: true, invoice_ready: true },
 };
-const EMPTY_JOB_FORM = { title: "", client: "", address: "", scheduled: "", price: "", notes: "" };
+const EMPTY_JOB_FORM = { title: "", client: "", client_id: "", address: "", scheduled: "", price: "", notes: "" };
+const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 
 function normalizeId(value) {
   if (!value) return "";
@@ -62,6 +63,37 @@ function storyStepState({ selected, quotes, invoices }) { const hasQuote = quote
 function photoCount(job) { if (Array.isArray(job?.photos)) return job.photos.length; if (Array.isArray(job?.photo_urls)) return job.photo_urls.length; if (Array.isArray(job?.attachments)) return job.attachments.filter((item) => /image|photo/i.test(String(item?.type || item?.url || item))).length; return Number(job?.photo_count || job?.photos_count || 0) || 0; }
 function jobFromTimerResponse(data) { return data?.job || data?.data?.job || data?.data || data || null; }
 function jobFromCreateResponse(data) { return data?.job || data?.data?.job || data?.data || data; }
+
+function parseJobModalPayload(raw) {
+  let payload = raw || {};
+  if (typeof raw === "string") {
+    try { payload = JSON.parse(raw); }
+    catch {
+      const params = new URLSearchParams(raw.replace(/^\?/, ""));
+      payload = { client_id: params.get("client_id") || "", client: params.get("client") || "", address: params.get("address") || "" };
+    }
+  }
+  if (!payload || typeof payload !== "object") payload = {};
+  if (payload.detail && typeof payload.detail === "object") payload = payload.detail;
+  if (typeof payload.search === "string" && payload.search) {
+    const params = new URLSearchParams(payload.search.replace(/^\?/, ""));
+    payload = { ...payload, client_id: payload.client_id || params.get("client_id") || "", client: payload.client || params.get("client") || "", address: payload.address || params.get("address") || "" };
+  }
+  return {
+    title: pick(payload, "title", "job_title", "job_name"),
+    client: pick(payload, "client", "client_name", "customer_name", "name"),
+    client_id: normalizeId(payload.client_id || payload.customer_id || payload.id || ""),
+    address: pick(payload, "address", "site_address", "service_address", "customer_address"),
+    scheduled: pick(payload, "scheduled", "scheduled_date", "date"),
+    price: pick(payload, "price", "fixed_price", "amount"),
+    notes: pick(payload, "notes", "client_notes", "job_notes"),
+  };
+}
+
+function jobFormFromPayload(raw) {
+  const draft = parseJobModalPayload(raw);
+  return { ...EMPTY_JOB_FORM, ...draft };
+}
 
 const selectedFilterButtonStyle = { background: "#111827", backgroundColor: "#111827", borderColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff" };
 const selectedFilterTextStyle = { color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1 };
@@ -119,8 +151,15 @@ export default function FreshJobs({ onNavigate }) {
   React.useEffect(() => { loadJobs(); loadStory(); }, [loadJobs, loadStory]);
   React.useEffect(() => { const onFreshDataUpdated = () => { loadJobs(); loadStory(); }; window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated); return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated); }, [loadJobs, loadStory]);
   React.useEffect(() => { if (!visibleJobs.length) return; if (!selectedId || !visibleJobs.some((job) => job.id === selectedId)) setSelectedId(visibleJobs[0].id); }, [visibleJobs, selectedId]);
+  React.useEffect(() => {
+    function openFromExternal(event) { openJobModalFromPayload(event?.detail || null); }
+    window.addEventListener("churvox:open-job-popup", openFromExternal);
+    try { const stored = window.localStorage.getItem(OPEN_JOB_MODAL_KEY); if (stored) window.setTimeout(() => openJobModalFromPayload(stored), 50); } catch {}
+    return () => window.removeEventListener("churvox:open-job-popup", openFromExternal);
+  }, []);
 
-  function openBlankJob() { setJobForm(EMPTY_JOB_FORM); setActionMessage(""); setError(""); setJobModalOpen(true); }
+  function openJobModalFromPayload(payload) { setJobForm(jobFormFromPayload(payload)); setActionMessage(""); setError(""); setJobModalOpen(true); try { window.localStorage.removeItem(OPEN_JOB_MODAL_KEY); } catch {} }
+  function openBlankJob() { openJobModalFromPayload(null); }
   function updateJobForm(key, value) { setJobForm((current) => ({ ...current, [key]: value })); }
 
   async function saveJob(event) {
@@ -130,7 +169,7 @@ export default function FreshJobs({ onNavigate }) {
     if (!title || !client) { setError("Job title and client/customer are required."); return; }
     setSavingJob(true); setError("");
     const priceAmount = moneyNumber(jobForm.price);
-    const payload = { title, job_name: title, client_name: client, customer_name: client, address: jobForm.address, site_address: jobForm.address, scheduled_date: jobForm.scheduled || null, notes: jobForm.notes, description: jobForm.notes || title, fixed_price: priceAmount, price: priceAmount, status: "Ready", source: "fresh_jobs_modal" };
+    const payload = { title, job_name: title, client_id: jobForm.client_id || null, customer_id: jobForm.client_id || null, client_name: client, customer_name: client, address: jobForm.address, site_address: jobForm.address, scheduled_date: jobForm.scheduled || null, notes: jobForm.notes, description: jobForm.notes || title, fixed_price: priceAmount, price: priceAmount, status: "Ready", source: "fresh_jobs_modal" };
     const optimistic = normalizeJob({ ...payload, id: `local-${Date.now()}`, created_at: new Date().toISOString() }, 0);
     setJobs((current) => [optimistic, ...current]); setSelectedId(optimistic.id); setJobModalOpen(false);
     const res = await post("/jobs", payload, { timeout: 25000 });
@@ -165,7 +204,7 @@ export default function FreshJobs({ onNavigate }) {
   const timerDisabled = !selected || Boolean(actionBusy);
 
   return (
-    <section className="freshJobsPage" data-jobs-needs-invoice="20260626" data-owner-timer-actions="20260626" data-create-job-modal="20260626">
+    <section className="freshJobsPage" data-jobs-needs-invoice="20260626" data-owner-timer-actions="20260626" data-create-job-modal="20260626" data-client-job-handoff="20260626">
       <header className="freshHero"><span>Jobs</span><h1>Jobs</h1><p>Job records with customer, worker, schedule, price, notes and linked quote/invoice history.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Total jobs</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside><aside className="freshCard freshJobsNeedsInvoicePulse"><h2>{jobsNeedingInvoice.length}</h2><p>Needs invoice</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Jobs need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadJobs(); loadStory(); }}>Retry</button></section> : null}
