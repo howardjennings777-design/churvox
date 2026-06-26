@@ -3290,6 +3290,25 @@ async def create_invoice(invoice_data: InvoiceCreate, request: Request, current_
 
     result = await db.invoices.insert_one(invoice_doc)
     invoice_doc["id"] = str(result.inserted_id)
+
+    if invoice_data.job_id:
+        try:
+            await db.jobs.update_one(
+                {
+                    "_id": ObjectId(invoice_data.job_id),
+                    "contractor_id": ObjectId(user["business_id"]),
+                },
+                {"$set": {
+                    "invoice_id": result.inserted_id,
+                    "invoice_status": InvoiceStatus.DRAFT,
+                    "invoice_ready": True,
+                    "invoice_generated_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc),
+                }}
+            )
+        except Exception as link_exc:
+            logger.warning(f"Manual invoice created but job link update failed: {link_exc}")
+
     invoice_doc["contractor_id"] = user["business_id"]
     if invoice_data.job_id:
         invoice_doc["job_id"] = invoice_data.job_id
