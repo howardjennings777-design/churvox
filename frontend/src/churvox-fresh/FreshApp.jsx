@@ -304,6 +304,7 @@ function installClientQuoteRuntime() {
     if (typeof window === "undefined" || typeof document === "undefined") return;
     if (window.__churvoxClientQuoteRuntimeInstalled) return;
     window.__churvoxClientQuoteRuntimeInstalled = true;
+    window.__churvoxClientQuoteRuntimeVersion = "20260626";
     document.addEventListener("click", (event) => {
       const button = event.target?.closest?.("button");
       if (!button || !button.closest(".freshClientsPage")) return;
