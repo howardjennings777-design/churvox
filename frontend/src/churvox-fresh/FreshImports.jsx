@@ -37,10 +37,22 @@ function text(value) { return String(value ?? "").trim(); }
 function num(value) { const n = Number(String(value ?? "").replace(/[^0-9.-]/g, "")); return Number.isFinite(n) ? Number(n.toFixed(2)) : 0; }
 function hasEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(value)); }
 function val(row, names) { for (const n of names) { const v = row[key(n)]; if (text(v)) return text(v); } return ""; }
+function excelSerialDate(value, endOfDay = false) {
+  const raw = text(value);
+  if (!/^\d{4,5}(\.\d+)?$/.test(raw)) return "";
+  const serial = Number(raw);
+  if (!Number.isFinite(serial) || serial < 20000 || serial > 80000) return "";
+  const d = new Date(Math.round((serial - 25569) * 86400 * 1000));
+  if (Number.isNaN(d.getTime())) return "";
+  d.setUTCHours(endOfDay ? 23 : 9, endOfDay ? 59 : 0, endOfDay ? 59 : 0, 0);
+  return d.toISOString();
+}
 function toIsoDate(year, month, day, endOfDay = false) { const d = new Date(Number(year), Number(month) - 1, Number(day), endOfDay ? 23 : 9, endOfDay ? 59 : 0, endOfDay ? 59 : 0); return Number.isNaN(d.getTime()) ? "" : d.toISOString(); }
 function dateVal(value, endOfDay = false) {
   const raw = text(value);
   if (!raw) return "";
+  const serialDate = excelSerialDate(raw, endOfDay);
+  if (serialDate) return serialDate;
   const local = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
   if (local) {
     const day = Number(local[1]);
