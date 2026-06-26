@@ -37,7 +37,22 @@ function text(value) { return String(value ?? "").trim(); }
 function num(value) { const n = Number(String(value ?? "").replace(/[^0-9.-]/g, "")); return Number.isFinite(n) ? Number(n.toFixed(2)) : 0; }
 function hasEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(value)); }
 function val(row, names) { for (const n of names) { const v = row[key(n)]; if (text(v)) return text(v); } return ""; }
-function dateVal(value, endOfDay = false) { const raw = text(value); if (!raw) return ""; const d = new Date(raw.includes("T") ? raw : `${raw}${/^\d{4}-\d{2}-\d{2}$/.test(raw) ? (endOfDay ? "T23:59:59" : "T09:00:00") : ""}`); return Number.isNaN(d.getTime()) ? raw : d.toISOString(); }
+function toIsoDate(year, month, day, endOfDay = false) { const d = new Date(Number(year), Number(month) - 1, Number(day), endOfDay ? 23 : 9, endOfDay ? 59 : 0, endOfDay ? 59 : 0); return Number.isNaN(d.getTime()) ? "" : d.toISOString(); }
+function dateVal(value, endOfDay = false) {
+  const raw = text(value);
+  if (!raw) return "";
+  const local = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
+  if (local) {
+    const day = Number(local[1]);
+    const month = Number(local[2]);
+    const year = Number(local[3]) < 100 ? 2000 + Number(local[3]) : Number(local[3]);
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) return toIsoDate(year, month, day, endOfDay) || raw;
+  }
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) return toIsoDate(iso[1], iso[2], iso[3], endOfDay) || raw;
+  const d = new Date(raw.includes("T") ? raw : `${raw}${/^\d{4}-\d{2}-\d{2}$/.test(raw) ? (endOfDay ? "T23:59:59" : "T09:00:00") : ""}`);
+  return Number.isNaN(d.getTime()) ? raw : d.toISOString();
+}
 function roleVal(value) { const v = text(value).toLowerCase(); if (v.includes("lead")) return "lead_worker"; if (v.includes("sub")) return "subcontractor"; if (v.includes("payroll")) return "payroll"; return "worker"; }
 function statusVal(value, fallback = "draft") { const v = text(value).toLowerCase(); if (v.includes("paid")) return "paid"; if (v.includes("sent")) return "sent"; if (v.includes("overdue")) return "overdue"; if (v.includes("complete")) return "completed"; if (v.includes("progress")) return "in_progress"; return v || fallback; }
 
