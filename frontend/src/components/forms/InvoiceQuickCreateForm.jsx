@@ -40,7 +40,18 @@ function todayPlus(days) {
   return d.toISOString().slice(0, 10);
 }
 
-export default function InvoiceQuickCreateForm({ onSuccess, onCancel }) {
+function jobDraft(job) {
+  if (!job || typeof job !== "object") return null;
+  const title = String(job.title || job.job || job.description || "Service work").trim();
+  const client = String(job.client || job.customer_name || job.client_name || "").trim();
+  const address = String(job.address || job.site_address || job.service_address || "").trim();
+  const price = money(job.priceAmount ?? job.price ?? job.amount ?? job.total);
+  const scheduled = String(job.scheduled || job.date || "").trim();
+  const notes = ["Created from completed job.", scheduled ? "Scheduled: " + scheduled + "." : ""].filter(Boolean).join(" ");
+  return { title, client, address, price, notes };
+}
+
+export default function InvoiceQuickCreateForm({ onSuccess, onCancel, initialJob = null }) {
   const { get, post } = useApi();
   const [clients, setClients] = React.useState([]);
   const [saving, setSaving] = React.useState(false);
@@ -63,6 +74,20 @@ export default function InvoiceQuickCreateForm({ onSuccess, onCancel }) {
     });
     return () => { alive = false; };
   }, [get]);
+
+  React.useEffect(() => {
+    const draft = jobDraft(initialJob);
+    if (!draft) return;
+    setForm((current) => ({
+      ...current,
+      customer_name: draft.client || current.customer_name,
+      address: draft.address || current.address,
+      description: draft.title || current.description,
+      quantity: "1",
+      unit_price: draft.price > 0 ? String(draft.price) : current.unit_price,
+      notes: current.notes || draft.notes,
+    }));
+  }, [initialJob]);
 
   function update(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -92,9 +117,13 @@ export default function InvoiceQuickCreateForm({ onSuccess, onCancel }) {
     const gstRate = 15;
     const gstAmount = subtotal * (gstRate / 100);
     const total = subtotal + gstAmount;
+    const linkedJobId = initialJob?.id || initialJob?.job_id || null;
 
     const payload = {
       client_id: form.client_id || null,
+      job_id: linkedJobId,
+      linked_job_id: linkedJobId,
+      job_title: initialJob?.title || form.description,
       customer_name: form.customer_name,
       client_name: form.customer_name,
       customer_email: form.customer_email || null,
