@@ -32,6 +32,7 @@ test.describe('Churvox Command operating system', () => {
     expect(command).toContain('FreshCommandOperatingSystem');
     expect(os).toContain('COMMAND_OS_MARKER_20260625');
     expect(os).toContain('COMMAND_CLEAN_FILLED_FORM_MARKER_20260627');
+    expect(os).toContain('COMMAND_FORM_FIRST_MARKER_20260627');
     expect(os).not.toContain('import "./freshCommandOperatingSystem.css";');
 
     for (const concept of [
@@ -43,6 +44,7 @@ test.describe('Churvox Command operating system', () => {
       'onApproveFix',
       'onSaveFix',
       'onIgnoreFix',
+      'onPrepareNotes',
       'selectedHasConcreteAction',
     ]) {
       expect(os, `${concept} should stay first-class in Command`).toContain(concept);
@@ -81,19 +83,22 @@ test.describe('Churvox Command operating system', () => {
 
     for (const className of [
       'freshCommandCleanDesk',
-      'freshCommandCleanHeader',
       'freshCommandCleanGrid',
       'freshCommandFilledFormCard',
       'freshCommandFilledRows',
       'freshCommandOwnerControls',
       'freshCommandFixActions',
+      'freshCommandFilledLead',
     ]) {
       expect(previewStyles, `${className} should keep its UI styling`).toContain(className);
       expect(os, `${className} should stay wired in the component`).toContain(className);
     }
 
     expect(previewStyles).toContain('CHURVOX_COMMAND_CLEAN_FILLED_FORM_20260627');
-    expect(previewStyles).toContain('grid-template-columns: minmax(0, 1.35fr) minmax(290px, .65fr)');
+    expect(previewStyles).toContain('.freshCommandStablePage > .freshHero');
+    expect(previewStyles).toContain('.freshCommandStablePage > .freshGrid');
+    expect(previewStyles).toContain('display: none !important');
+    expect(previewStyles).toContain('grid-template-columns: minmax(0, 1fr) minmax(300px, 360px)');
     expect(previewStyles).toContain('overflow-wrap: anywhere');
 
     expect(styles).toContain('.freshCommandStablePage .freshGrid > .freshJobsListCard');
