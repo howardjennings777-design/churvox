@@ -27,7 +27,64 @@ function linkedJobId(invoice) {
 }
 
 function invoiceId(invoice) {
-  return normalizeId(invoice?.id || invoice?._id || invoice?.invoice_id || "");
+  return normalizeId(invoice?.id || invoice?._id || invoice?.invoice_id || invoice?.number || invoice?.invoice_number || "");
+}
+
+function listFromPayload(payload, key = "") {
+  const data = payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  if (key && Array.isArray(data?.[key])) return data[key];
+  if (key && Array.isArray(data?.data?.[key])) return data.data[key];
+  for (const name of ["invoices", "items", "records", "results", "data"]) {
+    if (Array.isArray(data?.[name])) return data[name];
+  }
+  return [];
+}
+
+function invoiceRecord(payload) {
+  const data = payload?.data ?? payload;
+  const candidates = [
+    data?.invoice,
+    data?.record,
+    data?.item,
+    data?.data?.invoice,
+    data?.data?.record,
+    data?.data?.item,
+    data?.data,
+    data,
+  ];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) return candidate;
+  }
+  return {};
+}
+
+async function markJobInvoiced({ jobId, invoice, headers, timeout }) {
+  const normalizedJobId = normalizeId(jobId);
+  if (!normalizedJobId) return;
+  const record = invoiceRecord(invoice);
+  const normalizedInvoiceId = invoiceId(record) || invoiceId(invoice);
+  try {
+    await axios({
+      method: "PATCH",
+      url: `${API_BASE}/api/jobs/${normalizedJobId}`,
+      headers,
+      withCredentials: true,
+      timeout: timeout || API_TIMEOUT_MS,
+      data: {
+        invoice_id: normalizedInvoiceId || null,
+        linked_invoice_id: normalizedInvoiceId || null,
+        invoice_number: record.invoice_number || record.number || null,
+        invoice_status: record.status || "draft",
+        invoice_ready: false,
+        invoiced: true,
+        invoice_created: true,
+        invoice_generated_at: new Date().toISOString(),
+      },
+    });
+  } catch {
+    // Invoice creation stays successful even if the job marker cannot be written.
+  }
 }
 
 export function useApi() {
@@ -57,9 +114,10 @@ export function useApi() {
             withCredentials: true,
             timeout: options.timeout || API_TIMEOUT_MS,
           });
-          const invoices = Array.isArray(check.data) ? check.data : [];
+          const invoices = listFromPayload(check.data, "invoices");
           const duplicate = invoices.find((invoice) => linkedJobId(invoice) === normalizeId(data.job_id));
           if (duplicate) {
+            await markJobInvoiced({ jobId: data.job_id, invoice: duplicate, headers, timeout: options.timeout });
             return { success: true, duplicate: true, status: 200, data: duplicate };
           }
         }
@@ -79,23 +137,7 @@ export function useApi() {
         const body = response.data;
 
         if (method === "POST" && endpoint === "/invoices" && data?.job_id && body) {
-          try {
-            await axios({
-              method: "PATCH",
-              url: `${API_BASE}/api/jobs/${data.job_id}`,
-              headers,
-              withCredentials: true,
-              timeout: options.timeout || API_TIMEOUT_MS,
-              data: {
-                invoice_id: invoiceId(body),
-                invoice_number: body.invoice_number || null,
-                invoiced: true,
-                invoice_created: true,
-              },
-            });
-          } catch {
-            // Invoice creation stays successful even if the job marker cannot be written.
-          }
+          await markJobInvoiced({ jobId: data.job_id, invoice: invoiceRecord(body), headers, timeout: options.timeout });
         }
 
         if (body === "" || body === null || body === undefined) {
@@ -134,10 +176,17 @@ export function useApi() {
               timeout: options.timeout || API_TIMEOUT_MS,
             });
             if (duplicateRes.data) {
-              return { success: true, duplicate: true, status: 200, data: duplicateRes.data };
+              await markJobInvoiced({ jobId: data?.job_id, invoice: duplicateRes.data, headers, timeout: options.timeout });
+              return { success: true, duplicate: true, status: 200, data: invoiceRecord(duplicateRes.data) };
             }
           } catch {}
-          return { success: true, duplicate: true, status: 200, data: { id: duplicateInvoiceId, invoice_number: detail?.invoice_number, job_id: data?.job_id, status: "draft" } };
+          const fallbackDuplicate = { id: duplicateInvoiceId, invoice_number: detail?.invoice_number, job_id: data?.job_id, status: "draft" };
+          const headers = {
+            ...getAuthHeaders(),
+            ...options.headers,
+          };
+          await markJobInvoiced({ jobId: data?.job_id, invoice: fallbackDuplicate, headers, timeout: options.timeout });
+          return { success: true, duplicate: true, status: 200, data: fallbackDuplicate };
         }
 
         const isTimeout = err?.code === "ECONNABORTED" || /timeout/i.test(err?.message || "");
