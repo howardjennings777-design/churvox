@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { currentPlanForUser, mobileItemsForUser, mobileMoreOrderForUser, sidebarGroupsForUser, sidebarMoreItemsForUser } from "./planRules";
 import "./freshMobileAppShell.css";
 import "./freshSidebarCompact.css";
+import "./freshPlansTierLadder.css";
 
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
