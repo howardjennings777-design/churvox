@@ -1,35 +1,36 @@
-"""Churvox Python startup patches."""
+"""Churvox Python startup patches.
+
+This file is intentionally small but important. It is loaded automatically by
+Python on backend startup and installs safe runtime patches without replacing
+large backend/server.py through the GitHub connector.
+"""
 
 from __future__ import annotations
 
 import os
 
-try:
-    from . import churvox_monthly_job_limit  # noqa: F401
-except Exception:
+# Keep startup modules loaded from both package and direct backend cwd paths.
+def _safe_import(module_name: str) -> None:
     try:
-        import churvox_monthly_job_limit  # noqa: F401
+        __import__(f"backend.{module_name}")
+        return
+    except Exception:
+        pass
+    try:
+        __import__(module_name)
     except Exception:
         pass
 
-try:
-    from . import churvox_ai_action_limit  # noqa: F401
-except Exception:
-    try:
-        import churvox_ai_action_limit  # noqa: F401
-    except Exception:
-        pass
 
-try:
-    from . import churvox_plan_usage_routes  # noqa: F401
-except Exception:
-    try:
-        import churvox_plan_usage_routes  # noqa: F401
-    except Exception:
-        pass
+for _module in [
+    "churvox_monthly_job_limit",
+    "churvox_ai_action_limit",
+    "churvox_plan_usage_routes",
+    "churvox_billing_plan_confirm_patch",
+]:
+    _safe_import(_module)
 
-# Xero rejects the OAuth request if any scope is invalid. Let Render's XERO_SCOPES
-# win when it is configured, and only fall back to the minimum phase-one scope set.
+# Xero rejects OAuth requests with invalid scopes. Render env wins when set.
 os.environ.setdefault("XERO_SCOPES", "openid profile email offline_access accounting.invoices")
 os.environ.setdefault("BACKEND_PUBLIC_URL", "https://churvox-backend.onrender.com")
 os.environ.setdefault("FRONTEND_URL", "https://www.churvox.com")
@@ -38,7 +39,7 @@ LOCKED_PLAN_LIMITS = {
     "solo": {"price": 39, "max_workers": 1, "max_clients": 250, "jobs_per_month": 50, "ai_operator_actions": 25, "team": True, "sms": False, "myob": False, "xero": False, "accounting_sync": "add_on", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True},
     "team": {"price": 89, "max_workers": 5, "max_clients": 1000, "jobs_per_month": 150, "ai_operator_actions": 100, "team": True, "sms": True, "myob": False, "xero": False, "accounting_sync": "add_on", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True},
     "pro": {"price": 149, "max_workers": 15, "max_clients": 3000, "jobs_per_month": 500, "ai_operator_actions": 500, "team": True, "sms": True, "myob": False, "xero": False, "accounting_sync": "add_on", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True},
-    "enterprise": {"price": 299, "max_workers": 50, "max_clients": 10000, "jobs_per_month": 1500, "ai_operator_actions": 2000, "team": True, "sms": True, "myob": True, "xero": True, "accounting_sync": "included", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True, "extra_blocks": True},
+    "enterprise": {"price": 299, "max_workers": 50, "max_clients": 10000, "jobs_per_month": 1500, "ai_operator_actions": 2000, "team": True, "sms": True, "myob": False, "xero": True, "accounting_sync": "included", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True, "extra_blocks": True},
 }
 
 PLAN_ALIASES = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
@@ -57,7 +58,7 @@ def patch_locked_plan_limits(module):
         pass
 
 
-def patch_team_limit_runtime(module):
+def patch_team_and_client_limits(module):
     try:
         app = getattr(module, "app", None)
         db = getattr(module, "db", None)
@@ -79,11 +80,11 @@ def patch_team_limit_runtime(module):
                     values.append(ObjectId(str(raw)))
                 except Exception:
                     pass
-            deduped = []
+            out = []
             for value in values:
-                if value not in deduped:
-                    deduped.append(value)
-            return deduped
+                if value not in out:
+                    out.append(value)
+            return out
 
         def business_values(user):
             raw = user.get("business_id") or user.get("id")
@@ -96,8 +97,7 @@ def patch_team_limit_runtime(module):
             return raw, obj, values
 
         def client_business_values(doc):
-            raw = doc.get("contractor_id") or doc.get("business_id") or doc.get("owner_business_id") or doc.get("user_id")
-            return values_from_raw(raw)
+            return values_from_raw(doc.get("contractor_id") or doc.get("business_id") or doc.get("owner_business_id") or doc.get("user_id"))
 
         async def owner_doc_for(user):
             raw, obj, values = business_values(user)
@@ -110,8 +110,18 @@ def patch_team_limit_runtime(module):
                 owner = await db.users.find_one({"_id": obj})
             return owner
 
+        async def owner_doc_from_values(database, values):
+            if not values:
+                return None
+            owner = await database.users.find_one({"_id": {"$in": values}})
+            if owner:
+                return owner
+            return await database.users.find_one({"business_id": {"$in": values}, "role": {"$in": ["employer", "admin", "owner", "business_owner"]}})
+
         async def active_worker_count(user):
             raw, obj, values = business_values(user)
+            if not values:
+                return 0
             return await db.users.count_documents({
                 "business_id": {"$in": values},
                 "role": "worker",
@@ -131,15 +141,7 @@ def patch_team_limit_runtime(module):
                 "is_deleted": {"$ne": True},
             })
 
-        async def owner_doc_from_values(database, values):
-            if not values:
-                return None
-            owner = await database.users.find_one({"_id": {"$in": values}})
-            if owner:
-                return owner
-            return await database.users.find_one({"business_id": {"$in": values}, "role": {"$in": ["employer", "admin", "owner", "business_owner"]}})
-
-        async def capacity_for(user):
+        async def worker_capacity_for(user):
             plan = normal_plan(user.get("plan") or user.get("ui_plan") or user.get("subscription_plan") or "solo")
             limits = LOCKED_PLAN_LIMITS.get(plan, LOCKED_PLAN_LIMITS["solo"])
             max_workers = int(limits.get("max_workers", 0) or 0)
@@ -151,21 +153,20 @@ def patch_team_limit_runtime(module):
             return plan, limits, max_workers, packs, count
 
         async def assert_worker_slot(user):
-            plan, limits, max_workers, packs, count = await capacity_for(user)
+            plan, limits, max_workers, packs, count = await worker_capacity_for(user)
             if count >= max_workers:
                 raise HTTPException(status_code=403, detail=f"Team limit reached ({count}/{max_workers} active workers). Add a Command Growth Pack or remove inactive workers.")
             return plan, limits, max_workers, packs, count
 
-        async def assert_client_slot(database, doc):
-            values = client_business_values(doc)
+        async def assert_client_slot(database, document):
+            values = client_business_values(document)
             owner = await owner_doc_from_values(database, values)
-            plan = normal_plan((owner or {}).get("plan") or (owner or {}).get("ui_plan") or (owner or {}).get("subscription_plan") or doc.get("plan") or "solo")
+            plan = normal_plan((owner or {}).get("plan") or (owner or {}).get("ui_plan") or (owner or {}).get("subscription_plan") or document.get("plan") or "solo")
             limits = LOCKED_PLAN_LIMITS.get(plan, LOCKED_PLAN_LIMITS["solo"])
             max_clients = int(limits.get("max_clients", 0) or 0)
             count = await active_client_count_from_values(database, values)
-            if max_clients >= 0 and count >= max_clients:
+            if count >= max_clients:
                 raise HTTPException(status_code=403, detail=f"Client limit reached ({count}/{max_clients} clients). Upgrade your plan before adding more clients.")
-            return plan, max_clients, count
 
         async def locked_check_team_limits(user):
             raw, obj, values = business_values(user)
@@ -198,15 +199,10 @@ def patch_team_limit_runtime(module):
         if app is not None and get_current_user is not None and Request is not None:
             existing_paths = {getattr(route, "path", "") for route in getattr(app, "routes", [])}
             if "/api/team/limits" not in existing_paths:
-                async def team_limits(current_user: dict = None):
-                    user = current_user or {}
-                    plan, limits, max_workers, packs, count = await capacity_for(user)
-                    return {"success": True, "plan": plan, "limits": limits, "usage": {"workers": count}, "max_workers": max_workers, "extra_user_blocks": packs, "growth_packs": packs, "slots_left": max(0, max_workers - count)}
-
                 async def team_limits_endpoint(request: Request):
                     user = await get_current_user(request)
-                    return await team_limits(user)
-
+                    plan, limits, max_workers, packs, count = await worker_capacity_for(user)
+                    return {"success": True, "plan": plan, "limits": limits, "usage": {"workers": count}, "max_workers": max_workers, "extra_user_blocks": packs, "growth_packs": packs, "slots_left": max(0, max_workers - count)}
                 app.add_api_route("/api/team/limits", team_limits_endpoint, methods=["GET"])
     except Exception:
         pass
@@ -219,7 +215,7 @@ try:
 
     TARGETS = {"server", "backend.server"}
 
-    class ChurvoxPlanLimitLoader(importlib.abc.Loader):
+    class ChurvoxStartupLoader(importlib.abc.Loader):
         def __init__(self, original_loader):
             self.original_loader = original_loader
 
@@ -231,66 +227,30 @@ try:
         def exec_module(self, module):
             self.original_loader.exec_module(module)
             patch_locked_plan_limits(module)
-            patch_team_limit_runtime(module)
+            patch_team_and_client_limits(module)
 
-    class ChurvoxPlanLimitFinder(importlib.abc.MetaPathFinder):
+    class ChurvoxStartupFinder(importlib.abc.MetaPathFinder):
         def find_spec(self, fullname, path=None, target=None):
             if fullname not in TARGETS:
                 return None
             spec = importlib.machinery.PathFinder.find_spec(fullname, path)
-            if spec and spec.loader and not isinstance(spec.loader, ChurvoxPlanLimitLoader):
-                spec.loader = ChurvoxPlanLimitLoader(spec.loader)
+            if spec and spec.loader and not isinstance(spec.loader, ChurvoxStartupLoader):
+                spec.loader = ChurvoxStartupLoader(spec.loader)
             return spec
 
-    if not any(isinstance(finder, ChurvoxPlanLimitFinder) for finder in sys.meta_path):
-        sys.meta_path.insert(0, ChurvoxPlanLimitFinder())
+    if not any(isinstance(finder, ChurvoxStartupFinder) for finder in sys.meta_path):
+        sys.meta_path.insert(0, ChurvoxStartupFinder())
 
     for module_name in list(TARGETS):
         loaded = sys.modules.get(module_name)
         if loaded:
             patch_locked_plan_limits(loaded)
-            patch_team_limit_runtime(loaded)
+            patch_team_and_client_limits(loaded)
 except Exception:
     pass
 
 try:
     from churvox_stripe_no_card import install_no_card_trial_defaults
     install_no_card_trial_defaults()
-except Exception:
-    pass
-
-try:
-    from pathlib import Path
-    from base64 import b64decode
-
-    p = Path(__file__).with_name("server.py")
-    data = p.read_bytes()
-    old_due = b64decode("e2YnIGZvciB7aHlkcmF0ZWQuZ2V0KCdhbW91bnRfZHVlJyl9JyBpZiBoeWRyYXRlZC5nZXQoJ2Ftb3VudF9kdWUnKSBlbHNlICcnfQ==")
-    new_due = b64decode("eycgZm9yICcgKyBoeWRyYXRlZC5nZXQoJ2Ftb3VudF9kdWUnKSBpZiBoeWRyYXRlZC5nZXQoJ2Ftb3VudF9kdWUnKSBlbHNlICcnfQ==")
-    old_total = b64decode("e2YnIGZvciB7aHlkcmF0ZWQuZ2V0KCd0b3RhbCcpfScgaWYgaHlkcmF0ZWQuZ2V0KCd0b3RhbCcpIGVsc2UgJyd9")
-    new_total = b64decode("eycgZm9yICcgKyBoeWRyYXRlZC5nZXQoJ3RvdGFsJykgaWYgaHlkcmF0ZWQuZ2V0KCd0b3RhbCcpIGVsc2UgJyd9")
-    fixed = data.replace(old_due, new_due).replace(old_total, new_total)
-    if fixed != data:
-        p.write_bytes(fixed)
-except Exception:
-    pass
-
-try:
-    import stripe
-
-    create_original = stripe.checkout.Session.create
-
-    def create_checkout_session(*args, **kwargs):
-        if kwargs.get("mode") == "subscription":
-            kwargs["payment_method_collection"] = "if_required"
-            subscription_data = dict(kwargs.get("subscription_data") or {})
-            if not subscription_data.get("trial_period_days"):
-                subscription_data["trial_period_days"] = 14
-            if not subscription_data.get("trial_settings"):
-                subscription_data["trial_settings"] = {"end_behavior": {"missing_payment_method": "cancel"}}
-            kwargs["subscription_data"] = subscription_data
-        return create_original(*args, **kwargs)
-
-    stripe.checkout.Session.create = create_checkout_session
 except Exception:
     pass
