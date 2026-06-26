@@ -3,7 +3,7 @@ import { useApi } from "../hooks/useApi";
 import { hideDemoRecords } from "./freshDemoRecords";
 import "./freshJobsPolish.css";
 
-const filters = ["All", "Ready", "In progress", "Blocked", "Completed"];
+const filters = ["All", "Ready", "In progress", "Blocked", "Completed", "Needs invoice"];
 const STORY_ENDPOINTS = { quotes: "/quotes", invoices: "/invoices", clients: "/clients", workers: "/team/workers" };
 
 function normalizeId(value) {
@@ -124,6 +124,14 @@ function normalizeRelated(rows, selected) {
   return rows.filter((row) => matchesJob(row, selected)).sort((a, b) => dateScore(b) - dateScore(a));
 }
 
+function hasLinkedInvoice(job, invoices) {
+  return normalizeRelated(invoices || [], job).length > 0;
+}
+
+function needsInvoice(job, invoices) {
+  return Boolean(job?.status === "Completed" && !hasLinkedInvoice(job, invoices));
+}
+
 function storyStepState({ selected, quotes, invoices }) {
   const hasQuote = quotes.length > 0;
   const hasInvoice = invoices.length > 0;
@@ -158,9 +166,11 @@ export default function FreshJobs({ onNavigate }) {
   const [storyLoading, setStoryLoading] = React.useState(true);
   const [error, setError] = React.useState("");
 
-  const visibleJobs = filter === "All" ? jobs : jobs.filter((job) => job.status === filter);
+  const jobsNeedingInvoice = React.useMemo(() => jobs.filter((job) => needsInvoice(job, story.invoices)), [jobs, story.invoices]);
+  const visibleJobs = filter === "All" ? jobs : filter === "Needs invoice" ? jobsNeedingInvoice : jobs.filter((job) => job.status === filter);
   const selected = jobs.find((job) => job.id === selectedId) || visibleJobs[0] || jobs[0];
   const canCreateInvoice = Boolean(selected?.priceAmount > 0);
+  const selectedNeedsInvoice = needsInvoice(selected, story.invoices);
   const related = React.useMemo(() => ({
     quotes: normalizeRelated(story.quotes, selected),
     invoices: normalizeRelated(story.invoices, selected),
@@ -214,34 +224,44 @@ export default function FreshJobs({ onNavigate }) {
     onNavigate?.("invoices");
   }
 
+  function filterCount(item) {
+    if (item === "All") return jobs.length;
+    if (item === "Needs invoice") return jobsNeedingInvoice.length;
+    return jobs.filter((job) => job.status === item).length;
+  }
+
   const filterPillStyle = (active) => active ? selectedFilterButtonStyle : undefined;
   const filterTextStyle = (active) => active ? selectedFilterTextStyle : undefined;
   const filterCountStyle = (active) => active ? selectedFilterCountStyle : undefined;
 
   return (
-    <section className="freshJobsPage">
+    <section className="freshJobsPage" data-jobs-needs-invoice="20260626">
       <header className="freshHero"><span>Jobs</span><h1>Jobs</h1><p>Job records with customer, worker, schedule, price, notes and linked quote/invoice history.</p></header>
-      <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Total jobs</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside></section>
+      <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Total jobs</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside><aside className="freshCard freshJobsNeedsInvoicePulse"><h2>{jobsNeedingInvoice.length}</h2><p>Needs invoice</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Jobs need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadJobs(); loadStory(); }}>Retry</button></section> : null}
-      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{item === "All" ? jobs.length : jobs.filter((job) => job.status === item).length}</b></button>)}</section>
+      <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{filterCount(item)}</b></button>)}</section>
 
       <section className="freshGrid">
-        <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking saved job records.</span></div> : visibleJobs.map((job) => <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" ? "need" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}</b><span>{job.client} - {job.status} - {job.scheduled}</span></button>)}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No jobs found</b><span>Create a job or clear the filter.</span></div> : null}</aside>
+        <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking saved job records.</span></div> : visibleJobs.map((job) => {
+          const jobNeedsInvoice = needsInvoice(job, story.invoices);
+          return <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" || jobNeedsInvoice ? "need" : ""} ${jobNeedsInvoice ? "freshJobNeedsInvoiceItem" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}{jobNeedsInvoice ? <em className="freshJobNeedsInvoiceBadge">Needs invoice</em> : null}</b><span>{job.client} - {jobNeedsInvoice ? "Completed, not invoiced" : job.status} - {job.scheduled}</span></button>;
+        })}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No jobs found</b><span>Create a job or clear the filter.</span></div> : null}</aside>
 
         <section className="freshCard freshJobsDetailCard">
-          <div className="freshJobsDetailHeader"><div><small>Job record</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selected.status === "Completed" ? "ready" : selected.status === "Blocked" ? "need" : ""}>{selected.status}</span> : null}</div>
+          <div className="freshJobsDetailHeader"><div><small>Job record</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selectedNeedsInvoice ? "need" : selected.status === "Completed" ? "ready" : selected.status === "Blocked" ? "need" : ""}>{selectedNeedsInvoice ? "Needs invoice" : selected.status}</span> : null}</div>
           {selected ? (<>
-            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div className={canCreateInvoice ? "" : "need"}><span>Price</span><b>{selected.price}</b></div></div>
-            <section className="freshStoryRail">{steps.map((step) => <article key={step.label} className={step.state}><b>{step.label}</b><span>{step.detail}</span></article>)}</section>
+            {selectedNeedsInvoice ? <section className="freshJobsInvoiceAlert"><strong>Completed job needs invoice</strong><p>This job is finished and no linked invoice was found. Create the invoice so Command can prepare the approval step.</p><button type="button" className="freshOrange" disabled={!canCreateInvoice} onClick={createInvoiceForSelected}>{canCreateInvoice ? "Create invoice from this job" : "Add price before invoice"}</button></section> : null}
+            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div className={selectedNeedsInvoice ? "need" : ""}><span>Status</span><b>{selectedNeedsInvoice ? "Completed - needs invoice" : selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div className={canCreateInvoice ? "" : "need"}><span>Price</span><b>{selected.price}</b></div></div>
+            <section className="freshStoryRail">{steps.map((step) => <article key={step.label} className={step.label === "Invoice" && selectedNeedsInvoice ? "need" : step.state}><b>{step.label}</b><span>{step.label === "Invoice" && selectedNeedsInvoice ? "Needs invoice" : step.detail}</span></article>)}</section>
             <section className="freshJobsDetailBox"><span>Address</span><b>{selected.address}</b></section>
             <section className="freshJobsDetailBox"><span>Scheduled</span><b>{selected.scheduled}</b></section>
             <section className="freshJobsDetailBox notes"><span>Job notes</span><p>{selected.notes}</p></section>
-            <section className="freshStoryLinks"><article><b>{related.quotes.length}</b><span>linked quote{related.quotes.length === 1 ? "" : "s"}</span></article><article><b>{related.invoices.length}</b><span>linked invoice{related.invoices.length === 1 ? "" : "s"}</span></article><article><b>{photoCount(selected)}</b><span>proof photo{photoCount(selected) === 1 ? "" : "s"}</span></article><article><b>{related.workers.length}</b><span>worker match</span></article></section>
+            <section className="freshStoryLinks"><article><b>{related.quotes.length}</b><span>linked quote{related.quotes.length === 1 ? "" : "s"}</span></article><article className={selectedNeedsInvoice ? "need" : ""}><b>{related.invoices.length}</b><span>{selectedNeedsInvoice ? "needs invoice" : `linked invoice${related.invoices.length === 1 ? "" : "s"}`}</span></article><article><b>{photoCount(selected)}</b><span>proof photo{photoCount(selected) === 1 ? "" : "s"}</span></article><article><b>{related.workers.length}</b><span>worker match</span></article></section>
             {storyLoading ? <div className="freshItem"><b>Refreshing job links...</b><span>Checking quotes, invoices, clients and workers.</span></div> : null}
           </>) : <div className="freshItem"><b>No job selected</b><span>When a job is saved, its details will show here.</span></div>}
         </section>
 
-        <aside className="freshCard freshJobsActionsCard"><h2>Job actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Create job</button><button className="freshOrange" type="button" disabled={!canCreateInvoice} onClick={createInvoiceForSelected}>{canCreateInvoice ? "Create invoice" : "Add price before invoice"}</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Open customer links</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh jobs</button></div></aside>
+        <aside className="freshCard freshJobsActionsCard"><h2>Job actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Create job</button><button className={selectedNeedsInvoice ? "freshPrimary" : "freshOrange"} type="button" disabled={!canCreateInvoice} onClick={createInvoiceForSelected}>{selectedNeedsInvoice && canCreateInvoice ? "Create needed invoice" : canCreateInvoice ? "Create invoice" : "Add price before invoice"}</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Open customer links</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh jobs</button></div></aside>
       </section>
     </section>
   );
