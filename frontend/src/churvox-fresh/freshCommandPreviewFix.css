@@ -1,4 +1,27 @@
 /* CHURVOX_COMMAND_INLINE_PREPARED_FORM_20260626 */
+.freshCommandFixDetail {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.freshCommandFixDetail > .freshCommandPanelTitle { order: 1 !important; }
+.freshCommandFixDetail > h3 { order: 2 !important; }
+.freshCommandFixDetail > p:first-of-type { order: 3 !important; }
+.freshCommandFixDetail > div:nth-of-type(2) { order: 4 !important; }
+.freshCommandFixDetail > button { order: 5 !important; }
+.freshCommandInlinePreparedForm { order: 6 !important; }
+.freshCommandFixDetail > section:not(.freshCommandInlinePreparedForm) { order: 7 !important; }
+.freshCommandFixSections { order: 8 !important; }
+.freshCommandFixDetail > div[aria-label="Decision trail"] { order: 9 !important; }
+.freshCommandOwnerNote { order: 10 !important; }
+.freshCommandFixActions { order: 11 !important; }
+
+.freshCommandFixDetail > button {
+  width: fit-content !important;
+  margin: -2px 0 12px !important;
+  padding: 0 14px !important;
+}
+
 .freshCommandInlinePreparedForm {
   display: grid;
   gap: 10px;
@@ -88,11 +111,6 @@
 }
 
 @media (max-width: 680px) {
-  .freshCommandInlinePreparedForm label {
-    grid-template-columns: 1fr;
-  }
-
-  .freshCommandInlinePreparedForm label span {
-    padding-top: 0;
-  }
+  .freshCommandInlinePreparedForm label { grid-template-columns: 1fr; }
+  .freshCommandInlinePreparedForm label span { padding-top: 0; }
 }
