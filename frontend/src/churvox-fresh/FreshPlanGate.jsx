@@ -8,27 +8,28 @@ export default function FreshPlanGate({ page, user, onNavigate, children }) {
   if (access.allowed) return children;
 
   const required = PLAN_LABELS[access.requiredPlan] || "a higher plan";
+  const current = PLAN_LABELS[access.plan] || access.plan || "Start";
   const isAddon = access.addonRequired;
 
   return (
-    <section className="freshPlanGate">
+    <section className="freshPlanGate" aria-label="Plan access required">
       <header>
-        <span>Plan access</span>
-        <h1>{access.title}</h1>
-        <p>{access.message}</p>
+        <span>{isAddon ? "Add-on access" : "Tier access"}</span>
+        <h1>{access.rule.area} is locked on {current}</h1>
+        <p>{access.message} Your data stays safe — this only controls which Churvox tools are visible and usable on this tier.</p>
       </header>
 
       <section className="freshPlanGateCards">
         <article>
-          <b>Your current tier</b>
-          <strong>{PLAN_LABELS[access.plan] || access.plan || "Start"}</strong>
-          <p>This area is not open on the current tier.</p>
+          <b>Current workspace</b>
+          <strong>{current}</strong>
+          <p>You can still use the tools included in your current sidebar and return to Command at any time.</p>
         </article>
 
-        <article>
-          <b>{isAddon ? ACCOUNTING_ADDON_NAME : "Required plan"}</b>
+        <article className="primary">
+          <b>{isAddon ? ACCOUNTING_ADDON_NAME : "Unlock with"}</b>
           <strong>{isAddon ? ACCOUNTING_ADDON_PRICE : required}</strong>
-          <p>{isAddon ? "Adds Xero or MYOB sync where available. Draft invoice sync only." : access.rule.reason}</p>
+          <p>{isAddon ? "Adds Xero or MYOB sync where available. Draft invoice sync only and owner-approved." : access.rule.reason}</p>
         </article>
 
         <article>
@@ -39,8 +40,8 @@ export default function FreshPlanGate({ page, user, onNavigate, children }) {
       </section>
 
       <div className="freshPlanGateActions">
-        <button type="button" onClick={() => onNavigate?.("plans")}>Open Plans</button>
-        <button type="button" onClick={() => onNavigate?.("command")}>Send to Command</button>
+        <button type="button" onClick={() => onNavigate?.("plans")}>View Plans</button>
+        <button type="button" onClick={() => onNavigate?.("command")}>Back to Command</button>
         <button type="button" onClick={() => onNavigate?.("support")}>Ask support</button>
       </div>
     </section>
