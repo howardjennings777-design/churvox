@@ -25,8 +25,10 @@ test.describe('Churvox Command operating system', () => {
     const command = readFreshSource('FreshCommand.jsx');
     const os = readFreshSource('FreshCommandOperatingSystem.jsx');
     const styles = readFreshSource('freshCommandOperatingSystem.css');
+    const previewStyles = readFreshSource('freshCommandPreviewFix.css');
 
     expect(app).toContain('import "./freshCommandOperatingSystem.css";');
+    expect(app).toContain('import "./freshCommandPreviewFix.css";');
     expect(command).toContain('FreshCommandOperatingSystem');
     expect(os).toContain('COMMAND_OS_MARKER_20260625');
     expect(os).not.toContain('import "./freshCommandOperatingSystem.css";');
@@ -102,5 +104,12 @@ test.describe('Churvox Command operating system', () => {
     expect(styles).toContain('.freshCommandNoClutter span');
     expect(styles).toContain('background: #f97316 !important');
     expect(styles).toContain('color: #111827 !important');
+
+    expect(previewStyles).toContain('CHURVOX_COMMAND_PREVIEW_SHEET_20260626');
+    expect(previewStyles).toContain('[aria-label="Prepared form preview"]');
+    expect(previewStyles).toContain('width: min(760px, calc(100vw - 28px)) !important');
+    expect(previewStyles).toContain('grid-template-columns: 1fr !important');
+    expect(previewStyles).toContain('grid-template-columns: minmax(128px, .32fr) minmax(0, 1fr) !important');
+    expect(previewStyles).toContain('overflow-wrap: anywhere !important');
   });
 });
