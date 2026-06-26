@@ -72,9 +72,9 @@ export const PLAN_PRICING = {
     code: "start",
     tag: "Start",
     name: "Start",
-    summary: "Solo operators getting organised.",
-    tagline: "For solo operators getting organised.",
-    description: "Simple jobs, clients, quotes and invoices for one-person trade or service businesses.",
+    summary: "Solo owners getting jobs, clients, quotes and invoices under control.",
+    tagline: "For one owner who wants the basics working properly.",
+    description: "Simple job management for one-person trade or service businesses. Start keeps the core admin tidy without opening advanced crew or accounting tools by default.",
     price: 39,
     monthly: 39,
     period: "month",
@@ -82,20 +82,24 @@ export const PLAN_PRICING = {
     cta: "Start free trial",
     popular: false,
     includes: [
-      "Jobs and clients",
-      "Quotes and invoices",
-      "Basic scheduling",
-      "Basic AI admin help",
-      "Accounting Sync Add-on available",
-      "Up to 20 active clients"
+      "Core job management",
+      "Jobs, clients, quotes and invoices",
+      "Smart Hub and basic Command approval desk",
+      "Up to 250 clients",
+      "Up to 50 jobs per month",
+      "1 owner + 1 helper",
+      "25 AI Operator Actions per month",
+      "Accounting Sync Add-on available"
     ],
     features: [
-      "Jobs and clients",
-      "Quotes and invoices",
-      "Basic scheduling",
-      "Basic AI admin help",
-      "Accounting Sync Add-on available",
-      "Up to 20 active clients"
+      "Core job management",
+      "Jobs, clients, quotes and invoices",
+      "Smart Hub and basic Command approval desk",
+      "Up to 250 clients",
+      "Up to 50 jobs per month",
+      "1 owner + 1 helper",
+      "25 AI Operator Actions per month",
+      "Accounting Sync Add-on available"
     ]
   },
   team: {
@@ -103,9 +107,9 @@ export const PLAN_PRICING = {
     code: "crew",
     tag: "Crew",
     name: "Crew",
-    summary: "Small crews that need control.",
+    summary: "Small crews that need worker proof and cleaner handover.",
     tagline: "For small crews that need control.",
-    description: "Run jobs, team assignments, clients, quotes and invoices from one workspace.",
+    description: "Adds team workflow, worker proof, time approval and stronger handover controls while keeping accounting sync optional.",
     price: 89,
     monthly: 89,
     period: "month",
@@ -114,19 +118,23 @@ export const PLAN_PRICING = {
     popular: false,
     includes: [
       "Everything in Start",
-      "Team workflow",
-      "Worker assignments",
-      "Time tracking",
-      "Accounting Sync Add-on available",
-      "Up to 30 active clients"
+      "Up to 1,000 clients",
+      "Up to 150 jobs per month",
+      "Up to 5 active team members",
+      "100 AI Operator Actions per month",
+      "Worker Proof Pack",
+      "Worker Time Approval",
+      "Accounting Sync Add-on available"
     ],
     features: [
       "Everything in Start",
-      "Team workflow",
-      "Worker assignments",
-      "Time tracking",
-      "Accounting Sync Add-on available",
-      "Up to 30 active clients"
+      "Up to 1,000 clients",
+      "Up to 150 jobs per month",
+      "Up to 5 active team members",
+      "100 AI Operator Actions per month",
+      "Worker Proof Pack",
+      "Worker Time Approval",
+      "Accounting Sync Add-on available"
     ]
   },
   pro: {
@@ -136,7 +144,7 @@ export const PLAN_PRICING = {
     name: "Operator",
     summary: "Churvox does the admin. You approve.",
     tagline: "Churvox does the admin. You approve.",
-    description: "For growing teams that want AI Operator Actions prepared for owner approval.",
+    description: "For owners who want AI Operator Actions, admin recovery, follow-ups and approval control prepared before they touch the work.",
     price: 149,
     monthly: 149,
     period: "month",
@@ -146,19 +154,25 @@ export const PLAN_PRICING = {
     badge: "Most Popular",
     includes: [
       "Everything in Crew",
+      "Up to 3,000 clients",
+      "Up to 500 jobs per month",
+      "Up to 15 active team members",
+      "500 AI Operator Actions per month",
       "AI Operator Actions",
-      "Approval queue",
-      "Advanced job admin",
-      "Accounting Sync Add-on available",
-      "Up to 40 active clients"
+      "Admin recovery batch up to 25",
+      "Customer Follow-Up Brain",
+      "Accounting Sync Add-on available"
     ],
     features: [
       "Everything in Crew",
+      "Up to 3,000 clients",
+      "Up to 500 jobs per month",
+      "Up to 15 active team members",
+      "500 AI Operator Actions per month",
       "AI Operator Actions",
-      "Approval queue",
-      "Advanced job admin",
-      "Accounting Sync Add-on available",
-      "Up to 40 active clients"
+      "Admin recovery batch up to 25",
+      "Customer Follow-Up Brain",
+      "Accounting Sync Add-on available"
     ]
   },
   enterprise: {
@@ -166,9 +180,9 @@ export const PLAN_PRICING = {
     code: "command",
     tag: "Command",
     name: "Command",
-    summary: "Full command centre for larger teams.",
-    tagline: "Full command centre for larger teams.",
-    description: "Advanced control, roles, payroll workspace, one accounting sync option, and priority support.",
+    summary: "Full command centre for bigger service businesses.",
+    tagline: "Full command centre for bigger service businesses.",
+    description: "Full owner operating system with advanced approval control, payroll workspace, reports, exports, and one accounting sync option included.",
     price: 299,
     monthly: 299,
     period: "month",
@@ -177,23 +191,27 @@ export const PLAN_PRICING = {
     popular: false,
     includes: [
       "Everything in Operator",
-      "Up to 50 active clients",
+      "Up to 10,000 clients",
+      "Up to 1,500 jobs per month",
       "Up to 50 active team members",
-      "Accounting sync included: Xero or MYOB",
+      "2,000 AI Operator Actions per month",
+      "Bulk admin recovery",
+      "Owner Control Score",
       "Payroll workspace",
-      "Advanced roles",
-      "Reports and exports",
-      "Priority support"
+      "Imports, reports and exports",
+      "One accounting sync option included — Xero or MYOB"
     ],
     features: [
       "Everything in Operator",
-      "Up to 50 active clients",
+      "Up to 10,000 clients",
+      "Up to 1,500 jobs per month",
       "Up to 50 active team members",
-      "Accounting sync included: Xero or MYOB",
+      "2,000 AI Operator Actions per month",
+      "Bulk admin recovery",
+      "Owner Control Score",
       "Payroll workspace",
-      "Advanced roles",
-      "Reports and exports",
-      "Priority support"
+      "Imports, reports and exports",
+      "One accounting sync option included — Xero or MYOB"
     ],
     addonNote: "SMS credits and Command Growth Packs can be added when needed. One accounting sync option is included."
   }
@@ -211,10 +229,46 @@ export const BASE_PLANS = CHURVOX_PLANS;
 export const PLAN_LIST = CHURVOX_PLANS;
 
 export const PLAN_LIMITS = {
-  solo: { clients: 20, teamMembers: 1 },
-  team: { clients: 30, teamMembers: 10 },
-  pro: { clients: 40, teamMembers: 25 },
-  enterprise: { clients: 50, teamMembers: 50 }
+  solo: {
+    clients: 250,
+    teamMembers: 2,
+    activeTeamMembers: 2,
+    jobsPerMonth: 50,
+    aiOperatorActions: 25,
+    adminRecoveryBatch: 1,
+    proofPack: "Basic",
+    accountingSync: "add_on"
+  },
+  team: {
+    clients: 1000,
+    teamMembers: 5,
+    activeTeamMembers: 5,
+    jobsPerMonth: 150,
+    aiOperatorActions: 100,
+    adminRecoveryBatch: 5,
+    proofPack: "Standard",
+    accountingSync: "add_on"
+  },
+  pro: {
+    clients: 3000,
+    teamMembers: 15,
+    activeTeamMembers: 15,
+    jobsPerMonth: 500,
+    aiOperatorActions: 500,
+    adminRecoveryBatch: 25,
+    proofPack: "Advanced",
+    accountingSync: "add_on"
+  },
+  enterprise: {
+    clients: 10000,
+    teamMembers: 50,
+    activeTeamMembers: 50,
+    jobsPerMonth: 1500,
+    aiOperatorActions: 2000,
+    adminRecoveryBatch: "bulk",
+    proofPack: "Advanced",
+    accountingSync: "included"
+  }
 };
 
 export const PLAN_NAMES = {
@@ -243,13 +297,16 @@ export const GROWTH_PACK = {
   period: "month",
   interval: "month",
   addsTeamMembers: 50,
-  description: "Add more crew, more jobs and more AI Operator capacity as your business grows.",
+  addsJobsPerMonth: 1500,
+  addsAiOperatorActions: 1000,
+  description: "Adds 50 more active team members plus extra job, AI Operator, automation, admin and payroll capacity.",
   includes: [
     "50 more active team members",
-    "Extra job capacity",
-    "Extra AI Operator Actions",
+    "1,500 more jobs per month",
+    "1,000 more AI Operator Actions per month",
     "Extra automation runs",
-    "Extra admin and payroll capacity"
+    "Extra admin and payroll capacity",
+    "Extra proof pack capacity"
   ]
 };
 
@@ -266,7 +323,7 @@ export const ACCOUNTING_SYNC_ADDON = {
   monthly: 39,
   period: "month",
   interval: "month",
-  description: "Optional Xero or MYOB sync where available. Included with Command."
+  description: "Optional Xero or MYOB sync where available. Included with Command. Draft invoice sync stays owner-approved."
 };
 
 export const XERO_ADDON = ACCOUNTING_SYNC_ADDON;
@@ -569,6 +626,10 @@ export const APP_PLANS = CHURVOX_PLANS.map((plan) => {
     bestFor: plan.summary || plan.tagline || "",
     clientLimit: limits.clients,
     teamLimit: limits.teamMembers,
+    jobLimit: limits.jobsPerMonth,
+    aiOperatorActionLimit: limits.aiOperatorActions,
+    proofPack: limits.proofPack,
+    accountingSync: limits.accountingSync,
     limits: plan.features || plan.includes || []
   };
 });
