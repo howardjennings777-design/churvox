@@ -20,7 +20,7 @@ function readFreshSource(filename) {
 }
 
 test.describe('Churvox Command operating system', () => {
-  test('Command shows a completed filled form wired to owner approval controls', () => {
+  test('Command keeps the page shell and only cleans the filled form', () => {
     const app = readFreshSource('FreshApp.jsx');
     const command = readFreshSource('FreshCommand.jsx');
     const os = readFreshSource('FreshCommandOperatingSystem.jsx');
@@ -30,6 +30,10 @@ test.describe('Churvox Command operating system', () => {
     expect(app).toContain('import "./freshCommandOperatingSystem.css";');
     expect(app).toContain('import "./freshCommandPreviewFix.css";');
     expect(command).toContain('FreshCommandOperatingSystem');
+    expect(command).toContain('freshHero');
+    expect(command).toContain('freshCommandPulse');
+    expect(command).toContain('freshCommandFilterBar');
+    expect(command).toContain('freshGrid');
     expect(os).toContain('COMMAND_OS_MARKER_20260625');
     expect(os).toContain('COMMAND_CLEAN_FILLED_FORM_MARKER_20260627');
     expect(os).toContain('COMMAND_FORM_FIRST_MARKER_20260627');
@@ -98,9 +102,9 @@ test.describe('Churvox Command operating system', () => {
     }
 
     expect(previewStyles).toContain('CHURVOX_COMMAND_CLEAN_FILLED_FORM_20260627');
-    expect(previewStyles).toContain('.freshCommandStablePage > .freshHero');
-    expect(previewStyles).toContain('.freshCommandStablePage > .freshGrid');
-    expect(previewStyles).toContain('display: none !important');
+    expect(previewStyles).not.toContain('.freshCommandStablePage > .freshHero');
+    expect(previewStyles).not.toContain('.freshCommandStablePage > .freshGrid');
+    expect(previewStyles).not.toContain('display: none !important');
     expect(previewStyles).toContain('width: min(100%, 1040px)');
     expect(previewStyles).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
     expect(previewStyles).toContain('overflow-wrap: anywhere');
