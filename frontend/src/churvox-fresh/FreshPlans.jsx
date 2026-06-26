@@ -1,5 +1,6 @@
 import React from "react";
 import "./freshPlans.css";
+import "./freshPlansTierLadder.css";
 import { PLAN_FEATURE_MATRIX } from "./planRules";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
