@@ -1,0 +1,504 @@
+.cvPlansPage {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  display: grid;
+  gap: 16px;
+  padding: clamp(14px, 2vw, 24px);
+  color: #151513;
+  box-sizing: border-box;
+}
+
+.cvPlansPage * {
+  box-sizing: border-box;
+}
+
+.cvPlanHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 16px;
+  align-items: stretch;
+  border-radius: 28px;
+  border: 1px solid rgba(249, 115, 22, .28);
+  border-left: 7px solid #f97316;
+  background: linear-gradient(135deg, #151513 0%, #24231f 56%, #101010 100%);
+  color: #fff7ed;
+  padding: clamp(18px, 3vw, 30px);
+  box-shadow: 0 22px 55px rgba(15, 23, 42, .16);
+  overflow: hidden;
+}
+
+.cvPlanKicker,
+.cvPlanMiniKicker {
+  width: fit-content;
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(249, 115, 22, .16);
+  border: 1px solid rgba(249, 115, 22, .32);
+  color: #ffedd5;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvPlanHero h1 {
+  margin: 12px 0 8px;
+  color: #ffffff;
+  font-size: clamp(42px, 6vw, 76px);
+  line-height: .9;
+  letter-spacing: -.065em;
+}
+
+.cvPlanHero p {
+  max-width: 760px;
+  margin: 0;
+  color: #fed7aa;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.cvPlanHeroActions,
+.cvPlanActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cvPlanHero button,
+.cvPlanActions button,
+.cvPlanCurrentBox button,
+.cvPlanSelect select {
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, .14);
+  padding: 11px 15px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvPlanPrimary {
+  background: #f97316;
+  color: #151513;
+  border-color: #f97316;
+}
+
+.cvPlanGhost {
+  background: rgba(255, 255, 255, .08);
+  color: #fff7ed;
+  border-color: rgba(255, 255, 255, .18);
+}
+
+.cvPlanDark {
+  background: #151513;
+  color: #fff7ed;
+  border-color: #151513;
+}
+
+.cvPlanOrange {
+  background: #f97316;
+  color: #151513;
+  border-color: #f97316;
+}
+
+.cvPlanActions button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.cvPlanSelect {
+  max-width: 360px;
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.cvPlanSelect select {
+  width: 100%;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .10);
+  color: #fff7ed;
+  border-color: rgba(255, 255, 255, .18);
+}
+
+.cvPlanCurrentBox {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .10);
+  border: 1px solid rgba(255, 255, 255, .16);
+  padding: 18px;
+}
+
+.cvPlanCurrentBox strong {
+  margin-top: 8px;
+  color: #fff;
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: .95;
+  letter-spacing: -.055em;
+  overflow-wrap: anywhere;
+}
+
+.cvPlanCurrentBox p {
+  margin-top: 10px;
+  color: #ffedd5;
+  font-size: 13px;
+}
+
+.cvPlanNotice,
+.cvPlanPanel,
+.cvPlanCard,
+.cvPlanCheckout {
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: #fffaf0;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, .08);
+}
+
+.cvPlanNotice {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 20px;
+  padding: 13px 15px;
+}
+
+.cvPlanNotice b {
+  color: #151513;
+}
+
+.cvPlanNotice span {
+  color: #64748b;
+  font-weight: 850;
+  font-size: 13px;
+}
+
+.cvPlanPanel,
+.cvPlanCheckout {
+  border-radius: 26px;
+  padding: 18px;
+}
+
+.cvPlanPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.cvPlanPanelHeader h2,
+.cvPlanCheckout h2,
+.cvPlanSelected h2,
+.cvPlanCompare h2 {
+  margin: 8px 0 6px;
+  color: #151513;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: .95;
+  letter-spacing: -.05em;
+}
+
+.cvPlanPanelHeader p,
+.cvPlanCheckout p,
+.cvPlanSelected p,
+.cvPlanCompare p {
+  margin: 0;
+  color: #64748b;
+  font-weight: 850;
+  line-height: 1.42;
+}
+
+.cvPlanAllowanceGrid,
+.cvPlanCards,
+.cvPlanBreakdown,
+.cvPlanFeatureGrid,
+.cvPlanAddons,
+.cvPlanCompareGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.cvPlanAllowanceGrid,
+.cvPlanCompareGrid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.cvPlanAllowance {
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: #fff;
+  padding: 13px;
+}
+
+.cvPlanAllowance b,
+.cvPlanBreakdown div b,
+.cvPlanFeatureGrid div b,
+.cvPlanAddon b,
+.cvPlanCompareGrid div b {
+  display: block;
+  color: #151513;
+  font-size: 14px;
+}
+
+.cvPlanAllowance span,
+.cvPlanBreakdown div span,
+.cvPlanAddon span,
+.cvPlanCompareGrid div span {
+  display: block;
+  margin-top: 5px;
+  color: #f97316;
+  font-weight: 1000;
+}
+
+.cvPlanCards {
+  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+}
+
+.cvPlanCard {
+  position: relative;
+  min-width: 0;
+  border-radius: 26px;
+  border-left: 6px solid rgba(15, 23, 42, .18);
+  padding: 18px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+}
+
+.cvPlanCard.active,
+.cvPlanCard.best {
+  border-left-color: #f97316;
+  background: #fff7ed;
+}
+
+.cvPlanCard strong {
+  color: #151513;
+  font-size: 34px;
+  line-height: .95;
+  letter-spacing: -.045em;
+}
+
+.cvPlanPrice {
+  color: #f97316;
+  font-size: 28px;
+  font-weight: 1000;
+}
+
+.cvPlanPrice small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.cvPlanCard h3 {
+  margin: 0;
+  color: #151513;
+  font-size: 18px;
+}
+
+.cvPlanCard p,
+.cvPlanCard li {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.cvPlanCard ul {
+  display: grid;
+  gap: 7px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.cvPlanBadge {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #14532d;
+  padding: 6px 9px;
+  font-size: 10px;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.cvPlanMain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(285px, 360px);
+  gap: 14px;
+  align-items: start;
+}
+
+.cvPlanSelected {
+  border-radius: 26px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: #fffaf0;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, .08);
+  padding: 18px;
+}
+
+.cvPlanTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.cvPlanTopPrice,
+.cvPlanCheckoutPrice {
+  color: #f97316;
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 1000;
+  line-height: .95;
+  letter-spacing: -.05em;
+  overflow-wrap: anywhere;
+}
+
+.cvPlanTopPrice small,
+.cvPlanCheckoutPrice small {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.cvPlanBreakdown,
+.cvPlanFeatureGrid,
+.cvPlanAddons {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 16px;
+}
+
+.cvPlanBreakdown div,
+.cvPlanFeatureGrid div,
+.cvPlanAddon,
+.cvPlanCompareGrid div {
+  border-radius: 17px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: #fff;
+  padding: 13px;
+}
+
+.cvPlanAddon {
+  text-align: left;
+  cursor: pointer;
+}
+
+.cvPlanAddon.active {
+  background: #f0fdf4;
+  border-left: 5px solid #16a34a;
+}
+
+.cvPlanAddon.locked {
+  opacity: .86;
+}
+
+.cvPlanGrowth {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(249, 115, 22, .22);
+  background: #fff7ed;
+  padding: 14px;
+}
+
+.cvPlanGrowthControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cvPlanGrowthControls button {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, .14);
+  background: #fff;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvPlanCheckout {
+  position: sticky;
+  top: 84px;
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+  border-left: 6px solid #f97316;
+}
+
+.cvPlanCheckoutItem {
+  margin-top: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: #fff;
+  padding: 12px;
+}
+
+.cvPlanCheckoutItem b,
+.cvPlanCheckoutItem span {
+  display: block;
+}
+
+.cvPlanCheckoutItem span {
+  margin-top: 4px;
+  color: #64748b;
+  font-weight: 850;
+}
+
+.cvPlanCompare {
+  border-radius: 26px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: #fffaf0;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, .08);
+  padding: 18px;
+}
+
+@media (max-width: 1050px) {
+  .cvPlanMain,
+  .cvPlanHero,
+  .cvPlanTop {
+    grid-template-columns: 1fr;
+  }
+  .cvPlanCheckout {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .cvPlansPage {
+    padding: 12px;
+  }
+  .cvPlanHero,
+  .cvPlanPanel,
+  .cvPlanSelected,
+  .cvPlanCheckout,
+  .cvPlanCompare {
+    border-radius: 22px;
+    padding: 15px;
+  }
+  .cvPlanCards,
+  .cvPlanBreakdown,
+  .cvPlanFeatureGrid,
+  .cvPlanAddons,
+  .cvPlanAllowanceGrid,
+  .cvPlanCompareGrid {
+    grid-template-columns: 1fr;
+  }
+  .cvPlanGrowth {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
