@@ -128,7 +128,7 @@ import "./freshCommandOperatingSystem.css";
 import "./freshCommandPreviewFix.css";
 
 const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch", "routes"];
-const COMMAND_ALIASES = ["askchurvox", "aioperatorstudio", "quickcreateai", "followupwriter", "quoteai", "invoicecheck", "workerbrief", "automation"];
+const COMMAND_ALIASES = ["askchurvox", "aioperatorstudio", "quickcreateai", "followupwriter", "quoteai", "invoicecheck", "workerbrief"];
 const MESSAGE_ALIASES = ["inbox", "workermessages", "worker-messages", "workerinbox", "worker-inbox"];
 const JOB_RECORD_ALIASES = ["topstatus", "documents", "photos", "inventory", "recurring", "services", "quality", "safety", "warranties", "materialsreminder", "materialsai", "extras"];
 const CLIENT_RECORD_ALIASES = ["feedback", "reviews", "reviewbooster"];
