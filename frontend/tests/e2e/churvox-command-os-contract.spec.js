@@ -125,7 +125,7 @@ test.describe('Churvox Command operating system', () => {
     expect(styles).toContain('overflow-y: scroll !important');
     expect(styles).toContain('scrollbar-width: auto !important');
     expect(styles).toContain('display: block !important');
-    expect(styles).toContain('overflow-wrap: anywhere');
+    expect(styles).toContain('word-break: break-word');
 
     expect(command).toContain('function approvalGroupKey');
     expect(command).toContain('function groupCommandRows');
