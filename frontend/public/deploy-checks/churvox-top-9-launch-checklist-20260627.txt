@@ -1,4 +1,0 @@
-Churvox deploy marker:
-- Top 9 layer stabilised.
-- Customer pain playbook kept.
-- Launch checklist added for all 9 priority owner features.

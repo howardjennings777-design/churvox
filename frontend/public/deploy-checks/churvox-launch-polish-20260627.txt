@@ -1,5 +1,0 @@
-Churvox launch polish deploy marker.
-Includes:
-- customer SMS coming soon notice
-- import template mobile button polish
-- deploy check marker

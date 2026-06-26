@@ -1,4 +1,0 @@
-Churvox deploy marker:
-- Mobile tap target polish added.
-- Modal/detail width protected on phone.
-- Bottom nav breathing room added.

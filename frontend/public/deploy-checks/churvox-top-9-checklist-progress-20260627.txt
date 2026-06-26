@@ -1,4 +1,0 @@
-Churvox deploy marker:
-- Top 9 launch checklist is now tickable.
-- Progress is saved locally in the browser.
-- Owner can track launch readiness across the 9 key customer-pain features.

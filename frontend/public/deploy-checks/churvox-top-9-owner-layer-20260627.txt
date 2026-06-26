@@ -1,3 +1,0 @@
-Churvox deploy marker:
-- Top 9 owner operating layer added to Command.
-- Covers Today/This Week, worker proof, completed job to invoice, Command desk, admin debt, missing engine, one-tap admin recovery, support, transparent pricing.

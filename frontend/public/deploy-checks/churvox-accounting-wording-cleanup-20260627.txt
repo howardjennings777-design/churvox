@@ -1,3 +1,0 @@
-Churvox deploy marker:
-- Remaining visible non-Xero-page wording cleaned to Accounting sync.
-- Real Xero connection page still keeps Xero where appropriate.

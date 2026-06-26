@@ -1,3 +1,0 @@
-Churvox deploy marker:
-- Visible MYOB wording cleaned from active frontend pages.
-- Old FreshShell backup snapshots archived out of active src.

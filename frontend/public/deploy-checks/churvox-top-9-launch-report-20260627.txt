@@ -1,4 +1,0 @@
-Churvox deploy marker:
-- Top 9 checklist now has a launch readiness report.
-- Report can be copied and is saved locally in the browser.
-- Launch readiness is based on the 9 key customer-pain features.

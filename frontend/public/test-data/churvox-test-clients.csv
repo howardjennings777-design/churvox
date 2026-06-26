@@ -1,4 +1,0 @@
-name,email,phone,address,notes
-E2E Test Client One,e2e.client.one@example.com,+64210000001,"10 Test Street, Wellington",Human test client - regular mowing
-E2E Test Client Two,e2e.client.two@example.com,+64210000002,"20 Test Road, Lower Hutt",Human test client - quote follow-up
-E2E Missing Email Client,,+64210000003,"30 Proof Lane, Upper Hutt",Used to test missing customer details

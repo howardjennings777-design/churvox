@@ -1,6 +1,0 @@
-Churvox deploy marker:
-- Full human E2E test pack created.
-- Creates safe CSV test data.
-- Provides clickable human checklist for the whole site.
-- Covers setup, clients, team, jobs, worker proof, quotes, invoices, Command, money, imports, plans, support, mobile, public links, and final trust checks.
-Generated: 2026-06-26T16:56:00Z

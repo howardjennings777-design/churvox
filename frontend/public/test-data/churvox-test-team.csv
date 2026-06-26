@@ -1,3 +1,0 @@
-name,email,phone,role,hourly_rate,notes
-E2E Test Worker,e2e.worker@example.com,+64210000111,Worker,32,Use for worker proof/time test
-E2E Test Admin,e2e.admin@example.com,+64210000112,Admin,35,Use for office/admin test
