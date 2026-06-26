@@ -634,6 +634,16 @@ export default function FreshCommand({ onNavigate }) {
         summaryOf={summaryOf}
         readableAction={readableAction}
         categoryOf={categoryOf}
+        ownerNote={ownerNote}
+        onOwnerNoteChange={setOwnerNote}
+        onApproveFix={approveSelected}
+        onSaveFix={saveSelected}
+        onIgnoreFix={ignoreSelected}
+        onCheckForWork={checkForWork}
+        onPrepareNotes={prepareNotes}
+        onRefresh={loadReview}
+        onOpenRecord={openSelectedRecord}
+        externalBusy={busy}
       />
 
       {message ? <section className="freshBackendReviewSource" data-review-source="backend"><div><span>Your approval queue</span><h2>{message}</h2><p>Only clear, ready-to-approve work appears in Open.</p></div><aside><b>{counts.Open}</b><small>waiting</small></aside></section> : null}
