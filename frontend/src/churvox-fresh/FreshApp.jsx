@@ -338,7 +338,9 @@ function getInitialPage() {
     const pathPage = canonicalPage(pathKey, "");
     if (pathPage && pages[pathPage]) return pathPage;
 
-    const saved = canonicalPage(window.localStorage.getItem("churvox:fresh-page") || "planday");
+    const savedRaw = window.localStorage.getItem("churvox:fresh-page") || "planday";
+    const saved = canonicalPage(savedRaw);
+    if (saved === "quotes" && !window.localStorage.getItem("churvox:fresh-open-quote-modal:v1")) window.localStorage.removeItem("churvox:fresh-page");
     return pages[saved] ? saved : "planday";
   } catch {
     return "planday";
