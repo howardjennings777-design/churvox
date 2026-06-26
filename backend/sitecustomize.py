@@ -90,14 +90,26 @@ def patch_team_limit_runtime(module):
             count = await active_worker_count(user)
             return plan, limits, max_workers, packs, count
 
-        async def locked_check_team_limits(user):
-            raw, obj, values = business_values(user)
+        async def assert_worker_slot(user):
             plan, limits, max_workers, packs, count = await capacity_for(user)
             if count >= max_workers:
                 raise HTTPException(status_code=403, detail=f"Team limit reached ({count}/{max_workers} active workers). Add a Command Growth Pack or remove inactive workers.")
+            return plan, limits, max_workers, packs, count
+
+        async def locked_check_team_limits(user):
+            raw, obj, values = business_values(user)
+            await assert_worker_slot(user)
             return obj or raw
 
         module.check_team_limits = locked_check_team_limits
+
+        original_create_invite = getattr(module, "create_invite_for_worker", None)
+        if original_create_invite and not getattr(original_create_invite, "_churvox_limit_wrapped", False):
+            async def locked_create_invite_for_worker(email, name, phone, user, biz_id):
+                await assert_worker_slot(user)
+                return await original_create_invite(email, name, phone, user, biz_id)
+            locked_create_invite_for_worker._churvox_limit_wrapped = True
+            module.create_invite_for_worker = locked_create_invite_for_worker
 
         if app is not None and get_current_user is not None and Request is not None:
             existing_paths = {getattr(route, "path", "") for route in getattr(app, "routes", [])}
