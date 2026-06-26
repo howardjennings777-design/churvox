@@ -165,7 +165,7 @@ export const SIDEBAR_ALL_MORE_GROUP = {
 export const SIDEBAR_GROUPS = SIDEBAR_ALL_GROUPS;
 export const SIDEBAR_MORE_GROUP = SIDEBAR_ALL_MORE_GROUP;
 
-export const MOBILE_ITEMS = [["planday", "PD", "Today"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
+export const MOBILE_ITEMS = [["planday", "PD", "Smart Hub"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
 export const MOBILE_MORE_ORDER = ["messages", "clients", "quotes", "payments", "automation", "xero", "team", "workercommand", "time", "portal", "payroll", "reports", "launchcontrol", "imports", "exports", "settings", "plans", "support"];
 
 function cloneGroups(groups) {
