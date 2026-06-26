@@ -87,19 +87,28 @@ async def save_plan(db, user, ObjectId, backend_plan, ui_plan, payload, session=
         "plan_label": PLAN_LABELS.get(backend_plan, "Operator"),
         "billing_country": country,
         "subscription_status": "trialing",
+        "has_app_access": True,
+        "billing_lock_reason": "",
+        "plan_choice_required": False,
         "stripe_checkout_session_id": session_id,
         "plan_updated_at": now,
         "updated_at": now,
+    }
+    unset = {
+        "plan_required": "",
+        "payment_required": "",
+        "requires_plan_choice": "",
+        "trial_locked": "",
     }
     if subscription_id:
         update["stripe_subscription_id"] = subscription_id
     if customer_id:
         update["stripe_customer_id"] = customer_id
-    result = await db.users.update_one({"$or": [{"_id": {"$in": values}}, {"business_id": {"$in": values}, "role": {"$in": ["employer", "admin", "owner", "business_owner"]}}]}, {"$set": update})
+    result = await db.users.update_one({"$or": [{"_id": {"$in": values}}, {"business_id": {"$in": values}, "role": {"$in": ["employer", "admin", "owner", "business_owner"]}}]}, {"$set": update, "$unset": unset})
     if not getattr(result, "matched_count", 0) and values:
-        await db.users.update_one({"_id": values[0]}, {"$set": update})
+        await db.users.update_one({"_id": values[0]}, {"$set": update, "$unset": unset})
     try:
-        await db.billing_events.insert_one({"business_id": str(values[0]) if values else str(user.get("id", "")), "event_type": "plan_confirmed", "plan": backend_plan, "ui_plan": ui_plan, "stripe_session_id": session_id, "created_at": now})
+        await db.billing_events.insert_one({"business_id": str(values[0]) if values else str(user.get("id", "")), "event_type": "plan_confirmed", "plan": backend_plan, "ui_plan": ui_plan, "stripe_session_id": session_id, "has_app_access": True, "created_at": now})
     except Exception:
         pass
     return update
@@ -158,14 +167,15 @@ def install(module):
                 raise HTTPException(status_code=400, detail="Checkout is not complete yet")
         backend_plan, ui_plan = session_plan(session, payload)
         saved = await save_plan(db, user, ObjectId, backend_plan, ui_plan, payload, session)
-        return {"success": True, "plan": backend_plan, "ui_plan": ui_plan, "plan_label": PLAN_LABELS.get(backend_plan, "Operator"), "saved": True, "subscription_status": saved.get("subscription_status"), "stripe_session_id": session_id}
+        return {"success": True, "plan": backend_plan, "ui_plan": ui_plan, "plan_label": PLAN_LABELS.get(backend_plan, "Operator"), "saved": True, "has_app_access": True, "subscription_status": saved.get("subscription_status"), "stripe_session_id": session_id}
 
     async def subscription_status_endpoint(request: Request):
         user = await get_current_user(request)
         values = business_values(user, ObjectId)
         owner = await owner_for(db, values) or user
         backend_plan, ui_plan = normal_plan(owner.get("plan") or owner.get("ui_plan") or owner.get("subscription_plan") or "solo")
-        return {"success": True, "plan": backend_plan, "ui_plan": ui_plan, "current_plan": backend_plan, "plan_label": PLAN_LABELS.get(backend_plan, "Start"), "subscription_status": owner.get("subscription_status") or "trialing", "billing_country": owner.get("billing_country") or "NZ", "stripe_subscription_id": owner.get("stripe_subscription_id"), "stripe_customer_id": owner.get("stripe_customer_id")}
+        has_access = bool(owner.get("has_app_access", True))
+        return {"success": True, "plan": backend_plan, "ui_plan": ui_plan, "current_plan": backend_plan, "plan_label": PLAN_LABELS.get(backend_plan, "Start"), "subscription_status": owner.get("subscription_status") or "trialing", "has_app_access": has_access, "billing_lock_reason": owner.get("billing_lock_reason") or "", "billing_country": owner.get("billing_country") or "NZ", "stripe_subscription_id": owner.get("stripe_subscription_id"), "stripe_customer_id": owner.get("stripe_customer_id")}
 
     app.add_api_route("/api/billing/confirm-checkout", confirm_checkout_endpoint, methods=["POST"])
     app.add_api_route("/api/billing/subscription-status", subscription_status_endpoint, methods=["GET"])
