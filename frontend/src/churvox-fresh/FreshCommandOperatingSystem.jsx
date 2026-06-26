@@ -117,11 +117,12 @@ const approveOutcomeTextStyle = {
 };
 
 const formPreviewButtonStyle = {
-  width: "100%",
-  minHeight: 44,
+  width: "auto",
+  minHeight: 40,
   margin: "0 0 12px",
+  padding: "0 13px",
   border: "1px solid rgba(249,115,22,.28)",
-  borderRadius: 16,
+  borderRadius: 13,
   background: "#ffedd5",
   color: "#7c2d12",
   fontSize: 13,
@@ -135,69 +136,72 @@ const formPreviewShadeStyle = {
   zIndex: 9999,
   display: "grid",
   placeItems: "center",
-  padding: 18,
+  padding: 16,
   background: "rgba(15,23,42,.66)",
 };
 
 const formPreviewModalStyle = {
-  width: "min(920px, 100%)",
-  maxHeight: "88vh",
+  width: "min(620px, 94vw)",
+  maxHeight: "78vh",
   overflow: "auto",
-  borderRadius: 28,
+  borderRadius: 20,
   border: "1px solid rgba(255,255,255,.24)",
   background: "#fffaf0",
-  boxShadow: "0 35px 90px rgba(15,23,42,.45)",
+  boxShadow: "0 26px 70px rgba(15,23,42,.42)",
 };
 
 const formPreviewHeaderStyle = {
   display: "grid",
-  gap: 8,
-  padding: 20,
+  gap: 6,
+  padding: 15,
   background: "#111827",
   color: "#fff",
 };
 
 const formPreviewHeaderRowStyle = {
   display: "flex",
-  gap: 12,
+  gap: 10,
   alignItems: "start",
   justifyContent: "space-between",
 };
 
 const formPreviewCloseStyle = {
-  minWidth: 38,
-  minHeight: 38,
+  minWidth: 34,
+  minHeight: 34,
   border: "1px solid rgba(255,255,255,.18)",
   borderRadius: 999,
   background: "rgba(255,255,255,.10)",
   color: "#fff",
-  fontSize: 20,
+  fontSize: 18,
   fontWeight: 900,
   cursor: "pointer",
 };
 
 const formPreviewBodyStyle = {
   display: "grid",
-  gap: 12,
-  padding: 18,
+  gap: 9,
+  padding: 12,
 };
 
 const formPreviewGridStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: 10,
+  gridTemplateColumns: "1fr",
+  gap: 7,
 };
 
 const formPreviewFieldStyle = {
   display: "grid",
-  gap: 7,
-  padding: 12,
+  gridTemplateColumns: "130px minmax(0, 1fr)",
+  gap: 9,
+  alignItems: "start",
+  padding: "8px 10px",
   border: "1px solid rgba(15,23,42,.08)",
-  borderRadius: 17,
-  background: "rgba(255,255,255,.84)",
+  borderRadius: 12,
+  background: "#fff",
 };
 
 const formPreviewLabelStyle = {
+  paddingTop: 7,
   color: "#9a3412",
   fontSize: 10,
   fontWeight: 1000,
@@ -206,10 +210,15 @@ const formPreviewLabelStyle = {
 };
 
 const formPreviewValueStyle = {
+  minHeight: 34,
+  padding: "8px 10px",
+  border: "1px solid rgba(15,23,42,.10)",
+  borderRadius: 10,
+  background: "#f8fafc",
   color: "#111827",
   fontSize: 13,
-  fontWeight: 900,
-  lineHeight: 1.36,
+  fontWeight: 850,
+  lineHeight: 1.35,
   whiteSpace: "pre-wrap",
   wordBreak: "break-word",
 };
@@ -619,18 +628,16 @@ function buildPreparedFormRows({ fix, proofRows, approveOutcome, activeRiskBadge
   if (!fix) return [];
   const proofSummary = proofRows?.length ? proofRows.map((row) => `${row.label}: ${row.value}`).join("\n") : "No linked proof captured yet.";
   return [
-    { label: "Decision type", value: fix.categoryLabel || fix.bucket || "Command fix" },
+    { label: "Type", value: fix.categoryLabel || fix.bucket || "Command fix" },
     { label: "Priority", value: fix.severity || "Check today" },
-    { label: "Safety status", value: activeRiskBadge?.label || "Check first" },
-    { label: "Problem", value: fix.problem || "Prepared item" },
-    { label: "Record / title", value: fix.title || "Not captured yet" },
-    { label: "Why it matters", value: fix.why || "This needs owner review." },
-    { label: "Churvox prepared", value: fix.prepared || "Prepared for review." },
-    { label: "Safe next step", value: fix.nextStep || "Review before approving." },
-    { label: "If approved", value: approveOutcome?.title ? `${approveOutcome.title}\n${approveOutcome.text}` : "Owner approval will move the prepared action forward." },
-    { label: "Proof / context", value: proofSummary },
+    { label: "Safety", value: activeRiskBadge?.label || "Check first" },
+    { label: "Record", value: fix.title || "Not captured yet" },
+    { label: "Prepared action", value: fix.prepared || "Prepared for review." },
+    { label: "Why", value: fix.why || "This needs owner review." },
+    { label: "Proof checked", value: proofSummary },
     { label: "Owner note", value: noteValue || "No owner note added yet." },
-    { label: "Other safe options", value: `${editAction?.button || "Send back for edit"}: ${editAction?.hint || "Use if not ready."}\n${ignoreAction?.button || "Park for now"}: ${ignoreAction?.hint || "Does not delete records."}` },
+    { label: "If approved", value: approveOutcome?.title ? `${approveOutcome.title}\n${approveOutcome.text}` : "Owner approval will move the prepared action forward." },
+    { label: "Not ready?", value: `${editAction?.button || "Send back for edit"}: ${editAction?.hint || "Use if not ready."}\n${ignoreAction?.button || "Park for now"}: ${ignoreAction?.hint || "Does not delete records."}` },
   ];
 }
 
@@ -893,7 +900,7 @@ export default function FreshCommandOperatingSystem({
             <p>{activeFix.title}</p>
             {activeRiskBadge ? <div style={{ ...riskBadgeStyle, background: activeRiskBadge.background, border: `1px solid ${activeRiskBadge.border}` }}><strong style={{ ...riskBadgeLabelStyle, background: activeRiskBadge.labelBackground, color: activeRiskBadge.labelColor }}>{activeRiskBadge.label}</strong><span style={{ ...riskBadgeTextStyle, color: activeRiskBadge.color }}>{activeRiskBadge.text}</span></div> : null}
             {approveOutcome ? <section style={approveOutcomeStyle}><small style={approveOutcomeLabelStyle}>What happens if I approve?</small><b style={approveOutcomeTitleStyle}>{approveOutcome.title}</b><p style={approveOutcomeTextStyle}>{approveOutcome.text}</p></section> : null}
-            <button type="button" style={formPreviewButtonStyle} onClick={() => setShowPreparedForm(true)}>Open filled form preview</button>
+            <button type="button" style={formPreviewButtonStyle} onClick={() => setShowPreparedForm(true)}>Open prepared form</button>
             <div className="freshCommandFixSections">
               <section><small>Why it matters</small><b>{activeFix.why}</b></section>
               <section><small>Churvox prepared</small><b>{activeFix.prepared}</b></section>
@@ -936,22 +943,22 @@ export default function FreshCommandOperatingSystem({
       </details>
 
       {showPreparedForm && activeFix ? <div style={formPreviewShadeStyle} role="presentation" onClick={() => setShowPreparedForm(false)}>
-        <section style={formPreviewModalStyle} role="dialog" aria-modal="true" aria-label="Prepared form preview" onClick={(event) => event.stopPropagation()}>
+        <section style={formPreviewModalStyle} role="dialog" aria-modal="true" aria-label="Prepared approval form" onClick={(event) => event.stopPropagation()}>
           <header style={formPreviewHeaderStyle}>
             <div style={formPreviewHeaderRowStyle}>
               <div>
-                <small style={{ ...approveOutcomeLabelStyle, background: "#f97316", color: "#111827" }}>Prepared form preview</small>
-                <h3 style={{ margin: "10px 0 4px", fontSize: 30, lineHeight: 1, letterSpacing: "-.045em" }}>{activeFix.problem}</h3>
-                <p style={{ margin: 0, color: "#fed7aa", fontSize: 13, fontWeight: 900, lineHeight: 1.4 }}>This is a preview only. Nothing changes from this pop-up. Use the Command buttons after reviewing it.</p>
+                <small style={{ ...approveOutcomeLabelStyle, background: "#f97316", color: "#111827" }}>Prepared approval form</small>
+                <h3 style={{ margin: "8px 0 3px", fontSize: 22, lineHeight: 1.05, letterSpacing: "-.035em" }}>{activeFix.categoryLabel || activeFix.problem}</h3>
+                <p style={{ margin: 0, color: "#fed7aa", fontSize: 12, fontWeight: 900, lineHeight: 1.35 }}>Preview only. Nothing changes here. Check the filled fields, then close and decide.</p>
               </div>
-              <button type="button" style={formPreviewCloseStyle} aria-label="Close prepared form preview" onClick={() => setShowPreparedForm(false)}>×</button>
+              <button type="button" style={formPreviewCloseStyle} aria-label="Close prepared approval form" onClick={() => setShowPreparedForm(false)}>×</button>
             </div>
           </header>
           <div style={formPreviewBodyStyle}>
             <div style={formPreviewGridStyle}>
               {preparedFormRows.map((row) => <section key={row.label} style={formPreviewFieldStyle}><small style={formPreviewLabelStyle}>{row.label}</small><b style={formPreviewValueStyle}>{row.value}</b></section>)}
             </div>
-            <button type="button" style={{ ...formPreviewButtonStyle, margin: 0 }} onClick={() => setShowPreparedForm(false)}>Close preview and decide</button>
+            <button type="button" style={{ ...formPreviewButtonStyle, width: "100%", margin: 0 }} onClick={() => setShowPreparedForm(false)}>Close form and decide</button>
           </div>
         </section>
       </div> : null}
