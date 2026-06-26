@@ -18,7 +18,7 @@ export const PLAN_LABELS = {
   command: "Command",
 };
 
-export const ACCOUNTING_ADDON_NAME = "Accounting Sync Add-on";
+export const ACCOUNTING_ADDON_NAME = "Xero Sync Add-on";
 export const ACCOUNTING_ADDON_PRICE = "$39/month + GST";
 export const GROWTH_PACK_NAME = "Command Growth Pack";
 export const GROWTH_PACK_PRICE = "$99/month + GST";
@@ -40,7 +40,7 @@ export const CHURVOX_EIGHTEEN_FEATURES = [
   { id: "done_properly_checklist", name: "Done Properly Checklist", promise: "Industry-aware job completion checks for lawn care, cleaning, trades and services." },
   { id: "business_family_roles", name: "Business Family Roles", promise: "Safe helper roles for family-business admin without risky access." },
   { id: "worker_time_approval", name: "Worker Time Approval", promise: "Review and approve worker time before payroll or invoice checks." },
-  { id: "accounting_approval_sync", name: "Xero/MYOB Approval Sync", promise: "Draft accounting sync only. Owner approval required. No tax filing or bank payout files." },
+  { id: "xero_approval_sync", name: "Xero Approval Sync", promise: "Draft Xero sync only. Owner approval required. No tax filing or bank payout files." },
   { id: "core_job_management", name: "Core Job Management", promise: "Clients, jobs, calendar, quotes, invoices, workers and settings still work cleanly." },
 ];
 
@@ -56,27 +56,18 @@ export const FEATURE_RULES = {
   support: { area: "Support", open: "start", reason: "Support must stay open." },
   launchcontrol: { area: "Setup Coach", open: "start", reason: "Setup Coach helps every plan finish business setup." },
   leads: { area: "Requests", open: "start", reason: "New job requests are part of the core job flow." },
-
   messages: { area: "Messages", open: "crew", reason: "Crew unlocks team/customer message control." },
   team: { area: "Team", open: "crew", reason: "Crew unlocks workers and team setup." },
   workercommand: { area: "Worker Proof", open: "crew", reason: "Crew unlocks worker proof and worker access." },
   time: { area: "Time Approval", open: "crew", reason: "Crew unlocks worker time capture and approval." },
   portal: { area: "Proof Pack / Portal Links", open: "crew", reason: "Crew unlocks proof packs and customer-ready proof links." },
-
   payments: { area: "Admin Debt", open: "operator", reason: "Operator unlocks smarter unpaid, follow-up and admin debt work." },
   automation: { area: "Follow-Ups", open: "operator", reason: "Operator unlocks AI-prepared follow-ups and admin actions." },
   reports: { area: "Control Score / Reports", open: "command", reason: "Command unlocks deeper owner control reporting." },
-
   imports: { area: "Imports", open: "command", reason: "Command unlocks heavier migration and back-office controls." },
   exports: { area: "Exports", open: "command", reason: "Command unlocks deeper export and back-office controls." },
   payroll: { area: "Payroll", open: "command", reason: "Payroll workspace is included in Command only. Churvox never files tax or creates payment files." },
-
-  xero: {
-    area: "Accounting Sync",
-    open: "command",
-    addon: "accounting_sync",
-    reason: "Xero or MYOB opens with Command or the Accounting Sync Add-on. Draft invoice sync only. Owner approval required.",
-  },
+  xero: { area: "Xero Sync", open: "command", addon: "accounting_sync", reason: "Xero opens with Command or the Xero Sync Add-on. Draft invoice sync only. Owner approval required." },
 };
 
 export const PLAN_FEATURE_MATRIX = [
@@ -96,7 +87,7 @@ export const PLAN_FEATURE_MATRIX = [
   { area: "Done Properly Checklist", start: "Basic checklist", crew: "Industry checklists", operator: "Smart checklists", command: "Advanced templates" },
   { area: "Business Family Roles", start: "Helper only", crew: "Admin helper", operator: "Admin + payroll helper", command: "Full family role controls" },
   { area: "Worker Time Approval", start: "Not included", crew: "Included", operator: "Advanced", command: "Advanced + payroll support" },
-  { area: "Xero/MYOB Approval Sync", start: "$39 add-on", crew: "$39 add-on", operator: "$39 add-on", command: "Included one sync" },
+  { area: "Xero Approval Sync", start: "$39 add-on", crew: "$39 add-on", operator: "$39 add-on", command: "Included" },
   { area: "Core Job Management", start: "Included", crew: "Included", operator: "Included", command: "Included" },
 ];
 
@@ -125,7 +116,7 @@ const COMMAND_GROUPS = [
   { title: "Start", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
   { title: "Control", items: [["payments", "AD", "Admin Debt"], ["reports", "CS", "Control Score"], ["automation", "FU", "Follow-Ups"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
-  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "AC", "Accounting Sync"], ["payroll", "PR", "Payroll"]] },
+  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "AC", "Xero Sync"], ["payroll", "PR", "Payroll"]] },
   { title: "Proof", items: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"]] },
 ];
 
@@ -136,266 +127,34 @@ const MORE_ITEMS_BY_PLAN = {
   command: [["launchcontrol", "SC", "Setup Coach"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
 };
 
-export const SIDEBAR_GROUPS_BY_PLAN = {
-  start: START_GROUPS,
-  crew: CREW_GROUPS,
-  operator: OPERATOR_GROUPS,
-  command: COMMAND_GROUPS,
-};
-
-export const SIDEBAR_ALL_GROUPS = [
-  ...START_GROUPS,
-  ...CREW_GROUPS,
-  ...OPERATOR_GROUPS,
-  ...COMMAND_GROUPS,
-];
-
-export const SIDEBAR_ALL_MORE_GROUP = {
-  title: "More tools",
-  items: [
-    ["launchcontrol", "SC", "Setup Coach"],
-    ["settings", "SG", "Settings"],
-    ["plans", "PL", "Plans"],
-    ["support", "SP", "Help"],
-    ["imports", "IM", "Imports"],
-    ["exports", "EX", "Exports"],
-  ],
-};
-
+export const SIDEBAR_GROUPS_BY_PLAN = { start: START_GROUPS, crew: CREW_GROUPS, operator: OPERATOR_GROUPS, command: COMMAND_GROUPS };
+export const SIDEBAR_ALL_GROUPS = [...START_GROUPS, ...CREW_GROUPS, ...OPERATOR_GROUPS, ...COMMAND_GROUPS];
+export const SIDEBAR_ALL_MORE_GROUP = { title: "More tools", items: [["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"]] };
 export const SIDEBAR_GROUPS = SIDEBAR_ALL_GROUPS;
 export const SIDEBAR_MORE_GROUP = SIDEBAR_ALL_MORE_GROUP;
-
 export const MOBILE_ITEMS = [["planday", "PD", "Smart Hub"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
 export const MOBILE_MORE_ORDER = ["messages", "clients", "quotes", "payments", "automation", "xero", "team", "workercommand", "time", "portal", "payroll", "reports", "launchcontrol", "imports", "exports", "settings", "plans", "support"];
 
-function cloneGroups(groups) {
-  return groups.map((group) => ({
-    ...group,
-    items: group.items.map((item) => [...item]),
-  }));
-}
+function cloneGroups(groups) { return groups.map((group) => ({ ...group, items: group.items.map((item) => [...item]) })); }
+function uniqueKeys(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
+function addAccountingIfActive(groups, plan, user) { if (plan === "command" || !hasAccountingSync(user)) return groups; const next = cloneGroups(groups); const moneyGroup = next.find((group) => group.title === "Money") || next[next.length - 1]; if (moneyGroup && !moneyGroup.items.some(([key]) => key === "xero")) moneyGroup.items.push(["xero", "AC", "Xero Sync"]); return next; }
 
-function uniqueKeys(items) {
-  const seen = new Set();
-  return items.filter(([key]) => {
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function addAccountingIfActive(groups, plan, user) {
-  if (plan === "command" || !hasAccountingSync(user)) return groups;
-  const next = cloneGroups(groups);
-  const moneyGroup = next.find((group) => group.title === "Money") || next[next.length - 1];
-  if (moneyGroup && !moneyGroup.items.some(([key]) => key === "xero")) moneyGroup.items.push(["xero", "AC", "Accounting Sync"]);
-  return next;
-}
-
-export function normalizePlan(value) {
-  const key = String(value || "").trim().toLowerCase();
-  return PLAN_ALIASES[key] || "";
-}
-
-export function planRank(plan) {
-  const clean = normalizePlan(plan) || "start";
-  const index = PLAN_ORDER.indexOf(clean);
-  return index >= 0 ? index : 0;
-}
-
-export function planMeets(plan, minimum) {
-  return planRank(plan) >= planRank(minimum);
-}
-
-export function planFromUser(user) {
-  return normalizePlan(
-    user?.ui_plan ||
-    user?.current_plan ||
-    user?.plan ||
-    user?.subscription_plan ||
-    user?.billing_plan ||
-    user?.tier ||
-    user?.plan_name ||
-    user?.business?.plan ||
-    user?.business?.ui_plan ||
-    user?.business?.subscription_plan
-  );
-}
-
-export function readCachedPlan() {
-  try {
-    return normalizePlan(window.localStorage.getItem("churvox:stable-current-plan:v1"));
-  } catch {
-    return "";
-  }
-}
-
-export function readPlanOverride() {
-  try {
-    return normalizePlan(window.localStorage.getItem("churvox:plan-override"));
-  } catch {
-    return "";
-  }
-}
-
-export function currentPlanForUser(user) {
-  return readPlanOverride() || planFromUser(user) || readCachedPlan() || "start";
-}
-
-function flagFrom(value) {
-  if (value === true) return true;
-  if (value === 1) return true;
-  const text = String(value || "").toLowerCase();
-  return ["true", "yes", "active", "enabled", "1", "on"].includes(text);
-}
-
-export function hasAccountingSync(user) {
-  const sources = [
-    user?.accounting_sync,
-    user?.accountingSync,
-    user?.accounting_sync_addon,
-    user?.accountingSyncAddon,
-    user?.xero_enabled,
-    user?.myob_enabled,
-    user?.addons?.accounting_sync,
-    user?.addons?.accountingSync,
-    user?.business?.accounting_sync,
-    user?.business?.accountingSync,
-    user?.business?.addons?.accounting_sync,
-    user?.business?.addons?.accountingSync,
-    user?.features?.accounting_sync,
-    user?.features?.accountingSync,
-  ];
-
-  if (sources.some(flagFrom)) return true;
-
-  try {
-    return flagFrom(window.localStorage.getItem("churvox:addon:accounting_sync"));
-  } catch {
-    return false;
-  }
-}
-
-export function sidebarGroupsForPlan(plan, user = null) {
-  const clean = normalizePlan(plan) || "start";
-  const groups = SIDEBAR_GROUPS_BY_PLAN[clean] || START_GROUPS;
-  return addAccountingIfActive(cloneGroups(groups), clean, user);
-}
-
-export function sidebarGroupsForUser(user) {
-  return sidebarGroupsForPlan(currentPlanForUser(user), user);
-}
-
-export function sidebarMoreItemsForPlan(plan) {
-  const clean = normalizePlan(plan) || "start";
-  return uniqueKeys((MORE_ITEMS_BY_PLAN[clean] || MORE_ITEMS_BY_PLAN.start).map((item) => [...item]));
-}
-
-export function sidebarMoreItemsForUser(user) {
-  return sidebarMoreItemsForPlan(currentPlanForUser(user));
-}
-
-export function mobileItemsForUser() {
-  return MOBILE_ITEMS.map((item) => [...item]);
-}
-
-export function mobileMoreOrderForUser(user) {
-  const primary = new Set(mobileItemsForUser(user).map(([key]) => key));
-  const allowed = uniqueKeys([
-    ...sidebarGroupsForUser(user).flatMap((group) => group.items),
-    ...sidebarMoreItemsForUser(user),
-  ]).map(([key]) => key);
-  return MOBILE_MORE_ORDER.filter((key) => allowed.includes(key) && !primary.has(key));
-}
-
-export function commandGrowthPacks(user) {
-  const raw =
-    user?.command_growth_packs ||
-    user?.growth_packs ||
-    user?.addons?.command_growth_pack ||
-    user?.business?.command_growth_packs ||
-    user?.business?.growth_packs ||
-    0;
-
-  const count = Number(raw);
-  if (Number.isFinite(count) && count > 0) return count;
-
-  try {
-    const cached = Number(window.localStorage.getItem("churvox:addon:command_growth_pack") || 0);
-    return Number.isFinite(cached) && cached > 0 ? cached : 0;
-  } catch {
-    return 0;
-  }
-}
-
-export function activeTeamMemberLimit(user) {
-  const plan = currentPlanForUser(user);
-  if (plan === "crew") return 5;
-  if (plan === "operator") return 15;
-  if (plan !== "command") return 2;
-  return 50 + commandGrowthPacks(user) * 50;
-}
-
-export function ruleForPage(page) {
-  const key = String(page || "").toLowerCase();
-  const aliases = {
-    today: "planday",
-    dashboard: "planday",
-    smart: "planday",
-    hub: "planday",
-    schedule: "planday",
-    calendar: "planday",
-    dispatch: "planday",
-    routes: "planday",
-    todayswork: "planday",
-    worktoday: "planday",
-    askchurvox: "command",
-    aioperatorstudio: "command",
-    quickcreateai: "command",
-    followupwriter: "command",
-    quoteai: "command",
-    invoicecheck: "command",
-    workerbrief: "command",
-    worker: "workercommand",
-    workers: "workercommand",
-    proofpack: "portal",
-    clientportal: "portal",
-    customerportal: "portal",
-    xero: "xero",
-    myob: "xero",
-  };
-
-  return FEATURE_RULES[aliases[key] || key] || { area: page || "This area", open: "start", reason: "Included in the owner workspace." };
-}
-
-export function accessForPage(page, user) {
-  const plan = currentPlanForUser(user);
-  const rule = ruleForPage(page);
-  const includedByPlan = planMeets(plan, rule.open);
-
-  if (rule.addon === "accounting_sync") {
-    const addonActive = hasAccountingSync(user);
-    const allowed = includedByPlan || addonActive;
-    return {
-      allowed,
-      plan,
-      rule,
-      requiredPlan: rule.open,
-      addonRequired: !includedByPlan,
-      addonActive,
-      title: allowed ? `${rule.area} open` : `${ACCOUNTING_ADDON_NAME} required`,
-      message: allowed ? rule.reason : `${rule.area} opens with Command or the ${ACCOUNTING_ADDON_NAME} (${ACCOUNTING_ADDON_PRICE}).`,
-    };
-  }
-
-  return {
-    allowed: includedByPlan,
-    plan,
-    rule,
-    requiredPlan: rule.open,
-    addonRequired: false,
-    addonActive: false,
-    title: includedByPlan ? `${rule.area} open` : `${PLAN_LABELS[rule.open]} required`,
-    message: includedByPlan ? rule.reason : `${rule.area} opens on ${PLAN_LABELS[rule.open]} or above.`,
-  };
-}
+export function normalizePlan(value) { const key = String(value || "").trim().toLowerCase(); return PLAN_ALIASES[key] || ""; }
+export function planRank(plan) { const clean = normalizePlan(plan) || "start"; const index = PLAN_ORDER.indexOf(clean); return index >= 0 ? index : 0; }
+export function planMeets(plan, minimum) { return planRank(plan) >= planRank(minimum); }
+export function planFromUser(user) { return normalizePlan(user?.ui_plan || user?.current_plan || user?.plan || user?.subscription_plan || user?.billing_plan || user?.tier || user?.plan_name || user?.business?.plan || user?.business?.ui_plan || user?.business?.subscription_plan); }
+export function readCachedPlan() { try { return normalizePlan(window.localStorage.getItem("churvox:stable-current-plan:v1")); } catch { return ""; } }
+export function readPlanOverride() { try { return normalizePlan(window.localStorage.getItem("churvox:plan-override")); } catch { return ""; } }
+export function currentPlanForUser(user) { return readPlanOverride() || planFromUser(user) || readCachedPlan() || "start"; }
+function flagFrom(value) { if (value === true || value === 1) return true; const text = String(value || "").toLowerCase(); return ["true", "yes", "active", "enabled", "1", "on"].includes(text); }
+export function hasAccountingSync(user) { const sources = [user?.accounting_sync, user?.accountingSync, user?.accounting_sync_addon, user?.accountingSyncAddon, user?.xero_enabled, user?.addons?.accounting_sync, user?.addons?.accountingSync, user?.business?.accounting_sync, user?.business?.accountingSync, user?.business?.addons?.accounting_sync, user?.business?.addons?.accountingSync, user?.features?.accounting_sync, user?.features?.accountingSync]; if (sources.some(flagFrom)) return true; try { return flagFrom(window.localStorage.getItem("churvox:addon:accounting_sync")); } catch { return false; } }
+export function sidebarGroupsForPlan(plan, user = null) { const clean = normalizePlan(plan) || "start"; const groups = SIDEBAR_GROUPS_BY_PLAN[clean] || START_GROUPS; return addAccountingIfActive(cloneGroups(groups), clean, user); }
+export function sidebarGroupsForUser(user) { return sidebarGroupsForPlan(currentPlanForUser(user), user); }
+export function sidebarMoreItemsForPlan(plan) { const clean = normalizePlan(plan) || "start"; return uniqueKeys((MORE_ITEMS_BY_PLAN[clean] || MORE_ITEMS_BY_PLAN.start).map((item) => [...item])); }
+export function sidebarMoreItemsForUser(user) { return sidebarMoreItemsForPlan(currentPlanForUser(user)); }
+export function mobileItemsForUser() { return MOBILE_ITEMS.map((item) => [...item]); }
+export function mobileMoreOrderForUser(user) { const primary = new Set(mobileItemsForUser(user).map(([key]) => key)); const allowed = uniqueKeys([...sidebarGroupsForUser(user).flatMap((group) => group.items), ...sidebarMoreItemsForUser(user)]).map(([key]) => key); return MOBILE_MORE_ORDER.filter((key) => allowed.includes(key) && !primary.has(key)); }
+export function commandGrowthPacks(user) { const raw = user?.command_growth_packs || user?.growth_packs || user?.addons?.command_growth_pack || user?.business?.command_growth_packs || user?.business?.growth_packs || 0; const count = Number(raw); if (Number.isFinite(count) && count > 0) return count; try { const cached = Number(window.localStorage.getItem("churvox:addon:command_growth_pack") || 0); return Number.isFinite(cached) && cached > 0 ? cached : 0; } catch { return 0; } }
+export function activeTeamMemberLimit(user) { const plan = currentPlanForUser(user); if (plan === "crew") return 5; if (plan === "operator") return 15; if (plan !== "command") return 2; return 50 + commandGrowthPacks(user) * 50; }
+export function ruleForPage(page) { const key = String(page || "").toLowerCase(); const aliases = { today: "planday", dashboard: "planday", smart: "planday", hub: "planday", schedule: "planday", calendar: "planday", dispatch: "planday", routes: "planday", todayswork: "planday", worktoday: "planday", askchurvox: "command", aioperatorstudio: "command", quickcreateai: "command", followupwriter: "command", quoteai: "command", invoicecheck: "command", workerbrief: "command", worker: "workercommand", workers: "workercommand", proofpack: "portal", clientportal: "portal", customerportal: "portal", xero: "xero" }; return FEATURE_RULES[aliases[key] || key] || { area: page || "This area", open: "start", reason: "Included in the owner workspace." }; }
+export function accessForPage(page, user) { const plan = currentPlanForUser(user); const rule = ruleForPage(page); const includedByPlan = planMeets(plan, rule.open); if (rule.addon === "accounting_sync") { const addonActive = hasAccountingSync(user); const allowed = includedByPlan || addonActive; return { allowed, plan, rule, requiredPlan: rule.open, addonRequired: !includedByPlan, addonActive, title: allowed ? `${rule.area} open` : `${ACCOUNTING_ADDON_NAME} required`, message: allowed ? rule.reason : `${rule.area} opens with Command or the ${ACCOUNTING_ADDON_NAME} (${ACCOUNTING_ADDON_PRICE}).` }; } return { allowed: includedByPlan, plan, rule, requiredPlan: rule.open, addonRequired: false, addonActive: false, title: includedByPlan ? `${rule.area} open` : `${PLAN_LABELS[rule.open]} required`, message: includedByPlan ? rule.reason : `${rule.area} opens on ${PLAN_LABELS[rule.open]} or above.` }; }
