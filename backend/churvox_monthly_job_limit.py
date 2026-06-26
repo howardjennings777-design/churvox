@@ -6,7 +6,7 @@ import importlib.abc
 import importlib.machinery
 import sys
 
-for _bridge_module in ["churvox_plan_usage_routes", "churvox_billing_plan_confirm_patch", "churvox_plan_checkout_form_patch"]:
+for _bridge_module in ["churvox_team_client_limit_patch", "churvox_plan_usage_routes", "churvox_billing_plan_confirm_patch", "churvox_plan_checkout_form_patch"]:
     try:
         importlib.import_module(_bridge_module)
     except Exception:
