@@ -6,6 +6,12 @@ import "./freshJobsPolish.css";
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed", "Needs invoice"];
 const STORY_ENDPOINTS = { quotes: "/quotes", invoices: "/invoices", clients: "/clients", workers: "/team/workers" };
+const TIMER_OPTIMISTIC = {
+  start: { status: "In progress", job_status: "In Progress", timer_status: "running", timer_running: true },
+  pause: { status: "In progress", job_status: "In Progress", timer_status: "paused", timer_running: false },
+  resume: { status: "In progress", job_status: "In Progress", timer_status: "running", timer_running: true },
+  complete: { status: "Completed", job_status: "Completed", timer_status: "stopped", timer_running: false, completed: true, invoice_ready: true },
+};
 
 function normalizeId(value) {
   if (!value) return "";
@@ -167,12 +173,16 @@ function photoCount(job) {
   return Number(job?.photo_count || job?.photos_count || 0) || 0;
 }
 
+function jobFromTimerResponse(data) {
+  return data?.job || data?.data?.job || data?.data || data || null;
+}
+
 const selectedFilterButtonStyle = { background: "#111827", backgroundColor: "#111827", borderColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff" };
 const selectedFilterTextStyle = { color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1 };
 const selectedFilterCountStyle = { background: "#f97316", backgroundColor: "#f97316", color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, borderRadius: "999px" };
 
 export default function FreshJobs({ onNavigate }) {
-  const { get } = useApi();
+  const { get, post } = useApi();
   const [jobs, setJobs] = React.useState([]);
   const [story, setStory] = React.useState({ quotes: [], invoices: [], clients: [], workers: [] });
   const [selectedId, setSelectedId] = React.useState("");
@@ -180,6 +190,8 @@ export default function FreshJobs({ onNavigate }) {
   const [loading, setLoading] = React.useState(true);
   const [storyLoading, setStoryLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [actionBusy, setActionBusy] = React.useState("");
+  const [actionMessage, setActionMessage] = React.useState("");
 
   const jobsNeedingInvoice = React.useMemo(() => jobs.filter((job) => needsInvoice(job, story.invoices)), [jobs, story.invoices]);
   const visibleJobs = filter === "All" ? jobs : filter === "Needs invoice" ? jobsNeedingInvoice : jobs.filter((job) => job.status === filter);
@@ -193,6 +205,15 @@ export default function FreshJobs({ onNavigate }) {
     workers: story.workers.filter((worker) => selected && (normalizeId(worker.id || worker._id || worker.worker_id || worker.user_id) === selected.workerId || lower(pick(worker, "name", "full_name", "email")) === lower(selected.worker))),
   }), [story, selected]);
   const steps = React.useMemo(() => storyStepState({ selected, quotes: related.quotes, invoices: related.invoices }), [selected, related]);
+
+  const patchLocalJob = React.useCallback((jobId, patch = {}) => {
+    if (!jobId) return;
+    setJobs((currentJobs) => currentJobs.map((job, index) => {
+      if (job.id !== jobId) return job;
+      return normalizeJob({ ...job, ...patch, id: job.id, _id: job._id || job.id }, index);
+    }));
+    setSelectedId(jobId);
+  }, []);
 
   const loadJobs = React.useCallback(async () => {
     setLoading(true);
@@ -237,6 +258,29 @@ export default function FreshJobs({ onNavigate }) {
     window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: "" } }));
   }
 
+  async function runJobAction(action) {
+    if (!selected || actionBusy) return;
+    const optimistic = TIMER_OPTIMISTIC[action] || {};
+    const previous = selected;
+    setActionBusy(action);
+    setActionMessage("");
+    setError("");
+    patchLocalJob(selected.id, optimistic);
+    const res = await post(`/jobs/${selected.id}/timer/${action}`, { source: "fresh_jobs", action }, { timeout: 25000 });
+    if (!res.success) {
+      patchLocalJob(previous.id, previous);
+      setActionMessage(res.error || `Could not ${action} this job.`);
+      setError(res.error || `Could not ${action} this job.`);
+      setActionBusy("");
+      return;
+    }
+    const updated = jobFromTimerResponse(res.data);
+    if (updated) patchLocalJob(selected.id, updated);
+    setActionMessage(action === "complete" ? "Job completed. Invoice can now be prepared." : `Timer ${action} saved.`);
+    if (action === "complete") loadStory();
+    setActionBusy("");
+  }
+
   function createInvoiceForSelected() {
     if (!selected || !canCreateInvoice) return;
     const jobForInvoice = {
@@ -270,9 +314,10 @@ export default function FreshJobs({ onNavigate }) {
   const filterPillStyle = (active) => active ? selectedFilterButtonStyle : undefined;
   const filterTextStyle = (active) => active ? selectedFilterTextStyle : undefined;
   const filterCountStyle = (active) => active ? selectedFilterCountStyle : undefined;
+  const timerDisabled = !selected || Boolean(actionBusy);
 
   return (
-    <section className="freshJobsPage" data-jobs-needs-invoice="20260626">
+    <section className="freshJobsPage" data-jobs-needs-invoice="20260626" data-owner-timer-actions="20260626">
       <header className="freshHero"><span>Jobs</span><h1>Jobs</h1><p>Job records with customer, worker, schedule, price, notes and linked quote/invoice history.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Total jobs</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside><aside className="freshCard freshJobsNeedsInvoicePulse"><h2>{jobsNeedingInvoice.length}</h2><p>Needs invoice</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Jobs need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadJobs(); loadStory(); }}>Retry</button></section> : null}
@@ -289,6 +334,8 @@ export default function FreshJobs({ onNavigate }) {
           {selected ? (<>
             {selectedNeedsInvoice ? <section className="freshJobsInvoiceAlert"><strong>Completed job needs invoice</strong><p>This job is finished and no linked invoice was found. Create the invoice so Command can prepare the approval step.</p><button type="button" className="freshOrange" disabled={!canCreateInvoice} onClick={createInvoiceForSelected}>{canCreateInvoice ? "Create invoice from this job" : "Add price before invoice"}</button></section> : null}
             <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div className={selectedNeedsInvoice ? "need" : ""}><span>Status</span><b>{selectedNeedsInvoice ? "Completed - needs invoice" : selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div className={canCreateInvoice ? "" : "need"}><span>Price</span><b>{selected.price}</b></div></div>
+            <section className="freshActions freshJobsActionStack" style={{ marginTop: 12 }}><button className="freshPrimary" type="button" disabled={timerDisabled || selected.status === "In progress"} onClick={() => runJobAction("start")}>{actionBusy === "start" ? "Starting..." : "Start job"}</button><button className="freshGhost" type="button" disabled={timerDisabled || selected.status !== "In progress"} onClick={() => runJobAction("pause")}>{actionBusy === "pause" ? "Pausing..." : "Pause"}</button><button className="freshGhost" type="button" disabled={timerDisabled || selected.status !== "In progress"} onClick={() => runJobAction("resume")}>{actionBusy === "resume" ? "Resuming..." : "Resume"}</button><button className="freshOrange" type="button" disabled={timerDisabled || selected.status === "Completed"} onClick={() => runJobAction("complete")}>{actionBusy === "complete" ? "Completing..." : "Complete job"}</button></section>
+            {actionMessage ? <div className="freshItem"><b>Job action</b><span>{actionMessage}</span></div> : null}
             <section className="freshStoryRail">{steps.map((step) => <article key={step.label} className={step.label === "Invoice" && selectedNeedsInvoice ? "need" : step.state}><b>{step.label}</b><span>{step.label === "Invoice" && selectedNeedsInvoice ? "Needs invoice" : step.detail}</span></article>)}</section>
             <section className="freshJobsDetailBox"><span>Address</span><b>{selected.address}</b></section>
             <section className="freshJobsDetailBox"><span>Scheduled</span><b>{selected.scheduled}</b></section>
