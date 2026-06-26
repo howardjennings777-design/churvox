@@ -1,6 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { hideDemoRecords } from "./freshDemoRecords";
+import { mergeRecentInvoices } from "./freshRecentInvoices";
 import "./freshJobsPolish.css";
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed", "Needs invoice"];
@@ -46,9 +47,11 @@ function statusLabel(value) {
 }
 
 function dateScore(record) {
-  const raw = record?.created_at || record?.createdAt || record?.scheduled_date || record?.updated_at || record?.date || "";
+  const raw = record?.created_at || record?.createdAt || record?.scheduled_date || record?.updated_at || record?.date || record?.__cached_at || "";
   const parsed = Date.parse(raw);
-  return Number.isFinite(parsed) ? parsed : 0;
+  if (Number.isFinite(parsed)) return parsed;
+  const cached = Number(record?.__cached_at || 0);
+  return Number.isFinite(cached) ? cached : 0;
 }
 
 function scheduleText(job) {
@@ -201,9 +204,13 @@ export default function FreshJobs({ onNavigate }) {
     await Promise.all(Object.entries(STORY_ENDPOINTS).map(async ([key, endpoint]) => {
       try {
         const res = await get(endpoint, { timeout: 25000 });
-        if (res?.success) next[key] = hideDemoRecords(unpackList(res.data, key));
+        if (res?.success) {
+          const rows = hideDemoRecords(unpackList(res.data, key));
+          next[key] = key === "invoices" ? mergeRecentInvoices(rows) : rows;
+        }
       } catch {}
     }));
+    if (!next.invoices.length) next.invoices = mergeRecentInvoices([]);
     setStory(next);
     setStoryLoading(false);
   }, [get]);
