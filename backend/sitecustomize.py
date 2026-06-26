@@ -11,72 +11,13 @@ os.environ.setdefault("BACKEND_PUBLIC_URL", "https://churvox-backend.onrender.co
 os.environ.setdefault("FRONTEND_URL", "https://www.churvox.com")
 
 LOCKED_PLAN_LIMITS = {
-    "solo": {
-        "price": 39,
-        "max_workers": 1,
-        "max_clients": 250,
-        "jobs_per_month": 50,
-        "ai_operator_actions": 25,
-        "team": True,
-        "sms": False,
-        "myob": False,
-        "xero": False,
-        "accounting_sync": "add_on",
-        "quotes": True,
-        "invoices": True,
-        "time_tracking": True,
-        "scheduling": True,
-    },
-    "team": {
-        "price": 89,
-        "max_workers": 5,
-        "max_clients": 1000,
-        "jobs_per_month": 150,
-        "ai_operator_actions": 100,
-        "team": True,
-        "sms": True,
-        "myob": False,
-        "xero": False,
-        "accounting_sync": "add_on",
-        "quotes": True,
-        "invoices": True,
-        "time_tracking": True,
-        "scheduling": True,
-    },
-    "pro": {
-        "price": 149,
-        "max_workers": 15,
-        "max_clients": 3000,
-        "jobs_per_month": 500,
-        "ai_operator_actions": 500,
-        "team": True,
-        "sms": True,
-        "myob": False,
-        "xero": False,
-        "accounting_sync": "add_on",
-        "quotes": True,
-        "invoices": True,
-        "time_tracking": True,
-        "scheduling": True,
-    },
-    "enterprise": {
-        "price": 299,
-        "max_workers": 50,
-        "max_clients": 10000,
-        "jobs_per_month": 1500,
-        "ai_operator_actions": 2000,
-        "team": True,
-        "sms": True,
-        "myob": True,
-        "xero": True,
-        "accounting_sync": "included",
-        "quotes": True,
-        "invoices": True,
-        "time_tracking": True,
-        "scheduling": True,
-        "extra_blocks": True,
-    },
+    "solo": {"price": 39, "max_workers": 1, "max_clients": 250, "jobs_per_month": 50, "ai_operator_actions": 25, "team": True, "sms": False, "myob": False, "xero": False, "accounting_sync": "add_on", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True},
+    "team": {"price": 89, "max_workers": 5, "max_clients": 1000, "jobs_per_month": 150, "ai_operator_actions": 100, "team": True, "sms": True, "myob": False, "xero": False, "accounting_sync": "add_on", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True},
+    "pro": {"price": 149, "max_workers": 15, "max_clients": 3000, "jobs_per_month": 500, "ai_operator_actions": 500, "team": True, "sms": True, "myob": False, "xero": False, "accounting_sync": "add_on", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True},
+    "enterprise": {"price": 299, "max_workers": 50, "max_clients": 10000, "jobs_per_month": 1500, "ai_operator_actions": 2000, "team": True, "sms": True, "myob": True, "xero": True, "accounting_sync": "included", "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True, "extra_blocks": True},
 }
+
+PLAN_ALIASES = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 
 
 def patch_locked_plan_limits(module):
@@ -88,6 +29,89 @@ def patch_locked_plan_limits(module):
             current = dict(plan_limits.get(plan_key) or {})
             current.update(locked)
             plan_limits[plan_key] = current
+    except Exception:
+        pass
+
+
+def patch_team_limit_runtime(module):
+    try:
+        app = getattr(module, "app", None)
+        db = getattr(module, "db", None)
+        get_current_user = getattr(module, "get_current_user", None)
+        require_employer = getattr(module, "require_employer", None)
+        ObjectId = getattr(module, "ObjectId", None)
+        HTTPException = getattr(module, "HTTPException", None)
+        if not db or not ObjectId or not HTTPException:
+            return
+
+        def normal_plan(value):
+            return PLAN_ALIASES.get(str(value or "solo").strip().lower(), "solo")
+
+        def business_values(user):
+            raw = user.get("business_id") or user.get("id")
+            values = [str(raw)]
+            obj = None
+            try:
+                obj = ObjectId(str(raw))
+                values.append(obj)
+            except Exception:
+                obj = None
+            return raw, obj, values
+
+        async def owner_doc_for(user):
+            raw, obj, values = business_values(user)
+            owner = None
+            if obj:
+                owner = await db.users.find_one({"_id": obj})
+            if not owner:
+                owner = await db.users.find_one({"business_id": {"$in": values}, "role": {"$in": ["employer", "admin", "owner", "business_owner"]}})
+            if not owner and obj:
+                owner = await db.users.find_one({"_id": obj})
+            return owner
+
+        async def active_worker_count(user):
+            raw, obj, values = business_values(user)
+            return await db.users.count_documents({
+                "business_id": {"$in": values},
+                "role": "worker",
+                "active": {"$ne": False},
+                "is_active": {"$ne": False},
+                "status": {"$nin": ["inactive", "disabled", "paused", "removed", "archived"]},
+            })
+
+        async def capacity_for(user):
+            plan = normal_plan(user.get("plan") or user.get("ui_plan") or user.get("subscription_plan") or "solo")
+            limits = LOCKED_PLAN_LIMITS.get(plan, LOCKED_PLAN_LIMITS["solo"])
+            max_workers = int(limits.get("max_workers", 0) or 0)
+            owner = await owner_doc_for(user)
+            packs = int((owner or {}).get("extra_user_blocks", 0) or 0)
+            if plan == "enterprise":
+                max_workers += packs * 50
+            count = await active_worker_count(user)
+            return plan, limits, max_workers, packs, count
+
+        async def locked_check_team_limits(user):
+            raw, obj, values = business_values(user)
+            plan, limits, max_workers, packs, count = await capacity_for(user)
+            if count >= max_workers:
+                raise HTTPException(status_code=403, detail=f"Team limit reached ({count}/{max_workers} active workers). Add a Command Growth Pack or remove inactive workers.")
+            return obj or raw
+
+        module.check_team_limits = locked_check_team_limits
+
+        if app is not None and get_current_user is not None:
+            existing_paths = {getattr(route, "path", "") for route in getattr(app, "routes", [])}
+            if "/api/team/limits" not in existing_paths:
+                async def team_limits(current_user: dict = None):
+                    user = current_user or {}
+                    plan, limits, max_workers, packs, count = await capacity_for(user)
+                    return {"success": True, "plan": plan, "limits": limits, "usage": {"workers": count}, "max_workers": max_workers, "extra_user_blocks": packs, "growth_packs": packs, "slots_left": max(0, max_workers - count)}
+
+                async def team_limits_endpoint(request):
+                    user = await get_current_user(request)
+                    return await team_limits(user)
+
+                app.add_api_route("/api/team/limits", team_limits_endpoint, methods=["GET"])
     except Exception:
         pass
 
@@ -111,6 +135,7 @@ try:
         def exec_module(self, module):
             self.original_loader.exec_module(module)
             patch_locked_plan_limits(module)
+            patch_team_limit_runtime(module)
 
     class ChurvoxPlanLimitFinder(importlib.abc.MetaPathFinder):
         def find_spec(self, fullname, path=None, target=None):
@@ -128,6 +153,7 @@ try:
         loaded = sys.modules.get(module_name)
         if loaded:
             patch_locked_plan_limits(loaded)
+            patch_team_limit_runtime(loaded)
 except Exception:
     pass
 
