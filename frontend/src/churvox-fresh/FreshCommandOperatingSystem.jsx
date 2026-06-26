@@ -18,6 +18,7 @@ export const COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626 = "COMMAND_FIX_DESK_SMA
 export const COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626 = "COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626";
 export const COMMAND_FIX_DESK_FORM_PREVIEW_MARKER_20260626 = "COMMAND_FIX_DESK_FORM_PREVIEW_MARKER_20260626";
 export const COMMAND_CLEAN_FILLED_FORM_MARKER_20260627 = "COMMAND_CLEAN_FILLED_FORM_MARKER_20260627";
+export const COMMAND_FORM_FIRST_MARKER_20260627 = "COMMAND_FORM_FIRST_MARKER_20260627";
 
 function cleanText(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -157,10 +158,6 @@ export default function FreshCommandOperatingSystem({
   selectedApprovalDetails = [],
   selectedHasConcreteAction,
   selectedDiagnosticOnly,
-  preparedBackendRows = [],
-  noteRows = [],
-  moneyWatched = 0,
-  counts = {},
   summaryOf = () => "Ready for your decision.",
   readableAction = (value) => cleanText(value || "Review and approve"),
   categoryOf = () => "Review",
@@ -180,11 +177,11 @@ export default function FreshCommandOperatingSystem({
   const [message, setMessage] = React.useState("");
   const noteValue = onOwnerNoteChange ? String(ownerNote || "") : localNote;
   const filledRows = buildFilledFormRows({ item: selected, selectedApprovalDetails, readableAction, summaryOf });
-  const waitingCount = counts.Open || preparedBackendRows.length || 0;
   const canApprove = Boolean(selected && selectedHasConcreteAction && !selectedDiagnosticOnly);
   const title = selected ? titleFor(selected, summaryOf) : "No form selected";
   const typeLabel = selected ? cleanText(categoryOf(selected) || selected?.category || selected?.group || "Prepared form") : "Command";
   const busy = Boolean(busyAction || externalBusy);
+  const isNote = selected?.sourceMode === "note";
 
   React.useEffect(() => {
     if (onOwnerNoteChange) return;
@@ -202,12 +199,17 @@ export default function FreshCommandOperatingSystem({
     setMessage("");
     try {
       if (kind === "approve") {
-        if (!canApprove && selected?.sourceMode !== "note") {
+        if (isNote) {
+          await onPrepareNotes?.();
+          setMessage("Prepared.");
+          return;
+        }
+        if (!canApprove) {
           setMessage("This form needs an edit before it can be approved.");
           return;
         }
         await onApproveFix?.({ item: selected, note: noteValue });
-        setMessage(selected?.sourceMode === "note" ? "Prepared." : "Approved.");
+        setMessage("Approved.");
       } else if (kind === "save") {
         await onSaveFix?.({ item: selected, note: noteValue });
         setMessage("Saved.");
@@ -267,27 +269,13 @@ export default function FreshCommandOperatingSystem({
       data-command-smart-ignore={COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626}
       data-command-form-preview={COMMAND_FIX_DESK_FORM_PREVIEW_MARKER_20260626}
       data-command-clean-form={COMMAND_CLEAN_FILLED_FORM_MARKER_20260627}
+      data-command-form-first={COMMAND_FORM_FIRST_MARKER_20260627}
     >
-      <header className="freshCommandCleanHeader">
-        <span>Command Approval Desk</span>
-        <h2>Churvox filled the form.</h2>
-        <p>Check it, edit the note if needed, then approve or park it.</p>
-        <div className="freshCommandCleanStats">
-          <div><b>{waitingCount}</b><small>waiting</small></div>
-          <div><b>{moneyWatched || 0}</b><small>money</small></div>
-          <div><b>{noteRows.length || 0}</b><small>notes</small></div>
-        </div>
-        <div className="freshCommandCleanToolbar">
-          <button type="button" disabled={busy} onClick={() => runTool("scan")}>{busyAction === "scan" ? "Checking..." : "Check for work"}</button>
-          <button type="button" disabled={busy || !noteRows.length} onClick={() => runTool("prepare")}>{busyAction === "prepare" ? "Preparing..." : "Prepare notes"}</button>
-          <button type="button" disabled={busy} onClick={() => runTool("refresh")}>{busyAction === "refresh" ? "Refreshing..." : "Refresh"}</button>
-        </div>
-      </header>
-
       {selected ? (
         <section className="freshCommandCleanGrid">
           <main className="freshCommandFilledFormCard" aria-label="Filled approval form">
-            <div className="freshCommandCleanPanelTitle"><span>{typeLabel}</span><b>{canApprove ? "Ready" : "Needs edit"}</b></div>
+            <div className="freshCommandFilledLead"><span>Command</span><h2>Churvox filled the form.</h2></div>
+            <div className="freshCommandCleanPanelTitle"><span>{typeLabel}</span><b>{canApprove || isNote ? "Ready" : "Needs edit"}</b></div>
             <h3>{title}</h3>
             {filledRows.length ? (
               <div className="freshCommandFilledRows">
@@ -307,18 +295,24 @@ export default function FreshCommandOperatingSystem({
             <div className="freshCommandCleanPanelTitle"><span>Owner controls</span><b>{idOf(selected.id || selected._id, "selected")}</b></div>
             <label className="freshCommandOwnerNote"><span>Owner note / edit</span><textarea value={noteValue} onChange={(event) => updateNote(event.target.value)} placeholder="Optional note before approving" /></label>
             <div className="freshCommandFixActions">
-              <button type="button" disabled={busy || (!canApprove && selected?.sourceMode !== "note")} onClick={() => runAction("approve")}>{busyAction === "approve" ? "Approving..." : cleanButtonText("approve", selected)}</button>
-              <button type="button" disabled={busy} onClick={() => runAction("save")}>{busyAction === "save" ? "Saving..." : cleanButtonText("save", selected)}</button>
-              <button type="button" disabled={busy} onClick={() => runAction("ignore")}>{busyAction === "ignore" ? "Parking..." : cleanButtonText("ignore", selected)}</button>
-              <button type="button" disabled={busy || selected?.sourceMode === "note"} onClick={() => runTool("open")}>Open record</button>
+              <button type="button" disabled={busy || (!canApprove && !isNote)} onClick={() => runAction("approve")}>{busyAction === "approve" ? "Approving..." : cleanButtonText("approve", selected)}</button>
+              <button type="button" disabled={busy || isNote} onClick={() => runAction("save")}>{busyAction === "save" ? "Saving..." : cleanButtonText("save", selected)}</button>
+              <button type="button" disabled={busy || isNote} onClick={() => runAction("ignore")}>{busyAction === "ignore" ? "Parking..." : cleanButtonText("ignore", selected)}</button>
+              <button type="button" disabled={busy || isNote} onClick={() => runTool("open")}>Open record</button>
             </div>
             {message ? <p className="freshCommandOutcome">{message}</p> : null}
           </aside>
         </section>
       ) : (
-        <section className="freshCommandCleanEmpty">
+        <section className="freshCommandCleanEmpty freshCommandNoForm">
           <b>No form waiting.</b>
-          <span>Run Check for work when you want Churvox to prepare the next approval form.</span>
+          <span>Ask Churvox to check for admin work, or refresh if something was just created.</span>
+          <div className="freshCommandCleanToolbar">
+            <button type="button" disabled={busy} onClick={() => runTool("scan")}>{busyAction === "scan" ? "Checking..." : "Check for work"}</button>
+            <button type="button" disabled={busy} onClick={() => runTool("prepare")}>{busyAction === "prepare" ? "Preparing..." : "Prepare notes"}</button>
+            <button type="button" disabled={busy} onClick={() => runTool("refresh")}>{busyAction === "refresh" ? "Refreshing..." : "Refresh"}</button>
+          </div>
+          {message ? <p className="freshCommandOutcome">{message}</p> : null}
         </section>
       )}
     </section>
