@@ -199,6 +199,31 @@
   line-height: 1.35;
 }
 
+/* CHURVOX_IMPORT_TEMPLATE_LINK_BUTTON_20260627 */
+.freshImportsActions a {
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+  padding: 0 14px !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .08) !important;
+}
+
+.freshImportsActions a:hover {
+  border-color: rgba(249, 115, 22, .45) !important;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+}
+
 /* CHURVOX_COMMAND_QUEUE_LIMIT_20260626 */
 .freshCommandFixQueue {
   max-height: 560px !important;
