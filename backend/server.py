@@ -3260,6 +3260,23 @@ async def create_invoice(invoice_data: InvoiceCreate, request: Request, current_
             "status": {"$ne": "void"}
         })
         if existing_invoice:
+            try:
+                await db.jobs.update_one(
+                    {
+                        "_id": job_object_id,
+                        "contractor_id": ObjectId(user["business_id"]),
+                    },
+                    {"$set": {
+                        "invoice_id": existing_invoice["_id"],
+                        "invoice_status": existing_invoice.get("status", InvoiceStatus.DRAFT),
+                        "invoice_ready": True,
+                        "invoice_generated_at": existing_invoice.get("created_at") or datetime.now(timezone.utc),
+                        "updated_at": datetime.now(timezone.utc),
+                    }}
+                )
+            except Exception as link_exc:
+                logger.warning(f"Existing invoice found but job link repair failed: {link_exc}")
+
             raise HTTPException(
                 status_code=409,
                 detail={
