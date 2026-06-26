@@ -5,18 +5,6 @@
   box-sizing: border-box;
 }
 
-.freshCommandStablePage > .freshHero,
-.freshCommandStablePage > .freshCommandPulse,
-.freshCommandStablePage > .freshBackendReviewSource,
-.freshCommandStablePage > .freshCommandFilterBar,
-.freshCommandStablePage > .freshGrid {
-  display: none !important;
-}
-
-.freshCommandStablePage {
-  gap: 0 !important;
-}
-
 .freshCommandCleanDesk {
   display: block;
   color: #111827;
@@ -31,7 +19,7 @@
 
 .freshCommandFormShell {
   width: min(100%, 1040px);
-  margin: 0 auto;
+  margin: 0;
 }
 
 .freshCommandPreparedForm {
