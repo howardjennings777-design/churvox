@@ -239,7 +239,25 @@ export default function FreshJobs({ onNavigate }) {
 
   function createInvoiceForSelected() {
     if (!selected || !canCreateInvoice) return;
-    try { window.localStorage.setItem("churvox:selected-job-for-invoice", JSON.stringify({ id: selected.id, title: selected.title, client: selected.client, address: selected.address, price: selected.price, scheduled: selected.scheduled })); } catch {}
+    const jobForInvoice = {
+      id: selected.id,
+      job_id: selected.id,
+      title: selected.title,
+      client: selected.client,
+      customer_name: selected.client,
+      address: selected.address,
+      price: selected.price,
+      priceAmount: selected.priceAmount,
+      scheduled: selected.scheduled,
+      notes: selected.notes,
+    };
+    try {
+      const packed = JSON.stringify(jobForInvoice);
+      window.localStorage.setItem("churvox:selected-job-for-invoice", packed);
+      window.sessionStorage.setItem("churvox:selected-job-for-invoice", packed);
+      window.__churvoxSelectedJobForInvoice = jobForInvoice;
+      window.dispatchEvent(new CustomEvent("churvox:invoice-handoff", { detail: jobForInvoice }));
+    } catch {}
     onNavigate?.("invoices");
   }
 
