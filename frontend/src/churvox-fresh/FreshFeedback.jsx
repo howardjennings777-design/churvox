@@ -18,7 +18,7 @@ const defaults = [
   },
   {
     id: "fb-2",
-    title: "Customer wants MYOB / Xero clarity",
+    title: "Customer wants accounting sync clarity",
     source: "Prospect",
     area: "Integrations",
     status: "Planned",

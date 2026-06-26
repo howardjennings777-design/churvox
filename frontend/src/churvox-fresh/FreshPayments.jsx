@@ -199,7 +199,7 @@ export default function FreshPayments({ onNavigate }) {
         <div className="freshPaymentsStats"><div><b>{money(total)}</b><small>invoiced</small></div><div><b>{money(paid)}</b><small>paid-looking</small></div><div><b>{money(owing)}</b><small>owing</small></div><div><b>{checks}</b><small>owing checks</small></div></div>
       </div>
 
-      <div className="freshXeroNotice proper"><b>Payment rule</b><span>Only treat an invoice as paid after Xero, MYOB, or your accounting record confirms it.</span></div>
+      <div className="freshXeroNotice proper"><b>Payment rule</b><span>Only treat an invoice as paid after Xero or your accounting record confirms it.</span></div>
       {message ? <div className={`freshXeroNotice ${checks ? "need" : "proper"}`}><b>Payment status</b><span>{message}</span></div> : null}
 
       {!loading && !items.length ? <section className="freshPaymentsEmptyState"><div><span>Nothing waiting</span><h2>No invoices yet</h2><p>Once invoice records exist, payments will show balances and accounting status here.</p></div><div className="freshPaymentsEmptyActions"><button type="button" onClick={() => onNavigate?.("invoices")}>Create invoice</button><button type="button" onClick={loadInvoices}>Refresh</button></div></section> : null}

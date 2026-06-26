@@ -24,9 +24,9 @@ const defaults = [
     trial: "14-day free trial, no card",
     team: "Up to 50 active team members",
     aiActions: "Higher AI Operator Actions and automation runs",
-    invoices: "MYOB included plus advanced scale controls",
-    note: "For bigger teams needing MYOB, payroll workspace, advanced roles and priority support.",
-    nextAction: "Upgrade when the business needs more team capacity and included MYOB sync.",
+    invoices: "Accounting sync included plus advanced scale controls",
+    note: "For bigger teams needing accounting sync, payroll workspace, advanced roles and priority support.",
+    nextAction: "Upgrade when the business needs more team capacity and included accounting sync.",
   },
   {
     id: "bi-3",

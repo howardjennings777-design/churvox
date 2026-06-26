@@ -37,7 +37,7 @@ const defaults = [
     status: "Blocked",
     priority: "Medium",
     due: "After testing",
-    action: "Choose MYOB or Xero placeholder and confirm what syncs first.",
+    action: "Confirm accounting sync setup and what syncs first.",
     note: "Keep phase one to invoices, customers and payment status.",
   },
 ];

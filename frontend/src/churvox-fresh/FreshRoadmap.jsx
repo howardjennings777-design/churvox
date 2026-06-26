@@ -24,9 +24,9 @@ const defaults = [
     priority: "High",
     owner: "Owner",
     effort: "Large",
-    value: "MYOB and Xero clarity helps close serious businesses.",
+    value: "Accounting sync clarity helps close serious businesses.",
     risk: "Do not enable live sync until consent, scopes, callbacks and review are ready.",
-    nextAction: "Keep MYOB/Xero as placeholders until partner and security checks pass.",
+    nextAction: "Keep accounting sync review-first until partner and security checks pass.",
   },
   {
     id: "rm-3",

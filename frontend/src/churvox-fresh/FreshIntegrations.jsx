@@ -6,7 +6,7 @@ const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 const defaults = [
   {
     id: "myob",
-    name: "MYOB",
+    name: "Accounting Sync",
     status: "Ready to connect",
     type: "Accounting",
     plan: "Command included",
@@ -154,7 +154,7 @@ export default function FreshIntegrations({ onNavigate }) {
         <div>
           <span>Integrations</span>
           <h1>Connect the tools customers already use</h1>
-          <p>Keep MYOB, Xero, Stripe, Postmark and SMS setup visible before launch.</p>
+          <p>Keep Xero, Stripe, Postmark and SMS setup visible before launch.</p>
         </div>
 
         <div className="freshIntegrationsStats">

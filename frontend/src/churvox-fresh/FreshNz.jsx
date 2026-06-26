@@ -14,7 +14,7 @@ export default function FreshNz({ onNavigate }) {
           <h2>NZ checks</h2>
           <div className="freshItem"><b>GST</b><span>Use your business GST settings and invoice defaults from Settings.</span></div>
           <div className="freshItem"><b>Invoices</b><span>Invoices stay draft/review-first until the owner approves.</span></div>
-          <div className="freshItem"><b>Accounting</b><span>Xero or MYOB sync stays owner-controlled and review-first.</span></div>
+          <div className="freshItem"><b>Accounting</b><span>Xero sync stays owner-controlled and review-first.</span></div>
         </article>
 
         <aside className="freshCard">

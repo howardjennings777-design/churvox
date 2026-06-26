@@ -29,7 +29,7 @@ export default function FreshPlanGate({ page, user, onNavigate, children }) {
         <article className="primary">
           <b>{isAddon ? ACCOUNTING_ADDON_NAME : "Unlock with"}</b>
           <strong>{isAddon ? ACCOUNTING_ADDON_PRICE : required}</strong>
-          <p>{isAddon ? "Adds Xero or MYOB sync where available. Draft invoice sync only and owner-approved." : access.rule.reason}</p>
+          <p>{isAddon ? "Adds Accounting Sync where available. Draft invoice sync only and owner-approved." : access.rule.reason}</p>
         </article>
 
         <article>

@@ -30,14 +30,14 @@ const defaults = [
   },
   {
     id: "fl-3",
-    feature: "MYOB live sync",
+    feature: "Accounting sync planning",
     area: "Integrations",
     status: "Disabled",
     visibility: "Placeholder only",
     ownerApproval: "Required",
     risk: "High",
     effect: "Prevents accounting data moving before partner review is ready.",
-    note: "MYOB planning page can stay visible, but live sync must stay off.",
+    note: "Accounting sync planning can stay visible, but live sync must stay owner-approved.",
     nextAction: "Enable only after scopes, callbacks, consent and security review.",
   },
 ];
