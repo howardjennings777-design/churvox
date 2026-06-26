@@ -1,8 +1,9 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
-import FreshCommandOperatingSystem from "./FreshCommandOperatingSystem";
 import "./freshPayrollCompact.css";
 import "./freshJobsPolish.css";
+
+export const COMMAND_REPLACED_APPROVAL_PAGE_MARKER_20260627 = "COMMAND_REPLACED_APPROVAL_PAGE_MARKER_20260627";
 
 const commandFilters = ["Open", "Edited", "Notes", "Handled", "All"];
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
@@ -155,7 +156,7 @@ function idOf(value, fallback = "") {
 
 function readableAction(value) {
   const text = cleanString(value || "");
-  if (!text) return "Ready to approve";
+  if (!text) return "Review and approve";
   return text
     .replace(/^create job$/i, "Create job")
     .replace(/^create invoice$/i, "Create invoice")
@@ -266,41 +267,14 @@ function approvalDetailRows(item) {
   return rows;
 }
 
-function collectDetailFields(value, seen = new Set()) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  return Object.entries(value).flatMap(([key, raw]) => {
-    if (!shouldShowDetailField(key, raw)) return [];
-    const val = usefulValue(raw);
-    if (!val) return [];
-    const dedupeKey = `${displayLabel(key)}:${val}`.toLowerCase();
-    if (seen.has(dedupeKey)) return [];
-    seen.add(dedupeKey);
-    return [{ label: displayLabel(key), value: val }];
-  });
-}
-
-function compactDetails(item) {
-  const seen = new Set();
-  return [
-    ...collectDetailFields(item?.payload, seen),
-    ...collectDetailFields(item?.details, seen),
-    ...collectDetailFields(item?.preview, seen),
-    ...collectDetailFields(typeof item?.draft === "object" ? item.draft : null, seen),
-  ].slice(0, 5);
-}
-
-function detailRows(item) {
+function buildFormRows(item, approvalRows) {
   if (!item) return [];
-  if (item.preparedForApproval === false) return [{ label: "Needs work", value: "This is not shown in Open because no clear action is ready yet." }];
-  const rows = [];
-  const summary = summaryOf(item);
-  const details = compactDetails(item);
-  const prepared = usefulValue(item?.prepared || item?.draft || item?.next_action || item?.recommended_action || item?.approval_action || item?.message_text || item?.prepared_message);
-  const reason = usefulValue(item?.why || item?.reason);
-  if (details.length) rows.push({ label: "Record", value: details.map((row) => `${row.label}: ${row.value}`).join(" - ") });
-  if (prepared && !sameMeaning(prepared, summary) && !sameMeaning(prepared, rows[0]?.value)) rows.push({ label: "Prepared action", value: prepared });
-  if (reason && !sameMeaning(reason, summary) && !sameMeaning(reason, prepared)) rows.push({ label: "Owner check", value: reason });
-  return rows.length ? rows : [{ label: "Ready", value: summary }];
+  const rows = [...approvalRows];
+  if (!rows.some((row) => normalizedText(row.label) === "action")) {
+    rows.push({ label: "Action", value: readableAction(item.action || item.type || item.category || item.group) });
+  }
+  if (!rows.length) rows.push({ label: "Record", value: summaryOf(item) });
+  return rows.filter((row) => row.value && !/undefined|null/i.test(row.value));
 }
 
 function readLegacyInbox() {
@@ -327,7 +301,7 @@ function loadActivity() {
     if (typeof window === "undefined") return [];
     const raw = window.localStorage.getItem(COMMAND_ACTIVITY_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.slice(0, 10) : [];
+    return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
   } catch {
     return [];
   }
@@ -389,10 +363,6 @@ function duplicateBackendRows(groups) {
   return groups.flatMap((group) => group.items.slice(1).filter((item) => item.sourceMode === "backend" && ["open", "edited"].includes(item.listStatus)));
 }
 
-const selectedFilterButtonStyle = { background: "#f97316", backgroundColor: "#f97316", borderColor: "#f97316", color: "#111827", WebkitTextFillColor: "#111827", opacity: 1, fontWeight: 950 };
-const selectedFilterTextStyle = { color: "#111827", WebkitTextFillColor: "#111827", opacity: 1, fontWeight: 950 };
-const selectedFilterCountStyle = { background: "#111827", backgroundColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, fontWeight: 950, borderRadius: "999px" };
-
 export default function FreshCommand({ onNavigate }) {
   const { get, post, patch } = useApi();
   const [backendItems, setBackendItems] = React.useState([]);
@@ -432,12 +402,12 @@ export default function FreshCommand({ onNavigate }) {
   });
   const visibleGroups = groupCommandRows(visibleRows);
   const duplicateRows = duplicateBackendRows(visibleGroups);
-
   const selected = visibleRows.find((item) => `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex)}` === selectedId) || visibleGroups[0]?.item || null;
   const selectedKey = selected ? `${selected.sourceMode}-${idOf(selected.id || selected._id, selected.localIndex)}` : "";
   const selectedHasConcreteAction = Boolean(selected?.sourceMode === "backend" && selected.preparedForApproval);
   const selectedDiagnosticOnly = Boolean(selected?.sourceMode === "backend" && !selected.preparedForApproval);
   const selectedApprovalDetails = approvalDetailRows(selected);
+  const formRows = buildFormRows(selected, selectedApprovalDetails);
   const moneyWatched = preparedBackendRows.filter((item) => /money|invoice|payment/i.test(`${item.category || ""} ${item.action || ""}`)).length;
 
   const loadReview = React.useCallback(async () => {
@@ -474,7 +444,7 @@ export default function FreshCommand({ onNavigate }) {
   }, [activity]);
 
   function addActivity(title, status) {
-    setActivity((current) => [{ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, title, status, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current].slice(0, 10));
+    setActivity((current) => [{ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, title, status, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current].slice(0, 8));
   }
 
   async function approveSelected() {
@@ -494,6 +464,14 @@ export default function FreshCommand({ onNavigate }) {
     } finally {
       setBusy("");
     }
+  }
+
+  async function approveOrPrepareSelected() {
+    if (selected?.sourceMode === "note") {
+      await prepareNotes();
+      return;
+    }
+    await approveSelected();
   }
 
   async function saveSelected() {
@@ -521,13 +499,13 @@ export default function FreshCommand({ onNavigate }) {
     setBusy("ignore");
     try {
       const result = await post(`/ai-review-items/${encodeURIComponent(id)}/ignore`, { note: ownerNote }, { timeout: 25000 });
-      if (!result?.success) throw new Error(result?.error || "Could not ignore this.");
-      addActivity(titleOf(selected), "Ignored");
-      setMessage("Ignored. Nothing was changed.");
+      if (!result?.success) throw new Error(result?.error || "Could not park this.");
+      addActivity(titleOf(selected), "Parked");
+      setMessage("Parked for now. Nothing was changed.");
       setSelectedId("");
       await loadReview();
     } catch (err) {
-      setMessage(err?.message || "Could not ignore this.");
+      setMessage(err?.message || "Could not park this.");
     } finally {
       setBusy("");
     }
@@ -608,78 +586,110 @@ export default function FreshCommand({ onNavigate }) {
   }
 
   return (
-    <section className="freshCommandStablePage freshPayrollCompactPage">
-      <header className="freshHero">
-        <span>Command</span>
-        <h1>Ready for approval</h1>
-        <p>Churvox does the admin first. You approve, edit, ignore, or open the record it came from.</p>
+    <section className="freshCommandRebuild" data-command-replaced={COMMAND_REPLACED_APPROVAL_PAGE_MARKER_20260627}>
+      <header className="freshCommandRebuildHero">
+        <div>
+          <span>Command</span>
+          <h1>Ready for approval</h1>
+          <p>Churvox does the admin. You check the filled form and approve it.</p>
+        </div>
+        <div className="freshCommandHeroActions">
+          <button type="button" disabled={busy === "scan"} onClick={checkForWork}>{busy === "scan" ? "Checking..." : "Check for work"}</button>
+          <button type="button" disabled={busy === "refresh" || loading} onClick={loadReview}>Refresh</button>
+        </div>
       </header>
 
-      <section className="freshCommandPulse">
-        <aside className="freshCard"><h2>{loading ? "..." : counts.Open}</h2><p>Waiting for you</p></aside>
-        <aside className="freshCard"><h2>{loading ? "..." : counts.Notes}</h2><p>Notes to prepare</p></aside>
-        <aside className="freshCard"><h2>{loading ? "..." : moneyWatched}</h2><p>Money items</p></aside>
+      <section className="freshCommandStatsRow">
+        <article><span>Waiting</span><b>{loading ? "..." : counts.Open}</b></article>
+        <article><span>Money</span><b>{loading ? "..." : moneyWatched}</b></article>
+        <article><span>Notes</span><b>{loading ? "..." : counts.Notes}</b></article>
+        <article><span>Handled</span><b>{loading ? "..." : counts.Handled}</b></article>
       </section>
 
-      <FreshCommandOperatingSystem
-        selected={selected}
-        selectedApprovalDetails={selectedApprovalDetails}
-        selectedHasConcreteAction={selectedHasConcreteAction}
-        selectedDiagnosticOnly={selectedDiagnosticOnly}
-        preparedBackendRows={preparedBackendRows}
-        noteRows={noteRows}
-        moneyWatched={moneyWatched}
-        counts={counts}
-        detailRows={detailRows}
-        summaryOf={summaryOf}
-        readableAction={readableAction}
-        categoryOf={categoryOf}
-        ownerNote={ownerNote}
-        onOwnerNoteChange={setOwnerNote}
-        onApproveFix={approveSelected}
-        onSaveFix={saveSelected}
-        onIgnoreFix={ignoreSelected}
-        onCheckForWork={checkForWork}
-        onPrepareNotes={prepareNotes}
-        onRefresh={loadReview}
-        onOpenRecord={openSelectedRecord}
-        externalBusy={busy}
-      />
+      {message ? <section className="freshCommandStatusStrip"><b>{message}</b><span>Nothing moves until you approve it.</span></section> : null}
 
-      {message ? <section className="freshBackendReviewSource" data-review-source="backend"><div><span>Your approval queue</span><h2>{message}</h2><p>Only clear, ready-to-approve work appears in Open.</p></div><aside><b>{counts.Open}</b><small>waiting</small></aside></section> : null}
-
-      <section className="freshCommandFilterBar">
-        {commandFilters.map((item) => <button type="button" key={item} className={filter === item ? "commandFilterSelected" : ""} style={filter === item ? selectedFilterButtonStyle : undefined} onClick={() => setFilter(item)}><span style={filter === item ? selectedFilterTextStyle : undefined}>{item}</span><b style={filter === item ? selectedFilterCountStyle : undefined}>{counts[item] ?? rows.length}</b></button>)}
-      </section>
-
-      <section className="freshGrid">
-        <aside className="freshCard freshJobsListCard">
-          <h2>{filter === "All" ? "All items" : filter === "Notes" ? "Notes to prepare" : "Waiting for approval"}{visibleGroups.length !== visibleRows.length ? <small className="freshCommandGroupedMeta">{visibleRows.length} grouped into {visibleGroups.length}</small> : null}</h2>
-          {loading && !visibleGroups.length ? <div className="freshItem"><b>Checking...</b><span>Looking for work waiting on you.</span></div> : null}
-          {!loading && !visibleGroups.length ? <div className="freshItem"><b>Nothing waiting here</b><span>Run Check for work when you want Churvox to prepare the next admin actions.</span></div> : null}
-          {visibleGroups.map((group, index) => {
-            const item = group.item;
-            const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`;
-            const diagnostic = item.sourceMode === "backend" && !item.preparedForApproval;
-            return <button type="button" className={`freshItem ${selectedKey === key ? "active" : ""} ${item.sourceMode === "note" || diagnostic ? "need" : ""}`} key={group.key} onClick={() => setSelectedId(key)}><b>{titleOf(item)}{group.items.length > 1 ? <small className="freshCommandGroupCount">x{group.items.length}</small> : null}</b><span>{item.sourceMode === "note" ? "note to prepare" : diagnostic ? "needs preparation" : "ready"} - {summaryOf(item)}{group.items.length > 1 ? ` - ${group.items.length} similar approvals grouped` : ""}</span></button>;
-          })}
+      <section className="freshCommandBoard">
+        <aside className="freshCommandQueuePanel">
+          <div className="freshCommandPanelTitle"><span>Approval queue</span><b>{visibleGroups.length}</b></div>
+          <div className="freshCommandFilters">
+            {commandFilters.map((item) => (
+              <button type="button" key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>
+                {item}<b>{counts[item] ?? rows.length}</b>
+              </button>
+            ))}
+          </div>
+          <div className="freshCommandQueueList">
+            {loading && !visibleGroups.length ? <article><b>Checking...</b><span>Looking for approval work.</span></article> : null}
+            {!loading && !visibleGroups.length ? <article><b>Nothing waiting</b><span>Run Check for work when you want Churvox to prepare admin actions.</span></article> : null}
+            {visibleGroups.map((group, index) => {
+              const item = group.item;
+              const key = `${item.sourceMode}-${idOf(item.id || item._id, item.localIndex ?? index)}`;
+              const diagnostic = item.sourceMode === "backend" && !item.preparedForApproval;
+              return (
+                <button type="button" className={selectedKey === key ? "active" : ""} key={group.key} onClick={() => setSelectedId(key)}>
+                  <em>{item.sourceMode === "note" ? "Note" : diagnostic ? "Needs work" : "Ready"}</em>
+                  <b>{titleOf(item)}{group.items.length > 1 ? <small>x{group.items.length}</small> : null}</b>
+                  <span>{summaryOf(item)}</span>
+                </button>
+              );
+            })}
+          </div>
         </aside>
 
-        <section className="freshCard freshJobsDetailCard">
-          <div className="freshJobsDetailHeader"><div><small>{selected?.sourceMode === "note" ? "Note to prepare" : selectedDiagnosticOnly ? "Needs preparation" : "Ready for your decision"}</small><h2>{selected ? titleOf(selected) : "Nothing selected"}</h2></div>{selected ? <span className={selected.sourceMode === "note" || selectedDiagnosticOnly ? "need" : "ready"}>{selected.sourceMode === "note" ? "Prepare" : selectedDiagnosticOnly ? "Needs work" : "Ready"}</span> : null}</div>
-          {selected ? <>
-            <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Type</span><b>{categoryOf(selected)}</b></div><div><span>Action</span><b>{selectedDiagnosticOnly ? "Not ready yet" : readableAction(selected.action || selected.type)}</b></div><div><span>Status</span><b>{selected.sourceMode === "note" ? "Note" : selectedDiagnosticOnly ? "Needs preparation" : "Ready"}</b></div><div><span>Decision</span><b>{selected.sourceMode === "note" ? "Prepare first" : selectedDiagnosticOnly ? "Skip" : "Approve or edit"}</b></div></div>
-            {selectedApprovalDetails.length ? <section className="freshJobsDetailBox notes freshCommandApprovalDetails"><span>Job approval details</span><div>{selectedApprovalDetails.map((row) => <article key={`${row.label}-${row.value}`}><small>{row.label}</small><b>{row.value}</b></article>)}</div></section> : null}
-            <section className="freshJobsDetailBox notes"><span>Summary</span><p>{summaryOf(selected)}</p></section>
-            {detailRows(selected).map((row) => <section className="freshJobsDetailBox notes" key={row.label}><span>{row.label}</span><p>{row.value}</p></section>)}
-            <label className="freshField"><span>Your note / edit</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Optional note before approving or ignoring" /></label>
-          </> : <div className="freshItem"><b>Nothing waiting</b><span>When Churvox has a real draft, message, job change, or invoice check ready, it will appear here.</span></div>}
-        </section>
+        <main className="freshCommandFormPanel">
+          {selected ? (
+            <form onSubmit={(event) => { event.preventDefault(); approveOrPrepareSelected(); }}>
+              <header className="freshCommandFormHeader">
+                <div>
+                  <span>{categoryOf(selected)}</span>
+                  <h2>{titleOf(selected)}</h2>
+                </div>
+                <b>{selected.sourceMode === "note" ? "Prepare" : selectedDiagnosticOnly ? "Needs edit" : "Ready"}</b>
+              </header>
 
-        <aside className="freshCard freshJobsActionsCard"><h2>Your controls</h2><p className="freshJobsActionHint">Nothing changes until you approve it.</p><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" disabled={!selectedHasConcreteAction || busy === "approve"} onClick={approveSelected}>{busy === "approve" ? "Approving..." : selectedDiagnosticOnly ? "Not ready" : "Approve"}</button><button className="freshDark" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>Ignore</button><button className="freshGhost" type="button" disabled={!duplicateRows.length || busy === "dedupe"} onClick={archiveDuplicateApprovals}>{busy === "dedupe" ? "Archiving..." : duplicateRows.length ? `Archive ${duplicateRows.length} duplicates` : "No duplicates"}</button><button className="freshOrange" type="button" disabled={!noteItems.length || busy === "prepare"} onClick={prepareNotes}>{busy === "prepare" ? "Preparing..." : "Prepare notes"}</button><button className="freshDark" type="button" disabled={busy === "scan"} onClick={checkForWork}>{busy === "scan" ? "Checking..." : "Check for work"}</button><button className="freshGhost" type="button" disabled={!selected || selected.sourceMode === "note"} onClick={openSelectedRecord}>Open record</button><button className="freshGhost" type="button" onClick={loadReview}>Refresh</button></div></aside>
+              <section className="freshCommandFilledForm" aria-label="Filled approval form">
+                {formRows.map((row) => (
+                  <label key={`${row.label}-${row.value}`}>
+                    <span>{row.label}</span>
+                    <b>{row.value}</b>
+                  </label>
+                ))}
+              </section>
+
+              <label className="freshCommandOwnerEdit">
+                <span>Owner note / edit</span>
+                <textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Optional note before approving" />
+              </label>
+
+              <footer className="freshCommandFormActions">
+                <button type="submit" disabled={busy === "approve" || busy === "prepare" || (!selectedHasConcreteAction && selected.sourceMode !== "note")}>
+                  {busy === "approve" || busy === "prepare" ? "Working..." : selected.sourceMode === "note" ? "Prepare form" : "Approve form"}
+                </button>
+                <button type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "save"} onClick={saveSelected}>{busy === "save" ? "Saving..." : "Save edit"}</button>
+                <button type="button" disabled={!selected || selected.sourceMode !== "backend" || busy === "ignore"} onClick={ignoreSelected}>{busy === "ignore" ? "Parking..." : "Park for now"}</button>
+                <button type="button" disabled={!selected || selected.sourceMode === "note"} onClick={openSelectedRecord}>Open record</button>
+              </footer>
+            </form>
+          ) : (
+            <article className="freshCommandEmptyForm"><b>No approval selected</b><span>Select a queue item or run Check for work.</span></article>
+          )}
+        </main>
+
+        <aside className="freshCommandSidePanel">
+          <section>
+            <div className="freshCommandPanelTitle"><span>Owner control</span><b>{duplicateRows.length}</b></div>
+            <p>Only approve when the form is right. Churvox will not send invoices, file tax, create bank payout files, or mark anything paid unless the approved action allows it.</p>
+            <div className="freshCommandSideActions">
+              <button type="button" disabled={!duplicateRows.length || busy === "dedupe"} onClick={archiveDuplicateApprovals}>{busy === "dedupe" ? "Archiving..." : duplicateRows.length ? `Archive ${duplicateRows.length} duplicates` : "No duplicates"}</button>
+              <button type="button" disabled={!noteItems.length || busy === "prepare"} onClick={prepareNotes}>{busy === "prepare" ? "Preparing..." : "Prepare notes"}</button>
+            </div>
+          </section>
+          <section>
+            <div className="freshCommandPanelTitle"><span>Recent decisions</span><b>{activity.length}</b></div>
+            {activity.length ? activity.map((item) => <article className="freshCommandActivity" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></article>) : <article className="freshCommandActivity"><b>No decisions yet</b><span>Approvals will appear here.</span></article>}
+          </section>
+        </aside>
       </section>
-
-      <section className="freshGrid two" style={{ marginTop: 14 }}><section className="freshCard"><h2>Safety rule</h2><p>Churvox can prepare draft invoices and checks. It will not send invoices, file tax, create bank payout files, or mark anything paid unless you approve the allowed action.</p></section><aside className="freshCard"><h2>Recent decisions</h2>{activity.length ? activity.map((item) => <div className="freshItem freshActivityItem" key={item.id}><b>{item.status} - {item.title}</b><span>{item.time}</span></div>) : <div className="freshItem"><b>No decisions yet</b><span>Approve, edit, ignore, check for work, archive duplicates, or prepare notes to create activity.</span></div>}</aside></section>
     </section>
   );
 }
