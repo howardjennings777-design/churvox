@@ -20,6 +20,7 @@ export const COMMAND_FIX_DESK_FORM_PREVIEW_MARKER_20260626 = "COMMAND_FIX_DESK_F
 export const COMMAND_CLEAN_FILLED_FORM_MARKER_20260627 = "COMMAND_CLEAN_FILLED_FORM_MARKER_20260627";
 export const COMMAND_FORM_FIRST_MARKER_20260627 = "COMMAND_FORM_FIRST_MARKER_20260627";
 export const COMMAND_REAL_COMPLETED_FORM_MARKER_20260627 = "COMMAND_REAL_COMPLETED_FORM_MARKER_20260627";
+export const COMMAND_OPTIONAL_FORM_REVIEW_MARKER_20260627 = "COMMAND_OPTIONAL_FORM_REVIEW_MARKER_20260627";
 
 function cleanText(value) {
   return String(value || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
@@ -176,6 +177,7 @@ export default function FreshCommandOperatingSystem({
   const [localNote, setLocalNote] = React.useState("");
   const [busyAction, setBusyAction] = React.useState("");
   const [message, setMessage] = React.useState("");
+  const [showForm, setShowForm] = React.useState(false);
   const noteValue = onOwnerNoteChange ? String(ownerNote || "") : localNote;
   const filledRows = buildFilledFormRows({ item: selected, selectedApprovalDetails, readableAction, summaryOf });
   const canApprove = Boolean(selected && selectedHasConcreteAction && !selectedDiagnosticOnly);
@@ -189,6 +191,11 @@ export default function FreshCommandOperatingSystem({
     if (onOwnerNoteChange) return;
     setLocalNote(selected?.owner_note || selected?.owner || "");
   }, [selected, onOwnerNoteChange]);
+
+  React.useEffect(() => {
+    setShowForm(false);
+    setMessage("");
+  }, [recordId]);
 
   function updateNote(value) {
     if (onOwnerNoteChange) onOwnerNoteChange(value);
@@ -273,47 +280,63 @@ export default function FreshCommandOperatingSystem({
       data-command-clean-form={COMMAND_CLEAN_FILLED_FORM_MARKER_20260627}
       data-command-form-first={COMMAND_FORM_FIRST_MARKER_20260627}
       data-command-real-form={COMMAND_REAL_COMPLETED_FORM_MARKER_20260627}
+      data-command-optional-form={COMMAND_OPTIONAL_FORM_REVIEW_MARKER_20260627}
     >
       {selected ? (
-        <section className="freshCommandFormShell">
-          <form className="freshCommandPreparedForm" aria-label="Filled approval form" onSubmit={(event) => { event.preventDefault(); runAction("approve"); }}>
-            <header className="freshCommandFormTop">
-              <div>
+        <section className="freshCommandReviewShell">
+          {!showForm ? (
+            <article className="freshCommandReviewCard">
+              <div className="freshCommandReviewCopy">
                 <span>{typeLabel}</span>
                 <h2>{title}</h2>
+                <p>The prepared form is ready. Open it to check the fields before approving.</p>
               </div>
-              <b>{canApprove || isNote ? "Ready" : "Needs edit"}</b>
-            </header>
-
-            {filledRows.length ? (
-              <div className="freshCommandFilledRows">
-                {filledRows.map((row) => (
-                  <label key={row.label}>
-                    <span>{row.label}</span>
-                    <b>{row.value}</b>
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <div className="freshCommandCleanEmpty"><b>This form is not filled enough yet.</b><span>Use Save edit or open the record before approving.</span></div>
-            )}
-
-            <label className="freshCommandOwnerNote">
-              <span>Owner note / edit</span>
-              <textarea value={noteValue} onChange={(event) => updateNote(event.target.value)} placeholder="Optional note before approving" />
-            </label>
-
-            <footer className="freshCommandFormFooter">
-              <div className="freshCommandRecordId"><span>Record</span><b>{recordId}</b></div>
-              <div className="freshCommandFixActions">
-                <button type="submit" disabled={busy || (!canApprove && !isNote)}>{busyAction === "approve" ? "Approving..." : cleanButtonText("approve", selected)}</button>
-                <button type="button" disabled={busy || isNote} onClick={() => runAction("save")}>{busyAction === "save" ? "Saving..." : cleanButtonText("save", selected)}</button>
-                <button type="button" disabled={busy || isNote} onClick={() => runAction("ignore")}>{busyAction === "ignore" ? "Parking..." : cleanButtonText("ignore", selected)}</button>
+              <div className="freshCommandReviewActions">
+                <button type="button" disabled={busy} onClick={() => setShowForm(true)}>Review prepared form</button>
                 <button type="button" disabled={busy || isNote} onClick={() => runTool("open")}>Open record</button>
               </div>
-            </footer>
-            {message ? <p className="freshCommandOutcome">{message}</p> : null}
-          </form>
+              {message ? <p className="freshCommandOutcome">{message}</p> : null}
+            </article>
+          ) : (
+            <form className="freshCommandPreparedForm" aria-label="Filled approval form" onSubmit={(event) => { event.preventDefault(); runAction("approve"); }}>
+              <header className="freshCommandFormTop">
+                <div>
+                  <span>{typeLabel}</span>
+                  <h2>{title}</h2>
+                </div>
+                <button type="button" onClick={() => setShowForm(false)}>Hide prepared form</button>
+              </header>
+
+              {filledRows.length ? (
+                <div className="freshCommandFilledRows">
+                  {filledRows.map((row) => (
+                    <label key={row.label}>
+                      <span>{row.label}</span>
+                      <b>{row.value}</b>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="freshCommandCleanEmpty"><b>This form is not filled enough yet.</b><span>Use Save edit or open the record before approving.</span></div>
+              )}
+
+              <label className="freshCommandOwnerNote">
+                <span>Owner note / edit</span>
+                <textarea value={noteValue} onChange={(event) => updateNote(event.target.value)} placeholder="Optional note before approving" />
+              </label>
+
+              <footer className="freshCommandFormFooter">
+                <div className="freshCommandRecordId"><span>Record</span><b>{recordId}</b></div>
+                <div className="freshCommandFixActions">
+                  <button type="submit" disabled={busy || (!canApprove && !isNote)}>{busyAction === "approve" ? "Approving..." : cleanButtonText("approve", selected)}</button>
+                  <button type="button" disabled={busy || isNote} onClick={() => runAction("save")}>{busyAction === "save" ? "Saving..." : cleanButtonText("save", selected)}</button>
+                  <button type="button" disabled={busy || isNote} onClick={() => runAction("ignore")}>{busyAction === "ignore" ? "Parking..." : cleanButtonText("ignore", selected)}</button>
+                  <button type="button" disabled={busy || isNote} onClick={() => runTool("open")}>Open record</button>
+                </div>
+              </footer>
+              {message ? <p className="freshCommandOutcome">{message}</p> : null}
+            </form>
+          )}
         </section>
       ) : (
         <section className="freshCommandCleanEmpty freshCommandNoForm">
