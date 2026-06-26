@@ -16,6 +16,7 @@ export const COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626 = "COMMAND_FIX_DESK_RIS
 export const COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626 = "COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626";
 export const COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626 = "COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626";
 export const COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626 = "COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626";
+export const COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626 = "COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 const PRIORITY_ORDER = { "Fix first": 0, "Check today": 1, "Needs proof": 2, "Setup check": 3, "Watching": 4 };
@@ -131,6 +132,18 @@ const editActionHintStyle = {
   borderRadius: 14,
   background: "#f8fafc",
   color: "#475569",
+  fontSize: 12,
+  fontWeight: 850,
+  lineHeight: 1.35,
+};
+
+const ignoreActionHintStyle = {
+  margin: "8px 0 0",
+  padding: "9px 11px",
+  border: "1px solid rgba(15,23,42,.08)",
+  borderRadius: 14,
+  background: "#fffaf0",
+  color: "#64748b",
   fontSize: 12,
   fontWeight: 850,
   lineHeight: 1.35,
@@ -492,6 +505,17 @@ function buildEditAction(fix, activeRiskBadge) {
   return { button: "Send back for edit", hint: "Use this when the prepared fix is close, but not ready for approval.", outcome: "Saved as needs edit." };
 }
 
+function buildIgnoreAction(fix) {
+  if (!fix) return { button: "Park for now", hint: "This only removes the item from your Command attention list for now. It does not delete records.", outcome: "Parked for now. No records were deleted." };
+  if (fix?.source?.sourceMode === "note") return { button: "Park note", hint: "This parks the saved note locally. It does not delete any customer, job, invoice, quote, or team record.", outcome: "Note parked. Nothing was changed." };
+  if (fix.bucket === "Money") return { button: "Park money step", hint: "This hides the prepared money action from Command for now. It does not delete the job, customer, invoice, or quote.", outcome: "Money step parked. No records were deleted." };
+  if (fix.bucket === "Quotes") return { button: "Park follow-up", hint: "This parks the quote follow-up for now. The quote and customer records stay untouched.", outcome: "Quote follow-up parked. No records were deleted." };
+  if (fix.bucket === "Jobs") return { button: "Park job blocker", hint: "This parks the blocker in Command. The job record itself is not deleted or completed.", outcome: "Job blocker parked. No records were deleted." };
+  if (fix.bucket === "Proof") return { button: "Skip proof request", hint: "This skips the proof request for now. It does not delete photos, jobs, or worker records.", outcome: "Proof request parked. No records were deleted." };
+  if (fix.bucket === "Setup") return { button: "Park setup gap", hint: "This parks the setup reminder for now. It does not remove the underlying record.", outcome: "Setup gap parked. No records were deleted." };
+  return { button: "Park for now", hint: "This only removes the item from your Command attention list for now. It does not delete records.", outcome: "Parked for now. No records were deleted." };
+}
+
 export default function FreshCommandOperatingSystem({
   selected,
   selectedApprovalDetails = [],
@@ -562,9 +586,11 @@ export default function FreshCommandOperatingSystem({
   const approveBlocked = Boolean(activeFix?.source?.sourceMode !== "note" && (activeRiskBadge?.label === "Draft needed" || activeRiskBadge?.label === "Needs proof"));
   const approveOutcome = buildApproveOutcome(activeFix, approveBlocked, activeRiskBadge);
   const editAction = buildEditAction(activeFix, activeRiskBadge);
+  const ignoreAction = buildIgnoreAction(activeFix);
   const approveBlockHint = activeRiskBadge?.label === "Draft needed" ? "Approval is blocked until Churvox has a concrete draft or action ready." : activeRiskBadge?.label === "Needs proof" ? "Approval is blocked until stronger proof or linked context is added." : "";
   const approveButtonText = actionBusy === "approve" || externalBusy === "approve" ? "Approving..." : activeFix?.source?.sourceMode === "note" ? "Prepare note" : approveBlocked && activeRiskBadge?.label === "Draft needed" ? "Draft needed first" : approveBlocked ? "Proof needed first" : "Approve fix";
   const editButtonText = actionBusy === "save" || externalBusy === "save" ? "Saving..." : editAction.button;
+  const ignoreButtonText = actionBusy === "ignore" || externalBusy === "ignore" ? "Parking..." : ignoreAction.button;
   const adminDebtTotal = preparedBackendRows.reduce((sum, item) => sum + moneyAmount(item), 0);
   const moneyItems = fixItems.filter((item) => item.bucket === "Money");
   const highItems = fixItems.filter((item) => item.severity === "Fix first");
@@ -603,13 +629,13 @@ export default function FreshCommandOperatingSystem({
       }
       if (kind === "ignore" && onIgnoreFix) {
         await onIgnoreFix({ fix: activeFix, note });
-        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Ignored. Nothing was changed." }));
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: ignoreAction.outcome || "Parked for now. No records were deleted." }));
         return;
       }
 
       if (source.sourceMode === "note") {
         if (kind !== "approve") {
-          setLocalOutcome((current) => ({ ...current, [activeFix.id]: kind === "save" ? editAction.outcome || "Note marked for edit" : "Note ignored locally" }));
+          setLocalOutcome((current) => ({ ...current, [activeFix.id]: kind === "save" ? editAction.outcome || "Note marked for edit" : ignoreAction.outcome || "Note parked. Nothing was changed." }));
           return;
         }
         await commandApiRequest("POST", "/tell-churvox/prepare", { text: sourceText(source) || activeFix.title });
@@ -635,7 +661,7 @@ export default function FreshCommandOperatingSystem({
         setLocalOutcome((current) => ({ ...current, [activeFix.id]: editAction.outcome || "Saved as needs edit." }));
       } else if (kind === "ignore") {
         await commandApiRequest("POST", `/ai-review-items/${encodeURIComponent(id)}/ignore`, { note });
-        setLocalOutcome((current) => ({ ...current, [activeFix.id]: "Ignored. Nothing was changed." }));
+        setLocalOutcome((current) => ({ ...current, [activeFix.id]: ignoreAction.outcome || "Parked for now. No records were deleted." }));
       }
       notifyCommandUpdated();
     } catch (err) {
@@ -684,7 +710,7 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626} data-command-approve-guard={COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626} data-command-approve-outcome={COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626} data-command-smart-edit={COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626} data-command-approve-guard={COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626} data-command-approve-outcome={COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626} data-command-smart-edit={COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626} data-command-smart-ignore={COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
@@ -756,9 +782,10 @@ export default function FreshCommandOperatingSystem({
             <div className="freshCommandFixActions">
               <button type="button" disabled={busy || approveBlocked} onClick={() => runFixAction("approve")}>{approveButtonText}</button>
               <button type="button" disabled={busy} onClick={() => runFixAction("save")}>{editButtonText}</button>
-              <button type="button" disabled={busy} onClick={() => runFixAction("ignore")}>{actionBusy === "ignore" || externalBusy === "ignore" ? "Ignoring..." : "Ignore for now"}</button>
+              <button type="button" disabled={busy} onClick={() => runFixAction("ignore")}>{ignoreButtonText}</button>
             </div>
             {editAction?.hint ? <p style={editActionHintStyle}>{editAction.hint}</p> : null}
+            {ignoreAction?.hint ? <p style={ignoreActionHintStyle}>{ignoreAction.hint}</p> : null}
             {approveBlocked ? <p style={approveGuardHintStyle}>{approveBlockHint}</p> : null}
             {activeOutcome ? <p className="freshCommandOutcome">{activeOutcome}</p> : null}
           </> : <div className="freshCommandEmptyFix"><b>Nothing selected</b><small>Choose a fix from the left list.</small></div>}
