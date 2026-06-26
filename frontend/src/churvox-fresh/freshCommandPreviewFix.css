@@ -5,6 +5,18 @@
   box-sizing: border-box;
 }
 
+.freshCommandStablePage > .freshHero,
+.freshCommandStablePage > .freshCommandPulse,
+.freshCommandStablePage > .freshBackendReviewSource,
+.freshCommandStablePage > .freshCommandFilterBar,
+.freshCommandStablePage > .freshGrid {
+  display: none !important;
+}
+
+.freshCommandStablePage {
+  gap: 0 !important;
+}
+
 .freshCommandCleanDesk {
   display: grid;
   gap: 14px;
@@ -12,23 +24,14 @@
 }
 
 .freshCommandCleanHeader {
-  display: grid;
-  gap: 10px;
-  padding: 22px;
-  border: 1px solid rgba(249, 115, 22, .26);
-  border-left: 7px solid #f97316;
-  border-radius: 24px;
-  background:
-    linear-gradient(135deg, rgba(249, 115, 22, .18), transparent 34%),
-    radial-gradient(circle at 96% 6%, rgba(255, 237, 213, .13), transparent 28%),
-    #151513;
-  box-shadow: 0 22px 55px rgba(15, 23, 42, .18);
+  display: none;
 }
 
 .freshCommandCleanHeader > span,
 .freshCommandCleanPanelTitle span,
 .freshCommandFilledRows span,
-.freshCommandOwnerNote span {
+.freshCommandOwnerNote span,
+.freshCommandFilledLead span {
   display: inline-flex;
   width: fit-content;
   align-items: center;
@@ -44,57 +47,19 @@
   text-transform: uppercase;
 }
 
-.freshCommandCleanHeader h2 {
-  margin: 0;
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  font-size: clamp(28px, 4vw, 52px);
-  line-height: .98;
-  letter-spacing: -.04em;
-}
-
-.freshCommandCleanHeader p {
-  max-width: 760px;
-  margin: 0;
-  color: #fed7aa;
-  -webkit-text-fill-color: #fed7aa;
-  font-size: 15px;
-  font-weight: 900;
-  line-height: 1.4;
-}
-
-.freshCommandCleanStats {
+.freshCommandFilledLead {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
-.freshCommandCleanStats div {
-  padding: 12px;
-  border: 1px solid rgba(255, 237, 213, .15);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, .075);
-}
-
-.freshCommandCleanStats b,
-.freshCommandCleanStats small {
-  display: block;
-}
-
-.freshCommandCleanStats b {
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  font-size: 24px;
-  font-weight: 1000;
-  line-height: 1;
-}
-
-.freshCommandCleanStats small {
-  margin-top: 5px;
-  color: #fed7aa;
-  -webkit-text-fill-color: #fed7aa;
-  font-size: 11px;
-  font-weight: 900;
+.freshCommandFilledLead h2 {
+  margin: 0;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: clamp(30px, 4vw, 54px);
+  line-height: .95;
+  letter-spacing: -.045em;
 }
 
 .freshCommandCleanToolbar,
@@ -136,7 +101,7 @@
 
 .freshCommandCleanGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(290px, .65fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
   gap: 14px;
   align-items: start;
 }
@@ -145,9 +110,9 @@
 .freshCommandOwnerControls,
 .freshCommandCleanEmpty {
   min-width: 0;
-  padding: 16px;
+  padding: 18px;
   border: 1px solid rgba(15, 23, 42, .10);
-  border-radius: 22px;
+  border-radius: 20px;
   background: rgba(255, 250, 240, .98);
   box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
 }
@@ -191,7 +156,7 @@
 
 .freshCommandFilledRows label {
   display: grid;
-  grid-template-columns: minmax(120px, .28fr) minmax(0, 1fr);
+  grid-template-columns: minmax(112px, .25fr) minmax(0, 1fr);
   gap: 10px;
   align-items: start;
   padding: 9px;
@@ -233,7 +198,7 @@
 
 .freshCommandOwnerNote textarea {
   width: 100%;
-  min-height: 120px;
+  min-height: 116px;
   padding: 12px;
   border: 1px solid rgba(15, 23, 42, .12);
   border-radius: 16px;
@@ -303,6 +268,11 @@
   font-weight: 850;
 }
 
+.freshCommandNoForm {
+  display: grid;
+  gap: 12px;
+}
+
 @media (max-width: 1100px) {
   .freshCommandCleanGrid {
     grid-template-columns: 1fr;
@@ -314,7 +284,6 @@
 }
 
 @media (max-width: 760px) {
-  .freshCommandCleanHeader,
   .freshCommandFilledFormCard,
   .freshCommandOwnerControls,
   .freshCommandCleanEmpty {
@@ -322,7 +291,6 @@
     border-radius: 18px;
   }
 
-  .freshCommandCleanStats,
   .freshCommandFilledRows label {
     grid-template-columns: 1fr;
   }
