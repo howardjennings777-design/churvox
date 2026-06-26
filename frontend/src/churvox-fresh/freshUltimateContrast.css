@@ -136,6 +136,8 @@
   background: #111827 !important;
   border-color: #111827 !important;
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
 }
 
 .freshCommandFilterBar button.active *,
@@ -145,6 +147,8 @@
 .freshTabs button.active *,
 .freshTabs button[aria-pressed="true"] * {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
 }
 
 .freshCommandFilterBar button.active b,
@@ -155,10 +159,29 @@
 .freshTabs button[aria-pressed="true"] b {
   background: #f97316 !important;
   color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
   border-radius: 999px !important;
   padding: 0.12rem 0.42rem !important;
   min-width: 1.45rem !important;
   text-align: center !important;
+  opacity: 1 !important;
+}
+
+/* CHURVOX_PILL_VISIBILITY_20260626 */
+.freshMain [class*="Badge"],
+.freshMain [class*="Pill"],
+.freshMain [class*="Tag"],
+.freshMain [class*="Status"] {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.freshMain [class*="Badge"] *,
+.freshMain [class*="Pill"] *,
+.freshMain [class*="Tag"] *,
+.freshMain [class*="Status"] * {
+  opacity: 1 !important;
+  text-shadow: none !important;
 }
 
 /* CHURVOX_COMMAND_QUEUE_LIMIT_20260626 */
