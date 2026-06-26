@@ -12,6 +12,14 @@ except Exception:
     except Exception:
         pass
 
+try:
+    from . import churvox_ai_action_limit  # noqa: F401
+except Exception:
+    try:
+        import churvox_ai_action_limit  # noqa: F401
+    except Exception:
+        pass
+
 # Xero rejects the OAuth request if any scope is invalid. Let Render's XERO_SCOPES
 # win when it is configured, and only fall back to the minimum phase-one scope set.
 os.environ.setdefault("XERO_SCOPES", "openid profile email offline_access accounting.invoices")
