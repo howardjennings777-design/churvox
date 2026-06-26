@@ -479,6 +479,43 @@
   padding: 18px;
 }
 
+/* CHURVOX_ACCOUNTING_SYNC_VISIBLE_LABELS_20260626 */
+.cvPlanCard:nth-of-type(1) li:nth-child(6),
+.cvPlanCard:nth-of-type(2) li:nth-child(6),
+.cvPlanCard:nth-of-type(4) li:nth-child(5),
+.cvPlanBreakdown div:nth-child(2) b,
+.cvPlanAddon:first-child b {
+  font-size: 0 !important;
+}
+
+.cvPlanCard:nth-of-type(1) li:nth-child(6)::after,
+.cvPlanCard:nth-of-type(2) li:nth-child(6)::after,
+.cvPlanCard:nth-of-type(4) li:nth-child(5)::after,
+.cvPlanBreakdown div:nth-child(2) b::after,
+.cvPlanAddon:first-child b::after {
+  font-size: 13px !important;
+  line-height: 1.35;
+}
+
+.cvPlanCard:nth-of-type(1) li:nth-child(6)::after,
+.cvPlanCard:nth-of-type(2) li:nth-child(6)::after {
+  content: "✓ Accounting Sync Add-on available";
+}
+
+.cvPlanCard:nth-of-type(4) li:nth-child(5)::after {
+  content: "✓ Accounting sync included";
+}
+
+.cvPlanBreakdown div:nth-child(2) b::after {
+  content: "Accounting sync";
+  display: block;
+}
+
+.cvPlanAddon:first-child b::after {
+  content: "Accounting Sync Add-on";
+  display: block;
+}
+
 @media (max-width: 1050px) {
   .cvPlanMain,
   .cvPlanHero,
