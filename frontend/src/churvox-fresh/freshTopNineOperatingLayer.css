@@ -1,4 +1,7 @@
 /* CHURVOX_TOP_NINE_LAYER_MARKER_20260627 */
+/* CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627 */
+/* CHURVOX_TOP_NINE_LAUNCH_CHECKLIST_20260627 */
+
 .freshTopNineLayer {
   margin: 16px 0 18px;
   padding: 16px;
@@ -50,7 +53,14 @@
   line-height: 1.42;
 }
 
-.freshTopNineHeader button,
+.freshTopNineHeaderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.freshTopNineHeaderActions button,
 .freshTopNineCard button {
   min-height: 40px;
   border: 0;
@@ -65,11 +75,71 @@
   box-shadow: 0 12px 24px rgba(249, 115, 22, .24);
 }
 
-.freshTopNineHeader button {
+.freshTopNineHeaderActions button {
   white-space: nowrap;
   background: #ffffff;
   color: #111827;
   -webkit-text-fill-color: #111827;
+}
+
+.freshTopNineChecklist {
+  margin: 0 0 14px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(249, 115, 22, .22);
+  background: #fff7ed;
+}
+
+.freshTopNineChecklist > b {
+  display: block;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.freshTopNineChecklist > p {
+  margin: 5px 0 12px;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.freshTopNineChecklist > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshTopNineChecklist section {
+  padding: 11px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, .07);
+}
+
+.freshTopNineChecklist strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 13px;
+  font-weight: 1000;
+}
+
+.freshTopNineChecklist ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.freshTopNineChecklist li {
+  margin: 4px 0;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 12px;
+  font-weight: 820;
+  line-height: 1.32;
 }
 
 .freshTopNineGrid {
@@ -81,7 +151,7 @@
 .freshTopNineCard {
   display: grid;
   gap: 11px;
-  min-height: 218px;
+  min-height: 260px;
   padding: 14px;
   border-radius: 20px;
   border: 1px solid rgba(15, 23, 42, .09);
@@ -122,7 +192,7 @@
   line-height: 1.35;
 }
 
-.freshTopNineCard section {
+.freshTopNineCard > section {
   display: grid;
   gap: 4px;
   padding: 10px;
@@ -145,7 +215,7 @@
   line-height: 1.28;
 }
 
-.freshTopNineCard.need section {
+.freshTopNineCard.need > section {
   background: #fee2e2;
 }
 
@@ -155,7 +225,7 @@
   -webkit-text-fill-color: #991b1b;
 }
 
-.freshTopNineCard.money section {
+.freshTopNineCard.money > section {
   background: #ffedd5;
 }
 
@@ -165,7 +235,7 @@
   -webkit-text-fill-color: #9a3412;
 }
 
-.freshTopNineCard.command section {
+.freshTopNineCard.command > section {
   background: #e0f2fe;
 }
 
@@ -175,7 +245,7 @@
   -webkit-text-fill-color: #075985;
 }
 
-.freshTopNineCard.support section {
+.freshTopNineCard.support > section {
   background: #f5f3ff;
 }
 
@@ -185,46 +255,6 @@
   -webkit-text-fill-color: #5b21b6;
 }
 
-.freshTopNineCard button:disabled {
-  cursor: not-allowed;
-  opacity: .58;
-  box-shadow: none;
-}
-
-@media (max-width: 1060px) {
-  .freshTopNineGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 700px) {
-  .freshTopNineLayer {
-    padding: 13px;
-    border-radius: 20px;
-  }
-
-  .freshTopNineHeader {
-    display: grid;
-  }
-
-  .freshTopNineHeader button {
-    width: 100%;
-  }
-
-  .freshTopNineGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .freshTopNineCard {
-    min-height: auto;
-  }
-
-  .freshTopNineCard button {
-    width: 100%;
-  }
-}
-
-/* CHURVOX_TOP_NINE_PLAYBOOK_STYLE_20260627 */
 .freshTopNinePlaybook {
   border: 1px solid rgba(15, 23, 42, .08);
   border-radius: 15px;
@@ -256,3 +286,44 @@
   font-size: 12px;
 }
 
+.freshTopNineCard button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+  box-shadow: none;
+}
+
+@media (max-width: 1060px) {
+  .freshTopNineGrid,
+  .freshTopNineChecklist > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .freshTopNineLayer {
+    padding: 13px;
+    border-radius: 20px;
+  }
+
+  .freshTopNineHeader {
+    display: grid;
+  }
+
+  .freshTopNineHeaderActions,
+  .freshTopNineHeaderActions button {
+    width: 100%;
+  }
+
+  .freshTopNineGrid,
+  .freshTopNineChecklist > div {
+    grid-template-columns: 1fr;
+  }
+
+  .freshTopNineCard {
+    min-height: auto;
+  }
+
+  .freshTopNineCard button {
+    width: 100%;
+  }
+}
