@@ -4,6 +4,29 @@ import "./freshTopNineOperatingLayer.css";
 export const CHURVOX_TOP_NINE_LAYER_MARKER_20260627 = "CHURVOX_TOP_NINE_LAYER_MARKER_20260627";
 export const CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627 = "CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627";
 export const CHURVOX_TOP_NINE_LAUNCH_CHECKLIST_20260627 = "CHURVOX_TOP_NINE_LAUNCH_CHECKLIST_20260627";
+export const CHURVOX_TOP_NINE_CHECKLIST_PROGRESS_20260627 = "CHURVOX_TOP_NINE_CHECKLIST_PROGRESS_20260627";
+
+const CHECKLIST_PROGRESS_KEY = "churvox:top-nine-launch-checklist:v1";
+
+function checklistItemKey(cardId, text) {
+  return `${cardId}:${String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
+function readChecklistProgress() {
+  try {
+    const raw = window.localStorage.getItem(CHECKLIST_PROGRESS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveChecklistProgress(value) {
+  try {
+    window.localStorage.setItem(CHECKLIST_PROGRESS_KEY, JSON.stringify(value || {}));
+  } catch {}
+}
 
 function money(value) {
   const n = Number(value || 0);
@@ -230,9 +253,26 @@ function buildCards({
 export default function FreshTopNineOperatingLayer(props) {
   const [open, setOpen] = React.useState(true);
   const [checklistOpen, setChecklistOpen] = React.useState(false);
+  const [checked, setChecked] = React.useState(() => readChecklistProgress());
   const cards = buildCards(props);
   const activeCount = cards.filter((card) => ["need", "money", "command"].includes(card.tone)).length;
-  const totalChecks = cards.reduce((sum, card) => sum + card.checks.length, 0);
+  const allCheckKeys = React.useMemo(() => cards.flatMap((card) => card.checks.map((check) => checklistItemKey(card.id, check))), [cards]);
+  const totalChecks = allCheckKeys.length;
+  const completedChecks = allCheckKeys.filter((key) => checked[key]).length;
+  const progressPercent = totalChecks ? Math.round((completedChecks / totalChecks) * 100) : 0;
+
+  function toggleCheck(key) {
+    setChecked((current) => {
+      const next = { ...(current || {}), [key]: !current?.[key] };
+      saveChecklistProgress(next);
+      return next;
+    });
+  }
+
+  function resetChecks() {
+    setChecked({});
+    saveChecklistProgress({});
+  }
 
   return (
     <section
@@ -240,6 +280,7 @@ export default function FreshTopNineOperatingLayer(props) {
       data-top-nine-layer={CHURVOX_TOP_NINE_LAYER_MARKER_20260627}
       data-top-nine-playbook={CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627}
       data-top-nine-checklist={CHURVOX_TOP_NINE_LAUNCH_CHECKLIST_20260627}
+      data-top-nine-progress={CHURVOX_TOP_NINE_CHECKLIST_PROGRESS_20260627}
     >
       <header className="freshTopNineHeader">
         <div>
@@ -249,7 +290,7 @@ export default function FreshTopNineOperatingLayer(props) {
         </div>
         <div className="freshTopNineHeaderActions">
           <button type="button" onClick={() => setChecklistOpen((value) => !value)}>
-            {checklistOpen ? "Hide checklist" : `${totalChecks} launch checks`}
+            {checklistOpen ? "Hide checklist" : `${completedChecks}/${totalChecks} launch checks`}
           </button>
           <button type="button" onClick={() => setOpen((value) => !value)}>
             {open ? "Hide Top 9" : `Show Top 9 (${activeCount})`}
@@ -259,14 +300,36 @@ export default function FreshTopNineOperatingLayer(props) {
 
       {checklistOpen ? (
         <aside className="freshTopNineChecklist">
-          <b>Launch checklist for the 9 things that matter</b>
-          <p>Use this as the practical test pass before pushing harder on marketing.</p>
+          <header className="freshTopNineChecklistHead">
+            <div>
+              <b>Launch checklist for the 9 things that matter</b>
+              <p>Use this as the practical test pass before pushing harder on marketing.</p>
+            </div>
+            <section>
+              <strong>{progressPercent}%</strong>
+              <span>{completedChecks} of {totalChecks} checked</span>
+              <button type="button" onClick={resetChecks} disabled={!completedChecks}>Reset</button>
+            </section>
+          </header>
+          <div className="freshTopNineProgressBar" aria-label="Top 9 checklist progress">
+            <span style={{ width: `${progressPercent}%` }} />
+          </div>
           <div>
             {cards.map((card) => (
               <section key={`check-${card.id}`}>
                 <strong>{card.title}</strong>
                 <ul>
-                  {card.checks.map((check) => <li key={check}>{check}</li>)}
+                  {card.checks.map((check) => {
+                    const key = checklistItemKey(card.id, check);
+                    return (
+                      <li key={check} className={checked[key] ? "done" : ""}>
+                        <label>
+                          <input type="checkbox" checked={Boolean(checked[key])} onChange={() => toggleCheck(key)} />
+                          <span>{check}</span>
+                        </label>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             ))}

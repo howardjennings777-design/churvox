@@ -327,3 +327,139 @@
     width: 100%;
   }
 }
+
+/* CHURVOX_TOP_NINE_CHECKLIST_PROGRESS_STYLE_20260627 */
+.freshTopNineChecklistHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.freshTopNineChecklistHead > div > b {
+  display: block;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.freshTopNineChecklistHead > div > p {
+  margin: 5px 0 0;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.freshTopNineChecklistHead > section {
+  display: grid;
+  gap: 4px;
+  min-width: 140px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #111827;
+  text-align: right;
+}
+
+.freshTopNineChecklistHead > section strong {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 22px;
+  font-weight: 1000;
+}
+
+.freshTopNineChecklistHead > section span {
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.freshTopNineChecklistHead > section button {
+  justify-self: end;
+  min-height: 28px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #ffffff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 11px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshTopNineChecklistHead > section button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.freshTopNineProgressBar {
+  height: 10px;
+  margin: 0 0 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fed7aa;
+}
+
+.freshTopNineProgressBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #f97316;
+  transition: width .22s ease;
+}
+
+.freshTopNineChecklist li {
+  list-style: none;
+  margin: 6px 0;
+}
+
+.freshTopNineChecklist li label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.freshTopNineChecklist li input {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  accent-color: #f97316;
+  flex: 0 0 auto;
+}
+
+.freshTopNineChecklist li span {
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 12px;
+  font-weight: 820;
+  line-height: 1.32;
+}
+
+.freshTopNineChecklist li.done span {
+  color: #166534;
+  -webkit-text-fill-color: #166534;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(22, 101, 52, .35);
+}
+
+@media (max-width: 700px) {
+  .freshTopNineChecklistHead {
+    display: grid;
+  }
+
+  .freshTopNineChecklistHead > section {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .freshTopNineChecklistHead > section button {
+    justify-self: start;
+  }
+}
+
