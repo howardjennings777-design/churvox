@@ -8,6 +8,8 @@ axios.defaults.withCredentials = true;
 const AuthContext = createContext(null);
 const AUTH_TIMEOUT_MS = 15000;
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
+const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
+const GOOD_STATUSES = new Set(["active", "paid", "trialing", "trial", "past_due"]);
 
 function clearStoredAuth() {
   try {
@@ -21,6 +23,26 @@ function clearStoredAuth() {
 
 function removePlanFlag() {
   try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
+}
+
+function cleanPlan(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function userPlan(user = {}) {
+  return cleanPlan(user.plan || user.ui_plan || user.current_plan || user.subscription_plan || user.billing_plan || user.tier || user.plan_name || user?.business?.plan || user?.business?.subscription_plan);
+}
+
+function hasValidPlan(user = {}) {
+  return VALID_PLANS.has(userPlan(user));
+}
+
+function subscriptionStatus(user = {}) {
+  return String(user.subscription_status || user.billing_status || user.stripe_status || "").trim().toLowerCase();
+}
+
+function isLockedStatus(status) {
+  return ["cancelled", "canceled", "unpaid", "incomplete_expired", "locked", "disabled"].includes(status);
 }
 
 function tokenFrom(data = {}) {
@@ -72,7 +94,7 @@ export function AuthProvider({ children }) {
     try { token = localStorage.getItem("token") || ""; } catch {}
     try {
       const me = await fetchMe(token || undefined);
-      if (me?.has_app_access) removePlanFlag();
+      if (me?.has_app_access || hasValidPlan(me)) removePlanFlag();
       setUser(me);
       return me;
     } catch (err) {
@@ -136,7 +158,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem("token");
     }
 
-    if (nextUser?.has_app_access) removePlanFlag();
+    if (nextUser?.has_app_access || hasValidPlan(nextUser)) removePlanFlag();
     setUser(nextUser);
 
     const finalEmail = String(nextUser.email || "").trim().toLowerCase();
@@ -216,11 +238,15 @@ export function AuthProvider({ children }) {
   const hasAppAccess = (() => {
     if (!user) return false;
     if (isWorker || isPayroll) return true;
+
+    const status = subscriptionStatus(user);
+    const validPlan = hasValidPlan(user);
+    if (validPlan && !isLockedStatus(status) && !isTrialExpired) return true;
+    if (validPlan && GOOD_STATUSES.has(status) && !isTrialExpired) return true;
+
     if (typeof user.has_app_access === "boolean") return user.has_app_access;
-    const status = String(user.subscription_status || "").toLowerCase();
-    const plan = String(user.plan || "").toLowerCase();
-    if (!plan || plan === "none" || plan === "free") return false;
-    if (status === "active" || status === "paid") return true;
+
+    if (!validPlan) return false;
     if ((status === "trialing" || !status) && !isTrialExpired) return true;
     return false;
   })();
