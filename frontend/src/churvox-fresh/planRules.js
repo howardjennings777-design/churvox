@@ -85,7 +85,7 @@ export const PLAN_FEATURE_MATRIX = [
   { area: "Quiet Mode for Owners", start: "Basic", crew: "Included", operator: "Smart urgent mode", command: "Full owner controls" },
   { area: "Approval Memory", start: "Not included", crew: "Not included", operator: "Included", command: "Advanced" },
   { area: "Done Properly Checklist", start: "Basic checklist", crew: "Industry checklists", operator: "Smart checklists", command: "Advanced templates" },
-  { area: "Business Family Roles", start: "One helper", crew: "Admin helper", operator: "Admin + payroll helper", command: "Full family role controls" },
+  { area: "Business Family Roles", start: "One helper hidden", crew: "Admin helper", operator: "Admin + payroll helper", command: "Full family role controls" },
   { area: "Worker Time Approval", start: "Not included", crew: "Included", operator: "Advanced", command: "Advanced + payroll support" },
   { area: "Accounting Sync", start: "$39 add-on", crew: "$39 add-on", operator: "$39 add-on", command: "Included" },
   { area: "Core Job Management", start: "Included", crew: "Included", operator: "Included", command: "Included" },
