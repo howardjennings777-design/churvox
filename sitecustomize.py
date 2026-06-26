@@ -19,6 +19,11 @@ except Exception:
     pass
 
 try:
+    import backend.churvox_job_timer_routes_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import backend.churvox_plan_usage_routes  # noqa: F401
 except Exception:
     pass
