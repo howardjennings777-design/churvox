@@ -135,7 +135,7 @@ const CLIENT_RECORD_ALIASES = ["feedback", "reviews", "reviewbooster"];
 const QUOTE_RECORD_ALIASES = ["variations"];
 const PAYMENT_RECORD_ALIASES = ["expenses"];
 const TEAM_RECORD_ALIASES = ["contractors", "subcontractors"];
-const SUPPORT_ALIASES = ["helpdesk", "trust", "roadmap"];
+const SUPPORT_ALIASES = ["help", "supportdesk", "support-desk", "contact", "contactsupport"];
 
 const pages = {
   planday: FreshPlanMyDay,
