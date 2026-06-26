@@ -13,12 +13,21 @@ function backendErrorMessage(data) {
   return data.error || data.detail || data.message || "Request failed";
 }
 
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || value.job_id || value.invoice_id || "");
+  const text = String(value || "");
+  return text === "[object Object]" ? "" : text;
+}
+
 function linkedJobId(invoice) {
-  return String(invoice?.job_id || invoice?.jobId || invoice?.job?.id || invoice?.job?._id || "");
+  return normalizeId(invoice?.job_id || invoice?.linked_job_id || invoice?.source_job_id || invoice?.jobId || invoice?.job?.id || invoice?.job?._id || "");
 }
 
 function invoiceId(invoice) {
-  return String(invoice?.id || invoice?._id || invoice?.invoice_id || "");
+  return normalizeId(invoice?.id || invoice?._id || invoice?.invoice_id || "");
 }
 
 export function useApi() {
@@ -49,7 +58,7 @@ export function useApi() {
             timeout: options.timeout || API_TIMEOUT_MS,
           });
           const invoices = Array.isArray(check.data) ? check.data : [];
-          const duplicate = invoices.find((invoice) => linkedJobId(invoice) === String(data.job_id));
+          const duplicate = invoices.find((invoice) => linkedJobId(invoice) === normalizeId(data.job_id));
           if (duplicate) {
             return { success: true, duplicate: true, status: 200, data: duplicate };
           }
