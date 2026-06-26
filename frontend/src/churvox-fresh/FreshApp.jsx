@@ -287,7 +287,10 @@ function readClientCardForQuote(button) {
     const box = boxes.find((item) => String(item.querySelector("span")?.textContent || "").trim().toLowerCase() === label);
     return String(box?.querySelector("b")?.textContent || "").trim();
   };
-  return { name: title, client_name: title, customer_name: title, email: valueFor("contact"), address: valueFor("service address") };
+  const contact = valueFor("contact");
+  const email = String(contact).split("/").map((item) => item.trim()).find((item) => item.includes("@")) || "";
+  const phone = String(contact).split("/").map((item) => item.trim()).find((item) => !item.includes("@") && item !== "No contact saved") || "";
+  return { name: title, client_name: title, customer_name: title, email, phone, address: valueFor("service address") };
 }
 
 function installClientQuoteRuntime() {
