@@ -403,7 +403,7 @@
 }
 
 .cvPlanAddons::after {
-  content: "Accounting Sync Add-on covers Xero or MYOB where available. Draft sync only. Owner approval required.";
+  content: "Accounting Sync Add-on covers Xero where available. Draft sync only. Owner approval required.";
   grid-column: 1 / -1;
   display: block;
   padding: 11px 13px;
