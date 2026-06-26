@@ -1,5 +1,4 @@
 import React from "react";
-import { createPortal } from "react-dom";
 import API_BASE from "../lib/apiBase";
 
 export const COMMAND_OS_MARKER_20260625 = "COMMAND_OS_MARKER_20260625";
@@ -673,7 +672,6 @@ export default function FreshCommandOperatingSystem({
   const [toolBusy, setToolBusy] = React.useState("");
   const [localNote, setLocalNote] = React.useState("");
   const [showPreparedForm, setShowPreparedForm] = React.useState(false);
-  const canUsePortal = typeof document !== "undefined" && document.body;
   const selectedDetails = selected ? detailRows(selected) : [];
   const selectedGaps = selected ? selectedProofGaps(selectedApprovalDetails) : [];
   const selectedScore = scoreItem(selected, selectedApprovalDetails, selectedHasConcreteAction);
@@ -902,7 +900,22 @@ export default function FreshCommandOperatingSystem({
             <p>{activeFix.title}</p>
             {activeRiskBadge ? <div style={{ ...riskBadgeStyle, background: activeRiskBadge.background, border: `1px solid ${activeRiskBadge.border}` }}><strong style={{ ...riskBadgeLabelStyle, background: activeRiskBadge.labelBackground, color: activeRiskBadge.labelColor }}>{activeRiskBadge.label}</strong><span style={{ ...riskBadgeTextStyle, color: activeRiskBadge.color }}>{activeRiskBadge.text}</span></div> : null}
             {approveOutcome ? <section style={approveOutcomeStyle}><small style={approveOutcomeLabelStyle}>What happens if I approve?</small><b style={approveOutcomeTitleStyle}>{approveOutcome.title}</b><p style={approveOutcomeTextStyle}>{approveOutcome.text}</p></section> : null}
-            <button type="button" style={formPreviewButtonStyle} onClick={() => setShowPreparedForm(true)}>Open prepared form</button>
+            <button type="button" style={formPreviewButtonStyle} onClick={() => setShowPreparedForm((open) => !open)}>{showPreparedForm ? "Hide prepared form" : "Show prepared form"}</button>
+            {showPreparedForm ? <section className="freshCommandInlinePreparedForm" aria-label="Prepared form inline">
+              <header>
+                <span>Prepared form</span>
+                <b>{activeFix.categoryLabel || activeFix.problem}</b>
+                <small>Preview only. Nothing changes here. Check the filled fields, then approve, edit, or park below.</small>
+              </header>
+              <div>
+                {preparedFormRows.map((row) => (
+                  <label key={row.label}>
+                    <span>{row.label}</span>
+                    <b>{row.value}</b>
+                  </label>
+                ))}
+              </div>
+            </section> : null}
             <div className="freshCommandFixSections">
               <section><small>Why it matters</small><b>{activeFix.why}</b></section>
               <section><small>Churvox prepared</small><b>{activeFix.prepared}</b></section>
@@ -944,29 +957,6 @@ export default function FreshCommandOperatingSystem({
         </div>
       </details>
 
-      {showPreparedForm && activeFix && canUsePortal ? createPortal(
-        <div style={formPreviewShadeStyle} role="presentation" onClick={() => setShowPreparedForm(false)}>
-          <section style={formPreviewModalStyle} role="dialog" aria-modal="true" aria-label="Prepared approval form" onClick={(event) => event.stopPropagation()}>
-            <header style={formPreviewHeaderStyle}>
-              <div style={formPreviewHeaderRowStyle}>
-                <div>
-                  <small style={{ ...approveOutcomeLabelStyle, background: "#f97316", color: "#111827" }}>Prepared approval form</small>
-                  <h3 style={{ margin: "8px 0 3px", fontSize: 22, lineHeight: 1.05, letterSpacing: "-.035em" }}>{activeFix.categoryLabel || activeFix.problem}</h3>
-                  <p style={{ margin: 0, color: "#fed7aa", fontSize: 12, fontWeight: 900, lineHeight: 1.35 }}>Preview only. Nothing changes here. Check the filled fields, then close and decide.</p>
-                </div>
-                <button type="button" style={formPreviewCloseStyle} aria-label="Close prepared approval form" onClick={() => setShowPreparedForm(false)}>×</button>
-              </div>
-            </header>
-            <div style={formPreviewBodyStyle}>
-              <div style={formPreviewGridStyle}>
-                {preparedFormRows.map((row) => <section key={row.label} style={formPreviewFieldStyle}><small style={formPreviewLabelStyle}>{row.label}</small><b style={formPreviewValueStyle}>{row.value}</b></section>)}
-              </div>
-              <button type="button" style={{ ...formPreviewButtonStyle, width: "100%", margin: 0 }} onClick={() => setShowPreparedForm(false)}>Close form and decide</button>
-            </div>
-          </section>
-        </div>,
-        document.body
-      ) : null}
     </section>
   );
 }
