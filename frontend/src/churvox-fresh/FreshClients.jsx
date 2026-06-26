@@ -59,6 +59,15 @@ function isGenericClientName(value) {
   return ["customer", "client", "unnamed client", "for", "unknown"].includes(lower(value));
 }
 
+function clientRecord(payload, fallback = {}) {
+  const data = payload?.data ?? payload;
+  const candidates = [data?.client, data?.customer, data?.record, data?.item, data?.data?.client, data?.data?.customer, data?.data?.record, data?.data, data, fallback];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) return candidate;
+  }
+  return fallback;
+}
+
 function normalizeClient(client, index) {
   const id = normalizeId(client?.id || client?._id || client?.client_id || client?.customer_id) || `client-${index}`;
   const name = pick(client, "name", "client_name", "customer_name", "contact_name", "business_name") || "Customer";
@@ -251,10 +260,11 @@ export default function FreshClients({ onNavigate }) {
     await loadClients({ quiet: true });
   }
 
-  function openJobPopup(clientId = "") {
-    const modalSearch = clientId ? `?client_id=${encodeURIComponent(clientId)}` : "";
-    try { window.localStorage.setItem(OPEN_JOB_MODAL_KEY, modalSearch || "true"); } catch {}
-    window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { search: modalSearch } }));
+  function openJobPopup(client = selected) {
+    if (!client) return;
+    const jobDraft = { client_id: client.id, customer_id: client.id, client: displayClientName(client), client_name: displayClientName(client), customer_name: displayClientName(client), address: client.address || "", notes: client.notes || "" };
+    try { const packed = JSON.stringify(jobDraft); window.localStorage.setItem(OPEN_JOB_MODAL_KEY, packed); window.__churvoxSelectedClientForJob = jobDraft; window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: jobDraft })); } catch {}
+    onNavigate?.("jobs");
   }
 
   async function saveNewClient() {
@@ -275,13 +285,13 @@ export default function FreshClients({ onNavigate }) {
     setNewClient(emptyClient);
     setAddOpen(false);
     const refreshed = await loadClients({ quiet: true });
-    const created = normalizeClient(res.data?.data || res.data || {}, 0);
+    const created = normalizeClient(clientRecord(res.data, payload), 0);
     if (created?.id && refreshed.some((client) => client.id === created.id)) setSelectedId(created.id);
     setSavedAt(`Client saved ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
   }
 
   return (
-    <section className="freshClientsPage">
+    <section className="freshClientsPage" data-client-job-handoff="20260626">
       <header className="freshHero"><span>Clients</span><h1>Clients</h1><p>Customer records, contact details, service address, notes and recent work.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && clients.length === 0 ? "..." : clients.length}</h2><p>Total clients</p></aside><aside className="freshCard"><h2>{visibleClients.length}</h2><p>Showing</p></aside><aside className="freshCard"><h2>{selected ? money(timelineValue) : "$0.00"}</h2><p>Recent value</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Clients could not load</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadClients(); loadTimeline(); }}>Retry</button></section> : null}
@@ -293,7 +303,7 @@ export default function FreshClients({ onNavigate }) {
 
         <section className="freshCard freshJobsDetailCard"><h2>{displayClientName(selected)}</h2>{selected ? <><div className="freshMiniGrid"><div><span>Contact</span><b>{selected.contact || "No contact saved"}</b></div><div><span>Service address</span><b>{selected.address || "No address saved"}</b></div><div><span>Recent work</span><b>{rows.length} records</b></div><div><span>Recent value</span><b>{money(timelineValue)}</b></div></div>{selected.notes ? <section className="freshJobsDetailBox notes"><span>Client notes</span><p>{selected.notes}</p></section> : null}<section className="freshTimelineList"><h3>Recent work</h3>{timelineLoading ? <article><b>Refreshing recent work...</b><span>Checking jobs, quotes and invoices.</span></article> : rows.length ? rows.slice(0, 5).map((row, index) => <article key={`${row.type}-${index}`}><b>{row.type}: {row.title}</b><span>{row.status} - {money(row.amount)} - {row.note}</span></article>) : <article><b>No recent work saved</b><span>This client has no linked jobs, quotes, or invoices yet.</span></article>}</section>{editOpen ? <section className="freshClientEditPanel"><label className="freshField"><span>Client name</span><input value={selected.name} onChange={(event) => updateSelectedClient({ name: event.target.value })} /></label><label className="freshField"><span>Invoice/customer email</span><input value={selected.email} onChange={(event) => updateSelectedClient({ email: event.target.value })} /></label><label className="freshField"><span>Phone</span><input value={selected.phone} onChange={(event) => updateSelectedClient({ phone: event.target.value })} /></label><label className="freshField"><span>Service address</span><input value={selected.address} onChange={(event) => updateSelectedClient({ address: event.target.value })} /></label><label className="freshField"><span>Client notes</span><textarea value={selected.notes} onChange={(event) => updateSelectedClient({ notes: event.target.value })} /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveSelectedClient}>{saving ? "Saving..." : "Save client"}</button><button className="freshGhost" type="button" onClick={() => setEditOpen(false)}>Cancel</button></div></section> : <div className="freshActions"><button className="freshDark" type="button" onClick={() => setEditOpen(true)}>Edit details</button><button className="freshGhost" type="button" onClick={() => onNavigate?.("jobs")}>View jobs</button></div>}</> : <div className="freshItem"><b>No client selected</b><span>Add your first client to start the workflow.</span></div>}</section>
 
-        <aside className="freshCard freshJobsActionsCard"><h2>Client actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add client</button><FreshCsvImportButton endpoint="/clients/import-csv" label="Import clients CSV" disabled={saving} onDone={async (data) => { setSavedAt(data?.message || "Clients imported from CSV."); await loadClients({ quiet: true }); }} onError={(message) => { setError(message || "Could not import clients CSV."); setSavedAt("CSV import failed"); }} /><button className="freshOrange" type="button" disabled={!selected} onClick={() => openJobPopup(selected?.id || "")}>Create job</button><button className="freshDark" type="button" disabled={!selected} onClick={() => window.location.href = selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new"}>Create quote</button><button className="freshGhost" type="button" disabled={!selected || saving} onClick={deleteSelectedClient}>Delete client</button><button className="freshGhost" type="button" onClick={() => { loadClients(); loadTimeline(); }}>Refresh</button></div></aside>
+        <aside className="freshCard freshJobsActionsCard"><h2>Client actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={() => setAddOpen(true)}>Add client</button><FreshCsvImportButton endpoint="/clients/import-csv" label="Import clients CSV" disabled={saving} onDone={async (data) => { setSavedAt(data?.message || "Clients imported from CSV."); await loadClients({ quiet: true }); }} onError={(message) => { setError(message || "Could not import clients CSV."); setSavedAt("CSV import failed"); }} /><button className="freshOrange" type="button" disabled={!selected} onClick={() => openJobPopup(selected)}>Create job</button><button className="freshDark" type="button" disabled={!selected} onClick={() => window.location.href = selected ? `/quotes/new?client_id=${encodeURIComponent(selected.id)}` : "/quotes/new"}>Create quote</button><button className="freshGhost" type="button" disabled={!selected || saving} onClick={deleteSelectedClient}>Delete client</button><button className="freshGhost" type="button" onClick={() => { loadClients(); loadTimeline(); }}>Refresh</button></div></aside>
       </section>
 
       {addOpen ? <div className="freshPopupBackdrop freshClientPopupBackdrop" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(15,23,42,.62)", display: "grid", placeItems: "center", padding: 16 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setAddOpen(false); }}><section className="freshCard freshClientPopupCard" style={{ width: "min(1040px, calc(100vw - 56px))", maxHeight: "90dvh", overflow: "auto", boxShadow: "0 30px 80px rgba(0,0,0,.35)" }}><header className="freshHero freshClientPopupHero" style={{ marginBottom: 12 }}><span>Client</span><h1>Add client</h1><p>Add the customer details.</p></header>{addError ? <div className="freshItem need"><b>Client could not save</b><span>{addError}</span></div> : null}<label className="freshField"><span>Client name</span><input autoFocus value={newClient.name} onChange={(e) => setNewClient((c) => ({ ...c, name: e.target.value }))} placeholder="Customer or business name" /></label><label className="freshField"><span>Invoice/customer email</span><input value={newClient.email} onChange={(e) => setNewClient((c) => ({ ...c, email: e.target.value }))} placeholder="hello@churvox.com" /></label><label className="freshField"><span>Phone</span><input value={newClient.phone} onChange={(e) => setNewClient((c) => ({ ...c, phone: e.target.value }))} placeholder="phone number" /></label><label className="freshField"><span>Service address</span><input value={newClient.address} onChange={(e) => setNewClient((c) => ({ ...c, address: e.target.value }))} placeholder="job/site address" /></label><label className="freshField"><span>Notes</span><textarea value={newClient.notes} onChange={(e) => setNewClient((c) => ({ ...c, notes: e.target.value }))} placeholder="gate code, pets, preferences, anything useful" /></label><div className="freshActions"><button className="freshPrimary" type="button" disabled={saving} onClick={saveNewClient}>{saving ? "Saving..." : "Save client"}</button><button className="freshGhost" type="button" onClick={() => setAddOpen(false)}>Cancel</button></div></section></div> : null}
