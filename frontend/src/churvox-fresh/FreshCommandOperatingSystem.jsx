@@ -900,7 +900,7 @@ export default function FreshCommandOperatingSystem({
             <p>{activeFix.title}</p>
             {activeRiskBadge ? <div style={{ ...riskBadgeStyle, background: activeRiskBadge.background, border: `1px solid ${activeRiskBadge.border}` }}><strong style={{ ...riskBadgeLabelStyle, background: activeRiskBadge.labelBackground, color: activeRiskBadge.labelColor }}>{activeRiskBadge.label}</strong><span style={{ ...riskBadgeTextStyle, color: activeRiskBadge.color }}>{activeRiskBadge.text}</span></div> : null}
             {approveOutcome ? <section style={approveOutcomeStyle}><small style={approveOutcomeLabelStyle}>What happens if I approve?</small><b style={approveOutcomeTitleStyle}>{approveOutcome.title}</b><p style={approveOutcomeTextStyle}>{approveOutcome.text}</p></section> : null}
-            <button type="button" style={formPreviewButtonStyle} onClick={() => setShowPreparedForm((open) => !open)}>{showPreparedForm ? "Hide prepared form" : "Show prepared form"}</button>
+            <button type="button" style={formPreviewButtonStyle} onClick={() => setShowPreparedForm((open) => !open)}>{showPreparedForm ? "Hide prepared form" : "Review prepared form"}</button>
             {showPreparedForm ? <section className="freshCommandInlinePreparedForm" aria-label="Prepared form inline">
               <header>
                 <span>Prepared form</span>
