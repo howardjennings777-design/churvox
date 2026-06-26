@@ -199,6 +199,11 @@
   line-height: 1.35;
 }
 
+/* CHURVOX_NO_MYOB_VISIBLE_ACCOUNTING_NOTE_20260626 */
+.cvPlanAddons::after {
+  content: "Accounting Sync Add-on covers Xero where available. Draft sync only. Owner approval required." !important;
+}
+
 /* CHURVOX_COMMAND_QUEUE_LIMIT_20260626 */
 .freshCommandFixQueue {
   max-height: 560px !important;
