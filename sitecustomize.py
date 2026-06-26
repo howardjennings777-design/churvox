@@ -1,4 +1,9 @@
 try:
+    import backend.sitecustomize  # noqa: F401
+except Exception:
+    pass
+
+try:
     import builtins
     from fastapi import Body
     builtins.Body = Body
