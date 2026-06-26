@@ -14,6 +14,7 @@ const TIMER_OPTIMISTIC = {
 };
 const EMPTY_JOB_FORM = { title: "", client: "", client_id: "", address: "", scheduled: "", price: "", notes: "" };
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
+const ARCHIVED_JOBS_KEY = "churvox:fresh-archived-job-ids:v1";
 
 function normalizeId(value) {
   if (!value) return "";
@@ -63,6 +64,9 @@ function storyStepState({ selected, quotes, invoices }) { const hasQuote = quote
 function photoCount(job) { if (Array.isArray(job?.photos)) return job.photos.length; if (Array.isArray(job?.photo_urls)) return job.photo_urls.length; if (Array.isArray(job?.attachments)) return job.attachments.filter((item) => /image|photo/i.test(String(item?.type || item?.url || item))).length; return Number(job?.photo_count || job?.photos_count || 0) || 0; }
 function jobFromTimerResponse(data) { return data?.job || data?.data?.job || data?.data || data || null; }
 function jobFromCreateResponse(data) { return data?.job || data?.data?.job || data?.data || data; }
+function loadArchivedJobIds() { try { const saved = window.localStorage.getItem(ARCHIVED_JOBS_KEY); const parsed = saved ? JSON.parse(saved) : []; return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : []; } catch { return []; } }
+function saveArchivedJobIds(ids) { try { window.localStorage.setItem(ARCHIVED_JOBS_KEY, JSON.stringify([...new Set(ids.filter(Boolean).map(String))])); } catch {} }
+function isRecurringJob(job) { const text = lower(`${job?.repeat || job?.recurring || job?.recurrence || job?.recurring_id || job?.series_id || job?.frequency || job?.repeat_every || ""}`); return Boolean(job?.is_recurring || job?.recurring === true || job?.repeat || job?.recurrence || job?.recurring_id || job?.series_id || /daily|weekly|fortnight|month|repeat|recurr/.test(text)); }
 
 function parseJobModalPayload(raw) {
   let payload = raw || {};
@@ -117,12 +121,15 @@ export default function FreshJobs({ onNavigate }) {
   const [jobModalOpen, setJobModalOpen] = React.useState(false);
   const [jobForm, setJobForm] = React.useState(EMPTY_JOB_FORM);
   const [savingJob, setSavingJob] = React.useState(false);
+  const [archivedJobIds, setArchivedJobIds] = React.useState(loadArchivedJobIds);
 
-  const jobsNeedingInvoice = React.useMemo(() => jobs.filter((job) => needsInvoice(job, story.invoices)), [jobs, story.invoices]);
-  const visibleJobs = filter === "All" ? jobs : filter === "Needs invoice" ? jobsNeedingInvoice : jobs.filter((job) => job.status === filter);
-  const selected = jobs.find((job) => job.id === selectedId) || visibleJobs[0] || jobs[0];
+  const activeJobs = React.useMemo(() => jobs.filter((job) => !archivedJobIds.includes(String(job.id))), [jobs, archivedJobIds]);
+  const jobsNeedingInvoice = React.useMemo(() => activeJobs.filter((job) => needsInvoice(job, story.invoices)), [activeJobs, story.invoices]);
+  const visibleJobs = filter === "All" ? activeJobs : filter === "Needs invoice" ? jobsNeedingInvoice : activeJobs.filter((job) => job.status === filter);
+  const selected = activeJobs.find((job) => job.id === selectedId) || visibleJobs[0] || activeJobs[0];
   const canCreateInvoice = Boolean(selected?.priceAmount > 0);
   const selectedNeedsInvoice = needsInvoice(selected, story.invoices);
+  const selectedCanArchive = Boolean(selected?.status === "Completed" && !selectedNeedsInvoice && !isRecurringJob(selected));
   const related = React.useMemo(() => ({ quotes: normalizeRelated(story.quotes, selected), invoices: normalizeRelated(story.invoices, selected), clients: story.clients.filter((client) => selected && (normalizeId(client.id || client._id) === selected.clientId || recordClientName(client) === lower(selected.client))), workers: story.workers.filter((worker) => selected && (normalizeId(worker.id || worker._id || worker.worker_id || worker.user_id) === selected.workerId || lower(pick(worker, "name", "full_name", "email")) === lower(selected.worker))) }), [story, selected]);
   const steps = React.useMemo(() => storyStepState({ selected, quotes: related.quotes, invoices: related.invoices }), [selected, related]);
 
@@ -137,7 +144,7 @@ export default function FreshJobs({ onNavigate }) {
     const res = await get("/jobs", { timeout: 25000 });
     if (!res.success) { setJobs([]); setSelectedId(""); setError(res.error || "Could not load jobs"); setLoading(false); return; }
     const nextJobs = hideDemoRecords(unpackList(res.data, "jobs")).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
-    setJobs(nextJobs); setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs[0]?.id || ""); setLoading(false);
+    setJobs(nextJobs); setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs.find((job) => !loadArchivedJobIds().includes(String(job.id)))?.id || nextJobs[0]?.id || ""); setLoading(false);
   }, [get]);
 
   const loadStory = React.useCallback(async () => {
@@ -151,6 +158,7 @@ export default function FreshJobs({ onNavigate }) {
   React.useEffect(() => { loadJobs(); loadStory(); }, [loadJobs, loadStory]);
   React.useEffect(() => { const onFreshDataUpdated = () => { loadJobs(); loadStory(); }; window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated); return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated); }, [loadJobs, loadStory]);
   React.useEffect(() => { if (!visibleJobs.length) return; if (!selectedId || !visibleJobs.some((job) => job.id === selectedId)) setSelectedId(visibleJobs[0].id); }, [visibleJobs, selectedId]);
+  React.useEffect(() => { saveArchivedJobIds(archivedJobIds); }, [archivedJobIds]);
   React.useEffect(() => {
     function openFromExternal(event) { openJobModalFromPayload(event?.detail || null); }
     window.addEventListener("churvox:open-job-popup", openFromExternal);
@@ -161,6 +169,7 @@ export default function FreshJobs({ onNavigate }) {
   function openJobModalFromPayload(payload) { setJobForm(jobFormFromPayload(payload)); setActionMessage(""); setError(""); setJobModalOpen(true); try { window.localStorage.removeItem(OPEN_JOB_MODAL_KEY); } catch {} }
   function openBlankJob() { openJobModalFromPayload(null); }
   function updateJobForm(key, value) { setJobForm((current) => ({ ...current, [key]: value })); }
+  function archiveSelectedJob() { if (!selectedCanArchive || !selected) return; const nextIds = [...new Set([...archivedJobIds, String(selected.id)])]; setArchivedJobIds(nextIds); setActionMessage("Completed one-off job archived from the active list. The job record was not deleted."); setSelectedId(activeJobs.find((job) => job.id !== selected.id)?.id || ""); }
 
   async function saveJob(event) {
     event?.preventDefault?.();
@@ -197,26 +206,27 @@ export default function FreshJobs({ onNavigate }) {
     onNavigate?.("invoices");
   }
 
-  function filterCount(item) { if (item === "All") return jobs.length; if (item === "Needs invoice") return jobsNeedingInvoice.length; return jobs.filter((job) => job.status === item).length; }
+  function filterCount(item) { if (item === "All") return activeJobs.length; if (item === "Needs invoice") return jobsNeedingInvoice.length; return activeJobs.filter((job) => job.status === item).length; }
   const filterPillStyle = (active) => active ? selectedFilterButtonStyle : undefined;
   const filterTextStyle = (active) => active ? selectedFilterTextStyle : undefined;
   const filterCountStyle = (active) => active ? selectedFilterCountStyle : undefined;
   const timerDisabled = !selected || Boolean(actionBusy);
 
   return (
-    <section className="freshJobsPage" data-jobs-needs-invoice="20260626" data-owner-timer-actions="20260626" data-create-job-modal="20260626" data-client-job-handoff="20260626">
+    <section className="freshJobsPage" data-jobs-needs-invoice="20260626" data-owner-timer-actions="20260626" data-create-job-modal="20260626" data-client-job-handoff="20260626" data-one-off-archive-prompt="20260626">
       <header className="freshHero"><span>Jobs</span><h1>Jobs</h1><p>Job records with customer, worker, schedule, price, notes and linked quote/invoice history.</p></header>
-      <section className="freshCommandPulse"><aside className="freshCard"><h2>{jobs.length}</h2><p>Total jobs</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{jobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside><aside className="freshCard freshJobsNeedsInvoicePulse"><h2>{jobsNeedingInvoice.length}</h2><p>Needs invoice</p></aside></section>
+      <section className="freshCommandPulse"><aside className="freshCard"><h2>{activeJobs.length}</h2><p>Active jobs</p></aside><aside className="freshCard"><h2>{activeJobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{activeJobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside><aside className="freshCard freshJobsNeedsInvoicePulse"><h2>{jobsNeedingInvoice.length}</h2><p>Needs invoice</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Jobs need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadJobs(); loadStory(); }}>Retry</button></section> : null}
       <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{filterCount(item)}</b></button>)}</section>
 
       <section className="freshGrid">
-        <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking saved job records.</span></div> : visibleJobs.map((job) => { const jobNeedsInvoice = needsInvoice(job, story.invoices); return <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" || jobNeedsInvoice ? "need" : ""} ${jobNeedsInvoice ? "freshJobNeedsInvoiceItem" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}{jobNeedsInvoice ? <em className="freshJobNeedsInvoiceBadge">Needs invoice</em> : null}</b><span>{job.client} - {jobNeedsInvoice ? "Completed, not invoiced" : job.status} - {job.scheduled}</span></button>; })}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No jobs found</b><span>Create a job or clear the filter.</span></div> : null}</aside>
+        <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking saved job records.</span></div> : visibleJobs.map((job) => { const jobNeedsInvoice = needsInvoice(job, story.invoices); return <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" || jobNeedsInvoice ? "need" : ""} ${jobNeedsInvoice ? "freshJobNeedsInvoiceItem" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}{jobNeedsInvoice ? <em className="freshJobNeedsInvoiceBadge">Needs invoice</em> : null}</b><span>{job.client} - {jobNeedsInvoice ? "Completed, not invoiced" : job.status} - {job.scheduled}</span></button>; })}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No active jobs found</b><span>Create a job, clear the filter, or refresh if completed jobs were archived locally.</span></div> : null}</aside>
 
         <section className="freshCard freshJobsDetailCard">
           <div className="freshJobsDetailHeader"><div><small>Job record</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selectedNeedsInvoice ? "need" : selected.status === "Completed" ? "ready" : selected.status === "Blocked" ? "need" : ""}>{selectedNeedsInvoice ? "Needs invoice" : selected.status}</span> : null}</div>
           {selected ? (<>
             {selectedNeedsInvoice ? <section className="freshJobsInvoiceAlert"><strong>Completed job needs invoice</strong><p>This job is finished and no linked invoice was found. Create the invoice so Command can prepare the approval step.</p><button type="button" className="freshOrange" disabled={!canCreateInvoice} onClick={createInvoiceForSelected}>{canCreateInvoice ? "Create invoice from this job" : "Add price before invoice"}</button></section> : null}
+            {selected.status === "Completed" && !isRecurringJob(selected) ? <section className="freshJobsInvoiceAlert"><strong>One-off job finished</strong><p>{selectedNeedsInvoice ? "Create the invoice first. After it is invoiced, you can archive this one-off job from the active list." : "This looks like a completed one-off job. Archive it from the active list when you are done reviewing it."}</p><button type="button" className="freshGhost" disabled={!selectedCanArchive} onClick={archiveSelectedJob}>{selectedCanArchive ? "Archive from active list" : "Invoice first"}</button></section> : null}
             <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Client</span><b>{selected.client}</b></div><div className={selectedNeedsInvoice ? "need" : ""}><span>Status</span><b>{selectedNeedsInvoice ? "Completed - needs invoice" : selected.status}</b></div><div><span>Worker</span><b>{selected.worker}</b></div><div className={canCreateInvoice ? "" : "need"}><span>Price</span><b>{selected.price}</b></div></div>
             <section className="freshActions freshJobsActionStack" style={{ marginTop: 12 }}><button className="freshPrimary" type="button" disabled={timerDisabled || selected.status === "In progress"} onClick={() => runJobAction("start")}>{actionBusy === "start" ? "Starting..." : "Start job"}</button><button className="freshGhost" type="button" disabled={timerDisabled || selected.status !== "In progress"} onClick={() => runJobAction("pause")}>{actionBusy === "pause" ? "Pausing..." : "Pause"}</button><button className="freshGhost" type="button" disabled={timerDisabled || selected.status !== "In progress"} onClick={() => runJobAction("resume")}>{actionBusy === "resume" ? "Resuming..." : "Resume"}</button><button className="freshOrange" type="button" disabled={timerDisabled || selected.status === "Completed"} onClick={() => runJobAction("complete")}>{actionBusy === "complete" ? "Completing..." : "Complete job"}</button></section>
             {actionMessage ? <div className="freshItem"><b>Job action</b><span>{actionMessage}</span></div> : null}
@@ -227,7 +237,7 @@ export default function FreshJobs({ onNavigate }) {
           </>) : <div className="freshItem"><b>No job selected</b><span>When a job is saved, its details will show here.</span></div>}
         </section>
 
-        <aside className="freshCard freshJobsActionsCard"><h2>Job actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Create job</button><button className={selectedNeedsInvoice ? "freshPrimary" : "freshOrange"} type="button" disabled={!canCreateInvoice} onClick={createInvoiceForSelected}>{selectedNeedsInvoice && canCreateInvoice ? "Create needed invoice" : canCreateInvoice ? "Create invoice" : "Add price before invoice"}</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Open customer links</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh jobs</button></div></aside>
+        <aside className="freshCard freshJobsActionsCard"><h2>Job actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openBlankJob}>Create job</button><button className={selectedNeedsInvoice ? "freshPrimary" : "freshOrange"} type="button" disabled={!canCreateInvoice} onClick={createInvoiceForSelected}>{selectedNeedsInvoice && canCreateInvoice ? "Create needed invoice" : canCreateInvoice ? "Create invoice" : "Add price before invoice"}</button><button className="freshGhost" type="button" disabled={!selectedCanArchive} onClick={archiveSelectedJob}>{selectedCanArchive ? "Archive one-off" : "Archive after invoice"}</button><button className="freshGhost" type="button" disabled={!selected} onClick={() => onNavigate?.("portal")}>Open customer links</button><button className="freshGhost" type="button" onClick={() => { loadJobs(); loadStory(); }}>Refresh jobs</button></div></aside>
       </section>
 
       {jobModalOpen ? <div style={modalBackdropStyle} onMouseDown={(event) => { if (event.target === event.currentTarget && !savingJob) setJobModalOpen(false); }}><form className="freshCard" style={modalCardStyle} onSubmit={saveJob}><div className="freshJobsDetailHeader"><div><small>Create job</small><h2>New job</h2></div><button type="button" className="freshGhost" disabled={savingJob} onClick={() => setJobModalOpen(false)}>Close</button></div><div style={modalGridStyle}><label><span>Job title *</span><input style={inputStyle} value={jobForm.title} onChange={(event) => updateJobForm("title", event.target.value)} placeholder="Lawn mow, clean, repair..." /></label><label><span>Client/customer *</span><input style={inputStyle} value={jobForm.client} onChange={(event) => updateJobForm("client", event.target.value)} placeholder="Customer name" /></label><label><span>Address</span><input style={inputStyle} value={jobForm.address} onChange={(event) => updateJobForm("address", event.target.value)} placeholder="Job address" /></label><label><span>Scheduled</span><input style={inputStyle} type="datetime-local" value={jobForm.scheduled} onChange={(event) => updateJobForm("scheduled", event.target.value)} /></label><label><span>Price</span><input style={inputStyle} value={jobForm.price} onChange={(event) => updateJobForm("price", event.target.value)} placeholder="85" /></label><label><span>Notes</span><textarea style={{ ...inputStyle, minHeight: 92 }} value={jobForm.notes} onChange={(event) => updateJobForm("notes", event.target.value)} placeholder="Access notes, scope, reminders..." /></label></div><div className="freshActions" style={{ marginTop: 16 }}><button className="freshPrimary" type="submit" disabled={savingJob}>{savingJob ? "Saving..." : "Save job"}</button><button className="freshGhost" type="button" disabled={savingJob} onClick={() => setJobModalOpen(false)}>Cancel</button></div></form></div> : null}
