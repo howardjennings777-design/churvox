@@ -1,4 +1,0 @@
-Churvox customer readiness cleanup complete.
-Customer-facing build/test clutter removed.
-Business Health wording applied.
-Core promise: Job done. Admin prepared. Owner approves.
