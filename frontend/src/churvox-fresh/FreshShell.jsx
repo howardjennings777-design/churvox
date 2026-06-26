@@ -62,6 +62,7 @@ function fireJobAsk(text) { window.dispatchEvent(new CustomEvent("churvox:open-j
 export default function FreshShell({ active, onChange, onNavigate, children }) {
   const auth = useAuth();
   const user = auth?.user;
+  const [navRefresh, setNavRefresh] = React.useState(0);
   const currentPlan = currentPlanForUser(user);
   const navigate = onChange || onNavigate || (() => {});
   const [moreOpen, setMoreOpen] = React.useState(false);
@@ -72,18 +73,18 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const showGlobalAsk = currentPrimary === "planday";
 
   React.useEffect(() => {
-    const refresh = () => setGuideComplete(guideIsComplete());
-    ["storage", "churvox:ai-guide-status", "churvox:fresh-data-updated", "churvox-auth-refresh"].forEach((name) => window.addEventListener(name, refresh));
-    return () => ["storage", "churvox:ai-guide-status", "churvox:fresh-data-updated", "churvox-auth-refresh"].forEach((name) => window.removeEventListener(name, refresh));
+    const refresh = () => { setGuideComplete(guideIsComplete()); setNavRefresh((value) => value + 1); };
+    ["storage", "churvox:ai-guide-status", "churvox:fresh-data-updated", "churvox-auth-refresh", "churvox:plan-updated"].forEach((name) => window.addEventListener(name, refresh));
+    return () => ["storage", "churvox:ai-guide-status", "churvox:fresh-data-updated", "churvox-auth-refresh", "churvox:plan-updated"].forEach((name) => window.removeEventListener(name, refresh));
   }, []);
 
   React.useLayoutEffect(() => { resetScroll(); }, [active]);
   React.useEffect(() => { resetScroll(); }, [active]);
 
-  const safeGroups = React.useMemo(() => cleanGroups(sidebarGroupsForUser(user), guideComplete), [guideComplete, currentPlan, user]);
-  const safeMoreItems = React.useMemo(() => cleanGroups([{ title: "More tools", items: sidebarMoreItemsForUser(user) }], guideComplete)[0]?.items || [], [guideComplete, currentPlan, user]);
-  const safeMobileItems = React.useMemo(() => uniqueItems(mobileItemsForUser(user)), [currentPlan, user]);
-  const safeMobileMoreOrder = React.useMemo(() => mobileMoreOrderForUser(user), [currentPlan, user]);
+  const safeGroups = React.useMemo(() => cleanGroups(sidebarGroupsForUser(user), guideComplete), [guideComplete, currentPlan, navRefresh, user]);
+  const safeMoreItems = React.useMemo(() => cleanGroups([{ title: "More tools", items: sidebarMoreItemsForUser(user) }], guideComplete)[0]?.items || [], [guideComplete, currentPlan, navRefresh, user]);
+  const safeMobileItems = React.useMemo(() => uniqueItems(mobileItemsForUser(user)), [currentPlan, navRefresh, user]);
+  const safeMobileMoreOrder = React.useMemo(() => mobileMoreOrderForUser(user), [currentPlan, navRefresh, user]);
   const moreHasActiveItem = safeMoreItems.some(([key]) => currentPrimary === key);
   const availableKeys = React.useMemo(() => allKeys(safeGroups, safeMoreItems), [safeGroups, safeMoreItems]);
   const canOpenMessages = availableKeys.has("messages");
