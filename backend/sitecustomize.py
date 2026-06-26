@@ -47,16 +47,33 @@ def patch_team_limit_runtime(module):
         def normal_plan(value):
             return PLAN_ALIASES.get(str(value or "solo").strip().lower(), "solo")
 
+        def values_from_raw(raw):
+            values = []
+            if raw is not None:
+                values.append(str(raw))
+                try:
+                    values.append(ObjectId(str(raw)))
+                except Exception:
+                    pass
+            deduped = []
+            for value in values:
+                if value not in deduped:
+                    deduped.append(value)
+            return deduped
+
         def business_values(user):
             raw = user.get("business_id") or user.get("id")
-            values = [str(raw)]
+            values = values_from_raw(raw)
             obj = None
             try:
                 obj = ObjectId(str(raw))
-                values.append(obj)
             except Exception:
                 obj = None
             return raw, obj, values
+
+        def client_business_values(doc):
+            raw = doc.get("contractor_id") or doc.get("business_id") or doc.get("owner_business_id") or doc.get("user_id")
+            return values_from_raw(raw)
 
         async def owner_doc_for(user):
             raw, obj, values = business_values(user)
@@ -79,6 +96,25 @@ def patch_team_limit_runtime(module):
                 "status": {"$nin": ["inactive", "disabled", "paused", "removed", "archived"]},
             })
 
+        async def active_client_count_from_values(database, values):
+            if not values:
+                return 0
+            return await database.clients.count_documents({
+                "$or": [{"contractor_id": {"$in": values}}, {"business_id": {"$in": values}}, {"owner_business_id": {"$in": values}}],
+                "archived": {"$ne": True},
+                "is_archived": {"$ne": True},
+                "deleted": {"$ne": True},
+                "is_deleted": {"$ne": True},
+            })
+
+        async def owner_doc_from_values(database, values):
+            if not values:
+                return None
+            owner = await database.users.find_one({"_id": {"$in": values}})
+            if owner:
+                return owner
+            return await database.users.find_one({"business_id": {"$in": values}, "role": {"$in": ["employer", "admin", "owner", "business_owner"]}})
+
         async def capacity_for(user):
             plan = normal_plan(user.get("plan") or user.get("ui_plan") or user.get("subscription_plan") or "solo")
             limits = LOCKED_PLAN_LIMITS.get(plan, LOCKED_PLAN_LIMITS["solo"])
@@ -96,6 +132,17 @@ def patch_team_limit_runtime(module):
                 raise HTTPException(status_code=403, detail=f"Team limit reached ({count}/{max_workers} active workers). Add a Command Growth Pack or remove inactive workers.")
             return plan, limits, max_workers, packs, count
 
+        async def assert_client_slot(database, doc):
+            values = client_business_values(doc)
+            owner = await owner_doc_from_values(database, values)
+            plan = normal_plan((owner or {}).get("plan") or (owner or {}).get("ui_plan") or (owner or {}).get("subscription_plan") or doc.get("plan") or "solo")
+            limits = LOCKED_PLAN_LIMITS.get(plan, LOCKED_PLAN_LIMITS["solo"])
+            max_clients = int(limits.get("max_clients", 0) or 0)
+            count = await active_client_count_from_values(database, values)
+            if max_clients >= 0 and count >= max_clients:
+                raise HTTPException(status_code=403, detail=f"Client limit reached ({count}/{max_clients} clients). Upgrade your plan before adding more clients.")
+            return plan, max_clients, count
+
         async def locked_check_team_limits(user):
             raw, obj, values = business_values(user)
             await assert_worker_slot(user)
@@ -110,6 +157,19 @@ def patch_team_limit_runtime(module):
                 return await original_create_invite(email, name, phone, user, biz_id)
             locked_create_invite_for_worker._churvox_limit_wrapped = True
             module.create_invite_for_worker = locked_create_invite_for_worker
+
+        try:
+            from motor.motor_asyncio import AsyncIOMotorCollection
+            old_insert_one = AsyncIOMotorCollection.insert_one
+            if not getattr(old_insert_one, "_churvox_client_limit_wrapped", False):
+                async def limit_checked_insert_one(self, document, *args, **kwargs):
+                    if getattr(self, "name", "") == "clients" and isinstance(document, dict):
+                        await assert_client_slot(self.database, document)
+                    return await old_insert_one(self, document, *args, **kwargs)
+                limit_checked_insert_one._churvox_client_limit_wrapped = True
+                AsyncIOMotorCollection.insert_one = limit_checked_insert_one
+        except Exception:
+            pass
 
         if app is not None and get_current_user is not None and Request is not None:
             existing_paths = {getattr(route, "path", "") for route in getattr(app, "routes", [])}
