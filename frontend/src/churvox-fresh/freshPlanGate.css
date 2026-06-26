@@ -8,25 +8,47 @@
   margin: 0 auto;
   display: grid;
   gap: 14px;
+  --gate-graphite: #151513;
+  --gate-cream: #fff7ed;
+  --gate-orange: #f97316;
 }
 
 .freshPlanGate header {
-  border: 1px solid rgba(15,23,42,.13);
-  border-left: 7px solid #f97316;
-  border-radius: 28px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(249,115,22,.28);
+  border-left: 7px solid var(--gate-orange);
+  border-radius: 30px;
   background:
-    radial-gradient(circle at 92% -18%, rgba(249,115,22,.48), transparent 34%),
-    linear-gradient(135deg, #0b111a 0%, #111827 58%, #070b12 100%);
+    radial-gradient(circle at 96% -12%, rgba(249,115,22,.38), transparent 34%),
+    linear-gradient(135deg, #151513 0%, #1f1f1b 58%, #10100f 100%);
   color: #fff;
-  padding: 22px;
-  box-shadow: 0 18px 45px rgba(2,6,23,.14);
+  padding: 24px;
+  box-shadow: 0 20px 55px rgba(2,6,23,.16);
+}
+
+.freshPlanGate header::after {
+  content: "Churvox does the admin. You approve.";
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 14px;
+  padding: 8px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(249,115,22,.36);
+  background: rgba(249,115,22,.16);
+  color: #ffedd5;
+  -webkit-text-fill-color: #ffedd5;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .freshPlanGate header span {
   display: inline-flex;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(249,115,22,.36);
+  background: rgba(249,115,22,.14);
   color: #fed7aa;
   -webkit-text-fill-color: #fed7aa;
   padding: 7px 11px;
@@ -38,18 +60,19 @@
 
 .freshPlanGate header h1 {
   margin: 12px 0 8px;
+  max-width: 900px;
   color: #fff;
   -webkit-text-fill-color: #fff;
-  font-size: clamp(42px, 6vw, 72px);
-  line-height: .88;
-  letter-spacing: -.075em;
+  font-size: clamp(36px, 5.2vw, 68px);
+  line-height: .9;
+  letter-spacing: -.07em;
 }
 
 .freshPlanGate header p {
   margin: 0;
-  max-width: 760px;
-  color: #f8fafc;
-  -webkit-text-fill-color: #f8fafc;
+  max-width: 790px;
+  color: #ffedd5;
+  -webkit-text-fill-color: #ffedd5;
   font-size: 15px;
   font-weight: 850;
   line-height: 1.45;
@@ -62,19 +85,29 @@
 }
 
 .freshPlanGateCards article {
+  position: relative;
+  overflow: hidden;
   border: 1px solid rgba(15,23,42,.12);
+  border-left: 6px solid rgba(15,23,42,.22);
   border-radius: 24px;
   background: #fffaf0;
-  padding: 16px;
+  padding: 17px;
   box-shadow: 0 14px 34px rgba(2,6,23,.07);
+}
+
+.freshPlanGateCards article.primary {
+  border-left-color: var(--gate-orange);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(249,115,22,.14), transparent 34%),
+    #fff7ed;
 }
 
 .freshPlanGateCards b {
   display: inline-flex;
   border-radius: 999px;
-  background: #fff7ed;
-  color: #9a3412;
-  -webkit-text-fill-color: #9a3412;
+  background: #111827;
+  color: #fff7ed;
+  -webkit-text-fill-color: #fff7ed;
   padding: 7px 10px;
   font-size: 10px;
   font-weight: 1000;
@@ -82,20 +115,28 @@
   text-transform: uppercase;
 }
 
+.freshPlanGateCards article.primary b {
+  background: #ffedd5;
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
+}
+
 .freshPlanGateCards strong {
   display: block;
   margin-top: 12px;
   color: #101827;
   -webkit-text-fill-color: #101827;
-  font-size: 26px;
+  font-size: clamp(24px, 2.5vw, 34px);
   line-height: 1;
   font-weight: 1000;
+  letter-spacing: -.035em;
 }
 
 .freshPlanGateCards p {
   margin: 8px 0 0;
   color: #475569;
   -webkit-text-fill-color: #475569;
+  font-size: 13px;
   font-weight: 850;
   line-height: 1.4;
 }
@@ -104,6 +145,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(15,23,42,.08);
+  border-radius: 22px;
+  background: rgba(255,250,240,.74);
 }
 
 .freshPlanGateActions button {
@@ -116,16 +161,32 @@
   -webkit-text-fill-color: #fff;
   font-weight: 1000;
   cursor: pointer;
+  box-shadow: 0 12px 26px rgba(15,23,42,.11);
 }
 
 .freshPlanGateActions button:first-child {
-  background: #f97316;
+  background: var(--gate-orange);
   color: #111827;
   -webkit-text-fill-color: #111827;
+}
+
+.freshPlanGateActions button:last-child {
+  border: 1px solid rgba(249,115,22,.28);
+  background: #fff7ed;
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
 }
 
 @media (max-width: 900px) {
   .freshPlanGateCards {
     grid-template-columns: 1fr;
+  }
+
+  .freshPlanGateActions {
+    display: grid;
+  }
+
+  .freshPlanGateActions button {
+    width: 100%;
   }
 }
