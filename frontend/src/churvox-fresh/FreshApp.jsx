@@ -307,7 +307,14 @@ export default function FreshApp() {
   }, []);
 
   const [page, setPage] = React.useState(getInitialPage);
+  const [planGateRefresh, setPlanGateRefresh] = React.useState(0);
   const Page = pages[page] || FreshSimple;
+
+  React.useEffect(() => {
+    const refreshAccess = () => setPlanGateRefresh((value) => value + 1);
+    ["storage", "churvox:plan-updated", "churvox-auth-refresh", "churvox:fresh-data-updated"].forEach((name) => window.addEventListener(name, refreshAccess));
+    return () => ["storage", "churvox:plan-updated", "churvox-auth-refresh", "churvox:fresh-data-updated"].forEach((name) => window.removeEventListener(name, refreshAccess));
+  }, []);
 
   React.useEffect(() => {
     const applyHashRoute = () => {
@@ -333,7 +340,7 @@ export default function FreshApp() {
 
   return (
     <FreshShell active={page} onNavigate={navigate}>
-      <FreshPlanGate page={page} user={user} onNavigate={navigate}>
+      <FreshPlanGate key={`${page}-${planGateRefresh}`} page={page} user={user} onNavigate={navigate}>
         <Page page={page} onNavigate={navigate} />
       </FreshPlanGate>
     </FreshShell>
