@@ -10,715 +10,103 @@ export const COUNTRY_PRICE_OVERRIDES = {
   UK: { solo: 29, team: 69, pro: 119, enterprise: 249, accounting_sync: 29, growth_pack: 79 },
 };
 
-export function detectCountryCode() {
-  try {
-    const saved = window.localStorage.getItem("churvox:billing-country");
-    if (saved) return normalizeCountry(saved);
-  } catch {}
-
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-    if (/auckland|chatham/i.test(tz)) return "NZ";
-    if (/sydney|melbourne|brisbane|perth|adelaide|hobart|darwin/i.test(tz)) return "AU";
-    if (/london|belfast|guernsey|jersey|isle_of_man/i.test(tz)) return "UK";
-    if (/america\//i.test(tz)) return "US";
-  } catch {}
-
-  try {
-    const locale = String(navigator.language || navigator.userLanguage || "").toUpperCase();
-    if (locale.includes("-NZ")) return "NZ";
-    if (locale.includes("-AU")) return "AU";
-    if (locale.includes("-GB") || locale.includes("-UK")) return "UK";
-    if (locale.includes("-US")) return "US";
-  } catch {}
-
-  return DEFAULT_COUNTRY;
-}
-
-export const PLAN_KEYS = {
-  START: "solo",
-  CREW: "team",
-  OPERATOR: "pro",
-  COMMAND: "enterprise"
-};
-
-export const PLAN_ALIASES = {
-  start: "solo",
-  solo: "solo",
-  crew: "team",
-  team: "team",
-  operator: "pro",
-  pro: "pro",
-  command: "enterprise",
-  enterprise: "enterprise"
-};
-
+export const PLAN_KEYS = { START: "solo", CREW: "team", OPERATOR: "pro", COMMAND: "enterprise" };
+export const PLAN_ALIASES = { start: "solo", solo: "solo", crew: "team", team: "team", operator: "pro", pro: "pro", command: "enterprise", enterprise: "enterprise" };
 export const COUNTRY_OPTIONS = [
   { code: "NZ", label: "New Zealand", currency: "NZD", symbol: "$", taxLabel: "+ GST", taxInclusiveLabel: "incl. GST", taxRate: 0.15 },
   { code: "AU", label: "Australia", currency: "AUD", symbol: "A$", taxLabel: "+ GST", taxInclusiveLabel: "incl. GST", taxRate: 0.10 },
   { code: "US", label: "United States", currency: "USD", symbol: "US$", taxLabel: "", taxInclusiveLabel: "", taxRate: 0 },
   { code: "UK", label: "United Kingdom", currency: "GBP", symbol: "£", taxLabel: "+ VAT", taxInclusiveLabel: "incl. VAT", taxRate: 0.20 }
 ];
-
 export const COUNTRIES = COUNTRY_OPTIONS;
 export const AVAILABLE_COUNTRIES = COUNTRY_OPTIONS;
 export const BILLING_COUNTRIES = COUNTRY_OPTIONS;
-
 export const PLAN_ORDER = ["solo", "team", "pro", "enterprise"];
 
 export const PLAN_PRICING = {
-  solo: {
-    key: "solo",
-    code: "start",
-    tag: "Start",
-    name: "Start",
-    summary: "Solo owners getting jobs, clients, quotes and invoices under control.",
-    tagline: "For one owner who wants the basics working properly.",
-    description: "Simple job management for one-person trade or service businesses. Start keeps the core admin tidy without opening advanced crew or accounting tools by default.",
-    price: 39,
-    monthly: 39,
-    period: "month",
-    interval: "month",
-    cta: "Start free trial",
-    popular: false,
-    includes: [
-      "Core job management",
-      "Jobs, clients, quotes and invoices",
-      "Smart Hub and basic Command approval desk",
-      "Up to 250 clients",
-      "Up to 50 jobs per month",
-      "1 owner + 1 helper",
-      "25 AI Operator Actions per month",
-      "Accounting Sync Add-on available"
-    ],
-    features: [
-      "Core job management",
-      "Jobs, clients, quotes and invoices",
-      "Smart Hub and basic Command approval desk",
-      "Up to 250 clients",
-      "Up to 50 jobs per month",
-      "1 owner + 1 helper",
-      "25 AI Operator Actions per month",
-      "Accounting Sync Add-on available"
-    ]
-  },
-  team: {
-    key: "team",
-    code: "crew",
-    tag: "Crew",
-    name: "Crew",
-    summary: "Small crews that need worker proof and cleaner handover.",
-    tagline: "For small crews that need control.",
-    description: "Adds team workflow, worker proof, time approval and stronger handover controls while keeping accounting sync optional.",
-    price: 89,
-    monthly: 89,
-    period: "month",
-    interval: "month",
-    cta: "Start free trial",
-    popular: false,
-    includes: [
-      "Everything in Start",
-      "Up to 1,000 clients",
-      "Up to 150 jobs per month",
-      "Up to 5 active team members",
-      "100 AI Operator Actions per month",
-      "Worker Proof Pack",
-      "Worker Time Approval",
-      "Accounting Sync Add-on available"
-    ],
-    features: [
-      "Everything in Start",
-      "Up to 1,000 clients",
-      "Up to 150 jobs per month",
-      "Up to 5 active team members",
-      "100 AI Operator Actions per month",
-      "Worker Proof Pack",
-      "Worker Time Approval",
-      "Accounting Sync Add-on available"
-    ]
-  },
-  pro: {
-    key: "pro",
-    code: "operator",
-    tag: "Operator",
-    name: "Operator",
-    summary: "Churvox does the admin. You approve.",
-    tagline: "Churvox does the admin. You approve.",
-    description: "For owners who want AI Operator Actions, admin recovery, follow-ups and approval control prepared before they touch the work.",
-    price: 149,
-    monthly: 149,
-    period: "month",
-    interval: "month",
-    cta: "Start free trial",
-    popular: true,
-    badge: "Most Popular",
-    includes: [
-      "Everything in Crew",
-      "Up to 3,000 clients",
-      "Up to 500 jobs per month",
-      "Up to 15 active team members",
-      "500 AI Operator Actions per month",
-      "AI Operator Actions",
-      "Admin recovery batch up to 25",
-      "Customer Follow-Up Brain",
-      "Accounting Sync Add-on available"
-    ],
-    features: [
-      "Everything in Crew",
-      "Up to 3,000 clients",
-      "Up to 500 jobs per month",
-      "Up to 15 active team members",
-      "500 AI Operator Actions per month",
-      "AI Operator Actions",
-      "Admin recovery batch up to 25",
-      "Customer Follow-Up Brain",
-      "Accounting Sync Add-on available"
-    ]
-  },
-  enterprise: {
-    key: "enterprise",
-    code: "command",
-    tag: "Command",
-    name: "Command",
-    summary: "Full command centre for bigger service businesses.",
-    tagline: "Full command centre for bigger service businesses.",
-    description: "Full owner operating system with advanced approval control, payroll workspace, reports, exports, and one accounting sync option included.",
-    price: 299,
-    monthly: 299,
-    period: "month",
-    interval: "month",
-    cta: "Start free trial",
-    popular: false,
-    includes: [
-      "Everything in Operator",
-      "Up to 10,000 clients",
-      "Up to 1,500 jobs per month",
-      "Up to 50 active team members",
-      "2,000 AI Operator Actions per month",
-      "Bulk admin recovery",
-      "Owner Control Score",
-      "Payroll workspace",
-      "Imports, reports and exports",
-      "One accounting sync option included — Xero or MYOB"
-    ],
-    features: [
-      "Everything in Operator",
-      "Up to 10,000 clients",
-      "Up to 1,500 jobs per month",
-      "Up to 50 active team members",
-      "2,000 AI Operator Actions per month",
-      "Bulk admin recovery",
-      "Owner Control Score",
-      "Payroll workspace",
-      "Imports, reports and exports",
-      "One accounting sync option included — Xero or MYOB"
-    ],
-    addonNote: "SMS credits and Command Growth Packs can be added when needed. One accounting sync option is included."
-  }
+  solo: { key: "solo", code: "start", tag: "Start", name: "Start", summary: "Solo owners getting jobs, clients, quotes and invoices under control.", tagline: "For one owner who wants the basics working properly.", description: "Simple job management for one-person trade or service businesses. Start keeps the core admin tidy without opening advanced crew or accounting tools by default.", price: 39, monthly: 39, period: "month", interval: "month", cta: "Start free trial", popular: false, includes: ["Core job management", "Jobs, clients, quotes and invoices", "Smart Hub and basic Command approval desk", "Up to 250 clients", "Up to 50 jobs per month", "1 owner + 1 helper", "25 AI Operator Actions per month", "Xero Sync Add-on available"], features: ["Core job management", "Jobs, clients, quotes and invoices", "Smart Hub and basic Command approval desk", "Up to 250 clients", "Up to 50 jobs per month", "1 owner + 1 helper", "25 AI Operator Actions per month", "Xero Sync Add-on available"] },
+  team: { key: "team", code: "crew", tag: "Crew", name: "Crew", summary: "Small crews that need worker proof and cleaner handover.", tagline: "For small crews that need control.", description: "Adds team workflow, worker proof, time approval and stronger handover controls while keeping Xero sync optional.", price: 89, monthly: 89, period: "month", interval: "month", cta: "Start free trial", popular: false, includes: ["Everything in Start", "Up to 1,000 clients", "Up to 150 jobs per month", "Up to 5 active team members", "100 AI Operator Actions per month", "Worker Proof Pack", "Worker Time Approval", "Xero Sync Add-on available"], features: ["Everything in Start", "Up to 1,000 clients", "Up to 150 jobs per month", "Up to 5 active team members", "100 AI Operator Actions per month", "Worker Proof Pack", "Worker Time Approval", "Xero Sync Add-on available"] },
+  pro: { key: "pro", code: "operator", tag: "Operator", name: "Operator", summary: "Churvox does the admin. You approve.", tagline: "Churvox does the admin. You approve.", description: "For owners who want AI Operator Actions, admin recovery, follow-ups and approval control prepared before they touch the work.", price: 149, monthly: 149, period: "month", interval: "month", cta: "Start free trial", popular: true, badge: "Most Popular", includes: ["Everything in Crew", "Up to 3,000 clients", "Up to 500 jobs per month", "Up to 15 active team members", "500 AI Operator Actions per month", "AI Operator Actions", "Admin recovery batch up to 25", "Customer Follow-Up Brain", "Xero Sync Add-on available"], features: ["Everything in Crew", "Up to 3,000 clients", "Up to 500 jobs per month", "Up to 15 active team members", "500 AI Operator Actions per month", "AI Operator Actions", "Admin recovery batch up to 25", "Customer Follow-Up Brain", "Xero Sync Add-on available"] },
+  enterprise: { key: "enterprise", code: "command", tag: "Command", name: "Command", summary: "Full command centre for bigger service businesses.", tagline: "Full command centre for bigger service businesses.", description: "Full owner operating system with advanced approval control, payroll workspace, reports, exports, and Xero sync included.", price: 299, monthly: 299, period: "month", interval: "month", cta: "Start free trial", popular: false, includes: ["Everything in Operator", "Up to 10,000 clients", "Up to 1,500 jobs per month", "Up to 50 active team members", "2,000 AI Operator Actions per month", "Bulk admin recovery", "Owner Control Score", "Payroll workspace", "Imports, reports and exports", "Xero sync included"], features: ["Everything in Operator", "Up to 10,000 clients", "Up to 1,500 jobs per month", "Up to 50 active team members", "2,000 AI Operator Actions per month", "Bulk admin recovery", "Owner Control Score", "Payroll workspace", "Imports, reports and exports", "Xero sync included"], addonNote: "SMS credits and Command Growth Packs can be added when needed. Xero sync is included." }
 };
 
-export const CHURVOX_PLANS = [
-  PLAN_PRICING.solo,
-  PLAN_PRICING.team,
-  PLAN_PRICING.pro,
-  PLAN_PRICING.enterprise
-];
-
+export const CHURVOX_PLANS = [PLAN_PRICING.solo, PLAN_PRICING.team, PLAN_PRICING.pro, PLAN_PRICING.enterprise];
 export const PLANS = CHURVOX_PLANS;
 export const BASE_PLANS = CHURVOX_PLANS;
 export const PLAN_LIST = CHURVOX_PLANS;
-
 export const PLAN_LIMITS = {
-  solo: {
-    clients: 250,
-    teamMembers: 2,
-    activeTeamMembers: 2,
-    jobsPerMonth: 50,
-    aiOperatorActions: 25,
-    adminRecoveryBatch: 1,
-    proofPack: "Basic",
-    accountingSync: "add_on"
-  },
-  team: {
-    clients: 1000,
-    teamMembers: 5,
-    activeTeamMembers: 5,
-    jobsPerMonth: 150,
-    aiOperatorActions: 100,
-    adminRecoveryBatch: 5,
-    proofPack: "Standard",
-    accountingSync: "add_on"
-  },
-  pro: {
-    clients: 3000,
-    teamMembers: 15,
-    activeTeamMembers: 15,
-    jobsPerMonth: 500,
-    aiOperatorActions: 500,
-    adminRecoveryBatch: 25,
-    proofPack: "Advanced",
-    accountingSync: "add_on"
-  },
-  enterprise: {
-    clients: 10000,
-    teamMembers: 50,
-    activeTeamMembers: 50,
-    jobsPerMonth: 1500,
-    aiOperatorActions: 2000,
-    adminRecoveryBatch: "bulk",
-    proofPack: "Advanced",
-    accountingSync: "included"
-  }
+  solo: { clients: 250, teamMembers: 2, activeTeamMembers: 2, jobsPerMonth: 50, aiOperatorActions: 25, adminRecoveryBatch: 1, proofPack: "Basic", accountingSync: "add_on" },
+  team: { clients: 1000, teamMembers: 5, activeTeamMembers: 5, jobsPerMonth: 150, aiOperatorActions: 100, adminRecoveryBatch: 5, proofPack: "Standard", accountingSync: "add_on" },
+  pro: { clients: 3000, teamMembers: 15, activeTeamMembers: 15, jobsPerMonth: 500, aiOperatorActions: 500, adminRecoveryBatch: 25, proofPack: "Advanced", accountingSync: "add_on" },
+  enterprise: { clients: 10000, teamMembers: 50, activeTeamMembers: 50, jobsPerMonth: 1500, aiOperatorActions: 2000, adminRecoveryBatch: "bulk", proofPack: "Advanced", accountingSync: "included" }
 };
-
-export const PLAN_NAMES = {
-  solo: "Start",
-  team: "Crew",
-  pro: "Operator",
-  enterprise: "Command"
-};
-
+export const PLAN_NAMES = { solo: "Start", team: "Crew", pro: "Operator", enterprise: "Command" };
 export const PLAN_DISPLAY_NAMES = PLAN_NAMES;
+export const PLAN_PRICES = { solo: 39, team: 89, pro: 149, enterprise: 299 };
 
-export const PLAN_PRICES = {
-  solo: 39,
-  team: 89,
-  pro: 149,
-  enterprise: 299
-};
-
-export const GROWTH_PACK = {
-  key: "command_growth_pack",
-  code: "command_growth_pack",
-  name: "Command Growth Pack",
-  tag: "Growth Pack",
-  price: 99,
-  monthly: 99,
-  period: "month",
-  interval: "month",
-  addsTeamMembers: 50,
-  addsJobsPerMonth: 1500,
-  addsAiOperatorActions: 1000,
-  description: "Adds 50 more active team members plus extra job, AI Operator, automation, admin and payroll capacity.",
-  includes: [
-    "50 more active team members",
-    "1,500 more jobs per month",
-    "1,000 more AI Operator Actions per month",
-    "Extra automation runs",
-    "Extra admin and payroll capacity",
-    "Extra proof pack capacity"
-  ]
-};
-
+export const GROWTH_PACK = { key: "command_growth_pack", code: "command_growth_pack", name: "Command Growth Pack", tag: "Growth Pack", price: 99, monthly: 99, period: "month", interval: "month", addsTeamMembers: 50, addsJobsPerMonth: 1500, addsAiOperatorActions: 1000, description: "Adds 50 more active team members plus extra job, AI Operator, automation, admin and payroll capacity.", includes: ["50 more active team members", "1,500 more jobs per month", "1,000 more AI Operator Actions per month", "Extra automation runs", "Extra admin and payroll capacity", "Extra proof pack capacity"] };
 export const COMMAND_GROWTH_PACK = GROWTH_PACK;
 export const COMMAND_GROWTH_PACK_ADDON = GROWTH_PACK;
 export const GROWTH_PACK_ADDON = GROWTH_PACK;
-
-export const ACCOUNTING_SYNC_ADDON = {
-  key: "xero_addon",
-  code: "xero_addon",
-  name: "Accounting Sync Add-on",
-  tag: "Accounting Sync",
-  price: 39,
-  monthly: 39,
-  period: "month",
-  interval: "month",
-  description: "Optional Xero or MYOB sync where available. Included with Command. Draft invoice sync stays owner-approved."
-};
-
+export const ACCOUNTING_SYNC_ADDON = { key: "xero_addon", code: "xero_addon", name: "Xero Sync Add-on", tag: "Xero Sync", price: 39, monthly: 39, period: "month", interval: "month", description: "Optional Xero sync where available. Included with Command. Draft invoice sync stays owner-approved." };
 export const XERO_ADDON = ACCOUNTING_SYNC_ADDON;
 export const MYOB_ADDON = ACCOUNTING_SYNC_ADDON;
 export const ADDONS = [GROWTH_PACK, ACCOUNTING_SYNC_ADDON];
+export const SMS_PACKS = [{ key: "sms_100", credits: 100, price: "$10", note: "Coming soon" }, { key: "sms_500", credits: 500, price: "$45", note: "Coming soon" }, { key: "sms_1000", credits: 1000, price: "$80", note: "Coming soon" }];
+export const COMMAND_ADDONS = ["SMS credits can be added when needed.", "Command Growth Packs can be added as your team grows.", "Xero sync is included with Command."];
 
-export const SMS_PACKS = [
-  { key: "sms_100", credits: 100, price: "$10", note: "Coming soon" },
-  { key: "sms_500", credits: 500, price: "$45", note: "Coming soon" },
-  { key: "sms_1000", credits: 1000, price: "$80", note: "Coming soon" }
-];
+export function normalizePlanKey(planKey) { const key = String(planKey || "solo").trim().toLowerCase(); return PLAN_ALIASES[key] || "solo"; }
+export function normalisePlanKey(planKey) { return normalizePlanKey(planKey); }
+export function getPlanConfig(planKey) { const key = normalizePlanKey(planKey); return PLAN_PRICING[key] || PLAN_PRICING.solo; }
+export function getPlan(planKey) { return getPlanConfig(planKey); }
+export function getPlanName(planKey) { return getPlanConfig(planKey).name; }
+export function nicePlanName(planKey) { return getPlanName(planKey); }
+export function requiredPlanLabel(planKey) { return getPlanName(planKey); }
+export function planLabel(planKey) { return getPlanName(planKey); }
+export function getPlanPrice(planKey) { return getPlanConfig(planKey).monthly; }
+export function planPrice(planKey) { return getPlanPrice(planKey); }
+export function planRank(planKey) { const key = normalizePlanKey(planKey); const index = PLAN_ORDER.indexOf(key); return index === -1 ? 0 : index; }
+export function isPlanAtLeast(currentPlan, requiredPlan) { return planRank(currentPlan) >= planRank(requiredPlan); }
+export function hasPlanAtLeast(currentPlan, requiredPlan) { return isPlanAtLeast(currentPlan, requiredPlan); }
+export function hasRequiredPlan(currentPlan, requiredPlan) { return isPlanAtLeast(currentPlan, requiredPlan); }
+export function planHasAccess(currentPlan, requiredPlan) { return isPlanAtLeast(currentPlan, requiredPlan); }
+export function canUsePlanFeature(currentPlan, requiredPlan) { return isPlanAtLeast(currentPlan, requiredPlan); }
 
-export const COMMAND_ADDONS = [
-  "SMS credits can be added when needed.",
-  "Command Growth Packs can be added as your team grows.",
-  "One accounting sync option is included with Command."
-];
-
-export function normalizePlanKey(planKey) {
-  const key = String(planKey || "solo").trim().toLowerCase();
-  return PLAN_ALIASES[key] || "solo";
-}
-
-export function normalisePlanKey(planKey) {
-  return normalizePlanKey(planKey);
-}
-
-export function getPlanConfig(planKey) {
-  const key = normalizePlanKey(planKey);
-  return PLAN_PRICING[key] || PLAN_PRICING.solo;
-}
-
-export function getPlan(planKey) {
-  return getPlanConfig(planKey);
-}
-
-export function getPlanName(planKey) {
-  return getPlanConfig(planKey).name;
-}
-
-export function nicePlanName(planKey) {
-  return getPlanName(planKey);
-}
-
-export function requiredPlanLabel(planKey) {
-  return getPlanName(planKey);
-}
-
-export function planLabel(planKey) {
-  return getPlanName(planKey);
-}
-
-export function getPlanPrice(planKey) {
-  return getPlanConfig(planKey).monthly;
-}
-
-export function planPrice(planKey) {
-  return getPlanPrice(planKey);
-}
-
-export function planRank(planKey) {
-  const key = normalizePlanKey(planKey);
-  const index = PLAN_ORDER.indexOf(key);
-  return index === -1 ? 0 : index;
-}
-
-export function isPlanAtLeast(currentPlan, requiredPlan) {
-  return planRank(currentPlan) >= planRank(requiredPlan);
-}
-
-export function hasPlanAtLeast(currentPlan, requiredPlan) {
-  return isPlanAtLeast(currentPlan, requiredPlan);
-}
-
-export function hasRequiredPlan(currentPlan, requiredPlan) {
-  return isPlanAtLeast(currentPlan, requiredPlan);
-}
-
-export function planHasAccess(currentPlan, requiredPlan) {
-  return isPlanAtLeast(currentPlan, requiredPlan);
-}
-
-export function canUsePlanFeature(currentPlan, requiredPlan) {
-  return isPlanAtLeast(currentPlan, requiredPlan);
-}
-
-export function normalizeCountry(countryCode) {
-  const code = String(countryCode || DEFAULT_COUNTRY).trim().toUpperCase();
-  const aliases = {
-    NZ: "NZ",
-    NZL: "NZ",
-    "NEW ZEALAND": "NZ",
-    AU: "AU",
-    AUS: "AU",
-    AUSTRALIA: "AU",
-    US: "US",
-    USA: "US",
-    "UNITED STATES": "US",
-    "UNITED STATES OF AMERICA": "US",
-    UK: "UK",
-    GB: "UK",
-    GBR: "UK",
-    "UNITED KINGDOM": "UK"
-  };
-  return aliases[code] || DEFAULT_COUNTRY;
-}
-
-export function normaliseCountry(countryCode) {
-  return normalizeCountry(countryCode);
-}
-
-export function getCountryConfig(countryCode) {
-  const code = normalizeCountry(countryCode);
-  return COUNTRY_OPTIONS.find((country) => country.code === code) || COUNTRY_OPTIONS[0];
-}
-
-export function getCountryMeta(countryCode) {
-  return getCountryConfig(countryCode);
-}
-
-export function countryMeta(countryCode) {
-  return getCountryMeta(countryCode);
-}
-
-export function getCountryLabel(countryCode) {
-  return getCountryMeta(countryCode).label;
-}
-
-export function getCountrySymbol(countryCode) {
-  return getCountryMeta(countryCode).symbol;
-}
-
-export function getCountryCurrency(countryCode) {
-  return getCountryMeta(countryCode).currency;
-}
-
-export function getCountryTaxLabel(countryCode) {
-  return getCountryMeta(countryCode).taxLabel || "";
-}
-
-export function getCurrencySymbol(countryCode) {
-  return getCountrySymbol(countryCode);
-}
-
-export function getCurrencyCode(countryCode) {
-  return getCountryCurrency(countryCode);
-}
-
-export function formatCurrency(amount, countryCode) {
-  const country = getCountryMeta(countryCode);
-  const value = Number(amount || 0);
-  return country.symbol + value.toFixed(value % 1 === 0 ? 0 : 2);
-}
-
-export function formatMoney(amount, countryCode) {
-  return formatCurrency(amount, countryCode);
-}
-
-export function taxInclusiveAmount(amount, countryCode) {
-  const country = getCountryMeta(countryCode);
-  const value = Number(amount || 0);
-  return value + value * Number(country.taxRate || 0);
-}
-
-export function formatTaxInclusivePrice(amount, countryCode) {
-  const country = getCountryMeta(countryCode);
-  if (!country.taxLabel || !country.taxRate) return "";
-  return formatCurrency(taxInclusiveAmount(amount, countryCode), countryCode) + "/month " + (country.taxInclusiveLabel || "incl. tax");
-}
-
-export function pricePlanForCountry(planOrKey, countryCode) {
-  const plan = typeof planOrKey === "object" && planOrKey !== null
-    ? planOrKey
-    : getPlanConfig(planOrKey);
-
-  const country = getCountryMeta(countryCode);
-  const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {};
-  const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0);
-  const tax = country.taxLabel ? " " + country.taxLabel : "";
-  const priceLabel = country.symbol + monthly + "/month" + tax;
-
-  return {
-    ...plan,
-    price: monthly,
-    monthly,
-    period: plan.period || "month",
-    interval: plan.interval || "month",
-    currency: country.currency,
-    symbol: country.symbol,
-    taxLabel: country.taxLabel || "",
-    countryCode: country.code,
-    countryLabel: country.label,
-    priceLabel,
-    formattedPrice: priceLabel,
-    taxInclusiveLabel: formatTaxInclusivePrice(monthly, country.code)
-  };
-}
-
-export function getPlanPriceForCountry(planOrKey, countryCode) {
-  return pricePlanForCountry(planOrKey, countryCode);
-}
-
-export function getPlanPricingForCountry(planOrKey, countryCode) {
-  return pricePlanForCountry(planOrKey, countryCode);
-}
-
-export function planForCountry(planOrKey, countryCode) {
-  return pricePlanForCountry(planOrKey, countryCode);
-}
-
-export function addonPriceForCountry(addonOrKey, countryCode) {
-  const key = typeof addonOrKey === "string"
-    ? addonOrKey
-    : String(addonOrKey?.key || addonOrKey?.code || addonOrKey?.name || "");
-
-  const lower = key.toLowerCase();
-  const country = getCountryMeta(countryCode);
-
-  let addon = addonOrKey && typeof addonOrKey === "object" ? addonOrKey : null;
-
-  if (!addon) {
-    if (lower.includes("growth")) {
-      addon = GROWTH_PACK;
-    } else if (lower.includes("xero") || lower.includes("myob") || lower.includes("accounting")) {
-      addon = ACCOUNTING_SYNC_ADDON;
-    } else {
-      addon = { name: key || "Add-on", price: 0, monthly: 0, period: "month", interval: "month", description: "" };
-    }
-  }
-
-  const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {};
-  const addonPriceKey = lower.includes("growth") ? "growth_pack" : "accounting_sync";
-  const monthly = Number(overrides[addonPriceKey] ?? addon.monthly ?? addon.price ?? 0);
-  const tax = country.taxLabel ? " " + country.taxLabel : "";
-  const priceLabel = country.symbol + monthly + "/month" + tax;
-
-  return {
-    ...addon,
-    price: monthly,
-    monthly,
-    period: addon.period || "month",
-    interval: addon.interval || "month",
-    currency: country.currency,
-    symbol: country.symbol,
-    taxLabel: country.taxLabel || "",
-    countryCode: country.code,
-    countryLabel: country.label,
-    priceLabel,
-    formattedPrice: priceLabel,
-    taxInclusiveLabel: formatTaxInclusivePrice(monthly, country.code)
-  };
-}
-
-export function getAddonPriceForCountry(addonOrKey, countryCode) {
-  return addonPriceForCountry(addonOrKey, countryCode);
-}
-
-export function getAddonPricingForCountry(addonOrKey, countryCode) {
-  return addonPriceForCountry(addonOrKey, countryCode);
-}
-
-export function pricingNotesForCountry(countryCode) {
-  const country = getCountryMeta(countryCode);
-  return [
-    "Prices are monthly and shown in " + country.currency + ".",
-    country.taxLabel ? "Prices shown exclude " + country.taxLabel.replace("+ ", "") + ". Tax is added at checkout. Tax-inclusive totals are shown for clarity." : "Local taxes may apply where applicable.",
-    "Accounting Sync, SMS credits and Command Growth Packs can be added when needed."
-  ];
-}
-
-export function getPricingNotesForCountry(countryCode) {
-  return pricingNotesForCountry(countryCode);
-}
-
-export function pricingNotes(countryCode) {
-  return pricingNotesForCountry(countryCode);
-}
-
-export function formatPlanPrice(planKey, countryCode) {
-  const plan = pricePlanForCountry(planKey, countryCode);
-  return plan.priceLabel;
-}
+export function detectCountryCode() { try { const saved = window.localStorage.getItem("churvox:billing-country"); if (saved) return normalizeCountry(saved); } catch {} try { const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; if (/auckland|chatham/i.test(tz)) return "NZ"; if (/sydney|melbourne|brisbane|perth|adelaide|hobart|darwin/i.test(tz)) return "AU"; if (/london|belfast|guernsey|jersey|isle_of_man/i.test(tz)) return "UK"; if (/america\//i.test(tz)) return "US"; } catch {} try { const locale = String(navigator.language || navigator.userLanguage || "").toUpperCase(); if (locale.includes("-NZ")) return "NZ"; if (locale.includes("-AU")) return "AU"; if (locale.includes("-GB") || locale.includes("-UK")) return "UK"; if (locale.includes("-US")) return "US"; } catch {} return DEFAULT_COUNTRY; }
+export function normalizeCountry(countryCode) { const code = String(countryCode || DEFAULT_COUNTRY).trim().toUpperCase(); const aliases = { NZ: "NZ", NZL: "NZ", "NEW ZEALAND": "NZ", AU: "AU", AUS: "AU", AUSTRALIA: "AU", US: "US", USA: "US", "UNITED STATES": "US", "UNITED STATES OF AMERICA": "US", UK: "UK", GB: "UK", GBR: "UK", "UNITED KINGDOM": "UK" }; return aliases[code] || DEFAULT_COUNTRY; }
+export function normaliseCountry(countryCode) { return normalizeCountry(countryCode); }
+export function getCountryConfig(countryCode) { const code = normalizeCountry(countryCode); return COUNTRY_OPTIONS.find((country) => country.code === code) || COUNTRY_OPTIONS[0]; }
+export function getCountryMeta(countryCode) { return getCountryConfig(countryCode); }
+export function countryMeta(countryCode) { return getCountryMeta(countryCode); }
+export function getCountryLabel(countryCode) { return getCountryMeta(countryCode).label; }
+export function getCountrySymbol(countryCode) { return getCountryMeta(countryCode).symbol; }
+export function getCountryCurrency(countryCode) { return getCountryMeta(countryCode).currency; }
+export function getCountryTaxLabel(countryCode) { return getCountryMeta(countryCode).taxLabel || ""; }
+export function getCurrencySymbol(countryCode) { return getCountrySymbol(countryCode); }
+export function getCurrencyCode(countryCode) { return getCountryCurrency(countryCode); }
+export function formatCurrency(amount, countryCode) { const country = getCountryMeta(countryCode); const value = Number(amount || 0); return country.symbol + value.toFixed(value % 1 === 0 ? 0 : 2); }
+export function formatMoney(amount, countryCode) { return formatCurrency(amount, countryCode); }
+export function taxInclusiveAmount(amount, countryCode) { const country = getCountryMeta(countryCode); const value = Number(amount || 0); return value + value * Number(country.taxRate || 0); }
+export function formatTaxInclusivePrice(amount, countryCode) { const country = getCountryMeta(countryCode); if (!country.taxLabel || !country.taxRate) return ""; return formatCurrency(taxInclusiveAmount(amount, countryCode), countryCode) + "/month " + (country.taxInclusiveLabel || "incl. tax"); }
+export function pricePlanForCountry(planOrKey, countryCode) { const plan = typeof planOrKey === "object" && planOrKey !== null ? planOrKey : getPlanConfig(planOrKey); const country = getCountryMeta(countryCode); const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {}; const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0); const tax = country.taxLabel ? " " + country.taxLabel : ""; const priceLabel = country.symbol + monthly + "/month" + tax; return { ...plan, price: monthly, monthly, period: plan.period || "month", interval: plan.interval || "month", currency: country.currency, symbol: country.symbol, taxLabel: country.taxLabel || "", countryCode: country.code, countryLabel: country.label, priceLabel, formattedPrice: priceLabel, taxInclusiveLabel: formatTaxInclusivePrice(monthly, country.code) }; }
+export function getPlanPriceForCountry(planOrKey, countryCode) { return pricePlanForCountry(planOrKey, countryCode); }
+export function getPlanPricingForCountry(planOrKey, countryCode) { return pricePlanForCountry(planOrKey, countryCode); }
+export function planForCountry(planOrKey, countryCode) { return pricePlanForCountry(planOrKey, countryCode); }
+export function addonPriceForCountry(addonOrKey, countryCode) { const key = typeof addonOrKey === "string" ? addonOrKey : String(addonOrKey?.key || addonOrKey?.code || addonOrKey?.name || ""); const lower = key.toLowerCase(); const country = getCountryMeta(countryCode); let addon = addonOrKey && typeof addonOrKey === "object" ? addonOrKey : null; if (!addon) addon = lower.includes("growth") ? GROWTH_PACK : lower.includes("xero") || lower.includes("accounting") ? ACCOUNTING_SYNC_ADDON : { name: key || "Add-on", price: 0, monthly: 0, period: "month", interval: "month", description: "" }; const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {}; const addonPriceKey = lower.includes("growth") ? "growth_pack" : "accounting_sync"; const monthly = Number(overrides[addonPriceKey] ?? addon.monthly ?? addon.price ?? 0); const tax = country.taxLabel ? " " + country.taxLabel : ""; const priceLabel = country.symbol + monthly + "/month" + tax; return { ...addon, price: monthly, monthly, period: addon.period || "month", interval: addon.interval || "month", currency: country.currency, symbol: country.symbol, taxLabel: country.taxLabel || "", countryCode: country.code, countryLabel: country.label, priceLabel, formattedPrice: priceLabel, taxInclusiveLabel: formatTaxInclusivePrice(monthly, country.code) }; }
+export function getAddonPriceForCountry(addonOrKey, countryCode) { return addonPriceForCountry(addonOrKey, countryCode); }
+export function getAddonPricingForCountry(addonOrKey, countryCode) { return addonPriceForCountry(addonOrKey, countryCode); }
+export function pricingNotesForCountry(countryCode) { const country = getCountryMeta(countryCode); return ["Prices are monthly and shown in " + country.currency + ".", country.taxLabel ? "Prices shown exclude " + country.taxLabel.replace("+ ", "") + ". Tax is added at checkout. Tax-inclusive totals are shown for clarity." : "Local taxes may apply where applicable.", "Xero Sync, SMS credits and Command Growth Packs can be added when needed."]; }
+export function getPricingNotesForCountry(countryCode) { return pricingNotesForCountry(countryCode); }
+export function pricingNotes(countryCode) { return pricingNotesForCountry(countryCode); }
+export function formatPlanPrice(planKey, countryCode) { const plan = pricePlanForCountry(planKey, countryCode); return plan.priceLabel; }
 
 export const MARKETING_PLANS = CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, DEFAULT_COUNTRY));
 export const MARKETING_PLAN_LIST = MARKETING_PLANS;
 export const MARKETING_PLAN_KEYS = PLAN_ORDER;
 export const MARKETING_PLAN_NAMES = PLAN_NAMES;
-
-export const APP_PLANS = CHURVOX_PLANS.map((plan) => {
-  const country = getCountryMeta(DEFAULT_COUNTRY);
-  const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {};
-  const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0);
-  const limits = PLAN_LIMITS[plan.key] || {};
-  return {
-    ...plan,
-    price: "$" + monthly,
-    period: "/month + GST",
-    inclGst: formatTaxInclusivePrice(monthly, DEFAULT_COUNTRY),
-    blurb: plan.description || plan.summary || plan.tagline,
-    bestFor: plan.summary || plan.tagline || "",
-    clientLimit: limits.clients,
-    teamLimit: limits.teamMembers,
-    jobLimit: limits.jobsPerMonth,
-    aiOperatorActionLimit: limits.aiOperatorActions,
-    proofPack: limits.proofPack,
-    accountingSync: limits.accountingSync,
-    limits: plan.features || plan.includes || []
-  };
-});
-
-export const QUICK_PRICING_NOTES = [
-  "14-day free trial. No card required.",
-  "Prices shown exclude GST. GST is added at checkout. GST-inclusive totals are shown for clarity.",
-  "Accounting Sync, SMS credits and Command Growth Packs can be added when needed."
-];
-
+export const APP_PLANS = CHURVOX_PLANS.map((plan) => { const country = getCountryMeta(DEFAULT_COUNTRY); const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {}; const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0); const limits = PLAN_LIMITS[plan.key] || {}; return { ...plan, price: "$" + monthly, period: "/month + GST", inclGst: formatTaxInclusivePrice(monthly, DEFAULT_COUNTRY), blurb: plan.description || plan.summary || plan.tagline, bestFor: plan.summary || plan.tagline || "", clientLimit: limits.clients, teamLimit: limits.teamMembers, jobLimit: limits.jobsPerMonth, aiOperatorActionLimit: limits.aiOperatorActions, proofPack: limits.proofPack, accountingSync: limits.accountingSync, limits: plan.features || plan.includes || [] }; });
+export const QUICK_PRICING_NOTES = ["14-day free trial. No card required.", "Prices shown exclude GST. GST is added at checkout. GST-inclusive totals are shown for clarity.", "Xero Sync, SMS credits and Command Growth Packs can be added when needed."];
 export const QUICK_PLAN_NOTES = QUICK_PRICING_NOTES;
 export const QUICK_BILLING_NOTES = QUICK_PRICING_NOTES;
 
-export default {
-  DEFAULT_COUNTRY,
-  PLAN_KEYS,
-  PLAN_ALIASES,
-  COUNTRY_OPTIONS,
-  COUNTRIES,
-  AVAILABLE_COUNTRIES,
-  BILLING_COUNTRIES,
-  PLAN_PRICING,
-  CHURVOX_PLANS,
-  PLANS,
-  BASE_PLANS,
-  PLAN_LIST,
-  PLAN_ORDER,
-  PLAN_LIMITS,
-  COMMAND_ADDONS,
-  GROWTH_PACK,
-  COMMAND_GROWTH_PACK,
-  COMMAND_GROWTH_PACK_ADDON,
-  GROWTH_PACK_ADDON,
-  ACCOUNTING_SYNC_ADDON,
-  XERO_ADDON,
-  MYOB_ADDON,
-  ADDONS,
-  SMS_PACKS,
-  PLAN_NAMES,
-  PLAN_DISPLAY_NAMES,
-  PLAN_PRICES,
-  MARKETING_PLANS,
-  MARKETING_PLAN_LIST,
-  MARKETING_PLAN_KEYS,
-  MARKETING_PLAN_NAMES,
-  APP_PLANS,
-  QUICK_PRICING_NOTES,
-  QUICK_PLAN_NOTES,
-  QUICK_BILLING_NOTES,
-  normalizePlanKey,
-  normalisePlanKey,
-  getPlanConfig,
-  getPlan,
-  getPlanName,
-  nicePlanName,
-  requiredPlanLabel,
-  planLabel,
-  getPlanPrice,
-  planPrice,
-  planRank,
-  isPlanAtLeast,
-  hasPlanAtLeast,
-  hasRequiredPlan,
-  planHasAccess,
-  canUsePlanFeature,
-  normalizeCountry,
-  normaliseCountry,
-  getCountryConfig,
-  getCountryMeta,
-  countryMeta,
-  getCountryLabel,
-  getCountrySymbol,
-  getCountryCurrency,
-  getCountryTaxLabel,
-  getCurrencySymbol,
-  getCurrencyCode,
-  formatCurrency,
-  formatMoney,
-  taxInclusiveAmount,
-  formatTaxInclusivePrice,
-  pricePlanForCountry,
-  getPlanPriceForCountry,
-  getPlanPricingForCountry,
-  planForCountry,
-  addonPriceForCountry,
-  getAddonPriceForCountry,
-  getAddonPricingForCountry,
-  pricingNotesForCountry,
-  getPricingNotesForCountry,
-  pricingNotes,
-  formatPlanPrice
-};
+export default { DEFAULT_COUNTRY, PLAN_KEYS, PLAN_ALIASES, COUNTRY_OPTIONS, COUNTRIES, AVAILABLE_COUNTRIES, BILLING_COUNTRIES, PLAN_PRICING, CHURVOX_PLANS, PLANS, BASE_PLANS, PLAN_LIST, PLAN_ORDER, PLAN_LIMITS, COMMAND_ADDONS, GROWTH_PACK, COMMAND_GROWTH_PACK, COMMAND_GROWTH_PACK_ADDON, GROWTH_PACK_ADDON, ACCOUNTING_SYNC_ADDON, XERO_ADDON, MYOB_ADDON, ADDONS, SMS_PACKS, PLAN_NAMES, PLAN_DISPLAY_NAMES, PLAN_PRICES, MARKETING_PLANS, MARKETING_PLAN_LIST, MARKETING_PLAN_KEYS, MARKETING_PLAN_NAMES, APP_PLANS, QUICK_PRICING_NOTES, QUICK_PLAN_NOTES, QUICK_BILLING_NOTES, normalizePlanKey, normalisePlanKey, getPlanConfig, getPlan, getPlanName, nicePlanName, requiredPlanLabel, planLabel, getPlanPrice, planPrice, planRank, isPlanAtLeast, hasPlanAtLeast, hasRequiredPlan, planHasAccess, canUsePlanFeature, normalizeCountry, normaliseCountry, getCountryConfig, getCountryMeta, countryMeta, getCountryLabel, getCountrySymbol, getCountryCurrency, getCountryTaxLabel, getCurrencySymbol, getCurrencyCode, formatCurrency, formatMoney, taxInclusiveAmount, formatTaxInclusivePrice, pricePlanForCountry, getPlanPriceForCountry, getPlanPricingForCountry, planForCountry, addonPriceForCountry, getAddonPriceForCountry, getAddonPricingForCountry, pricingNotesForCountry, getPricingNotesForCountry, pricingNotes, formatPlanPrice };
