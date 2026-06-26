@@ -1,0 +1,4 @@
+client_name,job_title,address,scheduled_date,scheduled_time,assigned_to,price,status,notes
+E2E Test Client One,E2E One-off lawn tidy,"10 Test Street, Wellington",2026-06-28,09:00,E2E Test Worker,85,Scheduled,"Create, assign, complete, invoice-ready"
+E2E Test Client One,E2E recurring fortnightly mow,"10 Test Street, Wellington",2026-06-29,10:30,E2E Test Worker,65,Scheduled,Use to test recurring job flow
+E2E Missing Email Client,E2E proof required cleanup,"30 Proof Lane, Upper Hutt",2026-06-30,13:00,E2E Test Worker,120,Scheduled,Use to test missing proof/details

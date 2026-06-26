@@ -1,0 +1,3 @@
+client_name,invoice_number,description,amount,status,due_date,notes
+E2E Test Client One,E2E-INV-001,One-off lawn tidy,85,Draft,2026-07-05,Review draft invoice
+E2E Test Client Two,E2E-INV-002,Hedge trim quote deposit,90,Unpaid,2026-07-06,Test unpaid/admin debt

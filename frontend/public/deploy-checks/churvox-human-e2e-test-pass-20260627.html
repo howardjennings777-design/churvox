@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Churvox Human E2E Test Pass</title>
+  <style>
+    :root { color-scheme: light; --ink:#111827; --muted:#64748b; --orange:#f97316; --cream:#fff7ed; --line:rgba(15,23,42,.10); --green:#166534; --red:#991b1b; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#f6f1ea; color:var(--ink); }
+    main { max-width:1180px; margin:0 auto; padding:22px; }
+    .hero { padding:22px; border-radius:28px; background:#111827; color:white; box-shadow:0 22px 55px rgba(15,23,42,.22); }
+    .hero span { display:inline-flex; padding:6px 10px; border-radius:999px; background:rgba(249,115,22,.22); color:#fed7aa; font-size:11px; font-weight:1000; letter-spacing:.08em; text-transform:uppercase; }
+    .hero h1 { margin:10px 0 8px; font-size:clamp(28px,4vw,54px); line-height:.95; letter-spacing:-.06em; }
+    .hero p { max-width:850px; margin:0; color:#fed7aa; font-weight:850; line-height:1.45; }
+    .barWrap { position:sticky; top:0; z-index:20; margin:14px 0; padding:12px; border-radius:20px; background:rgba(255,255,255,.92); border:1px solid var(--line); backdrop-filter: blur(14px); box-shadow:0 12px 30px rgba(15,23,42,.10); }
+    .barTop { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .score { font-weight:1000; font-size:18px; }
+    .progress { height:12px; border-radius:999px; background:#fed7aa; overflow:hidden; margin-top:10px; }
+    .progress span { display:block; height:100%; width:0%; background:var(--orange); transition:width .2s ease; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+    button, .linkButton { min-height:38px; border:0; border-radius:999px; padding:0 13px; font-weight:1000; cursor:pointer; background:var(--orange); color:#111827; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+    button.secondary, .linkButton.secondary { background:#111827; color:white; }
+    button.light { background:#fff; border:1px solid var(--line); color:#111827; }
+    .csvBox { margin:14px 0; padding:14px; border-radius:20px; background:white; border:1px solid var(--line); }
+    .csvBox b { display:block; margin-bottom:8px; }
+    .csvLinks { display:flex; gap:8px; flex-wrap:wrap; }
+    .csvLinks a { display:inline-flex; padding:8px 10px; border-radius:999px; background:#fff7ed; color:#9a3412; font-size:12px; font-weight:1000; text-decoration:none; border:1px solid rgba(249,115,22,.18); }
+    .testSection { margin:14px 0; padding:14px; border-radius:24px; background:white; border:1px solid var(--line); box-shadow:0 12px 28px rgba(15,23,42,.08); }
+    .testSection header { display:flex; gap:10px; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:10px; }
+    .testSection header span { font-size:18px; font-weight:1000; letter-spacing:-.03em; }
+    .testSection header p { margin:0; color:var(--muted); font-size:13px; font-weight:850; text-align:right; max-width:520px; }
+    .steps { display:grid; gap:8px; }
+    .step { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; padding:12px; border-radius:17px; background:#f8fafc; border:1px solid rgba(15,23,42,.06); }
+    .step input { width:18px; height:18px; margin-top:2px; accent-color:var(--orange); }
+    .step b { font-size:14px; line-height:1.25; }
+    .step small { grid-column:2; color:var(--muted); font-size:12px; font-weight:850; }
+    .step textarea { grid-column:2; width:100%; min-height:42px; border:1px solid rgba(15,23,42,.10); border-radius:12px; padding:9px; resize:vertical; font:inherit; font-size:12px; }
+    .step.done { background:#ecfdf5; border-color:rgba(22,101,52,.18); }
+    .step.done b, .step.done small { color:var(--green); }
+    .reportBox { margin-top:14px; padding:14px; border-radius:20px; background:#111827; color:white; display:none; }
+    .reportBox.show { display:block; }
+    .reportBox textarea { width:100%; min-height:360px; border:0; border-radius:16px; padding:12px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:12px; line-height:1.45; color:#111827; }
+    .note { margin-top:8px; color:#fed7aa; font-size:12px; font-weight:900; }
+    @media (max-width:720px) {
+      main { padding:12px; }
+      .hero { border-radius:22px; }
+      .testSection header { display:grid; }
+      .testSection header p { text-align:left; }
+      .step { grid-template-columns:1fr; }
+      .step input { order:-1; }
+      .step small, .step textarea { grid-column:1; }
+      .actions, button, .linkButton { width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <span>Churvox full human test</span>
+      <h1>Create everything. Test everything.</h1>
+      <p>This pass walks through the whole product like a real owner: setup, clients, team, jobs, worker proof, quotes, invoices, Command approvals, money, imports, support, mobile, public links, and final trust checks. Use safe E2E test data only.</p>
+    </section>
+
+    <section class="barWrap">
+      <div class="barTop">
+        <div>
+          <div class="score" id="score">0 / 116 checked</div>
+          <small id="verdict">Start with login, then move through the whole customer journey.</small>
+        </div>
+        <div class="actions">
+          <a class="linkButton secondary" href="https://www.churvox.com/dashboard" target="_blank" rel="noreferrer">Open Churvox</a>
+          <button type="button" class="light" id="copyReport">Copy report</button>
+          <button type="button" class="light" id="toggleReport">Show report</button>
+          <button type="button" class="secondary" id="reset">Reset</button>
+        </div>
+      </div>
+      <div class="progress"><span id="progress"></span></div>
+    </section>
+
+    <section class="csvBox">
+      <b>Safe CSV test data</b>
+      <div class="csvLinks">
+        <a href='/test-data/churvox-test-clients.csv' download>churvox-test-clients.csv</a>
+<a href='/test-data/churvox-test-team.csv' download>churvox-test-team.csv</a>
+<a href='/test-data/churvox-test-jobs.csv' download>churvox-test-jobs.csv</a>
+<a href='/test-data/churvox-test-quotes.csv' download>churvox-test-quotes.csv</a>
+<a href='/test-data/churvox-test-invoices.csv' download>churvox-test-invoices.csv</a>
+      </div>
+    </section>
+
+    <section class='testSection'><header><span>0. Test rules</span><p>Keep the test clean and safe.</p></header><div class='steps'>
+<label class='step' data-key='s0-step0' data-title='0. Test rules' data-action='Use only E2E test names/data' data-expected='No real customers, workers, invoices, or private info are used.'><input type='checkbox' data-key='s0-step0' /><b>1. Use only E2E test names/data</b><small>Expected: No real customers, workers, invoices, or private info are used.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s0-step1' data-title='0. Test rules' data-action='Open the live site on desktop and phone/tablet' data-expected='You can compare desktop and mobile behaviour.'><input type='checkbox' data-key='s0-step1' /><b>2. Open the live site on desktop and phone/tablet</b><small>Expected: You can compare desktop and mobile behaviour.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s0-step2' data-title='0. Test rules' data-action='Use the test CSV files from /test-data/' data-expected='Imports use safe test records only.'><input type='checkbox' data-key='s0-step2' /><b>3. Use the test CSV files from /test-data/</b><small>Expected: Imports use safe test records only.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s0-step3' data-title='0. Test rules' data-action='If something fails, write the exact page + button + error' data-expected='Fixes are faster because the issue is clear.'><input type='checkbox' data-key='s0-step3' /><b>4. If something fails, write the exact page + button + error</b><small>Expected: Fixes are faster because the issue is clear.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>1. Public site, login, session</span><p>Make sure the app starts cleanly and auth does not confuse users.</p></header><div class='steps'>
+<label class='step' data-key='s1-step0' data-title='1. Public site, login, session' data-action='Open https://www.churvox.com' data-expected='Main site loads without blank screen.'><input type='checkbox' data-key='s1-step0' /><b>1. Open https://www.churvox.com</b><small>Expected: Main site loads without blank screen.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s1-step1' data-title='1. Public site, login, session' data-action='Open /login' data-expected='Login page loads with Churvox branding.'><input type='checkbox' data-key='s1-step1' /><b>2. Open /login</b><small>Expected: Login page loads with Churvox branding.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s1-step2' data-title='1. Public site, login, session' data-action='Log in as owner/test user' data-expected='You land inside the app without refresh loops.'><input type='checkbox' data-key='s1-step2' /><b>3. Log in as owner/test user</b><small>Expected: You land inside the app without refresh loops.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s1-step3' data-title='1. Public site, login, session' data-action='Refresh the page' data-expected='Session remains active.'><input type='checkbox' data-key='s1-step3' /><b>4. Refresh the page</b><small>Expected: Session remains active.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s1-step4' data-title='1. Public site, login, session' data-action='Log out' data-expected='You return to login.'><input type='checkbox' data-key='s1-step4' /><b>5. Log out</b><small>Expected: You return to login.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s1-step5' data-title='1. Public site, login, session' data-action='Log in again' data-expected='Session works a second time.'><input type='checkbox' data-key='s1-step5' /><b>6. Log in again</b><small>Expected: Session works a second time.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s1-step6' data-title='1. Public site, login, session' data-action='Test forgot password page/link if available' data-expected='User sees a helpful reset flow or message.'><input type='checkbox' data-key='s1-step6' /><b>7. Test forgot password page/link if available</b><small>Expected: User sees a helpful reset flow or message.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>2. Smart Hub daily flow</span><p>Owner should instantly know what matters today.</p></header><div class='steps'>
+<label class='step' data-key='s2-step0' data-title='2. Smart Hub daily flow' data-action='Open Smart Hub / dashboard' data-expected='Page loads and feels like the starting point.'><input type='checkbox' data-key='s2-step0' /><b>1. Open Smart Hub / dashboard</b><small>Expected: Page loads and feels like the starting point.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s2-step1' data-title='2. Smart Hub daily flow' data-action='Check Today / This Week / Needs Attention areas' data-expected='Owner can see jobs, late work, approvals, and money/admin items.'><input type='checkbox' data-key='s2-step1' /><b>2. Check Today / This Week / Needs Attention areas</b><small>Expected: Owner can see jobs, late work, approvals, and money/admin items.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s2-step2' data-title='2. Smart Hub daily flow' data-action='Use mobile quick actions' data-expected='New job, Add client, Approve buttons are visible and tappable.'><input type='checkbox' data-key='s2-step2' /><b>3. Use mobile quick actions</b><small>Expected: New job, Add client, Approve buttons are visible and tappable.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s2-step3' data-title='2. Smart Hub daily flow' data-action='Use Ask Churvox from Smart Hub' data-expected='Typing &#x27;new job for E2E Test Client One&#x27; opens/starts the correct flow.'><input type='checkbox' data-key='s2-step3' /><b>4. Use Ask Churvox from Smart Hub</b><small>Expected: Typing &#x27;new job for E2E Test Client One&#x27; opens/starts the correct flow.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s2-step4' data-title='2. Smart Hub daily flow' data-action='Tap items/cards' data-expected='Details open in a modal/sheet, not a confusing full-page jump.'><input type='checkbox' data-key='s2-step4' /><b>5. Tap items/cards</b><small>Expected: Details open in a modal/sheet, not a confusing full-page jump.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>3. Business setup/settings</span><p>Owner can make the workspace feel real.</p></header><div class='steps'>
+<label class='step' data-key='s3-step0' data-title='3. Business setup/settings' data-action='Open Settings' data-expected='Settings page loads cleanly.'><input type='checkbox' data-key='s3-step0' /><b>1. Open Settings</b><small>Expected: Settings page loads cleanly.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s3-step1' data-title='3. Business setup/settings' data-action='Update business name/test details' data-expected='Save works or gives a clear reason if blocked.'><input type='checkbox' data-key='s3-step1' /><b>2. Update business name/test details</b><small>Expected: Save works or gives a clear reason if blocked.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s3-step2' data-title='3. Business setup/settings' data-action='Check branding/logo area if present' data-expected='Mobile layout is readable.'><input type='checkbox' data-key='s3-step2' /><b>3. Check branding/logo area if present</b><small>Expected: Mobile layout is readable.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s3-step3' data-title='3. Business setup/settings' data-action='Check GST/tax rate fields if present' data-expected='Values are understandable and save safely.'><input type='checkbox' data-key='s3-step3' /><b>4. Check GST/tax rate fields if present</b><small>Expected: Values are understandable and save safely.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s3-step4' data-title='3. Business setup/settings' data-action='Check language/region fields if present' data-expected='No broken controls or hidden text.'><input type='checkbox' data-key='s3-step4' /><b>5. Check language/region fields if present</b><small>Expected: No broken controls or hidden text.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>4. Clients</span><p>Owner can create and manage customers easily.</p></header><div class='steps'>
+<label class='step' data-key='s4-step0' data-title='4. Clients' data-action='Open Clients' data-expected='Clients list loads with empty/loading states if no clients.'><input type='checkbox' data-key='s4-step0' /><b>1. Open Clients</b><small>Expected: Clients list loads with empty/loading states if no clients.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s4-step1' data-title='4. Clients' data-action='Create E2E Test Client One manually' data-expected='Client saves and appears in list.'><input type='checkbox' data-key='s4-step1' /><b>2. Create E2E Test Client One manually</b><small>Expected: Client saves and appears in list.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s4-step2' data-title='4. Clients' data-action='Open client details' data-expected='Details open in modal/sheet.'><input type='checkbox' data-key='s4-step2' /><b>3. Open client details</b><small>Expected: Details open in modal/sheet.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s4-step3' data-title='4. Clients' data-action='Edit phone/address/notes' data-expected='Changes save and persist after refresh.'><input type='checkbox' data-key='s4-step3' /><b>4. Edit phone/address/notes</b><small>Expected: Changes save and persist after refresh.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s4-step4' data-title='4. Clients' data-action='Create E2E Missing Email Client' data-expected='Client can exist, but missing email should be obvious later.'><input type='checkbox' data-key='s4-step4' /><b>5. Create E2E Missing Email Client</b><small>Expected: Client can exist, but missing email should be obvious later.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s4-step5' data-title='4. Clients' data-action='Import churvox-test-clients.csv' data-expected='CSV import accepts test clients or shows clear import result.'><input type='checkbox' data-key='s4-step5' /><b>6. Import churvox-test-clients.csv</b><small>Expected: CSV import accepts test clients or shows clear import result.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s4-step6' data-title='4. Clients' data-action='Search/filter clients if available' data-expected='E2E clients can be found.'><input type='checkbox' data-key='s4-step6' /><b>7. Search/filter clients if available</b><small>Expected: E2E clients can be found.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>5. Team / workers</span><p>Owner can add workers and worker view stays simple.</p></header><div class='steps'>
+<label class='step' data-key='s5-step0' data-title='5. Team / workers' data-action='Open Team' data-expected='Team page loads cleanly.'><input type='checkbox' data-key='s5-step0' /><b>1. Open Team</b><small>Expected: Team page loads cleanly.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s5-step1' data-title='5. Team / workers' data-action='Create E2E Test Worker manually' data-expected='Worker saves and appears.'><input type='checkbox' data-key='s5-step1' /><b>2. Create E2E Test Worker manually</b><small>Expected: Worker saves and appears.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s5-step2' data-title='5. Team / workers' data-action='Check invite email/help text' data-expected='Copy is clear and not scary.'><input type='checkbox' data-key='s5-step2' /><b>3. Check invite email/help text</b><small>Expected: Copy is clear and not scary.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s5-step3' data-title='5. Team / workers' data-action='Edit worker role/rate/details' data-expected='Save works or error is clear.'><input type='checkbox' data-key='s5-step3' /><b>4. Edit worker role/rate/details</b><small>Expected: Save works or error is clear.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s5-step4' data-title='5. Team / workers' data-action='Import churvox-test-team.csv' data-expected='CSV import creates/updates workers or clearly reports result.'><input type='checkbox' data-key='s5-step4' /><b>5. Import churvox-test-team.csv</b><small>Expected: CSV import creates/updates workers or clearly reports result.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s5-step5' data-title='5. Team / workers' data-action='Check worker-only view if available' data-expected='Worker does not see owner-only controls like pricing/admin.'><input type='checkbox' data-key='s5-step5' /><b>6. Check worker-only view if available</b><small>Expected: Worker does not see owner-only controls like pricing/admin.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>6. Jobs</span><p>Job creation, assignment, details, and completion are the core flow.</p></header><div class='steps'>
+<label class='step' data-key='s6-step0' data-title='6. Jobs' data-action='Open Jobs' data-expected='Jobs page loads without blank screen.'><input type='checkbox' data-key='s6-step0' /><b>1. Open Jobs</b><small>Expected: Jobs page loads without blank screen.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s6-step1' data-title='6. Jobs' data-action='Create E2E One-off lawn tidy' data-expected='Job saves with client, address, date/time, worker, and price.'><input type='checkbox' data-key='s6-step1' /><b>2. Create E2E One-off lawn tidy</b><small>Expected: Job saves with client, address, date/time, worker, and price.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s6-step2' data-title='6. Jobs' data-action='Open job details' data-expected='Details open in modal/sheet.'><input type='checkbox' data-key='s6-step2' /><b>3. Open job details</b><small>Expected: Details open in modal/sheet.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s6-step3' data-title='6. Jobs' data-action='Edit job notes/price/status' data-expected='Changes persist after refresh.'><input type='checkbox' data-key='s6-step3' /><b>4. Edit job notes/price/status</b><small>Expected: Changes persist after refresh.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s6-step4' data-title='6. Jobs' data-action='Assign E2E Test Worker' data-expected='Assigned worker is visible on the job.'><input type='checkbox' data-key='s6-step4' /><b>5. Assign E2E Test Worker</b><small>Expected: Assigned worker is visible on the job.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s6-step5' data-title='6. Jobs' data-action='Create E2E recurring fortnightly mow' data-expected='Recurring/repeat option saves or gives clear message.'><input type='checkbox' data-key='s6-step5' /><b>6. Create E2E recurring fortnightly mow</b><small>Expected: Recurring/repeat option saves or gives clear message.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s6-step6' data-title='6. Jobs' data-action='Import churvox-test-jobs.csv' data-expected='CSV import accepts jobs or gives clear result.'><input type='checkbox' data-key='s6-step6' /><b>7. Import churvox-test-jobs.csv</b><small>Expected: CSV import accepts jobs or gives clear result.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s6-step7' data-title='6. Jobs' data-action='Complete one test job' data-expected='Job becomes Completed and does not stay stuck In Progress.'><input type='checkbox' data-key='s6-step7' /><b>8. Complete one test job</b><small>Expected: Job becomes Completed and does not stay stuck In Progress.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>7. Worker proof / time</span><p>Worker can prove work happened without confusion.</p></header><div class='steps'>
+<label class='step' data-key='s7-step0' data-title='7. Worker proof / time' data-action='Open worker view / Worker Proof' data-expected='Worker sees assigned jobs only.'><input type='checkbox' data-key='s7-step0' /><b>1. Open worker view / Worker Proof</b><small>Expected: Worker sees assigned jobs only.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s7-step1' data-title='7. Worker proof / time' data-action='Acknowledge assigned E2E job' data-expected='Acknowledged state saves.'><input type='checkbox' data-key='s7-step1' /><b>2. Acknowledge assigned E2E job</b><small>Expected: Acknowledged state saves.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s7-step2' data-title='7. Worker proof / time' data-action='Start job timer' data-expected='Timer starts without network error.'><input type='checkbox' data-key='s7-step2' /><b>3. Start job timer</b><small>Expected: Timer starts without network error.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s7-step3' data-title='7. Worker proof / time' data-action='Pause job timer' data-expected='Timer pauses and state is visible.'><input type='checkbox' data-key='s7-step3' /><b>4. Pause job timer</b><small>Expected: Timer pauses and state is visible.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s7-step4' data-title='7. Worker proof / time' data-action='Resume job timer' data-expected='Timer resumes.'><input type='checkbox' data-key='s7-step4' /><b>5. Resume job timer</b><small>Expected: Timer resumes.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s7-step5' data-title='7. Worker proof / time' data-action='Add worker note' data-expected='Note saves and owner can see it.'><input type='checkbox' data-key='s7-step5' /><b>6. Add worker note</b><small>Expected: Note saves and owner can see it.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s7-step6' data-title='7. Worker proof / time' data-action='Add/upload photo if available' data-expected='Photo/proof is visible or clear if upload unavailable.'><input type='checkbox' data-key='s7-step6' /><b>7. Add/upload photo if available</b><small>Expected: Photo/proof is visible or clear if upload unavailable.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s7-step7' data-title='7. Worker proof / time' data-action='Complete job' data-expected='Completed state saves and owner sees proof/time context.'><input type='checkbox' data-key='s7-step7' /><b>8. Complete job</b><small>Expected: Completed state saves and owner sees proof/time context.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s7-step8' data-title='7. Worker proof / time' data-action='Refresh after completion' data-expected='Status and proof remain.'><input type='checkbox' data-key='s7-step8' /><b>9. Refresh after completion</b><small>Expected: Status and proof remain.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>8. Quotes</span><p>Quotes should lead naturally into jobs.</p></header><div class='steps'>
+<label class='step' data-key='s8-step0' data-title='8. Quotes' data-action='Open Quotes' data-expected='Quotes page loads cleanly.'><input type='checkbox' data-key='s8-step0' /><b>1. Open Quotes</b><small>Expected: Quotes page loads cleanly.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s8-step1' data-title='8. Quotes' data-action='Create E2E hedge trim quote' data-expected='Quote saves with client, amount, and description.'><input type='checkbox' data-key='s8-step1' /><b>2. Create E2E hedge trim quote</b><small>Expected: Quote saves with client, amount, and description.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s8-step2' data-title='8. Quotes' data-action='Open quote details' data-expected='Details open cleanly.'><input type='checkbox' data-key='s8-step2' /><b>3. Open quote details</b><small>Expected: Details open cleanly.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s8-step3' data-title='8. Quotes' data-action='Edit quote' data-expected='Changes persist.'><input type='checkbox' data-key='s8-step3' /><b>4. Edit quote</b><small>Expected: Changes persist.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s8-step4' data-title='8. Quotes' data-action='Mark/handle accepted quote' data-expected='Accepted quote status is clear.'><input type='checkbox' data-key='s8-step4' /><b>5. Mark/handle accepted quote</b><small>Expected: Accepted quote status is clear.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s8-step5' data-title='8. Quotes' data-action='Convert or continue quote to job if available' data-expected='Job is created or next step is clear.'><input type='checkbox' data-key='s8-step5' /><b>6. Convert or continue quote to job if available</b><small>Expected: Job is created or next step is clear.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s8-step6' data-title='8. Quotes' data-action='Import churvox-test-quotes.csv' data-expected='Quote import works or clearly reports result.'><input type='checkbox' data-key='s8-step6' /><b>7. Import churvox-test-quotes.csv</b><small>Expected: Quote import works or clearly reports result.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>9. Invoices / money</span><p>Completed work should become invoice-ready and money should be easy to track.</p></header><div class='steps'>
+<label class='step' data-key='s9-step0' data-title='9. Invoices / money' data-action='Open Invoices/Money' data-expected='Invoices page loads cleanly.'><input type='checkbox' data-key='s9-step0' /><b>1. Open Invoices/Money</b><small>Expected: Invoices page loads cleanly.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s9-step1' data-title='9. Invoices / money' data-action='Create invoice from E2E completed job if available' data-expected='Draft invoice uses client/job/price details.'><input type='checkbox' data-key='s9-step1' /><b>2. Create invoice from E2E completed job if available</b><small>Expected: Draft invoice uses client/job/price details.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s9-step2' data-title='9. Invoices / money' data-action='Create E2E draft invoice manually if needed' data-expected='Draft saves and appears.'><input type='checkbox' data-key='s9-step2' /><b>3. Create E2E draft invoice manually if needed</b><small>Expected: Draft saves and appears.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s9-step3' data-title='9. Invoices / money' data-action='Open invoice details' data-expected='Details open in modal/sheet.'><input type='checkbox' data-key='s9-step3' /><b>4. Open invoice details</b><small>Expected: Details open in modal/sheet.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s9-step4' data-title='9. Invoices / money' data-action='Check draft/review wording' data-expected='Nothing says it sent automatically.'><input type='checkbox' data-key='s9-step4' /><b>5. Check draft/review wording</b><small>Expected: Nothing says it sent automatically.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s9-step5' data-title='9. Invoices / money' data-action='Mark/test unpaid/overdue state' data-expected='Money/admin debt is visible.'><input type='checkbox' data-key='s9-step5' /><b>6. Mark/test unpaid/overdue state</b><small>Expected: Money/admin debt is visible.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s9-step6' data-title='9. Invoices / money' data-action='Import churvox-test-invoices.csv' data-expected='Invoice import works or clearly reports result.'><input type='checkbox' data-key='s9-step6' /><b>7. Import churvox-test-invoices.csv</b><small>Expected: Invoice import works or clearly reports result.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s9-step7' data-title='9. Invoices / money' data-action='Refresh after invoice actions' data-expected='Invoice states persist.'><input type='checkbox' data-key='s9-step7' /><b>8. Refresh after invoice actions</b><small>Expected: Invoice states persist.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>10. Command approval desk</span><p>Churvox should prepare admin, then wait for owner approval.</p></header><div class='steps'>
+<label class='step' data-key='s10-step0' data-title='10. Command approval desk' data-action='Open Command' data-expected='Command loads without white/washed-out cards.'><input type='checkbox' data-key='s10-step0' /><b>1. Open Command</b><small>Expected: Command loads without white/washed-out cards.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s10-step1' data-title='10. Command approval desk' data-action='Run Check for work' data-expected='Command finds or prepares relevant test admin items.'><input type='checkbox' data-key='s10-step1' /><b>2. Run Check for work</b><small>Expected: Command finds or prepares relevant test admin items.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s10-step2' data-title='10. Command approval desk' data-action='Open one Command slip' data-expected='Slip shows found/prepared/why/proof/next step.'><input type='checkbox' data-key='s10-step2' /><b>3. Open one Command slip</b><small>Expected: Slip shows found/prepared/why/proof/next step.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s10-step3' data-title='10. Command approval desk' data-action='Review prepared form' data-expected='Preview is readable and not too long.'><input type='checkbox' data-key='s10-step3' /><b>4. Review prepared form</b><small>Expected: Preview is readable and not too long.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s10-step4' data-title='10. Command approval desk' data-action='Approve safe item' data-expected='Approval succeeds or gives clear reason if blocked.'><input type='checkbox' data-key='s10-step4' /><b>5. Approve safe item</b><small>Expected: Approval succeeds or gives clear reason if blocked.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s10-step5' data-title='10. Command approval desk' data-action='Mark item Needs edit' data-expected='State updates and does not break list.'><input type='checkbox' data-key='s10-step5' /><b>6. Mark item Needs edit</b><small>Expected: State updates and does not break list.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s10-step6' data-title='10. Command approval desk' data-action='Park item for now' data-expected='Item parks without deleting records.'><input type='checkbox' data-key='s10-step6' /><b>7. Park item for now</b><small>Expected: Item parks without deleting records.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s10-step7' data-title='10. Command approval desk' data-action='Refresh Command' data-expected='Queue remains consistent.'><input type='checkbox' data-key='s10-step7' /><b>8. Refresh Command</b><small>Expected: Queue remains consistent.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>11. Owner Health Check</span><p>Health layer should support the whole site, not feel like builder notes.</p></header><div class='steps'>
+<label class='step' data-key='s11-step0' data-title='11. Owner Health Check' data-action='Open Owner Health Check inside Command' data-expected='It uses customer-safe language, not Top 9/build wording.'><input type='checkbox' data-key='s11-step0' /><b>1. Open Owner Health Check inside Command</b><small>Expected: It uses customer-safe language, not Top 9/build wording.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s11-step1' data-title='11. Owner Health Check' data-action='Open health checks' data-expected='Checklist is readable and tickable.'><input type='checkbox' data-key='s11-step1' /><b>2. Open health checks</b><small>Expected: Checklist is readable and tickable.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s11-step2' data-title='11. Owner Health Check' data-action='Tick several checks' data-expected='Progress updates.'><input type='checkbox' data-key='s11-step2' /><b>3. Tick several checks</b><small>Expected: Progress updates.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s11-step3' data-title='11. Owner Health Check' data-action='Refresh page' data-expected='Ticks remain saved locally.'><input type='checkbox' data-key='s11-step3' /><b>4. Refresh page</b><small>Expected: Ticks remain saved locally.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s11-step4' data-title='11. Owner Health Check' data-action='Open Health report' data-expected='Report uses owner/customer-safe wording.'><input type='checkbox' data-key='s11-step4' /><b>5. Open Health report</b><small>Expected: Report uses owner/customer-safe wording.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s11-step5' data-title='11. Owner Health Check' data-action='Copy health report' data-expected='Clipboard or fallback save message works.'><input type='checkbox' data-key='s11-step5' /><b>6. Copy health report</b><small>Expected: Clipboard or fallback save message works.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>12. Accounting sync / Xero</span><p>Accounting sync must feel safe and owner-controlled.</p></header><div class='steps'>
+<label class='step' data-key='s12-step0' data-title='12. Accounting sync / Xero' data-action='Open Accounting Sync/Xero page' data-expected='Page loads cleanly.'><input type='checkbox' data-key='s12-step0' /><b>1. Open Accounting Sync/Xero page</b><small>Expected: Page loads cleanly.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s12-step1' data-title='12. Accounting sync / Xero' data-action='Check wording' data-expected='It says draft sync only / owner-approved where relevant.'><input type='checkbox' data-key='s12-step1' /><b>2. Check wording</b><small>Expected: It says draft sync only / owner-approved where relevant.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s12-step2' data-title='12. Accounting sync / Xero' data-action='Check connect/disconnect buttons' data-expected='Buttons are clear and disabled only for a clear reason.'><input type='checkbox' data-key='s12-step2' /><b>3. Check connect/disconnect buttons</b><small>Expected: Buttons are clear and disabled only for a clear reason.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s12-step3' data-title='12. Accounting sync / Xero' data-action='Check CSV/bookkeeper pack buttons' data-expected='Downloads work or show clear result.'><input type='checkbox' data-key='s12-step3' /><b>4. Check CSV/bookkeeper pack buttons</b><small>Expected: Downloads work or show clear result.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s12-step4' data-title='12. Accounting sync / Xero' data-action='Check payment refresh/status' data-expected='No automatic paid marking unless accounting confirms it.'><input type='checkbox' data-key='s12-step4' /><b>5. Check payment refresh/status</b><small>Expected: No automatic paid marking unless accounting confirms it.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>13. Plans/pricing</span><p>Pricing should feel clear, honest, and not trapped.</p></header><div class='steps'>
+<label class='step' data-key='s13-step0' data-title='13. Plans/pricing' data-action='Open Plans' data-expected='Plans page loads.'><input type='checkbox' data-key='s13-step0' /><b>1. Open Plans</b><small>Expected: Plans page loads.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s13-step1' data-title='13. Plans/pricing' data-action='Check Start/Crew/Operator/Command prices' data-expected='Prices match locked pricing.'><input type='checkbox' data-key='s13-step1' /><b>2. Check Start/Crew/Operator/Command prices</b><small>Expected: Prices match locked pricing.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s13-step2' data-title='13. Plans/pricing' data-action='Check Operator recommended/Most Popular' data-expected='Recommended plan is clear.'><input type='checkbox' data-key='s13-step2' /><b>3. Check Operator recommended/Most Popular</b><small>Expected: Recommended plan is clear.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s13-step3' data-title='13. Plans/pricing' data-action='Check Command Growth Pack' data-expected='Growth Pack wording is clear.'><input type='checkbox' data-key='s13-step3' /><b>4. Check Command Growth Pack</b><small>Expected: Growth Pack wording is clear.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s13-step4' data-title='13. Plans/pricing' data-action='Check Accounting Sync Add-on wording' data-expected='No confusing public MYOB wording.'><input type='checkbox' data-key='s13-step4' /><b>5. Check Accounting Sync Add-on wording</b><small>Expected: No confusing public MYOB wording.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s13-step5' data-title='13. Plans/pricing' data-action='Start checkout flow if safe' data-expected='Selected plan/add-on is correct before payment.'><input type='checkbox' data-key='s13-step5' /><b>6. Start checkout flow if safe</b><small>Expected: Selected plan/add-on is correct before payment.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s13-step6' data-title='13. Plans/pricing' data-action='Return/cancel flow if tested' data-expected='Current plan display does not become stale/wrong.'><input type='checkbox' data-key='s13-step6' /><b>7. Return/cancel flow if tested</b><small>Expected: Current plan display does not become stale/wrong.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>14. Imports/exports</span><p>A real business can move from spreadsheets without pain.</p></header><div class='steps'>
+<label class='step' data-key='s14-step0' data-title='14. Imports/exports' data-action='Open Imports' data-expected='Imports page loads.'><input type='checkbox' data-key='s14-step0' /><b>1. Open Imports</b><small>Expected: Imports page loads.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s14-step1' data-title='14. Imports/exports' data-action='Download each template' data-expected='Clients, Team, Jobs, Quotes, Invoices templates download.'><input type='checkbox' data-key='s14-step1' /><b>2. Download each template</b><small>Expected: Clients, Team, Jobs, Quotes, Invoices templates download.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s14-step2' data-title='14. Imports/exports' data-action='Import clients CSV' data-expected='Comma CSV works.'><input type='checkbox' data-key='s14-step2' /><b>3. Import clients CSV</b><small>Expected: Comma CSV works.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s14-step3' data-title='14. Imports/exports' data-action='Import team CSV' data-expected='Team CSV works.'><input type='checkbox' data-key='s14-step3' /><b>4. Import team CSV</b><small>Expected: Team CSV works.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s14-step4' data-title='14. Imports/exports' data-action='Import jobs CSV' data-expected='Jobs CSV works or gives clear required field message.'><input type='checkbox' data-key='s14-step4' /><b>5. Import jobs CSV</b><small>Expected: Jobs CSV works or gives clear required field message.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s14-step5' data-title='14. Imports/exports' data-action='Try semicolon/tab CSV if available' data-expected='Parser handles alternate delimiters.'><input type='checkbox' data-key='s14-step5' /><b>6. Try semicolon/tab CSV if available</b><small>Expected: Parser handles alternate delimiters.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s14-step6' data-title='14. Imports/exports' data-action='Open Exports' data-expected='Export options are clear and download if available.'><input type='checkbox' data-key='s14-step6' /><b>7. Open Exports</b><small>Expected: Export options are clear and download if available.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>15. Help/support/messages</span><p>Users should not feel stuck.</p></header><div class='steps'>
+<label class='step' data-key='s15-step0' data-title='15. Help/support/messages' data-action='Open Help/Support' data-expected='Page loads and copy feels human.'><input type='checkbox' data-key='s15-step0' /><b>1. Open Help/Support</b><small>Expected: Page loads and copy feels human.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s15-step1' data-title='15. Help/support/messages' data-action='Create support/help note if available' data-expected='Support request saves or gives clear next step.'><input type='checkbox' data-key='s15-step1' /><b>2. Create support/help note if available</b><small>Expected: Support request saves or gives clear next step.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s15-step2' data-title='15. Help/support/messages' data-action='Open Messages if available' data-expected='Messages/inbox loads without owner-only confusion.'><input type='checkbox' data-key='s15-step2' /><b>3. Open Messages if available</b><small>Expected: Messages/inbox loads without owner-only confusion.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s15-step3' data-title='15. Help/support/messages' data-action='Use support from Owner Health Check' data-expected='Support note appears or Command refreshes.'><input type='checkbox' data-key='s15-step3' /><b>4. Use support from Owner Health Check</b><small>Expected: Support note appears or Command refreshes.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>16. Mobile/tablet pass</span><p>Tradies use phones. This must feel good.</p></header><div class='steps'>
+<label class='step' data-key='s16-step0' data-title='16. Mobile/tablet pass' data-action='Open site on phone/tablet' data-expected='No horizontal overflow or broken layout.'><input type='checkbox' data-key='s16-step0' /><b>1. Open site on phone/tablet</b><small>Expected: No horizontal overflow or broken layout.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s16-step1' data-title='16. Mobile/tablet pass' data-action='Use bottom nav' data-expected='Buttons are tappable and active state is clear.'><input type='checkbox' data-key='s16-step1' /><b>2. Use bottom nav</b><small>Expected: Buttons are tappable and active state is clear.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s16-step2' data-title='16. Mobile/tablet pass' data-action='Open More menu' data-expected='More menu scrolls and closes properly.'><input type='checkbox' data-key='s16-step2' /><b>3. Open More menu</b><small>Expected: More menu scrolls and closes properly.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s16-step3' data-title='16. Mobile/tablet pass' data-action='Open job/client/invoice modal' data-expected='Modal fits screen and scrolls.'><input type='checkbox' data-key='s16-step3' /><b>4. Open job/client/invoice modal</b><small>Expected: Modal fits screen and scrolls.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s16-step4' data-title='16. Mobile/tablet pass' data-action='Try worker timer buttons' data-expected='Buttons are not blocked by bottom nav.'><input type='checkbox' data-key='s16-step4' /><b>5. Try worker timer buttons</b><small>Expected: Buttons are not blocked by bottom nav.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s16-step5' data-title='16. Mobile/tablet pass' data-action='Try Command slip controls' data-expected='Approve/edit/park buttons are visible and tappable.'><input type='checkbox' data-key='s16-step5' /><b>6. Try Command slip controls</b><small>Expected: Approve/edit/park buttons are visible and tappable.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>17. Public/customer links</span><p>Customer-facing views should not expose owner tools.</p></header><div class='steps'>
+<label class='step' data-key='s17-step0' data-title='17. Public/customer links' data-action='Open public quote/client portal link if available' data-expected='Page loads without owner nav.'><input type='checkbox' data-key='s17-step0' /><b>1. Open public quote/client portal link if available</b><small>Expected: Page loads without owner nav.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s17-step1' data-title='17. Public/customer links' data-action='Check customer copy' data-expected='Customer sees quote/invoice/proof info only.'><input type='checkbox' data-key='s17-step1' /><b>2. Check customer copy</b><small>Expected: Customer sees quote/invoice/proof info only.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s17-step2' data-title='17. Public/customer links' data-action='Try approval/payment action if available' data-expected='Action is clear and safe.'><input type='checkbox' data-key='s17-step2' /><b>3. Try approval/payment action if available</b><small>Expected: Action is clear and safe.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+<section class='testSection'><header><span>18. Final trust check</span><p>Make sure Churvox feels trustworthy.</p></header><div class='steps'>
+<label class='step' data-key='s18-step0' data-title='18. Final trust check' data-action='Look for washed-out/hidden text' data-expected='Text is readable without highlighting.'><input type='checkbox' data-key='s18-step0' /><b>1. Look for washed-out/hidden text</b><small>Expected: Text is readable without highlighting.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s18-step1' data-title='18. Final trust check' data-action='Look for demo/fake data on owner pages' data-expected='No fake numbers pretending to be real.'><input type='checkbox' data-key='s18-step1' /><b>2. Look for demo/fake data on owner pages</b><small>Expected: No fake numbers pretending to be real.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s18-step2' data-title='18. Final trust check' data-action='Check every dangerous action' data-expected='Delete/send/sync/payroll/accounting actions require clear owner intent.'><input type='checkbox' data-key='s18-step2' /><b>3. Check every dangerous action</b><small>Expected: Delete/send/sync/payroll/accounting actions require clear owner intent.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+<label class='step' data-key='s18-step3' data-title='18. Final trust check' data-action='Confirm promise' data-expected='The product feels like: Job done. Admin prepared. Owner approves.'><input type='checkbox' data-key='s18-step3' /><b>4. Confirm promise</b><small>Expected: The product feels like: Job done. Admin prepared. Owner approves.</small><textarea placeholder='Notes / issue found...'></textarea></label>
+</div></section>
+
+    <section class="reportBox" id="reportBox">
+      <h2>Human test report</h2>
+      <textarea id="report" readonly></textarea>
+      <p class="note" id="copyNote"></p>
+    </section>
+  </main>
+
+  <script>
+    const KEY = "churvox:human-e2e-test-pass:20260627";
+    const NOTE_KEY = "churvox:human-e2e-test-notes:20260627";
+    const total = 116;
+    const boxes = Array.from(document.querySelectorAll("input[type='checkbox'][data-key]"));
+    const steps = Array.from(document.querySelectorAll(".step"));
+    const score = document.getElementById("score");
+    const verdict = document.getElementById("verdict");
+    const progress = document.getElementById("progress");
+    const report = document.getElementById("report");
+    const reportBox = document.getElementById("reportBox");
+    const copyNote = document.getElementById("copyNote");
+
+    function read(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch { return fallback; }
+    }
+    function write(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    }
+
+    let checked = read(KEY, {});
+    let notes = read(NOTE_KEY, {});
+
+    function stepReportLine(step) {
+      const box = step.querySelector("input");
+      const note = step.querySelector("textarea").value.trim();
+      const mark = box.checked ? "x" : " ";
+      const title = step.dataset.title || "";
+      const action = step.dataset.action || "";
+      const expected = step.dataset.expected || "";
+      return `[${mark}] ${title} — ${action}\n    Expected: ${expected}${note ? "\n    Note: " + note : ""}`;
+    }
+
+    function buildReport() {
+      const done = boxes.filter((box) => box.checked).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      const lines = [];
+      lines.push("Churvox Human End-to-End Test Report");
+      lines.push("Generated: " + new Date().toLocaleString());
+      lines.push("Progress: " + done + "/" + total + " (" + pct + "%)");
+      lines.push("");
+      lines.push("Promise being tested: Job done. Admin prepared. Owner approves.");
+      lines.push("");
+      steps.forEach((step) => lines.push(stepReportLine(step)));
+      lines.push("");
+      if (pct >= 90) lines.push("Verdict: Strong. Ready for controlled outreach if no critical notes are open.");
+      else if (pct >= 70) lines.push("Verdict: Close. Fix rough flows before bigger marketing.");
+      else lines.push("Verdict: Keep testing. Too many flows are not confirmed yet.");
+      return lines.join("\n");
+    }
+
+    function update() {
+      boxes.forEach((box) => {
+        box.checked = Boolean(checked[box.dataset.key]);
+        const step = box.closest(".step");
+        if (step) step.classList.toggle("done", box.checked);
+      });
+
+      document.querySelectorAll(".step textarea").forEach((ta) => {
+        const key = ta.closest(".step")?.dataset.key;
+        if (key && notes[key] !== undefined && ta.value !== notes[key]) ta.value = notes[key];
+      });
+
+      const done = boxes.filter((box) => box.checked).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      score.textContent = done + " / " + total + " checked";
+      progress.style.width = pct + "%";
+      verdict.textContent = pct >= 90 ? "Strong pass. Check notes, then controlled outreach is realistic." : pct >= 70 ? "Close. Fix rough flows before pushing marketing harder." : "Keep going through the full site flow.";
+      report.value = buildReport();
+    }
+
+    boxes.forEach((box) => {
+      box.addEventListener("change", () => {
+        checked[box.dataset.key] = box.checked;
+        write(KEY, checked);
+        update();
+      });
+    });
+
+    document.querySelectorAll(".step textarea").forEach((ta) => {
+      const key = ta.closest(".step")?.dataset.key;
+      if (key && notes[key]) ta.value = notes[key];
+      ta.addEventListener("input", () => {
+        const step = ta.closest(".step");
+        if (!step) return;
+        notes[step.dataset.key] = ta.value;
+        write(NOTE_KEY, notes);
+        update();
+      });
+    });
+
+    document.getElementById("reset").addEventListener("click", () => {
+      if (!confirm("Reset all checked items and notes for this human test pass?")) return;
+      checked = {};
+      notes = {};
+      write(KEY, checked);
+      write(NOTE_KEY, notes);
+      document.querySelectorAll(".step textarea").forEach((ta) => ta.value = "");
+      update();
+    });
+
+    document.getElementById("toggleReport").addEventListener("click", () => {
+      reportBox.classList.toggle("show");
+      document.getElementById("toggleReport").textContent = reportBox.classList.contains("show") ? "Hide report" : "Show report";
+      update();
+    });
+
+    document.getElementById("copyReport").addEventListener("click", async () => {
+      update();
+      try {
+        await navigator.clipboard.writeText(report.value);
+        copyNote.textContent = "Report copied.";
+        reportBox.classList.add("show");
+        document.getElementById("toggleReport").textContent = "Hide report";
+      } catch {
+        copyNote.textContent = "Clipboard blocked. Open the report and copy it manually.";
+        reportBox.classList.add("show");
+        document.getElementById("toggleReport").textContent = "Hide report";
+      }
+    });
+
+    update();
+  </script>
+</body>
+</html>

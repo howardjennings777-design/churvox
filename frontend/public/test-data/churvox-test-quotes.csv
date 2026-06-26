@@ -1,0 +1,3 @@
+client_name,quote_title,description,amount,status,notes
+E2E Test Client Two,E2E hedge trim quote,Trim front hedge and remove green waste,180,Draft,"Review, send/approve, convert to job"
+E2E Test Client One,E2E garden reset quote,Garden reset with follow-up visit,240,Accepted,Test accepted quote to job flow
