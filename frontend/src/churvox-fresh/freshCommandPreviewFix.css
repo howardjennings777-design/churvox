@@ -18,120 +18,83 @@
 }
 
 .freshCommandCleanDesk {
-  display: grid;
-  gap: 14px;
+  display: block;
   color: #111827;
 }
 
-.freshCommandCleanHeader {
+.freshCommandCleanHeader,
+.freshCommandCleanGrid,
+.freshCommandOwnerControls,
+.freshCommandFilledLead {
   display: none;
 }
 
-.freshCommandCleanHeader > span,
-.freshCommandCleanPanelTitle span,
+.freshCommandFormShell {
+  width: min(100%, 1040px);
+  margin: 0 auto;
+}
+
+.freshCommandPreparedForm {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-left: 6px solid #f97316;
+  border-radius: 16px;
+  background: rgba(255, 250, 240, .98);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .08);
+}
+
+.freshCommandFormTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, .08);
+}
+
+.freshCommandFormTop div {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.freshCommandFormTop span,
 .freshCommandFilledRows span,
 .freshCommandOwnerNote span,
-.freshCommandFilledLead span {
+.freshCommandRecordId span {
   display: inline-flex;
   width: fit-content;
   align-items: center;
-  padding: 6px 10px;
-  border: 1px solid rgba(249, 115, 22, .25);
+  padding: 5px 9px;
+  border: 1px solid rgba(249, 115, 22, .24);
   border-radius: 999px;
   background: #ffedd5;
   color: #7c2d12;
   -webkit-text-fill-color: #7c2d12;
   font-size: 10px;
-  font-weight: 1000;
-  letter-spacing: .08em;
+  font-weight: 950;
+  letter-spacing: .07em;
   text-transform: uppercase;
 }
 
-.freshCommandFilledLead {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.freshCommandFilledLead h2 {
+.freshCommandFormTop h2 {
   margin: 0;
   color: #111827;
   -webkit-text-fill-color: #111827;
-  font-size: clamp(30px, 4vw, 54px);
-  line-height: .95;
-  letter-spacing: -.045em;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -.035em;
 }
 
-.freshCommandCleanToolbar,
-.freshCommandFixActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.freshCommandCleanToolbar button,
-.freshCommandFixActions button {
-  min-height: 42px;
-  padding: 0 14px;
-  border: 1px solid rgba(15, 23, 42, .12);
-  border-radius: 14px;
-  background: #111827;
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  font-size: 13px;
-  font-weight: 1000;
-  cursor: pointer;
-}
-
-.freshCommandCleanToolbar button:first-child,
-.freshCommandFixActions button:first-child {
-  border-color: #f97316;
-  background: #f97316;
-  color: #111827;
-  -webkit-text-fill-color: #111827;
-  box-shadow: 0 12px 26px rgba(249, 115, 22, .22);
-}
-
-.freshCommandCleanToolbar button:disabled,
-.freshCommandFixActions button:disabled {
-  cursor: not-allowed;
-  opacity: .55;
-  box-shadow: none;
-}
-
-.freshCommandCleanGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-  gap: 14px;
-  align-items: start;
-}
-
-.freshCommandFilledFormCard,
-.freshCommandOwnerControls,
-.freshCommandCleanEmpty {
-  min-width: 0;
-  padding: 18px;
-  border: 1px solid rgba(15, 23, 42, .10);
-  border-radius: 20px;
-  background: rgba(255, 250, 240, .98);
-  box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
-}
-
-.freshCommandCleanPanelTitle {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.freshCommandCleanPanelTitle b {
+.freshCommandFormTop > b {
+  flex: 0 0 auto;
   display: inline-flex;
-  min-width: 30px;
-  min-height: 30px;
+  min-height: 32px;
   align-items: center;
   justify-content: center;
-  padding: 0 10px;
+  padding: 0 12px;
   border-radius: 999px;
   background: #111827;
   color: #fff;
@@ -140,40 +103,33 @@
   font-weight: 1000;
 }
 
-.freshCommandFilledFormCard h3 {
-  margin: 0 0 14px;
-  color: #111827;
-  -webkit-text-fill-color: #111827;
-  font-size: clamp(24px, 3vw, 38px);
-  line-height: 1;
-  letter-spacing: -.04em;
-}
-
 .freshCommandFilledRows {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .freshCommandFilledRows label {
   display: grid;
-  grid-template-columns: minmax(112px, .25fr) minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-  padding: 9px;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px;
   border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fff;
 }
 
-.freshCommandFilledRows span {
-  margin-top: 2px;
+.freshCommandFilledRows label:nth-child(2),
+.freshCommandFilledRows label:nth-child(3),
+.freshCommandFilledRows label:last-child {
+  grid-column: span 2;
 }
 
 .freshCommandFilledRows b {
-  min-height: 36px;
-  padding: 9px 11px;
+  min-height: 38px;
+  padding: 10px 11px;
   border: 1px solid rgba(15, 23, 42, .10);
-  border-radius: 11px;
+  border-radius: 10px;
   background: #f8fafc;
   color: #111827;
   -webkit-text-fill-color: #111827;
@@ -184,25 +140,22 @@
   overflow-wrap: anywhere;
 }
 
-.freshCommandOwnerControls {
-  position: sticky;
-  top: 16px;
-  display: grid;
-  gap: 12px;
-}
-
 .freshCommandOwnerNote {
   display: grid;
   gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 12px;
+  background: #fff;
 }
 
 .freshCommandOwnerNote textarea {
   width: 100%;
-  min-height: 116px;
+  min-height: 82px;
   padding: 12px;
   border: 1px solid rgba(15, 23, 42, .12);
-  border-radius: 16px;
-  background: #fff;
+  border-radius: 11px;
+  background: #f8fafc;
   color: #111827;
   -webkit-text-fill-color: #111827;
   font-size: 14px;
@@ -217,16 +170,57 @@
   box-shadow: 0 0 0 4px rgba(249, 115, 22, .14);
 }
 
-.freshCommandFixActions {
+.freshCommandFormFooter {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding-top: 2px;
 }
 
-.freshCommandFixActions button {
-  width: 100%;
+.freshCommandRecordId {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
 
-.freshCommandFixActions button:nth-child(2) {
+.freshCommandRecordId b {
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.freshCommandFixActions,
+.freshCommandCleanToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.freshCommandFixActions button,
+.freshCommandCleanToolbar button {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 12px;
   background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.freshCommandFixActions button:first-child,
+.freshCommandCleanToolbar button:first-child {
+  border-color: #f97316;
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  box-shadow: 0 10px 22px rgba(249, 115, 22, .20);
 }
 
 .freshCommandFixActions button:nth-child(3),
@@ -237,15 +231,31 @@
   border-color: rgba(249, 115, 22, .28);
 }
 
+.freshCommandFixActions button:disabled,
+.freshCommandCleanToolbar button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  box-shadow: none;
+}
+
 .freshCommandOutcome {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #ffedd5;
   color: #7c2d12;
   -webkit-text-fill-color: #7c2d12;
   font-size: 12px;
   font-weight: 900;
+}
+
+.freshCommandCleanEmpty {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 14px;
+  background: rgba(255, 250, 240, .98);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
 }
 
 .freshCommandCleanEmpty b,
@@ -273,30 +283,38 @@
   gap: 12px;
 }
 
-@media (max-width: 1100px) {
-  .freshCommandCleanGrid {
+@media (max-width: 900px) {
+  .freshCommandFormFooter {
     grid-template-columns: 1fr;
   }
 
-  .freshCommandOwnerControls {
-    position: static;
+  .freshCommandFixActions,
+  .freshCommandCleanToolbar {
+    justify-content: stretch;
+  }
+
+  .freshCommandFixActions button,
+  .freshCommandCleanToolbar button {
+    flex: 1 1 160px;
   }
 }
 
 @media (max-width: 760px) {
-  .freshCommandFilledFormCard,
-  .freshCommandOwnerControls,
+  .freshCommandPreparedForm,
   .freshCommandCleanEmpty {
     padding: 14px;
-    border-radius: 18px;
+    border-radius: 14px;
   }
 
-  .freshCommandFilledRows label {
+  .freshCommandFormTop {
+    display: grid;
+  }
+
+  .freshCommandFilledRows,
+  .freshCommandFilledRows label:nth-child(2),
+  .freshCommandFilledRows label:nth-child(3),
+  .freshCommandFilledRows label:last-child {
+    grid-column: auto;
     grid-template-columns: 1fr;
-  }
-
-  .freshCommandCleanToolbar,
-  .freshCommandCleanToolbar button {
-    width: 100%;
   }
 }
