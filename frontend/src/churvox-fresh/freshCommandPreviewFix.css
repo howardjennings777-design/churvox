@@ -1,381 +1,334 @@
-/* CHURVOX_COMMAND_INLINE_PREPARED_FORM_20260626 */
-/* CHURVOX_COMMAND_SIMPLE_FILLED_FORM_20260627 */
-/* CHURVOX_COMMAND_FILLED_FORM_FIRST_20260627 */
-.freshCommandFixDetail {
-  display: flex !important;
-  flex-direction: column !important;
+/* CHURVOX_COMMAND_CLEAN_FILLED_FORM_20260627 */
+
+.freshCommandCleanDesk,
+.freshCommandCleanDesk * {
+  box-sizing: border-box;
 }
 
-.freshCommandFixGrid {
-  grid-template-columns: minmax(230px, .68fr) minmax(360px, 1.12fr) minmax(310px, .9fr) !important;
+.freshCommandCleanDesk {
+  display: grid;
+  gap: 14px;
+  color: #111827;
 }
 
-.freshCommandFixQueue { order: 1 !important; }
-.freshCommandFixProof { order: 2 !important; }
-.freshCommandFixDetail { order: 3 !important; }
-
-.freshCommandFixDetail > .freshCommandPanelTitle { order: 1 !important; }
-.freshCommandFixDetail > h3 { order: 2 !important; }
-.freshCommandFixDetail > p:first-of-type { order: 3 !important; }
-.freshCommandOwnerNote { order: 4 !important; }
-.freshCommandFixActions { order: 5 !important; }
-.freshCommandOutcome { order: 6 !important; }
-
-.freshCommandFixDetail > div:nth-of-type(2),
-.freshCommandFixDetail > section:not(.freshCommandInlinePreparedForm),
-.freshCommandFixSections,
-.freshCommandFixDetail > div[aria-label="Decision trail"],
-.freshCommandFixDetail > button,
-.freshCommandInlinePreparedForm,
-.freshCommandFixActions + p,
-.freshCommandFixActions + p + p,
-.freshCommandFixActions + p + p + p {
-  display: none !important;
-}
-
-.freshCommandFixProof .freshCommandPanelTitle span {
-  font-size: 0 !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-}
-
-.freshCommandFixProof .freshCommandPanelTitle span::after {
-  content: "Filled form";
-  color: #7c2d12 !important;
-  -webkit-text-fill-color: #7c2d12 !important;
-  font-size: 10px !important;
-  font-weight: 1000 !important;
-}
-
-.freshCommandFixProof .freshCommandPanelTitle b {
-  display: none !important;
-}
-
-.freshCommandProofRows section:nth-last-child(3),
-.freshCommandProofRows section:nth-last-child(2),
-.freshCommandProofRows section:nth-last-child(1) {
-  display: none !important;
-}
-
-.freshCommandProofRows section {
-  background: #fff !important;
-}
-
-.freshCommandProofRows small {
-  width: fit-content !important;
-}
-
-.freshCommandProofRows b {
-  font-size: 15px !important;
-  line-height: 1.35 !important;
-}
-
-.freshCommandOwnerNote textarea {
-  min-height: 96px !important;
-}
-
-.freshCommandInlinePreparedForm {
+.freshCommandCleanHeader {
   display: grid;
   gap: 10px;
-  margin: 0 0 12px;
-  padding: 12px;
-  border: 1px solid rgba(249, 115, 22, .22);
-  border-radius: 18px;
-  background: #fffaf0;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.7);
+  padding: 22px;
+  border: 1px solid rgba(249, 115, 22, .26);
+  border-left: 7px solid #f97316;
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(249, 115, 22, .18), transparent 34%),
+    radial-gradient(circle at 96% 6%, rgba(255, 237, 213, .13), transparent 28%),
+    #151513;
+  box-shadow: 0 22px 55px rgba(15, 23, 42, .18);
 }
 
-.freshCommandInlinePreparedForm header {
-  display: grid;
-  gap: 5px;
-  padding: 12px;
-  border-radius: 15px;
-  background: #111827;
-  color: #fff;
-}
-
-.freshCommandInlinePreparedForm header span {
+.freshCommandCleanHeader > span,
+.freshCommandCleanPanelTitle span,
+.freshCommandFilledRows span,
+.freshCommandOwnerNote span {
+  display: inline-flex;
   width: fit-content;
-  padding: 5px 8px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid rgba(249, 115, 22, .25);
   border-radius: 999px;
-  background: #f97316;
-  color: #111827;
-  -webkit-text-fill-color: #111827;
+  background: #ffedd5;
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
   font-size: 10px;
   font-weight: 1000;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
-.freshCommandInlinePreparedForm header b {
+.freshCommandCleanHeader h2 {
+  margin: 0;
   color: #fff;
-  font-size: 18px;
+  -webkit-text-fill-color: #fff;
+  font-size: clamp(28px, 4vw, 52px);
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+
+.freshCommandCleanHeader p {
+  max-width: 760px;
+  margin: 0;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.freshCommandCleanStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshCommandCleanStats div {
+  padding: 12px;
+  border: 1px solid rgba(255, 237, 213, .15);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .075);
+}
+
+.freshCommandCleanStats b,
+.freshCommandCleanStats small {
+  display: block;
+}
+
+.freshCommandCleanStats b {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 24px;
   font-weight: 1000;
-  line-height: 1.1;
+  line-height: 1;
 }
 
-.freshCommandInlinePreparedForm header small {
-  display: none !important;
+.freshCommandCleanStats small {
+  margin-top: 5px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 11px;
+  font-weight: 900;
 }
 
-.freshCommandInlinePreparedForm > div {
-  display: grid;
-  gap: 7px;
-}
-
-.freshCommandInlinePreparedForm label {
-  display: grid;
-  grid-template-columns: minmax(118px, .28fr) minmax(0, 1fr);
+.freshCommandCleanToolbar,
+.freshCommandFixActions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.freshCommandCleanToolbar button,
+.freshCommandFixActions button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 14px;
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 13px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshCommandCleanToolbar button:first-child,
+.freshCommandFixActions button:first-child {
+  border-color: #f97316;
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  box-shadow: 0 12px 26px rgba(249, 115, 22, .22);
+}
+
+.freshCommandCleanToolbar button:disabled,
+.freshCommandFixActions button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  box-shadow: none;
+}
+
+.freshCommandCleanGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(290px, .65fr);
+  gap: 14px;
   align-items: start;
-  padding: 8px;
+}
+
+.freshCommandFilledFormCard,
+.freshCommandOwnerControls,
+.freshCommandCleanEmpty {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 22px;
+  background: rgba(255, 250, 240, .98);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
+}
+
+.freshCommandCleanPanelTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.freshCommandCleanPanelTitle b {
+  display: inline-flex;
+  min-width: 30px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.freshCommandFilledFormCard h3 {
+  margin: 0 0 14px;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: clamp(24px, 3vw, 38px);
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.freshCommandFilledRows {
+  display: grid;
+  gap: 8px;
+}
+
+.freshCommandFilledRows label {
+  display: grid;
+  grid-template-columns: minmax(120px, .28fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 9px;
   border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 12px;
+  border-radius: 14px;
   background: #fff;
 }
 
-.freshCommandInlinePreparedForm label:nth-child(2),
-.freshCommandInlinePreparedForm label:nth-child(3),
-.freshCommandInlinePreparedForm label:nth-child(6),
-.freshCommandInlinePreparedForm label:nth-child(7),
-.freshCommandInlinePreparedForm label:nth-child(9),
-.freshCommandInlinePreparedForm label:nth-child(10) {
-  display: none !important;
+.freshCommandFilledRows span {
+  margin-top: 2px;
 }
 
-.freshCommandInlinePreparedForm label span {
-  padding-top: 7px;
-  color: #9a3412;
-  -webkit-text-fill-color: #9a3412;
-  font-size: 10px;
-  font-weight: 1000;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-
-.freshCommandInlinePreparedForm label b {
-  min-height: 34px;
-  padding: 8px 10px;
+.freshCommandFilledRows b {
+  min-height: 36px;
+  padding: 9px 11px;
   border: 1px solid rgba(15, 23, 42, .10);
-  border-radius: 10px;
+  border-radius: 11px;
   background: #f8fafc;
   color: #111827;
   -webkit-text-fill-color: #111827;
-  font-size: 13px;
-  font-weight: 850;
+  font-size: 15px;
+  font-weight: 900;
   line-height: 1.35;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-/* CHURVOX_COMMAND_REMOVE_LONG_EXPLAINER_STRIP_20260626 */
-.freshCommandFixHeader > aside,
-.freshCommandFixHeader [data-command-explainer],
-.freshCommandFixHeader aside[style] {
-  display: none !important;
+.freshCommandOwnerControls {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 12px;
 }
 
-/* CHURVOX_COMMAND_APPROVAL_DESK_V1_20260626 */
-.freshCommandFixDesk {
-  --cvx-command-graphite: #151513;
-  --cvx-command-graphite-2: #1f1f1b;
-  --cvx-command-cream: #fff7ed;
-  --cvx-command-orange: #f97316;
+.freshCommandOwnerNote {
+  display: grid;
+  gap: 8px;
 }
 
-.freshCommandFixHeader {
-  border-color: rgba(249, 115, 22, .26) !important;
-  border-left-color: var(--cvx-command-orange) !important;
-  background:
-    linear-gradient(135deg, rgba(249, 115, 22, .18), transparent 34%),
-    radial-gradient(circle at 96% 6%, rgba(255, 237, 213, .13), transparent 28%),
-    var(--cvx-command-graphite) !important;
+.freshCommandOwnerNote textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 16px;
+  background: #fff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
 }
 
-.freshCommandFixHeader > span {
-  font-size: 0 !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  border: 1px solid rgba(249, 115, 22, .35) !important;
-  background: rgba(249, 115, 22, .18) !important;
+.freshCommandOwnerNote textarea:focus {
+  border-color: rgba(249, 115, 22, .62);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, .14);
 }
 
-.freshCommandFixHeader > span::after {
-  content: "Command Approval Desk";
-  color: #ffedd5 !important;
-  -webkit-text-fill-color: #ffedd5 !important;
-  font-size: 10px !important;
-  font-weight: 1000 !important;
-}
-
-.freshCommandFixHeader p::after {
-  content: " Churvox does the admin. You approve.";
-  color: #fed7aa;
-  font-weight: 1000;
-}
-
-.freshCommandFixStats div,
-.freshCommandDeskToolbar button {
-  background: rgba(255, 255, 255, .075) !important;
-  border-color: rgba(255, 237, 213, .15) !important;
-}
-
-.freshCommandDeskToolbar button:first-child,
-.freshCommandFixActions button:first-child {
-  background: var(--cvx-command-orange) !important;
-  color: #111827 !important;
-  -webkit-text-fill-color: #111827 !important;
-  box-shadow: 0 12px 26px rgba(249, 115, 22, .22) !important;
-}
-
-.freshCommandFixQueue {
-  max-height: 590px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scrollbar-gutter: stable !important;
-  overscroll-behavior: contain !important;
-  background:
-    linear-gradient(180deg, rgba(255, 237, 213, .06), transparent 22%),
-    var(--cvx-command-graphite) !important;
-  border-color: rgba(255, 237, 213, .12) !important;
-}
-
-.freshCommandFixQueue::-webkit-scrollbar { width: 10px !important; }
-.freshCommandFixQueue::-webkit-scrollbar-track { background: rgba(255, 237, 213, .08) !important; border-radius: 999px !important; }
-.freshCommandFixQueue::-webkit-scrollbar-thumb { background: rgba(249, 115, 22, .82) !important; border-radius: 999px !important; }
-
-.freshCommandFixQueue .freshCommandPanelTitle {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 2 !important;
-  margin: -16px -16px 12px !important;
-  padding: 14px 16px 12px !important;
-  background: linear-gradient(180deg, #151513 82%, rgba(21, 21, 19, 0)) !important;
-}
-
-.freshCommandFixQueue .freshCommandPanelTitle span {
-  font-size: 0 !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  background: rgba(249, 115, 22, .18) !important;
-  border: 1px solid rgba(249, 115, 22, .34) !important;
-}
-
-.freshCommandFixQueue .freshCommandPanelTitle span::after {
-  content: "Waiting approval";
-  color: #ffedd5 !important;
-  -webkit-text-fill-color: #ffedd5 !important;
-  font-size: 10px !important;
-  font-weight: 1000 !important;
-}
-
-.freshCommandFixQueue .freshCommandPanelTitle b {
-  background: #ffedd5 !important;
-  color: #7c2d12 !important;
-  -webkit-text-fill-color: #7c2d12 !important;
-}
-
-.freshCommandFixItem {
-  background: rgba(255, 250, 240, .07) !important;
-  border-color: rgba(255, 237, 213, .12) !important;
-  border-left-color: var(--cvx-command-orange) !important;
-  box-shadow: none !important;
-}
-
-.freshCommandFixItem:hover,
-.freshCommandFixItem.active {
-  background: rgba(249, 115, 22, .14) !important;
-  border-color: rgba(249, 115, 22, .45) !important;
-  box-shadow: 0 18px 34px rgba(0, 0, 0, .24) !important;
-}
-
-.freshCommandFixItem em {
-  background: rgba(249, 115, 22, .20) !important;
-  border: 1px solid rgba(249, 115, 22, .42) !important;
-  color: #ffedd5 !important;
-  -webkit-text-fill-color: #ffedd5 !important;
-}
-
-.freshCommandFixItem b {
-  color: #fff7ed !important;
-  -webkit-text-fill-color: #fff7ed !important;
-}
-
-.freshCommandFixItem small {
-  color: #fed7aa !important;
-  -webkit-text-fill-color: #fed7aa !important;
-}
-
-.freshCommandFixItem strong {
-  background: #ffedd5 !important;
-  color: #7c2d12 !important;
-  -webkit-text-fill-color: #7c2d12 !important;
-  padding: 5px 9px !important;
-  border-radius: 999px !important;
-}
-
-.freshCommandFixDetail,
-.freshCommandFixProof {
-  border-color: rgba(15, 23, 42, .10) !important;
-  background: rgba(255, 250, 240, .98) !important;
-}
-
-.freshCommandFixSections {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-}
-
-.freshCommandFixSections section {
-  background: #fff !important;
-  border-left: 4px solid rgba(249, 115, 22, .45) !important;
-}
-
-.freshCommandFixSections small,
-.freshCommandProofRows small,
-.freshCommandOwnerNote span,
-.freshCommandPanelTitle span {
-  border: 1px solid rgba(249, 115, 22, .25) !important;
-  background: #ffedd5 !important;
-  color: #7c2d12 !important;
-  -webkit-text-fill-color: #7c2d12 !important;
+.freshCommandFixActions {
+  display: grid;
 }
 
 .freshCommandFixActions button {
-  min-width: 128px !important;
+  width: 100%;
 }
 
 .freshCommandFixActions button:nth-child(2) {
-  background: #111827 !important;
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+  background: #111827;
 }
 
-.freshCommandFixActions button:last-child {
-  background: #fff7ed !important;
-  color: #7c2d12 !important;
-  -webkit-text-fill-color: #7c2d12 !important;
-  border-color: rgba(249, 115, 22, .28) !important;
+.freshCommandFixActions button:nth-child(3),
+.freshCommandFixActions button:nth-child(4) {
+  background: #fff;
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
+  border-color: rgba(249, 115, 22, .28);
 }
 
-@media (max-width: 1180px) {
-  .freshCommandFixGrid {
-    grid-template-columns: 1fr !important;
+.freshCommandOutcome {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #ffedd5;
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.freshCommandCleanEmpty b,
+.freshCommandCleanEmpty span {
+  display: block;
+}
+
+.freshCommandCleanEmpty b {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.freshCommandCleanEmpty span {
+  margin-top: 5px;
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+@media (max-width: 1100px) {
+  .freshCommandCleanGrid {
+    grid-template-columns: 1fr;
   }
 
-  .freshCommandFixQueue,
-  .freshCommandFixProof,
-  .freshCommandFixDetail {
-    order: initial !important;
+  .freshCommandOwnerControls {
+    position: static;
   }
-
-  .freshCommandFixQueue { max-height: 440px !important; }
 }
 
 @media (max-width: 760px) {
-  .freshCommandFixSections { grid-template-columns: 1fr !important; }
-  .freshCommandFixQueue { max-height: 390px !important; }
-}
+  .freshCommandCleanHeader,
+  .freshCommandFilledFormCard,
+  .freshCommandOwnerControls,
+  .freshCommandCleanEmpty {
+    padding: 14px;
+    border-radius: 18px;
+  }
 
-@media (max-width: 680px) {
-  .freshCommandInlinePreparedForm label { grid-template-columns: 1fr; }
-  .freshCommandInlinePreparedForm label span { padding-top: 0; }
+  .freshCommandCleanStats,
+  .freshCommandFilledRows label {
+    grid-template-columns: 1fr;
+  }
+
+  .freshCommandCleanToolbar,
+  .freshCommandCleanToolbar button {
+    width: 100%;
+  }
 }
