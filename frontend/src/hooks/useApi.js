@@ -51,9 +51,7 @@ export function useApi() {
           const invoices = Array.isArray(check.data) ? check.data : [];
           const duplicate = invoices.find((invoice) => linkedJobId(invoice) === String(data.job_id));
           if (duplicate) {
-            const msg = `This job already has invoice ${duplicate.invoice_number || invoiceId(duplicate) || "linked"}. No duplicate draft was created.`;
-            setError(msg);
-            return { success: false, error: msg, duplicate: true, status: 409, data: duplicate };
+            return { success: true, duplicate: true, status: 200, data: duplicate };
           }
         }
 
