@@ -25,6 +25,7 @@ import "./freshIntegrations.css";
 import "./freshInventory.css";
 import "./freshInvoices.css";
 import "./freshJobs.css";
+import "./freshJobsNeedsInvoice.css";
 import "./freshLaunch.css";
 import "./freshLeads.css";
 import "./freshMessages.css";
