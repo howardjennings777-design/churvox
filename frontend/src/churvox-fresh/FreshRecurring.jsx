@@ -1,7 +1,7 @@
 import React from "react";
+import { useApi } from "../hooks/useApi";
 
 const RECURRING_KEY = "churvox:fresh-recurring:v1";
-const JOBS_KEY = "churvox:fresh-jobs:v1";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
 const defaults = [
@@ -86,8 +86,12 @@ function sendRecurringToCommand(item) {
 }
 
 export default function FreshRecurring({ onNavigate }) {
+  const { post } = useApi();
   const [items, setItems] = React.useState(() => readList(RECURRING_KEY, defaults));
   const [selectedId, setSelectedId] = React.useState(() => readList(RECURRING_KEY, defaults)[0]?.id || "");
+  const [busy, setBusy] = React.useState(false);
+  const [message, setMessage] = React.useState("");
+  const [error, setError] = React.useState("");
   const selected = items.find((item) => item.id === selectedId) || items[0];
 
   const active = items.filter((item) => item.status === "Active").length;
@@ -122,30 +126,60 @@ export default function FreshRecurring({ onNavigate }) {
     const next = [nextItem, ...items];
     saveItems(next);
     setSelectedId(nextItem.id);
+    setMessage("New recurring setup added. Fill it in, then create the next job.");
+    setError("");
   }
 
   function resetRecurring() {
     saveItems(defaults);
     setSelectedId(defaults[0]?.id || "");
+    setMessage("Recurring setups reset.");
+    setError("");
   }
 
-  function createNextJob() {
-    if (!selected) return;
+  async function createNextJob() {
+    if (!selected || busy) return;
 
-    const jobs = readList(JOBS_KEY, []);
-    const job = {
-      id: `J-REC-${Date.now().toString().slice(-5)}`,
-      client: selected.client,
-      title: selected.service,
-      status: "Assigned",
-      area: "Recurring run",
-      worker: selected.worker,
-      price: Number(selected.price || 0),
-      note: `Created from recurring setup: ${selected.frequency}. ${selected.note}`,
+    const title = String(selected.service || "Recurring service").trim();
+    const client = String(selected.client || "Customer").trim();
+    if (!title || !client) {
+      setError("Client and service are required before creating the next job.");
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+    setError("");
+
+    const price = Number(selected.price || 0) || 0;
+    const payload = {
+      title,
+      job_name: title,
+      client_name: client,
+      customer_name: client,
+      assigned_worker_name: selected.worker || "Unassigned",
+      worker_name: selected.worker || "Unassigned",
+      scheduled_date: selected.nextDate || null,
+      notes: `Created from recurring setup: ${selected.frequency}. ${selected.note || ""}`.trim(),
+      description: title,
+      fixed_price: price,
+      price,
+      status: "Ready",
+      recurring_id: selected.id,
+      source: "fresh_recurring",
     };
 
-    saveList(JOBS_KEY, [job, ...jobs], "recurring-job");
-    updateItem(selected.id, { status: "Active" });
+    const res = await post("/jobs", payload, { timeout: 25000 });
+    setBusy(false);
+
+    if (!res.success) {
+      setError(res.error || "Could not create the next job from this recurring setup.");
+      return;
+    }
+
+    updateItem(selected.id, { status: "Active", lastCreatedAt: new Date().toISOString() });
+    setMessage("Next recurring job created in Jobs.");
+    try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "recurring-job-created" } })); } catch {}
     onNavigate?.("jobs");
   }
 
@@ -156,7 +190,7 @@ export default function FreshRecurring({ onNavigate }) {
   }
 
   return (
-    <section className="freshRecurringPage">
+    <section className="freshRecurringPage" data-recurring-api-create="20260626">
       <div className="freshRecurringHero">
         <div>
           <span>Recurring jobs</span>
@@ -171,6 +205,9 @@ export default function FreshRecurring({ onNavigate }) {
           <div><b>${monthlyValue}</b><small>active value</small></div>
         </div>
       </div>
+
+      {message ? <section className="freshItem"><b>Recurring status</b><span>{message}</span></section> : null}
+      {error ? <section className="freshItem need"><b>Recurring needs attention</b><span>{error}</span></section> : null}
 
       <div className="freshRecurringLayout">
         <aside className="freshRecurringList">
@@ -211,7 +248,7 @@ export default function FreshRecurring({ onNavigate }) {
 
               <div className="freshRecurringHeadActions">
                 <button type="button" onClick={sendToCommand}>Send to Command</button>
-                <button type="button" onClick={createNextJob}>Create next job</button>
+                <button type="button" disabled={busy} onClick={createNextJob}>{busy ? "Creating..." : "Create next job"}</button>
               </div>
             </div>
 
