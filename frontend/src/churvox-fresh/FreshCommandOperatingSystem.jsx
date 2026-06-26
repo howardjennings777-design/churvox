@@ -17,6 +17,7 @@ export const COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626 = "COMMAND_FIX_DESK_
 export const COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626 = "COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626";
 export const COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626 = "COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626";
 export const COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626 = "COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626";
+export const COMMAND_FIX_DESK_FORM_PREVIEW_MARKER_20260626 = "COMMAND_FIX_DESK_FORM_PREVIEW_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 const PRIORITY_ORDER = { "Fix first": 0, "Check today": 1, "Needs proof": 2, "Setup check": 3, "Watching": 4 };
@@ -113,6 +114,104 @@ const approveOutcomeTextStyle = {
   fontSize: 13,
   fontWeight: 850,
   lineHeight: 1.4,
+};
+
+const formPreviewButtonStyle = {
+  width: "100%",
+  minHeight: 44,
+  margin: "0 0 12px",
+  border: "1px solid rgba(249,115,22,.28)",
+  borderRadius: 16,
+  background: "#ffedd5",
+  color: "#7c2d12",
+  fontSize: 13,
+  fontWeight: 1000,
+  cursor: "pointer",
+};
+
+const formPreviewShadeStyle = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 9999,
+  display: "grid",
+  placeItems: "center",
+  padding: 18,
+  background: "rgba(15,23,42,.66)",
+};
+
+const formPreviewModalStyle = {
+  width: "min(920px, 100%)",
+  maxHeight: "88vh",
+  overflow: "auto",
+  borderRadius: 28,
+  border: "1px solid rgba(255,255,255,.24)",
+  background: "#fffaf0",
+  boxShadow: "0 35px 90px rgba(15,23,42,.45)",
+};
+
+const formPreviewHeaderStyle = {
+  display: "grid",
+  gap: 8,
+  padding: 20,
+  background: "#111827",
+  color: "#fff",
+};
+
+const formPreviewHeaderRowStyle = {
+  display: "flex",
+  gap: 12,
+  alignItems: "start",
+  justifyContent: "space-between",
+};
+
+const formPreviewCloseStyle = {
+  minWidth: 38,
+  minHeight: 38,
+  border: "1px solid rgba(255,255,255,.18)",
+  borderRadius: 999,
+  background: "rgba(255,255,255,.10)",
+  color: "#fff",
+  fontSize: 20,
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const formPreviewBodyStyle = {
+  display: "grid",
+  gap: 12,
+  padding: 18,
+};
+
+const formPreviewGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: 10,
+};
+
+const formPreviewFieldStyle = {
+  display: "grid",
+  gap: 7,
+  padding: 12,
+  border: "1px solid rgba(15,23,42,.08)",
+  borderRadius: 17,
+  background: "rgba(255,255,255,.84)",
+};
+
+const formPreviewLabelStyle = {
+  color: "#9a3412",
+  fontSize: 10,
+  fontWeight: 1000,
+  letterSpacing: ".08em",
+  textTransform: "uppercase",
+};
+
+const formPreviewValueStyle = {
+  color: "#111827",
+  fontSize: 13,
+  fontWeight: 900,
+  lineHeight: 1.36,
+  whiteSpace: "pre-wrap",
+  wordBreak: "break-word",
 };
 
 const approveGuardHintStyle = {
@@ -516,6 +615,25 @@ function buildIgnoreAction(fix) {
   return { button: "Park for now", hint: "This only removes the item from your Command attention list for now. It does not delete records.", outcome: "Parked for now. No records were deleted." };
 }
 
+function buildPreparedFormRows({ fix, proofRows, approveOutcome, activeRiskBadge, noteValue, editAction, ignoreAction }) {
+  if (!fix) return [];
+  const proofSummary = proofRows?.length ? proofRows.map((row) => `${row.label}: ${row.value}`).join("\n") : "No linked proof captured yet.";
+  return [
+    { label: "Decision type", value: fix.categoryLabel || fix.bucket || "Command fix" },
+    { label: "Priority", value: fix.severity || "Check today" },
+    { label: "Safety status", value: activeRiskBadge?.label || "Check first" },
+    { label: "Problem", value: fix.problem || "Prepared item" },
+    { label: "Record / title", value: fix.title || "Not captured yet" },
+    { label: "Why it matters", value: fix.why || "This needs owner review." },
+    { label: "Churvox prepared", value: fix.prepared || "Prepared for review." },
+    { label: "Safe next step", value: fix.nextStep || "Review before approving." },
+    { label: "If approved", value: approveOutcome?.title ? `${approveOutcome.title}\n${approveOutcome.text}` : "Owner approval will move the prepared action forward." },
+    { label: "Proof / context", value: proofSummary },
+    { label: "Owner note", value: noteValue || "No owner note added yet." },
+    { label: "Other safe options", value: `${editAction?.button || "Send back for edit"}: ${editAction?.hint || "Use if not ready."}\n${ignoreAction?.button || "Park for now"}: ${ignoreAction?.hint || "Does not delete records."}` },
+  ];
+}
+
 export default function FreshCommandOperatingSystem({
   selected,
   selectedApprovalDetails = [],
@@ -546,6 +664,7 @@ export default function FreshCommandOperatingSystem({
   const [actionBusy, setActionBusy] = React.useState("");
   const [toolBusy, setToolBusy] = React.useState("");
   const [localNote, setLocalNote] = React.useState("");
+  const [showPreparedForm, setShowPreparedForm] = React.useState(false);
   const selectedDetails = selected ? detailRows(selected) : [];
   const selectedGaps = selected ? selectedProofGaps(selectedApprovalDetails) : [];
   const selectedScore = scoreItem(selected, selectedApprovalDetails, selectedHasConcreteAction);
@@ -578,6 +697,10 @@ export default function FreshCommandOperatingSystem({
     if (!activeId || !fixItems.some((item) => item.id === activeId)) setActiveId(fixItems[0].id);
   }, [activeId, fixItems]);
 
+  React.useEffect(() => {
+    setShowPreparedForm(false);
+  }, [activeId]);
+
   const visibleItems = tab === "All" ? fixItems : fixItems.filter((item) => item.bucket === tab);
   const activeFix = fixItems.find((item) => item.id === activeId) || visibleItems[0] || fixItems[0] || null;
   const activeProofRows = activeFix ? buildProofRows(activeFix, selectedApprovalDetails, selectedDetails) : [];
@@ -597,6 +720,7 @@ export default function FreshCommandOperatingSystem({
   const missingProofText = selectedGaps.length ? selectedGaps.join(", ") : "No major proof gaps on the selected item.";
   const activeOutcome = activeFix ? localOutcome[activeFix.id] : "";
   const noteValue = onOwnerNoteChange ? String(ownerNote || "") : localNote;
+  const preparedFormRows = buildPreparedFormRows({ fix: activeFix, proofRows: activeProofRows, approveOutcome, activeRiskBadge, noteValue, editAction, ignoreAction });
   const busy = Boolean(actionBusy || toolBusy || externalBusy);
   const hasAnyFixes = fixItems.length > 0;
 
@@ -710,7 +834,7 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626} data-command-approve-guard={COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626} data-command-approve-outcome={COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626} data-command-smart-edit={COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626} data-command-smart-ignore={COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626} data-command-approve-guard={COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626} data-command-approve-outcome={COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626} data-command-smart-edit={COMMAND_FIX_DESK_SMART_EDIT_MARKER_20260626} data-command-smart-ignore={COMMAND_FIX_DESK_SMART_IGNORE_MARKER_20260626} data-command-form-preview={COMMAND_FIX_DESK_FORM_PREVIEW_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
@@ -769,6 +893,7 @@ export default function FreshCommandOperatingSystem({
             <p>{activeFix.title}</p>
             {activeRiskBadge ? <div style={{ ...riskBadgeStyle, background: activeRiskBadge.background, border: `1px solid ${activeRiskBadge.border}` }}><strong style={{ ...riskBadgeLabelStyle, background: activeRiskBadge.labelBackground, color: activeRiskBadge.labelColor }}>{activeRiskBadge.label}</strong><span style={{ ...riskBadgeTextStyle, color: activeRiskBadge.color }}>{activeRiskBadge.text}</span></div> : null}
             {approveOutcome ? <section style={approveOutcomeStyle}><small style={approveOutcomeLabelStyle}>What happens if I approve?</small><b style={approveOutcomeTitleStyle}>{approveOutcome.title}</b><p style={approveOutcomeTextStyle}>{approveOutcome.text}</p></section> : null}
+            <button type="button" style={formPreviewButtonStyle} onClick={() => setShowPreparedForm(true)}>Open filled form preview</button>
             <div className="freshCommandFixSections">
               <section><small>Why it matters</small><b>{activeFix.why}</b></section>
               <section><small>Churvox prepared</small><b>{activeFix.prepared}</b></section>
@@ -809,6 +934,27 @@ export default function FreshCommandOperatingSystem({
           <section><small>No-clutter rule</small><b>Jobs, clients, quotes, invoices, and team stay as clean record pages. Command only holds work needing a decision.</b></section>
         </div>
       </details>
+
+      {showPreparedForm && activeFix ? <div style={formPreviewShadeStyle} role="presentation" onClick={() => setShowPreparedForm(false)}>
+        <section style={formPreviewModalStyle} role="dialog" aria-modal="true" aria-label="Prepared form preview" onClick={(event) => event.stopPropagation()}>
+          <header style={formPreviewHeaderStyle}>
+            <div style={formPreviewHeaderRowStyle}>
+              <div>
+                <small style={{ ...approveOutcomeLabelStyle, background: "#f97316", color: "#111827" }}>Prepared form preview</small>
+                <h3 style={{ margin: "10px 0 4px", fontSize: 30, lineHeight: 1, letterSpacing: "-.045em" }}>{activeFix.problem}</h3>
+                <p style={{ margin: 0, color: "#fed7aa", fontSize: 13, fontWeight: 900, lineHeight: 1.4 }}>This is a preview only. Nothing changes from this pop-up. Use the Command buttons after reviewing it.</p>
+              </div>
+              <button type="button" style={formPreviewCloseStyle} aria-label="Close prepared form preview" onClick={() => setShowPreparedForm(false)}>×</button>
+            </div>
+          </header>
+          <div style={formPreviewBodyStyle}>
+            <div style={formPreviewGridStyle}>
+              {preparedFormRows.map((row) => <section key={row.label} style={formPreviewFieldStyle}><small style={formPreviewLabelStyle}>{row.label}</small><b style={formPreviewValueStyle}>{row.value}</b></section>)}
+            </div>
+            <button type="button" style={{ ...formPreviewButtonStyle, margin: 0 }} onClick={() => setShowPreparedForm(false)}>Close preview and decide</button>
+          </div>
+        </section>
+      </div> : null}
     </section>
   );
 }
