@@ -37,7 +37,9 @@ function uiPlanFromBackend(value) { const raw = String(value || "").toLowerCase(
 function backendUrl(path) { const base = String(LIVE_BACKEND || "").replace(/\/+$/, ""); const cleanPath = String(path || "").replace(/^\/+/, ""); if (/^https?:\/\//i.test(path)) return path; if (!base) return `/${cleanPath}`; return `${base}/api/${cleanPath.replace(/^api\//i, "")}`; }
 function authToken(user) { if (user?.token) return user.token; try { return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || ""; } catch { return ""; } }
 function readCachedPlan() { try { return uiPlanFromBackend(window.localStorage.getItem(PLAN_CACHE_KEY) || ""); } catch { return ""; } }
-function saveCachedPlan(planId) { const clean = uiPlanFromBackend(planId); if (!clean) return; try { window.localStorage.setItem(PLAN_CACHE_KEY, clean); } catch {} }
+function notifyPlanUpdated(detail = {}) { try { window.dispatchEvent(new CustomEvent("churvox:plan-updated", { detail })); } catch {} }
+function saveCachedPlan(planId) { const clean = uiPlanFromBackend(planId); if (!clean) return; try { window.localStorage.setItem(PLAN_CACHE_KEY, clean); } catch {} notifyPlanUpdated({ plan: clean, source: "plan-cache" }); }
+function saveAddonActivation(addon, quantity = 1) { try { const key = String(addon || "").toLowerCase(); if (["xero_addon", "xero", "myob", "accounting_sync", "accounting-sync"].includes(key)) window.localStorage.setItem("churvox:addon:accounting_sync", "true"); if (key === "command_growth_pack") window.localStorage.setItem("churvox:addon:command_growth_pack", String(Math.max(1, Number(quantity || 1)))); } catch {} notifyPlanUpdated({ addon, quantity, source: "addon-checkout" }); }
 function planFromUser(user) { return uiPlanFromBackend(user?.ui_plan || user?.current_plan || user?.plan || user?.subscription_plan || user?.billing_plan || user?.tier || user?.plan_name || user?.business?.plan || user?.business?.subscription_plan); }
 function errorFrom(body, response) { return body?.detail || body?.error || body?.message || body?.data?.detail || body?.data?.error || `Request failed with status ${response?.status || body?.status || "unknown"}`; }
 async function readBody(response) { const text = await response.text(); if (!text.trim()) return {}; try { return JSON.parse(text); } catch { return { success: false, detail: `Non-JSON response from backend endpoint (${response.status}).`, body: text.slice(0, 400) }; } }
@@ -253,6 +255,7 @@ export default function FreshPlans({ onNavigate }) {
         body: JSON.stringify({ session_id: sessionId, addon, quantity, country }),
       });
       if (!response.ok || body?.success === false) throw new Error(errorFrom(body, response));
+      saveAddonActivation(addon, quantity);
       setNotice(addon === "command_growth_pack" ? "Command Growth Pack added." : "Accounting Sync Add-on activated.");
       if (addon === "command_growth_pack") setGrowthPacks(0);
       if (addon === "xero_addon" || addon === "xero") setAccountingSync(false);
