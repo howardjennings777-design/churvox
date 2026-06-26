@@ -57,7 +57,7 @@ export const FEATURE_RULES = {
   launchcontrol: { area: "Setup Coach", open: "start", reason: "Setup Coach helps every plan finish business setup." },
   leads: { area: "Requests", open: "start", reason: "New job requests are part of the core job flow." },
   messages: { area: "Messages", open: "crew", reason: "Crew unlocks team/customer message control." },
-  team: { area: "Team", open: "crew", reason: "Crew unlocks workers and team setup." },
+  team: { area: "Team", open: "start", reason: "Start includes one helper. Crew and above unlock larger team capacity." },
   workercommand: { area: "Worker Proof", open: "crew", reason: "Crew unlocks worker proof and worker access." },
   time: { area: "Time Approval", open: "crew", reason: "Crew unlocks worker time capture and approval." },
   portal: { area: "Proof Pack / Portal Links", open: "crew", reason: "Crew unlocks proof packs and customer-ready proof links." },
@@ -93,7 +93,7 @@ export const PLAN_FEATURE_MATRIX = [
 
 const START_GROUPS = [
   { title: "Start", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
 ];
 
