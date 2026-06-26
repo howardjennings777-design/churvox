@@ -14,6 +14,7 @@ const TIMER_OPTIMISTIC = {
 };
 const EMPTY_JOB_FORM = { title: "", client: "", client_id: "", address: "", scheduled: "", price: "", notes: "" };
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
+const OPEN_JOB_ID_KEY = "churvox:fresh-open-job-id:v1";
 const ARCHIVED_JOBS_KEY = "churvox:fresh-archived-job-ids:v1";
 
 function normalizeId(value) {
@@ -66,16 +67,14 @@ function jobFromTimerResponse(data) { return data?.job || data?.data?.job || dat
 function jobFromCreateResponse(data) { return data?.job || data?.data?.job || data?.data || data; }
 function loadArchivedJobIds() { try { const saved = window.localStorage.getItem(ARCHIVED_JOBS_KEY); const parsed = saved ? JSON.parse(saved) : []; return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : []; } catch { return []; } }
 function saveArchivedJobIds(ids) { try { window.localStorage.setItem(ARCHIVED_JOBS_KEY, JSON.stringify([...new Set(ids.filter(Boolean).map(String))])); } catch {} }
+function takeRequestedJobId() { try { const id = normalizeId(window.localStorage.getItem(OPEN_JOB_ID_KEY)); if (id) window.localStorage.removeItem(OPEN_JOB_ID_KEY); return id; } catch { return ""; } }
 function isRecurringJob(job) { const text = lower(`${job?.repeat || job?.recurring || job?.recurrence || job?.recurring_id || job?.series_id || job?.frequency || job?.repeat_every || ""}`); return Boolean(job?.is_recurring || job?.recurring === true || job?.repeat || job?.recurrence || job?.recurring_id || job?.series_id || /daily|weekly|fortnight|month|repeat|recurr/.test(text)); }
 
 function parseJobModalPayload(raw) {
   let payload = raw || {};
   if (typeof raw === "string") {
     try { payload = JSON.parse(raw); }
-    catch {
-      const params = new URLSearchParams(raw.replace(/^\?/, ""));
-      payload = { client_id: params.get("client_id") || "", client: params.get("client") || "", address: params.get("address") || "" };
-    }
+    catch { const params = new URLSearchParams(raw.replace(/^\?/, "")); payload = { client_id: params.get("client_id") || "", client: params.get("client") || "", address: params.get("address") || "" }; }
   }
   if (!payload || typeof payload !== "object") payload = {};
   if (payload.detail && typeof payload.detail === "object") payload = payload.detail;
@@ -83,21 +82,10 @@ function parseJobModalPayload(raw) {
     const params = new URLSearchParams(payload.search.replace(/^\?/, ""));
     payload = { ...payload, client_id: payload.client_id || params.get("client_id") || "", client: payload.client || params.get("client") || "", address: payload.address || params.get("address") || "" };
   }
-  return {
-    title: pick(payload, "title", "job_title", "job_name"),
-    client: pick(payload, "client", "client_name", "customer_name", "name"),
-    client_id: normalizeId(payload.client_id || payload.customer_id || payload.id || ""),
-    address: pick(payload, "address", "site_address", "service_address", "customer_address"),
-    scheduled: pick(payload, "scheduled", "scheduled_date", "date"),
-    price: pick(payload, "price", "fixed_price", "amount"),
-    notes: pick(payload, "notes", "client_notes", "job_notes"),
-  };
+  return { title: pick(payload, "title", "job_title", "job_name"), client: pick(payload, "client", "client_name", "customer_name", "name"), client_id: normalizeId(payload.client_id || payload.customer_id || payload.id || ""), address: pick(payload, "address", "site_address", "service_address", "customer_address"), scheduled: pick(payload, "scheduled", "scheduled_date", "date"), price: pick(payload, "price", "fixed_price", "amount"), notes: pick(payload, "notes", "client_notes", "job_notes") };
 }
 
-function jobFormFromPayload(raw) {
-  const draft = parseJobModalPayload(raw);
-  return { ...EMPTY_JOB_FORM, ...draft };
-}
+function jobFormFromPayload(raw) { const draft = parseJobModalPayload(raw); return { ...EMPTY_JOB_FORM, ...draft }; }
 
 const selectedFilterButtonStyle = { background: "#111827", backgroundColor: "#111827", borderColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff" };
 const selectedFilterTextStyle = { color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1 };
@@ -139,13 +127,30 @@ export default function FreshJobs({ onNavigate }) {
     setSelectedId(jobId);
   }, []);
 
+  const openRequestedJob = React.useCallback((jobId, sourceJobs = jobs) => {
+    const wanted = normalizeId(jobId);
+    if (!wanted) return false;
+    const match = (sourceJobs || []).find((job) => normalizeId(job.id || job._id || job.job_id) === wanted);
+    if (!match) return false;
+    setArchivedJobIds((current) => current.filter((id) => String(id) !== wanted));
+    setFilter("All");
+    setSelectedId(match.id);
+    setActionMessage("Opened linked job.");
+    return true;
+  }, [jobs]);
+
   const loadJobs = React.useCallback(async () => {
     setLoading(true); setError("");
     const res = await get("/jobs", { timeout: 25000 });
     if (!res.success) { setJobs([]); setSelectedId(""); setError(res.error || "Could not load jobs"); setLoading(false); return; }
     const nextJobs = hideDemoRecords(unpackList(res.data, "jobs")).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
-    setJobs(nextJobs); setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs.find((job) => !loadArchivedJobIds().includes(String(job.id)))?.id || nextJobs[0]?.id || ""); setLoading(false);
-  }, [get]);
+    const requestedJobId = takeRequestedJobId();
+    setJobs(nextJobs);
+    if (requestedJobId && openRequestedJob(requestedJobId, nextJobs)) { setLoading(false); return; }
+    if (requestedJobId) setActionMessage("Linked job could not be found in the active job list yet.");
+    setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs.find((job) => !loadArchivedJobIds().includes(String(job.id)))?.id || nextJobs[0]?.id || "");
+    setLoading(false);
+  }, [get, openRequestedJob]);
 
   const loadStory = React.useCallback(async () => {
     setStoryLoading(true);
@@ -160,11 +165,17 @@ export default function FreshJobs({ onNavigate }) {
   React.useEffect(() => { if (!visibleJobs.length) return; if (!selectedId || !visibleJobs.some((job) => job.id === selectedId)) setSelectedId(visibleJobs[0].id); }, [visibleJobs, selectedId]);
   React.useEffect(() => { saveArchivedJobIds(archivedJobIds); }, [archivedJobIds]);
   React.useEffect(() => {
+    const requested = takeRequestedJobId();
+    if (requested) openRequestedJob(requested, jobs);
+  }, [jobs, openRequestedJob]);
+  React.useEffect(() => {
     function openFromExternal(event) { openJobModalFromPayload(event?.detail || null); }
+    function openJobIdFromExternal(event) { openRequestedJob(event?.detail?.jobId || event?.detail || takeRequestedJobId(), jobs); }
     window.addEventListener("churvox:open-job-popup", openFromExternal);
+    window.addEventListener("churvox:open-job-id", openJobIdFromExternal);
     try { const stored = window.localStorage.getItem(OPEN_JOB_MODAL_KEY); if (stored) window.setTimeout(() => openJobModalFromPayload(stored), 50); } catch {}
-    return () => window.removeEventListener("churvox:open-job-popup", openFromExternal);
-  }, []);
+    return () => { window.removeEventListener("churvox:open-job-popup", openFromExternal); window.removeEventListener("churvox:open-job-id", openJobIdFromExternal); };
+  }, [jobs, openRequestedJob]);
 
   function openJobModalFromPayload(payload) { setJobForm(jobFormFromPayload(payload)); setActionMessage(""); setError(""); setJobModalOpen(true); try { window.localStorage.removeItem(OPEN_JOB_MODAL_KEY); } catch {} }
   function openBlankJob() { openJobModalFromPayload(null); }
@@ -213,7 +224,7 @@ export default function FreshJobs({ onNavigate }) {
   const timerDisabled = !selected || Boolean(actionBusy);
 
   return (
-    <section className="freshJobsPage" data-jobs-needs-invoice="20260626" data-owner-timer-actions="20260626" data-create-job-modal="20260626" data-client-job-handoff="20260626" data-one-off-archive-prompt="20260626">
+    <section className="freshJobsPage" data-jobs-needs-invoice="20260626" data-owner-timer-actions="20260626" data-create-job-modal="20260626" data-client-job-handoff="20260626" data-one-off-archive-prompt="20260626" data-message-job-handoff="20260626">
       <header className="freshHero"><span>Jobs</span><h1>Jobs</h1><p>Job records with customer, worker, schedule, price, notes and linked quote/invoice history.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{activeJobs.length}</h2><p>Active jobs</p></aside><aside className="freshCard"><h2>{activeJobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{activeJobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside><aside className="freshCard freshJobsNeedsInvoicePulse"><h2>{jobsNeedingInvoice.length}</h2><p>Needs invoice</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Jobs need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadJobs(); loadStory(); }}>Retry</button></section> : null}
