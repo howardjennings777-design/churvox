@@ -1,0 +1,225 @@
+/* CHURVOX_TOP_NINE_LAYER_MARKER_20260627 */
+.freshTopNineLayer {
+  margin: 16px 0 18px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .08);
+  box-shadow: 0 22px 55px rgba(15, 23, 42, .18);
+}
+
+.freshTopNineHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.freshTopNineHeader span {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 6px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .22);
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshTopNineHeader h3 {
+  margin: 0;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: clamp(20px, 2.2vw, 30px);
+  font-weight: 1000;
+  letter-spacing: -.04em;
+}
+
+.freshTopNineHeader p {
+  margin: 6px 0 0;
+  max-width: 820px;
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.42;
+}
+
+.freshTopNineHeader button,
+.freshTopNineCard button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(249, 115, 22, .24);
+}
+
+.freshTopNineHeader button {
+  white-space: nowrap;
+  background: #ffffff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshTopNineGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.freshTopNineCard {
+  display: grid;
+  gap: 11px;
+  min-height: 218px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(15, 23, 42, .09);
+  background: #ffffff;
+  color: #111827;
+  -webkit-text-fill-color: initial;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, .12);
+}
+
+.freshTopNineCard > small {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.freshTopNineCard b {
+  display: block;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 15px;
+  font-weight: 1000;
+  line-height: 1.15;
+}
+
+.freshTopNineCard p {
+  margin: 5px 0 0;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 12px;
+  font-weight: 820;
+  line-height: 1.35;
+}
+
+.freshTopNineCard section {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 15px;
+  background: #f8fafc;
+}
+
+.freshTopNineCard strong {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.freshTopNineCard section span {
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.28;
+}
+
+.freshTopNineCard.need section {
+  background: #fee2e2;
+}
+
+.freshTopNineCard.need strong,
+.freshTopNineCard.need section span {
+  color: #991b1b;
+  -webkit-text-fill-color: #991b1b;
+}
+
+.freshTopNineCard.money section {
+  background: #ffedd5;
+}
+
+.freshTopNineCard.money strong,
+.freshTopNineCard.money section span {
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+}
+
+.freshTopNineCard.command section {
+  background: #e0f2fe;
+}
+
+.freshTopNineCard.command strong,
+.freshTopNineCard.command section span {
+  color: #075985;
+  -webkit-text-fill-color: #075985;
+}
+
+.freshTopNineCard.support section {
+  background: #f5f3ff;
+}
+
+.freshTopNineCard.support strong,
+.freshTopNineCard.support section span {
+  color: #5b21b6;
+  -webkit-text-fill-color: #5b21b6;
+}
+
+.freshTopNineCard button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+  box-shadow: none;
+}
+
+@media (max-width: 1060px) {
+  .freshTopNineGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .freshTopNineLayer {
+    padding: 13px;
+    border-radius: 20px;
+  }
+
+  .freshTopNineHeader {
+    display: grid;
+  }
+
+  .freshTopNineHeader button {
+    width: 100%;
+  }
+
+  .freshTopNineGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .freshTopNineCard {
+    min-height: auto;
+  }
+
+  .freshTopNineCard button {
+    width: 100%;
+  }
+}

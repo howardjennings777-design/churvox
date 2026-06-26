@@ -1,5 +1,6 @@
 import React from "react";
 import API_BASE from "../lib/apiBase";
+import FreshTopNineOperatingLayer from "./FreshTopNineOperatingLayer";
 
 export const COMMAND_OS_MARKER_20260625 = "COMMAND_OS_MARKER_20260625";
 export const COMMAND_APPROVAL_BRAIN_MARKER_20260626 = "COMMAND_APPROVAL_BRAIN_MARKER_20260626";
@@ -863,6 +864,19 @@ export default function FreshCommandOperatingSystem({
           <button type="button" disabled={busy} onClick={() => runTool("refresh")}>{toolBusy === "refresh" ? "Refreshing..." : "Refresh"}</button>
         </div>
         {localOutcome.toolbar ? <p className="freshCommandToolOutcome">{localOutcome.toolbar}</p> : null}
+        <FreshTopNineOperatingLayer
+          fixItems={fixItems}
+          highItems={highItems}
+          moneyItems={moneyItems}
+          adminDebtTotal={adminDebtTotal}
+          counts={counts}
+          noteRows={noteRows}
+          selectedGaps={selectedGaps}
+          activeFix={activeFix}
+          busy={busy}
+          toolBusy={toolBusy}
+          runAction={runTool}
+        />
       </header>
 
       <nav className="freshCommandFixTabs" aria-label="Command fix filters">
