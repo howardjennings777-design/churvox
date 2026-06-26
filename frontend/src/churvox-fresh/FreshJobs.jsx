@@ -113,6 +113,13 @@ function recordStatus(record, fallback = "draft") {
   return String(record?.status || record?.payment_status || fallback).trim() || fallback;
 }
 
+function hasJobInvoiceMarker(job) {
+  if (!job) return false;
+  if (normalizeId(job.invoice_id || job.linked_invoice_id || job.invoice?.id || job.invoice?._id)) return true;
+  if (pick(job, "invoice_number", "invoice_status", "invoice_generated_at")) return true;
+  return job.invoice_ready === true || job.invoiced === true || job.invoice_created === true;
+}
+
 function matchesJob(record, job) {
   if (!job || !record) return false;
   const recordJob = recordJobId(record);
@@ -133,7 +140,7 @@ function normalizeRelated(rows, selected) {
 }
 
 function hasLinkedInvoice(job, invoices) {
-  return normalizeRelated(invoices || [], job).length > 0;
+  return hasJobInvoiceMarker(job) || normalizeRelated(invoices || [], job).length > 0;
 }
 
 function needsInvoice(job, invoices) {
@@ -142,13 +149,13 @@ function needsInvoice(job, invoices) {
 
 function storyStepState({ selected, quotes, invoices }) {
   const hasQuote = quotes.length > 0;
-  const hasInvoice = invoices.length > 0;
+  const hasInvoice = hasJobInvoiceMarker(selected) || invoices.length > 0;
   const paid = invoices.some((invoice) => /paid|complete|closed/i.test(recordStatus(invoice)));
   return [
     { label: "Request", state: selected ? "done" : "open", detail: selected?.client || "No job" },
     { label: "Quote", state: hasQuote ? "done" : "open", detail: hasQuote ? `${quotes.length} linked` : "No quote linked" },
     { label: "Job", state: selected?.status === "Completed" ? "done" : "open", detail: selected?.status || "Not started" },
-    { label: "Invoice", state: hasInvoice ? "done" : "open", detail: hasInvoice ? `${invoices.length} linked` : "Not invoiced" },
+    { label: "Invoice", state: hasInvoice ? "done" : "open", detail: hasInvoice ? `${Math.max(invoices.length, 1)} linked` : "Not invoiced" },
     { label: "Paid", state: paid ? "done" : "open", detail: paid ? "Payment confirmed" : "Not paid" },
   ];
 }
