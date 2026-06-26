@@ -1,4 +1,5 @@
 /* CHURVOX_COMMAND_INLINE_PREPARED_FORM_20260626 */
+/* CHURVOX_COMMAND_SIMPLE_FILLED_FORM_20260627 */
 .freshCommandFixDetail {
   display: flex !important;
   flex-direction: column !important;
@@ -7,18 +8,25 @@
 .freshCommandFixDetail > .freshCommandPanelTitle { order: 1 !important; }
 .freshCommandFixDetail > h3 { order: 2 !important; }
 .freshCommandFixDetail > p:first-of-type { order: 3 !important; }
-.freshCommandFixDetail > div:nth-of-type(2) { order: 4 !important; }
-.freshCommandFixDetail > button { order: 5 !important; }
-.freshCommandInlinePreparedForm { order: 6 !important; }
-.freshCommandFixDetail > section:not(.freshCommandInlinePreparedForm) { order: 7 !important; }
-.freshCommandFixSections { order: 8 !important; }
-.freshCommandFixDetail > div[aria-label="Decision trail"] { order: 9 !important; }
-.freshCommandOwnerNote { order: 10 !important; }
-.freshCommandFixActions { order: 11 !important; }
+.freshCommandFixDetail > button { order: 4 !important; }
+.freshCommandInlinePreparedForm { order: 5 !important; }
+.freshCommandOwnerNote { order: 6 !important; }
+.freshCommandFixActions { order: 7 !important; }
+.freshCommandOutcome { order: 8 !important; }
+
+.freshCommandFixDetail > div:nth-of-type(2),
+.freshCommandFixDetail > section:not(.freshCommandInlinePreparedForm),
+.freshCommandFixSections,
+.freshCommandFixDetail > div[aria-label="Decision trail"],
+.freshCommandFixActions + p,
+.freshCommandFixActions + p + p,
+.freshCommandFixActions + p + p + p {
+  display: none !important;
+}
 
 .freshCommandFixDetail > button {
   width: fit-content !important;
-  margin: -2px 0 12px !important;
+  margin: 0 0 12px !important;
   padding: 0 14px !important;
 }
 
@@ -63,10 +71,7 @@
 }
 
 .freshCommandInlinePreparedForm header small {
-  color: #fed7aa;
-  font-size: 12px;
-  font-weight: 850;
-  line-height: 1.35;
+  display: none !important;
 }
 
 .freshCommandInlinePreparedForm > div {
@@ -76,13 +81,21 @@
 
 .freshCommandInlinePreparedForm label {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-columns: minmax(118px, .28fr) minmax(0, 1fr);
   gap: 8px;
   align-items: start;
   padding: 8px;
   border: 1px solid rgba(15, 23, 42, .08);
   border-radius: 12px;
   background: #fff;
+}
+
+.freshCommandInlinePreparedForm label:nth-child(2),
+.freshCommandInlinePreparedForm label:nth-child(3),
+.freshCommandInlinePreparedForm label:nth-child(6),
+.freshCommandInlinePreparedForm label:nth-child(9),
+.freshCommandInlinePreparedForm label:nth-child(10) {
+  display: none !important;
 }
 
 .freshCommandInlinePreparedForm label span {
