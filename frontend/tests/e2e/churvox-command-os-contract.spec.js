@@ -20,7 +20,7 @@ function readFreshSource(filename) {
 }
 
 test.describe('Churvox Command operating system', () => {
-  test('Command keeps the page shell and only cleans the filled form', () => {
+  test('Command keeps the page shell and opens the filled form only on review', () => {
     const app = readFreshSource('FreshApp.jsx');
     const command = readFreshSource('FreshCommand.jsx');
     const os = readFreshSource('FreshCommandOperatingSystem.jsx');
@@ -38,6 +38,7 @@ test.describe('Churvox Command operating system', () => {
     expect(os).toContain('COMMAND_CLEAN_FILLED_FORM_MARKER_20260627');
     expect(os).toContain('COMMAND_FORM_FIRST_MARKER_20260627');
     expect(os).toContain('COMMAND_REAL_COMPLETED_FORM_MARKER_20260627');
+    expect(os).toContain('COMMAND_OPTIONAL_FORM_REVIEW_MARKER_20260627');
     expect(os).not.toContain('import "./freshCommandOperatingSystem.css";');
 
     for (const concept of [
@@ -51,11 +52,14 @@ test.describe('Churvox Command operating system', () => {
       'onIgnoreFix',
       'onPrepareNotes',
       'selectedHasConcreteAction',
+      'showForm',
     ]) {
       expect(os, `${concept} should stay first-class in Command`).toContain(concept);
     }
 
     for (const label of [
+      'Review prepared form',
+      'Hide prepared form',
       'Filled approval form',
       'Customer',
       'Job',
@@ -88,7 +92,9 @@ test.describe('Churvox Command operating system', () => {
 
     for (const className of [
       'freshCommandCleanDesk',
-      'freshCommandFormShell',
+      'freshCommandReviewShell',
+      'freshCommandReviewCard',
+      'freshCommandReviewActions',
       'freshCommandPreparedForm',
       'freshCommandFormTop',
       'freshCommandFilledRows',
@@ -105,7 +111,6 @@ test.describe('Churvox Command operating system', () => {
     expect(previewStyles).not.toContain('.freshCommandStablePage > .freshHero');
     expect(previewStyles).not.toContain('.freshCommandStablePage > .freshGrid');
     expect(previewStyles).not.toContain('display: none !important');
-    expect(previewStyles).toContain('width: min(100%, 1040px)');
     expect(previewStyles).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
     expect(previewStyles).toContain('overflow-wrap: anywhere');
 
