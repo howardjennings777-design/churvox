@@ -160,3 +160,16 @@
   min-width: 1.45rem !important;
   text-align: center !important;
 }
+
+/* CHURVOX_COMMAND_QUEUE_LIMIT_20260626 */
+.freshCommandFixQueue {
+  max-height: 560px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 760px) {
+  .freshCommandFixQueue {
+    max-height: 430px !important;
+  }
+}
