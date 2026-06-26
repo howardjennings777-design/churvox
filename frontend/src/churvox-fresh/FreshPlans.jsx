@@ -11,7 +11,7 @@ import {
   pricePlanForCountry,
 } from "../config/churvoxPlans";
 
-const CHECKOUT_TRACE_MARKER = "clean-isolated-plans-v45";
+const CHECKOUT_TRACE_MARKER = "clean-isolated-plans-no-auto-refresh-v46";
 const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
 const PLAN_CACHE_KEY = "churvox:stable-current-plan:v1";
 const COUNTRY_CACHE_KEY = "churvox:billing-country";
@@ -220,7 +220,7 @@ function postCheckoutForm({ token, plan, country, accountingSync = false, growth
     accounting_sync: accountingSync ? "1" : "",
     growth_packs: growthPacks || 0,
     packs: growthPacks || 0,
-    source: "fresh_plans_clean_v45",
+    source: "fresh_plans_clean_v46",
   };
   Object.entries(fields).forEach(([name, value]) => {
     const input = document.createElement("input");
@@ -251,7 +251,6 @@ function postAddonCheckout({ token, addon, country, quantity = 1 }) {
 
 export default function FreshPlans({ onNavigate }) {
   const { user, loading: authLoading, updateUser } = useAuth();
-  const loadedOnceRef = React.useRef(false);
   const loadingRef = React.useRef(false);
   const [currentPlan, setCurrentPlan] = React.useState(() => readCachedPlan());
   const [selectedPlan, setSelectedPlan] = React.useState(() => readCachedPlan() || "operator");
@@ -308,10 +307,8 @@ export default function FreshPlans({ onNavigate }) {
     return true;
   }
 
-  const loadPlan = React.useCallback(async ({ force = false } = {}) => {
+  const loadPlan = React.useCallback(async () => {
     if (authLoading || loadingRef.current) return;
-    if (loadedOnceRef.current && !force) return;
-    loadedOnceRef.current = true;
     loadingRef.current = true;
     setCheckingPlan(true);
     setError("");
@@ -343,8 +340,7 @@ export default function FreshPlans({ onNavigate }) {
   React.useEffect(() => {
     const fromUser = planFromUser(user);
     if (fromUser && fromUser !== currentPlan) applyPlan(fromUser, "Loaded from account profile.");
-    if (!authLoading) loadPlan();
-  }, [authLoading, user?.plan, user?.ui_plan, user?.subscription_plan, user?.billing_plan]);
+  }, [user?.plan, user?.ui_plan, user?.subscription_plan, user?.billing_plan]);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search || "");
@@ -389,7 +385,6 @@ export default function FreshPlans({ onNavigate }) {
       clearPendingCheckout();
       window.history.replaceState(null, "", "/plans");
       window.dispatchEvent(new Event("churvox-auth-refresh"));
-      loadPlan({ force: true });
     } catch (err) {
       if (fallbackPlan && uiPlanFromBackend(fallbackPlan)) applyPlan(fallbackPlan, "Stripe returned. Showing selected plan while billing confirms.");
       setNotice("Checkout needs attention.");
@@ -422,7 +417,6 @@ export default function FreshPlans({ onNavigate }) {
       if (safeAddon === "xero_addon" || safeAddon === "xero") setAccountingSync(false);
       window.history.replaceState(null, "", "/plans");
       window.dispatchEvent(new Event("churvox-auth-refresh"));
-      loadPlan({ force: true });
     } catch (err) {
       setNotice("Add-on checkout needs attention.");
       setError(err?.message || "Add-on checkout could not be saved.");
@@ -493,7 +487,7 @@ export default function FreshPlans({ onNavigate }) {
           <span className="cvPlanMiniKicker">Current plan</span>
           <strong>{current ? current.name : checkingPlan || authLoading ? "Checking plan" : "No plan chosen"}</strong>
           <p>{checkingPlan && current ? `${notice} Current plan stays visible.` : notice}</p>
-          {current ? <button type="button" onClick={() => choosePlan(current.id)}>View current plan</button> : <button type="button" onClick={() => loadPlan({ force: true })}>Reload current plan</button>}
+          {current ? <button type="button" onClick={() => choosePlan(current.id)}>View current plan</button> : <button type="button" onClick={() => loadPlan()}>Reload current plan</button>}
         </aside>
       </header>
 
@@ -503,8 +497,8 @@ export default function FreshPlans({ onNavigate }) {
 
       <section className="cvPlanPanel">
         <div className="cvPlanPanelHeader">
-          <div><span className="cvPlanMiniKicker">Plan limits</span><h2>{(current || selected).name} allowances</h2><p>Stable limits only. This page does not load live usage counts, so it cannot get stuck refreshing.</p></div>
-          <button className="cvPlanDark" type="button" onClick={() => loadPlan({ force: true })} disabled={checkingPlan}>{checkingPlan ? "Checking…" : "Reload plan"}</button>
+          <div><span className="cvPlanMiniKicker">Plan limits</span><h2>{(current || selected).name} allowances</h2><p>Static limits only. Nothing on this page refreshes automatically.</p></div>
+          <button className="cvPlanDark" type="button" onClick={() => loadPlan()} disabled={checkingPlan}>{checkingPlan ? "Checking…" : "Reload plan"}</button>
         </div>
         <div className="cvPlanAllowanceGrid">
           {allowances.map(([name, limit]) => <div className="cvPlanAllowance" key={name}><b>{name}</b><span>{limit} included</span><p>Usage count hidden here</p></div>)}
@@ -557,7 +551,7 @@ export default function FreshPlans({ onNavigate }) {
           <div className="cvPlanActions">
             <button className="cvPlanDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading || noCheckoutChange}>{checkoutButton}</button>
             <button className="cvPlanOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
-            <button className="cvPlanGhost" type="button" onClick={() => loadPlan({ force: true })} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload plan"}</button>
+            <button className="cvPlanGhost" type="button" onClick={() => loadPlan()} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload plan"}</button>
           </div>
           <div className="cvPlanCheckoutItem"><b>Checkout total</b><span>{noCheckoutChange ? "No checkout needed" : checkoutLabel}</span></div>
           <div className="cvPlanCheckoutItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div>
