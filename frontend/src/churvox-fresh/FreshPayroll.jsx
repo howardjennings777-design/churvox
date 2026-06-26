@@ -2,6 +2,7 @@ import React from "react";
 import { readFreshFocus } from "./freshFocus";
 import { useApi } from "../hooks/useApi";
 import "./freshPayroll.css";
+import "./freshPayrollModal.css";
 
 const PAYROLL_PERIOD_KEY = "churvox:fresh-payroll-period:v1";
 const PAYROLL_EDIT_KEY = "churvox:fresh-payroll-edits:v1";
@@ -210,7 +211,6 @@ function aggregateJobTime(jobs, workers) {
   return totals;
 }
 
-
 function mergeShiftTime(totals, shifts, workers) {
   const lookup = buildWorkerLookup(workers);
 
@@ -229,7 +229,6 @@ function mergeShiftTime(totals, shifts, workers) {
 
   return totals;
 }
-
 
 function normalizePayroll(worker, index, edits = {}, timeByWorker = {}) {
   const id = idOf(worker, `worker-${index}`);
@@ -293,6 +292,7 @@ export default function FreshPayroll({ onNavigate }) {
   const [people, setPeople] = React.useState([]);
   const [period, setPeriod] = React.useState(loadPeriod);
   const [selectedId, setSelectedId] = React.useState(() => readFreshFocus("payroll", ""));
+  const [detailId, setDetailId] = React.useState("");
   const [filter, setFilter] = React.useState("All");
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -300,6 +300,7 @@ export default function FreshPayroll({ onNavigate }) {
 
   const visiblePeople = filter === "All" ? people : people.filter((person) => person.status === filter);
   const selected = people.find((person) => person.id === selectedId) || visiblePeople[0] || people[0];
+  const detailPerson = detailId ? people.find((person) => person.id === detailId) : null;
   const totalGross = people.reduce((sum, person) => sum + grossPay(person), 0);
   const totalHours = people.reduce((sum, person) => sum + Number(person.ordinaryHours || 0) + Number(person.extraHours || 0), 0);
   const liveTimeCount = people.filter((person) => person.timeSource === "Live job time").length;
@@ -325,6 +326,7 @@ export default function FreshPayroll({ onNavigate }) {
 
       setPeople(rows);
       setSelectedId((current) => (rows.some((person) => person.id === current) ? current : rows[0]?.id || ""));
+      setDetailId((current) => (rows.some((person) => person.id === current) ? current : ""));
 
       if (!rows.length) setActionMessage("No workers yet. Add workers before running payroll review.");
     } catch (err) {
@@ -371,6 +373,12 @@ export default function FreshPayroll({ onNavigate }) {
       saveEdits(edits);
       return next;
     });
+  }
+
+  function openPersonDetail(person) {
+    if (!person) return;
+    setSelectedId(person.id);
+    setDetailId(person.id);
   }
 
   function resetPayroll() {
@@ -424,7 +432,7 @@ export default function FreshPayroll({ onNavigate }) {
   }
 
   return (
-    <section className="cvPayPage">
+    <section className="cvPayPage" data-payroll-detail-modal="20260626">
       <header className="cvPayHeader">
         <div>
           <span>Payroll review</span>
@@ -502,11 +510,11 @@ export default function FreshPayroll({ onNavigate }) {
               type="button"
               className={`cvPayItem ${selected?.id === person.id ? "active" : ""} ${person.status === "Needs review" ? "need" : ""}`}
               key={person.id}
-              onClick={() => setSelectedId(person.id)}
+              onClick={() => openPersonDetail(person)}
             >
               <b>{person.name}</b>
               <span>{person.status} · {(Number(person.ordinaryHours) + Number(person.extraHours)).toFixed(1)} hrs · {money(grossPay(person))}</span>
-              <small>{person.timeSource}</small>
+              <small>{person.timeSource} · View details</small>
             </button>
           ))}
 
@@ -529,6 +537,8 @@ export default function FreshPayroll({ onNavigate }) {
                 <section><span>Total hours</span><b>{(Number(selected.ordinaryHours) + Number(selected.extraHours)).toFixed(1)}</b></section>
                 <section><span>Gross pay</span><b>{money(grossPay(selected))}</b></section>
               </div>
+
+              <button type="button" className="cvPayViewDetails" onClick={() => openPersonDetail(selected)}>View details</button>
 
               <label className="cvPayField">
                 <span>Ordinary hours</span>
@@ -560,25 +570,71 @@ export default function FreshPayroll({ onNavigate }) {
           )}
         </main>
 
-<aside className="cvPayPanel cvPayActionsPanel">
-  <h2>Owner actions</h2>
-  <p className="cvPayActionHint">Review gross pay only. Churvox does not file tax, submit government records, or create bank/payment files.</p>
+        <aside className="cvPayPanel cvPayActionsPanel">
+          <h2>Owner actions</h2>
+          <p className="cvPayActionHint">Review gross pay only. Churvox does not file tax, submit government records, or create bank/payment files.</p>
 
-  <div className="cvPayActionGroup cvPayActionGroup--main">
-    <button type="button" className="green" onClick={() => updateSelectedPerson({ status: "Ready" })}>Mark ready</button>
-    <button type="button" className="dark" onClick={() => updateSelectedPerson({ status: "Approved" })}>Approve pay</button>
-    <button type="button" className="orange" onClick={() => updateSelectedPerson({ status: "Needs review" })}>Needs review</button>
-  </div>
+          <div className="cvPayActionGroup cvPayActionGroup--main">
+            <button type="button" className="green" onClick={() => updateSelectedPerson({ status: "Ready" })}>Mark ready</button>
+            <button type="button" className="dark" onClick={() => updateSelectedPerson({ status: "Approved" })}>Approve pay</button>
+            <button type="button" className="orange" onClick={() => updateSelectedPerson({ status: "Needs review" })}>Needs review</button>
+          </div>
 
-  <div className="cvPayActionGroup cvPayActionGroup--secondary">
-    <button type="button" onClick={exportCsv}>Export review CSV</button>
-    <button type="button" onClick={() => onNavigate?.("time")}>Open Time Sheets</button>
-    <button type="button" onClick={() => onNavigate?.("team")}>Open Team</button>
-    <button type="button" onClick={sendSelectedToCommand}>Send to Command</button>
-    <button type="button" onClick={resetPayroll}>Reset payroll edits</button>
-  </div>
-</aside>
+          <div className="cvPayActionGroup cvPayActionGroup--secondary">
+            <button type="button" onClick={exportCsv}>Export review CSV</button>
+            <button type="button" onClick={() => onNavigate?.("time")}>Open Time Sheets</button>
+            <button type="button" onClick={() => onNavigate?.("team")}>Open Team</button>
+            <button type="button" onClick={sendSelectedToCommand}>Send to Command</button>
+            <button type="button" onClick={resetPayroll}>Reset payroll edits</button>
+          </div>
+        </aside>
       </section>
+
+      {detailPerson ? (
+        <div className="cvPayModalOverlay" onClick={() => setDetailId("")}>
+          <section className="cvPayModal" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <div>
+                <span>Payroll detail</span>
+                <h2>{detailPerson.name}</h2>
+                <p>{period} · {detailPerson.role} · {detailPerson.timeSource}</p>
+              </div>
+              <button type="button" onClick={() => setDetailId("")}>Close</button>
+            </header>
+
+            <div className="cvPayModalStats">
+              <article><span>Status</span><b>{detailPerson.status}</b></article>
+              <article><span>Total hours</span><b>{(Number(detailPerson.ordinaryHours) + Number(detailPerson.extraHours)).toFixed(1)}</b></article>
+              <article><span>Gross pay</span><b>{money(grossPay(detailPerson))}</b></article>
+              <article><span>Rate</span><b>{money(detailPerson.hourlyRate)}/hr</b></article>
+            </div>
+
+            <section className="cvPayModalBody">
+              <div>
+                <h3>Review summary</h3>
+                <p><b>Email</b><span>{detailPerson.email || "No email saved"}</span></p>
+                <p><b>Phone</b><span>{detailPerson.phone || "No phone saved"}</span></p>
+                <p><b>Ordinary</b><span>{Number(detailPerson.ordinaryHours || 0).toFixed(1)} hrs</span></p>
+                <p><b>Extra</b><span>{Number(detailPerson.extraHours || 0).toFixed(1)} hrs</span></p>
+                <p><b>Adjustment</b><span>{money(detailPerson.adjustment)}</span></p>
+              </div>
+
+              <div>
+                <h3>Owner note</h3>
+                <p className="cvPayModalNote">{detailPerson.notes || "No payroll note yet."}</p>
+                <small>No tax filing, no government submission, no bank/payment file. This is an owner review only.</small>
+              </div>
+            </section>
+
+            <div className="cvPayModalActions">
+              <button type="button" className="green" onClick={() => updateSelectedPerson({ status: "Ready" })}>Mark ready</button>
+              <button type="button" className="dark" onClick={() => updateSelectedPerson({ status: "Approved" })}>Approve pay</button>
+              <button type="button" className="orange" onClick={() => updateSelectedPerson({ status: "Needs review" })}>Needs review</button>
+              <button type="button" onClick={sendSelectedToCommand}>Send to Command</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }
