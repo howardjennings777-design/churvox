@@ -20,12 +20,14 @@ function readFreshSource(filename) {
 }
 
 test.describe('Churvox Command operating system', () => {
-  test('Command includes the seven defensible moat surfaces', () => {
+  test('Command keeps the owner approval operating system surfaces', () => {
     const app = readFreshSource('FreshApp.jsx');
     const command = readFreshSource('FreshCommand.jsx');
     const os = readFreshSource('FreshCommandOperatingSystem.jsx');
+    const topNine = readFreshSource('FreshTopNineOperatingLayer.jsx');
     const styles = readFreshSource('freshCommandOperatingSystem.css');
     const previewStyles = readFreshSource('freshCommandPreviewFix.css');
+    const topNineStyles = readFreshSource('freshTopNineOperatingLayer.css');
 
     expect(app).toContain('import "./freshCommandOperatingSystem.css";');
     expect(app).toContain('import "./freshCommandPreviewFix.css";');
@@ -34,44 +36,90 @@ test.describe('Churvox Command operating system', () => {
     expect(os).not.toContain('import "./freshCommandOperatingSystem.css";');
 
     for (const concept of [
-      'adminDebtItems',
       'adminDebtTotal',
-      'commandReasoningRows',
-      'jobToCashSteps',
-      'businessMemorySignals',
-      'proofPackRows',
-      'commandBriefRows',
-      'noClutterRules',
+      'fixItems',
+      'moneyItems',
+      'highItems',
+      'selectedGaps',
+      'buildProofRows',
+      'buildDecisionTrail',
+      'buildRiskBadge',
+      'buildPreparedFormRows',
+      'FreshTopNineOperatingLayer',
     ]) {
       expect(os, `${concept} should stay first-class in Command`).toContain(concept);
     }
 
+    for (const marker of [
+      'COMMAND_APPROVAL_BRAIN_MARKER_20260626',
+      'COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626',
+      'COMMAND_TAPPABLE_CARDS_MARKER_20260626',
+      'COMMAND_FIX_DESK_MARKER_20260626',
+      'COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626',
+      'COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626',
+      'COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626',
+      'COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626',
+      'COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626',
+      'COMMAND_FIX_DESK_FORM_PREVIEW_MARKER_20260626',
+    ]) {
+      expect(os, `${marker} should keep protecting Command`).toContain(marker);
+    }
+
     for (const label of [
-      'Admin Debt Meter',
-      'Command Reasoning Card',
-      'Job-To-Cash Autopilot',
-      'Business Memory',
-      'Proof Pack',
-      "Today's Command Brief",
-      'No-Clutter Intelligence',
+      'Command Fix Desk',
+      'Decision-only page',
+      'Check for work',
+      'Prepare notes',
+      'What happens if I approve?',
+      'Proof + context',
+      'Business Health / view-only intelligence',
+      'Business memory',
+      'No-clutter rule',
     ]) {
       expect(os, `${label} should stay visible`).toContain(label);
     }
 
+    for (const label of [
+      'Business Health',
+      'What needs attention across the business',
+      'Ready to invoice',
+      'Command approvals',
+      'Admin debt',
+      'Missing information',
+      'Admin catch-up',
+      'Setup help',
+      'Plan clarity',
+    ]) {
+      expect(topNine, `${label} should stay visible in Business Health`).toContain(label);
+    }
+
     for (const className of [
-      'freshCommandOperatingSystem',
-      'freshCommandDebtMeter',
-      'freshCommandReasoningCard',
-      'freshCommandJobToCash',
-      'freshCommandMemory',
-      'freshCommandProofPack',
-      'freshCommandBrief',
-      'freshCommandNoClutter',
+      'freshCommandOsWrap',
+      'freshCommandFixDesk',
+      'freshCommandFixHeader',
+      'freshCommandDeskToolbar',
+      'freshCommandFixGrid',
+      'freshCommandFixQueue',
+      'freshCommandFixDetail',
+      'freshCommandFixProof',
+      'freshCommandBusinessHealth',
     ]) {
       expect(styles, `${className} should keep its UI styling`).toContain(className);
     }
 
-    expect(styles).toContain('CHURVOX_COMMAND_WAITING_LIST_SCROLL_20260625');
+    for (const className of [
+      'freshTopNineLayer',
+      'freshTopNineHeader',
+      'freshTopNineGrid',
+      'freshTopNineCard',
+      'freshTopNinePlaybook',
+    ]) {
+      expect(topNineStyles, `${className} should keep Business Health styling`).toContain(className);
+    }
+
+    expect(topNine).toContain('CHURVOX_BUSINESS_HEALTH_MARKER_20260627');
+    expect(topNineStyles).toContain('CHURVOX_BUSINESS_HEALTH_MARKER_20260627');
+
     expect(styles).toContain('.freshCommandStablePage .freshGrid > .freshJobsListCard');
     expect(styles).toContain('max-height: 430px !important');
     expect(styles).toContain('overflow-y: scroll !important');
@@ -88,28 +136,16 @@ test.describe('Churvox Command operating system', () => {
     expect(command).toContain('Archived as duplicate from grouped Command queue.');
     expect(command).toContain('freshCommandGroupCount');
     expect(command).toContain('freshCommandGroupedMeta');
-    expect(styles).toContain('CHURVOX_COMMAND_GROUPED_APPROVALS_20260625');
     expect(styles).toContain('.freshCommandGroupCount');
     expect(styles).toContain('.freshCommandGroupedMeta');
 
-    expect(styles).toContain('CHURVOX_COMMAND_NO_CLUTTER_WRAP_20260625');
-    expect(styles).toContain('grid-template-columns: 1fr !important');
-    expect(styles).toContain('font-size: clamp(20px, 2.4vw, 30px) !important');
-    expect(styles).toContain('white-space: normal');
-    expect(styles).toContain('max-width: 100%');
-
-    expect(styles).toContain('CHURVOX_COMMAND_PILL_CONTRAST_20260625');
-    expect(styles).toContain('background: #ffedd5');
-    expect(styles).toContain('color: #7c2d12');
-    expect(styles).toContain('.freshCommandNoClutter span');
-    expect(styles).toContain('background: #f97316 !important');
-    expect(styles).toContain('color: #111827 !important');
-
-    expect(previewStyles).toContain('CHURVOX_COMMAND_PREVIEW_SHEET_20260626');
-    expect(previewStyles).toContain('[aria-label="Prepared form preview"]');
-    expect(previewStyles).toContain('width: min(760px, calc(100vw - 28px)) !important');
-    expect(previewStyles).toContain('grid-template-columns: 1fr !important');
-    expect(previewStyles).toContain('grid-template-columns: minmax(128px, .32fr) minmax(0, 1fr) !important');
-    expect(previewStyles).toContain('overflow-wrap: anywhere !important');
+    expect(previewStyles).toContain('CHURVOX_COMMAND_INLINE_PREPARED_FORM_20260626');
+    expect(previewStyles).toContain('CHURVOX_COMMAND_APPROVAL_DESK_V1_20260626');
+    expect(previewStyles).toContain('.freshCommandInlinePreparedForm');
+    expect(previewStyles).toContain('.freshCommandFixHeader > span::after');
+    expect(previewStyles).toContain('Command Approval Desk');
+    expect(previewStyles).toContain('Churvox does the admin. You approve.');
+    expect(previewStyles).toContain('grid-template-columns: repeat(2, minmax(0, 1fr)) !important');
+    expect(previewStyles).toContain('overflow-wrap: anywhere');
   });
 });
