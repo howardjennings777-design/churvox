@@ -38,9 +38,9 @@ def patch_team_limit_runtime(module):
         app = getattr(module, "app", None)
         db = getattr(module, "db", None)
         get_current_user = getattr(module, "get_current_user", None)
-        require_employer = getattr(module, "require_employer", None)
         ObjectId = getattr(module, "ObjectId", None)
         HTTPException = getattr(module, "HTTPException", None)
+        Request = getattr(module, "Request", None)
         if not db or not ObjectId or not HTTPException:
             return
 
@@ -99,7 +99,7 @@ def patch_team_limit_runtime(module):
 
         module.check_team_limits = locked_check_team_limits
 
-        if app is not None and get_current_user is not None:
+        if app is not None and get_current_user is not None and Request is not None:
             existing_paths = {getattr(route, "path", "") for route in getattr(app, "routes", [])}
             if "/api/team/limits" not in existing_paths:
                 async def team_limits(current_user: dict = None):
@@ -107,7 +107,7 @@ def patch_team_limit_runtime(module):
                     plan, limits, max_workers, packs, count = await capacity_for(user)
                     return {"success": True, "plan": plan, "limits": limits, "usage": {"workers": count}, "max_workers": max_workers, "extra_user_blocks": packs, "growth_packs": packs, "slots_left": max(0, max_workers - count)}
 
-                async def team_limits_endpoint(request):
+                async def team_limits_endpoint(request: Request):
                     user = await get_current_user(request)
                     return await team_limits(user)
 
