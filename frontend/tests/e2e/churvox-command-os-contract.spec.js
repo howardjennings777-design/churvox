@@ -20,47 +20,62 @@ function readFreshSource(filename) {
 }
 
 test.describe('Churvox Command operating system', () => {
-  test('Command keeps the page shell and opens the filled form only on review', () => {
+  test('Command is a rebuilt approval page with a filled form and wired controls', () => {
     const app = readFreshSource('FreshApp.jsx');
     const command = readFreshSource('FreshCommand.jsx');
-    const os = readFreshSource('FreshCommandOperatingSystem.jsx');
-    const styles = readFreshSource('freshCommandOperatingSystem.css');
-    const previewStyles = readFreshSource('freshCommandPreviewFix.css');
+    const styles = readFreshSource('freshCommandPreviewFix.css');
 
-    expect(app).toContain('import "./freshCommandOperatingSystem.css";');
     expect(app).toContain('import "./freshCommandPreviewFix.css";');
-    expect(command).toContain('FreshCommandOperatingSystem');
-    expect(command).toContain('freshHero');
-    expect(command).toContain('freshCommandPulse');
-    expect(command).toContain('freshCommandFilterBar');
-    expect(command).toContain('freshGrid');
-    expect(os).toContain('COMMAND_OS_MARKER_20260625');
-    expect(os).toContain('COMMAND_CLEAN_FILLED_FORM_MARKER_20260627');
-    expect(os).toContain('COMMAND_FORM_FIRST_MARKER_20260627');
-    expect(os).toContain('COMMAND_REAL_COMPLETED_FORM_MARKER_20260627');
-    expect(os).toContain('COMMAND_OPTIONAL_FORM_REVIEW_MARKER_20260627');
-    expect(os).not.toContain('import "./freshCommandOperatingSystem.css";');
+    expect(command).toContain('COMMAND_REPLACED_APPROVAL_PAGE_MARKER_20260627');
+    expect(command).not.toContain('FreshCommandOperatingSystem');
 
-    for (const concept of [
-      'buildFilledFormRows',
-      'selectedApprovalDetails',
-      'firstValue',
-      'findFieldValue',
-      'sourcesFor',
-      'onApproveFix',
-      'onSaveFix',
-      'onIgnoreFix',
-      'onPrepareNotes',
-      'selectedHasConcreteAction',
-      'showForm',
+    for (const wiredFunction of [
+      'loadReview',
+      'approveSelected',
+      'approveOrPrepareSelected',
+      'saveSelected',
+      'ignoreSelected',
+      'archiveDuplicateApprovals',
+      'prepareNotes',
+      'checkForWork',
+      'openSelectedRecord',
     ]) {
-      expect(os, `${concept} should stay first-class in Command`).toContain(concept);
+      expect(command, `${wiredFunction} should stay wired`).toContain(wiredFunction);
     }
 
-    for (const label of [
-      'Review prepared form',
-      'Hide prepared form',
-      'Filled approval form',
+    for (const apiCall of [
+      '/ai-review-items?limit=200',
+      '/approve',
+      '/ignore',
+      '/tell-churvox/prepare',
+    ]) {
+      expect(command, `${apiCall} should stay wired`).toContain(apiCall);
+    }
+
+    for (const className of [
+      'freshCommandRebuild',
+      'freshCommandRebuildHero',
+      'freshCommandStatsRow',
+      'freshCommandStatusStrip',
+      'freshCommandBoard',
+      'freshCommandQueuePanel',
+      'freshCommandQueueList',
+      'freshCommandFormPanel',
+      'freshCommandFilledForm',
+      'freshCommandOwnerEdit',
+      'freshCommandFormActions',
+      'freshCommandSidePanel',
+    ]) {
+      expect(command, `${className} should be rendered`).toContain(className);
+      expect(styles, `${className} should be styled`).toContain(className);
+    }
+
+    for (const visibleText of [
+      'Ready for approval',
+      'Churvox does the admin. You check the filled form and approve it.',
+      'Approval queue',
+      'Owner control',
+      'Recent decisions',
       'Customer',
       'Job',
       'Address',
@@ -73,10 +88,11 @@ test.describe('Churvox Command operating system', () => {
       'Approve form',
       'Save edit',
       'Park for now',
-      'Owner note / edit',
-      'Record',
+      'Open record',
+      'Check for work',
+      'Refresh',
     ]) {
-      expect(os, `${label} should stay visible`).toContain(label);
+      expect(command, `${visibleText} should stay visible`).toContain(visibleText);
     }
 
     for (const removedCopy of [
@@ -86,51 +102,16 @@ test.describe('Churvox Command operating system', () => {
       'Business Health / view-only intelligence',
       'No-clutter rule',
       'Get stronger proof',
+      'Review prepared form',
+      'Hide prepared form',
     ]) {
-      expect(os, `${removedCopy} should not return to the filled form`).not.toContain(removedCopy);
+      expect(command, `${removedCopy} should not return`).not.toContain(removedCopy);
     }
 
-    for (const className of [
-      'freshCommandCleanDesk',
-      'freshCommandReviewShell',
-      'freshCommandReviewCard',
-      'freshCommandReviewActions',
-      'freshCommandPreparedForm',
-      'freshCommandFormTop',
-      'freshCommandFilledRows',
-      'freshCommandOwnerNote',
-      'freshCommandRecordId',
-      'freshCommandFormFooter',
-      'freshCommandFixActions',
-    ]) {
-      expect(previewStyles, `${className} should keep its UI styling`).toContain(className);
-      expect(os, `${className} should stay wired in the component`).toContain(className);
-    }
-
-    expect(previewStyles).toContain('CHURVOX_COMMAND_CLEAN_FILLED_FORM_20260627');
-    expect(previewStyles).not.toContain('.freshCommandStablePage > .freshHero');
-    expect(previewStyles).not.toContain('.freshCommandStablePage > .freshGrid');
-    expect(previewStyles).not.toContain('display: none !important');
-    expect(previewStyles).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
-    expect(previewStyles).toContain('overflow-wrap: anywhere');
-
-    expect(styles).toContain('.freshCommandStablePage .freshGrid > .freshJobsListCard');
-    expect(styles).toContain('max-height: 430px !important');
-    expect(styles).toContain('overflow-y: scroll !important');
-    expect(styles).toContain('scrollbar-width: auto !important');
-    expect(styles).toContain('display: block !important');
-    expect(styles).toContain('word-break: break-word');
-
-    expect(command).toContain('function approvalGroupKey');
-    expect(command).toContain('function groupCommandRows');
-    expect(command).toContain('function duplicateBackendRows');
-    expect(command).toContain('const visibleGroups = groupCommandRows(visibleRows)');
-    expect(command).toContain('async function archiveDuplicateApprovals');
-    expect(command).toContain('Archive ${duplicateRows.length} duplicates');
-    expect(command).toContain('Archived as duplicate from grouped Command queue.');
-    expect(command).toContain('freshCommandGroupCount');
-    expect(command).toContain('freshCommandGroupedMeta');
-    expect(styles).toContain('.freshCommandGroupCount');
-    expect(styles).toContain('.freshCommandGroupedMeta');
+    expect(styles).toContain('CHURVOX_COMMAND_REBUILT_APPROVAL_PAGE_20260627');
+    expect(styles).not.toContain('.freshCommandStablePage > .freshHero');
+    expect(styles).not.toContain('display: none !important');
+    expect(styles).toContain('grid-template-columns: minmax(240px, .72fr) minmax(0, 1.45fr) minmax(260px, .78fr)');
+    expect(styles).toContain('overflow-wrap: anywhere');
   });
 });
