@@ -1,0 +1,76 @@
+Churvox pre-test readiness report
+Generated: 2026-06-26T16:39:27Z
+Site: https://www.churvox.com
+API: https://grassley-backend.onrender.com
+
+===== A) Required files =====
+[PASS] Command operating system — frontend/src/churvox-fresh/FreshCommandOperatingSystem.jsx exists
+[PASS] Top 9 owner layer — frontend/src/churvox-fresh/FreshTopNineOperatingLayer.jsx exists
+[PASS] Top 9 styles — frontend/src/churvox-fresh/freshTopNineOperatingLayer.css exists
+[PASS] Plans page — frontend/src/churvox-fresh/FreshPlans.jsx exists
+[PASS] Jobs page — frontend/src/churvox-fresh/FreshJobs.jsx exists
+[PASS] Worker Command — frontend/src/churvox-fresh/FreshWorkerCommand.jsx exists
+[PASS] Xero page — frontend/src/churvox-fresh/FreshXero.jsx exists
+[PASS] Backend server — backend/server.py exists
+[PASS] Timer backend patch — backend/churvox_job_timer_routes_patch.py exists
+
+===== B) Backend compile =====
+[PASS] Backend compile — key backend files compile
+
+===== C) Static source audits =====
+[PASS] No old visible MYOB wording — no matches
+[PASS] No old non-Xero-page Xero sync wording — no matches
+
+===== D) Required public templates =====
+[PASS] CSV template — frontend/public/import-templates/churvox-clients-template.csv exists
+[PASS] CSV template — frontend/public/import-templates/churvox-team-template.csv exists
+[PASS] CSV template — frontend/public/import-templates/churvox-jobs-template.csv exists
+[PASS] CSV template — frontend/public/import-templates/churvox-quotes-template.csv exists
+[PASS] CSV template — frontend/public/import-templates/churvox-invoices-template.csv exists
+
+===== E) Live site smoke =====
+[PASS] Main site — HTTP 200
+[PASS] Dashboard route — HTTP 200
+[PASS] Plans route — HTTP 200
+[PASS] Clients template live — HTTP 200
+[PASS] Team template live — HTTP 200
+[PASS] Jobs template live — HTTP 200
+[PASS] Quotes template live — HTTP 200
+[PASS] Invoices template live — HTTP 200
+[PASS] Backend auth/me protected route — HTTP 401
+[PASS] Xero status protected route — HTTP 401
+
+===== F) Recent deploy markers =====
+[PASS] Marker churvox-mobile-tap-polish-20260627.txt — HTTP 200
+[PASS] Marker churvox-sms-coming-soon-20260627.txt — HTTP 200
+[PASS] Marker churvox-no-myob-and-archive-cleanup-20260627.txt — HTTP 200
+[PASS] Marker churvox-accounting-wording-cleanup-20260627.txt — HTTP 200
+[PASS] Marker churvox-timer-launch-audit-20260627.txt — HTTP 200
+[PASS] Marker churvox-launch-smoke-test-20260627.txt — HTTP 200
+[PASS] Marker churvox-top-9-owner-layer-20260627.txt — HTTP 200
+[PASS] Marker churvox-top-9-pain-playbook-20260627.txt — HTTP 200
+[PASS] Marker churvox-top-9-launch-checklist-20260627.txt — HTTP 200
+[PASS] Marker churvox-top-9-checklist-progress-20260627.txt — HTTP 200
+[PASS] Marker churvox-top-9-launch-report-20260627.txt — HTTP 200
+
+===== G) Manual test list still required =====
+[CHECK] Manual test 1 — Create a client, edit it, open details modal/sheet.
+[CHECK] Manual test 2 — Create a worker, check worker view, acknowledge job.
+[CHECK] Manual test 3 — Create job, assign worker, start/pause/resume/complete.
+[CHECK] Manual test 4 — Completed job creates/appears as invoice-ready.
+[CHECK] Manual test 5 — Create quote, convert/continue to job flow.
+[CHECK] Manual test 6 — Command: Check for work, approve/edit/park an item.
+[CHECK] Manual test 7 — Top 9 checklist ticks save after refresh.
+[CHECK] Manual test 8 — Launch report copies/saves locally.
+[CHECK] Manual test 9 — Plans page shows correct pricing and accounting wording.
+[CHECK] Manual test 10 — Xero connection/status page stays owner-approved draft sync only.
+[CHECK] Manual test 11 — Mobile: sidebar, modal taps, buttons, and scroll behaviour.
+[CHECK] Manual test 12 — Signup/login/logout/forgot password flow.
+
+===== Summary =====
+PASS: 38
+WARN: 0
+CHECK: 12
+FAIL: 0
+
+Result: READY FOR MANUAL TEST PASS — code/build checks passed, now do the manual tests above.
