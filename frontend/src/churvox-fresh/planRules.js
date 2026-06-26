@@ -40,7 +40,7 @@ export const CHURVOX_EIGHTEEN_FEATURES = [
   { id: "done_properly_checklist", name: "Done Properly Checklist", promise: "Industry-aware job completion checks for lawn care, cleaning, trades and services." },
   { id: "business_family_roles", name: "Business Family Roles", promise: "Safe helper roles for family-business admin without risky access." },
   { id: "worker_time_approval", name: "Worker Time Approval", promise: "Review and approve worker time before payroll or invoice checks." },
-  { id: "xero_approval_sync", name: "Accounting Approval Sync", promise: "Draft Xero sync only. Owner approval required." },
+  { id: "xero_approval_sync", name: "Accounting Approval Sync", promise: "Draft Accounting sync only. Owner approval required." },
   { id: "core_job_management", name: "Core Job Management", promise: "Clients, jobs, calendar, quotes, invoices and settings still work cleanly." },
 ];
 
