@@ -1,55 +1,75 @@
 /* CHURVOX_COMMAND_PREVIEW_SHEET_20260626 */
-.freshCommandFixDesk div[role="presentation"]:has(> [aria-label="Prepared form preview"]) {
-  align-items: start !important;
-  justify-items: center !important;
+.freshCommandFixDesk div[role="presentation"]:has(> [aria-label="Prepared form preview"]),
+.freshCommandFixDesk div[role="presentation"]:has(> [aria-label="Prepared approval form"]) {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  justify-items: unset !important;
   padding: 18px !important;
   overflow-y: auto !important;
+  z-index: 2147483647 !important;
+  background: rgba(15, 23, 42, .68) !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] {
-  width: min(760px, calc(100vw - 28px)) !important;
-  max-height: 86vh !important;
+.freshCommandFixDesk [aria-label="Prepared form preview"],
+.freshCommandFixDesk [aria-label="Prepared approval form"] {
+  width: min(620px, calc(100vw - 28px)) !important;
+  max-height: 78vh !important;
   overflow: auto !important;
-  border-radius: 26px !important;
+  border-radius: 20px !important;
   background: #fffaf0 !important;
+  box-shadow: 0 26px 70px rgba(15, 23, 42, .42) !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] header {
-  padding: 18px !important;
+.freshCommandFixDesk [aria-label="Prepared form preview"] header,
+.freshCommandFixDesk [aria-label="Prepared approval form"] header {
+  padding: 15px !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] h3 {
-  max-width: 620px !important;
-  font-size: clamp(22px, 3vw, 30px) !important;
-  line-height: 1.02 !important;
+.freshCommandFixDesk [aria-label="Prepared form preview"] h3,
+.freshCommandFixDesk [aria-label="Prepared approval form"] h3 {
+  max-width: 520px !important;
+  margin: 8px 0 3px !important;
+  font-size: 22px !important;
+  line-height: 1.05 !important;
   overflow-wrap: anywhere !important;
   white-space: normal !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child {
+.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child,
+.freshCommandFixDesk [aria-label="Prepared approval form"] > div:last-child {
   display: grid !important;
-  gap: 10px !important;
-  padding: 14px !important;
+  gap: 9px !important;
+  padding: 12px !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child {
+.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child,
+.freshCommandFixDesk [aria-label="Prepared approval form"] > div:last-child > div:first-child {
   display: grid !important;
   grid-template-columns: 1fr !important;
-  gap: 9px !important;
+  gap: 7px !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section {
+.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section,
+.freshCommandFixDesk [aria-label="Prepared approval form"] > div:last-child > div:first-child > section {
   display: grid !important;
-  grid-template-columns: minmax(128px, .32fr) minmax(0, 1fr) !important;
-  gap: 10px !important;
+  grid-template-columns: 130px minmax(0, 1fr) !important;
+  gap: 9px !important;
   align-items: start !important;
-  padding: 12px 13px !important;
-  border-radius: 17px !important;
+  padding: 8px 10px !important;
+  border-radius: 12px !important;
   background: #ffffff !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section small {
-  margin-top: 2px !important;
+.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section small,
+.freshCommandFixDesk [aria-label="Prepared approval form"] > div:last-child > div:first-child > section small {
+  padding-top: 7px !important;
   color: #9a3412 !important;
   -webkit-text-fill-color: #9a3412 !important;
   font-size: 10px !important;
@@ -57,26 +77,54 @@
   line-height: 1.2 !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section b {
+.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section b,
+.freshCommandFixDesk [aria-label="Prepared approval form"] > div:last-child > div:first-child > section b {
+  min-height: 34px !important;
+  padding: 8px 10px !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-radius: 10px !important;
+  background: #f8fafc !important;
   color: #111827 !important;
   -webkit-text-fill-color: #111827 !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
   font-weight: 850 !important;
-  line-height: 1.42 !important;
+  line-height: 1.35 !important;
   white-space: pre-wrap !important;
   overflow-wrap: anywhere !important;
   word-break: normal !important;
 }
 
-.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > button {
+.freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > button,
+.freshCommandFixDesk [aria-label="Prepared approval form"] > div:last-child > button {
   position: sticky !important;
   bottom: 0 !important;
   margin: 0 !important;
+  min-height: 38px !important;
+  border-radius: 12px !important;
   box-shadow: 0 -10px 24px rgba(255, 250, 240, .92) !important;
 }
 
 @media (max-width: 680px) {
-  .freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section {
+  .freshCommandFixDesk div[role="presentation"]:has(> [aria-label="Prepared form preview"]),
+  .freshCommandFixDesk div[role="presentation"]:has(> [aria-label="Prepared approval form"]) {
+    padding: 10px !important;
+    align-items: start !important;
+  }
+
+  .freshCommandFixDesk [aria-label="Prepared form preview"],
+  .freshCommandFixDesk [aria-label="Prepared approval form"] {
+    width: min(430px, calc(100vw - 18px)) !important;
+    max-height: 86vh !important;
+  }
+
+  .freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section,
+  .freshCommandFixDesk [aria-label="Prepared approval form"] > div:last-child > div:first-child > section {
     grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+
+  .freshCommandFixDesk [aria-label="Prepared form preview"] > div:last-child > div:first-child > section small,
+  .freshCommandFixDesk [aria-label="Prepared approval form"] > div:last-child > div:first-child > section small {
+    padding-top: 0 !important;
   }
 }
