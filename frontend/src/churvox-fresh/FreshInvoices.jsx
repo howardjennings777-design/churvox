@@ -66,12 +66,21 @@ function normalizeInvoice(invoice, index) {
   };
 }
 
+function parseStoredJob(raw) {
+  try {
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function readSelectedJobForInvoice() {
   try {
     if (typeof window === "undefined") return null;
-    const raw = window.localStorage.getItem(SELECTED_JOB_INVOICE_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return parsed && typeof parsed === "object" ? parsed : null;
+    return parseStoredJob(window.sessionStorage.getItem(SELECTED_JOB_INVOICE_KEY))
+      || parseStoredJob(window.localStorage.getItem(SELECTED_JOB_INVOICE_KEY))
+      || (window.__churvoxSelectedJobForInvoice && typeof window.__churvoxSelectedJobForInvoice === "object" ? window.__churvoxSelectedJobForInvoice : null);
   } catch {
     return null;
   }
@@ -98,6 +107,7 @@ export default function FreshInvoices({ onNavigate }) {
   const overdueTotal = invoices.filter((invoice) => invoice.status === "Overdue").reduce((sum, invoice) => sum + invoice.amount, 0);
 
   const loadInvoices = React.useCallback(async () => {
+    setSourceJob(readSelectedJobForInvoice());
     setLoading(true);
     setError("");
     const res = await get("/invoices", { timeout: 25000 });
@@ -116,14 +126,28 @@ export default function FreshInvoices({ onNavigate }) {
 
   React.useEffect(() => { loadInvoices(); }, [loadInvoices]);
   React.useEffect(() => {
-    const onFreshDataUpdated = () => loadInvoices();
+    const refreshHandoff = () => setSourceJob(readSelectedJobForInvoice());
+    const onFreshDataUpdated = () => { refreshHandoff(); loadInvoices(); };
+    refreshHandoff();
+    window.addEventListener("focus", refreshHandoff);
+    window.addEventListener("hashchange", refreshHandoff);
+    window.addEventListener("churvox:invoice-handoff", refreshHandoff);
     window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
-    return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    return () => {
+      window.removeEventListener("focus", refreshHandoff);
+      window.removeEventListener("hashchange", refreshHandoff);
+      window.removeEventListener("churvox:invoice-handoff", refreshHandoff);
+      window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
+    };
   }, [loadInvoices]);
 
   function clearSourceJob() {
     setSourceJob(null);
-    try { window.localStorage.removeItem(SELECTED_JOB_INVOICE_KEY); } catch {}
+    try {
+      window.localStorage.removeItem(SELECTED_JOB_INVOICE_KEY);
+      window.sessionStorage.removeItem(SELECTED_JOB_INVOICE_KEY);
+      window.__churvoxSelectedJobForInvoice = null;
+    } catch {}
   }
 
   function openInvoicePopup() { setInvoicePopupOpen(true); }
