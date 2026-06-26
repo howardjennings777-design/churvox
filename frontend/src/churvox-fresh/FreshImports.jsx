@@ -17,6 +17,7 @@ const TEMPLATE_LINKS = {
   Team: "/import-templates/churvox-team-template.csv",
   Jobs: "/import-templates/churvox-jobs-template.csv",
   Quotes: "/import-templates/churvox-quotes-template.csv",
+  Invoices: "/import-templates/churvox-invoices-template.csv",
 };
 
 const ALIASES = {

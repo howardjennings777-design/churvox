@@ -14,10 +14,11 @@ import {
 const CHECKOUT_TRACE_MARKER = "clean-isolated-plans-no-auto-refresh-v46";
 const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
 const PLAN_CACHE_KEY = "churvox:stable-current-plan:v1";
+const PLAN_OVERRIDE_KEY = "churvox:plan-override";
 const COUNTRY_CACHE_KEY = "churvox:billing-country";
 const PENDING_CHECKOUT_KEY = "churvox:pending-checkout:v1";
 const PENDING_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-const accountingAddonText = "Xero Sync Add-on — $39/month + GST";
+const accountingAddonText = "Accounting Sync Add-on — $39/month + GST";
 
 const plans = [
   {
@@ -28,7 +29,7 @@ const plans = [
     headline: "Get the work under control",
     summary: "For one owner who wants jobs, clients, quotes and invoices in one place.",
     limit: "50 jobs/month · 1 owner + 1 helper · 25 AI actions",
-    includes: ["Jobs, clients, quotes and invoices", "Smart Hub", "Basic Command desk", "250 clients", "50 jobs/month", "Xero Sync Add-on available"],
+    includes: ["Jobs, clients, quotes and invoices", "Smart Hub", "Basic Command desk", "250 clients", "50 jobs/month", "Accounting Sync Add-on available"],
     limits: { workers: 1, clients: 250, jobs_month: 50, ai_actions_month: 25 },
   },
   {
@@ -39,7 +40,7 @@ const plans = [
     headline: "Run the crew",
     summary: "For a small team that needs worker proof, time approval and cleaner handover.",
     limit: "150 jobs/month · 5 active team members · 100 AI actions",
-    includes: ["Everything in Start", "1,000 clients", "150 jobs/month", "5 active team members", "Worker Proof Pack", "Xero Sync Add-on available"],
+    includes: ["Everything in Start", "1,000 clients", "150 jobs/month", "5 active team members", "Worker Proof Pack", "Accounting Sync Add-on available"],
     limits: { workers: 5, clients: 1000, jobs_month: 150, ai_actions_month: 100 },
   },
   {
@@ -59,9 +60,9 @@ const plans = [
     name: "Command",
     tag: "Scale",
     headline: "Full control at scale",
-    summary: "For the bigger business that wants AI approval control, payroll workspace and Xero sync included.",
+    summary: "For the bigger business that wants AI approval control, payroll workspace and accounting sync included.",
     limit: "1,500 jobs/month · 50 active team members · 2,000 AI actions",
-    includes: ["Everything in Operator", "10,000 clients", "1,500 jobs/month", "50 active team members", "Xero sync included", "Payroll workspace"],
+    includes: ["Everything in Operator", "10,000 clients", "1,500 jobs/month", "50 active team members", "Accounting sync included", "Payroll workspace"],
     limits: { workers: 50, clients: 10000, jobs_month: 1500, ai_actions_month: 2000 },
   },
 ];
@@ -109,6 +110,7 @@ function saveCachedPlan(planId) {
   if (!clean) return;
   try {
     window.localStorage.setItem(PLAN_CACHE_KEY, clean);
+    window.localStorage.removeItem(PLAN_OVERRIDE_KEY);
   } catch {}
   try {
     window.dispatchEvent(new CustomEvent("churvox:plan-updated", { detail: { plan: clean, source: "plans-clean" } }));
@@ -290,7 +292,7 @@ export default function FreshPlans({ onNavigate }) {
   const noCheckoutChange = samePlanSelected && monthlyTotal === 0;
   const addonOnlyGrowthCheckout = samePlanSelected && commandSelected && growthPacks > 0;
   const addonOnlyAccountingCheckout = samePlanSelected && !commandSelected && accountingSync;
-  const checkoutLabel = addonOnlyGrowthCheckout ? `${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : addonOnlyAccountingCheckout ? "Xero Sync Add-on" : `${selected.name}${accountingSync && !commandSelected ? " + Xero" : ""}${growthPacks ? ` + ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}`;
+  const checkoutLabel = addonOnlyGrowthCheckout ? `${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : addonOnlyAccountingCheckout ? "Accounting Sync Add-on" : `${selected.name}${accountingSync && !commandSelected ? " + Accounting Sync" : ""}${growthPacks ? ` + ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}`;
   const checkoutButton = noCheckoutChange ? "Current plan active" : checkoutLoading ? "Opening Stripe..." : addonOnlyGrowthCheckout || addonOnlyAccountingCheckout ? "Buy selected add-on" : "Buy selected plan";
   const selectedTotalLabel = noCheckoutChange ? "Already active" : money(monthlyTotal, country);
   const showDebug = React.useMemo(() => {
@@ -412,7 +414,7 @@ export default function FreshPlans({ onNavigate }) {
       if (!response.ok || body?.success === false) throw new Error(errorFrom(body, response));
       saveAddonActivation(safeAddon, safeQuantity);
       clearPendingCheckout();
-      setNotice(safeAddon === "command_growth_pack" ? "Command Growth Pack added." : "Xero Sync Add-on activated.");
+      setNotice(safeAddon === "command_growth_pack" ? "Command Growth Pack added." : "Accounting Sync Add-on activated.");
       if (safeAddon === "command_growth_pack") setGrowthPacks(0);
       if (safeAddon === "xero_addon" || safeAddon === "xero") setAccountingSync(false);
       window.history.replaceState(null, "", "/plans");
@@ -492,7 +494,7 @@ export default function FreshPlans({ onNavigate }) {
       </header>
 
       <section className="cvPlanNotice"><b>14-day free trial</b><span>No card. Billing stays owner-approved.</span></section>
-      <section className="cvPlanNotice"><b>Safe money rules</b><span>Invoices stay draft-only until approved. Xero sync is owner-approved.</span></section>
+      <section className="cvPlanNotice"><b>Safe money rules</b><span>Invoices stay draft-only until approved. Accounting sync is owner-approved.</span></section>
       {error && !/not authenticated|401|403/i.test(error) && <section className="cvPlanNotice"><b>Needs attention</b><span>{error}</span></section>}
 
       <section className="cvPlanPanel">
@@ -532,12 +534,12 @@ export default function FreshPlans({ onNavigate }) {
           </div>
           <div className="cvPlanBreakdown">
             <div><b>Base plan</b><span>{samePlanSelected ? "Already active" : money(selected.price, country)}</span></div>
-            <div><b>Xero sync</b><span>{accountingIncluded ? "Included" : accountingSync ? "Selected" : accountingAddonText}</span></div>
+            <div><b>Accounting sync</b><span>{accountingIncluded ? "Included" : accountingSync ? "Selected" : accountingAddonText}</span></div>
             <div><b>Growth packs</b><span>{commandSelected ? `${growthPacks} selected` : "Command only"}</span></div>
           </div>
           <div className="cvPlanFeatureGrid">{selectedIncludes.map((feature) => <div key={feature}><b>✓</b><span>{feature}</span></div>)}</div>
           <div className="cvPlanAddons">
-            <button type="button" className={`cvPlanAddon ${accountingSelected ? "active" : ""}`} onClick={() => { if (!accountingIncluded) setAccountingSync((value) => !value); }}><b>Xero Sync Add-on</b><span>{accountingIncluded ? "Included with Command" : pricedAccountingAddon.priceLabel}</span><p>Owner-approved draft invoice sync only.</p></button>
+            <button type="button" className={`cvPlanAddon ${accountingSelected ? "active" : ""}`} onClick={() => { if (!accountingIncluded) setAccountingSync((value) => !value); }}><b>Accounting Sync Add-on</b><span>{accountingIncluded ? "Included with Command" : pricedAccountingAddon.priceLabel}</span><p>Owner-approved draft invoice sync only.</p></button>
             <button type="button" className={`cvPlanAddon ${commandSelected ? "active" : "locked"}`} onClick={() => { if (!commandSelected) choosePlan("command"); }}><b>Command Growth Pack</b><span>{pricedGrowthPack.priceLabel}</span><p>Adds 50 active team members plus extra capacity.</p></button>
           </div>
           {commandSelected && <div className="cvPlanGrowth"><div><b>Command Growth Pack</b><p>Each pack adds 50 active team members, 1,500 jobs/month and 1,000 AI actions/month.</p></div><div className="cvPlanGrowthControls"><button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button><strong>{growthPacks}</strong><button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button></div></div>}
