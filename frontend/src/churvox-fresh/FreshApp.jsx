@@ -278,6 +278,11 @@ function installCommandOpenRecordRuntime() {
   } catch {}
 }
 
+function cleanClientHandoffText(value, emptyLabel) {
+  const text = String(value || "").trim();
+  return text === emptyLabel ? "" : text;
+}
+
 function readClientCardForQuote(button) {
   const page = button.closest(".freshClientsPage") || document.querySelector(".freshClientsPage");
   if (!page) return null;
@@ -290,7 +295,8 @@ function readClientCardForQuote(button) {
   const contact = valueFor("contact");
   const email = String(contact).split("/").map((item) => item.trim()).find((item) => item.includes("@")) || "";
   const phone = String(contact).split("/").map((item) => item.trim()).find((item) => !item.includes("@") && item !== "No contact saved") || "";
-  return { name: title, client_name: title, customer_name: title, email, phone, address: valueFor("service address") };
+  const address = cleanClientHandoffText(valueFor("service address"), "No address saved");
+  return { name: title, client_name: title, customer_name: title, email, phone, address };
 }
 
 function installClientQuoteRuntime() {
