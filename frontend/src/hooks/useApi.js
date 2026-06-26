@@ -18,7 +18,7 @@ function linkedJobId(invoice) {
 }
 
 function invoiceId(invoice) {
-  return String(invoice?.id || invoice?._id || "");
+  return String(invoice?.id || invoice?._id || invoice?.invoice_id || "");
 }
 
 export function useApi() {
@@ -109,6 +109,28 @@ export function useApi() {
 
         return { success: true, data: body, status: response.status };
       } catch (err) {
+        const detail = err.response?.data?.detail;
+        const duplicateInvoiceId = detail?.invoice_id;
+        if (method === "POST" && endpoint === "/invoices" && err.response?.status === 409 && duplicateInvoiceId) {
+          try {
+            const headers = {
+              ...getAuthHeaders(),
+              ...options.headers,
+            };
+            const duplicateRes = await axios({
+              method: "GET",
+              url: `${API_BASE}/api/invoices/${duplicateInvoiceId}`,
+              headers,
+              withCredentials: true,
+              timeout: options.timeout || API_TIMEOUT_MS,
+            });
+            if (duplicateRes.data) {
+              return { success: true, duplicate: true, status: 200, data: duplicateRes.data };
+            }
+          } catch {}
+          return { success: true, duplicate: true, status: 200, data: { id: duplicateInvoiceId, invoice_number: detail?.invoice_number, job_id: data?.job_id, status: "draft" } };
+        }
+
         const isTimeout = err?.code === "ECONNABORTED" || /timeout/i.test(err?.message || "");
         const errorMessage = isTimeout
           ? "The server took too long to respond. Please refresh and try again."
