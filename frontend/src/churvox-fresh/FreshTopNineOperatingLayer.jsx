@@ -5,28 +5,10 @@ export const CHURVOX_TOP_NINE_LAYER_MARKER_20260627 = "CHURVOX_TOP_NINE_LAYER_MA
 export const CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627 = "CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627";
 export const CHURVOX_TOP_NINE_LAUNCH_CHECKLIST_20260627 = "CHURVOX_TOP_NINE_LAUNCH_CHECKLIST_20260627";
 export const CHURVOX_TOP_NINE_CHECKLIST_PROGRESS_20260627 = "CHURVOX_TOP_NINE_CHECKLIST_PROGRESS_20260627";
+export const CHURVOX_TOP_NINE_LAUNCH_REPORT_20260627 = "CHURVOX_TOP_NINE_LAUNCH_REPORT_20260627";
 
 const CHECKLIST_PROGRESS_KEY = "churvox:top-nine-launch-checklist:v1";
-
-function checklistItemKey(cardId, text) {
-  return `${cardId}:${String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
-}
-
-function readChecklistProgress() {
-  try {
-    const raw = window.localStorage.getItem(CHECKLIST_PROGRESS_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveChecklistProgress(value) {
-  try {
-    window.localStorage.setItem(CHECKLIST_PROGRESS_KEY, JSON.stringify(value || {}));
-  } catch {}
-}
+const LAUNCH_REPORT_KEY = "churvox:top-nine-launch-report:v1";
 
 function money(value) {
   const n = Number(value || 0);
@@ -37,6 +19,26 @@ function money(value) {
 function count(value) {
   const n = Number(value || 0);
   return Number.isFinite(n) ? n : 0;
+}
+
+function checklistItemKey(cardId, text) {
+  return `${cardId}:${String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
+function readJson(key, fallback) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : fallback;
+    return parsed && typeof parsed === "object" ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJson(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value || {}));
+  } catch {}
 }
 
 function makeSupportSlip(runAction) {
@@ -250,28 +252,72 @@ function buildCards({
   ];
 }
 
+function buildLaunchReport({ cards, checked, completedChecks, totalChecks, progressPercent }) {
+  const lines = [
+    "Churvox Top 9 Launch Readiness Report",
+    `Generated: ${new Date().toLocaleString()}`,
+    `Progress: ${completedChecks}/${totalChecks} checks complete (${progressPercent}%)`,
+    "",
+    "Positioning:",
+    "Churvox does the admin. You approve.",
+    "",
+    "Top 9 launch checks:",
+  ];
+
+  cards.forEach((card, index) => {
+    const done = card.checks.filter((check) => checked[checklistItemKey(card.id, check)]).length;
+    lines.push("");
+    lines.push(`${index + 1}. ${card.title} — ${done}/${card.checks.length}`);
+    lines.push(`Customer pain: ${card.pain}`);
+    lines.push(`Churvox answer: ${card.churvox}`);
+    card.checks.forEach((check) => {
+      const ok = checked[checklistItemKey(card.id, check)] ? "x" : " ";
+      lines.push(`   [${ok}] ${check}`);
+    });
+  });
+
+  lines.push("");
+  lines.push(progressPercent >= 85 ? "Launch view: Strong enough for controlled outreach." : progressPercent >= 60 ? "Launch view: Getting close, but finish the weak spots before heavy marketing." : "Launch view: Keep testing before a harder launch push.");
+  return lines.join("\n");
+}
+
 export default function FreshTopNineOperatingLayer(props) {
   const [open, setOpen] = React.useState(true);
   const [checklistOpen, setChecklistOpen] = React.useState(false);
-  const [checked, setChecked] = React.useState(() => readChecklistProgress());
+  const [reportOpen, setReportOpen] = React.useState(false);
+  const [copyNote, setCopyNote] = React.useState("");
+  const [checked, setChecked] = React.useState(() => readJson(CHECKLIST_PROGRESS_KEY, {}));
   const cards = buildCards(props);
   const activeCount = cards.filter((card) => ["need", "money", "command"].includes(card.tone)).length;
-  const allCheckKeys = React.useMemo(() => cards.flatMap((card) => card.checks.map((check) => checklistItemKey(card.id, check))), [cards]);
+  const allCheckKeys = cards.flatMap((card) => card.checks.map((check) => checklistItemKey(card.id, check)));
   const totalChecks = allCheckKeys.length;
   const completedChecks = allCheckKeys.filter((key) => checked[key]).length;
   const progressPercent = totalChecks ? Math.round((completedChecks / totalChecks) * 100) : 0;
+  const reportText = buildLaunchReport({ cards, checked, completedChecks, totalChecks, progressPercent });
 
   function toggleCheck(key) {
     setChecked((current) => {
       const next = { ...(current || {}), [key]: !current?.[key] };
-      saveChecklistProgress(next);
+      saveJson(CHECKLIST_PROGRESS_KEY, next);
       return next;
     });
   }
 
   function resetChecks() {
     setChecked({});
-    saveChecklistProgress({});
+    saveJson(CHECKLIST_PROGRESS_KEY, {});
+    setCopyNote("");
+  }
+
+  async function copyReport() {
+    setCopyNote("");
+    saveJson(LAUNCH_REPORT_KEY, { text: reportText, savedAt: new Date().toISOString() });
+    try {
+      await navigator.clipboard.writeText(reportText);
+      setCopyNote("Launch report copied and saved locally.");
+    } catch {
+      setCopyNote("Launch report saved locally. Select and copy it below if clipboard is blocked.");
+    }
   }
 
   return (
@@ -281,6 +327,7 @@ export default function FreshTopNineOperatingLayer(props) {
       data-top-nine-playbook={CHURVOX_TOP_NINE_CUSTOMER_PAIN_PLAYBOOK_20260627}
       data-top-nine-checklist={CHURVOX_TOP_NINE_LAUNCH_CHECKLIST_20260627}
       data-top-nine-progress={CHURVOX_TOP_NINE_CHECKLIST_PROGRESS_20260627}
+      data-top-nine-report={CHURVOX_TOP_NINE_LAUNCH_REPORT_20260627}
     >
       <header className="freshTopNineHeader">
         <div>
@@ -291,6 +338,9 @@ export default function FreshTopNineOperatingLayer(props) {
         <div className="freshTopNineHeaderActions">
           <button type="button" onClick={() => setChecklistOpen((value) => !value)}>
             {checklistOpen ? "Hide checklist" : `${completedChecks}/${totalChecks} launch checks`}
+          </button>
+          <button type="button" onClick={() => setReportOpen((value) => !value)}>
+            {reportOpen ? "Hide report" : "Launch report"}
           </button>
           <button type="button" onClick={() => setOpen((value) => !value)}>
             {open ? "Hide Top 9" : `Show Top 9 (${activeCount})`}
@@ -334,6 +384,20 @@ export default function FreshTopNineOperatingLayer(props) {
               </section>
             ))}
           </div>
+        </aside>
+      ) : null}
+
+      {reportOpen ? (
+        <aside className="freshTopNineReport">
+          <header>
+            <div>
+              <b>Launch readiness report</b>
+              <p>Copy this after your test pass. It gives you a simple owner view of what is ready and what still needs checking.</p>
+            </div>
+            <button type="button" onClick={copyReport}>Copy report</button>
+          </header>
+          {copyNote ? <small>{copyNote}</small> : null}
+          <textarea readOnly value={reportText} />
         </aside>
       ) : null}
 
