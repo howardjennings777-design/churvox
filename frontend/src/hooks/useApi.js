@@ -107,18 +107,22 @@ export function useApi() {
         };
 
         if (method === "POST" && endpoint === "/invoices" && data?.job_id) {
-          const check = await axios({
-            method: "GET",
-            url: `${API_BASE}/api/invoices`,
-            headers,
-            withCredentials: true,
-            timeout: options.timeout || API_TIMEOUT_MS,
-          });
-          const invoices = listFromPayload(check.data, "invoices");
-          const duplicate = invoices.find((invoice) => linkedJobId(invoice) === normalizeId(data.job_id));
-          if (duplicate) {
-            await markJobInvoiced({ jobId: data.job_id, invoice: duplicate, headers, timeout: options.timeout });
-            return { success: true, duplicate: true, status: 200, data: duplicate };
+          try {
+            const check = await axios({
+              method: "GET",
+              url: `${API_BASE}/api/invoices`,
+              headers,
+              withCredentials: true,
+              timeout: options.timeout || API_TIMEOUT_MS,
+            });
+            const invoices = listFromPayload(check.data, "invoices");
+            const duplicate = invoices.find((invoice) => linkedJobId(invoice) === normalizeId(data.job_id));
+            if (duplicate) {
+              await markJobInvoiced({ jobId: data.job_id, invoice: duplicate, headers, timeout: options.timeout });
+              return { success: true, duplicate: true, status: 200, data: duplicate };
+            }
+          } catch {
+            // Duplicate checking is best-effort only. Never block creating a draft invoice.
           }
         }
 
