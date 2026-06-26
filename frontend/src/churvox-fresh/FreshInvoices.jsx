@@ -2,6 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import InvoiceQuickCreateForm from "../components/forms/InvoiceQuickCreateForm";
 import { hideDemoRecords } from "./freshDemoRecords";
+import { mergeRecentInvoices } from "./freshRecentInvoices";
 import "./freshRoutePopups.css";
 
 const filters = ["All", "Draft", "Sent", "Overdue", "Paid"];
@@ -38,7 +39,7 @@ function money(value) {
 }
 
 function dateScore(invoice) {
-  const raw = invoice?.created_at || invoice?.createdAt || invoice?.updated_at || invoice?.updatedAt || "";
+  const raw = invoice?.created_at || invoice?.createdAt || invoice?.updated_at || invoice?.updatedAt || invoice?.__cached_at || "";
   const parsed = Date.parse(raw);
   return Number.isFinite(parsed) ? parsed : 0;
 }
@@ -138,7 +139,7 @@ export default function FreshInvoices({ onNavigate }) {
       setLoading(false);
       return;
     }
-    const nextInvoices = hideDemoRecords(listFrom(res.data)).map(normalizeInvoice).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+    const nextInvoices = hideDemoRecords(mergeRecentInvoices(listFrom(res.data))).map(normalizeInvoice).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
     setInvoices(nextInvoices);
     setSelectedId((current) => nextInvoices.some((invoice) => invoice.id === current) ? current : nextInvoices[0]?.id || "");
     setLoading(false);
