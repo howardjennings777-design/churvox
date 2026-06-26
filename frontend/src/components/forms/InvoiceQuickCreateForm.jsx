@@ -52,6 +52,25 @@ function jobDraft(job) {
   return { title, client, address, price, notes };
 }
 
+function invoiceRecord(payload, fallback = {}) {
+  const data = payload?.data ?? payload;
+  const candidates = [
+    data?.invoice,
+    data?.record,
+    data?.item,
+    data?.data?.invoice,
+    data?.data?.record,
+    data?.data?.item,
+    data?.data,
+    data,
+    fallback,
+  ];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) return candidate;
+  }
+  return fallback;
+}
+
 export default function InvoiceQuickCreateForm({ onSuccess, onCancel, initialJob = null }) {
   const { get, post } = useApi();
   const [clients, setClients] = React.useState([]);
@@ -118,7 +137,7 @@ export default function InvoiceQuickCreateForm({ onSuccess, onCancel, initialJob
     const gstRate = 15;
     const gstAmount = subtotal * (gstRate / 100);
     const total = subtotal + gstAmount;
-    const linkedJobId = initialJob?.id || initialJob?.job_id || null;
+    const linkedJobId = initialJob?.id || initialJob?.job_id || initialJob?._id || null;
 
     const payload = {
       client_id: form.client_id || null,
@@ -158,10 +177,11 @@ export default function InvoiceQuickCreateForm({ onSuccess, onCancel, initialJob
 
     if (!res?.success) return toast.error(res?.error || "Could not create invoice");
 
-    const savedInvoice = res.data || res.invoice || res.record || payload;
-    storeRecentInvoice({ ...payload, ...savedInvoice, status: savedInvoice?.status || payload.status });
-    toast.success("Draft invoice created");
-    onSuccess?.(savedInvoice);
+    const savedInvoice = invoiceRecord(res.data || res.invoice || res.record, payload);
+    const finalInvoice = { ...payload, ...savedInvoice, status: savedInvoice?.status || payload.status };
+    storeRecentInvoice(finalInvoice);
+    toast.success(res.duplicate ? "Draft invoice already exists" : "Draft invoice created");
+    onSuccess?.(finalInvoice);
   }
 
   return (
