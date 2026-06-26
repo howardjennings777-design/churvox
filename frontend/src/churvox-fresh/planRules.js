@@ -18,7 +18,7 @@ export const PLAN_LABELS = {
   command: "Command",
 };
 
-export const ACCOUNTING_ADDON_NAME = "Xero Sync Add-on";
+export const ACCOUNTING_ADDON_NAME = "Accounting Sync Add-on";
 export const ACCOUNTING_ADDON_PRICE = "$39/month + GST";
 export const GROWTH_PACK_NAME = "Command Growth Pack";
 export const GROWTH_PACK_PRICE = "$99/month + GST";
@@ -40,8 +40,8 @@ export const CHURVOX_EIGHTEEN_FEATURES = [
   { id: "done_properly_checklist", name: "Done Properly Checklist", promise: "Industry-aware job completion checks for lawn care, cleaning, trades and services." },
   { id: "business_family_roles", name: "Business Family Roles", promise: "Safe helper roles for family-business admin without risky access." },
   { id: "worker_time_approval", name: "Worker Time Approval", promise: "Review and approve worker time before payroll or invoice checks." },
-  { id: "xero_approval_sync", name: "Xero Approval Sync", promise: "Draft Xero sync only. Owner approval required. No tax filing or bank payout files." },
-  { id: "core_job_management", name: "Core Job Management", promise: "Clients, jobs, calendar, quotes, invoices, workers and settings still work cleanly." },
+  { id: "xero_approval_sync", name: "Accounting Approval Sync", promise: "Draft Xero or MYOB sync only. Owner approval required. No tax filing or bank payout files." },
+  { id: "core_job_management", name: "Core Job Management", promise: "Clients, jobs, calendar, quotes, invoices and settings still work cleanly." },
 ];
 
 export const FEATURE_RULES = {
@@ -57,7 +57,7 @@ export const FEATURE_RULES = {
   launchcontrol: { area: "Setup Coach", open: "start", reason: "Setup Coach helps every plan finish business setup." },
   leads: { area: "Requests", open: "start", reason: "New job requests are part of the core job flow." },
   messages: { area: "Messages", open: "crew", reason: "Crew unlocks team/customer message control." },
-  team: { area: "Team", open: "start", reason: "Start includes one helper. Crew and above unlock larger team capacity." },
+  team: { area: "Team", open: "crew", reason: "Crew unlocks team workspace and worker management. Start stays focused on owner-only admin." },
   workercommand: { area: "Worker Proof", open: "crew", reason: "Crew unlocks worker proof and worker access." },
   time: { area: "Time Approval", open: "crew", reason: "Crew unlocks worker time capture and approval." },
   portal: { area: "Proof Pack / Portal Links", open: "crew", reason: "Crew unlocks proof packs and customer-ready proof links." },
@@ -67,7 +67,7 @@ export const FEATURE_RULES = {
   imports: { area: "Imports", open: "command", reason: "Command unlocks heavier migration and back-office controls." },
   exports: { area: "Exports", open: "command", reason: "Command unlocks deeper export and back-office controls." },
   payroll: { area: "Payroll", open: "command", reason: "Payroll workspace is included in Command only. Churvox never files tax or creates payment files." },
-  xero: { area: "Xero Sync", open: "command", addon: "accounting_sync", reason: "Xero opens with Command or the Xero Sync Add-on. Draft invoice sync only. Owner approval required." },
+  xero: { area: "Accounting Sync", open: "command", addon: "accounting_sync", reason: "Accounting Sync opens with Command or the Accounting Sync Add-on. Draft invoice sync only. Owner approval required." },
 };
 
 export const PLAN_FEATURE_MATRIX = [
@@ -78,22 +78,22 @@ export const PLAN_FEATURE_MATRIX = [
   { area: "One-Tap Admin Recovery", start: "One fix at a time", crew: "Batch of 5", operator: "Batch of 25", command: "Bulk recovery" },
   { area: "Admin Debt Counter", start: "Basic count", crew: "Full count", operator: "Full with action cards", command: "Full with business totals" },
   { area: "Owner Control Score", start: "Not included", crew: "Not included", operator: "Control hints", command: "Advanced score" },
-  { area: "Worker Proof Pack", start: "Basic photos/notes", crew: "Full proof pack", operator: "Full + invoice backup", command: "Full + dispute/payroll support" },
+  { area: "Worker Proof Pack", start: "Not included", crew: "Full proof pack", operator: "Full + invoice backup", command: "Full + dispute/payroll support" },
   { area: "Invoice Confidence Check", start: "Basic missing info", crew: "Price/proof checks", operator: "Full confidence check", command: "Advanced confidence rules" },
   { area: "Customer Follow-Up Brain", start: "Manual reminders", crew: "Follow-up drafts", operator: "AI prepared follow-ups", command: "Lifecycle follow-up system" },
   { area: "Setup Coach", start: "Included", crew: "Included", operator: "Included", command: "Included + team setup" },
   { area: "Quiet Mode for Owners", start: "Basic", crew: "Included", operator: "Smart urgent mode", command: "Full owner controls" },
   { area: "Approval Memory", start: "Not included", crew: "Not included", operator: "Included", command: "Advanced" },
   { area: "Done Properly Checklist", start: "Basic checklist", crew: "Industry checklists", operator: "Smart checklists", command: "Advanced templates" },
-  { area: "Business Family Roles", start: "Helper only", crew: "Admin helper", operator: "Admin + payroll helper", command: "Full family role controls" },
+  { area: "Business Family Roles", start: "Owner only", crew: "Admin helper", operator: "Admin + payroll helper", command: "Full family role controls" },
   { area: "Worker Time Approval", start: "Not included", crew: "Included", operator: "Advanced", command: "Advanced + payroll support" },
-  { area: "Xero Approval Sync", start: "$39 add-on", crew: "$39 add-on", operator: "$39 add-on", command: "Included" },
+  { area: "Accounting Approval Sync", start: "$39 add-on", crew: "$39 add-on", operator: "$39 add-on", command: "Included" },
   { area: "Core Job Management", start: "Included", crew: "Included", operator: "Included", command: "Included" },
 ];
 
 const START_GROUPS = [
   { title: "Start", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
 ];
 
@@ -116,7 +116,7 @@ const COMMAND_GROUPS = [
   { title: "Start", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
   { title: "Control", items: [["payments", "AD", "Admin Debt"], ["reports", "CS", "Control Score"], ["automation", "FU", "Follow-Ups"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
-  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "AC", "Xero Sync"], ["payroll", "PR", "Payroll"]] },
+  { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "AC", "Accounting Sync"], ["payroll", "PR", "Payroll"]] },
   { title: "Proof", items: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"]] },
 ];
 
@@ -137,7 +137,7 @@ export const MOBILE_MORE_ORDER = ["messages", "clients", "quotes", "payments", "
 
 function cloneGroups(groups) { return groups.map((group) => ({ ...group, items: group.items.map((item) => [...item]) })); }
 function uniqueKeys(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
-function addAccountingIfActive(groups, plan, user) { if (plan === "command" || !hasAccountingSync(user)) return groups; const next = cloneGroups(groups); const moneyGroup = next.find((group) => group.title === "Money") || next[next.length - 1]; if (moneyGroup && !moneyGroup.items.some(([key]) => key === "xero")) moneyGroup.items.push(["xero", "AC", "Xero Sync"]); return next; }
+function addAccountingIfActive(groups, plan, user) { if (plan === "command" || !hasAccountingSync(user)) return groups; const next = cloneGroups(groups); const moneyGroup = next.find((group) => group.title === "Money") || next[next.length - 1]; if (moneyGroup && !moneyGroup.items.some(([key]) => key === "xero")) moneyGroup.items.push(["xero", "AC", "Accounting Sync"]); return next; }
 
 export function normalizePlan(value) { const key = String(value || "").trim().toLowerCase(); return PLAN_ALIASES[key] || ""; }
 export function planRank(plan) { const clean = normalizePlan(plan) || "start"; const index = PLAN_ORDER.indexOf(clean); return index >= 0 ? index : 0; }
@@ -147,7 +147,7 @@ export function readCachedPlan() { try { return normalizePlan(window.localStorag
 export function readPlanOverride() { try { return normalizePlan(window.localStorage.getItem("churvox:plan-override")); } catch { return ""; } }
 export function currentPlanForUser(user) { return readPlanOverride() || planFromUser(user) || readCachedPlan() || "start"; }
 function flagFrom(value) { if (value === true || value === 1) return true; const text = String(value || "").toLowerCase(); return ["true", "yes", "active", "enabled", "1", "on"].includes(text); }
-export function hasAccountingSync(user) { const sources = [user?.accounting_sync, user?.accountingSync, user?.accounting_sync_addon, user?.accountingSyncAddon, user?.xero_enabled, user?.addons?.accounting_sync, user?.addons?.accountingSync, user?.business?.accounting_sync, user?.business?.accountingSync, user?.business?.addons?.accounting_sync, user?.business?.addons?.accountingSync, user?.features?.accounting_sync, user?.features?.accountingSync]; if (sources.some(flagFrom)) return true; try { return flagFrom(window.localStorage.getItem("churvox:addon:accounting_sync")); } catch { return false; } }
+export function hasAccountingSync(user) { const sources = [user?.accounting_sync, user?.accountingSync, user?.accounting_sync_addon, user?.accountingSyncAddon, user?.xero_enabled, user?.myob_enabled, user?.addons?.accounting_sync, user?.addons?.accountingSync, user?.business?.accounting_sync, user?.business?.accountingSync, user?.business?.addons?.accounting_sync, user?.business?.addons?.accountingSync, user?.features?.accounting_sync, user?.features?.accountingSync]; if (sources.some(flagFrom)) return true; try { return flagFrom(window.localStorage.getItem("churvox:addon:accounting_sync")); } catch { return false; } }
 export function sidebarGroupsForPlan(plan, user = null) { const clean = normalizePlan(plan) || "start"; const groups = SIDEBAR_GROUPS_BY_PLAN[clean] || START_GROUPS; return addAccountingIfActive(cloneGroups(groups), clean, user); }
 export function sidebarGroupsForUser(user) { return sidebarGroupsForPlan(currentPlanForUser(user), user); }
 export function sidebarMoreItemsForPlan(plan) { const clean = normalizePlan(plan) || "start"; return uniqueKeys((MORE_ITEMS_BY_PLAN[clean] || MORE_ITEMS_BY_PLAN.start).map((item) => [...item])); }
@@ -155,6 +155,6 @@ export function sidebarMoreItemsForUser(user) { return sidebarMoreItemsForPlan(c
 export function mobileItemsForUser() { return MOBILE_ITEMS.map((item) => [...item]); }
 export function mobileMoreOrderForUser(user) { const primary = new Set(mobileItemsForUser(user).map(([key]) => key)); const allowed = uniqueKeys([...sidebarGroupsForUser(user).flatMap((group) => group.items), ...sidebarMoreItemsForUser(user)]).map(([key]) => key); return MOBILE_MORE_ORDER.filter((key) => allowed.includes(key) && !primary.has(key)); }
 export function commandGrowthPacks(user) { const raw = user?.command_growth_packs || user?.growth_packs || user?.addons?.command_growth_pack || user?.business?.command_growth_packs || user?.business?.growth_packs || 0; const count = Number(raw); if (Number.isFinite(count) && count > 0) return count; try { const cached = Number(window.localStorage.getItem("churvox:addon:command_growth_pack") || 0); return Number.isFinite(cached) && cached > 0 ? cached : 0; } catch { return 0; } }
-export function activeTeamMemberLimit(user) { const plan = currentPlanForUser(user); if (plan === "crew") return 5; if (plan === "operator") return 15; if (plan !== "command") return 2; return 50 + commandGrowthPacks(user) * 50; }
+export function activeTeamMemberLimit(user) { const plan = currentPlanForUser(user); if (plan === "crew") return 5; if (plan === "operator") return 15; if (plan !== "command") return 0; return 50 + commandGrowthPacks(user) * 50; }
 export function ruleForPage(page) { const key = String(page || "").toLowerCase(); const aliases = { today: "planday", dashboard: "planday", smart: "planday", hub: "planday", schedule: "planday", calendar: "planday", dispatch: "planday", routes: "planday", todayswork: "planday", worktoday: "planday", askchurvox: "command", aioperatorstudio: "command", quickcreateai: "command", followupwriter: "command", quoteai: "command", invoicecheck: "command", workerbrief: "command", worker: "workercommand", workers: "workercommand", proofpack: "portal", clientportal: "portal", customerportal: "portal", xero: "xero" }; return FEATURE_RULES[aliases[key] || key] || { area: page || "This area", open: "start", reason: "Included in the owner workspace." }; }
 export function accessForPage(page, user) { const plan = currentPlanForUser(user); const rule = ruleForPage(page); const includedByPlan = planMeets(plan, rule.open); if (rule.addon === "accounting_sync") { const addonActive = hasAccountingSync(user); const allowed = includedByPlan || addonActive; return { allowed, plan, rule, requiredPlan: rule.open, addonRequired: !includedByPlan, addonActive, title: allowed ? `${rule.area} open` : `${ACCOUNTING_ADDON_NAME} required`, message: allowed ? rule.reason : `${rule.area} opens with Command or the ${ACCOUNTING_ADDON_NAME} (${ACCOUNTING_ADDON_PRICE}).` }; } return { allowed: includedByPlan, plan, rule, requiredPlan: rule.open, addonRequired: false, addonActive: false, title: includedByPlan ? `${rule.area} open` : `${PLAN_LABELS[rule.open]} required`, message: includedByPlan ? rule.reason : `${rule.area} opens on ${PLAN_LABELS[rule.open]} or above.` }; }
