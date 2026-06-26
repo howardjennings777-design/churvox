@@ -110,6 +110,13 @@
   overflow-wrap: anywhere;
 }
 
+/* CHURVOX_COMMAND_REMOVE_LONG_EXPLAINER_STRIP_20260626 */
+.freshCommandFixHeader > aside,
+.freshCommandFixHeader [data-command-explainer],
+.freshCommandFixHeader aside[style] {
+  display: none !important;
+}
+
 @media (max-width: 680px) {
   .freshCommandInlinePreparedForm label { grid-template-columns: 1fr; }
   .freshCommandInlinePreparedForm label span { padding-top: 0; }
