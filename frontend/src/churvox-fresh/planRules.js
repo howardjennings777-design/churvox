@@ -86,7 +86,7 @@ export const PLAN_FEATURE_MATRIX = [
   { area: "What's Missing? Engine", start: "Basic job/client checks", crew: "Job/client/team checks", operator: "Full admin checks", command: "Full business checks" },
   { area: "One-Tap Admin Recovery", start: "One fix at a time", crew: "Batch of 5", operator: "Batch of 25", command: "Bulk recovery" },
   { area: "Admin Debt Counter", start: "Basic count", crew: "Full count", operator: "Full with action cards", command: "Full with business totals" },
-  { area: "Owner Control Score", start: "Not included", crew: "Basic score", operator: "Full score", command: "Advanced score" },
+  { area: "Owner Control Score", start: "Not included", crew: "Not included", operator: "Control hints", command: "Advanced score" },
   { area: "Worker Proof Pack", start: "Basic photos/notes", crew: "Full proof pack", operator: "Full + invoice backup", command: "Full + dispute/payroll support" },
   { area: "Invoice Confidence Check", start: "Basic missing info", crew: "Price/proof checks", operator: "Full confidence check", command: "Advanced confidence rules" },
   { area: "Customer Follow-Up Brain", start: "Manual reminders", crew: "Follow-up drafts", operator: "AI prepared follow-ups", command: "Lifecycle follow-up system" },
@@ -318,12 +318,21 @@ export function commandGrowthPacks(user) {
     0;
 
   const count = Number(raw);
-  return Number.isFinite(count) && count > 0 ? count : 0;
+  if (Number.isFinite(count) && count > 0) return count;
+
+  try {
+    const cached = Number(window.localStorage.getItem("churvox:addon:command_growth_pack") || 0);
+    return Number.isFinite(cached) && cached > 0 ? cached : 0;
+  } catch {
+    return 0;
+  }
 }
 
 export function activeTeamMemberLimit(user) {
   const plan = currentPlanForUser(user);
-  if (plan !== "command") return plan === "crew" ? 5 : plan === "operator" ? 15 : 1;
+  if (plan === "crew") return 5;
+  if (plan === "operator") return 15;
+  if (plan !== "command") return 2;
   return 50 + commandGrowthPacks(user) * 50;
 }
 
