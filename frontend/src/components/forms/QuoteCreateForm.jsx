@@ -9,19 +9,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { addDaysIso, loadBusinessSettings } from "@/lib/businessSettings";
 
 function arr(value) { if (Array.isArray(value)) return value; if (Array.isArray(value?.data)) return value.data; if (Array.isArray(value?.clients)) return value.clients; if (Array.isArray(value?.items)) return value.items; if (Array.isArray(value?.results)) return value.results; return []; }
-function normalizeId(value) { if (!value) return ""; if (typeof value === "string") return value; if (typeof value === "number") return String(value); if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || ""); const text = String(value || ""); return text === "[object Object]" ? "" : text; }
+function normalizeId(value) { if (!value) return ""; if (typeof value === "string") return value; if (typeof value === "number") return String(value); if (typeof value === "object") return normalizeId(value.$oid || value.oid || value.id || value._id || value.client_id || value.customer_id || ""); const text = String(value || ""); return text === "[object Object]" ? "" : text; }
 function recordId(payload) { const data = payload?.data ?? payload; const item = data?.quote || data?.item || data?.record || data; return normalizeId(data?.id || data?._id || item?.id || item?._id || ""); }
-function clientId(client) { return normalizeId(client?.id || client?._id || client?.client_id || ""); }
+function clientId(client) { return normalizeId(client?.id || client?._id || client?.client_id || client?.customer_id || ""); }
 function clientName(client) { return client?.name || client?.client_name || client?.customer_name || client?.contact_name || "Client"; }
 function money(value) { const n = Number(String(value ?? "").replace(/[^0-9.-]/g, "")); return Number.isFinite(n) ? n : 0; }
 function lineTotal(line) { return (money(line.qty) || 1) * money(line.rate); }
 function firstService(settings) { return settings?.default_job_types?.[0] || settings?.trade_industry_type || "Service work"; }
 function validNote(settings) { return `Quote is valid for ${Number(settings?.default_quote_expiry_days || 14)} days unless stated otherwise.`; }
 function queryValue(search, key) { try { return new URLSearchParams(search).get(key) || ""; } catch { return ""; } }
+function initialClientId(client) { return normalizeId(client?.id || client?._id || client?.client_id || client?.customer_id || ""); }
 
-export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Create quote" }) {
+export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Create quote", initialClient = null }) {
   const location = useLocation();
   const clientFromQuery = queryValue(location.search, "client_id");
+  const handoffClientId = initialClientId(initialClient);
+  const startingClientId = handoffClientId || clientFromQuery;
   const { get, post, loading } = useApi();
   const [settings, setSettings] = useState(() => loadBusinessSettings());
   const [clients, setClients] = useState([]);
@@ -30,7 +33,7 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
   const [lines, setLines] = useState(() => [{ description: firstService(loadBusinessSettings()), qty: "1", rate: "" }]);
   const [form, setForm] = useState(() => {
     const s = loadBusinessSettings();
-    return { client_id: clientFromQuery, customer_name: "", customer_email: "", customer_phone: "", address: "", job_description: firstService(s), job_type: "other", price: "", pricing_type: "fixed", notes: validNote(s), valid_until: addDaysIso(s.default_quote_expiry_days || 14) };
+    return { client_id: startingClientId, customer_name: clientName(initialClient || {}) === "Client" ? "" : clientName(initialClient || {}), customer_email: initialClient?.email || initialClient?.customer_email || initialClient?.client_email || "", customer_phone: initialClient?.phone || initialClient?.mobile || initialClient?.customer_phone || "", address: initialClient?.address || initialClient?.site_address || initialClient?.billing_address || "", job_description: firstService(s), job_type: "other", price: "", pricing_type: "fixed", notes: validNote(s), valid_until: addDaysIso(s.default_quote_expiry_days || 14) };
   });
 
   useEffect(() => {
@@ -46,14 +49,20 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
   }, [get]);
 
   useEffect(() => {
+    if (!initialClient) return;
+    setForm((p) => ({ ...p, client_id: handoffClientId || p.client_id, customer_name: clientName(initialClient) || p.customer_name, customer_email: initialClient.email || initialClient.customer_email || initialClient.client_email || p.customer_email, customer_phone: initialClient.phone || initialClient.mobile || initialClient.customer_phone || p.customer_phone, address: initialClient.address || initialClient.site_address || initialClient.billing_address || p.address }));
+    setPrefilled(true);
+  }, [initialClient, handoffClientId]);
+
+  useEffect(() => {
     if (prefilled) return;
     if (clientFromQuery && clients.length) {
       const client = clients.find((c) => clientId(c) === String(clientFromQuery));
       if (client) pickClient(clientFromQuery);
       setPrefilled(true);
     }
-    if (!clientFromQuery) setPrefilled(true);
-  }, [clients, clientFromQuery, prefilled]);
+    if (!clientFromQuery && !initialClient) setPrefilled(true);
+  }, [clients, clientFromQuery, prefilled, initialClient]);
 
   const subtotal = useMemo(() => lines.reduce((sum, line) => sum + lineTotal(line), 0), [lines]);
   const previewTotal = money(form.price) || subtotal;
@@ -105,12 +114,12 @@ export default function QuoteCreateForm({ onSuccess, onCancel, submitLabel = "Cr
   const section = "rounded-2xl border border-slate-700 bg-slate-950/50 p-4 md:p-5 space-y-4 shadow-[0_8px_28px_rgba(0,0,0,0.18)]";
   const fieldClass = "w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2.5 text-white";
 
-  return <form onSubmit={submit} className="min-h-full flex flex-col" data-version="CHURVOX_QUOTE_CREATE_EXTRAS_SAVE_20260607">
+  return <form onSubmit={submit} className="min-h-full flex flex-col" data-version="CHURVOX_QUOTE_CREATE_EXTRAS_SAVE_20260607" data-client-handoff="20260626">
     <div className="space-y-4 pb-28">
       <section className={section}>
         <div><p className="text-sm font-black text-white">Quote details</p><p className="text-xs font-semibold text-slate-300">Uses your business setup and can prefill directly from a client record.</p></div>
         <div className="rounded-2xl border border-lime-300/20 bg-lime-300/10 p-3 text-xs font-bold text-lime-100">Business defaults: {settings.business_name || "No business name yet"} · Expires in {settings.default_quote_expiry_days || 14} days</div>
-        {clientFromQuery ? <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-xs font-bold text-cyan-100">Opened from a client record. Customer details will prefill once the client loads.</div> : null}
+        {startingClientId ? <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-xs font-bold text-cyan-100">Opened from a client record. Customer details will prefill once the client loads.</div> : null}
         <div><Label htmlFor="quote-client">Client</Label><select id="quote-client" className={fieldClass} value={form.client_id} onChange={(e)=>pickClient(e.target.value)} data-testid="quote-client-select"><option value="">Select client</option>{clients.map((c)=><option key={clientId(c)} value={clientId(c)}>{clientName(c)}</option>)}</select></div>
         <div><Label htmlFor="quote-customer-name">Customer Name *</Label><Input id="quote-customer-name" className="rounded-xl" required value={form.customer_name} onChange={(e)=>change("customer_name", e.target.value)} data-testid="quote-customer-name-input" /></div>
         <div className="grid gap-3 md:grid-cols-2"><div><Label htmlFor="quote-customer-email">Customer Email</Label><Input id="quote-customer-email" className="rounded-xl" type="email" value={form.customer_email} onChange={(e)=>change("customer_email", e.target.value)} data-testid="quote-customer-email-input" /></div><div><Label htmlFor="quote-customer-phone">Customer Phone</Label><Input id="quote-customer-phone" className="rounded-xl" value={form.customer_phone} onChange={(e)=>change("customer_phone", e.target.value)} data-testid="quote-customer-phone-input" /></div></div>
