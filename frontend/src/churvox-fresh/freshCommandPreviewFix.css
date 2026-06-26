@@ -1,6 +1,5 @@
 /* CHURVOX_COMMAND_PREVIEW_PORTAL_20260626 */
-body > div[role="presentation"]:has(> [aria-label="Prepared approval form"]),
-body > div[role="presentation"]:has(> [aria-label="Prepared form preview"]) {
+body > div[role="presentation"] {
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
@@ -14,23 +13,26 @@ body > div[role="presentation"]:has(> [aria-label="Prepared form preview"]) {
   background: rgba(15, 23, 42, .72) !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"],
 body > div[role="presentation"] > [aria-label="Prepared approval form"],
 body > div[role="presentation"] > [aria-label="Prepared form preview"] {
-  width: min(540px, calc(100vw - 34px)) !important;
-  max-width: min(540px, calc(100vw - 34px)) !important;
+  width: min(500px, calc(100vw - 34px)) !important;
+  max-width: min(500px, calc(100vw - 34px)) !important;
   max-height: 74vh !important;
   overflow: auto !important;
   border-radius: 18px !important;
   background: #fffaf0 !important;
   box-shadow: 0 24px 68px rgba(15, 23, 42, .46) !important;
-  transform: translateX(180px) !important;
+  transform: translateX(190px) !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] header,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] header,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] header {
   padding: 13px 14px !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] h3,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] h3,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] h3 {
   margin: 7px 0 3px !important;
@@ -38,12 +40,14 @@ body > div[role="presentation"] > [aria-label="Prepared form preview"] h3 {
   line-height: 1.04 !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] header p,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] header p,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] header p {
   font-size: 11px !important;
   line-height: 1.3 !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] > div:last-child,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] > div:last-child,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:last-child {
   display: grid !important;
@@ -51,12 +55,14 @@ body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:las
   padding: 10px !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] > div:last-child > div:first-child,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] > div:last-child > div:first-child,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:last-child > div:first-child {
   display: grid !important;
   gap: 6px !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] > div:last-child > div:first-child > section,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] > div:last-child > div:first-child > section,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:last-child > div:first-child > section {
   display: grid !important;
@@ -67,17 +73,20 @@ body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:las
   background: #fff !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] small,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] small,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] small {
   font-size: 9.5px !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] b,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] b,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] b {
   font-size: 12.5px !important;
   line-height: 1.32 !important;
 }
 
+body > div[role="presentation"] > section[role="dialog"] > div:last-child > button,
 body > div[role="presentation"] > [aria-label="Prepared approval form"] > div:last-child > button,
 body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:last-child > button {
   min-height: 36px !important;
@@ -85,6 +94,7 @@ body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:las
 }
 
 @media (max-width: 980px) {
+  body > div[role="presentation"] > section[role="dialog"],
   body > div[role="presentation"] > [aria-label="Prepared approval form"],
   body > div[role="presentation"] > [aria-label="Prepared form preview"] {
     transform: translateX(120px) !important;
@@ -92,6 +102,7 @@ body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:las
 }
 
 @media (max-width: 680px) {
+  body > div[role="presentation"] > section[role="dialog"],
   body > div[role="presentation"] > [aria-label="Prepared approval form"],
   body > div[role="presentation"] > [aria-label="Prepared form preview"] {
     width: min(430px, calc(100vw - 20px)) !important;
@@ -100,6 +111,7 @@ body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:las
     transform: none !important;
   }
 
+  body > div[role="presentation"] > section[role="dialog"] > div:last-child > div:first-child > section,
   body > div[role="presentation"] > [aria-label="Prepared approval form"] > div:last-child > div:first-child > section,
   body > div[role="presentation"] > [aria-label="Prepared form preview"] > div:last-child > div:first-child > section {
     grid-template-columns: 1fr !important;
