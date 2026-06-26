@@ -86,6 +86,26 @@ function readSelectedJobForInvoice() {
   }
 }
 
+function optimisticInvoice(saved, sourceJob) {
+  const record = saved && typeof saved === "object" ? saved : {};
+  const amount = Number(record.total ?? record.amount ?? record.subtotal) || Number(String(sourceJob?.price || "").replace(/[^0-9.-]/g, "")) || 0;
+  return normalizeInvoice({
+    ...record,
+    id: record.id || record._id || record.invoice_id || record.invoice_number || `draft-${Date.now()}`,
+    invoice_number: record.invoice_number || `Draft ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+    client_name: record.client_name || record.customer_name || sourceJob?.client || "Customer",
+    customer_name: record.customer_name || record.client_name || sourceJob?.client || "Customer",
+    job_title: record.job_title || sourceJob?.title || record.description || "Service work",
+    description: record.description || sourceJob?.title || "Service work",
+    address: record.address || sourceJob?.address || "",
+    total: amount,
+    amount,
+    status: record.status || "draft",
+    notes: record.notes || "Draft invoice created from completed job.",
+    created_at: record.created_at || new Date().toISOString(),
+  }, 0);
+}
+
 const selectedFilterButtonStyle = { background: "#111827", backgroundColor: "#111827", borderColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff" };
 const selectedFilterTextStyle = { color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1 };
 const selectedFilterCountStyle = { background: "#f97316", backgroundColor: "#f97316", color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, borderRadius: "999px" };
@@ -156,6 +176,13 @@ export default function FreshInvoices({ onNavigate }) {
 
   function openInvoicePopup() { setInvoicePopupOpen(true); }
 
+  function showCreatedInvoice(saved) {
+    const created = optimisticInvoice(saved, sourceJob);
+    setInvoices((current) => [created, ...current.filter((invoice) => invoice.id !== created.id)]);
+    setSelectedId(created.id);
+    setFilter("All");
+  }
+
   function openPaymentsForSelected() {
     if (!selected) return;
     try {
@@ -196,7 +223,7 @@ export default function FreshInvoices({ onNavigate }) {
         <aside className="freshCard freshInvoicesActionsCard"><h2>Invoice actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openInvoicePopup}>{sourceJob ? "Create draft from job" : "Create invoice"}</button><button className="freshOrange" type="button" disabled={!selected} onClick={openPaymentsForSelected}>Open payment check</button><button className="freshGhost" type="button" onClick={loadInvoices}>Refresh invoices</button></div></aside>
       </section>
 
-      {invoicePopupOpen ? <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setInvoicePopupOpen(false); }}><section className="freshCard freshRoutePopupCard"><button className="freshRoutePopupClose" type="button" onClick={() => setInvoicePopupOpen(false)}>x</button><header className="freshHero freshRoutePopupHero"><span>Invoice</span><h1>{sourceJob ? "Create invoice from job" : "Create invoice"}</h1><p>{sourceJob ? `${sourceJob.title || "Selected job"} for ${sourceJob.client || "customer"}` : "Add the invoice details."}</p></header><InvoiceQuickCreateForm initialJob={sourceJob} onCancel={() => setInvoicePopupOpen(false)} onSuccess={() => { setInvoicePopupOpen(false); clearSourceJob(); loadInvoices(); try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "invoice-created" } })); } catch {} }} /></section></div> : null}
+      {invoicePopupOpen ? <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setInvoicePopupOpen(false); }}><section className="freshCard freshRoutePopupCard"><button className="freshRoutePopupClose" type="button" onClick={() => setInvoicePopupOpen(false)}>x</button><header className="freshHero freshRoutePopupHero"><span>Invoice</span><h1>{sourceJob ? "Create invoice from job" : "Create invoice"}</h1><p>{sourceJob ? `${sourceJob.title || "Selected job"} for ${sourceJob.client || "customer"}` : "Add the invoice details."}</p></header><InvoiceQuickCreateForm initialJob={sourceJob} onCancel={() => setInvoicePopupOpen(false)} onSuccess={(saved) => { showCreatedInvoice(saved); setInvoicePopupOpen(false); clearSourceJob(); window.setTimeout(loadInvoices, 600); try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "invoice-created" } })); } catch {} }} /></section></div> : null}
     </section>
   );
 }
