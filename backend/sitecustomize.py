@@ -1,9 +1,12 @@
-"""Churvox backend startup placeholder.
+"""Churvox backend startup hook."""
 
-This file is intentionally valid Python so backend startup cannot fail from a truncated startup patch.
-Runtime patch modules are loaded separately where available.
-"""
+from __future__ import annotations
 
 XERO_SCOPES_DEFAULT = "openid profile email offline_access accounting.invoices"
 BACKEND_PUBLIC_URL_DEFAULT = "https://churvox-backend.onrender.com"
 FRONTEND_URL_DEFAULT = "https://www.churvox.com"
+
+try:
+    import churvox_monthly_job_limit  # noqa: F401
+except Exception:
+    pass
