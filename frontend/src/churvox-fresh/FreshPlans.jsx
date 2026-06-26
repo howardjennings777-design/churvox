@@ -46,6 +46,8 @@ function errorFrom(body, response) { return body?.detail || body?.error || body?
 async function readBody(response) { const text = await response.text(); if (!text.trim()) return {}; try { return JSON.parse(text); } catch { return { success: false, detail: `Non-JSON response from backend endpoint (${response.status}).`, body: text.slice(0, 400) }; } }
 async function apiRequest(url, options = {}) { const response = await fetch(url, options); const body = await readBody(response); return { response, body }; }
 function firstCheckoutUrl(body) { return body?.url || body?.checkout_url || body?.checkoutUrl || body?.session_url || body?.stripe_url || body?.redirect_url || body?.data?.url || body?.data?.checkout_url || body?.session?.url || ""; }
+function usageRow(data, key) { return data?.usage?.[key] || null; }
+function usageRows(data) { return [["workers", "Active workers"], ["clients", "Clients"], ["jobs_month", "Jobs this month"], ["ai_actions_month", "AI Operator Actions"]].map(([key, fallback]) => ({ key, ...(usageRow(data, key) || { name: fallback, used: 0, limit: 0, left: 0, locked: false }) })); }
 
 function postCheckoutForm({ token, plan, country, accountingSync = false, growthPacks = 0 }) {
   const form = document.createElement("form");
@@ -61,28 +63,18 @@ function postCheckoutForm({ token, plan, country, accountingSync = false, growth
 function postAddonCheckout({ token, addon, country, quantity = 1 }) {
   const headers = { "Content-Type": "application/json", Accept: "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
-
   const safeQuantity = Math.max(1, Number(quantity || 1));
-
   return apiRequest(backendUrl("/billing/create-addon-checkout-session"), {
     method: "POST",
     credentials: "include",
     headers,
-    body: JSON.stringify({
-      addon,
-      addon_key: addon,
-      country: country || "NZ",
-      quantity: safeQuantity,
-      growth_packs: addon === "command_growth_pack" ? safeQuantity : 0,
-      packs: addon === "command_growth_pack" ? safeQuantity : 0,
-    }),
+    body: JSON.stringify({ addon, addon_key: addon, country: country || "NZ", quantity: safeQuantity, growth_packs: addon === "command_growth_pack" ? safeQuantity : 0, packs: addon === "command_growth_pack" ? safeQuantity : 0 }),
   }).then(({ response, body }) => {
     const checkoutUrl = firstCheckoutUrl(body);
     if (!response.ok || body?.success === false || !checkoutUrl) throw new Error(errorFrom(body, response));
     window.location.href = checkoutUrl;
   });
 }
-
 
 export default function FreshPlans({ onNavigate }) {
   const { user, loading: authLoading, updateUser } = useAuth();
@@ -94,14 +86,15 @@ export default function FreshPlans({ onNavigate }) {
   const [accountingSync, setAccountingSync] = React.useState(false);
   const [checkingPlan, setCheckingPlan] = React.useState(false);
   const [checkoutLoading, setCheckoutLoading] = React.useState(false);
+  const [usage, setUsage] = React.useState(null);
+  const [usageLoading, setUsageLoading] = React.useState(false);
+  const [usageError, setUsageError] = React.useState("");
   const [notice, setNotice] = React.useState(() => readCachedPlan() ? "Showing saved plan while billing checks." : "Checking account plan.");
   const [error, setError] = React.useState("");
   const [debug, setDebug] = React.useState(null);
   const [country, setCountry] = React.useState(readCountry);
 
-  React.useEffect(() => {
-    try { window.localStorage.setItem(COUNTRY_CACHE_KEY, country); } catch {}
-  }, [country]);
+  React.useEffect(() => { try { window.localStorage.setItem(COUNTRY_CACHE_KEY, country); } catch {} }, [country]);
 
   React.useEffect(() => {
     const applyCurrentPlanPillContrast = () => {
@@ -112,12 +105,10 @@ export default function FreshPlans({ onNavigate }) {
         el.style.setProperty("font-weight", "900", "important");
       });
     };
-
     applyCurrentPlanPillContrast();
     const timer = window.setTimeout(applyCurrentPlanPillContrast, 500);
     return () => window.clearTimeout(timer);
   }, [currentPlan, checkingPlan, authLoading, notice]);
-
 
   const countryMeta = getCountryMeta(country);
   const pricedPlans = React.useMemo(() => plans.map((plan) => {
@@ -143,21 +134,12 @@ export default function FreshPlans({ onNavigate }) {
   const addonOnlyGrowthCheckout = samePlanSelected && commandSelected && growthPacks > 0;
   const addonOnlyAccountingCheckout = samePlanSelected && !commandSelected && accountingSync;
   const noCheckoutChange = samePlanSelected && monthlyTotal === 0;
-  const checkoutModeLabel = addonOnlyGrowthCheckout
-    ? `${growthPacks} Command Growth Pack${growthPacks === 1 ? "" : "s"} only`
-    : addonOnlyAccountingCheckout
-      ? "Accounting Sync Add-on only"
-      : `${selected.name}${accountingSync && !commandSelected ? " + Accounting Sync" : ""}${growthPacks ? ` + ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}`;
-  const checkoutButtonLabel = noCheckoutChange
-    ? "Current plan active"
-    : checkoutLoading
-      ? "Opening Stripe..."
-      : addonOnlyGrowthCheckout || addonOnlyAccountingCheckout
-        ? "Buy selected add-on"
-        : "Buy selected plan";
+  const checkoutModeLabel = addonOnlyGrowthCheckout ? `${growthPacks} Command Growth Pack${growthPacks === 1 ? "" : "s"} only` : addonOnlyAccountingCheckout ? "Accounting Sync Add-on only" : `${selected.name}${accountingSync && !commandSelected ? " + Accounting Sync" : ""}${growthPacks ? ` + ${growthPacks} Growth Pack${growthPacks === 1 ? "" : "s"}` : ""}`;
+  const checkoutButtonLabel = noCheckoutChange ? "Current plan active" : checkoutLoading ? "Opening Stripe..." : addonOnlyGrowthCheckout || addonOnlyAccountingCheckout ? "Buy selected add-on" : "Buy selected plan";
   const selectedTotalLabel = noCheckoutChange ? "Already active" : money(monthlyTotal, country);
   const checkoutTotalLabel = noCheckoutChange ? "No checkout needed" : checkoutModeLabel;
   const showDebug = React.useMemo(() => { try { return new URLSearchParams(window.location.search || "").get("debug") === "1"; } catch { return false; } }, []);
+  const planUsageRows = usageRows(usage);
 
   function applyPlan(planId, reason = "Current plan updated.") {
     const clean = uiPlanFromBackend(planId);
@@ -168,6 +150,27 @@ export default function FreshPlans({ onNavigate }) {
     setNotice(reason);
     return true;
   }
+
+  const loadUsage = React.useCallback(async () => {
+    if (authLoading) return;
+    setUsageLoading(true);
+    setUsageError("");
+    try {
+      const token = authToken(user);
+      const headers = { Accept: "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const { response, body } = await apiRequest(backendUrl("/plan/usage"), { method: "GET", credentials: "include", headers });
+      if (!response.ok || body?.success === false) throw new Error(errorFrom(body, response));
+      const data = body?.data && typeof body.data === "object" ? body.data : body;
+      setUsage(data);
+      if (data?.plan) applyPlan(data.plan, "Loaded from plan usage.");
+      setDebug((previous) => ({ ...(previous || {}), usage: { endpoint: backendUrl("/plan/usage"), status: response.status, body: data } }));
+    } catch (err) {
+      setUsageError(err?.message || "Plan usage could not load.");
+    } finally {
+      setUsageLoading(false);
+    }
+  }, [authLoading, user]);
 
   const loadPlan = React.useCallback(async ({ force = false } = {}) => {
     if (authLoading || loadingRef.current) return;
@@ -207,7 +210,7 @@ export default function FreshPlans({ onNavigate }) {
   React.useEffect(() => {
     const fromUser = planFromUser(user);
     if (fromUser && fromUser !== currentPlan) applyPlan(fromUser, "Loaded from account profile.");
-    if (!authLoading) loadPlan();
+    if (!authLoading) { loadPlan(); loadUsage(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.plan, user?.ui_plan, user?.subscription_plan, user?.billing_plan]);
 
@@ -235,6 +238,7 @@ export default function FreshPlans({ onNavigate }) {
       window.dispatchEvent(new Event("churvox-auth-refresh"));
       setDebug((previous) => ({ ...(previous || {}), confirm: { endpoint: backendUrl("/billing/confirm-checkout"), status: response.status, body } }));
       loadPlan({ force: true });
+      loadUsage();
     } catch (err) {
       setNotice("Checkout needs attention.");
       setError(err?.message || "Stripe checkout could not be saved.");
@@ -249,12 +253,7 @@ export default function FreshPlans({ onNavigate }) {
       const token = authToken(user);
       const headers = { "Content-Type": "application/json", Accept: "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
-      const { response, body } = await apiRequest(backendUrl("/billing/confirm-addon-checkout"), {
-        method: "POST",
-        credentials: "include",
-        headers,
-        body: JSON.stringify({ session_id: sessionId, addon, quantity, country }),
-      });
+      const { response, body } = await apiRequest(backendUrl("/billing/confirm-addon-checkout"), { method: "POST", credentials: "include", headers, body: JSON.stringify({ session_id: sessionId, addon, quantity, country }) });
       if (!response.ok || body?.success === false) throw new Error(errorFrom(body, response));
       saveAddonActivation(addon, quantity);
       setNotice(addon === "command_growth_pack" ? "Command Growth Pack added." : "Accounting Sync Add-on activated.");
@@ -264,6 +263,7 @@ export default function FreshPlans({ onNavigate }) {
       window.dispatchEvent(new Event("churvox-auth-refresh"));
       setDebug((previous) => ({ ...(previous || {}), addonConfirm: { endpoint: backendUrl("/billing/confirm-addon-checkout"), status: response.status, body } }));
       loadPlan({ force: true });
+      loadUsage();
     } catch (err) {
       setNotice("Add-on checkout needs attention.");
       setError(err?.message || "Add-on checkout could not be saved.");
@@ -274,14 +274,6 @@ export default function FreshPlans({ onNavigate }) {
 
   function choosePlan(planId) { setSelectedPlan(planId); if (planId !== "command") setGrowthPacks(0); if (planId === "command") setAccountingSync(false); setError(""); }
 
-  async function tryCheckoutEndpoint(url, payload, token) {
-    const headers = { "Content-Type": "application/json", Accept: "application/json" };
-    if (token) headers.Authorization = `Bearer ${token}`;
-    const { response, body } = await apiRequest(url, { method: "POST", credentials: "include", headers, body: JSON.stringify(payload) });
-    const urlFromBody = firstCheckoutUrl(body);
-    return { ok: response.ok && body?.success !== false && Boolean(urlFromBody), checkoutUrl: urlFromBody, status: response.status, body, endpoint: url };
-  }
-
   async function startCheckout() {
     if (authLoading) { setNotice("Loading account."); return; }
     setCheckoutLoading(true);
@@ -291,17 +283,8 @@ export default function FreshPlans({ onNavigate }) {
     try {
       const token = authToken(user);
       if (!token) throw new Error("Checkout token missing. Please sign in again.");
-
-      if (addonOnlyGrowthCheckout) {
-        await postAddonCheckout({ token, addon: "command_growth_pack", country, quantity: Number(growthPacks || 1) });
-        return;
-      }
-
-      if (addonOnlyAccountingCheckout) {
-        await postAddonCheckout({ token, addon: "xero_addon", country, quantity: 1 });
-        return;
-      }
-
+      if (addonOnlyGrowthCheckout) { await postAddonCheckout({ token, addon: "command_growth_pack", country, quantity: Number(growthPacks || 1) }); return; }
+      if (addonOnlyAccountingCheckout) { await postAddonCheckout({ token, addon: "xero_addon", country, quantity: 1 }); return; }
       postCheckoutForm({ token, plan: selected.backendPlan, country, accountingSync: accountingSelected, growthPacks });
     } catch (err) {
       setNotice("Checkout needs attention.");
@@ -336,6 +319,18 @@ export default function FreshPlans({ onNavigate }) {
 
       {error && !/not authenticated|401|403/i.test(error) && <section className="freshCard freshNotice need"><b>Plans need attention</b><span>{error}</span></section>}
 
+      <section className="freshCard freshPlanLogicCard" style={{ marginBottom: 18 }}>
+        <div className="freshPlanLogicHead">
+          <span>Plan usage</span>
+          <h2>{usage?.plan_label || current?.name || "Current"} usage and limits</h2>
+          <p>{usageLoading ? "Refreshing live usage…" : usageError ? usageError : `Growth Packs active: ${usage?.growth_packs ?? 0}. These numbers come from the backend hard limits.`}</p>
+          <button className="freshGhost" type="button" onClick={loadUsage} disabled={usageLoading}>{usageLoading ? "Refreshing…" : "Refresh usage"}</button>
+        </div>
+        <div className="freshCompareGrid">
+          {planUsageRows.map((row) => <div key={row.key} className={row.locked ? "need" : ""}><b>{row.name}</b><span>{row.used}/{row.limit} used</span><p>{row.left} left{row.locked ? " · locked" : ""}</p></div>)}
+        </div>
+      </section>
+
       <section className="freshPricingCards freshPricingCardsV2">
         {pricedPlans.map((plan) => {
           const active = selectedPlan === plan.id;
@@ -351,30 +346,14 @@ export default function FreshPlans({ onNavigate }) {
           <section className="freshPlanSection"><h3>What you get on {selected.name}</h3><div className="freshPlanFeatures premium">{selectedIncludes.map((feature) => <div key={feature}><b>✓</b><span>{feature}</span></div>)}</div></section>
           <section className="freshPlanSection"><h3>Add-ons</h3><div className="freshAddOnGrid"><button type="button" className={`freshAddOnCard ${accountingSelected ? "active" : ""}`} onClick={() => { if (!accountingIncluded) setAccountingSync((value) => !value); }}><b>Accounting Sync Add-on</b><span>{accountingIncluded ? "Included with Command" : pricedAccountingAddon.priceLabel}</span><p>MYOB or Xero, where available. Owner-approved draft invoice sync only.</p></button><button type="button" className={`freshAddOnCard ${commandSelected ? "active" : "locked"}`} onClick={() => { if (!commandSelected) choosePlan("command"); }}><b>Command Growth Pack</b><span>{pricedGrowthPack.priceLabel}</span><p>Adds 50 active team members plus extra job, AI action, automation and admin capacity.</p></button></div>{commandSelected && <div className="freshGrowthPack premium freshGrowthPackV2"><div><b>Command Growth Pack</b><span>Command includes 50 active team members. Each pack adds 50 more active team members.</span></div><div className="freshGrowthControls"><button type="button" onClick={() => setGrowthPacks((count) => Math.max(0, count - 1))}>−</button><strong>{growthPacks}</strong><button type="button" onClick={() => setGrowthPacks((count) => count + 1)}>+</button></div></div>}</section>
         </section>
-        <aside className="freshCard freshCheckoutCard freshCheckoutCardV2"><span>Buy / update</span><h2>{selected.name}</h2><strong>{selectedTotalLabel}<small>{noCheckoutChange ? "" : `/month ${countryMeta.taxLabel}`}</small></strong><p>{noCheckoutChange ? "This is your current plan. Choose an add-on or another plan if you want to change billing." : `Stripe opens securely using ${countryMeta.label} pricing. If this is only an add-on for your current plan, checkout charges the add-on only.`}</p><div className="freshActions"><button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading || noCheckoutChange}>{checkoutButtonLabel}</button><button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => loadPlan({ force: true })} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload current plan"}</button></div><div className="freshItem"><b>Checkout total</b><span>{checkoutTotalLabel}</span></div><div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div><div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div></aside>
+        <aside className="freshCard freshCheckoutCard freshCheckoutCardV2"><span>Buy / update</span><h2>{selected.name}</h2><strong>{selectedTotalLabel}<small>{noCheckoutChange ? "" : `/month ${countryMeta.taxLabel}`}</small></strong><p>{noCheckoutChange ? "This is your current plan. Choose an add-on or another plan if you want to change billing." : `Stripe opens securely using ${countryMeta.label} pricing. If this is only an add-on for your current plan, checkout charges the add-on only.`}</p><div className="freshActions"><button className="freshDark" type="button" onClick={startCheckout} disabled={checkoutLoading || authLoading || noCheckoutChange}>{checkoutButtonLabel}</button><button className="freshOrange" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button><button className="freshGhost" type="button" onClick={() => { loadPlan({ force: true }); loadUsage(); }} disabled={authLoading || checkingPlan}>{checkingPlan ? "Checking…" : "Reload current plan"}</button></div><div className="freshItem"><b>Checkout total</b><span>{checkoutTotalLabel}</span></div><div className="freshItem"><b>Best default</b><span>Operator is the main plan because AI prepares the admin and the owner approves.</span></div><div className="freshItem need"><b>Command scale</b><span>Command includes up to 50 active team members. Inactive old staff should not count as billable.</span></div></aside>
       </section>
 
       <section className="freshCard freshPlanLogicCard">
-        <div className="freshPlanLogicHead">
-          <span>Plan logic</span>
-          <h2>What opens on each tier</h2>
-          <p>One rule set controls the owner workspace: Open, Locked, Add-on, Included, or Growth Pack only.</p>
-        </div>
+        <div className="freshPlanLogicHead"><span>Plan logic</span><h2>What opens on each tier</h2><p>One rule set controls the owner workspace: Open, Locked, Add-on, Included, or Growth Pack only.</p></div>
         <div className="freshPlanLogicTable">
-          <div className="head">Area</div>
-          <div className="head">Start</div>
-          <div className="head">Crew</div>
-          <div className="head">Operator</div>
-          <div className="head">Command</div>
-          {PLAN_FEATURE_MATRIX.map((row) => (
-            <React.Fragment key={row.area}>
-              <div className="area">{row.area}</div>
-              <div>{row.start}</div>
-              <div>{row.crew}</div>
-              <div>{row.operator}</div>
-              <div>{row.command}</div>
-            </React.Fragment>
-          ))}
+          <div className="head">Area</div><div className="head">Start</div><div className="head">Crew</div><div className="head">Operator</div><div className="head">Command</div>
+          {PLAN_FEATURE_MATRIX.map((row) => <React.Fragment key={row.area}><div className="area">{row.area}</div><div>{row.start}</div><div>{row.crew}</div><div>{row.operator}</div><div>{row.command}</div></React.Fragment>)}
         </div>
       </section>
 
