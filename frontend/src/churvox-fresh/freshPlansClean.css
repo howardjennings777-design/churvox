@@ -402,6 +402,20 @@
   opacity: .86;
 }
 
+.cvPlanAddons::after {
+  content: "Accounting Sync Add-on covers Xero or MYOB where available. Draft sync only. Owner approval required.";
+  grid-column: 1 / -1;
+  display: block;
+  padding: 11px 13px;
+  border-radius: 16px;
+  border: 1px solid rgba(249, 115, 22, .22);
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
 .cvPlanGrowth {
   margin-top: 14px;
   display: flex;
