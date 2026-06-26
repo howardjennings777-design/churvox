@@ -14,6 +14,7 @@ export const COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626 = "COMMAND_FIX_DESK_EXPL
 export const COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626 = "COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626";
 export const COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626 = "COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626";
 export const COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626 = "COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626";
+export const COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626 = "COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626";
 
 const LEGACY_INBOX_KEYS = ["churvox:fresh-command-inbox:v1", "churvox:review-inbox:v1"];
 const PRIORITY_ORDER = { "Fix first": 0, "Check today": 1, "Needs proof": 2, "Setup check": 3, "Watching": 4 };
@@ -74,6 +75,42 @@ const riskBadgeTextStyle = {
   fontSize: 13,
   fontWeight: 900,
   lineHeight: 1.35,
+};
+
+const approveOutcomeStyle = {
+  display: "grid",
+  gap: 7,
+  margin: "0 0 12px",
+  padding: "12px 13px",
+  border: "1px solid rgba(15,23,42,.08)",
+  borderRadius: 17,
+  background: "#f8fafc",
+};
+
+const approveOutcomeLabelStyle = {
+  width: "fit-content",
+  padding: "5px 9px",
+  borderRadius: 999,
+  background: "#111827",
+  color: "#fff",
+  fontSize: 10,
+  fontWeight: 1000,
+  letterSpacing: ".08em",
+  textTransform: "uppercase",
+};
+
+const approveOutcomeTitleStyle = {
+  color: "#111827",
+  fontSize: 14,
+  fontWeight: 1000,
+  lineHeight: 1.15,
+};
+
+const approveOutcomeTextStyle = {
+  color: "#475569",
+  fontSize: 13,
+  fontWeight: 850,
+  lineHeight: 1.4,
 };
 
 const approveGuardHintStyle = {
@@ -394,6 +431,44 @@ function buildRiskBadge(fix, proofRows, selectedDiagnosticOnly, selectedHasConcr
   };
 }
 
+function buildApproveOutcome(fix, approveBlocked, activeRiskBadge) {
+  if (!fix) return null;
+  if (fix?.source?.sourceMode === "note") {
+    return {
+      title: "This will prepare the note",
+      text: "Churvox will turn the saved note into an approval-ready item. Nothing is sent or changed until the owner approves a prepared action.",
+    };
+  }
+  if (approveBlocked) {
+    return {
+      title: "Approval is paused",
+      text: activeRiskBadge?.label === "Draft needed" ? "Approving is blocked because there is no concrete draft or action yet. Use Needs edit, open the record, or run Check for work." : "Approving is blocked because proof is weak. Add proof, open the record, or mark it as Needs edit.",
+    };
+  }
+  if (fix.bucket === "Money") {
+    return {
+      title: "This will approve the prepared money step",
+      text: "Churvox will use the prepared action for this record after your approval. Owner approval stays the control point before invoices, follow-ups, or money-related changes move forward.",
+    };
+  }
+  if (fix.bucket === "Quotes") {
+    return {
+      title: "This will approve the quote follow-up",
+      text: "Churvox will move the prepared quote action forward only after you approve it. You can still edit the owner note before approving.",
+    };
+  }
+  if (fix.bucket === "Jobs") {
+    return {
+      title: "This will clear the job blocker",
+      text: "Churvox will apply the prepared job/admin action for the selected record after your approval, then refresh Command so the queue stays clean.",
+    };
+  }
+  return {
+    title: "This will approve the prepared fix",
+    text: "Churvox will move this prepared action forward after owner approval and keep the decision trail visible in Command.",
+  };
+}
+
 export default function FreshCommandOperatingSystem({
   selected,
   selectedApprovalDetails = [],
@@ -462,6 +537,7 @@ export default function FreshCommandOperatingSystem({
   const decisionTrail = activeFix ? buildDecisionTrail(activeFix, activeProofRows, selectedDiagnosticOnly) : [];
   const activeRiskBadge = activeFix ? buildRiskBadge(activeFix, activeProofRows, selectedDiagnosticOnly, selectedHasConcreteAction, selectedScore) : null;
   const approveBlocked = Boolean(activeFix?.source?.sourceMode !== "note" && (activeRiskBadge?.label === "Draft needed" || activeRiskBadge?.label === "Needs proof"));
+  const approveOutcome = buildApproveOutcome(activeFix, approveBlocked, activeRiskBadge);
   const approveBlockHint = activeRiskBadge?.label === "Draft needed" ? "Approval is blocked until Churvox has a concrete draft or action ready." : activeRiskBadge?.label === "Needs proof" ? "Approval is blocked until stronger proof or linked context is added." : "";
   const approveButtonText = actionBusy === "approve" || externalBusy === "approve" ? "Approving..." : activeFix?.source?.sourceMode === "note" ? "Prepare note" : approveBlocked && activeRiskBadge?.label === "Draft needed" ? "Draft needed first" : approveBlocked ? "Proof needed first" : "Approve fix";
   const adminDebtTotal = preparedBackendRows.reduce((sum, item) => sum + moneyAmount(item), 0);
@@ -583,7 +659,7 @@ export default function FreshCommandOperatingSystem({
   }
 
   return (
-    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626} data-command-approve-guard={COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626}>
+    <section className="freshCommandOsWrap freshCommandFixDesk" data-command-os={COMMAND_OS_MARKER_20260625} data-command-brain={COMMAND_APPROVAL_BRAIN_MARKER_20260626} data-approval-quality-guard={COMMAND_APPROVAL_QUALITY_GUARD_MARKER_20260626} data-tappable-cards={COMMAND_TAPPABLE_CARDS_MARKER_20260626} data-command-fix-desk={COMMAND_FIX_DESK_MARKER_20260626} data-command-fix-actions={COMMAND_FIX_DESK_API_ACTIONS_MARKER_20260626} data-command-full-controls={COMMAND_FIX_DESK_FULL_CONTROLS_MARKER_20260626} data-command-empty-state={COMMAND_FIX_DESK_EMPTY_STATE_MARKER_20260626} data-command-priority-wording={COMMAND_FIX_DESK_PRIORITY_WORDING_MARKER_20260626} data-command-explainer={COMMAND_FIX_DESK_EXPLAINER_MARKER_20260626} data-command-decision-trail={COMMAND_FIX_DESK_DECISION_TRAIL_MARKER_20260626} data-command-risk-badge={COMMAND_FIX_DESK_RISK_BADGE_MARKER_20260626} data-command-approve-guard={COMMAND_FIX_DESK_APPROVE_GUARD_MARKER_20260626} data-command-approve-outcome={COMMAND_FIX_DESK_APPROVE_OUTCOME_MARKER_20260626}>
       <header className="freshCommandFixHeader">
         <span>Command Fix Desk</span>
         <h2>{hasAnyFixes ? `${fixItems.length} things need attention` : "All clear right now"}</h2>
@@ -641,6 +717,7 @@ export default function FreshCommandOperatingSystem({
             <h3>{activeFix.problem}</h3>
             <p>{activeFix.title}</p>
             {activeRiskBadge ? <div style={{ ...riskBadgeStyle, background: activeRiskBadge.background, border: `1px solid ${activeRiskBadge.border}` }}><strong style={{ ...riskBadgeLabelStyle, background: activeRiskBadge.labelBackground, color: activeRiskBadge.labelColor }}>{activeRiskBadge.label}</strong><span style={{ ...riskBadgeTextStyle, color: activeRiskBadge.color }}>{activeRiskBadge.text}</span></div> : null}
+            {approveOutcome ? <section style={approveOutcomeStyle}><small style={approveOutcomeLabelStyle}>What happens if I approve?</small><b style={approveOutcomeTitleStyle}>{approveOutcome.title}</b><p style={approveOutcomeTextStyle}>{approveOutcome.text}</p></section> : null}
             <div className="freshCommandFixSections">
               <section><small>Why it matters</small><b>{activeFix.why}</b></section>
               <section><small>Churvox prepared</small><b>{activeFix.prepared}</b></section>
