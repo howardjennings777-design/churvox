@@ -16,6 +16,17 @@ ADDONS = {
     "command_growth_pack": {"key": "command_growth_pack", "name": "Command Growth Pack", "price": "$99/month + GST", "stripe_env": "STRIPE_PRICE_COMMAND_GROWTH_PACK", "price_id": STRIPE_PRICE_COMMAND_GROWTH_PACK},
 }
 
+PLAN_ALIASES = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
+PLAN_LABELS = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command"}
+BASE_LIMITS = {
+    "solo": {"workers": 1, "clients": 250, "jobs_month": 50, "ai_actions_month": 25},
+    "team": {"workers": 5, "clients": 1000, "jobs_month": 150, "ai_actions_month": 100},
+    "pro": {"workers": 15, "clients": 3000, "jobs_month": 500, "ai_actions_month": 500},
+    "enterprise": {"workers": 50, "clients": 10000, "jobs_month": 1500, "ai_actions_month": 2000},
+}
+PACK_ADDS = {"workers": 50, "jobs_month": 1500, "ai_actions_month": 1000}
+
+
 def _safe(doc):
     out = dict(doc or {})
     if "_id" in out:
@@ -25,8 +36,30 @@ def _safe(doc):
         elif isinstance(v, datetime): out[k] = v.isoformat()
     return out
 
-def _bid(user): return str(user.get("business_id") or user.get("id"))
+def _bid(user): return str(user.get("business_id") or user.get("id") or user.get("_id"))
 def _plan(user): return str(user.get("plan") or user.get("ui_plan") or user.get("subscription_plan") or "").lower()
+def _normal_plan(value): return PLAN_ALIASES.get(str(value or "solo").strip().lower(), "solo")
+def _month_start():
+    now = datetime.now(timezone.utc)
+    return datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+def _limit_row(name, used, limit):
+    used = int(used or 0); limit = int(limit or 0)
+    return {"name": name, "used": used, "limit": limit, "left": max(0, limit - used), "locked": used >= limit}
+def _id_values(raw):
+    values = []
+    if raw is not None:
+        values.append(str(raw))
+        try:
+            values.append(ObjectId(str(raw)))
+        except Exception:
+            pass
+    out = []
+    for value in values:
+        if value not in out:
+            out.append(value)
+    return out
+
+def _business_values(user): return _id_values(user.get("business_id") or user.get("id") or user.get("_id"))
 def _quantity(payload):
     try:
         return max(1, int((payload or {}).get("quantity") or (payload or {}).get("growth_packs") or (payload or {}).get("packs") or 1))
@@ -38,6 +71,37 @@ def _allowed(addon, user):
     if addon == "command_growth_pack": return plan in ["enterprise", "command"], "Command Growth Pack needs the Command plan."
     if addon == "xero_addon": return plan in ["solo", "start", "team", "crew", "pro", "operator", "enterprise", "command"], "Xero Sync Add-on needs an active Churvox plan."
     return False, "Unknown add-on."
+
+async def _owner_for(db, values):
+    if not values:
+        return None
+    owner = await db.users.find_one({"_id": {"$in": values}})
+    if owner:
+        return owner
+    return await db.users.find_one({"business_id": {"$in": values}, "role": {"$in": ["employer", "admin", "owner", "business_owner"]}})
+
+async def _safe_count(coro, fallback=0):
+    try:
+        return await coro
+    except Exception:
+        return fallback
+
+async def _usage_payload(db, user):
+    values = _business_values(user)
+    owner = await _owner_for(db, values) or user
+    plan = _normal_plan(owner.get("plan") or owner.get("ui_plan") or owner.get("subscription_plan") or user.get("plan") or "solo")
+    packs = int((owner or {}).get("extra_user_blocks", 0) or 0)
+    limits = dict(BASE_LIMITS.get(plan, BASE_LIMITS["solo"]))
+    if plan == "enterprise":
+        limits["workers"] += packs * PACK_ADDS["workers"]
+        limits["jobs_month"] += packs * PACK_ADDS["jobs_month"]
+        limits["ai_actions_month"] += packs * PACK_ADDS["ai_actions_month"]
+    start = _month_start()
+    workers = await _safe_count(db.users.count_documents({"business_id": {"$in": values}, "role": "worker", "active": {"$ne": False}, "is_active": {"$ne": False}, "status": {"$nin": ["inactive", "disabled", "paused", "removed", "archived"]}}))
+    clients = await _safe_count(db.clients.count_documents({"$or": [{"contractor_id": {"$in": values}}, {"business_id": {"$in": values}}, {"owner_business_id": {"$in": values}}], "archived": {"$ne": True}, "is_archived": {"$ne": True}, "deleted": {"$ne": True}, "is_deleted": {"$ne": True}}))
+    jobs = await _safe_count(db.jobs.count_documents({"$or": [{"contractor_id": {"$in": values}}, {"business_id": {"$in": values}}, {"owner_business_id": {"$in": values}}], "$and": [{"$or": [{"created_at": {"$gte": start}}, {"createdAt": {"$gte": start}}, {"created": {"$gte": start}}, {"scheduled_at": {"$gte": start}}, {"scheduled": {"$gte": start}}]}], "archived": {"$ne": True}, "is_archived": {"$ne": True}, "status": {"$nin": ["archived", "cancelled", "canceled"]}}))
+    ai_actions = await _safe_count(db.ai_review_items.count_documents({"$or": [{"business_id": {"$in": values}}, {"contractor_id": {"$in": values}}, {"owner_business_id": {"$in": values}}], "$and": [{"$or": [{"created_at": {"$gte": start}}, {"createdAt": {"$gte": start}}, {"created": {"$gte": start}}]}], "status": {"$nin": ["deleted", "archived"]}}))
+    return {"success": True, "plan": plan, "plan_label": PLAN_LABELS.get(plan, "Start"), "growth_packs": packs, "limits": limits, "usage": {"workers": _limit_row("Active workers", workers, limits["workers"]), "clients": _limit_row("Clients", clients, limits["clients"]), "jobs_month": _limit_row("Jobs this month", jobs, limits["jobs_month"]), "ai_actions_month": _limit_row("AI Operator Actions", ai_actions, limits["ai_actions_month"])}, "pack_adds": PACK_ADDS, "period": {"month_start": start.isoformat()}, "fallback_source": "billing_addon_routes"}
 
 async def _apply(db, addon, user, session_id, quantity=1):
     bid = _bid(user); now = datetime.now(timezone.utc); qty = max(1, int(quantity or 1))
@@ -61,6 +125,10 @@ def install(app, db, get_current_user):
     _install_real_ai_review_routes(app, db, get_current_user)
     if getattr(app.state, "billing_addon_routes_installed", False): return
     router = APIRouter(prefix="/api")
+
+    @router.get("/plan/usage")
+    async def plan_usage_fallback(current_user: dict = Depends(get_current_user)):
+        return await _usage_payload(db, current_user)
 
     @router.get("/billing/addons")
     async def billing_addons(current_user: dict = Depends(get_current_user)):
