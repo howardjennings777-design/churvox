@@ -303,3 +303,73 @@
   }
 }
 
+/* CHURVOX_MOBILE_MODAL_TAP_POLISH_20260627 */
+@media (max-width: 760px) {
+  .freshMain {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .freshMain button,
+  .freshMain a,
+  .freshMain input,
+  .freshMain select,
+  .freshMain textarea {
+    touch-action: manipulation !important;
+  }
+
+  .freshMain button,
+  .freshMain a[role="button"],
+  .freshMain .freshImportsActions a,
+  .freshMain .cvPlanAddon,
+  .freshMain .cvPlanCta,
+  .freshMain .freshCommandFilterBar button,
+  .freshMain .freshFilters button,
+  .freshMain .freshTabs button {
+    min-height: 44px !important;
+  }
+
+  .freshMain [class*="Modal"],
+  .freshMain [class*="Sheet"],
+  .freshMain [class*="Drawer"],
+  .freshMain [class*="Detail"] {
+    max-width: calc(100vw - 18px) !important;
+  }
+
+  .freshMain [class*="Modal"] button,
+  .freshMain [class*="Sheet"] button,
+  .freshMain [class*="Drawer"] button,
+  .freshMain [class*="Detail"] button {
+    min-height: 44px !important;
+  }
+
+  .freshMain input,
+  .freshMain select,
+  .freshMain textarea {
+    font-size: 16px !important;
+  }
+
+  .freshImportsLayout,
+  .freshPayrollModalGrid,
+  .freshCommandFixGrid,
+  .freshSettingsGrid,
+  .cvPlanPanel {
+    gap: 12px !important;
+  }
+
+  .freshImportsActions,
+  .freshCommandFilterBar,
+  .freshFilters,
+  .freshTabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .freshImportsActions::-webkit-scrollbar,
+  .freshCommandFilterBar::-webkit-scrollbar,
+  .freshFilters::-webkit-scrollbar,
+  .freshTabs::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
