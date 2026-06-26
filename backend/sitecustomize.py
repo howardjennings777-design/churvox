@@ -10,3 +10,8 @@ try:
     import churvox_monthly_job_limit  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_ai_action_limit  # noqa: F401
+except Exception:
+    pass
