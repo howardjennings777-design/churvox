@@ -6,6 +6,7 @@ import "./freshRoutePopups.css";
 import "./freshJobsPolish.css";
 
 const filters = ["All", "Draft", "Sent", "Accepted", "Declined"];
+const OPEN_QUOTE_MODAL_KEY = "churvox:fresh-open-quote-modal:v1";
 
 function listFrom(payload) {
   const data = payload?.data ?? payload;
@@ -68,6 +69,16 @@ function normalizeQuote(quote, index) {
   };
 }
 
+function readQuoteHandoff(raw) {
+  if (!raw) return null;
+  let payload = raw;
+  if (typeof raw === "string") {
+    try { payload = JSON.parse(raw); } catch { payload = null; }
+  }
+  if (!payload || typeof payload !== "object") return null;
+  return payload.detail && typeof payload.detail === "object" ? payload.detail : payload;
+}
+
 const selectedFilterButtonStyle = { background: "#111827", backgroundColor: "#111827", borderColor: "#111827", color: "#ffffff", WebkitTextFillColor: "#ffffff" };
 const selectedFilterTextStyle = { color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1 };
 const selectedFilterCountStyle = { background: "#f97316", backgroundColor: "#f97316", color: "#ffffff", WebkitTextFillColor: "#ffffff", opacity: 1, borderRadius: "999px" };
@@ -80,6 +91,7 @@ export default function FreshQuotes({ onNavigate }) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [quotePopupOpen, setQuotePopupOpen] = React.useState(false);
+  const [quoteInitialClient, setQuoteInitialClient] = React.useState(null);
 
   const visibleQuotes = filter === "All" ? quotes : quotes.filter((quote) => quote.status === filter);
   const selected = quotes.find((quote) => quote.id === selectedId) || visibleQuotes[0] || quotes[0];
@@ -110,8 +122,14 @@ export default function FreshQuotes({ onNavigate }) {
     window.addEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
     return () => window.removeEventListener("churvox:fresh-data-updated", onFreshDataUpdated);
   }, [loadQuotes]);
+  React.useEffect(() => {
+    const openFromExternal = (event) => openQuotePopup(readQuoteHandoff(event?.detail));
+    window.addEventListener("churvox:open-quote-popup", openFromExternal);
+    try { const saved = window.localStorage.getItem(OPEN_QUOTE_MODAL_KEY); if (saved) window.setTimeout(() => openQuotePopup(readQuoteHandoff(saved)), 50); } catch {}
+    return () => window.removeEventListener("churvox:open-quote-popup", openFromExternal);
+  }, []);
 
-  function openQuotePopup() { setQuotePopupOpen(true); }
+  function openQuotePopup(initialClient = null) { setQuoteInitialClient(initialClient || null); setQuotePopupOpen(true); try { window.localStorage.removeItem(OPEN_QUOTE_MODAL_KEY); } catch {} }
 
   function convertSelectedQuoteToJob() {
     if (!selected) return;
@@ -128,7 +146,7 @@ export default function FreshQuotes({ onNavigate }) {
   const filterCountStyle = (active) => active ? selectedFilterCountStyle : undefined;
 
   return (
-    <section className="freshQuotesPage" data-quote-job-handoff="20260626">
+    <section className="freshQuotesPage" data-quote-job-handoff="20260626" data-quote-client-handoff="20260626">
       <header className="freshHero"><span>Quotes</span><h1>Quotes</h1><p>Saved quote records, customer, value, status and line details.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(draftTotal)}</h2><p>Draft value</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(sentTotal)}</h2><p>Sent value</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(acceptedTotal)}</h2><p>Accepted value</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Could not load quotes</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadQuotes}>Retry</button></section> : null}
@@ -143,13 +161,13 @@ export default function FreshQuotes({ onNavigate }) {
             <div className="freshMiniGrid freshJobsMiniGrid"><div><span>Quote</span><b>{selected.id}</b></div><div><span>Status</span><b>{selected.status}</b></div><div><span>Client</span><b>{selected.client}</b></div><div><span>Value</span><b>{money(selected.amount)}</b></div></div>
             <section className="freshJobsDetailBox notes"><span>Quote lines</span>{selected.lines.map((line, index) => <p key={`${selected.id}-${index}`}>{String(line)}</p>)}</section>
             <section className="freshJobsDetailBox notes"><span>Quote note</span><p>{selected.note}</p></section>
-          </>) : <div className="freshEmptyStateBig"><b>No quote selected</b><span>When quote records exist, details will show here.</span><button type="button" className="freshPrimary" onClick={openQuotePopup}>Create quote</button></div>}
+          </>) : <div className="freshEmptyStateBig"><b>No quote selected</b><span>When quote records exist, details will show here.</span><button type="button" className="freshPrimary" onClick={() => openQuotePopup()}>Create quote</button></div>}
         </section>
 
-        <aside className="freshCard freshQuotesActionsCard"><h2>Quote actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={openQuotePopup}>Create quote</button><button className="freshOrange" type="button" disabled={!selected || selected.status !== "Accepted"} onClick={convertSelectedQuoteToJob}>Create job from quote</button><button className="freshGhost" type="button" onClick={loadQuotes}>Refresh quotes</button></div></aside>
+        <aside className="freshCard freshQuotesActionsCard"><h2>Quote actions</h2><div className="freshActions freshJobsActionStack"><button className="freshPrimary" type="button" onClick={() => openQuotePopup()}>Create quote</button><button className="freshOrange" type="button" disabled={!selected || selected.status !== "Accepted"} onClick={convertSelectedQuoteToJob}>Create job from quote</button><button className="freshGhost" type="button" onClick={loadQuotes}>Refresh quotes</button></div></aside>
       </section>
 
-      {quotePopupOpen ? <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setQuotePopupOpen(false); }}><section className="freshCard freshRoutePopupCard"><button className="freshRoutePopupClose" type="button" onClick={() => setQuotePopupOpen(false)}>x</button><header className="freshHero freshRoutePopupHero"><span>Quote</span><h1>Create quote</h1><p>Add the quote details.</p></header><QuoteCreateForm submitLabel="Save quote" onCancel={() => setQuotePopupOpen(false)} onSuccess={() => { setQuotePopupOpen(false); loadQuotes(); try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "quote-created" } })); } catch {} }} /></section></div> : null}
+      {quotePopupOpen ? <div className="freshRoutePopupBackdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setQuotePopupOpen(false); }}><section className="freshCard freshRoutePopupCard"><button className="freshRoutePopupClose" type="button" onClick={() => setQuotePopupOpen(false)}>x</button><header className="freshHero freshRoutePopupHero"><span>Quote</span><h1>Create quote</h1><p>Add the quote details.</p></header><QuoteCreateForm submitLabel="Save quote" initialClient={quoteInitialClient} onCancel={() => setQuotePopupOpen(false)} onSuccess={() => { setQuotePopupOpen(false); setQuoteInitialClient(null); loadQuotes(); try { window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated", { detail: { type: "quote-created" } })); } catch {} }} /></section></div> : null}
     </section>
   );
 }
