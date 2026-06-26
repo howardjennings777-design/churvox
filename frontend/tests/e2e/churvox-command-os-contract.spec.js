@@ -20,7 +20,7 @@ function readFreshSource(filename) {
 }
 
 test.describe('Churvox Command operating system', () => {
-  test('Command shows a clean filled form wired to owner approval controls', () => {
+  test('Command shows a completed filled form wired to owner approval controls', () => {
     const app = readFreshSource('FreshApp.jsx');
     const command = readFreshSource('FreshCommand.jsx');
     const os = readFreshSource('FreshCommandOperatingSystem.jsx');
@@ -33,6 +33,7 @@ test.describe('Churvox Command operating system', () => {
     expect(os).toContain('COMMAND_OS_MARKER_20260625');
     expect(os).toContain('COMMAND_CLEAN_FILLED_FORM_MARKER_20260627');
     expect(os).toContain('COMMAND_FORM_FIRST_MARKER_20260627');
+    expect(os).toContain('COMMAND_REAL_COMPLETED_FORM_MARKER_20260627');
     expect(os).not.toContain('import "./freshCommandOperatingSystem.css";');
 
     for (const concept of [
@@ -51,7 +52,6 @@ test.describe('Churvox Command operating system', () => {
     }
 
     for (const label of [
-      'Churvox filled the form.',
       'Filled approval form',
       'Customer',
       'Job',
@@ -65,7 +65,8 @@ test.describe('Churvox Command operating system', () => {
       'Approve form',
       'Save edit',
       'Park for now',
-      'Owner controls',
+      'Owner note / edit',
+      'Record',
     ]) {
       expect(os, `${label} should stay visible`).toContain(label);
     }
@@ -83,12 +84,14 @@ test.describe('Churvox Command operating system', () => {
 
     for (const className of [
       'freshCommandCleanDesk',
-      'freshCommandCleanGrid',
-      'freshCommandFilledFormCard',
+      'freshCommandFormShell',
+      'freshCommandPreparedForm',
+      'freshCommandFormTop',
       'freshCommandFilledRows',
-      'freshCommandOwnerControls',
+      'freshCommandOwnerNote',
+      'freshCommandRecordId',
+      'freshCommandFormFooter',
       'freshCommandFixActions',
-      'freshCommandFilledLead',
     ]) {
       expect(previewStyles, `${className} should keep its UI styling`).toContain(className);
       expect(os, `${className} should stay wired in the component`).toContain(className);
@@ -98,7 +101,8 @@ test.describe('Churvox Command operating system', () => {
     expect(previewStyles).toContain('.freshCommandStablePage > .freshHero');
     expect(previewStyles).toContain('.freshCommandStablePage > .freshGrid');
     expect(previewStyles).toContain('display: none !important');
-    expect(previewStyles).toContain('grid-template-columns: minmax(0, 1fr) minmax(300px, 360px)');
+    expect(previewStyles).toContain('width: min(100%, 1040px)');
+    expect(previewStyles).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
     expect(previewStyles).toContain('overflow-wrap: anywhere');
 
     expect(styles).toContain('.freshCommandStablePage .freshGrid > .freshJobsListCard');
