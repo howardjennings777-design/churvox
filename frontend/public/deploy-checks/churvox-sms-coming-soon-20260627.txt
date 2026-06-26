@@ -1,0 +1,4 @@
+Churvox deploy marker:
+- Customer SMS/texting coming soon notice added.
+- No backend touched.
+- Owner approval promise kept.
