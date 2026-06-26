@@ -1,33 +1,77 @@
 /* CHURVOX_COMMAND_INLINE_PREPARED_FORM_20260626 */
 /* CHURVOX_COMMAND_SIMPLE_FILLED_FORM_20260627 */
+/* CHURVOX_COMMAND_FILLED_FORM_FIRST_20260627 */
 .freshCommandFixDetail {
   display: flex !important;
   flex-direction: column !important;
 }
 
+.freshCommandFixGrid {
+  grid-template-columns: minmax(230px, .68fr) minmax(360px, 1.12fr) minmax(310px, .9fr) !important;
+}
+
+.freshCommandFixQueue { order: 1 !important; }
+.freshCommandFixProof { order: 2 !important; }
+.freshCommandFixDetail { order: 3 !important; }
+
 .freshCommandFixDetail > .freshCommandPanelTitle { order: 1 !important; }
 .freshCommandFixDetail > h3 { order: 2 !important; }
 .freshCommandFixDetail > p:first-of-type { order: 3 !important; }
-.freshCommandFixDetail > button { order: 4 !important; }
-.freshCommandInlinePreparedForm { order: 5 !important; }
-.freshCommandOwnerNote { order: 6 !important; }
-.freshCommandFixActions { order: 7 !important; }
-.freshCommandOutcome { order: 8 !important; }
+.freshCommandOwnerNote { order: 4 !important; }
+.freshCommandFixActions { order: 5 !important; }
+.freshCommandOutcome { order: 6 !important; }
 
 .freshCommandFixDetail > div:nth-of-type(2),
 .freshCommandFixDetail > section:not(.freshCommandInlinePreparedForm),
 .freshCommandFixSections,
 .freshCommandFixDetail > div[aria-label="Decision trail"],
+.freshCommandFixDetail > button,
+.freshCommandInlinePreparedForm,
 .freshCommandFixActions + p,
 .freshCommandFixActions + p + p,
 .freshCommandFixActions + p + p + p {
   display: none !important;
 }
 
-.freshCommandFixDetail > button {
+.freshCommandFixProof .freshCommandPanelTitle span {
+  font-size: 0 !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.freshCommandFixProof .freshCommandPanelTitle span::after {
+  content: "Filled form";
+  color: #7c2d12 !important;
+  -webkit-text-fill-color: #7c2d12 !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+}
+
+.freshCommandFixProof .freshCommandPanelTitle b {
+  display: none !important;
+}
+
+.freshCommandProofRows section:nth-last-child(3),
+.freshCommandProofRows section:nth-last-child(2),
+.freshCommandProofRows section:nth-last-child(1) {
+  display: none !important;
+}
+
+.freshCommandProofRows section {
+  background: #fff !important;
+}
+
+.freshCommandProofRows small {
   width: fit-content !important;
-  margin: 0 0 12px !important;
-  padding: 0 14px !important;
+}
+
+.freshCommandProofRows b {
+  font-size: 15px !important;
+  line-height: 1.35 !important;
+}
+
+.freshCommandOwnerNote textarea {
+  min-height: 96px !important;
 }
 
 .freshCommandInlinePreparedForm {
@@ -93,6 +137,7 @@
 .freshCommandInlinePreparedForm label:nth-child(2),
 .freshCommandInlinePreparedForm label:nth-child(3),
 .freshCommandInlinePreparedForm label:nth-child(6),
+.freshCommandInlinePreparedForm label:nth-child(7),
 .freshCommandInlinePreparedForm label:nth-child(9),
 .freshCommandInlinePreparedForm label:nth-child(10) {
   display: none !important;
@@ -312,6 +357,16 @@
 }
 
 @media (max-width: 1180px) {
+  .freshCommandFixGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshCommandFixQueue,
+  .freshCommandFixProof,
+  .freshCommandFixDetail {
+    order: initial !important;
+  }
+
   .freshCommandFixQueue { max-height: 440px !important; }
 }
 
