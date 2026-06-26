@@ -103,7 +103,7 @@ function recordClientName(record) {
 }
 
 function recordJobId(record) {
-  return normalizeId(record?.job_id || record?.linked_job_id || record?.source_job_id || record?.jobId || record?.id || "");
+  return normalizeId(record?.job_id || record?.linked_job_id || record?.source_job_id || record?.jobId || record?.job?.id || record?.job?._id || "");
 }
 
 function recordStatus(record, fallback = "draft") {
@@ -115,9 +115,14 @@ function matchesJob(record, job) {
   const recordJob = recordJobId(record);
   if (recordJob && recordJob === job.id) return true;
   const jobClient = lower(job.client);
+  const jobTitle = lower(job.title);
+  const jobAddress = lower(job.address);
   const recClient = recordClientName(record);
-  const recText = lower(`${pick(record, "title", "job_description", "description", "notes", "address")} ${recClient}`);
-  return Boolean(jobClient && recText.includes(jobClient)) || Boolean(job.address && lower(recText).includes(lower(job.address)));
+  const recText = lower(`${pick(record, "title", "job_title", "job_description", "description", "notes", "address", "site_address", "billing_address", "service_address")} ${recClient}`);
+  if (jobClient && (recClient === jobClient || recText.includes(jobClient))) return true;
+  if (jobTitle && jobTitle !== "job" && recText.includes(jobTitle)) return true;
+  if (jobAddress && jobAddress !== "no address" && recText.includes(jobAddress)) return true;
+  return false;
 }
 
 function normalizeRelated(rows, selected) {
