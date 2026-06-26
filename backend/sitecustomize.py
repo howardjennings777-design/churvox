@@ -15,3 +15,8 @@ try:
     import churvox_ai_action_limit  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_job_timer_routes_patch  # noqa: F401
+except Exception:
+    pass
