@@ -35,7 +35,7 @@ export const PLANS = CHURVOX_PLANS;
 export const BASE_PLANS = CHURVOX_PLANS;
 export const PLAN_LIST = CHURVOX_PLANS;
 export const PLAN_LIMITS = {
-  solo: { clients: 250, teamMembers: 2, activeTeamMembers: 2, jobsPerMonth: 50, aiOperatorActions: 25, adminRecoveryBatch: 1, proofPack: "Basic", accountingSync: "add_on" },
+  solo: { clients: 250, teamMembers: 2, activeTeamMembers: 1, jobsPerMonth: 50, aiOperatorActions: 25, adminRecoveryBatch: 1, proofPack: "Basic", accountingSync: "add_on" },
   team: { clients: 1000, teamMembers: 5, activeTeamMembers: 5, jobsPerMonth: 150, aiOperatorActions: 100, adminRecoveryBatch: 5, proofPack: "Standard", accountingSync: "add_on" },
   pro: { clients: 3000, teamMembers: 15, activeTeamMembers: 15, jobsPerMonth: 500, aiOperatorActions: 500, adminRecoveryBatch: 25, proofPack: "Advanced", accountingSync: "add_on" },
   enterprise: { clients: 10000, teamMembers: 50, activeTeamMembers: 50, jobsPerMonth: 1500, aiOperatorActions: 2000, adminRecoveryBatch: "bulk", proofPack: "Advanced", accountingSync: "included" }
