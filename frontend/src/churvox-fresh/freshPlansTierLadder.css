@@ -146,3 +146,181 @@
     grid-template-columns: minmax(170px, 1.2fr) repeat(4, minmax(116px, 1fr)) !important;
   }
 }
+
+/* CHURVOX_PLANS_STABILITY_OVERRIDE_20260626 */
+.freshPricingPageV2,
+.freshPricingPageV2 * {
+  box-sizing: border-box !important;
+}
+
+.freshPricingPageV2 {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  align-content: start !important;
+}
+
+.freshPricingPageV2 .freshCard,
+.freshPricingPageV2 .freshPricingHeroV2,
+.freshPricingPageV2 .freshPricingCardsV2,
+.freshPricingPageV2 .freshPricingDetailV2,
+.freshPricingPageV2 .freshPlanLogicCard,
+.freshPricingPageV2 .freshCompareCardV2 {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.freshPricingPageV2 .freshPricingHeroV2 {
+  min-height: auto !important;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px) !important;
+  overflow: hidden !important;
+}
+
+.freshPricingPageV2 .freshPricingHeroV2 h1,
+.freshPricingPageV2 .freshPricingHeroV2 p,
+.freshPricingPageV2 .freshCurrentPlanBox,
+.freshPricingPageV2 .freshCurrentPlanBox * {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+.freshPricingPageV2 .freshCountrySelect {
+  max-width: 360px !important;
+  display: grid !important;
+  gap: 7px !important;
+  margin-top: 12px !important;
+}
+
+.freshPricingPageV2 .freshCountrySelect select {
+  width: 100% !important;
+  min-width: 0 !important;
+  border-radius: 14px !important;
+  padding: 11px 12px !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  background: rgba(255,255,255,.10) !important;
+  color: #fff7ed !important;
+  font-weight: 900 !important;
+}
+
+.freshPricingPageV2 .freshPricingCardsV2 {
+  grid-template-columns: repeat(auto-fit, minmax(238px, 1fr)) !important;
+  align-items: stretch !important;
+}
+
+.freshPricingPageV2 .freshPricingCardV2 {
+  min-height: 0 !important;
+  height: auto !important;
+  transform: none !important;
+}
+
+.freshPricingPageV2 .freshPricingCardV2:hover,
+.freshPricingPageV2 .freshPricingCardV2.active {
+  transform: none !important;
+}
+
+.freshPricingPageV2 .freshPricingCardV2 p {
+  min-height: 0 !important;
+}
+
+.freshPricingPageV2 .freshPricingCardV2 em,
+.freshPricingPageV2 .freshSelectedPlanTop strong,
+.freshPricingPageV2 .freshCheckoutCardV2 > strong {
+  flex-wrap: wrap !important;
+  overflow-wrap: anywhere !important;
+}
+
+.freshPricingPageV2 .freshPricingDetailV2 {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px) !important;
+}
+
+.freshPricingPageV2 .freshPlanBreakdown,
+.freshPricingPageV2 .freshAddOnGrid,
+.freshPricingPageV2 .freshPlanFeatures.premium,
+.freshPricingPageV2 .freshCompareGrid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+}
+
+.freshPricingPageV2 .freshPlanLogicCard {
+  overflow: hidden !important;
+}
+
+.freshPricingPageV2 .freshPlanLogicTable {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overscroll-behavior-x: contain !important;
+  grid-template-columns: minmax(150px, 1.15fr) repeat(4, minmax(96px, 1fr)) !important;
+}
+
+.freshPricingPageV2 .freshPlanLogicTable > div {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.freshPricingPageV2 .freshCheckoutCardV2 {
+  top: 84px !important;
+  max-height: calc(100vh - 110px) !important;
+  overflow: auto !important;
+}
+
+@media (max-width: 1180px) {
+  .freshPricingPageV2 .freshPricingDetailV2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshPricingPageV2 .freshCheckoutCardV2 {
+    position: static !important;
+    max-height: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .freshPricingPageV2 {
+    gap: 12px !important;
+  }
+
+  .freshPricingPageV2 .freshPricingHeroV2,
+  .freshPricingPageV2 .freshSelectedPlanTop,
+  .freshPricingPageV2 .freshPlanNotice.proper {
+    grid-template-columns: 1fr !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .freshPricingPageV2 .freshPricingHeroV2 {
+    padding: 16px !important;
+    border-radius: 24px !important;
+  }
+
+  .freshPricingPageV2 .freshPricingHeroV2 h1 {
+    font-size: clamp(32px, 12vw, 46px) !important;
+    letter-spacing: -.055em !important;
+  }
+
+  .freshPricingPageV2 .freshPricingCardsV2,
+  .freshPricingPageV2 .freshPlanBreakdown,
+  .freshPricingPageV2 .freshAddOnGrid,
+  .freshPricingPageV2 .freshPlanFeatures.premium,
+  .freshPricingPageV2 .freshCompareGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshPricingPageV2 .freshPlanLogicHead {
+    margin: -14px -14px 12px !important;
+    padding: 16px !important;
+  }
+
+  .freshPricingPageV2 .freshPlanLogicTable {
+    display: block !important;
+    white-space: normal !important;
+  }
+
+  .freshPricingPageV2 .freshPlanLogicTable > div {
+    display: flex !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+}
