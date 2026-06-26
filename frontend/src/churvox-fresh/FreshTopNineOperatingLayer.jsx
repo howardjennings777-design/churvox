@@ -254,14 +254,14 @@ function buildCards({
 
 function buildLaunchReport({ cards, checked, completedChecks, totalChecks, progressPercent }) {
   const lines = [
-    "Churvox Top 9 Launch Readiness Report",
+    "Churvox Owner Health Report",
     `Generated: ${new Date().toLocaleString()}`,
     `Progress: ${completedChecks}/${totalChecks} checks complete (${progressPercent}%)`,
     "",
     "Positioning:",
     "Churvox does the admin. You approve.",
     "",
-    "Top 9 launch checks:",
+    "Top 9 health checks:",
   ];
 
   cards.forEach((card, index) => {
@@ -277,7 +277,7 @@ function buildLaunchReport({ cards, checked, completedChecks, totalChecks, progr
   });
 
   lines.push("");
-  lines.push(progressPercent >= 85 ? "Launch view: Strong enough for controlled outreach." : progressPercent >= 60 ? "Launch view: Getting close, but finish the weak spots before heavy marketing." : "Launch view: Keep testing before a harder launch push.");
+  lines.push(progressPercent >= 85 ? "Owner view: Strong enough for controlled use." : progressPercent >= 60 ? "Owner view: Getting close, but finish the weak spots before a bigger push." : "Owner view: Keep testing before a bigger push.");
   return lines.join("\n");
 }
 
@@ -314,9 +314,9 @@ export default function FreshTopNineOperatingLayer(props) {
     saveJson(LAUNCH_REPORT_KEY, { text: reportText, savedAt: new Date().toISOString() });
     try {
       await navigator.clipboard.writeText(reportText);
-      setCopyNote("Launch report copied and saved locally.");
+      setCopyNote("Health report copied and saved locally.");
     } catch {
-      setCopyNote("Launch report saved locally. Select and copy it below if clipboard is blocked.");
+      setCopyNote("Health report saved locally. Select and copy it below if clipboard is blocked.");
     }
   }
 
@@ -331,16 +331,16 @@ export default function FreshTopNineOperatingLayer(props) {
     >
       <header className="freshTopNineHeader">
         <div>
-          <span>Top 9 owner operating layer</span>
-          <h3>Build Churvox around what owners actually want</h3>
-          <p>Less chasing, less forgetting, less double entry, and every risky admin step waiting for owner approval.</p>
+          <span>Owner Health Check</span>
+          <h3>What needs attention across the business</h3>
+          <p>Churvox watches jobs, proof, invoices, setup gaps, support, and money so the owner can approve the right next step.</p>
         </div>
         <div className="freshTopNineHeaderActions">
           <button type="button" onClick={() => setChecklistOpen((value) => !value)}>
-            {checklistOpen ? "Hide checklist" : `${completedChecks}/${totalChecks} launch checks`}
+            {checklistOpen ? "Hide checks" : `${completedChecks}/${totalChecks} health checks`}
           </button>
           <button type="button" onClick={() => setReportOpen((value) => !value)}>
-            {reportOpen ? "Hide report" : "Launch report"}
+            {reportOpen ? "Hide report" : "Health report"}
           </button>
           <button type="button" onClick={() => setOpen((value) => !value)}>
             {open ? "Hide Top 9" : `Show Top 9 (${activeCount})`}
@@ -352,8 +352,8 @@ export default function FreshTopNineOperatingLayer(props) {
         <aside className="freshTopNineChecklist">
           <header className="freshTopNineChecklistHead">
             <div>
-              <b>Launch checklist for the 9 things that matter</b>
-              <p>Use this as the practical test pass before pushing harder on marketing.</p>
+              <b>Whole-site health checks</b>
+              <p>Use this to check the main customer journey: jobs, workers, proof, invoices, support, pricing, and approvals.</p>
             </div>
             <section>
               <strong>{progressPercent}%</strong>
@@ -391,10 +391,10 @@ export default function FreshTopNineOperatingLayer(props) {
         <aside className="freshTopNineReport">
           <header>
             <div>
-              <b>Launch readiness report</b>
-              <p>Copy this after your test pass. It gives you a simple owner view of what is ready and what still needs checking.</p>
+              <b>Owner health report</b>
+              <p>Copy this after a site check. It gives you a simple owner view of what is healthy and what still needs attention.</p>
             </div>
-            <button type="button" onClick={copyReport}>Copy report</button>
+            <button type="button" onClick={copyReport}>Copy health report</button>
           </header>
           {copyNote ? <small>{copyNote}</small> : null}
           <textarea readOnly value={reportText} />
@@ -418,7 +418,7 @@ export default function FreshTopNineOperatingLayer(props) {
                 <summary>Why customers care</summary>
                 <p><b>Pain:</b> {card.pain}</p>
                 <p><b>Churvox answer:</b> {card.churvox}</p>
-                <p><b>Build/test next:</b> {card.nextBuild}</p>
+                <p><b>Next improvement:</b> {card.nextBuild}</p>
               </details>
               <button type="button" disabled={props.busy || card.disabled} onClick={card.onClick}>
                 {card.action}

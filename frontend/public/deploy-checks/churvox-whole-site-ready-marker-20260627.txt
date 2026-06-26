@@ -1,0 +1,4 @@
+Churvox deploy marker:
+- Whole-site ready pass added.
+- Customer-facing Owner Health wording cleaned.
+- Whole flow now checks Smart Hub, clients, jobs, workers, proof, quotes, invoices, Command, money, setup, support, plans, imports, mobile, and accounting sync.
