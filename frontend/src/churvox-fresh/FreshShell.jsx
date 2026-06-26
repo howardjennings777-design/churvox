@@ -79,6 +79,12 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
     return () => ["storage", "churvox:ai-guide-status", "churvox:fresh-data-updated", "churvox-auth-refresh", "churvox:plan-updated"].forEach((name) => window.removeEventListener(name, refresh));
   }, []);
 
+  React.useEffect(() => {
+    const closeOnEscape = (event) => { if (event.key === "Escape") setMoreOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, []);
+
   React.useLayoutEffect(() => { resetScroll(); }, [active]);
   React.useEffect(() => { resetScroll(); }, [active]);
 
@@ -128,7 +134,7 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
           <header className="freshMobileAppTop"><div><b>Churvox</b><span>{mobileTitle} - field mode</span></div><button className="freshMobileLogout" type="button" onClick={handleLogout}>Log out</button></header>
           <section className="freshMobileQuickActions" aria-label="Mobile quick actions"><button type="button" aria-label="New job" title="New job" onClick={openMobileJob}><b>+</b><span>New job</span></button><button type="button" aria-label="Add client" title="Add client" onClick={openMobileClient}><b>CL</b><span>Add client</span></button><button type="button" aria-label="Open approvals" title="Open approvals" onClick={() => go("command")}><b>OK</b><span>Approve</span></button>{canOpenMessages ? <button type="button" aria-label="Open messages" title="Open messages" onClick={() => go("messages")}><b>MS</b><span>Messages</span></button> : null}</section>
           {showGlobalAsk ? <form className="freshGlobalAsk" onSubmit={submitAsk}><label><span>What do you want to do?</span><input value={globalAsk} onChange={(event) => setGlobalAsk(event.target.value)} placeholder="book a job, review admin debt, approve an invoice, prepare a follow-up..." /></label><button type="submit">Ask Churvox</button></form> : null}
-          <div className="freshPageScroll" key={active}>{children}</div>
+          <div className="freshPageScroll" key={active} onClick={() => { if (moreOpen) setMoreOpen(false); }}>{children}</div>
         </main>
         {moreOpen && <div className="freshMobileMore">{safeExtraMobile.map(([key, mark, label]) => <button key={key} type="button" aria-label={label} title={label} className={currentPrimary === key ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}<div className="freshMobileMoreNote"><b>More tools</b><span>This menu only shows tools available on the current Churvox tier.</span></div></div>}
         <nav className="freshMobileNav" aria-label="Mobile navigation">{safeMobileItems.map(([key, mark, label]) => <button key={key} type="button" aria-label={label} title={label} className={currentPrimary === key || (key === "more" && moreOpen) ? "active" : ""} onClick={() => handleMobile(key)}><i>{mark}</i><span>{label}</span></button>)}</nav>
