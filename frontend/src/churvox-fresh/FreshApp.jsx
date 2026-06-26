@@ -278,6 +278,41 @@ function installCommandOpenRecordRuntime() {
   } catch {}
 }
 
+function readClientCardForQuote(button) {
+  const page = button.closest(".freshClientsPage") || document.querySelector(".freshClientsPage");
+  if (!page) return null;
+  const title = page.querySelector(".freshJobsDetailCard h2")?.textContent?.trim() || "";
+  const boxes = Array.from(page.querySelectorAll(".freshMiniGrid div"));
+  const valueFor = (label) => {
+    const box = boxes.find((item) => String(item.querySelector("span")?.textContent || "").trim().toLowerCase() === label);
+    return String(box?.querySelector("b")?.textContent || "").trim();
+  };
+  return { name: title, client_name: title, customer_name: title, email: valueFor("contact"), address: valueFor("service address") };
+}
+
+function installClientQuoteRuntime() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+    if (window.__churvoxClientQuoteRuntimeInstalled) return;
+    window.__churvoxClientQuoteRuntimeInstalled = true;
+    document.addEventListener("click", (event) => {
+      const button = event.target?.closest?.("button");
+      if (!button || !button.closest(".freshClientsPage")) return;
+      if (String(button.textContent || "").trim().toLowerCase() !== "create quote") return;
+      const draft = readClientCardForQuote(button);
+      if (!draft?.name) return;
+      event.preventDefault();
+      event.stopPropagation();
+      window.localStorage.setItem("churvox:fresh-open-quote-modal:v1", JSON.stringify(draft));
+      window.localStorage.setItem("churvox:fresh-page", "quotes");
+      window.location.hash = pageHash("quotes");
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("churvox:open-quote-popup", { detail: draft }));
+      }, 80);
+    }, true);
+  } catch {}
+}
+
 function getInitialPage() {
   try {
     const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
@@ -304,6 +339,7 @@ export default function FreshApp() {
   React.useEffect(() => {
     installPillContrastRuntime();
     installCommandOpenRecordRuntime();
+    installClientQuoteRuntime();
   }, []);
 
   const [page, setPage] = React.useState(getInitialPage);
