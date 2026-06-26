@@ -8,6 +8,7 @@ import sys
 
 PLAN_ALIASES = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 JOB_LIMITS = {"solo": 50, "team": 150, "pro": 500, "enterprise": 1500}
+JOBS_PER_COMMAND_GROWTH_PACK = 1500
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
 
@@ -87,9 +88,12 @@ def install(module):
             owner = await owner_for(self.database, values)
             plan = normal_plan((owner or {}).get("plan") or (owner or {}).get("ui_plan") or (owner or {}).get("subscription_plan") or document.get("plan") or "solo")
             max_jobs = int(JOB_LIMITS.get(plan, JOB_LIMITS["solo"]) or 0)
+            packs = int((owner or {}).get("extra_user_blocks", 0) or 0)
+            if plan == "enterprise":
+                max_jobs += packs * JOBS_PER_COMMAND_GROWTH_PACK
             used = await job_count_this_month(self.database, values)
             if used >= max_jobs:
-                raise HTTPException(status_code=403, detail=f"Monthly job limit reached ({used}/{max_jobs} jobs this month). Upgrade your plan before adding more jobs.")
+                raise HTTPException(status_code=403, detail=f"Monthly job limit reached ({used}/{max_jobs} jobs this month). Upgrade your plan or add a Command Growth Pack before adding more jobs.")
         return await original_insert_one(self, document, *args, **kwargs)
 
     limit_checked_insert_one._churvox_monthly_job_limit_wrapped = True
