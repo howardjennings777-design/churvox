@@ -6,6 +6,15 @@ import importlib.abc
 import importlib.machinery
 import sys
 
+for _bridge_module in ["churvox_plan_usage_routes", "churvox_billing_plan_confirm_patch", "churvox_plan_checkout_form_patch"]:
+    try:
+        importlib.import_module(_bridge_module)
+    except Exception:
+        try:
+            importlib.import_module("backend." + _bridge_module)
+        except Exception:
+            pass
+
 PLAN_ALIASES = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 JOB_LIMITS = {"solo": 50, "team": 150, "pro": 500, "enterprise": 1500}
 JOBS_PER_COMMAND_GROWTH_PACK = 1500
