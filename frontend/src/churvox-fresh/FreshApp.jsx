@@ -136,6 +136,7 @@ const QUOTE_RECORD_ALIASES = ["variations"];
 const PAYMENT_RECORD_ALIASES = ["expenses"];
 const TEAM_RECORD_ALIASES = ["contractors", "subcontractors"];
 const SUPPORT_ALIASES = ["helpdesk", "trust", "roadmap"];
+const JOB_INVOICE_HANDOFF_KEY = "churvox:selected-job-for-invoice";
 
 const pages = {
   planday: FreshPlanMyDay,
@@ -278,6 +279,44 @@ function installCommandOpenRecordRuntime() {
   } catch {}
 }
 
+function cleanText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function readJobDetail(page, label) {
+  const cards = Array.from(page.querySelectorAll(".freshMiniGrid div, .freshJobsDetailBox"));
+  const match = cards.find((card) => cleanText(card.querySelector("span")?.textContent).toLowerCase() === String(label || "").toLowerCase());
+  return cleanText(match?.querySelector("b")?.textContent || match?.textContent || "").replace(new RegExp(`^${label}\\s*`, "i"), "").trim();
+}
+
+function installJobInvoiceHandoffRuntime() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+    if (window.__churvoxJobInvoiceHandoffRuntimeInstalled) return;
+    window.__churvoxJobInvoiceHandoffRuntimeInstalled = true;
+    document.addEventListener("click", (event) => {
+      const button = event.target?.closest?.("button");
+      if (!button) return;
+      const buttonText = cleanText(button.textContent).toLowerCase();
+      if (!buttonText.includes("invoice") || !buttonText.includes("create")) return;
+      const jobsPage = button.closest(".freshJobsPage");
+      if (!jobsPage) return;
+      const title = cleanText(jobsPage.querySelector(".freshJobsDetailHeader h2")?.textContent || jobsPage.querySelector(".freshJobsListCard .freshItem.active b")?.textContent || "").replace(/Needs invoice/gi, "").trim();
+      const client = readJobDetail(jobsPage, "Client") || cleanText(jobsPage.querySelector(".freshJobsListCard .freshItem.active span")?.textContent || "").split(" - ")[0];
+      const price = readJobDetail(jobsPage, "Price");
+      const address = readJobDetail(jobsPage, "Address");
+      const scheduled = readJobDetail(jobsPage, "Scheduled");
+      const job = { id: `handoff-${Date.now()}`, title, client, address, price, scheduled, source: "jobs-page-click" };
+      if (!title && !client && !price) return;
+      const raw = JSON.stringify(job);
+      window.__churvoxSelectedJobForInvoice = job;
+      window.localStorage.setItem(JOB_INVOICE_HANDOFF_KEY, raw);
+      window.sessionStorage.setItem(JOB_INVOICE_HANDOFF_KEY, raw);
+      window.dispatchEvent(new CustomEvent("churvox:invoice-handoff", { detail: job }));
+    }, true);
+  } catch {}
+}
+
 function getInitialPage() {
   try {
     const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
@@ -304,6 +343,7 @@ export default function FreshApp() {
   React.useEffect(() => {
     installPillContrastRuntime();
     installCommandOpenRecordRuntime();
+    installJobInvoiceHandoffRuntime();
   }, []);
 
   const [page, setPage] = React.useState(getInitialPage);
