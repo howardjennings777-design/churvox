@@ -235,6 +235,48 @@ function syncPageHash(page) {
   } catch {}
 }
 
+function inferCommandRecordPage(text) {
+  const value = String(text || "").toLowerCase();
+  if (/xero|accounting|sync/.test(value)) return "xero";
+  if (/payroll|pay period|timesheet|wage/.test(value)) return "payroll";
+  if (/payment|paid|unpaid|overdue|balance/.test(value)) return "payments";
+  if (/invoice|bill|charge|money|admin debt/.test(value)) return "invoices";
+  if (/quote|estimate|proposal/.test(value)) return "quotes";
+  if (/client|customer|contact|phone|email/.test(value)) return "clients";
+  if (/worker|team|staff|dispatch|acknowledge/.test(value)) return "team";
+  return "jobs";
+}
+
+function installCommandOpenRecordRuntime() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+    if (window.__churvoxCommandOpenRecordRuntimeInstalled) return;
+    window.__churvoxCommandOpenRecordRuntimeInstalled = true;
+    document.addEventListener("click", (event) => {
+      const button = event.target?.closest?.("button");
+      if (!button) return;
+      const buttonText = String(button.textContent || "").trim().toLowerCase();
+      if (!buttonText.includes("open linked record") && buttonText !== "open record") return;
+      const commandPage = button.closest(".freshCommandStablePage") || document.querySelector(".freshCommandStablePage");
+      if (!commandPage) return;
+      const activeText = [
+        commandPage.querySelector(".freshCommandFixDetail")?.textContent,
+        commandPage.querySelector(".freshJobsDetailCard")?.textContent,
+        commandPage.querySelector(".freshCommandFixItem.active")?.textContent,
+      ].filter(Boolean).join(" ");
+      const nextPage = inferCommandRecordPage(activeText);
+      window.setTimeout(() => {
+        try {
+          window.localStorage.setItem("churvox:fresh-page", nextPage);
+          const nextHash = pageHash(nextPage);
+          if (window.location.hash.replace(/^#/, "") !== nextHash) window.location.hash = nextHash;
+          else window.dispatchEvent(new HashChangeEvent("hashchange"));
+        } catch {}
+      }, 0);
+    });
+  } catch {}
+}
+
 function getInitialPage() {
   try {
     const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
@@ -258,7 +300,10 @@ function getInitialPage() {
 
 export default function FreshApp() {
   const { user } = useAuth();
-  React.useEffect(() => installPillContrastRuntime(), []);
+  React.useEffect(() => {
+    installPillContrastRuntime();
+    installCommandOpenRecordRuntime();
+  }, []);
 
   const [page, setPage] = React.useState(getInitialPage);
   const Page = pages[page] || FreshSimple;
