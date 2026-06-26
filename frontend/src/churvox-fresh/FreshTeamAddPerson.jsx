@@ -44,7 +44,8 @@ export default function FreshTeamAddPerson({ onAdded, onNavigate, disabled = fal
     async function loadLimit() {
       setCheckingLimit(true);
       try {
-        const res = await get("/plan/limits");
+        let res = await get("/team/limits");
+        if (!res?.success) res = await get("/plan/limits");
         if (alive && res?.success) setPlanLimit(cleanLimitPayload(res));
       } catch {
         if (alive) setPlanLimit(null);
@@ -62,11 +63,12 @@ export default function FreshTeamAddPerson({ onAdded, onNavigate, disabled = fal
 
   const workerLimit = Number(planLimit?.max_workers);
   const workerCount = Number(planLimit?.usage?.workers ?? 0);
-  const growthPacks = Number(planLimit?.extra_user_blocks ?? 0);
+  const growthPacks = Number(planLimit?.growth_packs ?? planLimit?.extra_user_blocks ?? 0);
+  const slotsLeft = Number(planLimit?.slots_left ?? Math.max(0, workerLimit - workerCount));
   const hasLimit = Number.isFinite(workerLimit) && workerLimit >= 0;
   const reached = disabled || (hasLimit && workerCount >= workerLimit);
   const reachedMessage = limitMessage || (hasLimit
-    ? `${nicePlanName(planLimit?.plan)} allows ${workerLimit} active worker${workerLimit === 1 ? "" : "s"}. Current workers: ${workerCount}.${growthPacks ? ` Growth Packs: ${growthPacks}.` : ""}`
+    ? `${nicePlanName(planLimit?.plan)} allows ${workerLimit} active worker${workerLimit === 1 ? "" : "s"}. Current workers: ${workerCount}. Slots left: ${Number.isFinite(slotsLeft) ? slotsLeft : 0}.${growthPacks ? ` Growth Packs: ${growthPacks}.` : ""}`
     : "This plan has reached its active worker limit.");
 
   async function submit(event) {
@@ -99,6 +101,7 @@ export default function FreshTeamAddPerson({ onAdded, onNavigate, disabled = fal
   return (
     <form className="freshActions" onSubmit={submit}>
       {checkingLimit ? <div className="freshItem"><b>Checking plan limit</b><span>Confirming available worker slots.</span></div> : null}
+      {hasLimit && !reached && !checkingLimit ? <div className="freshItem"><b>Worker slots</b><span>{workerCount}/{workerLimit} used. {Number.isFinite(slotsLeft) ? slotsLeft : 0} left.{growthPacks ? ` Growth Packs: ${growthPacks}.` : ""}</span></div> : null}
       {reached ? (
         <div className="freshItem need">
           <b>Worker limit reached</b>
