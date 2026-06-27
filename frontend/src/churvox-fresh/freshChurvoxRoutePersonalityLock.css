@@ -1,31 +1,21 @@
-/* Professional Churvox page accents.
-   One final CSS layer for the owner workspace. No runtime labels, no loud stamps. */
+/* Churvox professional workspace layer.
+   Loaded last from index.js. Keep this as the single final UI correction layer. */
 
 :root {
-  --cv-pro-ink: #111827;
-  --cv-pro-muted: #64748b;
-  --cv-pro-paper: #fffaf1;
-  --cv-pro-card: rgba(255, 255, 255, 0.86);
-  --cv-pro-line: rgba(15, 23, 42, 0.1);
-  --cv-pro-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
-  --cv-pro-orange: #f97316;
-  --cv-pro-amber: #f5b21b;
-  --cv-pro-green: #16a34a;
-  --cv-pro-blue: #2563eb;
-  --cv-pro-teal: #0f766e;
-}
-
-.freshPageScroll {
-  max-width: 1480px !important;
-  margin: 0 auto !important;
-}
-
-.freshGrid,
-.freshCommandFixLayout,
-.freshWorkerNowPanel {
-  border: 1px solid var(--cv-pro-line) !important;
-  border-radius: 22px !important;
-  box-shadow: var(--cv-pro-shadow) !important;
+  --cv-ink: #111827;
+  --cv-muted: #64748b;
+  --cv-soft: #fffaf1;
+  --cv-card: rgba(255, 255, 255, 0.9);
+  --cv-line: rgba(15, 23, 42, 0.1);
+  --cv-shadow: 0 18px 46px rgba(15, 23, 42, 0.12);
+  --cv-shadow-tight: 0 10px 26px rgba(15, 23, 42, 0.1);
+  --cv-orange: #f97316;
+  --cv-amber: #f5b21b;
+  --cv-green: #16a34a;
+  --cv-blue: #2563eb;
+  --cv-teal: #0f766e;
+  --cv-violet: #6d28d9;
+  --cv-dark: #101827;
 }
 
 .freshGrid::before,
@@ -37,16 +27,133 @@
   display: none !important;
 }
 
-/* Shared hero cleanup. Keep the Churvox identity but lower the noise. */
+.freshApp {
+  background: #f5efe4 !important;
+}
+
+.freshSide {
+  width: 218px !important;
+  padding: 14px 12px !important;
+  background:
+    radial-gradient(circle at 18px 18px, rgba(249, 115, 22, 0.34), transparent 7rem),
+    linear-gradient(180deg, #0b1220 0%, #111827 58%, #0b1220 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 12px 0 36px rgba(15, 23, 42, 0.2) !important;
+}
+
+.freshBrand {
+  min-height: 58px !important;
+  padding: 10px !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.freshBrand strong,
+.freshBrand small {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.freshBrand small {
+  opacity: 0.68 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+.freshLogoutSide {
+  margin: 10px 0 12px !important;
+  width: 100% !important;
+  min-height: 34px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #111827 !important;
+  font-weight: 900 !important;
+}
+
+.freshNav {
+  gap: 11px !important;
+}
+
+.freshNavGroup {
+  padding: 8px !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+.freshNavGroup p,
+.freshNavMore summary span {
+  color: rgba(255, 255, 255, 0.56) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.56) !important;
+  letter-spacing: 0.12em !important;
+}
+
+.freshNav button,
+.freshNavMore summary {
+  min-height: 34px !important;
+  padding: 7px 8px !important;
+  border-radius: 10px !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+.freshNav button i {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 8px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.78) !important;
+  font-size: 9px !important;
+}
+
+.freshNav button.active {
+  background: linear-gradient(90deg, #f97316, #ea580c) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 10px 22px rgba(249, 115, 22, 0.28) !important;
+}
+
+.freshNav button.active i {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.freshNavMoreItems {
+  padding-top: 8px !important;
+}
+
+.freshMain {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(249, 115, 22, 0.08), transparent 24rem),
+    linear-gradient(180deg, #fffaf1 0%, #f3eadc 100%) !important;
+}
+
+.freshPageScroll {
+  max-width: 1500px !important;
+  margin: 0 auto !important;
+  padding: 22px 24px 34px !important;
+}
+
+.freshPageScroll > section {
+  isolation: isolate !important;
+}
+
 .freshHero,
 .freshCommandRebuildHero,
 .freshWorkerFieldHero,
 .cvPayHeader,
 .freshFollowUpsHero,
 .freshXeroCompactHeader {
-  min-height: 176px !important;
-  border-radius: 18px !important;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.12) !important;
+  min-height: 168px !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: var(--cv-shadow) !important;
+  overflow: hidden !important;
 }
 
 .freshHero h1,
@@ -56,245 +163,414 @@
 .freshFollowUpsHero h1,
 .freshXeroCompactHeader h1 {
   letter-spacing: 0 !important;
+  line-height: 0.94 !important;
 }
 
-/* Jobs: dispatch board. Dark active work list, practical detail area. */
-body.cv-fresh-page-jobs .freshMain,
+.freshFlowPromiseStrip {
+  margin: 0 0 12px !important;
+  display: grid !important;
+  grid-template-columns: 1.2fr repeat(3, 1fr) !important;
+  gap: 10px !important;
+}
+
+.freshFlowPromiseStrip article,
+.freshFlowPromiseStrip .freshFlowLead {
+  min-height: 86px !important;
+  border-radius: 16px !important;
+  padding: 14px !important;
+  border: 1px solid rgba(15, 23, 42, 0.09) !important;
+  background: rgba(255, 255, 255, 0.76) !important;
+  box-shadow: var(--cv-shadow-tight) !important;
+}
+
+.freshFlowPromiseStrip .freshFlowLead {
+  background: linear-gradient(135deg, #111827, #1f2937) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.freshFlowPromiseStrip span,
+.freshFlowPromiseStrip b,
+.freshFlowPromiseStrip p {
+  letter-spacing: 0 !important;
+}
+
+.freshCommandPulse {
+  gap: 10px !important;
+  margin: 12px 0 !important;
+}
+
+.freshCommandPulse .freshCard {
+  min-height: 86px !important;
+  border-radius: 18px !important;
+  border: 1px solid var(--cv-line) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: var(--cv-shadow-tight) !important;
+}
+
+.freshGrid,
+.freshCommandFixLayout,
+.freshWorkerNowPanel {
+  border: 1px solid var(--cv-line) !important;
+  border-radius: 24px !important;
+  padding: 10px !important;
+  box-shadow: var(--cv-shadow) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.freshCard {
+  border-radius: 20px !important;
+  border: 1px solid var(--cv-line) !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06) !important;
+}
+
+.freshActions button,
+.freshJobsActionStack button,
+.freshCommandFilterBar button,
+.freshPrimary,
+.freshOrange,
+.freshDark,
+.freshGhost {
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+}
+
+body[data-fresh-page="jobs"] .freshMain,
 body:has(.freshJobsPage) .freshMain {
   background:
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.1), transparent 22rem),
-    linear-gradient(180deg, #fffaf1 0%, #f4eadc 100%) !important;
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.12), transparent 24rem),
+    linear-gradient(180deg, #fff7ed 0%, #f3eadc 100%) !important;
 }
 
-body.cv-fresh-page-jobs .freshJobsPage .freshHero,
+body[data-fresh-page="jobs"] .freshJobsPage .freshHero,
 body:has(.freshJobsPage) .freshJobsPage .freshHero {
-  border-left: 7px solid var(--cv-pro-orange) !important;
+  border-left: 8px solid var(--cv-orange) !important;
   background:
-    linear-gradient(120deg, #0f172a 0 62%, rgba(249, 115, 22, 0.2) 62% 100%),
-    radial-gradient(circle at 92% 24%, rgba(249, 115, 22, 0.36), transparent 14rem) !important;
+    radial-gradient(circle at 92% 20%, rgba(249, 115, 22, 0.42), transparent 12rem),
+    linear-gradient(110deg, #0f172a 0 58%, #2a1609 58% 100%) !important;
 }
 
-body.cv-fresh-page-jobs .freshJobsPage .freshGrid,
+body[data-fresh-page="jobs"] .freshJobsPage .freshGrid,
 body:has(.freshJobsPage) .freshJobsPage .freshGrid {
-  grid-template-columns: minmax(320px, 0.9fr) minmax(440px, 1.24fr) minmax(236px, 0.64fr) !important;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(560px, 1.48fr) minmax(250px, 0.64fr) !important;
   background:
-    linear-gradient(90deg, rgba(255, 247, 237, 0.96), rgba(255, 255, 255, 0.76)),
-    repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.035) 0 1px, transparent 1px 108px) !important;
+    linear-gradient(90deg, rgba(255, 247, 237, 0.96), rgba(255, 255, 255, 0.72)),
+    repeating-linear-gradient(90deg, rgba(249, 115, 22, 0.05) 0 1px, transparent 1px 92px) !important;
 }
 
-body.cv-fresh-page-jobs .freshJobsPage .freshJobsListCard {
+body[data-fresh-page="jobs"] .freshJobsListCard,
+body:has(.freshJobsPage) .freshJobsListCard {
   background: linear-gradient(180deg, #111827, #1f2937) !important;
   color: #fff !important;
   -webkit-text-fill-color: #fff !important;
 }
 
-body.cv-fresh-page-jobs .freshJobsPage .freshJobsListCard * {
+body[data-fresh-page="jobs"] .freshJobsListCard *,
+body:has(.freshJobsPage) .freshJobsListCard * {
   color: inherit !important;
   -webkit-text-fill-color: inherit !important;
 }
 
-body.cv-fresh-page-jobs .freshJobsPage .freshJobsDetailCard {
-  border-top: 5px solid var(--cv-pro-orange) !important;
+body[data-fresh-page="jobs"] .freshJobsListCard .freshItem,
+body:has(.freshJobsPage) .freshJobsListCard .freshItem {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.065) !important;
 }
 
-/* Clients: customer memory. Warmer profile card and green history accent. */
-body.cv-fresh-page-clients .freshMain,
+body[data-fresh-page="jobs"] .freshJobsListCard .freshItem.active,
+body:has(.freshJobsPage) .freshJobsListCard .freshItem.active {
+  background: #fff !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+body[data-fresh-page="jobs"] .freshJobsDetailCard,
+body:has(.freshJobsPage) .freshJobsDetailCard {
+  border-top: 6px solid var(--cv-orange) !important;
+}
+
+body[data-fresh-page="clients"] .freshMain,
 body:has(.freshClientsPage) .freshMain {
   background:
-    radial-gradient(circle at top left, rgba(22, 163, 74, 0.1), transparent 22rem),
-    linear-gradient(180deg, #f0fdf4 0%, #f4eadc 100%) !important;
+    radial-gradient(circle at top left, rgba(22, 163, 74, 0.13), transparent 24rem),
+    linear-gradient(180deg, #f0fdf4 0%, #f3eadc 100%) !important;
 }
 
-body.cv-fresh-page-clients .freshClientsPage .freshHero,
+body[data-fresh-page="clients"] .freshClientsPage .freshHero,
 body:has(.freshClientsPage) .freshClientsPage .freshHero {
-  border-left: 7px solid var(--cv-pro-green) !important;
+  border-left: 8px solid var(--cv-green) !important;
   background:
-    radial-gradient(circle at 88% 28%, rgba(22, 163, 74, 0.28), transparent 14rem),
-    linear-gradient(135deg, #071a13 0%, #123126 100%) !important;
+    radial-gradient(circle at 88% 24%, rgba(22, 163, 74, 0.34), transparent 13rem),
+    linear-gradient(120deg, #071a13 0%, #123126 100%) !important;
 }
 
-body.cv-fresh-page-clients .freshClientsPage .freshGrid,
+body[data-fresh-page="clients"] .freshClientsPage .freshGrid,
 body:has(.freshClientsPage) .freshClientsPage .freshGrid {
-  grid-template-columns: minmax(236px, 0.58fr) minmax(560px, 1.5fr) minmax(250px, 0.72fr) !important;
+  grid-template-columns: minmax(250px, 0.62fr) minmax(640px, 1.58fr) minmax(250px, 0.6fr) !important;
   background:
-    linear-gradient(135deg, rgba(236, 253, 245, 0.9), rgba(255, 250, 241, 0.82)),
-    repeating-linear-gradient(0deg, rgba(22, 163, 74, 0.035) 0 1px, transparent 1px 92px) !important;
+    linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(255, 250, 241, 0.82)),
+    repeating-linear-gradient(0deg, rgba(22, 163, 74, 0.045) 0 1px, transparent 1px 64px) !important;
 }
 
-body.cv-fresh-page-clients .freshClientsPage .freshJobsListCard {
-  border-left: 6px solid var(--cv-pro-green) !important;
-  background: rgba(236, 253, 245, 0.92) !important;
+body[data-fresh-page="clients"] .freshClientsPage .freshJobsListCard,
+body:has(.freshClientsPage) .freshClientsPage .freshJobsListCard {
+  background: #ecfdf5 !important;
+  border-left: 6px solid var(--cv-green) !important;
 }
 
-body.cv-fresh-page-clients .freshClientsPage .freshJobsDetailCard {
-  border-left: 6px solid var(--cv-pro-green) !important;
-  background: linear-gradient(90deg, rgba(236, 253, 245, 0.74), rgba(255, 255, 255, 0.96)) !important;
-}
-
-/* Quotes: offer pipeline. Amber highlights, not another invoice screen. */
-body.cv-fresh-page-quotes .freshMain,
-body:has(.freshQuotesPage) .freshMain {
-  background:
-    radial-gradient(circle at top left, rgba(245, 178, 27, 0.11), transparent 22rem),
-    linear-gradient(180deg, #fffbeb 0%, #f4eadc 100%) !important;
-}
-
-body.cv-fresh-page-quotes .freshQuotesPage .freshHero,
-body:has(.freshQuotesPage) .freshQuotesPage .freshHero {
-  border-left: 7px solid var(--cv-pro-amber) !important;
-  background:
-    radial-gradient(circle at 88% 28%, rgba(245, 178, 27, 0.34), transparent 14rem),
-    linear-gradient(135deg, #1b1405 0%, #3a2507 100%) !important;
-}
-
-body.cv-fresh-page-quotes .freshQuotesPage .freshGrid,
-body:has(.freshQuotesPage) .freshQuotesPage .freshGrid {
-  grid-template-columns: minmax(270px, 0.72fr) minmax(540px, 1.44fr) minmax(250px, 0.72fr) !important;
-  background:
-    linear-gradient(135deg, rgba(255, 251, 235, 0.94), rgba(255, 247, 237, 0.84)),
-    repeating-linear-gradient(90deg, rgba(146, 64, 14, 0.035) 0 1px, transparent 1px 116px) !important;
-}
-
-body.cv-fresh-page-quotes .freshQuotesPage .freshQuotesDetailCard,
-body.cv-fresh-page-quotes .freshQuotesPage .freshJobsDetailCard {
-  border-top: 5px solid var(--cv-pro-amber) !important;
-}
-
-/* Invoices: money desk. Green ledger treatment. */
-body.cv-fresh-page-invoices .freshMain,
-body:has(.freshInvoicesPage) .freshMain {
-  background:
-    radial-gradient(circle at top left, rgba(16, 185, 129, 0.11), transparent 22rem),
-    linear-gradient(180deg, #ecfdf5 0%, #f4eadc 100%) !important;
-}
-
-body.cv-fresh-page-invoices .freshInvoicesPage .freshHero,
-body:has(.freshInvoicesPage) .freshInvoicesPage .freshHero {
-  border-left: 7px solid #10b981 !important;
-  background:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 42px),
-    linear-gradient(135deg, #052e22 0%, #083b2c 100%) !important;
-}
-
-body.cv-fresh-page-invoices .freshInvoicesPage .freshGrid,
-body:has(.freshInvoicesPage) .freshInvoicesPage .freshGrid {
-  grid-template-columns: minmax(260px, 0.72fr) minmax(560px, 1.46fr) minmax(250px, 0.72fr) !important;
-  background:
-    linear-gradient(135deg, rgba(236, 253, 245, 0.94), rgba(255, 250, 241, 0.82)),
-    repeating-linear-gradient(0deg, rgba(6, 78, 59, 0.04) 0 1px, transparent 1px 58px) !important;
-}
-
-body.cv-fresh-page-invoices .freshInvoicesPage .freshInvoicesDetailCard,
-body.cv-fresh-page-invoices .freshInvoicesPage .freshJobsDetailCard {
-  border-top: 5px solid #10b981 !important;
-}
-
-/* Team: people/access workspace. */
-body.cv-fresh-page-team .freshMain {
-  background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.1), transparent 22rem),
-    linear-gradient(180deg, #eff6ff 0%, #f4eadc 100%) !important;
-}
-
-body.cv-fresh-page-team .freshPageScroll > section:not([class]) > .freshHero {
-  border-left: 7px solid var(--cv-pro-blue) !important;
-  background:
-    radial-gradient(circle at 88% 28%, rgba(37, 99, 235, 0.3), transparent 14rem),
-    linear-gradient(135deg, #09162f 0%, #132e52 100%) !important;
-}
-
-body.cv-fresh-page-team .freshPageScroll > section:not([class]) > .freshGrid {
-  grid-template-columns: minmax(260px, 0.72fr) minmax(520px, 1.42fr) minmax(260px, 0.72fr) !important;
-  background:
-    linear-gradient(135deg, rgba(239, 246, 255, 0.94), rgba(255, 250, 241, 0.82)),
-    repeating-linear-gradient(90deg, rgba(37, 99, 235, 0.035) 0 1px, transparent 1px 108px) !important;
-}
-
-body.cv-fresh-page-team .freshPageScroll > section:not([class]) .freshJobsListCard,
-body.cv-fresh-page-team .freshPageScroll > section:not([class]) .freshJobsDetailCard {
-  border-left: 6px solid var(--cv-pro-blue) !important;
-}
-
-/* Command: approval desk. Keep queue readable, not oversized. */
-body.cv-fresh-page-command .freshMain,
-body:has(.freshCommandStablePage) .freshMain {
-  background:
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.1), transparent 22rem),
-    linear-gradient(180deg, #fffaf1 0%, #f4eadc 100%) !important;
-}
-
-body.cv-fresh-page-command .freshCommandStablePage .freshCommandFixLayout,
-body:has(.freshCommandStablePage) .freshCommandStablePage .freshCommandFixLayout {
-  grid-template-columns: minmax(320px, 0.9fr) minmax(450px, 1.18fr) minmax(276px, 0.72fr) !important;
-  background: linear-gradient(135deg, rgba(255, 250, 241, 0.96), rgba(255, 255, 255, 0.76)) !important;
-}
-
-body.cv-fresh-page-command .freshCommandStablePage .freshCommandQueuePanel,
-body:has(.freshCommandStablePage) .freshCommandStablePage .freshCommandQueuePanel {
-  background: linear-gradient(180deg, #111827, #1f2937) !important;
+body[data-fresh-page="clients"] .freshClientsPage .freshJobsListCard .freshItem.active,
+body:has(.freshClientsPage) .freshClientsPage .freshJobsListCard .freshItem.active {
+  background: #063f2d !important;
   color: #fff !important;
   -webkit-text-fill-color: #fff !important;
 }
 
-body.cv-fresh-page-command .freshCommandStablePage .freshCommandFixItem,
-body:has(.freshCommandStablePage) .freshCommandStablePage .freshCommandFixItem {
-  height: auto !important;
-  min-height: 76px !important;
-  max-height: none !important;
-  overflow: visible !important;
+body[data-fresh-page="clients"] .freshClientsPage .freshJobsDetailCard,
+body:has(.freshClientsPage) .freshClientsPage .freshJobsDetailCard {
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.9), #fff) !important;
+  border-left: 6px solid var(--cv-green) !important;
 }
 
-body.cv-fresh-page-command .freshCommandStablePage .freshCommandFixItem *,
-body:has(.freshCommandStablePage) .freshCommandStablePage .freshCommandFixItem * {
+body[data-fresh-page="quotes"] .freshMain,
+body:has(.freshQuotesPage) .freshMain {
+  background:
+    radial-gradient(circle at top left, rgba(245, 178, 27, 0.14), transparent 24rem),
+    linear-gradient(180deg, #fffbeb 0%, #f3eadc 100%) !important;
+}
+
+body[data-fresh-page="quotes"] .freshQuotesPage .freshHero,
+body:has(.freshQuotesPage) .freshQuotesPage .freshHero {
+  border-left: 8px solid var(--cv-amber) !important;
+  background:
+    radial-gradient(circle at 88% 24%, rgba(245, 178, 27, 0.38), transparent 13rem),
+    linear-gradient(120deg, #1b1405 0%, #3a2507 100%) !important;
+}
+
+body[data-fresh-page="quotes"] .freshQuotesPage .freshGrid,
+body:has(.freshQuotesPage) .freshQuotesPage .freshGrid {
+  grid-template-columns: minmax(270px, 0.72fr) minmax(600px, 1.5fr) minmax(250px, 0.62fr) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 251, 235, 0.96), rgba(255, 247, 237, 0.82)),
+    repeating-linear-gradient(90deg, rgba(146, 64, 14, 0.045) 0 1px, transparent 1px 96px) !important;
+}
+
+body[data-fresh-page="quotes"] .freshQuotesPage .freshJobsDetailCard,
+body:has(.freshQuotesPage) .freshQuotesPage .freshJobsDetailCard {
+  border-top: 6px solid var(--cv-amber) !important;
+}
+
+body[data-fresh-page="invoices"] .freshMain,
+body:has(.freshInvoicesPage) .freshMain {
+  background:
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.14), transparent 24rem),
+    linear-gradient(180deg, #ecfdf5 0%, #f3eadc 100%) !important;
+}
+
+body[data-fresh-page="invoices"] .freshInvoicesPage .freshHero,
+body:has(.freshInvoicesPage) .freshInvoicesPage .freshHero {
+  border-left: 8px solid #10b981 !important;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 44px),
+    radial-gradient(circle at 90% 22%, rgba(16, 185, 129, 0.35), transparent 13rem),
+    linear-gradient(120deg, #052e22 0%, #083b2c 100%) !important;
+}
+
+body[data-fresh-page="invoices"] .freshInvoicesPage .freshGrid,
+body:has(.freshInvoicesPage) .freshInvoicesPage .freshGrid {
+  grid-template-columns: minmax(270px, 0.72fr) minmax(600px, 1.5fr) minmax(250px, 0.62fr) !important;
+  background:
+    linear-gradient(135deg, rgba(236, 253, 245, 0.96), rgba(255, 250, 241, 0.82)),
+    repeating-linear-gradient(0deg, rgba(6, 78, 59, 0.045) 0 1px, transparent 1px 58px) !important;
+}
+
+body[data-fresh-page="invoices"] .freshInvoicesPage .freshJobsDetailCard,
+body:has(.freshInvoicesPage) .freshInvoicesPage .freshJobsDetailCard {
+  border-top: 6px solid #10b981 !important;
+}
+
+body[data-fresh-page="team"] .freshMain {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.13), transparent 24rem),
+    linear-gradient(180deg, #eff6ff 0%, #f3eadc 100%) !important;
+}
+
+body[data-fresh-page="team"] .freshPageScroll > section > .freshHero {
+  border-left: 8px solid var(--cv-blue) !important;
+  background:
+    radial-gradient(circle at 88% 24%, rgba(37, 99, 235, 0.36), transparent 13rem),
+    linear-gradient(120deg, #09162f 0%, #132e52 100%) !important;
+}
+
+body[data-fresh-page="team"] .freshPageScroll > section > .freshGrid {
+  grid-template-columns: minmax(280px, 0.72fr) minmax(560px, 1.44fr) minmax(270px, 0.7fr) !important;
+  background:
+    linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(255, 250, 241, 0.82)),
+    repeating-linear-gradient(90deg, rgba(37, 99, 235, 0.045) 0 1px, transparent 1px 92px) !important;
+}
+
+body[data-fresh-page="team"] .freshPageScroll > section .freshJobsListCard,
+body[data-fresh-page="team"] .freshPageScroll > section .freshJobsDetailCard {
+  border-left: 6px solid var(--cv-blue) !important;
+}
+
+body[data-fresh-page="team"] .freshPageScroll > section .freshJobsActionsCard {
+  background: linear-gradient(180deg, #eff6ff, #fff) !important;
+}
+
+body[data-fresh-page="command"] .freshMain,
+body:has(.freshCommandStablePage) .freshMain {
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.12), transparent 24rem),
+    linear-gradient(180deg, #fff7ed 0%, #f3eadc 100%) !important;
+}
+
+body[data-fresh-page="command"] .freshCommandStablePage .freshCommandFixLayout,
+body:has(.freshCommandStablePage) .freshCommandFixLayout {
+  grid-template-columns: minmax(360px, 0.92fr) minmax(500px, 1.18fr) minmax(292px, 0.72fr) !important;
+  gap: 12px !important;
+  background: linear-gradient(135deg, rgba(255, 250, 241, 0.96), rgba(255, 255, 255, 0.78)) !important;
+}
+
+body[data-fresh-page="command"] .freshCommandQueuePanel,
+body:has(.freshCommandStablePage) .freshCommandQueuePanel {
+  background: linear-gradient(180deg, #111827, #1f2937) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  overflow: hidden !important;
+}
+
+body[data-fresh-page="command"] .freshCommandFixList,
+body:has(.freshCommandStablePage) .freshCommandFixList {
+  display: grid !important;
+  gap: 9px !important;
+  padding-right: 8px !important;
+}
+
+body[data-fresh-page="command"] .freshCommandFixItem,
+body:has(.freshCommandStablePage) .freshCommandFixItem {
+  min-height: 96px !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 14px 14px 16px !important;
+  border-radius: 18px !important;
+  overflow: visible !important;
+  line-height: 1.25 !important;
+}
+
+body[data-fresh-page="command"] .freshCommandFixItem *,
+body:has(.freshCommandStablePage) .freshCommandFixItem * {
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
+  line-height: 1.25 !important;
 }
 
-/* Worker GPS command: map panel stays obvious but not toy-like. */
-body.cv-fresh-page-workercommand .freshMain,
+body[data-fresh-page="command"] .freshCommandFixItem.active,
+body:has(.freshCommandStablePage) .freshCommandFixItem.active {
+  background: #fff !important;
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24) !important;
+}
+
+body[data-fresh-page="command"] .freshCommandFixItem.active *,
+body:has(.freshCommandStablePage) .freshCommandFixItem.active * {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+body[data-fresh-page="command"] .freshCommandFixDetail,
+body:has(.freshCommandStablePage) .freshCommandFixDetail {
+  border-top: 6px solid var(--cv-orange) !important;
+  background: #fff !important;
+}
+
+body[data-fresh-page="workercommand"] .freshMain,
 body:has(.freshWorkerLivePage) .freshMain,
 body:has(.freshWorkerCommandPage) .freshMain {
   background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.1), transparent 22rem),
-    linear-gradient(180deg, #f0fdfa 0%, #f4eadc 100%) !important;
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.13), transparent 24rem),
+    linear-gradient(180deg, #f0fdfa 0%, #f3eadc 100%) !important;
 }
 
-body.cv-fresh-page-workercommand .freshWorkerNowPanel,
+body[data-fresh-page="workercommand"] .freshWorkerFieldHero,
+body:has(.freshWorkerLivePage) .freshWorkerFieldHero,
+body:has(.freshWorkerCommandPage) .freshWorkerFieldHero {
+  border-left: 8px solid var(--cv-teal) !important;
+  background:
+    radial-gradient(circle at 88% 24%, rgba(15, 118, 110, 0.38), transparent 13rem),
+    linear-gradient(120deg, #042f2e 0%, #102a43 100%) !important;
+}
+
+body[data-fresh-page="workercommand"] .freshWorkerNowPanel,
 body:has(.freshWorkerLivePage) .freshWorkerNowPanel,
 body:has(.freshWorkerCommandPage) .freshWorkerNowPanel {
-  grid-template-columns: minmax(250px, 0.58fr) minmax(620px, 1.42fr) !important;
+  grid-template-columns: minmax(260px, 0.58fr) minmax(680px, 1.42fr) !important;
   background:
-    linear-gradient(135deg, rgba(240, 253, 250, 0.94), rgba(255, 247, 237, 0.82)),
-    repeating-linear-gradient(90deg, rgba(15, 118, 110, 0.035) 0 1px, transparent 1px 62px),
-    repeating-linear-gradient(0deg, rgba(15, 118, 110, 0.035) 0 1px, transparent 1px 62px) !important;
+    linear-gradient(135deg, rgba(240, 253, 250, 0.96), rgba(255, 247, 237, 0.82)),
+    repeating-linear-gradient(90deg, rgba(15, 118, 110, 0.05) 0 1px, transparent 1px 62px),
+    repeating-linear-gradient(0deg, rgba(15, 118, 110, 0.05) 0 1px, transparent 1px 62px) !important;
 }
 
-body.cv-fresh-page-workercommand .freshWorkerLiveMapCard,
+body[data-fresh-page="workercommand"] .freshWorkerLiveMapCard,
 body:has(.freshWorkerLivePage) .freshWorkerLiveMapCard,
 body:has(.freshWorkerCommandPage) .freshWorkerLiveMapCard {
-  min-height: 320px !important;
+  min-height: 360px !important;
   border: 1px solid rgba(15, 118, 110, 0.18) !important;
   background:
-    radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.18), transparent 7rem),
-    repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.05) 0 1px, transparent 1px 44px),
-    repeating-linear-gradient(0deg, rgba(15, 23, 42, 0.05) 0 1px, transparent 1px 44px),
+    radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.2), transparent 6rem),
+    repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.06) 0 1px, transparent 1px 42px),
+    repeating-linear-gradient(0deg, rgba(15, 23, 42, 0.06) 0 1px, transparent 1px 42px),
     #f8fafc !important;
 }
 
-@media (max-width: 1100px) {
-  body.cv-fresh-page-jobs .freshJobsPage .freshGrid,
-  body.cv-fresh-page-clients .freshClientsPage .freshGrid,
-  body.cv-fresh-page-quotes .freshQuotesPage .freshGrid,
-  body.cv-fresh-page-invoices .freshInvoicesPage .freshGrid,
-  body.cv-fresh-page-team .freshPageScroll > section:not([class]) > .freshGrid,
-  body.cv-fresh-page-command .freshCommandStablePage .freshCommandFixLayout,
-  body.cv-fresh-page-workercommand .freshWorkerNowPanel,
-  body:has(.freshJobsPage) .freshJobsPage .freshGrid,
-  body:has(.freshClientsPage) .freshClientsPage .freshGrid,
-  body:has(.freshQuotesPage) .freshQuotesPage .freshGrid,
-  body:has(.freshInvoicesPage) .freshInvoicesPage .freshGrid,
-  body:has(.freshCommandStablePage) .freshCommandStablePage .freshCommandFixLayout {
+body[data-fresh-page="settings"] .freshMain,
+body[data-fresh-page="plans"] .freshMain,
+body[data-fresh-page="support"] .freshMain,
+body[data-fresh-page="messages"] .freshMain,
+body[data-fresh-page="payroll"] .freshMain,
+body[data-fresh-page="xero"] .freshMain {
+  background:
+    radial-gradient(circle at top left, rgba(109, 40, 217, 0.1), transparent 24rem),
+    linear-gradient(180deg, #faf5ff 0%, #f3eadc 100%) !important;
+}
+
+@media (max-width: 1180px) {
+  body[data-fresh-page] .freshGrid,
+  body[data-fresh-page] .freshCommandFixLayout,
+  body[data-fresh-page] .freshWorkerNowPanel,
+  body:has(.freshJobsPage) .freshGrid,
+  body:has(.freshClientsPage) .freshGrid,
+  body:has(.freshQuotesPage) .freshGrid,
+  body:has(.freshInvoicesPage) .freshGrid,
+  body:has(.freshCommandStablePage) .freshCommandFixLayout,
+  body:has(.freshWorkerLivePage) .freshWorkerNowPanel,
+  body:has(.freshWorkerCommandPage) .freshWorkerNowPanel {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshFlowPromiseStrip {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .freshPageScroll {
+    padding: 14px 12px 92px !important;
+  }
+
+  .freshHero,
+  .freshCommandRebuildHero,
+  .freshWorkerFieldHero,
+  .cvPayHeader,
+  .freshFollowUpsHero,
+  .freshXeroCompactHeader {
+    min-height: 132px !important;
+    border-radius: 18px !important;
+  }
+
+  .freshFlowPromiseStrip {
     grid-template-columns: 1fr !important;
   }
 }
