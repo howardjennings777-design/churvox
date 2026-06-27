@@ -224,7 +224,7 @@ export default function FreshJobs({ onNavigate }) {
     setJobs((current) => [optimistic, ...current]); setSelectedId(optimistic.id); setJobModalOpen(false);
     const res = await post("/jobs", payload, { timeout: 25000 });
     if (!res.success) { setJobs((current) => current.filter((job) => job.id !== optimistic.id)); setError(res.error || "Could not save job."); setSavingJob(false); setJobModalOpen(true); return; }
-    const saved = normalizeJob(jobFromCreateResponse(res.data) || payload, 0);
+    const saved = normalizeJob({ ...payload, ...(jobFromCreateResponse(res.data) || {}), title, job_name: title }, 0);
     rememberRecentJob(saved);
     setJobs((current) => [saved, ...current.filter((job) => job.id !== optimistic.id)]);
     setSelectedId(saved.id); setActionMessage("Job created."); setSavingJob(false); setJobForm(EMPTY_JOB_FORM);

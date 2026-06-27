@@ -40,7 +40,7 @@ const createFlows = [
     listUrl: '/dashboard#jobs',
     tokenPrefix: 'Deep Logic Job',
     fields: [
-      [['title', 'job', 'name'], value => value.name],
+      [['job-title', 'title', 'job', 'name'], value => value.name],
       [['client', 'customer'], value => value.clientName],
       [['address', 'service address'], value => value.address],
       [['scheduled', 'date', 'time'], () => futureDateTime()],
@@ -66,10 +66,10 @@ const createFlows = [
     listUrl: '/dashboard#invoices',
     tokenPrefix: 'Deep Logic Invoice',
     fields: [
-      [['client', 'customer', 'name'], value => value.clientName],
-      [['address', 'service address'], value => value.address],
-      [['price', 'amount', 'total'], () => '95'],
-      [['description', 'notes', 'service'], value => `${value.name}. ${value.note}`],
+      [['invoice-customer-name', 'customer', 'client', 'name'], value => value.clientName],
+      [['invoice-site-address', 'invoice-billing-address', 'address', 'service address'], value => value.address],
+      [['invoice-line-unit-price', 'invoice-line-total', 'price', 'amount', 'total'], () => '95'],
+      [['invoice-line-description', 'invoice-public-notes', 'description', 'notes', 'service'], value => `${value.name}. ${value.note}`],
     ],
   },
 ];
@@ -136,14 +136,16 @@ async function watchErrors(page, errors) {
 async function fillAny(page, names, value) {
   for (const name of names) {
     const locators = [
-      page.getByLabel(new RegExp(name, 'i')).first(),
-      page.getByPlaceholder(new RegExp(name, 'i')).first(),
-      page.locator(`input[name*="${name}" i], textarea[name*="${name}" i]`).first(),
-      page.locator(`input[id*="${name}" i], textarea[id*="${name}" i]`).first(),
+      page.locator(`[data-testid*="${name}" i]`).first(),
+      page.getByLabel(new RegExp(name.replace(/-/g, ' '), 'i')).first(),
+      page.getByPlaceholder(new RegExp(name.replace(/-/g, ' '), 'i')).first(),
+      page.locator(`input[name*="${name}" i], textarea[name*="${name}" i], select[name*="${name}" i]`).first(),
+      page.locator(`input[id*="${name}" i], textarea[id*="${name}" i], select[id*="${name}" i]`).first(),
     ];
 
     for (const locator of locators) {
       if (!(await locator.isVisible().catch(() => false))) continue;
+      await locator.scrollIntoViewIfNeeded().catch(() => null);
       await locator.fill(String(value)).catch(async () => {
         await locator.click({ force: true }).catch(() => null);
         await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A').catch(() => null);
@@ -339,6 +341,8 @@ async function createAndVerify(page, flow, value) {
   await page.goto(flow.newUrl);
   await waitHuman(page);
   await assertPageHealth(page, `${flow.label} create page`);
+  await page.waitForSelector('input, textarea, select, button[type="submit"]', { timeout: 20000 }).catch(() => null);
+  await page.waitForTimeout(800);
 
   const filled = [];
   for (const [names, resolver] of flow.fields) {
