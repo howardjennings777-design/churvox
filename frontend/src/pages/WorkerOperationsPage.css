@@ -169,7 +169,8 @@
   font-weight: 850;
 }
 
-.cv-worker-contact-strip {
+.cv-worker-contact-strip,
+.cv-worker-message-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 9px;
@@ -177,7 +178,8 @@
 }
 
 .cv-worker-contact-strip a,
-.cv-worker-contact-strip span {
+.cv-worker-contact-strip span,
+.cv-worker-message-strip a {
   min-height: 42px;
   border: 1px solid #e6eef9;
   border-radius: 999px;
@@ -198,6 +200,12 @@
   border-color: #fed7aa;
   background: #fff7ed;
   color: #9a3412;
+}
+
+.cv-worker-message-strip a {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .cv-worker-contact-strip span {
@@ -395,6 +403,7 @@
   .cv-worker-material,
   .cv-worker-checklist,
   .cv-worker-contact-strip,
+  .cv-worker-message-strip,
   .cv-worker-proof-templates,
   .cv-worker-actions {
     grid-template-columns: 1fr;
@@ -411,6 +420,7 @@
   .cv-worker-card-links a,
   .cv-worker-contact-strip a,
   .cv-worker-contact-strip span,
+  .cv-worker-message-strip a,
   .cv-worker-proof-templates button,
   .cv-worker-actions button,
   .cv-worker-material button {
