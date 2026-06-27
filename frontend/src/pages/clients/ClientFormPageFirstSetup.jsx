@@ -8,6 +8,18 @@ import { ArrowLeft, Save, UserPlus2 } from "lucide-react";
 import { toast } from "sonner";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
+const RECENT_CLIENT_CACHE_KEY = "churvox:fresh-recent-clients:v1";
+
+function rememberRecentClient(record) {
+  try {
+    const now = Date.now();
+    const id = normalizeId(record?.id || record?._id || record?.client_id || record?.customer_id) || `local-${now}`;
+    const saved = { ...record, id, _id: record?._id || id, __cached_at: now, created_at: record?.created_at || new Date(now).toISOString() };
+    const rows = JSON.parse(window.localStorage.getItem(RECENT_CLIENT_CACHE_KEY) || "[]");
+    const current = Array.isArray(rows) ? rows : [];
+    window.localStorage.setItem(RECENT_CLIENT_CACHE_KEY, JSON.stringify([saved, ...current.filter((item) => normalizeId(item?.id || item?._id || item?.client_id || item?.customer_id) !== id)].slice(0, 20)));
+  } catch {}
+}
 
 function normalizeId(value) {
   if (!value) return "";
@@ -90,25 +102,16 @@ export default function ClientFormPageFirstSetup() {
     setSaving(true);
     const payload = {
       name,
-      client_name: name,
-      customer_name: name,
-      contact_name: name,
       email: form.email.trim(),
-      customer_email: form.email.trim(),
-      client_email: form.email.trim(),
       phone: form.phone.trim(),
-      mobile: form.phone.trim(),
-      customer_phone: form.phone.trim(),
       address: form.address.trim(),
-      site_address: form.address.trim(),
-      customer_address: form.address.trim(),
-      billing_address: form.billing_address.trim() || form.address.trim(),
       notes: form.notes.trim(),
-      internal_notes: form.notes.trim(),
     };
     const res = isEdit ? await api.patch(`/clients/${encodeURIComponent(id)}`, payload) : await api.post("/clients", payload);
     setSaving(false);
     if (!res.success) return toast.error(res.error || "Could not save client");
+    const savedClient = { ...payload, ...readClient(res), name };
+    rememberRecentClient(savedClient);
     const nextId = recordId(res) || normalizeId(id);
     toast.success(isEdit ? "Client updated" : firstSetup ? "First client created" : "Client created");
     if (firstSetup && nextId) {
@@ -116,7 +119,7 @@ export default function ClientFormPageFirstSetup() {
       navigate(`/jobs/new?client_id=${encodeURIComponent(nextId)}&first_setup=1`);
       return;
     }
-    navigate(nextId ? `/clients/${encodeURIComponent(nextId)}` : "/clients-board");
+    navigate("/dashboard#clients");
   }
 
   return <Layout><PremiumPage maxWidth={1120}>

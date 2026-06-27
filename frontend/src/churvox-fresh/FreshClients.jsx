@@ -7,6 +7,7 @@ import "./freshJobsPolish.css";
 
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
+const RECENT_CLIENT_CACHE_KEY = "churvox:fresh-recent-clients:v1";
 const emptyClient = { name: "", email: "", phone: "", address: "", notes: "" };
 const TIMELINE_ENDPOINTS = { jobs: "/jobs", quotes: "/quotes", invoices: "/invoices" };
 
@@ -66,6 +67,23 @@ function clientRecord(payload, fallback = {}) {
     if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) return candidate;
   }
   return fallback;
+}
+
+function loadRecentClientCache() {
+  try {
+    const rows = JSON.parse(window.localStorage.getItem(RECENT_CLIENT_CACHE_KEY) || "[]");
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    return Array.isArray(rows) ? rows.filter((row) => Number(row?.__cached_at || 0) > cutoff) : [];
+  } catch { return []; }
+}
+
+function mergeRecentClients(rows) {
+  const merged = new Map();
+  [...(Array.isArray(rows) ? rows : []), ...loadRecentClientCache()].forEach((row, index) => {
+    const key = normalizeId(row?.id || row?._id || row?.client_id || row?.customer_id) || `${pick(row, "name", "client_name", "customer_name")}-${index}`;
+    merged.set(key, { ...(merged.get(key) || {}), ...row });
+  });
+  return [...merged.values()];
 }
 
 function normalizeClient(client, index) {
@@ -171,13 +189,14 @@ export default function FreshClients({ onNavigate }) {
     setError("");
     const res = await get("/clients");
     if (!res.success) {
-      setClients([]);
+      const cachedClients = loadRecentClientCache().map(normalizeClient);
+      setClients(cachedClients);
       setSelectedId("");
       setError(res.error || "Could not load clients");
       setLoading(false);
       return [];
     }
-    const nextClients = hideDemoRecords(unpackList(res.data, "clients")).map(normalizeClient).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+    const nextClients = hideDemoRecords(mergeRecentClients(unpackList(res.data, "clients"))).map(normalizeClient).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
     setClients(nextClients);
     setSelectedId((current) => nextClients.some((client) => client.id === current) ? current : nextClients[0]?.id || "");
     setLoading(false);
