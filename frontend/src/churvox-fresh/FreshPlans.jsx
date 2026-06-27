@@ -473,7 +473,7 @@ export default function FreshPlans({ onNavigate }) {
       <header className="cvPlanHero">
         <div>
           <span className="cvPlanKicker">Churvox pricing</span>
-          <h1>Plans</h1>
+          <h1>Churvox does the admin. You approve.</h1>
           <p>Looks simple. Works hard underneath. Churvox prepares the admin, then you approve.</p>
           <div className="cvPlanHeroActions">
             <button className="cvPlanPrimary" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>

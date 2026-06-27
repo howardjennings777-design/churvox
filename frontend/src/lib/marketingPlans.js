@@ -46,7 +46,7 @@ export const CHURVOX_PLANS = [
       "Smart dispatch suggestions",
       "Payroll workspace (export & handoff)",
       "Reports & owner-only money desk",
-      "MYOB optional add-on (+$39/mo)",
+      "accounting optional add-on (+$39/mo)",
     ],
     cta: "Start free trial",
     highlight: true,
@@ -60,7 +60,7 @@ export const CHURVOX_PLANS = [
     activeTeam: "Up to 25 active team members",
     features: [
       "Everything in Operator",
-      "MYOB sync included (approval-first)",
+      "accounting sync included (approval-first)",
       "Prepared message categories",
       "Office Admin + Payroll role separation",
       "Priority Churvox support",
@@ -81,11 +81,11 @@ export const CHURVOX_ADDONS = [
     appliesTo: "Command",
   },
   {
-    id: "myob",
-    title: "MYOB add-on",
+    id: "accounting",
+    title: "accounting add-on",
     price: 39,
     description:
-      "Approval-first MYOB sync for Operator. Push approved invoices & contacts — nothing auto-syncs without you.",
+      "Approval-first accounting sync for Operator. Push approved invoices & contacts — nothing auto-syncs without you.",
     appliesTo: "Operator (included free in Command)",
   },
   {
