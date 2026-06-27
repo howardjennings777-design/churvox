@@ -292,7 +292,7 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
     setSaving(false);
     if (res?.success) {
       const savedRecord = jobRecordFromResponse(res.data || res.job || res.record || res);
-      const finalRecord = { ...payload, ...savedRecord, title: savedRecord.title || savedRecord.job_name || finalTitle, job_name: savedRecord.job_name || savedRecord.title || finalTitle };
+      const finalRecord = { ...payload, ...savedRecord, title: finalTitle, job_name: finalTitle };
       rememberRecentJob(finalRecord);
       toast.success("Job created");
       try { window.localStorage.removeItem(ASK_DRAFT_KEY); } catch {}
