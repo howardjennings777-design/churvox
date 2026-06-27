@@ -96,30 +96,25 @@ const CREW_GROUPS = [
   { title: "Home", items: [["planday", "PD", "Smart Hub"], ["messages", "MS", "Messages"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["recurring", "RC", "Recurring"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
-  { title: "Proof", items: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"]] },
 ];
 
 const OPERATOR_GROUPS = [
-  { title: "Home", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
-  { title: "Approval", items: [["payments", "AD", "Admin Debt"], ["automation", "FU", "Follow-Ups"], ["payroll", "PR", "Payroll"]] },
+  { title: "Home", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["recurring", "RC", "Recurring"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
-  { title: "Proof", items: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"]] },
 ];
 
 const COMMAND_GROUPS = [
-  { title: "Home", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"], ["messages", "MS", "Messages"]] },
-  { title: "Control", items: [["payments", "AD", "Admin Debt"], ["reports", "CS", "Control Score"], ["automation", "FU", "Follow-Ups"], ["payroll", "PR", "Payroll"]] },
+  { title: "Home", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"]] },
   { title: "Work", items: [["jobs", "JB", "Jobs"], ["recurring", "RC", "Recurring"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "AC", "Xero Sync"]] },
-  { title: "Proof", items: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"]] },
 ];
 
 const MORE_ITEMS_BY_PLAN = {
   start: [["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
-  crew: [["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
-  operator: [["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
-  command: [["launchcontrol", "SC", "Setup Coach"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
+  crew: [["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"], ["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
+  operator: [["messages", "MS", "Messages"], ["payments", "AD", "Admin Debt"], ["automation", "FU", "Follow-Ups"], ["payroll", "PR", "Payroll"], ["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"], ["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
+  command: [["messages", "MS", "Messages"], ["payments", "AD", "Admin Debt"], ["reports", "CS", "Control Score"], ["automation", "FU", "Follow-Ups"], ["payroll", "PR", "Payroll"], ["workercommand", "WP", "Worker Proof"], ["time", "TA", "Time Approval"], ["portal", "PT", "Proof Packs"], ["imports", "IM", "Imports"], ["exports", "EX", "Exports"], ["launchcontrol", "SC", "Setup Coach"], ["settings", "SG", "Settings"], ["plans", "PL", "Plans"], ["support", "SP", "Help"]],
 };
 
 export const SIDEBAR_GROUPS_BY_PLAN = { start: START_GROUPS, crew: CREW_GROUPS, operator: OPERATOR_GROUPS, command: COMMAND_GROUPS };
