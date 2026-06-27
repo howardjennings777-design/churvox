@@ -1,0 +1,265 @@
+/* Final route personality lock.
+   Loaded from index.js so it wins the app-wide CSS cascade. */
+
+body.cv-fresh-page-jobs #root .freshMain,
+body:has(.freshJobsPage) #root .freshMain {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(249, 115, 22, 0.15), transparent 18rem),
+    linear-gradient(180deg, #fff7ed 0%, #f1e5d3 100%) !important;
+}
+
+body.cv-fresh-page-clients #root .freshMain,
+body:has(.freshClientsPage) #root .freshMain {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(22, 163, 74, 0.14), transparent 18rem),
+    linear-gradient(180deg, #f0fdf4 0%, #eee6d8 100%) !important;
+}
+
+body.cv-fresh-page-quotes #root .freshMain,
+body:has(.freshQuotesPage) #root .freshMain {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(245, 178, 27, 0.18), transparent 18rem),
+    linear-gradient(180deg, #fffbeb 0%, #f1e5d3 100%) !important;
+}
+
+body.cv-fresh-page-invoices #root .freshMain,
+body:has(.freshInvoicesPage) #root .freshMain {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.15), transparent 18rem),
+    linear-gradient(180deg, #ecfdf5 0%, #eee6d8 100%) !important;
+}
+
+body.cv-fresh-page-team #root .freshMain {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(37, 99, 235, 0.15), transparent 18rem),
+    linear-gradient(180deg, #eff6ff 0%, #eee6d8 100%) !important;
+}
+
+body.cv-fresh-page-workercommand #root .freshMain,
+body:has(.freshWorkerLivePage) #root .freshMain,
+body:has(.freshWorkerCommandPage) #root .freshMain {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(20, 184, 166, 0.16), transparent 18rem),
+    linear-gradient(180deg, #f0fdfa 0%, #eee6d8 100%) !important;
+}
+
+body.cv-fresh-page-command #root .freshMain,
+body:has(.freshCommandStablePage) #root .freshMain {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(249, 115, 22, 0.16), transparent 18rem),
+    linear-gradient(180deg, #fff7ed 0%, #f5eadb 100%) !important;
+}
+
+/* Big page headers get different structure and colour, not just different text. */
+body.cv-fresh-page-jobs #root .freshJobsPage .freshHero,
+body:has(.freshJobsPage) #root .freshJobsPage .freshHero {
+  min-height: 210px !important;
+  border-left: 8px solid #f97316 !important;
+  background:
+    linear-gradient(115deg, rgba(7, 17, 31, 0.98) 0 56%, rgba(249, 115, 22, 0.22) 56% 100%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 56px) !important;
+}
+
+body.cv-fresh-page-clients #root .freshClientsPage .freshHero,
+body:has(.freshClientsPage) #root .freshClientsPage .freshHero {
+  min-height: 190px !important;
+  border-left: 8px solid #16a34a !important;
+  background:
+    radial-gradient(circle at 86% 50%, rgba(22, 163, 74, 0.28), transparent 13rem),
+    linear-gradient(135deg, #071a13 0%, #123126 60%, #102018 100%) !important;
+}
+
+body.cv-fresh-page-quotes #root .freshQuotesPage .freshHero,
+body:has(.freshQuotesPage) #root .freshQuotesPage .freshHero {
+  min-height: 190px !important;
+  border-left: 8px solid #f5b21b !important;
+  background:
+    radial-gradient(circle at 86% 50%, rgba(245, 178, 27, 0.32), transparent 13rem),
+    linear-gradient(135deg, #1b1405 0%, #3a2507 58%, #171207 100%) !important;
+}
+
+body.cv-fresh-page-invoices #root .freshInvoicesPage .freshHero,
+body:has(.freshInvoicesPage) #root .freshInvoicesPage .freshHero {
+  min-height: 190px !important;
+  border-left: 8px solid #10b981 !important;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 42px),
+    linear-gradient(135deg, #052e22 0%, #083b2c 58%, #0f172a 100%) !important;
+}
+
+body.cv-fresh-page-team #root .freshPageScroll > section:not([class]) > .freshHero {
+  min-height: 190px !important;
+  border-left: 8px solid #2563eb !important;
+  background:
+    radial-gradient(circle at 86% 50%, rgba(37, 99, 235, 0.3), transparent 13rem),
+    linear-gradient(135deg, #09162f 0%, #132e52 58%, #111827 100%) !important;
+}
+
+/* Workspace bodies: each page gets a different operating shape. */
+body.cv-fresh-page-jobs #root .freshJobsPage .freshGrid,
+body:has(.freshJobsPage) #root .freshJobsPage .freshGrid {
+  grid-template-columns: minmax(330px, 0.92fr) minmax(430px, 1.18fr) minmax(220px, 0.58fr) !important;
+  border: 1px solid rgba(249, 115, 22, 0.2) !important;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04), rgba(249, 115, 22, 0.08)),
+    repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.05) 0 1px, transparent 1px 88px),
+    #fff7ed !important;
+}
+
+body.cv-fresh-page-clients #root .freshClientsPage .freshGrid,
+body:has(.freshClientsPage) #root .freshClientsPage .freshGrid {
+  grid-template-columns: minmax(250px, 0.56fr) minmax(600px, 1.56fr) minmax(250px, 0.7fr) !important;
+  border: 1px solid rgba(22, 163, 74, 0.18) !important;
+  background:
+    linear-gradient(135deg, rgba(236, 253, 245, 0.9), rgba(255, 250, 241, 0.74)),
+    repeating-linear-gradient(0deg, rgba(22, 163, 74, 0.055) 0 1px, transparent 1px 86px) !important;
+}
+
+body.cv-fresh-page-quotes #root .freshQuotesPage .freshGrid,
+body:has(.freshQuotesPage) #root .freshQuotesPage .freshGrid {
+  grid-template-columns: minmax(270px, 0.72fr) minmax(560px, 1.5fr) minmax(250px, 0.7fr) !important;
+  border: 1px solid rgba(245, 178, 27, 0.24) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 251, 235, 0.95), rgba(255, 247, 237, 0.78)),
+    repeating-linear-gradient(90deg, rgba(146, 64, 14, 0.055) 0 1px, transparent 1px 112px) !important;
+}
+
+body.cv-fresh-page-invoices #root .freshInvoicesPage .freshGrid,
+body:has(.freshInvoicesPage) #root .freshInvoicesPage .freshGrid {
+  grid-template-columns: minmax(260px, 0.72fr) minmax(580px, 1.5fr) minmax(250px, 0.7fr) !important;
+  border: 1px solid rgba(16, 185, 129, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(236, 253, 245, 0.96), rgba(255, 250, 241, 0.74)),
+    repeating-linear-gradient(0deg, rgba(6, 78, 59, 0.06) 0 1px, transparent 1px 52px) !important;
+}
+
+body.cv-fresh-page-team #root .freshPageScroll > section:not([class]) > .freshGrid {
+  grid-template-columns: minmax(260px, 0.72fr) minmax(540px, 1.48fr) minmax(260px, 0.7fr) !important;
+  border: 1px solid rgba(37, 99, 235, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(255, 250, 241, 0.74)),
+    repeating-linear-gradient(90deg, rgba(37, 99, 235, 0.055) 0 1px, transparent 1px 104px) !important;
+}
+
+/* The left pane should not look identical on every page. */
+body.cv-fresh-page-jobs #root .freshJobsPage .freshJobsListCard,
+body:has(.freshJobsPage) #root .freshJobsPage .freshJobsListCard {
+  background: linear-gradient(180deg, #0f172a, #1f2937) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+body.cv-fresh-page-clients #root .freshClientsPage .freshJobsListCard,
+body:has(.freshClientsPage) #root .freshClientsPage .freshJobsListCard {
+  background: #ecfdf5 !important;
+  border-left: 6px solid #16a34a !important;
+}
+
+body.cv-fresh-page-quotes #root .freshQuotesPage .freshJobsListCard,
+body:has(.freshQuotesPage) #root .freshQuotesPage .freshJobsListCard {
+  background: #fffbeb !important;
+  border-left: 6px solid #f5b21b !important;
+}
+
+body.cv-fresh-page-invoices #root .freshInvoicesPage .freshJobsListCard,
+body:has(.freshInvoicesPage) #root .freshInvoicesPage .freshJobsListCard {
+  background: #ecfdf5 !important;
+  border-left: 6px solid #10b981 !important;
+}
+
+body.cv-fresh-page-team #root .freshPageScroll > section:not([class]) .freshJobsListCard {
+  background: #eff6ff !important;
+  border-left: 6px solid #2563eb !important;
+}
+
+/* The action rail becomes page-specific command gear. */
+body.cv-fresh-page-clients #root .freshClientsPage .freshJobsActionsCard,
+body:has(.freshClientsPage) #root .freshClientsPage .freshJobsActionsCard {
+  background: linear-gradient(180deg, #14532d, #111827) !important;
+}
+
+body.cv-fresh-page-quotes #root .freshQuotesPage .freshJobsActionsCard,
+body:has(.freshQuotesPage) #root .freshQuotesPage .freshJobsActionsCard,
+body.cv-fresh-page-quotes #root .freshQuotesPage .freshQuotesActionsCard,
+body:has(.freshQuotesPage) #root .freshQuotesPage .freshQuotesActionsCard {
+  background: linear-gradient(180deg, #78350f, #111827) !important;
+}
+
+body.cv-fresh-page-invoices #root .freshInvoicesPage .freshJobsActionsCard,
+body:has(.freshInvoicesPage) #root .freshInvoicesPage .freshJobsActionsCard,
+body.cv-fresh-page-invoices #root .freshInvoicesPage .freshInvoicesActionsCard,
+body:has(.freshInvoicesPage) #root .freshInvoicesPage .freshInvoicesActionsCard {
+  background: linear-gradient(180deg, #064e3b, #111827) !important;
+}
+
+body.cv-fresh-page-team #root .freshPageScroll > section:not([class]) .freshJobsActionsCard {
+  background: linear-gradient(180deg, #1e3a8a, #111827) !important;
+}
+
+/* Command gets cockpit treatment and fixes the queue clipping the screenshots showed. */
+body.cv-fresh-page-command #root .freshCommandStablePage .freshCommandFixLayout,
+body:has(.freshCommandStablePage) #root .freshCommandStablePage .freshCommandFixLayout {
+  grid-template-columns: minmax(320px, 0.88fr) minmax(450px, 1.18fr) minmax(280px, 0.74fr) !important;
+  border: 1px solid rgba(249, 115, 22, 0.18) !important;
+  background:
+    radial-gradient(circle at 50% -20%, rgba(249, 115, 22, 0.16), transparent 20rem),
+    linear-gradient(135deg, rgba(255, 250, 241, 0.98), rgba(255, 255, 255, 0.72)) !important;
+}
+
+body.cv-fresh-page-command #root .freshCommandStablePage .freshCommandQueuePanel,
+body:has(.freshCommandStablePage) #root .freshCommandStablePage .freshCommandQueuePanel {
+  background: linear-gradient(180deg, #0f172a, #1f2937) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+body.cv-fresh-page-command #root .freshCommandStablePage .freshCommandFixItem,
+body:has(.freshCommandStablePage) #root .freshCommandStablePage .freshCommandFixItem {
+  height: auto !important;
+  min-height: 82px !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 12px 14px !important;
+}
+
+body.cv-fresh-page-command #root .freshCommandStablePage .freshCommandFixItem *,
+body:has(.freshCommandStablePage) #root .freshCommandStablePage .freshCommandFixItem * {
+  overflow: visible !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+}
+
+/* Worker map page should show the GPS product, even with no live workers. */
+body.cv-fresh-page-workercommand #root .freshWorkerLivePage .freshWorkerNowPanel,
+body:has(.freshWorkerLivePage) #root .freshWorkerLivePage .freshWorkerNowPanel,
+body:has(.freshWorkerCommandPage) #root .freshWorkerCommandPage .freshWorkerNowPanel {
+  grid-template-columns: minmax(250px, 0.56fr) minmax(640px, 1.44fr) !important;
+  border: 1px solid rgba(20, 184, 166, 0.2) !important;
+  background:
+    linear-gradient(135deg, rgba(240, 253, 250, 0.94), rgba(255, 247, 237, 0.72)),
+    repeating-linear-gradient(90deg, rgba(20, 184, 166, 0.06) 0 1px, transparent 1px 58px),
+    repeating-linear-gradient(0deg, rgba(20, 184, 166, 0.06) 0 1px, transparent 1px 58px) !important;
+}
+
+body.cv-fresh-page-workercommand #root .freshWorkerLiveMapCard,
+body:has(.freshWorkerLivePage) #root .freshWorkerLiveMapCard,
+body:has(.freshWorkerCommandPage) #root .freshWorkerLiveMapCard {
+  min-height: 330px !important;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.25), transparent 7rem),
+    repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.06) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(0deg, rgba(15, 23, 42, 0.06) 0 1px, transparent 1px 44px),
+    #f8fafc !important;
+}
+
+@media (max-width: 1100px) {
+  body.cv-fresh-page-jobs #root .freshJobsPage .freshGrid,
+  body.cv-fresh-page-clients #root .freshClientsPage .freshGrid,
+  body.cv-fresh-page-quotes #root .freshQuotesPage .freshGrid,
+  body.cv-fresh-page-invoices #root .freshInvoicesPage .freshGrid,
+  body.cv-fresh-page-team #root .freshPageScroll > section:not([class]) > .freshGrid,
+  body.cv-fresh-page-command #root .freshCommandStablePage .freshCommandFixLayout,
+  body.cv-fresh-page-workercommand #root .freshWorkerLivePage .freshWorkerNowPanel {
+    grid-template-columns: 1fr !important;
+  }
+}
