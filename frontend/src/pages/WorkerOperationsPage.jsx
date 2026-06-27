@@ -302,6 +302,12 @@ export default function WorkerOperationsPage() {
     return id && list.findIndex((x) => idOf(x) === id) === index;
   }), [active, todayJobs, upcoming]);
 
+  const draftCount = useMemo(() => Object.keys(readWorkerDrafts()).length, [jobs.length, busy]);
+  const activeJob = active[0] || null;
+  const nextJob = visibleJobs[0] || null;
+  const handoverTitle = activeJob ? `Keep going: ${jobTitle(activeJob)}` : nextJob ? `Next: ${jobTitle(nextJob)}` : "No job waiting";
+  const handoverDetail = activeJob ? jobAddress(activeJob) : nextJob ? `${jobClient(nextJob)} - ${jobAddress(nextJob)}` : "Refresh when the boss assigns more work.";
+
   async function run(label, fn) {
     setBusy(label);
     const res = await fn();
@@ -413,6 +419,24 @@ export default function WorkerOperationsPage() {
         <article><span>Upcoming</span><b>{metrics.upcoming || 0}</b></article>
         <article><span>Completed</span><b>{metrics.completed || 0}</b></article>
         <article className="issue"><span>Issues</span><b>{metrics.issues || 0}</b></article>
+      </section>
+
+      <section className="cv-worker-day-brief">
+        <article className="now">
+          <span>Do now</span>
+          <b>{handoverTitle}</b>
+          <p>{handoverDetail}</p>
+        </article>
+        <article>
+          <span>Proof drafts</span>
+          <b>{draftCount}</b>
+          <p>{draftCount ? "Finish these before you leave site." : "No unfinished proof drafts."}</p>
+        </article>
+        <article>
+          <span>Boss handover</span>
+          <b>{metrics.completed + metrics.issues}</b>
+          <p>Completed and blocked work sends clean notes toward Command.</p>
+        </article>
       </section>
 
       {loading ? (
