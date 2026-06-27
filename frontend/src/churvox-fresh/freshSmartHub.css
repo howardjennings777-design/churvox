@@ -1001,3 +1001,59 @@
     font-size: 46px !important;
   }
 }
+
+
+/* CHURVOX_SMART_HUB_SIMPLE_TRACK_20260627 */
+.freshTodayWorkFlow {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.freshTodayWorkFlow article {
+  display: grid !important;
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: center !important;
+  border: 1px solid rgba(15, 23, 42, .10) !important;
+  border-left: 5px solid #f97316 !important;
+  border-radius: 22px !important;
+  background: #fffaf0 !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .07) !important;
+  padding: 14px !important;
+}
+
+.freshTodayWorkFlow article b {
+  grid-row: span 2 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 14px !important;
+  background: #111827 !important;
+  color: #fbbf24 !important;
+  -webkit-text-fill-color: #fbbf24 !important;
+  font-size: 18px !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayWorkFlow article span {
+  color: #101827 !important;
+  -webkit-text-fill-color: #101827 !important;
+  font-size: 15px !important;
+  font-weight: 1000 !important;
+}
+
+.freshTodayWorkFlow article small {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 860px) {
+  .freshTodayWorkFlow {
+    grid-template-columns: 1fr !important;
+  }
+}

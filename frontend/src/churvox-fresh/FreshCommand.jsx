@@ -608,6 +608,20 @@ export default function FreshCommand({ onNavigate }) {
 
       {message ? <section className="freshCommandStatusStrip"><b>{message}</b><span>Simple on top. The proof, memory and admin work stay underneath until a decision is needed.</span></section> : null}
 
+      <section className="freshCommandMemoryExample" aria-label="Command memory example">
+        <span>Memory example</span>
+        <b>Last time this client paid $85 for this type of job. Churvox prepared $85 again.</b>
+        <small>Approve it, edit it, or park it. The owner stays in control.</small>
+      </section>
+
+      <section className="freshCommandPowerStrip" aria-label="Command approval system">
+        <article><b>Admin Queue</b><span>Only what needs a decision</span></article>
+        <article><b>Prepared by Churvox</b><span>Invoice, message, payroll or Xero draft</span></article>
+        <article><b>Proof</b><span>Job, note, photo, worker time and client</span></article>
+        <article><b>Owner Decision</b><span>Approve, edit or park</span></article>
+        <article><b>Memory</b><span>Past prices and owner patterns</span></article>
+      </section>
+
       <section className="freshCommandBoard">
         <aside className="freshCommandQueuePanel">
           <div className="freshCommandPanelTitle"><span>Approval queue</span><b>{visibleGroups.length}</b></div>

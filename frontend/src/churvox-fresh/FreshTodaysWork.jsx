@@ -525,8 +525,8 @@ export default function FreshTodaysWork({ onNavigate }) {
       <header className="freshTodayWorkHero">
         <div>
           <span>Smart Hub</span>
-          <h1>Today's Plan</h1>
-          <p>Jobs, worker gaps, money waiting and admin debt. Churvox finds the stuck work; Command is where you approve it.</p>
+          <h1>Smart Hub</h1>
+          <p>Your simple track for the day: work booked, money waiting, missing proof and what needs attention. Churvox keeps the heavy admin underneath.</p>
           <div className="freshTodayWorkSync">
             <b>{loading ? "Checking today's plan..." : "Today's plan loaded"}</b>
             {lastSynced ? <small>Updated {lastSynced}</small> : null}
@@ -563,6 +563,24 @@ export default function FreshTodaysWork({ onNavigate }) {
         <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
         <button type="button" className="primary" onClick={addJob}>Add job</button>
         <button type="button" onClick={() => onNavigate?.("command")}>Review in Command</button>
+      </section>
+
+      <section className="freshTodayWorkFlow" aria-label="How Churvox keeps this simple">
+        <article>
+          <b>1</b>
+          <span>Run today's work</span>
+          <small>Jobs, clients and recurring work stay easy to find.</small>
+        </article>
+        <article>
+          <b>2</b>
+          <span>Churvox spots admin</span>
+          <small>Invoices, unpaid money, missing proof and old quotes are watched quietly.</small>
+        </article>
+        <article>
+          <b>3</b>
+          <span>Approve when ready</span>
+          <small>Command holds prepared admin for approve, edit or park.</small>
+        </article>
       </section>
 
       <section className="freshAdminDebtRadar">
