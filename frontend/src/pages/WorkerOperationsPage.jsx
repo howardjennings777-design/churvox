@@ -61,6 +61,7 @@ function scopeJobs(rawJobs, user) {
 function isOpen(job) { return !["completed", "complete", "done", "cancelled", "canceled"].includes(statusOf(job)); }
 function isCompleted(job) { return ["completed", "complete", "done", "finished"].includes(statusOf(job)); }
 function isIssue(job) { return Boolean(job?.cannot_complete_reason || job?.issue_reason || job?.blocked_reason) || statusOf(job).includes("issue"); }
+function isOnSite(job) { return Boolean(job?.worker_arrived_at || job?.arrived_at || ["onsite", "on site", "arrived"].includes(statusOf(job))); }
 function pick(record, ...keys) {
   for (const key of keys) {
     const value = record?.[key];
@@ -187,7 +188,7 @@ function pushIssueToCommand(job, reason) {
   }, 40);
 }
 
-function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume, onComplete, onIssue, onMaterial }) {
+function WorkerJobCard({ job, nextJob, onAcknowledge, onArrive, onStart, onPause, onResume, onComplete, onIssue, onMaterial }) {
   const savedDraft = readWorkerDrafts()[draftKey(job)] || {};
   const [note, setNote] = useState(savedDraft.note || job.worker_completion_notes || job.worker_notes || "");
   const [material, setMaterial] = useState(savedDraft.material || "");
@@ -195,7 +196,8 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume
   const [checklist, setChecklist] = useState(savedDraft.checklist || []);
   const status = statusOf(job);
   const completed = isCompleted(job);
-  const acknowledged = Boolean(job.acknowledged_at || job.worker_acknowledged_at || job.worker_acknowledged || status === "acknowledged");
+  const acknowledged = Boolean(job.acknowledged_at || job.worker_acknowledged_at || job.worker_acknowledged || status === "acknowledged" || isOnSite(job));
+  const arrived = isOnSite(job);
   const draft = { note, material, materials, checklist };
   const readyProof = checklist.includes("Work done") && checklist.includes("Site tidy") && (note.trim() || existingProof(job));
   const phone = jobPhone(job);
@@ -240,8 +242,8 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume
 
       <div className="cv-worker-proof-status">
         <ShieldCheck size={16} />
-        <b>{proofStatus(job, draft)}</b>
-        <span>{readyProof ? "Ready to complete" : "Tick the job checks and add a short note."}</span>
+        <b>{arrived && !completed ? "On site" : proofStatus(job, draft)}</b>
+        <span>{arrived && !completed ? "Arrival saved for the boss." : readyProof ? "Ready to complete" : "Tick the job checks and add a short note."}</span>
       </div>
 
       <div className="cv-worker-contact-strip" aria-label="Customer contact actions">
@@ -276,6 +278,7 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume
 
       <div className="cv-worker-actions">
         <button type="button" onClick={() => onAcknowledge(job)} disabled={acknowledged || completed}>Acknowledge</button>
+        <button type="button" className="arrived" onClick={() => onArrive(job)} disabled={!acknowledged || arrived || completed}>Arrived</button>
         <button type="button" onClick={() => onStart(job)} disabled={status === "in_progress" || completed}><Play size={14} /> Start</button>
         <button type="button" onClick={() => onPause(job)} disabled={status !== "in_progress"}>Pause</button>
         <button type="button" onClick={() => onResume(job)} disabled={status !== "paused"}>Resume</button>
@@ -313,7 +316,7 @@ export default function WorkerOperationsPage() {
 
   const todayKey = today();
   const todayJobs = jobs.filter((job) => isOpen(job) && (!dateOf(job) || dateOf(job) === todayKey));
-  const active = jobs.filter((job) => ["in_progress", "in progress", "started", "paused"].includes(statusOf(job)));
+  const active = jobs.filter((job) => ["in_progress", "in progress", "started", "paused", "onsite", "on site", "arrived"].includes(statusOf(job)));
   const upcoming = jobs.filter((job) => isOpen(job) && dateOf(job) && dateOf(job) > todayKey);
   const completed = jobs.filter(isCompleted);
   const issues = jobs.filter(isIssue);
@@ -356,6 +359,15 @@ export default function WorkerOperationsPage() {
       const direct = await post(`/jobs/${id}/acknowledge`, {});
       const result = direct?.success ? direct : await patch(`/jobs/${id}`, { status: "acknowledged", acknowledged_at: new Date().toISOString(), worker_acknowledged_at: new Date().toISOString() });
       if (result?.success) pushProofTrail(job, "acknowledged", `${jobTitle(job)} acknowledged by worker.`);
+      return result;
+    });
+  }
+
+  function arrive(job) {
+    run("arrive", async () => {
+      const arrivedAt = new Date().toISOString();
+      const result = await patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "onsite", worker_arrived_at: arrivedAt, arrived_at: arrivedAt });
+      if (result?.success) pushProofTrail(job, "arrived", `${jobTitle(job)} marked arrived on site.`, { arrived_at: arrivedAt });
       return result;
     });
   }
@@ -437,7 +449,7 @@ export default function WorkerOperationsPage() {
       <PremiumHero
         eyebrow="Worker app"
         title="Today jobs, proof and completion."
-        subtitle="Phone-first job control: acknowledge, start, complete properly, and send the boss a clean approval note."
+        subtitle="Phone-first job control: acknowledge, arrive, start, complete properly, and send the boss a clean approval note."
         icon={<Clock className="h-6 w-6" />}
         actions={<PremiumButton variant="secondary" onClick={loadOps} disabled={loading || Boolean(busy)}><RefreshCw size={16} className="mr-2" /> Refresh</PremiumButton>}
       />
@@ -479,6 +491,7 @@ export default function WorkerOperationsPage() {
                 job={job}
                 nextJob={visibleJobs[index + 1]}
                 onAcknowledge={acknowledge}
+                onArrive={arrive}
                 onStart={start}
                 onPause={pause}
                 onResume={resume}
