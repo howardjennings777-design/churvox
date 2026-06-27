@@ -240,7 +240,13 @@ export default function JobFormPage() {
                 <h1>{firstSetup ? "Create your first job" : "New Job"}</h1>
                 <span>{firstSetup ? "Create the first real work item for Command." : "Create a job, assign it, and keep it ready for dispatch."}</span>
               </div>
-              <button type="button" className="cv-route-modal__close" onClick={() => navigate(closeTo)}>
+              <button
+                type="button"
+                className="cv-route-modal__close"
+                aria-label="Close new job"
+                title="Close new job"
+                onClick={() => navigate(closeTo)}
+              >
                 <X className="h-5 w-5" />
               </button>
             </header>
@@ -304,7 +310,7 @@ export default function JobFormPage() {
         </section>
 
         <section className="border border-[#d8e3f3] bg-[#f6faff] rounded-xl p-4 space-y-3">
-          <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={form.is_recurring} onChange={(e) => setField("is_recurring", e.target.checked)} className="h-4 w-4" data-testid="recurring-checkbox" /><span className="text-sm font-semibold text-[#0d1b34]">Recurring job</span></label>
+          <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" aria-label="Recurring job" checked={form.is_recurring} onChange={(e) => setField("is_recurring", e.target.checked)} className="h-5 w-5 shrink-0 accent-orange-600" data-testid="recurring-checkbox" /><span className="text-sm font-semibold text-[#0d1b34]">Recurring job</span></label>
           {form.is_recurring ? <select value={form.recurring_frequency} onChange={(e) => setField("recurring_frequency", e.target.value)} className="w-full rounded-md border border-[#d8e3f3] bg-white text-[#0d1b34] p-3" data-testid="recurring-frequency"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option></select> : null}
         </section>
 
