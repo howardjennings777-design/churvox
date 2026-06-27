@@ -169,6 +169,41 @@
   font-weight: 850;
 }
 
+.cv-worker-contact-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.cv-worker-contact-strip a,
+.cv-worker-contact-strip span {
+  min-height: 42px;
+  border: 1px solid #e6eef9;
+  border-radius: 999px;
+  background: #f8fbff;
+  color: #0d1b34;
+  padding: 10px 12px;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 950;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.cv-worker-contact-strip a {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.cv-worker-contact-strip span {
+  color: #7b8798;
+}
+
 .cv-worker-details {
   margin-top: 14px;
   border-radius: 18px;
@@ -330,6 +365,7 @@
   .cv-worker-history,
   .cv-worker-material,
   .cv-worker-checklist,
+  .cv-worker-contact-strip,
   .cv-worker-actions {
     grid-template-columns: 1fr;
   }
@@ -343,6 +379,8 @@
   }
 
   .cv-worker-card-links a,
+  .cv-worker-contact-strip a,
+  .cv-worker-contact-strip span,
   .cv-worker-actions button,
   .cv-worker-material button {
     width: 100%;
