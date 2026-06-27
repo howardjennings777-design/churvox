@@ -15,6 +15,12 @@ const WORKER_DRAFT_KEY = "churvox:worker-ops-drafts:v1";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 const PROOF_TRAIL_KEY = "churvox:proof-trail:v1";
 const DONE_PROPERLY_CHECKS = ["Work done", "Site tidy", "Customer note checked", "Proof note added"];
+const PROOF_NOTE_TEMPLATES = [
+  { label: "Done tidy", note: "Job done, site tidy, ready for boss review.", checks: ["Work done", "Site tidy", "Proof note added"] },
+  { label: "Access issue", note: "Could not complete because access was blocked. Needs owner decision.", checks: ["Customer note checked", "Proof note added"] },
+  { label: "Extra work", note: "Customer asked about extra work. Needs boss to review before adding or charging.", checks: ["Customer note checked", "Proof note added"] },
+  { label: "Photo needed", note: "Work mostly done. Photo/proof still needs adding on the job detail.", checks: ["Work done", "Customer note checked", "Proof note added"] },
+];
 
 function arr(value) {
   if (Array.isArray(value)) return value;
@@ -212,6 +218,11 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume
     setMaterial("");
   }
 
+  function applyProofTemplate(template) {
+    setNote((current) => current.trim() ? `${current.trim()} ${template.note}` : template.note);
+    setChecklist((current) => Array.from(new Set([...current, ...(template.checks || [])])));
+  }
+
   return (
     <article className={`cv-worker-card ${completed ? "doneProperly" : ""}`}>
       <header>
@@ -254,6 +265,12 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume
           </label>
         ))}
       </section>
+
+      <div className="cv-worker-proof-templates" aria-label="Proof note templates">
+        {PROOF_NOTE_TEMPLATES.map((template) => (
+          <button type="button" key={template.label} onClick={() => applyProofTemplate(template)}>{template.label}</button>
+        ))}
+      </div>
 
       <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Short proof note for the boss, e.g. done, gate locked, green bin moved..." />
 
