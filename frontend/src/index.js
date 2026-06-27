@@ -22,6 +22,7 @@ import './styles/launch-workbench-fit.css';
 import './runtime/churvoxContrastGuard';
 import './runtime/authInputVisibilityGuard';
 import './styles/command-final-readable.css';
+import './churvox-fresh/freshChurvoxRoutePersonalityLock.css';
 
 // CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
 if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__) {
@@ -29,10 +30,17 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__)
 
   const syncJobsBoardClass = () => {
     const path = window.location.pathname || '';
-    const onJobsBoard = path === '/jobs' || path === '/jobs-board' || path.startsWith('/jobs/');
-    const onQuotesBoard = path === '/quotes-board' || path === '/quotes' || path.startsWith('/quotes/');
-    const onClientsBoard = path === '/clients-board' || path === '/clients' || path.startsWith('/clients/');
-    const onDispatchBoard = path === '/dispatch-board' || path === '/dispatch' || path.startsWith('/dispatch/');
+    const hash = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+    const freshPage = hash || (path.includes('jobs') ? 'jobs' : path.includes('clients') ? 'clients' : path.includes('quotes') ? 'quotes' : path.includes('invoices') ? 'invoices' : path.includes('team') ? 'team' : path.includes('plans') ? 'plans' : '');
+    const freshKeys = ['dashboard', 'planday', 'jobs', 'clients', 'quotes', 'invoices', 'team', 'command', 'workercommand', 'payroll', 'xero', 'settings', 'plans', 'support', 'messages'];
+    freshKeys.forEach((key) => document.body.classList.toggle(`cv-fresh-page-${key}`, freshPage === key || (key === 'dashboard' && freshPage === '')));
+    if (freshPage) document.body.dataset.freshPage = freshPage;
+    else delete document.body.dataset.freshPage;
+
+    const onJobsBoard = path === '/jobs' || path === '/jobs-board' || path.startsWith('/jobs/') || hash === 'jobs';
+    const onQuotesBoard = path === '/quotes-board' || path === '/quotes' || path.startsWith('/quotes/') || hash === 'quotes';
+    const onClientsBoard = path === '/clients-board' || path === '/clients' || path.startsWith('/clients/') || hash === 'clients';
+    const onDispatchBoard = path === '/dispatch-board' || path === '/dispatch' || path.startsWith('/dispatch/') || hash === 'dispatch' || hash === 'dashboard';
     document.body.classList.toggle('cv-route-jobs-board', onJobsBoard);
     document.body.classList.toggle('cv-route-quotes-board', onQuotesBoard);
     document.body.classList.toggle('cv-route-clients-board', onClientsBoard);
@@ -66,6 +74,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__)
   };
 
   window.addEventListener('popstate', syncJobsBoardClass);
+  window.addEventListener('hashchange', syncJobsBoardClass);
   window.addEventListener('load', syncJobsBoardClass);
   document.addEventListener('click', () => setTimeout(syncJobsBoardClass, 80), true);
 
