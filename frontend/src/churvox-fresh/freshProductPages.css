@@ -1,0 +1,618 @@
+:root {
+  --cvxp-ink: #111827;
+  --cvxp-muted: #667085;
+  --cvxp-line: rgba(17, 24, 39, .12);
+  --cvxp-paper: #fffaf1;
+  --cvxp-card: rgba(255, 255, 255, .86);
+  --cvxp-orange: #f97316;
+  --cvxp-green: #16a34a;
+  --cvxp-blue: #2563eb;
+  --cvxp-amber: #d97706;
+  --cvxp-money: #0f766e;
+  --cvxp-shadow: 0 24px 70px rgba(15, 23, 42, .13);
+}
+
+.cvxProductPage,
+.cvxProductPage * {
+  box-sizing: border-box;
+}
+
+.cvxProductPage {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  min-height: calc(100vh - 48px);
+  color: var(--cvxp-ink);
+}
+
+.cvxProductHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+  gap: 16px;
+  min-height: 214px;
+  align-items: stretch;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-left: 8px solid var(--cvxp-orange);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(249, 115, 22, .36), transparent 16rem),
+    linear-gradient(120deg, #070b13 0%, #111827 62%, #251509 100%);
+  box-shadow: var(--cvxp-shadow);
+  overflow: hidden;
+}
+
+.tone-green .cvxProductHero { border-left-color: var(--cvxp-green); background: radial-gradient(circle at 90% 12%, rgba(22, 163, 74, .3), transparent 16rem), linear-gradient(120deg, #07120d, #102018 62%, #111827); }
+.tone-blue .cvxProductHero { border-left-color: var(--cvxp-blue); background: radial-gradient(circle at 90% 12%, rgba(37, 99, 235, .34), transparent 16rem), linear-gradient(120deg, #071225, #132e52 62%, #111827); }
+.tone-amber .cvxProductHero { border-left-color: var(--cvxp-amber); background: radial-gradient(circle at 90% 12%, rgba(217, 119, 6, .36), transparent 16rem), linear-gradient(120deg, #180f05, #2b1908 62%, #111827); }
+.tone-money .cvxProductHero { border-left-color: var(--cvxp-money); background: radial-gradient(circle at 90% 12%, rgba(15, 118, 110, .34), transparent 16rem), linear-gradient(120deg, #05201d, #0f2f2a 62%, #111827); }
+.tone-team .cvxProductHero { border-left-color: #7c3aed; background: radial-gradient(circle at 90% 12%, rgba(124, 58, 237, .32), transparent 16rem), linear-gradient(120deg, #120a24, #23143f 62%, #111827); }
+.tone-field .cvxProductHero { border-left-color: #0ea5e9; background: radial-gradient(circle at 90% 12%, rgba(14, 165, 233, .3), transparent 16rem), linear-gradient(120deg, #061724, #102f44 62%, #111827); }
+.tone-help .cvxProductHero { border-left-color: #64748b; background: radial-gradient(circle at 90% 12%, rgba(100, 116, 139, .3), transparent 16rem), linear-gradient(120deg, #111827, #1f2937 62%, #0f172a); }
+.tone-dark .cvxProductHero { border-left-color: var(--cvxp-orange); background: radial-gradient(circle at 90% 12%, rgba(249, 115, 22, .28), transparent 16rem), linear-gradient(120deg, #020617, #111827 62%, #05070b); }
+
+.cvxProductHero > div {
+  display: grid;
+  align-content: end;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cvxProductHero span,
+.cvxProductIntent span,
+.cvxDetailPanel > span,
+.cvxDecisionSlip > span,
+.cvxSettingsBoard span {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .11);
+  color: #ffedd5;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvxProductHero h1 {
+  max-width: 920px;
+  margin: 0;
+  color: #fffaf0;
+  font-size: clamp(42px, 5vw, 76px);
+  line-height: .9;
+  letter-spacing: -.04em;
+}
+
+.cvxProductHero p {
+  max-width: 860px;
+  margin: 0;
+  color: rgba(255, 250, 240, .82);
+  font-size: 16px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.cvxProductHero aside {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-content: end;
+}
+
+.cvxProductHero aside button {
+  min-height: 86px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .08);
+  color: #fffaf0;
+  text-align: left;
+  padding: 14px;
+}
+
+.cvxProductHero aside button:disabled {
+  opacity: 1;
+}
+
+.cvxProductHero aside b {
+  display: block;
+  color: #fffaf0;
+  font-size: 30px;
+  font-weight: 1000;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.cvxProductHero aside span {
+  margin-top: 7px;
+  padding: 0;
+  background: transparent;
+  color: #fed7aa;
+  font-size: 11px;
+}
+
+.cvxProductIntent {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--cvxp-line);
+  border-radius: 22px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, .78), rgba(255, 247, 237, .86)),
+    repeating-linear-gradient(90deg, rgba(17, 24, 39, .035) 0 1px, transparent 1px 90px);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, .08);
+}
+
+.cvxProductIntent article {
+  display: grid;
+  gap: 8px;
+  min-height: 114px;
+  padding: 14px;
+  border: 1px solid rgba(17, 24, 39, .08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .78);
+}
+
+.cvxProductIntent article.decision {
+  background: #111827;
+  color: #fffaf0;
+}
+
+.cvxProductIntent article.decision * {
+  color: inherit;
+}
+
+.cvxProductIntent span {
+  padding: 0;
+  background: transparent;
+  color: #9a3412;
+}
+
+.cvxProductIntent b {
+  font-size: 18px;
+  font-weight: 1000;
+}
+
+.cvxProductIntent small {
+  color: var(--cvxp-muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.cvxProductActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cvxProductActions button,
+.cvxRailCard button,
+.cvxAdminButton {
+  min-height: 42px;
+  border: 1px solid rgba(17, 24, 39, .12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .86);
+  color: #111827;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvxProductActions button.primary,
+.cvxRailCard button:first-of-type {
+  background: #111827;
+  color: #fffaf0;
+  border-color: #111827;
+}
+
+.cvxProductActions button:disabled,
+.cvxRailCard button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.cvxProductWorkbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 12px;
+  align-items: start;
+}
+
+.cvxProductWorkbench > main,
+.cvxProductWorkbench > aside,
+.cvxRecordWorkbench,
+.cvxCommandDesk,
+.cvxWorkerDeck,
+.cvxSettingsBoard,
+.cvxSupportComposer,
+.cvxHubGrid {
+  min-width: 0;
+}
+
+.cvxRecordWorkbench,
+.cvxCommandDesk,
+.cvxWorkerDeck,
+.cvxHubGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, .78fr) minmax(0, 1.35fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.cvxStackPanel,
+.cvxDetailPanel,
+.cvxDecisionSlip,
+.cvxMapPanel,
+.cvxRailCard,
+.cvxSettingsBoard article,
+.cvxSupportComposer,
+.cvxNotice {
+  border: 1px solid var(--cvxp-line);
+  border-radius: 22px;
+  background: var(--cvxp-card);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, .08);
+}
+
+.cvxStackPanel {
+  overflow: hidden;
+}
+
+.cvxStackPanel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 14px;
+  background: #111827;
+  color: #fffaf0;
+}
+
+.cvxStackPanel header span {
+  color: #fed7aa;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvxStackPanel header b {
+  display: inline-grid;
+  min-width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, .2);
+  color: #fed7aa;
+}
+
+.cvxStackPanel > div {
+  display: grid;
+  gap: 8px;
+  max-height: 620px;
+  overflow: auto;
+  padding: 10px;
+}
+
+.cvxRecord {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  border: 1px solid rgba(17, 24, 39, .1);
+  border-left: 5px solid rgba(249, 115, 22, .55);
+  border-radius: 16px;
+  background: rgba(255, 250, 241, .82);
+  color: #111827;
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cvxRecord.active,
+.cvxRecord:hover {
+  background: #fff7ed;
+  border-left-color: #f97316;
+  box-shadow: 0 12px 24px rgba(249, 115, 22, .12);
+}
+
+.cvxRecord.money {
+  border-left-color: var(--cvxp-money);
+}
+
+.cvxRecord b {
+  font-size: 15px;
+  font-weight: 1000;
+}
+
+.cvxRecord span,
+.cvxRecord small,
+.cvxEmpty small,
+.cvxRailCard span,
+.cvxNotice span {
+  color: var(--cvxp-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.cvxDetailPanel,
+.cvxDecisionSlip,
+.cvxMapPanel,
+.cvxRailCard,
+.cvxNotice {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 16px;
+}
+
+.cvxDetailPanel > span,
+.cvxDecisionSlip > span,
+.cvxSettingsBoard span {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.cvxDetailPanel h2,
+.cvxDecisionSlip h2,
+.cvxSettingsBoard h2,
+.cvxRailCard h2 {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(26px, 3vw, 42px);
+  line-height: .96;
+  letter-spacing: -.035em;
+}
+
+.cvxDetailPanel p,
+.cvxDecisionSlip p,
+.cvxSettingsBoard p,
+.cvxSupportComposer article span {
+  margin: 0;
+  color: #4b5563;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.cvxDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.cvxDetailGrid div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(17, 24, 39, .1);
+  border-radius: 14px;
+  background: #fffaf1;
+}
+
+.cvxDetailGrid span {
+  display: block;
+  margin-bottom: 5px;
+  color: #9a3412;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvxDetailGrid b {
+  display: block;
+  min-width: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.cvxMiniFlow {
+  display: grid;
+  gap: 4px;
+  padding: 13px;
+  border-radius: 16px;
+  background: #111827;
+  color: #fffaf0;
+}
+
+.cvxMiniFlow b,
+.cvxMiniFlow span {
+  color: inherit;
+}
+
+.cvxRailCard {
+  position: sticky;
+  top: 12px;
+}
+
+.cvxRailCard button {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  text-align: left;
+}
+
+.cvxRailCard button + button {
+  margin-top: 8px;
+}
+
+.cvxRailCard b {
+  font-size: 14px;
+  font-weight: 1000;
+}
+
+.cvxNotice {
+  margin-bottom: 12px;
+  border-left: 5px solid #f97316;
+  background: #fff7ed;
+}
+
+.cvxNotice b {
+  font-size: 15px;
+  font-weight: 1000;
+}
+
+.cvxCommandDesk {
+  grid-template-columns: minmax(310px, .82fr) minmax(0, 1.45fr);
+}
+
+.cvxTextField {
+  display: grid;
+  gap: 6px;
+}
+
+.cvxTextField span,
+.cvxSupportComposer label span {
+  color: #9a3412;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvxTextField textarea,
+.cvxSupportComposer textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid rgba(17, 24, 39, .12);
+  border-radius: 16px;
+  background: #fffaf1;
+  color: #111827;
+  padding: 12px;
+  font-weight: 850;
+}
+
+.cvxHubGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cvxWorkerDeck {
+  grid-template-columns: minmax(280px, .7fr) minmax(0, 1.55fr);
+}
+
+.cvxMapPanel iframe,
+.cvxMapPanel > div:first-child {
+  width: 100%;
+  min-height: 410px;
+  border: 0;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 52% 44%, rgba(249, 115, 22, .34), transparent 5rem),
+    repeating-linear-gradient(90deg, rgba(17, 24, 39, .08) 0 1px, transparent 1px 38px),
+    repeating-linear-gradient(0deg, rgba(17, 24, 39, .08) 0 1px, transparent 1px 38px),
+    #f8fafc;
+}
+
+.cvxMapPanel > div:first-child {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  padding: 18px;
+}
+
+.cvxSettingsBoard {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cvxSettingsBoard article {
+  min-height: 220px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 16px;
+}
+
+.cvxSupportComposer {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+.cvxSupportComposer label {
+  display: grid;
+  gap: 8px;
+}
+
+.cvxSupportComposer article {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  padding: 16px;
+  border-radius: 16px;
+  background: #111827;
+  color: #fffaf0;
+}
+
+.cvxSupportComposer article b,
+.cvxSupportComposer article span {
+  color: inherit;
+}
+
+.cvxEmpty {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px dashed rgba(17, 24, 39, .18);
+  border-radius: 16px;
+  background: #fffaf1;
+}
+
+@media (max-width: 1180px) {
+  .cvxProductHero,
+  .cvxProductWorkbench,
+  .cvxRecordWorkbench,
+  .cvxCommandDesk,
+  .cvxWorkerDeck,
+  .cvxHubGrid,
+  .cvxSupportComposer {
+    grid-template-columns: 1fr;
+  }
+
+  .cvxProductIntent,
+  .cvxSettingsBoard {
+    grid-template-columns: 1fr;
+  }
+
+  .cvxRailCard {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvxProductPage {
+    min-height: auto;
+  }
+
+  .cvxProductHero {
+    min-height: auto;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .cvxProductHero h1 {
+    font-size: 42px;
+  }
+
+  .cvxProductHero aside,
+  .cvxDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .cvxProductIntent article {
+    min-height: auto;
+  }
+
+  .cvxStackPanel > div {
+    max-height: none;
+  }
+}
