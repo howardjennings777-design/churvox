@@ -244,6 +244,31 @@
   accent-color: #f97316;
 }
 
+.cv-worker-proof-templates {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cv-worker-proof-templates button {
+  border: 1px solid #d8e3f3;
+  border-radius: 999px;
+  min-height: 42px;
+  background: #fff;
+  color: #0d1b34;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cv-worker-proof-templates button:hover {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
 .cv-worker-card textarea,
 .cv-worker-material input {
   width: 100%;
@@ -366,6 +391,7 @@
   .cv-worker-material,
   .cv-worker-checklist,
   .cv-worker-contact-strip,
+  .cv-worker-proof-templates,
   .cv-worker-actions {
     grid-template-columns: 1fr;
   }
@@ -381,6 +407,7 @@
   .cv-worker-card-links a,
   .cv-worker-contact-strip a,
   .cv-worker-contact-strip span,
+  .cv-worker-proof-templates button,
   .cv-worker-actions button,
   .cv-worker-material button {
     width: 100%;
