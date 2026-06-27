@@ -111,7 +111,10 @@ test.describe('Churvox Command operating system', () => {
     expect(styles).toContain('CHURVOX_COMMAND_REBUILT_APPROVAL_PAGE_20260627');
     expect(styles).not.toContain('.freshCommandStablePage > .freshHero');
     expect(styles).not.toContain('display: none !important');
-    expect(styles).toContain('grid-template-columns: minmax(240px, .72fr) minmax(0, 1.45fr) minmax(260px, .78fr)');
+    expect(styles).toContain('grid-template-columns: minmax(300px, .9fr) minmax(480px, 1.45fr) minmax(290px, .82fr)');
+    expect(styles).toContain('height: clamp(520px, calc(100vh - 300px), 660px)');
+    expect(styles).toContain('grid-template-rows: auto auto minmax(0, 1fr)');
+    expect(styles).toContain('overflow-y: auto');
     expect(styles).toContain('overflow-wrap: anywhere');
   });
 });
