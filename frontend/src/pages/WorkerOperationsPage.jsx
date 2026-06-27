@@ -75,6 +75,7 @@ function jobAddress(job) { return pick(job, "address", "site_address", "service_
 function jobPhone(job) { return String(pick(job, "customer_phone", "client_phone", "phone", "mobile", "customer_mobile", "client_mobile") || "").trim(); }
 function jobEmail(job) { return String(pick(job, "customer_email", "client_email", "email") || "").trim(); }
 function phoneHref(phone) { return phone ? phone.replace(/[^+0-9]/g, "") : ""; }
+function smsHref(phone, body) { return `sms:${phone}?&body=${encodeURIComponent(body)}`; }
 function mapUrl(job) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(jobAddress(job))}`; }
 function draftKey(job) { return idOf(job) || `${jobTitle(job)}-${dateOf(job)}`; }
 function readWorkerDrafts() {
@@ -203,6 +204,11 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onArrive, onStart, onPause
   const phone = jobPhone(job);
   const phoneLink = phoneHref(phone);
   const email = jobEmail(job);
+  const quickMessages = [
+    { label: "On my way", body: `Hi ${jobClient(job)}, I am on my way to ${jobAddress(job)} now.` },
+    { label: "Running late", body: `Hi ${jobClient(job)}, I am running a little late but still coming today.` },
+    { label: "Finished", body: `Hi ${jobClient(job)}, the job at ${jobAddress(job)} is finished. Thanks.` },
+  ];
 
   useEffect(() => {
     writeWorkerDraft(job, { note, material, materials, checklist });
@@ -251,6 +257,14 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onArrive, onStart, onPause
         {phoneLink ? <a href={`sms:${phoneLink}`}><MessageCircle size={14} /> Text</a> : null}
         {email ? <a href={`mailto:${email}`}><Mail size={14} /> Email</a> : <span>No email saved</span>}
       </div>
+
+      {phoneLink ? (
+        <div className="cv-worker-message-strip" aria-label="Quick customer messages">
+          {quickMessages.map((message) => (
+            <a key={message.label} href={smsHref(phoneLink, message.body)}><MessageCircle size={14} /> {message.label}</a>
+          ))}
+        </div>
+      ) : null}
 
       <section className="cv-worker-details">
         <p><b>Instructions:</b> {job.description || job.notes || job.site_instructions || "No instructions saved."}</p>
