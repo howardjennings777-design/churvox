@@ -204,8 +204,8 @@ function buildView(worker, jobs) {
 
 function friendlyError(error) {
   if (!error) return "";
-  if (/not found|404/i.test(String(error))) return "Live GPS endpoint is not connected yet. Team records and jobs can still show here.";
-  return String(error);
+  if (/not found|404/i.test(String(error))) return "";
+  return "Worker live data could not refresh. Saved team records and jobs can still show here.";
 }
 
 function JobRow({ job }) {
@@ -224,12 +224,12 @@ function EmptyGpsDeck({ onNavigate, onRefresh, refreshing }) {
   return (
     <section className="freshWorkerNowPanel freshWorkerLiveEmptyDeck">
       <article className="freshWorkerNowLeft">
-        <span>GPS command standby</span>
-        <h2>Worker map is ready</h2>
-        <p>Add or invite workers from Team. Once the worker app sends location, Churvox shows GPS, current job, proof, alerts and time here.</p>
+        <span>Worker command ready</span>
+        <h2>Live worker map</h2>
+        <p>Add workers from Team and assign jobs. When the worker app sends location, Churvox shows GPS, current job, proof, alerts and time here.</p>
         <div className="freshWorkerStatusLine">
           <b>No live worker selected</b>
-          <small>This is not a dead page. It is the owner worker command view waiting for real worker data.</small>
+          <small>GPS, job status, proof and time appear here as soon as worker data arrives.</small>
         </div>
         <div className="freshWorkerNowActions">
           <button type="button" onClick={() => onNavigate?.("team")}>Open Team</button>
@@ -307,13 +307,14 @@ export default function FreshWorkerCommandLive({ onNavigate }) {
     }
 
     const ordered = sortWorkers(nextWorkers);
+    const message = friendlyError(lastError);
     setWorkers(ordered);
     setJobs(nextJobs);
     setSelectedId((current) => {
       if (ordered.some((worker, index) => idOf(worker, `worker-${index}`) === current)) return current;
       return idOf(ordered[0], "");
     });
-    setError(ordered.length ? "" : friendlyError(lastError));
+    setError(ordered.length || !message ? "" : message);
     setLastUpdated(new Date());
     setLoading(false);
     setRefreshing(false);
@@ -341,7 +342,7 @@ export default function FreshWorkerCommandLive({ onNavigate }) {
           <div><b>{proofCount}</b><small>proof items</small></div>
         </div>
         <div className="freshWorkerLiveStrip">
-          <b>{loading ? "Loading live worker command" : error ? "Live feed note" : "Worker command ready"}</b>
+          <b>{loading ? "Loading worker command" : error ? "Worker data note" : "Worker command ready"}</b>
           <span>{lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" })}` : "Checking worker GPS and jobs"}</span>
           <button type="button" onClick={() => load({ silent: true })}>{refreshing ? "Refreshing" : "Refresh"}</button>
           <button type="button" onClick={() => setAutoRefresh((value) => !value)}>{autoRefresh ? "Auto on" : "Auto off"}</button>
@@ -350,7 +351,7 @@ export default function FreshWorkerCommandLive({ onNavigate }) {
 
       {error ? (
         <section className="freshWorkerLiveNotice">
-          <b>Worker view note</b>
+          <b>Worker data note</b>
           <span>{error}</span>
         </section>
       ) : null}
@@ -362,7 +363,7 @@ export default function FreshWorkerCommandLive({ onNavigate }) {
             <button type="button" onClick={() => load({ silent: true })}>{refreshing ? "Updating" : "Refresh"}</button>
           </div>
           {loading && !workers.length ? <div className="freshWorkerLiveEmpty"><b>Loading workers</b><span>Checking worker GPS, jobs and app status.</span></div> : null}
-          {!loading && !workers.length ? <div className="freshWorkerLiveEmpty"><b>No live workers yet</b><span>Add workers from Team. GPS appears here when the worker app sends location.</span></div> : null}
+          {!loading && !workers.length ? <div className="freshWorkerLiveEmpty"><b>No workers yet</b><span>Add workers from Team. GPS appears when the worker app sends location.</span></div> : null}
           {workers.map((worker, index) => {
             const workerId = idOf(worker, `worker-${index}`);
             const itemView = buildView(worker, jobs);
