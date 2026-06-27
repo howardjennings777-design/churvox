@@ -73,6 +73,7 @@ import "./freshTodaysWork.css";
 import "./freshUltimateContrast.css";
 import "./freshVariations.css";
 import "./freshWarranties.css";
+import "./freshBossProofRail.css";
 import FreshShell from "./FreshShell";
 import FreshPlanGate from "./FreshPlanGate";
 import FreshSimple from "./FreshSimple";
@@ -120,6 +121,7 @@ import FreshMaterialsReminder from "./FreshMaterialsReminder";
 import FreshMaterialsAI from "./FreshMaterialsAI";
 import FreshNz from "./FreshNz";
 import FreshPortal from "./FreshPortal";
+import FreshBossProofRail from "./FreshBossProofRail";
 import { installPillContrastRuntime } from "./freshPillContrastRuntime";
 import "./freshFinalContrastLock.css";
 import "./freshPillContrastSystem.css";
@@ -391,6 +393,7 @@ export default function FreshApp() {
       <FreshPlanGate key={`${page}-${planGateRefresh}`} page={page} user={user} onNavigate={navigate}>
         <Page page={page} onNavigate={navigate} />
       </FreshPlanGate>
+      <FreshBossProofRail onNavigate={navigate} />
     </FreshShell>
   );
 }
