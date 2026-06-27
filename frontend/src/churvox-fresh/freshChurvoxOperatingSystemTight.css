@@ -1,0 +1,194 @@
+/* Final workspace tightening: pages should feel like one useful command surface, not floating cards. */
+
+.freshMain {
+  min-width: 0 !important;
+}
+
+.freshPageScroll {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.freshPageScroll > section {
+  width: 100% !important;
+  max-width: none !important;
+  justify-self: stretch !important;
+  box-sizing: border-box !important;
+}
+
+.freshPageScroll > section:has(> .freshHero),
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.freshPageScroll > section:has(> .freshHero) > .freshHero,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) > .freshHero {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 168px !important;
+  padding: 22px 24px !important;
+  box-sizing: border-box !important;
+}
+
+.freshPageScroll > section:has(> .freshHero) > .freshHero h1,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) > .freshHero h1 {
+  font-size: clamp(46px, 5.7vw, 76px) !important;
+}
+
+.freshPageScroll > section:has(> .freshHero) > .freshCommandPulse,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) > .freshCommandPulse {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+.freshPageScroll > section:has(> .freshHero) > .freshGrid,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) > .freshGrid {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(420px, 1.35fr) minmax(260px, 0.85fr) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+  width: 100% !important;
+}
+
+.freshPageScroll > section:has(> .freshHero) .freshJobsListCard,
+.freshPageScroll > section:has(> .freshHero) .freshJobsDetailCard,
+.freshPageScroll > section:has(> .freshHero) .freshJobsActionsCard,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshJobsListCard,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshJobsDetailCard,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshJobsActionsCard {
+  min-height: 310px !important;
+  padding: 18px !important;
+}
+
+.freshPageScroll > section:has(> .freshHero) .freshJobsActionsCard,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshJobsActionsCard {
+  position: sticky !important;
+  top: 14px !important;
+  align-self: start !important;
+  min-height: 0 !important;
+}
+
+.freshPageScroll > section:has(> .freshHero) .freshActions,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshActions {
+  display: grid !important;
+  gap: 9px !important;
+}
+
+.freshPageScroll > section:has(> .freshHero) .freshActions button,
+.freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshActions button {
+  width: 100% !important;
+}
+
+.freshClientsPage .freshFlowPromiseStrip {
+  order: 2 !important;
+}
+
+.freshClientsPage > .freshHero {
+  order: 1 !important;
+}
+
+.freshClientsPage > .freshCommandPulse,
+.freshClientsPage > .freshField,
+.freshClientsPage > .freshGrid {
+  order: 3 !important;
+}
+
+.freshClientsPage .freshFlowPromiseStrip {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.freshClientsPage .freshFlowPromiseStrip article {
+  min-height: 92px !important;
+  padding: 13px !important;
+}
+
+.freshClientsPage .freshField {
+  margin: 0 !important;
+}
+
+.freshClientsPage .freshJobsDetailCard .freshMiniGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.freshClientsPage .freshJobsDetailCard {
+  min-width: 0 !important;
+}
+
+.freshClientsPage .freshJobsDetailCard h2,
+.freshPageScroll > section:has(> .freshHero) .freshJobsDetailCard h2 {
+  font-size: clamp(24px, 2.1vw, 34px) !important;
+  line-height: 1.02 !important;
+}
+
+.freshTeamPage,
+.freshPageScroll > section:has(> .freshHero > span) {
+  --team-card-min: 310px;
+}
+
+.freshPageScroll > section:has(> .freshHero > span) .freshTimelineList {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.freshPageScroll > section:has(> .freshHero > span) .freshTimelineItem,
+.freshPageScroll > section:has(> .freshHero > span) .freshTimelineList article {
+  border-radius: 12px !important;
+  border: 1px solid rgba(17, 24, 39, 0.08) !important;
+  background: #fffaf0 !important;
+  padding: 10px 12px !important;
+}
+
+@media (min-width: 1100px) {
+  .freshPageScroll {
+    padding-left: 18px !important;
+    padding-right: 20px !important;
+  }
+
+  .freshClientsPage > .freshHero,
+  .freshPageScroll > section:has(> .freshHero) > .freshHero {
+    min-height: 176px !important;
+  }
+}
+
+@media (max-width: 1240px) {
+  .freshPageScroll > section:has(> .freshHero) > .freshGrid,
+  .freshPageScroll > section:has(> .freshFlowPromiseStrip) > .freshGrid {
+    grid-template-columns: minmax(230px, 0.8fr) minmax(0, 1.2fr) !important;
+  }
+
+  .freshPageScroll > section:has(> .freshHero) .freshJobsActionsCard,
+  .freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshJobsActionsCard {
+    position: static !important;
+    grid-column: 1 / -1 !important;
+  }
+
+  .freshPageScroll > section:has(> .freshHero) .freshActions,
+  .freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshActions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .freshPageScroll > section:has(> .freshHero) > .freshCommandPulse,
+  .freshPageScroll > section:has(> .freshFlowPromiseStrip) > .freshCommandPulse,
+  .freshClientsPage .freshFlowPromiseStrip,
+  .freshClientsPage .freshJobsDetailCard .freshMiniGrid,
+  .freshPageScroll > section:has(> .freshHero) > .freshGrid,
+  .freshPageScroll > section:has(> .freshFlowPromiseStrip) > .freshGrid,
+  .freshPageScroll > section:has(> .freshHero) .freshActions,
+  .freshPageScroll > section:has(> .freshFlowPromiseStrip) .freshActions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshPageScroll > section:has(> .freshHero) > .freshHero,
+  .freshPageScroll > section:has(> .freshFlowPromiseStrip) > .freshHero {
+    min-height: 150px !important;
+    padding: 18px !important;
+  }
+}
