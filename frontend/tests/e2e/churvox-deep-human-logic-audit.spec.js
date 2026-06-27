@@ -152,6 +152,26 @@ async function clickAny(page, names) {
   return false;
 }
 
+async function submitLoginForm(page) {
+  const form = page.locator('form').first();
+  const submit = form.locator('button[type="submit"], input[type="submit"]').first();
+  if (await submit.isVisible().catch(() => false)) {
+    await submit.click({ timeout: 8000 });
+    await waitHuman(page);
+    return;
+  }
+
+  const formButton = form.getByRole('button', { name: /sign in|log in|login/i }).first();
+  if (await formButton.isVisible().catch(() => false)) {
+    await formButton.click({ timeout: 8000 });
+    await waitHuman(page);
+    return;
+  }
+
+  await page.locator('input[type="password"]').first().press('Enter');
+  await waitHuman(page);
+}
+
 async function login(page) {
   if (!OWNER_EMAIL || !OWNER_PASSWORD) {
     throw new Error('Missing CHURVOX_OWNER_EMAIL/CHURVOX_OWNER_PASSWORD or CHURVOX_E2E_EMAIL/CHURVOX_E2E_PASSWORD. Deep logic tests must fail instead of skipping.');
@@ -164,7 +184,7 @@ async function login(page) {
   await waitHuman(page);
   await fillAny(page, ['email'], OWNER_EMAIL);
   await fillAny(page, ['password'], OWNER_PASSWORD);
-  await clickAny(page, [/log in/i, /login/i, /sign in/i]);
+  await submitLoginForm(page);
   await page.waitForURL(/dashboard|plans|setup|guide|worker|admin/i, { timeout: 40000 }).catch(() => null);
   await waitHuman(page);
 
