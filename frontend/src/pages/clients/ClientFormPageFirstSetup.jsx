@@ -90,10 +90,21 @@ export default function ClientFormPageFirstSetup() {
     setSaving(true);
     const payload = {
       name,
+      client_name: name,
+      customer_name: name,
+      contact_name: name,
       email: form.email.trim(),
+      customer_email: form.email.trim(),
+      client_email: form.email.trim(),
       phone: form.phone.trim(),
+      mobile: form.phone.trim(),
+      customer_phone: form.phone.trim(),
       address: form.address.trim(),
+      site_address: form.address.trim(),
+      customer_address: form.address.trim(),
+      billing_address: form.billing_address.trim() || form.address.trim(),
       notes: form.notes.trim(),
+      internal_notes: form.notes.trim(),
     };
     const res = isEdit ? await api.patch(`/clients/${encodeURIComponent(id)}`, payload) : await api.post("/clients", payload);
     setSaving(false);
