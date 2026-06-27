@@ -66,7 +66,7 @@ const createFlows = [
     listUrl: '/dashboard#invoices',
     tokenPrefix: 'Deep Logic Invoice',
     fields: [
-      [['invoice-customer-name', 'customer', 'client', 'name'], value => value.clientName],
+      [['invoice-customer-name', 'customer', 'client', 'name'], value => value.name],
       [['invoice-site-address', 'invoice-billing-address', 'address', 'service address'], value => value.address],
       [['invoice-line-unit-price', 'invoice-line-total', 'price', 'amount', 'total'], () => '95'],
       [['invoice-line-description', 'invoice-public-notes', 'description', 'notes', 'service'], value => `${value.name}. ${value.note}`],
