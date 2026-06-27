@@ -169,7 +169,7 @@ export default function JobFormPage() {
       navigate(`/dashboard?first_setup=done${nextId ? `&job_id=${encodeURIComponent(nextId)}` : ""}`);
       return;
     }
-    navigate(nextId ? `/jobs/${nextId}` : "/jobs-board");
+    navigate("/dashboard#jobs");
   }
 
   async function handleSubmit(event) {
@@ -218,7 +218,7 @@ export default function JobFormPage() {
     setSaving(false);
     toast.success(isEdit ? "Job updated" : "Job created");
     const nextId = createdId(res) || id;
-    navigate(nextId ? `/jobs/${nextId}` : "/jobs-board");
+    navigate("/dashboard#jobs");
   }
 
   if (!isEdit) {

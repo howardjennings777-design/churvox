@@ -148,6 +148,7 @@ export default function FreshJobs({ onNavigate }) {
   const [jobModalOpen, setJobModalOpen] = React.useState(false);
   const [jobForm, setJobForm] = React.useState(EMPTY_JOB_FORM);
   const [savingJob, setSavingJob] = React.useState(false);
+  const [recentSavedJobs, setRecentSavedJobs] = React.useState([]);
   const [archivedJobIds, setArchivedJobIds] = React.useState(loadArchivedJobIds);
 
   const activeJobs = React.useMemo(() => jobs.filter((job) => !archivedJobIds.includes(String(job.id))), [jobs, archivedJobIds]);
@@ -170,7 +171,9 @@ export default function FreshJobs({ onNavigate }) {
     setLoading(true); setError("");
     const res = await get("/jobs", { timeout: 25000 });
     if (!res.success) { setJobs([]); setSelectedId(""); setError(res.error || "Could not load jobs"); setLoading(false); return; }
+    const cachedJobs = loadRecentJobCache().map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime);
     const nextJobs = hideDemoRecords(mergeRecentJobs(unpackList(res.data, "jobs"))).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+    setRecentSavedJobs(cachedJobs);
     setJobs(nextJobs); setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs.find((job) => !loadArchivedJobIds().includes(String(job.id)))?.id || nextJobs[0]?.id || ""); setLoading(false);
   }, [get]);
 
@@ -248,7 +251,7 @@ export default function FreshJobs({ onNavigate }) {
       <section className="freshCommandFilterBar">{filters.map((item) => <button type="button" key={item} className={filter === item ? "active" : ""} style={filterPillStyle(filter === item)} onClick={() => setFilter(item)}><span style={filterTextStyle(filter === item)}>{item}</span><b style={filterCountStyle(filter === item)}>{filterCount(item)}</b></button>)}</section>
 
       <section className="freshGrid">
-        <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking saved job records.</span></div> : visibleJobs.map((job) => { const jobNeedsInvoice = needsInvoice(job, story.invoices); return <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" || jobNeedsInvoice ? "need" : ""} ${jobNeedsInvoice ? "freshJobNeedsInvoiceItem" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}{jobNeedsInvoice ? <em className="freshJobNeedsInvoiceBadge">Needs invoice</em> : null}</b><span>{job.client} - {jobNeedsInvoice ? "Completed, not invoiced" : job.status} - {job.scheduled}</span></button>; })}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No active jobs found</b><span>Create a job, clear the filter, or refresh if completed jobs were archived locally.</span></div> : null}</aside>
+        <aside className="freshCard freshJobsListCard"><h2>Job list</h2>{recentSavedJobs.length ? <div className="freshItem need"><b>Recently saved</b><span>{recentSavedJobs.slice(0, 3).map((job) => `${job.title} - ${job.client}`).join(" | ")}</span></div> : null}{loading && jobs.length === 0 ? <div className="freshItem"><b>Loading jobs...</b><span>Checking saved job records.</span></div> : visibleJobs.map((job) => { const jobNeedsInvoice = needsInvoice(job, story.invoices); return <button type="button" className={`freshItem ${selected?.id === job.id ? "active" : ""} ${job.status === "Blocked" || jobNeedsInvoice ? "need" : ""} ${jobNeedsInvoice ? "freshJobNeedsInvoiceItem" : ""}`} key={job.id} onClick={() => setSelectedId(job.id)}><b>{job.title}{jobNeedsInvoice ? <em className="freshJobNeedsInvoiceBadge">Needs invoice</em> : null}</b><span>{job.client} - {jobNeedsInvoice ? "Completed, not invoiced" : job.status} - {job.scheduled}</span></button>; })}{loading && jobs.length > 0 ? <div className="freshItem"><b>Refreshing jobs...</b><span>Showing current saved jobs while Churvox refreshes.</span></div> : null}{!loading && visibleJobs.length === 0 ? <div className="freshItem"><b>No active jobs found</b><span>Create a job, clear the filter, or refresh if completed jobs were archived locally.</span></div> : null}</aside>
 
         <section className="freshCard freshJobsDetailCard">
           <div className="freshJobsDetailHeader"><div><small>Job record</small><h2>{selected?.title || "Select job"}</h2></div>{selected ? <span className={selectedNeedsInvoice ? "need" : selected.status === "Completed" ? "ready" : selected.status === "Blocked" ? "need" : ""}>{selectedNeedsInvoice ? "Needs invoice" : selected.status}</span> : null}</div>
