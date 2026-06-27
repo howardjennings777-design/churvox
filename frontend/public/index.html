@@ -101,6 +101,78 @@
         margin-top: 8px !important;
         box-shadow: 0 -12px 24px rgba(15,23,42,.08) !important;
       }
+      body .freshApp .freshCommandStablePage .freshCommandQueuePanel,
+      body .freshApp .freshCommandStablePage .freshCommandFixQueue {
+        overflow: hidden !important;
+      }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList,
+      body .freshApp .freshCommandStablePage .freshCommandFixQueue > div:last-child {
+        display: grid !important;
+        align-content: start !important;
+        gap: 8px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding-right: 8px !important;
+        scrollbar-gutter: stable !important;
+      }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList > button,
+      body .freshApp .freshCommandStablePage .freshCommandQueueList > article,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem {
+        display: grid !important;
+        align-content: start !important;
+        gap: 5px !important;
+        min-height: 84px !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 11px 12px !important;
+        border-radius: 16px !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        transform: none !important;
+      }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList > button.active,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem.active {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 22px rgba(15,23,42,.14) !important;
+      }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList em,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem em {
+        display: inline-flex !important;
+        width: fit-content !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 4px 8px !important;
+        border-radius: 999px !important;
+        font-size: 9px !important;
+        line-height: 1 !important;
+      }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList b,
+      body .freshApp .freshCommandStablePage .freshCommandQueueList span,
+      body .freshApp .freshCommandStablePage .freshCommandQueueList small,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem b,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem span,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem small,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem strong {
+        display: block !important;
+        min-width: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        text-overflow: clip !important;
+        overflow-wrap: anywhere !important;
+      }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList b,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem b {
+        font-size: 14px !important;
+        line-height: 1.16 !important;
+      }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList span,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem span,
+      body .freshApp .freshCommandStablePage .freshCommandFixItem small {
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+      }
       @media (max-width: 640px) {
         .rvShade .rvModal { border-radius: 24px !important; padding: 14px !important; }
         .rvShade .rvModalGrid { grid-template-columns: 1fr !important; }
