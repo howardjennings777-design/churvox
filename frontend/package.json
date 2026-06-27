@@ -57,6 +57,7 @@
   "scripts": {
     "start": "node server.cjs",
     "build": "craco build",
+    "test:launch:gate": "node scripts/churvox-launch-gate.cjs",
     "test": "craco test",
     "render-build": "npm install --legacy-peer-deps && npm run build",
     "test:e2e": "playwright test",
