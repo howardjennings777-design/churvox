@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
 const root = process.cwd();
-const reportDir = path.join(root, 'test-results');
+const reportDir = process.env.CHURVOX_LAUNCH_GATE_REPORT_DIR || path.join(os.tmpdir(), 'churvox-launch-gate');
 const reportPath = path.join(reportDir, 'churvox-launch-gate-report.txt');
 
-fs.mkdirSync(reportDir, { recursive: true });
+function ensureReportDir() {
+  fs.mkdirSync(reportDir, { recursive: true });
+}
+
+function appendReport(value) {
+  ensureReportDir();
+  fs.appendFileSync(reportPath, value);
+}
+
+ensureReportDir();
 fs.writeFileSync(reportPath, `Churvox launch gate\nStarted: ${new Date().toISOString()}\n\n`);
 
 const env = {
@@ -19,11 +29,11 @@ const env = {
 
 function log(line = '') {
   process.stdout.write(`${line}\n`);
-  fs.appendFileSync(reportPath, `${line}\n`);
+  appendReport(`${line}\n`);
 }
 
 function missingOwnerCredentials() {
-  return !env.CHURVOX_OWNER_EMAIL && !env.CHURVOX_E2E_EMAIL || !env.CHURVOX_OWNER_PASSWORD && !env.CHURVOX_E2E_PASSWORD;
+  return (!env.CHURVOX_OWNER_EMAIL && !env.CHURVOX_E2E_EMAIL) || (!env.CHURVOX_OWNER_PASSWORD && !env.CHURVOX_E2E_PASSWORD);
 }
 
 function runStep(step) {
@@ -36,11 +46,11 @@ function runStep(step) {
 
     child.stdout.on('data', (chunk) => {
       process.stdout.write(chunk);
-      fs.appendFileSync(reportPath, chunk);
+      appendReport(chunk);
     });
     child.stderr.on('data', (chunk) => {
       process.stderr.write(chunk);
-      fs.appendFileSync(reportPath, chunk);
+      appendReport(chunk);
     });
     child.on('close', (code) => {
       const seconds = Math.round((Date.now() - started) / 1000);
