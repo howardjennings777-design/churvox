@@ -3,13 +3,17 @@ import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
-import { AlertTriangle, Camera, CheckCircle, Clock, Play, RefreshCw } from "lucide-react";
+import { AlertTriangle, Camera, CheckCircle, Clock, MapPin, Play, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import "./WorkerOperationsPage.css";
 
 // CHURVOX_WORKER_OPS_STABLE_JOBS_20260601
 // This page no longer depends on a custom /worker/ops backend route.
 // It builds the worker operations view from stable /jobs and patches job records.
+
+const WORKER_DRAFT_KEY = "churvox:worker-ops-drafts:v1";
+const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const DONE_PROPERLY_CHECKS = ["Work done", "Site tidy", "Customer note checked", "Proof note added"];
 
 function arr(value) {
   if (Array.isArray(value)) return value;
@@ -23,7 +27,7 @@ function oid(value) { if (!value) return ""; if (typeof value === "object" && va
 function idOf(value) { return oid(value?.id || value?._id || value?.uuid || value?.job_id); }
 function lower(value) { return String(value || "").trim().toLowerCase(); }
 function statusOf(job) { return lower(job?.status || job?.job_status || job?.workflow_status || "assigned"); }
-function dateOf(job) { return String(job?.scheduled_date || job?.date || job?.scheduled_at || "").slice(0, 10); }
+function dateOf(job) { return String(job?.scheduled_date || job?.date || job?.scheduled_at || job?.due_date || "").slice(0, 10); }
 function today() { return new Date().toISOString().slice(0, 10); }
 function userKeys(user) {
   return [user?.id, user?._id, user?.uuid, user?.worker_id, user?.team_member_id, user?.email, user?.name, user?.full_name, user?.display_name]
@@ -48,23 +52,140 @@ function scopeJobs(rawJobs, user) {
   return list;
 }
 function isOpen(job) { return !["completed", "complete", "done", "cancelled", "canceled"].includes(statusOf(job)); }
+function isCompleted(job) { return ["completed", "complete", "done", "finished"].includes(statusOf(job)); }
 function isIssue(job) { return Boolean(job?.cannot_complete_reason || job?.issue_reason || job?.blocked_reason) || statusOf(job).includes("issue"); }
+function pick(record, ...keys) {
+  for (const key of keys) {
+    const value = record?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+function jobTitle(job) { return pick(job, "title", "job_name", "job_title", "service_type", "job_type", "customer_name") || "Job"; }
+function jobClient(job) { return pick(job, "customer_name", "client_name", "customer", "client", "name") || "No customer saved"; }
+function jobAddress(job) { return pick(job, "address", "site_address", "service_address", "job_address") || "No address saved"; }
+function mapUrl(job) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(jobAddress(job))}`; }
+function draftKey(job) { return idOf(job) || `${jobTitle(job)}-${dateOf(job)}`; }
+function readWorkerDrafts() {
+  try {
+    if (typeof window === "undefined") return {};
+    const parsed = JSON.parse(window.localStorage.getItem(WORKER_DRAFT_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function writeWorkerDraft(job, draft) {
+  try {
+    if (typeof window === "undefined") return;
+    const current = readWorkerDrafts();
+    current[draftKey(job)] = { ...draft, updated_at: new Date().toISOString() };
+    window.localStorage.setItem(WORKER_DRAFT_KEY, JSON.stringify(current));
+  } catch {}
+}
+function clearWorkerDraft(job) {
+  try {
+    if (typeof window === "undefined") return;
+    const current = readWorkerDrafts();
+    delete current[draftKey(job)];
+    window.localStorage.setItem(WORKER_DRAFT_KEY, JSON.stringify(current));
+  } catch {}
+}
+function existingProof(job) {
+  return Boolean(
+    job?.worker_completion_notes ||
+    job?.worker_notes ||
+    job?.completion_note ||
+    job?.proof_note ||
+    (Array.isArray(job?.photos) && job.photos.length) ||
+    (Array.isArray(job?.proof_photos) && job.proof_photos.length)
+  );
+}
+function proofStatus(job, draft) {
+  if (isCompleted(job) && existingProof(job)) return "Proof sent";
+  if (draft?.note || (draft?.checklist || []).length) return "Proof started";
+  return "Needs proof";
+}
+function pushCommandInbox(job, proof) {
+  try {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(COMMAND_INBOX_KEY);
+    const current = raw ? JSON.parse(raw) : [];
+    const items = Array.isArray(current) ? current : [];
+    items.unshift({
+      id: `worker-proof-${idOf(job) || Date.now()}`,
+      source: "worker-proof",
+      category: "Work complete",
+      action: "Prepare admin",
+      title: `${jobTitle(job)} is complete`,
+      summary: `${jobClient(job)} at ${jobAddress(job)} is ready for owner approval.`,
+      found: `Worker completed ${jobTitle(job)}.`,
+      prepared: "Prepare the job-to-invoice or follow-up form for owner approval.",
+      why: "The work is done and now the owner needs the admin filled properly before money moves.",
+      details: {
+        customer_name: jobClient(job),
+        job_title: jobTitle(job),
+        address: jobAddress(job),
+        scheduled_date: dateOf(job),
+        worker_note: proof.note || "No worker note added",
+        checklist: (proof.checklist || []).join(", "),
+        materials: (proof.materials || []).join(", "),
+      },
+      created_at: new Date().toISOString(),
+    });
+    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify(items.slice(0, 40)));
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated"));
+  } catch {}
+}
 
-function WorkerJobCard({ job, onStart, onPause, onResume, onComplete, onIssue, onMaterial }) {
-  const [note, setNote] = useState("");
-  const [material, setMaterial] = useState("");
+function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume, onComplete, onIssue, onMaterial }) {
+  const savedDraft = readWorkerDrafts()[draftKey(job)] || {};
+  const [note, setNote] = useState(savedDraft.note || job.worker_completion_notes || job.worker_notes || "");
+  const [material, setMaterial] = useState(savedDraft.material || "");
+  const [materials, setMaterials] = useState(savedDraft.materials || []);
+  const [checklist, setChecklist] = useState(savedDraft.checklist || []);
   const status = statusOf(job);
+  const completed = isCompleted(job);
+  const acknowledged = Boolean(job.acknowledged_at || job.worker_acknowledged_at || job.worker_acknowledged || status === "acknowledged");
+  const draft = { note, material, materials, checklist };
+  const readyProof = checklist.includes("Work done") && checklist.includes("Site tidy") && (note.trim() || existingProof(job));
+
+  useEffect(() => {
+    writeWorkerDraft(job, { note, material, materials, checklist });
+  }, [job, note, material, materials, checklist]);
+
+  function toggleCheck(label) {
+    setChecklist((current) => current.includes(label) ? current.filter((item) => item !== label) : [...current, label]);
+  }
+
+  function addMaterialDraft() {
+    const clean = material.trim();
+    if (!clean) return;
+    setMaterials((current) => [...current, clean]);
+    onMaterial(job, clean);
+    setMaterial("");
+  }
 
   return (
-    <article className="cv-worker-card">
+    <article className={`cv-worker-card ${completed ? "doneProperly" : ""}`}>
       <header>
         <div>
           <small>{job.status || "assigned"}</small>
-          <h3>{job.title || job.job_name || job.customer_name || "Job"}</h3>
-          <p>{job.address || job.site_address || "No address saved"}</p>
+          <h3>{jobTitle(job)}</h3>
+          <p>{jobClient(job)}</p>
+          <p>{jobAddress(job)}</p>
         </div>
-        <Link to={`/worker/jobs/${idOf(job)}`}>Open</Link>
+        <div className="cv-worker-card-links">
+          <a href={mapUrl(job)} target="_blank" rel="noreferrer"><MapPin size={14} /> Map</a>
+          <Link to={`/worker/jobs/${idOf(job)}`}>Open</Link>
+        </div>
       </header>
+
+      <div className="cv-worker-proof-status">
+        <ShieldCheck size={16} />
+        <b>{proofStatus(job, draft)}</b>
+        <span>{readyProof ? "Ready to complete" : "Tick the job checks and add a short note."}</span>
+      </div>
 
       <section className="cv-worker-details">
         <p><b>Instructions:</b> {job.description || job.notes || job.site_instructions || "No instructions saved."}</p>
@@ -73,20 +194,33 @@ function WorkerJobCard({ job, onStart, onPause, onResume, onComplete, onIssue, o
         {job.cannot_complete_reason ? <p className="issue"><b>Issue:</b> {job.cannot_complete_reason}</p> : null}
       </section>
 
-      <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Completion note or issue reason..." />
+      <section className="cv-worker-checklist" aria-label="Done properly checklist">
+        {DONE_PROPERLY_CHECKS.map((label) => (
+          <label key={label}>
+            <input type="checkbox" checked={checklist.includes(label)} onChange={() => toggleCheck(label)} />
+            <span>{label}</span>
+          </label>
+        ))}
+      </section>
+
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Short proof note for the boss, e.g. done, gate locked, green bin moved..." />
 
       <div className="cv-worker-actions">
-        <button type="button" onClick={() => onStart(job)} disabled={status === "in_progress" || status === "completed"}><Play size={14} /> Start</button>
+        <button type="button" onClick={() => onAcknowledge(job)} disabled={acknowledged || completed}>Acknowledge</button>
+        <button type="button" onClick={() => onStart(job)} disabled={status === "in_progress" || completed}><Play size={14} /> Start</button>
         <button type="button" onClick={() => onPause(job)} disabled={status !== "in_progress"}>Pause</button>
         <button type="button" onClick={() => onResume(job)} disabled={status !== "paused"}>Resume</button>
-        <button type="button" className="complete" onClick={() => onComplete(job, note)} disabled={status === "completed"}><CheckCircle size={14} /> Complete</button>
+        <button type="button" className="complete" onClick={() => onComplete(job, { note, checklist, materials })} disabled={completed || !readyProof}><CheckCircle size={14} /> Complete</button>
         <button type="button" className="issue" onClick={() => onIssue(job, note)}><AlertTriangle size={14} /> Issue</button>
       </div>
 
       <div className="cv-worker-material">
         <input value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="Material used, e.g. 2 bags mulch" />
-        <button type="button" onClick={() => { onMaterial(job, material); setMaterial(""); }}>Add material</button>
+        <button type="button" onClick={addMaterialDraft}>Add material</button>
       </div>
+
+      {materials.length ? <p className="cv-worker-materials-saved"><b>Materials:</b> {materials.join(", ")}</p> : null}
+      {nextJob ? <div className="cv-worker-next"><b>Next:</b><span>{jobTitle(nextJob)} - {jobAddress(nextJob)}</span></div> : null}
     </article>
   );
 }
@@ -112,7 +246,7 @@ export default function WorkerOperationsPage() {
   const todayJobs = jobs.filter((job) => isOpen(job) && (!dateOf(job) || dateOf(job) === todayKey));
   const active = jobs.filter((job) => ["in_progress", "in progress", "started", "paused"].includes(statusOf(job)));
   const upcoming = jobs.filter((job) => isOpen(job) && dateOf(job) && dateOf(job) > todayKey);
-  const completed = jobs.filter((job) => ["completed", "complete", "done"].includes(statusOf(job)));
+  const completed = jobs.filter(isCompleted);
   const issues = jobs.filter(isIssue);
 
   const metrics = useMemo(() => ({
@@ -141,6 +275,15 @@ export default function WorkerOperationsPage() {
     return res;
   }
 
+  function acknowledge(job) {
+    run("acknowledge", async () => {
+      const id = encodeURIComponent(idOf(job));
+      const direct = await post(`/jobs/${id}/acknowledge`, {});
+      if (direct?.success) return direct;
+      return patch(`/jobs/${idOf(job)}`, { status: "acknowledged", acknowledged_at: new Date().toISOString(), worker_acknowledged_at: new Date().toISOString() });
+    });
+  }
+
   function start(job) {
     run("start", () => post(`/jobs/${encodeURIComponent(idOf(job))}/timer/start`, {}));
   }
@@ -155,18 +298,30 @@ export default function WorkerOperationsPage() {
     run("resume", () => post(`/jobs/${encodeURIComponent(idOf(job))}/timer/resume`, {}));
   }
 
-  function complete(job, note) {
-    run("complete", () => post(`/jobs/${encodeURIComponent(idOf(job))}/complete`, {
-      worker_notes: note || job.worker_notes || "",
-      worker_completion_notes: note || job.worker_completion_notes || "",
-      work_review_status: "ready_for_review",
-      review_status: "ready_for_review",
-      owner_review_status: "ready_for_review",
-    }));
+  function complete(job, proof) {
+    run("complete", async () => {
+      const existingMaterials = Array.isArray(job.materials) ? job.materials : [];
+      const cleanMaterials = (proof.materials || []).filter(Boolean).map((name) => ({ name, added_at: new Date().toISOString(), source: "worker" }));
+      const result = await post(`/jobs/${encodeURIComponent(idOf(job))}/complete`, {
+        worker_notes: proof.note || job.worker_notes || "",
+        worker_completion_notes: proof.note || job.worker_completion_notes || "",
+        proof_note: proof.note || "",
+        done_properly_checklist: proof.checklist || [],
+        materials: [...existingMaterials, ...cleanMaterials],
+        work_review_status: "ready_for_review",
+        review_status: "ready_for_review",
+        owner_review_status: "ready_for_review",
+      });
+      if (result?.success) {
+        clearWorkerDraft(job);
+        pushCommandInbox(job, proof);
+      }
+      return result;
+    });
   }
 
   function issue(job, reason) {
-    const finalReason = reason || window.prompt("Why can’t this job be completed?");
+    const finalReason = reason || window.prompt("Why can't this job be completed?");
     if (!finalReason) return toast.error("Issue reason is required");
     run("issue", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "issue", cannot_complete_reason: finalReason, issue_reported_at: new Date().toISOString() }));
   }
@@ -174,15 +329,15 @@ export default function WorkerOperationsPage() {
   function material(job, text) {
     if (!text.trim()) return toast.error("Add a material first");
     const existing = Array.isArray(job.materials) ? job.materials : [];
-    run("material", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { materials: [...existing, { name: text, added_at: new Date().toISOString() }] }));
+    run("material", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { materials: [...existing, { name: text, added_at: new Date().toISOString(), source: "worker" }] }));
   }
 
   return (
     <PremiumPage maxWidth={980}>
       <PremiumHero
         eyebrow="Worker app"
-        title="Today’s jobs, proof and completion."
-        subtitle="Workers can start, pause, resume, complete, add materials and report issues without seeing owner pricing or invoice values."
+        title="Today jobs, proof and completion."
+        subtitle="Phone-first job control: acknowledge, start, complete properly, and send the boss a clean approval note."
         icon={<Clock className="h-6 w-6" />}
         actions={<PremiumButton variant="secondary" onClick={loadOps} disabled={loading || Boolean(busy)}><RefreshCw size={16} className="mr-2" /> Refresh</PremiumButton>}
       />
@@ -196,21 +351,32 @@ export default function WorkerOperationsPage() {
       </section>
 
       {loading ? (
-        <PremiumCard><div className="cv-worker-empty">Loading worker jobs…</div></PremiumCard>
+        <PremiumCard><div className="cv-worker-empty">Loading worker jobs...</div></PremiumCard>
       ) : (
         <>
           <section className="cv-worker-list">
-            {visibleJobs.length ? visibleJobs.map((job) => (
-              <WorkerJobCard key={idOf(job)} job={job} onStart={start} onPause={pause} onResume={resume} onComplete={complete} onIssue={issue} onMaterial={material} />
+            {visibleJobs.length ? visibleJobs.map((job, index) => (
+              <WorkerJobCard
+                key={idOf(job)}
+                job={job}
+                nextJob={visibleJobs[index + 1]}
+                onAcknowledge={acknowledge}
+                onStart={start}
+                onPause={pause}
+                onResume={resume}
+                onComplete={complete}
+                onIssue={issue}
+                onMaterial={material}
+              />
             )) : <div className="cv-worker-empty">No assigned jobs right now.</div>}
           </section>
 
           <section className="cv-worker-history">
             <PremiumCard title="Completed recently">
-              {completed.length ? completed.slice(0, 8).map((job) => <Link key={idOf(job)} to={`/worker/jobs/${idOf(job)}`}>{job.title || job.customer_name || "Completed job"}</Link>) : <div className="cv-worker-empty">No completed jobs yet.</div>}
+              {completed.length ? completed.slice(0, 8).map((job) => <Link key={idOf(job)} to={`/worker/jobs/${idOf(job)}`}>{jobTitle(job)}</Link>) : <div className="cv-worker-empty">No completed jobs yet.</div>}
             </PremiumCard>
             <PremiumCard title="Reported issues">
-              {issues.length ? issues.slice(0, 8).map((job) => <Link key={idOf(job)} to={`/worker/jobs/${idOf(job)}`}>{job.title || job.customer_name || "Issue job"}</Link>) : <div className="cv-worker-empty">No issues reported.</div>}
+              {issues.length ? issues.slice(0, 8).map((job) => <Link key={idOf(job)} to={`/worker/jobs/${idOf(job)}`}>{jobTitle(job)}</Link>) : <div className="cv-worker-empty">No issues reported.</div>}
             </PremiumCard>
           </section>
         </>
@@ -218,7 +384,7 @@ export default function WorkerOperationsPage() {
 
       <section className="cv-worker-note">
         <Camera size={18} />
-        <span>Photo upload support stays on the job detail/photo flow. This worker ops page keeps the daily actions fast and safe.</span>
+        <span>Photos still live on the job detail/photo flow. This screen keeps the day fast and sends clean completion proof toward Command.</span>
       </section>
     </PremiumPage>
   );
