@@ -74,7 +74,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__)
   };
 
   window.addEventListener('popstate', syncJobsBoardClass);
-  window.addEventListener('hashchange', syncJobsClass);
+  window.addEventListener('hashchange', syncJobsBoardClass);
   window.addEventListener('load', syncJobsBoardClass);
   document.addEventListener('click', () => setTimeout(syncJobsBoardClass, 80), true);
 
