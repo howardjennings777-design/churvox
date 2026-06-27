@@ -23,7 +23,6 @@ import './runtime/churvoxContrastGuard';
 import './runtime/authInputVisibilityGuard';
 import './styles/command-final-readable.css';
 import './churvox-fresh/freshChurvoxRoutePersonalityLock.css';
-import './runtime/churvoxPagePersonalityRuntime';
 
 // CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
 if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__) {
@@ -75,7 +74,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__)
   };
 
   window.addEventListener('popstate', syncJobsBoardClass);
-  window.addEventListener('hashchange', syncJobsBoardClass);
+  window.addEventListener('hashchange', syncJobsClass);
   window.addEventListener('load', syncJobsBoardClass);
   document.addEventListener('click', () => setTimeout(syncJobsBoardClass, 80), true);
 
