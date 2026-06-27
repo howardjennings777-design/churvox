@@ -13,6 +13,7 @@ import "./WorkerOperationsPage.css";
 
 const WORKER_DRAFT_KEY = "churvox:worker-ops-drafts:v1";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const PROOF_TRAIL_KEY = "churvox:proof-trail:v1";
 const DONE_PROPERLY_CHECKS = ["Work done", "Site tidy", "Customer note checked", "Proof note added"];
 
 function arr(value) {
@@ -106,36 +107,75 @@ function proofStatus(job, draft) {
   if (draft?.note || (draft?.checklist || []).length) return "Proof started";
   return "Needs proof";
 }
-function pushCommandInbox(job, proof) {
+function pushLocalList(key, item, limit = 50) {
   try {
-    if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(COMMAND_INBOX_KEY);
+    if (typeof window === "undefined") return false;
+    const raw = window.localStorage.getItem(key);
     const current = raw ? JSON.parse(raw) : [];
-    const items = Array.isArray(current) ? current : [];
-    items.unshift({
-      id: `worker-proof-${idOf(job) || Date.now()}`,
-      source: "worker-proof",
-      category: "Work complete",
-      action: "Prepare admin",
-      title: `${jobTitle(job)} is complete`,
-      summary: `${jobClient(job)} at ${jobAddress(job)} is ready for owner approval.`,
-      found: `Worker completed ${jobTitle(job)}.`,
-      prepared: "Prepare the job-to-invoice or follow-up form for owner approval.",
-      why: "The work is done and now the owner needs the admin filled properly before money moves.",
-      details: {
-        customer_name: jobClient(job),
-        job_title: jobTitle(job),
-        address: jobAddress(job),
-        scheduled_date: dateOf(job),
-        worker_note: proof.note || "No worker note added",
-        checklist: (proof.checklist || []).join(", "),
-        materials: (proof.materials || []).join(", "),
-      },
-      created_at: new Date().toISOString(),
-    });
-    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify(items.slice(0, 40)));
+    const list = Array.isArray(current) ? current : [];
+    window.localStorage.setItem(key, JSON.stringify([item, ...list].slice(0, limit)));
     window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated"));
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
+}
+function pushProofTrail(job, type, summary, extra = {}) {
+  pushLocalList(PROOF_TRAIL_KEY, {
+    id: `${type}-${idOf(job) || Date.now()}-${Math.random().toString(16).slice(2)}`,
+    type,
+    title: jobTitle(job),
+    customer: jobClient(job),
+    address: jobAddress(job),
+    job_id: idOf(job),
+    summary,
+    at: new Date().toISOString(),
+    ...extra,
+  }, 60);
+}
+function pushCommandInbox(job, proof) {
+  pushLocalList(COMMAND_INBOX_KEY, {
+    id: `worker-proof-${idOf(job) || Date.now()}`,
+    source: "worker-proof",
+    category: "Work complete",
+    action: "Prepare admin",
+    title: `${jobTitle(job)} is complete`,
+    summary: `${jobClient(job)} at ${jobAddress(job)} is ready for owner approval.`,
+    found: `Worker completed ${jobTitle(job)}.`,
+    prepared: "Prepare the job-to-invoice or follow-up form for owner approval.",
+    why: "The work is done and now the owner needs the admin filled properly before money moves.",
+    details: {
+      customer_name: jobClient(job),
+      job_title: jobTitle(job),
+      address: jobAddress(job),
+      scheduled_date: dateOf(job),
+      worker_note: proof.note || "No worker note added",
+      checklist: (proof.checklist || []).join(", "),
+      materials: (proof.materials || []).join(", "),
+    },
+    created_at: new Date().toISOString(),
+  }, 40);
+}
+function pushIssueToCommand(job, reason) {
+  pushLocalList(COMMAND_INBOX_KEY, {
+    id: `worker-issue-${idOf(job) || Date.now()}`,
+    source: "worker-issue",
+    category: "Blocked work",
+    action: "Prepare owner decision",
+    title: `${jobTitle(job)} is blocked`,
+    summary: `${jobClient(job)} needs an owner decision before the job moves on.`,
+    found: `Worker reported an issue on ${jobTitle(job)}: ${reason}`,
+    prepared: "Prepare a clear owner decision form: fix now, reassign, contact customer, or park.",
+    why: "Blocked jobs cost time unless the boss sees the decision cleanly.",
+    details: {
+      customer_name: jobClient(job),
+      job_title: jobTitle(job),
+      address: jobAddress(job),
+      issue: reason,
+      scheduled_date: dateOf(job),
+    },
+    created_at: new Date().toISOString(),
+  }, 40);
 }
 
 function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume, onComplete, onIssue, onMaterial }) {
@@ -279,23 +319,36 @@ export default function WorkerOperationsPage() {
     run("acknowledge", async () => {
       const id = encodeURIComponent(idOf(job));
       const direct = await post(`/jobs/${id}/acknowledge`, {});
-      if (direct?.success) return direct;
-      return patch(`/jobs/${idOf(job)}`, { status: "acknowledged", acknowledged_at: new Date().toISOString(), worker_acknowledged_at: new Date().toISOString() });
+      const result = direct?.success ? direct : await patch(`/jobs/${id}`, { status: "acknowledged", acknowledged_at: new Date().toISOString(), worker_acknowledged_at: new Date().toISOString() });
+      if (result?.success) pushProofTrail(job, "acknowledged", `${jobTitle(job)} acknowledged by worker.`);
+      return result;
     });
   }
 
   function start(job) {
-    run("start", () => post(`/jobs/${encodeURIComponent(idOf(job))}/timer/start`, {}));
+    run("start", async () => {
+      const result = await post(`/jobs/${encodeURIComponent(idOf(job))}/timer/start`, {});
+      if (result?.success) pushProofTrail(job, "started", `${jobTitle(job)} started.`);
+      return result;
+    });
   }
 
   function pause(job) {
     const reason = window.prompt("Pause reason?", "Paused by worker");
     if (reason === null) return;
-    run("pause", () => post(`/jobs/${encodeURIComponent(idOf(job))}/timer/pause`, { pause_reason: reason }));
+    run("pause", async () => {
+      const result = await post(`/jobs/${encodeURIComponent(idOf(job))}/timer/pause`, { pause_reason: reason });
+      if (result?.success) pushProofTrail(job, "paused", `${jobTitle(job)} paused: ${reason}`);
+      return result;
+    });
   }
 
   function resume(job) {
-    run("resume", () => post(`/jobs/${encodeURIComponent(idOf(job))}/timer/resume`, {}));
+    run("resume", async () => {
+      const result = await post(`/jobs/${encodeURIComponent(idOf(job))}/timer/resume`, {});
+      if (result?.success) pushProofTrail(job, "resumed", `${jobTitle(job)} resumed.`);
+      return result;
+    });
   }
 
   function complete(job, proof) {
@@ -315,6 +368,7 @@ export default function WorkerOperationsPage() {
       if (result?.success) {
         clearWorkerDraft(job);
         pushCommandInbox(job, proof);
+        pushProofTrail(job, "completed", `${jobTitle(job)} completed and sent to Command.`, { note: proof.note, checklist: proof.checklist, materials: proof.materials });
       }
       return result;
     });
@@ -323,13 +377,24 @@ export default function WorkerOperationsPage() {
   function issue(job, reason) {
     const finalReason = reason || window.prompt("Why can't this job be completed?");
     if (!finalReason) return toast.error("Issue reason is required");
-    run("issue", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "issue", cannot_complete_reason: finalReason, issue_reported_at: new Date().toISOString() }));
+    run("issue", async () => {
+      const result = await patch(`/jobs/${encodeURIComponent(idOf(job))}`, { status: "issue", cannot_complete_reason: finalReason, issue_reported_at: new Date().toISOString() });
+      if (result?.success) {
+        pushIssueToCommand(job, finalReason);
+        pushProofTrail(job, "blocked", `${jobTitle(job)} blocked: ${finalReason}`, { issue: finalReason });
+      }
+      return result;
+    });
   }
 
   function material(job, text) {
     if (!text.trim()) return toast.error("Add a material first");
     const existing = Array.isArray(job.materials) ? job.materials : [];
-    run("material", () => patch(`/jobs/${encodeURIComponent(idOf(job))}`, { materials: [...existing, { name: text, added_at: new Date().toISOString(), source: "worker" }] }));
+    run("material", async () => {
+      const result = await patch(`/jobs/${encodeURIComponent(idOf(job))}`, { materials: [...existing, { name: text, added_at: new Date().toISOString(), source: "worker" }] });
+      if (result?.success) pushProofTrail(job, "material", `${text} added to ${jobTitle(job)}.`, { material: text });
+      return result;
+    });
   }
 
   return (
