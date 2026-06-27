@@ -128,6 +128,7 @@ import "./freshPillContrastSystem.css";
 import "./freshOwnerShellFinal.css";
 import "./freshCommandOperatingSystem.css";
 import "./freshCommandPreviewFix.css";
+import "./freshChurvoxOperatingSystem.css";
 
 const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch", "routes"];
 const COMMAND_ALIASES = ["askchurvox", "aioperatorstudio", "quickcreateai", "followupwriter", "quoteai", "invoicecheck", "workerbrief"];
