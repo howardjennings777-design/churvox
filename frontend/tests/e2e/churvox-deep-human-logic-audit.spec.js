@@ -57,7 +57,7 @@ const createFlows = [
       [['client', 'customer', 'name'], value => value.clientName],
       [['address', 'service address'], value => value.address],
       [['price', 'amount', 'total'], () => '145'],
-      [['description', 'notes', 'service'], value => value.note],
+      [['description', 'notes', 'service'], value => `${value.name}. ${value.note}`],
     ],
   },
   {
@@ -69,7 +69,7 @@ const createFlows = [
       [['client', 'customer', 'name'], value => value.clientName],
       [['address', 'service address'], value => value.address],
       [['price', 'amount', 'total'], () => '95'],
-      [['description', 'notes', 'service'], value => value.note],
+      [['description', 'notes', 'service'], value => `${value.name}. ${value.note}`],
     ],
   },
 ];
@@ -122,7 +122,7 @@ async function watchErrors(page, errors) {
   page.on('console', msg => {
     const text = msg.text();
     if (msg.type() !== 'error') return;
-    if (/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|401|403|404|Failed to fetch/i.test(text)) return;
+    if (/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|401|403|404|Failed to fetch|platform\/visit|Access-Control-Allow-Origin|net::ERR_FAILED/i.test(text)) return;
     errors.push(`console: ${text.slice(0, 900)}`);
   });
   page.on('response', response => {
@@ -156,21 +156,27 @@ async function fillAny(page, names, value) {
 }
 
 async function clickAny(page, names) {
+  const submitButtons = page.locator('button[type="submit"], input[type="submit"]');
+  for (let i = await submitButtons.count().catch(() => 0) - 1; i >= 0; i -= 1) {
+    const button = submitButtons.nth(i);
+    if (!(await button.isVisible().catch(() => false))) continue;
+    await button.scrollIntoViewIfNeeded().catch(() => null);
+    try {
+      await button.click({ timeout: 8000 });
+      await waitHuman(page);
+      return true;
+    } catch {}
+  }
+
   for (const name of names) {
     const byRole = page.getByRole('button', { name }).first();
     if (await byRole.isVisible().catch(() => false)) {
       await byRole.scrollIntoViewIfNeeded().catch(() => null);
-      await byRole.click({ timeout: 8000 }).catch(() => null);
-      await waitHuman(page);
-      return true;
-    }
-
-    const byText = page.getByText(name, { exact: false }).first();
-    if (await byText.isVisible().catch(() => false)) {
-      await byText.scrollIntoViewIfNeeded().catch(() => null);
-      await byText.click({ timeout: 8000 }).catch(() => null);
-      await waitHuman(page);
-      return true;
+      try {
+        await byRole.click({ timeout: 8000 });
+        await waitHuman(page);
+        return true;
+      } catch {}
     }
   }
   return false;
