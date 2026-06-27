@@ -590,8 +590,8 @@ export default function FreshCommand({ onNavigate }) {
       <header className="freshCommandRebuildHero">
         <div>
           <span>Command</span>
-          <h1>Ready for approval</h1>
-          <p>Churvox does the admin. You check the filled form and approve it.</p>
+          <h1>Admin queue</h1>
+          <p>Churvox prepares invoices, messages, payroll summaries and Xero draft checks from job proof. You approve, edit or park it.</p>
         </div>
         <div className="freshCommandHeroActions">
           <button type="button" disabled={busy === "scan"} onClick={checkForWork}>{busy === "scan" ? "Checking..." : "Check for work"}</button>
@@ -606,7 +606,7 @@ export default function FreshCommand({ onNavigate }) {
         <article><span>Handled</span><b>{loading ? "..." : counts.Handled}</b></article>
       </section>
 
-      {message ? <section className="freshCommandStatusStrip"><b>{message}</b><span>Nothing moves until you approve it.</span></section> : null}
+      {message ? <section className="freshCommandStatusStrip"><b>{message}</b><span>Simple on top. The proof, memory and admin work stay underneath until a decision is needed.</span></section> : null}
 
       <section className="freshCommandBoard">
         <aside className="freshCommandQueuePanel">
@@ -678,7 +678,7 @@ export default function FreshCommand({ onNavigate }) {
         <aside className="freshCommandSidePanel">
           <section>
             <div className="freshCommandPanelTitle"><span>Owner control</span><b>{duplicateRows.length}</b></div>
-            <p>Only approve when the form is right. Churvox will not send invoices, file tax, create bank payout files, or mark anything paid unless the approved action allows it.</p>
+            <p>Only approve when the form is right. Churvox shows the prepared admin, the proof behind it, and the owner decision. No tax filing, no bank payout files, and no paid status without approved confirmation.</p>
             <div className="freshCommandSideActions">
               <button type="button" disabled={!duplicateRows.length || busy === "dedupe"} onClick={archiveDuplicateApprovals}>{busy === "dedupe" ? "Archiving..." : duplicateRows.length ? `Archive ${duplicateRows.length} duplicates` : "No duplicates"}</button>
               <button type="button" disabled={!noteItems.length || busy === "prepare"} onClick={prepareNotes}>{busy === "prepare" ? "Preparing..." : "Prepare notes"}</button>

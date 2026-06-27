@@ -18,7 +18,7 @@ const PLAN_OVERRIDE_KEY = "churvox:plan-override";
 const COUNTRY_CACHE_KEY = "churvox:billing-country";
 const PENDING_CHECKOUT_KEY = "churvox:pending-checkout:v1";
 const PENDING_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-const accountingAddonText = "Accounting Sync Add-on — $39/month + GST";
+const accountingAddonText = "Xero Sync Add-on — $39/month + GST";
 
 const plans = [
   {
@@ -26,10 +26,10 @@ const plans = [
     backendPlan: "solo",
     name: "Start",
     tag: "Solo",
-    headline: "Get the work under control",
-    summary: "For one owner who wants jobs, clients, quotes and invoices in one place.",
-    limit: "50 jobs/month · 1 owner + 1 helper · 25 AI actions",
-    includes: ["Jobs, clients, quotes and invoices", "Smart Hub", "Basic Command desk", "250 clients", "50 jobs/month", "Accounting Sync Add-on available"],
+    headline: "Simple on the surface. Powerful underneath.",
+    summary: "For one owner who wants jobs, recurring work, clients, quotes and invoices in one clean place.",
+    limit: "50 jobs/month · recurring jobs · 1 owner + 1 helper",
+    includes: ["Jobs, clients, quotes and invoices", "Recurring jobs included", "Smart Hub", "250 clients", "50 jobs/month", "Xero Sync Add-on available"],
     limits: { workers: 1, clients: 250, jobs_month: 50, ai_actions_month: 25 },
   },
   {
@@ -38,9 +38,9 @@ const plans = [
     name: "Crew",
     tag: "Team",
     headline: "Run the crew",
-    summary: "For a small team that needs worker proof, time approval and cleaner handover.",
+    summary: "For a small team that needs worker proof, messages, time approval and cleaner handover.",
     limit: "150 jobs/month · 5 active team members · 100 AI actions",
-    includes: ["Everything in Start", "1,000 clients", "150 jobs/month", "5 active team members", "Worker Proof Pack", "Accounting Sync Add-on available"],
+    includes: ["Everything in Start", "Team and worker app", "Messages", "Worker proof and time", "5 active team members", "Xero Sync Add-on available"],
     limits: { workers: 5, clients: 1000, jobs_month: 150, ai_actions_month: 100 },
   },
   {
@@ -51,7 +51,7 @@ const plans = [
     headline: "Churvox prepares the admin",
     summary: "For owners who want Churvox to prepare admin, follow-ups and approval work.",
     limit: "500 jobs/month · 15 active team members · 500 AI actions",
-    includes: ["Everything in Crew", "3,000 clients", "500 jobs/month", "15 active team members", "500 AI Operator Actions/month", "Customer Follow-Up Brain"],
+    includes: ["Everything in Crew", "Command Approval System", "AI prepared admin", "Payroll summaries", "Approval Memory", "Customer Follow-Up Brain"],
     limits: { workers: 15, clients: 3000, jobs_month: 500, ai_actions_month: 500 },
   },
   {
@@ -62,7 +62,7 @@ const plans = [
     headline: "Full control at scale",
     summary: "For the bigger business that wants AI approval control, payroll workspace and accounting sync included.",
     limit: "1,500 jobs/month · 50 active team members · 2,000 AI actions",
-    includes: ["Everything in Operator", "10,000 clients", "1,500 jobs/month", "50 active team members", "Accounting sync included", "Payroll workspace"],
+    includes: ["Everything in Operator", "Full Command control", "Xero sync included", "50 active team members", "Advanced approval memory", "Command Growth Pack available"],
     limits: { workers: 50, clients: 10000, jobs_month: 1500, ai_actions_month: 2000 },
   },
 ];
@@ -473,7 +473,7 @@ export default function FreshPlans({ onNavigate }) {
         <div>
           <span className="cvPlanKicker">Churvox pricing</span>
           <h1>Plans</h1>
-          <p>Choose the plan that fits your business. Churvox does the admin. You approve.</p>
+          <p>Looks simple. Works hard underneath. Churvox prepares the admin, then you approve.</p>
           <div className="cvPlanHeroActions">
             <button className="cvPlanPrimary" type="button" onClick={() => choosePlan("operator")}>Recommend Operator</button>
             <button className="cvPlanGhost" type="button" onClick={() => onNavigate?.("support")}>Ask which plan fits</button>
@@ -494,7 +494,8 @@ export default function FreshPlans({ onNavigate }) {
       </header>
 
       <section className="cvPlanNotice"><b>14-day free trial</b><span>No card. Billing stays owner-approved.</span></section>
-      <section className="cvPlanNotice"><b>Safe money rules</b><span>Invoices stay draft-only until approved. Accounting sync is owner-approved.</span></section>
+      <section className="cvPlanNotice"><b>Safe money rules</b><span>Invoices and Xero sync stay draft-only until approved by the owner.</span></section>
+      <section className="cvPlanNotice"><b>Simple track</b><span>Smart Hub shows what matters. Command handles approval work on Operator and Command.</span></section>
       {error && !/not authenticated|401|403/i.test(error) && <section className="cvPlanNotice"><b>Needs attention</b><span>{error}</span></section>}
 
       <section className="cvPlanPanel">
@@ -560,7 +561,7 @@ export default function FreshPlans({ onNavigate }) {
         </aside>
       </section>
 
-      <section className="cvPlanCompare"><h2>Simple comparison</h2><div className="cvPlanCompareGrid">{plans.map((plan) => <div key={plan.id}><b>{plan.name}</b><span>{plan.limit}</span><p>{plan.headline}</p></div>)}</div></section>
+      <section className="cvPlanCompare"><h2>What each plan is for</h2><div className="cvPlanCompareGrid">{plans.map((plan) => <div key={plan.id}><b>{plan.name}</b><span>{plan.limit}</span><p>{plan.headline}</p></div>)}</div></section>
       {showDebug && debug && <section className="cvPlanCompare"><h2>Checkout diagnostic</h2><pre>{JSON.stringify(debug, null, 2).slice(0, 1800)}</pre></section>}
     </section>
   );
