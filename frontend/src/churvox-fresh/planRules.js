@@ -41,17 +41,17 @@ export const CHURVOX_EIGHTEEN_FEATURES = [
   { id: "business_family_roles", name: "Business Family Roles", promise: "Safe helper roles for family-business admin without risky access." },
   { id: "worker_time_approval", name: "Worker Time Approval", promise: "Review and approve worker time before payroll or invoice checks." },
   { id: "xero_approval_sync", name: "Accounting Approval Sync", promise: "Draft Accounting sync only. Owner approval required." },
-  { id: "core_job_management", name: "Core Job Management", promise: "Clients, jobs, calendar, quotes, invoices and settings still work cleanly." },
+  { id: "core_job_management", name: "Core Job Management", promise: "Clients, jobs, repeat work, quotes, invoices and settings still work cleanly." },
 ];
 
 export const FEATURE_RULES = {
   planday: { area: "Smart Hub", open: "start", reason: "Every plan gets the daily owner cockpit for jobs, admin, priorities and follow-ups." },
   command: { area: "Command", open: "operator", reason: "Operator unlocks the Command Approval System. Start and Crew stay simple and run from Smart Hub, jobs and money tools." },
-  jobs: { area: "Jobs", open: "start", reason: "Core job workflow is included from Start." },
+  jobs: { area: "Jobs", open: "start", reason: "Core job workflow, including repeat work, is included from Start." },
+  recurring: { area: "Repeat jobs inside Jobs", open: "start", reason: "Repeat work lives inside Jobs so the main navigation stays simple." },
   clients: { area: "Clients", open: "start", reason: "Customer records are included from Start." },
   quotes: { area: "Quotes", open: "start", reason: "Quotes are included from Start." },
   invoices: { area: "Invoices", open: "start", reason: "Invoices are included from Start." },
-  recurring: { area: "Recurring Jobs", open: "start", reason: "Recurring jobs are included from Start because repeat work is core for solo service businesses." },
   settings: { area: "Settings", open: "start", reason: "Business setup must stay open." },
   plans: { area: "Plans", open: "start", reason: "Plan and billing controls must stay open." },
   support: { area: "Support", open: "start", reason: "Support must stay open." },
@@ -72,8 +72,7 @@ export const FEATURE_RULES = {
 };
 
 export const PLAN_FEATURE_MATRIX = [
-  { area: "Jobs, clients, quotes, invoices", start: "Included", crew: "Included", operator: "Included", command: "Included" },
-  { area: "Recurring jobs", start: "Included", crew: "Included", operator: "Included", command: "Included" },
+  { area: "Jobs, repeat work, clients, quotes, invoices", start: "Included", crew: "Included", operator: "Included", command: "Included" },
   { area: "Calendar / Smart Hub", start: "Included", crew: "Included", operator: "Included", command: "Included" },
   { area: "Team and worker app", start: "Locked", crew: "Included", operator: "Included", command: "Included" },
   { area: "Worker proof, photos and time", start: "Locked", crew: "Included", operator: "Included", command: "Included" },
@@ -88,25 +87,25 @@ export const PLAN_FEATURE_MATRIX = [
 
 const START_GROUPS = [
   { title: "Home", items: [["planday", "PD", "Smart Hub"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["recurring", "RC", "Recurring"], ["clients", "CL", "Clients"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
 ];
 
 const CREW_GROUPS = [
   { title: "Home", items: [["planday", "PD", "Smart Hub"], ["messages", "MS", "Messages"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["recurring", "RC", "Recurring"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
 ];
 
 const OPERATOR_GROUPS = [
   { title: "Home", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["recurring", "RC", "Recurring"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"]] },
 ];
 
 const COMMAND_GROUPS = [
   { title: "Home", items: [["planday", "PD", "Smart Hub"], ["command", "CM", "Command"]] },
-  { title: "Work", items: [["jobs", "JB", "Jobs"], ["recurring", "RC", "Recurring"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
+  { title: "Work", items: [["jobs", "JB", "Jobs"], ["clients", "CL", "Clients"], ["team", "TM", "Team"]] },
   { title: "Money", items: [["quotes", "QT", "Quotes"], ["invoices", "IV", "Invoices"], ["xero", "AC", "Xero Sync"]] },
 ];
 
@@ -123,7 +122,7 @@ export const SIDEBAR_ALL_MORE_GROUP = { title: "More tools", items: [["launchcon
 export const SIDEBAR_GROUPS = SIDEBAR_ALL_GROUPS;
 export const SIDEBAR_MORE_GROUP = SIDEBAR_ALL_MORE_GROUP;
 export const MOBILE_ITEMS = [["planday", "PD", "Smart Hub"], ["jobs", "JB", "Jobs"], ["command", "CM", "Command"], ["invoices", "$", "Money"], ["more", "+", "More"]];
-export const MOBILE_MORE_ORDER = ["messages", "clients", "quotes", "recurring", "payments", "automation", "xero", "team", "workercommand", "time", "portal", "payroll", "reports", "launchcontrol", "imports", "exports", "settings", "plans", "support"];
+export const MOBILE_MORE_ORDER = ["messages", "clients", "quotes", "payments", "automation", "xero", "team", "workercommand", "time", "portal", "payroll", "reports", "launchcontrol", "imports", "exports", "settings", "plans", "support"];
 
 function cloneGroups(groups) { return groups.map((group) => ({ ...group, items: group.items.map((item) => [...item]) })); }
 function uniqueKeys(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
@@ -153,5 +152,5 @@ export function mobileItemsForUser(user) {
 export function mobileMoreOrderForUser(user) { const primary = new Set(mobileItemsForUser(user).map(([key]) => key)); const allowed = uniqueKeys([...sidebarGroupsForUser(user).flatMap((group) => group.items), ...sidebarMoreItemsForUser(user)]).map(([key]) => key); return MOBILE_MORE_ORDER.filter((key) => allowed.includes(key) && !primary.has(key)); }
 export function commandGrowthPacks(user) { const raw = user?.command_growth_packs || user?.growth_packs || user?.addons?.command_growth_pack || user?.business?.command_growth_packs || user?.business?.growth_packs || 0; const count = Number(raw); if (Number.isFinite(count) && count > 0) return count; try { const cached = Number(window.localStorage.getItem("churvox:addon:command_growth_pack") || 0); return Number.isFinite(cached) && cached > 0 ? cached : 0; } catch { return 0; } }
 export function activeTeamMemberLimit(user) { const plan = currentPlanForUser(user); if (plan === "start") return 1; if (plan === "crew") return 5; if (plan === "operator") return 15; if (plan !== "command") return 1; return 50 + commandGrowthPacks(user) * 50; }
-export function ruleForPage(page) { const key = String(page || "").toLowerCase(); const aliases = { today: "planday", dashboard: "planday", smart: "planday", hub: "planday", schedule: "planday", calendar: "planday", dispatch: "planday", routes: "planday", todayswork: "planday", worktoday: "planday", askchurvox: "command", aioperatorstudio: "command", quickcreateai: "command", followupwriter: "command", quoteai: "command", invoicecheck: "command", workerbrief: "command", worker: "workercommand", workers: "workercommand", proofpack: "portal", clientportal: "portal", customerportal: "portal", accounting: "xero", accountingsync: "xero", accounting_sync: "xero", sync: "xero", xero: "xero" }; return FEATURE_RULES[aliases[key] || key] || { area: page || "This area", open: "start", reason: "Included in the owner workspace." }; }
+export function ruleForPage(page) { const key = String(page || "").toLowerCase(); const aliases = { today: "planday", dashboard: "planday", smart: "planday", hub: "planday", schedule: "planday", calendar: "planday", dispatch: "planday", routes: "planday", todayswork: "planday", worktoday: "planday", askchurvox: "command", aioperatorstudio: "command", quickcreateai: "command", followupwriter: "command", quoteai: "command", invoicecheck: "command", workerbrief: "command", worker: "workercommand", workers: "workercommand", proofpack: "portal", clientportal: "portal", customerportal: "portal", accounting: "xero", accountingsync: "xero", accounting_sync: "xero", sync: "xero", xero: "xero", recurring: "jobs" }; return FEATURE_RULES[aliases[key] || key] || { area: page || "This area", open: "start", reason: "Included in the owner workspace." }; }
 export function accessForPage(page, user) { const plan = currentPlanForUser(user); const rule = ruleForPage(page); const includedByPlan = planMeets(plan, rule.open); if (rule.addon === "accounting_sync") { const addonActive = hasAccountingSync(user); const allowed = includedByPlan || addonActive; return { allowed, plan, rule, requiredPlan: rule.open, addonRequired: !includedByPlan, addonActive, title: allowed ? `${rule.area} open` : `${ACCOUNTING_ADDON_NAME} required`, message: allowed ? rule.reason : `${rule.area} opens with Command or the ${ACCOUNTING_ADDON_NAME} (${ACCOUNTING_ADDON_PRICE}).` }; } return { allowed: includedByPlan, plan, rule, requiredPlan: rule.open, addonRequired: false, addonActive: false, title: includedByPlan ? `${rule.area} open` : `${PLAN_LABELS[rule.open]} required`, message: includedByPlan ? rule.reason : `${rule.area} opens on ${PLAN_LABELS[rule.open]} or above.` }; }
