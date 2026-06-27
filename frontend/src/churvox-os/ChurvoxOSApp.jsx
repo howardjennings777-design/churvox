@@ -77,11 +77,35 @@ const approvals = [
   { title: "Payroll check", note: "Worker time changed after completion. Review before export.", kind: "Team" },
 ];
 
+const jobLanes = [
+  { name: "Today", count: 2, items: [["Naenae lawn service", "9:30 am", "Ready"], ["Kauri Dental clean", "1:00 pm", "Worker assigned"]] },
+  { name: "Recurring", count: 3, items: [["Fortnightly lawn run", "Next Tue", "Auto-created"], ["Monthly hedge trim", "Draft", "Needs date"]] },
+  { name: "No worker", count: 4, items: [["Belmont reset", "Tomorrow", "Match found"], ["Upper Hutt garden", "Friday", "Needs approval"]] },
+  { name: "Needs invoice", count: 5, items: [["Naenae lawn service", "$85", "Draft prepared"], ["Worker proof job", "$120", "Proof check"]] },
+];
+
+const quoteLanes = [
+  { name: "Draft", items: ["Kauri Dental quote", "Hedge reset offer"] },
+  { name: "Sent", items: ["PW public quote"] },
+  { name: "Viewed", items: ["Naenae one-off tidy"] },
+  { name: "Follow-up", items: ["Commercial clean quote"] },
+  { name: "Accepted", items: ["Monthly garden run"] },
+];
+
+const invoiceLanes = [
+  { name: "Needs invoice", items: ["Naenae lawn", "Worker proof job"] },
+  { name: "Draft", items: ["Kauri Dental"] },
+  { name: "Sent", items: ["Belmont reset"] },
+  { name: "Overdue", items: ["Upper Hutt garden"] },
+  { name: "Paid", items: ["June lawn run"] },
+  { name: "Sync-ready", items: ["Draft to Xero"] },
+];
+
 const planRows = [
-  { name: "Start", price: "$39/month + GST", text: "Jobs, clients, quotes, invoices and recurring jobs for one owner." },
-  { name: "Crew", price: "$89/month + GST", text: "Adds workers, proof, messages and team access for small crews." },
-  { name: "Operator", price: "$149/month + GST", text: "Most Popular. Churvox starts preparing admin work for approval." },
-  { name: "Command", price: "$299/month + GST", text: "Full approval desk, payroll review, accounting sync option and higher capacity." },
+  { name: "Start", price: "$39/month + GST", tag: "Simple records", text: "Jobs, clients, quotes, invoices and recurring jobs for one owner.", includes: ["Jobs and clients", "Quotes and invoices", "Recurring inside Jobs"] },
+  { name: "Crew", price: "$89/month + GST", tag: "Field proof", text: "Adds workers, proof, messages and team access for small crews.", includes: ["Worker view", "Team access", "Proof and messages"] },
+  { name: "Operator", price: "$149/month + GST", tag: "Most Popular", text: "Churvox starts preparing admin work for owner approval.", includes: ["AI admin actions", "Follow-up drafts", "Admin debt checks"] },
+  { name: "Command", price: "$299/month + GST", tag: "Approval OS", text: "Full approval desk, payroll review, accounting sync option and higher capacity.", includes: ["Command desk", "Payroll review", "Accounting sync option"] },
 ];
 
 function normalise(value) {
@@ -163,6 +187,7 @@ function HubPage({ onNavigate }) {
       </div>
       <div className="hubToday">
         <span>Today</span><strong>3 decisions</strong><p>Everything else is being watched quietly.</p>
+        <div className="quietStack"><b>82 jobs watched</b><b>21 invoice checks</b><b>32 worker gaps scanned</b></div>
       </div>
       <div className="hubTriage">
         {triage.map((item) => <article key={item.title}><span>{item.type}</span><strong>{item.title}</strong><p>{item.meta}</p></article>)}
@@ -203,11 +228,17 @@ function CommandPage() {
 }
 
 function JobsPage({ onNavigate }) {
-  const lanes = ["Today", "Recurring", "No worker", "Needs invoice"];
   return (
     <section className="osJobs">
       <div className="jobsHeader"><span className="osEyebrow">Dispatch board</span><h1>Jobs stay simple: who, where, what next.</h1><button type="button">Create job</button></div>
-      <div className="jobLanes">{lanes.map((lane, index) => <article key={lane}><header><b>{lane}</b><span>{index + 2}</span></header><div><strong>{lane === "Recurring" ? "Fortnightly lawn run" : "Naenae lawn service"}</strong><p>{lane === "Needs invoice" ? "Completed. Churvox is preparing the admin." : "Client, address, worker and next action attached."}</p></div></article>)}</div>
+      <div className="jobLanes">
+        {jobLanes.map((lane) => (
+          <article key={lane.name}>
+            <header><b>{lane.name}</b><span>{lane.count}</span></header>
+            {lane.items.map(([title, meta, status]) => <div key={title}><strong>{title}</strong><p>{meta}</p><small>{status}</small></div>)}
+          </article>
+        ))}
+      </div>
       <div className="jobInspector"><h2>Selected job</h2><p>One job opens one work surface: client, worker, proof, notes, quote and invoice history.</p><button type="button" onClick={() => onNavigate("command")}>Send issue to Command</button></div>
     </section>
   );
@@ -217,8 +248,8 @@ function ClientsPage() {
   return (
     <section className="osClients">
       <div className="clientSearch"><span className="osEyebrow">Customer memory</span><h1>Every client has a trail.</h1><input placeholder="Search name, phone, email or address" /><div><b>bob</b><span>Recent value $0.00</span></div><div><b>Kauri Dental</b><span>Quote follow-up ready</span></div></div>
-      <div className="clientProfile"><h2>bob</h2><p>bob@bob / 0204957974</p><dl><div><dt>Service address</dt><dd>Flat 1</dd></div><div><dt>Last price</dt><dd>$85 memory match</dd></div><div><dt>Open money</dt><dd>$0.00</dd></div><div><dt>Next action</dt><dd>Prepare follow-up when work completes</dd></div></dl></div>
-      <div className="clientTimeline"><h3>Admin trail</h3>{["Job completed", "Invoice prepared", "Quote follow-up drafted", "Owner note saved"].map((x) => <p key={x}>{x}</p>)}</div>
+      <div className="clientProfile"><h2>bob</h2><p>bob@bob / 0204957974</p><dl><div><dt>Service address</dt><dd>Flat 1</dd></div><div><dt>Last price</dt><dd>$85 memory match</dd></div><div><dt>Open money</dt><dd>$0.00</dd></div><div><dt>Next action</dt><dd>Prepare follow-up when work completes</dd></div></dl><div className="memoryNote">Churvox uses this history to prepare quotes, invoices and messages with less owner typing.</div></div>
+      <div className="clientTimeline"><h3>Admin trail</h3>{["Job completed", "Invoice prepared", "Quote follow-up drafted", "Owner note saved"].map((x) => <p key={x}>{x}</p>)}<button type="button">Prepare next action</button></div>
     </section>
   );
 }
@@ -226,27 +257,27 @@ function ClientsPage() {
 function WorkersPage({ onNavigate }) {
   return (
     <section className="osWorkers">
-      <div className="workerMap"><span>GPS</span><h1>Live field view</h1><p>Location, job site, route check, photos and timer proof appear here when workers are live.</p></div>
+      <div className="workerMap"><span>GPS</span><h1>Live field view</h1><p>Location, job site, route check, photos and timer proof appear here when workers are live.</p><div className="routeCard"><b>Route check standby</b><small>Worker app has not sent live location yet.</small></div></div>
       <aside className="workerList"><span className="osEyebrow">Workers</span><h2>Field status</h2><button type="button">Refresh live</button><article><b>No live worker selected</b><p>Waiting for worker app location data.</p></article><button type="button" onClick={() => onNavigate("team")}>Open Team</button></aside>
-      <aside className="workerProof"><h3>Current job proof</h3><p>Photos, notes, time and alerts feed Command so the owner approves with confidence.</p></aside>
+      <aside className="workerProof"><h3>Current job proof</h3><p>Photos, notes, time and alerts feed Command so the owner approves with confidence.</p><div className="proofDots"><span>Photo</span><span>Note</span><span>Time</span></div></aside>
     </section>
   );
 }
 
 function QuotesPage() {
-  return <Pipeline title="Quotes" kicker="Offer pipeline" lanes={["Draft", "Sent", "Viewed", "Follow-up", "Accepted"]} action="Convert accepted quote to job" />;
+  return <Pipeline title="Quotes" kicker="Offer pipeline" lanes={quoteLanes} action="Convert accepted quote to job" />;
 }
 
 function InvoicesPage() {
-  return <Pipeline title="Invoices" kicker="Money desk" lanes={["Needs invoice", "Draft", "Sent", "Overdue", "Paid", "Sync-ready"]} action="Review before send or sync" />;
+  return <Pipeline title="Invoices" kicker="Money desk" lanes={invoiceLanes} action="Review before send or sync" />;
 }
 
 function Pipeline({ title, kicker, lanes, action }) {
   return (
     <section className="osPipeline">
       <header><span className="osEyebrow">{kicker}</span><h1>{title} move through decisions.</h1><p>{action}. Churvox prepares the next move and waits for owner approval.</p></header>
-      <div className="pipeTrack">{lanes.map((lane, index) => <article key={lane}><span>{index + 1}</span><b>{lane}</b><p>{lane.includes("Overdue") || lane.includes("Follow") ? "Churvox prepares the reminder." : "Owner stays in control."}</p></article>)}</div>
-      <aside><h2>Prepared action</h2><p>Selected record opens as a clean approval form, not a full admin rebuild.</p><button type="button">Prepare in Command</button></aside>
+      <div className="pipeTrack">{lanes.map((lane, index) => <article key={lane.name}><span>{index + 1}</span><b>{lane.name}</b>{lane.items.map((item) => <div key={item}><strong>{item}</strong><p>{lane.name.includes("Overdue") || lane.name.includes("Follow") ? "Reminder prepared." : "Owner stays in control."}</p></div>)}</article>)}</div>
+      <aside><h2>Prepared action</h2><p>Selected record opens as a clean approval form, not a full admin rebuild.</p><button type="button">Prepare in Command</button><div className="quietStack"><b>Proof checked</b><b>Price memory checked</b><b>Sync guard checked</b></div></aside>
     </section>
   );
 }
@@ -256,7 +287,7 @@ function TeamPage({ onNavigate }) {
     <section className="osTeam">
       <header><span className="osEyebrow">People and access</span><h1>Team is an access matrix.</h1><p>Workers, payroll-only people, invites and missing setup stay clear.</p></header>
       <table><thead><tr><th>Person</th><th>Role</th><th>Worker app</th><th>Payroll</th><th>Action</th></tr></thead><tbody>{["Worker one", "Subcontractor", "Payroll admin"].map((name, i) => <tr key={name}><td>{name}</td><td>{i === 2 ? "Payroll" : "Field"}</td><td>{i === 2 ? "Off" : "Ready"}</td><td>{i === 0 ? "Review" : "None"}</td><td><button type="button">Open</button></td></tr>)}</tbody></table>
-      <aside><h2>Worker gaps become Command items.</h2><p>If a job has no worker, missing app access or payroll concern, Churvox surfaces the decision.</p><button type="button" onClick={() => onNavigate("workers")}>Open worker view</button></aside>
+      <aside><h2>Worker gaps become Command items.</h2><p>If a job has no worker, missing app access or payroll concern, Churvox surfaces the decision.</p><div className="quietStack"><b>2 invites pending</b><b>1 payroll review</b><b>4 field ready</b></div><button type="button" onClick={() => onNavigate("workers")}>Open worker view</button></aside>
     </section>
   );
 }
@@ -265,7 +296,7 @@ function MessagesPage({ onNavigate }) {
   return (
     <section className="osMessages">
       <header><span className="osEyebrow">Prepared replies</span><h1>Messages are approval work, not another inbox.</h1></header>
-      <div>{["Quote follow-up", "Proof request", "Invoice reminder"].map((x) => <article key={x}><b>{x}</b><p>Drafted by Churvox and waiting for owner approval.</p></article>)}</div>
+      <div>{["Quote follow-up", "Proof request", "Invoice reminder"].map((x) => <article key={x}><b>{x}</b><p>Drafted by Churvox and waiting for owner approval.</p><small>Linked to the original job or client.</small></article>)}</div>
       <aside><h2>Nothing leaves without approval.</h2><p>Messages connect back to jobs, clients, quotes and invoices.</p><button type="button" onClick={() => onNavigate("command")}>Review in Command</button></aside>
     </section>
   );
@@ -275,24 +306,40 @@ function XeroPage() {
   return (
     <section className="osSync">
       <div><span className="osEyebrow">Accounting sync</span><h1>Draft sync only. Owner approval stays in control.</h1><p>Churvox prepares draft invoices and payment checks. It does not auto-send invoices, file tax or create payout files.</p></div>
-      <div className="syncRules"><b>Draft invoice sync</b><b>Payment status refresh</b><b>Accounting export</b><b>Owner approval required</b></div>
+      <div className="syncRules"><b>Draft invoice sync<span>Only after owner approval</span></b><b>Payment status refresh<span>Paid only after confirmed refresh</span></b><b>Accounting export<span>CSV and draft-ready records</span></b><b>Owner approval required<span>No surprise accounting action</span></b></div>
     </section>
   );
 }
 
 function SettingsPage() {
-  return <ControlPage page="settings" title="Business controls without the maze." items={["Branding", "GST and region", "Approval rules", "Imports and exports", "Account safety", "Notification defaults"]} />;
+  const items = [
+    ["Branding", "Logo, business name, email and customer-facing details."],
+    ["GST and region", "Tax defaults for invoices without making Churvox a tax filer."],
+    ["Approval rules", "What Churvox may prepare and what always needs owner review."],
+    ["Imports and exports", "Clients, team, invoices and accounting files."],
+    ["Account safety", "Password, sessions, delete account and data controls."],
+    ["Notification defaults", "Worker alerts, owner prompts and quiet hours."],
+  ];
+  return <ControlPage title="Business controls without the maze." items={items} />;
 }
 
 function HelpPage() {
-  return <ControlPage page="help" title="Help should get the owner unstuck fast." items={["Setup check", "Launch checklist", "Contact support", "Worker guide", "Accounting guide", "Tester readiness"]} />;
+  const items = [
+    ["Setup check", "Find missing business, team, invoice and worker setup."],
+    ["Launch checklist", "Owner, worker, quote, invoice and sync readiness."],
+    ["Contact support", "Use hello@churvox.com when something blocks launch."],
+    ["Worker guide", "How workers acknowledge jobs, add proof and record time."],
+    ["Accounting guide", "Draft sync, exports and payment status guardrails."],
+    ["Tester readiness", "A short path for getting early testers through the app."],
+  ];
+  return <ControlPage title="Help should get the owner unstuck fast." items={items} />;
 }
 
 function ControlPage({ title, items }) {
   return (
     <section className="osControl">
-      <header><span className="osEyebrow">Control</span><h1>{title}</h1></header>
-      <div>{items.map((item) => <article key={item}><b>{item}</b><p>Clear controls, no hidden dead ends.</p></article>)}</div>
+      <header><span className="osEyebrow">Control</span><h1>{title}</h1><p>Grouped by the decision the owner needs, not by hidden technical features.</p></header>
+      <div>{items.map(([item, text]) => <article key={item}><b>{item}</b><p>{text}</p><button type="button">Open</button></article>)}</div>
     </section>
   );
 }
@@ -301,8 +348,8 @@ function PlansPage() {
   return (
     <section className="osPlans">
       <header><span className="osEyebrow">Plans</span><h1>Simple tiers. Real admin power.</h1><p>No fake basic/light labels. Each plan shows what Churvox actually unlocks.</p></header>
-      <div>{planRows.map((plan) => <article key={plan.name} className={plan.name === "Operator" ? "popular" : ""}><h2>{plan.name}</h2><strong>{plan.price}</strong><p>{plan.text}</p></article>)}</div>
-      <footer>Command Growth Pack: $99/month + GST. Accounting Sync Add-on: $39/month + GST for non-Command tiers.</footer>
+      <div>{planRows.map((plan) => <article key={plan.name} className={plan.name === "Operator" ? "popular" : ""}><span>{plan.tag}</span><h2>{plan.name}</h2><strong>{plan.price}</strong><p>{plan.text}</p><ul>{plan.includes.map((item) => <li key={item}>{item}</li>)}</ul></article>)}</div>
+      <footer><b>Growth and accounting:</b> Command Growth Pack is $99/month + GST. Accounting Sync Add-on is $39/month + GST for non-Command tiers.</footer>
     </section>
   );
 }
