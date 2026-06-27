@@ -10,26 +10,33 @@ export default function FreshPlanGate({ page, user, onNavigate, children }) {
   const required = PLAN_LABELS[access.requiredPlan] || "a higher plan";
   const current = PLAN_LABELS[access.plan] || access.plan || "Start";
   const isAddon = access.addonRequired;
+  const isCommand = String(page || "").toLowerCase() === "command";
+  const isPayroll = String(page || "").toLowerCase() === "payroll";
+  const plainReason = isCommand
+    ? "Command is the approval desk where Churvox prepares admin from job proof, then asks the owner to approve, edit or park it."
+    : isPayroll
+      ? "Payroll summaries unlock once worker time and proof are part of the workflow."
+      : access.rule.reason;
 
   return (
     <section className="freshPlanGate" aria-label="Plan access required">
       <header>
-        <span>{isAddon ? "Add-on access" : "Tier access"}</span>
-        <h1>{access.rule.area} is locked on {current}</h1>
-        <p>{access.message} Your data stays safe — this only controls which Churvox tools are visible and usable on this tier.</p>
+        <span>{isAddon ? "Add-on access" : "Plan locked"}</span>
+        <h1>{access.rule.area} is not in {current}</h1>
+        <p>This page is not broken. Churvox keeps the app simple by only showing the tools that belong in your plan. {plainReason}</p>
       </header>
 
       <section className="freshPlanGateCards">
         <article>
           <b>Current workspace</b>
           <strong>{current}</strong>
-          <p>You can still use the tools included in your current sidebar and return to Command at any time.</p>
+          <p>You can still use the tools in your sidebar. Start stays focused on jobs, clients, recurring work, quotes and invoices.</p>
         </article>
 
         <article className="primary">
           <b>{isAddon ? ACCOUNTING_ADDON_NAME : "Unlock with"}</b>
           <strong>{isAddon ? ACCOUNTING_ADDON_PRICE : required}</strong>
-          <p>{isAddon ? "Adds Accounting Sync where available. Draft invoice sync only and owner-approved." : access.rule.reason}</p>
+          <p>{isAddon ? "Adds Xero draft invoice sync where available. Owner approval stays required." : plainReason}</p>
         </article>
 
         <article>
@@ -41,7 +48,7 @@ export default function FreshPlanGate({ page, user, onNavigate, children }) {
 
       <div className="freshPlanGateActions">
         <button type="button" onClick={() => onNavigate?.("plans")}>View Plans</button>
-        <button type="button" onClick={() => onNavigate?.("command")}>Back to Command</button>
+        <button type="button" onClick={() => onNavigate?.("planday")}>Back to Smart Hub</button>
         <button type="button" onClick={() => onNavigate?.("support")}>Ask support</button>
       </div>
     </section>
