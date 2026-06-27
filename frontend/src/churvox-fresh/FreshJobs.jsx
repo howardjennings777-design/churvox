@@ -82,10 +82,13 @@ function rememberRecentJob(record) {
 }
 function mergeRecentJobs(rows) {
   const merged = new Map();
-  [...loadRecentJobCache(), ...(Array.isArray(rows) ? rows : [])].forEach((row, index) => {
+
+  [...(Array.isArray(rows) ? rows : []), ...loadRecentJobCache()].forEach((row, index) => {
     const key = normalizeId(row?.id || row?._id || row?.job_id) || `${pick(row, "title", "job_name", "name")}-${pick(row, "client_name", "customer_name", "client")}-${index}`;
-    merged.set(key, row);
+    const existing = merged.get(key) || {};
+    merged.set(key, { ...existing, ...row });
   });
+
   return [...merged.values()];
 }
 function loadArchivedJobIds() { try { const saved = window.localStorage.getItem(ARCHIVED_JOBS_KEY); const parsed = saved ? JSON.parse(saved) : []; return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : []; } catch { return []; } }
