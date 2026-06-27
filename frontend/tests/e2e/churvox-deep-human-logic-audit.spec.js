@@ -76,8 +76,10 @@ function stamp() {
   return new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
 }
 
-function escapeRegex(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function hasPlaceholderCredentials() {
+  const email = String(OWNER_EMAIL || '').trim().toLowerCase();
+  const password = String(OWNER_PASSWORD || '').trim().toLowerCase();
+  return email === 'your-owner-email' || password === 'your-owner-password' || email === 'owner-email' || password === 'owner-password';
 }
 
 async function waitHuman(page) {
@@ -153,6 +155,9 @@ async function clickAny(page, names) {
 async function login(page) {
   if (!OWNER_EMAIL || !OWNER_PASSWORD) {
     throw new Error('Missing CHURVOX_OWNER_EMAIL/CHURVOX_OWNER_PASSWORD or CHURVOX_E2E_EMAIL/CHURVOX_E2E_PASSWORD. Deep logic tests must fail instead of skipping.');
+  }
+  if (hasPlaceholderCredentials()) {
+    throw new Error('Replace your-owner-email and your-owner-password with the real Churvox owner login before running the deep logic audit.');
   }
 
   await page.goto('/login');
