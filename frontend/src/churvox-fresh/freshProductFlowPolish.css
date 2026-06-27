@@ -191,3 +191,51 @@
     width: 100% !important;
   }
 }
+
+/* Page purpose strips for the work and money flow. */
+.freshFlowPagePurpose {
+  margin: 0 0 14px;
+}
+
+.freshFlowPagePurpose .freshFlowDecision b {
+  color: #9a3412;
+}
+
+.freshClientsPage .freshFlowPromiseStrip,
+.freshRecurringPage .freshFlowPromiseStrip,
+.freshQuotesPage .freshFlowPromiseStrip,
+.freshInvoicesPage .freshFlowPromiseStrip {
+  margin-top: 0;
+}
+
+.freshClientsPage,
+.freshRecurringPage,
+.freshQuotesPage,
+.freshInvoicesPage {
+  min-height: 100%;
+}
+
+.freshClientsPage button,
+.freshRecurringPage button,
+.freshQuotesPage button,
+.freshInvoicesPage button {
+  min-height: 40px;
+}
+
+@media (max-width: 680px) {
+  .freshClientsPage input,
+  .freshClientsPage select,
+  .freshClientsPage textarea,
+  .freshRecurringPage input,
+  .freshRecurringPage select,
+  .freshRecurringPage textarea,
+  .freshQuotesPage input,
+  .freshQuotesPage select,
+  .freshQuotesPage textarea,
+  .freshInvoicesPage input,
+  .freshInvoicesPage select,
+  .freshInvoicesPage textarea {
+    font-size: 16px !important;
+  }
+}
+

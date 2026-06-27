@@ -311,6 +311,30 @@ export default function FreshClients({ onNavigate }) {
 
   return (
     <section className="freshClientsPage" data-client-job-handoff="20260626">
+
+      <section className="freshFlowPromiseStrip freshFlowPagePurpose" aria-label="Client record flow">
+        <article className="freshFlowLead">
+          <span>Clients</span>
+          <b>One record for the customer, work and money history.</b>
+          <p>A client page should answer what happened last time and what needs doing next.</p>
+        </article>
+        <article>
+          <span>Record</span>
+          <b>Name, contact and address</b>
+          <p>Keep the basics clean so jobs, quotes and invoices do not need retyping.</p>
+        </article>
+        <article className="freshFlowQuiet">
+          <span>History</span>
+          <b>Jobs, quotes and invoices stay linked</b>
+          <p>Churvox uses the trail to prepare better admin later.</p>
+        </article>
+        <article className="freshFlowDecision">
+          <span>Memory</span>
+          <b>Reuse what worked before</b>
+          <p>Pricing, notes and owner preferences can feed Command approvals.</p>
+        </article>
+      </section>
+
       <header className="freshHero"><span>Clients</span><h1>Clients</h1><p>Customer records, contact details, service address, notes and recent work.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && clients.length === 0 ? "..." : clients.length}</h2><p>Total clients</p></aside><aside className="freshCard"><h2>{visibleClients.length}</h2><p>Showing</p></aside><aside className="freshCard"><h2>{selected ? money(timelineValue) : "$0.00"}</h2><p>Recent value</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Clients could not load</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadClients(); loadTimeline(); }}>Retry</button></section> : null}

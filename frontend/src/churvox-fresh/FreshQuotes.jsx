@@ -147,6 +147,30 @@ export default function FreshQuotes({ onNavigate }) {
 
   return (
     <section className="freshQuotesPage" data-quote-job-handoff="20260626" data-quote-client-handoff="20260626">
+
+      <section className="freshFlowPromiseStrip freshFlowPagePurpose" aria-label="Quote flow">
+        <article className="freshFlowLead">
+          <span>Quotes</span>
+          <b>Prepare the offer, then turn accepted work into a job.</b>
+          <p>Quotes should feel like a short decision, not a full admin session.</p>
+        </article>
+        <article>
+          <span>Prepare</span>
+          <b>Client, work and price</b>
+          <p>Keep the quote clear enough for the owner to approve quickly.</p>
+        </article>
+        <article className="freshFlowQuiet">
+          <span>Follow-up</span>
+          <b>Churvox watches the quote trail</b>
+          <p>Viewed or waiting quotes can surface as owner-approved follow-ups.</p>
+        </article>
+        <article className="freshFlowDecision">
+          <span>Next step</span>
+          <b>Approve, send or convert</b>
+          <p>Accepted quotes should move into the work board cleanly.</p>
+        </article>
+      </section>
+
       <header className="freshHero"><span>Quotes</span><h1>Quotes</h1><p>Saved quote records, customer, value, status and line details.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(draftTotal)}</h2><p>Draft value</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(sentTotal)}</h2><p>Sent value</p></aside><aside className="freshCard"><h2>{loading && quotes.length === 0 ? "..." : money(acceptedTotal)}</h2><p>Accepted value</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Could not load quotes</b><span>{error}</span><button type="button" className="freshPrimary" onClick={loadQuotes}>Retry</button></section> : null}

@@ -194,6 +194,30 @@ export default function FreshInvoices({ onNavigate }) {
 
   return (
     <section className="freshInvoicesPage">
+
+      <section className="freshFlowPromiseStrip freshFlowPagePurpose" aria-label="Invoice flow">
+        <article className="freshFlowLead">
+          <span>Invoices</span>
+          <b>Finished work becomes a checked invoice.</b>
+          <p>The owner should review the bill, not rebuild the admin from scratch.</p>
+        </article>
+        <article>
+          <span>Draft</span>
+          <b>Client, job and line items</b>
+          <p>Use the job record and proof to make the invoice easier to approve.</p>
+        </article>
+        <article className="freshFlowQuiet">
+          <span>Payment</span>
+          <b>Waiting money stays visible</b>
+          <p>Unpaid, overdue and sync-ready invoices can feed Command.</p>
+        </article>
+        <article className="freshFlowDecision">
+          <span>Owner control</span>
+          <b>Review before send or sync</b>
+          <p>No auto-send, no fake paid status, no surprise accounting action.</p>
+        </article>
+      </section>
+
       <header className="freshHero"><span>Invoices</span><h1>Invoices</h1><p>Saved invoice records, customer, amount, status, due date and accounting sync state.</p></header>
 
       <section className="freshCommandPulse">

@@ -191,6 +191,30 @@ export default function FreshRecurring({ onNavigate }) {
 
   return (
     <section className="freshRecurringPage" data-recurring-api-create="20260626">
+
+      <section className="freshFlowPromiseStrip freshFlowPagePurpose" aria-label="Recurring work flow">
+        <article className="freshFlowLead">
+          <span>Recurring jobs</span>
+          <b>Set the repeat once. Churvox keeps the pattern clear.</b>
+          <p>Regular work should not make the owner rebuild the same job every week.</p>
+        </article>
+        <article>
+          <span>Customer</span>
+          <b>Choose who and where</b>
+          <p>Keep the repeat tied to the client, address and service.</p>
+        </article>
+        <article className="freshFlowQuiet">
+          <span>Schedule</span>
+          <b>Weekly, fortnightly, monthly or custom</b>
+          <p>The repeat pattern stays underneath and feeds the work board.</p>
+        </article>
+        <article className="freshFlowDecision">
+          <span>Owner check</span>
+          <b>Confirm the next run</b>
+          <p>If something needs attention, send it to Command instead of hunting for it later.</p>
+        </article>
+      </section>
+
       <div className="freshRecurringHero">
         <div>
           <span>Recurring jobs</span>
