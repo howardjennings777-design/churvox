@@ -159,6 +159,47 @@
   -webkit-text-fill-color: #fff;
 }
 
+.freshCommandMemory {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-left: 5px solid #f97316;
+  border-radius: 20px;
+  background: #fffaf0;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .07);
+}
+
+.freshCommandMemory b,
+.freshCommandMemory strong,
+.freshCommandMemory span,
+.freshCommandMemory small,
+.freshCommandMemory p {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+}
+
+.freshCommandMemory small {
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.freshCommandMemory p {
+  margin: 0;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
 .freshCommandFixGrid {
   display: grid;
   grid-template-columns: minmax(250px, .78fr) minmax(360px, 1.25fr) minmax(280px, .85fr);
