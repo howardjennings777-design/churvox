@@ -318,6 +318,10 @@
   cursor: not-allowed;
 }
 
+.cv-worker-actions button.arrived {
+  background: #2563eb;
+}
+
 .cv-worker-actions button.complete {
   background: #16a34a;
 }
