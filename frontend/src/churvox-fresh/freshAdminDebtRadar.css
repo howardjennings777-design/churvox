@@ -1,0 +1,159 @@
+.freshAdminDebtRadar {
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 28px;
+  background: #fffaf0;
+  box-shadow: 0 18px 45px rgba(2, 6, 23, .08);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.freshAdminDebtRadar header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.freshAdminDebtRadar header span,
+.freshAdminDebtItem span {
+  display: inline-flex;
+  width: max-content;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 7px 11px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.freshAdminDebtRadar h2 {
+  margin: 8px 0 4px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: .95;
+  letter-spacing: -.055em;
+}
+
+.freshAdminDebtRadar p,
+.freshAdminDebtItem p,
+.freshAdminDebtEmpty span {
+  margin: 0;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-weight: 850;
+}
+
+.freshAdminDebtRadar header button,
+.freshAdminDebtItem button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 40px;
+  padding: 0 14px;
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-weight: 1000;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.freshAdminDebtRadar header button,
+.freshAdminDebtItem footer button:first-child {
+  background: #f97316;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.freshAdminDebtMessage {
+  border: 1px solid #fed7aa;
+  border-radius: 16px;
+  background: #fff7ed;
+  padding: 10px 12px;
+  color: #9a3412 !important;
+  -webkit-text-fill-color: #9a3412 !important;
+  font-weight: 950 !important;
+}
+
+.freshAdminDebtGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshAdminDebtItem,
+.freshAdminDebtEmpty {
+  border: 1px solid rgba(15, 23, 42, .12);
+  border-radius: 22px;
+  background: #fff;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+}
+
+.freshAdminDebtItem h3 {
+  margin: 8px 0 5px;
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 18px;
+  line-height: 1.05;
+  font-weight: 1000;
+}
+
+.freshAdminDebtItem > b {
+  color: #f97316;
+  -webkit-text-fill-color: #f97316;
+  font-size: 22px;
+  font-weight: 1000;
+}
+
+.freshAdminDebtItem footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.freshAdminDebtItem button {
+  min-height: 38px;
+  font-size: 12px;
+}
+
+.freshAdminDebtEmpty {
+  grid-column: 1 / -1;
+}
+
+.freshAdminDebtEmpty b {
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 20px;
+  font-weight: 1000;
+}
+
+@media (max-width: 1100px) {
+  .freshAdminDebtGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .freshAdminDebtRadar header,
+  .freshAdminDebtGrid,
+  .freshAdminDebtItem footer {
+    grid-template-columns: 1fr;
+  }
+
+  .freshAdminDebtRadar header {
+    display: grid;
+  }
+
+  .freshAdminDebtRadar header button,
+  .freshAdminDebtItem button {
+    width: 100%;
+  }
+}
