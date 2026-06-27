@@ -783,3 +783,45 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* CHURVOX_COMMAND_MEMORY_EXAMPLE_20260627 */
+.freshCommandMemoryExample {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  border: 1px solid rgba(249, 115, 22, .24);
+  border-left: 7px solid #f97316;
+  border-radius: 22px;
+  background: #fffaf0;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .07);
+  padding: 15px;
+}
+
+.freshCommandMemoryExample span {
+  width: fit-content;
+  border-radius: 999px;
+  background: #ffedd5;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.freshCommandMemoryExample b {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: clamp(18px, 2vw, 25px);
+  line-height: 1.12;
+  font-weight: 1000;
+}
+
+.freshCommandMemoryExample small {
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 13px;
+  font-weight: 850;
+}
