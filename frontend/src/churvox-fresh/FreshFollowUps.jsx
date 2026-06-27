@@ -148,7 +148,7 @@ export default function FreshFollowUps({ onNavigate }) {
     <section className="freshFollowUpsPage">
       <div className="freshFollowUpsHero">
         <div>
-          <span>Follow-ups</span>
+          <span>Quiet admin</span>
           <h1>Never let a customer go cold</h1>
           <p>Track quote follow-ups, overdue invoice nudges, rebook reminders, access checks and review requests.</p>
         </div>

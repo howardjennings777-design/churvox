@@ -435,7 +435,7 @@ export default function FreshPayroll({ onNavigate }) {
     <section className="cvPayPage" data-payroll-detail-modal="20260626">
       <header className="cvPayHeader">
         <div>
-          <span>Payroll review</span>
+          <span>Payroll summary</span>
           <h1>Payroll</h1>
           <p>Review worker hours, adjustments and gross pay. Tax filing, government filing and payment files stay outside Churvox.</p>
         </div>
