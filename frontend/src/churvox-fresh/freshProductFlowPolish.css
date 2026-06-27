@@ -239,3 +239,79 @@
   }
 }
 
+/* Quiet power pages: useful when needed, not noisy every day. */
+.freshFlowQuietPower {
+  margin: 0 0 14px;
+}
+
+.freshTeamPage,
+.freshWorkerProofPage,
+.freshTimeApprovalPage,
+.freshPayrollPage,
+.freshFollowUpsPage,
+.freshXeroPage,
+.freshAdminDebtPage,
+.freshProofPacksPage {
+  background:
+    radial-gradient(circle at top left, rgba(22, 138, 85, 0.1), transparent 32rem),
+    linear-gradient(180deg, #fffaf1 0%, #f7efe2 100%) !important;
+  color: var(--fresh-flow-ink) !important;
+}
+
+.freshTeamPage .freshFlowLead,
+.freshWorkerProofPage .freshFlowLead,
+.freshTimeApprovalPage .freshFlowLead,
+.freshPayrollPage .freshFlowLead,
+.freshFollowUpsPage .freshFlowLead,
+.freshXeroPage .freshFlowLead,
+.freshAdminDebtPage .freshFlowLead,
+.freshProofPacksPage .freshFlowLead {
+  background: #22312c;
+}
+
+.freshFlowPromiseStrip .freshFlowProof {
+  border-color: rgba(22, 138, 85, 0.22);
+  background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 100%);
+}
+
+.freshFlowPromiseStrip .freshFlowProof b {
+  color: #14532d;
+}
+
+.freshTeamPage button,
+.freshWorkerProofPage button,
+.freshTimeApprovalPage button,
+.freshPayrollPage button,
+.freshFollowUpsPage button,
+.freshXeroPage button,
+.freshAdminDebtPage button,
+.freshProofPacksPage button {
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+}
+
+.freshTeamPage section,
+.freshWorkerProofPage section,
+.freshTimeApprovalPage section,
+.freshPayrollPage section,
+.freshFollowUpsPage section,
+.freshXeroPage section,
+.freshAdminDebtPage section,
+.freshProofPacksPage section {
+  scroll-margin-top: 18px;
+}
+
+@media (max-width: 680px) {
+  .freshTeamPage,
+  .freshWorkerProofPage,
+  .freshTimeApprovalPage,
+  .freshPayrollPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshAdminDebtPage,
+  .freshProofPacksPage {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
