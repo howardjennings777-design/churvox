@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || process.env.CHURVOX_E2E_EMAIL || '';
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX_E2E_PASSWORD || '';
 const MUTATE = process.env.CHURVOX_E2E_MUTATE === '1';
+const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 
 const ownerAreas = [
   { label: 'Smart Hub', url: '/dashboard#dashboard' },
@@ -72,6 +73,10 @@ const createFlows = [
   },
 ];
 
+function apiUrl(url) {
+  return `${API_BASE}${url.startsWith('/api') ? url : `/api${url}`}`;
+}
+
 function stamp() {
   return new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
 }
@@ -80,6 +85,18 @@ function hasPlaceholderCredentials() {
   const email = String(OWNER_EMAIL || '').trim().toLowerCase();
   const password = String(OWNER_PASSWORD || '').trim().toLowerCase();
   return email === 'your-owner-email' || password === 'your-owner-password' || email === 'owner-email' || password === 'owner-password';
+}
+
+function tokenFrom(data = {}) {
+  return data?.token || data?.access_token || data?.auth_token || data?.user?.token || data?.user?.access_token || '';
+}
+
+function userFrom(data = {}) {
+  return data?.user || data?.data?.user || data?.data || data || {};
+}
+
+function safeJsonText(value) {
+  return JSON.stringify(value || {}, (key, item) => /password|token|secret/i.test(key) ? '[hidden]' : item).slice(0, 1200);
 }
 
 async function waitHuman(page) {
@@ -152,26 +169,6 @@ async function clickAny(page, names) {
   return false;
 }
 
-async function submitLoginForm(page) {
-  const form = page.locator('form').first();
-  const submit = form.locator('button[type="submit"], input[type="submit"]').first();
-  if (await submit.isVisible().catch(() => false)) {
-    await submit.click({ timeout: 8000 });
-    await waitHuman(page);
-    return;
-  }
-
-  const formButton = form.getByRole('button', { name: /sign in|log in|login/i }).first();
-  if (await formButton.isVisible().catch(() => false)) {
-    await formButton.click({ timeout: 8000 });
-    await waitHuman(page);
-    return;
-  }
-
-  await page.locator('input[type="password"]').first().press('Enter');
-  await waitHuman(page);
-}
-
 async function login(page) {
   if (!OWNER_EMAIL || !OWNER_PASSWORD) {
     throw new Error('Missing CHURVOX_OWNER_EMAIL/CHURVOX_OWNER_PASSWORD or CHURVOX_E2E_EMAIL/CHURVOX_E2E_PASSWORD. Deep logic tests must fail instead of skipping.');
@@ -180,18 +177,38 @@ async function login(page) {
     throw new Error('Replace your-owner-email and your-owner-password with the real Churvox owner login before running the deep logic audit.');
   }
 
-  await page.goto('/login');
+  const email = String(OWNER_EMAIL).trim().toLowerCase();
+  const response = await page.request.post(apiUrl('/api/auth/login'), {
+    data: { email, password: OWNER_PASSWORD },
+    timeout: 20000,
+  });
+  const payload = await response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
+
+  if (!response.ok() || payload?.success === false) {
+    throw new Error(`API login failed before page audit. status=${response.status()} body=${safeJsonText(payload)}`);
+  }
+
+  const token = tokenFrom(payload);
+  const user = userFrom(payload);
+  const returnedEmail = String(user?.email || payload?.email || '').trim().toLowerCase();
+  if (returnedEmail && returnedEmail !== email) {
+    throw new Error(`API login returned a different user: ${returnedEmail}`);
+  }
+
+  await page.goto('/');
   await waitHuman(page);
-  await fillAny(page, ['email'], OWNER_EMAIL);
-  await fillAny(page, ['password'], OWNER_PASSWORD);
-  await submitLoginForm(page);
+  await page.evaluate(({ nextToken }) => {
+    if (nextToken) window.localStorage.setItem('token', nextToken);
+  }, { nextToken: token });
+
+  await page.goto('/dashboard');
   await page.waitForURL(/dashboard|plans|setup|guide|worker|admin/i, { timeout: 40000 }).catch(() => null);
   await waitHuman(page);
 
   const text = await bodyText(page);
-  const token = await page.evaluate(() => window.localStorage.getItem('token') || '').catch(() => '');
+  const storedToken = await page.evaluate(() => window.localStorage.getItem('token') || '').catch(() => '');
   expect(text, `login should render Churvox app text. URL=${page.url()}`).toMatch(/Churvox|Command|Plan|Dashboard|Job|Client|Smart/i);
-  expect(token || !/\/login(?:$|[?#])/i.test(page.url()), `login should leave login page. URL=${page.url()} BODY=${text.slice(0, 600)}`).toBeTruthy();
+  expect(storedToken || !/\/login(?:$|[?#])/i.test(page.url()), `login should leave login page. URL=${page.url()} BODY=${text.slice(0, 600)}`).toBeTruthy();
 }
 
 async function assertPageHealth(page, label) {
