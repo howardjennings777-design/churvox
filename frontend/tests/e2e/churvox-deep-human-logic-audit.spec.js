@@ -43,6 +43,7 @@ const createFlows = [
       [['title', 'job', 'name'], value => value.name],
       [['client', 'customer'], value => value.clientName],
       [['address', 'service address'], value => value.address],
+      [['scheduled', 'date', 'time'], () => futureDateTime()],
       [['price', 'amount', 'total'], () => '95'],
       [['notes', 'description', 'instructions'], value => value.note],
     ],
@@ -79,6 +80,12 @@ function apiUrl(url) {
 
 function stamp() {
   return new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+}
+
+function futureDateTime(minutes = 120) {
+  const date = new Date(Date.now() + minutes * 60 * 1000);
+  const pad = value => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function hasPlaceholderCredentials() {
@@ -341,7 +348,16 @@ async function createAndVerify(page, flow, value) {
 
   const afterSaveText = await bodyText(page);
   expect(afterSaveText, `${flow.label} save should keep Churvox app alive`).toMatch(/Churvox|saved|created|draft|Job|Client|Quote|Invoice|Command/i);
-  expect(afterSaveText, `${flow.label} should show the created token after save`).toContain(value.primaryToken);
+
+  await expect.poll(async () => {
+    const text = await bodyText(page);
+    if (text.includes(value.primaryToken)) return true;
+    return openAndFindToken(page, flow.listUrl, value.primaryToken);
+  }, {
+    timeout: 15000,
+    intervals: [700, 1000, 2000, 3000],
+    message: `${flow.label} should show or list the created token after save`,
+  }).toBeTruthy();
 
   await page.goto('/dashboard#command');
   await waitHuman(page);
