@@ -15,6 +15,7 @@ const TIMER_OPTIMISTIC = {
 const EMPTY_JOB_FORM = { title: "", client: "", client_id: "", address: "", scheduled: "", price: "", notes: "" };
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";
 const ARCHIVED_JOBS_KEY = "churvox:fresh-archived-job-ids:v1";
+const RECENT_JOB_CACHE_KEY = "churvox:fresh-recent-jobs:v1";
 
 function normalizeId(value) {
   if (!value) return "";
@@ -64,6 +65,29 @@ function storyStepState({ selected, quotes, invoices }) { const hasQuote = quote
 function photoCount(job) { if (Array.isArray(job?.photos)) return job.photos.length; if (Array.isArray(job?.photo_urls)) return job.photo_urls.length; if (Array.isArray(job?.attachments)) return job.attachments.filter((item) => /image|photo/i.test(String(item?.type || item?.url || item))).length; return Number(job?.photo_count || job?.photos_count || 0) || 0; }
 function jobFromTimerResponse(data) { return data?.job || data?.data?.job || data?.data || data || null; }
 function jobFromCreateResponse(data) { return data?.job || data?.data?.job || data?.data || data; }
+function loadRecentJobCache() {
+  try {
+    const rows = JSON.parse(window.localStorage.getItem(RECENT_JOB_CACHE_KEY) || "[]");
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    return Array.isArray(rows) ? rows.filter((row) => Number(row?.__cached_at || 0) > cutoff) : [];
+  } catch { return []; }
+}
+function rememberRecentJob(record) {
+  try {
+    const now = Date.now();
+    const id = normalizeId(record?.id || record?._id || record?.job_id) || `local-${now}`;
+    const saved = { ...record, id, _id: record?._id || id, __cached_at: now, created_at: record?.created_at || new Date(now).toISOString() };
+    window.localStorage.setItem(RECENT_JOB_CACHE_KEY, JSON.stringify([saved, ...loadRecentJobCache().filter((item) => normalizeId(item?.id || item?._id || item?.job_id) !== id)].slice(0, 20)));
+  } catch {}
+}
+function mergeRecentJobs(rows) {
+  const merged = new Map();
+  [...loadRecentJobCache(), ...(Array.isArray(rows) ? rows : [])].forEach((row, index) => {
+    const key = normalizeId(row?.id || row?._id || row?.job_id) || `${pick(row, "title", "job_name", "name")}-${pick(row, "client_name", "customer_name", "client")}-${index}`;
+    merged.set(key, row);
+  });
+  return [...merged.values()];
+}
 function loadArchivedJobIds() { try { const saved = window.localStorage.getItem(ARCHIVED_JOBS_KEY); const parsed = saved ? JSON.parse(saved) : []; return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : []; } catch { return []; } }
 function saveArchivedJobIds(ids) { try { window.localStorage.setItem(ARCHIVED_JOBS_KEY, JSON.stringify([...new Set(ids.filter(Boolean).map(String))])); } catch {} }
 function isRecurringJob(job) { const text = lower(`${job?.repeat || job?.recurring || job?.recurrence || job?.recurring_id || job?.series_id || job?.frequency || job?.repeat_every || ""}`); return Boolean(job?.is_recurring || job?.recurring === true || job?.repeat || job?.recurrence || job?.recurring_id || job?.series_id || /daily|weekly|fortnight|month|repeat|recurr/.test(text)); }
@@ -143,7 +167,7 @@ export default function FreshJobs({ onNavigate }) {
     setLoading(true); setError("");
     const res = await get("/jobs", { timeout: 25000 });
     if (!res.success) { setJobs([]); setSelectedId(""); setError(res.error || "Could not load jobs"); setLoading(false); return; }
-    const nextJobs = hideDemoRecords(unpackList(res.data, "jobs")).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+    const nextJobs = hideDemoRecords(mergeRecentJobs(unpackList(res.data, "jobs"))).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
     setJobs(nextJobs); setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs.find((job) => !loadArchivedJobIds().includes(String(job.id)))?.id || nextJobs[0]?.id || ""); setLoading(false);
   }, [get]);
 
@@ -184,6 +208,7 @@ export default function FreshJobs({ onNavigate }) {
     const res = await post("/jobs", payload, { timeout: 25000 });
     if (!res.success) { setJobs((current) => current.filter((job) => job.id !== optimistic.id)); setError(res.error || "Could not save job."); setSavingJob(false); setJobModalOpen(true); return; }
     const saved = normalizeJob(jobFromCreateResponse(res.data) || payload, 0);
+    rememberRecentJob(saved);
     setJobs((current) => [saved, ...current.filter((job) => job.id !== optimistic.id)]);
     setSelectedId(saved.id); setActionMessage("Job created."); setSavingJob(false); setJobForm(EMPTY_JOB_FORM);
     try { window.dispatchEvent(new Event("churvox:fresh-data-updated")); } catch {}

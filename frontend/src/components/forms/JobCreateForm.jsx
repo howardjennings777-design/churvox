@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PremiumButton } from "@/components/premium";
 
 const ASK_DRAFT_KEY = "churvox:tell-command-draft:v1";
+const RECENT_JOB_CACHE_KEY = "churvox:fresh-recent-jobs:v1";
 const COUNTRY_OPTIONS = ["New Zealand", "Australia", "United States", "United Kingdom"];
 const REGION_OPTIONS = {
   "New Zealand": ["Northland", "Auckland", "Waikato", "Bay of Plenty", "Gisborne", "Hawke's Bay", "Taranaki", "Manawatu-Whanganui", "Wellington", "Tasman", "Nelson", "Marlborough", "West Coast", "Canterbury", "Otago", "Southland"],
@@ -46,6 +47,20 @@ function storedAsk() { try { return window.localStorage.getItem(ASK_DRAFT_KEY) |
 function pad(n) { return String(n).padStart(2, "0"); }
 function toInputDate(date) { return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`; }
 function jobTypeLabel(value) { return JOB_TYPES.find(([key]) => key === value)?.[1] || "New job"; }
+function jobRecordFromResponse(value) {
+  const data = value?.data ?? value;
+  return data?.job || data?.data?.job || data?.data || data?.record || data?.item || data || {};
+}
+function rememberRecentJob(record) {
+  try {
+    const now = Date.now();
+    const id = idOf(record?.id || record?._id || record?.job_id) || `local-${now}`;
+    const saved = { ...record, id, _id: record?._id || id, __cached_at: now, created_at: record?.created_at || new Date(now).toISOString() };
+    const rows = JSON.parse(window.localStorage.getItem(RECENT_JOB_CACHE_KEY) || "[]");
+    const current = Array.isArray(rows) ? rows : [];
+    window.localStorage.setItem(RECENT_JOB_CACHE_KEY, JSON.stringify([saved, ...current.filter((item) => idOf(item?.id || item?._id || item?.job_id) !== id)].slice(0, 20)));
+  } catch {}
+}
 
 function parseTimeInto(date, text) {
   const input = lower(text);
@@ -275,7 +290,13 @@ export default function JobCreateForm({ onSuccess, onCancel, submitLabel = "Crea
     const payload = { title: finalTitle, job_name: finalTitle, job_type: form.job_type || "other", client_id: form.client_id || null, client_name: form.client_name, customer_name: form.client_name, customer_email: form.customer_email, customer_phone: form.customer_phone, address: form.address, site_address: form.address, scheduled_date: form.scheduled_date, estimated_duration: 60, country: form.country, region: form.region, notes: form.notes, description: form.notes, assigned_worker_id: form.assigned_worker_id || null, worker_id: form.assigned_worker_id || null, assigned_worker_name: form.assigned_worker_name, worker_name: form.assigned_worker_name, pricing_type: form.pricing_type, fixed_price: fixedPrice, price: ["fixed", "fixed_extras"].includes(form.pricing_type) ? fixedPrice : 0, hourly_rate: ["hourly", "hourly_extras"].includes(form.pricing_type) ? hourlyRate : 0, status: form.status || "assigned", is_recurring: Boolean(form.is_recurring), recurrence_pattern: form.is_recurring ? form.recurring_frequency : null, recurring_frequency: form.is_recurring ? form.recurring_frequency : null };
     const res = await post("/jobs", payload);
     setSaving(false);
-    if (res?.success) { toast.success("Job created"); try { window.localStorage.removeItem(ASK_DRAFT_KEY); } catch {} onSuccess?.(res.data || res.job || res.record || res); }
+    if (res?.success) {
+      const savedRecord = jobRecordFromResponse(res.data || res.job || res.record || res);
+      rememberRecentJob({ ...payload, ...savedRecord, title: savedRecord.title || savedRecord.job_name || finalTitle, job_name: savedRecord.job_name || savedRecord.title || finalTitle });
+      toast.success("Job created");
+      try { window.localStorage.removeItem(ASK_DRAFT_KEY); } catch {}
+      onSuccess?.(savedRecord || res.data || res.job || res.record || res);
+    }
     else toast.error(res?.error || "Could not create job");
   }
 
