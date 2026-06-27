@@ -169,12 +169,23 @@ export default function FreshJobs({ onNavigate }) {
 
   const loadJobs = React.useCallback(async () => {
     setLoading(true); setError("");
-    const res = await get("/jobs", { timeout: 25000 });
-    if (!res.success) { setJobs([]); setSelectedId(""); setError(res.error || "Could not load jobs"); setLoading(false); return; }
     const cachedJobs = loadRecentJobCache().map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime);
-    const nextJobs = hideDemoRecords(mergeRecentJobs(unpackList(res.data, "jobs"))).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
     setRecentSavedJobs(cachedJobs);
-    setJobs(nextJobs); setSelectedId((current) => nextJobs.some((job) => job.id === current) ? current : nextJobs.find((job) => !loadArchivedJobIds().includes(String(job.id)))?.id || nextJobs[0]?.id || ""); setLoading(false);
+
+    const res = await get("/jobs", { timeout: 25000 });
+    if (!res.success) {
+      setJobs(cachedJobs);
+      setSelectedId((current) => cachedJobs.some((job) => job.id === current) ? current : cachedJobs[0]?.id || "");
+      setError(res.error || "Could not load jobs");
+      setLoading(false);
+      return;
+    }
+
+    const nextJobs = hideDemoRecords(mergeRecentJobs(unpackList(res.data, "jobs"))).map(normalizeJob).sort((a, b) => b.sortTime - a.sortTime || String(b.id).localeCompare(String(a.id)));
+    const visibleJobs = nextJobs.length ? nextJobs : cachedJobs;
+    setJobs(visibleJobs);
+    setSelectedId((current) => visibleJobs.some((job) => job.id === current) ? current : visibleJobs.find((job) => !loadArchivedJobIds().includes(String(job.id)))?.id || visibleJobs[0]?.id || "");
+    setLoading(false);
   }, [get]);
 
   const loadStory = React.useCallback(async () => {
