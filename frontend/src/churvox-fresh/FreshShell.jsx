@@ -24,6 +24,351 @@ const parentByKey = {
   inbox: "messages", workermessages: "messages", workerinbox: "messages", gps: "time", customerportal: "portal", clientportal: "portal", proofpack: "portal", reviewbooster: "clients",
 };
 
+const CHURVOX_WORKSPACE_OS_CSS = `
+  :root {
+    --cvx-os-ink: #10131b;
+    --cvx-os-muted: #5f6b7a;
+    --cvx-os-line: rgba(16, 19, 27, .11);
+    --cvx-os-paper: rgba(255, 252, 246, .9);
+    --cvx-os-white: rgba(255, 255, 255, .86);
+    --cvx-os-orange: #f97316;
+    --cvx-os-green: #16a34a;
+    --cvx-os-blue: #2563eb;
+    --cvx-os-teal: #0f766e;
+    --cvx-os-shadow: 0 22px 60px rgba(15, 23, 42, .14);
+    --cvx-os-tight: 0 12px 30px rgba(15, 23, 42, .09);
+  }
+
+  body:has(.freshApp) {
+    background: #f4eadc !important;
+  }
+
+  body:has(.freshApp) .freshApp {
+    grid-template-columns: 232px minmax(0, 1fr) !important;
+    background: #f4eadc !important;
+  }
+
+  body:has(.freshApp) .freshSide {
+    width: 232px !important;
+    padding: 14px 12px !important;
+    background:
+      linear-gradient(180deg, rgba(249, 115, 22, .18), transparent 18rem),
+      linear-gradient(180deg, #080d16 0%, #111827 48%, #05070b 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, .1) !important;
+    box-shadow: 16px 0 44px rgba(15, 23, 42, .24) !important;
+  }
+
+  body:has(.freshApp) .freshBrand {
+    min-height: 68px !important;
+    padding: 12px !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, .08) !important;
+    border: 1px solid rgba(255, 255, 255, .1) !important;
+  }
+
+  body:has(.freshApp) .freshBrand strong {
+    color: #fffaf0 !important;
+    -webkit-text-fill-color: #fffaf0 !important;
+    letter-spacing: .12em !important;
+  }
+
+  body:has(.freshApp) .freshBrand small {
+    color: rgba(255, 250, 240, .68) !important;
+    -webkit-text-fill-color: rgba(255, 250, 240, .68) !important;
+  }
+
+  body:has(.freshApp) .freshNav {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  body:has(.freshApp) .freshNavGroup {
+    margin: 0 !important;
+    padding: 9px !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, .045) !important;
+    border: 1px solid rgba(255, 255, 255, .07) !important;
+  }
+
+  body:has(.freshApp) .freshNavGroup p,
+  body:has(.freshApp) .freshNavMore summary span {
+    color: rgba(255, 250, 240, .52) !important;
+    -webkit-text-fill-color: rgba(255, 250, 240, .52) !important;
+    letter-spacing: .13em !important;
+  }
+
+  body:has(.freshApp) .freshNav button,
+  body:has(.freshApp) .freshNavMore summary {
+    min-height: 36px !important;
+    height: auto !important;
+    border-radius: 12px !important;
+    color: rgba(255, 250, 240, .82) !important;
+    -webkit-text-fill-color: rgba(255, 250, 240, .82) !important;
+  }
+
+  body:has(.freshApp) .freshNav button.active {
+    background: linear-gradient(90deg, #f97316, #ea580c) !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827 !important;
+    box-shadow: 0 14px 30px rgba(249, 115, 22, .28) !important;
+  }
+
+  body:has(.freshApp) .freshMain {
+    padding: 0 !important;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(249, 115, 22, .13), transparent 30rem),
+      linear-gradient(180deg, #fffaf1 0%, #f1e6d8 100%) !important;
+  }
+
+  body:has(.freshApp) .freshPageScroll {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 18px 22px 58px !important;
+    box-sizing: border-box !important;
+  }
+
+  body:has(.freshApp) .freshPageScroll > section,
+  body:has(.freshApp) .freshPageScroll > main,
+  body:has(.freshApp) .freshPageScroll > div {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: calc(100vh - 36px) !important;
+    display: grid !important;
+    gap: 14px !important;
+    align-content: start !important;
+  }
+
+  body:has(.freshApp) .freshHero,
+  body:has(.freshApp) .freshTodayWorkHero,
+  body:has(.freshApp) .freshCommandRebuildHero,
+  body:has(.freshApp) .freshWorkerFieldHero,
+  body:has(.freshApp) .cvPayHeader,
+  body:has(.freshApp) .cvPlanHero {
+    min-height: 182px !important;
+    border-radius: 26px !important;
+    border: 1px solid rgba(255, 255, 255, .16) !important;
+    border-left: 8px solid var(--cvx-os-orange) !important;
+    box-shadow: var(--cvx-os-shadow) !important;
+    overflow: hidden !important;
+    background:
+      radial-gradient(circle at 90% 18%, rgba(249, 115, 22, .36), transparent 15rem),
+      linear-gradient(120deg, #070b13 0%, #111827 58%, #231307 100%) !important;
+  }
+
+  body:has(.freshApp) .freshHero h1,
+  body:has(.freshApp) .freshTodayWorkHero h1,
+  body:has(.freshApp) .freshCommandRebuildHero h1,
+  body:has(.freshApp) .freshWorkerFieldHero h1,
+  body:has(.freshApp) .cvPayHeader h1,
+  body:has(.freshApp) .cvPlanHero h1 {
+    letter-spacing: -.035em !important;
+    line-height: .92 !important;
+    max-width: 980px !important;
+  }
+
+  body:has(.freshApp) .freshGrid,
+  body:has(.freshApp) .freshCommandFixLayout,
+  body:has(.freshApp) .freshWorkerNowPanel,
+  body:has(.freshApp) .cvPlanMain,
+  body:has(.freshApp) .cvPlanPanel,
+  body:has(.freshApp) .cvPlanTruth,
+  body:has(.freshApp) .cvPlanCompare {
+    width: 100% !important;
+    max-width: none !important;
+    border: 1px solid var(--cvx-os-line) !important;
+    border-radius: 26px !important;
+    padding: 12px !important;
+    gap: 12px !important;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, .72), rgba(255, 247, 237, .72)),
+      repeating-linear-gradient(90deg, rgba(249, 115, 22, .045) 0 1px, transparent 1px 84px) !important;
+    box-shadow: var(--cvx-os-shadow) !important;
+    backdrop-filter: blur(10px) !important;
+  }
+
+  body:has(.freshApp) .freshGrid {
+    grid-template-columns: minmax(270px, .75fr) minmax(520px, 1.55fr) minmax(250px, .7fr) !important;
+    align-items: stretch !important;
+  }
+
+  body:has(.freshApp) .freshCard,
+  body:has(.freshApp) .cvPlanCard,
+  body:has(.freshApp) .cvPlanSelected,
+  body:has(.freshApp) .cvPlanCheckout,
+  body:has(.freshApp) .cvPlanCurrentBox {
+    border-radius: 22px !important;
+    border: 1px solid var(--cvx-os-line) !important;
+    background: var(--cvx-os-paper) !important;
+    box-shadow: var(--cvx-os-tight) !important;
+  }
+
+  body:has(.freshJobsPage) .freshFlowPromiseStrip,
+  body:has(.freshJobsPage) .freshCommandPulse,
+  body:has(.freshJobsPage) .freshCommandFilterBar {
+    margin: 0 !important;
+  }
+
+  body:has(.freshJobsPage) .freshJobsPage::before {
+    content: "Jobs desk  /  Recurring lives here  /  Proof, timer, invoice readiness";
+    display: block !important;
+    padding: 12px 16px !important;
+    border-radius: 18px !important;
+    background: #111827 !important;
+    color: #fffaf0 !important;
+    -webkit-text-fill-color: #fffaf0 !important;
+    font-size: 12px !important;
+    font-weight: 1000 !important;
+    letter-spacing: .08em !important;
+    text-transform: uppercase !important;
+    box-shadow: var(--cvx-os-tight) !important;
+  }
+
+  body:has(.freshJobsPage) .freshJobsPage .freshGrid {
+    grid-template-columns: minmax(310px, .76fr) minmax(620px, 1.55fr) minmax(280px, .7fr) !important;
+  }
+
+  body:has(.freshJobsPage) .freshJobsListCard,
+  body[data-fresh-page="command"] .freshCommandQueuePanel,
+  body:has(.freshCommandStablePage) .freshCommandQueuePanel {
+    background:
+      linear-gradient(180deg, rgba(249, 115, 22, .18), transparent 16rem),
+      linear-gradient(180deg, #0b1220, #111827) !important;
+    color: #fffaf0 !important;
+    -webkit-text-fill-color: #fffaf0 !important;
+  }
+
+  body:has(.freshJobsPage) .freshJobsListCard .freshItem,
+  body:has(.freshCommandStablePage) .freshCommandFixItem {
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, .075) !important;
+    border-color: rgba(255, 255, 255, .1) !important;
+  }
+
+  body:has(.freshJobsPage) .freshJobsDetailCard,
+  body:has(.freshCommandStablePage) .freshCommandFixDetail {
+    background: #fff !important;
+    border-top: 7px solid var(--cvx-os-orange) !important;
+  }
+
+  body:has(.freshJobsPage) .freshJobsActionsCard::after {
+    content: "GPS / proof panel\A Site location, worker proof and completion notes sit with the job instead of becoming another sidebar page.";
+    white-space: pre-line !important;
+    display: block !important;
+    min-height: 170px !important;
+    margin-top: 12px !important;
+    padding: 16px !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(15, 118, 110, .18) !important;
+    background:
+      radial-gradient(circle at 62% 44%, rgba(249, 115, 22, .34), transparent 3.5rem),
+      repeating-linear-gradient(90deg, rgba(15, 23, 42, .08) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(0deg, rgba(15, 23, 42, .08) 0 1px, transparent 1px 34px),
+      #f8fafc !important;
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    font-weight: 950 !important;
+    line-height: 1.35 !important;
+  }
+
+  body:has(.freshCommandStablePage) .freshCommandFixLayout {
+    grid-template-columns: minmax(360px, .9fr) minmax(560px, 1.3fr) minmax(300px, .7fr) !important;
+  }
+
+  body:has(.freshCommandStablePage) .freshCommandFixLayout::before {
+    content: "Approval desk";
+    grid-column: 1 / -1 !important;
+    padding: 10px 14px !important;
+    border-radius: 16px !important;
+    background: #111827 !important;
+    color: #fffaf0 !important;
+    -webkit-text-fill-color: #fffaf0 !important;
+    font-weight: 1000 !important;
+    letter-spacing: .1em !important;
+    text-transform: uppercase !important;
+  }
+
+  body[data-fresh-page="settings"] .freshGrid,
+  body[data-fresh-page="support"] .freshGrid,
+  body:has(.freshSupportPage) .freshGrid {
+    grid-template-columns: minmax(280px, .7fr) minmax(580px, 1.45fr) minmax(280px, .75fr) !important;
+  }
+
+  body[data-fresh-page="settings"] .freshHero,
+  body[data-fresh-page="support"] .freshHero,
+  body:has(.freshSupportPage) .freshHero {
+    border-left-color: var(--cvx-os-blue) !important;
+    background:
+      radial-gradient(circle at 90% 18%, rgba(37, 99, 235, .34), transparent 15rem),
+      linear-gradient(120deg, #09162f 0%, #132e52 100%) !important;
+  }
+
+  body[data-fresh-page="plans"] .cvPlansPage {
+    display: grid !important;
+    gap: 14px !important;
+  }
+
+  body[data-fresh-page="plans"] .cvPlanCards {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  body[data-fresh-page="plans"] .cvPlanCard.best,
+  body[data-fresh-page="plans"] .cvPlanCard.active {
+    border-color: rgba(249, 115, 22, .62) !important;
+    box-shadow: 0 18px 42px rgba(249, 115, 22, .16) !important;
+  }
+
+  body:has(.freshWorkerLivePage) .freshWorkerLiveMapCard,
+  body:has(.freshWorkerCommandPage) .freshWorkerLiveMapCard,
+  body[data-fresh-page="workercommand"] .freshWorkerLiveMapCard {
+    min-height: 420px !important;
+    border-radius: 24px !important;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(249, 115, 22, .36), transparent 5rem),
+      repeating-linear-gradient(90deg, rgba(15, 23, 42, .07) 0 1px, transparent 1px 38px),
+      repeating-linear-gradient(0deg, rgba(15, 23, 42, .07) 0 1px, transparent 1px 38px),
+      #f8fafc !important;
+  }
+
+  @media (max-width: 1180px) {
+    body:has(.freshApp) .freshGrid,
+    body:has(.freshApp) .freshCommandFixLayout,
+    body:has(.freshApp) .freshWorkerNowPanel,
+    body[data-fresh-page="plans"] .cvPlanCards {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  @media (max-width: 900px) {
+    body:has(.freshApp) .freshApp {
+      display: block !important;
+    }
+
+    body:has(.freshApp) .freshPageScroll {
+      padding: 12px 12px 112px !important;
+    }
+
+    body:has(.freshApp) .freshPageScroll > section,
+    body:has(.freshApp) .freshPageScroll > main,
+    body:has(.freshApp) .freshPageScroll > div {
+      min-height: auto !important;
+    }
+
+    body:has(.freshApp) .freshHero,
+    body:has(.freshApp) .freshTodayWorkHero,
+    body:has(.freshApp) .cvPlanHero {
+      min-height: 150px !important;
+      border-radius: 20px !important;
+    }
+
+    body:has(.freshJobsPage) .freshJobsPage::before,
+    body:has(.freshCommandStablePage) .freshCommandFixLayout::before {
+      font-size: 10px !important;
+      line-height: 1.35 !important;
+    }
+  }
+`;
+
 function guideIsComplete() { try { return window.localStorage.getItem(GUIDE_COMPLETE_KEY) === "true"; } catch { return false; } }
 function titlePlan(plan) { return String(plan || "start").charAt(0).toUpperCase() + String(plan || "start").slice(1); }
 function uniqueItems(items) { const seen = new Set(); return items.filter(([key]) => { if (seen.has(key)) return false; seen.add(key); return true; }); }
@@ -73,6 +418,20 @@ export default function FreshShell({ active, onChange, onNavigate, children }) {
   const currentPrimary = parentByKey[active] || active;
   const mobileTitle = mobileLabels[currentPrimary] || mobileLabels[active] || "Churvox";
   const showGlobalAsk = currentPrimary === "planday";
+
+  React.useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    document.body.dataset.freshPage = currentPrimary;
+    document.body.dataset.freshPlan = currentPlan;
+    let style = document.getElementById("churvox-workspace-os-style");
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "churvox-workspace-os-style";
+      document.head.appendChild(style);
+    }
+    if (style.textContent !== CHURVOX_WORKSPACE_OS_CSS) style.textContent = CHURVOX_WORKSPACE_OS_CSS;
+    return undefined;
+  }, [currentPrimary, currentPlan]);
 
   React.useEffect(() => {
     const refresh = () => { setGuideComplete(guideIsComplete()); setNavRefresh((value) => value + 1); };
