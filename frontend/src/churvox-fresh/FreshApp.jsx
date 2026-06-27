@@ -132,6 +132,7 @@ import "./freshChurvoxOperatingSystem.css";
 import "./freshChurvoxOperatingSystemTight.css";
 import "./freshChurvoxSignatureOS.css";
 import "./freshChurvoxPagePersonalities.css";
+import "./freshChurvoxRoutePersonalityLock.css";
 
 const PLAN_DAY_ALIASES = ["today", "todayswork", "worktoday", "smart", "hub", "dashboard", "calendar", "schedule", "dispatch", "routes"];
 const COMMAND_ALIASES = ["askchurvox", "aioperatorstudio", "quickcreateai", "followupwriter", "quoteai", "invoicecheck", "workerbrief"];
