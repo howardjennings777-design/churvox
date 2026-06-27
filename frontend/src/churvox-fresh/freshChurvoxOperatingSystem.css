@@ -1,0 +1,496 @@
+/* Churvox Operating System layer.
+   One product language: Churvox finds the work, prepares the admin, owner approves. */
+
+:root {
+  --cv-os-bg: #f5eee2;
+  --cv-os-panel: rgba(255, 255, 255, 0.94);
+  --cv-os-panel-strong: #fffaf0;
+  --cv-os-ink: #111827;
+  --cv-os-muted: #5f6b63;
+  --cv-os-line: rgba(17, 24, 39, 0.1);
+  --cv-os-line-strong: rgba(249, 115, 22, 0.28);
+  --cv-os-orange: #f97316;
+  --cv-os-green: #16a34a;
+  --cv-os-dark: #111827;
+  --cv-os-shadow: 0 18px 46px rgba(20, 17, 13, 0.1);
+}
+
+.freshMain {
+  background:
+    radial-gradient(circle at 22% 0%, rgba(249, 115, 22, 0.1), transparent 34rem),
+    linear-gradient(180deg, #fffaf1 0%, var(--cv-os-bg) 100%) !important;
+}
+
+.freshPageScroll {
+  max-width: 1540px;
+  margin: 0 auto;
+  padding: 14px 16px 26px !important;
+}
+
+:is(
+  .freshTodayPage,
+  .freshCommandRebuild,
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .freshWorkerCommandPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshAdminDebtPage,
+  .freshProofPacksPage,
+  .freshSettingsPage,
+  .freshPlansPage,
+  .freshSupportPage,
+  .freshHelpDeskPage,
+  .freshImportsPage,
+  .freshExportsPage
+) {
+  display: grid !important;
+  gap: 12px !important;
+  color: var(--cv-os-ink) !important;
+}
+
+/* Page purpose rails. They make each page explain itself at a glance. */
+:is(
+  .freshTodayPage,
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshSettingsPage,
+  .freshPlansPage,
+  .freshSupportPage
+)::before {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 11px;
+  border: 1px solid rgba(249, 115, 22, 0.24);
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #7c2d12;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.freshTodayPage::before { content: "Smart Hub - what needs doing now"; }
+.freshJobsPage::before { content: "Jobs - who, where, what next"; }
+.freshClientsPage::before { content: "Clients - history, value, next action"; }
+.freshQuotesPage::before { content: "Quotes - prepare, send, convert"; }
+.freshInvoicesPage::before { content: "Invoices - draft, send, chase, sync"; }
+.freshTeamPage::before { content: "Team - access, assignment, field work"; }
+.freshWorkerLivePage::before,
+.freshWorkerCommandPage::before { content: "Worker view - GPS, proof, time"; }
+.cvPayPage::before { content: "Payroll - review time, then export"; }
+.freshFollowUpsPage::before { content: "Follow-ups - prepared messages, owner approved"; }
+.freshXeroPage::before { content: "Accounting sync - draft handoff, owner controlled"; }
+.freshSettingsPage::before { content: "Settings - business controls"; }
+.freshPlansPage::before { content: "Plans - tiered power, simple choice"; }
+.freshSupportPage::before { content: "Help - get unstuck fast"; }
+
+:is(
+  .freshTodayPage,
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .freshWorkerCommandPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshSettingsPage,
+  .freshPlansPage,
+  .freshSupportPage
+) > header,
+.freshCommandRebuildHero,
+.freshWorkerFieldHero,
+.cvPayHeader,
+.freshFollowUpsHero,
+.freshXeroCompactHeader {
+  overflow: hidden !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-left: 8px solid var(--cv-os-orange) !important;
+  background:
+    radial-gradient(circle at 95% 12%, rgba(249, 115, 22, 0.34), transparent 28%),
+    linear-gradient(135deg, #111827 0%, #151c1a 58%, #2b170d 100%) !important;
+  box-shadow: var(--cv-os-shadow) !important;
+}
+
+:is(
+  .freshTodayPage,
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .freshWorkerCommandPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshSettingsPage,
+  .freshPlansPage,
+  .freshSupportPage
+) > header h1,
+.freshCommandRebuildHero h1,
+.freshWorkerFieldHero h1,
+.cvPayHeader h1,
+.freshFollowUpsHero h1,
+.freshXeroCompactHeader h1 {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  font-size: clamp(42px, 5.2vw, 72px) !important;
+  line-height: 0.92 !important;
+  letter-spacing: 0 !important;
+}
+
+:is(
+  .freshTodayPage,
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .freshWorkerCommandPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshSettingsPage,
+  .freshPlansPage,
+  .freshSupportPage
+) > header p,
+.freshCommandRebuildHero p,
+.freshWorkerFieldHero p,
+.cvPayHeader p,
+.freshFollowUpsHero p,
+.freshXeroCompactHeader p {
+  color: #fed7aa !important;
+  -webkit-text-fill-color: #fed7aa !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1.38 !important;
+}
+
+/* Three-lane work layout: list, record, decision. */
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshGrid,
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshStoryGrid,
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshJobsLayout,
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshClientsLayout,
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshQuotesLayout,
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshInvoicesLayout {
+  display: grid !important;
+  grid-template-columns: minmax(250px, 0.74fr) minmax(430px, 1.42fr) minmax(250px, 0.78fr) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+:is(
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .freshWorkerCommandPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshSettingsPage,
+  .freshPlansPage,
+  .freshSupportPage,
+  .freshCommandRebuild
+) :is(
+  .freshCard,
+  .freshJobsListCard,
+  .freshJobsDetailCard,
+  .freshJobsActionsCard,
+  .freshMiniGrid > div,
+  .freshStoryLinks article,
+  .freshXeroCards section,
+  .freshXeroCompactStatus,
+  .freshWorkerNowPanel,
+  .freshWorkerRail,
+  .freshWorkerNowJob,
+  .freshWorkerFieldStats article,
+  .freshCommandQueuePanel,
+  .freshCommandFormPanel,
+  .freshCommandSidePanel section,
+  .cvPayCard,
+  .cvPayPanel,
+  .cvPayHeader + section,
+  article
+) {
+  border-color: var(--cv-os-line) !important;
+  border-radius: 16px !important;
+  background: var(--cv-os-panel) !important;
+  box-shadow: 0 12px 30px rgba(20, 17, 13, 0.06) !important;
+}
+
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(.freshJobsListCard, .freshJobsDetailCard, .freshJobsActionsCard, .freshCard) {
+  min-height: 260px;
+}
+
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(.freshJobsActionsCard, .freshCard:last-child) {
+  background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%) !important;
+}
+
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(.freshItem, .freshJobsItem, .freshClientItem, .freshQuoteItem, .freshInvoiceItem, button[class*="Item"]) {
+  border-radius: 13px !important;
+  border: 1px solid rgba(17, 24, 39, 0.1) !important;
+  border-left: 5px solid var(--cv-os-orange) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(.freshItem.active, .active[class*="Item"], button[class*="Item"].active) {
+  background: #111827 !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 12px 26px rgba(17, 24, 39, 0.16) !important;
+}
+
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(.freshItem.active, .active[class*="Item"], button[class*="Item"].active) * {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(h2, h3) {
+  letter-spacing: 0 !important;
+  color: var(--cv-os-ink) !important;
+  -webkit-text-fill-color: var(--cv-os-ink) !important;
+}
+
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(.freshMiniGrid, .freshStatsGrid, .freshSummaryGrid) {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+:is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(.freshMiniGrid > div, .freshStatsGrid > div, .freshSummaryGrid > div) {
+  min-height: 78px;
+  padding: 12px !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+}
+
+/* Buttons: orange means owner decision, black means control, white means secondary. */
+:is(
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .freshWorkerCommandPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshSettingsPage,
+  .freshPlansPage,
+  .freshSupportPage,
+  .freshCommandRebuild
+) button {
+  min-height: 38px;
+  border-radius: 999px !important;
+  font-weight: 950 !important;
+}
+
+:is(
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .freshWorkerCommandPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshCommandRebuild
+) :is(button:first-of-type, .primary, .freshPrimary) {
+  border-color: rgba(249, 115, 22, 0.35) !important;
+}
+
+/* Command: force approval desk rows readable and compact. */
+.freshCommandStablePage .freshCommandQueuePanel,
+.freshCommandStablePage .freshCommandFixQueue {
+  overflow: hidden !important;
+}
+
+.freshCommandStablePage .freshCommandQueueList,
+.freshCommandStablePage .freshCommandFixQueue > div:last-child {
+  display: grid !important;
+  align-content: start !important;
+  gap: 8px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 8px 0 0 !important;
+  scrollbar-gutter: stable !important;
+}
+
+.freshCommandStablePage .freshCommandQueueList > button,
+.freshCommandStablePage .freshCommandQueueList > article,
+.freshCommandStablePage .freshCommandFixItem {
+  display: grid !important;
+  align-content: start !important;
+  gap: 5px !important;
+  min-height: 90px !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 11px 12px !important;
+  border-radius: 16px !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  transform: none !important;
+}
+
+.freshCommandStablePage .freshCommandQueueList > button.active,
+.freshCommandStablePage .freshCommandFixItem.active {
+  border-radius: 16px !important;
+  background: #111827 !important;
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.14) !important;
+}
+
+.freshCommandStablePage .freshCommandQueueList em,
+.freshCommandStablePage .freshCommandFixItem em {
+  display: inline-flex !important;
+  width: fit-content !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 4px 8px !important;
+  border-radius: 999px !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+}
+
+.freshCommandStablePage .freshCommandQueueList b,
+.freshCommandStablePage .freshCommandQueueList span,
+.freshCommandStablePage .freshCommandQueueList small,
+.freshCommandStablePage .freshCommandFixItem b,
+.freshCommandStablePage .freshCommandFixItem span,
+.freshCommandStablePage .freshCommandFixItem small,
+.freshCommandStablePage .freshCommandFixItem strong {
+  display: block !important;
+  min-width: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+}
+
+.freshCommandStablePage .freshCommandQueueList b,
+.freshCommandStablePage .freshCommandFixItem b {
+  font-size: 14px !important;
+  line-height: 1.16 !important;
+}
+
+.freshCommandStablePage .freshCommandQueueList span,
+.freshCommandStablePage .freshCommandFixItem span,
+.freshCommandStablePage .freshCommandFixItem small {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+/* Worker view: map/control page should feel like field command, not an empty page. */
+.freshWorkerLivePage .freshWorkerNowPanel,
+.freshWorkerCommandPage .freshWorkerNowPanel {
+  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr) !important;
+}
+
+.freshWorkerLivePage .freshWorkerLiveMapCard,
+.freshWorkerCommandPage .freshWorkerLiveMapCard {
+  min-height: 390px !important;
+}
+
+/* Empty states become useful command panels. */
+:is(
+  .freshJobsPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshWorkerLivePage,
+  .freshWorkerCommandPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage,
+  .freshCommandRebuild
+) :is(.freshEmpty, .freshWorkerLiveEmpty, .freshCommandEmptyForm, .cvWorkerEmpty) {
+  border: 1px dashed rgba(249, 115, 22, 0.34) !important;
+  border-left: 5px solid var(--cv-os-orange) !important;
+  border-radius: 15px !important;
+  background: #fff7ed !important;
+  color: var(--cv-os-ink) !important;
+}
+
+@media (max-width: 1260px) {
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshGrid,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshStoryGrid,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshJobsLayout,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshClientsLayout,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshQuotesLayout,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshInvoicesLayout {
+    grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.2fr) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .freshPageScroll {
+    padding: 10px 10px 84px !important;
+  }
+
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshGrid,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshStoryGrid,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshJobsLayout,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshClientsLayout,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshQuotesLayout,
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) .freshInvoicesLayout,
+  .freshWorkerLivePage .freshWorkerNowPanel,
+  .freshWorkerCommandPage .freshWorkerNowPanel {
+    grid-template-columns: 1fr !important;
+  }
+
+  :is(.freshJobsPage, .freshClientsPage, .freshQuotesPage, .freshInvoicesPage, .freshTeamPage) :is(.freshMiniGrid, .freshStatsGrid, .freshSummaryGrid) {
+    grid-template-columns: 1fr !important;
+  }
+
+  :is(
+    .freshTodayPage,
+    .freshJobsPage,
+    .freshClientsPage,
+    .freshQuotesPage,
+    .freshInvoicesPage,
+    .freshTeamPage,
+    .freshWorkerLivePage,
+    .freshWorkerCommandPage,
+    .cvPayPage,
+    .freshFollowUpsPage,
+    .freshXeroPage,
+    .freshSettingsPage,
+    .freshPlansPage,
+    .freshSupportPage
+  ) > header h1,
+  .freshCommandRebuildHero h1,
+  .freshWorkerFieldHero h1,
+  .cvPayHeader h1,
+  .freshFollowUpsHero h1,
+  .freshXeroCompactHeader h1 {
+    font-size: clamp(38px, 12vw, 58px) !important;
+  }
+}
