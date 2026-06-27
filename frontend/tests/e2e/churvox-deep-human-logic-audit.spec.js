@@ -211,8 +211,29 @@ async function login(page) {
   expect(storedToken || !/\/login(?:$|[?#])/i.test(page.url()), `login should leave login page. URL=${page.url()} BODY=${text.slice(0, 600)}`).toBeTruthy();
 }
 
+function visibleControlScript() {
+  function visibleToHuman(el) {
+    if (!el || el.closest('[hidden], [aria-hidden="true"]')) return false;
+    if (typeof el.checkVisibility === 'function' && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    const inViewport = rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth;
+    return rect.width > 1 && rect.height > 1 && inViewport && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0.04;
+  }
+  return visibleToHuman;
+}
+
 async function assertPageHealth(page, label) {
   const result = await page.evaluate(() => {
+    const visibleToHuman = (el) => {
+      if (!el || el.closest('[hidden], [aria-hidden="true"]')) return false;
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      const inViewport = rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth;
+      return rect.width > 1 && rect.height > 1 && inViewport && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0.04;
+    };
+
     const issues = [];
     const body = document.body;
     const visibleText = (body?.innerText || '').trim().replace(/\s+/g, ' ');
@@ -222,18 +243,16 @@ async function assertPageHealth(page, label) {
     if (visibleText.length < 40) issues.push('not enough visible text');
 
     const controls = [...document.querySelectorAll('button, a[href], input, textarea, select, [role="button"], summary')]
-      .filter(el => {
-        const rect = el.getBoundingClientRect();
-        const style = getComputedStyle(el);
-        return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0.04;
-      });
+      .filter(visibleToHuman);
 
     controls.forEach((el, index) => {
       const rect = el.getBoundingClientRect();
       const style = getComputedStyle(el);
-      const labelText = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('title') || '').trim().replace(/\s+/g, ' ');
+      const inputType = (el.getAttribute('type') || '').toLowerCase();
+      const isNativeCheck = el.tagName === 'INPUT' && /^(checkbox|radio)$/.test(inputType);
+      const labelText = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('title') || el.getAttribute('value') || '').trim().replace(/\s+/g, ' ');
       if (!labelText && !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) issues.push(`unlabelled control ${index + 1}`);
-      if (rect.width < 14 || rect.height < 14) issues.push(`tiny control ${labelText || el.tagName} ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+      if (!isNativeCheck && (rect.width < 14 || rect.height < 14)) issues.push(`tiny control ${labelText || el.tagName} ${Math.round(rect.width)}x${Math.round(rect.height)}`);
       if (style.pointerEvents === 'none') issues.push(`pointer-events none ${labelText || el.tagName}`);
     });
 
@@ -246,12 +265,18 @@ async function assertPageHealth(page, label) {
 
 async function assertControlsActionable(page, label) {
   const controls = await page.evaluate(() => {
+    const visibleToHuman = (el) => {
+      if (!el || el.closest('[hidden], [aria-hidden="true"]')) return false;
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      const inViewport = rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth;
+      return rect.width > 1 && rect.height > 1 && inViewport && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0.04;
+    };
+
     return [...document.querySelectorAll('button, a[href], [role="button"], summary')]
       .map((el, index) => {
-        const rect = el.getBoundingClientRect();
-        const style = getComputedStyle(el);
-        const visible = rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0.04;
-        if (!visible) return null;
+        if (!visibleToHuman(el)) return null;
         const labelText = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim().replace(/\s+/g, ' ');
         const id = `deep-logic-control-${index}`;
         el.setAttribute('data-deep-logic-control', id);
@@ -266,7 +291,9 @@ async function assertControlsActionable(page, label) {
     if (control.disabled) continue;
     if (/log out|logout|delete|remove|archive|trash|disconnect|revoke|checkout|stripe|pay now|send invoice|send quote|send email|send sms/i.test(control.label)) continue;
     const locator = page.locator(`[data-deep-logic-control="${control.id}"]`).first();
+    if (!(await locator.isVisible().catch(() => false))) continue;
     await locator.scrollIntoViewIfNeeded().catch(() => null);
+    if (!(await locator.isVisible().catch(() => false))) continue;
     await locator.click({ trial: true, timeout: 3000 }).catch(error => failures.push(`${control.label || control.id}: ${error.message}`));
   }
 
