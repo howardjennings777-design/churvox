@@ -7,29 +7,44 @@
 
 .freshCommandRebuild {
   display: grid;
-  gap: 8px;
+  gap: 14px;
   color: #111827;
 }
 
 .freshCommandRebuildHero {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: space-between;
-  gap: 14px;
-  padding: 14px 16px;
-  border: 1px solid rgba(249, 115, 22, .24);
-  border-left: 7px solid #f97316;
-  border-radius: 16px;
+  gap: 18px;
+  min-height: 164px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-left: 9px solid #f97316;
+  border-radius: 28px;
   background:
-    radial-gradient(circle at 96% 10%, rgba(249, 115, 22, .34), transparent 26%),
-    linear-gradient(135deg, #111827, #181816 64%, #2b170d);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, .16);
+    radial-gradient(circle at 91% 22%, rgba(249, 115, 22, .46), transparent 14rem),
+    linear-gradient(115deg, #080f1d 0%, #111827 58%, #321606 100%);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .22);
 }
 
-.freshCommandRebuildHero div:first-child,
-.freshCommandFormHeader div,
-.freshCommandPanelTitle {
-  min-width: 0;
+.freshCommandRebuildHero h1 {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: clamp(42px, 5.8vw, 82px);
+  line-height: .88;
+  letter-spacing: -.04em;
+}
+
+.freshCommandRebuildHero p {
+  max-width: 820px;
+  margin: 10px 0 0;
+  color: #ffedd5;
+  -webkit-text-fill-color: #ffedd5;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.42;
 }
 
 .freshCommandRebuildHero span,
@@ -40,34 +55,15 @@
   display: inline-flex;
   width: fit-content;
   align-items: center;
-  padding: 5px 9px;
-  border: 1px solid rgba(249, 115, 22, .22);
+  padding: 5px 10px;
   border-radius: 999px;
   background: #ffedd5;
   color: #7c2d12;
   -webkit-text-fill-color: #7c2d12;
   font-size: 10px;
   font-weight: 1000;
-  letter-spacing: .075em;
+  letter-spacing: .09em;
   text-transform: uppercase;
-}
-
-.freshCommandRebuildHero h1 {
-  margin: 7px 0 0;
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  font-size: clamp(32px, 4vw, 52px);
-  line-height: .92;
-  letter-spacing: -.05em;
-}
-
-.freshCommandRebuildHero p {
-  max-width: 740px;
-  margin: 5px 0 0;
-  color: #fed7aa;
-  -webkit-text-fill-color: #fed7aa;
-  font-size: 13px;
-  font-weight: 900;
 }
 
 .freshCommandHeroActions,
@@ -80,6 +76,9 @@
 }
 
 .freshCommandHeroActions {
+  min-width: 230px;
+  align-content: flex-start;
+  align-items: flex-start;
   justify-content: flex-end;
 }
 
@@ -88,9 +87,9 @@
 .freshCommandSideActions button,
 .freshCommandFilters button {
   min-height: 38px;
-  padding: 0 12px;
+  padding: 0 13px;
   border: 1px solid rgba(15, 23, 42, .12);
-  border-radius: 11px;
+  border-radius: 999px;
   background: #111827;
   color: #fff;
   -webkit-text-fill-color: #fff;
@@ -122,26 +121,29 @@
 .freshCommandStatsRow {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 .freshCommandStatsRow article,
 .freshCommandStatusStrip,
+.freshCommandMemoryExample,
 .freshCommandQueuePanel,
 .freshCommandFormPanel,
 .freshCommandSidePanel section {
   border: 1px solid rgba(15, 23, 42, .10);
-  border-radius: 14px;
+  border-radius: 18px;
   background: rgba(255, 250, 240, .98);
   box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
 }
 
 .freshCommandStatsRow article {
-  padding: 10px 12px;
+  min-height: 78px;
+  padding: 14px;
 }
 
 .freshCommandStatsRow span,
-.freshCommandStatsRow b {
+.freshCommandStatsRow b,
+.freshCommandStatsRow small {
   display: block;
 }
 
@@ -158,16 +160,24 @@
   margin-top: 4px;
   color: #111827;
   -webkit-text-fill-color: #111827;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 1000;
   line-height: 1;
+}
+
+.freshCommandStatsRow small {
+  margin-top: 5px;
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .freshCommandStatusStrip {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 9px 12px;
+  padding: 10px 14px;
 }
 
 .freshCommandStatusStrip b,
@@ -181,25 +191,94 @@
   -webkit-text-fill-color: #64748b;
 }
 
+.freshCommandMemoryExample,
+.freshCommandMemory {
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+  border-left: 7px solid #f97316;
+  background: linear-gradient(90deg, rgba(255, 237, 213, .94), rgba(255, 255, 255, .92));
+}
+
+.freshCommandMemoryExample b {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: clamp(20px, 2vw, 30px);
+  line-height: 1.1;
+}
+
+.freshCommandMemoryExample small {
+  color: #7c2d12;
+  -webkit-text-fill-color: #7c2d12;
+  font-weight: 900;
+}
+
+.freshCommandPowerStrip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.freshCommandPowerStrip article {
+  min-height: 76px;
+  padding: 13px;
+  border: 1px solid rgba(15, 23, 42, .09);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+}
+
+.freshCommandPowerStrip article:first-child,
+.freshCommandPowerStrip article:nth-child(5) {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.freshCommandPowerStrip b,
+.freshCommandPowerStrip span {
+  display: block;
+}
+
+.freshCommandPowerStrip b {
+  font-size: 13px;
+  line-height: 1.18;
+}
+
+.freshCommandPowerStrip span {
+  margin-top: 5px;
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.freshCommandPowerStrip article:first-child span,
+.freshCommandPowerStrip article:nth-child(5) span {
+  color: #fed7aa;
+  -webkit-text-fill-color: #fed7aa;
+}
+
 .freshCommandBoard {
   display: grid;
-  grid-template-columns: minmax(290px, .82fr) minmax(510px, 1.5fr) minmax(330px, .96fr);
-  gap: 12px;
+  grid-template-columns: minmax(300px, .9fr) minmax(480px, 1.45fr) minmax(290px, .82fr);
+  gap: 14px;
   align-items: stretch;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, .1);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 247, 237, .96), rgba(255, 255, 255, .76)),
+    repeating-linear-gradient(90deg, rgba(249, 115, 22, .045) 0 1px, transparent 1px 78px);
+  box-shadow: 0 22px 58px rgba(15, 23, 42, .12);
 }
 
 .freshCommandQueuePanel,
 .freshCommandFormPanel,
 .freshCommandSidePanel {
-  height: clamp(560px, calc(100vh - 250px), 720px);
+  height: clamp(520px, calc(100vh - 300px), 660px);
   min-height: 0;
-}
-
-.freshCommandQueuePanel,
-.freshCommandFormPanel,
-.freshCommandSidePanel section {
-  min-width: 0;
-  padding: 12px;
 }
 
 .freshCommandQueuePanel,
@@ -209,24 +288,18 @@
   overflow: hidden;
 }
 
-.freshCommandFormPanel {
-  grid-template-rows: minmax(0, 1fr);
+.freshCommandQueuePanel {
+  padding: 14px;
+  background: linear-gradient(180deg, #101827 0%, #1f2937 100%);
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  border: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .18);
 }
 
-.freshCommandSidePanel {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
-  overflow: hidden;
-}
-
-.freshCommandSidePanel section {
-  overflow: hidden;
-}
-
-.freshCommandSidePanel section:last-child {
-  min-height: 0;
-  overflow-y: auto;
+.freshCommandQueuePanel * {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
 }
 
 .freshCommandPanelTitle {
@@ -253,403 +326,273 @@
 }
 
 .freshCommandFilters {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .freshCommandFilters button {
-  min-height: 32px;
-  padding: 0 9px;
-  background: #fff;
-  color: #7c2d12;
-  -webkit-text-fill-color: #7c2d12;
-  border-color: rgba(249, 115, 22, .24);
-}
-
-.freshCommandFilters button b {
-  margin-left: 6px;
+  min-height: 34px;
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .1);
 }
 
 .freshCommandQueueList {
   display: grid;
-  align-content: start;
-  gap: 7px;
-  min-height: 0;
+  gap: 10px;
   overflow-y: auto;
-  overflow-x: hidden;
   padding-right: 8px;
-  scrollbar-gutter: stable;
 }
 
 .freshCommandQueueList button,
 .freshCommandQueueList article {
   display: grid;
-  align-content: start;
-  gap: 4px;
-  width: 100%;
-  min-height: 0;
-  max-height: none;
-  padding: 9px 10px 10px;
-  border: 1px solid rgba(15, 23, 42, .09);
-  border-left: 4px solid #f97316;
-  border-radius: 12px;
-  background: #fff;
+  gap: 6px;
+  min-height: 108px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-left: 6px solid #f97316;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .075);
   text-align: left;
   overflow: visible;
-}
-
-.freshCommandQueueList button {
   cursor: pointer;
 }
 
 .freshCommandQueueList button.active {
-  background: #111827;
-  border-color: rgba(249, 115, 22, .65);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, .14);
+  background: #fff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .28);
 }
 
-.freshCommandQueueList button.active b,
-.freshCommandQueueList button.active span,
-.freshCommandQueueList button.active small {
-  color: #fff;
-  -webkit-text-fill-color: #fff;
+.freshCommandQueueList button.active * {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
 }
 
 .freshCommandQueueList em {
   width: fit-content;
-  padding: 4px 8px;
+  padding: 5px 9px;
   border-radius: 999px;
-  background: #111827;
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  font-size: 9px;
+  background: rgba(255, 255, 255, .92);
+  color: #111827;
+  -webkit-text-fill-color: #111827;
   font-style: normal;
+  font-size: 10px;
   font-weight: 1000;
   letter-spacing: .08em;
-  line-height: 1;
   text-transform: uppercase;
 }
 
-.freshCommandQueueList button.active em {
-  background: #fff7ed;
-  color: #7c2d12;
-  -webkit-text-fill-color: #7c2d12;
+.freshCommandQueueList b {
+  display: block;
+  font-size: 18px;
+  line-height: 1.18;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
-.freshCommandQueueList b,
 .freshCommandQueueList span {
   display: block;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.freshCommandQueueList b {
-  color: #111827;
-  -webkit-text-fill-color: #111827;
   font-size: 13px;
-  font-weight: 1000;
-  line-height: 1.14;
+  line-height: 1.3;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  opacity: .82;
 }
 
-.freshCommandQueueList small {
-  margin-left: 6px;
-  color: #c2410c;
-  -webkit-text-fill-color: #c2410c;
-  font-size: 11px;
-  font-weight: 1000;
-}
-
-.freshCommandQueueList span {
-  color: #64748b;
-  -webkit-text-fill-color: #64748b;
-  font-size: 11px;
-  font-weight: 850;
-  line-height: 1.25;
-  max-height: 2.55em;
+.freshCommandFormPanel {
+  grid-template-rows: minmax(0, 1fr);
+  padding: 0;
+  background: #fff;
   overflow: hidden;
 }
 
-.freshCommandQueueList button.active span {
-  max-height: 2.55em;
-}
-
-.freshCommandFormPanel form,
-.freshCommandEmptyForm {
+.freshCommandFormPanel form {
   display: grid;
-  align-content: start;
-  gap: 10px;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  height: 100%;
   min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .freshCommandFormHeader {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(15, 23, 42, .08);
+  padding: 20px;
+  border-bottom: 1px solid rgba(15, 23, 42, .09);
+  background: radial-gradient(circle at top right, rgba(249, 115, 22, .16), transparent 11rem), #fffaf0;
 }
 
 .freshCommandFormHeader h2 {
-  margin: 7px 0 0;
+  margin: 9px 0 0;
   color: #111827;
   -webkit-text-fill-color: #111827;
-  font-size: clamp(24px, 2.6vw, 34px);
-  line-height: 1.02;
+  font-size: clamp(28px, 3.2vw, 48px);
+  line-height: .95;
   letter-spacing: -.04em;
 }
 
 .freshCommandFilledForm {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  align-content: start;
+  gap: 10px;
+  padding: 16px;
+  overflow-y: auto;
 }
 
 .freshCommandFilledForm label {
   display: grid;
-  gap: 6px;
-  min-width: 0;
-  padding: 8px;
-  border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 11px;
-  background: #fff;
+  gap: 7px;
+  min-height: 86px;
+  padding: 13px;
+  border: 1px solid rgba(15, 23, 42, .09);
+  border-radius: 18px;
+  background: #f8fafc;
 }
 
+.freshCommandFilledForm label:nth-child(1),
 .freshCommandFilledForm label:nth-child(2),
-.freshCommandFilledForm label:nth-child(3),
-.freshCommandFilledForm label:last-child {
-  grid-column: span 2;
+.freshCommandFilledForm label:nth-child(3) {
+  background: #fff7ed;
+  border-color: rgba(249, 115, 22, .22);
 }
 
 .freshCommandFilledForm b {
-  min-height: 34px;
-  padding: 8px 10px;
-  border: 1px solid rgba(15, 23, 42, .10);
-  border-radius: 9px;
-  background: #f8fafc;
   color: #111827;
   -webkit-text-fill-color: #111827;
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 1.3;
-  white-space: pre-wrap;
+  font-size: 16px;
+  line-height: 1.25;
+  white-space: normal;
   overflow-wrap: anywhere;
 }
 
 .freshCommandOwnerEdit {
   display: grid;
-  gap: 7px;
-  padding: 8px;
-  border: 1px solid rgba(15, 23, 42, .08);
-  border-radius: 11px;
-  background: #fff;
+  gap: 8px;
+  padding: 0 16px 16px;
 }
 
 .freshCommandOwnerEdit textarea {
-  width: 100%;
-  min-height: 72px;
-  padding: 10px;
+  min-height: 86px;
+  padding: 13px;
   border: 1px solid rgba(15, 23, 42, .12);
-  border-radius: 10px;
-  background: #f8fafc;
-  color: #111827;
-  -webkit-text-fill-color: #111827;
-  font-size: 13px;
+  border-radius: 18px;
   font-weight: 850;
-  line-height: 1.4;
-  resize: vertical;
-  outline: none;
-}
-
-.freshCommandOwnerEdit textarea:focus {
-  border-color: rgba(249, 115, 22, .62);
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, .14);
 }
 
 .freshCommandFormActions {
-  position: sticky;
-  bottom: 0;
-  justify-content: flex-end;
-  margin-top: 2px;
-  padding: 8px 0 0;
-  background: rgba(255, 250, 240, .98);
+  padding: 14px 16px;
+  border-top: 1px solid rgba(15, 23, 42, .09);
+  background: rgba(248, 250, 252, .92);
 }
 
-.freshCommandFormActions button:nth-child(3),
-.freshCommandFormActions button:nth-child(4),
-.freshCommandSideActions button:nth-child(2) {
-  background: #fff;
-  color: #7c2d12;
-  -webkit-text-fill-color: #7c2d12;
-  border-color: rgba(249, 115, 22, .28);
+.freshCommandSidePanel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.freshCommandSidePanel section {
+  min-width: 0;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.freshCommandSidePanel section:first-child {
+  border-top: 6px solid #f97316;
+}
+
+.freshCommandSidePanel section:last-child {
+  overflow-y: auto;
 }
 
 .freshCommandSidePanel p {
-  margin: 0;
-  color: #475569;
-  -webkit-text-fill-color: #475569;
-  font-size: 12px;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+  font-size: 13px;
   font-weight: 850;
-  line-height: 1.4;
-}
-
-.freshCommandSideActions {
-  margin-top: 10px;
+  line-height: 1.45;
 }
 
 .freshCommandActivity {
   display: grid;
-  gap: 4px;
-  padding: 9px 0;
+  gap: 5px;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(15, 23, 42, .08);
-}
-
-.freshCommandActivity:last-child {
-  border-bottom: 0;
 }
 
 .freshCommandActivity b {
   color: #111827;
   -webkit-text-fill-color: #111827;
-  font-size: 12px;
-  font-weight: 950;
+  font-size: 13px;
+  line-height: 1.3;
 }
 
-.freshCommandActivity span,
-.freshCommandEmptyForm span {
+.freshCommandActivity span {
   color: #64748b;
   -webkit-text-fill-color: #64748b;
   font-size: 12px;
   font-weight: 850;
 }
 
+.freshCommandEmptyForm {
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  min-height: 100%;
+  padding: 24px;
+  text-align: center;
+}
+
 .freshCommandEmptyForm b {
   color: #111827;
   -webkit-text-fill-color: #111827;
-  font-size: 18px;
-  font-weight: 1000;
+  font-size: 24px;
 }
 
-/* Command approval desk should lead. Supporting promise/memory strips stay compact. */
-.freshCommandStablePage .freshCommandPowerStrip,
-.freshCommandStablePage .freshFlowPromiseStrip {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(150px, 1fr));
-  gap: 8px !important;
-  margin: 0 0 8px !important;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  scrollbar-width: thin;
-}
-
-.freshCommandStablePage .freshCommandPowerStrip > *,
-.freshCommandStablePage .freshFlowPromiseStrip > * {
-  min-width: 150px;
-  min-height: 0 !important;
-  padding: 9px 10px !important;
-  border-radius: 12px !important;
-}
-
-.freshCommandStablePage .freshCommandPowerStrip b,
-.freshCommandStablePage .freshFlowPromiseStrip b {
-  font-size: 12px !important;
-  line-height: 1.15 !important;
-}
-
-.freshCommandStablePage .freshCommandPowerStrip p,
-.freshCommandStablePage .freshFlowPromiseStrip p,
-.freshCommandStablePage .freshCommandPowerStrip small,
-.freshCommandStablePage .freshFlowPromiseStrip small {
-  font-size: 10px !important;
-  line-height: 1.25 !important;
-}
-
-.freshCommandStablePage .freshCommandMemory,
-.freshCommandStablePage [class*="Memory"] {
-  margin: 0 0 8px !important;
-}
-
-.freshCommandStablePage .freshCommandMemory p,
-.freshCommandStablePage [class*="Memory"] p {
-  font-size: 12px !important;
-  line-height: 1.3 !important;
-}
-
-.freshCommandStablePage .freshCommandMemory strong,
-.freshCommandStablePage [class*="Memory"] strong {
-  font-size: clamp(18px, 2vw, 24px) !important;
-  line-height: 1.15 !important;
-}
-
-@media (max-width: 1320px) {
-  .freshCommandBoard {
-    grid-template-columns: minmax(270px, .86fr) minmax(440px, 1.36fr) minmax(280px, .86fr);
-  }
+.freshCommandEmptyForm span {
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+  font-weight: 850;
 }
 
 @media (max-width: 1180px) {
-  .freshCommandBoard {
-    grid-template-columns: minmax(260px, .85fr) minmax(0, 1.25fr);
-  }
-
-  .freshCommandSidePanel {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: auto;
-    height: auto;
-    overflow: visible;
-  }
-
-  .freshCommandSidePanel section,
-  .freshCommandSidePanel section:last-child {
-    min-height: 0;
-    overflow: visible;
-  }
-}
-
-@media (max-width: 860px) {
   .freshCommandRebuildHero,
-  .freshCommandStatusStrip,
-  .freshCommandFormHeader {
+  .freshCommandStatusStrip {
     display: grid;
   }
 
-  .freshCommandStatsRow,
   .freshCommandBoard,
-  .freshCommandSidePanel,
-  .freshCommandFilledForm,
-  .freshCommandFilledForm label:nth-child(2),
-  .freshCommandFilledForm label:nth-child(3),
-  .freshCommandFilledForm label:last-child {
+  .freshCommandPowerStrip {
     grid-template-columns: 1fr;
-    grid-column: auto;
+  }
+
+  .freshCommandStatsRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .freshCommandQueuePanel,
   .freshCommandFormPanel,
   .freshCommandSidePanel {
     height: auto;
+    min-height: 0;
   }
 
-  .freshCommandQueueList {
-    max-height: 430px;
+  .freshCommandQueueList,
+  .freshCommandFilledForm,
+  .freshCommandSidePanel section:last-child {
+    max-height: 460px;
   }
+}
 
-  .freshCommandFormPanel form,
-  .freshCommandEmptyForm {
-    overflow-y: visible;
-  }
-
-  .freshCommandHeroActions,
-  .freshCommandFormActions,
-  .freshCommandSideActions {
-    justify-content: stretch;
-  }
-
-  .freshCommandHeroActions button,
-  .freshCommandFormActions button,
-  .freshCommandSideActions button {
-    flex: 1 1 160px;
+@media (max-width: 720px) {
+  .freshCommandStatsRow,
+  .freshCommandFilledForm {
+    grid-template-columns: 1fr;
   }
 }
