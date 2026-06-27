@@ -317,3 +317,55 @@
 
 
 /* Final app-wide polish: make every work page feel like one Churvox system. */
+
+/* freshFinalSafePolish: small safe polish only. */
+.freshFlowPromiseStrip,
+.freshCommandDecisionMap {
+  clear: both;
+}
+
+.freshFlowPromiseStrip article,
+.freshCommandDecisionMap article {
+  min-width: 0;
+}
+
+.freshFlowPromiseStrip p,
+.freshCommandDecisionMap p {
+  overflow-wrap: anywhere;
+}
+
+.freshCommandMemoryExample {
+  margin: 10px 0 14px;
+  border: 1px solid rgba(249, 115, 22, 0.24);
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+  color: #1f2623;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.freshCommandMemoryExample span {
+  display: block;
+  color: #9a3412;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.freshCommandMemoryExample b {
+  color: #1f2623;
+}
+
+.freshCommandMemoryExample p {
+  margin: 6px 0 0;
+  color: #66726d;
+  line-height: 1.4;
+}
+
+@media (max-width: 680px) {
+  .freshFlowPromiseStrip,
+  .freshCommandDecisionMap {
+    grid-template-columns: 1fr;
+  }
+}
