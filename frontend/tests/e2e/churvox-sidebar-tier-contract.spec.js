@@ -24,13 +24,25 @@ test('sidebar keeps main app simple and tier-driven', async ({ page }) => {
   await login(page);
   await page.goto('/dashboard');
 
-  await expect(page.locator('.freshSide')).toContainText('Smart Hub');
-  await expect(page.locator('.freshSide')).toContainText('Jobs');
-  await expect(page.locator('.freshSide')).toContainText('Recurring');
-  await expect(page.locator('.freshSide')).toContainText('Clients');
-  await expect(page.locator('.freshSide')).toContainText('Quotes');
-  await expect(page.locator('.freshSide')).toContainText('Invoices');
+  const sidebar = page.locator('.freshSide');
+  await expect(sidebar).toContainText('Smart Hub');
+  await expect(sidebar).toContainText('Jobs');
+  await expect(sidebar).toContainText('Clients');
+  await expect(sidebar).toContainText('Quotes');
+  await expect(sidebar).toContainText('Invoices');
+  await expect(sidebar).toContainText('Settings');
+  await expect(sidebar).toContainText('Plans');
+  await expect(sidebar).toContainText('Help');
 
-  const mainSidebarText = await page.locator('.freshSide').innerText();
+  const mainSidebarText = await sidebar.innerText();
+  expect(mainSidebarText).not.toMatch(/Recurring/);
   expect(mainSidebarText).not.toMatch(/MYOB/);
+
+  if (/Command/.test(mainSidebarText)) {
+    expect(mainSidebarText).toMatch(/Messages/);
+  }
+
+  if (/Team/.test(mainSidebarText)) {
+    expect(mainSidebarText).toMatch(/Worker View/);
+  }
 });
