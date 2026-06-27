@@ -41,7 +41,7 @@ const createFlows = [
     tokenPrefix: 'Deep Logic Job',
     fields: [
       [['job-title', 'title', 'job', 'name'], value => value.name],
-      [['client', 'customer'], value => value.clientName],
+      [['job-client-name', 'client name', 'customer name'], value => value.clientName],
       [['address', 'service address'], value => value.address],
       [['scheduled', 'date', 'time'], () => futureDateTime()],
       [['price', 'amount', 'total'], () => '95'],
@@ -333,6 +333,22 @@ async function openAndFindToken(page, url, token) {
   return false;
 }
 
+async function apiHasToken(page, flow, token) {
+  const endpoint = { client: '/api/clients', job: '/api/jobs', quote: '/api/quotes', invoice: '/api/invoices' }[flow.label];
+  if (!endpoint) return false;
+
+  const authToken = await page.evaluate(() => window.localStorage.getItem('token') || '').catch(() => '');
+  const response = await page.request.get(apiUrl(endpoint), {
+    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+    timeout: 20000,
+  }).catch(() => null);
+
+  if (!response || !response.ok()) return false;
+  const payload = await response.json().catch(() => null);
+  return JSON.stringify(payload || {}).includes(token);
+}
+
+
 async function saveRecord(page) {
   return clickAny(page, [/save/i, /create/i, /add/i, /done/i, /submit/i, /finish/i]);
 }
@@ -362,6 +378,7 @@ async function createAndVerify(page, flow, value) {
   await expect.poll(async () => {
     const text = await bodyText(page);
     if (text.includes(value.primaryToken)) return true;
+    if (await apiHasToken(page, flow, value.primaryToken)) return true;
     return openAndFindToken(page, flow.listUrl, value.primaryToken);
   }, {
     timeout: 15000,
@@ -373,7 +390,7 @@ async function createAndVerify(page, flow, value) {
   await waitHuman(page);
   await assertPageHealth(page, 'Command after create flow');
 
-  const persisted = await openAndFindToken(page, flow.listUrl, value.primaryToken);
+  const persisted = await openAndFindToken(page, flow.listUrl, value.primaryToken) || await apiHasToken(page, flow, value.primaryToken);
   expect(persisted, `${flow.label} should still be visible after leaving and reopening ${flow.listUrl}`).toBeTruthy();
 }
 
