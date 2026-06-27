@@ -553,3 +553,74 @@
     flex-direction: column;
   }
 }
+
+
+.cvPlanTruth {
+  display: grid;
+  gap: 14px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-left: 7px solid #f97316;
+  border-radius: 26px;
+  background: #fffaf0;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, .08);
+  padding: 18px;
+}
+
+.cvPlanTruth h2 {
+  margin: 8px 0 6px;
+  color: #151513;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: .95;
+  letter-spacing: -.05em;
+}
+
+.cvPlanTruth p {
+  max-width: 860px;
+  margin: 0;
+  color: #64748b;
+  font-weight: 850;
+  line-height: 1.42;
+}
+
+.cvPlanTruthTable {
+  display: grid;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.cvPlanTruthHead,
+.cvPlanTruthRow {
+  display: grid;
+  grid-template-columns: minmax(210px, 1.4fr) repeat(4, minmax(110px, 1fr));
+  gap: 8px;
+  min-width: 720px;
+  align-items: stretch;
+}
+
+.cvPlanTruthHead b,
+.cvPlanTruthRow span,
+.cvPlanTruthRow b {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  border-radius: 14px;
+  padding: 10px 11px;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.cvPlanTruthHead b {
+  background: #151513;
+  color: #fff7ed;
+}
+
+.cvPlanTruthRow span {
+  background: #ffffff;
+  color: #151513;
+}
+
+.cvPlanTruthRow b {
+  background: #ffedd5;
+  color: #7c2d12;
+}

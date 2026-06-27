@@ -10,6 +10,7 @@ import {
   normalizeCountry,
   pricePlanForCountry,
 } from "../config/churvoxPlans";
+import { PLAN_FEATURE_MATRIX } from "./planRules";
 
 const CHECKOUT_TRACE_MARKER = "clean-isolated-plans-no-auto-refresh-v46";
 const LIVE_BACKEND = API_BASE || "https://grassley-backend.onrender.com";
@@ -505,6 +506,28 @@ export default function FreshPlans({ onNavigate }) {
         </div>
         <div className="cvPlanAllowanceGrid">
           {allowances.map(([name, limit]) => <div className="cvPlanAllowance" key={name}><b>{name}</b><span>{limit} included</span><p>Usage count hidden here</p></div>)}
+        </div>
+      </section>
+
+      <section className="cvPlanTruth">
+        <div>
+          <span className="cvPlanMiniKicker">Tier truth</span>
+          <h2>Simple outside. Powerful underneath.</h2>
+          <p>Start gets the core work. Crew unlocks workers. Operator unlocks Churvox-prepared admin. Command unlocks full control and scale.</p>
+        </div>
+        <div className="cvPlanTruthTable" role="table" aria-label="Churvox tier feature comparison">
+          <div className="cvPlanTruthHead" role="row">
+            <b>Feature</b><b>Start</b><b>Crew</b><b>Operator</b><b>Command</b>
+          </div>
+          {PLAN_FEATURE_MATRIX.map((row) => (
+            <div className="cvPlanTruthRow" role="row" key={row.area}>
+              <span>{row.area}</span>
+              <b>{row.start}</b>
+              <b>{row.crew}</b>
+              <b>{row.operator}</b>
+              <b>{row.command}</b>
+            </div>
+          ))}
         </div>
       </section>
 
