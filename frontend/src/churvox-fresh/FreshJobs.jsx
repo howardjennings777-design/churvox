@@ -256,6 +256,30 @@ export default function FreshJobs({ onNavigate }) {
 
   return (
     <section className="freshJobsPage" data-jobs-needs-invoice="20260626" data-owner-timer-actions="20260626" data-create-job-modal="20260626" data-client-job-handoff="20260626" data-one-off-archive-prompt="20260626">
+
+      <section className="freshFlowPromiseStrip" aria-label="Job workflow">
+        <article className="freshFlowLead">
+          <span>Work board</span>
+          <b>Jobs stay simple: who, where, what next.</b>
+          <p>The job page is for running work. Churvox turns finished work into admin prompts.</p>
+        </article>
+        <article>
+          <span>Today</span>
+          <b>Pick the next job</b>
+          <p>Assignment, status and job details stay close together.</p>
+        </article>
+        <article className="freshFlowQuiet">
+          <span>Proof</span>
+          <b>Photos, notes and time matter later</b>
+          <p>They feed Command so invoices and payroll are easier to approve.</p>
+        </article>
+        <article className="freshFlowDecision">
+          <span>Admin</span>
+          <b>Finished work becomes a decision</b>
+          <p>If a job needs an invoice or follow-up, send it to Command.</p>
+        </article>
+      </section>
+
       <header className="freshHero"><span>Jobs</span><h1>Jobs</h1><p>Job records with customer, worker, schedule, price, notes and linked quote/invoice history.</p></header>
       <section className="freshCommandPulse"><aside className="freshCard"><h2>{activeJobs.length}</h2><p>Active jobs</p></aside><aside className="freshCard"><h2>{activeJobs.filter((job) => job.status === "Ready").length}</h2><p>Ready</p></aside><aside className="freshCard"><h2>{activeJobs.filter((job) => job.status === "Completed").length}</h2><p>Completed</p></aside><aside className="freshCard freshJobsNeedsInvoicePulse"><h2>{jobsNeedingInvoice.length}</h2><p>Needs invoice</p></aside></section>
       {error ? <section className="freshCard freshItem need"><b>Jobs need attention</b><span>{error}</span><button type="button" className="freshPrimary" onClick={() => { loadJobs(); loadStory(); }}>Retry</button></section> : null}

@@ -1,3 +1,4 @@
+import "./freshProductFlowPolish.css";
 import React from "react";
 import FreshNotificationBell from "./FreshNotificationBell";
 import { useAuth } from "../context/AuthContext";

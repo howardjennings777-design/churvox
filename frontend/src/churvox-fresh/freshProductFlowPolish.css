@@ -1,0 +1,193 @@
+/* Churvox product-flow polish: simple on top, powerful underneath. */
+:root {
+  --fresh-flow-bg: #fffaf1;
+  --fresh-flow-panel: rgba(255, 255, 255, 0.92);
+  --fresh-flow-ink: #1f2623;
+  --fresh-flow-muted: #66726d;
+  --fresh-flow-line: rgba(31, 38, 35, 0.1);
+  --fresh-flow-orange: #f97316;
+  --fresh-flow-green: #168a55;
+}
+
+.freshTodayPage,
+.freshCommandPreparedPage,
+.freshCommandOsWrap,
+.freshJobsPage,
+.freshRecurringPage,
+.freshClientsPage,
+.freshQuotesPage,
+.freshInvoicesPage,
+.freshTeamPage,
+.freshXeroPage {
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.12), transparent 34rem),
+    linear-gradient(180deg, #fffaf1 0%, #f7efe2 100%) !important;
+  color: var(--fresh-flow-ink) !important;
+}
+
+.freshFlowPromiseStrip {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  margin: 0 0 18px;
+}
+
+.freshFlowPromiseStrip > article,
+.freshFlowPromiseStrip > div {
+  border: 1px solid var(--fresh-flow-line);
+  background: var(--fresh-flow-panel);
+  box-shadow: 0 14px 40px rgba(35, 27, 18, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.freshFlowPromiseStrip .freshFlowLead {
+  background: #1f2623;
+  color: #fffaf1;
+}
+
+.freshFlowPromiseStrip span {
+  display: block;
+  color: rgba(31, 38, 35, 0.62);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+.freshFlowPromiseStrip .freshFlowLead span {
+  color: rgba(255, 250, 241, 0.72);
+}
+
+.freshFlowPromiseStrip b {
+  display: block;
+  color: inherit;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.freshFlowPromiseStrip p {
+  margin: 7px 0 0;
+  color: var(--fresh-flow-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.freshFlowPromiseStrip .freshFlowLead p {
+  color: rgba(255, 250, 241, 0.78);
+}
+
+.freshFlowPromiseStrip .freshFlowDecision {
+  border-color: rgba(249, 115, 22, 0.28);
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+}
+
+.freshFlowPromiseStrip .freshFlowQuiet {
+  border-style: dashed;
+}
+
+.freshTodayPage h1,
+.freshCommandPreparedPage h1,
+.freshCommandOsWrap h1,
+.freshJobsPage h1,
+.freshRecurringPage h1,
+.freshClientsPage h1,
+.freshQuotesPage h1,
+.freshInvoicesPage h1 {
+  letter-spacing: 0 !important;
+}
+
+.freshCommandPulse,
+.freshStoryLinks,
+.freshXeroCards,
+.freshCommandFixStats {
+  gap: 10px !important;
+}
+
+.freshCard,
+.freshStoryLinks article,
+.freshXeroCards section,
+.freshCommandFixQueue,
+.freshCommandFixDetail,
+.freshCommandFixProof,
+.freshCommandBusinessHealth {
+  border-radius: 14px !important;
+  border: 1px solid var(--fresh-flow-line) !important;
+  box-shadow: 0 12px 34px rgba(35, 27, 18, 0.07) !important;
+}
+
+.freshActions button,
+.freshCommandDeskToolbar button,
+.freshCommandFixActions button,
+.freshXeroHeadActions button {
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+}
+
+.freshJobsInvoiceAlert,
+.freshCommandMemory,
+.freshCommandMemoryExample,
+.freshCommandPowerStrip {
+  border-radius: 14px !important;
+  border: 1px solid rgba(249, 115, 22, 0.24) !important;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%) !important;
+  color: var(--fresh-flow-ink) !important;
+}
+
+@media (max-width: 980px) {
+  .freshFlowPromiseStrip {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .freshTodayPage,
+  .freshCommandPreparedPage,
+  .freshCommandOsWrap,
+  .freshJobsPage,
+  .freshRecurringPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .freshXeroPage {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .freshFlowPromiseStrip {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .freshFlowPromiseStrip > article,
+  .freshFlowPromiseStrip > div {
+    padding: 12px 13px;
+  }
+
+  .freshCommandPulse,
+  .freshStoryLinks,
+  .freshXeroCards,
+  .freshCommandFixStats {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .freshActions,
+  .freshJobsActionStack,
+  .freshCommandDeskToolbar,
+  .freshCommandFixActions,
+  .freshXeroHeadActions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .freshActions button,
+  .freshJobsActionStack button,
+  .freshCommandDeskToolbar button,
+  .freshCommandFixActions button,
+  .freshXeroHeadActions button {
+    width: 100% !important;
+  }
+}
