@@ -1,12 +1,16 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { hideDemoRecords } from "./freshDemoRecords";
+import "./freshAdminDebtRadar.css";
+
+const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 
 const ENDPOINTS = {
   jobs: "/jobs",
   workers: "/team/workers",
   clients: "/clients",
   invoices: "/invoices",
+  quotes: "/quotes",
 };
 
 function asArray(payload, key) {
@@ -43,7 +47,7 @@ function recordId(record, ...keys) {
     const text = idText(record?.[key]);
     if (text) return text;
   }
-  return idText(record?.id || record?._id || record?.job_id || "");
+  return idText(record?.id || record?._id || record?.job_id || record?.quote_id || record?.invoice_id || "");
 }
 
 function todayInputValue(date = new Date()) {
@@ -72,6 +76,11 @@ function dateValue(record, ...keys) {
 function sameInputDay(date, inputValue) {
   if (!date) return false;
   return todayInputValue(date) === inputValue;
+}
+
+function ageDays(date) {
+  if (!date) return 0;
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
 }
 
 function timeText(date) {
@@ -124,7 +133,7 @@ function jobHasInvoice(job, invoicedJobIds = new Set()) {
 }
 
 function amountOf(record) {
-  const raw = record?.balance_due ?? record?.amount_due ?? record?.balance ?? record?.total ?? record?.amount ?? record?.price ?? record?.job_price ?? record?.fixed_price ?? 0;
+  const raw = record?.balance_due ?? record?.amount_due ?? record?.balance ?? record?.total ?? record?.amount ?? record?.price ?? record?.job_price ?? record?.fixed_price ?? record?.quote_total ?? record?.invoice_total ?? 0;
   const n = Number(String(raw).replace(/[^0-9.-]/g, ""));
   return Number.isFinite(n) ? n : 0;
 }
@@ -149,6 +158,43 @@ function statusLabel(job) {
   return pick(job, "status", "job_status") || "Ready";
 }
 
+function invoiceStatus(invoice) {
+  return lower(invoice?.status || invoice?.invoice_status || invoice?.payment_status);
+}
+
+function invoiceNumber(invoice) {
+  return pick(invoice, "invoice_number", "number", "invoice_id", "id", "_id") || "invoice";
+}
+
+function isUnpaidInvoice(invoice) {
+  const status = invoiceStatus(invoice);
+  if (["paid", "void", "cancelled", "canceled", "draft"].includes(status)) return false;
+  return amountOf(invoice) > 0 || ["sent", "viewed", "overdue", "unpaid", "part_paid", "partial"].includes(status);
+}
+
+function quoteTitle(quote) {
+  return pick(quote, "title", "quote_title", "service_type", "job_title", "description") || "Quote";
+}
+
+function quoteIsCold(quote) {
+  const status = lower(quote?.status || quote?.quote_status || "draft");
+  if (["accepted", "approved", "won", "declined", "rejected", "lost", "converted", "invoiced", "archived"].includes(status)) return false;
+  const date = dateValue(quote, "sent_at", "created_at", "updated_at", "date", "quote_date");
+  return ageDays(date) >= 5;
+}
+
+function hasWorkerProof(job) {
+  return Boolean(
+    job?.worker_completion_notes ||
+    job?.worker_notes ||
+    job?.proof_note ||
+    job?.completion_note ||
+    (Array.isArray(job?.photos) && job.photos.length) ||
+    (Array.isArray(job?.proof_photos) && job.proof_photos.length) ||
+    (Array.isArray(job?.done_properly_checklist) && job.done_properly_checklist.length)
+  );
+}
+
 function openJobModal(text = "Create job from Today's Plan") {
   try {
     window.localStorage.setItem("churvox:fresh-open-job-modal:v1", JSON.stringify({ open: true, instruction: text, text, at: Date.now() }));
@@ -156,6 +202,128 @@ function openJobModal(text = "Create job from Today's Plan") {
   try {
     window.dispatchEvent(new CustomEvent("churvox:open-job-popup", { detail: { text, instruction: text, source: "todays-plan" } }));
   } catch {}
+}
+
+function pushCommandNote(item) {
+  try {
+    if (typeof window === "undefined") return false;
+    const raw = window.localStorage.getItem(COMMAND_INBOX_KEY);
+    const current = raw ? JSON.parse(raw) : [];
+    const items = Array.isArray(current) ? current : [];
+    items.unshift({
+      id: `admin-debt-${item.id || Date.now()}`,
+      source: "admin-debt-radar",
+      category: item.type,
+      action: item.commandAction,
+      title: item.title,
+      summary: item.summary,
+      found: item.found,
+      prepared: item.prepared,
+      why: item.why,
+      details: item.details,
+      page: item.page,
+      created_at: new Date().toISOString(),
+    });
+    window.localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify(items.slice(0, 50)));
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated"));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function buildAdminDebtItems({ jobs, invoices, quotes, invoicedJobIds }) {
+  const items = [];
+  const openJobs = jobs.filter((job) => !isCancelledJob(job));
+
+  openJobs.filter((job) => isCompletedJob(job) && !jobHasInvoice(job, invoicedJobIds)).slice(0, 8).forEach((job) => {
+    items.push({
+      id: `job-no-invoice-${recordId(job, "id", "_id", "job_id")}`,
+      type: "Money waiting",
+      page: "invoices",
+      priority: 100,
+      commandAction: "Prepare invoice form",
+      title: `${jobTitle(job)} needs an invoice`,
+      summary: `${clientName(job)} is done but not invoiced.`,
+      found: `Completed job: ${jobTitle(job)} for ${clientName(job)} at ${jobAddress(job)}.`,
+      prepared: "Fill the invoice form from the completed job and hold it for owner approval.",
+      why: "Completed work is not money until the invoice step is approved.",
+      amount: amountOf(job),
+      details: { customer_name: clientName(job), job_title: jobTitle(job), address: jobAddress(job), price: money(amountOf(job)), worker_name: jobWorker(job), status: statusLabel(job) },
+    });
+  });
+
+  invoices.filter(isUnpaidInvoice).slice(0, 8).forEach((invoice) => {
+    const due = dateValue(invoice, "due_date", "due", "created_at", "date");
+    items.push({
+      id: `unpaid-invoice-${recordId(invoice, "id", "_id", "invoice_id")}`,
+      type: "Unpaid money",
+      page: "invoices",
+      priority: 88 + Math.min(ageDays(due), 20),
+      commandAction: "Prepare payment follow-up",
+      title: `${invoiceNumber(invoice)} needs follow-up`,
+      summary: `${clientName(invoice)} has ${money(amountOf(invoice))} still unpaid.`,
+      found: `Invoice ${invoiceNumber(invoice)} is ${invoiceStatus(invoice) || "unpaid"}.`,
+      prepared: "Prepare a polite payment follow-up for owner approval.",
+      why: "The boss should not hunt for unpaid invoices manually.",
+      amount: amountOf(invoice),
+      details: { customer_name: clientName(invoice), invoice: invoiceNumber(invoice), amount: money(amountOf(invoice)), status: invoiceStatus(invoice) || "unpaid" },
+    });
+  });
+
+  quotes.filter(quoteIsCold).slice(0, 8).forEach((quote) => {
+    const date = dateValue(quote, "sent_at", "created_at", "updated_at", "date", "quote_date");
+    items.push({
+      id: `quote-followup-${recordId(quote, "id", "_id", "quote_id")}`,
+      type: "Quote follow-up",
+      page: "quotes",
+      priority: 72 + Math.min(ageDays(date), 18),
+      commandAction: "Prepare quote follow-up",
+      title: `${quoteTitle(quote)} needs a nudge`,
+      summary: `${clientName(quote)} quote is ${ageDays(date)} days old.`,
+      found: `Open quote for ${clientName(quote)} is still waiting.`,
+      prepared: "Prepare a short quote follow-up message for owner approval.",
+      why: "Old quotes quietly leak work unless the follow-up is ready.",
+      amount: amountOf(quote),
+      details: { customer_name: clientName(quote), quote: quoteTitle(quote), amount: money(amountOf(quote)), age: `${ageDays(date)} days` },
+    });
+  });
+
+  openJobs.filter((job) => isCompletedJob(job) && !hasWorkerProof(job)).slice(0, 6).forEach((job) => {
+    items.push({
+      id: `missing-proof-${recordId(job, "id", "_id", "job_id")}`,
+      type: "Missing proof",
+      page: "jobs",
+      priority: 68,
+      commandAction: "Prepare proof request",
+      title: `${jobTitle(job)} needs proof`,
+      summary: `${clientName(job)} job is complete but has no worker proof note or photo.`,
+      found: `Completed job has no worker proof saved: ${jobTitle(job)}.`,
+      prepared: "Prepare a worker proof request before billing moves forward.",
+      why: "The owner needs confidence before approving invoices or follow-ups.",
+      amount: amountOf(job),
+      details: { customer_name: clientName(job), job_title: jobTitle(job), address: jobAddress(job), worker_name: jobWorker(job) || "No worker" },
+    });
+  });
+
+  openJobs.filter((job) => !jobWorker(job) && !isCompletedJob(job)).slice(0, 6).forEach((job) => {
+    items.push({
+      id: `no-worker-${recordId(job, "id", "_id", "job_id")}`,
+      type: "Worker gap",
+      page: "jobs",
+      priority: 58,
+      commandAction: "Prepare assignment check",
+      title: `${jobTitle(job)} has no worker`,
+      summary: `${clientName(job)} is booked but not assigned.`,
+      found: `Job is waiting without a worker: ${jobTitle(job)} at ${jobAddress(job)}.`,
+      prepared: "Prepare an assignment check for owner approval.",
+      why: "Unassigned work becomes missed work.",
+      amount: amountOf(job),
+      details: { customer_name: clientName(job), job_title: jobTitle(job), address: jobAddress(job), scheduled_date: pick(job, "scheduled_date", "date", "due_date") || "No date" },
+    });
+  });
+
+  return items.sort((a, b) => b.priority - a.priority).slice(0, 12);
 }
 
 function JobCard({ job, invoicedJobIds, onNavigate }) {
@@ -184,14 +352,32 @@ function JobCard({ job, invoicedJobIds, onNavigate }) {
   );
 }
 
+function DebtCard({ item, onSend, onOpen }) {
+  return (
+    <article className="freshAdminDebtItem">
+      <div>
+        <span>{item.type}</span>
+        <h3>{item.title}</h3>
+        <p>{item.summary}</p>
+      </div>
+      <b>{item.amount ? money(item.amount) : "Check"}</b>
+      <footer>
+        <button type="button" onClick={() => onSend(item)}>Send to Command</button>
+        <button type="button" onClick={() => onOpen(item.page)}>Open area</button>
+      </footer>
+    </article>
+  );
+}
+
 export default function FreshTodaysWork({ onNavigate }) {
   const { get } = useApi();
   const [selectedDate, setSelectedDate] = React.useState(() => todayInputValue());
   const [quickAsk, setQuickAsk] = React.useState("");
-  const [data, setData] = React.useState({ jobs: [], workers: [], clients: [], invoices: [] });
+  const [data, setData] = React.useState({ jobs: [], workers: [], clients: [], invoices: [], quotes: [] });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [lastSynced, setLastSynced] = React.useState("");
+  const [radarMessage, setRadarMessage] = React.useState("");
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -221,6 +407,7 @@ export default function FreshTodaysWork({ onNavigate }) {
       workers: next.workers || [],
       clients: next.clients || [],
       invoices: next.invoices || [],
+      quotes: next.quotes || [],
     });
     setLastSynced(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
     if (failed.length) setError(`Could not load ${failed.join(", ")}.`);
@@ -245,6 +432,15 @@ export default function FreshTodaysWork({ onNavigate }) {
 
   const invoicedJobIds = React.useMemo(() => new Set(data.invoices.map(invoiceJobId).filter(Boolean)), [data.invoices]);
 
+  const adminDebtItems = React.useMemo(() => buildAdminDebtItems({
+    jobs: data.jobs,
+    invoices: data.invoices,
+    quotes: data.quotes,
+    invoicedJobIds,
+  }), [data.jobs, data.invoices, data.quotes, invoicedJobIds]);
+
+  const adminDebtScore = Math.max(0, 100 - adminDebtItems.length * 8);
+
   const dayJobs = React.useMemo(() => {
     return data.jobs
       .filter((job) => !isCancelledJob(job))
@@ -267,12 +463,31 @@ export default function FreshTodaysWork({ onNavigate }) {
     [150, 450, 900].forEach((delay) => window.setTimeout(() => openJobModal(`Create a job for ${longDay(selectedDate)}`), delay));
   }
 
+  function sendToCommand(item) {
+    const saved = pushCommandNote(item);
+    setRadarMessage(saved ? `${item.title} sent to Command.` : "Could not send that item to Command.");
+    if (saved) onNavigate?.("command");
+  }
+
+  function sendTopAttentionToCommand() {
+    if (!adminDebtItems.length) {
+      setRadarMessage("No admin debt found right now.");
+      return;
+    }
+    sendToCommand(adminDebtItems[0]);
+  }
+
   function submitQuickAsk(event) {
     event?.preventDefault?.();
     const text = quickAsk.trim();
     const clean = text.toLowerCase();
 
     if (!text) return;
+
+    if (clean.includes("debt") || clean.includes("attention") || clean.includes("stuck") || clean.includes("behind")) {
+      sendTopAttentionToCommand();
+      return;
+    }
 
     if (clean.includes("client") || clean.includes("customer")) {
       try { window.localStorage.setItem("churvox:fresh-open-client-modal:v1", "true"); } catch {}
@@ -309,9 +524,9 @@ export default function FreshTodaysWork({ onNavigate }) {
     <section className="freshTodayWorkPage">
       <header className="freshTodayWorkHero">
         <div>
-          <span>Today</span>
+          <span>Smart Hub</span>
           <h1>Today's Plan</h1>
-          <p>Jobs, worker gaps and invoice admin for {longDay(selectedDate)}. Churvox keeps the day planned; Command handles unfinished, doing, blocked and follow-up work.</p>
+          <p>Jobs, worker gaps, money waiting and admin debt. Churvox finds the stuck work; Command is where you approve it.</p>
           <div className="freshTodayWorkSync">
             <b>{loading ? "Checking today's plan..." : "Today's plan loaded"}</b>
             {lastSynced ? <small>Updated {lastSynced}</small> : null}
@@ -325,6 +540,7 @@ export default function FreshTodaysWork({ onNavigate }) {
           <button type="button" onClick={() => onNavigate?.("jobs")}><b>{unassigned.length}</b><span>No worker</span></button>
           <button type="button" onClick={() => onNavigate?.("invoices")}><b>{needInvoice.length}</b><span>Need invoice</span></button>
           <button type="button" onClick={() => onNavigate?.("workercommand")}><b>{activeWorkers.length}</b><span>Active workers</span></button>
+          <button type="button" onClick={sendTopAttentionToCommand}><b>{adminDebtItems.length}</b><span>Admin debt</span></button>
         </div>
       </header>
 
@@ -334,7 +550,7 @@ export default function FreshTodaysWork({ onNavigate }) {
           <input
             value={quickAsk}
             onChange={(event) => setQuickAsk(event.target.value)}
-            placeholder="Add job, open invoices, show unpaid money..."
+            placeholder="Add job, find admin debt, open invoices..."
           />
         </label>
         <button type="submit">Ask Churvox</button>
@@ -347,6 +563,23 @@ export default function FreshTodaysWork({ onNavigate }) {
         <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
         <button type="button" className="primary" onClick={addJob}>Add job</button>
         <button type="button" onClick={() => onNavigate?.("command")}>Review in Command</button>
+      </section>
+
+      <section className="freshAdminDebtRadar">
+        <header>
+          <div>
+            <span>Admin Debt Radar</span>
+            <h2>{adminDebtScore}% clean</h2>
+            <p>{adminDebtItems.length ? `${adminDebtItems.length} thing${adminDebtItems.length === 1 ? "" : "s"} need owner attention.` : "No obvious admin debt found right now."}</p>
+          </div>
+          <button type="button" onClick={sendTopAttentionToCommand}>Send top issue to Command</button>
+        </header>
+        {radarMessage ? <p className="freshAdminDebtMessage">{radarMessage}</p> : null}
+        <div className="freshAdminDebtGrid">
+          {adminDebtItems.length ? adminDebtItems.slice(0, 4).map((item) => <DebtCard key={item.id} item={item} onSend={sendToCommand} onOpen={(page) => onNavigate?.(page)} />) : (
+            <article className="freshAdminDebtEmpty"><b>Clean right now</b><span>No done-not-invoiced jobs, unpaid invoice follow-ups, old quotes, missing proof or unassigned work jumped out.</span></article>
+          )}
+        </div>
       </section>
 
       <section className="freshTodayWorkBoard">
