@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
-import { AlertTriangle, Camera, CheckCircle, Clock, MapPin, Play, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Camera, CheckCircle, Clock, Mail, MapPin, MessageCircle, Phone, Play, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import "./WorkerOperationsPage.css";
 
@@ -65,6 +65,9 @@ function pick(record, ...keys) {
 function jobTitle(job) { return pick(job, "title", "job_name", "job_title", "service_type", "job_type", "customer_name") || "Job"; }
 function jobClient(job) { return pick(job, "customer_name", "client_name", "customer", "client", "name") || "No customer saved"; }
 function jobAddress(job) { return pick(job, "address", "site_address", "service_address", "job_address") || "No address saved"; }
+function jobPhone(job) { return String(pick(job, "customer_phone", "client_phone", "phone", "mobile", "customer_mobile", "client_mobile") || "").trim(); }
+function jobEmail(job) { return String(pick(job, "customer_email", "client_email", "email") || "").trim(); }
+function phoneHref(phone) { return phone ? phone.replace(/[^+0-9]/g, "") : ""; }
 function mapUrl(job) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(jobAddress(job))}`; }
 function draftKey(job) { return idOf(job) || `${jobTitle(job)}-${dateOf(job)}`; }
 function readWorkerDrafts() {
@@ -189,6 +192,9 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume
   const acknowledged = Boolean(job.acknowledged_at || job.worker_acknowledged_at || job.worker_acknowledged || status === "acknowledged");
   const draft = { note, material, materials, checklist };
   const readyProof = checklist.includes("Work done") && checklist.includes("Site tidy") && (note.trim() || existingProof(job));
+  const phone = jobPhone(job);
+  const phoneLink = phoneHref(phone);
+  const email = jobEmail(job);
 
   useEffect(() => {
     writeWorkerDraft(job, { note, material, materials, checklist });
@@ -225,6 +231,12 @@ function WorkerJobCard({ job, nextJob, onAcknowledge, onStart, onPause, onResume
         <ShieldCheck size={16} />
         <b>{proofStatus(job, draft)}</b>
         <span>{readyProof ? "Ready to complete" : "Tick the job checks and add a short note."}</span>
+      </div>
+
+      <div className="cv-worker-contact-strip" aria-label="Customer contact actions">
+        {phoneLink ? <a href={`tel:${phoneLink}`}><Phone size={14} /> Call</a> : <span>No phone saved</span>}
+        {phoneLink ? <a href={`sms:${phoneLink}`}><MessageCircle size={14} /> Text</a> : null}
+        {email ? <a href={`mailto:${email}`}><Mail size={14} /> Email</a> : <span>No email saved</span>}
       </div>
 
       <section className="cv-worker-details">
