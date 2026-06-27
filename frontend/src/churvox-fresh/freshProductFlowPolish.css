@@ -315,3 +315,512 @@
   }
 }
 
+
+/* Final app-wide polish: make every work page feel like one Churvox system. */
+.freshShellMain,
+.freshAppMain,
+.freshTodayPage,
+.freshCommandPreparedPage,
+.freshCommandOsWrap,
+.freshJobsPage,
+.freshRecurringPage,
+.freshClientsPage,
+.freshQuotesPage,
+.freshInvoicesPage,
+.freshTeamPage,
+.freshFollowUpsPage,
+.cvPayPage,
+.freshXeroPage,
+.freshSettingsPage,
+.freshHelpDeskPage,
+.freshPlansPage {
+  box-sizing: border-box;
+}
+
+.freshTodayPage > *,
+.freshCommandPreparedPage > *,
+.freshCommandOsWrap > *,
+.freshJobsPage > *,
+.freshRecurringPage > *,
+.freshClientsPage > *,
+.freshQuotesPage > *,
+.freshInvoicesPage > *,
+.freshTeamPage > *,
+.freshFollowUpsPage > *,
+.cvPayPage > *,
+.freshXeroPage > *,
+.freshSettingsPage > *,
+.freshHelpDeskPage > *,
+.freshPlansPage > * {
+  max-width: 1280px;
+}
+
+.freshTodayPage header,
+.freshCommandPreparedPage header,
+.freshJobsPage header,
+.freshRecurringPage header,
+.freshClientsPage header,
+.freshQuotesPage header,
+.freshInvoicesPage header,
+.freshTeamPage header,
+.freshFollowUpsPage header,
+.cvPayPage header,
+.freshXeroPage header,
+.freshSettingsPage header,
+.freshHelpDeskPage header,
+.freshPlansPage header,
+.freshXeroCompactHeader,
+.freshFollowUpsHero,
+.cvPayHeader {
+  border-radius: 16px !important;
+  border: 1px solid rgba(31, 38, 35, 0.1) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 16px 42px rgba(35, 27, 18, 0.08) !important;
+}
+
+.freshTodayPage h1,
+.freshCommandPreparedPage h1,
+.freshJobsPage h1,
+.freshRecurringPage h1,
+.freshClientsPage h1,
+.freshQuotesPage h1,
+.freshInvoicesPage h1,
+.freshTeamPage h1,
+.freshFollowUpsPage h1,
+.cvPayPage h1,
+.freshXeroPage h1,
+.freshSettingsPage h1,
+.freshHelpDeskPage h1,
+.freshPlansPage h1 {
+  color: #1f2623 !important;
+  font-size: clamp(26px, 3vw, 42px) !important;
+  line-height: 1.02 !important;
+  letter-spacing: 0 !important;
+  margin-bottom: 8px !important;
+}
+
+.freshTodayPage p,
+.freshCommandPreparedPage p,
+.freshJobsPage p,
+.freshRecurringPage p,
+.freshClientsPage p,
+.freshQuotesPage p,
+.freshInvoicesPage p,
+.freshTeamPage p,
+.freshFollowUpsPage p,
+.cvPayPage p,
+.freshXeroPage p,
+.freshSettingsPage p,
+.freshHelpDeskPage p,
+.freshPlansPage p {
+  line-height: 1.45 !important;
+}
+
+.freshTodayPage input,
+.freshTodayPage select,
+.freshTodayPage textarea,
+.freshCommandPreparedPage input,
+.freshCommandPreparedPage select,
+.freshCommandPreparedPage textarea,
+.freshJobsPage input,
+.freshJobsPage select,
+.freshJobsPage textarea,
+.freshRecurringPage input,
+.freshRecurringPage select,
+.freshRecurringPage textarea,
+.freshClientsPage input,
+.freshClientsPage select,
+.freshClientsPage textarea,
+.freshQuotesPage input,
+.freshQuotesPage select,
+.freshQuotesPage textarea,
+.freshInvoicesPage input,
+.freshInvoicesPage select,
+.freshInvoicesPage textarea,
+.freshTeamPage input,
+.freshTeamPage select,
+.freshTeamPage textarea,
+.freshFollowUpsPage input,
+.freshFollowUpsPage select,
+.freshFollowUpsPage textarea,
+.cvPayPage input,
+.cvPayPage select,
+.cvPayPage textarea,
+.freshXeroPage input,
+.freshXeroPage select,
+.freshXeroPage textarea {
+  border-radius: 12px !important;
+  border: 1px solid rgba(31, 38, 35, 0.16) !important;
+  background: #fffefa !important;
+  color: #1f2623 !important;
+}
+
+.freshTodayPage button,
+.freshCommandPreparedPage button,
+.freshJobsPage button,
+.freshRecurringPage button,
+.freshClientsPage button,
+.freshQuotesPage button,
+.freshInvoicesPage button,
+.freshTeamPage button,
+.freshFollowUpsPage button,
+.cvPayPage button,
+.freshXeroPage button,
+.freshSettingsPage button,
+.freshHelpDeskPage button,
+.freshPlansPage button {
+  min-height: 40px;
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+}
+
+.freshTodayPage article,
+.freshCommandPreparedPage article,
+.freshJobsPage article,
+.freshRecurringPage article,
+.freshClientsPage article,
+.freshQuotesPage article,
+.freshInvoicesPage article,
+.freshTeamPage article,
+.freshFollowUpsPage article,
+.cvPayPage article,
+.freshXeroPage article {
+  overflow-wrap: anywhere;
+}
+
+.freshCard,
+.freshPanel,
+.freshModalPanel,
+.freshJobsDetail,
+.freshJobsList,
+.freshCommandFixQueue,
+.freshCommandFixDetail,
+.freshCommandFixProof,
+.freshXeroDetail,
+.freshXeroList,
+.cvPayCard,
+.cvPayPanel {
+  border-radius: 16px !important;
+  border: 1px solid rgba(31, 38, 35, 0.1) !important;
+  box-shadow: 0 14px 40px rgba(35, 27, 18, 0.07) !important;
+}
+
+.freshPopupBackdrop,
+.freshModalBackdrop {
+  backdrop-filter: blur(10px);
+}
+
+.freshModalPanel {
+  max-height: min(88vh, 820px) !important;
+  overflow: auto !important;
+}
+
+@media (max-width: 920px) {
+  .freshTodayPage > *,
+  .freshCommandPreparedPage > *,
+  .freshCommandOsWrap > *,
+  .freshJobsPage > *,
+  .freshRecurringPage > *,
+  .freshClientsPage > *,
+  .freshQuotesPage > *,
+  .freshInvoicesPage > *,
+  .freshTeamPage > *,
+  .freshFollowUpsPage > *,
+  .cvPayPage > *,
+  .freshXeroPage > *,
+  .freshSettingsPage > *,
+  .freshHelpDeskPage > *,
+  .freshPlansPage > * {
+    max-width: 100%;
+  }
+
+  .freshFlowPromiseStrip {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .freshTodayPage h1,
+  .freshCommandPreparedPage h1,
+  .freshJobsPage h1,
+  .freshRecurringPage h1,
+  .freshClientsPage h1,
+  .freshQuotesPage h1,
+  .freshInvoices
+cd /workspaces/churvox
+git pull origin main
+
+cat >> frontend/src/churvox-fresh/freshProductFlowPolish.css <<'CSS'
+
+/* No-wtf layout pass: every work page should feel calm, scannable and ready to act. */
+.freshShellMain,
+.freshAppMain,
+.freshTodayPage,
+.freshCommandPreparedPage,
+.freshCommandOsWrap,
+.freshJobsPage,
+.freshRecurringPage,
+.freshClientsPage,
+.freshQuotesPage,
+.freshInvoicesPage,
+.freshTeamPage,
+.cvPayPage,
+.freshFollowUpsPage,
+.freshXeroPage {
+  max-width: 1480px;
+}
+
+.freshTodayPage > header,
+.freshCommandPreparedPage > header,
+.freshJobsPage > header,
+.freshRecurringPage > header,
+.freshClientsPage > header,
+.freshQuotesPage > header,
+.freshInvoicesPage > header,
+.freshTeamPage > header,
+.cvPayHeader,
+.freshFollowUpsHero,
+.freshXeroCompactHeader {
+  margin-bottom: 14px !important;
+}
+
+.freshTodayPage h1,
+.freshCommandPreparedPage h1,
+.freshJobsPage h1,
+.freshRecurringPage h1,
+.freshClientsPage h1,
+.freshQuotesPage h1,
+.freshInvoicesPage h1,
+.freshTeamPage h1,
+.cvPayHeader h1,
+.freshFollowUpsHero h1,
+.freshXeroCompactHeader h1 {
+  max-width: 760px;
+  line-height: 1.03 !important;
+}
+
+.freshTodayPage header p,
+.freshCommandPreparedPage header p,
+.freshJobsPage header p,
+.freshRecurringPage header p,
+.freshClientsPage header p,
+.freshQuotesPage header p,
+.freshInvoicesPage header p,
+.freshTeamPage header p,
+.cvPayHeader p,
+.freshFollowUpsHero p,
+.freshXeroCompactHeader p {
+  max-width: 780px;
+  line-height: 1.45 !important;
+}
+
+.freshTodayPage input,
+.freshTodayPage select,
+.freshTodayPage textarea,
+.freshCommandPreparedPage input,
+.freshCommandPreparedPage select,
+.freshCommandPreparedPage textarea,
+.freshJobsPage input,
+.freshJobsPage select,
+.freshJobsPage textarea,
+.freshRecurringPage input,
+.freshRecurringPage select,
+.freshRecurringPage textarea,
+.freshClientsPage input,
+.freshClientsPage select,
+.freshClientsPage textarea,
+.freshQuotesPage input,
+.freshQuotesPage select,
+.freshQuotesPage textarea,
+.freshInvoicesPage input,
+.freshInvoicesPage select,
+.freshInvoicesPage textarea,
+.freshTeamPage input,
+.freshTeamPage select,
+.freshTeamPage textarea,
+.cvPayPage input,
+.cvPayPage select,
+.cvPayPage textarea,
+.freshFollowUpsPage input,
+.freshFollowUpsPage select,
+.freshFollowUpsPage textarea,
+.freshXeroPage input,
+.freshXeroPage select,
+.freshXeroPage textarea {
+  border-radius: 12px !important;
+  border: 1px solid rgba(31, 38, 35, 0.14) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #1f2623 !important;
+  min-height: 42px;
+}
+
+.freshTodayPage label,
+.freshCommandPreparedPage label,
+.freshJobsPage label,
+.freshRecurringPage label,
+.freshClientsPage label,
+.freshQuotesPage label,
+.freshInvoicesPage label,
+.freshTeamPage label,
+.cvPayPage label,
+.freshFollowUpsPage label,
+.freshXeroPage label {
+  gap: 7px !important;
+}
+
+.freshTodayPage label span,
+.freshCommandPreparedPage label span,
+.freshJobsPage label span,
+.freshRecurringPage label span,
+.freshClientsPage label span,
+.freshQuotesPage label span,
+.freshInvoicesPage label span,
+.freshTeamPage label span,
+.cvPayPage label span,
+.freshFollowUpsPage label span,
+.freshXeroPage label span {
+  color: rgba(31, 38, 35, 0.72) !important;
+  font-weight: 900 !important;
+}
+
+.freshTodayPage button,
+.freshCommandPreparedPage button,
+.freshJobsPage button,
+.freshRecurringPage button,
+.freshClientsPage button,
+.freshQuotesPage button,
+.freshInvoicesPage button,
+.freshTeamPage button,
+.cvPayPage button,
+.freshFollowUpsPage button,
+.freshXeroPage button {
+  min-height: 40px;
+}
+
+.freshTodayPage [role="button"],
+.freshCommandPreparedPage [role="button"],
+.freshJobsPage [role="button"],
+.freshRecurringPage [role="button"],
+.freshClientsPage [role="button"],
+.freshQuotesPage [role="button"],
+.freshInvoicesPage [role="button"],
+.freshTeamPage [role="button"],
+.cvPayPage [role="button"],
+.freshFollowUpsPage [role="button"],
+.freshXeroPage [role="button"] {
+  cursor: pointer;
+}
+
+.freshTodayPage section,
+.freshCommandPreparedPage section,
+.freshJobsPage section,
+.freshRecurringPage section,
+.freshClientsPage section,
+.freshQuotesPage section,
+.freshInvoicesPage section,
+.freshTeamPage section,
+.cvPayPage section,
+.freshFollowUpsPage section,
+.freshXeroPage section {
+  min-width: 0;
+}
+
+.freshTodayPage article,
+.freshCommandPreparedPage article,
+.freshJobsPage article,
+.freshRecurringPage article,
+.freshClientsPage article,
+.freshQuotesPage article,
+.freshInvoicesPage article,
+.freshTeamPage article,
+.cvPayPage article,
+.freshFollowUpsPage article,
+.freshXeroPage article {
+  min-width: 0;
+}
+
+.freshTodayPage p,
+.freshCommandPreparedPage p,
+.freshJobsPage p,
+.freshRecurringPage p,
+.freshClientsPage p,
+.freshQuotesPage p,
+.freshInvoicesPage p,
+.freshTeamPage p,
+.cvPayPage p,
+.freshFollowUpsPage p,
+.freshXeroPage p {
+  overflow-wrap: anywhere;
+}
+
+.freshPopupBackdrop,
+.freshModalBackdrop {
+  backdrop-filter: blur(5px);
+}
+
+.freshModalPanel,
+.freshPreparedModal,
+.cvPayModal,
+.freshCard[role="dialog"] {
+  border-radius: 16px !important;
+  max-height: min(86vh, 820px);
+  overflow: auto;
+}
+
+@media (max-width: 900px) {
+  .freshTodayPage,
+  .freshCommandPreparedPage,
+  .freshCommandOsWrap,
+  .freshJobsPage,
+  .freshRecurringPage,
+  .freshClientsPage,
+  .freshQuotesPage,
+  .freshInvoicesPage,
+  .freshTeamPage,
+  .cvPayPage,
+  .freshFollowUpsPage,
+  .freshXeroPage {
+    padding-top: 12px !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .freshTodayPage h1,
+  .freshCommandPreparedPage h1,
+  .freshJobsPage h1,
+  .freshRecurringPage h1,
+  .freshClientsPage h1,
+  .freshQuotesPage h1,
+  .freshInvoicesPage h1,
+  .freshTeamPage h1,
+  .cvPayHeader h1,
+  .freshFollowUpsHero h1,
+  .freshXeroCompactHeader h1 {
+    font-size: clamp(28px, 9vw, 40px) !important;
+  }
+
+  .freshTodayPage > header,
+  .freshCommandPreparedPage > header,
+  .freshJobsPage > header,
+  .freshRecurringPage > header,
+  .freshClientsPage > header,
+  .freshQuotesPage > header,
+  .freshInvoicesPage > header,
+  .freshTeamPage > header,
+  .cvPayHeader,
+  .freshFollowUpsHero,
+  .freshXeroCompactHeader {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .freshModalPanel,
+  .freshPreparedModal,
+  .cvPayModal,
+  .freshCard[role="dialog"] {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px !important;
+  }
+}
