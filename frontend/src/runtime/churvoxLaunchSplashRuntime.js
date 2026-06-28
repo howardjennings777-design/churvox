@@ -4,6 +4,7 @@
 const STYLE_ID = 'churvox-launch-splash-style';
 const NODE_ID = 'churvox-launch-splash';
 const SESSION_KEY = 'churvox-launch-splash-seen-v1';
+const ICON_VERSION = 'worker-app-redesign-20260629';
 
 function isWorkerApp() {
   return typeof window !== 'undefined' && window.location.pathname.startsWith('/worker');
@@ -18,16 +19,54 @@ function shouldShow() {
   return false;
 }
 
+function setMeta(name, content) {
+  let node = document.querySelector(`meta[name="${name}"]`);
+  if (!node) {
+    node = document.createElement('meta');
+    node.setAttribute('name', name);
+    document.head.appendChild(node);
+  }
+  node.setAttribute('content', content);
+}
+
+function setLink(rel, href, type) {
+  let node = document.querySelector(`link[rel="${rel}"][data-cvx-runtime="true"]`);
+  if (!node) {
+    node = document.createElement('link');
+    node.setAttribute('rel', rel);
+    node.setAttribute('data-cvx-runtime', 'true');
+    document.head.appendChild(node);
+  }
+  if (type) node.setAttribute('type', type);
+  node.setAttribute('href', href);
+}
+
+function ensureBranding() {
+  if (typeof document === 'undefined' || !document.head) return;
+  document.title = isWorkerApp()
+    ? 'Churvox Worker App - Clock in, proof, done'
+    : 'Churvox - Churvox does the admin. The owner approves.';
+  setMeta('theme-color', '#111820');
+  setMeta('apple-mobile-web-app-title', isWorkerApp() ? 'Churvox Worker' : 'Churvox');
+  setMeta('description', 'Churvox does the admin. The owner checks and approves. Jobs, workers, quotes, invoices, messages and safe accounting handoff.');
+  setLink('icon', `/favicon.svg?v=${ICON_VERSION}`, 'image/svg+xml');
+  setLink('apple-touch-icon', `/churvox-app-icon.svg?v=${ICON_VERSION}`);
+  setLink('manifest', `/manifest.json?v=${ICON_VERSION}`);
+}
+
 function markSvg() {
   return `
     <svg viewBox="0 0 256 256" aria-hidden="true" class="cvxSplashMark">
       <defs>
-        <linearGradient id="cvxSplashBg" x1="28" y1="18" x2="226" y2="236" gradientUnits="userSpaceOnUse"><stop stop-color="#252a31"/><stop offset=".55" stop-color="#111820"/><stop offset="1" stop-color="#05070b"/></linearGradient>
-        <linearGradient id="cvxSplashOrange" x1="44" y1="44" x2="212" y2="214" gradientUnits="userSpaceOnUse"><stop stop-color="#ffbd72"/><stop offset=".42" stop-color="#ff7a22"/><stop offset="1" stop-color="#ef5b1d"/></linearGradient>
-        <linearGradient id="cvxSplashWhite" x1="72" y1="88" x2="214" y2="160" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#d9dee7"/></linearGradient>
+        <linearGradient id="cvxSplashBg" x1="20" y1="12" x2="232" y2="244" gradientUnits="userSpaceOnUse"><stop stop-color="#2b3038"/><stop offset=".52" stop-color="#111820"/><stop offset="1" stop-color="#05070b"/></linearGradient>
+        <linearGradient id="cvxSplashOrange" x1="45" y1="36" x2="218" y2="218" gradientUnits="userSpaceOnUse"><stop stop-color="#ffbd72"/><stop offset=".42" stop-color="#ff7a22"/><stop offset="1" stop-color="#ef5b1d"/></linearGradient>
+        <linearGradient id="cvxSplashWhite" x1="66" y1="92" x2="213" y2="158" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#d9dee7"/></linearGradient>
+        <radialGradient id="cvxSplashGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(184 58) rotate(126) scale(170)"><stop stop-color="#ff8a2a" stop-opacity=".38"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient>
       </defs>
-      <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#cvxSplashBg)"/>
-      <rect x="16" y="16" width="224" height="224" rx="50" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3"/>
+      <rect x="10" y="10" width="236" height="236" rx="56" fill="url(#cvxSplashBg)"/>
+      <rect x="10" y="10" width="236" height="236" rx="56" fill="url(#cvxSplashGlow)"/>
+      <rect x="15" y="15" width="226" height="226" rx="51" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3"/>
+      <path d="M56 70h132M68 195h116" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round"/>
       <path d="M190 63A82 82 0 0 0 71 66" fill="none" stroke="url(#cvxSplashOrange)" stroke-width="28" stroke-linecap="round"/>
       <path d="M64 181A82 82 0 0 0 195 181" fill="none" stroke="url(#cvxSplashOrange)" stroke-width="28" stroke-linecap="round"/>
       <path d="M43 105h50M33 132h59M53 159h52" fill="none" stroke="url(#cvxSplashOrange)" stroke-width="12" stroke-linecap="round"/>
@@ -59,9 +98,14 @@ function showSplash() {
   window.setTimeout(() => node.remove(), isWorkerApp() ? 1650 : 1300);
 }
 
+function bootLaunchBranding() {
+  ensureBranding();
+  showSplash();
+}
+
 if (typeof window !== 'undefined') {
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showSplash, { once: true });
-  else showSplash();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootLaunchBranding, { once: true });
+  else bootLaunchBranding();
 }
 
 export {};
