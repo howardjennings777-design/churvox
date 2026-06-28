@@ -28,6 +28,7 @@ import './churvox-fresh/optionFControlPagesRuntime';
 import './churvox-fresh/optionFControlPagesRuntimeGuard';
 import './churvox-fresh/optionFPlansPricingRuntime';
 import './churvox-fresh/optionFWorkingActionsRuntime';
+import './churvox-fresh/optionFBackendSyncRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
