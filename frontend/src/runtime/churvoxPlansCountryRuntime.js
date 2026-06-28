@@ -10,6 +10,7 @@ const COUNTRIES = {
 
 const PLAN_NAMES = ["Start", "Crew", "Operator", "Command"];
 const STORAGE_KEY = "churvox:billing-country";
+let updateQueued = false;
 
 function normalizeCountry(value) {
   const raw = String(value || "").trim().toUpperCase();
@@ -54,12 +55,20 @@ function priceLabel(meta, amount) {
 }
 
 function setCountry(country) {
-  try { window.localStorage.setItem(STORAGE_KEY, country); } catch {}
+  try {
+    if (window.localStorage.getItem(STORAGE_KEY) !== country) window.localStorage.setItem(STORAGE_KEY, country);
+  } catch {}
   try {
     const url = new URL(window.location.href);
-    url.searchParams.set("country", country);
-    window.history.replaceState({}, document.title, url.toString());
+    if (url.searchParams.get("country") !== country) {
+      url.searchParams.set("country", country);
+      window.history.replaceState({}, document.title, url.toString());
+    }
   } catch {}
+}
+
+function setText(node, value) {
+  if (node && node.textContent !== value) node.textContent = value;
 }
 
 function ensureStyle() {
@@ -125,37 +134,41 @@ function updatePlansPage() {
     header.appendChild(bar);
     bar.querySelector("select")?.addEventListener("change", (event) => {
       setCountry(event.target.value);
-      updatePlansPage();
+      scheduleUpdate();
     });
   }
 
   const select = header?.querySelector(".osPlanCountryBar select");
-  if (select) select.value = country;
+  if (select && select.value !== country) select.value = country;
 
   root.querySelectorAll(".planCards article").forEach((card, index) => {
     const strong = card.querySelector("strong");
-    if (strong && meta.plans[index] != null) strong.textContent = priceLabel(meta, meta.plans[index]);
+    if (strong && meta.plans[index] != null) setText(strong, priceLabel(meta, meta.plans[index]));
     const title = card.querySelector("h2")?.textContent?.trim() || PLAN_NAMES[index];
-    card.setAttribute("data-country-price", `${title} ${priceLabel(meta, meta.plans[index] || 0)}`);
+    const dataValue = `${title} ${priceLabel(meta, meta.plans[index] || 0)}`;
+    if (card.getAttribute("data-country-price") !== dataValue) card.setAttribute("data-country-price", dataValue);
   });
 
   root.querySelectorAll(".planMatrix tbody tr").forEach((row) => {
     const first = row.querySelector("td:first-child")?.textContent || "";
     const cells = row.querySelectorAll("td");
     if (/Accounting Sync Add-on/i.test(first) && cells.length >= 5) {
-      cells[1].textContent = priceLabel(meta, meta.accounting);
-      cells[2].textContent = priceLabel(meta, meta.accounting);
-      cells[3].textContent = priceLabel(meta, meta.accounting);
-      cells[4].textContent = "Included option";
+      setText(cells[1], priceLabel(meta, meta.accounting));
+      setText(cells[2], priceLabel(meta, meta.accounting));
+      setText(cells[3], priceLabel(meta, meta.accounting));
+      setText(cells[4], "Included option");
     }
     if (/Command Growth Pack/i.test(first) && cells.length >= 5) {
-      cells[4].textContent = priceLabel(meta, meta.growth);
+      setText(cells[4], priceLabel(meta, meta.growth));
     }
   });
 }
 
 function scheduleUpdate() {
+  if (updateQueued) return;
+  updateQueued = true;
   window.requestAnimationFrame(() => {
+    updateQueued = false;
     updatePlansPage();
     setTimeout(updatePlansPage, 80);
     setTimeout(updatePlansPage, 400);
@@ -181,6 +194,8 @@ if (typeof window !== "undefined" && !window.__CHURVOX_PLANS_COUNTRY_RUNTIME__) 
     return result;
   };
 
-  const observer = new MutationObserver(scheduleUpdate);
+  const observer = new MutationObserver(() => {
+    if (isPlansRoute()) scheduleUpdate();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 }
