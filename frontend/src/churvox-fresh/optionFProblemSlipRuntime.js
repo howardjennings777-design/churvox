@@ -28,7 +28,31 @@ function isBlank(value) {
   return !text || text === "not set" || text === "not saved" || text === "none" || text === "undefined" || text === "null";
 }
 
-function getDrawerFields(drawer) {
+function findField(fields, names) {
+  const wanted = names.map(norm);
+  return fields.find((field) => wanted.some((name) => field.key === name || field.key.includes(name)));
+}
+
+function findFilledField(fields, names, money = false) {
+  const wanted = names.map(norm);
+  return fields.find((field) => wanted.some((name) => field.key === name || field.key.includes(name)) && (!isBlank(field.value)) && (!money || moneyValue(field.value) > 0));
+}
+
+function addProblem(problems, field, title, detail, severity = "blocker") {
+  if (!field && !title) return;
+  problems.push({ field, title, detail, severity });
+}
+
+function textFor(fields, names) {
+  return norm(findField(fields, names)?.value || "");
+}
+
+function signatureFor(problems) {
+  if (!problems.length) return "ok";
+  return problems.map((problem) => [problem.title, problem.detail, problem.severity, problem.field?.key].map(clean).join(":")) .join("|");
+}
+
+function drawerFields(drawer) {
   return Array.from(drawer.querySelectorAll(".cocField")).map((el) => {
     const label = clean(el.querySelector("span")?.textContent || "");
     const control = el.querySelector("input, textarea, select");
@@ -37,39 +61,20 @@ function getDrawerFields(drawer) {
   });
 }
 
-function findField(fields, names) {
-  const wanted = names.map(norm);
-  return fields.find((field) => wanted.some((name) => field.key === name || field.key.includes(name)));
-}
-
-function addProblem(problems, field, title, detail, severity = "blocker") {
-  if (!field && !title) return;
-  problems.push({ field, title, detail, severity });
-}
-
-function valueFor(fields, names) {
-  return findField(fields, names)?.value || "";
-}
-
-function textFor(fields, names) {
-  return norm(valueFor(fields, names));
-}
-
 function analyseDrawer(drawer) {
   const title = norm(drawer.querySelector("h2")?.textContent || "");
   const type = norm(drawer.querySelector("em")?.textContent || "");
-  const fields = getDrawerFields(drawer);
+  const fields = drawerFields(drawer);
   const problems = [];
 
   const client = findField(fields, ["client"]);
-  const date = findField(fields, ["scheduled date", "date", "due date"]);
-  const time = findField(fields, ["start time", "time", "clock in"]);
+  const date = findField(fields, ["scheduled date", "due date", "date"]);
+  const time = findField(fields, ["start time", "clock in", "time"]);
   const worker = findField(fields, ["assigned worker", "worker"]);
   const price = findField(fields, ["price nzd", "amount", "total"]);
   const proof = findField(fields, ["proof/photos", "proof", "evidence"]);
   const issue = findField(fields, ["issue status", "owner check", "prepared status", "slip/payroll status", "next step", "priority"]);
   const status = findField(fields, ["status", "clock status"]);
-  const notes = findField(fields, ["job notes", "edit notes", "notes", "message", "drafted reply"]);
 
   const isJob = title.includes("job") || type.includes("job");
   const isApproval = title.includes("approval") || type.includes("command");
@@ -152,7 +157,7 @@ function analyseDrawer(drawer) {
     addProblem(problems, issue, "Needs owner attention", issue.value, "warning");
   }
 
-  return { fields, problems };
+  return { problems };
 }
 
 function clearDrawer(drawer) {
@@ -164,11 +169,8 @@ function clearDrawer(drawer) {
 }
 
 function renderDrawerSummary(drawer, problems) {
-  const h2 = drawer.querySelector("h2");
-  const intro = drawer.querySelector("p");
-  const anchor = intro || h2;
+  const anchor = drawer.querySelector("p") || drawer.querySelector("h2");
   if (!anchor) return;
-
   const summary = document.createElement("section");
   summary.className = SUMMARY_CLASS;
   summary.innerHTML = `<strong>${problems.length ? "Fix first" : "No blockers found"}</strong><span>${problems.length ? "Churvox found the fields slowing this slip down." : "This slip looks complete enough for the owner to read."}</span><ul>${problems.map((problem) => `<li class="${problem.severity === "warning" ? "warn" : ""}"><b>${problem.title}</b><small>${problem.detail || "Needs attention"}</small></li>`).join("")}</ul>`;
@@ -176,8 +178,11 @@ function renderDrawerSummary(drawer, problems) {
 }
 
 function enhanceDrawer(drawer) {
-  clearDrawer(drawer);
   const { problems } = analyseDrawer(drawer);
+  const sig = signatureFor(problems);
+  if (drawer.dataset.problemSlipSig === sig && drawer.querySelector(`.${SUMMARY_CLASS}`)) return;
+  drawer.dataset.problemSlipSig = sig;
+  clearDrawer(drawer);
   problems.forEach((problem) => {
     if (!problem.field?.el) return;
     problem.field.el.classList.add(FIELD_CLASS);
@@ -187,7 +192,7 @@ function enhanceDrawer(drawer) {
   renderDrawerSummary(drawer, problems);
 }
 
-function getRecordRows(root) {
+function recordRows(root) {
   return Array.from(root.querySelectorAll(".cv-popup-info-row, .cv-popup-field, .cv-popup-summary div")).map((el) => {
     const label = clean(el.querySelector("span")?.textContent || "");
     const control = el.querySelector("input, textarea, select");
@@ -199,28 +204,25 @@ function getRecordRows(root) {
 
 function analyseRecordPopup(root) {
   const kind = norm(root.querySelector(".cv-record-popup-header p")?.textContent || "");
-  const rows = getRecordRows(root);
+  const rows = recordRows(root);
   const problems = [];
   const requiredByKind = {
-    job: [["status"], ["client", "client name", "customer name"], ["address", "site address"], ["scheduled date", "scheduled at"], ["price", "fixed price"]],
-    invoice: [["status"], ["customer name", "client name"], ["due date"], ["total", "amount due", "subtotal"]],
-    quote: [["status"], ["customer name", "client name"], ["description", "scope"], ["total", "price", "subtotal"]],
-    client: [["name", "client name", "customer name"], ["email", "phone"], ["address", "site address", "billing address"]],
-    person: [["name", "full name", "display name", "email"], ["role"], ["status"]],
+    job: [{ names: ["status"] }, { names: ["client", "client name", "customer name"] }, { names: ["address", "site address"] }, { names: ["scheduled date", "scheduled at"] }, { names: ["price", "fixed price"], money: true }],
+    invoice: [{ names: ["status"] }, { names: ["customer name", "client name"] }, { names: ["due date"] }, { names: ["total", "amount due", "subtotal"], money: true }],
+    quote: [{ names: ["status"] }, { names: ["customer name", "client name"] }, { names: ["description", "scope"] }, { names: ["total", "price", "subtotal"], money: true }],
+    client: [{ names: ["name", "client name", "customer name"] }, { names: ["email", "phone"] }, { names: ["address", "site address", "billing address"] }],
+    person: [{ names: ["name", "full name", "display name", "email"] }, { names: ["role"] }, { names: ["status"] }],
   };
-  const required = requiredByKind[kind] || [];
-  required.forEach((names) => {
-    const row = findField(rows, names);
-    if (!row || isBlank(row.value) || moneyValue(row.value) === 0 && /price|total|amount|subtotal|fixed/.test(names.join(" "))) {
-      addProblem(problems, row, `${names[0].replaceAll("_", " ")} missing`, "This record needs this before Churvox can prepare clean admin.");
-    }
+  (requiredByKind[kind] || []).forEach((rule) => {
+    const row = findFilledField(rows, rule.names, rule.money);
+    if (!row) addProblem(problems, findField(rows, rule.names), `${rule.names[0].replaceAll("_", " ")} missing`, "This record needs this before Churvox can prepare clean admin.");
   });
   rows.forEach((row) => {
     if (/status|sync|notes|description|internal notes|worker notes/i.test(row.label) && /missing|needs|review|pending|not synced|command|mismatch|issue|overdue/i.test(row.value)) {
       addProblem(problems, row, "Needs owner attention", `${row.label}: ${row.value}`, "warning");
     }
   });
-  return { rows, problems };
+  return { problems };
 }
 
 function clearRecordPopup(root) {
@@ -232,11 +234,14 @@ function clearRecordPopup(root) {
 }
 
 function enhanceRecordPopup(root) {
-  clearRecordPopup(root);
   const body = root.querySelector(".cv-record-popup-body");
   const detail = root.querySelector(".cv-popup-detail-grid");
   if (!body || !detail) return;
   const { problems } = analyseRecordPopup(root);
+  const sig = signatureFor(problems);
+  if (root.dataset.problemSlipSig === sig && root.querySelector(`.${RECORD_SUMMARY_CLASS}`)) return;
+  root.dataset.problemSlipSig = sig;
+  clearRecordPopup(root);
   problems.forEach((problem) => {
     if (!problem.field?.el) return;
     problem.field.el.classList.add(RECORD_FIELD_CLASS);
