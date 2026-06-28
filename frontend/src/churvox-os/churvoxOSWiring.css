@@ -1,0 +1,196 @@
+/* CHURVOX_OS_WIRING_20260628
+   Interaction polish for the wired admin OS state, CSV tools and live Command queue. */
+
+.churvoxOS .osSearch {
+  align-items: stretch;
+}
+
+.churvoxOS .osSearch input {
+  min-height: 30px;
+}
+
+.churvoxOS .osSearch button,
+.churvoxOS .csvTools button,
+.churvoxOS .csvImportLabel,
+.churvoxOS .resetOsButton,
+.churvoxOS .miniActionButton {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--os-graphite);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.churvoxOS .osSearch button {
+  background: var(--os-orange);
+}
+
+.churvoxOS .csvTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.churvoxOS .csvImportLabel {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.churvoxOS .csvImportLabel input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.churvoxOS .csvStatus,
+.churvoxOS .osNotice,
+.churvoxOS .emptyState {
+  border: 1px solid rgba(240, 90, 40, 0.22);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(240, 90, 40, 0.08);
+  color: #813014;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.churvoxOS .csvStatus {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.churvoxOS .emptyState {
+  margin-top: 12px;
+  background: rgba(23, 21, 18, 0.05);
+  border-color: var(--os-line);
+  color: var(--os-muted);
+}
+
+.churvoxOS .sourceState {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(23, 21, 18, 0.07);
+  color: var(--os-muted);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.churvoxOS .sourceState.ready,
+.churvoxOS .sourceState.open {
+  background: rgba(240, 90, 40, 0.12);
+  color: #9a3615;
+}
+
+.churvoxOS .sourceState.approved {
+  background: #e8f4ec;
+  color: var(--os-green);
+}
+
+.churvoxOS .sourceState.parked {
+  background: rgba(231, 165, 32, 0.16);
+  color: #8a5a00;
+}
+
+.churvoxOS .queueStats .approvedCount {
+  background: #e8f4ec;
+  color: var(--os-green);
+}
+
+.churvoxOS .queueStats .parkedCount {
+  background: rgba(231, 165, 32, 0.16);
+  color: #8a5a00;
+}
+
+.churvoxOS .commandQueue button.approved,
+.churvoxOS .commandQueue button.parked {
+  opacity: 0.78;
+}
+
+.churvoxOS .commandQueue button.approved {
+  border-left-color: var(--os-green);
+}
+
+.churvoxOS .commandQueue button.parked {
+  border-left-color: var(--os-amber);
+}
+
+.churvoxOS .commandActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.churvoxOS .decisionSlip .approvalDone {
+  border-radius: 8px;
+  padding: 12px;
+  background: #e8f4ec;
+  color: var(--os-green);
+  font-weight: 950;
+}
+
+.churvoxOS .controlGrid article.wideControl {
+  grid-column: 1 / -1;
+}
+
+.churvoxOS .csvPreview {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.churvoxOS .csvPreview p {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin: 0;
+  border-top: 1px solid var(--os-line);
+  padding-top: 7px;
+}
+
+.churvoxOS .dockCore.darkDock,
+.churvoxOS .dockList.darkDock {
+  background: var(--os-graphite);
+  color: #fff;
+}
+
+.churvoxOS .dockCore.darkDock p,
+.churvoxOS .dockList.darkDock p,
+.churvoxOS .dockList.darkDock span {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.churvoxOS .dockList.darkDock strong {
+  color: #fff;
+}
+
+.churvoxOS .dockCore.darkDock .kicker {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.churvoxOS .plansPage .csvTools {
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .churvoxOS .csvTools {
+    display: grid;
+  }
+
+  .churvoxOS .osSearch {
+    display: grid;
+  }
+}
