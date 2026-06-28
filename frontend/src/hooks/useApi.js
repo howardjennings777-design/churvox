@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { formatApiErrorDetail } from "../lib/utils";
 import API_BASE from "../lib/apiBase";
@@ -211,6 +211,10 @@ export function useApi() {
   const patch = useCallback((endpoint, data, options) => request("PATCH", endpoint, data, options), [request]);
   const put = useCallback((endpoint, data, options) => request("PUT", endpoint, data, options), [request]);
   const del = useCallback((endpoint, options) => request("DELETE", endpoint, null, options), [request]);
+  const stableApi = useRef(null);
 
-  return { get, post, patch, put, del, loading, error, setError };
+  if (!stableApi.current) stableApi.current = {};
+  Object.assign(stableApi.current, { get, post, patch, put, del, loading, error, setError });
+
+  return stableApi.current;
 }
