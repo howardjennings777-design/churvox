@@ -61,6 +61,7 @@ function html(raw) {
 }
 
 function missingFor(type, record) {
+  if (record?._adminOverride || record?._parkedByCommand) return [];
   const missing = [];
   if (type === 'jobs') {
     if (!value(record, ['title', 'Job name', 'job', 'Job'])) missing.push('job name');
@@ -162,6 +163,7 @@ function validateStores() {
   ['jobs', 'clients', 'quotes', 'invoices', 'messages', 'workers'].forEach((type) => {
     const list = Array.isArray(state[type]) ? state[type] : [];
     state[type] = list.map((record) => {
+      if (record._parkedByCommand) return { ...record, _blockedByCommand: true, _doNotShowToday: type === 'jobs', _commandMissing: record._commandMissing || 'parked in Command' };
       const missing = missingFor(type, record);
       if (!missing.length) {
         if (record._blockedByCommand || record._doNotShowToday || record._commandMissing) changed = true;
@@ -197,7 +199,7 @@ function ensureStyle() {
   style.id = STYLE_ID;
   style.textContent = `
     #${TOAST_ID}{position:fixed;right:18px;bottom:205px;z-index:999999;max-width:380px;padding:12px 14px;border-radius:14px;background:#101513;color:#fff;box-shadow:0 18px 44px rgba(16,21,19,.24);font:900 13px/1.35 Inter,system-ui,sans-serif;opacity:0;transform:translateY(12px);transition:.18s ease;pointer-events:none}#${TOAST_ID}.show{opacity:1;transform:translateY(0)}
-    #${MODAL_ID}{position:fixed;inset:0;z-index:1000000;display:grid;place-items:center;padding:24px;background:rgba(16,21,19,.42);backdrop-filter:blur(5px)}#${MODAL_ID}[hidden]{display:none}#${MODAL_ID} .brainModal{width:min(920px,calc(100vw - 28px));max-height:calc(100vh - 32px);overflow:auto;border-radius:22px;background:#fff;color:#111815;box-shadow:0 30px 80px rgba(16,21,19,.3)}#${MODAL_ID} header{display:flex;justify-content:space-between;gap:18px;padding:20px 22px;border-bottom:1px solid rgba(16,21,19,.08)}#${MODAL_ID} h2{margin:0;font-size:30px;line-height:1.05}#${MODAL_ID} p{margin:7px 0 0;color:#52605a;font-size:13px;font-weight:850}#${MODAL_ID} button{border:0;border-radius:999px;padding:10px 14px;background:#101513;color:#fff;font-weight:950;cursor:pointer}#${MODAL_ID} form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px 22px 22px}#${MODAL_ID} label{display:grid;gap:5px;color:#52605a;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.03em}#${MODAL_ID} input,#${MODAL_ID} textarea{width:100%;min-height:42px;border:1px solid rgba(16,21,19,.13);border-radius:12px;padding:9px 10px;background:#fff;color:#111815;font:850 14px Inter,system-ui,sans-serif;text-transform:none;letter-spacing:0}#${MODAL_ID} textarea{min-height:96px;resize:vertical}#${MODAL_ID} .full{grid-column:1/-1}#${MODAL_ID} .actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid rgba(16,21,19,.08);padding-top:10px}#${MODAL_ID} .actions button:last-child{background:#ea580c}
+    #${MODAL_ID}{position:fixed;inset:0;z-index:1000000;display:grid;place-items:center;padding:24px;background:rgba(16,21,19,.42);backdrop-filter:blur(5px)}#${MODAL_ID}[hidden]{display:none}#${MODAL_ID} .brainModal{width:min(980px,calc(100vw - 28px));max-height:calc(100vh - 32px);overflow:auto;border-radius:22px;background:#fff;color:#111815;box-shadow:0 30px 80px rgba(16,21,19,.3)}#${MODAL_ID} header{display:flex;justify-content:space-between;gap:18px;padding:20px 22px;border-bottom:1px solid rgba(16,21,19,.08)}#${MODAL_ID} h2{margin:0;font-size:30px;line-height:1.05}#${MODAL_ID} p{margin:7px 0 0;color:#52605a;font-size:13px;font-weight:850}#${MODAL_ID} button{border:0;border-radius:999px;padding:10px 14px;background:#101513;color:#fff;font-weight:950;cursor:pointer}#${MODAL_ID} form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px 22px 22px}#${MODAL_ID} label{display:grid;gap:5px;color:#52605a;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.03em}#${MODAL_ID} input,#${MODAL_ID} textarea,#${MODAL_ID} select{width:100%;min-height:42px;border:1px solid rgba(16,21,19,.13);border-radius:12px;padding:9px 10px;background:#fff;color:#111815;font:850 14px Inter,system-ui,sans-serif;text-transform:none;letter-spacing:0}#${MODAL_ID} textarea{min-height:96px;resize:vertical}#${MODAL_ID} .full{grid-column:1/-1}#${MODAL_ID} .actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid rgba(16,21,19,.08);padding-top:10px}#${MODAL_ID} .actions button:last-child{background:#ea580c}
     .ofBrainPanel{grid-column:1/-1;display:grid;gap:12px;padding:14px;border:1px solid rgba(16,21,19,.08);border-radius:16px;background:#fff;box-shadow:0 14px 30px rgba(16,21,19,.05)}.ofBrainPanel h3{margin:0;font-size:15px;color:#111815}.ofBrainStats{display:flex;flex-wrap:wrap;gap:8px}.ofBrainStats span{display:grid;min-width:112px;border-radius:12px;padding:10px 12px;background:#f8faf9;color:#52605a;font-size:11px;font-weight:900}.ofBrainStats b{font-size:20px;color:#111815;line-height:1}.ofBrainRows{display:grid;gap:8px}.ofBrainRow{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;min-height:44px;padding:9px 10px;border-radius:12px;background:#fff7ed;color:#52605a;font-size:12px;font-weight:850}.ofBrainRow b{color:#111815}.ofBrainRow em{font-style:normal;color:#9a3412;font-weight:950}.ofBrainRow .rowActions{display:flex;gap:6px}.ofBrainRow button{border:0;border-radius:999px;padding:7px 9px;background:#101513;color:#fff;font-size:11px;font-weight:950;cursor:pointer}.ofBrainRow button:first-child{background:#ea580c}.ofBrainBadge{position:fixed;right:18px;bottom:58px;z-index:99992;border:1px solid rgba(16,21,19,.09);border-radius:999px;padding:8px 11px;background:#fff;color:#111815;box-shadow:0 12px 28px rgba(16,21,19,.12);font:900 12px Inter,system-ui,sans-serif}.ofBrainBlocked{display:none!important}
     @media(max-width:760px){#${MODAL_ID} form{grid-template-columns:1fr}.ofBrainRow{grid-template-columns:1fr}.ofBrainRow .rowActions{flex-wrap:wrap}.ofBrainBadge{left:10px;right:10px;text-align:center}}
   `;
@@ -223,9 +225,32 @@ function field(name, labelText, val = '', type = 'text', full = false) {
   return `<label class="${full ? 'full' : ''}"><span>${html(labelText)}</span><input type="${type}" name="${name}" value="${html(val)}" /></label>`;
 }
 
+function findIssue(issueKey) {
+  return [...(main().command || []), ...(ops().commandQueue || [])].find((row) => row.issueKey === issueKey || row.id === issueKey);
+}
+
+function findRecord(type, issueKey) {
+  const state = main();
+  return (state[type] || []).find((record) => record._commandIssueKey === issueKey) || {};
+}
+
+function fixFields(type, record, item) {
+  const fields = [];
+  if (type === 'jobs') fields.push(field('title', 'Job name', value(record, ['title', 'Job name']) || item.title), field('client', 'Client', value(record, ['client', 'Client']) || item.client), field('worker', 'Assigned worker', value(record, ['worker', 'Assigned worker'])), field('date', 'Date', value(record, ['date', 'Scheduled date']), 'date'), field('time', 'Time', value(record, ['time', 'Start time']), 'time'), field('service', 'Service', value(record, ['service', 'Service'])), field('price', 'Price NZD', value(record, ['price', 'Price NZD', 'amount']) || item.amount, 'number'), field('billing', 'Billing type', value(record, ['billing', 'Billing type']) || 'Fixed price'), field('recurring', 'Frequency', value(record, ['recurring', 'Frequency']) || 'One-off'), field('notes', 'Job notes', value(record, ['notes', 'Job notes']), 'textarea', true));
+  if (type === 'clients') fields.push(field('name', 'Client name', value(record, ['name', 'Name']) || item.title), field('phone', 'Phone', value(record, ['phone', 'Phone'])), field('email', 'Email', value(record, ['email', 'Email']), 'email'), field('address', 'Address', value(record, ['address', 'Address'])), field('service', 'Service memory', value(record, ['service', 'Service memory', 'Preferred service'])), field('price', 'Price memory', value(record, ['price', 'Price memory', 'Saved price'])), field('notes', 'Notes/access', value(record, ['notes', 'Notes/access', 'Access notes']), 'textarea', true));
+  if (type === 'quotes') fields.push(field('title', 'Quote title', value(record, ['title', 'Quote']) || item.title), field('client', 'Client', value(record, ['client', 'Client']) || item.client), field('amount', 'Amount NZD', value(record, ['amount', 'Amount']) || item.amount, 'number'), field('status', 'Status', value(record, ['status', 'Status']) || 'Draft'), field('followUp', 'Follow-up', value(record, ['followUp', 'Follow-up', 'follow_up']) || 'Ready'), field('terms', 'Terms', value(record, ['terms', 'Terms']) || 'Valid 14 days'), field('scope', 'Scope', value(record, ['scope', 'Scope']), 'textarea', true));
+  if (type === 'invoices') fields.push(field('number', 'Invoice number', value(record, ['number', 'Invoice', 'invoice_number']) || item.title), field('client', 'Client', value(record, ['client', 'Client']) || item.client), field('job', 'Job', value(record, ['job', 'Job'])), field('amount', 'Amount NZD', value(record, ['amount', 'Amount']) || item.amount, 'number'), field('due', 'Due date', value(record, ['due', 'Due date', 'due_date']), 'date'), field('sync', 'Sync status', value(record, ['sync', 'Xero/MYOB status']) || 'Command approval'), field('line', 'Line item', value(record, ['line', 'Line item', 'line_item']), 'textarea', true), field('evidence', 'Proof/evidence', value(record, ['evidence', 'Evidence']), 'textarea', true));
+  if (type === 'messages') fields.push(field('subject', 'Subject', value(record, ['subject', 'Subject']) || item.title), field('client', 'Client', value(record, ['client', 'Client']) || item.client), field('job', 'Job', value(record, ['job', 'Job'])), field('channel', 'Channel', value(record, ['channel', 'Channel']) || 'SMS'), field('context', 'Thread context', value(record, ['context', 'detail', 'Message']), 'textarea', true), field('draft', 'Draft reply', value(record, ['draft', 'reply', 'Drafted reply', 'message']), 'textarea', true));
+  if (type === 'workers') fields.push(field('name', 'Worker name', value(record, ['name', 'Worker', 'worker']) || item.title), field('role', 'Role', value(record, ['role', 'Role']) || 'Worker'), field('status', 'Clock status', value(record, ['status', 'Clock status']) || 'Clocked in'), field('job', 'Current job', value(record, ['job', 'Current job', 'currentJob'])), field('gps', 'GPS/location', value(record, ['gps', 'GPS/location'])), field('clockIn', 'Clock in', value(record, ['start', 'clockIn', 'Clock in']), 'time'), field('clockOut', 'Clock out', value(record, ['end', 'clockOut', 'Clock out']), 'time'), field('hours', 'Timesheet hours', value(record, ['timesheet', 'hours', 'Timesheet hours'])), field('slipStatus', 'Slip status', value(record, ['slip', 'slipStatus', 'Slip status']) || 'Ready'), field('proof', 'Proof/photos', value(record, ['proof', 'Proof/photos'])), field('messages', 'Worker messages', value(record, ['messages', 'Worker messages']), 'textarea', true));
+  fields.push(field('fixNote', 'Owner note', '', 'textarea', true));
+  return fields;
+}
+
 function openFix(issueKey) {
-  const item = [...(main().command || []), ...(ops().commandQueue || [])].find((row) => row.issueKey === issueKey || row.id === issueKey);
+  const item = findIssue(issueKey);
   if (!item) return;
+  const type = item.sourceType || 'jobs';
+  const record = findRecord(type, item.issueKey || item.id);
   ensureStyle();
   let modal = document.getElementById(MODAL_ID);
   if (!modal) {
@@ -236,8 +261,9 @@ function openFix(issueKey) {
     modal.addEventListener('click', (event) => { if (event.target.id === MODAL_ID || event.target.closest('[data-close]')) closeFix(); });
     modal.addEventListener('submit', submitFix);
   }
-  modal.innerHTML = `<section class="brainModal"><header><div><h2>Fix missing details</h2><p>${html(item.check || item.filled || '')}</p></div><button type="button" data-close>Close</button></header><form data-issue-key="${html(item.issueKey || item.id)}">${field('title', 'Record', item.title || '')}${field('client', 'Client', item.client || '')}${field('date', 'Date', '', 'date')}${field('time', 'Time', '', 'time')}${field('worker', 'Worker', '')}${field('amount', 'Amount / price', item.amount || '', 'number')}${field('note', 'Fix note', '', 'textarea', true)}<div class="actions"><button type="button" data-close>Cancel</button><button type="submit">Save fix</button></div></form></section>`;
+  modal.innerHTML = `<section class="brainModal"><header><div><h2>Fix ${html(label(type).toLowerCase())}</h2><p>${html(item.check || item.filled || '')}</p></div><button type="button" data-close>Close</button></header><form data-issue-key="${html(item.issueKey || item.id)}" data-source-type="${html(type)}">${fixFields(type, record, item).join('')}<div class="actions"><button type="button" data-close>Cancel</button><button type="submit">Save fix</button></div></form></section>`;
   modal.hidden = false;
+  modal.querySelector('input,textarea')?.focus();
 }
 
 function closeFix() {
@@ -245,35 +271,32 @@ function closeFix() {
   if (modal) modal.hidden = true;
 }
 
+function applyFix(type, record, data) {
+  const fixed = { ...record, _blockedByCommand: false, _doNotShowToday: false, _commandMissing: '', _fixedByCommand: true, fixedAt: now() };
+  if (type === 'jobs') Object.assign(fixed, { title: data.title || record.title, 'Job name': data.title || record['Job name'], client: data.client || record.client, Client: data.client || record.Client, worker: data.worker || record.worker, 'Assigned worker': data.worker || record['Assigned worker'], date: data.date || record.date, time: data.time || record.time, service: data.service || record.service, price: data.price || record.price, billing: data.billing || record.billing, recurring: data.recurring || record.recurring, notes: [record.notes, data.notes, data.fixNote].filter(Boolean).join('\n') });
+  if (type === 'clients') Object.assign(fixed, { name: data.name || record.name, Name: data.name || record.Name, phone: data.phone || record.phone, email: data.email || record.email, address: data.address || record.address, service: data.service || record.service, price: data.price || record.price, notes: [record.notes, data.notes, data.fixNote].filter(Boolean).join('\n') });
+  if (type === 'quotes') Object.assign(fixed, { title: data.title || record.title, Quote: data.title || record.Quote, client: data.client || record.client, Client: data.client || record.Client, amount: data.amount || record.amount, status: data.status || record.status, followUp: data.followUp || record.followUp, terms: data.terms || record.terms, scope: data.scope || record.scope, notes: [record.notes, data.fixNote].filter(Boolean).join('\n') });
+  if (type === 'invoices') Object.assign(fixed, { number: data.number || record.number, Invoice: data.number || record.Invoice, client: data.client || record.client, Client: data.client || record.Client, job: data.job || record.job, Job: data.job || record.Job, amount: data.amount || record.amount, due: data.due || record.due, sync: data.sync || record.sync, line: data.line || record.line, evidence: data.evidence || record.evidence, notes: [record.notes, data.fixNote].filter(Boolean).join('\n') });
+  if (type === 'messages') Object.assign(fixed, { subject: data.subject || record.subject, client: data.client || record.client, Client: data.client || record.Client, job: data.job || record.job, channel: data.channel || record.channel, context: data.context || record.context, draft: data.draft || record.draft, reply: data.draft || record.reply, notes: [record.notes, data.fixNote].filter(Boolean).join('\n') });
+  if (type === 'workers') Object.assign(fixed, { name: data.name || record.name, Worker: data.name || record.Worker, role: data.role || record.role, status: data.status || record.status, job: data.job || record.job, gps: data.gps || record.gps, start: data.clockIn || record.start, clockIn: data.clockIn || record.clockIn, end: data.clockOut || record.end, clockOut: data.clockOut || record.clockOut, timesheet: data.hours || record.timesheet, hours: data.hours || record.hours, slip: data.slipStatus || record.slip, slipStatus: data.slipStatus || record.slipStatus, proof: data.proof || record.proof, messages: data.messages || record.messages, notes: [record.notes, data.fixNote].filter(Boolean).join('\n') });
+  return fixed;
+}
+
 function submitFix(event) {
   event.preventDefault();
   const form = event.target;
   const issueKey = form.dataset.issueKey;
+  const sourceType = form.dataset.sourceType;
   const data = Object.fromEntries(new FormData(form).entries());
   const state = main();
   const opState = ops();
   ['jobs', 'clients', 'quotes', 'invoices', 'messages', 'workers'].forEach((type) => {
-    state[type] = (state[type] || []).map((record) => {
-      if (record._commandIssueKey !== issueKey) return record;
-      return {
-        ...record,
-        client: data.client || record.client,
-        Client: data.client || record.Client,
-        date: data.date || record.date,
-        time: data.time || record.time,
-        worker: data.worker || record.worker,
-        amount: data.amount || record.amount,
-        price: data.amount || record.price,
-        notes: [record.notes, data.note].filter(Boolean).join('\n'),
-        _blockedByCommand: false,
-        _doNotShowToday: false,
-        _commandMissing: '',
-      };
-    });
+    if (sourceType && type !== sourceType) return;
+    state[type] = (state[type] || []).map((record) => record._commandIssueKey === issueKey ? applyFix(type, record, data) : record);
   });
-  state.command = (state.command || []).map((item) => item.issueKey === issueKey ? { ...item, status: 'Fixed', owner: 'Approve', fixedAt: now(), fixNote: data.note } : item);
-  opState.commandQueue = (opState.commandQueue || []).map((item) => item.issueKey === issueKey ? { ...item, status: 'fixed', fixedAt: now(), fixNote: data.note } : item);
-  state.audit = [{ action: 'Fixed missing details', detail: data.title || issueKey, at: now() }, ...(state.audit || [])].slice(0, 50);
+  state.command = (state.command || []).map((item) => item.issueKey === issueKey ? { ...item, status: 'Fixed', owner: 'Approve', fixedAt: now(), fixNote: data.fixNote } : item);
+  opState.commandQueue = (opState.commandQueue || []).map((item) => item.issueKey === issueKey ? { ...item, status: 'fixed', fixedAt: now(), fixNote: data.fixNote } : item);
+  state.audit = [{ action: 'Fixed missing details', detail: data.title || data.number || data.subject || data.name || issueKey, at: now() }, ...(state.audit || [])].slice(0, 50);
   saveMain(state);
   saveOps(opState);
   closeFix();
@@ -281,8 +304,21 @@ function submitFix(event) {
   setTimeout(run, 50);
 }
 
-function markCommand(issueKey, status) {
+function setRecordDecision(issueKey, status) {
   const state = main();
+  ['jobs', 'clients', 'quotes', 'invoices', 'messages', 'workers'].forEach((type) => {
+    state[type] = (state[type] || []).map((record) => {
+      if (record._commandIssueKey !== issueKey) return record;
+      if (status === 'approved') return { ...record, _adminOverride: true, _blockedByCommand: false, _doNotShowToday: false, _commandMissing: '', approvedAt: now() };
+      if (status === 'parked') return { ...record, _parkedByCommand: true, _blockedByCommand: true, _doNotShowToday: type === 'jobs', _commandMissing: record._commandMissing || 'parked in Command', parkedAt: now() };
+      return record;
+    });
+  });
+  return state;
+}
+
+function markCommand(issueKey, status) {
+  const state = setRecordDecision(issueKey, status);
   const opState = ops();
   state.command = (state.command || []).map((item) => (item.issueKey === issueKey || item.id === issueKey) ? { ...item, status, decidedAt: now() } : item);
   opState.commandQueue = (opState.commandQueue || []).map((item) => (item.issueKey === issueKey || item.id === issueKey) ? { ...item, status, decidedAt: now() } : item);
@@ -304,6 +340,10 @@ function renderBadge(issueCount) {
   badge.textContent = `${issueCount} admin fix${issueCount === 1 ? '' : 'es'} in Command`;
 }
 
+function activeIssues(state) {
+  return (state.command || []).filter((item) => /fix needed|missing/i.test(`${item.type} ${item.status}`) && !/approved|parked|fixed/i.test(String(item.status || '')));
+}
+
 function render() {
   ensureStyle();
   const result = validateStores();
@@ -312,7 +352,7 @@ function render() {
   if (!root) return;
   const p = page();
   const state = result.state;
-  const issues = (state.command || []).filter((item) => /fix needed|missing/i.test(`${item.type} ${item.status}`));
+  const issues = activeIssues(state);
   renderBadge(issues.length);
 
   const readyJobs = (state.jobs || []).filter((job) => !job._blockedByCommand && !job._doNotShowToday).length;
