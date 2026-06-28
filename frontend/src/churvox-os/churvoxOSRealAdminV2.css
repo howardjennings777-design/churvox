@@ -1,0 +1,59 @@
+/* CHURVOX_REAL_ADMIN_V2_POLISH_20260628 */
+.workOS .workSidebar {
+  position: sticky !important;
+  top: 0 !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.workOS .workSidebar nav button,
+.workOS .workSidebar nav button * {
+  font-family: inherit !important;
+  font-stretch: normal !important;
+  letter-spacing: 0 !important;
+  word-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.workOS .workSidebar nav button b {
+  font-size: 15px !important;
+  line-height: 1.05 !important;
+  font-weight: 900 !important;
+}
+
+.workOS .workSidebar nav button span {
+  font-size: 12px !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+}
+
+.workOS .clientsPage aside {
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.workOS .clientList {
+  max-height: 382px !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+  scrollbar-width: thin !important;
+}
+
+.workOS .clientList button {
+  min-height: 70px !important;
+  height: 70px !important;
+}
+
+.workOS .commandDock {
+  min-height: 360px;
+}
+
+.workOS .commandDock small {
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+  text-transform: none;
+}
