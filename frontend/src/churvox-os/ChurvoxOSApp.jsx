@@ -1,5 +1,6 @@
 import React from "react";
 import "./churvoxOS.css";
+import "./churvoxOSReadablePills.css";
 
 const NAV = [
   { key: "hub", label: "Smart Hub", code: "SH", group: "Run" },
