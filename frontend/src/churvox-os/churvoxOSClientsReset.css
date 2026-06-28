@@ -1,0 +1,260 @@
+/* CHURVOX_CLIENTS_RESET_20260628
+   Final Clients layout reset: one screen, one list scroll, real editor fit. */
+
+.clientWorkbenchOS,
+.clientWorkbenchOS * {
+  box-sizing: border-box !important;
+}
+
+.clientWorkbenchOS {
+  display: grid !important;
+  grid-template-columns: 212px minmax(0, 1fr) !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: #f5f1ea !important;
+}
+
+.clientWorkbenchOS .clientSidebar {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.clientWorkbenchOS .clientWorkbenchMain {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 10px 12px !important;
+  display: block !important;
+}
+
+.clientWorkbenchOS .clientTop {
+  display: none !important;
+}
+
+.clientWorkbenchOS .clientWorkbenchShell {
+  display: grid !important;
+  grid-template-columns: 232px minmax(0, 1fr) !important;
+  gap: 10px !important;
+  width: 100% !important;
+  height: calc(100dvh - 20px) !important;
+  max-height: calc(100dvh - 20px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  align-items: stretch !important;
+}
+
+.clientWorkbenchOS .clientDirectory,
+.clientWorkbenchOS .clientEditPanel {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+.clientWorkbenchOS .clientDirectory {
+  display: grid !important;
+  grid-template-rows: 78px 34px minmax(0, 1fr) !important;
+  background: #fffdf8 !important;
+}
+
+.clientWorkbenchOS .clientDirectoryHead {
+  display: grid !important;
+  grid-template-columns: 1fr 76px !important;
+  grid-template-rows: 34px 28px !important;
+  gap: 5px !important;
+  padding: 8px !important;
+  background: #fffdf8 !important;
+  border-bottom: 1px solid rgba(35, 31, 32, .1) !important;
+}
+
+.clientWorkbenchOS .clientDirectoryHead span,
+.clientWorkbenchOS .clientDirectoryHead button {
+  display: none !important;
+}
+
+.clientWorkbenchOS .clientDirectoryHead h1 {
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  font-size: 26px !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  color: #171717 !important;
+  white-space: nowrap !important;
+}
+
+.clientWorkbenchOS .clientDirectoryHead label {
+  grid-column: 1 / -1 !important;
+  min-height: 26px !important;
+  height: 26px !important;
+  border-radius: 6px !important;
+  background: #231f20 !important;
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+.clientWorkbenchOS .clientSearchLine {
+  height: 34px !important;
+  padding: 6px 8px !important;
+  display: grid !important;
+  grid-template-columns: 54px 1fr !important;
+  gap: 5px !important;
+  align-items: center !important;
+  background: #f3ebe2 !important;
+}
+
+.clientWorkbenchOS .clientSearchLine b,
+.clientWorkbenchOS .clientSearchLine span {
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  color: #231f20 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.clientWorkbenchOS .clientRecordList {
+  min-height: 0 !important;
+  max-height: none !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 7px !important;
+  gap: 6px !important;
+  scrollbar-width: thin !important;
+}
+
+.clientWorkbenchOS .clientRecordList button {
+  height: 54px !important;
+  min-height: 54px !important;
+  max-height: 54px !important;
+  padding: 7px 8px !important;
+  gap: 2px !important;
+  border-radius: 8px !important;
+}
+
+.clientWorkbenchOS .clientRecordList b {
+  font-size: 11px !important;
+  line-height: 1.05 !important;
+}
+
+.clientWorkbenchOS .clientRecordList span,
+.clientWorkbenchOS .clientRecordList small {
+  font-size: 9px !important;
+  line-height: 1.05 !important;
+}
+
+.clientWorkbenchOS .clientEditPanel {
+  display: grid !important;
+  grid-template-rows: 74px 86px minmax(0, 1fr) 48px !important;
+  background: #fffdf8 !important;
+}
+
+.clientWorkbenchOS .clientEditPanel header {
+  min-height: 0 !important;
+  height: 74px !important;
+  padding: 8px 12px !important;
+  display: grid !important;
+  align-content: center !important;
+  background: linear-gradient(90deg, #231f20 0%, #342827 62%, #d84a3a 100%) !important;
+  border-bottom: 0 !important;
+}
+
+.clientWorkbenchOS .clientEditPanel header span {
+  display: none !important;
+}
+
+.clientWorkbenchOS .clientEditPanel h2 {
+  margin: 0 !important;
+  font-size: clamp(27px, 4.3vw, 52px) !important;
+  line-height: .9 !important;
+  max-height: 50px !important;
+  overflow: hidden !important;
+  color: #fff !important;
+}
+
+.clientWorkbenchOS .clientEditPanel p {
+  margin-top: 4px !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  color: rgba(255,255,255,.85) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.clientWorkbenchOS .clientFormGrid {
+  grid-row: 2 / 4 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-rows: 82px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  padding: 8px !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.clientWorkbenchOS .clientFormGrid label {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 8px !important;
+  gap: 4px !important;
+  border-radius: 8px !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+  background: #fff !important;
+}
+
+.clientWorkbenchOS .clientFormGrid label.wide {
+  grid-column: span 2 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+}
+
+.clientWorkbenchOS .clientFormGrid input,
+.clientWorkbenchOS .clientFormGrid textarea {
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 7px 8px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+
+.clientWorkbenchOS .clientFormGrid textarea {
+  resize: none !important;
+}
+
+.clientWorkbenchOS .clientEditPanel footer {
+  grid-row: 4 !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  padding: 6px 10px !important;
+  align-items: center !important;
+  background: #f3ebe2 !important;
+}
+
+.clientWorkbenchOS .clientEditPanel footer button {
+  min-height: 34px !important;
+  height: 34px !important;
+  min-width: 106px !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+}
+
+@media (max-width: 1100px) {
+  .clientWorkbenchOS { grid-template-columns: 190px minmax(0, 1fr) !important; }
+  .clientWorkbenchOS .clientWorkbenchShell { grid-template-columns: 210px minmax(0, 1fr) !important; }
+  .clientWorkbenchOS .clientFormGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .clientWorkbenchOS .clientFormGrid label.wide { grid-column: span 1 !important; }
+}
