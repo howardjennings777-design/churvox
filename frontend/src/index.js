@@ -27,6 +27,7 @@ import './churvox-fresh/freshCommandLiveApprovalDesk.css';
 import './pages/marketing/PublicAdminOS.css';
 import './churvox-os/churvoxOSPlansDockPolish.css';
 import './churvox-os/churvoxOSSidebarPolish.css';
+import './runtime/churvoxPlansCountryRuntime';
 
 // CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
 if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__) {
@@ -79,21 +80,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__)
 
   window.addEventListener('popstate', syncJobsBoardClass);
   window.addEventListener('hashchange', syncJobsBoardClass);
-  window.addEventListener('load', syncJobsBoardClass);
-  document.addEventListener('click', () => setTimeout(syncJobsBoardClass, 80), true);
-
-  const observer = new MutationObserver(() => syncJobsBoardClass());
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-
-  syncJobsBoardClass();
-}
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.getRegistrations()
-      .then((regs) => Promise.all(regs.map((reg) => reg.unregister())))
-      .catch(() => {});
-  });
+  setTimeout(syncJobsBoardClass, 0);
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
