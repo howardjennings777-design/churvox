@@ -176,8 +176,16 @@ function css() {
     .${CONTROL_LAYER_CLASS} .depthRow span{font-size:12px;color:#52605a;font-weight:850}
     .${CONTROL_LAYER_CLASS} .depthRow em{justify-self:end;border-radius:999px;padding:5px 8px;background:#fff7ed;color:#9a3412;font-size:10px;font-style:normal;font-weight:950;white-space:nowrap}
     .churvoxOptionC:has(.${CONTROL_LAYER_CLASS}) .cocPage>.cocPanel{min-height:0!important}
-    @media(max-width:1100px){.${CONTROL_LAYER_CLASS} .depthHero{grid-template-columns:1fr}.${CONTROL_LAYER_CLASS} .depthStats{grid-template-columns:repeat(2,minmax(0,1fr))}.${CONTROL_LAYER_CLASS} .depthSections{grid-template-columns:1fr}}
-    @media(max-width:620px){.${CONTROL_LAYER_CLASS} .depthStats{grid-template-columns:1fr}.${CONTROL_LAYER_CLASS} .depthRow{grid-template-columns:1fr}.${CONTROL_LAYER_CLASS} .depthRow em{justify-self:start}}
+    @media(max-width:1100px){
+      .${CONTROL_LAYER_CLASS} .depthHero{grid-template-columns:1fr}
+      .${CONTROL_LAYER_CLASS} .depthStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .${CONTROL_LAYER_CLASS} .depthSections{grid-template-columns:1fr}
+    }
+    @media(max-width:620px){
+      .${CONTROL_LAYER_CLASS} .depthStats{grid-template-columns:1fr}
+      .${CONTROL_LAYER_CLASS} .depthRow{grid-template-columns:1fr}
+      .${CONTROL_LAYER_CLASS} .depthRow em{justify-self:start}
+    }
   `;
 }
 
