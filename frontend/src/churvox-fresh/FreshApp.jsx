@@ -8,6 +8,7 @@ import "../churvox-os/churvoxOSTodayEqualBoxes.css";
 import "../churvox-os/churvoxOSTodayFinalPolish.css";
 import "../churvox-os/churvoxOSJobsBoardFix.css";
 import "../churvox-os/churvoxOSClientsWorkspace.css";
-import ChurvoxOSRealAdminV3 from "../churvox-os/ChurvoxOSRealAdminV3";
+import "../churvox-os/churvoxOSClientWorkbench.css";
+import ChurvoxOSRealAdminV4 from "../churvox-os/ChurvoxOSRealAdminV4";
 
-export default ChurvoxOSRealAdminV3;
+export default ChurvoxOSRealAdminV4;
