@@ -28,6 +28,14 @@ body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid {
   overflow: hidden !important;
 }
 
+body.churvox-client-one-scroll .clientWorkbenchOS .clientTop,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientAddTop,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectoryHead button,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectoryHead > span,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel header > span {
+  display: none !important;
+}
+
 body.churvox-client-one-scroll .clientWorkbenchOS .clientSidebar {
   height: 100dvh !important;
   max-height: 100dvh !important;
@@ -36,7 +44,7 @@ body.churvox-client-one-scroll .clientWorkbenchOS .clientSidebar {
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientWorkbenchMain {
   display: grid !important;
-  grid-template-rows: auto minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
   height: 100dvh !important;
   max-height: 100dvh !important;
   padding: 8px 10px !important;
@@ -51,6 +59,21 @@ body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectory,
 body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel {
   height: 100% !important;
   max-height: 100% !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectoryHead {
+  grid-template-columns: 1fr !important;
+  padding: 10px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectoryHead h1 {
+  margin: 0 !important;
+  font-size: clamp(32px, 3vw, 46px) !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectoryHead label {
+  width: 100% !important;
+  min-height: 34px !important;
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList {
@@ -95,7 +118,7 @@ body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid textarea {
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel header {
-  min-height: 104px !important;
+  min-height: 96px !important;
   padding: 12px 15px !important;
 }
 
