@@ -1,0 +1,114 @@
+.churvoxOptionC .quotesPage .cocPanel:first-of-type {
+  min-height: 112px !important;
+}
+
+.churvoxOptionC .quotesPage .cocPanel:first-of-type .miniStats {
+  align-items: center !important;
+  min-height: 46px !important;
+}
+
+.churvoxOptionC .quotesPage .cocPanel:first-of-type .miniStat {
+  min-width: 96px !important;
+  min-height: 50px !important;
+}
+
+.churvoxOptionC .quotesPage .workCards,
+.churvoxOptionC .teamPage .workerCards {
+  gap: 10px !important;
+}
+
+.churvoxOptionC .quotesPage .workCard,
+.churvoxOptionC .teamPage .workerCard {
+  min-height: 116px !important;
+  padding: 13px 14px !important;
+}
+
+.churvoxOptionC .quotesPage .workCard b,
+.churvoxOptionC .teamPage .workerCard b,
+.churvoxOptionC .ledgerRow b {
+  font-size: 14px !important;
+}
+
+.churvoxOptionC .quotesPage .workCard span,
+.churvoxOptionC .teamPage .workerCard span {
+  color: #4e5b56 !important;
+  line-height: 1.35 !important;
+}
+
+.churvoxOptionC .quotesPage .cocPanel:nth-of-type(3) {
+  min-height: 136px !important;
+}
+
+.churvoxOptionC .invoicesPage .cocPanel:first-of-type {
+  min-height: 104px !important;
+}
+
+.churvoxOptionC .invoicesPage .ledgerRow {
+  min-height: 44px !important;
+  grid-template-columns: 110px minmax(130px, 1fr) 100px 92px 160px !important;
+}
+
+.churvoxOptionC .messagesPage .cocPanel {
+  min-height: 148px !important;
+}
+
+.churvoxOptionC .messagesPage .cocPanel:nth-of-type(4),
+.churvoxOptionC .messagesPage .cocPanel:nth-of-type(5) {
+  min-height: 126px !important;
+}
+
+.churvoxOptionC .messagesPage .bubble {
+  min-height: 86px !important;
+}
+
+.churvoxOptionC .teamPage .cocPanel:first-of-type {
+  min-height: 106px !important;
+}
+
+.churvoxOptionC .teamPage .cocPanel:nth-of-type(2) {
+  min-height: 260px !important;
+}
+
+.churvoxOptionC .teamPage .cocPanel:nth-of-type(5) {
+  display: none !important;
+}
+
+.churvoxOptionC .teamPage::after {
+  content: "Tap a staff card to open the editable person form, role/access, payroll and worker app details.";
+  grid-column: 1 / -1;
+  display: block;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid rgba(16, 21, 19, 0.1);
+  color: #4e5b56;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 12px 28px rgba(16, 21, 19, 0.04);
+}
+
+.churvoxOptionC .toolbar {
+  position: sticky !important;
+  top: 120px !important;
+  z-index: 5 !important;
+  background: rgba(244, 245, 242, 0.88) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 14px !important;
+  padding: 6px !important;
+}
+
+.churvoxOptionC .cocPanel.full,
+.churvoxOptionC .cocPanel.wide {
+  width: 100% !important;
+}
+
+@media (max-width: 900px) {
+  .churvoxOptionC .invoicesPage .ledgerRow {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+
+  .churvoxOptionC .teamPage .cocPanel:nth-of-type(5) {
+    display: block !important;
+  }
+}
