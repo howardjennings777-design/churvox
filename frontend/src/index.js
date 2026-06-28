@@ -42,6 +42,7 @@ import './churvox-fresh/optionFAutoAdminFlowRuntime';
 import './churvox-fresh/optionFDecisionEffectsRuntime';
 import './churvox-fresh/optionFRecordHydrationRuntime';
 import './churvox-fresh/optionFProblemSlipRuntime';
+import './churvox-fresh/optionFFullSiteWiringRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
