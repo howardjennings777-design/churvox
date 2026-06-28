@@ -11,7 +11,7 @@ import './runtime/churvoxLaunchSplashRuntime';
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
-import './runtime/churvoxStripeCheckoutRuntime';
+import './runtime/churvoxStripeCheckoutLiveRuntime';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionCCommandBarFix.css';
 import './churvox-fresh/optionCPolish.css';
