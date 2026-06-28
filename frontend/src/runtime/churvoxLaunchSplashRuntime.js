@@ -29,16 +29,19 @@ function setMeta(name, content) {
   node.setAttribute('content', content);
 }
 
-function setLink(rel, href, type) {
-  let node = document.querySelector(`link[rel="${rel}"][data-cvx-runtime="true"]`);
-  if (!node) {
-    node = document.createElement('link');
+function upsertLinks(rel, href, type) {
+  const nodes = Array.from(document.querySelectorAll(`link[rel="${rel}"]`));
+  if (!nodes.length) {
+    const node = document.createElement('link');
     node.setAttribute('rel', rel);
-    node.setAttribute('data-cvx-runtime', 'true');
+    nodes.push(node);
     document.head.appendChild(node);
   }
-  if (type) node.setAttribute('type', type);
-  node.setAttribute('href', href);
+  nodes.forEach((node) => {
+    if (type) node.setAttribute('type', type);
+    node.setAttribute('href', href);
+    node.setAttribute('data-cvx-runtime', 'true');
+  });
 }
 
 function ensureBranding() {
@@ -49,9 +52,9 @@ function ensureBranding() {
   setMeta('theme-color', '#111820');
   setMeta('apple-mobile-web-app-title', isWorkerApp() ? 'Churvox Worker' : 'Churvox');
   setMeta('description', 'Churvox does the admin. The owner checks and approves. Jobs, workers, quotes, invoices, messages and safe accounting handoff.');
-  setLink('icon', `/favicon.svg?v=${ICON_VERSION}`, 'image/svg+xml');
-  setLink('apple-touch-icon', `/churvox-app-icon.svg?v=${ICON_VERSION}`);
-  setLink('manifest', `/manifest.json?v=${ICON_VERSION}`);
+  upsertLinks('icon', `/favicon.svg?v=${ICON_VERSION}`, 'image/svg+xml');
+  upsertLinks('apple-touch-icon', `/churvox-app-icon.svg?v=${ICON_VERSION}`);
+  upsertLinks('manifest', `/manifest.json?v=${ICON_VERSION}`);
 }
 
 function markSvg() {
