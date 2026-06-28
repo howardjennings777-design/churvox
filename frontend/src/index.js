@@ -31,6 +31,7 @@ import './churvox-fresh/optionFWorkingActionsRuntime';
 import './churvox-fresh/optionFBackendSyncRuntime';
 import './churvox-fresh/optionFImportExportRuntime';
 import './churvox-fresh/optionFXeroActionsRuntime';
+import './churvox-fresh/optionFPageActionRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
