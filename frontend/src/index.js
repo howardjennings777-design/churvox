@@ -38,6 +38,7 @@ import './churvox-fresh/optionFNoLeakRuntime';
 import './churvox-fresh/optionFCommandCleanupRuntime';
 import './churvox-fresh/optionFTodayScheduleGuardRuntime';
 import './churvox-fresh/optionFAutoAdminFlowRuntime';
+import './churvox-fresh/optionFDecisionEffectsRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
