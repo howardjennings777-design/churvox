@@ -9,6 +9,7 @@ const endpointMap = {
   quotes: '/quotes',
   invoices: '/invoices',
   messages: '/messages',
+  workers: '/team',
 };
 
 function loadState() {
@@ -85,6 +86,8 @@ function mapPayload(key, record) {
       due_date: record['Due date'] || record.due || '',
       status: record.Status || record.status || 'Draft',
       sync_status: record['Xero/MYOB status'] || record.sync || '',
+      line_item: record.line || record['Line item'] || '',
+      evidence: record.evidence || record.Evidence || '',
       source: 'option_f_working_actions',
     };
   }
@@ -94,7 +97,29 @@ function mapPayload(key, record) {
       job_title: record.job || record.Job || '',
       subject: record.subject || record.Subject || 'Message draft',
       channel: record.channel || record.Channel || '',
-      message: record.draft || record['Drafted reply'] || record.Message || '',
+      message: record.draft || record.reply || record['Drafted reply'] || record.Message || '',
+      context: record.detail || record.context || '',
+      source: 'option_f_working_actions',
+    };
+  }
+  if (key === 'workers') {
+    return {
+      name: record.name || record.Worker || record.worker || '',
+      role: record.role || record.Role || '',
+      access: record.access || record.Access || '',
+      status: record.status || record['Clock status'] || '',
+      current_job: record.job || record['Current job'] || record.currentJob || '',
+      gps: record.gps || record['GPS/location'] || '',
+      clock_in: record.start || record.clockIn || record['Clock in'] || '',
+      clock_out: record.end || record.clockOut || record['Clock out'] || '',
+      break_time: record.break || record.breakTime || record.Break || '',
+      proof: record.proof || record['Proof/photos'] || '',
+      messages: record.messages || record['Worker messages'] || '',
+      timesheet: record.timesheet || record.hours || record['Timesheet hours'] || '',
+      slip_status: record.slip || record.slipStatus || record['Slip status'] || '',
+      payroll_status: record.payroll || record['Payroll review'] || '',
+      worker_app: record.app || record['Worker app'] || '',
+      notes: record.notes || record.Notes || '',
       source: 'option_f_working_actions',
     };
   }
