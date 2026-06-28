@@ -1,0 +1,158 @@
+/* CHURVOX_TODAY_ORGANIZED_20260628
+   Boss view: Today is concise, Jobs is jobs, approvals live in Command. */
+
+.workOS {
+  grid-template-columns: 222px minmax(0, 1fr) !important;
+}
+
+.workOS .commandDock {
+  display: none !important;
+}
+
+.workOS .workMain {
+  max-width: 100% !important;
+}
+
+.workOS .todayHero {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px) !important;
+  padding: 14px !important;
+}
+
+.workOS .todayHero h1 {
+  font-size: clamp(34px, 5vw, 64px) !important;
+}
+
+.workOS .todayStats b {
+  min-height: 64px !important;
+  font-size: 28px !important;
+}
+
+.workOS .weekStrip button {
+  min-height: 54px !important;
+}
+
+.workOS .weekStrip span {
+  font-size: 21px !important;
+}
+
+.workOS .todayGrid {
+  grid-template-columns: minmax(330px, 1.15fr) minmax(260px, .85fr) minmax(300px, .9fr) !important;
+  align-items: stretch !important;
+}
+
+.workOS .todayGrid > article {
+  min-height: 0 !important;
+  max-height: 330px !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin !important;
+}
+
+.workOS .todayJobs {
+  grid-row: span 2 !important;
+  max-height: 520px !important;
+}
+
+.workOS .todayGrid > article > p,
+.workOS .todayCommand > p,
+.workOS .lanePage article > p {
+  margin-top: 7px !important;
+  padding: 9px !important;
+}
+
+.workOS .todayGrid > article > p strong,
+.workOS .todayCommand > p strong,
+.workOS .lanePage article > p strong {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
+
+.workOS .todayGrid > article > p span,
+.workOS .todayGrid > article > p small,
+.workOS .todayCommand > p span,
+.workOS .lanePage article > p span,
+.workOS .lanePage article > p small {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+.workOS .todayWorkers > button {
+  min-height: 54px !important;
+}
+
+.workOS .todayWorkers > button b {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.workOS .workerDrawer,
+.workOS .todayMessages,
+.workOS .todayMoney,
+.workOS .todayProblems {
+  min-height: 0 !important;
+}
+
+.workOS .todayCommand {
+  max-height: 210px !important;
+  overflow-y: auto !important;
+}
+
+.workOS .todayCommand header button,
+.workOS .todayProblems header button {
+  display: none !important;
+}
+
+.workOS .lanePage header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: end !important;
+}
+
+.workOS .lanePage header h1 {
+  margin: 8px 0 !important;
+  font-size: clamp(36px, 5vw, 68px) !important;
+}
+
+.workOS .lanePage header p {
+  max-width: 520px !important;
+}
+
+.workOS .lanes {
+  grid-template-columns: repeat(4, minmax(220px, 1fr)) !important;
+  overflow-x: auto !important;
+}
+
+.workOS .lanePage article {
+  min-height: 0 !important;
+  max-height: 480px !important;
+  overflow-y: auto !important;
+  padding: 12px !important;
+  scrollbar-width: thin !important;
+}
+
+.workOS .lanePage article button {
+  display: none !important;
+}
+
+.workOS .lanePage article p {
+  border-left-color: var(--work-orange) !important;
+}
+
+.workOS .pipeline article button,
+.workOS .matrix aside button {
+  font-size: 0 !important;
+}
+
+.workOS .pipeline article button::after,
+.workOS .matrix aside button::after {
+  content: "In approval";
+  font-size: 12px;
+}
+
+@media (max-width: 1220px) {
+  .workOS .todayHero,
+  .workOS .todayGrid,
+  .workOS .lanePage header {
+    grid-template-columns: 1fr !important;
+  }
+}
