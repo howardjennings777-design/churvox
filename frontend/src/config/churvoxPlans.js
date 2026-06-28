@@ -6,8 +6,8 @@ export const DEFAULT_COUNTRY = "NZ";
 export const COUNTRY_PRICE_OVERRIDES = {
   NZ: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
   AU: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
-  US: { solo: 29, team: 69, pro: 119, enterprise: 249, accounting_sync: 29, growth_pack: 79 },
-  UK: { solo: 29, team: 69, pro: 119, enterprise: 249, accounting_sync: 29, growth_pack: 79 },
+  US: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
+  UK: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
 };
 
 export const PLAN_KEYS = { START: "solo", CREW: "team", OPERATOR: "pro", COMMAND: "enterprise" };
@@ -48,7 +48,7 @@ export const GROWTH_PACK = { key: "command_growth_pack", code: "command_growth_p
 export const COMMAND_GROWTH_PACK = GROWTH_PACK;
 export const COMMAND_GROWTH_PACK_ADDON = GROWTH_PACK;
 export const GROWTH_PACK_ADDON = GROWTH_PACK;
-export const ACCOUNTING_SYNC_ADDON = { key: "xero_addon", code: "xero_addon", name: "Xero Sync Add-on", tag: "Xero Sync", price: 39, monthly: 39, period: "month", interval: "month", description: "Optional Xero draft invoice sync where available. Included with Command. Owner approval required." };
+export const ACCOUNTING_SYNC_ADDON = { key: "accounting_sync_addon", code: "accounting_sync_addon", name: "Accounting Sync Add-on", tag: "Accounting Sync", price: 39, monthly: 39, period: "month", interval: "month", description: "Optional accounting draft invoice sync where available. Included with Command. Owner approval required." };
 export const XERO_ADDON = ACCOUNTING_SYNC_ADDON;
 export const Xero_ADDON = ACCOUNTING_SYNC_ADDON;
 export const ADDONS = [GROWTH_PACK, ACCOUNTING_SYNC_ADDON];
@@ -92,7 +92,7 @@ export function pricePlanForCountry(planOrKey, countryCode) { const plan = typeo
 export function getPlanPriceForCountry(planOrKey, countryCode) { return pricePlanForCountry(planOrKey, countryCode); }
 export function getPlanPricingForCountry(planOrKey, countryCode) { return pricePlanForCountry(planOrKey, countryCode); }
 export function planForCountry(planOrKey, countryCode) { return pricePlanForCountry(planOrKey, countryCode); }
-export function addonPriceForCountry(addonOrKey, countryCode) { const key = typeof addonOrKey === "string" ? addonOrKey : String(addonOrKey?.key || addonOrKey?.code || addonOrKey?.name || ""); const lower = key.toLowerCase(); const country = getCountryMeta(countryCode); let addon = addonOrKey && typeof addonOrKey === "object" ? addonOrKey : null; if (!addon) addon = lower.includes("growth") ? GROWTH_PACK : lower.includes("xero") || lower.includes("xero") || lower.includes("accounting") ? ACCOUNTING_SYNC_ADDON : { name: key || "Add-on", price: 0, monthly: 0, period: "month", interval: "month", description: "" }; const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {}; const addonPriceKey = lower.includes("growth") ? "growth_pack" : "accounting_sync"; const monthly = Number(overrides[addonPriceKey] ?? addon.monthly ?? addon.price ?? 0); const tax = country.taxLabel ? " " + country.taxLabel : ""; const priceLabel = country.symbol + monthly + "/month" + tax; return { ...addon, price: monthly, monthly, period: addon.period || "month", interval: addon.interval || "month", currency: country.currency, symbol: country.symbol, taxLabel: country.taxLabel || "", countryCode: country.code, countryLabel: country.label, priceLabel, formattedPrice: priceLabel, taxInclusiveLabel: formatTaxInclusivePrice(monthly, country.code) }; }
+export function addonPriceForCountry(addonOrKey, countryCode) { const key = typeof addonOrKey === "string" ? addonOrKey : String(addonOrKey?.key || addonOrKey?.code || addonOrKey?.name || ""); const lower = key.toLowerCase(); const country = getCountryMeta(countryCode); let addon = addonOrKey && typeof addonOrKey === "object" ? addonOrKey : null; if (!addon) addon = lower.includes("growth") ? GROWTH_PACK : lower.includes("xero") || lower.includes("accounting") ? ACCOUNTING_SYNC_ADDON : { name: key || "Add-on", price: 0, monthly: 0, period: "month", interval: "month", description: "" }; const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {}; const addonPriceKey = lower.includes("growth") ? "growth_pack" : "accounting_sync"; const monthly = Number(overrides[addonPriceKey] ?? addon.monthly ?? addon.price ?? 0); const tax = country.taxLabel ? " " + country.taxLabel : ""; const priceLabel = country.symbol + monthly + "/month" + tax; return { ...addon, price: monthly, monthly, period: addon.period || "month", interval: addon.interval || "month", currency: country.currency, symbol: country.symbol, taxLabel: country.taxLabel || "", countryCode: country.code, countryLabel: country.label, priceLabel, formattedPrice: priceLabel, taxInclusiveLabel: formatTaxInclusivePrice(monthly, country.code) }; }
 export function getAddonPriceForCountry(addonOrKey, countryCode) { return addonPriceForCountry(addonOrKey, countryCode); }
 export function getAddonPricingForCountry(addonOrKey, countryCode) { return addonPriceForCountry(addonOrKey, countryCode); }
 export function pricingNotesForCountry(countryCode) { const country = getCountryMeta(countryCode); return ["Prices are monthly and shown in " + country.currency + ".", country.taxLabel ? "Prices shown exclude " + country.taxLabel.replace("+ ", "") + ". Tax is added at checkout. Tax-inclusive totals are shown for clarity." : "Local taxes may apply where applicable.", "Accounting Sync Add-on, SMS credits and Command Growth Packs can be added when needed."]; }
