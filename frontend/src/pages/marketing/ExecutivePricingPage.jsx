@@ -13,48 +13,31 @@ import {
 } from "../../config/churvoxPlans";
 import "./SimplePublic.css";
 
-function priceLabel(plan) {
-  return plan.priceLabel || "";
-}
-
-function taxLabel(plan) {
-  return plan.taxInclusiveLabel || plan.taxInclusiveLabel === "" ? plan.taxInclusiveLabel : "Tax added at checkout";
-}
-
-function featureList(plan) {
-  const list = plan.features || plan.includes || [];
-  return Array.isArray(list) ? list.slice(0, 6) : [];
-}
-
 function isOperator(plan) {
   return String(plan?.name || "").toLowerCase() === "operator";
 }
 
-const chooser = [
-  ["Start", "Best when you are solo and need clients, jobs, quotes and invoices organised."],
-  ["Crew", "Best when you assign work, track time and need the team to stay clear."],
-  ["Operator", "Most popular. Best when you want Command preparing admin cards for owner approval."],
-  ["Command", "Best when you need deeper control: accounting sync included, payroll workspace, roles, exports and approval oversight."],
+function featureList(plan) {
+  const list = plan.features || plan.includes || [];
+  return Array.isArray(list) ? list.slice(0, 8) : [];
+}
+
+function taxInclusive(plan) {
+  return plan.taxInclusiveLabel || "";
+}
+
+const planFit = [
+  ["Start", "Solo owner", "Jobs, clients, quotes and invoices under control."],
+  ["Crew", "Small team", "Worker proof, time approval and cleaner handover."],
+  ["Operator", "Busy owner", "Churvox prepares admin. The owner approves in Command."],
+  ["Command", "Larger operation", "Full approval OS, payroll workspace, reports and accounting sync option included."],
 ];
 
-const safety = [
-  ["Owner-approved", "Important admin actions stay reviewed by the owner before they move."],
-  ["Accounting safe", "Accounting sync is a controlled handoff path. No auto tax filing and no bank payout files."],
-  ["Trial first", "Start with the plan that fits, test the workflow, then keep or upgrade when it makes sense."],
-];
-
-const buyerProof = [
+const pricingRules = [
   ["No card upfront", "Start the 14-day trial before committing."],
-  ["Clear upgrade path", "Start, Crew, Operator and Command match how much admin help you need."],
-  ["Owner control", "Churvox prepares admin work, but you approve important actions."],
-  ["Accounting options", "Add accounting sync where available, or use export packs as the safe fallback."],
-];
-
-const planCompare = [
-  ["Start", "Solo operator", "Core jobs, clients, quotes and invoices"],
-  ["Crew", "Small team", "Assign work, track time and keep workers clear"],
-  ["Operator", "Growing owner", "Command approval desk for prepared admin"],
-  ["Command", "Larger operation", "Accounting sync included, payroll workspace and higher control"],
+  ["Prices stay clear", "Monthly price is shown before tax, with GST or VAT-inclusive totals where applicable."],
+  ["Upgrade path", "Start with records, add team control, then add prepared admin and deeper Command controls."],
+  ["Owner control", "Churvox prepares important admin, but approvals stay in Command."],
 ];
 
 export default function ExecutivePricingPage() {
@@ -74,66 +57,112 @@ export default function ExecutivePricingPage() {
   const countryMeta = getCountryMeta(country);
   const displayPlans = React.useMemo(() => CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, country)), [country]);
   const accountingAddon = addonPriceForCountry("accounting_sync", country);
+  const growthPack = addonPriceForCountry("growth_pack", country);
   const signupTo = `/signup?country=${encodeURIComponent(country)}`;
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="simplePublic" data-version="CHURVOX_PRICING_COMMAND_POSITIONING_20260625">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_PRICING_MODERN_OS_20260629">
       <Nav />
 
-      <section className="simpleHero">
-        <div>
-          <span className="simpleKicker">Plans for real service businesses</span>
-          <h1>Pick how much admin Churvox should prepare for approval.</h1>
-          <p className="simpleLead">
-            Start with the core workflow, add workers when you need them, then move into Operator when you want Command preparing unfinished admin, follow-ups and draft actions for you to approve.
+      <section className="publicHero publicHeroCompact">
+        <div className="publicHeroCopy">
+          <span className="publicKicker">Simple plan ladder</span>
+          <h1>Choose how much admin Churvox should prepare.</h1>
+          <p>
+            Plans scale from core records to team control, prepared admin and full Command operations. Prices are unchanged and sourced from the Churvox pricing config.
           </p>
-
-          <label className="simpleCountrySelect">
+          <label className="publicCountrySelect">
             <span>Pricing region</span>
             <select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>
               {COUNTRY_OPTIONS.map((item) => (
-                <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>
+                <option key={item.code} value={item.code}>{item.label} - {item.currency}</option>
               ))}
             </select>
           </label>
-
-          <p className="simpleLead">
-            Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes[0]} {notes[1]}
-          </p>
-
-          <div className="simpleActions">
-            <Link to={signupTo} className="simpleBtn simplePrimary">Start 14-day trial</Link>
-            <Link to="/features" className="simpleBtn simpleGhost">See how it works</Link>
+          <p className="publicFinePrint">Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes.join(" ")}</p>
+          <div className="publicActions">
+            <Link to={signupTo} className="publicPrimary">Start 14-day trial</Link>
+            <Link to="/features" className="publicSecondary">See how it works</Link>
           </div>
         </div>
-
-        <aside className="simpleCard simpleOperatorCard">
-          <span className="simplePlanBadge">Most popular</span>
-          <h2>Operator is where Command starts doing the admin.</h2>
-          <p>
-            Operator is where Churvox starts feeling different: unfinished work and admin actions are prepared for review while the owner keeps final approval.
-          </p>
+        <aside className="publicFeaturePanel publicOperatorPanel">
+          <small>Most popular</small>
+          <b>Operator</b>
+          <span>For owners who want the new Churvox promise: Churvox does the admin. The owner checks and approves.</span>
         </aside>
       </section>
 
-      <section className="simpleBand simpleTrustBand">
-        <span className="simpleSectionLabel">Before checkout</span>
-        <h2>Start safe. Upgrade when the admin gets heavier.</h2>
-        <p className="simpleLead">
-          Churvox pricing is built around how much of the business you want connected: core workflow first, then team control, then owner-approved admin, then Command-level operations.
-        </p>
-        <div className="simpleGrid">
-          {buyerProof.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
+      <section className="publicBand">
+        <div className="publicSectionHead">
+          <span className="publicKicker">Plan cards</span>
+          <h2>Actual monthly cost, plus what is included.</h2>
+        </div>
+        <div className="publicPlanGrid">
+          {displayPlans.map((plan) => (
+            <article key={plan.name} className={isOperator(plan) ? "featured" : ""}>
+              {isOperator(plan) ? <small>Most Popular</small> : null}
+              <h3>{plan.name}</h3>
+              <div className="publicPlanPrice">{plan.priceLabel}</div>
+              {taxInclusive(plan) ? <div className="publicPlanTax">{taxInclusive(plan)}</div> : null}
+              <p>{plan.summary}</p>
+              <ul>
+                {featureList(plan).map((item) => <li key={item}>{item}</li>)}
+              </ul>
+              <Link to={signupTo} className="publicPrimary">Start trial</Link>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="simpleBand">
-        <h2>Which plan fits?</h2>
-        <div className="simpleGrid">
-          {chooser.map(([title, text]) => (
-            <article key={title} className={title === "Operator" ? "simpleFeaturedPlan" : ""}>
-              {title === "Operator" ? <small>Most popular</small> : null}
+      <section className="publicBand publicSplit">
+        <div>
+          <span className="publicKicker">Which one fits</span>
+          <h2>Pick by operating need, not by guesswork.</h2>
+          <p>
+            The tiers are meant to be readable: records first, workers next, prepared admin next, full Command operations last.
+          </p>
+        </div>
+        <div className="publicAreaGrid">
+          {planFit.map(([title, who, text]) => (
+            <article key={title}>
+              <b>{title}</b>
+              <small>{who}</small>
+              <span>{text}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="publicBand">
+        <div className="publicSectionHead">
+          <span className="publicKicker">Add-ons</span>
+          <h2>Extra capacity stays explicit.</h2>
+        </div>
+        <div className="publicAddOnGrid">
+          <article>
+            <b>Command Growth Pack</b>
+            <strong>{growthPack.priceLabel}</strong>
+            {growthPack.taxInclusiveLabel ? <span>{growthPack.taxInclusiveLabel}</span> : null}
+            <p>Adds extra team, job, AI Operator, automation, admin and payroll capacity.</p>
+          </article>
+          <article>
+            <b>Accounting Sync Add-on</b>
+            <strong>{accountingAddon.priceLabel}</strong>
+            {accountingAddon.taxInclusiveLabel ? <span>{accountingAddon.taxInclusiveLabel}</span> : null}
+            <p>Optional accounting draft invoice sync for non-Command tiers where available. Owner approval required.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="publicBand publicDarkBand">
+        <div>
+          <span className="publicKicker">Pricing rules</span>
+          <h2>Clear pricing, clear control.</h2>
+        </div>
+        <div className="publicCardGrid">
+          {pricingRules.map(([title, text]) => (
+            <article key={title}>
               <b>{title}</b>
               <span>{text}</span>
             </article>
@@ -141,58 +170,14 @@ export default function ExecutivePricingPage() {
         </div>
       </section>
 
-      <section className="simpleBand simpleCompareBand">
-        <span className="simpleSectionLabel">Quick comparison</span>
-        <h2>Choose by how you work.</h2>
-        <div className="simpleCompareTable simplePlanCompare" role="table" aria-label="Churvox plan comparison">
-          <div role="row" className="simpleCompareHead">
-            <b role="columnheader">Plan</b>
-            <b role="columnheader">Best for</b>
-            <b role="columnheader">Main job</b>
-          </div>
-          {planCompare.map(([plan, best, main]) => (
-            <div role="row" key={plan} className={plan === "Operator" ? "simpleCompareFeatured" : ""}>
-              <span role="cell">{plan}</span>
-              <span role="cell">{best}</span>
-              <span role="cell">{main}</span>
-            </div>
-          ))}
+      <section className="publicBand publicCta">
+        <div>
+          <span className="publicKicker">Start clean</span>
+          <h2>Start the trial and put the business into Churvox.</h2>
         </div>
-      </section>
-
-      <section className="simpleBand">
-        <h2>Monthly plans</h2>
-        <p className="simpleLead">Start simple. Upgrade when the admin load gets heavier.</p>
-
-        <div className="simpleGrid simplePlanGrid">
-          {displayPlans.map((plan) => (
-            <article key={plan.name} className={isOperator(plan) ? "simpleFeaturedPlan" : ""}>
-              {isOperator(plan) ? <small>Most popular</small> : null}
-              <b>{plan.name}</b>
-              <span className="simplePriceLine">{priceLabel(plan)}</span>
-              {taxLabel(plan) ? <span>{taxLabel(plan)}</span> : null}
-              <span>{plan.summary}</span>
-              {featureList(plan).map((item) => <span key={item}>• {item}</span>)}
-              <div className="simpleActions">
-                <Link to={signupTo} className="simpleBtn simplePrimary">Start 14-day trial</Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="simpleBand">
-        <h2>Accounting Sync Add-on</h2>
-        <p className="simpleLead">
-          Start, Crew and Operator can add accounting sync for {accountingAddon.priceLabel} where available.
-          Command includes one accounting sync option where available.
-        </p>
-      </section>
-
-      <section className="simpleBand">
-        <h2>Safe by design.</h2>
-        <div className="simpleGrid">
-          {safety.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
+        <div className="publicActions">
+          <Link to={signupTo} className="publicPrimary">Start 14-day trial</Link>
+          <Link to="/features" className="publicSecondary">See the workflow</Link>
         </div>
       </section>
 
