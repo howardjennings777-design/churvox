@@ -1,0 +1,9 @@
+.churvoxOptionC .cocBar {
+  grid-template-columns: 260px minmax(0, 1fr) 190px;
+}
+
+@media (max-width: 1100px) {
+  .churvoxOptionC .cocBar {
+    grid-template-columns: 1fr;
+  }
+}
