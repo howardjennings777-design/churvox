@@ -1,0 +1,145 @@
+/* CHURVOX_OPTION_F_PROBLEM_SLIP_HIGHLIGHTS_20260629 */
+
+.churvoxOptionC .cocProblemSummary,
+.cv-record-popup .cv-popup-problem-summary {
+  clear: both !important;
+  display: grid !important;
+  gap: 10px !important;
+  margin: 14px 0 16px !important;
+  padding: 14px !important;
+  border: 1px solid rgba(197, 77, 66, 0.28) !important;
+  border-left: 5px solid #c54d42 !important;
+  border-radius: 14px !important;
+  background: #fff4f2 !important;
+  color: #151c19 !important;
+  box-shadow: 0 14px 34px rgba(197, 77, 66, 0.11) !important;
+}
+
+.cv-record-popup .cv-popup-problem-summary {
+  margin-top: 0 !important;
+  border-radius: 18px !important;
+}
+
+.churvoxOptionC .cocProblemSummary strong,
+.cv-record-popup .cv-popup-problem-summary strong {
+  color: #9f2d25 !important;
+  font-size: 14px !important;
+  font-weight: 1000 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+}
+
+.churvoxOptionC .cocProblemSummary > span,
+.cv-record-popup .cv-popup-problem-summary > span {
+  color: #5e6b65 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1.4 !important;
+}
+
+.churvoxOptionC .cocProblemSummary ul,
+.cv-record-popup .cv-popup-problem-summary ul {
+  display: grid !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.churvoxOptionC .cocProblemSummary li,
+.cv-record-popup .cv-popup-problem-summary li {
+  display: grid !important;
+  gap: 3px !important;
+  min-height: 46px !important;
+  padding: 9px 10px !important;
+  border: 1px solid rgba(197, 77, 66, 0.18) !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+}
+
+.churvoxOptionC .cocProblemSummary li.warn,
+.cv-record-popup .cv-popup-problem-summary li.warn {
+  border-color: rgba(191, 138, 34, 0.24) !important;
+  background: #fffaf0 !important;
+}
+
+.churvoxOptionC .cocProblemSummary li b,
+.cv-record-popup .cv-popup-problem-summary li b {
+  color: #151c19 !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+}
+
+.churvoxOptionC .cocProblemSummary li small,
+.cv-record-popup .cv-popup-problem-summary li small {
+  color: #5e6b65 !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.churvoxOptionC .cocDrawer .cocProblemField,
+.cv-record-popup .cv-popup-problem-field {
+  position: relative !important;
+  border-color: rgba(197, 77, 66, 0.54) !important;
+  background: #fff4f2 !important;
+  box-shadow: 0 0 0 3px rgba(197, 77, 66, 0.11) !important;
+}
+
+.churvoxOptionC .cocDrawer .cocWarningField,
+.cv-record-popup .cv-popup-warning-field {
+  border-color: rgba(191, 138, 34, 0.5) !important;
+  background: #fffaf0 !important;
+  box-shadow: 0 0 0 3px rgba(191, 138, 34, 0.12) !important;
+}
+
+.churvoxOptionC .cocDrawer .cocProblemField::after,
+.cv-record-popup .cv-popup-problem-field::after {
+  content: attr(data-problem) !important;
+  display: inline-flex !important;
+  width: max-content !important;
+  max-width: 100% !important;
+  margin-top: 8px !important;
+  padding: 5px 8px !important;
+  border-radius: 999px !important;
+  background: #c54d42 !important;
+  color: #fff !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0 !important;
+}
+
+.churvoxOptionC .cocDrawer .cocWarningField::after,
+.cv-record-popup .cv-popup-warning-field::after {
+  background: #bf8a22 !important;
+}
+
+.churvoxOptionC .cocDrawer .cocProblemField input,
+.churvoxOptionC .cocDrawer .cocProblemField textarea,
+.churvoxOptionC .cocDrawer .cocProblemField select {
+  border-color: rgba(197, 77, 66, 0.54) !important;
+  background: #fff !important;
+}
+
+.churvoxOptionC .cocDrawer .cocWarningField input,
+.churvoxOptionC .cocDrawer .cocWarningField textarea,
+.churvoxOptionC .cocDrawer .cocWarningField select {
+  border-color: rgba(191, 138, 34, 0.5) !important;
+}
+
+.cv-record-popup .cv-popup-problem-field strong,
+.cv-record-popup .cv-popup-problem-field span,
+.cv-record-popup .cv-popup-problem-field input,
+.cv-record-popup .cv-popup-problem-field textarea {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+}
+
+@media (max-width: 680px) {
+  .churvoxOptionC .cocProblemSummary,
+  .cv-record-popup .cv-popup-problem-summary {
+    padding: 12px !important;
+  }
+}
