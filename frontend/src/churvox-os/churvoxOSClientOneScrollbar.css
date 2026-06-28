@@ -1,0 +1,115 @@
+/* CHURVOX_CLIENT_ONE_SCROLLBAR_20260628 */
+
+html.churvox-client-one-scroll,
+body.churvox-client-one-scroll {
+  width: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+body.churvox-client-one-scroll #root,
+body.churvox-client-one-scroll .app,
+body.churvox-client-one-scroll .dashboard,
+body.churvox-client-one-scroll .clientWorkbenchOS {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientWorkbenchMain,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientWorkbenchShell,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectory,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientSidebar {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientWorkbenchMain {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  padding: 8px 10px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientWorkbenchShell {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectory,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList::-webkit-scrollbar {
+  width: 10px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList::-webkit-scrollbar-thumb {
+  background: rgba(35, 31, 32, 0.42) !important;
+  border-radius: 999px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(92px, auto) !important;
+  gap: 8px !important;
+  padding: 9px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid label {
+  min-height: 92px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid label.wide {
+  grid-column: span 2 !important;
+  min-height: 160px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid textarea {
+  min-height: 88px !important;
+  max-height: 96px !important;
+  resize: none !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel header {
+  min-height: 104px !important;
+  padding: 12px 15px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel footer {
+  min-height: 50px !important;
+  padding: 7px 11px !important;
+}
+
+@media (max-width: 1180px) {
+  body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid label.wide {
+    grid-column: 1 / -1 !important;
+  }
+}
