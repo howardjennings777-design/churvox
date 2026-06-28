@@ -47,6 +47,7 @@ import './churvox-fresh/optionFProblemSlipRuntime';
 import './churvox-fresh/optionFFullSiteWiringRuntime';
 import './churvox-fresh/optionFAiFillMissingRuntime';
 import './churvox-fresh/optionFDrawerPersistenceRuntime';
+import './styles/churvoxResponsiveFit.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
