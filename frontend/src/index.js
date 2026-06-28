@@ -17,6 +17,7 @@ import './churvox-fresh/optionFModernEasy.css';
 import './churvox-fresh/optionFTopNav.css';
 import './churvox-fresh/optionFSearchTidy.css';
 import './churvox-fresh/optionFIndustrialHeaders.css';
+import './churvox-fresh/optionFNoCommandPill.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
