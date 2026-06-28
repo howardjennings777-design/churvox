@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, ClipboardList, Clock3, MapPin, MessageCircle, Navigation, PauseCircle, Phone, PlayCircle, RefreshCw, Send, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, ClipboardList, Clock3, MapPin, MessageCircle, Navigation, PauseCircle, Phone, PlayCircle, RefreshCw, Send, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
@@ -9,7 +9,7 @@ import "./WorkerCleanApp.css";
 import "./WorkerFieldFlow.css";
 
 const OFFLINE_QUEUE_KEY = "churvox-worker-offline-queue";
-const FLOW_MARKER = "WORKER_APP_14_FIELD_FLOW_20260625";
+const FLOW_MARKER = "WORKER_APP_FIELD_LOGIC_20260629";
 
 async function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -57,6 +57,11 @@ function oid(value) {
   return text === "[object Object]" ? "" : text;
 }
 
+function lower(value) { return String(value || "").trim().toLowerCase(); }
+function blank(value) {
+  const raw = lower(value);
+  return !raw || raw === "none" || raw === "not set" || raw === "undefined" || raw === "null" || raw === "no customer";
+}
 function jobIdOf(job) { return oid(job?.id || job?._id || job?.job_id || ""); }
 function statusOf(job) { return String(job?.status || "assigned").toLowerCase().replaceAll(" ", "_"); }
 function reviewStatus(job) { return String(job?.work_review_status || job?.review_status || job?.owner_review_status || "").trim().toLowerCase(); }
@@ -73,7 +78,31 @@ function customerContactAllowed(job) { return Boolean(job?.worker_can_contact_cu
 function dateText(job) {
   const date = String(job?.scheduled_date || job?.date || job?.start || job?.due_date || "").slice(0, 10);
   const time = job?.scheduled_time || job?.time || "";
-  return [date, time].filter(Boolean).join(" · ") || "No time set";
+  return [date, time].filter(Boolean).join(" - ") || "No time set";
+}
+
+function workerMissingFields(job) {
+  const missing = [];
+  if (job?._blockedByCommand || job?._doNotShowToday || job?._commandMissing) {
+    missing.push(...String(job?._commandMissing || "").split(",").map((item) => item.trim()).filter(Boolean));
+  }
+  if (blank(jobTitle(job)) || jobTitle(job) === "Untitled job") missing.push("job title");
+  if (blank(clientName(job))) missing.push("customer");
+  if (blank(String(job?.scheduled_date || job?.date || job?.start || job?.due_date || "").slice(0, 10))) missing.push("date");
+  if (blank(job?.scheduled_time || job?.time || "")) missing.push("time");
+  if (blank(addressOf(job))) missing.push("address");
+  return [...new Set(missing)];
+}
+
+function proofProblems({ job, workerNotes, photos, currentTimerMinutes, issueFound, materialsText }) {
+  const problems = [];
+  const note = String(workerNotes || "").trim();
+  if (workerMissingFields(job).length) problems.push(`Missing job details: ${workerMissingFields(job).join(", ")}`);
+  if (Number(currentTimerMinutes || 0) <= 0) problems.push("No time saved");
+  if (!note) problems.push("No worker message");
+  if (!photos.length && !issueFound) problems.push("No photo proof");
+  if (issueFound && !String(materialsText || note).trim()) problems.push("Issue ticked but no detail added");
+  return problems;
 }
 
 function defaultChecklist(job) {
@@ -141,14 +170,16 @@ function getGpsPosition() {
   });
 }
 
-function ProofSteps({ photoCount, workerNotes, complete }) {
+function ProofSteps({ photoCount, workerNotes, complete, timeMinutes }) {
   const hasNote = String(workerNotes || "").trim().length > 0;
   const hasPhoto = Number(photoCount || 0) > 0;
+  const hasTime = Number(timeMinutes || 0) > 0;
   return (
     <section className="wc-proof-steps">
-      <div className={hasPhoto ? "done" : ""}><b>{hasPhoto ? "✓" : "1"}</b><span>Add photo proof</span></div>
-      <div className={hasNote ? "done" : ""}><b>{hasNote ? "✓" : "2"}</b><span>Leave message</span></div>
-      <div className={complete ? "done" : ""}><b>{complete ? "✓" : "3"}</b><span>Send to owner</span></div>
+      <div className={hasTime ? "done" : ""}><b>{hasTime ? "✓" : "1"}</b><span>Save time</span></div>
+      <div className={hasPhoto ? "done" : ""}><b>{hasPhoto ? "✓" : "2"}</b><span>Add photo proof</span></div>
+      <div className={hasNote ? "done" : ""}><b>{hasNote ? "✓" : "3"}</b><span>Leave message</span></div>
+      <div className={complete ? "done" : ""}><b>{complete ? "✓" : "4"}</b><span>Send to owner</span></div>
     </section>
   );
 }
@@ -268,6 +299,11 @@ export default function WorkerJobDetailPage() {
   }
 
   async function updateWorkerStatus(nextStatus) {
+    const missing = workerMissingFields(job);
+    if (missing.length && !["paused"].includes(nextStatus)) {
+      toast.error(`Job missing ${missing.join(", ")}. Ask the boss to fix it first.`);
+      return;
+    }
     setWorkerStatus(nextStatus);
     if (nextStatus === "started" && !timerStartedAt) setTimerStartedAt(Date.now());
     if (nextStatus === "paused" && timerStartedAt) stopTimer(false);
@@ -284,6 +320,10 @@ export default function WorkerJobDetailPage() {
   }
 
   function startTimer() {
+    if (workerMissingFields(job).length) {
+      toast.error("This job is missing details. Ask the boss before starting.");
+      return;
+    }
     setTimerStartedAt(Date.now());
     if (workerStatus !== "started") updateWorkerStatus("started");
   }
@@ -333,20 +373,40 @@ export default function WorkerJobDetailPage() {
     await saveFieldUpdate({ materials_used: materialsText, issue_found: issueFound });
   }
 
+  function draftWorkerMessage() {
+    const photos = Array.isArray(job?.photos) ? job.photos : [];
+    const checkedCount = checklist.filter((item) => item.done).length;
+    const currentTimerMinutes = timeMinutes + minutesFromTimer(timerStartedAt) + (elapsedTick * 0);
+    const parts = [
+      `Completed ${jobTitle(job)} for ${clientName(job)}.`,
+      currentTimerMinutes > 0 ? `Time: ${currentTimerMinutes} min.` : "Time still needs checking.",
+      photos.length ? `${photos.length} photo${photos.length === 1 ? "" : "s"} attached.` : "No photo attached yet.",
+      checklist.length ? `Checklist: ${checkedCount}/${checklist.length} done.` : "Checklist not supplied.",
+      materialsText.trim() ? `Materials/extras: ${materialsText.trim()}.` : "No extra materials noted.",
+      issueFound ? "Issue/owner review needed." : "No issue found.",
+    ];
+    const draft = parts.join(" ");
+    setWorkerNotes(draft);
+    setProofPrompt(false);
+    toast.success("Churvox drafted the worker message");
+  }
+
   async function finishJob() {
     const photos = Array.isArray(job?.photos) ? job.photos : [];
     const note = String(workerNotes || "").trim();
     const finalTimeMinutes = Number(timeMinutes || 0) + minutesFromTimer(timerStartedAt);
-    if (!photos.length && !note) {
+    const problems = proofProblems({ job, workerNotes: note, photos, currentTimerMinutes: finalTimeMinutes, issueFound, materialsText });
+    if (problems.length) {
       setProofPrompt(true);
       document.getElementById("worker-proof")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      toast.info("Add a photo or message before sending this to the boss.");
+      toast.error(`Fix first: ${problems[0]}`);
+      await sendLivePing({ source: "worker-finish-blocked", job_id: id, job_title: jobTitle(job), problems });
       return;
     }
     setSaving(true);
     try {
       if (timerStartedAt) { setTimeMinutes(finalTimeMinutes); setTimerStartedAt(0); }
-      if (note) await saveNotes(note);
+      await saveNotes(note);
       const location = await getGpsPosition();
       const payload = {
         worker_notes: note,
@@ -357,20 +417,21 @@ export default function WorkerJobDetailPage() {
         issue_found: issueFound,
         worker_time_minutes: finalTimeMinutes,
         completed_by_worker: true,
-        work_review_status: "ready_for_review",
-        review_status: "ready_for_review",
-        owner_review_status: "ready_for_review",
+        work_review_status: issueFound ? "needs_owner_review" : "ready_for_review",
+        review_status: issueFound ? "needs_owner_review" : "ready_for_review",
+        owner_review_status: issueFound ? "needs_owner_review" : "ready_for_review",
         worker_action_required: false,
         completed_at: new Date().toISOString(),
         worker_app_flow: FLOW_MARKER,
+        command_reason: issueFound ? "Worker marked issue/extra owner review" : "Worker finished with proof",
       };
       if (location) payload.location = location;
       let res = null;
       try { res = await post(`/worker/jobs/${encodeURIComponent(id)}/complete`, payload); } catch { res = null; }
       if (res?.success) {
-        await sendLivePing({ source: "job-finished", live_status: "Finished job", clock_status: "clocked_in", job_id: id, job_title: jobTitle(job), job_status: "completed", location });
+        await sendLivePing({ source: "job-finished", live_status: "Finished job", clock_status: "clocked_in", job_id: id, job_title: jobTitle(job), job_status: "completed", location, issue_found: issueFound });
         setWorkerStatus("completed");
-        toast.success("Job sent to owner");
+        toast.success(issueFound ? "Sent to owner review" : "Job sent to owner");
         try { window.localStorage.removeItem(draftKey(id)); } catch {}
         await loadJob();
       } else {
@@ -385,8 +446,8 @@ export default function WorkerJobDetailPage() {
 
   const currentTimerMinutes = timeMinutes + minutesFromTimer(timerStartedAt) + (elapsedTick * 0);
 
-  if (loading) return <div className="wc-screen wc-loading-screen"><RefreshCw className="spin" /><b>Loading job…</b></div>;
-  if (!job) return <div className="wc-screen wc-loading-screen"><AlertTriangle /><b>Job not found</b><Link to="/worker/jobs">Back to today’s jobs</Link></div>;
+  if (loading) return <div className="wc-screen wc-loading-screen"><RefreshCw className="spin" /><b>Loading job...</b></div>;
+  if (!job) return <div className="wc-screen wc-loading-screen"><AlertTriangle /><b>Job not found</b><Link to="/worker/jobs">Back to jobs</Link></div>;
 
   const address = addressOf(job);
   const instructions = instructionsOf(job);
@@ -400,6 +461,8 @@ export default function WorkerJobDetailPage() {
   const email = customerEmail(job);
   const canContact = customerContactAllowed(job) && (phone || email);
   const checkedCount = checklist.filter((item) => item.done).length;
+  const missingFields = workerMissingFields(job);
+  const problems = proofProblems({ job, workerNotes, photos, currentTimerMinutes, issueFound, materialsText });
 
   return (
     <div className="wc-screen wc-job-screen" data-worker-flow={FLOW_MARKER}>
@@ -409,40 +472,41 @@ export default function WorkerJobDetailPage() {
       </header>
 
       <main className="wc-main">
-        <section className="wc-job-hero"><span>{sentBack ? "Owner needs fix" : complete ? "Sent to owner" : "Job details"}</span><h1>{jobTitle(job)}</h1><p>{clientName(job)}</p><small>{dateText(job)}</small></section>
+        <section className="wc-job-hero"><span>{sentBack ? "Owner needs fix" : complete ? "Sent to owner" : missingFields.length ? "Admin fix needed" : "Job details"}</span><h1>{jobTitle(job)}</h1><p>{clientName(job)}</p><small>{dateText(job)}</small></section>
 
         {queuedCount ? <section className="wc-alert need"><Send /><div><b>{queuedCount} offline update{queuedCount === 1 ? "" : "s"} waiting</b><span>Saved on this phone. Sync when signal is back.</span><button type="button" className="wc-mini-action" onClick={syncOfflineQueue}>Sync now</button></div></section> : null}
+        {missingFields.length ? <section className="wc-alert need"><AlertTriangle /><div><b>Missing info before this is proper work</b><span>{missingFields.join(", ")}. Churvox should fill what it can; anything uncertain belongs in Command for the boss.</span><button type="button" className="wc-mini-action" onClick={() => setShowContactOffice(true)}>Message boss</button></div></section> : null}
         {sentBack ? <section className="wc-alert"><AlertTriangle /><div><b>Boss sent this back</b><span>{ownerNote || "Check the job, add photo or message, then send it again."}</span></div></section> : null}
 
         <section className="wc-status-strip" aria-label="Job status buttons">
-          <button type="button" className={workerStatus === "on_my_way" ? "active" : ""} onClick={() => updateWorkerStatus("on_my_way")} disabled={complete}>On my way</button>
-          <button type="button" className={workerStatus === "started" ? "active" : ""} onClick={() => updateWorkerStatus("started")} disabled={complete}>Started</button>
+          <button type="button" className={workerStatus === "on_my_way" ? "active" : ""} onClick={() => updateWorkerStatus("on_my_way")} disabled={complete || missingFields.length}>On my way</button>
+          <button type="button" className={workerStatus === "started" ? "active" : ""} onClick={() => updateWorkerStatus("started")} disabled={complete || missingFields.length}>Started</button>
           <button type="button" className={workerStatus === "paused" ? "active" : ""} onClick={() => updateWorkerStatus("paused")} disabled={complete}>Paused</button>
           <button type="button" onClick={() => setShowContactOffice(true)} disabled={complete}>Need help</button>
         </section>
 
-        <section className="wc-card wc-timer-card"><div className="wc-section-head"><span>Time</span><h2>{currentTimerMinutes} min</h2><p>Track time for this job. It is included when you send the job to owner review.</p></div><div className="wc-two-actions">{!timerStartedAt ? <button type="button" onClick={startTimer}><PlayCircle size={18} /> Start timer</button> : <button type="button" onClick={() => stopTimer()}><PauseCircle size={18} /> Stop timer</button>}<button type="button" onClick={() => saveFieldUpdate({ worker_time_minutes: currentTimerMinutes })}><Clock3 size={18} /> Save time</button></div></section>
+        <section className="wc-card wc-timer-card"><div className="wc-section-head"><span>Time</span><h2>{currentTimerMinutes} min</h2><p>Track time for this job. It is included when you send the job to owner review.</p></div><div className="wc-two-actions">{!timerStartedAt ? <button type="button" onClick={startTimer} disabled={complete || missingFields.length}><PlayCircle size={18} /> Start timer</button> : <button type="button" onClick={() => stopTimer()}><PauseCircle size={18} /> Stop timer</button>}<button type="button" onClick={() => saveFieldUpdate({ worker_time_minutes: currentTimerMinutes })}><Clock3 size={18} /> Save time</button></div></section>
 
         <section className="wc-card"><div className="wc-section-head"><span>Where</span><h2>Address</h2></div>{address ? <p><MapPin size={17} /> {address}</p> : <p><MapPin size={17} /> No address added.</p>}{address ? <a className="wc-map-button" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer"><Navigation size={17} /> Open directions</a> : null}</section>
 
         <section className="wc-card"><div className="wc-section-head"><span>Customer contact</span><h2>{canContact ? "Contact allowed" : "Hidden by owner"}</h2><p>{canContact ? "Use only for job access or arrival updates." : "Customer phone/email stays hidden unless the owner turns it on for workers."}</p></div>{canContact ? <div className="wc-two-actions">{phone ? <a href={`tel:${phone}`}><Phone size={18} /> Call customer</a> : null}{phone ? <a href={`sms:${phone}`}><MessageCircle size={18} /> Text customer</a> : null}{email ? <a href={`mailto:${email}`}><Send size={18} /> Email customer</a> : null}</div> : null}</section>
 
-        <section className="wc-card"><div className="wc-section-head"><span>Instructions</span><h2>What to do</h2></div><p>{instructions || "No special instructions added. Do the job as assigned."}</p></section>
+        <section className="wc-card"><div className="wc-section-head"><span>Instructions</span><h2>What to do</h2></div><p>{instructions || "No special instructions added. Ask the boss if the scope is unclear."}</p></section>
 
         <section className="wc-card"><div className="wc-section-head"><span>Checklist</span><h2>{checkedCount}/{checklist.length || 0} done</h2><p>Tick off the field steps so the owner gets consistent work back.</p></div><div className="wc-checklist">{checklist.map((item, index) => <button type="button" key={item.id || item.label} className={item.done ? "done" : ""} onClick={() => toggleChecklist(index)}><b>{item.done ? "✓" : index + 1}</b><span>{item.label}</span></button>)}</div><button type="button" className="wc-save-note" onClick={() => saveFieldUpdate({ worker_checklist: checklist, checklist })}>Save checklist</button></section>
 
-        <section className="wc-card" id="worker-proof"><div className="wc-section-head"><span>Proof</span><h2>Photos and message</h2><p>Before you send it, add a photo or leave the boss a quick message.</p></div>{proofPrompt ? <section className="wc-alert need"><Camera /><div><b>Add proof first</b><span>Take a photo or write a quick message, then press “I’ve finished this job” again.</span></div></section> : null}<ProofSteps photoCount={photos.length} workerNotes={workerNotes} complete={complete} /><label className="wc-photo-button"><Camera size={22} />{uploadingPhoto ? "Adding photo…" : "Add photo"}<input type="file" accept="image/*" capture="environment" onChange={addPhoto} disabled={uploadingPhoto} /></label>{photos.length ? <div className="wc-photo-grid">{photos.map((src, index) => <div className="wc-photo-thumb" key={`${src}-${index}`}><img src={src} alt={`Job proof ${index + 1}`} /><button type="button" onClick={() => removePhoto(index)}><X size={14} /></button></div>)}</div> : <p className="wc-empty-proof">No photos yet.</p>}<textarea className="wc-textarea" rows={4} value={workerNotes} onChange={(event) => { setWorkerNotes(event.target.value); if (event.target.value.trim()) setProofPrompt(false); }} placeholder="Message for boss… e.g. Done lawns and edges. Gate was locked at first." /><button type="button" className="wc-save-note" onClick={() => saveNotes(workerNotes)}>Save message</button></section>
+        <section className="wc-card" id="worker-proof"><div className="wc-section-head"><span>Proof</span><h2>Photos and message</h2><p>Churvox highlights what is missing before the job can go back to the boss.</p></div>{proofPrompt || problems.length ? <section className="wc-alert need"><Camera /><div><b>Fix these before sending</b><span>{problems.length ? problems.join(". ") : "Take a photo, save time, or write a quick message."}</span></div></section> : null}<ProofSteps photoCount={photos.length} workerNotes={workerNotes} complete={complete} timeMinutes={currentTimerMinutes} /><label className="wc-photo-button"><Camera size={22} />{uploadingPhoto ? "Adding photo..." : "Add photo"}<input type="file" accept="image/*" capture="environment" onChange={addPhoto} disabled={uploadingPhoto} /></label>{photos.length ? <div className="wc-photo-grid">{photos.map((src, index) => <div className="wc-photo-thumb" key={`${src}-${index}`}><img src={src} alt={`Job proof ${index + 1}`} /><button type="button" onClick={() => removePhoto(index)}><X size={14} /></button></div>)}</div> : <p className="wc-empty-proof">No photos yet.</p>}<textarea className="wc-textarea" rows={4} value={workerNotes} onChange={(event) => { setWorkerNotes(event.target.value); if (event.target.value.trim()) setProofPrompt(false); }} placeholder="Message for boss... e.g. Done lawns and edges. Gate was locked at first." /><div className="wc-two-actions"><button type="button" className="wc-save-note" onClick={draftWorkerMessage}><Sparkles size={17} /> Churvox draft</button><button type="button" className="wc-save-note" onClick={() => saveNotes(workerNotes)}>Save message</button></div></section>
 
         <section className="wc-card"><div className="wc-section-head"><span>Materials</span><h2>Parts or extras used</h2><p>Add anything the owner should review before invoicing.</p></div><textarea className="wc-textarea" rows={3} value={materialsText} onChange={(event) => setMaterialsText(event.target.value)} placeholder="Example: 2 bags mulch, 30 min extra, replacement latch" /><label className="wc-issue-toggle"><input type="checkbox" checked={issueFound} onChange={(event) => setIssueFound(event.target.checked)} /> Issue found or extra owner review needed</label><button type="button" className="wc-save-note" onClick={saveMaterials}>Save materials</button></section>
 
-        <section className="wc-card wc-wrap-card"><div className="wc-section-head"><span>Daily wrap-up</span><h2>Before you finish</h2><p>Quick summary for owner review.</p></div><div className="wc-wrap-grid"><article><span>Time</span><b>{currentTimerMinutes} min</b></article><article><span>Checklist</span><b>{checkedCount}/{checklist.length || 0}</b></article><article><span>Photos</span><b>{photos.length}</b></article><article><span>Issue</span><b>{issueFound ? "Yes" : "No"}</b></article></div></section>
+        <section className="wc-card wc-wrap-card"><div className="wc-section-head"><span>Daily wrap-up</span><h2>Before you finish</h2><p>Problem fields are highlighted so the worker does not send a weak slip.</p></div><div className="wc-wrap-grid"><article><span>Time</span><b>{currentTimerMinutes} min</b></article><article><span>Checklist</span><b>{checkedCount}/{checklist.length || 0}</b></article><article><span>Photos</span><b>{photos.length}</b></article><article><span>Problems</span><b>{problems.length}</b></article></div></section>
 
-        <section className={`wc-finish ${noteReady || photoReady ? "ready" : ""}`}><div><span>Finish</span><h2>{complete ? "Sent to owner" : "I’ve finished this job"}</h2><p>{complete ? "The owner can now review the work." : "This sends the job, photos, checklist, materials, time and message back to the boss."}</p></div><button type="button" disabled={saving || complete} onClick={finishJob}><CheckCircle2 size={20} />{saving ? "Sending…" : complete ? "Finished" : "I’ve finished this job"}</button></section>
+        <section className={`wc-finish ${noteReady && (photoReady || issueFound) && currentTimerMinutes > 0 && !missingFields.length ? "ready" : ""}`}><div><span>Finish</span><h2>{complete ? "Sent to owner" : "I have finished this job"}</h2><p>{complete ? "The owner can now review the work." : "This sends the job, photos, checklist, materials, time and message back to owner review."}</p></div><button type="button" disabled={saving || complete} onClick={finishJob}><CheckCircle2 size={20} />{saving ? "Sending..." : complete ? "Finished" : "Send to owner"}</button></section>
 
-        <section className="wc-card"><div className="wc-section-head"><span>Help</span><h2>Need help?</h2></div><p>Message the boss if the address, access, instructions or job scope is wrong.</p><button type="button" className="wc-save-note" onClick={() => setShowContactOffice(true)}><ClipboardList size={17} /> Message boss</button></section>
+        <section className="wc-card"><div className="wc-section-head"><span>Help</span><h2>Need help?</h2></div><p>Message the boss if the address, access, instructions, time or job scope is wrong.</p><button type="button" className="wc-save-note" onClick={() => setShowContactOffice(true)}><ClipboardList size={17} /> Message boss</button></section>
       </main>
 
-      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} jobId={id} jobTitle={jobTitle(job)} defaultMessage={`I need help with this job: ${jobTitle(job)}`} />
+      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} jobId={id} jobTitle={jobTitle(job)} defaultMessage={`I need help with this job: ${jobTitle(job)}${missingFields.length ? `. Missing: ${missingFields.join(", ")}` : ""}`} />
       <WorkerBottomNav active="jobs" />
     </div>
   );
