@@ -80,7 +80,21 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__)
 
   window.addEventListener('popstate', syncJobsBoardClass);
   window.addEventListener('hashchange', syncJobsBoardClass);
-  setTimeout(syncJobsBoardClass, 0);
+  window.addEventListener('load', syncJobsBoardClass);
+  document.addEventListener('click', () => setTimeout(syncJobsBoardClass, 80), true);
+
+  const observer = new MutationObserver(() => syncJobsBoardClass());
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  syncJobsBoardClass();
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.getRegistrations()
+      .then((regs) => Promise.all(regs.map((reg) => reg.unregister())))
+      .catch(() => {});
+  });
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
