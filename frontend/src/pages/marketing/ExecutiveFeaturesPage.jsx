@@ -3,72 +3,73 @@ import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
 import "./SimplePublic.css";
 
-const features = [
-  ["Smart Hub", "Shows owner attention from the work in the account: new work, prepared admin and what has reached Command."],
-  ["Command approval", "The only place for approve, save edit and park decisions."],
-  ["Jobs", "Dispatch, recurring work, proof, notes, worker status and admin prepared from jobs."],
-  ["Clients", "Customer memory for history, notes, price context and follow-up work."],
-  ["Workers", "Field status, time, proof and GPS-style job view for the owner."],
-  ["Quotes and invoices", "Offer pipeline and money desk show prepared work, but decisions stay in Command."],
-  ["Messages", "Prepared replies wait for owner approval instead of sending from the inbox."],
-  ["Settings and CSV", "Business setup, invoice defaults, imports, exports and account safety controls."],
-  ["Accounting handoff", "CSV export or draft-sync where available, with no auto-send, tax filing or payout files."],
+const featureAreas = [
+  ["Today", "A clear day view for dated work, active workers, due money, messages and issues."],
+  ["Command", "The only approval desk for prepared admin. Approve, edit and park live here."],
+  ["Jobs", "Editable job forms with client, price, date, time, recurrence, worker, proof and status."],
+  ["Clients", "Client list, editable records, notes, service memory, price memory and history."],
+  ["Workers", "Clocked-in workers, GPS map, current jobs, proof, photos, messages and slips."],
+  ["Quotes", "Draft, sent, viewed, accepted and follow-up-ready quote work."],
+  ["Invoices", "Drafts, due today, overdue, paid, sync-ready status and proof context."],
+  ["Messages", "Worker and customer messages, drafted replies and thread history."],
+  ["Settings", "Business controls, CSV defaults, exports, security and billing controls."],
 ];
 
-const flow = [
-  ["1", "Set up the business", "Create the account, choose the plan, add business details and invoice defaults."],
-  ["2", "Add or import records", "Bring in clients, jobs, invoices or team data with CSV, or add work from the app."],
-  ["3", "Run the work", "Jobs, clients, workers, quotes, invoices and messages stay connected."],
-  ["4", "Churvox prepares admin", "Follow-ups, draft invoices, messages, team gaps and sync checks become Command items."],
-  ["5", "Owner approves in Command", "Approve, save an edit or park the prepared admin from one place."],
+const commandItems = [
+  ["Quote ready", "Prepared from client, service, price and job context."],
+  ["Invoice ready", "Prepared from job records, time, proof, notes and invoice memory."],
+  ["Message ready", "Drafted from the current thread and record history."],
+  ["Client or job issue", "Missing details, unclear requests or record problems go to Command."],
+  ["Timesheet or proof issue", "Worker slips, missing proof and time checks wait for owner review."],
+  ["Sync decision", "Accounting handoff stays owner-approved and guarded."],
 ];
 
-const commandCards = [
-  ["Quote follow-up", "Prepared from quote and client context, then held for owner approval."],
-  ["Invoice draft", "Prepared from job facts, proof and time before sending or syncing."],
-  ["Message reply", "Drafted from job and client context, but not sent from Messages."],
-  ["Team review", "Worker app, access and payroll review items become owner attention."],
-  ["Accounting check", "Draft sync and export steps stay controlled by Command."],
-  ["Setup gap", "Missing business, invoice or import details are surfaced instead of hidden."],
+const buildFlow = [
+  ["1", "Set up", "Business details, plan, invoice defaults, team access and imports."],
+  ["2", "Run work", "Jobs, workers, clients, proof, quotes and invoices stay connected."],
+  ["3", "Find gaps", "Missing date, time, price, proof or client details do not silently move forward."],
+  ["4", "Prepare admin", "Churvox fills the useful slip from the records it has."],
+  ["5", "Approve in Command", "The owner checks, edits or parks the prepared action."],
 ];
 
 const guardrails = [
-  ["One approval place", "Approve, edit and park controls belong in Command only."],
-  ["No automatic invoice sending", "Invoices can be prepared, but sending is an owner decision."],
-  ["No tax filing", "Churvox does not submit tax filings to government."],
-  ["No payout files", "Churvox does not create bank payout files."],
-  ["Recurring inside Jobs", "Repeat work belongs with job records, proof and scheduling."],
-  ["Real account data", "The app fills from your records, imports and work activity."],
+  ["No approval buttons outside Command", "Other pages show status and context. Decisions stay in Command."],
+  ["No fake Today work", "Work without a usable date and time should be fixed before it appears in Today."],
+  ["No risky accounting", "Draft sync only where available. No tax filing. No payout files."],
+  ["No hidden missing info", "Bad or incomplete records become owner attention instead of disappearing."],
 ];
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="simplePublic" data-version="CHURVOX_FEATURES_REAL_WORKFLOW_20260628">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_FEATURES_MODERN_OS_20260629">
       <Nav />
-      <section className="simpleHero">
-        <div>
-          <span className="simpleKicker">How it works</span>
-          <h1>Real work goes in. Command handles the decisions.</h1>
-          <p className="simpleLead">
-            Churvox is built around one practical idea: the owner adds or imports the work, the app keeps the records connected, and prepared admin waits in Command for approval.
+
+      <section className="publicHero publicHeroCompact">
+        <div className="publicHeroCopy">
+          <span className="publicKicker">How Churvox works</span>
+          <h1>Real work becomes prepared admin.</h1>
+          <p>
+            Churvox connects the business records, watches for missing information, prepares the next admin move and puts the owner decision in Command.
           </p>
-          <div className="simpleActions">
-            <Link to="/signup" className="simpleBtn simplePrimary">Start 14-day trial</Link>
-            <Link to="/pricing" className="simpleBtn simpleGhost">View pricing</Link>
+          <div className="publicActions">
+            <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
+            <Link to="/pricing" className="publicSecondary">View pricing</Link>
           </div>
         </div>
-        <aside className="simpleCard">
-          <h2>Churvox starts clean.</h2>
-          <p>
-            It does not need fake dashboard data to make sense. Your clients, jobs, invoices, team and imports create the operating picture.
-          </p>
+        <aside className="publicFeaturePanel">
+          <small>Core rule</small>
+          <b>Command is the approval desk.</b>
+          <span>Approve, edit and park are not scattered through the product. The owner checks them in one place.</span>
         </aside>
       </section>
 
-      <section className="simpleBand">
-        <h2>The real workflow.</h2>
-        <div className="simpleTimeline">
-          {flow.map(([num, title, text]) => (
+      <section className="publicBand">
+        <div className="publicSectionHead">
+          <span className="publicKicker">Operating flow</span>
+          <h2>The system should be obvious.</h2>
+        </div>
+        <div className="publicFlow">
+          {buildFlow.map(([num, title, text]) => (
             <article key={title}>
               <i>{num}</i>
               <b>{title}</b>
@@ -78,58 +79,65 @@ export default function ExecutiveFeaturesPage() {
         </div>
       </section>
 
-      <section className="simpleBand simpleInsideBand">
+      <section className="publicBand publicSplit">
         <div>
-          <span className="simpleSectionLabel">Command cards</span>
-          <h2>What Churvox prepares for owner approval.</h2>
-          <p className="simpleLead">
-            Command is for unfinished doing: follow-ups, invoice drafts, messages, access checks, setup gaps and accounting handoff decisions.
+          <span className="publicKicker">Command items</span>
+          <h2>What gets prepared for the owner.</h2>
+          <p>
+            Command should feel like a useful approval desk, not a vague notification list. Each item needs enough context to make a decision quickly.
           </p>
         </div>
-        <div className="simpleProductShowcase">
-          {commandCards.map(([title, text]) => (
+        <div className="publicAreaGrid">
+          {commandItems.map(([title, text]) => (
             <article key={title}>
-              <div>
-                <small>Prepared for Command</small>
-                <b>{title}</b>
-              </div>
-              <p>{text}</p>
+              <b>{title}</b>
+              <span>{text}</span>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="simpleBand">
-        <h2>The product areas.</h2>
-        <p className="simpleLead">
-          Each page has a job. The pages do not all need approval buttons because Command is the approval desk.
-        </p>
-        <div className="simpleGrid">
-          {features.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
+      <section className="publicBand">
+        <div className="publicSectionHead">
+          <span className="publicKicker">Product areas</span>
+          <h2>One OS, clear pages.</h2>
+        </div>
+        <div className="publicFeatureGrid">
+          {featureAreas.map(([title, text]) => (
+            <article key={title}>
+              <b>{title}</b>
+              <span>{text}</span>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="simpleBand simpleTrustBand">
-        <span className="simpleSectionLabel">Guardrails</span>
-        <h2>Useful admin, not reckless automation.</h2>
-        <p className="simpleLead">
-          Churvox should make the owner feel calmer, not locked out. These limits keep the product honest.
-        </p>
-        <div className="simpleGrid">
-          {guardrails.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
+      <section className="publicBand publicDarkBand">
+        <div>
+          <span className="publicKicker">Guardrails</span>
+          <h2>Hard rules keep it simple for the boss.</h2>
+        </div>
+        <div className="publicCardGrid">
+          {guardrails.map(([title, text]) => (
+            <article key={title}>
+              <b>{title}</b>
+              <span>{text}</span>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="simpleBand simpleCtaBand">
-        <h2>Build the account from real work.</h2>
-        <p className="simpleLead">
-          Start the trial, choose the plan, add or import the first records, then use Command as the approval desk.
-        </p>
-        <div className="simpleActions">
-          <Link to="/signup" className="simpleBtn simplePrimary">Start 14-day trial</Link>
-          <Link to="/pricing" className="simpleBtn simpleGhost">Choose a plan</Link>
+      <section className="publicBand publicCta">
+        <div>
+          <span className="publicKicker">Start with the workflow</span>
+          <h2>Churvox does the admin. The owner checks and approves.</h2>
+        </div>
+        <div className="publicActions">
+          <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
+          <Link to="/pricing" className="publicSecondary">Choose a plan</Link>
         </div>
       </section>
+
       <Footer />
     </main>
   );
