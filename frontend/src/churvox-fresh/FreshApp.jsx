@@ -12,6 +12,7 @@ import "../churvox-os/churvoxOSJobsBoardFix.css";
 import "../churvox-os/churvoxOSClientsWorkspace.css";
 import "../churvox-os/churvoxOSClientWorkbench.css";
 import "../churvox-os/churvoxOSClientWorkbenchScrollFix.css";
+import "../churvox-os/churvoxOSClientOneScrollbar.css";
 import ChurvoxOSRealAdminV4 from "../churvox-os/ChurvoxOSRealAdminV4";
 
 export default ChurvoxOSRealAdminV4;
