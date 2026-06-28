@@ -36,6 +36,10 @@ function apiUrl(endpoint) {
   return `${API_BASE || ''}/api${endpoint}`;
 }
 
+function isBlocked(record) {
+  return Boolean(record?._blockedByCommand || record?._doNotShowToday || record?._commandMissing);
+}
+
 function mapPayload(key, record) {
   if (key === 'jobs') {
     return {
@@ -128,7 +132,7 @@ function mapPayload(key, record) {
 
 async function postRecord(key, record) {
   const endpoint = endpointMap[key];
-  if (!endpoint || record._synced || record._syncing) return record;
+  if (!endpoint || record._synced || record._syncing || isBlocked(record)) return record;
   const last = Number(record._lastSyncAttempt || 0);
   if (record._syncError && Date.now() - last < 30000) return record;
 
@@ -168,10 +172,11 @@ async function syncState() {
 }
 
 function renderBadge(state = loadState()) {
-  const pending = Object.keys(endpointMap).reduce((sum, key) => sum + (state[key] || []).filter((item) => !item._synced).length, 0);
+  const pending = Object.keys(endpointMap).reduce((sum, key) => sum + (state[key] || []).filter((item) => !item._synced && !isBlocked(item)).length, 0);
+  const blocked = Object.keys(endpointMap).reduce((sum, key) => sum + (state[key] || []).filter(isBlocked).length, 0);
   const synced = Object.keys(endpointMap).reduce((sum, key) => sum + (state[key] || []).filter((item) => item._synced).length, 0);
   let badge = document.getElementById(SYNC_BADGE_ID);
-  if (!pending && !synced) {
+  if (!pending && !synced && !blocked) {
     badge?.remove();
     return;
   }
@@ -181,7 +186,7 @@ function renderBadge(state = loadState()) {
     badge.style.cssText = 'position:fixed;left:18px;bottom:58px;z-index:99991;border:1px solid rgba(16,21,19,.09);border-radius:999px;padding:8px 11px;background:#fff;color:#111815;box-shadow:0 12px 28px rgba(16,21,19,.12);font:900 12px Inter,system-ui,sans-serif';
     document.body.appendChild(badge);
   }
-  badge.textContent = pending ? `${pending} pending backend sync` : `${synced} synced to backend`;
+  badge.textContent = blocked ? `${blocked} held for Command fix` : pending ? `${pending} pending backend sync` : `${synced} synced to backend`;
 }
 
 if (typeof window !== 'undefined') {
