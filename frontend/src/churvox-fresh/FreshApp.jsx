@@ -1,3 +1,3 @@
-import ChurvoxOSApp from "../churvox-os/ChurvoxOSApp";
+import ChurvoxOSProper from "../churvox-os/ChurvoxOSProper";
 
-export default ChurvoxOSApp;
+export default ChurvoxOSProper;
