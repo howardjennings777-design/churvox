@@ -1,0 +1,35 @@
+/* Final contrast override for washed-out OS pills/badges. */
+.churvoxOS .kicker,
+.churvoxOS .livePill,
+.churvoxOS .status,
+.churvoxOS .rulesStrip,
+.churvoxOS .rulesStrip span,
+.churvoxOS .flowBoard h2 span,
+.churvoxOS .queueStats span,
+.churvoxOS .clientMemory span,
+.churvoxOS .messagePrep span,
+.churvoxOS .teamMatrixMini p span,
+.churvoxOS .replyBoard article > span,
+.churvoxOS .planCards article > span,
+.churvoxOS .clientDossier::after,
+.churvoxOS .clientWorkBand span,
+.churvoxOS .clientWorkBand strong,
+.churvoxOS .osEyebrow {
+  color: #000 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.churvoxOS .kicker,
+.churvoxOS .livePill,
+.churvoxOS .status,
+.churvoxOS .flowBoard h2 span,
+.churvoxOS .queueStats span,
+.churvoxOS .clientMemory span,
+.churvoxOS .messagePrep span,
+.churvoxOS .teamMatrixMini p span,
+.churvoxOS .replyBoard article > span,
+.churvoxOS .planCards article > span {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(0, 0, 0, 0.18) !important;
+}
