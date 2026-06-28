@@ -1,0 +1,121 @@
+/* CHURVOX_JOBS_BOARD_FIX_20260628
+   Jobs is a clean dispatch board, not a Today box. */
+
+.workOS .lanePage {
+  display: grid !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+}
+
+.workOS .lanePage header {
+  display: block !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  padding: 16px !important;
+  overflow: visible !important;
+}
+
+.workOS .lanePage header span {
+  display: inline-flex !important;
+  width: fit-content !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+}
+
+.workOS .lanePage header h1 {
+  display: block !important;
+  max-width: 760px !important;
+  margin: 10px 0 8px !important;
+  overflow: visible !important;
+  color: var(--work-ink) !important;
+  font-size: clamp(34px, 5vw, 64px) !important;
+  line-height: .95 !important;
+  letter-spacing: 0 !important;
+  white-space: normal !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  word-break: normal !important;
+}
+
+.workOS .lanePage header p {
+  max-width: 680px !important;
+  margin: 0 !important;
+  color: var(--work-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.workOS .lanes {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(190px, 1fr)) !important;
+  gap: 10px !important;
+  overflow-x: auto !important;
+  padding-bottom: 8px !important;
+}
+
+.workOS .lanePage article {
+  min-width: 190px !important;
+  min-height: 430px !important;
+  max-height: 430px !important;
+  height: 430px !important;
+  overflow-y: auto !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  background: rgba(255, 253, 248, .96) !important;
+  box-shadow: none !important;
+  scrollbar-width: thin !important;
+}
+
+.workOS .lanePage article h3 {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  margin: -12px -12px 8px !important;
+  padding: 10px 12px !important;
+  border-bottom: 1px solid rgba(95, 33, 15, .14) !important;
+  background: #fff0e6 !important;
+  color: #5f210f !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+}
+
+.workOS .lanePage article p {
+  display: grid !important;
+  gap: 4px !important;
+  min-height: 0 !important;
+  margin: 7px 0 0 !important;
+  border-left: 3px solid var(--work-orange) !important;
+  border-radius: 7px !important;
+  padding: 8px !important;
+  background: #fff !important;
+}
+
+.workOS .lanePage article p:nth-of-type(n+7) {
+  display: none !important;
+}
+
+.workOS .lanePage article p strong {
+  color: var(--work-ink) !important;
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.workOS .lanePage article p span,
+.workOS .lanePage article p small {
+  color: var(--work-muted) !important;
+  font-size: 10.5px !important;
+  line-height: 1.25 !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.workOS .lanePage article button {
+  display: none !important;
+}
+
+@media (max-width: 1220px) {
+  .workOS .lanes {
+    grid-template-columns: repeat(5, 220px) !important;
+  }
+}
