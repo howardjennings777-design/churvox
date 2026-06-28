@@ -51,6 +51,8 @@ body.churvox-client-one-scroll .clientWorkbenchOS .clientWorkbenchMain {
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientWorkbenchShell {
+  grid-template-columns: 250px minmax(0, 1fr) !important;
+  gap: 10px !important;
   height: 100% !important;
   max-height: 100% !important;
 }
@@ -63,23 +65,36 @@ body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel {
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectoryHead {
   grid-template-columns: 1fr !important;
-  padding: 10px !important;
+  gap: 6px !important;
+  padding: 8px !important;
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectoryHead h1 {
   margin: 0 !important;
-  font-size: clamp(32px, 3vw, 46px) !important;
+  font-size: clamp(28px, 2.6vw, 38px) !important;
+  line-height: .9 !important;
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientDirectoryHead label {
   width: 100% !important;
-  min-height: 34px !important;
+  min-height: 32px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientSearchLine {
+  padding: 7px 9px !important;
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList {
   overflow-y: auto !important;
   overflow-x: hidden !important;
+  padding: 7px !important;
   scrollbar-width: thin !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList button {
+  height: 68px !important;
+  min-height: 68px !important;
+  padding: 7px 8px !important;
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList::-webkit-scrollbar {
@@ -95,36 +110,75 @@ body.churvox-client-one-scroll .clientWorkbenchOS .clientRecordList::-webkit-scr
   background: transparent !important;
 }
 
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel {
+  grid-template-rows: 82px minmax(0, 1fr) 46px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel header {
+  min-height: 0 !important;
+  height: 82px !important;
+  padding: 10px 14px !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel h2 {
+  margin: 0 0 4px !important;
+  font-size: clamp(32px, 4vw, 52px) !important;
+  line-height: .9 !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel p {
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+}
+
 body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid {
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  grid-auto-rows: minmax(92px, auto) !important;
+  grid-template-rows: 84px minmax(130px, 1fr) !important;
+  grid-auto-rows: 84px !important;
+  align-content: start !important;
   gap: 8px !important;
   padding: 9px !important;
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid label {
-  min-height: 92px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  gap: 7px !important;
+  height: 84px !important;
+  min-height: 0 !important;
+  padding: 9px !important;
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid label.wide {
   grid-column: span 2 !important;
-  min-height: 160px !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid input,
+body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid textarea {
+  min-height: 0 !important;
+  margin: 0 !important;
 }
 
 body.churvox-client-one-scroll .clientWorkbenchOS .clientFormGrid textarea {
-  min-height: 88px !important;
-  max-height: 96px !important;
+  flex: 1 !important;
+  height: 92px !important;
+  min-height: 92px !important;
+  max-height: 92px !important;
   resize: none !important;
 }
 
-body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel header {
-  min-height: 96px !important;
-  padding: 12px 15px !important;
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel footer {
+  min-height: 0 !important;
+  height: 46px !important;
+  padding: 6px 10px !important;
 }
 
-body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel footer {
-  min-height: 50px !important;
-  padding: 7px 11px !important;
+body.churvox-client-one-scroll .clientWorkbenchOS .clientEditPanel footer button {
+  min-height: 34px !important;
+  height: 34px !important;
 }
 
 @media (max-width: 1180px) {
