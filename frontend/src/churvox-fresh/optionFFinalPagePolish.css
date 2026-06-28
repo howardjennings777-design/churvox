@@ -206,6 +206,71 @@ body:has(.churvoxOptionC) {
   overflow-y: hidden !important;
 }
 
+.churvoxOptionC .command::before {
+  content: "Command handles: quote ready • invoice ready • message ready • client/job issue • timesheet/proof/slip issue" !important;
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  align-items: center !important;
+  min-height: 42px !important;
+  border: 1px solid rgba(16, 21, 19, 0.12) !important;
+  border-radius: 14px !important;
+  padding: 0 14px !important;
+  background: #fff !important;
+  color: #151c19 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  box-shadow: 0 12px 28px rgba(16, 21, 19, 0.05) !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(1) {
+  min-height: 300px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(2) {
+  min-height: 300px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(3) {
+  min-height: 182px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(2) .formGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(2)::after {
+  content: "Filled from job records, client memory, messages, time, photos and accounting state." !important;
+  display: block !important;
+  margin-top: 12px !important;
+  border-radius: 12px !important;
+  padding: 10px 12px !important;
+  background: #eef2ed !important;
+  color: #5e6b65 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+.churvoxOptionC .ownerActions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  align-items: center !important;
+}
+
+.churvoxOptionC .ownerActions .action,
+.churvoxOptionC .command .cocPanel:nth-child(3) .action {
+  min-width: 84px !important;
+  margin-right: 0 !important;
+  border-radius: 999px !important;
+  padding: 0 16px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(3) p {
+  clear: both !important;
+  margin-top: 12px !important;
+}
+
 @media (max-width: 1180px) {
   .churvoxOptionC .today .cocPanel:nth-child(1),
   .churvoxOptionC .today .cocPanel:nth-child(2),
@@ -243,5 +308,12 @@ body:has(.churvoxOptionC) {
 
   .churvoxOptionC .proofGrid {
     grid-template-columns: 1fr !important;
+  }
+
+  .churvoxOptionC .command::before {
+    align-items: flex-start !important;
+    height: auto !important;
+    padding: 10px 12px !important;
+    line-height: 1.35 !important;
   }
 }
