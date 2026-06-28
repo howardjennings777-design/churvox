@@ -1,5 +1,6 @@
 import "../runtime/churvoxRouteEvents";
 import "../runtime/churvoxClientOneScroll";
+import "../runtime/churvoxClientOpenFirst";
 import "../runtime/churvoxTodayLanguageGuard";
 import "../runtime/churvoxClientsWorkspace";
 import "../churvox-os/churvoxOSRealAdminV2.css";
