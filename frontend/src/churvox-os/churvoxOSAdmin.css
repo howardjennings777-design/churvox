@@ -1,0 +1,971 @@
+:root {
+  --admin-bg: #f7f3ec;
+  --admin-panel: #fffdf8;
+  --admin-ink: #171512;
+  --admin-muted: #6f665b;
+  --admin-line: rgba(23, 21, 18, 0.13);
+  --admin-dark: #20201d;
+  --admin-orange: #f05a28;
+  --admin-orange-dark: #cf4217;
+  --admin-green: #17864f;
+  --admin-shadow: 0 18px 44px rgba(37, 28, 18, 0.12);
+}
+
+.adminOS,
+.adminOS * {
+  box-sizing: border-box;
+}
+
+.adminOS button,
+.adminOS input,
+.adminOS textarea {
+  font: inherit;
+}
+
+.adminOS {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 222px minmax(0, 1fr) 270px;
+  background: linear-gradient(90deg, rgba(240,90,40,.045) 1px, transparent 1px), linear-gradient(180deg, rgba(240,90,40,.035) 1px, transparent 1px), var(--admin-bg);
+  background-size: 42px 42px;
+  color: var(--admin-ink);
+}
+
+.adminOS h1,
+.adminOS h2,
+.adminOS h3,
+.adminOS p {
+  margin-top: 0;
+}
+
+.adminOS button {
+  cursor: pointer;
+}
+
+.adminSidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  border-right: 1px solid var(--admin-line);
+  padding: 10px;
+  background: #fffaf2;
+  scrollbar-width: none;
+}
+
+.adminSidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--admin-panel);
+}
+
+.brand > b {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--admin-orange);
+  color: #fff;
+  font-weight: 950;
+}
+
+.brand strong,
+.brand em {
+  display: block;
+  font-style: normal;
+}
+
+.brand strong {
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.brand em {
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.adminSidebar nav {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 7px;
+  background: rgba(255, 253, 248, 0.74);
+}
+
+.adminSidebar nav p {
+  margin: 0 0 3px;
+  color: var(--admin-muted);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.adminSidebar nav button {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 7px;
+  padding: 6px 7px;
+  background: transparent;
+  color: var(--admin-ink);
+  text-align: left;
+}
+
+.adminSidebar nav button.active {
+  background: #ffe6d8;
+  box-shadow: inset 3px 0 0 var(--admin-orange);
+  color: #7f2a10;
+}
+
+.adminSidebar nav button span {
+  width: 30px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(23, 21, 18, 0.06);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.adminSidebar nav button b {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adminSidebar nav button em {
+  min-width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--admin-orange);
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.adminSidebar footer {
+  display: grid;
+  gap: 5px;
+  margin-top: auto;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 9px;
+  background: var(--admin-panel);
+}
+
+.adminSidebar footer b::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--admin-green);
+}
+
+.adminSidebar footer span {
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.adminWorkspace {
+  min-width: 0;
+  padding: 14px;
+}
+
+.adminTopbar {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.adminTopbar > div span,
+.adminTopbar > button span,
+.adminTopbar form label {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.adminTopbar > div strong {
+  display: block;
+  font-size: 25px;
+  font-weight: 950;
+}
+
+.adminTopbar form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 253, 248, 0.82);
+}
+
+.adminTopbar input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--admin-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.adminTopbar form button,
+.adminTopbar > button,
+.ownerDock button,
+.hubGrid button,
+.workTable button,
+.jobsAdmin footer button,
+.simpleAdmin aside button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 13px;
+  background: var(--admin-orange);
+  color: #fff;
+  font-weight: 950;
+}
+
+.adminTopbar > button {
+  border: 1px solid var(--admin-line);
+  background: var(--admin-panel);
+  color: var(--admin-ink);
+  text-align: left;
+}
+
+.ownerDock {
+  position: sticky;
+  top: 14px;
+  align-self: start;
+  display: grid;
+  gap: 10px;
+  margin: 14px 14px 0 0;
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--admin-dark);
+  color: #fff;
+  box-shadow: var(--admin-shadow);
+}
+
+.ownerDock span,
+.ownerDock small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.ownerDock strong {
+  font-size: 58px;
+  line-height: 0.9;
+}
+
+.ownerDock p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-weight: 900;
+}
+
+.commandDesk {
+  min-height: calc(100vh - 84px);
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.formQueue,
+.adminFormSlip,
+.ownerBoard,
+.mapPanelAdmin,
+.workTable,
+.jobsAdmin > header,
+.jobsAdmin > div article,
+.jobsAdmin footer,
+.workersAdmin > article,
+.workersAdmin aside,
+.clientsAdmin aside,
+.clientsAdmin article,
+.simpleAdmin header,
+.simpleAdmin > div article,
+.simpleAdmin aside,
+.controlAdmin header,
+.controlAdmin article,
+.plansAdmin header,
+.plansAdmin article {
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: var(--admin-shadow);
+}
+
+.formQueue {
+  max-height: calc(100vh - 84px);
+  overflow: auto;
+  padding: 16px;
+}
+
+.formQueue h1 {
+  margin-bottom: 10px;
+  font-size: 34px;
+  line-height: 0.98;
+}
+
+.queueStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.queueStats b,
+.queueStats span {
+  border-radius: 999px;
+  padding: 7px 9px;
+  background: rgba(23, 21, 18, 0.07);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.queueStats b {
+  background: var(--admin-dark);
+  color: #fff;
+}
+
+.formQueue button {
+  width: 100%;
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  border: 1px solid var(--admin-line);
+  border-left: 4px solid rgba(23, 21, 18, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--admin-ink);
+  text-align: left;
+}
+
+.formQueue button.active {
+  border-left-color: var(--admin-orange);
+  background: var(--admin-dark);
+  color: #fff;
+}
+
+.formQueue small {
+  color: var(--admin-orange-dark);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.formQueue button.active small,
+.formQueue button.active span,
+.formQueue button.active em {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.formQueue b {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.formQueue span {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.formQueue em {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(240, 90, 40, 0.12);
+  color: #5f210f;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.adminFormSlip {
+  display: flex;
+  min-height: calc(100vh - 84px);
+  flex-direction: column;
+  overflow: hidden;
+  padding: 18px;
+}
+
+.adminFormSlip header {
+  border-bottom: 1px solid var(--admin-line);
+  padding-bottom: 14px;
+}
+
+.adminFormSlip header span,
+.hubGrid header span,
+.jobsAdmin header span,
+.simpleAdmin header span,
+.controlAdmin header span,
+.plansAdmin header span {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid rgba(240, 90, 40, 0.24);
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(240, 90, 40, 0.09);
+  color: #5f210f;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.adminFormSlip h2 {
+  margin: 12px 0 8px;
+  font-size: clamp(38px, 5vw, 66px);
+  line-height: 0.94;
+}
+
+.adminFormSlip p {
+  margin-bottom: 0;
+  color: var(--admin-muted);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.actualForm {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 3px 14px 0;
+}
+
+.actualForm label {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.actualForm label.wide {
+  grid-column: 1 / -1;
+}
+
+.actualForm label span {
+  color: #5f210f;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.actualForm input,
+.actualForm textarea {
+  width: 100%;
+  border: 1px solid rgba(23, 21, 18, 0.14);
+  border-radius: 8px;
+  padding: 11px;
+  background: #fffaf2;
+  color: var(--admin-ink);
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.actualForm textarea {
+  min-height: 118px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.adminFormSlip footer {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr;
+  gap: 10px;
+  border-top: 1px solid var(--admin-line);
+  padding-top: 14px;
+  background: var(--admin-panel);
+}
+
+.adminFormSlip footer button {
+  min-height: 54px;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.adminFormSlip footer button:first-child {
+  background: var(--admin-orange);
+  box-shadow: 0 14px 30px rgba(240, 90, 40, 0.24);
+}
+
+.adminFormSlip footer button:nth-child(2) {
+  background: var(--admin-dark);
+}
+
+.adminFormSlip footer button:nth-child(3) {
+  background: rgba(23, 21, 18, 0.09);
+  color: var(--admin-ink);
+}
+
+.hubGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 12px;
+}
+
+.ownerBoard,
+.mapPanelAdmin,
+.workTable,
+.jobsAdmin > header,
+.jobsAdmin footer,
+.workersAdmin > article,
+.workersAdmin aside,
+.clientsAdmin aside,
+.clientsAdmin article,
+.simpleAdmin header,
+.simpleAdmin aside,
+.controlAdmin header,
+.plansAdmin header {
+  padding: 16px;
+}
+
+.ownerBoard h1,
+.jobsAdmin h1,
+.simpleAdmin h1,
+.controlAdmin h1,
+.plansAdmin h1,
+.workersAdmin h1,
+.clientsAdmin h1 {
+  margin: 10px 0;
+  font-size: clamp(34px, 4vw, 58px);
+  line-height: 0.96;
+}
+
+.threeCols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.threeCols section,
+.workTable table,
+.clientsAdmin article div,
+.plansAdmin article {
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.threeCols h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.threeCols h3 b {
+  color: var(--admin-orange-dark);
+}
+
+.threeCols p,
+.jobsAdmin article p,
+.workersAdmin aside p,
+.simpleAdmin article p {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  border-left: 4px solid var(--admin-orange);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 250, 242, 0.88);
+}
+
+.threeCols p span,
+.jobsAdmin article p span,
+.workersAdmin aside span,
+.workersAdmin aside small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.mapPanelAdmin {
+  display: grid;
+  gap: 10px;
+}
+
+.adminMap {
+  position: relative;
+  min-height: 470px;
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  background: #eee5d8;
+}
+
+.adminMap iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  filter: saturate(0.86) contrast(0.96);
+}
+
+.adminMap button {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 3px;
+  width: 150px;
+  border: 1px solid rgba(23, 21, 18, 0.18);
+  border-radius: 8px;
+  padding: 9px;
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 16px 34px rgba(37, 28, 18, 0.18);
+  text-align: left;
+}
+
+.adminMap button b {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--admin-orange);
+  color: #fff;
+}
+
+.adminMap div {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  z-index: 2;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 13px;
+  background: rgba(255, 253, 248, 0.94);
+}
+
+.adminMap div b,
+.adminMap div span {
+  display: block;
+}
+
+.adminMap div span,
+.workTable td,
+.simpleAdmin p,
+.controlAdmin p,
+.clientsAdmin span,
+.clientsAdmin p,
+.jobsAdmin header p,
+.simpleAdmin header p,
+.controlAdmin header p,
+.plansAdmin header p {
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.workTable {
+  grid-column: 1 / -1;
+  padding: 16px;
+}
+
+.workTable header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.workTable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.workTable th,
+.workTable td {
+  border-bottom: 1px solid var(--admin-line);
+  padding: 10px 8px;
+  text-align: left;
+}
+
+.workTable th {
+  color: var(--admin-muted);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.jobsAdmin,
+.simpleAdmin,
+.controlAdmin,
+.plansAdmin {
+  display: grid;
+  gap: 12px;
+}
+
+.jobsAdmin > div,
+.simpleAdmin > div,
+.controlAdmin > div,
+.plansAdmin > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.jobsAdmin > div {
+  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  overflow-x: auto;
+}
+
+.jobsAdmin article,
+.simpleAdmin article,
+.controlAdmin article,
+.plansAdmin article {
+  min-height: 210px;
+  padding: 14px;
+}
+
+.jobsAdmin footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workersAdmin {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 12px;
+}
+
+.workersAdmin .adminMap {
+  min-height: 560px;
+}
+
+.clientsAdmin {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.clientsAdmin aside button {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  border: 1px solid var(--admin-line);
+  border-left: 4px solid rgba(23, 21, 18, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+  color: var(--admin-ink);
+  text-align: left;
+}
+
+.clientsAdmin aside button.active {
+  border-left-color: var(--admin-orange);
+  background: var(--admin-dark);
+  color: #fff;
+}
+
+.clientsAdmin article h2 {
+  font-size: clamp(44px, 7vw, 92px);
+  line-height: 0.92;
+}
+
+.clientsAdmin article div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.clientsAdmin article p {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.simpleAdmin {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.simpleAdmin header {
+  grid-column: 1 / -1;
+}
+
+.simpleAdmin > div {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.simpleAdmin article span,
+.plansAdmin article span {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(240, 90, 40, 0.11);
+  color: #5f210f;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.simpleAdmin aside {
+  align-self: start;
+}
+
+.plansAdmin article.popular {
+  background: var(--admin-dark);
+  color: #fff;
+}
+
+.plansAdmin article h2 {
+  font-size: 34px;
+}
+
+.plansAdmin article b {
+  color: var(--admin-orange-dark);
+}
+
+.emptyBox {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  padding: 13px;
+  background: rgba(255, 253, 248, 0.78);
+}
+
+.emptyBox b {
+  color: var(--admin-ink);
+}
+
+.emptyBox span {
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+@media (max-width: 1380px) {
+  .adminOS {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .ownerDock {
+    grid-column: 2;
+    position: static;
+    margin: 0 14px 14px;
+  }
+}
+
+@media (max-width: 1120px) {
+  .adminOS,
+  .commandDesk,
+  .hubGrid,
+  .workersAdmin,
+  .clientsAdmin,
+  .simpleAdmin {
+    grid-template-columns: 1fr;
+  }
+
+  .adminSidebar {
+    position: relative;
+    height: auto;
+  }
+
+  .adminSidebar nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adminSidebar nav p {
+    grid-column: 1 / -1;
+  }
+
+  .ownerDock {
+    grid-column: auto;
+  }
+
+  .formQueue,
+  .adminFormSlip {
+    max-height: none;
+    min-height: auto;
+  }
+
+  .threeCols,
+  .jobsAdmin > div,
+  .simpleAdmin > div,
+  .controlAdmin > div,
+  .plansAdmin > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .adminWorkspace {
+    padding: 10px;
+  }
+
+  .adminTopbar,
+  .adminTopbar form,
+  .actualForm,
+  .adminFormSlip footer,
+  .threeCols,
+  .clientsAdmin article div,
+  .simpleAdmin > div,
+  .controlAdmin > div,
+  .plansAdmin > div {
+    grid-template-columns: 1fr;
+  }
+
+  .workTable {
+    overflow-x: auto;
+  }
+
+  .workTable table {
+    min-width: 720px;
+  }
+}
