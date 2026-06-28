@@ -33,6 +33,7 @@ import './churvox-fresh/optionFImportExportRuntime';
 import './churvox-fresh/optionFXeroActionsRuntime';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFOperationsRuntime';
+import './churvox-fresh/optionFAdminBrainRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
