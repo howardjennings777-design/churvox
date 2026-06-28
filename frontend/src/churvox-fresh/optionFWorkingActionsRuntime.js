@@ -376,8 +376,6 @@ function handleClick(event) {
   if (text.includes('add job')) { event.preventDefault(); openAddJob(); return; }
   if (text.includes('add client')) { event.preventDefault(); openAddClient(); return; }
   if (text.includes('new quote')) { event.preventDefault(); openAddQuote(); return; }
-  if (text.includes('csv import')) { toast('CSV import ready', 'Next step: wire this to the real upload endpoint.'); recordAudit('CSV import clicked', currentPage()); return; }
-  if (text === 'export') { toast('Export prepared', 'Export action saved. Backend file export is the next wiring step.'); recordAudit('Export clicked', currentPage()); return; }
   if (text.includes('new ticket')) { event.preventDefault(); openMessage(); return; }
 }
 
