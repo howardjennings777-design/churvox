@@ -34,6 +34,11 @@ function lower(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function isBlank(value) {
+  const raw = lower(value);
+  return !raw || raw === "none" || raw === "not set" || raw === "undefined" || raw === "null" || raw === "no customer";
+}
+
 function userKeys(user) {
   return [
     user?.id,
@@ -158,6 +163,24 @@ function jobSortValue(job) {
   const date = dateOf(job) || "9999-12-31";
   const time = timeOf(job) || "99:99";
   return `${date} ${time}`;
+}
+
+function workerMissingFields(job) {
+  const missing = [];
+  if (job?._blockedByCommand || job?._doNotShowToday || job?._commandMissing) {
+    const stored = String(job?._commandMissing || "").split(",").map((item) => item.trim()).filter(Boolean);
+    missing.push(...stored);
+  }
+  if (isBlank(jobTitle(job)) || jobTitle(job) === "Untitled job") missing.push("job title");
+  if (isBlank(clientName(job))) missing.push("customer");
+  if (isBlank(dateOf(job))) missing.push("date");
+  if (isBlank(timeOf(job))) missing.push("time");
+  if (isBlank(addressOf(job))) missing.push("address");
+  return [...new Set(missing)];
+}
+
+function readyForWorker(job) {
+  return !isComplete(job) && workerMissingFields(job).length === 0;
 }
 
 function nextJobLabel(job) {
@@ -292,25 +315,27 @@ function WorkerJobCard({ job }) {
   const status = statusOf(job);
   const instructions = instructionsOf(job);
   const sentBack = isSentBack(job);
+  const aiFilled = Array.isArray(job?._aiFilled) ? job._aiFilled.join(", ") : "";
 
   return (
     <article className={`wc-job-card ${isComplete(job) ? "done" : ""} ${isActive(job) ? "active" : ""} ${sentBack ? "need" : ""}`}>
       <Link to={`/worker/jobs/${id}`} className="wc-job-main">
         <div className="wc-job-top">
           <span>{sentBack ? "Owner needs fix" : isComplete(job) ? "Finished" : isActive(job) ? "Open job" : status.replaceAll("_", " ")}</span>
-          <small>{timeOf(job) || "No time"}</small>
+          <small>{timeOf(job)}</small>
         </div>
 
         <h2>{jobTitle(job)}</h2>
         <p>{clientName(job)}</p>
 
-        {address ? <small><MapPin size={14} /> {address}</small> : <small><MapPin size={14} /> No address added</small>}
+        <small><MapPin size={14} /> {address}</small>
         {instructions ? <em>{String(instructions).slice(0, 120)}</em> : <em>No special instructions added.</em>}
+        {aiFilled ? <em>Churvox filled: {aiFilled}</em> : null}
       </Link>
 
       <div className="wc-job-actions">
         <Link to={`/worker/jobs/${id}`} className="primary">Open job</Link>
-        {address ? <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer"><Navigation size={15} /> Directions</a> : null}
+        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer"><Navigation size={15} /> Directions</a>
       </div>
     </article>
   );
@@ -483,28 +508,30 @@ export default function WorkerJobsPage() {
   }, [gpsTracking, shiftStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const today = localDateKey();
-  const todayJobs = useMemo(() => jobs.filter((job) => dateOf(job) === today), [jobs, today]);
-  const openJobs = jobs.filter((job) => !isComplete(job));
-  const activeJobs = jobs.filter(isActive);
+  const readyJobs = useMemo(() => jobs.filter(readyForWorker), [jobs]);
+  const heldJobs = useMemo(() => jobs.filter((job) => !isComplete(job) && !readyForWorker(job)), [jobs]);
+  const todayJobs = useMemo(() => readyJobs.filter((job) => dateOf(job) === today), [readyJobs, today]);
+  const upcomingJobs = useMemo(() => readyJobs.filter((job) => dateOf(job) && dateOf(job) !== today), [readyJobs, today]);
+  const activeJobs = readyJobs.filter(isActive);
   const visibleJobs = useMemo(() => {
-    const base = todayJobs.length ? todayJobs : openJobs;
+    const base = todayJobs.length ? todayJobs : upcomingJobs;
     return [...base].sort((a, b) => {
       if (isSentBack(a) !== isSentBack(b)) return isSentBack(a) ? -1 : 1;
       if (isActive(a) !== isActive(b)) return isActive(a) ? -1 : 1;
       return jobSortValue(a).localeCompare(jobSortValue(b));
     });
-  }, [todayJobs, openJobs]);
+  }, [todayJobs, upcomingJobs]);
   const doneToday = jobs.filter((job) => isComplete(job) && dateOf(job) === today).length;
-  const sentBackJobs = jobs.filter(isSentBack);
-  const nextJob = sentBackJobs[0] || activeJobs[0] || visibleJobs.find((job) => !isComplete(job)) || null;
+  const sentBackJobs = readyJobs.filter(isSentBack);
+  const nextJob = sentBackJobs[0] || activeJobs[0] || todayJobs.find((job) => !isComplete(job)) || upcomingJobs[0] || null;
   const nextAddress = nextJob ? addressOf(nextJob) : "";
   const nextInstructions = nextJob ? instructionsOf(nextJob) : "";
   const clockedIn = shiftStatus === "clocked_in";
   const readySteps = [
     { label: "Clock", detail: clockedIn ? "Clocked in" : "Clock in first", done: clockedIn },
     { label: "GPS", detail: gpsTracking ? "GPS on" : "GPS starts with clock in", done: gpsTracking },
-    { label: "Next job", detail: nextJob ? jobTitle(nextJob) : "No job ready", done: Boolean(nextJob) },
-    { label: "Proof", detail: "Photo or message before finish", done: false },
+    { label: "Next job", detail: nextJob ? jobTitle(nextJob) : heldJobs.length ? "Boss/admin fixing details" : "No job ready", done: Boolean(nextJob) },
+    { label: "Proof", detail: "Photo and message before finish", done: false },
   ];
 
   return (
@@ -525,7 +552,7 @@ export default function WorkerJobsPage() {
         <section className="wc-welcome wc-welcome-compact">
           <span>Worker app</span>
           <h1>Today</h1>
-          <p>Clock in, open the next job, follow instructions, add proof, then send it to the boss.</p>
+          <p>Clock in, open the next ready job, follow instructions, add proof, then send it to the boss.</p>
         </section>
 
         <section className="wc-clock-card">
@@ -549,9 +576,9 @@ export default function WorkerJobsPage() {
         <section className={`wc-next-job ${nextJob ? "ready" : "empty"}`} id="today">
           <div className="wc-next-job-copy">
             <span>{nextJobLabel(nextJob)}</span>
-            <h2>{nextJob ? jobTitle(nextJob) : "No job assigned yet"}</h2>
-            <p>{nextJob ? clientName(nextJob) : "Refresh or message the boss if you are expecting work."}</p>
-            {nextAddress ? <small><MapPin size={15} /> {nextAddress}</small> : <small><MapPin size={15} /> No address added</small>}
+            <h2>{nextJob ? jobTitle(nextJob) : "No ready job assigned"}</h2>
+            <p>{nextJob ? clientName(nextJob) : heldJobs.length ? "Churvox is holding incomplete jobs until the boss/admin fixes the missing details." : "Refresh or message the boss if you are expecting work."}</p>
+            {nextAddress ? <small><MapPin size={15} /> {nextAddress}</small> : null}
             {nextInstructions ? <em>{String(nextInstructions).slice(0, 150)}</em> : null}
           </div>
           <div className="wc-next-job-actions">
@@ -560,6 +587,17 @@ export default function WorkerJobsPage() {
             <button type="button" onClick={() => setShowContactOffice(true)}><MessageCircle size={16} /> Message boss</button>
           </div>
         </section>
+
+        {heldJobs.length ? (
+          <section className="wc-alert need">
+            <AlertTriangle />
+            <div>
+              <b>{heldJobs.length} job{heldJobs.length === 1 ? "" : "s"} not ready for worker app</b>
+              <span>Missing {heldJobs.slice(0, 3).map((job) => workerMissingFields(job).join("/")).join(", ")}. Churvox keeps these out of Today until Command/admin fixes them.</span>
+              <button type="button" className="wc-mini-action" onClick={() => setShowContactOffice(true)}>Ask boss</button>
+            </div>
+          </section>
+        ) : null}
 
         <section className="wc-ready-steps" aria-label="Worker readiness checklist">
           {readySteps.map((step) => (
@@ -606,8 +644,8 @@ export default function WorkerJobsPage() {
         </section>
 
         <section className="wc-stats">
-          <article><span>Today</span><b>{todayJobs.length || visibleJobs.length}</b></article>
-          <article><span>Open</span><b>{openJobs.length}</b></article>
+          <article><span>Today ready</span><b>{todayJobs.length}</b></article>
+          <article><span>Held</span><b>{heldJobs.length}</b></article>
           <article><span>Done</span><b>{doneToday}</b></article>
         </section>
 
@@ -635,11 +673,11 @@ export default function WorkerJobsPage() {
           </section>
         ) : null}
 
-        {!loading && !error && !jobs.length ? (
+        {!loading && !error && !readyJobs.length ? (
           <section className="wc-empty">
             <Briefcase />
-            <b>No jobs assigned yet</b>
-            <span>Refresh or message the boss if you are expecting work.</span>
+            <b>No ready jobs assigned</b>
+            <span>{heldJobs.length ? "Some jobs exist, but Churvox is holding them until missing details are fixed." : "Refresh or message the boss if you are expecting work."}</span>
             <button type="button" onClick={fetchJobs}>Refresh jobs</button>
             <button type="button" onClick={() => setShowContactOffice(true)}>Message boss</button>
           </section>
@@ -648,7 +686,7 @@ export default function WorkerJobsPage() {
         <section className="wc-list" id="jobs">
           <div className="wc-section-head">
             <span>Job list</span>
-            <h2>{todayJobs.length ? "Today’s jobs" : "Open jobs"}</h2>
+            <h2>{todayJobs.length ? "Today’s ready jobs" : "Upcoming ready jobs"}</h2>
           </div>
 
           {!loading && !error ? visibleJobs.map((job) => (
