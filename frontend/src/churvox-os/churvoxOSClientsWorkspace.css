@@ -1,0 +1,286 @@
+/* CHURVOX_CLIENTS_WORKSPACE_20260628 */
+
+.workOS .clientsPage {
+  min-height: calc(100vh - 82px) !important;
+  padding: 0 !important;
+}
+
+.cvClientWorkspace {
+  display: grid;
+  grid-template-columns: 285px minmax(420px, 1fr) 260px;
+  gap: 14px;
+  min-height: calc(100vh - 102px);
+  width: 100%;
+}
+
+.cvClientSide,
+.cvClientMain,
+.cvClientHistory {
+  background: rgba(255, 255, 255, .82);
+  border: 1px solid rgba(20, 24, 31, .1);
+  border-radius: 14px;
+  box-shadow: 0 18px 45px rgba(20, 24, 31, .05);
+}
+
+.cvClientSide {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cvClientSide > span,
+.cvClientForm header span {
+  width: max-content;
+  border: 1px solid rgba(20, 24, 31, .16);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #111827;
+  background: #fff;
+}
+
+.cvClientSide h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(34px, 4.8vw, 58px);
+  line-height: .88;
+  letter-spacing: -.055em;
+  color: #111827;
+}
+
+.cvClientControls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cvClientControls button,
+.cvImport,
+.cvClientForm footer button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-height: 38px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.cvClientControls button:first-child,
+.cvClientForm footer button:first-child {
+  background: #ef4b35;
+  color: #fff;
+}
+
+.cvClientControls button:last-child,
+.cvImport,
+.cvClientForm footer button:last-child {
+  background: #16191f;
+  color: #fff;
+  text-align: center;
+}
+
+.cvImport input {
+  display: none;
+}
+
+.cvClientList {
+  display: grid;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.cvClientList button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(20, 24, 31, .1);
+  background: rgba(255, 255, 255, .74);
+  border-radius: 12px;
+  padding: 12px;
+  min-height: 54px;
+  display: grid;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.cvClientList button.active {
+  background: #1b1d23;
+  border-color: #ef4b35;
+  color: #fff;
+}
+
+.cvClientList b {
+  font-size: 14px;
+  font-weight: 950;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cvClientList span {
+  font-size: 12px;
+  font-weight: 750;
+  color: inherit;
+  opacity: .75;
+}
+
+.cvClientMain {
+  padding: 16px;
+  min-width: 0;
+}
+
+.cvClientForm {
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.cvClientForm header,
+.cvClientForm .wide,
+.cvClientForm footer {
+  grid-column: 1 / -1;
+}
+
+.cvClientForm header {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 2px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(239, 75, 53, .1), rgba(255, 255, 255, .8));
+  border: 1px solid rgba(239, 75, 53, .18);
+  border-radius: 14px;
+}
+
+.cvClientForm h2 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: .95;
+  letter-spacing: -.045em;
+  color: #111827;
+}
+
+.cvClientForm p {
+  margin: 0;
+  color: #3c414d;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.cvClientForm label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cvClientForm label span {
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  color: #5b616d;
+}
+
+.cvClientForm input,
+.cvClientForm textarea {
+  width: 100%;
+  border: 1px solid rgba(20, 24, 31, .13);
+  border-radius: 12px;
+  background: #fff;
+  color: #111827;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 750;
+  outline: none;
+}
+
+.cvClientForm textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.cvClientForm input:focus,
+.cvClientForm textarea:focus {
+  border-color: rgba(239, 75, 53, .75);
+  box-shadow: 0 0 0 3px rgba(239, 75, 53, .12);
+}
+
+.cvClientForm footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  padding-top: 4px;
+}
+
+.cvClientHistory {
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.cvClientHistory h3 {
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: #1b1d23;
+  color: #fff;
+  font-size: 14px;
+}
+
+.cvClientHistory p,
+.cvStatus {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  border-left: 3px solid #ef4b35;
+  background: rgba(255, 255, 255, .72);
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 12px;
+  color: #2f3440;
+}
+
+.cvClientHistory b,
+.cvStatus {
+  color: #111827;
+  font-weight: 950;
+}
+
+.cvClientHistory span {
+  font-weight: 750;
+  color: #4b5160;
+}
+
+.cvClientLoading,
+.cvEmpty {
+  border: 1px dashed rgba(20, 24, 31, .18);
+  border-radius: 12px;
+  padding: 14px;
+  color: #333945;
+  background: rgba(255, 255, 255, .72);
+  font-weight: 850;
+}
+
+@media (max-width: 1180px) {
+  .cvClientWorkspace {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .cvClientHistory {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 820px) {
+  .cvClientWorkspace,
+  .cvClientForm {
+    grid-template-columns: 1fr;
+  }
+}
