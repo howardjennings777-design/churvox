@@ -1,0 +1,274 @@
+/* CHURVOX_TODAY_FIRST_20260628 */
+.workOS .todayPage {
+  display: grid;
+  gap: 12px;
+}
+
+.workOS .todayHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  border: 1px solid var(--work-line);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: var(--work-shadow);
+}
+
+.workOS .todayHero span {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid rgba(240, 90, 40, .24);
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(240, 90, 40, .09);
+  color: #5f210f;
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.workOS .todayHero h1 {
+  margin: 10px 0 6px;
+  font-size: clamp(42px, 7vw, 92px);
+  line-height: .9;
+}
+
+.workOS .todayHero p {
+  margin: 0;
+  color: var(--work-muted);
+  font-weight: 850;
+}
+
+.workOS .todayStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(74px, 1fr));
+  gap: 8px;
+}
+
+.workOS .todayStats b {
+  display: grid;
+  gap: 3px;
+  min-height: 82px;
+  align-content: center;
+  border: 1px solid var(--work-line);
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+  color: var(--work-ink);
+  font-size: 34px;
+  line-height: .9;
+}
+
+.workOS .todayStats span {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--work-muted);
+  font-size: 11px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.workOS .weekStrip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workOS .weekStrip button {
+  min-height: 68px;
+  border: 1px solid var(--work-line);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 253, 248, .9);
+  color: var(--work-ink);
+  text-align: left;
+}
+
+.workOS .weekStrip button.active {
+  background: var(--work-dark);
+  color: #fff;
+  box-shadow: inset 4px 0 0 var(--work-orange);
+}
+
+.workOS .weekStrip b,
+.workOS .weekStrip span {
+  display: block;
+}
+
+.workOS .weekStrip b {
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.workOS .weekStrip span {
+  margin-top: 5px;
+  font-size: 25px;
+  font-weight: 950;
+}
+
+.workOS .todayGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.35fr) minmax(230px, .8fr) minmax(260px, .9fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.workOS .todayGrid > article,
+.workOS .todayCommand {
+  border: 1px solid var(--work-line);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: var(--work-shadow);
+}
+
+.workOS .todayGrid article header,
+.workOS .todayCommand header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.workOS .todayGrid h2,
+.workOS .todayCommand h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.workOS .todayGrid header button,
+.workOS .todayCommand header button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--work-orange);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.workOS .todayJobs {
+  grid-row: span 2;
+}
+
+.workOS .todayJobs p,
+.workOS .workerDrawer p,
+.workOS .todayMessages p,
+.workOS .todayMoney p,
+.workOS .todayProblems p,
+.workOS .todayCommand p {
+  display: grid;
+  gap: 5px;
+  margin: 8px 0 0;
+  border-left: 4px solid var(--work-orange);
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+
+.workOS .todayJobs span,
+.workOS .todayJobs small,
+.workOS .workerDrawer span,
+.workOS .workerDrawer small,
+.workOS .todayMessages span,
+.workOS .todayMessages small,
+.workOS .todayMoney span,
+.workOS .todayMoney small,
+.workOS .todayProblems span,
+.workOS .todayProblems small,
+.workOS .todayCommand span {
+  color: var(--work-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.workOS .todayWorkers {
+  display: grid;
+  gap: 8px;
+}
+
+.workOS .todayWorkers header {
+  margin-bottom: 2px;
+}
+
+.workOS .todayWorkers > button {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--work-line);
+  border-left: 4px solid rgba(23, 21, 18, .16);
+  border-radius: 8px;
+  padding: 9px;
+  background: #fff;
+  color: var(--work-ink);
+  text-align: left;
+}
+
+.workOS .todayWorkers > button.active {
+  border-left-color: var(--work-orange);
+  background: var(--work-dark);
+  color: #fff;
+}
+
+.workOS .todayWorkers > button b {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  grid-row: span 2;
+  border-radius: 50%;
+  background: var(--work-orange);
+  color: #fff;
+  font-size: 12px;
+}
+
+.workOS .todayWorkers > button span,
+.workOS .todayWorkers > button small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workOS .todayWorkers > button small {
+  color: var(--work-muted);
+  font-size: 12px;
+}
+
+.workOS .todayWorkers > button.active small {
+  color: rgba(255,255,255,.74);
+}
+
+.workOS .todayMessages,
+.workOS .todayMoney,
+.workOS .todayProblems,
+.workOS .workerDrawer {
+  min-height: 260px;
+}
+
+@media (max-width: 1220px) {
+  .workOS .todayHero,
+  .workOS .todayGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .workOS .todayStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .workOS .weekStrip {
+    grid-template-columns: repeat(7, 92px);
+    overflow-x: auto;
+  }
+
+  .workOS .todayStats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
