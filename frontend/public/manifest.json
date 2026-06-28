@@ -1,16 +1,16 @@
 {
   "short_name": "Churvox",
-  "name": "Churvox — AI Operator Command Desk",
-  "description": "Churvox does the admin. You approve. Jobs, quotes, invoices, crew, payroll and MYOB for trade & service businesses.",
+  "name": "Churvox - Admin OS",
+  "description": "Churvox does the admin. The owner checks and approves. Jobs, workers, quotes, invoices, messages and safe accounting handoff for trade and service businesses.",
   "icons": [
     {
-      "src": "churvox-app-icon.svg?v=orange-command-check-20260614",
+      "src": "churvox-app-icon.svg?v=worker-app-redesign-20260629",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any maskable"
     },
     {
-      "src": "churvox-mark.svg?v=orange-command-check-20260614",
+      "src": "churvox-mark.svg?v=worker-app-redesign-20260629",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any maskable"
@@ -18,8 +18,8 @@
   ],
   "start_url": "/dashboard",
   "display": "standalone",
-  "theme_color": "#f97316",
-  "background_color": "#111820",
+  "theme_color": "#111820",
+  "background_color": "#fff8ed",
   "scope": "/",
   "categories": ["business", "productivity"]
 }
