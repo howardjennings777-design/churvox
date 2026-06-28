@@ -1,5 +1,4 @@
-/* CHURVOX_PUBLIC_AUTH_ADMIN_OS_20260628
-   Login and signup should feel like the same public product as the landing pages. */
+/* CHURVOX_PUBLIC_AUTH_MODERN_OS_20260629 */
 
 .cvPublicAuth,
 .cvPublicAuth * {
@@ -12,339 +11,288 @@
 }
 
 .cvPublicAuth {
-  min-height: 100vh !important;
-  overflow-x: clip !important;
-  padding: 0 !important;
+  min-height: 100vh;
+  overflow-x: clip;
+  color: #111318;
   background:
-    linear-gradient(90deg, rgba(21, 21, 21, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(21, 21, 21, 0.035) 1px, transparent 1px),
-    radial-gradient(circle at 14% 0%, rgba(233, 86, 63, 0.24), transparent 340px),
-    radial-gradient(circle at 88% 4%, rgba(255, 122, 69, 0.16), transparent 360px),
-    linear-gradient(180deg, #fffaf3 0%, #f6efe6 100%) !important;
-  background-size: 44px 44px, 44px 44px, auto, auto, auto !important;
-  color: #151515 !important;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-}
-
-.cvPublicAuth::before {
-  content: "" !important;
-  position: fixed !important;
-  inset: 0 !important;
-  background:
-    linear-gradient(90deg, rgba(233, 86, 63, 0.08), transparent 28%, rgba(32, 33, 36, 0.05)),
-    radial-gradient(circle at 50% 120%, rgba(32, 33, 36, 0.08), transparent 34%) !important;
-  pointer-events: none !important;
+    linear-gradient(90deg, rgba(17, 19, 24, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(17, 19, 24, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 12% 0%, rgba(240, 90, 40, 0.16), transparent 360px),
+    linear-gradient(180deg, #f9fafb 0%, #eef1f5 100%);
+  background-size: 36px 36px, 36px 36px, auto, auto;
 }
 
 .cvPublicAuth > * {
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-.cvPublicAuth .simpleNav {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  min-height: 72px !important;
-  padding: 12px clamp(18px, 4vw, 58px) !important;
-  border-bottom: 1px solid rgba(21, 21, 21, 0.14) !important;
-  background: rgba(255, 250, 243, 0.86) !important;
-  backdrop-filter: blur(18px) saturate(155%) !important;
-  box-shadow: 0 16px 40px rgba(21, 21, 21, 0.06) !important;
-}
-
-.cvPublicAuth .simpleBrand,
-.cvPublicAuth .simpleBrand b,
-.cvPublicAuth .simpleLinks a:not(.simplePrimary) {
-  color: #151515 !important;
-  -webkit-text-fill-color: #151515 !important;
-}
-
-.cvPublicAuth .simpleBrand small {
-  color: rgba(21, 21, 21, 0.58) !important;
-  -webkit-text-fill-color: rgba(21, 21, 21, 0.58) !important;
-}
-
-.cvPublicAuth .simpleLinks a,
-.cvPublicAuth .simplePrimary {
-  min-height: 42px !important;
-  border-radius: 8px !important;
-  padding: 0 16px !important;
-}
-
-.cvPublicAuth .simpleGhost {
-  background: rgba(255, 255, 255, 0.58) !important;
-  border: 1px solid rgba(21, 21, 21, 0.14) !important;
-  box-shadow: none !important;
-}
-
-.cvPublicAuth .simplePrimary {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-  background: linear-gradient(135deg, #e9563f, #d6402f) !important;
-  border: 1px solid rgba(146, 36, 26, 0.28) !important;
-  box-shadow: 0 14px 30px rgba(233, 86, 63, 0.26) !important;
+  position: relative;
+  z-index: 1;
 }
 
 .cvPublicAuthShell {
-  width: calc(100% - clamp(28px, 7vw, 116px)) !important;
-  max-width: 1180px !important;
-  margin: 0 auto !important;
-  min-height: calc(100vh - 72px) !important;
-  display: grid !important;
-  grid-template-columns: minmax(330px, 0.86fr) minmax(360px, 1fr) !important;
-  gap: 14px !important;
-  align-items: stretch !important;
-  padding: clamp(18px, 3vw, 42px) 0 !important;
+  width: calc(100% - 96px);
+  max-width: 1180px;
+  min-height: calc(100vh - 72px);
+  margin: 0 auto;
+  padding: 34px 0;
+  display: grid;
+  grid-template-columns: minmax(330px, 0.82fr) minmax(360px, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.cvPublicSignupShell {
+  grid-template-columns: minmax(460px, 1fr) minmax(340px, 0.62fr);
 }
 
 .cvPublicAuthCard,
 .cvPublicAuthPanel {
-  position: relative !important;
-  overflow: hidden !important;
-  border-radius: 8px !important;
-  border: 1px solid rgba(21, 21, 21, 0.14) !important;
-  background: rgba(255, 250, 243, 0.92) !important;
-  color: #151515 !important;
-  -webkit-text-fill-color: initial !important;
-  box-shadow: 0 30px 90px rgba(25, 20, 15, 0.18) !important;
-  backdrop-filter: blur(18px) !important;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(17, 19, 24, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  color: #111318;
+  box-shadow: 0 20px 60px rgba(17, 19, 24, 0.12);
+}
+
+.cvPublicAuthCard {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  padding: clamp(22px, 4vw, 42px);
 }
 
 .cvPublicAuthCard::before,
 .cvPublicAuthPanel::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 auto 0 0 !important;
-  width: 5px !important;
-  background: linear-gradient(180deg, #e9563f, #ff7a45) !important;
-}
-
-.cvPublicAuthCard {
-  display: grid !important;
-  align-content: center !important;
-  gap: 14px !important;
-  padding: clamp(24px, 4vw, 46px) !important;
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #f05a28, #c63e1d);
 }
 
 .cvPublicAuthPanel {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-end !important;
-  min-height: 560px !important;
-  padding: clamp(24px, 4vw, 46px) !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 560px;
+  padding: clamp(22px, 4vw, 42px);
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    #202124 !important;
-  background-size: 28px 28px, 28px 28px, auto !important;
-}
-
-.cvPublicAuthCard h1,
-.cvPublicAuthPanel h2 {
-  margin: 0 !important;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-  line-height: 0.92 !important;
-  letter-spacing: -0.07em !important;
-}
-
-.cvPublicAuthCard h1 {
-  color: #151515 !important;
-  -webkit-text-fill-color: #151515 !important;
-  font-size: clamp(46px, 5vw, 74px) !important;
-}
-
-.cvPublicAuthPanel h2 {
-  margin-bottom: 18px !important;
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-  font-size: clamp(40px, 5vw, 72px) !important;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, #171a20, #222731);
+  background-size: 28px 28px, 28px 28px, auto;
 }
 
 .cvPublicAuthKicker,
 .cvPublicAuthPanel p {
-  width: max-content !important;
-  max-width: 100% !important;
-  margin: 0 0 10px !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(233, 86, 63, 0.24) !important;
-  background: rgba(233, 86, 63, 0.14) !important;
-  color: #121212 !important;
-  -webkit-text-fill-color: #121212 !important;
-  padding: 8px 12px !important;
-  font-size: 10px !important;
-  font-weight: 1000 !important;
-  letter-spacing: 0.14em !important;
-  text-transform: uppercase !important;
+  width: max-content;
+  max-width: 100%;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #c63e1d;
+  background: rgba(240, 90, 40, 0.12);
+  border: 1px solid rgba(240, 90, 40, 0.2);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .cvPublicAuthPanel p {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-  background: rgba(255, 255, 255, 0.10) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.12);
+  margin-bottom: 14px;
+}
+
+.cvPublicAuthCard h1,
+.cvPublicAuthPanel h2 {
+  margin: 0;
+  font-weight: 950;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.cvPublicAuthCard h1 {
+  color: #111318;
+  font-size: clamp(42px, 5vw, 68px);
+}
+
+.cvPublicAuthPanel h2 {
+  color: #fff;
+  font-size: clamp(38px, 5vw, 66px);
+  margin-bottom: 18px;
 }
 
 .cvPublicAuthIntro,
 .cvPublicAuthBottom {
-  margin: 0 !important;
-  color: rgba(21, 21, 21, 0.68) !important;
-  -webkit-text-fill-color: rgba(21, 21, 21, 0.68) !important;
-  font-size: 16px !important;
-  line-height: 1.52 !important;
-  font-weight: 800 !important;
+  margin: 0;
+  color: #5d6572;
+  font-size: 16px;
+  font-weight: 780;
+  line-height: 1.52;
 }
 
 .cvPublicAuthBottom a {
-  color: #151515 !important;
-  -webkit-text-fill-color: #151515 !important;
-  font-weight: 1000 !important;
-  text-decoration: underline !important;
-  text-decoration-color: rgba(233, 86, 63, 0.48) !important;
-  text-underline-offset: 4px !important;
+  color: #111318;
+  font-weight: 950;
+  text-decoration: underline;
+  text-decoration-color: rgba(240, 90, 40, 0.44);
+  text-underline-offset: 4px;
+}
+
+.cvPublicFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .cvPublicAuthCard label {
-  display: grid !important;
-  gap: 7px !important;
-  color: #151515 !important;
-  -webkit-text-fill-color: #151515 !important;
-  font-size: 13px !important;
-  font-weight: 950 !important;
+  display: grid;
+  gap: 7px;
+  color: #111318;
+  font-size: 13px;
+  font-weight: 950;
 }
 
 .cvPublicAuthCard input,
 .cvPublicAuthCard select,
 .cvPublicNativeInput,
 .cvPublicAuth input {
-  width: 100% !important;
-  min-height: 52px !important;
-  border: 1px solid rgba(21, 21, 21, 0.16) !important;
-  border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.86) !important;
-  background-color: rgba(255, 255, 255, 0.86) !important;
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid rgba(17, 19, 24, 0.16);
+  border-radius: 8px;
+  background: #fff !important;
+  background-color: #fff !important;
   color: #000 !important;
   -webkit-text-fill-color: #000 !important;
   caret-color: #000 !important;
-  padding: 0 14px !important;
+  padding: 0 14px;
   font-size: 16px !important;
   font-weight: 850 !important;
-  outline: none !important;
-  box-shadow: none !important;
-  appearance: auto !important;
-  -webkit-appearance: auto !important;
+  outline: none;
+  box-shadow: none;
+  appearance: auto;
+  -webkit-appearance: auto;
 }
 
 .cvPublicAuthCard input::placeholder {
-  color: #64748b !important;
-  -webkit-text-fill-color: #64748b !important;
-  opacity: 1 !important;
+  color: #7a8493 !important;
+  -webkit-text-fill-color: #7a8493 !important;
+  opacity: 1;
 }
 
 .cvPublicAuthCard input:focus,
 .cvPublicAuthCard select:focus {
-  border-color: #e9563f !important;
-  box-shadow: 0 0 0 4px rgba(233, 86, 63, 0.14) !important;
+  border-color: #f05a28;
+  box-shadow: 0 0 0 4px rgba(240, 90, 40, 0.14);
 }
 
 .cvPublicAuth .password-row {
-  grid-template-columns: 1fr minmax(76px, auto) !important;
+  display: grid;
+  grid-template-columns: 1fr minmax(76px, auto);
+  gap: 10px;
 }
 
 .cvPublicAuthSubmit,
 .cvPublicAuthGhost {
-  min-height: 52px !important;
-  border-radius: 8px !important;
-  padding: 0 18px !important;
-  font-size: 15px !important;
-  font-weight: 1000 !important;
-  cursor: pointer !important;
+  min-height: 52px;
+  border-radius: 8px;
+  padding: 0 18px;
+  font-size: 15px;
+  font-weight: 950;
+  cursor: pointer;
 }
 
 .cvPublicAuthSubmit {
-  border: 1px solid rgba(146, 36, 26, 0.28) !important;
-  background: linear-gradient(135deg, #e9563f, #d6402f) !important;
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-  box-shadow: 0 14px 30px rgba(233, 86, 63, 0.22) !important;
+  border: 1px solid rgba(198, 62, 29, 0.35);
+  background: linear-gradient(135deg, #f05a28, #c63e1d);
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  box-shadow: 0 14px 28px rgba(240, 90, 40, 0.24);
 }
 
 .cvPublicAuthGhost {
-  border: 1px solid rgba(21, 21, 21, 0.14) !important;
-  background: rgba(255, 255, 255, 0.64) !important;
-  color: #151515 !important;
-  -webkit-text-fill-color: #151515 !important;
+  border: 1px solid rgba(17, 19, 24, 0.12);
+  background: #eef1f5;
+  color: #111318;
+  -webkit-text-fill-color: #111318;
 }
 
 .cvPublicAuthSubmit:disabled {
-  opacity: 0.70 !important;
-  cursor: wait !important;
+  opacity: 0.7 !important;
+  cursor: wait;
 }
 
 .cvPublicAuthError {
-  margin: 0 !important;
-  border: 1px solid rgba(185, 28, 28, 0.28) !important;
-  border-radius: 8px !important;
-  background: rgba(254, 226, 226, 0.86) !important;
-  color: #7f1d1d !important;
-  -webkit-text-fill-color: #7f1d1d !important;
-  padding: 12px 14px !important;
-  font-weight: 900 !important;
-  line-height: 1.45 !important;
+  margin: 0;
+  border: 1px solid rgba(185, 28, 28, 0.28);
+  border-radius: 8px;
+  background: rgba(254, 226, 226, 0.9);
+  color: #7f1d1d;
+  -webkit-text-fill-color: #7f1d1d;
+  padding: 12px 14px;
+  font-weight: 900;
+  line-height: 1.45;
 }
 
 .cvPublicAuthPanel ul {
-  margin: 0 !important;
-  padding: 0 !important;
-  display: grid !important;
-  gap: 10px !important;
-  list-style: none !important;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  list-style: none;
 }
 
 .cvPublicAuthPanel li {
-  min-height: 52px !important;
-  display: flex !important;
-  align-items: center !important;
-  border-radius: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: rgba(255, 255, 255, 0.82) !important;
-  -webkit-text-fill-color: rgba(255, 255, 255, 0.82) !important;
-  padding: 0 14px !important;
-  font-weight: 850 !important;
-  line-height: 1.35 !important;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+  padding: 0 14px;
+  font-weight: 850;
+  line-height: 1.35;
 }
 
-@media (max-width: 900px) {
-  .cvPublicAuthShell {
-    grid-template-columns: 1fr !important;
-    min-height: auto !important;
+@media (max-width: 980px) {
+  .cvPublicAuthShell,
+  .cvPublicSignupShell {
+    grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .cvPublicAuthPanel {
-    min-height: 320px !important;
-    order: -1 !important;
+    min-height: 320px;
+    order: -1;
   }
 }
 
-@media (max-width: 620px) {
-  .cvPublicAuth .simpleNav {
-    padding: 12px 14px !important;
-    min-height: 70px !important;
-  }
-
+@media (max-width: 680px) {
   .cvPublicAuthShell {
-    width: calc(100% - 28px) !important;
-    padding: 16px 0 28px !important;
+    width: calc(100% - 28px);
+    padding: 16px 0 28px;
   }
 
   .cvPublicAuthCard,
   .cvPublicAuthPanel {
-    padding: 20px !important;
+    padding: 20px;
   }
 
   .cvPublicAuthCard h1,
   .cvPublicAuthPanel h2 {
-    font-size: clamp(36px, 12vw, 54px) !important;
+    font-size: clamp(34px, 11vw, 50px);
+  }
+
+  .cvPublicFormGrid,
+  .cvPublicAuth .password-row {
+    grid-template-columns: 1fr;
   }
 }
