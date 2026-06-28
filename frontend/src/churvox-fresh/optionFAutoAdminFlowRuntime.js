@@ -53,6 +53,10 @@ function keyFor(type, record) {
   return `${type}:${text(record, ['id', '_backendId', 'title', 'Job name', 'number', 'Invoice', 'subject', 'name'])}`.toLowerCase();
 }
 
+function jobScheduleIssueKey(jobId) {
+  return `jobs:${jobId}:assigned worker|date|time`.toLowerCase();
+}
+
 function addCommand(state, opState, flowState, flowKey, item) {
   if (flowState.created[flowKey]) return false;
   const payload = {
@@ -104,6 +108,9 @@ function runFlows() {
         title: text(job, ['title', 'Job name']) || 'Unscheduled job',
         client: text(job, ['client', 'Client']) || 'Not set',
         owner: 'Edit',
+        sourceType: 'jobs',
+        sourceId: text(job, ['id']),
+        issueKey: job._commandIssueKey || `jobs:${text(job, ['id']) || text(job, ['title', 'Job name'])}:date|time`.toLowerCase(),
         filled: 'Job cannot appear on Today until date and time are set.',
         evidence: 'Churvox held this from Today automatically.',
         check: 'Add date and time, then approve in Command.',
@@ -117,17 +124,28 @@ function runFlows() {
     if (/accepted/i.test(status)) {
       const title = text(quote, ['title', 'Quote']) || 'Accepted quote';
       const client = text(quote, ['client', 'Client']);
-      const jobExists = (state.jobs || []).some((job) => text(job, ['title', 'Job name']).toLowerCase() === title.toLowerCase() && text(job, ['client', 'Client']).toLowerCase() === client.toLowerCase());
+      let jobId = '';
+      const jobExists = (state.jobs || []).some((job) => {
+        const match = text(job, ['title', 'Job name']).toLowerCase() === title.toLowerCase() && text(job, ['client', 'Client']).toLowerCase() === client.toLowerCase();
+        if (match) jobId = text(job, ['id']);
+        return match;
+      });
       if (!jobExists) {
-        state.jobs = [{ id: `quote-job-${Date.now()}`, title, client, price: amount(quote), service: text(quote, ['scope', 'Scope']) || 'Accepted quote work', status: 'needs_schedule', billing: 'Quote accepted', recurring: 'One-off', notes: 'Created from accepted quote. Needs schedule before Today.', _blockedByCommand: true, _doNotShowToday: true, _commandMissing: 'date, time, assigned worker' }, ...(state.jobs || [])].slice(0, 80);
+        jobId = `quote-job-${Date.now()}`;
+        const issueKey = jobScheduleIssueKey(jobId);
+        state.jobs = [{ id: jobId, title, client, price: amount(quote), service: text(quote, ['scope', 'Scope']) || 'Accepted quote work', status: 'needs_schedule', billing: 'Quote accepted', recurring: 'One-off', notes: 'Created from accepted quote. Needs schedule before Today.', _blockedByCommand: true, _doNotShowToday: true, _commandMissing: 'assigned worker, date, time', _commandIssueKey: issueKey }, ...(state.jobs || [])].slice(0, 80);
         changed = true;
       }
+      const issueKey = jobId ? jobScheduleIssueKey(jobId) : `accepted-quote:${keyFor('quote', quote)}`;
       changed = addCommand(state, opState, flowState, `accepted-quote:${keyFor('quote', quote)}`, {
         type: 'Job fix needed',
         title,
         client,
         amount: amount(quote),
         owner: 'Edit',
+        sourceType: 'jobs',
+        sourceId: jobId,
+        issueKey,
         filled: 'Accepted quote has been prepared as a job shell.',
         evidence: text(quote, ['scope', 'Scope']) || 'Accepted quote record.',
         check: 'Add date, time and assigned worker before this job appears on Today.',
