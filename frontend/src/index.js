@@ -41,11 +41,11 @@ import './churvox-fresh/optionFNoLeakRuntime';
 import './churvox-fresh/optionFCommandCleanupRuntime';
 import './churvox-fresh/optionFTodayScheduleGuardRuntime';
 import './churvox-fresh/optionFAutoAdminFlowRuntime';
-import './churvox-fresh/optionFAiFillMissingRuntime';
 import './churvox-fresh/optionFDecisionEffectsRuntime';
 import './churvox-fresh/optionFRecordHydrationRuntime';
 import './churvox-fresh/optionFProblemSlipRuntime';
 import './churvox-fresh/optionFFullSiteWiringRuntime';
+import './churvox-fresh/optionFAiFillMissingRuntime';
 import './churvox-fresh/optionFDrawerPersistenceRuntime';
 
 if ('serviceWorker' in navigator) {
