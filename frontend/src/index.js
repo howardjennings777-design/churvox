@@ -39,6 +39,7 @@ import './churvox-fresh/optionFCommandCleanupRuntime';
 import './churvox-fresh/optionFTodayScheduleGuardRuntime';
 import './churvox-fresh/optionFAutoAdminFlowRuntime';
 import './churvox-fresh/optionFDecisionEffectsRuntime';
+import './churvox-fresh/optionFRecordHydrationRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
