@@ -74,6 +74,39 @@
   color: var(--os-muted);
 }
 
+.churvoxOS .emptyState b,
+.churvoxOS .emptyState span {
+  display: block;
+}
+
+.churvoxOS .emptyState b {
+  color: var(--os-ink);
+  margin-bottom: 4px;
+}
+
+.churvoxOS .fakeMap > .emptyState,
+.churvoxOS .mapCanvas > .emptyState,
+.churvoxOS .fieldMap .emptyState {
+  position: absolute;
+  inset: 18px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  min-height: 0;
+  margin: 0;
+  background: rgba(255, 252, 247, 0.84);
+  backdrop-filter: blur(2px);
+}
+
+.churvoxOS .jobMachine .emptyState,
+.churvoxOS .offerTrack .emptyState,
+.churvoxOS .replyBoard .emptyState,
+.churvoxOS .invoiceLedger .emptyState {
+  min-height: 88px;
+  display: grid;
+  align-content: center;
+}
+
 .churvoxOS .sourceState {
   display: inline-flex;
   width: fit-content;
