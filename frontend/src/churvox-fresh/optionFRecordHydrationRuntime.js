@@ -235,6 +235,10 @@ function updateCommand(ref, status) {
   setTimeout(render, 60);
 }
 
+function findBrainFixButton(ref) {
+  return [...document.querySelectorAll('[data-brain-fix]')].find((button) => button.dataset.brainFix === ref);
+}
+
 function handleClick(event) {
   const open = event.target.closest('[data-hydrate-open]');
   if (open) {
@@ -248,7 +252,7 @@ function handleClick(event) {
     event.preventDefault();
     event.stopPropagation();
     if (action.dataset.hydrateCommand === 'edit') {
-      const button = document.querySelector(`[data-brain-fix="${CSS.escape(action.dataset.ref)}"]`);
+      const button = findBrainFixButton(action.dataset.ref);
       if (button) button.click(); else toast('Edit from the Admin fix queue');
       return;
     }
