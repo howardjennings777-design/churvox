@@ -1,0 +1,162 @@
+/* CHURVOX_CLIENT_WORKBENCH_SCROLL_FIX_20260628 */
+
+html:has(.clientWorkbenchOS),
+body:has(.clientWorkbenchOS),
+#root:has(.clientWorkbenchOS) {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.clientWorkbenchOS {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.clientWorkbenchOS .clientWorkbenchMain {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 8px 10px 10px !important;
+}
+
+.clientWorkbenchOS .clientWorkbenchShell {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.clientWorkbenchOS .clientDirectory,
+.clientWorkbenchOS .clientEditPanel {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.clientWorkbenchOS .clientDirectoryHead {
+  padding: 10px !important;
+}
+
+.clientWorkbenchOS .clientDirectoryHead h1 {
+  font-size: clamp(30px, 2.7vw, 42px) !important;
+}
+
+.clientWorkbenchOS .clientRecordList {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.clientWorkbenchOS .clientEditPanel header {
+  min-height: 116px !important;
+  padding: 13px 16px !important;
+}
+
+.clientWorkbenchOS .clientEditPanel h2 {
+  margin: 8px 0 4px !important;
+  font-size: clamp(34px, 4.4vw, 62px) !important;
+}
+
+.clientWorkbenchOS .clientEditPanel p {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.clientWorkbenchOS .clientFormGrid {
+  overflow: hidden !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-content: stretch !important;
+  gap: 9px !important;
+  padding: 10px !important;
+}
+
+.clientWorkbenchOS .clientFormGrid label {
+  min-height: 96px !important;
+  padding: 10px !important;
+  color: #111111 !important;
+  background: #fffdf8 !important;
+}
+
+.clientWorkbenchOS .clientFormGrid label.wide {
+  grid-column: span 2 !important;
+  min-height: 176px !important;
+}
+
+.clientWorkbenchOS .clientFormGrid label,
+.clientWorkbenchOS .clientFormGrid label span,
+.clientWorkbenchOS .clientSearchLine,
+.clientWorkbenchOS .clientSearchLine b,
+.clientWorkbenchOS .clientSearchLine span,
+.clientWorkbenchOS .clientRecordList button,
+.clientWorkbenchOS .clientRecordList b,
+.clientWorkbenchOS .clientRecordList span,
+.clientWorkbenchOS .clientRecordList small {
+  color: #111111 !important;
+  opacity: 1 !important;
+}
+
+.clientWorkbenchOS .clientRecordList button.active,
+.clientWorkbenchOS .clientRecordList button.active b,
+.clientWorkbenchOS .clientRecordList button.active span,
+.clientWorkbenchOS .clientRecordList button.active small {
+  color: #ffffff !important;
+}
+
+.clientWorkbenchOS .clientFormGrid input,
+.clientWorkbenchOS .clientFormGrid textarea {
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+  opacity: 1 !important;
+  background: #ffffff !important;
+  border-color: rgba(17, 17, 17, 0.18) !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+}
+
+.clientWorkbenchOS .clientFormGrid input::placeholder,
+.clientWorkbenchOS .clientFormGrid textarea::placeholder {
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111 !important;
+  opacity: 0.72 !important;
+}
+
+.clientWorkbenchOS .clientFormGrid textarea {
+  min-height: 104px !important;
+  max-height: 118px !important;
+  resize: none !important;
+}
+
+.clientWorkbenchOS .clientEditPanel footer {
+  min-height: 54px !important;
+  padding: 8px 12px !important;
+}
+
+.clientWorkbenchOS .clientEditPanel footer button {
+  min-height: 38px !important;
+}
+
+@media (max-width: 1180px) {
+  .clientWorkbenchOS .clientFormGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow-y: auto !important;
+  }
+
+  .clientWorkbenchOS .clientFormGrid label.wide {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 980px) {
+  html:has(.clientWorkbenchOS),
+  body:has(.clientWorkbenchOS),
+  #root:has(.clientWorkbenchOS),
+  .clientWorkbenchOS,
+  .clientWorkbenchOS .clientWorkbenchMain {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
