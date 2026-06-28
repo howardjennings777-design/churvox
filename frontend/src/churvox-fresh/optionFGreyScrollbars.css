@@ -1,0 +1,36 @@
+.churvoxOptionC,
+.churvoxOptionC * {
+  scrollbar-width: thin !important;
+  scrollbar-color: #9ca3a0 #e6e9e5 !important;
+}
+
+.churvoxOptionC::-webkit-scrollbar,
+.churvoxOptionC *::-webkit-scrollbar {
+  width: 9px !important;
+  height: 9px !important;
+}
+
+.churvoxOptionC::-webkit-scrollbar-track,
+.churvoxOptionC *::-webkit-scrollbar-track {
+  background: #e6e9e5 !important;
+  border-radius: 999px !important;
+}
+
+.churvoxOptionC::-webkit-scrollbar-thumb,
+.churvoxOptionC *::-webkit-scrollbar-thumb {
+  background: #9ca3a0 !important;
+  border: 2px solid #e6e9e5 !important;
+  border-radius: 999px !important;
+}
+
+.churvoxOptionC::-webkit-scrollbar-thumb:hover,
+.churvoxOptionC *::-webkit-scrollbar-thumb:hover {
+  background: #737b77 !important;
+}
+
+.churvoxOptionC .workspace,
+.churvoxOptionC .scroll,
+.churvoxOptionC .cocNav,
+.churvoxOptionC .cocDrawer {
+  scrollbar-color: #9ca3a0 #e6e9e5 !important;
+}
