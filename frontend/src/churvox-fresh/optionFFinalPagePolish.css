@@ -178,6 +178,34 @@
   display: none !important;
 }
 
+body:has(.churvoxOptionC) {
+  overflow-y: auto !important;
+}
+
+.churvoxOptionC {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow: visible !important;
+}
+
+.churvoxOptionC .workspace {
+  height: auto !important;
+  min-height: calc(100vh - 150px) !important;
+  overflow: visible !important;
+  padding-right: 0 !important;
+}
+
+.churvoxOptionC .scroll,
+.churvoxOptionC .scroll.tight {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.churvoxOptionC .cocNav {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
 @media (max-width: 1180px) {
   .churvoxOptionC .today .cocPanel:nth-child(1),
   .churvoxOptionC .today .cocPanel:nth-child(2),
