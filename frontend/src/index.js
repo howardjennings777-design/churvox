@@ -43,6 +43,7 @@ import './churvox-fresh/optionFDecisionEffectsRuntime';
 import './churvox-fresh/optionFRecordHydrationRuntime';
 import './churvox-fresh/optionFProblemSlipRuntime';
 import './churvox-fresh/optionFFullSiteWiringRuntime';
+import './churvox-fresh/optionFDrawerPersistenceRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
