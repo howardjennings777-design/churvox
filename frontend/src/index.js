@@ -19,6 +19,7 @@ import './churvox-fresh/optionFSearchTidy.css';
 import './churvox-fresh/optionFIndustrialHeaders.css';
 import './churvox-fresh/optionFNoCommandPill.css';
 import './churvox-fresh/optionFHeaderPattern.css';
+import './churvox-fresh/optionFGreyScrollbars.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
