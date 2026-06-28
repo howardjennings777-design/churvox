@@ -373,7 +373,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => setTimeout(runAiFill, 260));
   document.addEventListener('input', scheduleRun, true);
   document.addEventListener('change', scheduleRun, true);
-  setInterval(runAiFill, 5200);
+  setInterval(runAiFill, 2400);
 }
 
 export {};
