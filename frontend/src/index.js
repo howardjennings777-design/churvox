@@ -11,6 +11,7 @@ import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './churvox-fresh/optionCCommandBarFix.css';
 import './churvox-fresh/optionCPolish.css';
+import './churvox-fresh/optionCProperFinish.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
