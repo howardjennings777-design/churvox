@@ -1,4 +1,3 @@
-import ChurvoxOSAdmin from "../churvox-os/ChurvoxOSAdmin";
-import "../churvox-os/churvoxOSClientFix.css";
+import ChurvoxOSWorkAdmin from "../churvox-os/ChurvoxOSWorkAdmin";
 
-export default ChurvoxOSAdmin;
+export default ChurvoxOSWorkAdmin;
