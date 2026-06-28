@@ -70,7 +70,7 @@ export default function ExecutivePricingPage() {
           <span className="publicKicker">Simple plan ladder</span>
           <h1>Choose how much admin Churvox should prepare.</h1>
           <p>
-            Plans scale from core records to team control, prepared admin and full Command operations. Prices are unchanged and sourced from the Churvox pricing config.
+            Plans scale from core records to team control, prepared admin and full Command operations. Prices are locked, readable and shown with tax-inclusive totals where applicable.
           </p>
           <label className="publicCountrySelect">
             <span>Pricing region</span>
