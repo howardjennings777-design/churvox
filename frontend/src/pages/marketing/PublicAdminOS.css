@@ -1,703 +1,802 @@
-/* CHURVOX_PUBLIC_ADMIN_OS_REDESIGN_20260628
-   Marketing pages should feel like the product promise: real work goes in,
-   Churvox prepares the admin, and the owner approves in one place. */
+/* CHURVOX_PUBLIC_MODERN_OS_20260629
+   Public marketing pages for the new Churvox OS direction. */
 
 :root {
-  --public-ink: #151515;
-  --public-graphite: #202124;
-  --public-graphite-2: #2d2f33;
-  --public-paper: #fffaf3;
-  --public-paper-2: #f6efe6;
-  --public-line: rgba(21, 21, 21, 0.14);
-  --public-soft-line: rgba(21, 21, 21, 0.08);
-  --public-orange: #e9563f;
-  --public-orange-2: #ff7a45;
-  --public-green: #15803d;
-  --public-shadow: 0 30px 90px rgba(25, 20, 15, 0.18);
+  --public-bg: #f5f6f8;
+  --public-surface: #ffffff;
+  --public-ink: #111318;
+  --public-muted: #5d6572;
+  --public-soft: #eef1f5;
+  --public-line: rgba(17, 19, 24, 0.12);
+  --public-line-strong: rgba(17, 19, 24, 0.2);
+  --public-graphite: #171a20;
+  --public-graphite-2: #222731;
+  --public-orange: #f05a28;
+  --public-orange-dark: #c63e1d;
+  --public-green: #1f8a4c;
+  --public-shadow: 0 20px 60px rgba(17, 19, 24, 0.12);
 }
 
-html:has(.simplePublic),
-body:has(.simplePublic),
-#root:has(.simplePublic) {
-  background: var(--public-paper) !important;
+html:has(.publicSite),
+body:has(.publicSite),
+#root:has(.publicSite) {
+  background: var(--public-bg) !important;
 }
 
-.simplePublic {
-  min-height: 100vh !important;
-  width: 100% !important;
+.publicSite {
+  min-height: 100vh;
+  color: var(--public-ink);
   background:
-    linear-gradient(90deg, rgba(21, 21, 21, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(21, 21, 21, 0.035) 1px, transparent 1px),
-    radial-gradient(circle at 14% 0%, rgba(233, 86, 63, 0.24), transparent 340px),
-    radial-gradient(circle at 88% 4%, rgba(255, 122, 69, 0.16), transparent 360px),
-    linear-gradient(180deg, #fffaf3 0%, #f6efe6 100%) !important;
-  background-size: 44px 44px, 44px 44px, auto, auto, auto !important;
-  color: var(--public-ink) !important;
-  overflow-x: clip !important;
+    linear-gradient(90deg, rgba(17, 19, 24, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(17, 19, 24, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 12% 0%, rgba(240, 90, 40, 0.16), transparent 360px),
+    linear-gradient(180deg, #f9fafb 0%, #eef1f5 100%);
+  background-size: 36px 36px, 36px 36px, auto, auto;
+  overflow-x: clip;
 }
 
-.simplePublic::before {
-  content: "" !important;
-  position: fixed !important;
-  inset: 0 !important;
-  pointer-events: none !important;
-  background:
-    linear-gradient(90deg, rgba(233, 86, 63, 0.08), transparent 28%, rgba(32, 33, 36, 0.05)),
-    radial-gradient(circle at 50% 120%, rgba(32, 33, 36, 0.08), transparent 34%) !important;
+.publicSite *,
+.publicSite *::before,
+.publicSite *::after {
+  box-sizing: border-box;
 }
 
-.simpleNav {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 20 !important;
-  min-height: 72px !important;
-  padding: 12px clamp(18px, 4vw, 58px) !important;
-  border-bottom: 1px solid var(--public-line) !important;
-  background: rgba(255, 250, 243, 0.86) !important;
-  backdrop-filter: blur(18px) saturate(155%) !important;
-  box-shadow: 0 16px 40px rgba(21, 21, 21, 0.06) !important;
+.publicSite a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.simpleBrand,
-.simpleBrand b,
-.simpleFooterBrand,
-.simpleFooterBrand b {
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
-}
-
-.simpleBrand small,
-.simpleFooterBrand small {
-  color: rgba(21, 21, 21, 0.58) !important;
-  -webkit-text-fill-color: rgba(21, 21, 21, 0.58) !important;
-  letter-spacing: 0.06em !important;
-}
-
-.simpleLinks a,
-.simpleBtn {
-  min-height: 42px !important;
-  border-radius: 8px !important;
-  padding: 0 16px !important;
-  letter-spacing: -0.01em !important;
-}
-
-.simpleGhost,
-.simpleBtn.simpleGhost,
-.simpleLinks a.simpleGhost {
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
-  background: rgba(255, 255, 255, 0.58) !important;
-  border: 1px solid var(--public-line) !important;
-  box-shadow: none !important;
-}
-
-.simplePrimary,
-.simpleBtn.simplePrimary,
-.simpleLinks a.simplePrimary {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-  background: linear-gradient(135deg, var(--public-orange), #d6402f) !important;
-  border: 1px solid rgba(146, 36, 26, 0.28) !important;
-  box-shadow: 0 14px 30px rgba(233, 86, 63, 0.26) !important;
-}
-
-.simpleHero {
-  position: relative !important;
-  min-height: calc(100vh - 72px) !important;
-  padding: clamp(26px, 4vw, 58px) clamp(18px, 4vw, 58px) clamp(28px, 4vw, 58px) !important;
-  display: grid !important;
-  grid-template-columns: minmax(0, 0.96fr) minmax(420px, 0.72fr) !important;
-  gap: clamp(18px, 3vw, 42px) !important;
-  align-items: stretch !important;
-}
-
-.simpleHero::after {
-  content: "Owner adds work  →  Churvox prepares admin  →  Command approves";
-  position: absolute;
-  left: clamp(18px, 4vw, 58px);
-  right: clamp(18px, 4vw, 58px);
-  bottom: 16px;
-  min-height: 42px;
+.publicNav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 72px;
+  padding: 12px 48px;
+  border-bottom: 1px solid var(--public-line);
+  background: rgba(249, 250, 251, 0.9);
+  backdrop-filter: blur(18px);
+}
+
+.publicBrand,
+.publicFooterBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: max-content;
+}
+
+.publicBrand span,
+.publicFooterBrand span {
+  display: grid;
+  gap: 2px;
+}
+
+.publicBrand b,
+.publicFooterBrand b {
+  color: var(--public-ink);
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.publicBrand small,
+.publicFooterBrand small {
+  color: var(--public-muted);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.publicLinks {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.publicLinks a,
+.publicPrimary,
+.publicSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
   padding: 0 16px;
   border-radius: 8px;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.publicLinks a,
+.publicSecondary {
+  color: var(--public-ink);
+  background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--public-line);
-  background: rgba(255, 255, 255, 0.68);
-  color: rgba(21, 21, 21, 0.66);
+}
+
+.publicPrimary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--public-orange), var(--public-orange-dark));
+  border: 1px solid rgba(198, 62, 29, 0.35);
+  box-shadow: 0 14px 28px rgba(240, 90, 40, 0.26);
+}
+
+.publicHero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(420px, 0.78fr);
+  align-items: center;
+  gap: 30px;
+  padding: 54px 48px 36px;
+}
+
+.publicHeroCompact {
+  min-height: 520px;
+}
+
+.publicHeroCopy {
+  display: grid;
+  gap: 18px;
+  max-width: 820px;
+}
+
+.publicKicker {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--public-orange-dark);
+  background: rgba(240, 90, 40, 0.12);
+  border: 1px solid rgba(240, 90, 40, 0.2);
   font-size: 12px;
   font-weight: 950;
-  letter-spacing: 0.04em;
   text-transform: uppercase;
-  backdrop-filter: blur(12px);
+  letter-spacing: 0;
 }
 
-.simpleHero > div:first-child,
-.simpleHero > aside {
-  min-height: 0 !important;
+.publicHero h1,
+.publicBand h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-weight: 950;
+  line-height: 0.98;
+  letter-spacing: 0;
 }
 
-.simpleHero > div:first-child {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  padding-bottom: 58px !important;
+.publicHero h1 {
+  max-width: 780px;
+  font-size: 72px;
 }
 
-.simpleKicker,
-.simpleSectionLabel,
-.simplePlanBadge,
-.simpleFeaturedPlan small {
-  width: max-content !important;
-  max-width: 100% !important;
-  color: #121212 !important;
-  -webkit-text-fill-color: #121212 !important;
-  background: rgba(233, 86, 63, 0.14) !important;
-  border: 1px solid rgba(233, 86, 63, 0.24) !important;
-  border-radius: 999px !important;
-  box-shadow: none !important;
+.publicBand h2 {
+  font-size: 48px;
 }
 
-.simpleHero h1 {
-  max-width: 980px !important;
-  margin: 18px 0 16px !important;
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
-  font-size: clamp(58px, 7.2vw, 118px) !important;
-  line-height: 0.84 !important;
-  letter-spacing: -0.075em !important;
+.publicHero p,
+.publicBand p,
+.publicFeaturePanel span,
+.publicAreaGrid span,
+.publicCardGrid span,
+.publicFeatureGrid span,
+.publicFlow span,
+.publicPlanGrid p,
+.publicAddOnGrid p,
+.publicFinePrint {
+  margin: 0;
+  color: var(--public-muted);
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.5;
 }
 
-.simpleLead,
-.simpleBand .simpleLead,
-.simpleBand p,
-.simpleCard p {
-  color: rgba(21, 21, 21, 0.68) !important;
-  -webkit-text-fill-color: rgba(21, 21, 21, 0.68) !important;
-  font-size: clamp(17px, 1.2vw, 22px) !important;
-  font-weight: 800 !important;
-  line-height: 1.46 !important;
+.publicHero p {
+  max-width: 760px;
+  font-size: 20px;
 }
 
-.simpleHeroStats,
-.simpleProof {
-  max-width: 900px !important;
+.publicActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.simpleHeroStats div,
-.simpleProof span,
-.simpleProofDark span {
-  border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.72) !important;
-  border: 1px solid var(--public-line) !important;
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
-  box-shadow: none !important;
+.publicProof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.simpleHeroStats small,
-.simplePreviewTop span,
-.simplePreviewGrid small,
-.simplePreviewQueue small {
-  color: rgba(21, 21, 21, 0.56) !important;
-  -webkit-text-fill-color: rgba(21, 21, 21, 0.56) !important;
+.publicProof span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--public-ink);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--public-line);
+  font-size: 12px;
+  font-weight: 950;
 }
 
-.simpleHeroStats b {
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
+.publicMock,
+.publicFeaturePanel,
+.publicBand,
+.publicPlanGrid article,
+.publicAddOnGrid article {
+  border-radius: 8px;
+  border: 1px solid var(--public-line);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--public-shadow);
 }
 
-.simpleCard,
-.simpleBand {
-  position: relative !important;
-  overflow: hidden !important;
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: initial !important;
-  background: rgba(255, 250, 243, 0.92) !important;
-  border: 1px solid var(--public-line) !important;
-  border-radius: 8px !important;
-  box-shadow: var(--public-shadow) !important;
-  backdrop-filter: blur(18px) !important;
-}
-
-.simpleCard::before,
-.simpleBand::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 auto 0 0 !important;
-  width: 5px !important;
-  background: linear-gradient(180deg, var(--public-orange), var(--public-orange-2)) !important;
-  opacity: 1 !important;
-}
-
-.simpleCard h2,
-.simpleBand h2,
-.simpleGrid b,
-.simpleTimeline b,
-.simpleCompare b,
-.simplePreviewQueue b,
-.simplePreviewApproval b,
-.simplePreviewGrid strong {
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
-}
-
-.simpleHeroPreview.simpleCommandMock {
-  align-self: stretch !important;
-  display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto !important;
-  gap: 12px !important;
-  min-height: 640px !important;
-  padding: 16px !important;
+.publicMock {
+  align-self: stretch;
+  min-height: 560px;
+  padding: 14px;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 12px;
   background:
-    linear-gradient(90deg, rgba(21, 21, 21, 0.04) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(21, 21, 21, 0.04) 1px, transparent 1px),
-    #fffdf8 !important;
-  background-size: 24px 24px, 24px 24px, auto !important;
-  transform: none !important;
+    linear-gradient(90deg, rgba(17, 19, 24, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(17, 19, 24, 0.05) 1px, transparent 1px),
+    #ffffff;
+  background-size: 28px 28px, 28px 28px, auto;
 }
 
-.simpleCommandMock::before {
-  inset: 10px !important;
-  border-radius: 8px !important;
-  border: 1px solid rgba(21, 21, 21, 0.09) !important;
-  background: transparent !important;
+.publicMockTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--public-orange), var(--public-graphite) 42%, #050608);
 }
 
-.simplePreviewTop {
-  border-radius: 8px !important;
-  background: var(--public-graphite) !important;
-  color: #fff !important;
-  box-shadow: none !important;
+.publicMockTop span,
+.publicMockGrid small,
+.publicFeaturePanel small,
+.publicPlanGrid small,
+.publicAreaGrid small {
+  color: inherit;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
-.simplePreviewTop b {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+.publicMockTop b {
+  font-size: 13px;
+  font-weight: 950;
 }
 
-.simplePreviewGrid {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+.publicMockTabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.simplePreviewGrid div,
-.simplePreviewQueue article,
-.simpleCard li,
-.simpleGrid article,
-.simpleTimeline article,
-.simpleCompare article {
-  border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.72) !important;
-  border: 1px solid var(--public-soft-line) !important;
-  color: var(--public-ink) !important;
-  box-shadow: none !important;
+.publicMockTabs span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border-radius: 8px;
+  color: var(--public-muted);
+  background: var(--public-soft);
+  border: 1px solid var(--public-line);
+  font-size: 12px;
+  font-weight: 950;
 }
 
-.simplePreviewQueue {
-  align-content: stretch !important;
-  grid-auto-rows: 1fr !important;
+.publicMockTabs .active {
+  color: #fff;
+  background: var(--public-graphite);
 }
 
-.simplePreviewQueue article:first-child {
-  border-color: rgba(233, 86, 63, 0.36) !important;
-  background: #fff7f4 !important;
+.publicMockGrid {
+  display: grid;
+  grid-template-columns: 0.8fr 1fr;
+  gap: 12px;
+  min-height: 0;
 }
 
-.simplePreviewQueue p,
-.simplePreviewApproval p,
-.simpleGrid span,
-.simpleTimeline span,
-.simpleCompare span {
-  color: rgba(21, 21, 21, 0.66) !important;
-  -webkit-text-fill-color: rgba(21, 21, 21, 0.66) !important;
+.publicMockGrid section {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(245, 246, 248, 0.86);
+  border: 1px solid var(--public-line);
 }
 
-.simplePreviewFacts span,
-.simplePreviewActions span {
-  border-radius: 8px !important;
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
-  background: rgba(21, 21, 21, 0.06) !important;
+.publicMockGrid small {
+  color: var(--public-muted);
 }
 
-.simplePreviewFacts span:first-child {
-  background: rgba(21, 128, 61, 0.12) !important;
-  color: var(--public-green) !important;
-  -webkit-text-fill-color: var(--public-green) !important;
+.publicMockGrid article,
+.publicSlip {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--public-line);
 }
 
-.simplePreviewActions span {
-  min-height: 42px !important;
-  background: var(--public-graphite) !important;
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+.publicMockGrid b,
+.publicSlip b,
+.publicAreaGrid b,
+.publicCardGrid b,
+.publicFeatureGrid b,
+.publicFlow b,
+.publicPlanGrid h3,
+.publicAddOnGrid b,
+.publicAddOnGrid strong {
+  color: var(--public-ink);
+  font-size: 16px;
+  font-weight: 950;
+  line-height: 1.2;
 }
 
-.simplePreviewActions span:last-child {
-  background: var(--public-orange) !important;
+.publicMockGrid span,
+.publicSlip span {
+  color: var(--public-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
-.simplePreviewApproval {
-  border-radius: 8px !important;
-  border-left: 5px solid var(--public-orange) !important;
-  background: rgba(255, 255, 255, 0.74) !important;
+.publicMockActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.simpleBand {
-  width: calc(100% - clamp(30px, 7vw, 116px)) !important;
-  margin: 0 auto clamp(16px, 2vw, 28px) !important;
-  padding: clamp(28px, 4vw, 58px) !important;
+.publicMockActions span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--public-graphite);
+  font-size: 12px;
+  font-weight: 950;
 }
 
-.simpleBand h2 {
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
-  font-size: clamp(40px, 5.2vw, 86px) !important;
-  line-height: 0.9 !important;
-  letter-spacing: -0.065em !important;
+.publicMockActions span:first-child {
+  background: var(--public-orange);
 }
 
-.simpleDifferenceBand,
-.simpleInsideBand,
-.simpleTrustBand,
-.simpleCtaBand,
-.simpleOperatorCard {
-  border-left: 0 !important;
+.publicBand {
+  width: calc(100% - 96px);
+  margin: 0 auto 24px;
+  padding: 34px;
+  overflow: hidden;
 }
 
-.simpleDifferenceBand {
-  display: grid !important;
-  grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1fr) !important;
-  gap: clamp(20px, 3vw, 44px) !important;
-  align-items: end !important;
+.publicStatement {
+  display: grid;
+  grid-template-columns: 0.36fr 0.64fr;
+  gap: 24px;
+  align-items: end;
+  background: var(--public-graphite);
 }
 
-.simpleDifferenceBand .simpleGrid,
-.simpleTrustBand .simpleGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  margin-top: 0 !important;
+.publicStatement h2,
+.publicStatement p,
+.publicDarkBand h2,
+.publicDarkBand b,
+.publicDarkBand span,
+.publicCta h2,
+.publicCta .publicKicker,
+.publicStatement .publicKicker,
+.publicDarkBand .publicKicker {
+  color: #fff;
 }
 
-.simpleInsideBand {
-  display: grid !important;
-  grid-template-columns: minmax(260px, 0.36fr) minmax(0, 1fr) !important;
-  gap: clamp(20px, 3vw, 44px) !important;
-  align-items: stretch !important;
+.publicStatement p,
+.publicDarkBand span {
+  opacity: 0.74;
 }
 
-.simpleProductShowcase {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  margin-top: 0 !important;
+.publicSectionHead {
+  display: grid;
+  gap: 12px;
+  max-width: 860px;
+  margin-bottom: 22px;
 }
 
-.simpleProductShowcase article,
-.simpleProductShowcase article:nth-child(even) {
-  min-height: 250px !important;
-  border-radius: 8px !important;
-  background: var(--public-graphite) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  box-shadow: none !important;
+.publicFlow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.simpleProductShowcase article:nth-child(3n + 2) {
-  background: #f4ebe1 !important;
-  border-color: var(--public-line) !important;
+.publicFlow article,
+.publicAreaGrid article,
+.publicCardGrid article,
+.publicFeatureGrid article {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 168px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--public-line);
 }
 
-.simpleProductShowcase article:nth-child(3n + 2) b,
-.simpleProductShowcase article:nth-child(3n + 2) p,
-.simpleProductShowcase article:nth-child(3n + 2) small {
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
+.publicFlow i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--public-orange);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 950;
 }
 
-.simpleProductShowcase b {
-  font-size: clamp(24px, 2.2vw, 38px) !important;
+.publicSplit {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.34fr) minmax(0, 0.66fr);
+  gap: 24px;
+  align-items: start;
 }
 
-.simpleProductShowcase small {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-  background: rgba(255, 255, 255, 0.10) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+.publicSplit > div:first-child {
+  display: grid;
+  gap: 14px;
 }
 
-.simpleProductShowcase p {
-  color: rgba(255, 255, 255, 0.76) !important;
-  -webkit-text-fill-color: rgba(255, 255, 255, 0.76) !important;
+.publicAreaGrid,
+.publicCardGrid,
+.publicFeatureGrid,
+.publicAddOnGrid {
+  display: grid;
+  gap: 12px;
 }
 
-.simpleSplitBand {
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr) !important;
-  align-items: stretch !important;
+.publicAreaGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.simpleSplitBand .simpleProofDark {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 10px !important;
-  margin: 0 !important;
+.publicCardGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.simpleSplitBand .simpleProofDark span {
-  min-height: 64px !important;
-  align-items: center !important;
-  display: flex !important;
+.publicFeatureGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.simpleIndustryGrid {
-  grid-template-columns: repeat(6, minmax(150px, 1fr)) !important;
-  overflow-x: auto !important;
-  padding-bottom: 6px !important;
+.publicDarkBand {
+  display: grid;
+  grid-template-columns: 0.32fr 0.68fr;
+  gap: 24px;
+  background: var(--public-graphite);
 }
 
-.simpleIndustryGrid article::before,
-.simplePlanGrid article::after,
-.simpleCommandMock::after,
-.simpleProductShowcase article::after,
-.simpleProductShowcase article::before,
-.simpleBand::after,
-.simpleCard::after {
-  display: none !important;
+.publicDarkBand article {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-.simpleCompareTable {
-  gap: 10px !important;
+.publicCta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: linear-gradient(135deg, var(--public-graphite), var(--public-graphite-2));
 }
 
-.simpleCompareTable b,
-.simpleCompareTable span {
-  min-height: 58px !important;
-  border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.72) !important;
-  border: 1px solid var(--public-soft-line) !important;
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
+.publicCta > div:first-child {
+  display: grid;
+  gap: 12px;
+  max-width: 820px;
 }
 
-.simpleCompareTable b {
-  background: var(--public-graphite) !important;
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+.publicFeaturePanel {
+  display: grid;
+  align-content: end;
+  gap: 12px;
+  min-height: 320px;
+  padding: 22px;
+  background: var(--public-graphite);
 }
 
-.simpleCompareTable > div span:last-child {
-  border-left: 5px solid var(--public-orange) !important;
-  background: #fff7f4 !important;
+.publicFeaturePanel small {
+  color: var(--public-orange);
 }
 
-.simpleTimeline {
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+.publicFeaturePanel b {
+  color: #fff;
+  font-size: 34px;
+  font-weight: 950;
+  line-height: 1;
 }
 
-.simpleTimeline i {
-  background: var(--public-orange) !important;
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+.publicFeaturePanel span {
+  color: rgba(255, 255, 255, 0.74);
 }
 
-.simpleCtaBand {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto !important;
-  gap: 24px !important;
-  align-items: center !important;
-  background: var(--public-graphite) !important;
+.publicCountrySelect {
+  display: grid;
+  gap: 8px;
+  max-width: 420px;
 }
 
-.simpleCtaBand h2,
-.simpleCtaBand p {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+.publicCountrySelect span {
+  color: var(--public-muted);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
-.simpleCtaBand .simpleLead {
-  color: rgba(255, 255, 255, 0.72) !important;
-  -webkit-text-fill-color: rgba(255, 255, 255, 0.72) !important;
+.publicCountrySelect select {
+  min-height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--public-line);
+  background: #fff;
+  color: var(--public-ink);
+  padding: 0 14px;
+  font-weight: 900;
 }
 
-.simpleCtaBand .simpleActions {
-  margin: 0 !important;
+.publicFinePrint {
+  max-width: 780px;
+  font-size: 13px !important;
 }
 
-.simpleCountrySelect {
-  display: grid !important;
-  gap: 8px !important;
-  max-width: 410px !important;
-  margin: 20px 0 4px !important;
-  color: var(--public-ink) !important;
+.publicPlanGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.simpleCountrySelect span {
-  color: rgba(21, 21, 21, 0.58) !important;
-  -webkit-text-fill-color: rgba(21, 21, 21, 0.58) !important;
-  font-size: 12px !important;
-  font-weight: 950 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
+.publicPlanGrid article {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 640px;
+  padding: 18px;
 }
 
-.simpleCountrySelect select {
-  min-height: 50px !important;
-  border-radius: 8px !important;
-  border: 1px solid var(--public-line) !important;
-  background: rgba(255, 255, 255, 0.82) !important;
-  color: var(--public-ink) !important;
-  padding: 0 14px !important;
-  font-weight: 900 !important;
+.publicPlanGrid article.featured {
+  color: #fff;
+  background: var(--public-graphite);
+  border-color: rgba(240, 90, 40, 0.45);
 }
 
-.simpleOperatorCard {
-  align-self: center !important;
-  background: var(--public-graphite) !important;
-  min-height: 430px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-end !important;
+.publicPlanGrid small {
+  width: max-content;
+  max-width: 100%;
+  padding: 6px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--public-orange);
 }
 
-.simpleOperatorCard h2,
-.simpleOperatorCard p {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+.publicPlanGrid h3 {
+  margin: 0;
+  font-size: 22px;
 }
 
-.simpleOperatorCard p {
-  color: rgba(255, 255, 255, 0.74) !important;
-  -webkit-text-fill-color: rgba(255, 255, 255, 0.74) !important;
+.publicPlanPrice {
+  color: var(--public-ink);
+  font-size: 34px;
+  font-weight: 950;
+  line-height: 1;
 }
 
-.simplePlanGrid {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+.publicPlanTax {
+  color: var(--public-green);
+  font-size: 14px;
+  font-weight: 950;
 }
 
-.simplePlanGrid article {
-  min-height: 520px !important;
-  align-content: stretch !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
+.publicPlanGrid article.featured h3,
+.publicPlanGrid article.featured .publicPlanPrice,
+.publicPlanGrid article.featured .publicPlanTax,
+.publicPlanGrid article.featured p,
+.publicPlanGrid article.featured li {
+  color: #fff;
 }
 
-.simplePlanGrid article .simpleActions {
-  margin-top: auto !important;
+.publicPlanGrid ul {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
 }
 
-.simpleFeaturedPlan {
-  background: var(--public-graphite) !important;
-  border-color: rgba(233, 86, 63, 0.44) !important;
-  box-shadow: 0 28px 70px rgba(21, 21, 21, 0.22) !important;
+.publicPlanGrid li {
+  color: var(--public-muted);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
 }
 
-.simpleFeaturedPlan b,
-.simpleFeaturedPlan span:not(.simplePriceLine),
-.simpleFeaturedPlan .simplePriceLine {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
+.publicPlanGrid li::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: var(--public-orange);
+  vertical-align: 1px;
 }
 
-.simplePriceLine {
-  color: var(--public-orange) !important;
-  -webkit-text-fill-color: var(--public-orange) !important;
+.publicPlanGrid .publicPrimary {
+  margin-top: auto;
 }
 
-.simpleFooter {
-  padding: 34px clamp(18px, 4vw, 58px) 42px !important;
-  color: rgba(21, 21, 21, 0.66) !important;
-  border-top: 1px solid var(--public-line) !important;
+.publicAddOnGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.simpleFooter a {
-  color: var(--public-ink) !important;
-  -webkit-text-fill-color: var(--public-ink) !important;
+.publicAddOnGrid article {
+  display: grid;
+  gap: 10px;
+  min-height: 210px;
+  padding: 18px;
+  box-shadow: none;
 }
 
-@media (max-width: 1200px) {
-  .simpleHero {
-    grid-template-columns: 1fr !important;
-    min-height: auto !important;
+.publicAddOnGrid strong {
+  color: var(--public-orange-dark);
+  font-size: 28px;
+}
+
+.publicAddOnGrid span {
+  color: var(--public-green);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.publicFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px 48px 40px;
+  border-top: 1px solid var(--public-line);
+}
+
+.publicFooter nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.publicFooter a {
+  color: var(--public-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+@media (max-width: 1180px) {
+  .publicHero,
+  .publicStatement,
+  .publicSplit,
+  .publicDarkBand {
+    grid-template-columns: 1fr;
   }
 
-  .simpleHeroPreview.simpleCommandMock {
-    min-height: 540px !important;
+  .publicHero h1 {
+    font-size: 58px;
   }
 
-  .simpleDifferenceBand,
-  .simpleInsideBand,
-  .simpleCtaBand {
-    grid-template-columns: 1fr !important;
+  .publicPlanGrid,
+  .publicCardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .simplePlanGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  .simpleTimeline {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  .publicFeatureGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 760px) {
-  .simpleNav {
-    position: relative !important;
-    align-items: center !important;
+@media (max-width: 820px) {
+  .publicNav {
+    position: relative;
+    align-items: flex-start;
+    padding: 12px 16px;
   }
 
-  .simpleHero {
-    padding: 24px 14px 28px !important;
+  .publicLinks {
+    gap: 6px;
   }
 
-  .simpleHero::after {
-    position: static !important;
-    margin-top: 16px !important;
-    content: "One approval desk: Command" !important;
+  .publicLinks a,
+  .publicPrimary,
+  .publicSecondary {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 12px;
   }
 
-  .simpleHero > div:first-child {
-    padding-bottom: 0 !important;
+  .publicHero {
+    grid-template-columns: 1fr;
+    padding: 26px 14px 20px;
   }
 
-  .simpleHero h1 {
-    font-size: clamp(43px, 14vw, 64px) !important;
-    line-height: 0.88 !important;
+  .publicHero h1 {
+    font-size: 42px;
   }
 
-  .simpleHeroStats,
-  .simplePreviewGrid,
-  .simpleDifferenceBand .simpleGrid,
-  .simpleTrustBand .simpleGrid,
-  .simpleProductShowcase,
-  .simpleSplitBand,
-  .simpleSplitBand .simpleProofDark,
-  .simplePlanGrid,
-  .simpleTimeline,
-  .simpleGrid,
-  .simpleCompareTable > div,
-  .simpleCompareTable.simplePlanCompare > div {
-    grid-template-columns: 1fr !important;
+  .publicHero p {
+    font-size: 17px;
   }
 
-  .simpleHeroPreview.simpleCommandMock {
-    min-height: auto !important;
+  .publicMock {
+    min-height: auto;
   }
 
-  .simplePreviewQueue article:nth-child(n + 3) {
-    display: none !important;
+  .publicMockGrid,
+  .publicFlow,
+  .publicAreaGrid,
+  .publicCardGrid,
+  .publicFeatureGrid,
+  .publicPlanGrid,
+  .publicAddOnGrid {
+    grid-template-columns: 1fr;
   }
 
-  .simpleBand {
-    width: calc(100% - 28px) !important;
-    padding: 22px 16px !important;
+  .publicBand {
+    width: calc(100% - 28px);
+    padding: 20px 16px;
+    margin-bottom: 16px;
   }
 
-  .simpleBand h2 {
-    font-size: clamp(34px, 11vw, 50px) !important;
+  .publicBand h2 {
+    font-size: 34px;
   }
 
-  .simpleProductShowcase article,
-  .simplePlanGrid article,
-  .simpleOperatorCard {
-    min-height: auto !important;
+  .publicFlow article,
+  .publicAreaGrid article,
+  .publicCardGrid article,
+  .publicFeatureGrid article,
+  .publicPlanGrid article {
+    min-height: auto;
+  }
+
+  .publicCta,
+  .publicFooter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .publicFooter {
+    padding: 24px 16px 32px;
+  }
+
+  .publicFooter nav {
+    justify-content: flex-start;
   }
 }
