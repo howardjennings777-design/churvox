@@ -1,0 +1,402 @@
+/* CHURVOX_CLIENTS_CLEAN_REBUILD_20260628 */
+
+html.ccNoScroll,
+body.ccNoScroll {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+body.ccNoScroll #root {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.ccRoot,
+.ccRoot * {
+  box-sizing: border-box;
+}
+
+.ccRoot button,
+.ccRoot input,
+.ccRoot textarea {
+  font: inherit;
+}
+
+.ccRoot {
+  --cc-bg: #f7f3ec;
+  --cc-card: #fffdf8;
+  --cc-ink: #151515;
+  --cc-muted: #675f56;
+  --cc-line: rgba(20, 20, 20, .13);
+  --cc-dark: #20201d;
+  --cc-red: #df4c3f;
+  width: 100vw;
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(223, 76, 63, .035) 1px, transparent 1px), linear-gradient(180deg, rgba(223, 76, 63, .03) 1px, transparent 1px), var(--cc-bg);
+  background-size: 42px 42px;
+  color: var(--cc-ink);
+}
+
+.ccSidebar {
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  border-right: 1px solid var(--cc-line);
+  background: #fffaf2;
+  padding: 9px;
+}
+
+.ccBrand,
+.ccSidebar nav {
+  border: 1px solid var(--cc-line);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, .94);
+}
+
+.ccBrand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.ccBrand > b {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--cc-red);
+  color: #fff;
+  font-weight: 950;
+}
+
+.ccBrand strong,
+.ccBrand em {
+  display: block;
+  font-style: normal;
+}
+
+.ccBrand strong {
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.ccBrand em {
+  color: var(--cc-muted);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.ccSidebar nav {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+}
+
+.ccSidebar nav p {
+  margin: 0 0 2px;
+  color: var(--cc-muted);
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.ccSidebar nav button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 6px;
+  background: transparent;
+  color: var(--cc-ink);
+  text-align: left;
+}
+
+.ccSidebar nav button.active {
+  background: #ffe6d8;
+  box-shadow: inset 3px 0 0 var(--cc-red);
+}
+
+.ccSidebar nav button span {
+  width: 26px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(20, 20, 20, .06);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.ccSidebar nav button b {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ccSidebar nav button em {
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--cc-red);
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.ccPage {
+  height: 100dvh;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.ccListPane,
+.ccFormPane {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--cc-line);
+  border-radius: 9px;
+  background: rgba(255, 253, 248, .92);
+  box-shadow: 0 14px 34px rgba(37, 28, 18, .08);
+}
+
+.ccListPane {
+  display: grid;
+  grid-template-rows: 76px 34px minmax(0, 1fr);
+}
+
+.ccListPane header {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  padding: 10px;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.ccListPane h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: .9;
+  letter-spacing: 0;
+}
+
+.ccListPane label {
+  display: grid;
+  place-items: center;
+  min-height: 30px;
+  border-radius: 7px;
+  background: var(--cc-dark);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.ccListPane label input {
+  display: none;
+}
+
+.ccListMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--cc-line);
+  background: #f6ede4;
+}
+
+.ccListMeta b,
+.ccListMeta span {
+  color: var(--cc-ink);
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+.ccClientList {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 8px;
+  scrollbar-width: thin;
+}
+
+.ccClientList button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 62px;
+  border: 1px solid var(--cc-line);
+  border-left: 3px solid rgba(223, 76, 63, .5);
+  border-radius: 8px;
+  background: #fffdf8;
+  color: var(--cc-ink);
+  padding: 7px 8px;
+  text-align: left;
+}
+
+.ccClientList button.active {
+  background: var(--cc-dark);
+  color: #fff;
+  border-left-color: var(--cc-red);
+}
+
+.ccClientList b,
+.ccClientList span,
+.ccClientList small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ccClientList b {
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.ccClientList span,
+.ccClientList small {
+  font-size: 10px;
+  opacity: .9;
+}
+
+.ccFormPane {
+  display: grid;
+  grid-template-rows: 74px minmax(0, 1fr) 44px;
+}
+
+.ccFormPane > header {
+  overflow: hidden;
+  padding: 10px 14px;
+  background: linear-gradient(105deg, #20201d, #2c2424 62%, var(--cc-red));
+  color: #fff;
+}
+
+.ccFormPane h2 {
+  margin: 0 0 3px;
+  overflow: hidden;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: .88;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ccFormPane p {
+  margin: 0;
+  color: rgba(255, 255, 255, .9);
+  font-size: 10px;
+  line-height: 1.12;
+  font-weight: 800;
+}
+
+.ccFields {
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: 64px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+
+.ccFields label {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 13px minmax(0, 1fr);
+  gap: 4px;
+  border: 1px solid var(--cc-line);
+  border-radius: 8px;
+  background: #fffdf8;
+  color: var(--cc-ink);
+  padding: 7px;
+  font-size: 9px;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.ccFields label.memory {
+  grid-column: span 2;
+}
+
+.ccFields input,
+.ccFields textarea {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  border: 1px solid rgba(20, 20, 20, .14);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--cc-ink);
+  -webkit-text-fill-color: var(--cc-ink);
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.16;
+  outline: none;
+}
+
+.ccFields textarea {
+  resize: none;
+}
+
+.ccFormPane footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 6px 9px;
+  border-top: 1px solid var(--cc-line);
+  background: #f6ede4;
+}
+
+.ccFormPane footer button {
+  min-width: 96px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--cc-dark);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.ccFormPane footer button:last-child {
+  background: var(--cc-red);
+}
+
+@media (max-width: 1060px) {
+  .ccRoot {
+    grid-template-columns: 178px minmax(0, 1fr);
+  }
+
+  .ccPage {
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .ccFields {
+    gap: 6px;
+  }
+}
