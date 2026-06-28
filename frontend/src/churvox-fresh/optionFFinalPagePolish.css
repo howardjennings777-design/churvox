@@ -1,0 +1,211 @@
+.churvoxOptionC .workspace {
+  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0)) !important;
+}
+
+.churvoxOptionC .cocPage,
+.churvoxOptionC .cocPage.four {
+  align-content: start !important;
+  align-items: start !important;
+  min-height: auto !important;
+  gap: 12px !important;
+}
+
+.churvoxOptionC .cocPanel {
+  min-height: 148px !important;
+  padding: 50px 14px 14px !important;
+}
+
+.churvoxOptionC .cocPanel h2 {
+  height: 36px !important;
+  font-size: 13px !important;
+}
+
+.churvoxOptionC .today .cocPanel:nth-child(1) {
+  grid-column: span 8 !important;
+  min-height: 108px !important;
+}
+
+.churvoxOptionC .today .cocPanel:nth-child(2) {
+  grid-column: span 4 !important;
+  min-height: 108px !important;
+}
+
+.churvoxOptionC .today .cocPanel:nth-child(n+3) {
+  min-height: 190px !important;
+}
+
+.churvoxOptionC .today .cocWeek {
+  align-items: center !important;
+  min-height: 42px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(1) {
+  grid-column: span 4 !important;
+  min-height: 328px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(2) {
+  grid-column: span 8 !important;
+  min-height: 328px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(3) {
+  grid-column: span 4 !important;
+  min-height: 156px !important;
+}
+
+.churvoxOptionC .command .cocPanel:nth-child(3) .action {
+  margin-right: 7px !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar) {
+  align-content: start !important;
+}
+
+.churvoxOptionC .toolbar {
+  margin: 0 0 2px !important;
+  padding: 0 !important;
+}
+
+.churvoxOptionC .toolbar button {
+  min-height: 40px !important;
+  padding: 0 15px !important;
+  border-radius: 10px !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar) .cocPanel {
+  min-height: 238px !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar) .cocPanel.wide {
+  min-height: 302px !important;
+}
+
+.churvoxOptionC .cocPage.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.churvoxOptionC .cocPage.four .cocPanel {
+  grid-column: auto !important;
+  min-height: 266px !important;
+}
+
+.churvoxOptionC .cocPage.four .cocPanel.full {
+  grid-column: 1 / -1 !important;
+  min-height: 112px !important;
+}
+
+.churvoxOptionC .cocPanel:has(.moneyStrip) {
+  min-height: 112px !important;
+}
+
+.churvoxOptionC .cocPanel:has(.moneyStrip)::after {
+  content: "Draft • Due today • Overdue • Paid • Sync-ready" !important;
+  display: inline-flex !important;
+  margin-top: 10px !important;
+  border-radius: 999px !important;
+  padding: 6px 10px !important;
+  background: #eef2ed !important;
+  color: #5e6b65 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+.churvoxOptionC .cocPanel.full:has(table) {
+  min-height: 270px !important;
+}
+
+.churvoxOptionC .moneyStrip span {
+  min-width: 108px !important;
+  padding: 10px 12px !important;
+}
+
+.churvoxOptionC .moneyStrip b {
+  font-size: 22px !important;
+}
+
+.churvoxOptionC .map {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.34) !important;
+}
+
+.churvoxOptionC .map.big {
+  min-height: 270px !important;
+}
+
+.churvoxOptionC .proofGrid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.churvoxOptionC .formGrid {
+  align-items: start !important;
+}
+
+.churvoxOptionC .cocField input,
+.churvoxOptionC .cocField textarea {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8) !important;
+}
+
+.churvoxOptionC table {
+  margin-top: -2px !important;
+}
+
+.churvoxOptionC tr {
+  cursor: pointer !important;
+}
+
+.churvoxOptionC td {
+  padding: 9px 11px !important;
+}
+
+.churvoxOptionC .scroll {
+  max-height: 238px !important;
+}
+
+.churvoxOptionC .cocRow {
+  min-height: 47px !important;
+}
+
+.churvoxOptionC .planList div {
+  min-height: 68px !important;
+}
+
+@media (max-width: 1180px) {
+  .churvoxOptionC .today .cocPanel:nth-child(1),
+  .churvoxOptionC .today .cocPanel:nth-child(2),
+  .churvoxOptionC .command .cocPanel:nth-child(1),
+  .churvoxOptionC .command .cocPanel:nth-child(2),
+  .churvoxOptionC .command .cocPanel:nth-child(3),
+  .churvoxOptionC .cocPage:has(.toolbar) .cocPanel,
+  .churvoxOptionC .cocPage:has(.toolbar) .cocPanel.wide {
+    grid-column: span 3 !important;
+  }
+
+  .churvoxOptionC .cocPage.four {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .churvoxOptionC .proofGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .churvoxOptionC .today .cocPanel:nth-child(1),
+  .churvoxOptionC .today .cocPanel:nth-child(2),
+  .churvoxOptionC .command .cocPanel:nth-child(1),
+  .churvoxOptionC .command .cocPanel:nth-child(2),
+  .churvoxOptionC .command .cocPanel:nth-child(3),
+  .churvoxOptionC .cocPage:has(.toolbar) .cocPanel,
+  .churvoxOptionC .cocPage:has(.toolbar) .cocPanel.wide {
+    grid-column: 1 !important;
+  }
+
+  .churvoxOptionC .cocPage.four {
+    grid-template-columns: 1fr !important;
+  }
+
+  .churvoxOptionC .proofGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
