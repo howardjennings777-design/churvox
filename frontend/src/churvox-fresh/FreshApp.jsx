@@ -24,11 +24,11 @@ const subtitles = {
 
 const seed = {
   jobs: [
-    { id: "j1", title: "Naenae lawn reset", client: "Mere H.", worker: "Howard", status: "in_progress", date: "2026-06-29", time: "08:00", price: 65, proof: "2 photos", recurring: "Fortnightly", address: "Naenae", notes: "Front and back lawn, send photos after finish.", issue: "" },
-    { id: "j2", title: "Petone unit cleanup", client: "Petone Units", worker: "Alex", status: "assigned", date: "2026-06-29", time: "10:30", price: 180, proof: "No proof yet", recurring: "One-off", address: "Petone", notes: "Confirm arrival with tenants.", issue: "" },
-    { id: "j3", title: "Belmont hedge trim", client: "Belmont Villas", worker: "Sam", status: "proof_ready", date: "2026-06-29", time: "12:00", price: 420, proof: "3 photos + note", recurring: "Monthly", address: "Belmont", notes: "Package price saved. Photos required.", issue: "" },
-    { id: "j4", title: "Wainui quote visit", client: "Wainui School", worker: "Howard", status: "quote_draft", date: "2026-06-29", time: "14:00", price: 0, proof: "Site notes", recurring: "One-off", address: "Wainuiomata", notes: "Quote approval required.", issue: "quote approval" },
-    { id: "j5", title: "Birchville tidy", client: "Birchville Dairy", worker: "Alex", status: "needs_check", date: "2026-06-29", time: "16:00", price: 120, proof: "Worker message", recurring: "Weekly", address: "Birchville", notes: "Extra green waste reported by worker.", issue: "extra green waste" },
+    { id: "j1", title: "Naenae lawn reset", client: "Mere H.", worker: "Howard", status: "in_progress", date: "2026-06-29", time: "08:00", price: 65, service: "Lawn mowing", billing: "Fixed price", duration: "1.5 hours", proof: "2 photos", recurring: "Fortnightly", address: "Naenae", notes: "Front and back lawn, send photos after finish.", issue: "" },
+    { id: "j2", title: "Petone unit cleanup", client: "Petone Units", worker: "Alex", status: "assigned", date: "2026-06-29", time: "10:30", price: 180, service: "Cleanup", billing: "Fixed + extras", duration: "2 hours", proof: "No proof yet", recurring: "One-off", address: "Petone", notes: "Confirm arrival with tenants.", issue: "" },
+    { id: "j3", title: "Belmont hedge trim", client: "Belmont Villas", worker: "Sam", status: "proof_ready", date: "2026-06-29", time: "12:00", price: 420, service: "Hedge trimming", billing: "Package price", duration: "3 hours", proof: "3 photos + note", recurring: "Monthly", address: "Belmont", notes: "Package price saved. Photos required.", issue: "" },
+    { id: "j4", title: "Wainui quote visit", client: "Wainui School", worker: "Howard", status: "quote_draft", date: "2026-06-29", time: "14:00", price: 0, service: "Quote visit", billing: "Quote required", duration: "45 minutes", proof: "Site notes", recurring: "One-off", address: "Wainuiomata", notes: "Quote approval required.", issue: "quote approval" },
+    { id: "j5", title: "Birchville tidy", client: "Birchville Dairy", worker: "Alex", status: "needs_check", date: "2026-06-29", time: "16:00", price: 120, service: "Property tidy", billing: "Hourly + extras", duration: "2 hours", proof: "Worker message", recurring: "Weekly", address: "Birchville", notes: "Extra green waste reported by worker.", issue: "extra green waste" },
   ],
   clients: [
     { id: "c1", name: "Mere H.", phone: "027 000 000", email: "mere@example.com", address: "Naenae", notes: "Gate code saved. Likes Friday mornings.", service: "Fortnightly lawns", price: "$65 regular", jobs: 5, quotes: 2, invoices: 4 },
@@ -71,6 +71,8 @@ const seed = {
 const optionSets = {
   status: ["assigned", "acknowledged", "in_progress", "proof_ready", "completed", "needs_check", "quote_draft"],
   recurring: ["One-off", "Weekly", "Fortnightly", "Monthly", "Custom"],
+  billing: ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras", "Package price", "Quote required"],
+  service: ["Lawn mowing", "Hedge trimming", "Property tidy", "Cleanup", "Quote visit", "Other"],
   worker: ["Howard", "Alex", "Sam", "Tui"],
   client: ["Mere H.", "Belmont Villas", "Naenae Dairy", "Petone Units", "Wainui School", "Birchville Dairy"],
 };
@@ -127,7 +129,10 @@ function useOsData() {
           status: textOf(job.status, job.job_status, job.stage, fallback.status),
           date: textOf(job.scheduled_date, job.date, fallback.date),
           time: textOf(job.scheduled_time, job.start_time, job.time, fallback.time),
-          price: Number(job.price || job.amount || job.total || fallback.price || 0),
+          price: Number(job.price ?? job.amount ?? job.total ?? fallback.price ?? 0),
+          service: textOf(job.service, job.service_type, job.job_type, fallback.service),
+          billing: textOf(job.billing_type, job.pricing_type, job.price_type, fallback.billing),
+          duration: textOf(job.estimated_duration, job.duration, job.expected_time, fallback.duration),
           proof: Array.isArray(job.photos) && job.photos.length ? `${job.photos.length} photos` : textOf(job.proof, job.worker_notes, fallback.proof),
           recurring: job.is_recurring || job.recurring_frequency ? textOf(job.recurring_frequency, "Recurring") : textOf(job.recurring, fallback.recurring),
           address: textOf(job.address, job.site_address, fallback.address),
@@ -161,10 +166,10 @@ function Panel({ title, tone = "green", className = "", children }) {
 
 function Field({ label, value, textarea = false, type = "text", options, readOnly = false }) {
   if (options) {
-    return <label className="cocField"><span>{label}</span><select defaultValue={value || ""}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
+    return <label className="cocField"><span>{label}</span><select defaultValue={value ?? ""}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
   }
   const Tag = textarea ? "textarea" : "input";
-  return <label className="cocField"><span>{label}</span><Tag type={textarea ? undefined : type} defaultValue={value || ""} readOnly={readOnly} rows={textarea ? 4 : undefined} /></label>;
+  return <label className="cocField"><span>{label}</span><Tag type={textarea ? undefined : type} step={type === "number" ? "0.01" : undefined} defaultValue={value ?? ""} readOnly={readOnly} rows={textarea ? 4 : undefined} /></label>;
 }
 
 function Stat({ label, value, tone = "green" }) {
@@ -191,7 +196,7 @@ function detailFor(selected) {
   if (kind.includes("quote")) return { title: "Quote form", note: "Quote details, status and follow-up.", fields: [["Quote", selected.title], ["Client", selected.client], ["Amount", selected.amount, false, "number"], ["Status", selected.status], ["Follow-up", selected.followUp], ["Convert to job", selected.status === "Accepted" ? "Ready" : "Not yet", false, "text", null, true]] };
   if (kind.includes("message")) return { title: "Message thread", note: "Thread plus Churvox drafted reply. Sending approval stays in Command.", fields: [["From", selected.from], ["Subject", selected.subject], ["History", selected.history], ["Message", selected.detail, true], ["Drafted reply", selected.draft, true]] };
   if (kind.includes("command") || kind.includes("approval")) return { title: "Approval slip", note: "Check what Churvox filled, edit if needed, then approve or park it.", approval: true, fields: [["Approval type", selected.type], ["Record", selected.title], ["Client", selected.client], ["Amount", selected.amount ? selected.amount : "Not money related"], ["Prepared status", selected.status], ["Recommended action", selected.owner, false, "text", ["Approve", "Edit", "Park"]], ["What Churvox filled", selected.filled, true], ["Evidence checked", selected.evidence, true], ["Owner check", selected.check, true], ["Edit notes", "", true]] };
-  return { title: "Editable job form", note: "Price, date, time, worker, status and recurring can be edited here. Issues are shown as Command status.", job: true, fields: [["Job name", selected.title], ["Client", selected.client, false, "text", optionSets.client], ["Site address", selected.address], ["Assigned worker", selected.worker, false, "text", optionSets.worker], ["Date", selected.date, false, "date"], ["Start time", selected.time, false, "time"], ["Price", selected.price, false, "number"], ["Status", selected.status, false, "text", optionSets.status], ["Recurring", selected.recurring, false, "text", optionSets.recurring], ["Proof/photos", selected.proof], ["Issue status", selected.issue ? `Waiting in Command: ${selected.issue}` : "No issue", false, "text", null, true], ["Job notes", selected.notes, true]] };
+  return { title: "Editable job form", note: "Edit the job like a real record: service, price, date, time, worker, status and repeat schedule.", job: true, fields: [["Job name", selected.title], ["Client", selected.client, false, "text", optionSets.client], ["Site address", selected.address], ["Service", selected.service, false, "text", optionSets.service], ["Assigned worker", selected.worker, false, "text", optionSets.worker], ["Scheduled date", selected.date, false, "date"], ["Start time", selected.time, false, "time"], ["Estimated duration", selected.duration], ["Price NZD", selected.price, false, "number"], ["Billing type", selected.billing, false, "text", optionSets.billing], ["Frequency", selected.recurring, false, "text", optionSets.recurring], ["Status", selected.status, false, "text", optionSets.status], ["Proof/photos", selected.proof], ["Issue status", selected.issue ? `Waiting in Command: ${selected.issue}` : "No issue", false, "text", null, true], ["Job notes", selected.notes, true]] };
 }
 
 function Drawer({ selected, onClose }) {
@@ -216,7 +221,7 @@ function Command({ data, open }) {
 }
 
 function Jobs({ data, open }) {
-  return <div className="cocPage jobsPage"><div className="toolbar"><button type="button">+ Add Job</button><button type="button">Recurring</button><button type="button">Dispatch Board</button></div><Panel title="Jobs" tone="blue" className="full jobBoard"><div className="jobCards">{data.jobs.slice(0, 8).map((job) => <button key={job.id} type="button" className="jobCard" onClick={() => open("Job", job)}><b>{job.title}</b><small>{job.client} - {job.worker}</small><span>{job.date} at {job.time}</span><em>{money(job.price)}</em><i>{job.issue ? `In Command: ${job.issue}` : job.status}</i></button>)}</div></Panel></div>;
+  return <div className="cocPage jobsPage"><div className="toolbar"><button type="button">+ Add Job</button><button type="button">Recurring</button><button type="button">Dispatch Board</button></div><Panel title="Jobs" tone="blue" className="full jobBoard"><div className="jobCards">{data.jobs.slice(0, 8).map((job) => <button key={job.id} type="button" className="jobCard" onClick={() => open("Job", job)}><b>{job.title}</b><small>{job.client} - {job.worker}</small><span>{job.date} at {job.time} - {job.recurring}</span><em>{money(job.price)}</em><i>{job.issue ? `In Command: ${job.issue}` : job.status}</i></button>)}</div></Panel></div>;
 }
 
 function Clients({ data, open }) {
