@@ -1,3 +1,3 @@
-import ChurvoxOSRealAdmin from "../churvox-os/ChurvoxOSRealAdmin";
+import ChurvoxOSRealAdminV2 from "../churvox-os/ChurvoxOSRealAdminV2";
 
-export default ChurvoxOSRealAdmin;
+export default ChurvoxOSRealAdminV2;
