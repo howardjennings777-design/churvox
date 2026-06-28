@@ -1,4 +1,5 @@
 import "../churvox-os/churvoxOSRealAdminV2.css";
-import ChurvoxOSRealAdminV2 from "../churvox-os/ChurvoxOSRealAdminV2";
+import "../churvox-os/churvoxOSTodayFirst.css";
+import ChurvoxOSRealAdminV3 from "../churvox-os/ChurvoxOSRealAdminV3";
 
-export default ChurvoxOSRealAdminV2;
+export default ChurvoxOSRealAdminV3;
