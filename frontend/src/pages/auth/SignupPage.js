@@ -22,8 +22,8 @@ function lockInputText(el) {
   el.style.setProperty("filter", "none", "important");
   el.style.setProperty("text-shadow", "none", "important");
   el.style.setProperty("mix-blend-mode", "normal", "important");
-  el.style.setProperty("font-size", "17px", "important");
-  el.style.setProperty("font-weight", "800", "important");
+  el.style.setProperty("font-size", "16px", "important");
+  el.style.setProperty("font-weight", "850", "important");
 }
 
 async function sendWelcomeEmail(token) {
@@ -98,24 +98,61 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="cvPublicAuth">
+    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_SIGNUP_MODERN_OS_20260629">
       <Nav />
-      <section className="cvPublicAuthShell">
+      <section className="cvPublicAuthShell cvPublicSignupShell">
         <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
-          <p className="cvPublicAuthKicker">Create account</p>
-          <h1>Start your Churvox trial.</h1>
-          <p className="cvPublicAuthIntro">Create your account first. Next you choose Start, Crew, Operator or Command, then Stripe starts the 14-day trial for that plan.</p>
+          <p className="cvPublicAuthKicker">Start trial</p>
+          <h1>Create your Churvox account.</h1>
+          <p className="cvPublicAuthIntro">
+            Create the account, choose Start, Crew, Operator or Command, then Churvox opens the setup path for your business.
+          </p>
+
           {error ? <p className="cvPublicAuthError">{error}</p> : null}
-          <label>Full name<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="name" autoComplete="name" placeholder="Your name" required /></label>
-          <label>Email<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="hello@churvox.com" required /></label>
-          <label>Business name<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="business_name" autoComplete="organization" placeholder="Business name" /></label>
-          <label>Country / pricing region<select className="cvPublicNativeInput" name="country" value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>{COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label>
-          <label>Password<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="password" type="password" autoComplete="new-password" placeholder="Password" required /></label>
-          <label>Confirm password<input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Confirm password" required /></label>
+
+          <div className="cvPublicFormGrid">
+            <label>
+              Full name
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="name" autoComplete="name" placeholder="Your name" required />
+            </label>
+            <label>
+              Email
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="you@business.co.nz" required />
+            </label>
+            <label>
+              Business name
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="business_name" autoComplete="organization" placeholder="Business name" />
+            </label>
+            <label>
+              Country / pricing region
+              <select className="cvPublicNativeInput" name="country" value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>
+                {COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} - {item.currency}</option>)}
+              </select>
+            </label>
+            <label>
+              Password
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="password" type="password" autoComplete="new-password" placeholder="Password" required />
+            </label>
+            <label>
+              Confirm password
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Confirm password" required />
+            </label>
+          </div>
+
           <button className="cvPublicAuthSubmit" type="submit" disabled={loading}>{loading ? "Creating account..." : "Create account and choose plan"}</button>
           <p className="cvPublicAuthBottom">Already have an account? <Link to="/login">Sign in</Link></p>
         </form>
-        <aside className="cvPublicAuthPanel"><p>Plan first, then trial</p><h2>Pick Start, Crew, Operator or Command before entering the app.</h2><ul><li>Create the account first</li><li>Choose the plan that matches your business</li><li>Stripe starts the 14-day trial for that chosen plan</li><li>After checkout, Churvox opens the setup guide</li></ul></aside>
+
+        <aside className="cvPublicAuthPanel">
+          <p>Trial path</p>
+          <h2>Start clean. Choose the plan. Then set up the OS.</h2>
+          <ul>
+            <li>Create the account first.</li>
+            <li>Choose Start, Crew, Operator or Command.</li>
+            <li>Stripe starts the 14-day trial for the selected plan.</li>
+            <li>After checkout, Churvox opens setup and Command.</li>
+          </ul>
+        </aside>
       </section>
     </main>
   );
