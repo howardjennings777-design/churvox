@@ -23,6 +23,7 @@ import './churvox-fresh/optionFGreyScrollbars.css';
 import './churvox-fresh/optionFCenteredRecordModal.css';
 import './churvox-fresh/optionFFinalPagePolish.css';
 import './churvox-fresh/optionFWorkspaceTighten.css';
+import './churvox-fresh/optionFControlPages.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
