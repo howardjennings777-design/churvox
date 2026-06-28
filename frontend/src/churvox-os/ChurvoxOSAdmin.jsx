@@ -3,7 +3,7 @@ import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import "./churvoxOSAdmin.css";
 
-const STATE_KEY = "churvox.os.admin.forms.v1";
+const STATE_KEY = "churvox.os.admin.forms.v2";
 
 const NAV = [
   ["hub", "Smart Hub", "SH", "Run"],
@@ -22,6 +22,7 @@ const NAV = [
 ].map(([key, label, code, group]) => ({ key, label, code, group }));
 
 const EMPTY = { jobs: [], clients: [], quotes: [], invoices: [], workers: [], team: [], messages: [], actions: [], requests: [], xero: {} };
+const SKIP_KEYS = /(^id$|_id|password|token|secret|hash|created|updated|deleted|tenant|owner_id|business_id)/i;
 
 function cleanRoute(value) {
   const key = String(value || "").replace(/^#/, "").replace(/^\//, "").trim().toLowerCase();
@@ -55,6 +56,65 @@ function list(result, key) {
     if (Array.isArray(body?.[name])) return body[name];
   }
   return [];
+}
+
+function normalizeKey(value) {
+  return String(value || "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+function findDeep(source, keys) {
+  const wanted = keys.map(normalizeKey);
+  const seen = new Set();
+  const walk = (node) => {
+    if (!node || typeof node !== "object" || seen.has(node)) return "";
+    seen.add(node);
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        const found = walk(item);
+        if (found) return found;
+      }
+      return "";
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if (SKIP_KEYS.test(key)) continue;
+      const clean = normalizeKey(key);
+      if (wanted.some((target) => clean === target || clean.includes(target) || target.includes(clean))) {
+        if (Array.isArray(value)) return value.map((item) => typeof item === "object" ? readableText(item, 4) : String(item)).filter(Boolean).join("\n");
+        if (value && typeof value === "object") return readableText(value, 6);
+        if (pick(value)) return pick(value);
+      }
+    }
+    for (const value of Object.values(node)) {
+      const found = walk(value);
+      if (found) return found;
+    }
+    return "";
+  };
+  return walk(source);
+}
+
+function readableText(source, limit = 8) {
+  const values = [];
+  const seen = new Set();
+  const walk = (node, key = "") => {
+    if (values.length >= limit || node === null || node === undefined) return;
+    if (typeof node === "string" || typeof node === "number") {
+      const text = String(node).trim();
+      if (text && text.length > 1 && !seen.has(text) && !SKIP_KEYS.test(key)) {
+        seen.add(text);
+        values.push(text);
+      }
+      return;
+    }
+    if (Array.isArray(node)) return node.forEach((item) => walk(item, key));
+    if (typeof node === "object") {
+      Object.entries(node).forEach(([childKey, value]) => {
+        if (!SKIP_KEYS.test(childKey)) walk(value, childKey);
+      });
+    }
+  };
+  walk(source);
+  return values.join("\n");
 }
 
 function money(value) {
@@ -141,7 +201,7 @@ function useLiveData(api) {
     const results = await Promise.allSettled(endpoints.map(([, endpoint]) => api.get(endpoint)));
     const byKey = Object.fromEntries(endpoints.map(([key], index) => [key, results[index]]));
     const value = (key) => byKey[key]?.status === "fulfilled" && byKey[key].value?.success !== false ? byKey[key].value : null;
-    const failed = endpoints.filter(([key]) => !value(key)).map(([key]) => key);
+    const failed = endpoints.filter(([key]) => !value(key)).map(([key]) => key).filter((key) => key !== "actions");
 
     const jobs = list(value("jobs"), "jobs").map((job) => ({
       raw: job,
@@ -238,41 +298,48 @@ function useLiveData(api) {
 }
 
 function field(key, label, value, type = "text") {
-  return { key, label, value: value || "", type };
+  return { key, label, value: pick(value), type };
 }
 
 function inferActionType(action) {
-  const text = `${action.recordType || ""} ${action.record_type || ""} ${action.type || ""} ${action.title || ""} ${action.actionKey || ""}`.toLowerCase();
-  if (text.includes("client") || text.includes("customer")) return "client";
-  if (text.includes("quote")) return "quote";
+  const text = readableText(action, 20).toLowerCase();
+  if (text.includes("quote") || text.includes("estimate")) return "quote";
   if (text.includes("invoice")) return "invoice";
-  if (text.includes("message") || text.includes("reply")) return "message";
-  if (text.includes("worker") || text.includes("team")) return "worker";
-  return "work";
+  if (text.includes("message") || text.includes("reply") || text.includes("sms") || text.includes("email")) return "message";
+  if (text.includes("client") || text.includes("customer")) return "client";
+  if (text.includes("worker") || text.includes("team") || text.includes("payroll")) return "worker";
+  return "job";
 }
 
 function actionForm(action, index) {
   const kind = inferActionType(action);
-  const patch = action.fieldPatch || action.payload || action.data || {};
-  const audit = pick(action.afterApproval, action.ownerAuditNote, action.detail, action.summary, action.message, "Churvox prepared this admin from saved work.");
   const baseId = idOf(action, `action-${index}`);
+  const text = readableText(action, 10) || "Saved admin item waiting for owner check.";
+  const nameValue = pick(findDeep(action, ["client_name", "customer_name", "name", "client", "customer"]), "To confirm");
+  const phoneValue = findDeep(action, ["phone", "mobile", "contact_phone"]);
+  const emailValue = findDeep(action, ["email", "contact_email"]);
+  const addressValue = pick(findDeep(action, ["address", "site_address", "location"]), "To confirm");
+  const workValue = pick(findDeep(action, ["work", "service_needed", "job_title", "title", "description", "message", "summary", "detail"]), text);
+  const amountValue = pick(findDeep(action, ["amount", "total", "price", "subtotal"]), "Check amount");
+  const titleValue = title(action, kind === "client" ? "New client form ready" : "Admin form ready");
+
   if (kind === "client") {
     return {
       id: `action:${baseId}`,
       actionId: idOf(action),
       kind: "client",
-      title: "New client form ready",
-      subtitle: "Client details filled from the work that came in.",
+      title: "Client form ready",
+      subtitle: "Client details are filled from the work that came in. Check, edit, then create it.",
       actionLabel: "Create client",
       sourceType: "action",
       status: "Ready",
       fields: [
-        field("name", "Client name", pick(patch.name, patch.client_name, patch.customer_name, action.client_name, action.customer_name, "To confirm")),
-        field("phone", "Phone", pick(patch.phone, patch.mobile, action.phone, "")),
-        field("email", "Email", pick(patch.email, action.email, "")),
-        field("address", "Address", pick(patch.address, patch.site_address, action.address, "To confirm")),
-        field("work", "Work requested", pick(patch.work, patch.service_needed, patch.title, action.title, audit), "textarea"),
-        field("notes", "Admin notes", audit, "textarea"),
+        field("name", "Client name", nameValue),
+        field("phone", "Phone", phoneValue || "Add if missing"),
+        field("email", "Email", emailValue || "Add if missing"),
+        field("address", "Site address", addressValue),
+        field("work", "Work requested", workValue, "textarea"),
+        field("notes", "Owner note", "Looks right. Update anything missing, then approve.", "textarea"),
       ],
     };
   }
@@ -282,17 +349,17 @@ function actionForm(action, index) {
       actionId: idOf(action),
       kind: "quote",
       title: "Quote form ready",
-      subtitle: "Price, wording and customer context are prepared for owner check.",
+      subtitle: "The quote is prepared. Check price, line items and message before sending.",
       actionLabel: "Approve quote",
       sourceType: "action",
       status: "Ready",
       fields: [
-        field("client", "Client", pick(patch.client_name, patch.customer_name, action.client_name, "To confirm")),
-        field("job", "Job / work", pick(patch.title, patch.job_title, action.title, "Work request")),
-        field("line_items", "Line items", pick(patch.line_items, patch.items, audit), "textarea"),
-        field("total", "Total", pick(patch.total, patch.amount, action.amount, "To confirm")),
-        field("terms", "Terms", pick(patch.terms, "Quote valid for 14 days unless stated otherwise."), "textarea"),
-        field("message", "Customer message", pick(patch.message, audit), "textarea"),
+        field("client", "Client", nameValue),
+        field("job", "Job / work", workValue),
+        field("line_items", "Line items", pick(findDeep(action, ["line_items", "items"]), workValue), "textarea"),
+        field("total", "Total", amountValue),
+        field("terms", "Terms", "Quote valid for 14 days unless stated otherwise.", "textarea"),
+        field("message", "Customer message", pick(findDeep(action, ["message", "body"]), "Here is the quote for your review."), "textarea"),
       ],
     };
   }
@@ -302,17 +369,17 @@ function actionForm(action, index) {
       actionId: idOf(action),
       kind: "invoice",
       title: "Invoice form ready",
-      subtitle: "The invoice is filled, proof checked, and waiting for owner approval.",
+      subtitle: "The invoice is prepared. Check amount, proof and sync rule before approving.",
       actionLabel: "Approve invoice",
       sourceType: "action",
       status: "Ready",
       fields: [
-        field("client", "Client", pick(patch.client_name, patch.customer_name, action.client_name, "To confirm")),
-        field("job", "Job", pick(patch.job_title, patch.title, action.title, "Completed work")),
-        field("proof", "Proof", pick(patch.proof, "Attached if worker uploaded it")),
-        field("time", "Time", pick(patch.time, patch.time_on_site, "Check job timer")),
-        field("amount", "Amount", pick(patch.amount, patch.total, action.amount, "To confirm")),
-        field("notes", "Invoice note", audit, "textarea"),
+        field("client", "Client", nameValue),
+        field("job", "Job", workValue),
+        field("amount", "Amount", amountValue),
+        field("proof", "Proof", pick(findDeep(action, ["proof", "photos", "attachment"]), "Check worker proof before sending")),
+        field("invoice_note", "Invoice note", pick(findDeep(action, ["note", "notes", "summary"]), text), "textarea"),
+        field("sync", "Accounting sync", "Draft sync only after owner approval"),
       ],
     };
   }
@@ -320,16 +387,16 @@ function actionForm(action, index) {
     return {
       id: `action:${baseId}`,
       actionId: idOf(action),
-      kind: "message",
+      kind: "reply",
       title: "Reply ready",
-      subtitle: "Churvox drafted the reply. Owner checks wording before anything sends.",
+      subtitle: "The reply is drafted. Check wording before anything sends.",
       actionLabel: "Approve reply",
       sourceType: "action",
       status: "Ready",
       fields: [
-        field("to", "To", pick(patch.to, patch.client_name, action.client_name, "Client")),
-        field("subject", "Subject", pick(patch.subject, action.title, "Job update")),
-        field("message", "Message", pick(patch.message, patch.body, audit), "textarea"),
+        field("to", "To", nameValue),
+        field("subject", "Subject", pick(findDeep(action, ["subject", "title"]), "Job update")),
+        field("message", "Message", pick(findDeep(action, ["message", "body", "reply", "detail", "summary"]), text), "textarea"),
         field("send_rule", "Send rule", "Send only after owner approval"),
       ],
     };
@@ -337,17 +404,17 @@ function actionForm(action, index) {
   return {
     id: `action:${baseId}`,
     actionId: idOf(action),
-    kind: "work",
-    title: title(action, "Admin form ready"),
-    subtitle: "Churvox prepared the admin. Check the fields, then approve or edit.",
+    kind: "job",
+    title: titleValue,
+    subtitle: "The admin is prepared. Check the fields, edit if needed, then approve.",
     actionLabel: "Approve admin",
     sourceType: "action",
     status: "Ready",
     fields: [
-      field("work", "Work", pick(patch.title, action.title, "Work item")),
-      field("client", "Client", pick(patch.client_name, patch.customer_name, action.client_name, "To confirm")),
-      field("next_step", "Next step", audit, "textarea"),
-      field("owner_rule", "Owner rule", "No send, sync or client action until approved in Command"),
+      field("client", "Client", nameValue),
+      field("work", "Work", workValue, "textarea"),
+      field("address", "Site address", addressValue),
+      field("next_step", "Next step", pick(findDeep(action, ["next_step", "action", "recommendation"]), "Approve this prepared admin or save an edit."), "textarea"),
     ],
   };
 }
@@ -361,11 +428,11 @@ function invoiceForm(invoice) {
 }
 
 function messageForm(message) {
-  return { id: `message:${message.id}`, sourceType: "message", sourceId: message.id, kind: "message", title: "Reply ready", subtitle: "Check wording before it goes out.", actionLabel: "Approve reply", status: message.status, fields: [field("to", "To", message.audience), field("subject", "Subject", message.title), field("body", "Message", message.detail, "textarea"), field("rule", "Send rule", "Owner approval required")] };
+  return { id: `message:${message.id}`, sourceType: "message", sourceId: message.id, kind: "reply", title: "Reply ready", subtitle: "Check wording before it goes out.", actionLabel: "Approve reply", status: message.status, fields: [field("to", "To", message.audience), field("subject", "Subject", message.title), field("body", "Message", message.detail, "textarea"), field("rule", "Send rule", "Owner approval required")] };
 }
 
 function requestForm(request, index) {
-  return { id: `request:${idOf(request, `request-${index}`)}`, sourceType: "request", sourceId: idOf(request), kind: "request", title: "New work request ready", subtitle: "Turn the request into real work after checking the details.", actionLabel: "Create job", status: pick(request.status, "New"), fields: [field("client", "Client", pick(request.customer_name, request.name, "To confirm")), field("phone", "Phone", pick(request.phone, request.mobile)), field("email", "Email", pick(request.email)), field("work", "Work requested", pick(request.service_needed, request.title, request.message), "textarea"), field("address", "Address", pick(request.address, request.site_address, "To confirm"))] };
+  return { id: `request:${idOf(request, `request-${index}`)}`, sourceType: "request", sourceId: idOf(request), kind: "request", title: "New work request ready", subtitle: "Turn the request into real work after checking the details.", actionLabel: "Create job", status: pick(request.status, "New"), fields: [field("client", "Client", pick(request.customer_name, request.name, "To confirm")), field("phone", "Phone", pick(request.phone, request.mobile, "Add if missing")), field("email", "Email", pick(request.email, "Add if missing")), field("work", "Work requested", pick(request.service_needed, request.title, request.message, readableText(request, 6)), "textarea"), field("address", "Address", pick(request.address, request.site_address, "To confirm"))] };
 }
 
 function needsOwner(statusText) {
@@ -407,13 +474,13 @@ function Command({ forms, adminState, setAdminState, approve, busy }) {
   React.useEffect(() => {
     if (!selected) return;
     setDraft(savedDraft || Object.fromEntries(selected.fields.map((item) => [item.key, item.value])));
-  }, [selected?.id]);
+  }, [selected?.id, savedDraft]);
 
   const update = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
 
   if (!selected) return <section className="commandDesk"><aside className="formQueue"><h1>Admin forms ready for owner check.</h1><Empty title="Nothing waiting" text="When Churvox prepares a client, quote, invoice, reply or job form it appears here as a real editable form." /></aside></section>;
 
-  return <section className="commandDesk"><aside className="formQueue"><h1>Admin forms ready for owner check.</h1><div className="queueStats"><b>{forms.filter((form) => form.state !== "parked").length} open</b><span>{forms.filter((form) => form.edited).length} edited</span><span>{forms.filter((form) => form.state === "parked").length} parked</span></div>{forms.map((form) => <button className={form.id === selected.id ? "active" : ""} key={form.id} onClick={() => setSelectedId(form.id)} type="button"><small>{form.kind}</small><b>{form.title}</b><span>{form.subtitle}</span><em>{form.edited ? "edited" : form.state || "open"}</em></button>)}</aside><article className="adminFormSlip"><header><span>{selected.kind} admin</span><h2>{selected.title}</h2><p>{selected.subtitle}</p></header><div className="actualForm">{selected.fields.map((item) => <label className={item.type === "textarea" ? "wide" : ""} key={item.key}><span>{item.label}</span>{item.type === "textarea" ? <textarea value={draft[item.key] || ""} onChange={(event) => update(item.key, event.target.value)} /> : <input value={draft[item.key] || ""} onChange={(event) => update(item.key, event.target.value)} />}</label>)}</div><footer><button disabled={busy} onClick={() => approve(selected, "approved", draft)} type="button">{selected.actionLabel}</button><button disabled={busy} onClick={() => { setAdminState((current) => ({ ...current, [selected.id]: { ...(current[selected.id] || {}), state: "open", edited: true, draft } })); }} type="button">Save edit</button><button disabled={busy} onClick={() => approve(selected, "parked", draft)} type="button">Park</button></footer></article></section>;
+  return <section className="commandDesk"><aside className="formQueue"><h1>Admin forms ready for owner check.</h1><div className="queueStats"><b>{forms.filter((form) => form.state !== "parked").length} open</b><span>{forms.filter((form) => form.edited).length} edited</span><span>{forms.filter((form) => form.state === "parked").length} parked</span></div>{forms.map((form) => <button className={form.id === selected.id ? "active" : ""} key={form.id} onClick={() => setSelectedId(form.id)} type="button"><small>{form.kind}</small><b>{form.title}</b><span>{form.subtitle}</span><em>{form.edited ? "edited" : form.state || "open"}</em></button>)}</aside><article className="adminFormSlip"><header><span>{selected.kind} form</span><h2>{selected.title}</h2><p>{selected.subtitle}</p></header><div className="actualForm">{selected.fields.map((item) => <label className={item.type === "textarea" ? "wide" : ""} key={item.key}><span>{item.label}</span>{item.type === "textarea" ? <textarea value={draft[item.key] || ""} onChange={(event) => update(item.key, event.target.value)} /> : <input value={draft[item.key] || ""} onChange={(event) => update(item.key, event.target.value)} />}</label>)}</div><footer><button disabled={busy} onClick={() => approve(selected, "approved", draft)} type="button">{selected.actionLabel}</button><button disabled={busy} onClick={() => { setAdminState((current) => ({ ...current, [selected.id]: { ...(current[selected.id] || {}), state: "open", edited: true, draft } })); }} type="button">Save edit</button><button disabled={busy} onClick={() => approve(selected, "parked", draft)} type="button">Park</button></footer></article></section>;
 }
 
 function MapBox({ workers }) {
@@ -514,5 +581,5 @@ export default function ChurvoxOSAdmin() {
   else if (page === "help") content = <Control titleText="Help" subtitle="Fast setup and launch checks." items={[["Setup check", "Create one client, one job, one worker and one invoice."], ["Worker guide", "Workers record time, GPS and proof."], ["Accounting guide", "Draft sync only, no tax filing or payout files."], ["Support", "hello@churvox.com"]]} />;
   else content = <Hub data={data} forms={forms} go={go} loading={loading} error={error} />;
 
-  return <main className="adminOS"><Sidebar page={page} go={go} count={forms.filter((form) => form.state !== "parked").length} data={data} loading={loading} error={error} /><section className="adminWorkspace"><Topbar page={page} go={go} addWork={addWork} busy={addBusy} />{content}</section><aside className="ownerDock"><span>Command approval desk</span><strong>{forms.filter((form) => form.state !== "parked").length}</strong><p>admin forms waiting</p><button onClick={() => go("command")} type="button">Open Command</button><small>Check the form, edit if needed, approve.</small></aside></main>;
+  return <main className="adminOS"><Sidebar page={page} go={go} count={forms.filter((form) => form.state !== "parked").length} data={data} loading={loading} error={error} /><section className="adminWorkspace"><Topbar page={page} go={go} addWork={addWork} busy={addBusy} />{content}</section><aside className="ownerDock"><span>Command approval desk</span><strong>{forms.filter((form) => form.state !== "parked").length}</strong><p>forms waiting</p><button onClick={() => go("command")} type="button">Open Command</button><small>Check the form, edit if needed, approve.</small></aside></main>;
 }
