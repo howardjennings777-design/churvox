@@ -1,0 +1,192 @@
+/* CHURVOX_TODAY_FINAL_POLISH_20260628 */
+
+.workOS .workTop {
+  grid-template-columns: 120px minmax(260px, 1fr) 118px !important;
+  min-height: 40px !important;
+  margin-bottom: 6px !important;
+}
+
+.workOS .workTop > div span {
+  font-size: 9px !important;
+}
+
+.workOS .workTop > div strong {
+  font-size: 18px !important;
+}
+
+.workOS .workTop form {
+  min-height: 38px !important;
+  border-radius: 7px !important;
+  padding: 5px 7px !important;
+  background: #fffdf8 !important;
+}
+
+.workOS .workTop form label {
+  font-size: 9px !important;
+}
+
+.workOS .workTop input {
+  font-size: 13px !important;
+}
+
+.workOS .workTop button {
+  min-height: 34px !important;
+  border-radius: 7px !important;
+  padding: 7px 10px !important;
+  font-size: 12px !important;
+}
+
+.workOS .todayHero {
+  min-height: 104px !important;
+  grid-template-columns: minmax(0, 1fr) 360px !important;
+  padding: 10px 12px !important;
+}
+
+.workOS .todayHero h1 {
+  font-size: clamp(28px, 3.8vw, 46px) !important;
+}
+
+.workOS .todayHero p {
+  font-size: 12px !important;
+}
+
+.workOS .todayStats b {
+  min-height: 48px !important;
+  font-size: 22px !important;
+}
+
+.workOS .todayStats b span {
+  font-size: 8.5px !important;
+}
+
+.workOS .weekStrip button {
+  min-height: 42px !important;
+}
+
+.workOS .weekStrip b {
+  font-size: 10px !important;
+}
+
+.workOS .weekStrip span {
+  font-size: 17px !important;
+}
+
+.workOS .todayGrid {
+  grid-template-rows: repeat(2, 282px) !important;
+}
+
+.workOS .todayJobs,
+.workOS .todayWorkers,
+.workOS .workerDrawer,
+.workOS .todayMessages,
+.workOS .todayMoney,
+.workOS .todayProblems {
+  height: 282px !important;
+  max-height: 282px !important;
+  min-height: 282px !important;
+  border-color: rgba(23, 21, 18, .16) !important;
+}
+
+.workOS .todayGrid article header {
+  min-height: 48px !important;
+  padding: 10px 12px !important;
+  color: #fff !important;
+}
+
+.workOS .todayJobs header {
+  background: #f05a28 !important;
+}
+
+.workOS .todayWorkers header {
+  background: #2d3430 !important;
+}
+
+.workOS .workerDrawer header,
+.workOS .workerDrawer > h2 {
+  background: #53483e !important;
+  color: #fff !important;
+}
+
+.workOS .todayMessages header {
+  background: #2f6b4f !important;
+}
+
+.workOS .todayMoney header {
+  background: #b54822 !important;
+}
+
+.workOS .todayProblems header {
+  background: #7a5412 !important;
+}
+
+.workOS .workerDrawer > h2 {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  border-bottom: 1px solid rgba(255,255,255,.18) !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.workOS .todayGrid h2 {
+  color: inherit !important;
+  font-size: 16px !important;
+  letter-spacing: 0 !important;
+}
+
+.workOS .todayGrid header button {
+  background: rgba(255,255,255,.18) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.24) !important;
+}
+
+.workOS .todayGrid > article > p,
+.workOS .todayWorkers > button,
+.workOS .workerDrawer p {
+  margin: 8px 10px 0 !important;
+  padding: 9px !important;
+  border-left-width: 3px !important;
+}
+
+.workOS .todayGrid > article > p strong,
+.workOS .todayWorkers > button span,
+.workOS .workerDrawer p b {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+
+.workOS .todayGrid > article > p span,
+.workOS .todayGrid > article > p small,
+.workOS .todayWorkers > button small,
+.workOS .workerDrawer p span,
+.workOS .workerDrawer p small {
+  font-size: 11.2px !important;
+  line-height: 1.28 !important;
+}
+
+.workOS .todayJobs header h2::after {
+  content: " today";
+}
+
+.workOS .todayMessages .workEmpty,
+.workOS .todayGrid .workEmpty {
+  margin: 8px 10px 0 !important;
+}
+
+.workOS .todayWorkers > button.active {
+  border-left-width: 4px !important;
+  background: #fff8f3 !important;
+}
+
+.workOS .todayWorkers > button.active span {
+  color: var(--work-ink) !important;
+}
+
+@media (max-width: 1220px) {
+  .workOS .todayHero {
+    grid-template-columns: 1fr !important;
+  }
+}
