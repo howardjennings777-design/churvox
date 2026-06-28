@@ -1,0 +1,189 @@
+/* CHURVOX_OS_ACTION_FIX_20260628
+   Command is not an evidence reader. It is the owner's action desk. */
+
+.realChurvoxOS:has(.properCommand) {
+  grid-template-columns: 222px minmax(0, 1fr);
+}
+
+.realChurvoxOS:has(.properCommand) .commandDock {
+  display: none !important;
+}
+
+.properCommand {
+  grid-template-columns: 340px minmax(0, 1fr) !important;
+  gap: 14px !important;
+}
+
+.properCommand .evidenceRail {
+  display: none !important;
+}
+
+.properCommand .commandQueue {
+  max-height: calc(100vh - 88px) !important;
+  padding: 18px !important;
+}
+
+.properCommand .commandQueue h1 {
+  font-size: 32px !important;
+  line-height: 0.98 !important;
+}
+
+.properCommand .commandQueue button {
+  min-height: 104px !important;
+  padding: 12px !important;
+}
+
+.properCommand .realSlip {
+  min-height: calc(100vh - 88px) !important;
+  padding: 18px !important;
+}
+
+.properCommand .realSlip header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 14px !important;
+}
+
+.properCommand .realSlip header h2 {
+  font-size: clamp(34px, 4vw, 58px) !important;
+  line-height: 0.96 !important;
+}
+
+.properCommand .realSlip header strong {
+  align-self: start !important;
+  border-radius: 8px !important;
+  padding: 12px 14px !important;
+  background: var(--os-orange) !important;
+  color: #fff !important;
+  font-size: 18px !important;
+}
+
+.ownerCheckStrip {
+  border-color: rgba(23, 21, 18, 0.14) !important;
+  background: #fffdf8 !important;
+  box-shadow: inset 4px 0 0 var(--os-orange) !important;
+}
+
+.ownerCheckStrip b::before {
+  content: "Owner check: ";
+  color: var(--os-orange-2);
+}
+
+.realFilledForm {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+}
+
+.realFilledForm label {
+  min-height: 96px !important;
+  border-color: rgba(23, 21, 18, 0.14) !important;
+  background: #fff !important;
+}
+
+.realFilledForm label > span {
+  color: #5f210f !important;
+  font-size: 11px !important;
+}
+
+.realFilledForm label > b {
+  color: var(--os-ink) !important;
+  font-size: 15px !important;
+}
+
+.realFilledForm .filledPreview {
+  min-height: 220px !important;
+}
+
+.realFilledForm .filledPreview pre {
+  min-height: 150px !important;
+  max-height: 260px !important;
+  border: 1px solid rgba(23, 21, 18, 0.14) !important;
+  background: #fffaf2 !important;
+  color: var(--os-ink) !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+}
+
+.realFilledForm .filledPreview pre:empty::before {
+  content: "No filled form body came back from Churvox yet. Use Save edit to add the owner note, or park it.";
+  color: var(--os-muted);
+}
+
+.realFilledForm .ownerNote textarea {
+  min-height: 126px !important;
+  border: 2px solid rgba(240, 90, 40, 0.24) !important;
+  background: #fffdf8 !important;
+}
+
+.realSlip .stickyActions {
+  display: grid !important;
+  grid-template-columns: 1.2fr 1fr 0.8fr !important;
+  gap: 10px !important;
+  padding: 14px 0 0 !important;
+}
+
+.realSlip .stickyActions::before {
+  content: "Owner action";
+  grid-column: 1 / -1;
+  color: #5f210f;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.realSlip .stickyActions button {
+  min-height: 54px !important;
+  font-size: 15px !important;
+}
+
+.realSlip .stickyActions button:first-of-type {
+  background: var(--os-orange) !important;
+  box-shadow: 0 14px 30px rgba(240, 90, 40, 0.24) !important;
+}
+
+.realSlip .stickyActions button:nth-of-type(2) {
+  background: var(--os-graphite) !important;
+}
+
+.realSlip .stickyActions button:nth-of-type(3) {
+  background: rgba(23, 21, 18, 0.09) !important;
+  color: var(--os-ink) !important;
+}
+
+.simpleRealPage .replyBoard article,
+.controlPage .controlGrid article,
+.jobsPage .jobMachine article,
+.clientsPage .clientDossier,
+.invoicesPage .replyBoard article,
+.quotesPage .replyBoard article {
+  position: relative;
+}
+
+.simpleRealPage .replyBoard article::after,
+.controlPage .controlGrid article::after {
+  content: "Open action in Command when ready";
+  display: inline-flex;
+  width: fit-content;
+  margin-top: auto;
+  border-radius: 999px;
+  padding: 7px 9px;
+  background: rgba(240, 90, 40, 0.12);
+  color: #5f210f;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+@media (max-width: 1120px) {
+  .realChurvoxOS:has(.properCommand),
+  .properCommand {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .realFilledForm,
+  .realSlip .stickyActions {
+    grid-template-columns: 1fr !important;
+  }
+}
