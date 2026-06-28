@@ -1,0 +1,66 @@
+/* CHURVOX_OS_SIDEBAR_POLISH_20260628
+   Remove the quick-add button and keep the OS sidebar pinned and tidy. */
+
+@media (min-width: 1121px) {
+  .churvoxOS .osSidebar {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    gap: 8px !important;
+    padding: 12px !important;
+    align-self: start !important;
+  }
+
+  .churvoxOS .osQuickAdd {
+    display: none !important;
+  }
+
+  .churvoxOS .osBrand {
+    min-height: 54px !important;
+    padding: 8px !important;
+  }
+
+  .churvoxOS .osLogo {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .churvoxOS .osBrand strong {
+    font-size: 17px !important;
+  }
+
+  .churvoxOS .osNavGroup {
+    gap: 2px !important;
+    padding: 7px !important;
+  }
+
+  .churvoxOS .osNavGroup p {
+    margin-bottom: 3px !important;
+  }
+
+  .churvoxOS .osNavGroup button {
+    min-height: 34px !important;
+    padding: 5px 7px !important;
+  }
+
+  .churvoxOS .navCode {
+    height: 22px !important;
+  }
+
+  .churvoxOS .navLabel {
+    font-size: 12.5px !important;
+  }
+
+  .churvoxOS .osSystemCard {
+    margin-top: auto !important;
+    padding: 10px !important;
+  }
+}
+
+@media (max-width: 1120px) {
+  .churvoxOS .osQuickAdd {
+    display: none !important;
+  }
+}
