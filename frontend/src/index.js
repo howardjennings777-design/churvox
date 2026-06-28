@@ -21,6 +21,7 @@ import './churvox-fresh/optionFNoCommandPill.css';
 import './churvox-fresh/optionFHeaderPattern.css';
 import './churvox-fresh/optionFGreyScrollbars.css';
 import './churvox-fresh/optionFCenteredRecordModal.css';
+import './churvox-fresh/optionFProblemSlipRuntime.css';
 import './churvox-fresh/optionFFinalPagePolish.css';
 import './churvox-fresh/optionFWorkspaceTighten.css';
 import './churvox-fresh/optionFControlPages.css';
@@ -40,6 +41,7 @@ import './churvox-fresh/optionFTodayScheduleGuardRuntime';
 import './churvox-fresh/optionFAutoAdminFlowRuntime';
 import './churvox-fresh/optionFDecisionEffectsRuntime';
 import './churvox-fresh/optionFRecordHydrationRuntime';
+import './churvox-fresh/optionFProblemSlipRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
