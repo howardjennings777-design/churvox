@@ -28,6 +28,7 @@ import './pages/marketing/PublicAdminOS.css';
 import './churvox-os/churvoxOSPlansDockPolish.css';
 import './churvox-os/churvoxOSSidebarPolish.css';
 import './runtime/churvoxPlansCountryRuntime';
+import './runtime/churvoxKiwiCopyGuard';
 
 // CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
 if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__) {
