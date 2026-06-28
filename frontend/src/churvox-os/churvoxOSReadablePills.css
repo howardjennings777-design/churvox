@@ -95,3 +95,159 @@
     min-height: auto !important;
   }
 }
+
+/* Workspace fill pass for sparse control, admin, money and sync pages. */
+.churvoxOS .osWorkspace.hasDock .controlPage,
+.churvoxOS .osWorkspace.hasDock .plansPage,
+.churvoxOS .osWorkspace.hasDock .xeroPage,
+.churvoxOS .osWorkspace.hasDock .messagesPage,
+.churvoxOS .osWorkspace.hasDock .teamPage,
+.churvoxOS .osWorkspace.hasDock .quotesPage,
+.churvoxOS .osWorkspace.hasDock .invoicesPage {
+  min-height: calc(100vh - 80px) !important;
+  align-content: stretch !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .controlPage {
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .controlGrid {
+  height: 100% !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(190px, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .controlGrid article {
+  min-height: 0 !important;
+  justify-content: space-between !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .plansPage {
+  grid-template-rows: auto minmax(245px, 0.9fr) minmax(230px, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .planCards {
+  height: 100% !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .planCards article {
+  min-height: 0 !important;
+  justify-content: space-between !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .planMatrix {
+  min-height: 230px !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .xeroPage {
+  grid-template-columns: minmax(330px, 0.92fr) minmax(0, 1.08fr) !important;
+  grid-auto-rows: minmax(0, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .xeroStatement {
+  min-height: calc(100vh - 80px) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .guardrailGrid {
+  height: 100% !important;
+  grid-auto-rows: 1fr !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .guardrailGrid article {
+  min-height: 0 !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .messagesPage {
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.34fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .messageHeader {
+  grid-column: 1 / -1 !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .replyBoard {
+  height: 100% !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(190px, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .replyBoard article {
+  min-height: 0 !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .messageGuard {
+  min-height: 100% !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .teamPage {
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.34fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .teamMatrix,
+.churvoxOS .osWorkspace.hasDock .teamRail {
+  min-height: 100% !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .teamMatrix td,
+.churvoxOS .osWorkspace.hasDock .teamMatrix th {
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .quotesPage {
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.34fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .offerTrack {
+  height: 100% !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .offerTrack article,
+.churvoxOS .osWorkspace.hasDock .pipelinePrep {
+  min-height: 100% !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .invoicesPage {
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.34fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .invoiceLedger {
+  height: 100% !important;
+  grid-auto-rows: minmax(72px, 1fr) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock .invoiceLedger article,
+.churvoxOS .osWorkspace.hasDock .moneyControl {
+  min-height: 100% !important;
+}
+
+.churvoxOS .osWorkspace.hasDock + .commandDock {
+  min-height: calc(100vh - 28px) !important;
+}
+
+.churvoxOS .osWorkspace.hasDock + .commandDock .dockCore {
+  min-height: min(520px, calc(100vh - 230px)) !important;
+}
+
+@media (max-width: 1120px) {
+  .churvoxOS .osWorkspace.hasDock .controlGrid,
+  .churvoxOS .osWorkspace.hasDock .replyBoard,
+  .churvoxOS .osWorkspace.hasDock .guardrailGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .churvoxOS .osWorkspace.hasDock .plansPage,
+  .churvoxOS .osWorkspace.hasDock .messagesPage,
+  .churvoxOS .osWorkspace.hasDock .teamPage,
+  .churvoxOS .osWorkspace.hasDock .quotesPage,
+  .churvoxOS .osWorkspace.hasDock .invoicesPage,
+  .churvoxOS .osWorkspace.hasDock .xeroPage {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+  }
+}
