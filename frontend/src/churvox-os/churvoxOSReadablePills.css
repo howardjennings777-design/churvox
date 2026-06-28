@@ -33,3 +33,65 @@
   background-color: rgba(255, 255, 255, 0.82) !important;
   border-color: rgba(0, 0, 0, 0.18) !important;
 }
+
+/* When Command is open the right approval dock is hidden, so the desk must use that space. */
+.churvoxOS > .osWorkspace:last-child {
+  grid-column: 2 / -1 !important;
+  padding-right: 18px !important;
+}
+
+.churvoxOS > .osWorkspace:last-child .commandPage {
+  width: 100% !important;
+  min-height: calc(100vh - 80px) !important;
+  display: grid !important;
+  grid-template-columns: minmax(285px, 0.82fr) minmax(460px, 1.42fr) minmax(310px, 0.96fr) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+}
+
+.churvoxOS > .osWorkspace:last-child .commandQueue,
+.churvoxOS > .osWorkspace:last-child .decisionSlip,
+.churvoxOS > .osWorkspace:last-child .evidenceRail {
+  min-height: calc(100vh - 92px) !important;
+}
+
+.churvoxOS > .osWorkspace:last-child .decisionSlip {
+  grid-template-rows: auto minmax(360px, 1fr) auto !important;
+}
+
+.churvoxOS > .osWorkspace:last-child .filledForm {
+  align-content: stretch !important;
+}
+
+.churvoxOS > .osWorkspace:last-child .filledForm label:last-child {
+  min-height: 170px !important;
+}
+
+.churvoxOS > .osWorkspace:last-child .filledForm textarea {
+  min-height: 150px !important;
+}
+
+.churvoxOS > .osWorkspace:last-child .evidenceRail {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.churvoxOS > .osWorkspace:last-child .evidenceRail div:last-child {
+  margin-bottom: auto !important;
+}
+
+@media (max-width: 1120px) {
+  .churvoxOS > .osWorkspace:last-child {
+    grid-column: auto !important;
+  }
+
+  .churvoxOS > .osWorkspace:last-child .commandPage {
+    grid-template-columns: 1fr !important;
+  }
+
+  .churvoxOS > .osWorkspace:last-child .commandQueue,
+  .churvoxOS > .osWorkspace:last-child .decisionSlip,
+  .churvoxOS > .osWorkspace:last-child .evidenceRail {
+    min-height: auto !important;
+  }
+}
