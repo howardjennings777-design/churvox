@@ -165,25 +165,54 @@
 .churvoxOS .plansPage {
   min-height: calc(100vh - 80px) !important;
   display: grid !important;
-  grid-template-rows: auto minmax(245px, .86fr) minmax(285px, 1fr) !important;
+  grid-template-rows: minmax(170px, auto) minmax(245px, .86fr) minmax(285px, 1fr) !important;
   gap: 12px !important;
 }
 
 .churvoxOS .plansHeader {
   position: relative !important;
-  min-height: 150px !important;
+  min-height: 170px !important;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(260px, .38fr) !important;
-  gap: 18px !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  gap: 8px 18px !important;
   align-items: end !important;
   padding: 18px !important;
   overflow: hidden !important;
 }
 
+.churvoxOS .plansHeader .kicker {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  align-self: start !important;
+}
+
+.churvoxOS .plansHeader h1 {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  max-width: 760px !important;
+  margin: 0 !important;
+  font-size: clamp(38px, 4.4vw, 66px) !important;
+  letter-spacing: -0.04em !important;
+}
+
+.churvoxOS .plansHeader p {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  max-width: 680px !important;
+  margin: 0 !important;
+  color: var(--os-muted) !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  align-self: end !important;
+}
+
 .churvoxOS .plansHeader::after {
   content: "Pricing stays fixed. Operator is Most Popular. Command adds the full approval desk." !important;
+  grid-column: 2 !important;
+  grid-row: 1 / 4 !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-end !important;
   align-self: stretch !important;
   padding: 14px !important;
   border-radius: 8px !important;
@@ -193,21 +222,6 @@
   font-size: 14px !important;
   font-weight: 950 !important;
   line-height: 1.35 !important;
-}
-
-.churvoxOS .plansHeader h1 {
-  max-width: 760px !important;
-  margin-bottom: 6px !important;
-  font-size: clamp(34px, 4.2vw, 62px) !important;
-  letter-spacing: -0.035em !important;
-}
-
-.churvoxOS .plansHeader p {
-  max-width: 680px !important;
-  margin: 0 !important;
-  color: var(--os-muted) !important;
-  font-size: 14px !important;
-  font-weight: 850 !important;
 }
 
 .churvoxOS .planCards {
@@ -400,6 +414,19 @@
 @media (max-width: 1120px) {
   .churvoxOS .plansHeader {
     grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto auto !important;
+  }
+
+  .churvoxOS .plansHeader .kicker,
+  .churvoxOS .plansHeader h1,
+  .churvoxOS .plansHeader p,
+  .churvoxOS .plansHeader::after {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+
+  .churvoxOS .plansHeader::after {
+    align-items: center !important;
   }
 
   .churvoxOS .planCards {
