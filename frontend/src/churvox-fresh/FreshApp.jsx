@@ -1,4 +1,3 @@
-import ChurvoxOSProper from "../churvox-os/ChurvoxOSProper";
-import "../churvox-os/churvoxOSActionFix.css";
+import ChurvoxOSAdmin from "../churvox-os/ChurvoxOSAdmin";
 
-export default ChurvoxOSProper;
+export default ChurvoxOSAdmin;
