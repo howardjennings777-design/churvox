@@ -6,8 +6,8 @@ export const DEFAULT_COUNTRY = "NZ";
 export const COUNTRY_PRICE_OVERRIDES = {
   NZ: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
   AU: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
-  US: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
-  UK: { solo: 39, team: 89, pro: 149, enterprise: 299, accounting_sync: 39, growth_pack: 99 },
+  US: { solo: 29, team: 69, pro: 119, enterprise: 249, accounting_sync: 29, growth_pack: 79 },
+  UK: { solo: 29, team: 69, pro: 119, enterprise: 249, accounting_sync: 29, growth_pack: 79 },
 };
 
 export const PLAN_KEYS = { START: "solo", CREW: "team", OPERATOR: "pro", COMMAND: "enterprise" };
