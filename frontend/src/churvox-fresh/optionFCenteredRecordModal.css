@@ -1,0 +1,102 @@
+body:has(.churvoxOptionC .cocDrawer) .churvoxOptionC::after {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 38 !important;
+  background: rgba(16, 21, 19, 0.34) !important;
+  backdrop-filter: blur(2px) !important;
+  pointer-events: none !important;
+}
+
+.churvoxOptionC .cocDrawer {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(760px, calc(100vw - 44px)) !important;
+  max-height: min(760px, calc(100vh - 56px)) !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 50 !important;
+  overflow: auto !important;
+  border: 1px solid rgba(16, 21, 19, 0.14) !important;
+  border-radius: 22px !important;
+  padding: 22px !important;
+  background: #fff !important;
+  color: #151c19 !important;
+  box-shadow: 0 38px 120px rgba(16, 21, 19, 0.36) !important;
+}
+
+.churvoxOptionC .cocDrawer button {
+  position: sticky !important;
+  top: 0 !important;
+  float: right !important;
+  z-index: 2 !important;
+  min-height: 36px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  padding: 8px 14px !important;
+  background: #101513 !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px rgba(16, 21, 19, 0.12) !important;
+}
+
+.churvoxOptionC .cocDrawer em {
+  margin-bottom: 12px !important;
+  background: #ffe2d2 !important;
+  color: #b94b24 !important;
+}
+
+.churvoxOptionC .cocDrawer h2 {
+  margin: 8px 0 8px !important;
+  color: #151c19 !important;
+  font-size: clamp(26px, 3vw, 36px) !important;
+  line-height: 1.05 !important;
+  font-weight: 950 !important;
+}
+
+.churvoxOptionC .cocDrawer p {
+  max-width: 64ch !important;
+  margin: 0 0 18px !important;
+  color: #5e6b65 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.churvoxOptionC .cocDrawer > div {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 16px !important;
+  clear: both !important;
+}
+
+.churvoxOptionC .cocDrawer .cocField textarea,
+.churvoxOptionC .cocDrawer .cocField:has(textarea) {
+  grid-column: 1 / -1 !important;
+}
+
+.churvoxOptionC .cocDrawer .cocField input,
+.churvoxOptionC .cocDrawer .cocField textarea {
+  min-height: 44px !important;
+  border: 1px solid rgba(16, 21, 19, 0.12) !important;
+  border-radius: 12px !important;
+  background: #f8faf7 !important;
+  font-size: 14px !important;
+}
+
+.churvoxOptionC .cocDrawer .cocField textarea {
+  min-height: 120px !important;
+}
+
+@media (max-width: 680px) {
+  .churvoxOptionC .cocDrawer {
+    width: calc(100vw - 24px) !important;
+    max-height: calc(100vh - 24px) !important;
+    padding: 18px !important;
+    border-radius: 18px !important;
+  }
+
+  .churvoxOptionC .cocDrawer > div {
+    grid-template-columns: 1fr !important;
+  }
+}
