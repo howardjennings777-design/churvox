@@ -25,6 +25,7 @@ import './styles/command-final-readable.css';
 import './churvox-fresh/freshChurvoxRoutePersonalityLock.css';
 import './churvox-fresh/freshCommandLiveApprovalDesk.css';
 import './pages/marketing/PublicAdminOS.css';
+import './churvox-os/churvoxOSPlansDockPolish.css';
 
 // CHURVOX_JOBS_BOARD_ROUTE_CLASS_20260609
 if (typeof window !== 'undefined' && !window.__CHURVOX_JOBS_BOARD_ROUTE_CLASS__) {
