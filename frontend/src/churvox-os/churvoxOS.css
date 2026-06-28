@@ -273,3 +273,59 @@ body:has(.churvoxOS) [aria-label*="Support"] { display: none !important; }
   .commandActions { grid-template-columns: 1fr; }
   .churvoxOS h1 { font-size: 34px; }
 }
+
+/* Churvox OS screenshot pass: compact dock, darker pills, tighter work screens. */
+@media (min-width: 1381px) {
+  .churvoxOS { grid-template-columns: 222px minmax(0, 1fr) 270px; }
+}
+.kicker,
+.planCards article > span { color: #5f210f; }
+.livePill { color: #0c4d2d; }
+.flowBoard h2 span,
+.status.scheduled,
+.navCode,
+.queueStats span,
+.clientMemory span,
+.messagePrep span,
+.teamMatrixMini p span,
+.replyBoard article > span { color: var(--os-ink); }
+.rulesStrip { color: #6f260f; }
+.status { color: #15466e; }
+.status.on-site { color: #0c4d2d; }
+.commandDock { top: 14px; align-self: start; height: auto; grid-template-rows: auto auto; }
+.dockCore { min-height: 410px; }
+.dockCore::before { inset: 78px 28px 128px; }
+.dockCore::after { bottom: 104px; }
+.dockBeacon { min-height: 180px; }
+.dockBeacon span:nth-child(1) { height: 104px; }
+.dockBeacon span:nth-child(2) { height: 164px; }
+.dockBeacon span:nth-child(3) { height: 82px; }
+.dockCore button { margin-top: 10px; }
+.commandPage { grid-template-columns: 320px minmax(360px, 1fr) 280px; align-items: start; }
+.decisionSlip { grid-template-rows: auto auto auto; }
+.commandActions { background: rgba(255,253,248,.96); }
+.pageStatement h1,
+.moneyHeader h1,
+.messageHeader h1,
+.controlHeader h1,
+.plansHeader h1,
+.xeroStatement h1 { font-size: clamp(30px, 3vw, 46px); }
+.clientIndex h1 { font-size: 36px; }
+.clientDossier { grid-template-rows: auto auto auto; align-content: start; align-self: start; }
+.clientDossier h2 { font-size: clamp(34px, 5vw, 70px); }
+.dossierGrid { align-content: start; margin-top: 14px; }
+.clientDossier::after {
+  content: "Next prepared admin: quote follow-up waiting in Command / not sent";
+  display: block;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(240,90,40,.26);
+  border-radius: 8px;
+  background: #fff0e7;
+  color: #5f210f;
+  font-size: 13px;
+  font-weight: 950;
+}
+@media (max-width: 1380px) {
+  .commandDock { top: auto; align-self: auto; }
+}
