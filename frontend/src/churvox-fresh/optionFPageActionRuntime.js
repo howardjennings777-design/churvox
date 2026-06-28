@@ -1,5 +1,39 @@
 import API_BASE from '../lib/apiBase';
 
+function installOptionFRefreshGuard() {
+  if (typeof window === 'undefined' || window.__churvoxOptionFRefreshGuard) return;
+  const nativeSetInterval = window.setInterval.bind(window);
+  const nativeClearInterval = window.clearInterval.bind(window);
+  const blockedDelays = new Set([1600, 1800, 2400, 3000, 4200]);
+  const blockedHandles = new Set();
+  let nextBlockedHandle = 900000;
+
+  function guardedSetInterval(handler, delay, ...args) {
+    if (blockedDelays.has(Number(delay))) {
+      const handle = nextBlockedHandle += 1;
+      blockedHandles.add(handle);
+      return handle;
+    }
+    return nativeSetInterval(handler, delay, ...args);
+  }
+
+  function guardedClearInterval(handle) {
+    if (blockedHandles.delete(handle)) return undefined;
+    return nativeClearInterval(handle);
+  }
+
+  window.__churvoxOptionFRefreshGuard = true;
+  window.setInterval = guardedSetInterval;
+  window.clearInterval = guardedClearInterval;
+
+  window.setTimeout(() => {
+    if (window.setInterval === guardedSetInterval) window.setInterval = nativeSetInterval;
+    if (window.clearInterval === guardedClearInterval) window.clearInterval = nativeClearInterval;
+  }, 8000);
+}
+
+installOptionFRefreshGuard();
+
 const STORE = 'churvox_option_f_page_actions_v1';
 const MAIN_STORE = 'churvox_option_f_working_actions_v1';
 const MODAL_ID = 'option-f-page-action-modal';
