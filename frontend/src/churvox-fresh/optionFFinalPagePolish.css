@@ -170,6 +170,14 @@
   min-height: 68px !important;
 }
 
+.churvoxOptionC .cocBar {
+  grid-template-columns: 220px minmax(0, 1fr) !important;
+}
+
+.churvoxOptionC .owner {
+  display: none !important;
+}
+
 @media (max-width: 1180px) {
   .churvoxOptionC .today .cocPanel:nth-child(1),
   .churvoxOptionC .today .cocPanel:nth-child(2),
