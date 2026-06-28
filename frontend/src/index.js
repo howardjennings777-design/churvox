@@ -25,6 +25,7 @@ import './churvox-fresh/optionFFinalPagePolish.css';
 import './churvox-fresh/optionFWorkspaceTighten.css';
 import './churvox-fresh/optionFControlPages.css';
 import './churvox-fresh/optionFControlPagesRuntime';
+import './churvox-fresh/optionFControlPagesRuntimeGuard';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
