@@ -54,8 +54,7 @@
 }
 
 .wc-topbar::before,
-.worker-app-top::before,
-.px-mobile-header::before {
+.worker-app-top::before {
   content: "";
   width: 42px;
   height: 42px;
@@ -65,6 +64,11 @@
     linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,0)),
     conic-gradient(from 210deg, #ffb15f, #f06423, #111820, #ff8a2a, #ffb15f);
   box-shadow: inset 0 0 0 7px #0b0f13, 0 12px 30px rgba(240, 100, 35, .26);
+}
+
+.px-mobile-header [data-testid="churvox-logo"],
+.px-mobile-header [data-logo-variant] {
+  filter: drop-shadow(0 12px 24px rgba(240, 100, 35, .24));
 }
 
 .wc-topbar b,
