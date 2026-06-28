@@ -22,6 +22,76 @@
   word-spacing: 0 !important;
 }
 
+.churvoxOS .osNavGroup button,
+.churvoxOS .osNavGroup button:hover,
+.churvoxOS .osNavGroup button:focus,
+.churvoxOS .osNavGroup button:active,
+.churvoxOS .osNavGroup button.active {
+  font-family: inherit !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  font-stretch: normal !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  word-spacing: 0 !important;
+  text-transform: none !important;
+  transform: none !important;
+}
+
+.churvoxOS .osNavGroup button .navLabel,
+.churvoxOS .osNavGroup button:hover .navLabel,
+.churvoxOS .osNavGroup button:focus .navLabel,
+.churvoxOS .osNavGroup button:active .navLabel,
+.churvoxOS .osNavGroup button.active .navLabel {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  font-family: inherit !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  font-stretch: normal !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+  word-spacing: 0 !important;
+  text-transform: none !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  transform: none !important;
+}
+
+.churvoxOS .osNavGroup button .navCode,
+.churvoxOS .osNavGroup button:hover .navCode,
+.churvoxOS .osNavGroup button:focus .navCode,
+.churvoxOS .osNavGroup button:active .navCode,
+.churvoxOS .osNavGroup button.active .navCode {
+  display: grid !important;
+  place-items: center !important;
+  width: 30px !important;
+  height: 24px !important;
+  flex: 0 0 30px !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  font-stretch: normal !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  word-spacing: 0 !important;
+  text-transform: uppercase !important;
+  transform: none !important;
+}
+
+.churvoxOS .osNavGroup button.active .navLabel,
+.churvoxOS .osNavGroup button.active .navCode {
+  color: inherit !important;
+}
+
 @media (min-width: 1121px) {
   .churvoxOS .osSidebar {
     position: sticky !important;
@@ -69,19 +139,23 @@
     text-transform: uppercase !important;
   }
 
-  .churvoxOS .osNavGroup button {
-    min-height: 36px !important;
+  .churvoxOS .osNavGroup button,
+  .churvoxOS .osNavGroup button:hover,
+  .churvoxOS .osNavGroup button:focus,
+  .churvoxOS .osNavGroup button:active,
+  .churvoxOS .osNavGroup button.active {
+    min-height: 38px !important;
     padding: 5px 7px !important;
     grid-template-columns: 32px minmax(0, 1fr) auto !important;
   }
 
   .churvoxOS .navCode {
     height: 24px !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
   }
 
   .churvoxOS .navLabel {
-    font-size: 14px !important;
+    font-size: 15px !important;
     font-weight: 900 !important;
   }
 
