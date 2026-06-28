@@ -271,6 +271,63 @@ body:has(.churvoxOptionC) {
   margin-top: 12px !important;
 }
 
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(.googleMapShell),
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel.red {
+  display: none !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) {
+  grid-column: 1 / -1 !important;
+  min-height: 430px !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) h2::after {
+  content: "Tap a job to open the full job slip" !important;
+  margin-left: auto !important;
+  color: rgba(255,255,255,0.74) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) tbody {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) tr {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.2fr) minmax(80px, .7fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 0 !important;
+  min-height: 72px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(16, 21, 19, 0.12) !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: 0 10px 22px rgba(16,21,19,.05) !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) td {
+  display: flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  border-right: 1px solid rgba(16, 21, 19, 0.08) !important;
+  border-radius: 0 !important;
+  white-space: normal !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) td:last-child {
+  border-right: 0 !important;
+}
+
+.churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) .formGrid {
+  margin-top: 16px !important;
+  padding: 12px !important;
+  border-radius: 14px !important;
+  background: #f8faf7 !important;
+}
+
 @media (max-width: 1180px) {
   .churvoxOptionC .today .cocPanel:nth-child(1),
   .churvoxOptionC .today .cocPanel:nth-child(2),
@@ -288,6 +345,10 @@ body:has(.churvoxOptionC) {
 
   .churvoxOptionC .proofGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) tbody {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -315,5 +376,14 @@ body:has(.churvoxOptionC) {
     height: auto !important;
     padding: 10px 12px !important;
     line-height: 1.35 !important;
+  }
+
+  .churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) tr {
+    grid-template-columns: 1fr !important;
+  }
+
+  .churvoxOptionC .cocPage:has(.toolbar):has(.googleMapShell) .cocPanel:has(table) td {
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(16,21,19,.08) !important;
   }
 }
