@@ -36,6 +36,7 @@ import './churvox-fresh/optionFOperationsRuntime';
 import './churvox-fresh/optionFAdminBrainRuntime';
 import './churvox-fresh/optionFNoLeakRuntime';
 import './churvox-fresh/optionFCommandCleanupRuntime';
+import './churvox-fresh/optionFTodayScheduleGuardRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
