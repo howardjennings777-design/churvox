@@ -1,0 +1,150 @@
+/* CHURVOX_TODAY_EQUAL_BOXES_20260628
+   Same-size Today boxes, 5 visible rows, coloured section headers. */
+
+.workOS .todayGrid {
+  grid-template-columns: repeat(3, minmax(240px, 1fr)) !important;
+  grid-template-rows: repeat(2, 272px) !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+}
+
+.workOS .todayJobs,
+.workOS .todayWorkers,
+.workOS .workerDrawer,
+.workOS .todayMessages,
+.workOS .todayMoney,
+.workOS .todayProblems {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  height: 272px !important;
+  max-height: 272px !important;
+  min-height: 272px !important;
+  overflow-y: auto !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  background: rgba(255, 253, 248, .96) !important;
+  box-shadow: none !important;
+}
+
+.workOS .todayGrid article header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  margin: 0 !important;
+  min-height: 46px !important;
+  padding: 10px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(95, 33, 15, .14) !important;
+  background: #fff0e6 !important;
+  color: #5f210f !important;
+}
+
+.workOS .todayGrid article:nth-child(2) header,
+.workOS .todayGrid article:nth-child(3) header {
+  background: #f3eadf !important;
+}
+
+.workOS .todayGrid article:nth-child(4) header {
+  background: #eef3ee !important;
+  color: #174d32 !important;
+}
+
+.workOS .todayGrid article:nth-child(5) header {
+  background: #f6eadf !important;
+  color: #6d2b0f !important;
+}
+
+.workOS .todayGrid article:nth-child(6) header {
+  background: #fff4dc !important;
+  color: #6a3d00 !important;
+}
+
+.workOS .todayGrid h2 {
+  font-size: 16px !important;
+  font-weight: 950 !important;
+}
+
+.workOS .todayGrid header button {
+  border-radius: 999px !important;
+  padding: 6px 9px !important;
+  background: var(--work-orange) !important;
+  color: #fff !important;
+  font-size: 10px !important;
+}
+
+.workOS .todayJobs p,
+.workOS .todayMessages p,
+.workOS .todayMoney p,
+.workOS .todayProblems p,
+.workOS .workerDrawer p,
+.workOS .todayWorkers > button,
+.workOS .todayGrid .workEmpty {
+  margin: 7px 10px 0 !important;
+  padding: 8px !important;
+  border-radius: 7px !important;
+  background: #fff !important;
+}
+
+.workOS .todayJobs p:nth-of-type(n+6),
+.workOS .todayWorkers > button:nth-of-type(n+6),
+.workOS .workerDrawer p:nth-of-type(n+6),
+.workOS .todayMessages p:nth-of-type(n+6),
+.workOS .todayMoney p:nth-of-type(n+6),
+.workOS .todayProblems p:nth-of-type(n+6) {
+  display: none !important;
+}
+
+.workOS .todayJobs p strong,
+.workOS .todayMessages p strong,
+.workOS .todayMoney p strong,
+.workOS .todayProblems p strong,
+.workOS .workerDrawer p b,
+.workOS .todayWorkers > button span {
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+}
+
+.workOS .todayJobs p span,
+.workOS .todayJobs p small,
+.workOS .todayMessages p span,
+.workOS .todayMessages p small,
+.workOS .todayMoney p span,
+.workOS .todayMoney p small,
+.workOS .todayProblems p span,
+.workOS .todayProblems p small,
+.workOS .workerDrawer p span,
+.workOS .workerDrawer p small,
+.workOS .todayWorkers > button small {
+  font-size: 10.5px !important;
+  line-height: 1.25 !important;
+}
+
+.workOS .todayWorkers > button {
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  min-height: 42px !important;
+  color: var(--work-ink) !important;
+}
+
+.workOS .todayWorkers > button.active {
+  background: #fff !important;
+  color: var(--work-ink) !important;
+}
+
+.workOS .todayWorkers > button b {
+  width: 26px !important;
+  height: 26px !important;
+}
+
+@media (max-width: 1220px) {
+  .workOS .todayGrid {
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: none !important;
+  }
+}
+
+@media (max-width: 840px) {
+  .workOS .todayGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
