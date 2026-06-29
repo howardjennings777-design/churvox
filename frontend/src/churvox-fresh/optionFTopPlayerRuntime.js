@@ -174,7 +174,7 @@ async function renderSupportPanel() {
 }
 
 function renderWorkerOfflinePanel() {
-  if (!window.location.pathname.startsWith('/worker')) { document.getElementById(IDS.workerOffline)?.remove(); return; }
+  if (window.location.pathname !== '/worker/ops') { document.getElementById(IDS.workerOffline)?.remove(); return; }
   const main = document.querySelector('.wc-screen .wc-main, .wc-main, main');
   if (!main) return;
   let node = document.getElementById(IDS.workerOffline);
@@ -241,30 +241,23 @@ function handleClick(event) {
   const pay = event.target.closest('[data-tp-pay-link]');
   const portal = event.target.closest('[data-tp-portal-link]');
   const ticket = event.target.closest('[data-tp-ticket-send]');
-  const offline = event.target.closest('[data-tp-offline-sync]');
-  if (pay || portal) {
-    event.preventDefault();
-    const row = (pay || portal).closest('[data-tp-invoice-id]');
-    const id = row?.getAttribute('data-tp-invoice-id');
-    if (pay) createPayLink(id, pay);
-    if (portal) createPortalLink(id, portal, 'invoice');
-  }
-  if (ticket) { event.preventDefault(); sendTicket(ticket); }
-  if (offline) { event.preventDefault(); syncOffline(offline); }
+  const sync = event.target.closest('[data-tp-offline-sync]');
+  if (pay) createPayLink(pay.closest('[data-tp-invoice-id]')?.getAttribute('data-tp-invoice-id'), pay);
+  if (portal) createPortalLink(portal.closest('[data-tp-invoice-id]')?.getAttribute('data-tp-invoice-id'), portal, 'invoice');
+  if (ticket) sendTicket(ticket);
+  if (sync) syncOffline(sync);
 }
 
-async function schedule() {
+async function runAll() {
+  if (await renderCustomerPortal()) return;
+  await Promise.all([renderInvoicesPanel(), renderSchedulePanel(), renderSetupPanel(), renderReportsPanel(), renderUsagePanel(), renderSupportPanel()]);
+  renderWorkerOfflinePanel();
+}
+function schedule() {
   if (queued) return;
   queued = true;
-  setTimeout(async () => {
-    queued = false;
-    if (await renderCustomerPortal()) return;
-    renderWorkerOfflinePanel();
-    if (!document.querySelector('.churvoxOptionC')) return;
-    await Promise.all([renderInvoicesPanel(), renderSchedulePanel(), renderSetupPanel(), renderReportsPanel(), renderUsagePanel(), renderSupportPanel()]);
-  }, 180);
+  window.setTimeout(async () => { queued = false; await runAll(); }, 120);
 }
-
 if (typeof window !== 'undefined' && !window.__CHURVOX_TOP_PLAYER_RUNTIME__) {
   window.__CHURVOX_TOP_PLAYER_RUNTIME__ = true;
   window.addEventListener('load', schedule);
@@ -272,6 +265,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_TOP_PLAYER_RUNTIME__) {
   window.addEventListener('popstate', schedule);
   window.addEventListener('churvox:fresh-data-updated', schedule);
   document.addEventListener('click', handleClick, true);
+  document.addEventListener('click', schedule, true);
   const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 }
