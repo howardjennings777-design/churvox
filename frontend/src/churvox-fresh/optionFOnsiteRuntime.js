@@ -54,8 +54,11 @@ function renameNav() {
   const title = document.querySelector('.churvoxOptionC .title h1');
   const subtitle = document.querySelector('.churvoxOptionC .title p');
   if (isOnsitePage()) {
+    document.documentElement.setAttribute('data-owner-page', 'onsite');
     if (title) title.textContent = 'Onsite';
     if (subtitle) subtitle.textContent = 'Live map, workers doing work, GPS, proof, messages and field warnings.';
+  } else if (document.documentElement.getAttribute('data-owner-page') === 'onsite') {
+    document.documentElement.removeAttribute('data-owner-page');
   }
 }
 function isOnsitePage() {
@@ -77,9 +80,7 @@ function cleanupTeamCopy() {
 }
 function onsiteHtml(data) {
   const rows = Array.isArray(data?.onsite) ? data.onsite : [];
-  const allTeam = Array.isArray(data?.all_team) ? data.all_team : [];
   const warnings = Array.isArray(data?.warnings) ? data.warnings : [];
-  const slips = Array.isArray(data?.field_slips) ? data.field_slips : [];
   const counts = data?.counts || {};
   const liveLocations = rows.map((row) => realLocation(row.location || row.gps || row.map_query)).filter(Boolean);
   const query = liveLocations.length ? `${liveLocations.slice(0, 5).join(' ')} New Zealand` : '';
@@ -91,35 +92,46 @@ function onsiteHtml(data) {
     <div class="onsiteHero">
       <div>
         <span>Onsite</span>
-        <h2>Live work only: map, workers doing work, proof and field warnings.</h2>
-        <p>Team is for staff records. Onsite is for what is happening right now in the field.</p>
+        <h2>Live field view.</h2>
+        <p>Only workers doing work appear here. Staff records, payroll and old proof panels stay off this page.</p>
       </div>
       <strong>${counts.onsite || rows.length} onsite</strong>
     </div>
     ${mapBlock}
     <div class="onsiteStats">
       <article><b>${counts.onsite || rows.length}</b><small>working now</small></article>
-      <article><b>${allTeam.length}</b><small>team records</small></article>
       <article><b>${warnings.length}</b><small>field warnings</small></article>
-      <article><b>${slips.length}</b><small>Command slips</small></article>
     </div>
     <div class="onsiteRows">
-      ${(rows.length ? rows : allTeam.filter((row) => row.active).slice(0, 6)).slice(0, 8).map((row) => `<article data-onsite-worker="${esc(row.id || row.name)}">
+      ${rows.slice(0, 8).map((row) => `<article data-onsite-worker="${esc(row.id || row.name)}">
         <div><b>${esc(row.name || 'Worker')}</b><small>${esc(row.status || 'Onsite')} · ${esc(row.job || 'No current job')}</small></div>
         <span>${esc(realLocation(row.location || row.gps || row.map_query) || 'No live GPS yet')}</span>
         <em>${esc(row.proof || 'No proof yet')}</em>
         <small>${esc(row.messages || 'No messages')} · ${esc(row.timesheet || 'No time yet')}</small>
-      </article>`).join('') || '<p>No one is marked onsite right now. Team records stay on Team.</p>'}
+      </article>`).join('') || '<p>No worker is live right now. Team records stay on Team.</p>'}
     </div>
     <div class="onsiteWarnings">
       ${warnings.slice(0, 6).map((warning) => `<span>${esc(warning.message || warning.type)}</span>`).join('') || '<span>No live field warnings.</span>'}
     </div>`;
+}
+function hideOldOnsitePanels() {
+  const pageRoot = root();
+  if (!pageRoot || !isOnsitePage()) return;
+  Array.from(pageRoot.children).forEach((child) => {
+    if (child.id === PANEL_ID) return;
+    const text = clean(child.innerText || '');
+    if (!text) return;
+    if (/COMMAND JOB READINESS ENGINE|Every job now says|FIELD PROOF CONTROL|Today shows what the admin engine|Map backup|Google Maps GPS|Onsite Summary|Worker Day Summary|Onsite Cards|Worker Cards|Proof\s*\/\s*Photos|Site Messages|Team timesheets|Timesheets|Slips|SCHEDULE BOARD|Day board|Churvox admin wiring|Worker actions|Page actions|Recent logic|Saved worker day records/i.test(text)) {
+      child.setAttribute('data-onsite-old-panel', 'true');
+    }
+  });
 }
 async function renderOnsite(force = false) {
   renameNav();
   cleanupTeamCopy();
   if (!isOnsitePage()) {
     document.getElementById(PANEL_ID)?.remove();
+    document.querySelectorAll('[data-onsite-old-panel="true"]').forEach((node) => node.removeAttribute('data-onsite-old-panel'));
     return;
   }
   const pageRoot = root();
@@ -133,12 +145,7 @@ async function renderOnsite(force = false) {
   }
   const data = await load(force);
   renderHtml(node, onsiteHtml(data || {}));
-  Array.from(pageRoot.querySelectorAll('.cocPanel h2')).forEach((heading) => {
-    if (/Google Maps GPS/i.test(heading.textContent || '')) heading.textContent = 'Map backup';
-    if (/Worker Day Summary/i.test(heading.textContent || '')) heading.textContent = 'Onsite summary backup';
-    if (/Worker Cards/i.test(heading.textContent || '')) heading.textContent = 'Onsite worker cards';
-    if (/Timesheets|Slips/i.test(heading.textContent || '')) heading.closest('.cocPanel')?.classList.add('onsiteMovedToTeam');
-  });
+  hideOldOnsitePanels();
 }
 function schedule(force = false) {
   if (queued) return;
