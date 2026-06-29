@@ -65,7 +65,7 @@ import ClientWorkbenchCommandPage from "./pages/ClientWorkbenchCommandPage";
 import FreshApp from "./churvox-fresh/FreshApp";
 import { trackPlatformVisit } from "./lib/platformTelemetry";
 
-const Spinner = () => (<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-400" /></div>);
+const Spinner = () => (<div className="min-h-screen flex items-center justify-center bg-[#f5f7f1] p-6 text-center text-slate-950"><div><div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-t-2 border-amber-400" /><p className="text-sm font-black uppercase tracking-[0.16em] text-orange-700">Loading Churvox</p><h1 className="mt-2 text-3xl font-black tracking-[-0.05em]">Today Jobs Messages</h1><p className="mt-2 text-sm font-bold text-slate-600">Getting your worker screen ready.</p></div></div>);
 const AppPage = ({ children }) => <>{children}</>;
 const CommandDeskRoute = ({ fallbackHref = "/dashboard", fallbackLabel = "Back to Command Board" }) => (<ErrorBoundary fallbackHref={fallbackHref} fallbackLabel={fallbackLabel}><CommandDeskOperatorPage /></ErrorBoundary>);
 function PrivateRoute({ children }) { const { user, loading } = useAuth(); if (loading) return <Spinner />; return user ? <AppPage>{children}</AppPage> : <Navigate to="/login" replace />; }
