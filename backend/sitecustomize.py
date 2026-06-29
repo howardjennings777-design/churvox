@@ -40,3 +40,8 @@ try:
     import churvox_field_truth_hardening_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_command_readiness_patch  # noqa: F401
+except Exception:
+    pass
