@@ -54,6 +54,8 @@ import './churvox-fresh/optionFRealReviewFeatureRuntime';
 import './churvox-fresh/optionFRealReviewFeatureRuntime.css';
 import './churvox-fresh/optionFRealReviewBackendSyncRuntime';
 import './churvox-fresh/optionFRealReviewBackendSyncRuntime.css';
+import './churvox-fresh/optionF10OutOf10Runtime';
+import './churvox-fresh/optionF10OutOf10Runtime.css';
 import './styles/churvoxResponsiveFit.css';
 import './styles/churvoxWorkerFieldFlowV2.css';
 
