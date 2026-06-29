@@ -3,41 +3,33 @@ import { Briefcase, CalendarDays, Camera, MessageCircle, UserCircle2 } from "luc
 import "./WorkerIphoneFix.css";
 
 const items = [
-  { key: "today", label: "Today", to: "/worker/jobs#today", icon: CalendarDays },
-  { key: "jobs", label: "Jobs", to: "/worker/jobs#jobs", icon: Briefcase },
-  { key: "proof", label: "Proof", to: "/worker/ops#proof", icon: Camera },
-  { key: "messages", label: "Help", to: "/worker/settings#help", icon: MessageCircle },
-  { key: "profile", label: "Me", to: "/worker/settings#top", icon: UserCircle2 },
+  { key: "today", label: "Today", to: "/worker/today", icon: CalendarDays },
+  { key: "jobs", label: "Jobs", to: "/worker/jobs", icon: Briefcase },
+  { key: "proof", label: "Proof", to: "/worker/ops", icon: Camera },
+  { key: "messages", label: "Help", to: "/worker/help", icon: MessageCircle },
+  { key: "profile", label: "Me", to: "/worker/settings", icon: UserCircle2 },
 ];
 
 function go(to) {
   if (typeof window === "undefined") return;
-  const url = new URL(to, window.location.origin);
-  const samePage = window.location.pathname === url.pathname;
-  if (samePage) {
-    window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
-    setTimeout(() => {
-      const target = url.hash ? document.querySelector(url.hash) : null;
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-      else window.scrollTo({ top: 0, behavior: "smooth" });
-    }, 40);
-    return;
-  }
-  window.location.assign(`${url.pathname}${url.hash}`);
+  window.location.assign(to);
 }
 
 export default function WorkerBottomNav({ active = "today" }) {
+  const path = typeof window !== "undefined" ? window.location.pathname : "";
+  const activeKey = path === "/worker/today" ? "today" : path === "/worker/jobs" ? "jobs" : path === "/worker/ops" ? "proof" : path === "/worker/help" ? "messages" : path === "/worker/settings" ? "profile" : active;
   return (
     <nav className="worker-bottom-nav fixed left-3 right-3 bottom-3 z-40 rounded-[28px] border border-[rgba(15,23,42,0.12)] bg-white/95 p-2 shadow-[0_-10px_28px_rgba(2,6,23,0.18)] backdrop-blur-xl" aria-label="Worker app navigation">
       <div className="mx-auto grid max-w-2xl grid-cols-5 gap-2">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive = active === item.key;
+          const isActive = activeKey === item.key;
           return (
             <button
               key={item.key}
               type="button"
               onClick={() => go(item.to)}
+              data-worker-nav-key={item.key === "messages" ? "help" : item.key === "profile" ? "me" : item.key}
               aria-current={isActive ? "page" : undefined}
               className={`worker-bottom-nav__item flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-[20px] text-[11px] font-black transition ${
                 isActive
