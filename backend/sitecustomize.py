@@ -95,3 +95,8 @@ try:
     import churvox_command_execution_lock_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_worker_onsite_signal_patch  # noqa: F401
+except Exception:
+    pass
