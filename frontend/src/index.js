@@ -7,6 +7,8 @@ import './styles/churvoxFullPageModals.css';
 import './components/recordWorkspacePopup.css';
 import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
+import './runtime/churvoxWorkerNoFussHardCleanRuntime';
+import './runtime/churvoxDrawerClickSafetyRuntime';
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
