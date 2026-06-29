@@ -22,6 +22,8 @@ def now_utc():
 
 
 def clean(value):
+    if isinstance(value, dict):
+        return str(value.get("address_label") or value.get("display_name") or value.get("address") or value.get("location") or "").strip()
     return str(value or "").strip()
 
 
@@ -66,22 +68,30 @@ def number(value):
         return None
 
 
+def payload_location(payload):
+    loc = payload.get("location") if isinstance(payload.get("location"), dict) else {}
+    lat = number(payload.get("latitude") or payload.get("lat") or loc.get("latitude") or loc.get("lat"))
+    lng = number(payload.get("longitude") or payload.get("lng") or payload.get("lon") or loc.get("longitude") or loc.get("lng") or loc.get("lon"))
+    label = clean(payload.get("address") or payload.get("site") or payload.get("location") or loc.get("address_label") or loc.get("display_name") or loc.get("address"))
+    accuracy = number(payload.get("accuracy") or loc.get("accuracy"))
+    return lat, lng, label, accuracy
+
+
 async def save_signal(db, user, ObjectId, payload):
     state = lower(payload.get("state") or payload.get("status") or "start")
     job_id = clean(payload.get("job_id") or payload.get("jobId"))
-    lat = number(payload.get("latitude") or payload.get("lat"))
-    lng = number(payload.get("longitude") or payload.get("lng") or payload.get("lon"))
+    lat, lng, supplied_location, accuracy = payload_location(payload)
     job = None
     if job_id:
         try:
             job = await one(db.jobs, field_truth.job_lookup_query(user, ObjectId, job_id))
         except Exception:
             job = None
-    job_title = clean((job or {}).get("title") or (job or {}).get("job_name") or (job or {}).get("description"))
+    job_title = clean((job or {}).get("title") or (job or {}).get("job_name") or (job or {}).get("description") or payload.get("job_title"))
     job_address = clean((job or {}).get("address") or (job or {}).get("site_address") or (job or {}).get("location"))
-    location = clean(payload.get("location") or payload.get("address") or job_address)
+    location = supplied_location or job_address
     map_query = f"{lat},{lng}" if lat is not None and lng is not None else (f"{location} New Zealand" if location else "")
-    live_state = "off" if state in {"stop", "off", "complete", "completed", "clock_out"} else "active_on_job"
+    live_state = "off" if state in {"stop", "off", "complete", "completed", "clock_out", "clocked_out"} else "active_on_job"
     doc = {
         "business_id": bid(user),
         "worker_id": uid(user),
@@ -95,6 +105,8 @@ async def save_signal(db, user, ObjectId, payload):
         "map_query": map_query,
         "latitude": lat,
         "longitude": lng,
+        "accuracy": accuracy,
+        "source": clean(payload.get("source")),
         "updated_at": now_utc(),
         "after_hours_tracking": False,
         "rule": "Location is used as job proof only while the worker is clocked in.",
