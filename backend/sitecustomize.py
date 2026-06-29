@@ -100,3 +100,8 @@ try:
     import churvox_worker_onsite_signal_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_onsite_debug_patch  # noqa: F401
+except Exception:
+    pass
