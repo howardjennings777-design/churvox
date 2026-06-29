@@ -56,6 +56,7 @@ async function request(method, path, payload) {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.error || body?.message || `HTTP ${response.status}`);
+  if (body?.jobs || body?.items || body?.plans || body?.addons || body?.slip || body?.gps || body?.message_draft || body?.invoice || body?.quote) return body;
   return body?.data?.data || body?.data || body;
 }
 
