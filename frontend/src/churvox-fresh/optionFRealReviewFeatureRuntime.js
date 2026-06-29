@@ -1,6 +1,5 @@
-// CHURVOX_REAL_REVIEW_FIELD_TRUTH_RUNTIME_20260629
-// Built from field-service review pain points: fewer taps, reliable proof, fair GPS, offline safety,
-// clean worker flow, and owner approval slips instead of noisy dashboards.
+// CHURVOX_FIELD_PROOF_RUNTIME_20260629
+// Field proof, fair GPS, offline safety, clean worker flow, and owner approval slips.
 
 const WORKER_PANEL_ID = 'churvox-real-review-worker-panel';
 const PASSPORT_ID = 'churvox-proof-passport';
@@ -159,7 +158,7 @@ function pushCommandSlip(note) {
     title,
     summary: note.text || 'Worker sent a field note for owner approval.',
     found: `Job ${note.job_id}`,
-    prepared: 'Churvox converted the worker field note into a Command slip. Owner approval is required before customer/admin action.',
+    prepared: 'Churvox turned the worker note into an owner approval slip. Nothing goes to the customer without approval.',
     why: 'Problems and extras should not clutter Jobs. They belong in Command for approve, edit or park.',
     priority: note.type === 'issue' ? 'high' : 'medium',
     details: { job_id: note.job_id, field_note_type: note.type, field_note: note.text },
@@ -183,8 +182,8 @@ function workerTrustHtml() {
   return `
     <div class="rrTop">
       <div>
-        <span class="rrEyebrow">Field truth mode</span>
-        <h2>Built for workers, not office clutter.</h2>
+        <span class="rrEyebrow">Field proof</span>
+        <h2>Made for workers, not office clutter.</h2>
         <p>Today, Jobs, Proof, Help and Me stay simple. Churvox catches missing proof and sends issues to Command instead of making the worker think like an admin.</p>
       </div>
       <div class="rrScore">${missing ? `${missing} proof checks left` : 'Proof looks ready'}</div>
@@ -251,7 +250,7 @@ function noteSlipHtml() {
   return `
     <div class="rrTop compact">
       <div>
-        <span class="rrEyebrow">Voice / note to slip</span>
+        <span class="rrEyebrow">Note to slip</span>
         <h2>Worker note becomes owner admin.</h2>
         <p>Use this for extras, customer requests or job problems. It will route to Command, not Jobs.</p>
       </div>
@@ -303,7 +302,7 @@ function insertMePanel() {
       <div>
         <span class="rrEyebrow">Me</span>
         <h2>My proof, hours and sent notes.</h2>
-        <p>Workers need to see what they submitted, what is waiting, and what protects their pay/job history.</p>
+        <p>Workers can see what they submitted, what is waiting, and what protects their pay/job history.</p>
       </div>
     </div>
     <div class="rrGrid three">
@@ -353,9 +352,9 @@ function ownerPanelHtml(page) {
   return `
     <div class="rrTop">
       <div>
-        <span class="rrEyebrow">Real review build layer</span>
+        <span class="rrEyebrow">Field proof control</span>
         <h2>${commandOnly ? 'Command catches field problems before they hit customers.' : 'Today shows what the admin engine is checking.'}</h2>
-        <p>Built from real complaints: photo/offline failures, GPS trust, missing job info, schedule chaos, invoice proof and too much worker admin.</p>
+        <p>Churvox checks photo/offline gaps, GPS trust, missing job info, schedule pressure, invoice proof and worker admin.</p>
       </div>
       <div class="rrScore">${audit.passed}/${audit.total} checks</div>
     </div>
