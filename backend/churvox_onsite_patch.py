@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import importlib
 import importlib.abc
 import importlib.machinery
@@ -46,22 +46,6 @@ async def safe_recent(collection, query, limit=100, sort_field="updated_at"):
             return []
 
 
-def parse_dt(value):
-    if isinstance(value, datetime):
-        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    text = clean(value)
-    if not text:
-        return None
-    try:
-        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
-        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
-    except Exception:
-        try:
-            return datetime.fromisoformat(text[:10]).replace(tzinfo=timezone.utc)
-        except Exception:
-            return None
-
-
 def worker_name(worker):
     return clean(worker.get("name") or worker.get("full_name") or worker.get("email") or worker.get("worker_name") or worker.get("id") or worker.get("_id"))
 
@@ -80,11 +64,32 @@ def job_location(job):
 
 def is_active_worker(worker):
     text = lower(" ".join([clean(worker.get("status")), clean(worker.get("clock_status")), clean(worker.get("current_job")), clean(worker.get("job_title")), clean(worker.get("gps")), clean(worker.get("location"))]))
-    if any(word in text for word in ["clocked in", "driving", "on site", "onsite", "in progress", "proof", "working"]):
+    if any(word in text for word in ["clocked in", "driving", "on site", "onsite", "in progress", "proof", "working", "active_on_job", "started"]):
         return True
     if any(word in text for word in ["clocked out", "off", "invited", "pending"]):
         return False
     return bool(clean(worker.get("current_job") or worker.get("job_title") or worker.get("gps") or worker.get("location")))
+
+
+def gps_key(row):
+    return clean(row.get("worker_id") or row.get("user_id") or row.get("email") or row.get("worker_email") or row.get("name") or row.get("worker_name"))
+
+
+def gps_active(row):
+    state = lower(row.get("state") or row.get("status"))
+    if state in {"off", "inactive", "stopped", "clocked_out", "complete", "completed"}:
+        return False
+    if state in {"active_on_job", "active", "started", "start", "clocked_in", "clock_in", "on_my_way", "in_progress"}:
+        return True
+    return bool(clean(row.get("location") or row.get("map_query") or row.get("job_title") or row.get("job_id")))
+
+
+def gps_location(row):
+    lat = row.get("latitude") or row.get("lat")
+    lng = row.get("longitude") or row.get("lng") or row.get("lon")
+    if lat is not None and lng is not None:
+        return f"{lat},{lng}"
+    return clean(row.get("location") or row.get("map_query"))
 
 
 async def onsite_payload(db, user):
@@ -93,35 +98,36 @@ async def onsite_payload(db, user):
     jobs = await safe_recent(db.jobs, {"business_id": bid}, 250, "scheduled_date")
     slips = await safe_recent(db.worker_field_slips, {"business_id": bid}, 80, "updated_at")
     gps_rows = await safe_recent(db.worker_gps_status, {"business_id": bid}, 120, "updated_at")
+
     gps_by_worker = {}
     for row in gps_rows:
-        key = clean(row.get("worker_id") or row.get("user_id") or row.get("name") or row.get("worker_name"))
+        key = gps_key(row)
         if key and key not in gps_by_worker:
             gps_by_worker[key] = row
+
     jobs_by_worker = {}
     for job in jobs:
         worker = job_worker(job) or "Unassigned"
         jobs_by_worker.setdefault(worker, []).append(job)
+
     onsite = []
     warnings = []
+    seen = set()
+
     for worker in workers:
         name = worker_name(worker)
         wid = clean(worker.get("id") or worker.get("_id") or worker.get("user_id") or worker.get("email") or name)
-        gps = gps_by_worker.get(wid) or gps_by_worker.get(name) or {}
+        gps = gps_by_worker.get(wid) or gps_by_worker.get(name) or gps_by_worker.get(clean(worker.get("email"))) or {}
         assigned = jobs_by_worker.get(name) or jobs_by_worker.get(wid) or []
-        current_job = clean(worker.get("current_job") or worker.get("job_title"))
+        current_job = clean(gps.get("job_title") or worker.get("current_job") or worker.get("job_title"))
         if not current_job and assigned:
             current_job = job_title(assigned[0])
-        status = clean(worker.get("status") or worker.get("clock_status") or gps.get("state") or ("Onsite" if is_active_worker(worker) else "Offsite"))
-        location = clean(gps.get("location") or worker.get("gps") or worker.get("location") or (job_location(assigned[0]) if assigned else ""))
-        proof = clean(worker.get("proof") or worker.get("photo_status") or gps.get("proof") or "No proof yet")
+        active = gps_active(gps) or is_active_worker(worker)
+        status = clean(worker.get("status") or worker.get("clock_status") or gps.get("state") or ("Clocked in" if active else "Offsite"))
+        location = clean(gps_location(gps) or worker.get("gps") or worker.get("location") or (job_location(assigned[0]) if assigned else ""))
+        proof = clean(worker.get("proof") or worker.get("photo_status") or gps.get("proof") or ("Clock-in signal received" if gps else "No proof yet"))
         messages = clean(worker.get("messages") or worker.get("message_status") or "No unread messages")
-        active = is_active_worker(worker)
-        if active and not location:
-            warnings.append({"type": "missing_location", "worker": name, "message": f"{name} is active but has no site/GPS location."})
-        if active and proof.lower().startswith("no proof"):
-            warnings.append({"type": "missing_proof", "worker": name, "message": f"{name} is active but proof is missing."})
-        onsite.append({
+        row = {
             "id": wid,
             "name": name,
             "role": clean(worker.get("role") or worker.get("access") or "Worker"),
@@ -131,35 +137,79 @@ async def onsite_payload(db, user):
             "jobs": [json_safe(job) for job in assigned[:8]],
             "gps": location,
             "location": location,
-            "map_query": f"{location} New Zealand" if location else "Lower Hutt Wellington New Zealand",
-            "start": clean(worker.get("start") or worker.get("clock_in") or worker.get("start_time") or gps.get("started_at")),
+            "map_query": location,
+            "start": clean(worker.get("start") or worker.get("clock_in") or worker.get("start_time") or gps.get("started_at") or gps.get("updated_at")),
             "end": clean(worker.get("end") or worker.get("clock_out") or worker.get("end_time")),
             "proof": proof,
             "messages": messages,
             "timesheet": clean(worker.get("timesheet") or worker.get("hours_today") or ""),
             "slip": clean(worker.get("slip") or worker.get("pay_slip_status") or worker.get("payroll_status") or ""),
             "updated_at": worker.get("updated_at") or gps.get("updated_at"),
-        })
+            "source": "team+gps" if gps else "team",
+        }
+        if active and not location:
+            warnings.append({"type": "missing_location", "worker": name, "message": f"{name} is active but has no site/GPS location."})
+        if active and proof.lower().startswith("no proof"):
+            warnings.append({"type": "missing_proof", "worker": name, "message": f"{name} is active but proof is missing."})
+        onsite.append(row)
+        for key in [wid, name, clean(worker.get("email"))]:
+            if key:
+                seen.add(key)
+
+    for gps in gps_rows:
+        if not gps_active(gps):
+            continue
+        key = gps_key(gps)
+        if key and key in seen:
+            continue
+        location = gps_location(gps)
+        name = clean(gps.get("worker_name") or gps.get("worker_email") or key or "Worker")
+        row = {
+            "id": key or name,
+            "name": name,
+            "role": "Worker",
+            "status": clean(gps.get("state") or "Clocked in"),
+            "active": True,
+            "job": clean(gps.get("job_title") or gps.get("job_id") or "Current job"),
+            "jobs": [],
+            "gps": location,
+            "location": location,
+            "map_query": location,
+            "start": clean(gps.get("started_at") or gps.get("updated_at")),
+            "end": "",
+            "proof": "Clock-in signal received",
+            "messages": "No unread messages",
+            "timesheet": "Clocked in",
+            "slip": "",
+            "updated_at": gps.get("updated_at"),
+            "source": "worker_gps_status",
+        }
+        if not location:
+            warnings.append({"type": "missing_location", "worker": name, "message": f"{name} is clocked in but no GPS/address was received."})
+        onsite.append(row)
+        if key:
+            seen.add(key)
+
     active_rows = [row for row in onsite if row.get("active")]
-    places = [row.get("location") for row in active_rows if row.get("location")]
-    if not places:
-        places = [job_location(job) for job in jobs if job_location(job)][:4]
+    places = [row.get("location") or row.get("map_query") for row in active_rows if clean(row.get("location") or row.get("map_query"))]
+
     command_slips = []
     for slip in slips[:20]:
         if lower(slip.get("status")) in {"approved", "parked", "closed"}:
             continue
         command_slips.append(json_safe(slip))
+
     return {
         "success": True,
         "page": "onsite",
         "label": "Onsite",
-        "map_query": f"{' '.join(places[:5])} New Zealand" if places else "Lower Hutt Wellington New Zealand",
-        "counts": {"onsite": len(active_rows), "team": len(workers), "warnings": len(warnings), "field_slips": len(command_slips)},
+        "map_query": f"{' '.join(places[:5])} New Zealand" if places else "",
+        "counts": {"onsite": len(active_rows), "team": len(onsite), "warnings": len(warnings), "field_slips": len(command_slips)},
         "onsite": json_safe(active_rows),
         "all_team": json_safe(onsite),
         "warnings": json_safe(warnings),
         "field_slips": command_slips,
-        "rule": "Team holds staff records. Onsite only shows live work, map, field proof and people currently doing work.",
+        "rule": "Team holds staff records. Onsite shows live worker GPS/status signals and people currently doing work.",
         "updated_at": now_utc(),
     }
 
