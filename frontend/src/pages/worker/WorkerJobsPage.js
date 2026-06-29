@@ -1,1 +1,1 @@
-export { default } from "./WorkerSimplePages";
+export { default } from "./WorkerDailySimple";
