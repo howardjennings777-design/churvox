@@ -63,6 +63,11 @@ function writeJson(key, value) {
   } catch (_) {}
 }
 
+function renderHtml(node, html) {
+  if (!node || node.innerHTML === html) return;
+  node.innerHTML = html;
+}
+
 function sameObject(a, b) {
   try {
     return JSON.stringify(a || {}) === JSON.stringify(b || {});
@@ -92,9 +97,12 @@ function existingProof(jobId = currentJobId()) {
 function setLocalProof(jobId, update, quiet = false) {
   if (!jobId) return;
   const { all, state } = existingProof(jobId);
-  const next = { ...state, ...update, updatedAt: new Date().toISOString() };
-  if (sameObject(state, next)) return;
-  all[jobId] = next;
+  const comparableNext = { ...state, ...update };
+  const comparableNow = { ...state };
+  delete comparableNext.updatedAt;
+  delete comparableNow.updatedAt;
+  if (sameObject(comparableNow, comparableNext)) return;
+  all[jobId] = { ...comparableNext, updatedAt: new Date().toISOString() };
   writeJson(PROOF_KEY, all);
   if (!quiet) {
     try { window.dispatchEvent(new CustomEvent('churvox:fresh-data-updated')); } catch (_) {}
@@ -200,7 +208,7 @@ async function syncLatestNote(jobId = currentJobId()) {
   const notes = fieldNotes();
   const note = notes.find((item) => item && item.job_id === jobId && !item.backend_synced) || notes.find((item) => item && !item.backend_synced);
   if (!note) return;
-  const payload = { id: note.id, type: note.type || 'field_note', text: note.text || note.note || '', source: 'worker_note_to_command' };
+  const payload = { id: `review-${note.id}`, type: note.type || 'field_note', text: note.text || note.note || '', source: 'worker_note_to_command' };
   try {
     await request('POST', `/worker/jobs/${encodeURIComponent(jobId)}/field-slip`, payload);
     updateFieldNotes(notes.map((item) => item.id === note.id ? { ...item, backend_synced: true, synced_at: new Date().toISOString() } : item));
@@ -224,6 +232,7 @@ function mergeCommandItems(items) {
   const queueById = new Map(queueList.map((item) => [String(item.id || item.title), item]));
   normalized.forEach((item) => queueById.set(String(item.id || item.title), { ...queueById.get(String(item.id || item.title)), ...item }));
   writeJson(OPS_KEY, { ...ops, commandQueue: Array.from(queueById.values()).slice(0, 100), updatedAt: new Date().toISOString() });
+  try { window.dispatchEvent(new CustomEvent('churvox:fresh-data-updated')); } catch (_) {}
 }
 
 async function loadFieldSlips(force = false) {
@@ -281,7 +290,7 @@ function insertPhotoPanel() {
     if (anchor) anchor.insertAdjacentElement('afterend', node);
     else root.appendChild(node);
   }
-  node.innerHTML = photoPanelHtml();
+  renderHtml(node, photoPanelHtml());
 }
 
 function compressImage(file) {
@@ -316,14 +325,7 @@ async function handlePhotoInput(input) {
   setPhotoStatus('Saving photo safely...');
   try {
     const compressed = await compressImage(file);
-    const payload = {
-      kind,
-      filename: file.name || `${kind}-photo.jpg`,
-      mime_type: compressed.mime,
-      size_bytes: compressed.size,
-      photo_data: compressed.dataUrl,
-      offline_token: `photo-${jobId}-${kind}-${Date.now()}`,
-    };
+    const payload = { kind, filename: file.name || `${kind}-photo.jpg`, mime_type: compressed.mime, size_bytes: compressed.size, photo_data: compressed.dataUrl, offline_token: `photo-${jobId}-${kind}-${Date.now()}` };
     const opId = `photo-${jobId}-${kind}-${Date.now()}`;
     enqueue({ id: opId, type: 'photo', job_id: jobId, payload });
     setLocalProof(jobId, kind === 'before' ? { beforePhoto: true } : kind === 'after' ? { afterPhoto: true } : { workNote: true });
