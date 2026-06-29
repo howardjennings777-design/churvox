@@ -12,6 +12,8 @@ const PHOTO_PANEL_ID = 'churvox-worker-photo-safe-queue';
 const STATUS_ID = 'churvox-worker-photo-safe-status';
 let queued = false;
 let flushing = false;
+let lastFieldSlipLoad = 0;
+const passportLoadAt = {};
 
 function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
@@ -61,6 +63,14 @@ function writeJson(key, value) {
   } catch (_) {}
 }
 
+function sameObject(a, b) {
+  try {
+    return JSON.stringify(a || {}) === JSON.stringify(b || {});
+  } catch (_) {
+    return false;
+  }
+}
+
 function isWorkerRoute() {
   return typeof window !== 'undefined' && window.location.pathname.startsWith('/worker');
 }
@@ -79,12 +89,16 @@ function existingProof(jobId = currentJobId()) {
   return { all, state: all[jobId] || {} };
 }
 
-function setLocalProof(jobId, update) {
+function setLocalProof(jobId, update, quiet = false) {
   if (!jobId) return;
   const { all, state } = existingProof(jobId);
-  all[jobId] = { ...state, ...update, updatedAt: new Date().toISOString() };
+  const next = { ...state, ...update, updatedAt: new Date().toISOString() };
+  if (sameObject(state, next)) return;
+  all[jobId] = next;
   writeJson(PROOF_KEY, all);
-  try { window.dispatchEvent(new CustomEvent('churvox:fresh-data-updated')); } catch (_) {}
+  if (!quiet) {
+    try { window.dispatchEvent(new CustomEvent('churvox:fresh-data-updated')); } catch (_) {}
+  }
 }
 
 function backendStepsFromLocal(state) {
@@ -155,18 +169,20 @@ async function syncPassport(jobId = currentJobId()) {
   try {
     const body = await request('POST', `/worker/jobs/${encodeURIComponent(jobId)}/proof-passport`, payload);
     const steps = body?.passport?.steps || body?.steps || {};
-    if (steps && Object.keys(steps).length) setLocalProof(jobId, localStepsFromBackend(steps));
+    if (steps && Object.keys(steps).length) setLocalProof(jobId, localStepsFromBackend(steps), true);
   } catch (_) {
     enqueue({ type: 'passport', job_id: jobId, payload });
   }
 }
 
-async function loadPassport(jobId = currentJobId()) {
+async function loadPassport(jobId = currentJobId(), force = false) {
   if (!jobId || !token()) return;
+  if (!force && Date.now() - (passportLoadAt[jobId] || 0) < 15000) return;
+  passportLoadAt[jobId] = Date.now();
   try {
     const body = await request('GET', `/worker/jobs/${encodeURIComponent(jobId)}/proof-passport`);
     const passport = body?.passport || body;
-    if (passport?.steps) setLocalProof(jobId, localStepsFromBackend(passport.steps));
+    if (passport?.steps) setLocalProof(jobId, localStepsFromBackend(passport.steps), true);
   } catch (_) {}
 }
 
@@ -188,7 +204,7 @@ async function syncLatestNote(jobId = currentJobId()) {
   try {
     await request('POST', `/worker/jobs/${encodeURIComponent(jobId)}/field-slip`, payload);
     updateFieldNotes(notes.map((item) => item.id === note.id ? { ...item, backend_synced: true, synced_at: new Date().toISOString() } : item));
-    loadFieldSlips();
+    loadFieldSlips(true);
   } catch (_) {
     enqueue({ id: `slip-${note.id}`, type: 'field_slip', job_id: jobId, payload });
   }
@@ -208,11 +224,12 @@ function mergeCommandItems(items) {
   const queueById = new Map(queueList.map((item) => [String(item.id || item.title), item]));
   normalized.forEach((item) => queueById.set(String(item.id || item.title), { ...queueById.get(String(item.id || item.title)), ...item }));
   writeJson(OPS_KEY, { ...ops, commandQueue: Array.from(queueById.values()).slice(0, 100), updatedAt: new Date().toISOString() });
-  try { window.dispatchEvent(new CustomEvent('churvox:fresh-data-updated')); } catch (_) {}
 }
 
-async function loadFieldSlips() {
+async function loadFieldSlips(force = false) {
   if (!isOwnerRoute() || !token()) return;
+  if (!force && Date.now() - lastFieldSlipLoad < 15000) return;
+  lastFieldSlipLoad = Date.now();
   try {
     const body = await request('GET', '/command/field-slips');
     mergeCommandItems(body?.items || body?.actions || body?.data || []);
@@ -223,7 +240,7 @@ async function decideFieldSlip(slipId, decision) {
   if (!slipId || !token()) return;
   try {
     await request('POST', `/command/field-slips/${encodeURIComponent(slipId)}/${encodeURIComponent(decision || 'park')}`, { source: 'owner_command' });
-    await loadFieldSlips();
+    await loadFieldSlips(true);
   } catch (_) {}
 }
 
