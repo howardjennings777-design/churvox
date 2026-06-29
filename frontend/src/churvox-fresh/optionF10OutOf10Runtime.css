@@ -1,0 +1,257 @@
+/* CHURVOX_10_OUT_OF_10_LAYER_20260629 */
+
+.tenReadinessPanel,
+.tenWorkerPanel,
+.tenHelpPanel,
+.tenTierPanel {
+  display: grid;
+  gap: 13px;
+  grid-column: 1 / -1;
+  border: 1px solid rgba(17, 24, 39, .09);
+  border-radius: 24px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 100% -18%, rgba(234, 88, 12, .18), transparent 35%),
+    linear-gradient(135deg, #fffaf4 0%, #ffffff 55%, #f5f2ea 100%);
+  box-shadow: 0 18px 42px rgba(2, 6, 23, .07);
+  color: #111827;
+  -webkit-text-fill-color: initial;
+}
+
+.tenWorkerPanel {
+  background:
+    radial-gradient(circle at 96% -12%, rgba(234, 88, 12, .16), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf6 100%);
+}
+
+.tenTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tenTop.compact {
+  align-items: center;
+}
+
+.tenEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 7px;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.tenTop h2 {
+  margin: 0;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: clamp(20px, 4vw, 30px);
+  line-height: .98;
+  letter-spacing: -.05em;
+  font-weight: 1000;
+}
+
+.tenTop p,
+.tenTiny,
+.tenMetricGrid small,
+.tenJobList small,
+.tenJobList p,
+.tenChecklist small,
+.tenTierGrid small,
+.tenPhotoLog small {
+  margin: 5px 0 0;
+  color: #52605a;
+  -webkit-text-fill-color: #52605a;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 850;
+}
+
+.tenScore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #ea580c;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 11px;
+  font-weight: 1000;
+  box-shadow: 0 10px 20px rgba(234, 88, 12, .22);
+}
+
+.tenMetricGrid,
+.tenTierGrid,
+.tenChecklist {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.tenMetricGrid article,
+.tenJobList article,
+.tenChecklist article,
+.tenTierGrid article,
+.tenPhotoLog article {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  border: 1px solid rgba(17, 24, 39, .08);
+  border-radius: 16px;
+  padding: 11px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 8px 20px rgba(2, 6, 23, .045);
+}
+
+.tenMetricGrid strong,
+.tenJobList strong,
+.tenChecklist strong,
+.tenTierGrid strong,
+.tenPhotoLog strong {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 13px;
+  line-height: 1.05;
+  font-weight: 1000;
+}
+
+.tenStateRow {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.tenStateRow span {
+  border: 1px solid rgba(17, 24, 39, .08);
+  border-radius: 999px;
+  padding: 7px 9px;
+  background: #fff;
+  color: #374151;
+  -webkit-text-fill-color: #374151;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.tenStateRow b {
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.tenJobList {
+  display: grid;
+  gap: 8px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.tenJobList article {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tenActions,
+.tenWorkerControls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tenActions button,
+.tenWorkerControls button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 14px;
+  padding: 9px 11px;
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 11px;
+  line-height: 1.15;
+  font-weight: 1000;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, .11);
+}
+
+.tenActions button:first-child,
+.tenWorkerControls button:first-child {
+  background: #ea580c;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.tenWorkerControls button:nth-child(2) {
+  background: #f4f1ea;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  border: 1px solid rgba(17,24,39,.08);
+  box-shadow: none;
+}
+
+.tenPhotoLog {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tenPhotoLog article {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.tenPhotoLog img {
+  width: 54px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 13px;
+  border: 1px solid rgba(17, 24, 39, .08);
+  background: #f4f1ea;
+}
+
+@media (max-width: 900px) {
+  .tenMetricGrid,
+  .tenTierGrid,
+  .tenChecklist,
+  .tenPhotoLog {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .tenReadinessPanel,
+  .tenWorkerPanel,
+  .tenHelpPanel,
+  .tenTierPanel {
+    padding: 13px;
+    border-radius: 18px;
+  }
+
+  .tenTop {
+    display: grid;
+  }
+
+  .tenMetricGrid,
+  .tenTierGrid,
+  .tenChecklist,
+  .tenPhotoLog {
+    grid-template-columns: 1fr;
+  }
+
+  .tenActions button,
+  .tenWorkerControls button {
+    flex: 1 1 130px;
+  }
+}
