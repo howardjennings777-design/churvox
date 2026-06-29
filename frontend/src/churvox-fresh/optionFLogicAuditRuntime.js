@@ -98,6 +98,13 @@ function hardenOnsiteAliases() {
     if (lower(button.textContent) === 'workers') button.textContent = 'Onsite';
   });
 }
+function safeTextNode(node) {
+  const parent = node?.parentElement;
+  if (!parent) return false;
+  if (parent.closest('input, textarea, select, option')) return false;
+  if (parent.closest('.jobCard, .workerCard, .workCard, .ledgerRow, .cocDrawer, .cocField')) return false;
+  return true;
+}
 function cleanVisibleProductCopy() {
   if (!isOwnerApp() || !document.body) return;
   const replacements = [
@@ -113,15 +120,13 @@ function cleanVisibleProductCopy() {
     ['build layer', 'control layer'],
     ['10 out of 10', 'ready'],
     ['10/10', 'ready'],
-    ['demo', 'sample'],
-    ['fake', 'sample'],
-    ['placeholder', 'not set yet'],
   ];
   const showText = window.NodeFilter ? NodeFilter.SHOW_TEXT : 4;
   const walker = document.createTreeWalker(document.body, showText);
   const nodes = [];
   while (walker.nextNode()) nodes.push(walker.currentNode);
   nodes.forEach((node) => {
+    if (!safeTextNode(node)) return;
     let next = node.nodeValue || '';
     replacements.forEach(([from, to]) => { next = next.replaceAll(from, to); });
     if (next !== node.nodeValue) node.nodeValue = next;
