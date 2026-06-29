@@ -8,6 +8,11 @@ import sys
 
 import churvox_field_truth_patch as field_truth
 
+try:
+    import churvox_onsite_signal_rows_patch  # noqa: F401
+except Exception:
+    pass
+
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
 
