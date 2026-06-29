@@ -1,5 +1,5 @@
 // CHURVOX_WORKER_NO_FUSS_HARD_CLEAN_20260629
-// Removes legacy worker proof/field panels from worker routes so the worker app stays a simple run sheet.
+// Removes legacy worker proof/field text from worker routes so the worker app stays a simple run sheet.
 
 const STYLE_ID = 'churvox-worker-no-fuss-hard-clean-style';
 const LEGACY_WORKER_COPY = /FIELD PROOF|Made for workers, not office clutter|6 proof checks left|Fair GPS|Proof safety|Offline aware|Less chasing|worker protection controls|photo safe queue|worker note becomes owner admin|photo thumbnails will show|route to command|Today, Jobs, Proof, Help and Me stay simple/i;
@@ -19,7 +19,9 @@ function installStyle() {
     html.churvox-worker-no-fuss-route [class*="worker-flow"],
     html.churvox-worker-no-fuss-route [class*="field-proof"],
     html.churvox-worker-no-fuss-route [class*="proof-passport"],
-    html.churvox-worker-no-fuss-route [class*="photo-safe"] {
+    html.churvox-worker-no-fuss-route [class*="photo-safe"],
+    html.churvox-worker-no-fuss-route [class*="tenWorker"],
+    html.churvox-worker-no-fuss-route #churvox-ten-worker-controls {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
@@ -32,18 +34,49 @@ function installStyle() {
   document.head.appendChild(style);
 }
 
-function closestSafeRemoval(node) {
-  if (!node || node === document.body || node.id === 'root') return null;
-  if (node.closest?.('.simpleWorkerApp')) return null;
-  const ownText = String(node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim();
-  if (!LEGACY_WORKER_COPY.test(ownText)) return null;
-  let current = node;
-  while (current && current.parentElement && current.parentElement !== document.body && current.parentElement.id !== 'root' && !current.parentElement.querySelector?.('.simpleWorkerApp')) {
-    const parentText = String(current.parentElement.innerText || current.parentElement.textContent || '').replace(/\s+/g, ' ').trim();
-    if (LEGACY_WORKER_COPY.test(parentText)) current = current.parentElement;
-    else break;
+function textOf(node) {
+  return String(node?.innerText || node?.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function isCleanWorkerCore(node) {
+  return Boolean(node?.matches?.('.simpleWorkerApp,.swHero,.swBody,.swNav,.swCard,.swJob,.swEmpty,.swPrimary,.swLight,.swBig') || node?.closest?.('.swHero,.swBody,.swNav,.swCard,.swJob,.swEmpty'));
+}
+
+function removeNode(node) {
+  if (!node || node === document.body || node.id === 'root') return false;
+  if (node.classList?.contains('simpleWorkerApp')) return false;
+  node.remove();
+  return true;
+}
+
+function removeLegacyTextNode(textNode) {
+  let node = textNode?.parentElement;
+  while (node && node !== document.body && node.id !== 'root') {
+    if (node.classList?.contains('simpleWorkerApp')) break;
+    if (['SECTION', 'ARTICLE', 'HEADER', 'ASIDE', 'DIV', 'MAIN'].includes(node.tagName)) break;
+    node = node.parentElement;
   }
-  return current && current !== document.body && current.id !== 'root' ? current : node;
+  if (!node || node === document.body || node.id === 'root') return false;
+  if (node.classList?.contains('simpleWorkerApp')) {
+    const children = Array.from(node.children);
+    for (const child of children) {
+      if (isCleanWorkerCore(child)) continue;
+      if (LEGACY_WORKER_COPY.test(textOf(child))) child.remove();
+    }
+    return true;
+  }
+  if (isCleanWorkerCore(node) && !/^FIELD PROOF/i.test(textOf(node))) return false;
+  return removeNode(node);
+}
+
+function cleanByText(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const hits = [];
+  let current;
+  while ((current = walker.nextNode())) {
+    if (LEGACY_WORKER_COPY.test(String(current.nodeValue || ''))) hits.push(current);
+  }
+  for (const hit of hits) removeLegacyTextNode(hit);
 }
 
 function cleanWorker() {
@@ -51,22 +84,31 @@ function cleanWorker() {
   document.documentElement.classList.add('churvox-worker-no-fuss-route');
   installStyle();
   const root = document.getElementById('root') || document.body;
-  const nodes = Array.from(root.querySelectorAll('section, article, header, aside, main, div'));
-  for (const node of nodes) {
-    const target = closestSafeRemoval(node);
-    if (target && target.parentElement && !target.closest?.('.simpleWorkerApp')) {
-      target.remove();
+
+  const selectors = [
+    '#churvox-ten-worker-controls',
+    '.tenWorkerPanel',
+    '.worker-flow-panel',
+    '.worker-readiness-card',
+    '.px-hero',
+    '[class*="worker-flow"]',
+    '[class*="field-proof"]',
+    '[class*="proof-passport"]',
+    '[class*="photo-safe"]'
+  ];
+  for (const node of Array.from(root.querySelectorAll(selectors.join(',')))) removeNode(node);
+
+  cleanByText(root);
+
+  const simple = root.querySelector('.simpleWorkerApp');
+  if (simple && LEGACY_WORKER_COPY.test(textOf(root))) {
+    for (const child of Array.from(simple.children)) {
+      if (isCleanWorkerCore(child)) continue;
+      if (LEGACY_WORKER_COPY.test(textOf(child))) child.remove();
     }
-  }
-  const rootText = String(root.innerText || root.textContent || '').replace(/\s+/g, ' ').trim();
-  if (LEGACY_WORKER_COPY.test(rootText)) {
-    const simple = root.querySelector('.simpleWorkerApp');
-    if (simple) {
-      Array.from(root.children).forEach((child) => {
-        if (child.contains(simple)) return;
-        const text = String(child.innerText || child.textContent || '').replace(/\s+/g, ' ').trim();
-        if (LEGACY_WORKER_COPY.test(text)) child.remove();
-      });
+    for (const child of Array.from(root.children)) {
+      if (child.contains(simple)) continue;
+      if (LEGACY_WORKER_COPY.test(textOf(child))) child.remove();
     }
   }
 }
@@ -74,13 +116,15 @@ function cleanWorker() {
 if (typeof window !== 'undefined' && !window.__CHURVOX_WORKER_NO_FUSS_HARD_CLEAN__) {
   window.__CHURVOX_WORKER_NO_FUSS_HARD_CLEAN__ = true;
   installStyle();
+  cleanWorker();
   window.addEventListener('load', cleanWorker);
-  window.addEventListener('popstate', () => setTimeout(cleanWorker, 50));
-  window.addEventListener('hashchange', () => setTimeout(cleanWorker, 50));
-  document.addEventListener('click', () => setTimeout(cleanWorker, 30), true);
+  window.addEventListener('popstate', () => setTimeout(cleanWorker, 10));
+  window.addEventListener('hashchange', () => setTimeout(cleanWorker, 10));
+  document.addEventListener('DOMContentLoaded', cleanWorker);
+  document.addEventListener('click', () => setTimeout(cleanWorker, 10), true);
   const observer = new MutationObserver(() => cleanWorker());
   observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-  setInterval(cleanWorker, 250);
+  setInterval(cleanWorker, 100);
 }
 
 export {};
