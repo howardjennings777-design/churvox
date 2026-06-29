@@ -1,38 +1,98 @@
 /* CHURVOX_WORKER_PAGE_SPLIT_20260629 */
 
+html[data-worker-page="today"] #churvox-worker-flow-nav,
+html[data-worker-page="jobs"] #churvox-worker-flow-nav,
+html[data-worker-page="help"] #churvox-worker-flow-nav,
+html[data-worker-page="me"] #churvox-worker-flow-nav {
+  display: none !important;
+}
+
+.worker-page-title {
+  border: 1px solid rgba(15,23,42,.08);
+  border-radius: 28px;
+  padding: 22px 24px;
+  background: linear-gradient(135deg, #111827, #1f2937 58%, #fb923c);
+  color: #fff;
+  box-shadow: 0 18px 36px rgba(2,6,23,.12);
+}
+
+.worker-page-title span {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(255,255,255,.14);
+  color: #fed7aa;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.worker-page-title p {
+  margin: 0;
+  max-width: 520px;
+  color: rgba(255,255,255,.84);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+[data-worker-page-hidden="true"] {
+  display: none !important;
+}
+
+html[data-worker-page="today"] .wc-welcome,
+html[data-worker-page="today"] .wc-welcome-compact,
 html[data-worker-page="today"] .wc-list,
 html[data-worker-page="today"] .wc-stats,
 html[data-worker-page="today"] .wc-ready-steps,
 html[data-worker-page="today"] .wc-quick-actions,
+html[data-worker-page="today"] .wc-sync,
 html[data-worker-page="today"] .wc-alert:not(.danger),
 html[data-worker-page="today"] #tp-worker-offline-panel,
-html[data-worker-page="today"] #churvox-worker-flow-nav {
+html[data-worker-page="today"] .worker-runtime-bottom-nav {
   display: none !important;
 }
 
+html[data-worker-page="today"] .wc-clock-card,
+html[data-worker-page="today"] .wc-next-job {
+  display: block !important;
+  border-radius: 28px !important;
+}
+
+html[data-worker-page="today"] .wc-next-job {
+  margin-bottom: 110px !important;
+}
+
 html[data-worker-page="jobs"] .wc-welcome,
+html[data-worker-page="jobs"] .wc-welcome-compact,
 html[data-worker-page="jobs"] .wc-clock-card,
 html[data-worker-page="jobs"] .wc-next-job,
 html[data-worker-page="jobs"] .wc-ready-steps,
 html[data-worker-page="jobs"] .wc-quick-actions,
 html[data-worker-page="jobs"] .wc-stats,
-html[data-worker-page="jobs"] .wc-alert:not(.danger),
 html[data-worker-page="jobs"] .wc-sync,
+html[data-worker-page="jobs"] .wc-alert:not(.danger),
 html[data-worker-page="jobs"] #tp-worker-offline-panel,
-html[data-worker-page="jobs"] #churvox-worker-flow-nav {
+html[data-worker-page="jobs"] .worker-runtime-bottom-nav {
   display: none !important;
 }
 
 html[data-worker-page="jobs"] .wc-list {
+  display: block !important;
   margin-top: 12px !important;
+  margin-bottom: 110px !important;
+  border-radius: 28px !important;
 }
 
 html[data-worker-page="jobs"] .wc-list .wc-section-head {
-  padding: 22px 22px 8px !important;
+  display: none !important;
 }
 
-html[data-worker-page="jobs"] .wc-list .wc-section-head span::after {
-  content: ' only';
+html[data-worker-page="jobs"] .wc-job-card {
+  margin-bottom: 14px !important;
 }
 
 html[data-worker-page="proof"] .wc-welcome,
@@ -55,8 +115,7 @@ html[data-worker-page="help"] .wc-quick-actions,
 html[data-worker-page="help"] .wc-stats,
 html[data-worker-page="help"] .wc-alert:not(.danger),
 html[data-worker-page="help"] .wc-list,
-html[data-worker-page="help"] #tp-worker-offline-panel,
-html[data-worker-page="help"] #churvox-worker-flow-nav {
+html[data-worker-page="help"] #tp-worker-offline-panel {
   display: none !important;
 }
 
@@ -70,18 +129,7 @@ html[data-worker-page="jobs"] .wc-main,
 html[data-worker-page="proof"] .wc-main,
 html[data-worker-page="help"] .wc-main {
   padding-bottom: 120px !important;
-}
-
-html[data-worker-page="today"] .wc-welcome,
-html[data-worker-page="today"] .wc-clock-card,
-html[data-worker-page="today"] .wc-next-job,
-html[data-worker-page="jobs"] .wc-list {
-  border-radius: 28px !important;
-}
-
-html[data-worker-page="today"] .wc-welcome h1,
-html[data-worker-page="jobs"] .wc-list h2 {
-  letter-spacing: -0.055em !important;
+  gap: 14px !important;
 }
 
 html[data-worker-page="today"] .worker-bottom-nav__item[data-worker-nav-key="today"],
