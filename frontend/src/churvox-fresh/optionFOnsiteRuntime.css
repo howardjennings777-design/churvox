@@ -1,5 +1,9 @@
 /* CHURVOX_ONSITE_RUNTIME_20260629 */
 
+html[data-owner-page="onsite"] [data-onsite-old-panel="true"] {
+  display: none !important;
+}
+
 .onsiteLivePanel {
   display: grid;
   gap: 12px;
@@ -135,7 +139,7 @@
 
 .onsiteStats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
 }
 
@@ -170,7 +174,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
-  max-height: 520px;
+  max-height: 420px;
   overflow: auto;
 }
 
@@ -188,23 +192,6 @@
 .onsiteWarnings span {
   border: 1px solid rgba(234,88,12,.18);
   border-radius: 999px;
-  padding: 8px 10px;
-  background: #fff7ed;
-  color: #9a3412;
-  -webkit-text-fill-color: #9a3412;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.onsiteMovedToTeam {
-  opacity: .62;
-}
-
-.onsiteMovedToTeam::after {
-  content: 'Moved into Team for staff/payroll control.';
-  display: block;
-  margin-top: 8px;
-  border-radius: 12px;
   padding: 8px 10px;
   background: #fff7ed;
   color: #9a3412;
