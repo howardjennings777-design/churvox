@@ -1,1 +1,1 @@
-export { SimpleJob as default } from "./WorkerSimplePages";
+export { DailyJob as default } from "./WorkerDailySimple";
