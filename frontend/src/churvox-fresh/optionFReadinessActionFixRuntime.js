@@ -1,5 +1,5 @@
-// CHURVOX_READINESS_ACTION_FIX_RUNTIME_20260629
-// Makes fallback readiness actions useful instead of dead buttons.
+import './optionFTopPlayerRuntime';
+import './optionFTopPlayerRuntime.css';
 
 let cleanQueued = false;
 
@@ -23,15 +23,7 @@ function cleanVisibleCopy() {
   cleanQueued = false;
   const replacements = [
     ['Clear pricing guard', 'Plan clarity'],
-    ['No sneaky lockouts.', 'Clear limits before upgrade.'],
     ['Less confusion, fewer support tickets.', 'Less confusion, fewer support headaches.'],
-    ['Real review build layer', 'Field proof control'],
-    ['Built from real complaints:', 'Churvox checks'],
-    ['Built for rough coverage.', 'Ready for rough coverage.'],
-    ['Built for workers', 'Made for workers'],
-    ['build layer', 'control layer'],
-    ['10 out of 10', 'ready'],
-    ['10/10', 'ready'],
   ];
   const root = document.body || document.documentElement;
   if (!root) return;
