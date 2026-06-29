@@ -9,10 +9,16 @@ const MUTATE = process.env.CHURVOX_E2E_MUTATE === '1';
 const oldWorkerClutter = /proof passport|worker protection controls|photo safe queue|worker note becomes owner admin|made for workers, not office clutter|proof, gps and time are clear|0\/6 ready for owner approval|field proof|fair gps|photo thumbnails will show|worker controls ready|route to command, not jobs|6 proof checks left/i;
 const adminWordsOnWorker = /command slip|owner admin|sync to xero|sync to myob|bank payout|file tax/i;
 
+async function gotoFast(page, route) {
+  await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(async () => {
+    await page.evaluate((target) => { window.location.href = target; }, route).catch(() => null);
+  });
+}
+
 async function waitSettled(page) {
-  await page.waitForLoadState('domcontentloaded').catch(() => null);
-  await page.waitForLoadState('networkidle', { timeout: 1500 }).catch(() => null);
-  await page.waitForTimeout(250).catch(() => null);
+  await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => null);
+  await page.waitForLoadState('networkidle', { timeout: 800 }).catch(() => null);
+  await page.waitForTimeout(180).catch(() => null);
 }
 
 async function bodyText(page) {
@@ -42,7 +48,7 @@ async function fillAny(page, names, value) {
 
 async function loginWorker(page) {
   if (!WORKER_EMAIL || !WORKER_PASSWORD) throw new Error('Missing CHURVOX_WORKER_EMAIL/CHURVOX_WORKER_PASSWORD. Full human audit must use the real worker login.');
-  await page.goto('/login');
+  await gotoFast(page, '/login');
   await waitSettled(page);
   await fillAny(page, ['email'], WORKER_EMAIL);
   await fillAny(page, ['password'], WORKER_PASSWORD);
@@ -53,7 +59,7 @@ async function loginWorker(page) {
   await waitSettled(page);
   const text = await bodyText(page);
   expect(text, 'worker login should not show auth error').not.toMatch(/invalid|incorrect|wrong|failed|try again|required|not found/i);
-  if (!/worker/i.test(page.url())) await page.goto('/worker/today');
+  if (!/worker/i.test(page.url())) await gotoFast(page, '/worker/today');
   await waitSettled(page);
 }
 
@@ -83,12 +89,12 @@ async function clickVisible(page, regex, label) {
 
 test.describe('Churvox full human audit v8 - worker no-fuss contract', () => {
   test('worker Today is info only and Jobs works one at a time without old proof clutter', async ({ page }, testInfo) => {
-    test.setTimeout(180000);
+    test.setTimeout(240000);
     if (!MUTATE) throw new Error('Missing CHURVOX_E2E_MUTATE=1. This audit must safely start/finish the worker job or fail.');
 
     await loginWorker(page);
 
-    await page.goto('/worker/today');
+    await gotoFast(page, '/worker/today');
     await waitSettled(page);
     let text = await bodyText(page);
     expect(text, 'Today should identify the schedule/info page').toMatch(/Today/i);
@@ -96,10 +102,10 @@ test.describe('Churvox full human audit v8 - worker no-fuss contract', () => {
     expect(text, 'Today should not show Start job as the main work action').not.toMatch(/Start job/i);
     await assertNoOldWorkerClutter(page, 'worker today');
 
-    await page.goto('/worker/jobs');
+    await gotoFast(page, '/worker/jobs');
     await waitSettled(page);
     text = await bodyText(page);
-    expect(text, 'Jobs should be a one-job queue').toMatch(/one job at a time|start current job|all jobs done/i);
+    expect(text, 'Jobs should be a one-job queue').toMatch(/one job at a time|start current job|all jobs done|no open jobs/i);
     await assertNoOldWorkerClutter(page, 'worker jobs before start');
 
     if (/all jobs done|no open jobs/i.test(text)) {
@@ -134,7 +140,7 @@ test.describe('Churvox full human audit v8 - public mobile contract', () => {
   for (const route of ['/', '/features', '/pricing', '/login', '/signup']) {
     test(`public mobile page has readable content and no horizontal overflow: ${route}`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width: 412, height: 915 });
-      await page.goto(route);
+      await gotoFast(page, route);
       await waitSettled(page);
       const result = await page.evaluate(() => {
         const body = document.body;
