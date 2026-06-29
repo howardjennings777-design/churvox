@@ -85,3 +85,8 @@ try:
     import churvox_logic_audit_hardening_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_logic_audit_idempotency_patch  # noqa: F401
+except Exception:
+    pass
