@@ -7,6 +7,7 @@ const PANEL_ID = 'churvox-onsite-live-panel';
 let cached = null;
 let lastLoad = 0;
 let queued = false;
+let polling = false;
 
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
 function esc(value) { return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -37,7 +38,7 @@ function realLocation(value) {
 }
 async function load(force = false) {
   if (!token()) return cached;
-  if (!force && cached && Date.now() - lastLoad < 12000) return cached;
+  if (!force && cached && Date.now() - lastLoad < 8000) return cached;
   lastLoad = Date.now();
   try { cached = await request('GET', '/onsite/live'); } catch (_) {}
   return cached;
@@ -80,7 +81,7 @@ function onsiteHtml(data) {
   const warnings = Array.isArray(data?.warnings) ? data.warnings : [];
   const slips = Array.isArray(data?.field_slips) ? data.field_slips : [];
   const counts = data?.counts || {};
-  const liveLocations = rows.map((row) => realLocation(row.location || row.gps)).filter(Boolean);
+  const liveLocations = rows.map((row) => realLocation(row.location || row.gps || row.map_query)).filter(Boolean);
   const query = liveLocations.length ? `${liveLocations.slice(0, 5).join(' ')} New Zealand` : '';
   const mapBlock = query ? `<div class="onsiteMapShell">
       <iframe title="Onsite Google Maps" src="${esc(mapUrl(query))}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -105,7 +106,7 @@ function onsiteHtml(data) {
     <div class="onsiteRows">
       ${(rows.length ? rows : allTeam.filter((row) => row.active).slice(0, 6)).slice(0, 8).map((row) => `<article data-onsite-worker="${esc(row.id || row.name)}">
         <div><b>${esc(row.name || 'Worker')}</b><small>${esc(row.status || 'Onsite')} · ${esc(row.job || 'No current job')}</small></div>
-        <span>${esc(realLocation(row.location || row.gps) || 'No live GPS yet')}</span>
+        <span>${esc(realLocation(row.location || row.gps || row.map_query) || 'No live GPS yet')}</span>
         <em>${esc(row.proof || 'No proof yet')}</em>
         <small>${esc(row.messages || 'No messages')} · ${esc(row.timesheet || 'No time yet')}</small>
       </article>`).join('') || '<p>No one is marked onsite right now. Team records stay on Team.</p>'}
@@ -114,7 +115,7 @@ function onsiteHtml(data) {
       ${warnings.slice(0, 6).map((warning) => `<span>${esc(warning.message || warning.type)}</span>`).join('') || '<span>No live field warnings.</span>'}
     </div>`;
 }
-async function renderOnsite() {
+async function renderOnsite(force = false) {
   renameNav();
   cleanupTeamCopy();
   if (!isOnsitePage()) {
@@ -130,7 +131,7 @@ async function renderOnsite() {
     node.className = 'onsiteLivePanel';
     pageRoot.prepend(node);
   }
-  const data = await load();
+  const data = await load(force);
   renderHtml(node, onsiteHtml(data || {}));
   Array.from(pageRoot.querySelectorAll('.cocPanel h2')).forEach((heading) => {
     if (/Google Maps GPS/i.test(heading.textContent || '')) heading.textContent = 'Map backup';
@@ -139,22 +140,31 @@ async function renderOnsite() {
     if (/Timesheets|Slips/i.test(heading.textContent || '')) heading.closest('.cocPanel')?.classList.add('onsiteMovedToTeam');
   });
 }
-function schedule() {
+function schedule(force = false) {
   if (queued) return;
   queued = true;
   window.setTimeout(async () => {
     queued = false;
-    await renderOnsite();
+    await renderOnsite(force);
   }, 120);
+}
+function startPolling() {
+  if (polling) return;
+  polling = true;
+  window.setInterval(() => {
+    if (document.visibilityState !== 'visible') return;
+    if (!isOnsitePage()) return;
+    schedule(true);
+  }, 6000);
 }
 if (typeof window !== 'undefined' && !window.__CHURVOX_ONSITE_RUNTIME__) {
   window.__CHURVOX_ONSITE_RUNTIME__ = true;
-  window.addEventListener('load', schedule);
-  window.addEventListener('hashchange', schedule);
-  window.addEventListener('popstate', schedule);
-  window.addEventListener('churvox:fresh-data-updated', schedule);
-  document.addEventListener('click', schedule, true);
-  const observer = new MutationObserver(schedule);
+  window.addEventListener('load', () => { schedule(true); startPolling(); });
+  window.addEventListener('hashchange', () => schedule(true));
+  window.addEventListener('popstate', () => schedule(true));
+  window.addEventListener('churvox:fresh-data-updated', () => schedule(true));
+  document.addEventListener('click', () => schedule(false), true);
+  const observer = new MutationObserver(() => schedule(false));
   observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
