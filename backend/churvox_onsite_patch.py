@@ -51,7 +51,7 @@ def worker_name(worker):
 
 
 def job_worker(job):
-    return clean(job.get("assigned_worker_name") or job.get("worker_name") or job.get("worker") or job.get("assigned_to") or job.get("assigned_worker_id"))
+    return clean(job.get("assigned_worker_name") or job.get("worker_name") or job.get("worker") or job.get("assigned_to_name") or job.get("assigned_to") or job.get("assigned_worker_id") or job.get("worker_email") or job.get("assigned_worker_email"))
 
 
 def job_title(job):
@@ -59,7 +59,28 @@ def job_title(job):
 
 
 def job_location(job):
-    return clean(job.get("address") or job.get("site_address") or job.get("location") or job.get("suburb") or "")
+    return clean(job.get("address") or job.get("site_address") or job.get("service_address") or job.get("job_address") or job.get("location") or job.get("suburb") or "")
+
+
+def job_status(job):
+    return lower(job.get("status") or job.get("job_status") or job.get("workflow_status") or "assigned")
+
+
+def job_done(job):
+    return any(word in job_status(job) for word in ["complete", "completed", "done", "finished", "cancelled", "archived"])
+
+
+def job_ready_for_map(job):
+    if job_done(job) or not job_location(job):
+        return False
+    status = job_status(job)
+    if any(word in status for word in ["in_progress", "started", "active", "on_my_way", "assigned", "ready", "scheduled"]):
+        return True
+    date = clean(job.get("scheduled_date") or job.get("date") or job.get("start") or job.get("due_date"))[:10]
+    if not date:
+        return True
+    today = now_utc().date().isoformat()
+    return date >= today
 
 
 def is_active_worker(worker):
@@ -191,6 +212,36 @@ async def onsite_payload(db, user):
             seen.add(key)
 
     active_rows = [row for row in onsite if row.get("active")]
+    if not any(clean(row.get("location") or row.get("map_query") or row.get("gps")) for row in active_rows):
+        fallback_jobs = [job for job in jobs if job_ready_for_map(job)][:8]
+        for job in fallback_jobs:
+            key = clean(job.get("id") or job.get("_id") or job.get("job_id") or job_title(job))
+            worker = job_worker(job) or "Worker"
+            location = job_location(job)
+            row = {
+                "id": key,
+                "name": worker,
+                "role": "Worker",
+                "status": "Job site",
+                "active": True,
+                "job": job_title(job),
+                "jobs": [json_safe(job)],
+                "gps": location,
+                "location": location,
+                "map_query": location,
+                "start": clean(job.get("scheduled_time") or job.get("time")),
+                "end": "",
+                "proof": "Mapped from job address",
+                "messages": clean(job.get("scheduled_time") or job.get("time") or "No live GPS yet"),
+                "timesheet": "GPS fallback",
+                "slip": "",
+                "updated_at": job.get("updated_at") or now_utc(),
+                "source": "job_address_fallback",
+            }
+            active_rows.append(row)
+        if fallback_jobs:
+            warnings.insert(0, {"type": "gps_fallback", "message": "Showing job site map until live worker GPS arrives."})
+
     places = [row.get("location") or row.get("map_query") for row in active_rows if clean(row.get("location") or row.get("map_query"))]
 
     command_slips = []
@@ -209,7 +260,7 @@ async def onsite_payload(db, user):
         "all_team": json_safe(onsite),
         "warnings": json_safe(warnings),
         "field_slips": command_slips,
-        "rule": "Team holds staff records. Onsite shows live worker GPS/status signals and people currently doing work.",
+        "rule": "GPS is first choice. If GPS is missing, Onsite maps the current job site address so the boss still sees the work location.",
         "updated_at": now_utc(),
     }
 
