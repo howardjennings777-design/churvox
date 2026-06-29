@@ -55,8 +55,7 @@ html:has(.wc-screen) {
   white-space: nowrap;
 }
 
-.worker-flow-nav button.active,
-.worker-flow-nav button:first-child {
+.worker-flow-nav button.active {
   background: #111827;
   color: #fff;
   -webkit-text-fill-color: #fff;
