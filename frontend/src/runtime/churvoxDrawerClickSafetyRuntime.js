@@ -1,8 +1,9 @@
 // CHURVOX_DRAWER_CLICK_SAFETY_20260629
-// Prevents stale drawers/modals from sitting over page controls during real use and QA trial-clicks.
+// Prevents stale drawers and review modals from sitting over page controls during real use and QA trial-clicks.
 
 const STYLE_ID = 'churvox-drawer-click-safety-style';
 const STALE_MODAL_ID = 'option-f-full-site-wiring-modal';
+const DEEP_MODAL_ID = 'option-f-deep-wiring-modal';
 
 function installStyle() {
   if (document.getElementById(STYLE_ID)) return;
@@ -28,7 +29,8 @@ function installStyle() {
     .churvoxOptionC .cocDrawer[data-churvox-drawer-closed="true"] * {
       pointer-events: none !important;
     }
-    #${STALE_MODAL_ID} {
+    #option-f-full-site-wiring-modal,
+    #option-f-deep-wiring-modal {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
@@ -42,17 +44,16 @@ function drawers() {
 }
 
 function staleModal() {
-  return document.getElementById(STALE_MODAL_ID);
+  return document.getElementById(STALE_MODAL_ID) || document.getElementById(DEEP_MODAL_ID);
 }
 
-function killStaleModal() {
+function hideStaleModal() {
   const modal = staleModal();
   if (!modal) return;
   modal.hidden = true;
   modal.setAttribute('aria-hidden', 'true');
   modal.style.display = 'none';
   modal.style.pointerEvents = 'none';
-  modal.remove();
 }
 
 function hideDrawer(drawer) {
@@ -69,12 +70,12 @@ function restoreDrawer(drawer) {
 
 function closeAll() {
   drawers().forEach(hideDrawer);
-  killStaleModal();
+  hideStaleModal();
 }
 
 function ensureCloseButtons() {
   installStyle();
-  killStaleModal();
+  hideStaleModal();
   for (const drawer of drawers()) {
     drawer.style.pointerEvents = 'none';
     if (drawer.querySelector('[data-coc-close-drawer]')) continue;
@@ -84,13 +85,13 @@ function ensureCloseButtons() {
     button.setAttribute('aria-label', 'Close drawer');
     button.dataset.cocCloseDrawer = 'true';
     button.style.cssText = 'position:absolute;right:12px;top:12px;z-index:5;border:0;border-radius:999px;background:#111827;color:#fff;padding:8px 12px;font-weight:900;pointer-events:auto!important;';
-    button.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); hideDrawer(drawer); killStaleModal(); });
+    button.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); hideDrawer(drawer); hideStaleModal(); });
     drawer.appendChild(button);
   }
 }
 
 function handleClick(event) {
-  killStaleModal();
+  hideStaleModal();
   const target = event.target;
   if (target?.closest?.('.churvoxOptionC .cocDrawer')) return;
   if (drawers().some((drawer) => drawer.dataset.churvoxDrawerClosed !== 'true' && drawer.getBoundingClientRect().width > 0)) closeAll();
