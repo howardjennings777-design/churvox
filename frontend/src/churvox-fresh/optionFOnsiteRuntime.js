@@ -81,8 +81,7 @@ function onsiteHtml(data) {
   const slips = Array.isArray(data?.field_slips) ? data.field_slips : [];
   const counts = data?.counts || {};
   const liveLocations = rows.map((row) => realLocation(row.location || row.gps)).filter(Boolean);
-  const backendMap = realLocation(data?.map_query);
-  const query = liveLocations.length ? `${liveLocations.slice(0, 5).join(' ')} New Zealand` : backendMap;
+  const query = liveLocations.length ? `${liveLocations.slice(0, 5).join(' ')} New Zealand` : '';
   const mapBlock = query ? `<div class="onsiteMapShell">
       <iframe title="Onsite Google Maps" src="${esc(mapUrl(query))}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       <a href="${esc(mapSearch(query))}" target="_blank" rel="noreferrer">Open in Google Maps</a>
