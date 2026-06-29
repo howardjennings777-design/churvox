@@ -22,7 +22,22 @@ async function waitSettled(page) {
 }
 
 async function bodyText(page) {
-  return (await page.locator('body').innerText({ timeout: 10000 }).catch(() => '')).replace(/\s+/g, ' ').trim();
+  return (await page.locator('body').innerText({ timeout: 5000 }).catch(() => '')).replace(/\s+/g, ' ').trim();
+}
+
+async function waitForWorkerText(page, route, pattern, label) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt === 1) await gotoFast(page, route);
+    await waitSettled(page);
+    for (let i = 0; i < 16; i += 1) {
+      const text = await bodyText(page);
+      if (pattern.test(text)) return text;
+      await page.waitForTimeout(250).catch(() => null);
+    }
+  }
+  const url = page.url();
+  const text = await bodyText(page);
+  throw new Error(`${label} did not render expected worker text. url=${url} text=${text.slice(0, 300)}`);
 }
 
 async function fillAny(page, names, value) {
@@ -89,22 +104,19 @@ async function clickVisible(page, regex, label) {
 
 test.describe('Churvox full human audit v8 - worker no-fuss contract', () => {
   test('worker Today is info only and Jobs works one at a time without old proof clutter', async ({ page }, testInfo) => {
-    test.setTimeout(240000);
+    test.setTimeout(120000);
     if (!MUTATE) throw new Error('Missing CHURVOX_E2E_MUTATE=1. This audit must safely start/finish the worker job or fail.');
 
     await loginWorker(page);
 
     await gotoFast(page, '/worker/today');
-    await waitSettled(page);
-    let text = await bodyText(page);
-    expect(text, 'Today should identify the schedule/info page').toMatch(/Today/i);
+    let text = await waitForWorkerText(page, '/worker/today', /Today/i, 'worker today');
     expect(text, 'Today should mention schedule/info, not old proof flow').toMatch(/schedule|info|messages|jobs/i);
     expect(text, 'Today should not show Start job as the main work action').not.toMatch(/Start job/i);
     await assertNoOldWorkerClutter(page, 'worker today');
 
     await gotoFast(page, '/worker/jobs');
-    await waitSettled(page);
-    text = await bodyText(page);
+    text = await waitForWorkerText(page, '/worker/jobs', /one job at a time|start current job|all jobs done|no open jobs/i, 'worker jobs');
     expect(text, 'Jobs should be a one-job queue').toMatch(/one job at a time|start current job|all jobs done|no open jobs/i);
     await assertNoOldWorkerClutter(page, 'worker jobs before start');
 
