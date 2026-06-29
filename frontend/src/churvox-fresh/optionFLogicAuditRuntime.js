@@ -99,7 +99,7 @@ function hardenOnsiteAliases() {
   });
 }
 function cleanVisibleProductCopy() {
-  if (!isOwnerApp()) return;
+  if (!isOwnerApp() || !document.body) return;
   const replacements = [
     ['Jobs, workers, money, messages and problems for today.', 'Jobs, onsite people, money, messages and problems for today.'],
     ['Clock-ins, GPS, current jobs, proof and timesheets.', 'Live map, onsite people, current jobs, proof and field warnings.'],
@@ -117,7 +117,8 @@ function cleanVisibleProductCopy() {
     ['fake', 'sample'],
     ['placeholder', 'not set yet'],
   ];
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const showText = window.NodeFilter ? NodeFilter.SHOW_TEXT : 4;
+  const walker = document.createTreeWalker(document.body, showText);
   const nodes = [];
   while (walker.nextNode()) nodes.push(walker.currentNode);
   nodes.forEach((node) => {
