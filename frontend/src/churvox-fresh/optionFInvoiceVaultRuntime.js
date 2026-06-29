@@ -29,6 +29,11 @@ function headers() {
   return { 'Content-Type': 'application/json', ...(auth ? { Authorization: `Bearer ${auth}` } : {}) };
 }
 
+function pdfHeaders() {
+  const auth = token();
+  return auth ? { Authorization: `Bearer ${auth}` } : {};
+}
+
 async function request(method, path, payload) {
   const response = await fetch(apiUrl(path), { method, credentials: 'include', headers: headers(), body: payload === undefined ? undefined : JSON.stringify(payload) });
   const body = await response.json().catch(() => ({}));
@@ -86,11 +91,11 @@ function panelHtml(data) {
     </div>
     <div class="ivRows">
       ${invoices.slice(0, 10).map((invoice) => {
-        const id = encodeURIComponent(invoice.invoice_id || invoice.id || invoice.number || 'invoice');
-        return `<article data-iv-id="${esc(invoice.invoice_id || invoice.id || invoice.number)}">
+        const id = invoice.invoice_id || invoice.id || invoice.number || 'invoice';
+        return `<article data-iv-id="${esc(id)}">
           <div><strong>${esc(invoice.number || invoice.invoice_id || 'Invoice')}</strong><small>${esc(invoice.client_name || 'Customer')} · ${esc(invoice.status || invoice.paid_status || 'saved')} · ${esc(invoice.send_status || 'archived')}</small></div>
           <b>${money(invoice.amount || 0)}</b>
-          <a href="${apiUrl(`/invoices/${id}/pdf`)}" target="_blank" rel="noreferrer">Open PDF</a>
+          <button type="button" data-iv-pdf>Open PDF</button>
           <button type="button" data-iv-paid>Mark paid</button>
         </article>`;
       }).join('') || '<p class="ivEmpty">No invoice snapshots yet. The vault fills when invoices are approved/sent or archived.</p>'}
@@ -130,12 +135,34 @@ async function markPaid(id, button) {
   }
 }
 
+async function openPdf(id, button) {
+  if (!id || !token()) return;
+  const original = button.textContent;
+  button.textContent = 'Opening...';
+  try {
+    const response = await fetch(apiUrl(`/invoices/${encodeURIComponent(id)}/pdf`), { method: 'GET', credentials: 'include', headers: pdfHeaders() });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    button.textContent = 'Opened';
+    window.setTimeout(() => { button.textContent = original; }, 1500);
+  } catch (_) {
+    button.textContent = 'Try again';
+    window.setTimeout(() => { button.textContent = original; }, 1500);
+  }
+}
+
 function handleClick(event) {
-  const button = event.target.closest('[data-iv-paid]');
-  if (!button) return;
+  const paid = event.target.closest('[data-iv-paid]');
+  const pdf = event.target.closest('[data-iv-pdf]');
+  if (!paid && !pdf) return;
   event.preventDefault();
-  const row = button.closest('[data-iv-id]');
-  markPaid(row?.getAttribute('data-iv-id'), button);
+  const row = (paid || pdf).closest('[data-iv-id]');
+  const id = row?.getAttribute('data-iv-id');
+  if (paid) markPaid(id, paid);
+  if (pdf) openPdf(id, pdf);
 }
 
 function schedule() {
