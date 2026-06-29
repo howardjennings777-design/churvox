@@ -24,6 +24,7 @@ module.exports = defineConfig({
     actionTimeout: 15_000,
     navigationTimeout: 45_000,
     ignoreHTTPSErrors: true,
+    serviceWorkers: 'block',
   },
   webServer: useExternalSite ? undefined : {
     command: 'npm run build && npx serve -s build -l 3000',
