@@ -31,15 +31,15 @@ function siteLocation() {
 }
 function actionFromText(text) {
   const t = lower(text);
-  if (/clock out|finish|complete|stop timer|stop job|end job/.test(t)) return 'stop';
-  if (/clock in|start job|start timer|start work|begin|in progress/.test(t)) return 'start';
+  if (/clock out|finish|complete|stop timer|stop job|end job|paused|pause/.test(t)) return 'stop';
+  if (/\bstarted\b|on my way|clock in|start job|start timer|start work|begin|in progress/.test(t)) return 'start';
   return '';
 }
 function actionFromRequest(url, method) {
   const target = lower(`${method || ''} ${url || ''}`);
   if (!target.includes('/api/') && !target.includes('/worker')) return '';
-  if (/complete|finish|clock-out|clock_out|stop/.test(target)) return 'stop';
-  if (/start|clock-in|clock_in|timer|in-progress/.test(target)) return 'start';
+  if (/complete|finish|clock-out|clock_out|stop|paused|pause/.test(target)) return 'stop';
+  if (/started|start|clock-in|clock_in|timer|in-progress|field-update|live-ping/.test(target)) return 'start';
   return '';
 }
 async function position() {
