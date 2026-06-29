@@ -1,3 +1,5 @@
+import '../churvox-fresh/optionFOldBackendBridgeRuntime';
+
 // CHURVOX_LOGO_LAUNCH_SPLASH_20260629
 // Shows a short branded launch screen for the worker app and first-load app shell.
 
