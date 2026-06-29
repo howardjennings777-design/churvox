@@ -1,1 +1,1 @@
-export { WorkerProofPage as default } from "./worker/WorkerRebuildPages";
+export { SimpleProof as default } from "./worker/WorkerSimplePages";
