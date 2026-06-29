@@ -90,3 +90,8 @@ try:
     import churvox_logic_audit_idempotency_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_command_execution_lock_patch  # noqa: F401
+except Exception:
+    pass
