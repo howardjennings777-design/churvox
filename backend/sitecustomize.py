@@ -30,3 +30,8 @@ try:
     import churvox_field_truth_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_field_truth_fix_patch  # noqa: F401
+except Exception:
+    pass
