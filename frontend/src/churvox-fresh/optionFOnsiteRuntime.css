@@ -1,7 +1,16 @@
 /* CHURVOX_ONSITE_RUNTIME_20260629 */
 
-html[data-owner-page="onsite"] [data-onsite-old-panel="true"] {
+html[data-owner-page="onsite"] [data-onsite-old-panel="true"],
+html[data-onsite-hard-lock] .churvoxOptionC .workspace .cocPage.onsiteOnlyPage > *:not(#churvox-onsite-live-panel) {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html[data-onsite-hard-lock] .churvoxOptionC .workspace .cocPage.onsiteOnlyPage {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
 }
 
 .onsiteLivePanel {
