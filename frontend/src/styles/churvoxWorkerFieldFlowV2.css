@@ -1,0 +1,284 @@
+/* CHURVOX_WORKER_FIELD_FLOW_V2_20260629 */
+
+body:has(.wc-screen),
+html:has(.wc-screen) {
+  background: #f7f5ef !important;
+}
+
+.wc-screen {
+  background:
+    radial-gradient(circle at 96% -10%, rgba(234, 88, 12, .12), transparent 34%),
+    linear-gradient(180deg, #fbfaf6 0%, #f0eee6 100%) !important;
+}
+
+.wc-topbar,
+.px-mobile-header:has(+ #churvox-worker-flow-nav),
+.worker-app-top:has(+ #churvox-worker-flow-nav) {
+  border-radius: 0 !important;
+  box-shadow: 0 8px 22px rgba(2, 6, 23, .13) !important;
+}
+
+.worker-flow-nav {
+  position: sticky;
+  top: calc(66px + env(safe-area-inset-top));
+  z-index: 39;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding: 9px max(12px, calc(10px + env(safe-area-inset-left))) 10px max(12px, calc(10px + env(safe-area-inset-right)));
+  background: rgba(247, 245, 239, .92);
+  border-bottom: 1px solid rgba(17, 24, 39, .08);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.worker-flow-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.worker-flow-nav button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  border: 1px solid rgba(17, 24, 39, .10);
+  border-radius: 999px;
+  padding: 0 13px;
+  background: #fff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: -.01em;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, .05);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.worker-flow-nav button.active,
+.worker-flow-nav button:first-child {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  border-color: #111827;
+}
+
+.wc-main {
+  gap: 13px !important;
+}
+
+.wc-welcome,
+.wc-job-hero {
+  border-radius: 22px !important;
+  padding: 18px !important;
+  box-shadow: 0 12px 30px rgba(2, 6, 23, .12) !important;
+}
+
+.wc-welcome h1,
+.wc-job-hero h1 {
+  font-size: clamp(30px, 8vw, 48px) !important;
+  line-height: .96 !important;
+  letter-spacing: -.055em !important;
+}
+
+.wc-clock-card,
+.wc-next-job,
+.wc-ready-steps,
+.wc-quick-actions,
+.wc-stats,
+.wc-list,
+.wc-card,
+.wc-job-card,
+.wc-finish,
+.wc-alert,
+.wc-empty,
+#churvox-worker-flow-nav {
+  scroll-margin-top: calc(122px + env(safe-area-inset-top)) !important;
+}
+
+.wc-clock-card,
+.wc-next-job,
+.wc-card,
+.wc-job-card,
+.wc-empty,
+.wc-alert,
+.wc-finish {
+  border-radius: 20px !important;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, .055) !important;
+}
+
+.wc-section-head h2,
+.wc-finish h2,
+.wc-job-card h2 {
+  letter-spacing: -.035em !important;
+}
+
+.wc-status-strip {
+  position: sticky;
+  top: calc(116px + env(safe-area-inset-top));
+  z-index: 33;
+  padding: 8px;
+  margin: -2px -4px 0;
+  border-radius: 20px;
+  background: rgba(247, 245, 239, .91);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(17, 24, 39, .08);
+}
+
+.wc-status-strip button {
+  min-height: 44px !important;
+  border-radius: 15px !important;
+  font-size: 12px !important;
+}
+
+.wc-job-screen .wc-main {
+  padding-top: 12px !important;
+}
+
+.wc-job-screen .wc-card,
+.wc-job-screen .wc-finish {
+  align-content: start;
+}
+
+.wc-job-screen #worker-proof,
+.wc-job-screen #finish {
+  border-color: rgba(234, 88, 12, .22) !important;
+}
+
+.wc-proof-steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.worker-runtime-bottom-nav {
+  position: fixed;
+  left: max(10px, calc(10px + env(safe-area-inset-left)));
+  right: max(10px, calc(10px + env(safe-area-inset-right)));
+  bottom: calc(8px + env(safe-area-inset-bottom));
+  z-index: 2147482000;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid rgba(15,23,42,0.12);
+  border-radius: 26px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 -10px 28px rgba(2,6,23,0.18);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.worker-runtime-bottom-nav button {
+  min-height: 56px;
+  border: 0;
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.worker-runtime-bottom-nav button:first-child {
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.worker-bottom-nav > div {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+.worker-bottom-nav__item {
+  min-height: 54px !important;
+}
+
+.worker-bottom-nav__item span {
+  font-size: 10px !important;
+  line-height: 1.05 !important;
+}
+
+@media (min-width: 820px) {
+  .wc-main {
+    width: min(920px, 100%) !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .wc-job-screen .wc-main {
+    width: min(1120px, 100%) !important;
+    grid-template-columns: minmax(0, 1.05fr) minmax(340px, .95fr);
+    align-items: start;
+  }
+
+  .wc-job-screen .wc-job-hero,
+  .wc-job-screen .wc-alert,
+  .wc-job-screen .wc-status-strip,
+  .wc-job-screen .wc-finish,
+  .wc-job-screen #worker-proof,
+  .wc-job-screen #help {
+    grid-column: 1 / -1;
+  }
+
+  .wc-job-screen .wc-timer-card {
+    min-height: 240px;
+  }
+
+  .wc-job-screen #directions,
+  .wc-job-screen #contact,
+  .wc-job-screen #instructions,
+  .wc-job-screen #checklist,
+  .wc-job-screen #materials,
+  .wc-job-screen #wrap {
+    min-height: 190px;
+  }
+
+  .wc-job-screen #worker-proof {
+    display: grid;
+    grid-template-columns: minmax(0, .78fr) minmax(320px, 1fr);
+    align-items: start;
+  }
+
+  .wc-job-screen #worker-proof .wc-section-head,
+  .wc-job-screen #worker-proof .wc-alert,
+  .wc-job-screen #worker-proof .wc-proof-steps {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .worker-flow-nav {
+    top: calc(61px + env(safe-area-inset-top));
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .wc-status-strip {
+    position: static;
+  }
+
+  .wc-proof-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .worker-bottom-nav,
+  .worker-runtime-bottom-nav {
+    left: 6px !important;
+    right: 6px !important;
+    padding: 5px !important;
+  }
+
+  .worker-bottom-nav__item,
+  .worker-runtime-bottom-nav button {
+    min-height: 50px !important;
+    border-radius: 15px !important;
+  }
+
+  .worker-flow-nav button {
+    min-height: 36px;
+    padding: 0 11px;
+    font-size: 11px;
+  }
+}
