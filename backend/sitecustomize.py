@@ -20,3 +20,8 @@ try:
     import churvox_job_timer_routes_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_old_backend_bridge_patch  # noqa: F401
+except Exception:
+    pass
