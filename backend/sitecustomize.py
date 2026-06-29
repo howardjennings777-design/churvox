@@ -25,3 +25,8 @@ try:
     import churvox_old_backend_bridge_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_field_truth_patch  # noqa: F401
+except Exception:
+    pass
