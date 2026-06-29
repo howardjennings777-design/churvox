@@ -1,1 +1,1 @@
-export { SimpleProof as default } from "./worker/WorkerSimplePages";
+export { DailyProof as default } from "./worker/WorkerDailySimple";
