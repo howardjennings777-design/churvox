@@ -60,3 +60,8 @@ try:
     import churvox_approval_execution_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_invoice_vault_patch  # noqa: F401
+except Exception:
+    pass
