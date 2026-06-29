@@ -4,13 +4,9 @@ import App from './App';
 import RecordWorkspacePopupBridgeV2 from './components/RecordWorkspacePopupBridgeV2';
 import './index.css';
 import './styles/churvoxFullPageModals.css';
-import './styles/churvoxWorkerAppRedesign.css';
 import './components/recordWorkspacePopup.css';
 import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
-import './runtime/churvoxWorkerFieldFlowRuntime';
-import './runtime/churvoxWorkerPageSplitRuntime';
-import './runtime/churvoxWorkerPageSplitRuntime.css';
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
@@ -63,7 +59,6 @@ import './churvox-fresh/optionFApprovalExecutionRuntime';
 import './churvox-fresh/optionFInvoiceVaultRuntime';
 import './churvox-fresh/optionFInvoiceVaultRuntime.css';
 import './styles/churvoxResponsiveFit.css';
-import './styles/churvoxWorkerFieldFlowV2.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
