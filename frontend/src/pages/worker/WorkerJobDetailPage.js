@@ -1,1 +1,1 @@
-export { WorkerJobDetailPage as default } from "./WorkerRebuildPages";
+export { SimpleJob as default } from "./WorkerSimplePages";
