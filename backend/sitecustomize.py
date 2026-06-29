@@ -67,6 +67,11 @@ except Exception:
     pass
 
 try:
+    import churvox_invoice_vault_guard_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_top_player_patch  # noqa: F401
 except Exception:
     pass
