@@ -241,6 +241,23 @@ function getGpsPosition() {
   });
 }
 
+function onsiteGpsPayload({ state, location, source, job }) {
+  const address = location?.address_label || location?.display_name || addressOf(job) || "";
+  return {
+    state,
+    source,
+    job_id: idOf(job),
+    job_title: job ? jobTitle(job) : "Shift clock",
+    location: address,
+    address,
+    latitude: location?.latitude ?? location?.lat ?? null,
+    longitude: location?.longitude ?? location?.lng ?? null,
+    accuracy: location?.accuracy ?? null,
+    live_status: state === "stop" ? "Clocked out" : "Clocked in",
+    clock_status: state === "stop" ? "clocked_out" : "clocked_in",
+  };
+}
+
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = `${base64String}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
@@ -366,6 +383,14 @@ export default function WorkerJobsPage() {
     }
   }
 
+  async function sendOnsiteGpsStatus({ state = "start", location = null, source = "worker-clock", job = null } = {}) {
+    try {
+      await post("/worker/gps/status", onsiteGpsPayload({ state, location, source, job }));
+    } catch {
+      // Never block the worker flow. Boss Onsite debug will show if this failed.
+    }
+  }
+
   async function fetchShiftStatus() {
     const res = await get("/worker/shift/status-v2");
     if (res?.success) {
@@ -386,6 +411,7 @@ export default function WorkerJobsPage() {
         clock_status: shiftStatus || "clocked_in",
         location,
       });
+      await sendOnsiteGpsStatus({ state: "start", location, source: `gps-${source}`, job: nextJob });
       if (!res?.success) toast.error(res?.error || "GPS could not be recorded");
       else toast.success("GPS recorded");
     } catch (err) {
@@ -407,6 +433,7 @@ export default function WorkerJobsPage() {
           clock_status: "clocked_in",
           location,
         });
+        await sendOnsiteGpsStatus({ state: "start", location, source: "clock-in", job: nextJob });
         toast.success("Clocked in. GPS is on.");
         await fetchShiftStatus();
       } else {
@@ -465,6 +492,7 @@ export default function WorkerJobsPage() {
           clock_status: "clocked_out",
           location,
         });
+        await sendOnsiteGpsStatus({ state: "stop", location, source: "clock-out", job: nextJob });
         toast.success("Clocked out. Time sheet sent for owner review.");
         await fetchShiftStatus();
       } else {
@@ -511,7 +539,7 @@ export default function WorkerJobsPage() {
   const readyJobs = useMemo(() => jobs.filter(readyForWorker), [jobs]);
   const heldJobs = useMemo(() => jobs.filter((job) => !isComplete(job) && !readyForWorker(job)), [jobs]);
   const todayJobs = useMemo(() => readyJobs.filter((job) => dateOf(job) === today), [readyJobs, today]);
-  const upcomingJobs = useMemo(() => readyJobs.filter((job) => dateOf(job) && dateOf(job) !== today), [readyJobs, today]);
+  const upcomingJobs = useMemo(() => readyJobs.filter((job) => dateOf(job) && dateOf(job) !== today), [readyJobs]);
   const activeJobs = readyJobs.filter(isActive);
   const visibleJobs = useMemo(() => {
     const base = todayJobs.length ? todayJobs : upcomingJobs;
@@ -578,128 +606,47 @@ export default function WorkerJobsPage() {
             <span>{nextJobLabel(nextJob)}</span>
             <h2>{nextJob ? jobTitle(nextJob) : "No ready job assigned"}</h2>
             <p>{nextJob ? clientName(nextJob) : heldJobs.length ? "Churvox is holding incomplete jobs until the boss/admin fixes the missing details." : "Refresh or message the boss if you are expecting work."}</p>
-            {nextAddress ? <small><MapPin size={15} /> {nextAddress}</small> : null}
-            {nextInstructions ? <em>{String(nextInstructions).slice(0, 150)}</em> : null}
+            {nextAddress ? <small><MapPin size={16} /> {nextAddress}</small> : null}
+            {nextInstructions ? <em>{String(nextInstructions).slice(0, 130)}</em> : null}
           </div>
-          <div className="wc-next-job-actions">
-            {nextJob ? <Link to={`/worker/jobs/${idOf(nextJob)}`}>Open next job</Link> : <button type="button" onClick={fetchJobs}>Refresh jobs</button>}
-            {nextAddress ? <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextAddress)}`} target="_blank" rel="noreferrer"><Navigation size={16} /> Directions</a> : null}
-            <button type="button" onClick={() => setShowContactOffice(true)}><MessageCircle size={16} /> Message boss</button>
-          </div>
+          {nextJob ? <Link to={`/worker/jobs/${idOf(nextJob)}`}>Open next job</Link> : <button type="button" onClick={() => setShowContactOffice(true)}>Message boss</button>}
+          {nextAddress ? <a className="wc-directions" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextAddress)}`} target="_blank" rel="noreferrer"><Navigation /> Directions</a> : null}
         </section>
 
-        {heldJobs.length ? (
-          <section className="wc-alert need">
-            <AlertTriangle />
-            <div>
-              <b>{heldJobs.length} job{heldJobs.length === 1 ? "" : "s"} not ready for worker app</b>
-              <span>Missing {heldJobs.slice(0, 3).map((job) => workerMissingFields(job).join("/")).join(", ")}. Churvox keeps these out of Today until Command/admin fixes them.</span>
-              <button type="button" className="wc-mini-action" onClick={() => setShowContactOffice(true)}>Ask boss</button>
-            </div>
-          </section>
-        ) : null}
+        {heldJobs.length ? <section className="wc-alert need"><AlertTriangle /><div><b>{heldJobs.length} job{heldJobs.length === 1 ? "" : "s"} need fixing</b><span>Open the job, add what the owner asked for, then send it back.</span></div></section> : null}
 
-        <section className="wc-ready-steps" aria-label="Worker readiness checklist">
-          {readySteps.map((step) => (
-            <article key={step.label} className={step.done ? "done" : ""}>
-              <b>{step.done ? "✓" : "•"}</b>
-              <span>{step.label}</span>
-              <small>{step.detail}</small>
-            </article>
-          ))}
+        <section className="wc-ready-steps" aria-label="Worker ready checks">
+          {readySteps.map((step) => <article key={step.label} className={step.done ? "done" : ""}><CheckCircle2 /><b>{step.label}</b><span>{step.detail}</span></article>)}
         </section>
 
-        {!workerPushEnabled ? (
-          <section className="wc-alert need">
-            <AlertTriangle />
-            <div>
-              <b>Turn job notifications on</b>
-              <span>So you see new jobs, boss messages and sent-back work straight away.</span>
-              <button type="button" className="wc-mini-action" onClick={enableWorkerNotifications}>Turn notifications on</button>
-            </div>
-          </section>
-        ) : (
-          <section className="wc-alert">
-            <CheckCircle2 />
-            <div>
-              <b>Notifications are on</b>
-              <span>You’ll be alerted for new jobs, boss messages and job changes.</span>
-            </div>
-          </section>
-        )}
+        {!workerPushEnabled ? <section className="wc-alert need"><MessageCircle /><div><b>Turn on job alerts</b><span>Get notified when the boss assigns or fixes a job.</span><button type="button" className="wc-mini-action" onClick={enableWorkerNotifications}>Turn on alerts</button></div></section> : null}
 
         <section className="wc-quick-actions">
-          <button type="button" onClick={() => sendGpsPing("manual")} disabled={shiftStatus !== "clocked_in"}>
-            <MapPin size={18} />
-            GPS check
-          </button>
-          <button type="button" onClick={() => setShowContactOffice(true)}>
-            <MessageCircle size={18} />
-            Message boss
-          </button>
-          <button type="button" onClick={fetchJobs}>
-            <RefreshCw size={18} />
-            Refresh jobs
-          </button>
+          <button type="button" onClick={() => sendGpsPing("manual")}><MapPin /> GPS check</button>
+          <button type="button" onClick={() => setShowContactOffice(true)}><MessageCircle /> Message boss</button>
+          <Link to="/worker/settings"><Settings /> Me</Link>
         </section>
 
         <section className="wc-stats">
-          <article><span>Today ready</span><b>{todayJobs.length}</b></article>
-          <article><span>Held</span><b>{heldJobs.length}</b></article>
+          <article><span>Ready</span><b>{readyJobs.length}</b></article>
+          <article><span>Today</span><b>{todayJobs.length}</b></article>
           <article><span>Done</span><b>{doneToday}</b></article>
         </section>
 
-        {sentBackJobs.length ? (
-          <section className="wc-alert">
-            <AlertTriangle />
-            <div>
-              <b>{sentBackJobs.length} job{sentBackJobs.length === 1 ? "" : "s"} need fixing</b>
-              <span>Open the job, add what the owner asked for, then send it back.</span>
-            </div>
-          </section>
-        ) : null}
+        {sentBackJobs.length ? <section className="wc-alert need"><AlertTriangle /><div><b>{sentBackJobs.length} job{sentBackJobs.length === 1 ? "" : "s"} need a fix</b><span>The boss sent these back for more info, proof or a message.</span></div></section> : null}
 
-        {error ? (
-          <section className="wc-alert danger">
-            <AlertTriangle />
-            <div><b>Could not load jobs</b><span>{error}</span></div>
-          </section>
-        ) : null}
+        {error ? <section className="wc-alert danger"><AlertTriangle /><div><b>Could not load jobs</b><span>{error}</span></div></section> : null}
+        {loading ? <section className="wc-loading"><RefreshCw className="spin" /><b>Loading jobs...</b></section> : null}
 
-        {loading ? (
-          <section className="wc-empty">
-            <RefreshCw className="spin" />
-            <b>Loading your jobs…</b>
-          </section>
-        ) : null}
-
-        {!loading && !error && !readyJobs.length ? (
-          <section className="wc-empty">
-            <Briefcase />
-            <b>No ready jobs assigned</b>
-            <span>{heldJobs.length ? "Some jobs exist, but Churvox is holding them until missing details are fixed." : "Refresh or message the boss if you are expecting work."}</span>
-            <button type="button" onClick={fetchJobs}>Refresh jobs</button>
-            <button type="button" onClick={() => setShowContactOffice(true)}>Message boss</button>
-          </section>
-        ) : null}
+        {!loading && !visibleJobs.length ? <section className="wc-empty"><Briefcase /><b>No ready jobs right now</b><span>{heldJobs.length ? "Some jobs are waiting for boss/admin fixes." : "Refresh or message the boss if you expected a job."}</span></section> : null}
 
         <section className="wc-list" id="jobs">
-          <div className="wc-section-head">
-            <span>Job list</span>
-            <h2>{todayJobs.length ? "Today’s ready jobs" : "Upcoming ready jobs"}</h2>
-          </div>
-
-          {!loading && !error ? visibleJobs.map((job) => (
-            <WorkerJobCard key={idOf(job)} job={job} />
-          )) : null}
+          <div className="wc-section-head"><span>Job list</span><h2>{visibleJobs.length ? "Upcoming ready jobs" : "No jobs"}</h2></div>
+          {visibleJobs.map((job) => <WorkerJobCard job={job} key={idOf(job)} />)}
         </section>
-
-        <div className="wc-sync">
-          Last synced: {lastSynced ? lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}
-        </div>
       </main>
 
-      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} />
+      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} defaultMessage="I need help with my jobs today." />
       <WorkerBottomNav active="today" />
     </div>
   );
