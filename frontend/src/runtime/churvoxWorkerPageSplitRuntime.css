@@ -1,0 +1,94 @@
+/* CHURVOX_WORKER_PAGE_SPLIT_20260629 */
+
+html[data-worker-page="today"] .wc-list,
+html[data-worker-page="today"] .wc-stats,
+html[data-worker-page="today"] .wc-ready-steps,
+html[data-worker-page="today"] .wc-quick-actions,
+html[data-worker-page="today"] .wc-alert:not(.danger),
+html[data-worker-page="today"] #tp-worker-offline-panel,
+html[data-worker-page="today"] #churvox-worker-flow-nav {
+  display: none !important;
+}
+
+html[data-worker-page="jobs"] .wc-welcome,
+html[data-worker-page="jobs"] .wc-clock-card,
+html[data-worker-page="jobs"] .wc-next-job,
+html[data-worker-page="jobs"] .wc-ready-steps,
+html[data-worker-page="jobs"] .wc-quick-actions,
+html[data-worker-page="jobs"] .wc-stats,
+html[data-worker-page="jobs"] .wc-alert:not(.danger),
+html[data-worker-page="jobs"] .wc-sync,
+html[data-worker-page="jobs"] #tp-worker-offline-panel,
+html[data-worker-page="jobs"] #churvox-worker-flow-nav {
+  display: none !important;
+}
+
+html[data-worker-page="jobs"] .wc-list {
+  margin-top: 12px !important;
+}
+
+html[data-worker-page="jobs"] .wc-list .wc-section-head {
+  padding: 22px 22px 8px !important;
+}
+
+html[data-worker-page="jobs"] .wc-list .wc-section-head span::after {
+  content: ' only';
+}
+
+html[data-worker-page="proof"] .wc-welcome,
+html[data-worker-page="proof"] .wc-clock-card,
+html[data-worker-page="proof"] .wc-next-job,
+html[data-worker-page="proof"] .wc-ready-steps,
+html[data-worker-page="proof"] .wc-quick-actions,
+html[data-worker-page="proof"] .wc-stats,
+html[data-worker-page="proof"] .wc-alert:not(.danger),
+html[data-worker-page="proof"] .wc-list,
+html[data-worker-page="proof"] #churvox-worker-flow-nav {
+  display: none !important;
+}
+
+html[data-worker-page="help"] .wc-welcome,
+html[data-worker-page="help"] .wc-clock-card,
+html[data-worker-page="help"] .wc-next-job,
+html[data-worker-page="help"] .wc-ready-steps,
+html[data-worker-page="help"] .wc-quick-actions,
+html[data-worker-page="help"] .wc-stats,
+html[data-worker-page="help"] .wc-alert:not(.danger),
+html[data-worker-page="help"] .wc-list,
+html[data-worker-page="help"] #tp-worker-offline-panel,
+html[data-worker-page="help"] #churvox-worker-flow-nav {
+  display: none !important;
+}
+
+html[data-worker-page="job-detail"] #tp-worker-offline-panel,
+html[data-worker-page="job-detail"] .worker-runtime-bottom-nav {
+  display: none !important;
+}
+
+html[data-worker-page="today"] .wc-main,
+html[data-worker-page="jobs"] .wc-main,
+html[data-worker-page="proof"] .wc-main,
+html[data-worker-page="help"] .wc-main {
+  padding-bottom: 120px !important;
+}
+
+html[data-worker-page="today"] .wc-welcome,
+html[data-worker-page="today"] .wc-clock-card,
+html[data-worker-page="today"] .wc-next-job,
+html[data-worker-page="jobs"] .wc-list {
+  border-radius: 28px !important;
+}
+
+html[data-worker-page="today"] .wc-welcome h1,
+html[data-worker-page="jobs"] .wc-list h2 {
+  letter-spacing: -0.055em !important;
+}
+
+html[data-worker-page="today"] .worker-bottom-nav__item[data-worker-nav-key="today"],
+html[data-worker-page="jobs"] .worker-bottom-nav__item[data-worker-nav-key="jobs"],
+html[data-worker-page="proof"] .worker-bottom-nav__item[data-worker-nav-key="proof"],
+html[data-worker-page="help"] .worker-bottom-nav__item[data-worker-nav-key="help"],
+html[data-worker-page="me"] .worker-bottom-nav__item[data-worker-nav-key="me"] {
+  background: #111827 !important;
+  color: #fff !important;
+}
