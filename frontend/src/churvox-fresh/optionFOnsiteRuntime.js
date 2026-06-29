@@ -36,6 +36,17 @@ function realLocation(value) {
   if (/no gps|no location|not set/i.test(text)) return '';
   return text;
 }
+function liveMapQuery(rows) {
+  for (const row of rows) {
+    const coordinate = realLocation(row.map_query || row.location || row.gps);
+    if (coordinate && /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(coordinate)) return coordinate;
+  }
+  for (const row of rows) {
+    const address = realLocation(row.location || row.gps || row.map_query);
+    if (address) return /new zealand|nz$/i.test(address) ? address : `${address}, New Zealand`;
+  }
+  return '';
+}
 async function load(force = false) {
   if (!token()) return cached;
   if (!force && cached && Date.now() - lastLoad < 8000) return cached;
@@ -80,8 +91,7 @@ function onsiteHtml(data) {
   const rows = Array.isArray(data?.onsite) ? data.onsite : [];
   const warnings = Array.isArray(data?.warnings) ? data.warnings : [];
   const counts = data?.counts || {};
-  const liveLocations = rows.map((row) => realLocation(row.location || row.gps || row.map_query)).filter(Boolean);
-  const query = liveLocations.length ? `${liveLocations.slice(0, 5).join(' ')} New Zealand` : '';
+  const query = liveMapQuery(rows);
   const mapBlock = query ? `<div class="onsiteMapShell">
       <iframe title="Onsite Google Maps" src="${esc(mapUrl(query))}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       <a href="${esc(mapSearch(query))}" target="_blank" rel="noreferrer">Open in Google Maps</a>
