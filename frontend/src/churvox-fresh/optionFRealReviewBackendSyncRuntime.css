@@ -1,0 +1,58 @@
+/* CHURVOX_REAL_REVIEW_BACKEND_SYNC_20260629 */
+
+.real-review-photo-queue {
+  border-color: rgba(234, 88, 12, .2) !important;
+}
+
+.rrPhotoActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rrPhotoActions label,
+.rrPhotoActions button {
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  border: 0;
+  border-radius: 15px;
+  padding: 10px 12px;
+  background: #111827;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 12px;
+  line-height: 1.1;
+  font-weight: 1000;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(2, 6, 23, .12);
+}
+
+.rrPhotoActions label:first-child {
+  background: #ea580c;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+}
+
+.rrPhotoActions label:nth-child(2) {
+  background: #f4f1ea;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  border: 1px solid rgba(17,24,39,.08);
+  box-shadow: none;
+}
+
+.rrPhotoActions input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 620px) {
+  .rrPhotoActions {
+    grid-template-columns: 1fr;
+  }
+}
