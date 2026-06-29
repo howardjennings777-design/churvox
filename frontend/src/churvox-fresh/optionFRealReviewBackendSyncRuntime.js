@@ -121,14 +121,14 @@ function backendStepsFromLocal(state) {
 }
 
 function localStepsFromBackend(steps = {}) {
-  return {
-    arrival: Boolean(steps.arrival),
-    beforePhoto: Boolean(steps.before_photo),
-    afterPhoto: Boolean(steps.after_photo),
-    workNote: Boolean(steps.worker_note),
-    extras: Boolean(steps.extras),
-    finish: Boolean(steps.finish_summary),
-  };
+  const out = {};
+  if (steps.arrival) out.arrival = true;
+  if (steps.before_photo) out.beforePhoto = true;
+  if (steps.after_photo) out.afterPhoto = true;
+  if (steps.worker_note) out.workNote = true;
+  if (steps.extras) out.extras = true;
+  if (steps.finish_summary) out.finish = true;
+  return out;
 }
 
 function queue() {
