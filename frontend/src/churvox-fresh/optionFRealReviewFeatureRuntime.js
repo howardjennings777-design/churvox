@@ -50,6 +50,11 @@ function writeJson(key, value) {
   } catch (_) {}
 }
 
+function renderHtml(node, html) {
+  if (!node || node.innerHTML === html) return;
+  node.innerHTML = html;
+}
+
 function isWorkerRoute() {
   return typeof window !== 'undefined' && window.location.pathname.startsWith('/worker');
 }
@@ -169,11 +174,7 @@ function pushCommandSlip(note) {
 
   const ops = readJson(OPS_KEY, {});
   const queue = Array.isArray(ops.commandQueue) ? ops.commandQueue : [];
-  writeJson(OPS_KEY, {
-    ...ops,
-    commandQueue: [slip, ...queue.filter((item) => item?.id !== slip.id)].slice(0, 100),
-    updatedAt: new Date().toISOString(),
-  });
+  writeJson(OPS_KEY, { ...ops, commandQueue: [slip, ...queue.filter((item) => item?.id !== slip.id)].slice(0, 100), updatedAt: new Date().toISOString() });
 }
 
 function workerTrustHtml() {
@@ -209,7 +210,7 @@ function insertWorkerTrustPanel() {
     if (anchor) anchor.insertAdjacentElement('afterend', node);
     else root.prepend(node);
   }
-  node.innerHTML = workerTrustHtml();
+  renderHtml(node, workerTrustHtml());
 }
 
 function proofPassportHtml() {
@@ -243,7 +244,7 @@ function insertProofPassport() {
     if (anchor) anchor.insertAdjacentElement('afterend', node);
     else root.appendChild(node);
   }
-  node.innerHTML = proofPassportHtml();
+  renderHtml(node, proofPassportHtml());
 }
 
 function noteSlipHtml() {
@@ -278,7 +279,7 @@ function insertNoteToSlip() {
     else root.appendChild(node);
   }
   if (!node.dataset.rendered) {
-    node.innerHTML = noteSlipHtml();
+    renderHtml(node, noteSlipHtml());
     node.dataset.rendered = 'true';
   }
 }
@@ -297,7 +298,7 @@ function insertMePanel() {
   const notes = fieldNotes();
   const proof = readJson(PROOF_KEY, {});
   const jobsWithProof = Object.keys(proof || {}).length;
-  node.innerHTML = `
+  const html = `
     <div class="rrTop compact">
       <div>
         <span class="rrEyebrow">Me</span>
@@ -311,8 +312,9 @@ function insertMePanel() {
       <article><strong>${notes.filter((item) => item.type === 'issue').length}</strong><small>issues routed to Command</small></article>
     </div>
     <div class="rrMiniList">
-      ${notes.slice(0, 5).map((note) => `<article><strong>${esc(note.type.replace('_', ' '))}</strong><small>${esc(note.text || 'No note text')}</small></article>`).join('') || '<p class="rrTiny">No field notes saved on this device yet.</p>'}
+      ${notes.slice(0, 5).map((note) => `<article><strong>${esc((note.type || 'note').replace('_', ' '))}</strong><small>${esc(note.text || 'No note text')}</small></article>`).join('') || '<p class="rrTiny">No field notes saved on this device yet.</p>'}
     </div>`;
+  renderHtml(node, html);
 }
 
 function commandItems() {
@@ -338,13 +340,7 @@ function featureChecks() {
 
 function runAudit() {
   const checks = featureChecks().map(([label, ok]) => ({ label, ok, at: new Date().toISOString() }));
-  const result = {
-    at: new Date().toISOString(),
-    route: window.location.pathname + window.location.hash,
-    checks,
-    passed: checks.filter((item) => item.ok).length,
-    total: checks.length,
-  };
+  const result = { at: new Date().toISOString(), route: window.location.pathname + window.location.hash, checks, passed: checks.filter((item) => item.ok).length, total: checks.length };
   writeJson(AUDIT_KEY, result);
   return result;
 }
@@ -397,7 +393,7 @@ function insertOwnerPanel() {
     if (first) first.insertAdjacentElement('beforebegin', node);
     else root.prepend(node);
   }
-  node.innerHTML = ownerPanelHtml(page);
+  renderHtml(node, ownerPanelHtml(page));
 }
 
 function markCommandItem(id, action) {
@@ -416,7 +412,6 @@ function handleClick(event) {
   if (proof) {
     event.preventDefault();
     setProofStep(proof.getAttribute('data-rr-proof-step'), true);
-    document.getElementById(PASSPORT_ID)?.removeAttribute('data-rendered');
     insertProofPassport();
     insertWorkerTrustPanel();
     return;
