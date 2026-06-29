@@ -1,5 +1,6 @@
 import './churvoxWorkerOnsiteSignalRuntime';
 import './churvoxWorkerOnsiteSignalHardRuntime';
+import './churvoxWorkerBeaconBridgeRuntime';
 
 // CHURVOX_WORKER_FIELD_FLOW_RUNTIME_20260629
 // Keeps job-detail guidance, but the main worker app uses real separate pages.
@@ -107,8 +108,7 @@ function navItems() {
     ];
   }
   return [];
-}
-
+}\n
 function samePageHref(href) {
   if (!href) return false;
   if (href.startsWith('#')) return true;
