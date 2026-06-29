@@ -1,1 +1,1 @@
-export { default } from "./WorkerDailySimple";
+export { default } from "./WorkerNoFuss";
