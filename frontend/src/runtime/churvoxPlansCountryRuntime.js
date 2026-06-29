@@ -1,11 +1,11 @@
-// CHURVOX_OS_PLANS_COUNTRY_RUNTIME_20260628
-// Keeps the logged-in Churvox OS Plans screen aligned with country-specific Stripe pricing.
+// CHURVOX_OS_PLANS_COUNTRY_RUNTIME_20260629
+// Keeps plan-region display aligned with Stripe. US and UK amounts are Stripe-managed.
 
 const COUNTRIES = {
   NZ: { label: "New Zealand", currency: "NZD", symbol: "$", tax: "+ GST", plans: [39, 89, 149, 299], accounting: 39, growth: 99 },
   AU: { label: "Australia", currency: "AUD", symbol: "A$", tax: "+ GST", plans: [39, 89, 149, 299], accounting: 39, growth: 99 },
-  US: { label: "United States", currency: "USD", symbol: "US$", tax: "", plans: [29, 69, 119, 249], accounting: 29, growth: 79 },
-  UK: { label: "United Kingdom", currency: "GBP", symbol: "£", tax: "+ VAT", plans: [29, 69, 119, 249], accounting: 29, growth: 79 },
+  US: { label: "United States", currency: "USD", symbol: "US$", tax: "", stripeManaged: true },
+  UK: { label: "United Kingdom", currency: "GBP", symbol: "£", tax: "+ VAT", stripeManaged: true },
 };
 
 const PLAN_NAMES = ["Start", "Crew", "Operator", "Command"];
@@ -51,7 +51,13 @@ function detectCountry() {
 }
 
 function priceLabel(meta, amount) {
+  if (meta?.stripeManaged) return `${meta.currency} price set in Stripe`;
   return `${meta.symbol}${amount}/month${meta.tax ? ` ${meta.tax}` : ""}`;
+}
+
+function priceNote(meta) {
+  if (meta?.stripeManaged) return "Final amount is shown in Stripe Checkout from your configured Price ID.";
+  return "Auto-detected. Change this if the country is wrong before checkout.";
 }
 
 function setCountry(country) {
@@ -130,7 +136,7 @@ function updatePlansPage() {
   if (header && !header.querySelector(".osPlanCountryBar")) {
     const bar = document.createElement("label");
     bar.className = "osPlanCountryBar";
-    bar.innerHTML = `<span>Pricing region</span><select aria-label="Pricing region">${Object.entries(COUNTRIES).map(([code, item]) => `<option value="${code}">${item.label} - ${item.currency}</option>`).join("")}</select><small>Auto-detected. Change this if the country is wrong before checkout.</small>`;
+    bar.innerHTML = `<span>Pricing region</span><select aria-label="Pricing region">${Object.entries(COUNTRIES).map(([code, item]) => `<option value="${code}">${item.label} - ${item.currency}</option>`).join("")}</select><small>${priceNote(meta)}</small>`;
     header.appendChild(bar);
     bar.querySelector("select")?.addEventListener("change", (event) => {
       setCountry(event.target.value);
@@ -140,12 +146,15 @@ function updatePlansPage() {
 
   const select = header?.querySelector(".osPlanCountryBar select");
   if (select && select.value !== country) select.value = country;
+  const note = header?.querySelector(".osPlanCountryBar small");
+  setText(note, priceNote(meta));
 
   root.querySelectorAll(".planCards article").forEach((card, index) => {
     const strong = card.querySelector("strong");
-    if (strong && meta.plans[index] != null) setText(strong, priceLabel(meta, meta.plans[index]));
+    const label = priceLabel(meta, meta.plans?.[index]);
+    setText(strong, label);
     const title = card.querySelector("h2")?.textContent?.trim() || PLAN_NAMES[index];
-    const dataValue = `${title} ${priceLabel(meta, meta.plans[index] || 0)}`;
+    const dataValue = `${title} ${label}`;
     if (card.getAttribute("data-country-price") !== dataValue) card.setAttribute("data-country-price", dataValue);
   });
 
@@ -153,9 +162,10 @@ function updatePlansPage() {
     const first = row.querySelector("td:first-child")?.textContent || "";
     const cells = row.querySelectorAll("td");
     if (/Accounting Sync Add-on/i.test(first) && cells.length >= 5) {
-      setText(cells[1], priceLabel(meta, meta.accounting));
-      setText(cells[2], priceLabel(meta, meta.accounting));
-      setText(cells[3], priceLabel(meta, meta.accounting));
+      const label = priceLabel(meta, meta.accounting);
+      setText(cells[1], label);
+      setText(cells[2], label);
+      setText(cells[3], label);
       setText(cells[4], "Included option");
     }
     if (/Command Growth Pack/i.test(first) && cells.length >= 5) {
