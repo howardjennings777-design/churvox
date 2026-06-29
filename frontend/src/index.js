@@ -8,6 +8,7 @@ import './styles/churvoxWorkerAppRedesign.css';
 import './components/recordWorkspacePopup.css';
 import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
+import './runtime/churvoxWorkerFieldFlowRuntime';
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
@@ -50,6 +51,7 @@ import './churvox-fresh/optionFFullSiteWiringRuntime';
 import './churvox-fresh/optionFAiFillMissingRuntime';
 import './churvox-fresh/optionFDrawerPersistenceRuntime';
 import './styles/churvoxResponsiveFit.css';
+import './styles/churvoxWorkerFieldFlowV2.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
