@@ -30,36 +30,56 @@ async def hardened_save_photo(db, user, ObjectId, job_id, payload):
     offline_token = base.clean((payload or {}).get("offline_token"))
     kind = base.lower((payload or {}).get("kind") or (payload or {}).get("type") or "proof")
 
-    if offline_token:
-        try:
-            existing = await db.worker_proof_photos.find_one({
-                "business_id": business_id,
-                "job_id": str(job_id),
-                "offline_token": offline_token,
-            })
-        except Exception:
-            existing = None
-        if existing:
-            step = "before_photo" if "before" in kind else "after_photo" if "after" in kind else "worker_note"
-            await base.save_passport(db, user, ObjectId, job_id, {"steps": {step: True}, "offline_token": offline_token})
-            return existing
+    if not offline_token:
+        return await _ORIGINAL_SAVE_PHOTO(db, user, ObjectId, job_id, payload)
 
-    doc = await _ORIGINAL_SAVE_PHOTO(db, user, ObjectId, job_id, payload)
-    if offline_token:
+    existing = None
+    try:
+        existing = await db.worker_proof_photos.find_one({
+            "business_id": business_id,
+            "job_id": str(job_id),
+            "offline_token": offline_token,
+        })
+    except Exception:
+        existing = None
+
+    step = "before_photo" if "before" in kind else "after_photo" if "after" in kind else "worker_note"
+
+    if existing:
+        await base.save_passport(db, user, ObjectId, job_id, {"steps": {step: True}, "offline_token": offline_token})
+        return existing
+
+    now = base.now_utc()
+    data = base.clean((payload or {}).get("photo_data") or (payload or {}).get("data_url") or "")
+    doc = {
+        "business_id": business_id,
+        "job_id": str(job_id),
+        "worker_id": base.user_id_string(user),
+        "worker_name": base.clean(user.get("name") or user.get("full_name") or user.get("email")),
+        "kind": kind,
+        "filename": base.clean((payload or {}).get("filename") or f"{kind}-photo.jpg"),
+        "mime_type": base.clean((payload or {}).get("mime_type") or "image/jpeg"),
+        "size_bytes": int((payload or {}).get("size_bytes") or len(data) or 0),
+        "photo_data": data,
+        "offline_token": offline_token,
+        "status": "uploaded",
+        "source": "worker_offline_safe_queue",
+        "created_at": now,
+        "updated_at": now,
+    }
+    try:
+        await db.worker_proof_photos.update_one(
+            {"business_id": business_id, "job_id": str(job_id), "offline_token": offline_token},
+            {"$set": doc},
+            upsert=True,
+        )
+    except Exception:
         try:
-            await db.worker_proof_photos.update_one(
-                {"business_id": business_id, "job_id": str(job_id), "offline_token": offline_token},
-                {"$setOnInsert": {**dict(doc), "offline_token": offline_token}},
-                upsert=True,
-            )
+            result = await db.worker_proof_photos.insert_one(dict(doc))
+            doc["_id"] = result.inserted_id
         except Exception:
-            try:
-                doc_id = doc.get("_id")
-                if doc_id:
-                    await db.worker_proof_photos.update_one({"_id": doc_id}, {"$set": {"offline_token": offline_token}})
-                    doc["offline_token"] = offline_token
-            except Exception:
-                pass
+            pass
+    await base.save_passport(db, user, ObjectId, job_id, {"steps": {step: True}, "offline_token": offline_token})
     return doc
 
 
