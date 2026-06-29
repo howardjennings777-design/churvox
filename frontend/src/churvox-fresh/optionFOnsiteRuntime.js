@@ -1,5 +1,5 @@
 // CHURVOX_ONSITE_RUNTIME_20260629
-// Renames Workers to Onsite and makes the page a live field board: map, active workers, proof, GPS and field warnings.
+// Makes Onsite a single-purpose live field board: map, active workers and field warnings only.
 
 import API_BASE from '../lib/apiBase';
 
@@ -43,6 +43,18 @@ async function load(force = false) {
   try { cached = await request('GET', '/onsite/live'); } catch (_) {}
   return cached;
 }
+function isOnsitePage() {
+  const page = activePage();
+  return page === 'workers' || page === 'onsite';
+}
+function setPageFlags() {
+  const onsite = isOnsitePage();
+  document.documentElement.toggleAttribute('data-onsite-hard-lock', onsite);
+  document.documentElement.toggleAttribute('data-owner-page', onsite);
+  if (onsite) document.documentElement.setAttribute('data-owner-page', 'onsite');
+  const pageRoot = root();
+  if (pageRoot) pageRoot.classList.toggle('onsiteOnlyPage', onsite);
+}
 function renameNav() {
   const buttons = Array.from(document.querySelectorAll('.churvoxOptionC .cocNav button'));
   buttons.forEach((button) => {
@@ -54,29 +66,15 @@ function renameNav() {
   const title = document.querySelector('.churvoxOptionC .title h1');
   const subtitle = document.querySelector('.churvoxOptionC .title p');
   if (isOnsitePage()) {
-    document.documentElement.setAttribute('data-owner-page', 'onsite');
     if (title) title.textContent = 'Onsite';
     if (subtitle) subtitle.textContent = 'Live map, workers doing work, GPS, proof, messages and field warnings.';
-  } else if (document.documentElement.getAttribute('data-owner-page') === 'onsite') {
-    document.documentElement.removeAttribute('data-owner-page');
   }
-}
-function isOnsitePage() {
-  const page = activePage();
-  return page === 'workers' || page === 'onsite';
 }
 function cleanupTeamCopy() {
   const page = activePage();
   if (page !== 'team') return;
   const title = document.querySelector('.churvoxOptionC .title p');
   if (title) title.textContent = 'Staff records, roles, access, invites, payroll review and worker app setup.';
-  const pageRoot = root();
-  if (!pageRoot) return;
-  Array.from(pageRoot.querySelectorAll('.cocPanel h2')).forEach((heading) => {
-    if (/Staff Cards/i.test(heading.textContent || '')) heading.textContent = 'Team Records';
-    if (/Payroll Review/i.test(heading.textContent || '')) heading.textContent = 'Payroll / Timesheet Review';
-    if (/Editable Person Form/i.test(heading.textContent || '')) heading.textContent = 'Staff Member Form';
-  });
 }
 function onsiteHtml(data) {
   const rows = Array.isArray(data?.onsite) ? data.onsite : [];
@@ -93,7 +91,7 @@ function onsiteHtml(data) {
       <div>
         <span>Onsite</span>
         <h2>Live field view.</h2>
-        <p>Only workers doing work appear here. Staff records, payroll and old proof panels stay off this page.</p>
+        <p>Only workers doing work appear here. Team, payroll, proof history and schedule panels stay on their own pages.</p>
       </div>
       <strong>${counts.onsite || rows.length} onsite</strong>
     </div>
@@ -114,24 +112,31 @@ function onsiteHtml(data) {
       ${warnings.slice(0, 6).map((warning) => `<span>${esc(warning.message || warning.type)}</span>`).join('') || '<span>No live field warnings.</span>'}
     </div>`;
 }
-function hideOldOnsitePanels() {
+function hardLockOnsitePage() {
   const pageRoot = root();
   if (!pageRoot || !isOnsitePage()) return;
+  pageRoot.classList.add('onsiteOnlyPage');
   Array.from(pageRoot.children).forEach((child) => {
-    if (child.id === PANEL_ID) return;
-    const text = clean(child.innerText || '');
-    if (!text) return;
-    if (/COMMAND JOB READINESS ENGINE|Every job now says|FIELD PROOF CONTROL|Today shows what the admin engine|Map backup|Google Maps GPS|Onsite Summary|Worker Day Summary|Onsite Cards|Worker Cards|Proof\s*\/\s*Photos|Site Messages|Team timesheets|Timesheets|Slips|SCHEDULE BOARD|Day board|Churvox admin wiring|Worker actions|Page actions|Recent logic|Saved worker day records/i.test(text)) {
-      child.setAttribute('data-onsite-old-panel', 'true');
+    if (child.id === PANEL_ID) {
+      child.removeAttribute('data-onsite-old-panel');
+      child.removeAttribute('aria-hidden');
+      return;
     }
+    if (child.getAttribute('data-onsite-old-panel') !== 'true') child.setAttribute('data-onsite-old-panel', 'true');
+    if (child.getAttribute('aria-hidden') !== 'true') child.setAttribute('aria-hidden', 'true');
   });
 }
 async function renderOnsite(force = false) {
+  setPageFlags();
   renameNav();
   cleanupTeamCopy();
   if (!isOnsitePage()) {
     document.getElementById(PANEL_ID)?.remove();
-    document.querySelectorAll('[data-onsite-old-panel="true"]').forEach((node) => node.removeAttribute('data-onsite-old-panel'));
+    document.querySelectorAll('[data-onsite-old-panel="true"]').forEach((node) => {
+      node.removeAttribute('data-onsite-old-panel');
+      node.removeAttribute('aria-hidden');
+    });
+    root()?.classList.remove('onsiteOnlyPage');
     return;
   }
   const pageRoot = root();
@@ -141,11 +146,11 @@ async function renderOnsite(force = false) {
     node = document.createElement('section');
     node.id = PANEL_ID;
     node.className = 'onsiteLivePanel';
-    pageRoot.prepend(node);
   }
+  if (pageRoot.firstElementChild !== node) pageRoot.prepend(node);
   const data = await load(force);
   renderHtml(node, onsiteHtml(data || {}));
-  hideOldOnsitePanels();
+  hardLockOnsitePage();
 }
 function schedule(force = false) {
   if (queued) return;
@@ -153,7 +158,7 @@ function schedule(force = false) {
   window.setTimeout(async () => {
     queued = false;
     await renderOnsite(force);
-  }, 120);
+  }, 80);
 }
 function startPolling() {
   if (polling) return;
