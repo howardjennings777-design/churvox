@@ -32,6 +32,7 @@ import './churvox-fresh/optionFControlPagesRuntime';
 import './churvox-fresh/optionFControlPagesRuntimeGuard';
 import './churvox-fresh/optionFPlansLiveCheckoutRuntimeV2';
 import './churvox-fresh/optionFPlansIsolationRuntime';
+import './churvox-fresh/optionFStripeManagedPriceDisplayRuntime';
 import './churvox-fresh/optionFBackendSyncRuntime';
 import './churvox-fresh/optionFImportExportRuntime';
 import './churvox-fresh/optionFXeroActionsRuntime';
