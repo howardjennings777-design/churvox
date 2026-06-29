@@ -1,5 +1,6 @@
 // CHURVOX_ONSITE_RUNTIME_20260629
 // Makes Onsite a single-purpose live field board: map, active workers and field warnings only.
+// Fallback rule: if live GPS is missing, use current job site addresses so the boss still sees a useful map.
 
 import API_BASE from '../lib/apiBase';
 
@@ -10,6 +11,7 @@ let queued = false;
 let polling = false;
 
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
+function lower(value) { return clean(value).toLowerCase(); }
 function esc(value) { return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function apiUrl(path) { return `${String(API_BASE || '').replace(/\/$/, '')}/api${path}`; }
 function token() { try { return localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('access_token') || ''; } catch (_) { return ''; } }
@@ -19,6 +21,14 @@ async function request(method, path, payload) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.error || body?.message || `HTTP ${response.status}`);
   return body?.data?.data || body?.data || body;
+}
+function listFrom(value) {
+  if (Array.isArray(value)) return value;
+  if (Array.isArray(value?.data)) return value.data;
+  if (Array.isArray(value?.jobs)) return value.jobs;
+  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.results)) return value.results;
+  return [];
 }
 function renderHtml(node, html) { if (!node || node.innerHTML === html) return; node.innerHTML = html; }
 function activePage() {
@@ -33,8 +43,22 @@ function realLocation(value) {
   const text = clean(value);
   if (!text) return '';
   if (/lower hutt wellington new zealand/i.test(text)) return '';
-  if (/no gps|no location|not set/i.test(text)) return '';
+  if (/no gps|no location|not set|undefined|null/i.test(text)) return '';
   return text;
+}
+function jobTitle(job) { return clean(job?.title || job?.job_name || job?.job_title || job?.description || 'Job'); }
+function jobAddress(job) { return realLocation(job?.address || job?.site_address || job?.service_address || job?.job_address || job?.location || ''); }
+function jobWorker(job) { return clean(job?.assigned_worker_name || job?.worker_name || job?.worker || job?.assigned_to_name || job?.assigned_to || job?.assigned_worker_email || job?.worker_email || 'Worker'); }
+function jobStatus(job) { return lower(job?.status || job?.job_status || job?.workflow_status || 'assigned'); }
+function jobIsDone(job) { return /complete|completed|done|finished|cancelled|archived/i.test(jobStatus(job)); }
+function jobTime(job) { return clean(job?.scheduled_time || job?.time || job?.start_time || ''); }
+function isTodayOrReady(job) {
+  const status = jobStatus(job);
+  if (/in_progress|started|active|on_my_way|assigned|ready|scheduled/.test(status)) return true;
+  const date = clean(job?.scheduled_date || job?.date || job?.start || job?.due_date).slice(0, 10);
+  if (!date) return true;
+  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  return date >= today;
 }
 function liveMapQuery(rows) {
   for (const row of rows) {
@@ -47,11 +71,48 @@ function liveMapQuery(rows) {
   }
   return '';
 }
+async function jobFallbackRows() {
+  try {
+    const res = await request('GET', '/jobs');
+    const jobs = listFrom(res).filter((job) => !jobIsDone(job) && jobAddress(job) && isTodayOrReady(job));
+    return jobs.slice(0, 8).map((job) => ({
+      id: clean(job?.id || job?._id || job?.job_id || jobTitle(job)),
+      name: jobWorker(job),
+      status: /in_progress|started|active|on_my_way/.test(jobStatus(job)) ? 'Live job' : 'Job site',
+      job: jobTitle(job),
+      location: jobAddress(job),
+      gps: jobAddress(job),
+      map_query: jobAddress(job),
+      proof: 'Mapped from job address',
+      messages: jobTime(job) ? `${jobTime(job)} scheduled` : 'No worker GPS yet',
+      timesheet: 'GPS fallback',
+      source: 'job_address_fallback',
+      active: true,
+    }));
+  } catch (_) {
+    return [];
+  }
+}
 async function load(force = false) {
   if (!token()) return cached;
   if (!force && cached && Date.now() - lastLoad < 8000) return cached;
   lastLoad = Date.now();
-  try { cached = await request('GET', '/onsite/live'); } catch (_) {}
+  let data = null;
+  try { data = await request('GET', '/onsite/live'); } catch (_) { data = null; }
+  const liveRows = Array.isArray(data?.onsite) ? data.onsite : [];
+  const hasLiveMap = Boolean(liveMapQuery(liveRows));
+  if (!hasLiveMap) {
+    const fallbackRows = await jobFallbackRows();
+    if (fallbackRows.length) {
+      data = data || {};
+      data.onsite = liveRows.length ? liveRows.concat(fallbackRows) : fallbackRows;
+      data.warnings = Array.isArray(data.warnings) ? data.warnings : [];
+      data.warnings.unshift({ type: 'gps_fallback', message: 'Showing job site map until live worker GPS arrives.' });
+      data.counts = { ...(data.counts || {}), onsite: data.onsite.length, warnings: data.warnings.length };
+      data.map_source = 'job_address_fallback';
+    }
+  }
+  cached = data;
   return cached;
 }
 function isOnsitePage() {
@@ -92,31 +153,33 @@ function onsiteHtml(data) {
   const warnings = Array.isArray(data?.warnings) ? data.warnings : [];
   const counts = data?.counts || {};
   const query = liveMapQuery(rows);
-  const mapBlock = query ? `<div class="onsiteMapShell">
+  const fallback = data?.map_source === 'job_address_fallback';
+  const mapBlock = query ? `<div class="onsiteMapShell ${fallback ? 'onsiteMapFallback' : ''}">
+      ${fallback ? '<span class="onsiteMapBadge">Job site map · waiting for live GPS</span>' : ''}
       <iframe title="Onsite Google Maps" src="${esc(mapUrl(query))}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       <a href="${esc(mapSearch(query))}" target="_blank" rel="noreferrer">Open in Google Maps</a>
-    </div>` : `<div class="onsiteMapShell onsiteMapEmpty"><strong>No live location yet</strong><p>Onsite will show the map when a worker is clocked in with a job/site location or GPS proof.</p></div>`;
+    </div>` : `<div class="onsiteMapShell onsiteMapEmpty"><strong>No job site or live location yet</strong><p>Onsite will map live GPS first. If GPS is missing, it will map the current job address.</p></div>`;
   return `
     <div class="onsiteHero">
       <div>
         <span>Onsite</span>
         <h2>Live field view.</h2>
-        <p>Only workers doing work appear here. Team, payroll, proof history and schedule panels stay on their own pages.</p>
+        <p>GPS is first choice. If GPS fails, Churvox maps the current job address so the boss still sees where work is meant to happen.</p>
       </div>
       <strong>${counts.onsite || rows.length} onsite</strong>
     </div>
     ${mapBlock}
     <div class="onsiteStats">
-      <article><b>${counts.onsite || rows.length}</b><small>working now</small></article>
+      <article><b>${counts.onsite || rows.length}</b><small>mapped jobs/workers</small></article>
       <article><b>${warnings.length}</b><small>field warnings</small></article>
     </div>
     <div class="onsiteRows">
-      ${rows.slice(0, 8).map((row) => `<article data-onsite-worker="${esc(row.id || row.name)}">
+      ${rows.slice(0, 8).map((row) => `<article data-onsite-worker="${esc(row.id || row.name)}" class="${row.source === 'job_address_fallback' ? 'onsiteFallbackRow' : ''}">
         <div><b>${esc(row.name || 'Worker')}</b><small>${esc(row.status || 'Onsite')} · ${esc(row.job || 'No current job')}</small></div>
         <span>${esc(realLocation(row.location || row.gps || row.map_query) || 'No live GPS yet')}</span>
         <em>${esc(row.proof || 'No proof yet')}</em>
         <small>${esc(row.messages || 'No messages')} · ${esc(row.timesheet || 'No time yet')}</small>
-      </article>`).join('') || '<p>No worker is live right now. Team records stay on Team.</p>'}
+      </article>`).join('') || '<p>No worker or job site can be mapped yet.</p>'}
     </div>
     <div class="onsiteWarnings">
       ${warnings.slice(0, 6).map((warning) => `<span>${esc(warning.message || warning.type)}</span>`).join('') || '<span>No live field warnings.</span>'}
