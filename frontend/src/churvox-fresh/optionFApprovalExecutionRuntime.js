@@ -12,6 +12,10 @@ function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
+function isOwnerRoute() {
+  return typeof window !== 'undefined' && !window.location.pathname.startsWith('/worker');
+}
+
 function apiUrl(path) {
   return `${String(API_BASE || '').replace(/\/$/, '')}/api${path}`;
 }
@@ -103,9 +107,15 @@ function markLocal(id, result) {
   if (Array.isArray(ops.commandQueue)) writeJson(OPS_KEY, { ...ops, commandQueue: ops.commandQueue.map(update), updatedAt: new Date().toISOString() });
 }
 
-function isApprove(button) {
+function isApprovalButton(button) {
   const text = clean(button?.textContent).toLowerCase();
-  return text === 'approve' || text.includes('approved') || text.includes('send') || button?.getAttribute('data-rr-command-action') === 'approve' || button?.getAttribute('data-command-action') === 'approved' || Boolean(button?.dataset?.brainApprove);
+  const hasCommandContext = Boolean(
+    button?.closest('[data-rr-command-id], [data-command-id], [data-ten-job-id], .rrCommandQueue, .tenReadinessPanel, .ofDecisionEffects') ||
+    button?.dataset?.commandId ||
+    button?.dataset?.brainApprove
+  );
+  if (!hasCommandContext) return false;
+  return text === 'approve' || text === 'send' || text.includes('approved') || button?.getAttribute('data-rr-command-action') === 'approve' || button?.getAttribute('data-command-action') === 'approved' || Boolean(button?.dataset?.brainApprove);
 }
 
 function commandId(button) {
@@ -117,7 +127,7 @@ function commandId(button) {
 }
 
 async function execute(button) {
-  if (!token() || !isApprove(button)) return;
+  if (!isOwnerRoute() || !token() || !isApprovalButton(button)) return;
   const id = commandId(button);
   if (!id) return;
   const item = findItem(id, button);
@@ -149,8 +159,8 @@ async function execute(button) {
 
 function handleClick(event) {
   const button = event.target.closest('button');
-  if (!button) return;
-  if (!isApprove(button)) return;
+  if (!button || !isOwnerRoute()) return;
+  if (!isApprovalButton(button)) return;
   window.setTimeout(() => execute(button), 260);
 }
 
