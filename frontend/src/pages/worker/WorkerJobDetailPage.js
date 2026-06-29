@@ -170,6 +170,23 @@ function getGpsPosition() {
   });
 }
 
+function onsiteGpsPayload({ state, location, source, job }) {
+  const address = location?.address_label || location?.display_name || addressOf(job) || "";
+  return {
+    state,
+    source,
+    job_id: jobIdOf(job),
+    job_title: jobTitle(job),
+    location: address,
+    address,
+    latitude: location?.latitude ?? location?.lat ?? null,
+    longitude: location?.longitude ?? location?.lng ?? null,
+    accuracy: location?.accuracy ?? null,
+    live_status: state === "stop" ? "Clocked out" : "Clocked in",
+    clock_status: state === "stop" ? "clocked_out" : "clocked_in",
+  };
+}
+
 function ProofSteps({ photoCount, workerNotes, complete, timeMinutes }) {
   const hasNote = String(workerNotes || "").trim().length > 0;
   const hasPhoto = Number(photoCount || 0) > 0;
@@ -258,6 +275,10 @@ export default function WorkerJobDetailPage() {
     try { await post("/worker/live-ping", payload); } catch {}
   }
 
+  async function sendOnsiteGpsStatus({ state = "start", location = null, source = "worker-status" } = {}) {
+    try { await post("/worker/gps/status", onsiteGpsPayload({ state, location, source, job })); } catch {}
+  }
+
   async function syncOfflineQueue() {
     const queue = queuedItems();
     if (!queue.length) { setQueuedCount(0); toast.success("No offline updates waiting"); return; }
@@ -307,6 +328,8 @@ export default function WorkerJobDetailPage() {
     setWorkerStatus(nextStatus);
     if (nextStatus === "started" && !timerStartedAt) setTimerStartedAt(Date.now());
     if (nextStatus === "paused" && timerStartedAt) stopTimer(false);
+    let location = null;
+    if (["started", "on_my_way"].includes(nextStatus)) location = await getGpsPosition();
     await saveFieldUpdate({
       status: nextStatus === "on_my_way" ? "assigned" : nextStatus,
       job_status: nextStatus,
@@ -315,7 +338,8 @@ export default function WorkerJobDetailPage() {
       worker_status: nextStatus,
       worker_status_updated_at: new Date().toISOString(),
     }, { quiet: true });
-    await sendLivePing({ source: "worker-status", job_id: id, job_title: jobTitle(job), job_status: nextStatus, live_status: nextStatus.replaceAll("_", " ") });
+    await sendLivePing({ source: "worker-status", job_id: id, job_title: jobTitle(job), job_status: nextStatus, live_status: nextStatus.replaceAll("_", " "), location });
+    await sendOnsiteGpsStatus({ state: nextStatus === "paused" ? "stop" : "start", location, source: `job-${nextStatus}` });
     toast.success(nextStatus.replaceAll("_", " "));
   }
 
@@ -430,6 +454,7 @@ export default function WorkerJobDetailPage() {
       try { res = await post(`/worker/jobs/${encodeURIComponent(id)}/complete`, payload); } catch { res = null; }
       if (res?.success) {
         await sendLivePing({ source: "job-finished", live_status: "Finished job", clock_status: "clocked_in", job_id: id, job_title: jobTitle(job), job_status: "completed", location, issue_found: issueFound });
+        await sendOnsiteGpsStatus({ state: "stop", location, source: "job-finished" });
         setWorkerStatus("completed");
         toast.success(issueFound ? "Sent to owner review" : "Job sent to owner");
         try { window.localStorage.removeItem(draftKey(id)); } catch {}
