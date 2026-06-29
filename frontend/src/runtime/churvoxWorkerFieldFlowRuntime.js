@@ -19,7 +19,7 @@ function isWorkerRoute() {
 }
 
 function setId(node, id) {
-  if (node && !node.id) node.id = id;
+  if (node && !node.id && !document.getElementById(id)) node.id = id;
 }
 
 function textOf(node) {
@@ -32,15 +32,19 @@ function labelForCard(card) {
   return `${textOf(span)} ${textOf(h2)} ${textOf(card)}`;
 }
 
+function firstSection(pattern, id) {
+  if (document.getElementById(id)) return;
+  const match = Array.from(document.querySelectorAll('main, section, article, .wc-card')).find((node) => pattern.test(textOf(node)));
+  setId(match, id);
+}
+
 function annotateJobList() {
   setId(document.querySelector('.wc-clock-card'), 'clock');
   setId(document.querySelector('.wc-next-job'), 'today');
   setId(document.querySelector('.wc-ready-steps'), 'flow');
   setId(document.querySelector('.wc-quick-actions'), 'tools');
   setId(document.querySelector('.wc-list'), 'jobs');
-
-  const firstNeed = document.querySelector('.wc-alert.need');
-  setId(firstNeed, 'alerts');
+  setId(document.querySelector('.wc-alert.need'), 'alerts');
 }
 
 function annotateJobDetail() {
@@ -66,19 +70,13 @@ function annotateJobDetail() {
 function annotateSettings() {
   const root = document.querySelector('#top');
   if (root && !root.id) root.id = 'top';
-  const help = document.querySelector('#worker-help');
-  setId(help, 'worker-help');
+  setId(document.querySelector('#worker-help'), 'worker-help');
 }
 
 function annotateOps() {
-  const page = document.querySelector('.worker-ops-page, [data-marker*="WORKER"], main');
-  setId(page, 'proof');
-  document.querySelectorAll('section, article').forEach((node) => {
-    const txt = textOf(node);
-    if (/proof|photo|complete|done properly/.test(txt)) setId(node, 'proof');
-    if (/issue|blocked|cannot complete/.test(txt)) setId(node, 'issues');
-    if (/materials|extras/.test(txt)) setId(node, 'materials');
-  });
+  setId(document.querySelector('.worker-ops-page, [data-marker*="WORKER"], main'), 'proof');
+  firstSection(/issue|blocked|cannot complete/, 'issues');
+  firstSection(/materials|extras/, 'materials');
 }
 
 function annotateSections() {
@@ -208,13 +206,18 @@ function ensureFallbackBottomNav() {
 
 function markActiveByHash() {
   const hash = window.location.hash || '';
-  document.querySelectorAll('#churvox-worker-flow-nav button').forEach((button) => {
+  const buttons = Array.from(document.querySelectorAll('#churvox-worker-flow-nav button'));
+  let matched = false;
+  buttons.forEach((button) => {
     const href = button.getAttribute('data-worker-flow-target') || '';
     const buttonHash = href.startsWith('#') ? href : (() => {
       try { return new URL(href, window.location.origin).hash; } catch (_) { return ''; }
     })();
-    button.classList.toggle('active', Boolean(hash && buttonHash === hash));
+    const active = Boolean(hash && buttonHash === hash);
+    if (active) matched = true;
+    button.classList.toggle('active', active);
   });
+  if (!matched && buttons[0]) buttons[0].classList.add('active');
 }
 
 function handleClick(event) {
