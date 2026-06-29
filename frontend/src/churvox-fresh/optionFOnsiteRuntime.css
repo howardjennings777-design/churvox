@@ -116,6 +116,30 @@ html[data-onsite-hard-lock] .churvoxOptionC .workspace .cocPage.onsiteOnlyPage {
   text-decoration: none;
 }
 
+.onsiteMapFallback {
+  outline: 2px solid rgba(234, 88, 12, .35);
+}
+
+.onsiteMapBadge {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  top: 12px;
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: rgba(17, 24, 39, .92);
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .02em;
+}
+
+.onsiteFallbackRow {
+  border-color: rgba(234, 88, 12, .24) !important;
+  background: linear-gradient(135deg, #fff, #fff7ed) !important;
+}
+
 .onsiteMapEmpty {
   display: grid;
   place-items: center;
