@@ -15,6 +15,7 @@ except Exception:
 
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
+BUSINESS_KEYS = ["business_id", "owner_business_id", "contractor_id", "created_by", "user_id"]
 
 
 def now_utc():
@@ -35,7 +36,7 @@ def json_safe(value):
     return field_truth.json_safe(value)
 
 
-def bid(user):
+def default_bid(user):
     return field_truth.business_id_string(user)
 
 
@@ -68,6 +69,18 @@ def number(value):
         return None
 
 
+def obj_values(value, ObjectId):
+    vals = []
+    text = clean(value)
+    if text:
+        vals.append(text)
+        try:
+            vals.append(ObjectId(text))
+        except Exception:
+            pass
+    return vals
+
+
 def payload_location(payload):
     loc = payload.get("location") if isinstance(payload.get("location"), dict) else {}
     lat = number(payload.get("latitude") or payload.get("lat") or loc.get("latitude") or loc.get("lat"))
@@ -77,23 +90,88 @@ def payload_location(payload):
     return lat, lng, label, accuracy
 
 
+async def find_job_any_business(db, user, ObjectId, job_id, payload):
+    vals = obj_values(job_id, ObjectId)
+    if vals:
+        query = {"$or": [{"_id": {"$in": vals}}, {"id": {"$in": [clean(job_id)]}}, {"job_id": {"$in": [clean(job_id)]}}, {"uuid": {"$in": [clean(job_id)]}}]}
+        job = await one(db.jobs, query)
+        if job:
+            return job
+    title = clean(payload.get("job_title"))
+    address = clean(payload.get("address") or payload.get("location"))
+    worker_email = clean(user.get("email"))
+    soft = []
+    if worker_email:
+        soft.extend([{field: worker_email} for field in ["assigned_worker_email", "worker_email", "assigned_to_email"]])
+    if title:
+        soft.extend([{field: title} for field in ["title", "job_name", "description"]])
+    if address:
+        soft.extend([{field: address} for field in ["address", "site_address", "location"]])
+    if soft:
+        job = await one(db.jobs, {"$or": soft})
+        if job:
+            return job
+    return None
+
+
+async def find_team_business(db, user):
+    email = clean(user.get("email"))
+    worker = uid(user)
+    names = [clean(user.get("name")), clean(user.get("full_name")), clean(user.get("display_name"))]
+    clauses = []
+    if email:
+        clauses.extend([{field: email} for field in ["email", "worker_email", "assigned_worker_email"]])
+    if worker:
+        clauses.extend([{field: worker} for field in ["user_id", "worker_id", "id"]])
+    for name in names:
+        if name:
+            clauses.extend([{field: name} for field in ["name", "worker_name", "full_name"]])
+    if not clauses:
+        return ""
+    row = await one(db.team, {"$or": clauses})
+    if not row:
+        try:
+            row = await db.team.find_one({"$or": clauses}, sort=[("updated_at", -1)])
+        except Exception:
+            row = None
+    if row:
+        return clean(row.get("business_id") or row.get("owner_business_id") or row.get("contractor_id") or row.get("created_by") or row.get("user_id"))
+    return ""
+
+
+def owner_business_from_job(job, fallback):
+    if not job:
+        return fallback
+    for key in BUSINESS_KEYS:
+        value = clean(job.get(key))
+        if value:
+            return value
+    return fallback
+
+
+async def resolve_owner_business(db, user, ObjectId, job, payload):
+    fallback = default_bid(user)
+    from_job = owner_business_from_job(job, "")
+    if from_job:
+        return from_job
+    from_team = await find_team_business(db, user)
+    return from_team or fallback
+
+
 async def save_signal(db, user, ObjectId, payload):
     state = lower(payload.get("state") or payload.get("status") or "start")
     job_id = clean(payload.get("job_id") or payload.get("jobId"))
     lat, lng, supplied_location, accuracy = payload_location(payload)
-    job = None
-    if job_id:
-        try:
-            job = await one(db.jobs, field_truth.job_lookup_query(user, ObjectId, job_id))
-        except Exception:
-            job = None
+    job = await find_job_any_business(db, user, ObjectId, job_id, payload) if job_id or payload.get("job_title") else None
+    owner_business_id = await resolve_owner_business(db, user, ObjectId, job, payload)
     job_title = clean((job or {}).get("title") or (job or {}).get("job_name") or (job or {}).get("description") or payload.get("job_title"))
     job_address = clean((job or {}).get("address") or (job or {}).get("site_address") or (job or {}).get("location"))
     location = supplied_location or job_address
     map_query = f"{lat},{lng}" if lat is not None and lng is not None else (f"{location} New Zealand" if location else "")
     live_state = "off" if state in {"stop", "off", "complete", "completed", "clock_out", "clocked_out"} else "active_on_job"
     doc = {
-        "business_id": bid(user),
+        "business_id": owner_business_id,
+        "worker_original_business_id": default_bid(user),
         "worker_id": uid(user),
         "user_id": uid(user),
         "worker_email": clean(user.get("email")),
