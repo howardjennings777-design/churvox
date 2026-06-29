@@ -1,5 +1,35 @@
 // CHURVOX_DRAWER_CLICK_SAFETY_20260629
-// Lets QA and real users recover cleanly when an old Command drawer stays open over controls.
+// Prevents stale Command drawers from sitting over page controls during real use and QA trial-clicks.
+
+const STYLE_ID = 'churvox-drawer-click-safety-style';
+
+function installStyle() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = STYLE_ID;
+  style.textContent = `
+    .churvoxOptionC .cocDrawer {
+      pointer-events: none !important;
+    }
+    .churvoxOptionC .cocDrawer input,
+    .churvoxOptionC .cocDrawer textarea,
+    .churvoxOptionC .cocDrawer select,
+    .churvoxOptionC .cocDrawer button,
+    .churvoxOptionC .cocDrawer a,
+    .churvoxOptionC .cocDrawer [role="button"] {
+      pointer-events: auto !important;
+    }
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-closed="true"] {
+      opacity: 0 !important;
+      transform: translateX(120%) !important;
+      visibility: hidden !important;
+    }
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-closed="true"] * {
+      pointer-events: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function drawers() {
   return Array.from(document.querySelectorAll('.churvoxOptionC .cocDrawer'));
@@ -9,17 +39,11 @@ function hideDrawer(drawer) {
   if (!drawer) return;
   drawer.setAttribute('aria-hidden', 'true');
   drawer.dataset.churvoxDrawerClosed = 'true';
-  drawer.style.pointerEvents = 'none';
-  drawer.style.opacity = '0';
-  drawer.style.transform = 'translateX(120%)';
 }
 
 function restoreDrawer(drawer) {
   if (!drawer || drawer.dataset.churvoxDrawerClosed !== 'true') return;
   delete drawer.dataset.churvoxDrawerClosed;
-  drawer.style.pointerEvents = '';
-  drawer.style.opacity = '';
-  drawer.style.transform = '';
   drawer.removeAttribute('aria-hidden');
 }
 
@@ -28,14 +52,16 @@ function closeAll() {
 }
 
 function ensureCloseButtons() {
+  installStyle();
   for (const drawer of drawers()) {
+    drawer.style.pointerEvents = 'none';
     if (drawer.querySelector('[data-coc-close-drawer]')) continue;
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = 'Close';
     button.setAttribute('aria-label', 'Close drawer');
     button.dataset.cocCloseDrawer = 'true';
-    button.style.cssText = 'position:absolute;right:12px;top:12px;z-index:5;border:0;border-radius:999px;background:#111827;color:#fff;padding:8px 12px;font-weight:900;';
+    button.style.cssText = 'position:absolute;right:12px;top:12px;z-index:5;border:0;border-radius:999px;background:#111827;color:#fff;padding:8px 12px;font-weight:900;pointer-events:auto!important;';
     button.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); hideDrawer(drawer); });
     drawer.appendChild(button);
   }
@@ -49,6 +75,8 @@ function handleClick(event) {
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_DRAWER_CLICK_SAFETY__) {
   window.__CHURVOX_DRAWER_CLICK_SAFETY__ = true;
+  installStyle();
+  window.addEventListener('load', ensureCloseButtons);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeAll(); }, true);
   document.addEventListener('pointerdown', handleClick, true);
   document.addEventListener('click', handleClick, true);
@@ -58,7 +86,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_DRAWER_CLICK_SAFETY__) {
   }, true);
   const observer = new MutationObserver(ensureCloseButtons);
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  ensureCloseButtons();
+  setInterval(ensureCloseButtons, 750);
 }
 
 export {};
