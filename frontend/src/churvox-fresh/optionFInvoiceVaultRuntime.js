@@ -42,9 +42,9 @@ async function request(method, path, payload) {
 }
 
 function isInvoicePage() {
+  const pathname = clean(window.location.pathname || '').toLowerCase();
   const hash = clean((window.location.hash || '').replace('#', '')).toLowerCase();
-  const active = clean(document.querySelector('.churvoxOptionC .cocNav button.active')?.textContent).toLowerCase();
-  return hash === 'invoices' || active === 'invoices';
+  return pathname === '/invoices' || pathname.startsWith('/invoices/') || hash === 'invoices' || hash === 'money';
 }
 
 function root() {
@@ -62,10 +62,10 @@ function money(value) {
 }
 
 async function loadVault(force = false) {
-  if (!token()) return cached;
+  if (!token() || !isInvoicePage()) return cached;
   if (!force && cached && Date.now() - lastLoad < 20000) return cached;
   lastLoad = Date.now();
-  try { cached = await request('GET', '/invoices/vault'); } catch (_) {}
+  try { cached = await request('GET', '/invoices/vault'); } catch (_) { cached = cached || { invoices: [], items: [] }; }
   return cached;
 }
 
@@ -121,7 +121,7 @@ async function insertPanel() {
 }
 
 async function markPaid(id, button) {
-  if (!id || !token()) return;
+  if (!id || !token() || !isInvoicePage()) return;
   const original = button.textContent;
   button.textContent = 'Saving...';
   try {
@@ -136,7 +136,7 @@ async function markPaid(id, button) {
 }
 
 async function openPdf(id, button) {
-  if (!id || !token()) return;
+  if (!id || !token() || !isInvoicePage()) return;
   const original = button.textContent;
   button.textContent = 'Opening...';
   try {
@@ -155,6 +155,7 @@ async function openPdf(id, button) {
 }
 
 function handleClick(event) {
+  if (!isInvoicePage()) return;
   const paid = event.target.closest('[data-iv-paid]');
   const pdf = event.target.closest('[data-iv-pdf]');
   if (!paid && !pdf) return;
