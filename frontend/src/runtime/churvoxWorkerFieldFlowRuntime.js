@@ -1,3 +1,5 @@
+import './churvoxWorkerOnsiteSignalRuntime';
+
 // CHURVOX_WORKER_FIELD_FLOW_RUNTIME_20260629
 // Makes the worker app feel like a guided field flow without changing backend logic.
 // Uses existing sections: clock/GPS, next job, directions, checklist, proof, materials, finish, help.
