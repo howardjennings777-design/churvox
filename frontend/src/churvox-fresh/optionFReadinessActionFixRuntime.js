@@ -1,6 +1,8 @@
 // CHURVOX_READINESS_ACTION_FIX_RUNTIME_20260629
 // Makes fallback readiness actions useful instead of dead buttons.
 
+let cleanQueued = false;
+
 function isOwnerRoute() {
   return typeof window !== 'undefined' && !window.location.pathname.startsWith('/worker');
 }
@@ -18,16 +20,22 @@ function handleClick(event) {
 }
 
 function cleanVisibleCopy() {
+  cleanQueued = false;
   const replacements = [
     ['Clear pricing guard', 'Plan clarity'],
     ['No sneaky lockouts.', 'Clear limits before upgrade.'],
     ['Less confusion, fewer support tickets.', 'Less confusion, fewer support headaches.'],
     ['Real review build layer', 'Field proof control'],
     ['Built from real complaints:', 'Churvox checks'],
+    ['Built for rough coverage.', 'Ready for rough coverage.'],
+    ['Built for workers', 'Made for workers'],
+    ['build layer', 'control layer'],
     ['10 out of 10', 'ready'],
     ['10/10', 'ready'],
   ];
-  const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT);
+  const root = document.body || document.documentElement;
+  if (!root) return;
+  const walker = document.createTreeWalker(root, window.NodeFilter ? NodeFilter.SHOW_TEXT : 4);
   const nodes = [];
   while (walker.nextNode()) nodes.push(walker.currentNode);
   nodes.forEach((node) => {
@@ -38,6 +46,8 @@ function cleanVisibleCopy() {
 }
 
 function scheduleClean() {
+  if (cleanQueued) return;
+  cleanQueued = true;
   window.requestAnimationFrame(cleanVisibleCopy);
 }
 
