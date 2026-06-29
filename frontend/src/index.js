@@ -52,6 +52,8 @@ import './churvox-fresh/optionFAiFillMissingRuntime';
 import './churvox-fresh/optionFDrawerPersistenceRuntime';
 import './churvox-fresh/optionFRealReviewFeatureRuntime';
 import './churvox-fresh/optionFRealReviewFeatureRuntime.css';
+import './churvox-fresh/optionFRealReviewBackendSyncRuntime';
+import './churvox-fresh/optionFRealReviewBackendSyncRuntime.css';
 import './styles/churvoxResponsiveFit.css';
 import './styles/churvoxWorkerFieldFlowV2.css';
 
