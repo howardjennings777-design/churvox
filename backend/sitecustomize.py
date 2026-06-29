@@ -70,3 +70,8 @@ try:
     import churvox_top_player_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_top_player_fix_patch  # noqa: F401
+except Exception:
+    pass
