@@ -1,9 +1,5 @@
-import './optionFTopPlayerRuntime';
-import './optionFTopPlayerRuntime.css';
-import './optionFTopPlayerFixRuntime';
-import './optionFOnsiteRuntime';
-import './optionFOnsiteRuntime.css';
-import './optionFLogicAuditRuntime';
+// CHURVOX_READINESS_ACTION_FIX_RUNTIME_20260629
+// Kept as a tiny owner-only click helper. Do not import overlay runtimes from here.
 
 function isOwnerRoute() {
   return typeof window !== 'undefined' && !window.location.pathname.startsWith('/worker');
