@@ -50,6 +50,8 @@ import './churvox-fresh/optionFProblemSlipRuntime';
 import './churvox-fresh/optionFFullSiteWiringRuntime';
 import './churvox-fresh/optionFAiFillMissingRuntime';
 import './churvox-fresh/optionFDrawerPersistenceRuntime';
+import './churvox-fresh/optionFRealReviewFeatureRuntime';
+import './churvox-fresh/optionFRealReviewFeatureRuntime.css';
 import './styles/churvoxResponsiveFit.css';
 import './styles/churvoxWorkerFieldFlowV2.css';
 
