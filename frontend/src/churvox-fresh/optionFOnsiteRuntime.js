@@ -26,8 +26,15 @@ function activePage() {
   return hash || active || 'today';
 }
 function root() { return document.querySelector('.churvoxOptionC .workspace .cocPage'); }
-function mapUrl(query) { return `https://www.google.com/maps?q=${encodeURIComponent(query || 'Lower Hutt Wellington New Zealand')}&output=embed`; }
-function mapSearch(query) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || 'Lower Hutt Wellington New Zealand')}`; }
+function mapUrl(query) { return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`; }
+function mapSearch(query) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; }
+function realLocation(value) {
+  const text = clean(value);
+  if (!text) return '';
+  if (/lower hutt wellington new zealand/i.test(text)) return '';
+  if (/no gps|no location|not set/i.test(text)) return '';
+  return text;
+}
 async function load(force = false) {
   if (!token()) return cached;
   if (!force && cached && Date.now() - lastLoad < 12000) return cached;
@@ -73,7 +80,13 @@ function onsiteHtml(data) {
   const warnings = Array.isArray(data?.warnings) ? data.warnings : [];
   const slips = Array.isArray(data?.field_slips) ? data.field_slips : [];
   const counts = data?.counts || {};
-  const query = data?.map_query || rows.map((row) => row.location).filter(Boolean).join(' ') || 'Lower Hutt Wellington New Zealand';
+  const liveLocations = rows.map((row) => realLocation(row.location || row.gps)).filter(Boolean);
+  const backendMap = realLocation(data?.map_query);
+  const query = liveLocations.length ? `${liveLocations.slice(0, 5).join(' ')} New Zealand` : backendMap;
+  const mapBlock = query ? `<div class="onsiteMapShell">
+      <iframe title="Onsite Google Maps" src="${esc(mapUrl(query))}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <a href="${esc(mapSearch(query))}" target="_blank" rel="noreferrer">Open in Google Maps</a>
+    </div>` : `<div class="onsiteMapShell onsiteMapEmpty"><strong>No live location yet</strong><p>Onsite will show the map when a worker is clocked in with a job/site location or GPS proof.</p></div>`;
   return `
     <div class="onsiteHero">
       <div>
@@ -83,10 +96,7 @@ function onsiteHtml(data) {
       </div>
       <strong>${counts.onsite || rows.length} onsite</strong>
     </div>
-    <div class="onsiteMapShell">
-      <iframe title="Onsite Google Maps" src="${esc(mapUrl(query))}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-      <a href="${esc(mapSearch(query))}" target="_blank" rel="noreferrer">Open in Google Maps</a>
-    </div>
+    ${mapBlock}
     <div class="onsiteStats">
       <article><b>${counts.onsite || rows.length}</b><small>working now</small></article>
       <article><b>${allTeam.length}</b><small>team records</small></article>
@@ -96,7 +106,7 @@ function onsiteHtml(data) {
     <div class="onsiteRows">
       ${(rows.length ? rows : allTeam.filter((row) => row.active).slice(0, 6)).slice(0, 8).map((row) => `<article data-onsite-worker="${esc(row.id || row.name)}">
         <div><b>${esc(row.name || 'Worker')}</b><small>${esc(row.status || 'Onsite')} · ${esc(row.job || 'No current job')}</small></div>
-        <span>${esc(row.location || row.gps || 'No GPS')}</span>
+        <span>${esc(realLocation(row.location || row.gps) || 'No live GPS yet')}</span>
         <em>${esc(row.proof || 'No proof yet')}</em>
         <small>${esc(row.messages || 'No messages')} · ${esc(row.timesheet || 'No time yet')}</small>
       </article>`).join('') || '<p>No one is marked onsite right now. Team records stay on Team.</p>'}
