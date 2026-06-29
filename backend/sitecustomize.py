@@ -50,3 +50,8 @@ try:
     import churvox_command_readiness_fix_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_command_readiness_hardening_patch  # noqa: F401
+except Exception:
+    pass
