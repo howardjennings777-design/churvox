@@ -1,6 +1,4 @@
-// CHURVOX_TOP_PLAYER_FIX_RUNTIME_20260629
-// Makes public Pay Now and schedule board job moves perform real actions.
-
+import './optionFCommandIdentityGuardRuntime';
 import API_BASE from '../lib/apiBase';
 
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
