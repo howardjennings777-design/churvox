@@ -2,8 +2,7 @@ import './churvoxWorkerOnsiteSignalRuntime';
 import './churvoxWorkerOnsiteSignalHardRuntime';
 
 // CHURVOX_WORKER_FIELD_FLOW_RUNTIME_20260629
-// Makes the worker app feel like a guided field flow without changing backend logic.
-// Uses existing sections: clock/GPS, next job, directions, checklist, proof, materials, finish, help.
+// Keeps job-detail guidance, but the main worker app uses real separate pages.
 
 const NAV_ID = 'churvox-worker-flow-nav';
 const FALLBACK_BOTTOM_ID = 'churvox-worker-runtime-bottom-nav';
@@ -39,6 +38,10 @@ function firstSection(pattern, id) {
   if (document.getElementById(id)) return;
   const match = Array.from(document.querySelectorAll('main, section, article, .wc-card')).find((node) => pattern.test(textOf(node)));
   setId(match, id);
+}
+
+function isWorkerListPage() {
+  return ['/worker', '/worker/today', '/worker/jobs'].includes(window.location.pathname);
 }
 
 function annotateJobList() {
@@ -85,9 +88,9 @@ function annotateOps() {
 function annotateSections() {
   if (!isWorkerRoute()) return;
   const path = window.location.pathname;
-  if (path === '/worker/jobs' || path === '/worker') annotateJobList();
+  if (isWorkerListPage()) annotateJobList();
   else if (/^\/worker\/jobs\//.test(path)) annotateJobDetail();
-  else if (path === '/worker/settings') annotateSettings();
+  else if (path === '/worker/settings' || path === '/worker/help') annotateSettings();
   else if (path === '/worker/ops') annotateOps();
 }
 
@@ -103,31 +106,7 @@ function navItems() {
       ['Help', '#help'],
     ];
   }
-  if (path === '/worker/settings') {
-    return [
-      ['Profile', '#top'],
-      ['Help', '#worker-help'],
-      ['Today', '/worker/jobs#today'],
-      ['Jobs', '/worker/jobs#jobs'],
-      ['Proof', '/worker/ops#proof'],
-    ];
-  }
-  if (path === '/worker/ops') {
-    return [
-      ['Proof', '#proof'],
-      ['Issues', '#issues'],
-      ['Materials', '#materials'],
-      ['Today', '/worker/jobs#today'],
-      ['Help', '/worker/settings#help'],
-    ];
-  }
-  return [
-    ['Clock', '#clock'],
-    ['Next', '#today'],
-    ['Flow', '#flow'],
-    ['Jobs', '#jobs'],
-    ['Help', '/worker/settings#help'],
-  ];
+  return [];
 }
 
 function samePageHref(href) {
@@ -164,7 +143,18 @@ function insertFlowNav() {
 
   annotateSections();
 
+  if (isWorkerListPage()) {
+    document.getElementById(NAV_ID)?.remove();
+    ensureFallbackBottomNav();
+    return;
+  }
+
   const items = navItems();
+  if (!items.length) {
+    document.getElementById(NAV_ID)?.remove();
+    ensureFallbackBottomNav();
+    return;
+  }
   const anchor = document.querySelector('.wc-topbar, .px-mobile-header, .worker-app-top, header');
   if (!anchor) return;
 
@@ -198,11 +188,11 @@ function ensureFallbackBottomNav() {
     document.body.appendChild(nav);
   }
   const items = [
-    ['Today', '/worker/jobs#today'],
-    ['Jobs', '/worker/jobs#jobs'],
-    ['Proof', '/worker/ops#proof'],
-    ['Help', '/worker/settings#help'],
-    ['Me', '/worker/settings#top'],
+    ['Today', '/worker/today'],
+    ['Jobs', '/worker/jobs'],
+    ['Proof', '/worker/ops'],
+    ['Help', '/worker/help'],
+    ['Me', '/worker/settings'],
   ];
   nav.innerHTML = items.map(([label, href]) => `<button type="button" data-worker-runtime-target="${href}">${label}</button>`).join('');
 }
