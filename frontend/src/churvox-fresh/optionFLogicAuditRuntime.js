@@ -70,7 +70,7 @@ function isBaseCommandButton(button) {
   return Boolean(button.closest('.cocPage.command .ownerActions') || button.closest('.approvalSlip .approvalActions'));
 }
 async function hardWireCommand(button) {
-  if (busy || !token()) return;
+  if (busy || !token() || button.dataset.churvoxDone === 'true') return;
   const action = commandButtonAction(button);
   const item = textNearCommand();
   if (!action || !item.title) return;
@@ -80,13 +80,18 @@ async function hardWireCommand(button) {
   try {
     const res = await request('POST', '/command/manual-decision', { decision: action, action_id: item.id, item });
     const resultStatus = clean(res?.result?.status || res?.decision?.decision || res?.decision?.execution_status || 'done');
-    if (action === 'approve') button.textContent = /sent/i.test(resultStatus) ? 'Sent' : /queued/i.test(resultStatus) ? 'Queued' : 'Approved';
+    if (action === 'approve') button.textContent = res?.duplicate_guard ? 'Already approved' : /sent/i.test(resultStatus) ? 'Sent' : /queued/i.test(resultStatus) ? 'Queued' : 'Approved';
     else button.textContent = action === 'edit' ? 'Ready to edit' : 'Parked';
+    button.dataset.churvoxDone = 'true';
+    button.setAttribute('aria-disabled', 'true');
+    button.disabled = true;
     try { window.dispatchEvent(new CustomEvent('churvox:fresh-data-updated')); } catch (_) {}
   } catch (_) {
     button.textContent = 'Try again';
+    window.setTimeout(() => { button.textContent = original; }, 1700);
+  } finally {
+    busy = false;
   }
-  window.setTimeout(() => { button.textContent = original; busy = false; }, 1700);
 }
 function hardenOnsiteAliases() {
   if (!isOwnerApp()) return;
