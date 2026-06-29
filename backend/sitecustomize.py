@@ -107,6 +107,11 @@ except Exception:
     pass
 
 try:
+    import churvox_onsite_beacon_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_onsite_debug_patch  # noqa: F401
 except Exception:
     pass
