@@ -30,6 +30,11 @@ const jobAmount = (job) => {
   if (!number) return "Office sets amount";
   return `$${number.toFixed(number % 1 === 0 ? 0 : 2)}`;
 };
+const jobAmountCents = (job) => {
+  const raw = job?.payment_due || job?.amount_due || job?.invoice_total || job?.total || job?.price || job?.quote_total || job?.job_price;
+  const number = Number(String(raw || "").replace(/[^0-9.]/g, ""));
+  return number > 0 ? Math.round(number * 100) : 0;
+};
 
 const readDone = () => {
   try { return JSON.parse(localStorage.getItem("churvox-worker-finished") || "[]"); } catch { return []; }
@@ -149,7 +154,7 @@ function InfoCard({ job, count }) {
   );
 }
 
-function PaymentCard({ job, enabled, onPay }) {
+function PaymentCard({ job, enabled, onPay, busy }) {
   return (
     <section className={`swCard swActionCard swPayment ${enabled ? "" : "locked"}`}>
       <span>Payment</span>
@@ -159,12 +164,12 @@ function PaymentCard({ job, enabled, onPay }) {
         <Fact label="Amount" value={jobAmount(job)} />
       </div>
       <small>Customer taps card. Funds go to the business account, not the worker.</small>
-      <button className={enabled ? "swPrimary" : "swLight"} type="button" onClick={onPay}><CreditCard size={16} />{enabled ? "Take payment" : "Locked"}</button>
+      <button className={enabled ? "swPrimary" : "swLight"} type="button" disabled={busy} onClick={onPay}><CreditCard size={16} />{enabled ? (busy ? "Preparing" : "Take payment") : "Locked"}</button>
     </section>
   );
 }
 
-function WorkCard({ job, started, finish, note, setNote, busy, act, canPay, onPay }) {
+function WorkCard({ job, started, finish, note, setNote, busy, act, canPay, onPay, payBusy }) {
   const address = where(job);
   return (
     <>
@@ -186,7 +191,7 @@ function WorkCard({ job, started, finish, note, setNote, busy, act, canPay, onPa
         <h2>{what(job)}</h2>
       </section>
 
-      <PaymentCard job={job} enabled={canPay} onPay={onPay} />
+      <PaymentCard job={job} enabled={canPay} onPay={onPay} busy={payBusy} />
 
       <section className="swCard swActionCard">
         <span>{finish ? "Before finish" : "Note"}</span>
@@ -245,6 +250,7 @@ export function NoFussJob() {
   const [finish, setFinish] = useState(false);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [payBusy, setPayBusy] = useState(false);
   const paymentEnabled = canTakeOnSitePayments(user);
 
   useEffect(() => {
@@ -257,10 +263,25 @@ export function NoFussJob() {
       toast.error("On-site payments are Operator and Command only");
       return;
     }
+    const amountCents = jobAmountCents(job);
+    if (!amountCents) {
+      toast.error("Office needs to set the payment amount first");
+      return;
+    }
+    setPayBusy(true);
     try {
-      await post("/onsite/worker-beacon", { state: "payment-request", source: "worker-payment", job_id: jobId, job_title: name(job), customer_name: who(job), amount: jobAmount(job) });
-    } catch {}
-    toast.info("Payment terminal setup required before charging cards");
+      const result = await post("/payments/on-site/payment-intent", { job_id: jobId, amount_cents: amountCents, currency: "nzd", description: `${name(job)} - ${who(job)}` });
+      const data = result?.data || result;
+      if (data?.client_secret) {
+        toast.success("Payment ready. Connect Stripe Terminal reader to tap card.");
+      } else {
+        toast.info(data?.detail || "Payment setup needs owner attention");
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || error?.message || "Payment setup needs owner attention");
+    } finally {
+      setPayBusy(false);
+    }
   }
 
   async function act() {
@@ -293,7 +314,7 @@ export function NoFussJob() {
   if (load || !job) {
     return <Shell tab="Jobs" title="Jobs"><section className="swEmpty">{load ? "Loading" : "All jobs done."}</section></Shell>;
   }
-  return <Shell tab="Jobs" title={name(job)}><WorkCard job={job} started={started} finish={finish} note={note} setNote={setNote} busy={busy} act={act} canPay={paymentEnabled} onPay={requestPayment} /></Shell>;
+  return <Shell tab="Jobs" title={name(job)}><WorkCard job={job} started={started} finish={finish} note={note} setNote={setNote} busy={busy} act={act} canPay={paymentEnabled} onPay={requestPayment} payBusy={payBusy} /></Shell>;
 }
 
 export function NoFussMessages() {
