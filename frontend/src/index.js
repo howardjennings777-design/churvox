@@ -48,6 +48,7 @@ import './churvox-fresh/optionFPlansUsageRuntime';
 import './churvox-fresh/optionFBackendSyncRuntime';
 import './churvox-fresh/optionFImportExportRuntime';
 import './churvox-fresh/optionFXeroActionsRuntime';
+import './churvox-fresh/optionFXeroPaymentsRuntime';
 import './churvox-fresh/optionFOperationsRuntime';
 import './churvox-fresh/optionFAdminBrainRuntime';
 import './churvox-fresh/optionFNoLeakRuntime';
