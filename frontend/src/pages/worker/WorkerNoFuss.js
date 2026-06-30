@@ -1,19 +1,330 @@
-import React,{useEffect,useState}from"react";import{Link,useLocation,useParams}from"react-router-dom";import{Briefcase,LogOut,MapPin,MessageCircle,Navigation,RefreshCw,UserRound}from"lucide-react";import{toast}from"sonner";import{useApi}from"@/hooks/useApi";import{useAuth}from"@/context/AuthContext";import"./WorkerNoFuss.css";
-const c=v=>String(v||"").replace(/\s+/g," ").trim(),arr=v=>Array.isArray(v)?v:Array.isArray(v?.data)?v.data:Array.isArray(v?.jobs)?v.jobs:Array.isArray(v?.items)?v.items:Array.isArray(v?.results)?v.results:[],oid=v=>!v?"":typeof v==="string"||typeof v==="number"?String(v):typeof v==="object"?oid(v.$oid||v.id||v._id||v.job_id||""):"";
-const id=j=>oid(j?.id||j?._id||j?.job_id),name=j=>c(j?.title||j?.job_name||j?.job_title||j?.service_type||"Job"),who=j=>c(j?.client_name||j?.customer_name||j?.client||"Customer"),where=j=>c(j?.address||j?.site_address||j?.service_address||j?.location||""),what=j=>c(j?.worker_instructions||j?.instructions||j?.description||j?.notes||"No instructions."),msg=j=>c(j?.worker_message||j?.office_message||j?.boss_message||j?.job_message||j?.message||""),day=j=>c(j?.scheduled_date||j?.date||j?.start).slice(0,10),time=j=>c(j?.scheduled_time||j?.time),stat=j=>c(j?.status||j?.job_status||j?.workflow_status).toLowerCase(),done=j=>/complete|done|finished|cancelled|archived/.test(stat(j)),today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10),map=a=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`;
-const readDone=()=>{try{return JSON.parse(localStorage.getItem("churvox-worker-finished")||"[]")}catch{return[]}},markDone=x=>{try{localStorage.setItem("churvox-worker-finished",JSON.stringify(Array.from(new Set([...readDone(),x]))))}catch{}};
-function openJobs(jobs){const gone=new Set(readDone());return jobs.filter(j=>id(j)&&!done(j)&&!gone.has(id(j))).sort((a,b)=>`${day(a)||"9999"} ${time(a)||"99"}`.localeCompare(`${day(b)||"9999"} ${time(b)||"99"}`))}
-function useJobs(){const{get}=useApi(),[jobs,setJobs]=useState([]),[load,setLoad]=useState(true);async function go(){setLoad(true);try{let r=await get("/worker/jobs");let rows=arr(r?.data||r);if(!rows.length){try{r=await get("/jobs");rows=arr(r?.data||r)}catch{}}setJobs(rows.filter(x=>id(x)))}catch{setJobs([])}setLoad(false)}useEffect(()=>{go()},[]);return{jobs,load,go}}
-async function beacon(post,j,state){try{await post("/onsite/worker-beacon",{state,source:state==="stop"?"finish-job":"start-job",job_id:id(j),job_title:name(j),address:where(j),location:where(j)})}catch{}}
-async function timer(post,j,action,note){try{return await post(`/jobs/${id(j)}/${action}`,{worker_notes:note,source:"worker-app"})}catch{return null}}
-function Shell({tab,title,sub,children}){return <main className="simpleWorkerApp"><section className="swHero"><span>{tab}</span><h1>{title}</h1><p>{sub}</p></section><section className="swBody">{children}</section><nav className="swNav">{[["Today","/worker/today"],["Jobs","/worker/jobs"],["Messages","/worker/ops"],["Help","/worker/help"],["Me","/worker/settings"]].map(([x,h])=><Link key={x} className={x===tab?"active":""} to={h}>{x}</Link>)}</nav></main>}
-function Alerts(){const[ok,setOk]=useState(typeof Notification==="undefined"||Notification.permission==="granted");async function on(){if(typeof Notification==="undefined"){setOk(true);return}setOk(await Notification.requestPermission()==="granted")}return ok?null:<section className="swCard"><span>Alerts</span><h2>Turn on job alerts</h2><p>So you do not miss changes.</p><button className="swPrimary" onClick={on}>Turn on alerts</button></section>}
-function InfoCard({j,count}){if(!j)return <section className="swEmpty"><Briefcase/>No jobs today.</section>;return <section className="swCard swJob"><span>{time(j)||day(j)||"Next"}</span><h2>{name(j)}</h2><p>{who(j)}</p>{where(j)?<small><MapPin size={15}/>{where(j)}</small>:null}<p>{count>1?`${count} jobs in queue`:"Last job in queue"}</p></section>}
-function WorkCard({j,started,finish,note,setNote,busy,act}){const a=where(j);return <><section className="swCard"><span>Where</span><h2>{a||"No address"}</h2>{a?<a className="swPrimary" href={map(a)} target="_blank" rel="noreferrer"><Navigation size={16}/>Directions</a>:null}</section>{msg(j)?<section className="swCard"><span>Message</span><h2>Office</h2><p>{msg(j)}</p></section>:null}<section className="swCard"><span>Do this</span><p>{what(j)}</p></section><section className="swCard"><span>{finish?"Before finish":"Note"}</span>{finish?<h2>Need to add anything?</h2>:null}<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder={finish?"Add note if needed":"Optional note"}/>{finish?<button className="swLight" onClick={()=>setNote(note||"No extra note needed.")}>No, finish job</button>:null}</section><button className={`swBig ${started?"finish":""}`} disabled={busy} onClick={act}>{busy?"Saving":started?(finish?"Send to office":"Finish job"):"Start job"}</button></>}
-export function NoFussToday(){const{jobs,load}=useJobs();const todayJobs=openJobs(jobs).filter(j=>day(j)===today()),queue=todayJobs.length?todayJobs:openJobs(jobs),first=queue[0];return <Shell tab="Today" title="Today" sub="Your day at a glance."><Alerts/>{load?<section className="swEmpty"><RefreshCw className="spin"/>Loading</section>:null}{!load?<InfoCard j={first} count={queue.length}/>:null}{first&&msg(first)?<section className="swCard"><span>Message</span><h2>Office</h2><p>{msg(first)}</p></section>:<section className="swCard"><span>Messages</span><h2>Office</h2><p>No new messages.</p></section>}</Shell>}
-export function NoFussJobs(){const{jobs,load,go}=useJobs(),[tick,setTick]=useState(0),queue=openJobs(jobs),j=queue[0];return <Shell tab="Jobs" title="Jobs" sub="One job at a time.">{load?<section className="swEmpty"><RefreshCw className="spin"/>Loading</section>:null}{!load&&j?<Link className="swPrimary" to={`/worker/jobs/${id(j)}`}>Start current job</Link>:null}{!load&&j?<InfoCard j={j} count={queue.length}/>:null}{!load&&!j?<section className="swEmpty"><Briefcase/>All jobs done.</section>:null}<button className="swLight" onClick={()=>{setTick(tick+1);go()}}>Refresh</button></Shell>}
-export function NoFussJob(){const{ id:jid}=useParams(),{jobs,load,go}=useJobs(),{post,patch}=useApi(),queue=openJobs(jobs),picked=jobs.find(x=>id(x)===jid&&!readDone().includes(id(x)))||queue[0],j=picked,[started,setStarted]=useState(false),[finish,setFinish]=useState(false),[note,setNote]=useState(""),[busy,setBusy]=useState(false);useEffect(()=>{setStarted(/progress|started|active/.test(stat(j||{})));setNote(c(j?.worker_notes||""))},[jid,load]);async function act(){if(!j)return;if(started&&!finish){setFinish(true);return}setBusy(true);const end=started;await beacon(post,j,end?"stop":"start");try{if(end){await post(`/worker/jobs/${id(j)}/complete`,{worker_notes:note});await timer(post,j,"complete",note)}else{await timer(post,j,"start",note);await patch(`/worker/jobs/${id(j)}/field-update`,{worker_notes:note})}}catch{}if(end)markDone(id(j));setBusy(false);if(end){toast.success("Sent to office");await go();window.location.assign("/worker/jobs")}else{setStarted(true);toast.success("Started")}}if(load||!j)return <Shell tab="Jobs" title="Jobs" sub="One job at a time."><section className="swEmpty">{load?"Loading":"All jobs done."}</section></Shell>;return <Shell tab="Jobs" title={name(j)} sub={who(j)}><WorkCard j={j} started={started} finish={finish} note={note} setNote={setNote} busy={busy} act={act}/></Shell>}
-export function NoFussMessages(){const[t,setT]=useState("");function send(){if(!c(t)){toast.error("Type a message first");return}setT("");toast.success("Sent to office")}return <Shell tab="Messages" title="Messages" sub="Send a note to office."><section className="swCard"><MessageCircle/><h2>Office</h2><textarea value={t} onChange={e=>setT(e.target.value)} placeholder="Type message"/><button className="swPrimary" onClick={send}>Send</button></section></Shell>}
-export function NoFussHelp(){return <Shell tab="Help" title="Help" sub="Message office if stuck."><section className="swCard"><h2>Need help?</h2><p>Wrong address, unclear job, customer issue, or unsafe work.</p><Link className="swPrimary" to="/worker/ops">Message office</Link></section></Shell>}
-export function NoFussMe(){const{user,logout}=useAuth();return <Shell tab="Me" title="Me" sub="Profile."><section className="swCard"><UserRound/><h2>{c(user?.name||user?.email||"Worker")}</h2><p>{c(user?.email)}</p></section><button className="swPrimary danger" onClick={logout}><LogOut size={16}/>Log out</button></Shell>}
-export default function NoFussRoute(){const l=useLocation();if(l.pathname==="/worker/jobs")return <NoFussJobs/>;if(l.pathname==="/worker/ops")return <NoFussMessages/>;if(l.pathname==="/worker/help")return <NoFussHelp/>;if(l.pathname==="/worker/settings")return <NoFussMe/>;return <NoFussToday/>}
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { Briefcase, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
+import { toast } from "sonner";
+import { useApi } from "@/hooks/useApi";
+import { useAuth } from "@/context/AuthContext";
+import "./WorkerNoFuss.css";
+
+const DRAFT_KEY = "churvox-worker-message-draft";
+const c = (value) => String(value || "").replace(/\s+/g, " ").trim();
+const arr = (value) => Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : Array.isArray(value?.jobs) ? value.jobs : Array.isArray(value?.items) ? value.items : Array.isArray(value?.results) ? value.results : [];
+const oid = (value) => !value ? "" : typeof value === "string" || typeof value === "number" ? String(value) : typeof value === "object" ? oid(value.$oid || value.id || value._id || value.job_id || "") : "";
+const id = (job) => oid(job?.id || job?._id || job?.job_id);
+const name = (job) => c(job?.title || job?.job_name || job?.job_title || job?.service_type || "Job");
+const who = (job) => c(job?.client_name || job?.customer_name || job?.client || "Customer");
+const where = (job) => c(job?.address || job?.site_address || job?.service_address || job?.location || "");
+const what = (job) => c(job?.worker_instructions || job?.instructions || job?.description || job?.notes || "No instructions.");
+const msg = (job) => c(job?.worker_message || job?.office_message || job?.boss_message || job?.job_message || job?.message || "");
+const day = (job) => c(job?.scheduled_date || job?.date || job?.start).slice(0, 10);
+const time = (job) => c(job?.scheduled_time || job?.time);
+const stat = (job) => c(job?.status || job?.job_status || job?.workflow_status).toLowerCase();
+const done = (job) => /complete|done|finished|cancelled|archived/.test(stat(job));
+const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const map = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+
+const readDone = () => {
+  try { return JSON.parse(localStorage.getItem("churvox-worker-finished") || "[]"); } catch { return []; }
+};
+const markDone = (jobId) => {
+  try { localStorage.setItem("churvox-worker-finished", JSON.stringify(Array.from(new Set([...readDone(), jobId])))); } catch {}
+};
+const setDraft = (message) => {
+  try { localStorage.setItem(DRAFT_KEY, message); } catch {}
+};
+const takeDraft = () => {
+  try {
+    const value = localStorage.getItem(DRAFT_KEY) || "";
+    localStorage.removeItem(DRAFT_KEY);
+    return value;
+  } catch { return ""; }
+};
+
+function openJobs(jobs) {
+  const gone = new Set(readDone());
+  return jobs
+    .filter((job) => id(job) && !done(job) && !gone.has(id(job)))
+    .sort((a, b) => `${day(a) || "9999"} ${time(a) || "99"}`.localeCompare(`${day(b) || "9999"} ${time(b) || "99"}`));
+}
+
+function useJobs() {
+  const { get } = useApi();
+  const [jobs, setJobs] = useState([]);
+  const [load, setLoad] = useState(true);
+  async function go() {
+    setLoad(true);
+    try {
+      let response = await get("/worker/jobs");
+      let rows = arr(response?.data || response);
+      if (!rows.length) {
+        try {
+          response = await get("/jobs");
+          rows = arr(response?.data || response);
+        } catch {}
+      }
+      setJobs(rows.filter((item) => id(item)));
+    } catch {
+      setJobs([]);
+    }
+    setLoad(false);
+  }
+  useEffect(() => { go(); }, []);
+  return { jobs, load, go };
+}
+
+async function beacon(post, job, state) {
+  try {
+    await post("/onsite/worker-beacon", {
+      state,
+      source: state === "stop" ? "finish-job" : "start-job",
+      job_id: id(job),
+      job_title: name(job),
+      address: where(job),
+      location: where(job),
+    });
+  } catch {}
+}
+
+async function timer(post, job, action, note) {
+  try { return await post(`/jobs/${id(job)}/${action}`, { worker_notes: note, source: "worker-app" }); } catch { return null; }
+}
+
+function Shell({ tab, title, children }) {
+  return (
+    <main className="simpleWorkerApp">
+      <section className="swHero">
+        <span>{tab}</span>
+        <h1>{title}</h1>
+      </section>
+      <section className="swBody">{children}</section>
+      <nav className="swNav">
+        {[["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/ops"], ["Help", "/worker/help"], ["Me", "/worker/settings"]].map(([label, href]) => (
+          <Link key={label} className={label === tab ? "active" : ""} to={href}>{label}</Link>
+        ))}
+      </nav>
+    </main>
+  );
+}
+
+function Fact({ label, value }) {
+  if (!c(value)) return null;
+  return <span className="swFact"><b>{label}</b>{value}</span>;
+}
+
+function Alerts() {
+  const [ok, setOk] = useState(typeof Notification === "undefined" || Notification.permission === "granted");
+  async function on() {
+    if (typeof Notification === "undefined") { setOk(true); return; }
+    setOk(await Notification.requestPermission() === "granted");
+  }
+  return ok ? null : (
+    <section className="swCard swActionCard">
+      <span>Alerts</span>
+      <h2>Turn on job alerts</h2>
+      <button className="swPrimary" onClick={on}>Turn on alerts</button>
+    </section>
+  );
+}
+
+function InfoCard({ job, count }) {
+  if (!job) return <section className="swEmpty"><Briefcase />No jobs today.</section>;
+  return (
+    <section className="swCard swJob">
+      <span>{time(job) || day(job) || "Next"}</span>
+      <h2>{name(job)}</h2>
+      <div className="swFacts">
+        <Fact label="Customer" value={who(job)} />
+        <Fact label="Queue" value={count > 1 ? `${count} jobs` : "Last job"} />
+      </div>
+      {where(job) ? <small><MapPin size={15} />{where(job)}</small> : null}
+    </section>
+  );
+}
+
+function WorkCard({ job, started, finish, note, setNote, busy, act }) {
+  const address = where(job);
+  return (
+    <>
+      <section className="swCard swActionCard">
+        <span>Where</span>
+        <h2>{address || "No address"}</h2>
+        {address ? <a className="swPrimary" href={map(address)} target="_blank" rel="noreferrer"><Navigation size={16} />Directions</a> : null}
+      </section>
+
+      {msg(job) ? (
+        <section className="swCard">
+          <span>Office</span>
+          <h2>{msg(job)}</h2>
+        </section>
+      ) : null}
+
+      <section className="swCard">
+        <span>Do this</span>
+        <h2>{what(job)}</h2>
+      </section>
+
+      <section className="swCard swActionCard">
+        <span>{finish ? "Before finish" : "Note"}</span>
+        {finish ? <h2>Anything to add?</h2> : null}
+        <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder={finish ? "Add note if needed" : "Optional note"} />
+        {finish ? <button className="swLight" onClick={() => setNote(note || "No extra note needed.")}>No note</button> : null}
+      </section>
+
+      <button className={`swBig ${started ? "finish" : ""}`} disabled={busy} onClick={act}>{busy ? "Saving" : started ? (finish ? "Send to office" : "Finish job") : "Start job"}</button>
+    </>
+  );
+}
+
+export function NoFussToday() {
+  const { jobs, load } = useJobs();
+  const todayJobs = openJobs(jobs).filter((job) => day(job) === today());
+  const queue = todayJobs.length ? todayJobs : openJobs(jobs);
+  const first = queue[0];
+  return (
+    <Shell tab="Today" title="Today">
+      <Alerts />
+      {load ? <section className="swEmpty"><RefreshCw className="spin" />Loading</section> : null}
+      {!load ? <InfoCard job={first} count={queue.length} /> : null}
+      {first ? <Link className="swPrimary" to={`/worker/jobs/${id(first)}`}>Open job</Link> : null}
+      {first && msg(first) ? <section className="swCard"><span>Office</span><h2>{msg(first)}</h2></section> : <section className="swEmpty"><MessageCircle />No office messages.</section>}
+    </Shell>
+  );
+}
+
+export function NoFussJobs() {
+  const { jobs, load, go } = useJobs();
+  const [tick, setTick] = useState(0);
+  const queue = openJobs(jobs);
+  const job = queue[0];
+  return (
+    <Shell tab="Jobs" title="Jobs">
+      {load ? <section className="swEmpty"><RefreshCw className="spin" />Loading</section> : null}
+      {!load && job ? <InfoCard job={job} count={queue.length} /> : null}
+      {!load && job ? <Link className="swPrimary" to={`/worker/jobs/${id(job)}`}>Start current job</Link> : null}
+      {!load && !job ? <section className="swEmpty"><Briefcase />All jobs done.</section> : null}
+      <button className="swLight" onClick={() => { setTick(tick + 1); go(); }}>Refresh</button>
+    </Shell>
+  );
+}
+
+export function NoFussJob() {
+  const { id: jid } = useParams();
+  const { jobs, load, go } = useJobs();
+  const { post, patch } = useApi();
+  const queue = openJobs(jobs);
+  const picked = jobs.find((item) => id(item) === jid && !readDone().includes(id(item))) || queue[0];
+  const job = picked;
+  const [started, setStarted] = useState(false);
+  const [finish, setFinish] = useState(false);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setStarted(/progress|started|active/.test(stat(job || {})));
+    setNote(c(job?.worker_notes || ""));
+  }, [jid, load, job]);
+
+  async function act() {
+    if (!job) return;
+    if (started && !finish) { setFinish(true); return; }
+    setBusy(true);
+    const end = started;
+    await beacon(post, job, end ? "stop" : "start");
+    try {
+      if (end) {
+        await post(`/worker/jobs/${id(job)}/complete`, { worker_notes: note });
+        await timer(post, job, "complete", note);
+      } else {
+        await timer(post, job, "start", note);
+        await patch(`/worker/jobs/${id(job)}/field-update`, { worker_notes: note });
+      }
+    } catch {}
+    if (end) markDone(id(job));
+    setBusy(false);
+    if (end) {
+      toast.success("Sent to office");
+      await go();
+      window.location.assign("/worker/jobs");
+    } else {
+      setStarted(true);
+      toast.success("Started");
+    }
+  }
+
+  if (load || !job) {
+    return <Shell tab="Jobs" title="Jobs"><section className="swEmpty">{load ? "Loading" : "All jobs done."}</section></Shell>;
+  }
+  return <Shell tab="Jobs" title={name(job)}><WorkCard job={job} started={started} finish={finish} note={note} setNote={setNote} busy={busy} act={act} /></Shell>;
+}
+
+export function NoFussMessages() {
+  const [text, setText] = useState(() => takeDraft());
+  function send() {
+    if (!c(text)) { toast.error("Type a message first"); return; }
+    setText("");
+    toast.success("Sent to office");
+  }
+  return (
+    <Shell tab="Messages" title="Messages">
+      <section className="swCard swActionCard">
+        <MessageCircle />
+        <h2>Office</h2>
+        <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Type message" />
+        <button className="swPrimary" onClick={send}>Send</button>
+      </section>
+    </Shell>
+  );
+}
+
+export function NoFussHelp() {
+  const options = ["Wrong address", "Customer issue", "Unsafe work", "Need more info", "Other"];
+  function choose(option) {
+    setDraft(option === "Other" ? "" : option);
+    window.location.assign("/worker/ops");
+  }
+  return (
+    <Shell tab="Help" title="Help">
+      <section className="swCard swActionCard">
+        <h2>Message office</h2>
+        <div className="swChips">
+          {options.map((option) => <button key={option} type="button" onClick={() => choose(option)}>{option}</button>)}
+        </div>
+      </section>
+    </Shell>
+  );
+}
+
+export function NoFussMe() {
+  const { user, logout } = useAuth();
+  const guide = [
+    ["Today", "Next job only"],
+    ["Jobs", "Start, finish, send"],
+    ["Messages", "Talk to office"],
+    ["Help", "Pick a quick reason"],
+  ];
+  return (
+    <Shell tab="Me" title="Me">
+      <section className="swCard">
+        <UserRound />
+        <h2>{c(user?.name || user?.email || "Worker")}</h2>
+        <div className="swFacts"><Fact label="Email" value={c(user?.email)} /></div>
+      </section>
+      <section className="swCard">
+        <span>App guide</span>
+        <div className="swGuide">
+          {guide.map(([label, value]) => <span key={label}><b>{label}</b>{value}</span>)}
+        </div>
+      </section>
+      <button className="swPrimary danger" onClick={logout}><LogOut size={16} />Log out</button>
+    </Shell>
+  );
+}
+
+export default function NoFussRoute() {
+  const location = useLocation();
+  if (location.pathname === "/worker/jobs") return <NoFussJobs />;
+  if (location.pathname === "/worker/ops") return <NoFussMessages />;
+  if (location.pathname === "/worker/help") return <NoFussHelp />;
+  if (location.pathname === "/worker/settings") return <NoFussMe />;
+  return <NoFussToday />;
+}
