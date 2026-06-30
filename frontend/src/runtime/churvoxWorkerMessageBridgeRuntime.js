@@ -3,7 +3,13 @@
 
 const KEY = '__CHURVOX_WORKER_MESSAGE_BRIDGE__';
 const STORE = 'churvox_worker_message_history';
+const BACKEND = 'https://grassley-backend.onrender.com';
 
+function apiUrl(path) {
+  const host = String(window.location.hostname || '').toLowerCase();
+  if (host === 'www.churvox.com' || host === 'churvox.com') return `${BACKEND}${path}`;
+  return path;
+}
 function isWorkerMessages() {
   return /^\/worker\/(ops|messages)/i.test(window.location.pathname || '');
 }
@@ -18,7 +24,7 @@ async function sendBackend(message) {
   const payload = { source: 'worker_app', from: 'Worker', subject: 'Worker update', message, body: message, detail: message, priority: 'Worker update', channel: 'Worker app' };
   for (const path of ['/api/messages', '/api/worker/messages', '/api/approved-notifications']) {
     try {
-      const res = await fetch(path, { method: 'POST', headers, credentials: 'include', body: JSON.stringify(payload) });
+      const res = await fetch(apiUrl(path), { method: 'POST', headers, credentials: 'include', body: JSON.stringify(payload) });
       if (res.ok) return true;
     } catch {}
   }
