@@ -1,0 +1,114 @@
+// CHURVOX_OPTION_F_HIDE_SEED_DEMO_RUNTIME_20260630
+// Prevents seeded sample records from looking like live business data.
+
+const STYLE_ID = 'option-f-hide-seed-demo-style';
+const SEED_PATTERNS = [
+  'Naenae lawn reset',
+  'Petone unit cleanup',
+  'Belmont hedge trim',
+  'Wainui quote visit',
+  'Birchville tidy',
+  'Mere H.',
+  'Belmont Villas',
+  'Naenae Dairy',
+  'Petone Units',
+  'Wainui School',
+  'Birchville Dairy',
+  'Fence repair',
+  'Grounds tidy',
+  'Hedge package',
+  'Friday request',
+  'Extra green waste',
+  'Alex clock-out',
+];
+
+function ensureStyle() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = STYLE_ID;
+  style.textContent = `
+    .ofSeedDemoHidden{display:none!important}
+    .ofLiveEmptyNote{display:grid;grid-column:1/-1;gap:4px;margin:8px 0;padding:10px 12px;border:1px solid rgba(16,21,19,.08);border-radius:12px;background:#f8faf9;color:#111815;font:900 12px/1.35 Inter,system-ui,sans-serif}
+    .ofLiveEmptyNote small{color:#52605a;font-weight:850}
+  `;
+  document.head.appendChild(style);
+}
+
+function isSeedText(text) {
+  const value = String(text || '');
+  return SEED_PATTERNS.some((pattern) => value.includes(pattern));
+}
+
+function pageKey() {
+  const hash = (window.location.hash || '').replace('#', '').toLowerCase();
+  if (hash) return hash;
+  const active = document.querySelector('.churvoxOptionC .cocNav button.active');
+  return active ? String(active.textContent || '').trim().toLowerCase() : 'today';
+}
+
+function addEmptyNote(panel, label) {
+  if (!panel || panel.querySelector('.ofLiveEmptyNote')) return;
+  panel.insertAdjacentHTML('beforeend', `<div class="ofLiveEmptyNote"><b>No live ${label} yet</b><small>Sample records are hidden so the owner only sees real business data.</small></div>`);
+}
+
+function hideSeedRows() {
+  ensureStyle();
+  const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
+  if (!root) return;
+
+  document.querySelectorAll('.ofSeedDemoHidden').forEach((node) => node.classList.remove('ofSeedDemoHidden'));
+  document.querySelectorAll('.ofLiveEmptyNote').forEach((node) => node.remove());
+
+  const selectors = '.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow,.chip,.bubble';
+  root.querySelectorAll(selectors).forEach((node) => {
+    if (isSeedText(node.textContent)) node.classList.add('ofSeedDemoHidden');
+  });
+
+  root.querySelectorAll('.cocPanel').forEach((panel) => {
+    const visibleRecords = Array.from(panel.querySelectorAll('.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow,.chip,.bubble')).filter((node) => !node.classList.contains('ofSeedDemoHidden'));
+    if (visibleRecords.length === 0 && isSeedText(panel.textContent)) {
+      const heading = panel.querySelector('h2')?.textContent || pageKey();
+      addEmptyNote(panel, heading.toLowerCase());
+    }
+  });
+
+  if (pageKey() === 'command') {
+    root.querySelectorAll('.cocPanel').forEach((panel) => {
+      if (!isSeedText(panel.textContent)) return;
+      const h2 = panel.querySelector('h2')?.textContent || '';
+      if (/filled approval form|owner actions/i.test(h2)) {
+        panel.querySelector('.formGrid')?.remove();
+        const h3 = panel.querySelector('h3');
+        const p = panel.querySelector('p');
+        if (h3) h3.textContent = 'No live approvals waiting';
+        if (p) p.textContent = 'Real Command items will appear here when Churvox has prepared owner-approved work.';
+        panel.querySelectorAll('button').forEach((button) => { button.disabled = true; button.textContent = button.textContent || 'Waiting'; });
+      }
+    });
+  }
+}
+
+let scheduled = false;
+function schedule() {
+  if (scheduled) return;
+  scheduled = true;
+  window.requestAnimationFrame(() => {
+    scheduled = false;
+    hideSeedRows();
+  });
+}
+
+if (typeof window !== 'undefined' && !window.__CHURVOX_HIDE_SEED_DEMO__) {
+  window.__CHURVOX_HIDE_SEED_DEMO__ = true;
+  window.addEventListener('load', () => setTimeout(schedule, 500));
+  window.addEventListener('hashchange', () => setTimeout(schedule, 120));
+  window.addEventListener('popstate', () => setTimeout(schedule, 120));
+  document.addEventListener('click', () => setTimeout(schedule, 160), true);
+  document.addEventListener('input', schedule, true);
+  document.addEventListener('change', schedule, true);
+  const observer = new MutationObserver(schedule);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  setInterval(schedule, 1500);
+}
+
+export {};
