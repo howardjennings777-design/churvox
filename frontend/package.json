@@ -55,6 +55,8 @@
   "scripts": {
     "start": "node server.cjs",
     "build": "craco build",
+    "green": "node scripts/churvox-green-machine.cjs",
+    "green:deep": "CHURVOX_DEEP=1 node scripts/churvox-green-machine.cjs",
     "test:launch:gate": "node scripts/churvox-launch-gate.cjs",
     "test": "craco test",
     "render-build": "npm install --legacy-peer-deps && npm run build",
