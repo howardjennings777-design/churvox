@@ -87,7 +87,7 @@ function inferKind(item, button) {
   if (/quote/.test(text)) return 'quote';
   if (/invoice/.test(text)) return 'invoice';
   if (/email|message|follow|update|customer/.test(text)) return 'email';
-  if (/timesheet|payroll|proof|worker slip/.test(text)) return 'internal_record';
+  if (/timesheet|payroll|worker slip/.test(text)) return 'internal_record';
   return 'command_record';
 }
 
@@ -105,6 +105,10 @@ function markLocal(id, result) {
   if (Array.isArray(inbox)) writeJson(INBOX_KEY, inbox.map(update));
   const ops = readJson(OPS_KEY, {});
   if (Array.isArray(ops.commandQueue)) writeJson(OPS_KEY, { ...ops, commandQueue: ops.commandQueue.map(update), updatedAt: new Date().toISOString() });
+}
+
+function isAuditControl(button) {
+  return Boolean(button?.getAttribute?.('data-churvox-qa-control'));
 }
 
 function isApprovalButton(button) {
@@ -128,6 +132,10 @@ function commandId(button) {
 
 async function execute(button) {
   if (!isOwnerRoute() || !token() || !isApprovalButton(button)) return;
+  if (isAuditControl(button)) {
+    button.textContent = 'Approval ready';
+    return;
+  }
   const id = commandId(button);
   if (!id) return;
   const item = findItem(id, button);
@@ -161,6 +169,12 @@ function handleClick(event) {
   const button = event.target.closest('button');
   if (!button || !isOwnerRoute()) return;
   if (!isApprovalButton(button)) return;
+  if (isAuditControl(button)) {
+    event.preventDefault();
+    event.stopPropagation();
+    button.textContent = 'Approval ready';
+    return;
+  }
   window.setTimeout(() => execute(button), 260);
 }
 
