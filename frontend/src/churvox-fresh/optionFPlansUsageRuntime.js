@@ -27,6 +27,7 @@ function rowLimit(row) { return row && typeof row === 'object' ? numberValue(row
 function pick(...values) { for (const value of values) if (value !== undefined && value !== null && clean(value)) return value; return ''; }
 function payload(raw) { return raw?.data?.data || raw?.data || raw?.usage || raw || {}; }
 function percent(used, limit) { return limit ? Math.max(0, Math.min(100, Math.round((Number(used || 0) / Number(limit || 1)) * 100))) : 0; }
+function activeAccountingSync(data, addons) { return Boolean(addons.accounting_sync || addons.accounting_sync_addon || addons.xero || addons.myob || data.accounting_sync_active || data.accounting_sync_addon_active || data.accounting_addon_active || data.xero_addon_active || data.myob_addon_active || data.sync_addon_active); }
 
 function normalizedUsage() {
   const data = payload(usage);
@@ -48,7 +49,7 @@ function normalizedUsage() {
     teamUsed: rowUsed(teamRow) || numberValue(data.active_team_members, data.workers_used),
     teamLimit: rowLimit(teamRow) || numberValue(limits.workers, limits.team, limits.active_team_members, data.team_limit, data.worker_limit),
     growthPacks: numberValue(addons.growth_pack, addons.command_growth_pack, data.growth_packs, data.extra_user_blocks),
-    accountingSync: Boolean(addons.accounting_sync || addons.xero || addons.myob || data.accounting_sync_active || data.xero_addon_active),
+    accountingSync: activeAccountingSync(data, addons),
   };
 }
 
