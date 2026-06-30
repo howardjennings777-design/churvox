@@ -27,7 +27,9 @@ function rawRole(user = {}, payload = {}) {
 
 function truthy(value) {
   if (typeof value === "string") return ["1", "true", "yes", "active", "enabled", "worker", "staff", "field_worker"].includes(value.trim().toLowerCase());
-  return Boolean(value);
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value > 0;
+  return false;
 }
 
 function looksWorker(user = {}, payload = {}) {
