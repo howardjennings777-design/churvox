@@ -76,7 +76,8 @@ function setStatValue(stat, value) {
 function clearSeededStats(root) {
   const hiddenSeedCount = root.querySelectorAll('.ofSeedDemoHidden').length;
   if (!hiddenSeedCount) return;
-  const hasVisibleLiveRecords = Array.from(root.querySelectorAll('.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow,.chip,.bubble')).some((node) => !node.classList.contains('ofSeedDemoHidden') && !node.classList.contains('ofLiveEmptyNote'));
+  const liveSelectors = '.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow,.bubble';
+  const hasVisibleLiveRecords = Array.from(root.querySelectorAll(liveSelectors)).some((node) => !node.classList.contains('ofSeedDemoHidden'));
   if (hasVisibleLiveRecords) return;
   root.querySelectorAll('.miniStat').forEach((stat) => {
     const label = String(stat.querySelector('small')?.textContent || '').toLowerCase();
