@@ -2,6 +2,10 @@
   display: none !important;
 }
 
+.churvoxOptionC button[data-hard-action="open-command"] {
+  display: none !important;
+}
+
 .churvoxOptionC .workspace {
   height: calc(100vh - 110px) !important;
   padding-top: 0 !important;
