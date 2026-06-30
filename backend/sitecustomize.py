@@ -72,6 +72,11 @@ except Exception:
     pass
 
 try:
+    import churvox_plan_usage_guard_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_top_player_patch  # noqa: F401
 except Exception:
     pass
