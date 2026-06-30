@@ -25,29 +25,44 @@ const ROLE_ALIASES = {
   worker: "worker",
   staff: "worker",
   crew: "worker",
+  employee: "worker",
+  team_member: "worker",
+  teammember: "worker",
+  team: "worker",
+  subcontractor: "worker",
+  contractor: "worker",
+  field: "worker",
+  field_staff: "worker",
+  fieldstaff: "worker",
   field_worker: "worker",
   fieldworker: "worker",
+  technician: "worker",
+  tech: "worker",
   payroll: "payroll",
   payroll_user: "payroll",
   payrolluser: "payroll",
 };
 
+function roleKey(raw) {
+  return String(raw || "").trim().toLowerCase().replace(/[\s_-]+/g, "_");
+}
+
 export function normalizeRole(raw) {
   if (!raw) return ROLES.OWNER;
-  const key = String(raw).trim().toLowerCase().replace(/[\s_-]+/g, "_");
+  const key = roleKey(raw);
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || ROLES.OWNER;
 }
 
 export function isExplicitWorkerRole(raw) {
   if (!raw) return false;
-  const key = String(raw).trim().toLowerCase().replace(/[\s_-]+/g, "_");
+  const key = roleKey(raw);
   const compact = key.replace(/_/g, "");
-  return ["worker", "staff", "crew", "field_worker", "fieldworker"].includes(key) || ["worker", "staff", "crew", "fieldworker"].includes(compact);
+  return ["worker", "staff", "crew", "employee", "team_member", "team", "subcontractor", "contractor", "field", "field_staff", "field_worker", "technician", "tech"].includes(key) || ["worker", "staff", "crew", "employee", "teammember", "team", "subcontractor", "contractor", "field", "fieldstaff", "fieldworker", "technician", "tech"].includes(compact);
 }
 
 export function isExplicitPayrollRole(raw) {
   if (!raw) return false;
-  const key = String(raw).trim().toLowerCase().replace(/[\s_-]+/g, "_");
+  const key = roleKey(raw);
   const compact = key.replace(/_/g, "");
   return ["payroll", "payroll_user", "payrolluser"].includes(key) || ["payroll", "payrolluser"].includes(compact);
 }
