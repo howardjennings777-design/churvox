@@ -46,6 +46,7 @@ import './churvox-fresh/optionFXeroActionsRuntime';
 import './churvox-fresh/optionFOperationsRuntime';
 import './churvox-fresh/optionFAdminBrainRuntime';
 import './churvox-fresh/optionFNoLeakRuntime';
+import './churvox-fresh/optionFHideSeedDemoRuntime';
 import './churvox-fresh/optionFCommandCleanupRuntime';
 import './churvox-fresh/optionFTodayScheduleGuardRuntime';
 import './churvox-fresh/optionFAutoAdminFlowRuntime';
