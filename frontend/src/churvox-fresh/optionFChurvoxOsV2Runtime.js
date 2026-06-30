@@ -4,8 +4,14 @@
 const ROOT = '.churvoxOptionC';
 const STYLE_ID = 'churvox-os-v2-style';
 const SAVE_KEY = 'churvox_os_v2_saved_records';
+const BACKEND = 'https://grassley-backend.onrender.com';
 const DEMO_NAMES = ['Mere H.', 'Belmont Villas', 'Naenae Dairy', 'Petone Units', 'Wainui School', 'Birchville Dairy'];
 
+function apiUrl(path) {
+  const host = String(window.location.hostname || '').toLowerCase();
+  if (host === 'www.churvox.com' || host === 'churvox.com') return `${BACKEND}${path}`;
+  return path;
+}
 function root() { return document.querySelector(ROOT); }
 function text(node) { return String(node?.textContent || '').replace(/\s+/g, ' ').trim(); }
 function fieldValue(field) {
@@ -41,7 +47,7 @@ function authHeaders() {
 }
 async function sendSave(row) {
   try {
-    const res = await fetch('/api/os-v2/saved-records', { method: 'POST', credentials: 'include', headers: authHeaders(), body: JSON.stringify(row) });
+    const res = await fetch(apiUrl('/api/os-v2/saved-records'), { method: 'POST', credentials: 'include', headers: authHeaders(), body: JSON.stringify(row) });
     if (!res.ok) return false;
     const body = await res.json().catch(() => ({}));
     return body?.success !== false;
