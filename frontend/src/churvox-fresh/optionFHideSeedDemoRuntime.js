@@ -2,18 +2,12 @@
 // Prevents seeded sample records from looking like live business data without re-render loops.
 
 const STYLE_ID = 'option-f-hide-seed-demo-style';
-const SEED_PATTERNS = [
+const STRONG_SEED_PATTERNS = [
   'Naenae lawn reset',
   'Petone unit cleanup',
   'Belmont hedge trim',
   'Wainui quote visit',
   'Birchville tidy',
-  'Mere H.',
-  'Belmont Villas',
-  'Naenae Dairy',
-  'Petone Units',
-  'Wainui School',
-  'Birchville Dairy',
   'Fence repair',
   'Grounds tidy',
   'Hedge package',
@@ -27,6 +21,14 @@ const SEED_PATTERNS = [
   '022 000 000',
   '021 000 000',
   '@example.com',
+];
+const SOFT_SEED_PATTERNS = [
+  'Mere H.',
+  'Belmont Villas',
+  'Naenae Dairy',
+  'Petone Units',
+  'Wainui School',
+  'Birchville Dairy',
 ];
 
 function ensureStyle() {
@@ -43,7 +45,9 @@ function ensureStyle() {
 
 function isSeedText(text) {
   const value = String(text || '');
-  return SEED_PATTERNS.some((pattern) => value.includes(pattern));
+  if (STRONG_SEED_PATTERNS.some((pattern) => value.includes(pattern))) return true;
+  const softHits = SOFT_SEED_PATTERNS.filter((pattern) => value.includes(pattern)).length;
+  return softHits >= 2;
 }
 
 function pageKey() {
