@@ -122,8 +122,33 @@ async def payment_account(db, user, ObjectId):
     except Exception:
         settings = None
     owner = await find_owner(db, user, ObjectId)
-    account_id = text((settings or {}).get("stripe_account_id") or (owner or {}).get("stripe_account_id") or (owner or {}).get("stripe_connected_account_id"))
+    account_id = text(
+        (settings or {}).get("stripe_account_id")
+        or (owner or {}).get("stripe_account_id")
+        or (owner or {}).get("stripe_connected_account_id")
+        or os.environ.get("STRIPE_ONSITE_ACCOUNT_ID")
+    )
     return settings or {}, owner or {}, account_id
+
+
+async def save_payment_account(db, user, account_id, source):
+    bid = business_id(user)
+    if not account_id:
+        return
+    await db.payment_settings.update_one(
+        {"business_id": bid},
+        {
+            "$set": {
+                "business_id": bid,
+                "provider": "stripe",
+                "stripe_account_id": account_id,
+                "setup_source": source,
+                "updated_at": now_utc(),
+            },
+            "$setOnInsert": {"created_at": now_utc()},
+        },
+        upsert=True,
+    )
 
 
 def cents(value):
@@ -160,6 +185,18 @@ def remove_route(app, path, method):
         pass
 
 
+def first_existing_connected_account(stripe):
+    try:
+        accounts = stripe.Account.list(limit=10)
+        for account in accounts.get("data") or []:
+            account_id = text(account.get("id"))
+            if account_id:
+                return account_id
+    except Exception:
+        return ""
+    return ""
+
+
 def install(module):
     name = getattr(module, "__name__", "")
     if name in INSTALLED:
@@ -193,7 +230,7 @@ def install(module):
 
     async def setup_link(request: Request):
         user = await get_current_user(request)
-        if role(user) not in {"owner", "admin", "manager"}:
+        if role(user) not in {"owner", "admin", "manager", "employer", "business_owner", "superadmin"}:
             raise HTTPException(status_code=403, detail="Owner access required")
         plan = await business_plan(db, user, ObjectId)
         if not is_allowed_plan(plan):
@@ -203,11 +240,15 @@ def install(module):
             raise HTTPException(status_code=503, detail="Stripe is not configured")
         settings, owner, account_id = await payment_account(db, user, ObjectId)
         if not account_id:
+            account_id = first_existing_connected_account(stripe)
+            if account_id:
+                await save_payment_account(db, user, account_id, "reused_existing_connected_account")
+        if not account_id:
             account = stripe.Account.create(type="express", email=text(owner.get("email") or user.get("email")), capabilities={"card_payments": {"requested": True}, "transfers": {"requested": True}})
             account_id = account.get("id")
-            await db.payment_settings.update_one({"business_id": business_id(user)}, {"$set": {"business_id": business_id(user), "provider": "stripe", "stripe_account_id": account_id, "updated_at": now_utc()}, "$setOnInsert": {"created_at": now_utc()}}, upsert=True)
+            await save_payment_account(db, user, account_id, "created_by_churvox")
         base = frontend_url()
-        link = stripe.AccountLink.create(account=account_id, refresh_url=f"{base}/dashboard#settings", return_url=f"{base}/dashboard#settings", type="account_onboarding")
+        link = stripe.AccountLink.create(account=account_id, refresh_url=f"{base}/dashboard#xero", return_url=f"{base}/dashboard#xero", type="account_onboarding")
         return safe({"success": True, "url": link.get("url"), "stripe_account_id": account_id})
 
     async def payment_intent(request: Request):
@@ -249,10 +290,12 @@ def install(module):
 class Loader(importlib.abc.Loader):
     def __init__(self, original):
         self.original = original
+
     def create_module(self, spec):
         if hasattr(self.original, "create_module"):
             return self.original.create_module(spec)
         return None
+
     def exec_module(self, module):
         self.original.exec_module(module)
         install(module)
