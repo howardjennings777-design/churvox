@@ -11,15 +11,16 @@ function ensureStyle() {
   const style = document.createElement('style');
   style.id = 'churvox-xero-payments-style';
   style.textContent = `
-    #${PANEL_ID}{display:grid;gap:12px;border-radius:24px;padding:18px;background:linear-gradient(135deg,#111827,#1f2937 58%,#f97316);color:#fff;box-shadow:0 18px 44px rgba(15,23,42,.18);min-height:180px;align-content:start}
+    #${PANEL_ID}{display:grid;gap:12px;border-radius:20px;padding:16px;background:linear-gradient(135deg,#111827,#1f2937 58%,#f97316);color:#fff;box-shadow:0 14px 34px rgba(15,23,42,.14);min-height:150px;align-content:start;grid-column:1/-1;order:20;margin-top:10px}
     #${PANEL_ID} *{box-sizing:border-box}
     #${PANEL_ID} span{display:inline-flex;width:max-content;border-radius:999px;background:rgba(255,255,255,.14);padding:6px 10px;color:#fed7aa;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
-    #${PANEL_ID} h2{margin:0;font-size:24px;letter-spacing:-.03em;color:#fff!important}
+    #${PANEL_ID} h2{margin:0;font-size:22px;letter-spacing:-.03em;color:#fff!important}
     #${PANEL_ID} p{margin:0;color:#f8fafc!important;font-weight:850;line-height:1.35}
-    #${PANEL_ID} .cvPayStatus{border-radius:16px;background:rgba(255,255,255,.12);padding:10px 12px;color:#fff!important;font-size:13px;font-weight:900}
-    #${PANEL_ID} a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:999px;padding:10px 14px;background:#fff;color:#111827!important;text-decoration:none;font-weight:1000;box-shadow:0 14px 30px rgba(15,23,42,.18)}
-    #${PANEL_ID} .cvPayRules{display:grid;gap:6px;margin-top:2px}
+    #${PANEL_ID} .cvPayStatus{border-radius:14px;background:rgba(255,255,255,.12);padding:10px 12px;color:#fff!important;font-size:13px;font-weight:900}
+    #${PANEL_ID} a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;border-radius:999px;padding:10px 14px;background:#fff;color:#111827!important;text-decoration:none;font-weight:1000;box-shadow:0 12px 24px rgba(15,23,42,.16)}
+    #${PANEL_ID} .cvPayRules{display:grid;gap:6px;margin-top:2px;grid-template-columns:repeat(3,minmax(0,1fr))}
     #${PANEL_ID} .cvPayRules b{display:block;border-radius:12px;background:rgba(255,255,255,.1);padding:8px 10px;color:#fff;font-size:12px;font-weight:900}
+    @media(max-width:860px){#${PANEL_ID} .cvPayRules{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
 }
@@ -49,6 +50,11 @@ async function refreshStatus(panel) {
   }
 }
 
+function targetPage() {
+  const pages = Array.from(document.querySelectorAll('.workspace .cocPage'));
+  return pages.find((page) => page.offsetParent !== null) || pages[0] || null;
+}
+
 function mount() {
   ensureStyle();
   const existing = document.getElementById(PANEL_ID);
@@ -56,8 +62,16 @@ function mount() {
     if (existing) existing.remove();
     return;
   }
-  const page = document.querySelector('.workspace .cocPage') || document.querySelector('.workspace') || document.querySelector('#root');
-  if (!page || existing) return;
+
+  const page = targetPage();
+  if (!page) {
+    if (existing && !existing.closest('.workspace .cocPage')) existing.remove();
+    return;
+  }
+
+  if (existing && existing.parentElement !== page) existing.remove();
+  if (document.getElementById(PANEL_ID)) return;
+
   const panel = document.createElement('section');
   panel.id = PANEL_ID;
   panel.className = 'cocPanel full';
@@ -78,7 +92,7 @@ function mount() {
 }
 
 function schedule() {
-  window.requestAnimationFrame(() => setTimeout(mount, 120));
+  window.requestAnimationFrame(() => setTimeout(mount, 180));
 }
 
 window.addEventListener('hashchange', schedule);
