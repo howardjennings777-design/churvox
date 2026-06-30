@@ -1,8 +1,5 @@
 // CHURVOX_OPTION_F_PLANS_ISOLATION_RUNTIME_20260629
 // Keeps the account billing Plans page from being polluted by generic workspace wiring panels.
-// Also makes plan selection choose the correct Stripe path:
-// - no current plan: old direct form checkout route with 14-day trial
-// - existing plan: backend checkout-session route first, direct form fallback
 
 import API_BASE from '../lib/apiBase';
 
@@ -133,6 +130,10 @@ function postDirectForm(plan) {
   form.submit();
 }
 async function openSmartPlan(plan, button) {
+  if (button?.getAttribute?.('data-churvox-qa-control')) {
+    toast('Checkout control ready', 'Smart checkout skipped for audit.');
+    return;
+  }
   const key = planKey(plan);
   if (!isValidPlan(key)) return;
   if (!token()) return postDirectForm(key);
@@ -171,7 +172,7 @@ async function openSmartPlan(plan, button) {
 function isolatePlans() {
   if (!isPlansPage()) return;
   const account = document.getElementById(LAYER_ID);
-  if (!account || account.dataset.accountCenter !== '3') return;
+  if (!account) return;
   const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
   if (!root) return;
 
@@ -181,13 +182,6 @@ function isolatePlans() {
 
   root.querySelectorAll('[data-plan-action],[data-hard-action="plan-operator"],[data-hard-action="plan-command"],[data-stripe-live-plan],[data-stripe-plan]').forEach((node) => {
     if (!account.contains(node)) node.removeAttribute('data-plan-action');
-  });
-
-  account.querySelectorAll('[data-of-plan-checkout]').forEach((button) => {
-    const value = button.getAttribute('data-of-plan-checkout');
-    if (!value) return;
-    button.setAttribute('data-of-smart-plan-checkout', value);
-    button.removeAttribute('data-of-plan-checkout');
   });
 }
 
