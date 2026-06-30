@@ -41,7 +41,12 @@ async function request(method, path, payload) {
     body: payload === undefined ? undefined : JSON.stringify(payload),
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.error || body?.message || `HTTP ${response.status}`);
+  if (!response.ok || body?.success === false) {
+    const error = new Error(body?.detail || body?.error || body?.message || `HTTP ${response.status}`);
+    error.status = response.status;
+    error.body = body;
+    throw error;
+  }
   return body?.data?.data || body?.data || body;
 }
 
@@ -95,6 +100,17 @@ function canApproveThroughAiReview(item, id) {
   const key = String(id || item?.id || '');
   const objectIdish = /^[a-f0-9]{24}$/i.test(key);
   return Boolean(objectIdish || item?.preparedForApproval !== undefined || item?.action || item?.payload);
+}
+
+async function executeViaBackend(key, kind, item) {
+  if (canApproveThroughAiReview(item, key)) {
+    try {
+      return await request('POST', `/ai-review-items/${encodeURIComponent(key)}/approve`, { note: item.owner_note || '', item });
+    } catch (error) {
+      if (![404, 405].includes(Number(error.status || 0))) throw error;
+    }
+  }
+  return await request('POST', `/command/approvals/${encodeURIComponent(key)}/execute`, { action_id: key, kind, item });
 }
 
 function saveEffect(effect) {
@@ -152,12 +168,7 @@ async function execute(button) {
   button.textContent = 'Executing...';
   try {
     const kind = inferKind(item, button);
-    let result;
-    if (canApproveThroughAiReview(item, key)) {
-      result = await request('POST', `/ai-review-items/${encodeURIComponent(key)}/approve`, { note: item.owner_note || '', item });
-    } else {
-      result = { success: true, status: 'approved_local', kind, result: { status: 'approved_local' } };
-    }
+    const result = await executeViaBackend(key, kind, item);
     markLocal(key, result);
     saveEffect({ id: key, kind, status: result?.result?.status || result?.status || 'executed', title: item.title || key });
     const status = result?.result?.status || result?.status || '';
