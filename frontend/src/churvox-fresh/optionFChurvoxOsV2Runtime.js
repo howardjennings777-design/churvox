@@ -31,6 +31,24 @@ function isCommandPage() { return currentPage() === 'command' || String(window.l
 function isCommandDrawer(drawer) { return drawer?.classList.contains('approvalSlip') || /approval|command/i.test(text(drawer?.querySelector('h2'))); }
 function readSaved() { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '[]'); } catch { return []; } }
 function writeSaved(row) { try { localStorage.setItem(SAVE_KEY, JSON.stringify([row, ...readSaved()].slice(0, 80))); } catch {} }
+function authHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  try {
+    const token = localStorage.getItem('token') || '';
+    if (token) headers.Authorization = `Bearer ${token}`;
+  } catch {}
+  return headers;
+}
+async function sendSave(row) {
+  try {
+    const res = await fetch('/api/os-v2/saved-records', { method: 'POST', credentials: 'include', headers: authHeaders(), body: JSON.stringify(row) });
+    if (!res.ok) return false;
+    const body = await res.json().catch(() => ({}));
+    return body?.success !== false;
+  } catch {
+    return false;
+  }
+}
 function flash(message, tone = 'good') {
   let node = document.getElementById('cv-os-v2-toast');
   if (!node) {
@@ -52,7 +70,7 @@ function installStyle() {
     #cv-os-v2-toast{position:fixed;right:18px;bottom:18px;z-index:2147483647;max-width:min(420px,calc(100vw - 36px));padding:14px 16px;border-radius:18px;background:#111815;color:#fff;font:900 13px/1.35 Inter,system-ui,sans-serif;box-shadow:0 24px 70px rgba(17,24,21,.28);transform:translateY(18px);opacity:0;pointer-events:none;transition:.18s ease}#cv-os-v2-toast.show{transform:translateY(0);opacity:1}#cv-os-v2-toast.warn{background:#9a3412}#cv-os-v2-toast.good{background:#166534}
     .cvOsV2Banner{display:grid;gap:6px;margin:0 0 14px;padding:14px 16px;border:1px solid rgba(234,88,12,.22);border-radius:22px;background:linear-gradient(135deg,#fff7ed,#fff);box-shadow:0 14px 34px rgba(15,23,42,.06)}.cvOsV2Banner b{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#9a3412}.cvOsV2Banner p{margin:0;color:#334155;font-size:13px;font-weight:850;line-height:1.35}
     .cvOsV2Cockpit{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 14px}.cvOsV2Lane{border:1px solid rgba(15,23,42,.09);border-radius:22px;background:#fff;padding:14px;box-shadow:0 12px 28px rgba(15,23,42,.06)}.cvOsV2Lane span{display:inline-flex;border-radius:999px;background:#111815;color:#fff;padding:5px 9px;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}.cvOsV2Lane b{display:block;margin-top:9px;font-size:18px;line-height:1.05}.cvOsV2Lane small{display:block;margin-top:5px;color:#64748b;font-weight:800;line-height:1.3}
-    .cvOsV2Trail{display:grid;gap:10px;margin:16px 0;padding:14px;border:1px solid rgba(15,23,42,.10);border-radius:18px;background:linear-gradient(135deg,#f8fafc,#fff)}.cvOsV2Trail>span{font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em;color:#ea580c}.cvOsV2Trail div{display:grid;gap:2px}.cvOsV2Trail b{font-size:12px;color:#111815}.cvOsV2Trail p{margin:0;color:#475569;font-size:12px;font-weight:800;line-height:1.35}.cvOsV2QueueNote{display:grid;gap:4px;margin:10px 0 0;padding:10px 12px;border-radius:14px;background:#ecfdf5;color:#14532d;font-weight:900;font-size:12px}.cvOsV2Empty{grid-column:1/-1;border:1px dashed rgba(15,23,42,.2);border-radius:22px;background:#fff;padding:18px;text-align:left}.cvOsV2Empty b{display:block;color:#111815}.cvOsV2Empty p{margin:6px 0 0;color:#64748b;font-weight:850}.cvOsV2DemoSoft{opacity:.55;filter:saturate(.55)}
+    .cvOsV2Trail{display:grid;gap:10px;margin:16px 0;padding:14px;border:1px solid rgba(15,23,42,.10);border-radius:18px;background:linear-gradient(135deg,#f8fafc,#fff)}.cvOsV2Trail>span{font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em;color:#ea580c}.cvOsV2Trail div{display:grid;gap:2px}.cvOsV2Trail b{font-size:12px;color:#111815}.cvOsV2Trail p{margin:0;color:#475569;font-size:12px;font-weight:800;line-height:1.35}.cvOsV2QueueNote{display:grid;gap:4px;margin:10px 0 0;padding:10px 12px;border-radius:14px;background:#ecfdf5;color:#14532d;font-weight:900;font-size:12px}.cvOsV2QueueNote.warn{background:#fff7ed;color:#9a3412}.cvOsV2Empty{grid-column:1/-1;border:1px dashed rgba(15,23,42,.2);border-radius:22px;background:#fff;padding:18px;text-align:left}.cvOsV2Empty b{display:block;color:#111815}.cvOsV2Empty p{margin:6px 0 0;color:#64748b;font-weight:850}.cvOsV2DemoSoft{opacity:.55;filter:saturate(.55)}
     .churvoxOptionC .cocDrawer:not(.approvalSlip) .approvalActions button[data-cv-command-only="true"]{background:#111815!important;color:#fff!important}.churvoxOptionC .cocPanel h2 .cvOsV2Mini{display:inline-flex;margin-left:8px;border-radius:999px;background:#fff7ed;color:#9a3412;padding:3px 7px;font-size:9px;font-weight:950;vertical-align:middle}
     @media(max-width:760px){.cvOsV2Cockpit{grid-template-columns:1fr}.cvOsV2Banner{margin:0 0 10px}.cvOsV2Lane b{font-size:16px}}
   `;
@@ -119,7 +137,6 @@ function ensureEmptyStates(app) {
 function adminTrailFor(drawer) {
   if (!drawer || drawer.querySelector('.cvOsV2Trail')) return;
   const title = text(drawer.querySelector('h2')) || 'Record';
-  const kind = text(drawer.querySelector('em')) || title;
   const command = isCommandDrawer(drawer);
   const section = document.createElement('section');
   section.className = 'cvOsV2Trail';
@@ -146,7 +163,7 @@ function recordKind(drawer) {
   return 'record';
 }
 
-function queueSave(drawer, buttonLabel) {
+async function queueSave(drawer, buttonLabel) {
   const row = { at: new Date().toISOString(), kind: recordKind(drawer), action: buttonLabel, fields: fieldsFromDrawer(drawer) };
   writeSaved(row);
   let note = drawer.querySelector('.cvOsV2QueueNote');
@@ -155,8 +172,17 @@ function queueSave(drawer, buttonLabel) {
     note.className = 'cvOsV2QueueNote';
     drawer.querySelector('.approvalActions')?.before(note);
   }
-  note.innerHTML = '<b>Saved in Churvox OS.</b><span>Record changes are kept in the local admin trail and ready for backend sync.</span>';
-  flash('Saved. Admin trail updated.', 'good');
+  note.classList.remove('warn');
+  note.innerHTML = '<b>Saving in Churvox OS...</b><span>Keeping an admin trail for this record.</span>';
+  const ok = await sendSave(row);
+  if (ok) {
+    note.innerHTML = '<b>Saved in Churvox OS.</b><span>Record changes are stored in the backend queue and visible in the admin trail.</span>';
+    flash('Saved to Churvox OS.', 'good');
+  } else {
+    note.classList.add('warn');
+    note.innerHTML = '<b>Saved on this device.</b><span>Backend queue was not available, so this change is kept locally for retry.</span>';
+    flash('Saved locally. Backend queue unavailable.', 'warn');
+  }
 }
 
 function commandOnlyGuard(event) {
