@@ -12,6 +12,11 @@ except Exception:
     pass
 
 try:
+    import churvox_xero_addon_alias_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_xero_routes_install_patch  # noqa: F401
 except Exception:
     pass
