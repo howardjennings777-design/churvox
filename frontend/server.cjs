@@ -333,6 +333,16 @@ function sendFile(res, filePath) {
   fs.createReadStream(filePath).pipe(res);
 }
 
+function workerFallbackPath(urlPath) {
+  if (urlPath === "/worker/today" || urlPath === "/worker/today/") {
+    return path.join(BUILD_DIR, "worker", "today", "index.html");
+  }
+  if (urlPath === "/worker/jobs" || urlPath === "/worker/jobs/") {
+    return path.join(BUILD_DIR, "worker", "jobs", "index.html");
+  }
+  return null;
+}
+
 const server = http.createServer((req, res) => {
   try {
     const urlPath = new URL(req.url, `http://${req.headers.host}`).pathname;
@@ -340,6 +350,14 @@ const server = http.createServer((req, res) => {
     if (req.method === "GET" && (urlPath === "/jobs/new" || urlPath === "/jobs/new/")) {
       redirect(res, "/dashboard#jobs-new");
       return;
+    }
+
+    if (req.method === "GET") {
+      const workerFile = workerFallbackPath(urlPath);
+      if (workerFile && fs.existsSync(workerFile)) {
+        sendFile(res, workerFile);
+        return;
+      }
     }
 
     if (urlPath === "/api" || urlPath.startsWith("/api/")) {
