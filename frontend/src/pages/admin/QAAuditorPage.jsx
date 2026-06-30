@@ -6,8 +6,8 @@ const TESTS = [
   { id: "smart_hub", label: "Run Dashboard test", routes: ["/dashboard"] },
   { id: "role_permission", label: "Run role permission test", routes: ["/dashboard", "/payroll", "/team"] },
   { id: "mobile_tap", label: "Run mobile tap test", routes: ["/dashboard", "/jobs"] },
-  { id: "billing_plans", label: "Run billing/plans test", routes: ["/plans"] },
-  { id: "full_wiring", label: "Run full app wiring audit", routes: ["/api/auth/me", "/api/jobs", "/api/clients", "/api/quotes", "/api/invoices", "/api/team/workers", "/api/billing/status"] },
+  { id: "billing_plans", label: "Run billing/plans test", routes: ["/plans", "/api/billing/subscription-status"] },
+  { id: "full_wiring", label: "Run full app wiring audit", routes: ["/api/auth/me", "/api/jobs", "/api/clients", "/api/quotes", "/api/invoices", "/api/worker/shift-records", "/api/billing/subscription-status"] },
 ];
 
 const kStore = "qa_audit_runs";
