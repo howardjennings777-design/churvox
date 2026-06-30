@@ -1,3 +1,5 @@
+import './churvoxWorkerCompleteRequestGuard';
+
 // CHURVOX_PLAIN_SEND_GUARD_20260630
 // Command should require explicit approval wording, not plain Send auto-execution.
 
