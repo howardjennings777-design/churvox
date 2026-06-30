@@ -301,6 +301,13 @@ def install(module):
     app.add_api_route("/api/onsite/worker-beacon", beacon_endpoint, methods=["POST"])
     remove_route(app, "/api/onsite/beacon-debug", "GET")
     app.add_api_route("/api/onsite/beacon-debug", beacon_debug_endpoint, methods=["GET"])
+
+    try:
+        import churvox_on_site_payments_patch as payments_patch
+        payments_patch.install(module)
+    except Exception:
+        pass
+
     INSTALLED.add(name)
 
 
@@ -310,7 +317,7 @@ class Loader(importlib.abc.Loader):
 
     def create_module(self, spec):
         if hasattr(self.original, "create_module"):
-            return self.original.create_module(spec)
+            return self.original.create_module()
         return None
 
     def exec_module(self, module):
