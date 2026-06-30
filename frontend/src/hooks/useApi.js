@@ -16,7 +16,37 @@ function backendErrorMessage(data) {
 function normalizeEndpoint(endpoint) {
   if (endpoint === "/team") return "/team/workers";
   if (endpoint === "/workers") return "/team/workers";
+  if (endpoint === "/messages") return "/approved-notifications";
   return endpoint;
+}
+
+function normalizeMessageBody(rawEndpoint, body) {
+  if (rawEndpoint !== "/messages") return body;
+  const rows = Array.isArray(body?.messages)
+    ? body.messages
+    : Array.isArray(body?.notifications)
+      ? body.notifications
+      : Array.isArray(body?.items)
+        ? body.items
+        : Array.isArray(body?.data)
+          ? body.data
+          : Array.isArray(body)
+            ? body
+            : [];
+  const messages = rows.map((item, index) => ({
+    id: item.id || item._id || item.source_id || `message-${index}`,
+    from: item.from || item.type || item.event_type || "Churvox",
+    subject: item.subject || item.title || "Churvox update",
+    detail: item.detail || item.message || item.body || "Owner update ready.",
+    draft: item.draft || item.reply || "Review this update in Command if it needs an owner decision.",
+    history: item.history || item.created_at || item.updated_at || "recent",
+    client: item.client || item.client_name || "Business",
+    job: item.job || item.job_title || item.route || "Churvox",
+    priority: item.priority || (item.read || item.is_read ? "Read" : "Unread"),
+    channel: item.channel || "Owner notification",
+    ...item,
+  }));
+  return { success: true, messages, items: messages, data: messages };
 }
 
 function normalizeId(value) {
@@ -145,7 +175,7 @@ export function useApi() {
           config.data = data;
         }
         const response = await axios(config);
-        const body = response.data;
+        const body = normalizeMessageBody(rawEndpoint, response.data);
 
         if (method === "POST" && endpoint === "/invoices" && data?.job_id && body) {
           await markJobInvoiced({ jobId: data.job_id, invoice: invoiceRecord(body), headers, timeout: options.timeout });
