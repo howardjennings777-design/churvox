@@ -12,6 +12,11 @@ except Exception:
     pass
 
 try:
+    import churvox_xero_routes_install_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_monthly_job_limit  # noqa: F401
 except Exception:
     pass
