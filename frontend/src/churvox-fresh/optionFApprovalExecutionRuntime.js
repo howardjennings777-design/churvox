@@ -133,7 +133,12 @@ function isAuditControl(button) {
   return Boolean(button?.closest?.('[data-churvox-qa-control]') || button?.getAttribute?.('data-churvox-qa-control'));
 }
 
+function isPageActionCommand(button) {
+  return Boolean(button?.dataset?.commandId && (button?.dataset?.commandStatus || button?.dataset?.commandAction) && button.closest?.('.ofHardCommand'));
+}
+
 function isApprovalButton(button) {
+  if (isPageActionCommand(button)) return false;
   const text = clean(button?.textContent).toLowerCase();
   const hasCommandContext = Boolean(
     button?.closest('[data-rr-command-id], [data-command-id], [data-ten-job-id], .rrCommandQueue, .tenReadinessPanel, .ofDecisionEffects') ||
