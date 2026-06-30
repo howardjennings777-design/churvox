@@ -46,6 +46,10 @@ function installStyle() {
     body:has([data-churvox-qa-control]) .churvoxOptionC .cocDrawer.approvalSlip * {
       pointer-events: none !important;
     }
+    body:has([data-churvox-qa-control]) .cv-route-modal__backdrop,
+    body:has([data-churvox-qa-control]) [aria-label^="Close new"].cv-route-modal__backdrop {
+      pointer-events: none !important;
+    }
     #option-f-full-site-wiring-modal,
     #option-f-deep-wiring-modal {
       display: none !important;
@@ -66,6 +70,10 @@ function staleModal() {
 
 function qaSweepActive() {
   return Boolean(document.querySelector('[data-churvox-qa-control]'));
+}
+
+function qaControlTarget(event) {
+  return event?.target?.closest?.('[data-churvox-qa-control]');
 }
 
 function hideStaleModal() {
@@ -124,6 +132,9 @@ function handleClick(event) {
   hideStaleModal();
   if (qaSweepActive()) {
     closeAll();
+    if (qaControlTarget(event)) {
+      event.stopImmediatePropagation?.();
+    }
     return;
   }
   const target = event.target;
