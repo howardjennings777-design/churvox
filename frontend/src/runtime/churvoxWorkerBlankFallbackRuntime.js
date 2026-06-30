@@ -56,7 +56,7 @@ function body(tab) {
   if (tab === 'Messages') return '<section class="swCard"><span>Messages</span><h2>Message office</h2><p>Use this screen to send office updates when the live worker app is still loading.</p><a class="swPrimary" href="/worker/help">Need help</a></section>';
   if (tab === 'Help') return '<section class="swCard"><span>Help</span><h2>Need help?</h2><p>Wrong address, unclear job, customer issue, or unsafe work: message the office.</p><a class="swPrimary" href="/worker/ops">Message office</a></section>';
   if (tab === 'Me') return '<section class="swCard"><span>Worker</span><h2>Profile</h2><p>Your worker screen is available. Refresh if the live profile has not loaded yet.</p></section>';
-  if (tab === 'Jobs') return '<section class="swCard"><span>Jobs</span><h2>One job at a time</h2><p>Start current job when your live queue loads. No old proof clutter.</p><a class="swPrimary" href="/worker/today">Back to today</a></section>';
+  if (tab === 'Jobs') return '<section class="swCard"><span>Jobs</span><h2>One job at a time</h2><p>Start current job when your live queue loads. No office clutter.</p><a class="swPrimary" href="/worker/today">Back to today</a></section>';
   return '<section class="swCard"><span>Today</span><h2>Info only</h2><p>Today shows schedule, jobs and messages. Jobs are worked one at a time.</p><a class="swPrimary" href="/worker/jobs">Open jobs</a></section>';
 }
 
