@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 async function go(page, route) {
   await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 20000 });
   await page.waitForLoadState('networkidle', { timeout: 1000 }).catch(() => null);
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(350);
 }
 
 async function bodyText(page) {
@@ -11,14 +11,14 @@ async function bodyText(page) {
 }
 
 test.describe('Churvox worker route contract', () => {
-  test('worker stable pages render', async ({ page }) => {
-    await go(page, '/worker/today/index.html');
+  test('worker live paths render immediately', async ({ page }) => {
+    await go(page, '/worker/today');
     let text = await bodyText(page);
     expect(text).toMatch(/Today/i);
     expect(text).toMatch(/schedule|info|messages|jobs/i);
     expect(text).not.toMatch(/Start job/i);
 
-    await go(page, '/worker/jobs/index.html');
+    await go(page, '/worker/jobs');
     text = await bodyText(page);
     expect(text).toMatch(/Jobs/i);
     expect(text).toMatch(/one job at a time|all jobs done|no open jobs/i);
