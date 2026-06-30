@@ -8,12 +8,29 @@ function isWorkerRoute() {
   return /^\/worker(?:\/|$)/i.test(window.location.pathname || '');
 }
 
-function text() {
-  return String(document.body?.innerText || document.body?.textContent || '').replace(/\s+/g, ' ').trim();
+function compact(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
-function hasWorkerText() {
-  return /Churvox|Worker|Today|Jobs|Messages|Help|Start current job|All jobs done|Message office/i.test(text());
+function visibleText(node) {
+  if (!node) return '';
+  try {
+    const style = window.getComputedStyle(node);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return '';
+  } catch (_) {}
+  return compact(node.innerText || node.textContent || '');
+}
+
+function workerRootText() {
+  const root = document.querySelector('.simpleWorkerApp') || document.getElementById('root') || document.body;
+  return visibleText(root);
+}
+
+function liveWorkerOk() {
+  const simple = document.querySelector('.simpleWorkerApp');
+  if (!simple) return false;
+  const value = visibleText(simple);
+  return /Worker|Today|Jobs|Messages|Help|Start current job|All jobs done|Message office/i.test(value) && value.length > 20;
 }
 
 function currentTab() {
@@ -65,13 +82,15 @@ function renderFallback() {
     document.getElementById(FALLBACK_ID)?.remove();
     return;
   }
-  if (hasWorkerText() && !document.getElementById(FALLBACK_ID)) return;
-  if (document.querySelector('.simpleWorkerApp') && text().length > 20) {
+  if (liveWorkerOk()) {
     document.getElementById(FALLBACK_ID)?.remove();
     return;
   }
+  const rootText = workerRootText();
+  const current = document.getElementById(FALLBACK_ID);
+  if (!current && rootText.length > 40 && /login|email|password|loading/i.test(rootText)) return;
   ensureStyle();
-  let node = document.getElementById(FALLBACK_ID);
+  let node = current;
   if (!node) {
     node = document.createElement('main');
     node.id = FALLBACK_ID;
@@ -83,8 +102,9 @@ function renderFallback() {
 }
 
 function schedule() {
-  setTimeout(renderFallback, 1200);
-  setTimeout(renderFallback, 3200);
+  setTimeout(renderFallback, 800);
+  setTimeout(renderFallback, 1800);
+  setTimeout(renderFallback, 3600);
 }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_WORKER_BLANK_FALLBACK__) {
@@ -92,8 +112,10 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_WORKER_BLANK_FALLBACK__) 
   window.addEventListener('load', schedule);
   window.addEventListener('popstate', schedule);
   window.addEventListener('hashchange', schedule);
+  window.addEventListener('error', schedule);
+  window.addEventListener('unhandledrejection', schedule);
   document.addEventListener('click', () => setTimeout(renderFallback, 800), true);
-  setInterval(renderFallback, 2500);
+  setInterval(renderFallback, 2000);
 }
 
 export {};
