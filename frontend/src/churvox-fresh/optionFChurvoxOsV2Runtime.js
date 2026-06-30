@@ -76,7 +76,7 @@ function installStyle() {
     #cv-os-v2-toast{position:fixed;right:18px;bottom:18px;z-index:2147483647;max-width:min(420px,calc(100vw - 36px));padding:14px 16px;border-radius:18px;background:#111815;color:#fff;font:900 13px/1.35 Inter,system-ui,sans-serif;box-shadow:0 24px 70px rgba(17,24,21,.28);transform:translateY(18px);opacity:0;pointer-events:none;transition:.18s ease}#cv-os-v2-toast.show{transform:translateY(0);opacity:1}#cv-os-v2-toast.warn{background:#9a3412}#cv-os-v2-toast.good{background:#166534}
     .cvOsV2Banner{display:grid;gap:6px;margin:0 0 14px;padding:14px 16px;border:1px solid rgba(234,88,12,.22);border-radius:22px;background:linear-gradient(135deg,#fff7ed,#fff);box-shadow:0 14px 34px rgba(15,23,42,.06)}.cvOsV2Banner b{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#9a3412}.cvOsV2Banner p{margin:0;color:#334155;font-size:13px;font-weight:850;line-height:1.35}
     .cvOsV2Cockpit{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 14px}.cvOsV2Lane{border:1px solid rgba(15,23,42,.09);border-radius:22px;background:#fff;padding:14px;box-shadow:0 12px 28px rgba(15,23,42,.06)}.cvOsV2Lane span{display:inline-flex;border-radius:999px;background:#111815;color:#fff;padding:5px 9px;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}.cvOsV2Lane b{display:block;margin-top:9px;font-size:18px;line-height:1.05}.cvOsV2Lane small{display:block;margin-top:5px;color:#64748b;font-weight:800;line-height:1.3}
-    .cvOsV2Trail{display:grid;gap:10px;margin:16px 0;padding:14px;border:1px solid rgba(15,23,42,.10);border-radius:18px;background:linear-gradient(135deg,#f8fafc,#fff)}.cvOsV2Trail>span{font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em;color:#ea580c}.cvOsV2Trail div{display:grid;gap:2px}.cvOsV2Trail b{font-size:12px;color:#111815}.cvOsV2Trail p{margin:0;color:#475569;font-size:12px;font-weight:800;line-height:1.35}.cvOsV2QueueNote{display:grid;gap:4px;margin:10px 0 0;padding:10px 12px;border-radius:14px;background:#ecfdf5;color:#14532d;font-weight:900;font-size:12px}.cvOsV2QueueNote.warn{background:#fff7ed;color:#9a3412}.cvOsV2Empty{grid-column:1/-1;border:1px dashed rgba(15,23,42,.2);border-radius:22px;background:#fff;padding:18px;text-align:left}.cvOsV2Empty b{display:block;color:#111815}.cvOsV2Empty p{margin:6px 0 0;color:#64748b;font-weight:850}.cvOsV2DemoSoft{opacity:.55;filter:saturate(.55)}
+    .cvOsV2Trail{display:grid;gap:10px;margin:16px 0;padding:14px;border:1px solid rgba(15,23,42,.10);border-radius:18px;background:linear-gradient(135deg,#f8fafc,#fff)}.cvOsV2Trail>span{font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em;color:#ea580c}.cvOsV2Trail div{display:grid;gap:2px}.cvOsV2Trail b{font-size:12px;color:#111815}.cvOsV2Trail p{margin:0;color:#475569;font-size:12px;font-weight:800;line-height:1.35}.cvOsV2QueueNote{display:grid;gap:4px;margin:10px 0 0;padding:10px 12px;border-radius:14px;background:#ecfdf5;color:#14532d;font-weight:900;font-size:12px}.cvOsV2QueueNote.warn{background:#fff7ed;color:#9a3412}.cvOsV2Empty{grid-column:1/-1;border:1px dashed rgba(15,23,42,.2);border-radius:22px;background:#fff;padding:18px;text-align:left}.cvOsV2Empty b{display:block;color:#111815}.cvOsV2Empty p{margin:6px 0 0;color:#64748b;font-weight:850}.cvOsV2DemoSoft{display:none!important}
     .churvoxOptionC .cocDrawer:not(.approvalSlip) .approvalActions button[data-cv-command-only="true"]{background:#111815!important;color:#fff!important}.churvoxOptionC .cocPanel h2 .cvOsV2Mini{display:inline-flex;margin-left:8px;border-radius:999px;background:#fff7ed;color:#9a3412;padding:3px 7px;font-size:9px;font-weight:950;vertical-align:middle}
     @media(max-width:760px){.cvOsV2Cockpit{grid-template-columns:1fr}.cvOsV2Banner{margin:0 0 10px}.cvOsV2Lane b{font-size:16px}}
   `;
@@ -120,10 +120,10 @@ function addPanelBadges(app) {
   });
 }
 
-function softenDemoRows(app) {
+function hideSeedRows(app) {
   const all = text(app);
-  const demoHits = DEMO_NAMES.filter((name) => all.includes(name)).length;
-  if (demoHits < 3) return;
+  const seedHits = DEMO_NAMES.filter((name) => all.includes(name)).length;
+  if (seedHits < 3) return;
   app.querySelectorAll('.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow').forEach((row) => {
     const rowText = text(row);
     if (DEMO_NAMES.some((name) => rowText.includes(name))) row.classList.add('cvOsV2DemoSoft');
@@ -132,7 +132,8 @@ function softenDemoRows(app) {
 
 function ensureEmptyStates(app) {
   app.querySelectorAll('.scroll,.jobCards,.workerCards,.workCards,.ledgerList,.proofGrid,.teamQuickGrid').forEach((list) => {
-    if (list.children.length || list.querySelector('.cvOsV2Empty')) return;
+    const visible = Array.from(list.children).filter((child) => !child.classList.contains('cvOsV2DemoSoft') && !child.classList.contains('cvOsV2Empty'));
+    if (visible.length || list.querySelector('.cvOsV2Empty')) return;
     const empty = document.createElement('div');
     empty.className = 'cvOsV2Empty';
     empty.innerHTML = '<b>No saved records here yet.</b><p>Add the first record, or let Churvox prepare it and approve it from Command.</p>';
@@ -229,7 +230,7 @@ function run() {
   addLiveBanner(app);
   addCockpit(app);
   addPanelBadges(app);
-  softenDemoRows(app);
+  hideSeedRows(app);
   ensureEmptyStates(app);
   const drawer = app.querySelector('.cocDrawer');
   if (drawer) adminTrailFor(drawer);
