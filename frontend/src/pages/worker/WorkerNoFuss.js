@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { Briefcase, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
+import { Briefcase, CreditCard, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +22,14 @@ const stat = (job) => c(job?.status || job?.job_status || job?.workflow_status).
 const done = (job) => /complete|done|finished|cancelled|archived/.test(stat(job));
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 const map = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+const planText = (user) => c(user?.plan || user?.business_plan || user?.subscription_plan || user?.business?.plan || user?.company?.plan || user?.account?.plan || "").toLowerCase();
+const canTakeOnSitePayments = (user) => /operator|command|pro|enterprise/.test(planText(user));
+const jobAmount = (job) => {
+  const raw = job?.payment_due || job?.amount_due || job?.invoice_total || job?.total || job?.price || job?.quote_total || job?.job_price;
+  const number = Number(String(raw || "").replace(/[^0-9.]/g, ""));
+  if (!number) return "Office sets amount";
+  return `$${number.toFixed(number % 1 === 0 ? 0 : 2)}`;
+};
 
 const readDone = () => {
   try { return JSON.parse(localStorage.getItem("churvox-worker-finished") || "[]"); } catch { return []; }
@@ -141,7 +149,22 @@ function InfoCard({ job, count }) {
   );
 }
 
-function WorkCard({ job, started, finish, note, setNote, busy, act }) {
+function PaymentCard({ job, enabled, onPay }) {
+  return (
+    <section className={`swCard swActionCard swPayment ${enabled ? "" : "locked"}`}>
+      <span>Payment</span>
+      <h2>{enabled ? "Take payment on site" : "Payment locked"}</h2>
+      <div className="swFacts">
+        <Fact label="Plan" value={enabled ? "Operator / Command" : "Operator or Command"} />
+        <Fact label="Amount" value={jobAmount(job)} />
+      </div>
+      <small>Customer taps card. Funds go to the business account, not the worker.</small>
+      <button className={enabled ? "swPrimary" : "swLight"} type="button" onClick={onPay}><CreditCard size={16} />{enabled ? "Take payment" : "Locked"}</button>
+    </section>
+  );
+}
+
+function WorkCard({ job, started, finish, note, setNote, busy, act, canPay, onPay }) {
   const address = where(job);
   return (
     <>
@@ -162,6 +185,8 @@ function WorkCard({ job, started, finish, note, setNote, busy, act }) {
         <span>Do this</span>
         <h2>{what(job)}</h2>
       </section>
+
+      <PaymentCard job={job} enabled={canPay} onPay={onPay} />
 
       <section className="swCard swActionCard">
         <span>{finish ? "Before finish" : "Note"}</span>
@@ -211,6 +236,7 @@ export function NoFussJob() {
   const { id: jid } = useParams();
   const { jobs, load, go } = useJobs();
   const { post, patch } = useApi();
+  const { user } = useAuth();
   const queue = openJobs(jobs);
   const picked = jobs.find((item) => id(item) === jid && !readDone().includes(id(item))) || queue[0];
   const job = picked;
@@ -219,11 +245,23 @@ export function NoFussJob() {
   const [finish, setFinish] = useState(false);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const paymentEnabled = canTakeOnSitePayments(user);
 
   useEffect(() => {
     setStarted(/progress|started|active/.test(stat(job || {})));
     setNote(c(job?.worker_notes || ""));
   }, [jid, load, jobId]);
+
+  async function requestPayment() {
+    if (!paymentEnabled) {
+      toast.error("On-site payments are Operator and Command only");
+      return;
+    }
+    try {
+      await post("/onsite/worker-beacon", { state: "payment-request", source: "worker-payment", job_id: jobId, job_title: name(job), customer_name: who(job), amount: jobAmount(job) });
+    } catch {}
+    toast.info("Payment terminal setup required before charging cards");
+  }
 
   async function act() {
     if (!job) return;
@@ -255,7 +293,7 @@ export function NoFussJob() {
   if (load || !job) {
     return <Shell tab="Jobs" title="Jobs"><section className="swEmpty">{load ? "Loading" : "All jobs done."}</section></Shell>;
   }
-  return <Shell tab="Jobs" title={name(job)}><WorkCard job={job} started={started} finish={finish} note={note} setNote={setNote} busy={busy} act={act} /></Shell>;
+  return <Shell tab="Jobs" title={name(job)}><WorkCard job={job} started={started} finish={finish} note={note} setNote={setNote} busy={busy} act={act} canPay={paymentEnabled} onPay={requestPayment} /></Shell>;
 }
 
 export function NoFussMessages() {
@@ -300,6 +338,7 @@ export function NoFussMe() {
   const guide = [
     ["Today", "Next job only"],
     ["Jobs", "Start, finish, send"],
+    ["Payments", "Operator and Command only"],
     ["Messages", "Talk to office"],
     ["Help", "Pick a quick reason"],
   ];
@@ -308,7 +347,7 @@ export function NoFussMe() {
       <section className="swCard">
         <UserRound />
         <h2>{c(user?.name || user?.email || "Worker")}</h2>
-        <div className="swFacts"><Fact label="Email" value={c(user?.email)} /></div>
+        <div className="swFacts"><Fact label="Email" value={c(user?.email)} /><Fact label="Payments" value={canTakeOnSitePayments(user) ? "Operator / Command" : "Locked"} /></div>
       </section>
       <section className="swCard">
         <span>App guide</span>
