@@ -1,5 +1,5 @@
 // CHURVOX_OPTION_F_HIDE_SEED_DEMO_RUNTIME_20260630
-// Prevents seeded sample records from looking like live business data.
+// Prevents seeded sample records from looking like live business data without re-render loops.
 
 const STYLE_ID = 'option-f-hide-seed-demo-style';
 const SEED_PATTERNS = [
@@ -46,9 +46,26 @@ function pageKey() {
   return active ? String(active.textContent || '').trim().toLowerCase() : 'today';
 }
 
-function addEmptyNote(panel, label) {
-  if (!panel || panel.querySelector('.ofLiveEmptyNote')) return;
-  panel.insertAdjacentHTML('beforeend', `<div class="ofLiveEmptyNote"><b>No live ${label} yet</b><small>Sample records are hidden so the owner only sees real business data.</small></div>`);
+function setHidden(node, hidden) {
+  if (!node) return;
+  if (hidden && !node.classList.contains('ofSeedDemoHidden')) node.classList.add('ofSeedDemoHidden');
+  if (!hidden && node.classList.contains('ofSeedDemoHidden')) node.classList.remove('ofSeedDemoHidden');
+}
+
+function ensureEmptyNote(panel, label) {
+  if (!panel) return;
+  const html = `<b>No live ${label} yet</b><small>Sample records are hidden so the owner only sees real business data.</small>`;
+  let note = panel.querySelector(':scope > .ofLiveEmptyNote');
+  if (!note) {
+    note = document.createElement('div');
+    note.className = 'ofLiveEmptyNote';
+    panel.appendChild(note);
+  }
+  if (note.innerHTML !== html) note.innerHTML = html;
+}
+
+function removeEmptyNote(panel) {
+  panel?.querySelector(':scope > .ofLiveEmptyNote')?.remove();
 }
 
 function hideSeedRows() {
@@ -56,19 +73,18 @@ function hideSeedRows() {
   const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
   if (!root) return;
 
-  document.querySelectorAll('.ofSeedDemoHidden').forEach((node) => node.classList.remove('ofSeedDemoHidden'));
-  document.querySelectorAll('.ofLiveEmptyNote').forEach((node) => node.remove());
-
   const selectors = '.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow,.chip,.bubble';
-  root.querySelectorAll(selectors).forEach((node) => {
-    if (isSeedText(node.textContent)) node.classList.add('ofSeedDemoHidden');
-  });
+  root.querySelectorAll(selectors).forEach((node) => setHidden(node, isSeedText(node.textContent)));
 
   root.querySelectorAll('.cocPanel').forEach((panel) => {
-    const visibleRecords = Array.from(panel.querySelectorAll('.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow,.chip,.bubble')).filter((node) => !node.classList.contains('ofSeedDemoHidden'));
-    if (visibleRecords.length === 0 && isSeedText(panel.textContent)) {
+    const records = Array.from(panel.querySelectorAll(selectors));
+    const visibleRecords = records.filter((node) => !node.classList.contains('ofSeedDemoHidden'));
+    const onlySeedRecords = records.length > 0 && visibleRecords.length === 0 && isSeedText(panel.textContent);
+    if (onlySeedRecords) {
       const heading = panel.querySelector('h2')?.textContent || pageKey();
-      addEmptyNote(panel, heading.toLowerCase());
+      ensureEmptyNote(panel, heading.toLowerCase());
+    } else {
+      removeEmptyNote(panel);
     }
   });
 
@@ -80,9 +96,13 @@ function hideSeedRows() {
         panel.querySelector('.formGrid')?.remove();
         const h3 = panel.querySelector('h3');
         const p = panel.querySelector('p');
-        if (h3) h3.textContent = 'No live approvals waiting';
-        if (p) p.textContent = 'Real Command items will appear here when Churvox has prepared owner-approved work.';
-        panel.querySelectorAll('button').forEach((button) => { button.disabled = true; button.textContent = button.textContent || 'Waiting'; });
+        if (h3 && h3.textContent !== 'No live approvals waiting') h3.textContent = 'No live approvals waiting';
+        const message = 'Real Command items will appear here when Churvox has prepared owner-approved work.';
+        if (p && p.textContent !== message) p.textContent = message;
+        panel.querySelectorAll('button').forEach((button) => {
+          if (!button.disabled) button.disabled = true;
+          if (!button.textContent) button.textContent = 'Waiting';
+        });
       }
     });
   }
@@ -92,10 +112,12 @@ let scheduled = false;
 function schedule() {
   if (scheduled) return;
   scheduled = true;
-  window.requestAnimationFrame(() => {
+  const run = () => {
     scheduled = false;
     hideSeedRows();
-  });
+  };
+  if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+  else setTimeout(run, 16);
 }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_HIDE_SEED_DEMO__) {
@@ -106,7 +128,9 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_HIDE_SEED_DEMO__) {
   document.addEventListener('click', () => setTimeout(schedule, 160), true);
   document.addEventListener('input', schedule, true);
   document.addEventListener('change', schedule, true);
-  const observer = new MutationObserver(schedule);
+  const observer = new MutationObserver((mutations) => {
+    if (mutations.some((mutation) => Array.from(mutation.addedNodes || []).some((node) => node.nodeType === 1 && !node.classList?.contains('ofLiveEmptyNote')))) schedule();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   setInterval(schedule, 1500);
 }
