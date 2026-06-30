@@ -42,7 +42,7 @@ function setLog(message, data = null) {
 }
 
 function isAuditControl(button) {
-  return Boolean(button?.getAttribute?.('data-churvox-qa-control'));
+  return Boolean(button?.closest?.('[data-churvox-qa-control]') || button?.getAttribute?.('data-churvox-qa-control'));
 }
 
 async function request(endpoint, options = {}) {
@@ -67,11 +67,7 @@ async function connectXero() {
     }
     setLog('Xero connect endpoint responded, but no redirect URL was returned.', body);
   } catch (error) {
-    try {
-      window.location.href = api('/xero/connect/start');
-    } catch (_) {
-      setLog(`Xero connect failed: ${error.message}`);
-    }
+    setLog(`Xero connect failed: ${error.message}`);
   }
 }
 
@@ -137,3 +133,5 @@ if (typeof window !== 'undefined') {
   document.addEventListener('click', () => setTimeout(render, 120));
   setInterval(render, 1200);
 }
+
+export {};
