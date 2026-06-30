@@ -11,6 +11,7 @@ import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxWorkerNoFussHardCleanRuntime';
 import './runtime/churvoxWorkerJobsFallbackRuntime';
 import './runtime/churvoxDrawerClickSafetyRuntime';
+import './runtime/churvoxPlainSendGuardRuntime';
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
