@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./SimplePublic.css";
 import "./SimplePublicStrong.css";
+import "./ExecutivePublicPolish.css";
 
 const navLinks = [
   ["/features", "How it works"],
