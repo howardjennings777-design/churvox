@@ -114,8 +114,10 @@ function App() {
     <Route path="/worker/jobs" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
     <Route path="/worker/help" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
     <Route path="/worker/ops" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+    <Route path="/worker/messages" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
     <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
     <Route path="/worker/settings" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+    <Route path="/worker/profile" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
     <Route path="/privacy" element={<PrivacyPage />} /><Route path="/terms" element={<TermsPage />} /><Route path="/privacy-policy" element={<PrivacyPolicyPage />} /><Route path="/terms-of-service" element={<TermsOfServicePage />} /><Route path="/account-deletion" element={<AccountDeletionPage />} /><Route path="/platform-unlock" element={<PlatformUnlock />} />
     <Route path="/" element={<HomePage />} /><Route path="/pricing" element={<PricingPage />} /><Route path="/features" element={<FeaturesPage />} /><Route path="*" element={<RoleRedirect />} />
     <Route path="/fresh" element={<Navigate to="/dashboard" replace />} />
