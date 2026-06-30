@@ -17,6 +17,7 @@ function normalizeEndpoint(endpoint) {
   if (endpoint === "/team") return "/team/workers";
   if (endpoint === "/workers") return "/team/workers";
   if (endpoint === "/messages") return "/approved-notifications";
+  if (endpoint === "/ai/actions") return "/ai-review-items";
   return endpoint;
 }
 
@@ -47,6 +48,37 @@ function normalizeMessageBody(rawEndpoint, body) {
     ...item,
   }));
   return { success: true, messages, items: messages, data: messages };
+}
+
+function normalizeAiBody(rawEndpoint, body) {
+  if (rawEndpoint !== "/ai/actions") return body;
+  const rows = Array.isArray(body?.actions)
+    ? body.actions
+    : Array.isArray(body?.items)
+      ? body.items
+      : Array.isArray(body?.data)
+        ? body.data
+        : Array.isArray(body)
+          ? body
+          : [];
+  const actions = rows.map((item, index) => ({
+    id: item.id || item._id || item.action_id || `ai-${index}`,
+    type: item.type || item.action || item.category || "AI review item",
+    title: item.title || item.summary || item.label || "Prepared admin item",
+    status: item.status || (item.preparedForApproval ? "Ready" : "Review"),
+    owner: item.owner || item.recommended_action || "Approve",
+    client: item.client || item.client_name || item.customer_name || item.payload?.client_name || item.payload?.customer_name || "Business",
+    amount: item.amount || item.total || item.payload?.amount || item.payload?.price || 0,
+    filled: item.filled || item.summary || item.description || item.payload?.description || "Prepared for owner review.",
+    evidence: item.evidence || item.reason || item.match?.reason || "Prepared from live business records.",
+    check: item.check || item.owner_check || "Approve, edit or park in Command.",
+    ...item,
+  }));
+  return { success: true, actions, items: actions, data: actions };
+}
+
+function normalizeBody(rawEndpoint, body) {
+  return normalizeAiBody(rawEndpoint, normalizeMessageBody(rawEndpoint, body));
 }
 
 function normalizeId(value) {
@@ -175,7 +207,7 @@ export function useApi() {
           config.data = data;
         }
         const response = await axios(config);
-        const body = normalizeMessageBody(rawEndpoint, response.data);
+        const body = normalizeBody(rawEndpoint, response.data);
 
         if (method === "POST" && endpoint === "/invoices" && data?.job_id && body) {
           await markJobInvoiced({ jobId: data.job_id, invoice: invoiceRecord(body), headers, timeout: options.timeout });
