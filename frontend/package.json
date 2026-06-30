@@ -23,6 +23,7 @@
     "@radix-ui/react-slot": "^1.2.0",
     "@radix-ui/react-switch": "^1.2.2",
     "@radix-ui/react-tabs": "^1.1.9",
+    "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-toast": "^1.2.11",
     "@radix-ui/react-toggle": "^1.1.6",
     "@radix-ui/react-toggle-group": "^1.1.7",
@@ -112,7 +113,7 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6fd140556e2bb3137e",
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad3b73a279f04574",
   "optionalDependencies": {
     "@playwright/test": "^1.54.2"
   }
