@@ -18,7 +18,7 @@ def _text(value):
     if isinstance(value, ObjectId):
         return str(value)
     if isinstance(value, dict):
-        return _text(value.get("$oid") or value.get("id") or value.get("_id") or value.get("worker_id") or value.get("user_id"))
+        return _text(value.get("$oid") or value.get("id") or value.get("_id") or value.get("worker_id") or value.get("user_id") or value.get("email"))
     return str(value or "").strip()
 
 
@@ -68,19 +68,23 @@ def _worker_ids(user):
 def _assigned(job, user):
     ids = _worker_ids(user)
     email = str((user or {}).get("email") or "").strip().lower()
-    for key in ("assigned_worker_id", "worker_id", "assigned_to", "assignedWorkerId", "workerId", "staff_id", "team_member_id", "assigned_user_id"):
-        if _text(job.get(key)) in ids:
+    id_keys = ("assigned_worker_id", "worker_id", "assigned_to", "assignedWorkerId", "workerId", "staff_id", "team_member_id", "assigned_user_id")
+    for key in id_keys:
+        value = _text(job.get(key))
+        if value in ids:
             return True
-    for key in ("worker_email", "assigned_worker_email", "assigned_to_email", "staff_email"):
+        if email and value.lower() == email:
+            return True
+    for key in ("worker_email", "assigned_worker_email", "assigned_to_email", "staff_email", "email"):
         if email and str(job.get(key) or "").strip().lower() == email:
             return True
-    for row in (job.get("workers") or job.get("assigned_workers") or []):
+    for row in (job.get("workers") or job.get("assigned_workers") or job.get("team") or []):
         if isinstance(row, dict):
             if _text(row.get("id") or row.get("_id") or row.get("worker_id") or row.get("user_id")) in ids:
                 return True
             if email and str(row.get("email") or "").strip().lower() == email:
                 return True
-        elif _text(row) in ids:
+        elif _text(row) in ids or (email and _text(row).lower() == email):
             return True
     return False
 
