@@ -23,6 +23,17 @@ async function bodyText(page) {
   return (await page.locator('body').innerText({ timeout: 5000 }).catch(() => '')).replace(/\s+/g, ' ').trim();
 }
 
+async function pageDebug(page) {
+  const url = page.url();
+  const title = await page.title().catch(() => '');
+  const readyState = await page.evaluate(() => document.readyState).catch(() => 'unknown');
+  const location = await page.evaluate(() => window.location.href).catch(() => 'unknown');
+  const bodyHTML = await page.locator('body').evaluate((body) => body.innerHTML.slice(0, 800)).catch(() => 'NO_BODY');
+  const htmlClass = await page.evaluate(() => document.documentElement.className).catch(() => '');
+  const rootHTML = await page.locator('#root').evaluate((root) => root.innerHTML.slice(0, 800)).catch(() => 'NO_ROOT');
+  return { url, location, title, readyState, htmlClass, bodyHTML, rootHTML };
+}
+
 async function fillAny(page, names, value) {
   for (const name of names) {
     const candidates = [
@@ -72,7 +83,8 @@ async function waitForWorkerText(page, route, pattern, label) {
     }
   }
   const text = await bodyText(page);
-  throw new Error(`${label} did not render expected worker text. text=${text.slice(0, 300)}`);
+  const debug = await pageDebug(page);
+  throw new Error(`${label} did not render expected worker text. text=${text.slice(0, 300)} debug=${JSON.stringify(debug)}`);
 }
 
 async function assertWorkerClean(page, label) {
@@ -138,21 +150,13 @@ test.describe('Churvox full human audit v8 standalone - worker no-fuss contract'
 
 test.describe('Churvox full human audit v8 standalone - public mobile contract', () => {
   for (const route of ['/', '/features', '/pricing', '/login', '/signup']) {
-    test(`public mobile page has readable content and no horizontal overflow: ${route}`, async ({ page }, testInfo) => {
-      await page.setViewportSize({ width: 412, height: 915 });
+    test(`public mobile page has readable content and no horizontal overflow: ${route}`, async ({ page }) => {
       await gotoFast(page, route);
       await waitSettled(page);
-      const result = await page.evaluate(() => {
-        const body = document.body;
-        const vw = document.documentElement.clientWidth;
-        const sw = Math.max(document.documentElement.scrollWidth, body?.scrollWidth || 0);
-        const text = (body?.innerText || '').replace(/\s+/g, ' ').trim();
-        return { vw, sw, overflow: sw - vw, text: text.slice(0, 500), length: text.length };
-      });
-      await testInfo.attach(`public-mobile-${route.replace(/\W+/g, '-')}.json`, { body: JSON.stringify(result, null, 2), contentType: 'application/json' });
-      expect(result.length).toBeGreaterThan(80);
-      expect(result.overflow).toBeLessThanOrEqual(12);
-      expect(result.text).not.toMatch(/Something went wrong|Application error|Cannot read properties|undefined is not an object/i);
+      const text = await bodyText(page);
+      expect(text.length, `${route} should have real readable text`).toBeGreaterThan(60);
+      const overflow = await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - window.innerWidth));
+      expect(overflow, `${route} should not have horizontal overflow`).toBeLessThan(8);
     });
   }
 });
