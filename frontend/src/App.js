@@ -29,9 +29,7 @@ import QuoteDetailPage from "./pages/quotes/QuoteDetailPage";
 import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
 import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import ChurvoxHQPage from "./pages/ChurvoxHQPage";
-import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
-import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
-import WorkerSafeSettingsPage from "./pages/worker/WorkerSafeSettingsPage";
+import WorkerNoFussRoute from "./pages/worker/WorkerNoFuss";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
@@ -55,7 +53,6 @@ import CommandShell from "./components/CommandShell";
 import ConceptCFrame from "./concept-c/ConceptCFrame";
 import CommandDeskOperatorPage from "./pages/CommandDeskOperatorPageV4";
 import WorkerMapCommandPage from "./pages/WorkerMapCommandPage";
-import WorkerOperationsPage from "./pages/WorkerOperationsPage";
 import PayrollCommandPage from "./pages/PayrollCommandPage";
 import OfflineSyncPage from "./pages/OfflineSyncPage";
 import BillingReturnPage from "./pages/BillingReturnPage";
@@ -113,15 +110,16 @@ function App() {
     <Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} /><Route path="/billing" element={<BillingReturnBridge />} /><Route path="/billing/success" element={<BillingReturnBridge />} /><Route path="/billing/cancel" element={<BillingReturnBridge cancelled />} />
     <Route path="/team-board" element={<Navigate to="/dashboard#team" replace />} /><Route path="/team" element={<Navigate to="/team-board" replace />} /><Route path="/payroll-board" element={<Navigate to="/dashboard#team" replace />} /><Route path="/payroll" element={<Navigate to="/dashboard#team" replace />} />
     <Route path="/worker" element={<Navigate to="/worker/today" replace />} />
-    <Route path="/worker/today" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
-    <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
-    <Route path="/worker/help" element={<WorkerRoute><WorkerSafeSettingsPage /></WorkerRoute>} />
-    <Route path="/worker/ops" element={<WorkerRoute><WorkerOperationsPage /></WorkerRoute>} />
-    <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
-    <Route path="/worker/settings" element={<WorkerRoute><WorkerSafeSettingsPage /></WorkerRoute>} />
+    <Route path="/worker/today" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+    <Route path="/worker/jobs" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+    <Route path="/worker/help" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+    <Route path="/worker/ops" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+    <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+    <Route path="/worker/settings" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
     <Route path="/privacy" element={<PrivacyPage />} /><Route path="/terms" element={<TermsPage />} /><Route path="/privacy-policy" element={<PrivacyPolicyPage />} /><Route path="/terms-of-service" element={<TermsOfServicePage />} /><Route path="/account-deletion" element={<AccountDeletionPage />} /><Route path="/platform-unlock" element={<PlatformUnlock />} />
     <Route path="/" element={<HomePage />} /><Route path="/pricing" element={<PricingPage />} /><Route path="/features" element={<FeaturesPage />} /><Route path="*" element={<RoleRedirect />} />
     <Route path="/fresh" element={<Navigate to="/dashboard" replace />} />
   </Routes></ErrorBoundary></AuthProvider></BrowserRouter>;
 }
+
 export default App;
