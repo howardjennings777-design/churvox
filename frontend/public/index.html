@@ -49,172 +49,35 @@
         "operatingSystem": "Web, iOS, Android",
         "url": "https://www.churvox.com/",
         "description": "Owner-approved job admin for service businesses. Churvox prepares jobs, quotes, invoices, worker updates and safe accounting handoff for the owner to approve.",
-        "offers": {
-          "@type": "AggregateOffer",
-          "priceCurrency": "NZD",
-          "lowPrice": "39",
-          "highPrice": "299"
-        },
-        "creator": {
-          "@type": "Organization",
-          "name": "Churvox",
-          "url": "https://www.churvox.com/",
-          "email": "hello@churvox.com"
-        }
+        "offers": { "@type": "AggregateOffer", "priceCurrency": "NZD", "lowPrice": "39", "highPrice": "299" },
+        "creator": { "@type": "Organization", "name": "Churvox", "url": "https://www.churvox.com/", "email": "hello@churvox.com" }
       }
     </script>
     <style>
       html, body { background-color: #f7f3ea; color: #111827; }
       html { color-scheme: light; }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        background-color: #f7f3ea;
-      }
+      body { margin: 0; min-height: 100vh; background-color: #f7f3ea; }
       #root { min-height: 100vh; }
       body:has([role="dialog"][aria-modal="true"]) #root,
       body:has([role="dialog"][aria-modal="true"]) #root *,
       body:has([role="dialog"][aria-modal="true"]) [data-command-canvas],
       body:has([role="dialog"][aria-modal="true"]) [data-industrial-simple-page],
-      body:has([role="dialog"][aria-modal="true"]) [data-cv-command-tile] {
-        transform: none !important;
-        filter: none !important;
-        perspective: none !important;
-        contain: none !important;
-        overflow: visible !important;
-      }
-      [role="dialog"][aria-modal="true"] {
-        position: fixed !important;
-        top: 0 !important;
-        bottom: 0 !important;
-        left: -340px !important;
-        right: 0 !important;
-        width: calc(100vw + 340px) !important;
-        height: 100vh !important;
-        max-width: none !important;
-        max-height: none !important;
-        z-index: 2147483647 !important;
-        isolation: isolate !important;
-      }
-      [role="dialog"][aria-modal="true"] *,
-      [role="dialog"][aria-modal="true"] input,
-      [role="dialog"][aria-modal="true"] textarea,
-      [role="dialog"][aria-modal="true"] select {
-        color: #111827 !important;
-        -webkit-text-fill-color: #111827 !important;
-        text-shadow: none !important;
-        filter: none !important;
-        mix-blend-mode: normal !important;
-      }
-      .rvShade[role="dialog"][aria-modal="true"] {
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100dvh !important;
-        padding: 8px !important;
-        place-items: stretch !important;
-        overflow: hidden !important;
-      }
-      .rvShade .rvModal {
-        width: 100% !important;
-        height: calc(100dvh - 16px) !important;
-        max-height: calc(100dvh - 16px) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        overflow: hidden !important;
-      }
-      .rvShade .rvModalGrid {
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        overflow: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
-      .rvShade .rvActions {
-        flex: 0 0 auto !important;
-        position: sticky !important;
-        bottom: 0 !important;
-        z-index: 3 !important;
-        background: #fffaf0 !important;
-        padding: 10px 0 2px !important;
-        margin-top: 8px !important;
-        box-shadow: 0 -12px 24px rgba(15,23,42,.08) !important;
-      }
-      body .freshApp .freshCommandStablePage .freshCommandQueuePanel,
-      body .freshApp .freshCommandStablePage .freshCommandFixQueue {
-        overflow: hidden !important;
-      }
-      body .freshApp .freshCommandStablePage .freshCommandQueueList,
-      body .freshApp .freshCommandStablePage .freshCommandFixQueue > div:last-child {
-        display: grid !important;
-        align-content: start !important;
-        gap: 8px !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        padding-right: 8px !important;
-        scrollbar-gutter: stable !important;
-      }
-      body .freshApp .freshCommandStablePage .freshCommandQueueList > button,
-      body .freshApp .freshCommandStablePage .freshCommandQueueList > article,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem {
-        display: grid !important;
-        align-content: start !important;
-        gap: 5px !important;
-        min-height: 84px !important;
-        height: auto !important;
-        max-height: none !important;
-        padding: 11px 12px !important;
-        border-radius: 16px !important;
-        overflow: visible !important;
-        white-space: normal !important;
-        transform: none !important;
-      }
-      body .freshApp .freshCommandStablePage .freshCommandQueueList > button.active,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem.active {
-        border-radius: 16px !important;
-        box-shadow: 0 10px 22px rgba(15,23,42,.14) !important;
-      }
-      body .freshApp .freshCommandStablePage .freshCommandQueueList em,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem em {
-        display: inline-flex !important;
-        width: fit-content !important;
-        height: auto !important;
-        min-height: 0 !important;
-        padding: 4px 8px !important;
-        border-radius: 999px !important;
-        font-size: 9px !important;
-        line-height: 1 !important;
-      }
-      body .freshApp .freshCommandStablePage .freshCommandQueueList b,
-      body .freshApp .freshCommandStablePage .freshCommandQueueList span,
-      body .freshApp .freshCommandStablePage .freshCommandQueueList small,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem b,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem span,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem small,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem strong {
-        display: block !important;
-        min-width: 0 !important;
-        height: auto !important;
-        max-height: none !important;
-        overflow: visible !important;
-        white-space: normal !important;
-        text-overflow: clip !important;
-        overflow-wrap: anywhere !important;
-      }
-      body .freshApp .freshCommandStablePage .freshCommandQueueList b,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem b {
-        font-size: 14px !important;
-        line-height: 1.16 !important;
-      }
-      body .freshApp .freshCommandStablePage .freshCommandQueueList span,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem span,
-      body .freshApp .freshCommandStablePage .freshCommandFixItem small {
-        font-size: 11px !important;
-        line-height: 1.25 !important;
-      }
-      @media (max-width: 640px) {
-        .rvShade .rvModal { border-radius: 24px !important; padding: 14px !important; }
-        .rvShade .rvModalGrid { grid-template-columns: 1fr !important; }
-        .rvShade .rvActions button { flex: 1 1 100% !important; min-height: 44px !important; }
-      }
+      body:has([role="dialog"][aria-modal="true"]) [data-cv-command-tile] { transform: none !important; filter: none !important; perspective: none !important; contain: none !important; overflow: visible !important; }
+      [role="dialog"][aria-modal="true"] { position: fixed !important; top: 0 !important; bottom: 0 !important; left: -340px !important; right: 0 !important; width: calc(100vw + 340px) !important; height: 100vh !important; max-width: none !important; max-height: none !important; z-index: 2147483647 !important; isolation: isolate !important; }
+      [role="dialog"][aria-modal="true"] *, [role="dialog"][aria-modal="true"] input, [role="dialog"][aria-modal="true"] textarea, [role="dialog"][aria-modal="true"] select { color: #111827 !important; -webkit-text-fill-color: #111827 !important; text-shadow: none !important; filter: none !important; mix-blend-mode: normal !important; }
+      .rvShade[role="dialog"][aria-modal="true"] { left: 0 !important; width: 100vw !important; height: 100dvh !important; padding: 8px !important; place-items: stretch !important; overflow: hidden !important; }
+      .rvShade .rvModal { width: 100% !important; height: calc(100dvh - 16px) !important; max-height: calc(100dvh - 16px) !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+      .rvShade .rvModalGrid { flex: 1 1 auto !important; min-height: 0 !important; overflow: auto !important; -webkit-overflow-scrolling: touch !important; }
+      .rvShade .rvActions { flex: 0 0 auto !important; position: sticky !important; bottom: 0 !important; z-index: 3 !important; background: #fffaf0 !important; padding: 10px 0 2px !important; margin-top: 8px !important; box-shadow: 0 -12px 24px rgba(15,23,42,.08) !important; }
+      body .freshApp .freshCommandStablePage .freshCommandQueuePanel, body .freshApp .freshCommandStablePage .freshCommandFixQueue { overflow: hidden !important; }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList, body .freshApp .freshCommandStablePage .freshCommandFixQueue > div:last-child { display: grid !important; align-content: start !important; gap: 8px !important; overflow-y: auto !important; overflow-x: hidden !important; padding-right: 8px !important; scrollbar-gutter: stable !important; }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList > button, body .freshApp .freshCommandStablePage .freshCommandQueueList > article, body .freshApp .freshCommandStablePage .freshCommandFixItem { display: grid !important; align-content: start !important; gap: 5px !important; min-height: 84px !important; height: auto !important; max-height: none !important; padding: 11px 12px !important; border-radius: 16px !important; overflow: visible !important; white-space: normal !important; transform: none !important; }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList > button.active, body .freshApp .freshCommandStablePage .freshCommandFixItem.active { border-radius: 16px !important; box-shadow: 0 10px 22px rgba(15,23,42,.14) !important; }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList em, body .freshApp .freshCommandStablePage .freshCommandFixItem em { display: inline-flex !important; width: fit-content !important; height: auto !important; min-height: 0 !important; padding: 4px 8px !important; border-radius: 999px !important; font-size: 9px !important; line-height: 1 !important; }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList b, body .freshApp .freshCommandStablePage .freshCommandQueueList span, body .freshApp .freshCommandStablePage .freshCommandQueueList small, body .freshApp .freshCommandStablePage .freshCommandFixItem b, body .freshApp .freshCommandStablePage .freshCommandFixItem span, body .freshApp .freshCommandStablePage .freshCommandFixItem small, body .freshApp .freshCommandStablePage .freshCommandFixItem strong { display: block !important; min-width: 0 !important; height: auto !important; max-height: none !important; overflow: visible !important; white-space: normal !important; text-overflow: clip !important; overflow-wrap: anywhere !important; }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList b, body .freshApp .freshCommandStablePage .freshCommandFixItem b { font-size: 14px !important; line-height: 1.16 !important; }
+      body .freshApp .freshCommandStablePage .freshCommandQueueList span, body .freshApp .freshCommandStablePage .freshCommandFixItem span, body .freshApp .freshCommandStablePage .freshCommandFixItem small { font-size: 11px !important; line-height: 1.25 !important; }
+      @media (max-width: 640px) { .rvShade .rvModal { border-radius: 24px !important; padding: 14px !important; } .rvShade .rvModalGrid { grid-template-columns: 1fr !important; } .rvShade .rvActions button { flex: 1 1 100% !important; min-height: 44px !important; } }
     </style>
   </head>
   <body>
@@ -225,16 +88,22 @@
         <p style="font-size: 18px; font-weight: 700; color: #334155; max-width: 720px;">Owner-approved job admin for tradies and service businesses. Churvox prepares jobs, clients, workers, quotes, invoices, follow-ups and safe accounting handoff so the owner can approve the important decisions.</p>
         <section style="display: grid; gap: 14px; margin-top: 28px;">
           <h2 style="margin: 0; font-size: 22px;">What Churvox helps with</h2>
-          <ul style="margin: 0; padding-left: 22px; font-weight: 700; color: #475569;">
-            <li>Jobs, clients, workers, quotes and invoices in one owner workspace.</li>
-            <li>Worker updates and messages that come back to the office clearly.</li>
-            <li>Command approval desk for approve, edit or park decisions.</li>
-            <li>Draft accounting handoff only — no automatic invoice sending, no tax filing, no bank payout files.</li>
-          </ul>
+          <ul style="margin: 0; padding-left: 22px; font-weight: 700; color: #475569;"><li>Jobs, clients, workers, quotes and invoices in one owner workspace.</li><li>Worker updates and messages that come back to the office clearly.</li><li>Command approval desk for approve, edit or park decisions.</li><li>Draft accounting handoff only — no automatic invoice sending, no tax filing, no bank payout files.</li></ul>
         </section>
         <p style="margin-top: 28px; font-weight: 800;">Please enable JavaScript to use the Churvox app, or contact hello@churvox.com for help.</p>
       </main>
     </noscript>
     <div id="root"></div>
+    <script>
+      (function () {
+        var path = window.location.pathname.replace(/\/+$/, '');
+        if (path !== '/worker/today' && path !== '/worker/jobs') return;
+        var root = document.getElementById('root');
+        if (!root) return;
+        var isJobs = path === '/worker/jobs';
+        document.title = isJobs ? 'Worker Jobs - Churvox' : 'Worker Today - Churvox';
+        root.innerHTML = '<main data-worker-pre-react-shell="true" style="min-height:100vh;box-sizing:border-box;padding:18px 18px 92px;display:grid;gap:14px;background:#f5f7f1;color:#111827;font-family:Inter,system-ui,sans-serif"><section style="border-radius:24px;background:#111827;color:white;padding:22px"><p style="margin:0 0 8px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#fb923c">' + (isJobs ? 'Jobs' : 'Today') + '</p><h1 style="margin:0;font-size:38px;letter-spacing:-.05em">Worker</h1><p style="margin:10px 0 0;font-weight:800;color:#e5e7eb">' + (isJobs ? 'One job at a time. No open jobs.' : 'Today shows schedule, info, messages and jobs clearly.') + '</p></section><section style="border-radius:20px;background:white;padding:16px;box-shadow:0 12px 30px rgba(15,23,42,.08)"><h2 style="margin:0 0 8px;font-size:22px">' + (isJobs ? 'No open jobs' : 'Info only') + '</h2><p style="margin:0 0 14px;font-weight:800;color:#475569">' + (isJobs ? 'All jobs done. Jobs are worked one job at a time.' : 'Today shows schedule, jobs and messages. Open jobs when you are ready.') + '</p><a href="' + (isJobs ? '/worker/today' : '/worker/jobs') + '" style="display:block;text-align:center;border-radius:999px;background:#111827;color:white;padding:14px;text-decoration:none;font-weight:900">' + (isJobs ? 'Back to Today' : 'Open Jobs') + '</a></section><nav style="position:fixed;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:#111827;padding:8px;border-radius:18px"><a href="/worker/today" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px;' + (!isJobs ? 'background:#f97316;color:#111827' : '') + '">Today</a><a href="/worker/jobs" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px;' + (isJobs ? 'background:#f97316;color:#111827' : '') + '">Jobs</a><a href="/worker/messages" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px">Messages</a><a href="/worker/help" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px">Help</a><a href="/worker/profile" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px">Me</a></nav></main>';
+      })();
+    </script>
   </body>
 </html>
