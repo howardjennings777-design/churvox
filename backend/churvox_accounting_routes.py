@@ -94,7 +94,11 @@ def _owner_role(user):
 
 
 def _stripe_key():
-    return os.environ.get("STRIPE_SECRET_KEY", "").strip()
+    return (
+        os.environ.get("STRIPE_CONNECT_SECRET_KEY")
+        or os.environ.get("STRIPE_SECRET_KEY")
+        or ""
+    ).strip()
 
 
 def _frontend_url():

@@ -61,7 +61,11 @@ def is_allowed_plan(plan):
 
 
 def stripe_key():
-    return text(os.environ.get("STRIPE_SECRET_KEY") or os.environ.get("CHURVOX_STRIPE_SECRET_KEY"))
+    return text(
+        os.environ.get("STRIPE_CONNECT_SECRET_KEY")
+        or os.environ.get("STRIPE_SECRET_KEY")
+        or os.environ.get("CHURVOX_STRIPE_SECRET_KEY")
+    )
 
 
 def frontend_url():
