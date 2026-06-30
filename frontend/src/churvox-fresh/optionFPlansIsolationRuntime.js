@@ -130,7 +130,7 @@ function postDirectForm(plan) {
   form.submit();
 }
 async function openSmartPlan(plan, button) {
-  if (button?.getAttribute?.('data-churvox-qa-control')) {
+  if (button?.closest?.('[data-churvox-qa-control]') || button?.getAttribute?.('data-churvox-qa-control')) {
     toast('Checkout control ready', 'Smart checkout skipped for audit.');
     return;
   }
