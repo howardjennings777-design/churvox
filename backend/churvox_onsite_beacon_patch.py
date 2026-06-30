@@ -317,7 +317,7 @@ class Loader(importlib.abc.Loader):
 
     def create_module(self, spec):
         if hasattr(self.original, "create_module"):
-            return self.original.create_module()
+            return self.original.create_module(spec)
         return None
 
     def exec_module(self, module):
