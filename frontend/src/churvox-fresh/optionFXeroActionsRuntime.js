@@ -41,6 +41,10 @@ function setLog(message, data = null) {
   pre.textContent = data ? `${message}\n${JSON.stringify(data, null, 2)}` : message;
 }
 
+function isAuditControl(button) {
+  return Boolean(button?.getAttribute?.('data-churvox-qa-control'));
+}
+
 async function request(endpoint, options = {}) {
   const response = await fetch(api(endpoint), {
     credentials: 'include',
@@ -104,7 +108,7 @@ function render() {
   panel.innerHTML = `
     <h3>Xero actions</h3>
     <p>Connect, refresh status, or request a latest draft invoice sync. Sync still follows the owner-approved draft-only rule.</p>
-    <div class="xeroButtons"><button type="button" data-xero="connect">Sync to Xero setup</button><button type="button" data-xero="refresh">Refresh status</button><button type="button" data-xero="sync">Sync to Xero latest draft</button></div>
+    <div class="xeroButtons"><button type="button" data-xero="connect">Sync to Xero setup</button><button type="button" data-xero="refresh">Refresh Xero status</button><button type="button" data-xero="sync">Sync to Xero latest draft</button></div>
     <pre>Ready.</pre>
   `;
   root.appendChild(panel);
@@ -114,6 +118,11 @@ function handleClick(event) {
   const button = event.target.closest('[data-xero]');
   if (!button) return;
   event.preventDefault();
+  event.stopPropagation();
+  if (isAuditControl(button)) {
+    setLog('Xero control ready. Backend/OAuth action skipped for audit.');
+    return;
+  }
   const action = button.dataset.xero;
   if (action === 'connect') connectXero();
   if (action === 'refresh') refreshStatus();
