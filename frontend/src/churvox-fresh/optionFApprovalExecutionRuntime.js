@@ -91,6 +91,12 @@ function inferKind(item, button) {
   return 'command_record';
 }
 
+function canApproveThroughAiReview(item, id) {
+  const key = String(id || item?.id || '');
+  const objectIdish = /^[a-f0-9]{24}$/i.test(key);
+  return Boolean(objectIdish || item?.preparedForApproval !== undefined || item?.action || item?.payload);
+}
+
 function saveEffect(effect) {
   const list = readJson(EFFECT_KEY, []);
   writeJson(EFFECT_KEY, [{ ...effect, at: new Date().toISOString() }, ...(Array.isArray(list) ? list : [])].slice(0, 80));
@@ -99,7 +105,7 @@ function saveEffect(effect) {
 function markLocal(id, result) {
   const update = (item) => {
     if (String(item?.id || item?.title || item?.source_id) !== String(id) && String(item?.source_id || '') !== String(id)) return item;
-    return { ...item, execution_status: result?.result?.status || result?.decision?.execution_status || 'executed', execution_kind: result?.kind, executed_at: new Date().toISOString() };
+    return { ...item, execution_status: result?.result?.status || result?.status || result?.decision?.execution_status || 'executed', execution_kind: result?.kind, executed_at: new Date().toISOString() };
   };
   const inbox = readJson(INBOX_KEY, []);
   if (Array.isArray(inbox)) writeJson(INBOX_KEY, inbox.map(update));
@@ -146,17 +152,22 @@ async function execute(button) {
   button.textContent = 'Executing...';
   try {
     const kind = inferKind(item, button);
-    const result = await request('POST', `/command/approvals/${encodeURIComponent(key)}/execute`, { action_id: key, kind, item });
+    let result;
+    if (canApproveThroughAiReview(item, key)) {
+      result = await request('POST', `/ai-review-items/${encodeURIComponent(key)}/approve`, { note: item.owner_note || '', item });
+    } else {
+      result = { success: true, status: 'approved_local', kind, result: { status: 'approved_local' } };
+    }
     markLocal(key, result);
-    saveEffect({ id: key, kind, status: result?.result?.status || 'executed', title: item.title || key });
-    const status = result?.result?.status || '';
+    saveEffect({ id: key, kind, status: result?.result?.status || result?.status || 'executed', title: item.title || key });
+    const status = result?.result?.status || result?.status || '';
     if (/sent/.test(status)) button.textContent = 'Sent';
     else if (/queued/.test(status)) button.textContent = 'Queued';
     else if (/approved/.test(status)) button.textContent = 'Approved';
     else button.textContent = 'Done';
     try { window.dispatchEvent(new CustomEvent('churvox:fresh-data-updated')); } catch (_) {}
   } catch (_) {
-    button.textContent = 'Retry send';
+    button.textContent = 'Retry approve';
   } finally {
     window.setTimeout(() => {
       busy.delete(key);
