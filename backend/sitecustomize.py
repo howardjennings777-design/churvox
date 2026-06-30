@@ -160,3 +160,8 @@ try:
     import churvox_on_site_payments_patch  # noqa: F401
 except Exception:
     pass
+
+try:
+    import churvox_payment_account_env_patch  # noqa: F401
+except Exception:
+    pass
