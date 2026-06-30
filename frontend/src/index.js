@@ -14,6 +14,8 @@ import './runtime/churvoxWorkerJobsFallbackRuntime';
 import './runtime/churvoxWorkerBlankFallbackRuntime';
 import './runtime/churvoxDrawerClickSafetyRuntime';
 import './runtime/churvoxPlainSendGuardRuntime';
+import './runtime/churvoxPlanPersistenceRuntime';
+import './runtime/churvoxFirstRunSetupRuntime';
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
