@@ -6,6 +6,11 @@ import builtins
 import sys
 from datetime import datetime, timezone
 
+try:
+    import churvox_os_v2_saved_records_patch  # noqa: F401
+except Exception:
+    pass
+
 _ORIGINAL_IMPORT = builtins.__import__
 PATH = "/api/worker/jobs/{job_id}/complete"
 
@@ -63,6 +68,11 @@ def _install(module):
     Request = getattr(module, "Request", None)
     if app is None or db is None or get_current_user is None or HTTPException is None or Request is None:
         return
+    try:
+        if hasattr(churvox_os_v2_saved_records_patch, "_install"):
+            churvox_os_v2_saved_records_patch._install(module)
+    except Exception:
+        pass
     if getattr(app.state, "worker_complete_elapsed_patch", False):
         return
     try:
