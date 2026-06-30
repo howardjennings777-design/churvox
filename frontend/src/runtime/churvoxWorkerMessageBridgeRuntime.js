@@ -17,6 +17,14 @@ function compact(value) { return String(value || '').replace(/\s+/g, ' ').trim()
 function history() { try { return JSON.parse(localStorage.getItem(STORE) || '[]'); } catch { return []; } }
 function save(row) { try { localStorage.setItem(STORE, JSON.stringify([row, ...history()].slice(0, 30))); } catch {} }
 function token() { try { return localStorage.getItem('token') || ''; } catch { return ''; } }
+function clearTextarea(textarea) {
+  if (!textarea) return;
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+  if (setter) setter.call(textarea, '');
+  else textarea.value = '';
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  textarea.dispatchEvent(new Event('change', { bubbles: true }));
+}
 async function sendBackend(message) {
   const headers = { 'Content-Type': 'application/json' };
   const t = token();
@@ -81,7 +89,7 @@ async function handleSend(event) {
   button.textContent = 'Sending';
   const delivered = await sendBackend(message);
   save({ at: new Date().toISOString(), message, status: delivered ? 'Sent' : 'Saved for office' });
-  if (textarea) textarea.value = '';
+  clearTextarea(textarea);
   button.disabled = false;
   button.textContent = delivered ? 'Sent' : 'Saved';
   noteAfter(button, 'cvWorkerMessageSaved', delivered ? 'Sent to office' : 'Saved for office');
