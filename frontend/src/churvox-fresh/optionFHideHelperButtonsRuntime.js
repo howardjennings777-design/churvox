@@ -1,5 +1,5 @@
-import './optionFChurvoxOsV2Runtime';
 import '../runtime/churvoxWorkerMessageBridgeRuntime';
+import './optionFChurvoxOsV2Runtime';
 
 // CHURVOX_OPTION_F_HIDE_HELPER_BUTTONS_20260630
 // Keeps old helper/test controls out of the owner workspace.
