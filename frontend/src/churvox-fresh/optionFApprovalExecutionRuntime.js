@@ -108,7 +108,7 @@ function markLocal(id, result) {
 }
 
 function isAuditControl(button) {
-  return Boolean(button?.getAttribute?.('data-churvox-qa-control'));
+  return Boolean(button?.closest?.('[data-churvox-qa-control]') || button?.getAttribute?.('data-churvox-qa-control'));
 }
 
 function isApprovalButton(button) {
