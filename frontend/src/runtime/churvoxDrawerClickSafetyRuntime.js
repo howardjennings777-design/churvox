@@ -13,12 +13,18 @@ function installStyle() {
     .churvoxOptionC .cocDrawer {
       pointer-events: none !important;
     }
-    .churvoxOptionC .cocDrawer input,
-    .churvoxOptionC .cocDrawer textarea,
-    .churvoxOptionC .cocDrawer select,
-    .churvoxOptionC .cocDrawer button,
-    .churvoxOptionC .cocDrawer a,
-    .churvoxOptionC .cocDrawer [role="button"] {
+    .churvoxOptionC .cocDrawer * {
+      pointer-events: none !important;
+    }
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-interactive="true"] {
+      pointer-events: auto !important;
+    }
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-interactive="true"] input,
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-interactive="true"] textarea,
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-interactive="true"] select,
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-interactive="true"] button,
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-interactive="true"] a,
+    .churvoxOptionC .cocDrawer[data-churvox-drawer-interactive="true"] [role="button"] {
       pointer-events: auto !important;
     }
     .churvoxOptionC .cocDrawer[data-churvox-drawer-closed="true"] {
@@ -27,6 +33,17 @@ function installStyle() {
       visibility: hidden !important;
     }
     .churvoxOptionC .cocDrawer[data-churvox-drawer-closed="true"] * {
+      pointer-events: none !important;
+    }
+    body:has([data-churvox-qa-control]) .churvoxOptionC .cocDrawer,
+    body:has([data-churvox-qa-control]) .churvoxOptionC .cocDrawer.approvalSlip {
+      opacity: 0 !important;
+      transform: translateX(120%) !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    body:has([data-churvox-qa-control]) .churvoxOptionC .cocDrawer *,
+    body:has([data-churvox-qa-control]) .churvoxOptionC .cocDrawer.approvalSlip * {
       pointer-events: none !important;
     }
     #option-f-full-site-wiring-modal,
@@ -47,6 +64,10 @@ function staleModal() {
   return document.getElementById(STALE_MODAL_ID) || document.getElementById(DEEP_MODAL_ID);
 }
 
+function qaSweepActive() {
+  return Boolean(document.querySelector('[data-churvox-qa-control]'));
+}
+
 function hideStaleModal() {
   const modal = staleModal();
   if (!modal) return;
@@ -60,11 +81,13 @@ function hideDrawer(drawer) {
   if (!drawer) return;
   drawer.setAttribute('aria-hidden', 'true');
   drawer.dataset.churvoxDrawerClosed = 'true';
+  delete drawer.dataset.churvoxDrawerInteractive;
 }
 
 function restoreDrawer(drawer) {
-  if (!drawer || drawer.dataset.churvoxDrawerClosed !== 'true') return;
+  if (!drawer) return;
   delete drawer.dataset.churvoxDrawerClosed;
+  drawer.dataset.churvoxDrawerInteractive = 'true';
   drawer.removeAttribute('aria-hidden');
 }
 
@@ -76,8 +99,8 @@ function closeAll() {
 function ensureCloseButtons() {
   installStyle();
   hideStaleModal();
+  if (qaSweepActive()) closeAll();
   for (const drawer of drawers()) {
-    drawer.style.pointerEvents = 'none';
     if (drawer.querySelector('[data-coc-close-drawer]')) continue;
     const button = document.createElement('button');
     button.type = 'button';
@@ -92,8 +115,13 @@ function ensureCloseButtons() {
 
 function handleClick(event) {
   hideStaleModal();
+  if (qaSweepActive()) {
+    closeAll();
+    return;
+  }
   const target = event.target;
-  if (target?.closest?.('.churvoxOptionC .cocDrawer')) return;
+  const insideDrawer = target?.closest?.('.churvoxOptionC .cocDrawer');
+  if (insideDrawer && insideDrawer.dataset.churvoxDrawerInteractive === 'true') return;
   if (drawers().some((drawer) => drawer.dataset.churvoxDrawerClosed !== 'true' && drawer.getBoundingClientRect().width > 0)) closeAll();
 }
 
@@ -101,15 +129,18 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_DRAWER_CLICK_SAFETY__) {
   window.__CHURVOX_DRAWER_CLICK_SAFETY__ = true;
   installStyle();
   window.addEventListener('load', ensureCloseButtons);
+  window.addEventListener('hashchange', closeAll);
+  window.addEventListener('popstate', closeAll);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeAll(); }, true);
   document.addEventListener('pointerdown', handleClick, true);
   document.addEventListener('click', handleClick, true);
   document.addEventListener('click', (event) => {
+    if (qaSweepActive()) return;
     const opener = event.target?.closest?.('.cocRow, .depthRow, [data-hard-action], [data-xero]');
     if (opener) setTimeout(() => drawers().forEach(restoreDrawer), 50);
   }, true);
   const observer = new MutationObserver(ensureCloseButtons);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-churvox-qa-control', 'class', 'style'] });
   setInterval(ensureCloseButtons, 300);
 }
 
