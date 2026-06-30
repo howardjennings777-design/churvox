@@ -11,32 +11,33 @@ function ensureStyle() {
   const style = document.createElement('style');
   style.id = 'churvox-xero-payments-style';
   style.textContent = `
-    #${PANEL_ID}{display:grid;gap:14px;border-radius:22px;padding:18px;background:linear-gradient(135deg,#111827,#1f2937 58%,#f97316);color:#fff;box-shadow:0 14px 34px rgba(15,23,42,.14);grid-column:1/-1;order:20;margin-top:10px}
-    #${PANEL_ID} *{box-sizing:border-box}
-    #${PANEL_ID} .cvPayTop{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:14px;align-items:stretch}
-    #${PANEL_ID} .cvPayHero,#${PANEL_ID} .cvPaySetup,#${PANEL_ID} .cvPayCard,#${PANEL_ID} .cvPayFlow{border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.09);padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
-    #${PANEL_ID} .cvPayHero{display:grid;gap:9px;align-content:start}
-    #${PANEL_ID} .cvPaySetup{display:grid;gap:10px;align-content:start;background:rgba(255,255,255,.13)}
-    #${PANEL_ID} span.cvPayKicker{display:inline-flex;width:max-content;border-radius:999px;background:rgba(255,255,255,.14);padding:6px 10px;color:#fed7aa;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
-    #${PANEL_ID} h2{margin:0;font-size:26px;letter-spacing:-.04em;color:#fff!important}
-    #${PANEL_ID} h3{margin:0;font-size:15px;color:#fff!important;letter-spacing:-.02em}
-    #${PANEL_ID} p{margin:0;color:#f8fafc!important;font-weight:850;line-height:1.35}
-    #${PANEL_ID} small{display:block;color:#fed7aa!important;font-weight:900;line-height:1.35}
-    #${PANEL_ID} .cvPayStatus{border-radius:14px;background:rgba(255,255,255,.12);padding:10px 12px;color:#fff!important;font-size:13px;font-weight:900}
-    #${PANEL_ID} .cvPayActions{display:flex;gap:8px;flex-wrap:wrap}
-    #${PANEL_ID} button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;border:0;border-radius:999px;padding:10px 14px;background:#fff;color:#111827!important;text-decoration:none;font-weight:1000;box-shadow:0 12px 24px rgba(15,23,42,.16);cursor:pointer}
-    #${PANEL_ID} button.cvPaySecondary{background:rgba(255,255,255,.12);color:#fff!important;border:1px solid rgba(255,255,255,.18);box-shadow:none}
-    #${PANEL_ID} button:disabled{opacity:.7;cursor:wait}
-    #${PANEL_ID} .cvPayGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-    #${PANEL_ID} .cvPayCard{display:grid;gap:6px;min-height:118px;align-content:start}
-    #${PANEL_ID} .cvPayCard b{display:block;color:#fff;font-size:13px;font-weight:1000}
-    #${PANEL_ID} .cvPayCard em{display:inline-flex;width:max-content;border-radius:999px;padding:5px 8px;background:rgba(255,255,255,.12);color:#fed7aa;font-size:11px;font-style:normal;font-weight:950;text-transform:uppercase}
-    #${PANEL_ID} .cvPayCard p{font-size:12px;color:#f8fafc!important}
-    #${PANEL_ID} .cvPayFlow{display:grid;gap:8px;background:rgba(15,23,42,.18)}
-    #${PANEL_ID} .cvPaySteps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-    #${PANEL_ID} .cvPaySteps b{display:grid;gap:4px;border-radius:14px;background:rgba(255,255,255,.1);padding:10px;color:#fff;font-size:12px;font-weight:950;min-height:76px;align-content:start}
-    #${PANEL_ID} .cvPaySteps i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;background:#fff;color:#111827;font-style:normal;font-weight:1000;font-size:11px}
-    @media(max-width:980px){#${PANEL_ID} .cvPayTop,#${PANEL_ID} .cvPayGrid,#${PANEL_ID} .cvPaySteps{grid-template-columns:1fr}}
+    #${PANEL_ID}{display:grid!important;gap:14px!important;border:1px solid rgba(17,24,39,.08)!important;border-radius:24px!important;padding:16px!important;background:#f8f5ef!important;color:#111827!important;box-shadow:0 14px 34px rgba(15,23,42,.12)!important;grid-column:1/-1!important;order:20!important;margin-top:10px!important;overflow:hidden!important}
+    #${PANEL_ID} *{box-sizing:border-box!important}
+    #${PANEL_ID} .cvPayTop{display:grid!important;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr)!important;gap:14px!important;align-items:stretch!important}
+    #${PANEL_ID} .cvPayHero{display:grid!important;gap:10px!important;align-content:start!important;min-height:190px!important;border-radius:20px!important;padding:18px!important;background:linear-gradient(135deg,#111827,#1f2937 58%,#f97316)!important;color:#fff!important;box-shadow:0 16px 34px rgba(17,24,39,.18)!important;position:relative!important;overflow:hidden!important}
+    #${PANEL_ID} .cvPayHero:after{content:""!important;position:absolute!important;right:-60px!important;top:-70px!important;width:190px!important;height:190px!important;border:26px solid rgba(249,115,22,.28)!important;border-radius:999px!important}
+    #${PANEL_ID} .cvPaySetup{display:grid!important;gap:11px!important;align-content:start!important;border:1px solid rgba(17,24,39,.1)!important;border-radius:20px!important;background:#fff!important;padding:16px!important;color:#111827!important;box-shadow:0 14px 30px rgba(15,23,42,.08)!important}
+    #${PANEL_ID} span.cvPayKicker{display:inline-flex!important;width:max-content!important;border-radius:999px!important;background:rgba(255,255,255,.14)!important;padding:6px 10px!important;color:#fed7aa!important;font-size:11px!important;font-weight:950!important;text-transform:uppercase!important;letter-spacing:.08em!important;position:relative!important;z-index:1!important}
+    #${PANEL_ID} h2{margin:0!important;font-size:28px!important;letter-spacing:-.04em!important;color:#fff!important;position:relative!important;z-index:1!important}
+    #${PANEL_ID} h3{margin:0!important;font-size:16px!important;color:#111827!important;letter-spacing:-.02em!important}
+    #${PANEL_ID} .cvPayHero p{margin:0!important;color:#fff!important;font-weight:900!important;line-height:1.35!important;position:relative!important;z-index:1!important}
+    #${PANEL_ID} .cvPayHero small{display:block!important;color:#fed7aa!important;font-weight:950!important;line-height:1.35!important;position:relative!important;z-index:1!important}
+    #${PANEL_ID} .cvPaySetup p,#${PANEL_ID} .cvPayCard p,#${PANEL_ID} .cvPayFlow p{margin:0!important;color:#374151!important;font-weight:850!important;line-height:1.35!important}
+    #${PANEL_ID} .cvPayStatus{border-radius:14px!important;background:#fff7ed!important;border:1px solid rgba(249,115,22,.22)!important;padding:11px 12px!important;color:#9a3412!important;font-size:13px!important;font-weight:950!important;min-height:46px!important}
+    #${PANEL_ID} .cvPayActions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+    #${PANEL_ID} button{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:44px!important;width:100%!important;border:0!important;border-radius:999px!important;padding:10px 14px!important;background:#111827!important;color:#fff!important;text-decoration:none!important;font-weight:1000!important;box-shadow:0 12px 24px rgba(15,23,42,.16)!important;cursor:pointer!important;white-space:nowrap!important}
+    #${PANEL_ID} button.cvPaySecondary{background:#f3f4f6!important;color:#111827!important;border:1px solid rgba(17,24,39,.1)!important;box-shadow:none!important}
+    #${PANEL_ID} button:disabled{opacity:.7!important;cursor:wait!important}
+    #${PANEL_ID} .cvPayGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+    #${PANEL_ID} .cvPayCard{display:grid!important;gap:7px!important;min-height:122px!important;align-content:start!important;border:1px solid rgba(17,24,39,.09)!important;border-radius:18px!important;background:#fff!important;padding:14px!important;color:#111827!important;box-shadow:0 10px 22px rgba(15,23,42,.05)!important}
+    #${PANEL_ID} .cvPayCard b{display:block!important;color:#111827!important;font-size:14px!important;font-weight:1000!important;line-height:1.25!important}
+    #${PANEL_ID} .cvPayCard em{display:inline-flex!important;width:max-content!important;border-radius:999px!important;padding:5px 8px!important;background:#fff7ed!important;color:#c2410c!important;font-size:11px!important;font-style:normal!important;font-weight:950!important;text-transform:uppercase!important}
+    #${PANEL_ID} .cvPayFlow{display:grid!important;gap:10px!important;border:1px solid rgba(17,24,39,.09)!important;border-radius:18px!important;background:#111827!important;padding:14px!important;color:#fff!important;box-shadow:0 10px 24px rgba(17,24,39,.12)!important}
+    #${PANEL_ID} .cvPayFlow h3{color:#fff!important}
+    #${PANEL_ID} .cvPaySteps{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
+    #${PANEL_ID} .cvPaySteps b{display:grid!important;gap:6px!important;border-radius:14px!important;background:rgba(255,255,255,.1)!important;padding:10px!important;color:#fff!important;font-size:12px!important;font-weight:950!important;min-height:78px!important;align-content:start!important;line-height:1.25!important}
+    #${PANEL_ID} .cvPaySteps i{display:inline-grid!important;place-items:center!important;width:24px!important;height:24px!important;border-radius:999px!important;background:#fff!important;color:#111827!important;font-style:normal!important;font-weight:1000!important;font-size:11px!important}
+    @media(max-width:980px){#${PANEL_ID} .cvPayTop,#${PANEL_ID} .cvPayGrid,#${PANEL_ID} .cvPaySteps{grid-template-columns:1fr!important}#${PANEL_ID} .cvPayActions{grid-template-columns:1fr!important}}
   `;
   document.head.appendChild(style);
 }
