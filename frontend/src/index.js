@@ -5,6 +5,7 @@ import RecordWorkspacePopupBridgeV2 from './components/RecordWorkspacePopupBridg
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './components/recordWorkspacePopup.css';
+import './runtime/churvoxNativeTimerRuntime';
 import './runtime/churvoxRouteAliasRuntime';
 import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
@@ -16,6 +17,7 @@ import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './churvox-fresh/optionFPageActionRuntime';
+import './churvox-fresh/optionFRestoreTimersRuntime';
 import './churvox-fresh/optionCCommandBarFix.css';
 import './churvox-fresh/optionCPolish.css';
 import './churvox-fresh/optionCProperFinish.css';
