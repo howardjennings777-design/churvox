@@ -5,9 +5,9 @@ const KEY = '__CHURVOX_AUTH_LOGIN_RESPONSE_GUARD__';
 function pathOf(response) {
   const raw = response?.config?.url || '';
   try {
-    return new URL(raw, window.location.origin).pathname.replace(/^\/api/, '');
+    return new URL(raw, window.location.origin).pathname.replace(/^\/api/, '').replace(/\/+$/, '');
   } catch {
-    return String(raw || '').replace(/^.*\/api/, '');
+    return String(raw || '').replace(/^.*\/api/, '').replace(/\/+$/, '');
   }
 }
 
