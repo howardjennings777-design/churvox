@@ -16,16 +16,48 @@ function setupPendingLocally() {
   }
 }
 
+function rawRole(user = {}, payload = {}) {
+  const business = user?.business && typeof user.business === "object" ? user.business : {};
+  return (
+    user.role || payload.role || user.user_role || payload.user_role || user.account_role || user.member_role || user.team_role ||
+    user.staff_role || user.worker_role || user.type || payload.type || user.user_type || user.account_type || user.member_type ||
+    user.staff_type || user.worker_type || business.role || business.user_role || business.member_role || ""
+  );
+}
+
+function truthy(value) {
+  if (typeof value === "string") return ["1", "true", "yes", "active", "enabled", "worker", "staff", "field_worker"].includes(value.trim().toLowerCase());
+  return Boolean(value);
+}
+
+function looksWorker(user = {}, payload = {}) {
+  const role = rawRole(user, payload);
+  return Boolean(
+    isWorkerRole(role) ||
+    truthy(user.is_worker) || truthy(payload.is_worker) || truthy(user.worker) || truthy(user.is_field_worker) ||
+    truthy(user.worker_account) || truthy(user.worker_portal) || truthy(user.worker_login) ||
+    user.worker_id || payload.worker_id || user.staff_id || user.team_member_id || user.invite_role === "worker"
+  );
+}
+
+function looksPayroll(user = {}, payload = {}) {
+  const role = rawRole(user, payload);
+  return Boolean(isPayrollRole(role) || truthy(user.is_payroll) || truthy(payload.is_payroll) || truthy(user.payroll_user) || user.payroll_id);
+}
+
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
-  const role = normalizeRole(user?.role || payload?.role);
+  const roleRaw = rawRole(user, payload);
+  const role = normalizeRole(roleRaw);
   const isPlatformOwner =
     email === "hello@churvox.com" ||
     user?.is_platform_owner === true ||
     user?.is_admin === true;
 
   if (isPlatformOwner) return "/admin";
+  if (looksWorker(user, payload)) return "/worker/jobs";
+  if (looksPayroll(user, payload)) return "/payroll-board";
   if (isWorkerRole(role) || isPayrollRole(role)) return getDefaultRoute(role);
 
   const plan = String(user?.plan || payload?.plan || "").trim().toLowerCase();
@@ -51,7 +83,10 @@ const loginLooksValid = (result = {}) => {
         user?.email ||
         user?.id ||
         user?._id ||
-        user?.role)
+        user?.role ||
+        user?.user_role ||
+        user?.account_type ||
+        user?.worker_id)
   );
 };
 
