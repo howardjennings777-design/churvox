@@ -39,8 +39,22 @@ function page() {
   return active ? active.textContent.trim().toLowerCase() : '';
 }
 
+function renameProblemPanels(root) {
+  root?.querySelectorAll('.cocPanel h2').forEach((heading) => {
+    const text = String(heading.textContent || '').trim().toLowerCase();
+    if (text === 'problems today') heading.textContent = 'Held for Command';
+    if (text === 'next owner check') heading.textContent = 'Command preview';
+  });
+  root?.querySelectorAll('.chip.red').forEach((chip) => {
+    chip.textContent = String(chip.textContent || '').replace(/^In Command:/i, 'Command:');
+  });
+}
+
 function applyNoLeak() {
   ensureStyle();
+  const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
+  renameProblemPanels(root);
+
   const blocked = blockedRecords();
   const blockedTitles = blocked.map((item) => item.title);
   document.querySelectorAll('.ofNoLeakHidden').forEach((node) => node.classList.remove('ofNoLeakHidden'));
@@ -54,7 +68,6 @@ function applyNoLeak() {
     if (hit && (page() === 'today' || node.hasAttribute('data-created-runtime'))) node.classList.add('ofNoLeakHidden');
   });
 
-  const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
   if (!root || page() === 'command') return;
   const shown = blocked.slice(0, 3).map((item) => `${item.title}: ${item.missing}`).join(' | ');
   root.insertAdjacentHTML('beforeend', `<section class="ofNoLeakHeldNote"><b>${blocked.length} record${blocked.length === 1 ? '' : 's'} held for Command</b><small>${shown}</small></section>`);
@@ -67,3 +80,5 @@ if (typeof window !== 'undefined') {
   document.addEventListener('click', () => setTimeout(applyNoLeak, 180));
   setInterval(applyNoLeak, 1700);
 }
+
+export {};
