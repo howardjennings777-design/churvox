@@ -45,6 +45,35 @@ function isLockedStatus(status) {
   return ["cancelled", "canceled", "unpaid", "incomplete_expired", "locked", "disabled"].includes(status);
 }
 
+function rawRole(user = {}) {
+  const business = user?.business && typeof user.business === "object" ? user.business : {};
+  return (
+    user.role || user.user_role || user.account_role || user.member_role || user.team_role || user.staff_role || user.worker_role ||
+    user.type || user.user_type || user.account_type || user.member_type || user.staff_type || user.worker_type ||
+    business.role || business.user_role || business.member_role || ""
+  );
+}
+
+function truthy(value) {
+  if (typeof value === "string") return ["1", "true", "yes", "active", "enabled", "worker", "staff", "field_worker"].includes(value.trim().toLowerCase());
+  return Boolean(value);
+}
+
+function inferredWorker(user = {}) {
+  const role = rawRole(user);
+  return Boolean(
+    isWorkerRole(role) ||
+    truthy(user.is_worker) || truthy(user.worker) || truthy(user.is_field_worker) || truthy(user.field_worker) ||
+    truthy(user.worker_account) || truthy(user.worker_portal) || truthy(user.worker_login) ||
+    user.worker_id || user.staff_id || user.team_member_id || user.invite_role === "worker"
+  );
+}
+
+function inferredPayroll(user = {}) {
+  const role = rawRole(user);
+  return Boolean(isPayrollRole(role) || truthy(user.is_payroll) || truthy(user.payroll_user) || user.payroll_id);
+}
+
 function tokenFrom(data = {}) {
   return data?.token || data?.access_token || data?.auth_token || data?.user?.token || data?.user?.access_token || "";
 }
@@ -52,7 +81,7 @@ function tokenFrom(data = {}) {
 function userFrom(data = {}) {
   const picked = data?.user || data?.data?.user || data?.data || data || {};
   if (!picked || typeof picked !== "object") return null;
-  if (!(picked.email || picked.id || picked._id || picked.role || picked.business_id || picked.businessId)) return null;
+  if (!(picked.email || picked.id || picked._id || picked.role || picked.user_role || picked.account_type || picked.worker_id || picked.business_id || picked.businessId)) return null;
   const id = picked.id || picked._id || data.id || data._id || "";
   const email = String(picked.email || data.email || "").trim().toLowerCase();
   return {
@@ -223,11 +252,12 @@ export function AuthProvider({ children }) {
 
   const updateUser = useCallback((updates) => setUser((prev) => (prev ? { ...prev, ...updates } : prev)), []);
 
-  const normalizedRole = normalizeRole(user?.role);
-  const isEmployer = isBusinessRole(user?.role);
-  const isWorker = isWorkerRole(user?.role);
-  const isPayroll = isPayrollRole(user?.role);
-  const isOwnerUser = isOwner(user?.role);
+  const roleValue = rawRole(user || {});
+  const normalizedRole = normalizeRole(roleValue);
+  const isWorker = inferredWorker(user || {});
+  const isPayroll = !isWorker && inferredPayroll(user || {});
+  const isEmployer = !isWorker && !isPayroll && isBusinessRole(roleValue);
+  const isOwnerUser = !isWorker && !isPayroll && isOwner(roleValue);
 
   const isTrialExpired = (() => {
     if (!user?.trial_ends_at) return false;
