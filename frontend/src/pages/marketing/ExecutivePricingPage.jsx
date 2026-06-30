@@ -27,17 +27,24 @@ function taxInclusive(plan) {
 }
 
 const planFit = [
-  ["Start", "Solo owner", "Jobs, clients, quotes and invoices under control."],
-  ["Crew", "Small team", "Worker proof, time approval and cleaner handover."],
-  ["Operator", "Busy owner", "Churvox prepares admin. The owner approves in Command."],
-  ["Command", "Larger operation", "Full approval OS, payroll workspace, reports and accounting sync option included."],
+  ["Start", "Solo owner", "Core records: jobs, clients, quotes and invoices kept tidy."],
+  ["Crew", "Small team", "Worker flow, messages, job handover and cleaner team control."],
+  ["Operator", "Busy owner", "Churvox prepares the admin. The owner approves in Command."],
+  ["Command", "Larger operation", "Full owner approval desk, deeper controls, reporting and accounting handoff."],
 ];
 
 const pricingRules = [
   ["No card upfront", "Start the 14-day trial before committing."],
-  ["Prices stay clear", "Monthly price is shown before tax, with GST or VAT-inclusive totals where applicable."],
-  ["Upgrade path", "Start with records, add team control, then add prepared admin and deeper Command controls."],
-  ["Owner control", "Churvox prepares important admin, but approvals stay in Command."],
+  ["Clear monthly price", "Monthly price is shown before tax, with tax-inclusive totals where applicable."],
+  ["Simple upgrade path", "Start with records, add team control, then add prepared admin and Command control."],
+  ["Owner stays in charge", "Churvox prepares important admin, but approval stays in Command."],
+];
+
+const valueSteps = [
+  ["Records", "Keep jobs, clients, quotes and invoices together."],
+  ["Team", "Give workers a simple flow for jobs, directions and updates."],
+  ["Prepared admin", "Churvox organises the next step from real records."],
+  ["Command", "The owner approves, edits or parks important actions."],
 ];
 
 export default function ExecutivePricingPage() {
@@ -62,7 +69,7 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_PRICING_MODERN_OS_20260629">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_PRICING_10_OUT_OF_10_20260630">
       <Nav />
 
       <section className="publicHero publicHeroCompact">
@@ -70,7 +77,7 @@ export default function ExecutivePricingPage() {
           <span className="publicKicker">Simple plan ladder</span>
           <h1>Choose how much admin Churvox should prepare.</h1>
           <p>
-            Plans scale from core records to team control, prepared admin and full Command operations. Prices are locked, readable and shown with tax-inclusive totals where applicable.
+            Start with clean records, add team control, then let Churvox prepare admin for owner approval. Pricing stays readable and the important decisions stay in Command.
           </p>
           <label className="publicCountrySelect">
             <span>Pricing region</span>
@@ -89,7 +96,7 @@ export default function ExecutivePricingPage() {
         <aside className="publicFeaturePanel publicOperatorPanel">
           <small>Most popular</small>
           <b>Operator</b>
-          <span>For owners who want the new Churvox promise: Churvox does the admin. The owner checks and approves.</span>
+          <span>For owners who want the main Churvox promise: Churvox does the admin. You approve.</span>
         </aside>
       </section>
 
@@ -115,12 +122,28 @@ export default function ExecutivePricingPage() {
         </div>
       </section>
 
+      <section className="publicBand">
+        <div className="publicSectionHead">
+          <span className="publicKicker">Value ladder</span>
+          <h2>What you add as the business grows.</h2>
+        </div>
+        <div className="publicFlow">
+          {valueSteps.map(([title, text], index) => (
+            <article key={title}>
+              <i>{index + 1}</i>
+              <b>{title}</b>
+              <span>{text}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="publicBand publicSplit">
         <div>
           <span className="publicKicker">Which one fits</span>
           <h2>Pick by operating need, not by guesswork.</h2>
           <p>
-            The tiers are meant to be readable: records first, workers next, prepared admin next, full Command operations last.
+            The tiers are meant to be easy to understand: records first, workers next, prepared admin next, full Command operation last.
           </p>
         </div>
         <div className="publicAreaGrid">
@@ -144,7 +167,7 @@ export default function ExecutivePricingPage() {
             <b>Command Growth Pack</b>
             <strong>{growthPack.priceLabel}</strong>
             {growthPack.taxInclusiveLabel ? <span>{growthPack.taxInclusiveLabel}</span> : null}
-            <p>Adds extra team, job, AI Operator, automation, admin and payroll capacity.</p>
+            <p>Adds extra team, job, automation, admin and payroll capacity for larger Command accounts.</p>
           </article>
           <article>
             <b>Accounting Sync Add-on</b>
