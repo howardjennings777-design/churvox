@@ -1,3 +1,5 @@
+import './churvoxAuthLoginResponseGuard';
+
 // Forces auth input text to remain visible even if global contrast/runtime CSS tries to repaint it.
 function isAuthPage() {
   const path = `${window.location.pathname || ""} ${window.location.hash || ""}`.toLowerCase();
