@@ -24,7 +24,28 @@ function ensureAutomationStyle() {
   document.head.appendChild(style);
 }
 
+function normaliseFreshHash() {
+  const path = window.location.pathname || '';
+  if (!path.startsWith('/dashboard') && !path.startsWith('/setup') && !path.startsWith('/guide')) return;
+  const raw = (window.location.hash || '').replace('#', '').toLowerCase();
+  const aliases = {
+    dispatch: 'workers',
+    despatch: 'workers',
+    schedule: 'workers',
+    calendar: 'workers',
+    map: 'workers',
+    reports: 'invoices',
+    report: 'invoices',
+    support: 'help',
+    guide: 'help',
+    payroll: 'team',
+  };
+  const target = aliases[raw];
+  if (target) window.history.replaceState({}, document.title, `${path}#${target}`);
+}
+
 function renderAutomationAlias() {
+  normaliseFreshHash();
   const isAutomation = (window.location.hash || '').replace('#', '').toLowerCase() === 'automation';
   const old = document.getElementById(AUTOMATION_ID);
   if (!isAutomation) { old?.remove(); return; }
@@ -69,7 +90,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   window.__CHURVOX_ROUTE_ALIAS_RUNTIME__ = true;
   const path = window.location.pathname || '';
   const aliases = {
-    '/help': '/dashboard#support',
+    '/help': '/dashboard#help',
     '/setup': '/setup-guide',
     '/smart-hub': '/dashboard',
     '/automation': '/dashboard#automation',
@@ -87,6 +108,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   if (target) {
     window.history.replaceState({}, document.title, target);
   }
+  normaliseFreshHash();
   window.addEventListener('load', () => setTimeout(renderAutomationAlias, 120));
   window.addEventListener('hashchange', () => setTimeout(renderAutomationAlias, 120));
   window.addEventListener('popstate', () => setTimeout(renderAutomationAlias, 120));
