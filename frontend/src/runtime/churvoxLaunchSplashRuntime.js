@@ -49,7 +49,7 @@ function upsertLinks(rel, href, type) {
 function ensureBranding() {
   if (typeof document === 'undefined' || !document.head) return;
   document.title = isWorkerApp()
-    ? 'Churvox Worker App - Clock in, proof, done'
+    ? 'Churvox Worker App - Today, jobs, messages'
     : 'Churvox - Churvox does the admin. The owner approves.';
   setMeta('theme-color', '#111820');
   setMeta('apple-mobile-web-app-title', isWorkerApp() ? 'Churvox Worker' : 'Churvox');
@@ -85,7 +85,7 @@ function ensureStyle() {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    #${NODE_ID}{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 25%,rgba(255,122,34,.24),transparent 28%),linear-gradient(145deg,#05070b 0%,#111820 54%,#2c1209 100%);color:#fffaf3;font-family:Inter,system-ui,sans-serif;overflow:hidden;transition:opacity .34s ease,visibility .34s ease}#${NODE_ID}.hide{opacity:0;visibility:hidden}#${NODE_ID}:before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 180deg,transparent,rgba(255,122,34,.18),transparent 34%);animation:cvxSplashSweep 2.8s linear infinite}#${NODE_ID}:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at 50% 45%,#000,transparent 72%)}.cvxSplashCard{position:relative;z-index:1;display:grid;justify-items:center;gap:16px;text-align:center}.cvxSplashMark{width:min(144px,38vw);height:auto;filter:drop-shadow(0 24px 44px rgba(0,0,0,.48));animation:cvxSplashPop .72s cubic-bezier(.2,.9,.25,1.2)}.cvxSplashCard h1{margin:0;font-size:clamp(34px,10vw,74px);line-height:.9;letter-spacing:-.08em;font-weight:1000}.cvxSplashCard p{margin:0;max-width:360px;color:#ffd7ba;font-size:13px;font-weight:900;line-height:1.45}.cvxSplashBar{width:min(260px,68vw);height:6px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}.cvxSplashBar i{display:block;width:42%;height:100%;border-radius:999px;background:linear-gradient(90deg,#ffbd72,#f06423);animation:cvxSplashLoad .92s ease-in-out infinite alternate}@keyframes cvxSplashSweep{to{transform:rotate(360deg)}}@keyframes cvxSplashPop{from{transform:scale(.8) translateY(16px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes cvxSplashLoad{to{transform:translateX(142%)}}
+    #${NODE_ID}{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 25%,rgba(255,122,34,.24),transparent 28%),linear-gradient(145deg,#05070b 0%,#111820 54%,#2c1209 100%);color:#fffaf3;font-family:Inter,system-ui,sans-serif;overflow:hidden;transition:opacity .34s ease,visibility .34s ease;pointer-events:none!important}#${NODE_ID}.hide{opacity:0;visibility:hidden}#${NODE_ID}:before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 180deg,transparent,rgba(255,122,34,.18),transparent 34%);animation:cvxSplashSweep 2.8s linear infinite}#${NODE_ID}:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at 50% 45%,#000,transparent 72%)}.cvxSplashCard{position:relative;z-index:1;display:grid;justify-items:center;gap:16px;text-align:center}.cvxSplashMark{width:min(144px,38vw);height:auto;filter:drop-shadow(0 24px 44px rgba(0,0,0,.48));animation:cvxSplashPop .72s cubic-bezier(.2,.9,.25,1.2)}.cvxSplashCard h1{margin:0;font-size:clamp(34px,10vw,74px);line-height:.9;letter-spacing:-.08em;font-weight:1000}.cvxSplashCard p{margin:0;max-width:360px;color:#ffd7ba;font-size:13px;font-weight:900;line-height:1.45}.cvxSplashBar{width:min(260px,68vw);height:6px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}.cvxSplashBar i{display:block;width:42%;height:100%;border-radius:999px;background:linear-gradient(90deg,#ffbd72,#f06423);animation:cvxSplashLoad .92s ease-in-out infinite alternate}@keyframes cvxSplashSweep{to{transform:rotate(360deg)}}@keyframes cvxSplashPop{from{transform:scale(.8) translateY(16px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes cvxSplashLoad{to{transform:translateX(142%)}}
     @media (prefers-reduced-motion: reduce){#${NODE_ID}:before,.cvxSplashMark,.cvxSplashBar i{animation:none!important}}
   `;
   document.head.appendChild(style);
@@ -96,11 +96,11 @@ function showSplash() {
   ensureStyle();
   const node = document.createElement('div');
   node.id = NODE_ID;
-  node.innerHTML = `<section class="cvxSplashCard">${markSvg()}<div><h1>Churvox</h1><p>${isWorkerApp() ? 'Worker app loading. Clock in, do the job, add proof.' : 'Churvox does the admin. The owner checks and approves.'}</p></div><span class="cvxSplashBar"><i></i></span></section>`;
+  node.innerHTML = `<section class="cvxSplashCard">${markSvg()}<div><h1>Churvox</h1><p>${isWorkerApp() ? 'Worker app loading. Today, Jobs and Messages.' : 'Churvox does the admin. The owner checks and approves.'}</p></div><span class="cvxSplashBar"><i></i></span></section>`;
   document.body.appendChild(node);
   window.sessionStorage.setItem(SESSION_KEY, '1');
-  window.setTimeout(() => node.classList.add('hide'), isWorkerApp() ? 1250 : 950);
-  window.setTimeout(() => node.remove(), isWorkerApp() ? 1650 : 1300);
+  window.setTimeout(() => node.classList.add('hide'), isWorkerApp() ? 900 : 750);
+  window.setTimeout(() => node.remove(), isWorkerApp() ? 1150 : 950);
 }
 
 function bootLaunchBranding() {
