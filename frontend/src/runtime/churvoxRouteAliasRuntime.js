@@ -45,8 +45,8 @@ function renderAutomationAlias() {
 }
 
 function guardCsvAuditClick(event) {
-  const button = event.target?.closest?.('button[data-churvox-qa-control]');
-  if (!button) return false;
+  const button = event.target?.closest?.('button');
+  if (!button?.closest?.('[data-churvox-qa-control]')) return false;
   const label = String(button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
   if (!label.includes('csv import') && label !== 'export') return false;
   event.preventDefault();
@@ -70,7 +70,15 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   const path = window.location.pathname || '';
   const aliases = {
     '/help': '/dashboard#support',
+    '/setup': '/setup-guide',
+    '/smart-hub': '/dashboard',
     '/automation': '/dashboard#automation',
+    '/dispatch-board': '/dashboard#workers',
+    '/dispatch': '/dashboard#workers',
+    '/schedule': '/dashboard#workers',
+    '/calendar': '/dashboard#workers',
+    '/reports-board': '/dashboard#invoices',
+    '/reports': '/dashboard#invoices',
     '/worker/messages': '/worker/ops',
     '/worker/profile': '/worker/settings',
     '/worker/me': '/worker/settings',
