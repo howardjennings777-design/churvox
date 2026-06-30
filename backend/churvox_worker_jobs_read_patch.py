@@ -22,6 +22,13 @@ def _text(value):
     return str(value or "").strip()
 
 
+def _oid(value):
+    try:
+        return ObjectId(str(value))
+    except Exception:
+        return None
+
+
 def _safe(doc):
     out = dict(doc or {})
     if "_id" in out:
@@ -78,6 +85,21 @@ def _assigned(job, user):
     return False
 
 
+def _business_query(user):
+    bid = _business_id(user)
+    values = [bid]
+    oid = _oid(bid)
+    if oid is not None:
+        values.append(oid)
+    return {
+        "$or": [
+            {"business_id": {"$in": values}},
+            {"businessId": {"$in": values}},
+            {"contractor_id": {"$in": values}},
+        ]
+    }
+
+
 def _install(module):
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
@@ -90,11 +112,9 @@ def _install(module):
     async def worker_jobs(current_user: dict = Depends(get_current_user)):
         if not _is_worker(current_user):
             return {"success": True, "jobs": [], "items": [], "data": []}
-        bid = _business_id(current_user)
-        query = {"$or": [{"business_id": bid}, {"businessId": bid}, {"contractor_id": bid}]}
         rows = []
         try:
-            cursor = db.jobs.find(query).limit(300)
+            cursor = db.jobs.find(_business_query(current_user)).limit(300)
             async for job in cursor:
                 if _assigned(job, current_user):
                     rows.append(_safe(job))
