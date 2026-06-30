@@ -24,6 +24,8 @@ export const COUNTRIES = COUNTRY_OPTIONS;
 export const AVAILABLE_COUNTRIES = COUNTRY_OPTIONS;
 export const BILLING_COUNTRIES = COUNTRY_OPTIONS;
 export const PLAN_ORDER = ["solo", "team", "pro", "enterprise"];
+export const ON_SITE_PAYMENTS_REQUIRED_PLAN = "pro";
+export const ON_SITE_PAYMENTS_FEATURE = "On-site card payments";
 
 export const PLAN_PRICING = {
   solo: {
@@ -50,8 +52,8 @@ export const PLAN_PRICING = {
     tagline: "Churvox does the admin. You approve.",
     description: "For owners who want AI Operator Actions, admin recovery, follow-ups and approval control prepared before they touch the work.",
     price: 149, monthly: 149, period: "month", interval: "month", cta: "Start free trial", popular: true, badge: "Most Popular",
-    includes: ["Everything in Crew", "Up to 3,000 clients", "Up to 500 jobs per month", "Up to 15 active team members", "500 AI Operator Actions per month", "AI Operator Actions", "Admin recovery batch up to 25", "Customer Follow-Up Brain", "Accounting Sync Add-on available"],
-    features: ["Everything in Crew", "Up to 3,000 clients", "Up to 500 jobs per month", "Up to 15 active team members", "500 AI Operator Actions per month", "AI Operator Actions", "Admin recovery batch up to 25", "Customer Follow-Up Brain", "Accounting Sync Add-on available"],
+    includes: ["Everything in Crew", "Up to 3,000 clients", "Up to 500 jobs per month", "Up to 15 active team members", "500 AI Operator Actions per month", "AI Operator Actions", "Admin recovery batch up to 25", "Customer Follow-Up Brain", "On-site card payments", "Accounting Sync Add-on available"],
+    features: ["Everything in Crew", "Up to 3,000 clients", "Up to 500 jobs per month", "Up to 15 active team members", "500 AI Operator Actions per month", "AI Operator Actions", "Admin recovery batch up to 25", "Customer Follow-Up Brain", "On-site card payments", "Accounting Sync Add-on available"],
   },
   enterprise: {
     key: "enterprise", code: "command", tag: "Command", name: "Command",
@@ -59,8 +61,8 @@ export const PLAN_PRICING = {
     tagline: "Full command centre for bigger service businesses.",
     description: "Full owner operating system with advanced approval control, payroll workspace, reports, exports, and one accounting sync option included.",
     price: 299, monthly: 299, period: "month", interval: "month", cta: "Start free trial", popular: false,
-    includes: ["Everything in Operator", "Up to 10,000 clients", "Up to 1,500 jobs per month", "Up to 50 active team members", "2,000 AI Operator Actions per month", "Bulk admin recovery", "Owner Control Score", "Payroll workspace", "Imports, reports and exports", "Accounting sync included"],
-    features: ["Everything in Operator", "Up to 10,000 clients", "Up to 1,500 jobs per month", "Up to 50 active team members", "2,000 AI Operator Actions per month", "Bulk admin recovery", "Owner Control Score", "Payroll workspace", "Imports, reports and exports", "Accounting sync included"],
+    includes: ["Everything in Operator", "Up to 10,000 clients", "Up to 1,500 jobs per month", "Up to 50 active team members", "2,000 AI Operator Actions per month", "Bulk admin recovery", "Owner Control Score", "Payroll workspace", "On-site card payments", "Imports, reports and exports", "Accounting sync included"],
+    features: ["Everything in Operator", "Up to 10,000 clients", "Up to 1,500 jobs per month", "Up to 50 active team members", "2,000 AI Operator Actions per month", "Bulk admin recovery", "Owner Control Score", "Payroll workspace", "On-site card payments", "Imports, reports and exports", "Accounting sync included"],
     addonNote: "SMS credits and Command Growth Packs can be added when needed. Accounting sync is included.",
   },
 };
@@ -70,10 +72,10 @@ export const PLANS = CHURVOX_PLANS;
 export const BASE_PLANS = CHURVOX_PLANS;
 export const PLAN_LIST = CHURVOX_PLANS;
 export const PLAN_LIMITS = {
-  solo: { clients: 250, teamMembers: 2, activeTeamMembers: 1, jobsPerMonth: 50, aiOperatorActions: 25, adminRecoveryBatch: 1, proofPack: "Basic", accountingSync: "add_on" },
-  team: { clients: 1000, teamMembers: 5, activeTeamMembers: 5, jobsPerMonth: 150, aiOperatorActions: 100, adminRecoveryBatch: 5, proofPack: "Standard", accountingSync: "add_on" },
-  pro: { clients: 3000, teamMembers: 15, activeTeamMembers: 15, jobsPerMonth: 500, aiOperatorActions: 500, adminRecoveryBatch: 25, proofPack: "Advanced", accountingSync: "add_on" },
-  enterprise: { clients: 10000, teamMembers: 50, activeTeamMembers: 50, jobsPerMonth: 1500, aiOperatorActions: 2000, adminRecoveryBatch: "bulk", proofPack: "Advanced", accountingSync: "included" },
+  solo: { clients: 250, teamMembers: 2, activeTeamMembers: 1, jobsPerMonth: 50, aiOperatorActions: 25, adminRecoveryBatch: 1, proofPack: "Basic", accountingSync: "add_on", onSitePayments: false },
+  team: { clients: 1000, teamMembers: 5, activeTeamMembers: 5, jobsPerMonth: 150, aiOperatorActions: 100, adminRecoveryBatch: 5, proofPack: "Standard", accountingSync: "add_on", onSitePayments: false },
+  pro: { clients: 3000, teamMembers: 15, activeTeamMembers: 15, jobsPerMonth: 500, aiOperatorActions: 500, adminRecoveryBatch: 25, proofPack: "Advanced", accountingSync: "add_on", onSitePayments: true },
+  enterprise: { clients: 10000, teamMembers: 50, activeTeamMembers: 50, jobsPerMonth: 1500, aiOperatorActions: 2000, adminRecoveryBatch: "bulk", proofPack: "Advanced", accountingSync: "included", onSitePayments: true },
 };
 export const PLAN_NAMES = { solo: "Start", team: "Crew", pro: "Operator", enterprise: "Command" };
 export const PLAN_DISPLAY_NAMES = PLAN_NAMES;
@@ -106,6 +108,7 @@ export function hasPlanAtLeast(currentPlan, requiredPlan) { return isPlanAtLeast
 export function hasRequiredPlan(currentPlan, requiredPlan) { return isPlanAtLeast(currentPlan, requiredPlan); }
 export function planHasAccess(currentPlan, requiredPlan) { return isPlanAtLeast(currentPlan, requiredPlan); }
 export function canUsePlanFeature(currentPlan, requiredPlan) { return isPlanAtLeast(currentPlan, requiredPlan); }
+export function canUseOnSitePayments(currentPlan) { return isPlanAtLeast(currentPlan, ON_SITE_PAYMENTS_REQUIRED_PLAN); }
 
 export function detectCountryCode() {
   try { const saved = window.localStorage.getItem("churvox:billing-country"); if (saved) return normalizeCountry(saved); } catch {}
@@ -177,9 +180,9 @@ export const MARKETING_PLANS = CHURVOX_PLANS.map((plan) => pricePlanForCountry(p
 export const MARKETING_PLAN_LIST = MARKETING_PLANS;
 export const MARKETING_PLAN_KEYS = PLAN_ORDER;
 export const MARKETING_PLAN_NAMES = PLAN_NAMES;
-export const APP_PLANS = CHURVOX_PLANS.map((plan) => { const country = getCountryMeta(DEFAULT_COUNTRY); const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {}; const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0); const limits = PLAN_LIMITS[plan.key] || {}; return { ...plan, price: "$" + monthly, period: "/month + GST", inclGst: formatTaxInclusivePrice(monthly, DEFAULT_COUNTRY), blurb: plan.description || plan.summary || plan.tagline, bestFor: plan.summary || plan.tagline || "", clientLimit: limits.clients, teamLimit: limits.teamMembers, jobLimit: limits.jobsPerMonth, aiOperatorActionLimit: limits.aiOperatorActions, proofPack: limits.proofPack, accountingSync: limits.accountingSync, limits: plan.features || plan.includes || [] }; });
+export const APP_PLANS = CHURVOX_PLANS.map((plan) => { const country = getCountryMeta(DEFAULT_COUNTRY); const overrides = COUNTRY_PRICE_OVERRIDES[country.code] || COUNTRY_PRICE_OVERRIDES[DEFAULT_COUNTRY] || {}; const monthly = Number(overrides[plan.key] ?? plan.monthly ?? plan.price ?? 0); const limits = PLAN_LIMITS[plan.key] || {}; return { ...plan, price: "$" + monthly, period: "/month + GST", inclGst: formatTaxInclusivePrice(monthly, DEFAULT_COUNTRY), blurb: plan.description || plan.summary || plan.tagline, bestFor: plan.summary || plan.tagline || "", clientLimit: limits.clients, teamLimit: limits.teamMembers, jobLimit: limits.jobsPerMonth, aiOperatorActionLimit: limits.aiOperatorActions, proofPack: limits.proofPack, accountingSync: limits.accountingSync, onSitePayments: limits.onSitePayments, limits: plan.features || plan.includes || [] }; });
 export const QUICK_PRICING_NOTES = ["14-day free trial. No card required.", "Prices shown exclude GST. GST is added at checkout. GST-inclusive totals are shown for clarity.", "Accounting Sync Add-on, SMS credits and Command Growth Packs can be added when needed."];
 export const QUICK_PLAN_NOTES = QUICK_PRICING_NOTES;
 export const QUICK_BILLING_NOTES = QUICK_PRICING_NOTES;
 
-export default { DEFAULT_COUNTRY, STRIPE_MANAGED_PRICE_COUNTRIES, PLAN_KEYS, PLAN_ALIASES, COUNTRY_OPTIONS, COUNTRIES, AVAILABLE_COUNTRIES, BILLING_COUNTRIES, PLAN_PRICING, CHURVOX_PLANS, PLANS, BASE_PLANS, PLAN_LIST, PLAN_ORDER, PLAN_LIMITS, COMMAND_ADDONS, GROWTH_PACK, COMMAND_GROWTH_PACK, COMMAND_GROWTH_PACK_ADDON, GROWTH_PACK_ADDON, ACCOUNTING_SYNC_ADDON, XERO_ADDON, Xero_ADDON, ADDONS, SMS_PACKS, PLAN_NAMES, PLAN_DISPLAY_NAMES, PLAN_PRICES, MARKETING_PLANS, MARKETING_PLAN_LIST, MARKETING_PLAN_KEYS, MARKETING_PLAN_NAMES, APP_PLANS, QUICK_PRICING_NOTES, QUICK_PLAN_NOTES, QUICK_BILLING_NOTES, normalizePlanKey, normalisePlanKey, getPlanConfig, getPlan, getPlanName, nicePlanName, requiredPlanLabel, planLabel, getPlanPrice, planPrice, planRank, isPlanAtLeast, hasPlanAtLeast, hasRequiredPlan, planHasAccess, canUsePlanFeature, normalizeCountry, normaliseCountry, getCountryConfig, getCountryMeta, countryMeta, getCountryLabel, getCountrySymbol, getCountryCurrency, getCountryTaxLabel, getCurrencySymbol, getCurrencyCode, isStripeManagedPriceCountry, stripeManagedPriceLabel, stripeManagedTaxLabel, formatCurrency, formatMoney, taxInclusiveAmount, formatTaxInclusivePrice, pricePlanForCountry, getPlanPriceForCountry, getPlanPricingForCountry, planForCountry, addonPriceForCountry, getAddonPriceForCountry, getAddonPricingForCountry, pricingNotesForCountry, getPricingNotesForCountry, pricingNotes, formatPlanPrice };
+export default { DEFAULT_COUNTRY, STRIPE_MANAGED_PRICE_COUNTRIES, PLAN_KEYS, PLAN_ALIASES, COUNTRY_OPTIONS, COUNTRIES, AVAILABLE_COUNTRIES, BILLING_COUNTRIES, PLAN_PRICING, CHURVOX_PLANS, PLANS, BASE_PLANS, PLAN_LIST, PLAN_ORDER, PLAN_LIMITS, ON_SITE_PAYMENTS_REQUIRED_PLAN, ON_SITE_PAYMENTS_FEATURE, COMMAND_ADDONS, GROWTH_PACK, COMMAND_GROWTH_PACK, COMMAND_GROWTH_PACK_ADDON, GROWTH_PACK_ADDON, ACCOUNTING_SYNC_ADDON, XERO_ADDON, Xero_ADDON, ADDONS, SMS_PACKS, PLAN_NAMES, PLAN_DISPLAY_NAMES, PLAN_PRICES, MARKETING_PLANS, MARKETING_PLAN_LIST, MARKETING_PLAN_KEYS, MARKETING_PLAN_NAMES, APP_PLANS, QUICK_PRICING_NOTES, QUICK_PLAN_NOTES, QUICK_BILLING_NOTES, normalizePlanKey, normalisePlanKey, getPlanConfig, getPlan, getPlanName, nicePlanName, requiredPlanLabel, planLabel, getPlanPrice, planPrice, planRank, isPlanAtLeast, hasPlanAtLeast, hasRequiredPlan, planHasAccess, canUsePlanFeature, canUseOnSitePayments, normalizeCountry, normaliseCountry, getCountryConfig, getCountryMeta, countryMeta, getCountryLabel, getCountrySymbol, getCountryCurrency, getCountryTaxLabel, getCurrencySymbol, getCurrencyCode, isStripeManagedPriceCountry, stripeManagedPriceLabel, stripeManagedTaxLabel, formatCurrency, formatMoney, taxInclusiveAmount, formatTaxInclusivePrice, pricePlanForCountry, getPlanPriceForCountry, getPlanPricingForCountry, planForCountry, addonPriceForCountry, getAddonPriceForCountry, getAddonPricingForCountry, pricingNotesForCountry, getPricingNotesForCountry, pricingNotes, formatPlanPrice };
