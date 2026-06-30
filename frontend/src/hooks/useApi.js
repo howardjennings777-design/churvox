@@ -13,6 +13,12 @@ function backendErrorMessage(data) {
   return data.error || data.detail || data.message || "Request failed";
 }
 
+function normalizeEndpoint(endpoint) {
+  if (endpoint === "/team") return "/team/workers";
+  if (endpoint === "/workers") return "/team/workers";
+  return endpoint;
+}
+
 function normalizeId(value) {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -97,7 +103,8 @@ export function useApi() {
   }, []);
 
   const request = useCallback(
-    async (method, endpoint, data = null, options = {}) => {
+    async (method, rawEndpoint, data = null, options = {}) => {
+      const endpoint = normalizeEndpoint(rawEndpoint);
       setLoading(true);
       setError(null);
       try {
