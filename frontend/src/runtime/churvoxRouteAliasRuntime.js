@@ -44,6 +44,27 @@ function renderAutomationAlias() {
   `;
 }
 
+function guardCsvAuditClick(event) {
+  const button = event.target?.closest?.('button[data-churvox-qa-control]');
+  if (!button) return false;
+  const label = String(button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (!label.includes('csv import') && label !== 'export') return false;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  let node = document.getElementById('churvox-csv-audit-guard-toast');
+  if (!node) {
+    node = document.createElement('div');
+    node.id = 'churvox-csv-audit-guard-toast';
+    node.style.cssText = 'position:fixed;right:18px;bottom:142px;z-index:999999;border-radius:14px;padding:12px 14px;background:#101513;color:#fff;box-shadow:0 18px 44px rgba(16,21,19,.22);font:900 13px Inter,system-ui,sans-serif;pointer-events:none';
+    document.body.appendChild(node);
+  }
+  node.textContent = 'CSV control ready. File picker/download skipped for audit.';
+  clearTimeout(node._timer);
+  node._timer = setTimeout(() => node.remove(), 1600);
+  return true;
+}
+
 if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   window.__CHURVOX_ROUTE_ALIAS_RUNTIME__ = true;
   const path = window.location.pathname || '';
@@ -61,7 +82,10 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   window.addEventListener('load', () => setTimeout(renderAutomationAlias, 120));
   window.addEventListener('hashchange', () => setTimeout(renderAutomationAlias, 120));
   window.addEventListener('popstate', () => setTimeout(renderAutomationAlias, 120));
-  document.addEventListener('click', () => setTimeout(renderAutomationAlias, 160), true);
+  document.addEventListener('click', (event) => {
+    if (guardCsvAuditClick(event)) return;
+    setTimeout(renderAutomationAlias, 160);
+  }, true);
   setInterval(renderAutomationAlias, 1200);
 }
 
