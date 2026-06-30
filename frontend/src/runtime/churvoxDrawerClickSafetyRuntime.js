@@ -96,6 +96,13 @@ function closeAll() {
   hideStaleModal();
 }
 
+function startupClose() {
+  installStyle();
+  hideStaleModal();
+  closeAll();
+  ensureCloseButtons();
+}
+
 function ensureCloseButtons() {
   installStyle();
   hideStaleModal();
@@ -128,9 +135,9 @@ function handleClick(event) {
 if (typeof window !== 'undefined' && !window.__CHURVOX_DRAWER_CLICK_SAFETY__) {
   window.__CHURVOX_DRAWER_CLICK_SAFETY__ = true;
   installStyle();
-  window.addEventListener('load', ensureCloseButtons);
-  window.addEventListener('hashchange', closeAll);
-  window.addEventListener('popstate', closeAll);
+  window.addEventListener('load', startupClose);
+  window.addEventListener('hashchange', startupClose);
+  window.addEventListener('popstate', startupClose);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeAll(); }, true);
   document.addEventListener('pointerdown', handleClick, true);
   document.addEventListener('click', handleClick, true);
