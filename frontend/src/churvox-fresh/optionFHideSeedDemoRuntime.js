@@ -68,6 +68,23 @@ function removeEmptyNote(panel) {
   panel?.querySelector(':scope > .ofLiveEmptyNote')?.remove();
 }
 
+function setStatValue(stat, value) {
+  const target = stat?.querySelector('b');
+  if (target && target.textContent !== value) target.textContent = value;
+}
+
+function clearSeededStats(root) {
+  const hiddenSeedCount = root.querySelectorAll('.ofSeedDemoHidden').length;
+  if (!hiddenSeedCount) return;
+  const hasVisibleLiveRecords = Array.from(root.querySelectorAll('.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow,.chip,.bubble')).some((node) => !node.classList.contains('ofSeedDemoHidden') && !node.classList.contains('ofLiveEmptyNote'));
+  if (hasVisibleLiveRecords) return;
+  root.querySelectorAll('.miniStat').forEach((stat) => {
+    const label = String(stat.querySelector('small')?.textContent || '').toLowerCase();
+    if (/jobs|working|waiting|due|quotes|invoices|clients|team|workers/.test(label)) setStatValue(stat, /due/.test(label) ? '$0' : '0');
+  });
+  root.querySelectorAll('.money').forEach((node) => { if (node.textContent !== '$0') node.textContent = '$0'; });
+}
+
 function hideSeedRows() {
   ensureStyle();
   const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
@@ -87,6 +104,8 @@ function hideSeedRows() {
       removeEmptyNote(panel);
     }
   });
+
+  clearSeededStats(root);
 
   if (pageKey() === 'command') {
     root.querySelectorAll('.cocPanel').forEach((panel) => {
