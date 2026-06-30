@@ -5,6 +5,7 @@ import RecordWorkspacePopupBridgeV2 from './components/RecordWorkspacePopupBridg
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './components/recordWorkspacePopup.css';
+import './runtime/churvoxWorkerPreReactShell';
 import './runtime/churvoxNativeTimerRuntime';
 import './runtime/churvoxRouteAliasRuntime';
 import './runtime/authInputVisibilityGuard';
