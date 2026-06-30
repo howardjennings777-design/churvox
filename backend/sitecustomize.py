@@ -32,6 +32,11 @@ except Exception:
     pass
 
 try:
+    import churvox_worker_complete_elapsed_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_monthly_job_limit  # noqa: F401
 except Exception:
     pass
