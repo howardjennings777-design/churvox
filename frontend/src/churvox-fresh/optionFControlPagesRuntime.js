@@ -4,10 +4,10 @@ const CONTROL_LAYER_CLASS = 'optionFControlDepth';
 const pages = {
   xero: {
     title: 'Accounting sync control',
-    intro: 'Draft invoice sync only. Churvox prepares the queue and keeps the owner decision in Command.',
+    intro: 'Live Xero status is shown in the Xero actions panel. Sync stays draft-only and owner-approved.',
     stats: [
-      ['Connected', 'Xero', 'Tenant ready'],
-      ['5', 'drafts queued', 'No auto-send'],
+      ['Live', 'status check', 'Use panel'],
+      ['0', 'auto-sends', 'Locked off'],
       ['0', 'tax files', 'Locked off'],
       ['0', 'payout files', 'Locked off'],
     ],
@@ -15,10 +15,10 @@ const pages = {
       {
         title: 'Draft Sync Queue',
         rows: [
-          ['INV-1042', 'Belmont Villas', '$420', '3 photos + note', 'Waiting in Command'],
-          ['INV-1041', 'Petone Units', '$180', 'Worker notes', 'Ready after owner check'],
-          ['INV-1038', 'Naenae Dairy', '$120', 'Site notes', 'Not synced'],
-          ['INV-1034', 'Mere H.', '$65', '2 photos', 'Synced'],
+          ['Live invoices', 'Use the invoice ledger and Xero actions panel for current sync state.', 'Live'],
+          ['Owner approval', 'Draft sync decisions remain in Command before any accounting action.', 'Locked'],
+          ['Status refresh', 'Only mark paid after accounting refresh confirms paid.', 'Guarded'],
+          ['Connection', 'Connect and refresh from the Xero actions panel.', 'Live check'],
         ],
       },
       {
@@ -33,9 +33,9 @@ const pages = {
       {
         title: 'Activity Log',
         rows: [
-          ['Today 8:10', 'Belmont draft prepared from job proof.', 'Queued'],
-          ['Today 7:42', 'Petone invoice checked against worker note.', 'Ready'],
-          ['Yesterday', 'Mere H. invoice marked synced after accounting status refresh.', 'Synced'],
+          ['Live sync log', 'Use the Xero panel response and invoice sync records for current activity.', 'Live'],
+          ['Audit safe', 'Audit clicks do not run backend sync or OAuth actions.', 'Guarded'],
+          ['Owner desk', 'Anything risky waits for approve, edit or park in Command.', 'Command'],
         ],
       },
     ],
@@ -64,7 +64,7 @@ const pages = {
         rows: [
           ['Default repeat', 'Fortnightly', 'Weekly, fortnightly, monthly or custom'],
           ['Default billing', 'Fixed + extras', 'Can be changed per job'],
-          ['Proof requirement', 'Photos + notes', 'Shown before invoice draft'],
+          ['Photo notes', 'Photos + notes', 'Shown before invoice draft'],
           ['Issue handling', 'Waits in Command', 'No send-to-Command button needed'],
         ],
       },
@@ -243,3 +243,5 @@ if (typeof window !== 'undefined') {
   document.addEventListener('click', () => setTimeout(enhance, 80));
   setInterval(enhance, 1000);
 }
+
+export {};
