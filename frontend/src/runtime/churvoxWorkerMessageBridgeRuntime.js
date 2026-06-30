@@ -35,7 +35,7 @@ function ensureStyle() {
   const style = document.createElement('style');
   style.id = 'cv-worker-message-bridge-style';
   style.textContent = `
-    .cvWorkerHistory{display:grid;gap:10px;margin-top:12px}.cvWorkerHistory h3{margin:0;font-size:16px}.cvWorkerHistory article{display:grid;gap:4px;border:1px solid rgba(15,23,42,.08);border-radius:14px;background:#f8fafc;padding:10px}.cvWorkerHistory article b{font-size:13px}.cvWorkerHistory article span{font-size:12px;color:#475569;font-weight:800}.cvWorkerHistory article small{font-size:11px;color:#9a3412;font-weight:950;text-transform:uppercase;letter-spacing:.06em}.cvWorkerMessageSaved{border-radius:999px;background:#dcfce7;color:#14532d;padding:6px 10px;font-size:12px;font-weight:950;width:fit-content}
+    .cvWorkerHistory{display:grid;gap:10px;margin-top:12px}.cvWorkerHistory h3{margin:0;font-size:16px}.cvWorkerHistory article{display:grid;gap:4px;border:1px solid rgba(15,23,42,.08);border-radius:14px;background:#f8fafc;padding:10px}.cvWorkerHistory article b{font-size:13px}.cvWorkerHistory article span{font-size:12px;color:#475569;font-weight:800}.cvWorkerHistory article small{font-size:11px;color:#9a3412;font-weight:950;text-transform:uppercase;letter-spacing:.06em}.cvWorkerMessageSaved{border-radius:999px;background:#dcfce7;color:#14532d;padding:6px 10px;font-size:12px;font-weight:950;width:fit-content}.cvWorkerMessageEmpty{border-radius:999px;background:#fff7ed;color:#9a3412;padding:6px 10px;font-size:12px;font-weight:950;width:fit-content}
   `;
   document.head.appendChild(style);
 }
@@ -54,17 +54,29 @@ function renderHistory() {
   const rows = history();
   wrap.innerHTML = `<h3>Sent to office</h3>${rows.length ? rows.slice(0, 8).map((row) => `<article><small>${row.status || 'Saved'}</small><b>${row.message}</b><span>${new Date(row.at).toLocaleString()}</span></article>`).join('') : '<article><b>No sent messages yet.</b><span>Messages you send from here will stay visible.</span></article>'}`;
 }
+function noteAfter(button, className, message) {
+  const old = button.parentElement?.querySelector?.(`.${className}`);
+  if (old) old.remove();
+  const note = document.createElement('span');
+  note.className = className;
+  note.textContent = message;
+  button.after(note);
+  setTimeout(() => note.remove(), 1800);
+}
 async function handleSend(event) {
   if (!isWorkerMessages()) return;
   const button = event.target?.closest?.('button');
   if (!button || !/send/i.test(compact(button.textContent))) return;
-  const app = document.querySelector('.simpleWorkerApp');
-  const textarea = app?.querySelector('textarea');
-  const message = compact(textarea?.value);
-  if (!message) return;
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
+  const app = document.querySelector('.simpleWorkerApp');
+  const textarea = app?.querySelector('textarea');
+  const message = compact(textarea?.value);
+  if (!message) {
+    noteAfter(button, 'cvWorkerMessageEmpty', 'Type a message first');
+    return;
+  }
   button.disabled = true;
   button.textContent = 'Sending';
   const delivered = await sendBackend(message);
@@ -72,11 +84,8 @@ async function handleSend(event) {
   if (textarea) textarea.value = '';
   button.disabled = false;
   button.textContent = delivered ? 'Sent' : 'Saved';
-  const note = document.createElement('span');
-  note.className = 'cvWorkerMessageSaved';
-  note.textContent = delivered ? 'Sent to office' : 'Saved for office';
-  button.after(note);
-  setTimeout(() => { note.remove(); button.textContent = 'Send'; }, 1800);
+  noteAfter(button, 'cvWorkerMessageSaved', delivered ? 'Sent to office' : 'Saved for office');
+  setTimeout(() => { button.textContent = 'Send'; }, 1800);
   renderHistory();
 }
 if (typeof window !== 'undefined' && !window[KEY]) {
