@@ -9,7 +9,6 @@ const endpointMap = {
   clients: '/clients',
   quotes: '/quotes',
   invoices: '/invoices',
-  messages: '/messages',
   workers: '/team/workers',
 };
 
@@ -31,13 +30,13 @@ function mapPayload(key, record) {
   if (key === 'clients') return { name: record.name || record.Name || '', phone: record.phone || record.Phone || '', email: record.email || record.Email || '', address: record.address || record.Address || '', notes: record.notes || record['Notes/access'] || record['Access notes'] || '', service_memory: record.service || record['Service memory'] || record['Preferred service'] || '', price_memory: record.price || record['Price memory'] || record['Saved price'] || '', source: 'option_f_working_actions' };
   if (key === 'quotes') return { title: record.title || record.Quote || 'New quote', client_name: record.client || record.Client || '', amount: Number(record.amount || record.Amount || 0), status: record.status || record.Status || 'Draft', scope: record.scope || record.Scope || '', terms: record.terms || record.Terms || '', follow_up: record.followUp || record['Follow-up'] || '', source: 'option_f_working_actions' };
   if (key === 'invoices') return { invoice_number: record.Invoice || record.number || '', client_name: record.Client || record.client || '', job_title: record.Job || record.job || '', amount: Number(record.Amount || record.amount || 0), due_date: record['Due date'] || record.due || '', status: record.Status || record.status || 'Draft', sync_status: record['Xero/MYOB status'] || record.sync || '', line_item: record.line || record['Line item'] || '', evidence: record.evidence || record.Evidence || '', source: 'option_f_working_actions' };
-  if (key === 'messages') return { client_name: record.client || record.Client || '', job_title: record.job || record.Job || '', subject: record.subject || record.Subject || 'Message draft', channel: record.channel || record.Channel || '', message: record.draft || record.reply || record['Drafted reply'] || record.Message || '', context: record.detail || record.context || '', source: 'option_f_working_actions' };
   if (key === 'workers') return { name: record.name || record.Worker || record.worker || '', email: record.email || record.Email || '', phone: record.phone || record.Phone || '', role: record.role || record.Role || 'worker', access: record.access || record.Access || '', status: record.status || record['Clock status'] || '', current_job: record.job || record['Current job'] || record.currentJob || '', gps: record.gps || record['GPS/location'] || '', clock_in: record.start || record.clockIn || record['Clock in'] || '', clock_out: record.end || record.clockOut || record['Clock out'] || '', break_time: record.break || record.breakTime || record.Break || '', proof: record.proof || record['Proof/photos'] || '', messages: record.messages || record['Worker messages'] || '', timesheet: record.timesheet || record.hours || record['Timesheet hours'] || '', slip_status: record.slip || record.slipStatus || record['Slip status'] || '', payroll_status: record.payroll || record['Payroll review'] || '', worker_app: record.app || record['Worker app'] || '', notes: record.notes || record.Notes || '', source: 'option_f_working_actions' };
   return record;
 }
 async function postRecord(key, record) {
   const endpoint = endpointMap[key];
   if (!endpoint || record._synced || record._syncing || isBlocked(record)) return record;
+  if (key === 'workers' && !String(record.email || record.Email || '').trim()) return { ...record, _synced: false, _syncError: 'Worker email required before backend sync' };
   const last = Number(record._lastSyncAttempt || 0);
   if (record._syncError && Date.now() - last < 30000) return record;
   const next = { ...record, _syncing: true, _lastSyncAttempt: Date.now() };
