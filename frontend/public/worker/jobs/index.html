@@ -1,2 +1,45 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Jobs</title></head><body><h1>Jobs</h1><h2>No open jobs</h2><p>One job at a time.</p><a href="/worker/today">Today</a></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Worker Jobs - Churvox</title>
+  <style>
+    body { margin: 0; background: #f5f7f1; color: #111827; font-family: Inter, system-ui, sans-serif; }
+    main { padding: 18px 18px 92px; display: grid; gap: 14px; }
+    .hero { border-radius: 24px; background: #111827; color: white; padding: 22px; }
+    .card { border-radius: 20px; background: white; padding: 16px; }
+    .button { display: block; text-align: center; border-radius: 999px; background: #111827; color: white; padding: 14px; text-decoration: none; font-weight: 900; }
+    .pill { display: inline-flex; border-radius: 999px; background: #fff7ed; color: #9a3412; padding: 5px 9px; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+    nav { position: fixed; left: 10px; right: 10px; bottom: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: #111827; padding: 8px; border-radius: 18px; }
+    nav a { color: white; text-align: center; text-decoration: none; font-weight: 900; font-size: 12px; padding: 10px 0; border-radius: 12px; }
+    nav a.active { background: #f97316; color: #111827; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <p>Jobs</p>
+      <h1>Worker</h1>
+      <p>One job at a time.</p>
+    </section>
+    <section class="card">
+      <h2>No open jobs</h2>
+      <p>All jobs done. One job at a time.</p>
+      <a class="button" href="/worker/today">Today</a>
+    </section>
+    <section class="card">
+      <span class="pill">Operator / Command</span>
+      <h2>Take payment</h2>
+      <p>Approved on-site card payments are owner-controlled. The worker collects only; funds go to the business account.</p>
+    </section>
+    <nav>
+      <a href="/worker/today">Today</a>
+      <a class="active" href="/worker/jobs">Jobs</a>
+      <a href="/worker/messages">Messages</a>
+      <a href="/worker/help">Help</a>
+      <a href="/worker/profile">Me</a>
+    </nav>
+  </main>
+</body>
+</html>
