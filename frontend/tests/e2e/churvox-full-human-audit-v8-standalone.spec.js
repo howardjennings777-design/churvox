@@ -10,15 +10,15 @@ async function bodyText(page) {
   return (await page.locator('body').innerText({ timeout: 5000 })).replace(/\s+/g, ' ').trim();
 }
 
-test.describe('Churvox worker fallback contract', () => {
-  test('worker Today and Jobs are never blank', async ({ page }) => {
-    await go(page, '/worker/today/index.html');
+test.describe('Churvox worker live route contract', () => {
+  test('worker Today and Jobs live URLs are never blank', async ({ page }) => {
+    await go(page, '/worker/today');
     let text = await bodyText(page);
     expect(text).toMatch(/Today/i);
     expect(text).toMatch(/schedule|info|messages|jobs/i);
     expect(text).not.toMatch(/Start job/i);
 
-    await go(page, '/worker/jobs/index.html');
+    await go(page, '/worker/jobs');
     text = await bodyText(page);
     expect(text).toMatch(/Jobs/i);
     expect(text).toMatch(/one job at a time|all jobs done|no open jobs/i);
