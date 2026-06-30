@@ -170,6 +170,28 @@ async def _payment_settings(db, user, owner=None):
     return settings, owner, account_id
 
 
+async def _payment_debug_payload(db, user):
+    bid = _business_id(user)
+    owner = await _owner_doc(db, user)
+    plan = _plan(user, owner)
+    settings, owner, account_id = await _payment_settings(db, user, owner)
+    return _json_safe({
+        "success": True,
+        "business_id": bid,
+        "role": _role(user),
+        "owner_role": _owner_role(user),
+        "plan": plan,
+        "enabled_for_plan": _on_site_payment_allowed(plan),
+        "stripe_configured": bool(_stripe_key()),
+        "stripe_key_mode": "live" if _stripe_key().startswith("sk_live_") else "test" if _stripe_key().startswith("sk_test_") else "unknown",
+        "connected": bool(account_id),
+        "stripe_account_id": account_id,
+        "frontend_url": _frontend_url(),
+        "payment_settings": settings,
+        "next_step": "Connect Stripe" if _on_site_payment_allowed(plan) and _stripe_key() and not account_id else "Check owner role, plan, Stripe key, and Stripe Connect setup",
+    })
+
+
 async def _build_on_site_setup_link(db, user):
     if not _owner_role(user):
         raise HTTPException(status_code=403, detail="Owner access required")
@@ -177,7 +199,7 @@ async def _build_on_site_setup_link(db, user):
     owner = await _owner_doc(db, user)
     plan = _plan(user, owner)
     if not _on_site_payment_allowed(plan):
-        raise HTTPException(status_code=403, detail="On-site payments require Operator or Command")
+        raise HTTPException(status_code=403, detail=f"On-site payments require Operator or Command. Current plan: {plan}")
     secret = _stripe_key()
     if not secret:
         raise HTTPException(status_code=503, detail="Stripe secret key is not configured in Render")
@@ -206,7 +228,16 @@ async def _build_on_site_setup_link(db, user):
             type="account_onboarding",
         )
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Stripe onboarding error: {str(exc)}")
+        detail = str(exc)
+        await db.on_site_payment_events.insert_one({
+            "business_id": bid,
+            "event": "setup_link_failed",
+            "detail": detail,
+            "stripe_account_id": account_id,
+            "plan": plan,
+            "created_at": datetime.now(timezone.utc),
+        })
+        raise HTTPException(status_code=400, detail=f"Stripe onboarding error: {detail}")
     return {"success": True, "url": link.get("url"), "stripe_account_id": account_id}
 
 
@@ -299,6 +330,21 @@ def build_accounting_router(db, get_current_user, ObjectId=None):
 
     router = APIRouter()
 
+    @router.get("/plan/usage")
+    async def plan_usage_fallback(current_user=Depends(get_current_user)):
+        bid = _business_id(current_user)
+        owner = await _owner_doc(db, current_user)
+        plan = _plan(current_user, owner)
+        jobs = await _docs(db, "jobs", bid, limit=500)
+        clients = await _docs(db, "clients", bid, limit=500)
+        invoices = await _docs(db, "invoices", bid, limit=500)
+        return {
+            "success": True,
+            "plan": plan,
+            "usage": {"jobs": len(jobs), "clients": len(clients), "invoices": len(invoices)},
+            "limits": {"onSitePayments": _on_site_payment_allowed(plan)},
+        }
+
     @router.get("/accounting/health")
     async def accounting_health(current_user=Depends(get_current_user)):
         bid = _business_id(current_user)
@@ -342,26 +388,11 @@ def build_accounting_router(db, get_current_user, ObjectId=None):
 
     @router.get("/payments/on-site/status")
     async def on_site_payment_status(current_user=Depends(get_current_user)):
-        bid = _business_id(current_user)
-        owner = await _owner_doc(db, current_user)
-        plan = _plan(current_user, owner)
-        settings, owner, account_id = await _payment_settings(db, current_user, owner)
-        return _json_safe({
-            "success": True,
-            "feature": "on_site_card_payments",
-            "required_plan": "operator",
-            "enabled_for_plan": _on_site_payment_allowed(plan),
-            "plan": plan,
-            "stripe_configured": bool(_stripe_key()),
-            "connected": bool(account_id),
-            "terminal_ready": bool(_stripe_key() and account_id and _on_site_payment_allowed(plan)),
-            "stripe_account_id": account_id,
-            "business_id": bid,
-            "charges_go_to": "business_account",
-            "worker_can_change_bank": False,
-            "xero_rule": "Draft sync only. No tax filing. No payout files.",
-            "settings": settings,
-        })
+        return await _payment_debug_payload(db, current_user)
+
+    @router.get("/payments/on-site/debug")
+    async def on_site_payment_debug(current_user=Depends(get_current_user)):
+        return await _payment_debug_payload(db, current_user)
 
     @router.post("/payments/on-site/setup-link")
     async def on_site_payment_setup_link(current_user=Depends(get_current_user)):
@@ -389,7 +420,7 @@ def build_accounting_router(db, get_current_user, ObjectId=None):
         if amount <= 0:
             raise HTTPException(status_code=400, detail="Payment amount is required")
         currency = str((settings or {}).get("currency") or (payload or {}).get("currency") or "nzd").lower().strip()[:3] or "nzd"
-        stripe.api_key = secret
+        stripe.api_key = _stripe_key()
         try:
             intent = stripe.PaymentIntent.create(
                 amount=amount,
