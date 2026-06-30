@@ -18,7 +18,7 @@ def _text(value):
     if isinstance(value, ObjectId):
         return str(value)
     if isinstance(value, dict):
-        return _text(value.get("$oid") or value.get("id") or value.get("_id") or value.get("worker_id") or value.get("user_id") or value.get("email"))
+        return _text(value.get("$oid") or value.get("id") or value.get("_id") or value.get("worker_id") or value.get("user_id") or value.get("email") or value.get("name"))
     return str(value or "").strip()
 
 
@@ -65,8 +65,19 @@ def _worker_ids(user):
     return {value for value in (_text(user.get(key)) for key in ("id", "_id", "worker_id", "staff_id", "team_member_id", "user_id")) if value}
 
 
+def _worker_names(user):
+    user = user or {}
+    names = set()
+    for key in ("name", "full_name", "worker_name", "staff_name"):
+        value = str(user.get(key) or "").strip().lower()
+        if value:
+            names.add(value)
+    return names
+
+
 def _assigned(job, user):
     ids = _worker_ids(user)
+    names = _worker_names(user)
     email = str((user or {}).get("email") or "").strip().lower()
     id_keys = ("assigned_worker_id", "worker_id", "assigned_to", "assignedWorkerId", "workerId", "staff_id", "team_member_id", "assigned_user_id")
     for key in id_keys:
@@ -75,8 +86,13 @@ def _assigned(job, user):
             return True
         if email and value.lower() == email:
             return True
+        if names and value.lower() in names:
+            return True
     for key in ("worker_email", "assigned_worker_email", "assigned_to_email", "staff_email", "email"):
         if email and str(job.get(key) or "").strip().lower() == email:
+            return True
+    for key in ("worker_name", "assigned_worker_name", "assigned_to_name", "staff_name"):
+        if names and str(job.get(key) or "").strip().lower() in names:
             return True
     for row in (job.get("workers") or job.get("assigned_workers") or job.get("team") or []):
         if isinstance(row, dict):
@@ -84,7 +100,9 @@ def _assigned(job, user):
                 return True
             if email and str(row.get("email") or "").strip().lower() == email:
                 return True
-        elif _text(row) in ids or (email and _text(row).lower() == email):
+            if names and str(row.get("name") or row.get("full_name") or "").strip().lower() in names:
+                return True
+        elif _text(row) in ids or (email and _text(row).lower() == email) or (names and _text(row).lower() in names):
             return True
     return False
 
