@@ -7,6 +7,11 @@ BACKEND_PUBLIC_URL_DEFAULT = "https://churvox-backend.onrender.com"
 FRONTEND_URL_DEFAULT = "https://www.churvox.com"
 
 try:
+    import churvox_plan_limits_current_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_monthly_job_limit  # noqa: F401
 except Exception:
     pass
