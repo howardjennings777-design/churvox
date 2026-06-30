@@ -17,9 +17,21 @@ const SEED_PATTERNS = [
   'Fence repair',
   'Grounds tidy',
   'Hedge package',
+  'Cleanup',
+  'Gate locked',
   'Friday request',
   'Extra green waste',
   'Alex clock-out',
+  'Invite pending',
+  'Worker app invite still pending',
+  'Yard',
+  'QT-',
+  'INV-10',
+  '027 000 000',
+  '04 000 000',
+  '022 000 000',
+  '021 000 000',
+  '@example.com',
 ];
 
 function ensureStyle() {
