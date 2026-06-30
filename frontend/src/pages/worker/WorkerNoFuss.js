@@ -214,6 +214,7 @@ export function NoFussJob() {
   const queue = openJobs(jobs);
   const picked = jobs.find((item) => id(item) === jid && !readDone().includes(id(item))) || queue[0];
   const job = picked;
+  const jobId = id(job);
   const [started, setStarted] = useState(false);
   const [finish, setFinish] = useState(false);
   const [note, setNote] = useState("");
@@ -222,7 +223,7 @@ export function NoFussJob() {
   useEffect(() => {
     setStarted(/progress|started|active/.test(stat(job || {})));
     setNote(c(job?.worker_notes || ""));
-  }, [jid, load, job]);
+  }, [jid, load, jobId]);
 
   async function act() {
     if (!job) return;
@@ -232,14 +233,14 @@ export function NoFussJob() {
     await beacon(post, job, end ? "stop" : "start");
     try {
       if (end) {
-        await post(`/worker/jobs/${id(job)}/complete`, { worker_notes: note });
+        await post(`/worker/jobs/${jobId}/complete`, { worker_notes: note });
         await timer(post, job, "complete", note);
       } else {
         await timer(post, job, "start", note);
-        await patch(`/worker/jobs/${id(job)}/field-update`, { worker_notes: note });
+        await patch(`/worker/jobs/${jobId}/field-update`, { worker_notes: note });
       }
     } catch {}
-    if (end) markDone(id(job));
+    if (end) markDone(jobId);
     setBusy(false);
     if (end) {
       toast.success("Sent to office");
