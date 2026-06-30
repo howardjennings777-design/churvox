@@ -253,9 +253,9 @@ export function AuthProvider({ children }) {
   const updateUser = useCallback((updates) => setUser((prev) => (prev ? { ...prev, ...updates } : prev)), []);
 
   const roleValue = rawRole(user || {});
-  const normalizedRole = normalizeRole(roleValue);
   const isWorker = inferredWorker(user || {});
   const isPayroll = !isWorker && inferredPayroll(user || {});
+  const normalizedRole = isWorker ? "worker" : isPayroll ? "payroll" : normalizeRole(roleValue);
   const isEmployer = !isWorker && !isPayroll && isBusinessRole(roleValue);
   const isOwnerUser = !isWorker && !isPayroll && isOwner(roleValue);
 
