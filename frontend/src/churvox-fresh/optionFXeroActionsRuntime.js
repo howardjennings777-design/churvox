@@ -2,6 +2,8 @@ import API_BASE from '../lib/apiBase';
 
 const PANEL_ID = 'option-f-xero-actions-panel';
 const STYLE_ID = 'option-f-xero-actions-style';
+let statusLoaded = false;
+let xeroConnected = false;
 
 function isXeroPage() {
   const hash = (window.location.hash || '').replace('#', '').toLowerCase();
@@ -30,15 +32,36 @@ function ensureStyle() {
     #${PANEL_ID} .xeroButtons{display:flex;flex-wrap:wrap;gap:10px}
     #${PANEL_ID} button{border:0;border-radius:999px;padding:10px 13px;background:#101513;color:#fff;font-weight:950;cursor:pointer}
     #${PANEL_ID} button:first-child{background:#ea580c}
+    #${PANEL_ID} button[disabled]{cursor:not-allowed;opacity:.48;background:#6b7280}
+    #${PANEL_ID} .xeroStatusPill{justify-self:start;border-radius:999px;padding:7px 10px;background:#f8faf9;color:#111815;border:1px solid rgba(16,21,19,.08);font-size:12px;font-weight:950}
+    #${PANEL_ID} .xeroStatusPill.live{background:#ecfdf5;color:#047857}
+    #${PANEL_ID} .xeroStatusPill.off{background:#fff7ed;color:#9a3412}
     #${PANEL_ID} pre{margin:0;white-space:pre-wrap;border-radius:12px;padding:10px;background:#f8faf9;color:#111815;font:800 12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;max-height:170px;overflow:auto}
   `;
   document.head.appendChild(style);
+}
+
+function panel() {
+  return document.getElementById(PANEL_ID);
 }
 
 function setLog(message, data = null) {
   const pre = document.querySelector(`#${PANEL_ID} pre`);
   if (!pre) return;
   pre.textContent = data ? `${message}\n${JSON.stringify(data, null, 2)}` : message;
+}
+
+function setStatus(connected, label = '') {
+  xeroConnected = Boolean(connected);
+  const root = panel();
+  if (!root) return;
+  const pill = root.querySelector('.xeroStatusPill');
+  if (pill) {
+    pill.classList.toggle('live', xeroConnected);
+    pill.classList.toggle('off', !xeroConnected);
+    pill.textContent = xeroConnected ? `Connected${label ? `: ${label}` : ''}` : (label || 'Not connected');
+  }
+  root.querySelector('[data-xero="sync"]')?.toggleAttribute('disabled', !xeroConnected);
 }
 
 function isAuditControl(button) {
@@ -68,6 +91,7 @@ async function connectXero() {
     setLog('Xero connect endpoint responded, but no redirect URL was returned.', body);
   } catch (error) {
     setLog(`Xero connect failed: ${error.message}`);
+    setStatus(false, 'Connection unavailable');
   }
 }
 
@@ -75,13 +99,24 @@ async function refreshStatus() {
   setLog('Refreshing Xero status...');
   try {
     const body = await request('/xero/status', { method: 'GET' });
+    const raw = body?.data?.data || body?.data || body || {};
+    const connected = Boolean(raw.connected || raw.xero_connected || raw.live_sync?.xero_connected);
+    const tenant = raw.tenant_name || raw.tenantName || raw.live_sync?.tenant_name || '';
+    statusLoaded = true;
+    setStatus(connected, connected ? tenant : (raw.message || raw.detail || 'Not connected'));
     setLog('Xero status refreshed.', body);
   } catch (error) {
+    statusLoaded = true;
+    setStatus(false, 'Status check failed');
     setLog(`Xero status failed: ${error.message}`);
   }
 }
 
 async function syncLatest() {
+  if (!xeroConnected) {
+    setLog('Connect Xero before requesting draft invoice sync.');
+    return;
+  }
   setLog('Requesting latest draft invoice sync...');
   try {
     const body = await request('/xero/sync-latest-invoice', { method: 'POST' });
@@ -95,19 +130,24 @@ function render() {
   ensureStyle();
   if (!isXeroPage()) {
     document.getElementById(PANEL_ID)?.remove();
+    statusLoaded = false;
     return;
   }
   const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
-  if (!root || document.getElementById(PANEL_ID)) return;
-  const panel = document.createElement('section');
-  panel.id = PANEL_ID;
-  panel.innerHTML = `
-    <h3>Xero actions</h3>
-    <p>Connect, refresh status, or request a latest draft invoice sync. Sync still follows the owner-approved draft-only rule.</p>
-    <div class="xeroButtons"><button type="button" data-xero="connect">Sync to Xero setup</button><button type="button" data-xero="refresh">Refresh Xero status</button><button type="button" data-xero="sync">Sync to Xero latest draft</button></div>
-    <pre>Ready.</pre>
-  `;
-  root.appendChild(panel);
+  if (!root) return;
+  if (!document.getElementById(PANEL_ID)) {
+    const panelNode = document.createElement('section');
+    panelNode.id = PANEL_ID;
+    panelNode.innerHTML = `
+      <h3>Xero actions</h3>
+      <p>Connect, refresh status, or request a latest draft invoice sync. Sync still follows the owner-approved draft-only rule.</p>
+      <span class="xeroStatusPill off">Checking Xero status...</span>
+      <div class="xeroButtons"><button type="button" data-xero="connect">Sync to Xero setup</button><button type="button" data-xero="refresh">Refresh Xero status</button><button type="button" data-xero="sync" disabled>Sync to Xero latest draft</button></div>
+      <pre>Checking live status...</pre>
+    `;
+    root.appendChild(panelNode);
+  }
+  if (!statusLoaded) refreshStatus();
 }
 
 function handleClick(event) {
@@ -115,6 +155,10 @@ function handleClick(event) {
   if (!button) return;
   event.preventDefault();
   event.stopPropagation();
+  if (button.disabled) {
+    setLog('This Xero action is unavailable until the live status check passes.');
+    return;
+  }
   if (isAuditControl(button)) {
     setLog('Xero control ready. Backend/OAuth action skipped for audit.');
     return;
