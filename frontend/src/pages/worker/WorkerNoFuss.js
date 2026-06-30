@@ -98,7 +98,7 @@ function Shell({ tab, title, children }) {
       </section>
       <section className="swBody">{children}</section>
       <nav className="swNav">
-        {[["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/ops"], ["Help", "/worker/help"], ["Me", "/worker/settings"]].map(([label, href]) => (
+        {[["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/messages"], ["Help", "/worker/help"], ["Me", "/worker/profile"]].map(([label, href]) => (
           <Link key={label} className={label === tab ? "active" : ""} to={href}>{label}</Link>
         ))}
       </nav>
@@ -281,7 +281,7 @@ export function NoFussHelp() {
   const options = ["Wrong address", "Customer issue", "Unsafe work", "Need more info", "Other"];
   function choose(option) {
     setDraft(option === "Other" ? "" : option);
-    window.location.assign("/worker/ops");
+    window.location.assign("/worker/messages");
   }
   return (
     <Shell tab="Help" title="Help">
@@ -313,7 +313,7 @@ export function NoFussMe() {
       <section className="swCard">
         <span>App guide</span>
         <div className="swGuide">
-          {guide.map(([label, value]) => <span key={label}><b>{label}</b>{value}</span>)}
+          {guide.map(([label, value]) => <span key={label}><b>{label}</b>{value}</span>) }
         </div>
       </section>
       <button className="swPrimary danger" onClick={logout}><LogOut size={16} />Log out</button>
@@ -324,8 +324,8 @@ export function NoFussMe() {
 export default function NoFussRoute() {
   const location = useLocation();
   if (location.pathname === "/worker/jobs") return <NoFussJobs />;
-  if (location.pathname === "/worker/ops") return <NoFussMessages />;
+  if (location.pathname === "/worker/ops" || location.pathname === "/worker/messages") return <NoFussMessages />;
   if (location.pathname === "/worker/help") return <NoFussHelp />;
-  if (location.pathname === "/worker/settings") return <NoFussMe />;
+  if (location.pathname === "/worker/settings" || location.pathname === "/worker/profile") return <NoFussMe />;
   return <NoFussToday />;
 }
