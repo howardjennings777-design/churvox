@@ -5,6 +5,12 @@ const MAP = {
   'No proof yet': 'No photos yet',
   'Evidence checked': 'Source info',
   'Owner check': 'Owner note',
+  'Issue status': 'Command status',
+  'No issue': 'Clear',
+  'Waiting in Command': 'Held in Command',
+  'In Command:': 'Command:',
+  'Problem': 'Command item',
+  'problem': 'Command item',
   'Proof': 'Photos',
   'proof': 'photos',
 };
@@ -23,13 +29,13 @@ function applyPlainLanguage() {
   root.querySelectorAll('h1,h2,h3,p,span,small,b,strong,em,i,label,button,li,td,th,div').forEach((node) => {
     if (node.children.length) return;
     const current = node.textContent || '';
-    if (!/proof|evidence checked|owner check/i.test(current)) return;
+    if (!/proof|evidence checked|owner check|issue status|no issue|waiting in command|in command:|problem/i.test(current)) return;
     const next = swap(current);
     if (next !== current) node.textContent = next;
   });
   root.querySelectorAll('input,textarea').forEach((node) => {
     const current = node.value || '';
-    if (!/proof|evidence checked|owner check/i.test(current)) return;
+    if (!/proof|evidence checked|owner check|issue status|no issue|waiting in command|in command:|problem/i.test(current)) return;
     const next = swap(current);
     if (next !== current) node.value = next;
   });
