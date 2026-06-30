@@ -71,6 +71,17 @@ def remove_route(app, path, method):
         pass
 
 
+def promote_route(app, path, method):
+    try:
+        routes = list(app.router.routes)
+        matches = [r for r in routes if route_matches(r, path, method)]
+        others = [r for r in routes if not route_matches(r, path, method)]
+        if matches:
+            app.router.routes = matches[-1:] + others + matches[:-1]
+    except Exception:
+        pass
+
+
 async def find_owner(db, user, ObjectId):
     bid = business_id(user)
     checks = []
@@ -164,13 +175,12 @@ def install_server(module):
     for path in ["/api/payments/on-site/status", "/api/payments/on-site/debug"]:
         remove_route(app, path, "GET")
         app.add_api_route(path, status, methods=["GET"])
+        promote_route(app, path, "GET")
     return True
 
 
 def install(module):
     name = getattr(module, "__name__", "")
-    if name in DONE:
-        return
     ok = False
     if name in {"server", "backend.server"}:
         ok = install_server(module) or ok
