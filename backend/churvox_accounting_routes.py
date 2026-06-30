@@ -169,6 +169,7 @@ async def _payment_settings(db, user, owner=None):
         settings.get("stripe_account_id")
         or owner.get("stripe_account_id")
         or owner.get("stripe_connected_account_id")
+        or os.environ.get("STRIPE_ONSITE_ACCOUNT_ID")
         or ""
     ).strip()
     return settings, owner, account_id
