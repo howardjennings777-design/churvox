@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Connect Payments - Churvox</title>
+  <title>Payments + Xero - Churvox</title>
   <style>
     body { margin: 0; background: #f5f7f1; color: #111827; font-family: Inter, system-ui, sans-serif; }
     main { min-height: 100vh; box-sizing: border-box; display: grid; place-items: center; padding: 22px; }
@@ -24,9 +24,9 @@
 <body>
   <main>
     <section class="hero">
-      <p>Operator / Command</p>
+      <p>Payments + Xero</p>
       <h1>Connect on-site payments</h1>
-      <p>Owner connects Stripe. Workers can collect approved card payments. Funds go to the business account, not the worker.</p>
+      <p>This belongs with Xero/accounting because the owner controls money. Workers only collect approved card payments for the business.</p>
     </section>
     <section>
       <h2>Payment setup</h2>
@@ -36,9 +36,10 @@
         <span>Owner-controlled bank setup only</span>
         <span>Operator and Command only</span>
         <span>Workers cannot change payout bank details</span>
+        <span>Xero remains draft sync only — no tax filing, no payout files</span>
         <span>Card data is handled by Stripe, not Churvox</span>
       </div>
-      <a class="button" href="/dashboard#settings">Back to Settings</a>
+      <a class="button" href="/dashboard#xero">Back to Xero + Payments</a>
     </section>
   </main>
   <script>
@@ -52,7 +53,7 @@
     async function api(path, options = {}) {
       const res = await fetch(`${API_BASE}/api${path}`, { credentials: "include", headers: headers(), ...options });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || data.message || "Request failed");
+      if (!res.ok) throw new Error(data.detail || data.message || `Backend ${res.status}: route not ready yet`);
       return data;
     }
     async function load() {
