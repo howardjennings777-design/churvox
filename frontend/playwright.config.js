@@ -1,7 +1,7 @@
 const { defineConfig, devices } = require('@playwright/test');
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000';
-const useExternalSite = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com';
+const useExternalSite = /^https?:\/\//i.test(baseURL) && !/127\.0\.0\.1|localhost/i.test(baseURL);
 const storageState = process.env.PLAYWRIGHT_STORAGE_STATE || undefined;
 
 module.exports = defineConfig({
