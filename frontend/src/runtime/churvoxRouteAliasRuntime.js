@@ -6,8 +6,10 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   const path = window.location.pathname || '';
   const aliases = {
     '/help': '/dashboard#support',
+    '/automation': '/dashboard#automation',
     '/worker/messages': '/worker/ops',
     '/worker/profile': '/worker/settings',
+    '/worker/me': '/worker/settings',
   };
   const target = aliases[path];
   if (target) {
