@@ -3,7 +3,14 @@
 
 const STYLE_ID = 'option-f-hide-helper-buttons-style';
 const HIDDEN_CLASS = 'ofHelperButtonHidden';
-const HELPERS = ['open command', 'run site checks'];
+const HELPERS = [
+  'open command',
+  'open command desk',
+  'open command board',
+  'run site checks',
+  'run site check',
+  'site checks',
+];
 
 function ensureStyle() {
   if (document.getElementById(STYLE_ID)) return;
