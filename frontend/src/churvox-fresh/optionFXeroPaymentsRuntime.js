@@ -23,7 +23,7 @@ function ensureStyle() {
     #${PANEL_ID} .cvPayHero p{margin:0!important;color:#fff!important;font-weight:900!important;line-height:1.35!important;position:relative!important;z-index:1!important}
     #${PANEL_ID} .cvPayHero small{display:block!important;color:#fed7aa!important;font-weight:950!important;line-height:1.35!important;position:relative!important;z-index:1!important}
     #${PANEL_ID} .cvPaySetup p,#${PANEL_ID} .cvPayCard p,#${PANEL_ID} .cvPayFlow p{margin:0!important;color:#374151!important;font-weight:850!important;line-height:1.35!important}
-    #${PANEL_ID} .cvPayStatus{border-radius:14px!important;background:#fff7ed!important;border:1px solid rgba(249,115,22,.22)!important;padding:11px 12px!important;color:#9a3412!important;font-size:13px!important;font-weight:950!important;min-height:46px!important}
+    #${PANEL_ID} .cvPayStatus{border-radius:14px!important;background:#fff7ed!important;border:1px solid rgba(249,115,22,.22)!important;padding:11px 12px!important;color:#9a3412!important;font-size:13px!important;font-weight:950!important;min-height:46px!important;white-space:pre-wrap!important}
     #${PANEL_ID} .cvPayActions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
     #${PANEL_ID} button{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:44px!important;width:100%!important;border:0!important;border-radius:999px!important;padding:10px 14px!important;background:#111827!important;color:#fff!important;text-decoration:none!important;font-weight:1000!important;box-shadow:0 12px 24px rgba(15,23,42,.16)!important;cursor:pointer!important;white-space:nowrap!important}
     #${PANEL_ID} button.cvPaySecondary{background:#f3f4f6!important;color:#111827!important;border:1px solid rgba(17,24,39,.1)!important;box-shadow:none!important}
@@ -49,8 +49,8 @@ function authHeaders() {
 
 async function api(path, options = {}) {
   const res = await fetch(`${API_BASE}/api${path}`, { credentials: 'include', headers: authHeaders(), ...options });
-  if (res.status === 404) throw new Error('Backend payment route is not live yet. Wait for the backend Render deploy, then refresh.');
   const data = await res.json().catch(() => ({}));
+  if (res.status === 404) throw new Error('Backend payment route is not live yet. Wait for the backend Render deploy, then refresh.');
   if (!res.ok) throw new Error(data.detail || data.message || `Backend ${res.status}`);
   return data;
 }
@@ -87,6 +87,13 @@ async function refreshStatus(panel) {
 async function openStripe(panel) {
   const status = panel.querySelector('.cvPayStatus');
   const button = panel.querySelector('.cvPayButton');
+  let stripeWindow = null;
+  try {
+    stripeWindow = window.open('', '_blank');
+    if (stripeWindow) {
+      stripeWindow.document.write('<title>Opening Stripe...</title><p style="font-family:system-ui;padding:24px;font-weight:800">Opening secure Stripe onboarding...</p>');
+    }
+  } catch {}
   if (button) {
     button.disabled = true;
     button.textContent = 'Opening Stripe...';
@@ -95,9 +102,16 @@ async function openStripe(panel) {
   try {
     const data = await api('/payments/on-site/setup-link', { method: 'POST', body: '{}' });
     if (!data.url) throw new Error('Stripe did not return an onboarding link.');
-    window.location.assign(data.url);
+    if (stripeWindow && !stripeWindow.closed) {
+      stripeWindow.location.href = data.url;
+    } else {
+      window.location.href = data.url;
+    }
   } catch (error) {
-    if (status) status.textContent = error?.message || 'Could not open Stripe onboarding.';
+    const message = error?.message || 'Could not open Stripe onboarding.';
+    if (stripeWindow && !stripeWindow.closed) stripeWindow.close();
+    if (status) status.textContent = `Stripe setup did not open:\n${message}`;
+    window.alert(`Stripe setup did not open:\n${message}`);
     if (button) {
       button.disabled = false;
       button.textContent = 'Connect Stripe payments';
