@@ -49,6 +49,7 @@ import './churvox-fresh/optionFAdminBrainRuntime';
 import './churvox-fresh/optionFNoLeakRuntime';
 import './churvox-fresh/optionFHideSeedDemoRuntime';
 import './churvox-fresh/optionFPlainLanguageRuntime';
+import './churvox-fresh/optionFWorkerCopyScrubRuntime';
 import './churvox-fresh/optionFHideHelperButtonsRuntime';
 import './churvox-fresh/optionFCommandCleanupRuntime';
 import './churvox-fresh/optionFTodayScheduleGuardRuntime';
