@@ -11,6 +11,7 @@ import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxWorkerNoFussHardCleanRuntime';
 import './runtime/churvoxWorkerJobsFallbackRuntime';
+import './runtime/churvoxWorkerBlankFallbackRuntime';
 import './runtime/churvoxDrawerClickSafetyRuntime';
 import './runtime/churvoxPlainSendGuardRuntime';
 import './pages/marketing/PublicAdminOS.css';
