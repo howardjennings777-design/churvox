@@ -39,7 +39,7 @@ function roleFromEmail(email) {
 }
 
 function tokenFrom(data) {
-  return data?.token || data?.access_token || data?.auth_token || data?.user?.token || data?.user?.access_token || '';
+  return data?.token || data?.access_token || data?.auth_token || data?.data?.token || data?.data?.access_token || data?.data?.auth_token || data?.user?.token || data?.user?.access_token || data?.data?.user?.token || data?.data?.user?.access_token || '';
 }
 
 function hasUser(data) {
@@ -61,7 +61,7 @@ function shape(data, email) {
     auth_response_guard: true,
   };
   if (token) user.token = token;
-  return { ...(data || {}), success: true, email, id: email, business_id: email, role, plan: user.plan, subscription_status: 'active', has_app_access: true, user };
+  return { ...(data || {}), success: true, email, id: email, business_id: email, role, plan: user.plan, subscription_status: 'active', has_app_access: true, token, access_token: token || undefined, user };
 }
 
 if (typeof window !== 'undefined' && !window[KEY]) {
