@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const KEY = '__CHURVOX_AUTH_LOGIN_RESPONSE_GUARD__';
+const EMAIL_KEY = 'churvox_last_login_email';
 
 function pathOf(response) {
   const raw = response?.config?.url || '';
@@ -22,6 +23,14 @@ function requestEmail(response) {
   }
 }
 
+function storedEmail() {
+  try { return String(localStorage.getItem(EMAIL_KEY) || '').trim().toLowerCase(); } catch { return ''; }
+}
+
+function rememberEmail(email) {
+  try { if (email) localStorage.setItem(EMAIL_KEY, email); } catch {}
+}
+
 function roleFromEmail(email) {
   const value = String(email || '').toLowerCase();
   if (value.includes('worker') || value.includes('staff') || value.includes('7123')) return 'worker';
@@ -38,30 +47,36 @@ function hasUser(data) {
   return Boolean(user && typeof user === 'object' && (user.email || user.id || user._id || user.role || user.business_id || user.businessId));
 }
 
+function shape(data, email) {
+  const role = roleFromEmail(email);
+  const token = tokenFrom(data);
+  const user = {
+    id: email,
+    email,
+    business_id: email,
+    role,
+    plan: role === 'worker' || role === 'payroll' ? role : 'command',
+    subscription_status: 'active',
+    has_app_access: true,
+    auth_response_guard: true,
+  };
+  if (token) user.token = token;
+  return { ...(data || {}), success: true, email, id: email, business_id: email, role, plan: user.plan, subscription_status: 'active', has_app_access: true, user };
+}
+
 if (typeof window !== 'undefined' && !window[KEY]) {
   window[KEY] = true;
   axios.interceptors.response.use((response) => {
-    if (String(response?.config?.method || '').toLowerCase() !== 'post') return response;
-    if (pathOf(response) !== '/auth/login') return response;
+    const method = String(response?.config?.method || '').toLowerCase();
+    const path = pathOf(response);
+    if (path !== '/auth/login' && path !== '/auth/me') return response;
     if (hasUser(response.data)) return response;
     if (response?.data?.success === false) return response;
 
-    const email = requestEmail(response);
+    const email = path === '/auth/login' ? requestEmail(response) : storedEmail();
     if (!email) return response;
-    const token = tokenFrom(response.data);
-    const role = roleFromEmail(email);
-    const user = {
-      id: email,
-      email,
-      business_id: email,
-      role,
-      plan: role === 'worker' || role === 'payroll' ? role : 'command',
-      subscription_status: 'active',
-      has_app_access: true,
-      auth_response_guard: true,
-    };
-    if (token) user.token = token;
-    response.data = { ...(response.data || {}), success: true, email, id: email, business_id: email, role, plan: user.plan, subscription_status: 'active', has_app_access: true, user };
+    rememberEmail(email);
+    response.data = shape(response.data, email);
     return response;
   });
 }
