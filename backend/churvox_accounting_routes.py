@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 import stripe
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 
 
 ON_SITE_PAYMENT_PLANS = {"operator", "pro", "command", "enterprise"}
@@ -170,6 +170,46 @@ async def _payment_settings(db, user, owner=None):
     return settings, owner, account_id
 
 
+async def _build_on_site_setup_link(db, user):
+    if not _owner_role(user):
+        raise HTTPException(status_code=403, detail="Owner access required")
+    bid = _business_id(user)
+    owner = await _owner_doc(db, user)
+    plan = _plan(user, owner)
+    if not _on_site_payment_allowed(plan):
+        raise HTTPException(status_code=403, detail="On-site payments require Operator or Command")
+    secret = _stripe_key()
+    if not secret:
+        raise HTTPException(status_code=503, detail="Stripe secret key is not configured in Render")
+    stripe.api_key = secret
+    settings, owner, account_id = await _payment_settings(db, user, owner)
+    try:
+        if not account_id:
+            country = str(owner.get("country") or owner.get("billing_country") or user.get("country") or "NZ").upper().strip()[:2] or "NZ"
+            account = stripe.Account.create(
+                type="express",
+                country=country,
+                email=owner.get("email") or user.get("email"),
+                capabilities={"card_payments": {"requested": True}, "transfers": {"requested": True}},
+                metadata={"business_id": bid, "source": "churvox_on_site_payments"},
+            )
+            account_id = account.get("id")
+            await db.payment_settings.update_one(
+                {"business_id": bid},
+                {"$set": {"business_id": bid, "provider": "stripe", "stripe_account_id": account_id, "updated_at": datetime.now(timezone.utc)}, "$setOnInsert": {"created_at": datetime.now(timezone.utc)}},
+                upsert=True,
+            )
+        link = stripe.AccountLink.create(
+            account=account_id,
+            refresh_url=f"{_frontend_url()}/dashboard#xero",
+            return_url=f"{_frontend_url()}/dashboard#xero",
+            type="account_onboarding",
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Stripe onboarding error: {str(exc)}")
+    return {"success": True, "url": link.get("url"), "stripe_account_id": account_id}
+
+
 def _csv_bytes(rows, headers):
     s = io.StringIO()
     writer = csv.DictWriter(s, fieldnames=headers, extrasaction="ignore")
@@ -325,43 +365,12 @@ def build_accounting_router(db, get_current_user, ObjectId=None):
 
     @router.post("/payments/on-site/setup-link")
     async def on_site_payment_setup_link(current_user=Depends(get_current_user)):
-        if not _owner_role(current_user):
-            raise HTTPException(status_code=403, detail="Owner access required")
-        bid = _business_id(current_user)
-        owner = await _owner_doc(db, current_user)
-        plan = _plan(current_user, owner)
-        if not _on_site_payment_allowed(plan):
-            raise HTTPException(status_code=403, detail="On-site payments require Operator or Command")
-        secret = _stripe_key()
-        if not secret:
-            raise HTTPException(status_code=503, detail="Stripe secret key is not configured in Render")
-        stripe.api_key = secret
-        settings, owner, account_id = await _payment_settings(db, current_user, owner)
-        try:
-            if not account_id:
-                country = str(owner.get("country") or owner.get("billing_country") or current_user.get("country") or "NZ").upper().strip()[:2] or "NZ"
-                account = stripe.Account.create(
-                    type="express",
-                    country=country,
-                    email=owner.get("email") or current_user.get("email"),
-                    capabilities={"card_payments": {"requested": True}, "transfers": {"requested": True}},
-                    metadata={"business_id": bid, "source": "churvox_on_site_payments"},
-                )
-                account_id = account.get("id")
-                await db.payment_settings.update_one(
-                    {"business_id": bid},
-                    {"$set": {"business_id": bid, "provider": "stripe", "stripe_account_id": account_id, "updated_at": datetime.now(timezone.utc)}, "$setOnInsert": {"created_at": datetime.now(timezone.utc)}},
-                    upsert=True,
-                )
-            link = stripe.AccountLink.create(
-                account=account_id,
-                refresh_url=f"{_frontend_url()}/dashboard#xero",
-                return_url=f"{_frontend_url()}/dashboard#xero",
-                type="account_onboarding",
-            )
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=f"Stripe onboarding error: {str(exc)}")
-        return {"success": True, "url": link.get("url"), "stripe_account_id": account_id}
+        return await _build_on_site_setup_link(db, current_user)
+
+    @router.get("/payments/on-site/setup-start")
+    async def on_site_payment_setup_start(current_user=Depends(get_current_user)):
+        result = await _build_on_site_setup_link(db, current_user)
+        return RedirectResponse(result["url"], status_code=303)
 
     @router.post("/payments/on-site/payment-intent")
     async def on_site_payment_intent(payload: dict = Body(default_factory=dict), current_user=Depends(get_current_user)):
