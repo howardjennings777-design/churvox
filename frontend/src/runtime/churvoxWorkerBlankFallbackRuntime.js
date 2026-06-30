@@ -88,7 +88,7 @@ function renderFallback() {
   }
   const rootText = workerRootText();
   const current = document.getElementById(FALLBACK_ID);
-  if (!current && rootText.length > 40 && /login|email|password|loading/i.test(rootText)) return;
+  if (!current && rootText.length > 40 && /login|email|password/i.test(rootText)) return;
   ensureStyle();
   let node = current;
   if (!node) {
