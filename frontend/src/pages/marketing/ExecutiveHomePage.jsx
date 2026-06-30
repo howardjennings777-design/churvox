@@ -13,38 +13,51 @@ const navLinks = [
 const proof = [
   "14-day free trial",
   "No card upfront",
-  "Owner approval in Command",
-  "CSV import and export",
+  "Owner approval stays in Command",
+  "Built for service businesses",
+];
+
+const businessTypes = [
+  ["Trades", "Plumbing, electrical, painting, repairs, installs and maintenance."],
+  ["Property services", "Cleaning, lawn care, landscaping, pest control and handyman work."],
+  ["Mobile teams", "Workers on the road, office messages, time, photos and job notes."],
+  ["Growing crews", "A simple way to keep jobs, clients, quotes, invoices and staff lined up."],
 ];
 
 const osAreas = [
-  ["Today", "Jobs due, workers active, money due, messages and issues for this business day."],
-  ["Command", "The only approval desk. Approve, edit or park prepared admin here."],
-  ["Jobs", "Add work, edit job details, manage recurring work, proof, time, prices and status."],
-  ["Clients", "Client list, editable records, service memory, price memory and history."],
-  ["Workers", "Clocked-in team, current jobs, GPS view, proof, photos, messages and slips."],
-  ["Money", "Quotes, invoices, due money, paid work and draft sync readiness."],
+  ["Today", "A clear view of the day: jobs moving, workers active, money due and messages that need attention."],
+  ["Command", "The approval desk. Approve, edit or park prepared admin from one place."],
+  ["Jobs", "Create, edit and schedule work with client, worker, date, time, price and recurrence details."],
+  ["Clients", "Keep service history, notes, pricing memory and job records together."],
+  ["Workers", "Give the team simple job instructions, directions, messages and finish flow."],
+  ["Money", "Quotes, invoices, due money, paid work and safe draft accounting handoff."],
 ];
 
 const workflow = [
-  ["1", "Work goes in", "Add a job, import clients, capture worker proof or receive a customer message."],
-  ["2", "Churvox prepares", "Draft invoices, quote follow-ups, replies, missing details and sync checks are assembled from records."],
-  ["3", "Owner checks", "Important decisions wait in Command with enough context to understand what happened."],
-  ["4", "Owner approves", "Approve, edit or park. Churvox never hides the decision in another page."],
+  ["1", "Work comes in", "Add a job, import a client, receive a message or get a worker update."],
+  ["2", "Churvox prepares", "The admin details are organised from the records you already have."],
+  ["3", "Command shows it", "Anything that needs a decision goes to one approval desk."],
+  ["4", "You approve", "Approve, edit or park. No guessing. No hidden decisions."],
 ];
 
 const guardrails = [
-  ["No auto-send", "Messages, invoices and sync decisions can be prepared, but important actions wait for owner approval."],
-  ["Command only", "Approve, edit and park controls live in Command, not scattered across the app."],
-  ["Accounting safe", "Draft sync only where available. No tax filing and no payout files."],
-  ["Real records", "The app fills from jobs, clients, workers, quotes, invoices, messages and imports."],
+  ["No automatic invoice sending", "Churvox can prepare invoices, but sending stays owner-approved."],
+  ["No scattered approval buttons", "Important decisions live in Command, not across every page."],
+  ["Safe accounting handoff", "Draft sync only where available. No tax filing. No bank payout files."],
+  ["Clear missing details", "If information is missing, it is surfaced instead of quietly moving forward."],
 ];
 
 const operatingMoments = [
-  ["A worker uploads proof", "Churvox links the photos, job, worker, time and invoice context."],
-  ["A quote needs follow-up", "The reply can be prepared from client memory, quote status and job notes."],
-  ["An invoice is missing details", "It is held back from Today and routed to Command or the right setup page."],
-  ["A customer asks for a change", "The message thread stays visible and the action waits for approval."],
+  ["Worker finishes a job", "Notes, time and photos are tied back to the job so the office can act."],
+  ["Quote needs a follow-up", "Churvox keeps the client, quote and job context together."],
+  ["Invoice needs checking", "Price, job, client and worker details are prepared before owner approval."],
+  ["Customer asks for a change", "The message stays visible and the next decision goes to Command."],
+];
+
+const trustPoints = [
+  ["Simple for the owner", "You see what matters, then approve it."],
+  ["Simple for workers", "They see jobs, directions, messages, start and finish."],
+  ["Built around control", "Churvox prepares admin, but the business owner stays in charge."],
 ];
 
 export function Nav() {
@@ -75,7 +88,7 @@ export function Footer() {
         <ChurvoxLogo variant="mark" size="md" />
         <span>
           <b>Churvox</b>
-          <small>The owner-approved admin OS.</small>
+          <small>Churvox does the admin. You approve.</small>
         </span>
       </div>
       <nav aria-label="Footer navigation">
@@ -92,10 +105,10 @@ export function Footer() {
 
 function ProductMock() {
   return (
-    <aside className="publicMock" aria-label="Churvox OS preview">
+    <aside className="publicMock" aria-label="Churvox preview">
       <div className="publicMockTop">
-        <span>Churvox OS</span>
-        <b>Owner checks and approves</b>
+        <span>Command</span>
+        <b>Prepared admin, ready to approve</b>
       </div>
       <div className="publicMockTabs">
         <span>Today</span>
@@ -105,28 +118,28 @@ function ProductMock() {
       </div>
       <div className="publicMockGrid">
         <section>
-          <small>Waiting for approval</small>
+          <small>Waiting for owner</small>
           <article>
             <b>Invoice ready</b>
-            <span>Job, photos, time and price checked</span>
+            <span>Job, time, photos and price are together</span>
           </article>
           <article>
             <b>Quote follow-up</b>
-            <span>Draft reply prepared from client history</span>
+            <span>Client history and quote status are ready</span>
           </article>
           <article>
             <b>Missing job time</b>
-            <span>Needs date and worker time before Today</span>
+            <span>Needs date and worker time before it moves on</span>
           </article>
         </section>
         <section>
-          <small>Filled approval slip</small>
+          <small>Approval slip</small>
           <div className="publicSlip">
             <b>Invoice ready</b>
             <span>Client: Belmont Villas</span>
             <span>Job: Hedge trim</span>
-            <span>Proof: 3 photos + note</span>
-            <span>Recommended action: Approve</span>
+            <span>Photos: 3 + worker note</span>
+            <span>Next step: approve, edit or park</span>
           </div>
           <div className="publicMockActions">
             <span>Approve</span>
@@ -141,15 +154,15 @@ function ProductMock() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_MODERN_OS_20260629">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_10_OUT_OF_10_20260630">
       <Nav />
 
       <section className="publicHero">
         <div className="publicHeroCopy">
-          <span className="publicKicker">Modern admin OS for service businesses</span>
-          <h1>Churvox does the admin. The owner checks and approves.</h1>
+          <span className="publicKicker">Admin engine for service businesses</span>
+          <h1>Churvox does the admin. You approve.</h1>
           <p>
-            Run jobs, clients, workers, quotes, invoices, messages and accounting handoff in one clean system. Churvox prepares the admin from real records, then Command gives the owner one place to approve, edit or park it.
+            Churvox keeps jobs, clients, workers, quotes, invoices, messages and safe accounting handoff in one clean system. It prepares the admin from real records, then sends important decisions to Command for owner approval.
           </p>
           <div className="publicActions">
             <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
@@ -166,14 +179,14 @@ export default function ExecutiveHomePage() {
         <span className="publicKicker">The point</span>
         <h2>Less chasing. Less guessing. One approval desk.</h2>
         <p>
-          The owner should not hunt through every page to find what needs a decision. Churvox turns work activity into clear admin slips, and Command keeps the final decisions controlled.
+          Owners should not have to search through every page to find what needs a decision. Churvox prepares the next admin move and keeps final approval in Command.
         </p>
       </section>
 
       <section className="publicBand">
         <div className="publicSectionHead">
-          <span className="publicKicker">How it runs</span>
-          <h2>Four steps, every day.</h2>
+          <span className="publicKicker">How it works</span>
+          <h2>Four steps that make sense.</h2>
         </div>
         <div className="publicFlow">
           {workflow.map(([num, title, text]) => (
@@ -188,10 +201,28 @@ export default function ExecutiveHomePage() {
 
       <section className="publicBand publicSplit">
         <div>
-          <span className="publicKicker">Inside Churvox</span>
-          <h2>Every page has a job.</h2>
+          <span className="publicKicker">Who it is for</span>
+          <h2>Built for service businesses that move fast.</h2>
           <p>
-            The public site now matches the product shape: light readable pages, black industrial headers, orange action points and one simple promise.
+            Churvox fits businesses where jobs, workers, customers, pricing and invoices are always moving at the same time.
+          </p>
+        </div>
+        <div className="publicAreaGrid">
+          {businessTypes.map(([title, text]) => (
+            <article key={title}>
+              <b>{title}</b>
+              <span>{text}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="publicBand publicSplit">
+        <div>
+          <span className="publicKicker">Inside Churvox</span>
+          <h2>Every page has one clear job.</h2>
+          <p>
+            The owner sees the business clearly. Workers stay simple. Command handles decisions.
           </p>
         </div>
         <div className="publicAreaGrid">
@@ -234,10 +265,25 @@ export default function ExecutiveHomePage() {
         </div>
       </section>
 
+      <section className="publicBand">
+        <div className="publicSectionHead">
+          <span className="publicKicker">Why it feels different</span>
+          <h2>Simple screens. Clear decisions. No hidden action.</h2>
+        </div>
+        <div className="publicCardGrid">
+          {trustPoints.map(([title, text]) => (
+            <article key={title}>
+              <b>{title}</b>
+              <span>{text}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="publicBand publicCta">
         <div>
           <span className="publicKicker">Start clean</span>
-          <h2>Put the business into Churvox and let Command handle the owner checks.</h2>
+          <h2>Put the business into Churvox and let Command handle the approvals.</h2>
         </div>
         <div className="publicActions">
           <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
