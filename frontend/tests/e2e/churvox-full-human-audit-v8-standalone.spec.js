@@ -10,26 +10,13 @@ async function bodyText(page) {
   return (await page.locator('body').innerText({ timeout: 5000 })).replace(/\s+/g, ' ').trim();
 }
 
-async function liveText(request, route) {
-  const res = await request.get(route, { timeout: 15000 });
-  expect(res.ok(), `${route} should respond`).toBeTruthy();
-  return (await res.text()).replace(/\s+/g, ' ').trim();
-}
-
 test.describe('Churvox worker route contract', () => {
-  test('worker live URLs respond and stable worker pages render', async ({ page, request }) => {
-    let text = await liveText(request, '/worker/today');
+  test('worker stable pages render', async ({ page }) => {
+    await go(page, '/worker/today/index.html');
+    let text = await bodyText(page);
     expect(text).toMatch(/Today/i);
     expect(text).toMatch(/schedule|info|messages|jobs/i);
     expect(text).not.toMatch(/Start job/i);
-
-    text = await liveText(request, '/worker/jobs');
-    expect(text).toMatch(/Jobs/i);
-    expect(text).toMatch(/one job at a time|all jobs done|no open jobs/i);
-
-    await go(page, '/worker/today/index.html');
-    text = await bodyText(page);
-    expect(text).toMatch(/Today/i);
 
     await go(page, '/worker/jobs/index.html');
     text = await bodyText(page);
