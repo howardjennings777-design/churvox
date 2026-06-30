@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connect Payments - Churvox</title>
+  <style>
+    body { margin: 0; background: #f5f7f1; color: #111827; font-family: Inter, system-ui, sans-serif; }
+    main { min-height: 100vh; box-sizing: border-box; display: grid; place-items: center; padding: 22px; }
+    section { width: min(760px, 100%); display: grid; gap: 16px; border-radius: 28px; background: white; padding: 26px; box-shadow: 0 24px 60px rgba(15,23,42,.14); }
+    .hero { background: linear-gradient(135deg, #111827, #1f2937 56%, #f97316); color: white; }
+    p, h1, h2 { margin: 0; }
+    h1 { font-size: clamp(34px, 8vw, 64px); line-height: .92; letter-spacing: -.06em; }
+    h2 { font-size: 22px; }
+    p { color: #475569; font-weight: 800; line-height: 1.45; }
+    .hero p { color: #fed7aa; }
+    button, a.button { min-height: 52px; border: 0; border-radius: 999px; padding: 14px 18px; background: #111827; color: white; font-weight: 1000; text-align: center; text-decoration: none; cursor: pointer; }
+    button:disabled { opacity: .65; cursor: wait; }
+    .status { border-radius: 18px; padding: 14px; background: #f8fafc; color: #334155; font-weight: 850; }
+    .rules { display: grid; gap: 8px; }
+    .rules span { border-radius: 14px; background: #fff7ed; color: #9a3412; padding: 10px 12px; font-weight: 900; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <p>Operator / Command</p>
+      <h1>Connect on-site payments</h1>
+      <p>Owner connects Stripe. Workers can collect approved card payments. Funds go to the business account, not the worker.</p>
+    </section>
+    <section>
+      <h2>Payment setup</h2>
+      <p id="status" class="status">Checking payment status...</p>
+      <button id="connect" type="button">Connect Stripe payments</button>
+      <div class="rules">
+        <span>Owner-controlled bank setup only</span>
+        <span>Operator and Command only</span>
+        <span>Workers cannot change payout bank details</span>
+        <span>Card data is handled by Stripe, not Churvox</span>
+      </div>
+      <a class="button" href="/dashboard#settings">Back to Settings</a>
+    </section>
+  </main>
+  <script>
+    const API_BASE = "https://grassley-backend.onrender.com";
+    const statusEl = document.getElementById("status");
+    const button = document.getElementById("connect");
+    function headers() {
+      const token = localStorage.getItem("token");
+      return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+    }
+    async function api(path, options = {}) {
+      const res = await fetch(`${API_BASE}/api${path}`, { credentials: "include", headers: headers(), ...options });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || data.message || "Request failed");
+      return data;
+    }
+    async function load() {
+      try {
+        const data = await api("/payments/on-site/status");
+        if (!data.enabled_for_plan) {
+          statusEl.textContent = "Locked: on-site payments require Operator or Command.";
+          button.disabled = true;
+          return;
+        }
+        if (!data.stripe_configured) {
+          statusEl.textContent = "Backend needs STRIPE_SECRET_KEY saved in Render.";
+          button.disabled = true;
+          return;
+        }
+        statusEl.textContent = data.connected ? "Stripe connected. Workers can prepare card-present payment requests when jobs have an amount." : "Ready to connect Stripe. Click the button to open secure Stripe onboarding.";
+      } catch (error) {
+        statusEl.textContent = error.message || "Sign in as the owner first, then open this page again.";
+      }
+    }
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      button.textContent = "Opening Stripe...";
+      try {
+        const data = await api("/payments/on-site/setup-link", { method: "POST", body: "{}" });
+        if (data.url) window.location.assign(data.url);
+        else throw new Error("Stripe did not return an onboarding link.");
+      } catch (error) {
+        statusEl.textContent = error.message || "Could not open Stripe onboarding.";
+        button.disabled = false;
+        button.textContent = "Connect Stripe payments";
+      }
+    });
+    load();
+  </script>
+</body>
+</html>
