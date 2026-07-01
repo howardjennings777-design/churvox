@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { Briefcase, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
+import { Briefcase, CreditCard, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +22,15 @@ const instructions = (job) => clean(job?.worker_instructions || job?.instruction
 const status = (job) => clean(job?.status || job?.job_status || job?.workflow_status).toLowerCase();
 const isDone = (job) => /complete|done|finished|cancelled|archived/.test(status(job));
 const mapsUrl = (place) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`;
+const moneyValue = (job) => job?.payment_due || job?.amount_due || job?.invoice_total || job?.total || job?.price || job?.quote_total || job?.job_price || 0;
+const centsFromJob = (job) => {
+  const number = Number(String(moneyValue(job) || "").replace(/[^0-9.]/g, ""));
+  return number > 0 ? Math.round(number * 100) : 0;
+};
+const moneyLabel = (job) => {
+  const cents = centsFromJob(job);
+  return cents > 0 ? `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}` : "Office sets amount";
+};
 
 function useWorkerJobs() {
   const { get } = useApi();
@@ -86,6 +95,61 @@ function JobCard({ job, action = "Open job" }) {
 
 function openJobs(jobs) {
   return jobs.filter((job) => !isDone(job));
+}
+
+function WorkerPaymentCard({ job }) {
+  const { get, post } = useApi();
+  const [status, setStatus] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const amountCents = centsFromJob(job);
+  const ready = Boolean(status?.terminal_ready && amountCents > 0);
+
+  useEffect(() => {
+    let alive = true;
+    get("/payments/on-site/status")
+      .then((result) => { if (alive) setStatus(result?.data || result || {}); })
+      .catch(() => { if (alive) setStatus({ terminal_ready: false }); });
+    return () => { alive = false; };
+  }, [get]);
+
+  async function preparePayment() {
+    if (!ready) {
+      toast.info(amountCents > 0 ? "Owner needs to connect Stripe first" : "Office needs to set the payment amount first");
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await post("/payments/on-site/payment-intent", {
+        job_id: jobId(job),
+        amount_cents: amountCents,
+        currency: "nzd",
+        description: `${jobTitle(job)} - ${customer(job)}`,
+      });
+      const data = result?.data || result || {};
+      if (data.client_secret) {
+        toast.success("Payment prepared. Use the connected Stripe Terminal reader to tap card.");
+      } else {
+        toast.info(data.detail || "Payment setup needs owner attention");
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.message || "Payment setup needs owner attention");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className={`swCard swActionCard swPayment ${ready ? "" : "locked"}`}>
+      <span>Payment</span>
+      <h2>{ready ? "Prepare card payment" : "Payment locked"}</h2>
+      <div className="swFacts">
+        <span className="swFact"><b>Plan</b>{status?.enabled_for_plan ? "Operator / Command" : "Operator or Command"}</span>
+        <span className="swFact"><b>Amount</b>{moneyLabel(job)}</span>
+      </div>
+      <small>Worker can prepare collection only. Funds go to the business Stripe account.</small>
+      <button className={ready ? "swPrimary" : "swLight"} type="button" disabled={busy} onClick={preparePayment}><CreditCard size={16} />{busy ? "Preparing" : ready ? "Prepare payment" : "Locked"}</button>
+    </section>
+  );
 }
 
 export function NoFussToday() {
@@ -170,6 +234,7 @@ export function NoFussJob() {
         <span>Do this</span>
         <h2>{instructions(job)}</h2>
       </section>
+      <WorkerPaymentCard job={job} />
       <section className="swCard swActionCard">
         <span>Note</span>
         <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note for office" />
