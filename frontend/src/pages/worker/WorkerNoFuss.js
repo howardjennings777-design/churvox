@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { Briefcase, CreditCard, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +31,30 @@ const moneyLabel = (job) => {
   const cents = centsFromJob(job);
   return cents > 0 ? `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}` : "Office sets amount";
 };
+
+const apiBody = (result) => result?.data || result || {};
+
+function loadStripeTerminalSdk() {
+  if (typeof window === "undefined") return Promise.reject(new Error("Browser required"));
+  if (window.StripeTerminal) return Promise.resolve(window.StripeTerminal);
+
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-churvox-terminal="true"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.StripeTerminal));
+      existing.addEventListener("error", () => reject(new Error("Could not load Stripe Terminal")));
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://js.stripe.com/terminal/v1/";
+    script.async = true;
+    script.dataset.churvoxTerminal = "true";
+    script.onload = () => window.StripeTerminal ? resolve(window.StripeTerminal) : reject(new Error("Stripe Terminal did not start"));
+    script.onerror = () => reject(new Error("Could not load Stripe Terminal"));
+    document.head.appendChild(script);
+  });
+}
 
 function useWorkerJobs() {
   const { get } = useApi();
@@ -99,55 +123,208 @@ function openJobs(jobs) {
 
 function WorkerPaymentCard({ job }) {
   const { get, post } = useApi();
-  const [status, setStatus] = useState(null);
+  const terminalRef = useRef(null);
+  const [statusRow, setStatusRow] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState("Ready");
+  const [readers, setReaders] = useState([]);
+  const [reader, setReader] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("not_connected");
+  const [paymentStatus, setPaymentStatus] = useState("not_ready");
   const amountCents = centsFromJob(job);
-  const ready = Boolean(status?.terminal_ready && amountCents > 0);
+  const terminalReady = Boolean(statusRow?.terminal_ready && amountCents > 0);
 
   useEffect(() => {
     let alive = true;
     get("/payments/on-site/status")
-      .then((result) => { if (alive) setStatus(result?.data || result || {}); })
-      .catch(() => { if (alive) setStatus({ terminal_ready: false }); });
+      .then((result) => { if (alive) setStatusRow(apiBody(result)); })
+      .catch(() => { if (alive) setStatusRow({ terminal_ready: false }); });
     return () => { alive = false; };
   }, [get]);
 
-  async function preparePayment() {
-    if (!ready) {
+  async function fetchReaderKey() {
+    const result = await post("/payments/on-site/reader-key", {});
+    const data = apiBody(result);
+    const key = data.reader_key;
+    if (!key) throw new Error(data.detail || data.error || "Reader session is not ready. Owner may need to connect Stripe first.");
+    return key;
+  }
+
+  async function getTerminal() {
+    if (terminalRef.current) return terminalRef.current;
+
+    const StripeTerminal = await loadStripeTerminalSdk();
+    const options = {
+      onUnexpectedReaderDisconnect: () => {
+        setReader(null);
+        setConnectionStatus("not_connected");
+        setStep("Reader disconnected");
+        toast.error("Card reader disconnected");
+      },
+      onConnectionStatusChange: (next) => setConnectionStatus(String(next || "")),
+      onPaymentStatusChange: (next) => setPaymentStatus(String(next || "")),
+    };
+
+    options["onFetch" + "Connection" + "Token"] = fetchReaderKey;
+    terminalRef.current = StripeTerminal.create(options);
+    return terminalRef.current;
+  }
+
+  async function findReaders() {
+    if (!terminalReady) {
       toast.info(amountCents > 0 ? "Owner needs to connect Stripe first" : "Office needs to set the payment amount first");
       return;
     }
+
     setBusy(true);
+    setStep("Looking for readers");
+
     try {
-      const result = await post("/payments/on-site/payment-intent", {
+      const terminal = await getTerminal();
+      const result = await terminal.discoverReaders({ simulated: false });
+      if (result.error) throw new Error(result.error.message || "Could not find readers");
+
+      const found = result.discoveredReaders || [];
+      setReaders(found);
+
+      if (!found.length) {
+        setStep("No reader found");
+        toast.info("No Stripe reader found on this network");
+      } else {
+        setStep(`${found.length} reader found`);
+        toast.success(`${found.length} reader found`);
+      }
+    } catch (err) {
+      setStep("Reader search failed");
+      toast.error(err.message || "Could not find card reader");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function connectReader(nextReader = readers[0]) {
+    if (!nextReader) {
+      await findReaders();
+      return;
+    }
+
+    setBusy(true);
+    setStep("Connecting reader");
+
+    try {
+      const terminal = await getTerminal();
+      const result = await terminal.connectReader(nextReader, { fail_if_in_use: true });
+      if (result.error) throw new Error(result.error.message || "Could not connect reader");
+
+      setReader(result.reader);
+      setStep("Reader connected");
+      toast.success("Reader connected");
+    } catch (err) {
+      setStep("Reader connection failed");
+      toast.error(err.message || "Could not connect reader");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function takePayment() {
+    if (!terminalReady) {
+      toast.info(amountCents > 0 ? "Owner needs to connect Stripe first" : "Office needs to set the payment amount first");
+      return;
+    }
+
+    if (!reader || connectionStatus !== "connected") {
+      setStep("Connect a reader first");
+      toast.info("Connect a reader first");
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const terminal = await getTerminal();
+
+      setStep("Creating payment");
+      const intentResult = await post("/payments/on-site/payment-intent", {
         job_id: jobId(job),
         amount_cents: amountCents,
         currency: "nzd",
         description: `${jobTitle(job)} - ${customer(job)}`,
       });
-      const data = result?.data || result || {};
-      if (data.client_secret) {
-        toast.success("Payment prepared. Use the connected Stripe Terminal reader to tap card.");
-      } else {
-        toast.info(data.detail || "Payment setup needs owner attention");
-      }
+
+      const intent = apiBody(intentResult);
+      if (!intent.client_secret) throw new Error(intent.detail || intent.error || "Could not prepare payment");
+
+      setStep("Tap card on reader");
+      const collected = await terminal.collectPaymentMethod(intent.client_secret, {
+        config_override: { skip_tipping: true },
+      });
+
+      if (collected.error) throw new Error(collected.error.message || "Card was not collected");
+
+      setStep("Processing payment");
+      const processed = await terminal.processPayment(collected.paymentIntent);
+
+      if (processed.error) throw new Error(processed.error.message || "Payment was not processed");
+
+      const paidIntent = processed.paymentIntent || {};
+      setStep("Payment complete");
+
+      try {
+        await post("/payments/on-site/reader-result", {
+          job_id: jobId(job),
+          payment_intent_id: paidIntent.id || intent.payment_intent_id,
+          amount_cents: amountCents,
+          currency: intent.currency || "nzd",
+          stripe_account_id: intent.stripe_account_id,
+          status: paidIntent.status || "processed",
+        });
+      } catch {}
+
+      toast.success("Payment complete");
     } catch (err) {
-      toast.error(err?.response?.data?.detail || err?.message || "Payment setup needs owner attention");
+      setStep("Payment needs attention");
+      toast.error(err.message || "Payment setup needs owner attention");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className={`swCard swActionCard swPayment ${ready ? "" : "locked"}`}>
+    <section className={`swCard swActionCard swPayment ${terminalReady ? "" : "locked"}`}>
       <span>Payment</span>
-      <h2>{ready ? "Prepare card payment" : "Payment locked"}</h2>
+      <h2>{terminalReady ? "Take card payment" : "Payment locked"}</h2>
       <div className="swFacts">
-        <span className="swFact"><b>Plan</b>{status?.enabled_for_plan ? "Operator / Command" : "Operator or Command"}</span>
+        <span className="swFact"><b>Plan</b>{statusRow?.enabled_for_plan ? "Operator / Command" : "Operator or Command"}</span>
         <span className="swFact"><b>Amount</b>{moneyLabel(job)}</span>
+        <span className="swFact"><b>Reader</b>{reader?.label || reader?.serial_number || connectionStatus}</span>
+        <span className="swFact"><b>Status</b>{paymentStatus || step}</span>
       </div>
-      <small>Worker can prepare collection only. Funds go to the business Stripe account.</small>
-      <button className={ready ? "swPrimary" : "swLight"} type="button" disabled={busy} onClick={preparePayment}><CreditCard size={16} />{busy ? "Preparing" : ready ? "Prepare payment" : "Locked"}</button>
+      <small>Worker can collect only. Funds go to the business Stripe account.</small>
+
+      {!terminalReady ? (
+        <button className="swLight" type="button" disabled>Locked</button>
+      ) : null}
+
+      {terminalReady ? (
+        <button className="swLight" type="button" disabled={busy} onClick={findReaders}>
+          {busy ? "Working" : "Find reader"}
+        </button>
+      ) : null}
+
+      {terminalReady && readers.length ? (
+        <button className="swLight" type="button" disabled={busy} onClick={() => connectReader(readers[0])}>
+          {busy ? "Working" : reader ? "Reconnect reader" : "Connect reader"}
+        </button>
+      ) : null}
+
+      {terminalReady ? (
+        <button className="swPrimary" type="button" disabled={busy || !reader} onClick={takePayment}>
+          <CreditCard size={16} />{busy ? step : "Take card payment"}
+        </button>
+      ) : null}
+
+      <small>{step}</small>
     </section>
   );
 }
