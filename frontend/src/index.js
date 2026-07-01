@@ -22,6 +22,7 @@ import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxPublicBusinessPagesRuntime';
+import './runtime/churvoxPublicBusinessPolishRuntime';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
 import './churvox-fresh/optionCCommandBarFix.css';
