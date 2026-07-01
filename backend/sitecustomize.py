@@ -166,8 +166,12 @@ try:
 except Exception:
     pass
 
-
 try:
     import churvox_admin_recovery_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
+    import churvox_paid_launch_guard_patch  # noqa: F401
 except Exception:
     pass
