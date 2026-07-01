@@ -123,6 +123,15 @@ export default function LoginPage() {
         return;
       }
 
+      const resultPath = getPostLoginPath(result);
+
+      if (resultPath.startsWith("/worker")) {
+        setSubmitting(false);
+        navigate(resultPath, { replace: true });
+        checkAuth?.().catch(() => {});
+        return;
+      }
+
       let fresh = null;
       try {
         fresh = await checkAuth?.();
@@ -130,7 +139,9 @@ export default function LoginPage() {
         // Login already succeeded. The app shell can refresh again after navigation.
       }
 
-      navigate(getPostLoginPath(fresh || result), { replace: true });
+      const finalPath = getPostLoginPath(fresh || result);
+      setSubmitting(false);
+      navigate(finalPath, { replace: true });
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
