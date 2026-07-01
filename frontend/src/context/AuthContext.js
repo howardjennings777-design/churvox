@@ -7,9 +7,10 @@ axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
 const AUTH_TIMEOUT_MS = 15000;
+const WORKER_AUTH_TIMEOUT_MS = 10000;
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
 const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
-const GOOD_STATUSES = new Set(["active", "paid", "trialing", "trial", "past_due"]);
+const GOOD_STATUSES = new Set(["active", "paid", "trialing", "trial", "past_due", "tester_free", "worker"]);
 
 function clearStoredAuth() {
   try {
@@ -103,6 +104,12 @@ function authError(data = {}) {
   return data?.detail || data?.message || data?.error || data?.data?.detail || data?.data?.message || "Invalid email or password.";
 }
 
+function shouldTryWorkerFallback(err) {
+  const status = err?.response?.status;
+  if (!status) return true;
+  return [400, 401, 403, 404, 408, 422, 500, 502, 503, 504].includes(status);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -125,7 +132,7 @@ export function AuthProvider({ children }) {
     try { token = localStorage.getItem("token") || ""; } catch {}
     try {
       const me = await fetchMe(token || undefined);
-      if (me?.has_app_access || hasValidPlan(me)) removePlanFlag();
+      if (me?.has_app_access || inferredWorker(me) || inferredPayroll(me) || hasValidPlan(me)) removePlanFlag();
       setUser(me);
       return me;
     } catch (err) {
@@ -155,19 +162,48 @@ export function AuthProvider({ children }) {
     };
   }, [checkAuth]);
 
+  async function workerLoginBridge(cleanEmail, password, originalError) {
+    try {
+      const response = await axios.post(
+        `${API_BASE}/api/worker/auth/login`,
+        { email: cleanEmail, password },
+        { withCredentials: true, timeout: WORKER_AUTH_TIMEOUT_MS }
+      );
+      if (response.data?.success === false) throw new Error(authError(response.data));
+      return response;
+    } catch (workerErr) {
+      const message = workerErr?.response?.data?.detail || workerErr?.response?.data?.message || workerErr?.message;
+      const original = originalError?.response?.data?.detail || originalError?.response?.data?.message || originalError?.message;
+      throw new Error(message || original || "Invalid email or password.");
+    }
+  }
+
   const login = useCallback(async (email, password) => {
     clearStoredAuth();
     setUser(null);
 
     const cleanEmail = String(email || "").trim().toLowerCase();
-    const response = await axios.post(
-      `${API_BASE}/api/auth/login`,
-      { email: cleanEmail, password },
-      { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
-    );
+    let response;
+    let normalLoginError = null;
+
+    try {
+      response = await axios.post(
+        `${API_BASE}/api/auth/login`,
+        { email: cleanEmail, password },
+        { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
+      );
+    } catch (err) {
+      normalLoginError = err;
+      if (!shouldTryWorkerFallback(err)) throw err;
+      response = await workerLoginBridge(cleanEmail, password, err);
+    }
 
     if (response.data?.success === false) {
-      throw new Error(authError(response.data));
+      try {
+        response = await workerLoginBridge(cleanEmail, password, normalLoginError);
+      } catch (err) {
+        throw new Error(authError(response.data) || err.message);
+      }
     }
 
     const token = tokenFrom(response.data);
@@ -189,7 +225,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem("token");
     }
 
-    if (nextUser?.has_app_access || hasValidPlan(nextUser)) removePlanFlag();
+    if (nextUser?.has_app_access || inferredWorker(nextUser) || inferredPayroll(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
     setUser(nextUser);
 
     const finalEmail = String(nextUser.email || "").trim().toLowerCase();
