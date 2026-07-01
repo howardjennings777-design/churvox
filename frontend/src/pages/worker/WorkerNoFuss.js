@@ -64,11 +64,14 @@ function useJobs() {
   const { get } = useApi();
   const [jobs, setJobs] = useState([]);
   const [load, setLoad] = useState(true);
+  const [error, setError] = useState("");
   async function go() {
     setLoad(true);
+    setError("");
     try {
       let response = await get("/worker/jobs");
       let rows = arr(response?.data || response);
+      if (response?.success === false) setError(response.error || "Could not load worker jobs.");
       if (!rows.length) {
         try {
           response = await get("/jobs");
@@ -76,13 +79,14 @@ function useJobs() {
         } catch {}
       }
       setJobs(rows.filter((item) => id(item)));
-    } catch {
+    } catch (err) {
+      setError(err?.message || "Could not load worker jobs.");
       setJobs([]);
     }
     setLoad(false);
   }
   useEffect(() => { go(); }, []);
-  return { jobs, load, go };
+  return { jobs, load, error, go };
 }
 
 async function beacon(post, job, state) {
@@ -206,7 +210,7 @@ function WorkCard({ job, started, finish, note, setNote, busy, act, canPay, onPa
 }
 
 export function NoFussToday() {
-  const { jobs, load } = useJobs();
+  const { jobs, load, error } = useJobs();
   const todayJobs = openJobs(jobs).filter((job) => day(job) === today());
   const queue = todayJobs.length ? todayJobs : openJobs(jobs);
   const first = queue[0];
@@ -214,6 +218,7 @@ export function NoFussToday() {
     <Shell tab="Today" title="Today">
       <Alerts />
       {load ? <section className="swEmpty"><RefreshCw className="spin" />Loading</section> : null}
+      {!load && error ? <section className="swEmpty"><AlertText text={error} /></section> : null}
       {!load ? <InfoCard job={first} count={queue.length} /> : null}
       {first ? <Link className="swPrimary" to={`/worker/jobs/${id(first)}`}>Open job</Link> : null}
       {first && msg(first) ? <section className="swCard"><span>Office</span><h2>{msg(first)}</h2></section> : <section className="swEmpty"><MessageCircle />No office messages.</section>}
@@ -221,17 +226,22 @@ export function NoFussToday() {
   );
 }
 
+function AlertText({ text }) {
+  return <>{text || "Could not load."}</>;
+}
+
 export function NoFussJobs() {
-  const { jobs, load, go } = useJobs();
+  const { jobs, load, error, go } = useJobs();
   const [tick, setTick] = useState(0);
   const queue = openJobs(jobs);
   const job = queue[0];
   return (
     <Shell tab="Jobs" title="Jobs">
       {load ? <section className="swEmpty"><RefreshCw className="spin" />Loading</section> : null}
+      {!load && error ? <section className="swEmpty"><AlertText text={error} /></section> : null}
       {!load && job ? <InfoCard job={job} count={queue.length} /> : null}
       {!load && job ? <Link className="swPrimary" to={`/worker/jobs/${id(job)}`}>Start current job</Link> : null}
-      {!load && !job ? <section className="swEmpty"><Briefcase />All jobs done.</section> : null}
+      {!load && !job ? <section className="swEmpty"><Briefcase />No open jobs assigned.</section> : null}
       <button className="swLight" onClick={() => { setTick(tick + 1); go(); }}>Refresh</button>
     </Shell>
   );
@@ -328,7 +338,7 @@ export function NoFussJob() {
   }
 
   if (load || !job) {
-    return <Shell tab="Jobs" title="Jobs"><section className="swEmpty">{load ? "Loading" : "All jobs done."}</section></Shell>;
+    return <Shell tab="Jobs" title="Jobs"><section className="swEmpty">{load ? "Loading" : "No open jobs assigned."}</section></Shell>;
   }
   return <Shell tab="Jobs" title={name(job)}><WorkCard job={job} started={started} finish={finish} note={note} setNote={setNote} busy={busy} act={act} canPay={paymentEnabled} onPay={requestPayment} payBusy={payBusy} /></Shell>;
 }
@@ -451,9 +461,11 @@ export function NoFussMe() {
 
 export default function NoFussRoute() {
   const location = useLocation();
-  if (location.pathname === "/worker/jobs") return <NoFussJobs />;
-  if (location.pathname === "/worker/ops" || location.pathname === "/worker/messages") return <NoFussMessages />;
-  if (location.pathname === "/worker/help") return <NoFussHelp />;
-  if (location.pathname === "/worker/settings" || location.pathname === "/worker/profile") return <NoFussMe />;
+  const path = location.pathname;
+  if (path.startsWith("/worker/jobs/") && path !== "/worker/jobs") return <NoFussJob />;
+  if (path === "/worker/jobs") return <NoFussJobs />;
+  if (path === "/worker/ops" || path === "/worker/messages") return <NoFussMessages />;
+  if (path === "/worker/help") return <NoFussHelp />;
+  if (path === "/worker/settings" || path === "/worker/profile") return <NoFussMe />;
   return <NoFussToday />;
 }
