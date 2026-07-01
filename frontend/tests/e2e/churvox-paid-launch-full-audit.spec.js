@@ -64,6 +64,22 @@ async function login(page, email, password) {
   await page.waitForTimeout(1200);
 }
 
+async function browserApiGet(page, path) {
+  return page.evaluate(async (urlPath) => {
+    const token = window.localStorage.getItem('token') || '';
+    const response = await fetch(urlPath, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    const text = await response.text();
+    return { status: response.status, text };
+  }, path);
+}
+
 async function mobileFit(page, route) {
   await page.setViewportSize({ width: 412, height: 915 });
   await gotoFast(page, route);
@@ -100,10 +116,9 @@ test.describe('Churvox paid launch full audit', () => {
     await gotoFast(page, `/signup?tester=1&email=${encodeURIComponent(invited)}`);
     const text = await noFatalUi(page, 'tester signup');
     expect(text).toMatch(/Tester access|Create your tester account|No Stripe checkout needed|unlock your tester access/i);
-    await expect(page.locator('input[type="email"], input[name="email"]').first()).toHaveValue(invited);
-    await expect(page.locator('input[type="email"], input[name="email"]').first()).toHaveAttribute(/readonly/i, /|true/i).catch(async () => {
-      await expect(page.locator('input[type="email"], input[name="email"]').first()).toHaveJSProperty('readOnly', true);
-    });
+    const emailInput = page.locator('input[type="email"], input[name="email"]').first();
+    await expect(emailInput).toHaveValue(invited);
+    await expect(emailInput).toHaveJSProperty('readOnly', true);
     expect(text).not.toMatch(/Create account and choose plan/i);
   });
 
@@ -165,21 +180,20 @@ test.describe('Churvox paid launch full audit', () => {
     expect(text).not.toMatch(/Approve|tax filing|bank payout/i);
   });
 
-  test('backend paid-launch routes answer when authenticated session storage is supplied', async ({ page, request }) => {
-    test.skip(!process.env.PLAYWRIGHT_STORAGE_STATE && (!OWNER_EMAIL || !OWNER_PASSWORD), 'Supply storage state or owner credentials for authenticated API route audit.');
-    if (OWNER_EMAIL && OWNER_PASSWORD) await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+  test('backend paid-launch routes answer when owner credentials are supplied', async ({ page }) => {
+    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
+    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
 
     const checks = [
-      { method: 'get', path: '/api/billing/subscription-status', ok: /plan|subscription_status|has_app_access|free_tester_access/i },
-      { method: 'get', path: '/api/payments/on-site/status', ok: /terminal_ready|stripe_configured|worker_can_change_bank|required_plan/i },
-      { method: 'get', path: '/api/command/recovery-sweep', ok: /success|created|items|message/i },
+      { path: '/api/billing/subscription-status', ok: /plan|subscription_status|has_app_access|free_tester_access/i },
+      { path: '/api/payments/on-site/status', ok: /terminal_ready|stripe_configured|worker_can_change_bank|required_plan/i },
+      { path: '/api/command/recovery-sweep', ok: /success|created|items|message/i },
     ];
 
     for (const item of checks) {
-      const response = await request[item.method](item.path);
-      expect(response.status(), `${item.path} should not server-error`).toBeLessThan(500);
-      const text = await response.text();
-      expect(text, `${item.path} should return expected shape`).toMatch(item.ok);
+      const response = await browserApiGet(page, item.path);
+      expect(response.status, `${item.path} should not server-error`).toBeLessThan(500);
+      expect(response.text, `${item.path} should return expected shape`).toMatch(item.ok);
     }
   });
 });
