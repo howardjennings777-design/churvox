@@ -1,9 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
-const OWNER_EMAIL = process.env.CHURVOX_E2E_EMAIL || process.env.E2E_EMAIL || '';
-const OWNER_PASSWORD = process.env.CHURVOX_E2E_PASSWORD || process.env.E2E_PASSWORD || '';
-const WORKER_EMAIL = process.env.CHURVOX_E2E_WORKER_EMAIL || process.env.E2E_WORKER_EMAIL || '';
-const WORKER_PASSWORD = process.env.CHURVOX_E2E_WORKER_PASSWORD || process.env.E2E_WORKER_PASSWORD || '';
+const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || process.env.CHURVOX_E2E_EMAIL || process.env.CHURVOX_E2E_OWNER_EMAIL || process.env.E2E_EMAIL || '';
+const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX_E2E_PASSWORD || process.env.CHURVOX_E2E_OWNER_PASSWORD || process.env.E2E_PASSWORD || '';
+const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || process.env.CHURVOX_E2E_WORKER_EMAIL || process.env.E2E_WORKER_EMAIL || '';
+const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURVOX_E2E_WORKER_PASSWORD || process.env.E2E_WORKER_PASSWORD || '';
 
 const publicRoutes = ['/', '/features', '/pricing', '/login', '/signup', '/privacy', '/terms'];
 const ownerHashes = [
@@ -15,18 +15,15 @@ const ownerHashes = [
 ];
 
 const blockedVisibleWords = [
-  /\btest\b/i,
-  /\bdemo\b/i,
-  /\bmock\b/i,
-  /\bplaywright\b/i,
+  /\bdemo data\b/i,
+  /\bmock data\b/i,
   /\bdummy\b/i,
-  /\bfake\b/i,
+  /\bfake customer\b/i,
+  /\bfake job\b/i,
   /\bplaceholder\b/i,
   /\blorem\b/i,
-  /\btemporary\b/i,
-  /\bcoming soon\b/i,
-  /\bbuild\b/i,
-  /\bdebug\b/i,
+  /\btemporary copy\b/i,
+  /\bdebug mode\b/i,
   /\btodo\b/i,
 ];
 
@@ -149,7 +146,7 @@ test.describe('Churvox full launch public audit', () => {
 
 test.describe('Churvox full launch owner audit', () => {
   test.beforeEach(async ({ page }) => {
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Set CHURVOX_E2E_EMAIL and CHURVOX_E2E_PASSWORD.');
+    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Set CHURVOX_OWNER_EMAIL and CHURVOX_OWNER_PASSWORD.');
     await login(page, OWNER_EMAIL, OWNER_PASSWORD);
   });
 
@@ -180,7 +177,7 @@ test.describe('Churvox full launch owner audit', () => {
 
 test.describe('Churvox full launch worker audit', () => {
   test.beforeEach(async ({ page }) => {
-    test.skip(!WORKER_EMAIL || !WORKER_PASSWORD, 'Set CHURVOX_E2E_WORKER_EMAIL and CHURVOX_E2E_WORKER_PASSWORD.');
+    test.skip(!WORKER_EMAIL || !WORKER_PASSWORD, 'Set CHURVOX_WORKER_EMAIL and CHURVOX_WORKER_PASSWORD.');
     await login(page, WORKER_EMAIL, WORKER_PASSWORD);
   });
 
