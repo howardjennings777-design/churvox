@@ -32,6 +32,28 @@ function isSetupRoute() {
   );
 }
 
+function isBillingContext() {
+  const path = String(window.location.pathname || '');
+  const search = String(window.location.search || '');
+  return path.startsWith('/billing') || /checkout|session_id|must_choose_plan|first_setup/.test(search);
+}
+
+function guardBillingHelpLinks() {
+  if (!isBillingContext() || typeof document === 'undefined') return;
+  document.querySelectorAll('a[href="/support-board"],a[href="/dashboard#help"],a[href="/support"]').forEach((link) => {
+    link.setAttribute('href', '/contact');
+    if (/need help|support/i.test(link.textContent || '')) link.textContent = 'Contact support';
+  });
+}
+
+function guardBillingHelpClicks(event) {
+  if (!isBillingContext()) return;
+  const link = event.target?.closest?.('a[href="/support-board"],a[href="/dashboard#help"],a[href="/support"]');
+  if (!link) return;
+  event.preventDefault();
+  window.location.href = '/contact';
+}
+
 function shouldShow() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return false;
   if (localStorage.getItem(DONE_KEY) === 'true') return false;
@@ -82,6 +104,7 @@ function startDashboard() {
 }
 
 function render() {
+  guardBillingHelpLinks();
   if (!shouldShow()) {
     document.getElementById(ROOT_ID)?.remove();
     return;
@@ -120,6 +143,7 @@ function render() {
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_FIRST_RUN_SETUP__) {
   window.__CHURVOX_FIRST_RUN_SETUP__ = true;
+  document.addEventListener('click', guardBillingHelpClicks, true);
   window.addEventListener('load', () => setTimeout(render, 500));
   window.addEventListener('hashchange', () => setTimeout(render, 160));
   window.addEventListener('popstate', () => setTimeout(render, 160));
