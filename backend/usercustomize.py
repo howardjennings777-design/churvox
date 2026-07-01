@@ -6,6 +6,11 @@ try:
 except Exception:
     pass
 
+try:
+    import churvox_owner_cockpit_control_patch  # noqa: F401
+except Exception:
+    pass
+
 
 def _install_churvox_real_ai_hook():
     try:
