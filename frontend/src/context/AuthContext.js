@@ -107,7 +107,7 @@ function authError(data = {}) {
 function shouldTryWorkerFallback(err) {
   const status = err?.response?.status;
   if (!status) return true;
-  return [400, 401, 403, 404, 408, 422, 429, 500, 502, 503, 504].includes(status);
+  return [400, 401, 403, 404, 408, 422, 500, 502, 503, 504].includes(status);
 }
 
 export function AuthProvider({ children }) {
