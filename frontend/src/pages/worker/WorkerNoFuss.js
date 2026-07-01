@@ -318,19 +318,61 @@ export function NoFussJob() {
 }
 
 export function NoFussMessages() {
+  const { post } = useApi();
+  const { jobs } = useJobs();
   const [text, setText] = useState(() => takeDraft());
-  function send() {
-    if (!c(text)) { toast.error("Type a message first"); return; }
-    setText("");
-    toast.success("Sent to office");
+  const [busy, setBusy] = useState(false);
+  const job = openJobs(jobs)[0] || jobs[0];
+
+  async function send() {
+    const body = c(text);
+    if (!body) { toast.error("Type a message first"); return; }
+    setBusy(true);
+    try {
+      const jobId = id(job);
+      let result = null;
+      if (jobId) {
+        result = await post(`/worker/jobs/${jobId}/field-slip`, {
+          type: "worker_message",
+          kind: "worker_message",
+          text: body,
+          note: body,
+          summary: body,
+          source: "worker_messages",
+        });
+      }
+      if (!result || result.success === false) {
+        result = await post("/command/execute-approved", {
+          kind: "command_record",
+          item: {
+            type: "Worker message",
+            title: "Worker message needs owner review",
+            summary: body,
+            message: body,
+            status: "waiting_owner_review",
+            source: "worker_messages",
+            owner_approved: false,
+            auto_sent: false,
+          },
+        });
+      }
+      if (result?.success === false) throw new Error(result.error || "Could not send message");
+      setText("");
+      toast.success("Sent to office and added to Command");
+    } catch (error) {
+      toast.error(error?.message || "Message could not be sent");
+    } finally {
+      setBusy(false);
+    }
   }
+
   return (
     <Shell tab="Messages" title="Messages">
       <section className="swCard swActionCard">
         <MessageCircle />
         <h2>Office</h2>
         <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Type message" />
-        <button className="swPrimary" onClick={send}>Send</button>
+        <button className="swPrimary" disabled={busy} onClick={send}>{busy ? "Sending" : "Send to Command"}</button>
       </section>
     </Shell>
   );

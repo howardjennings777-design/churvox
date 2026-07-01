@@ -23,50 +23,14 @@ const subtitles = {
 };
 
 const seed = {
-  jobs: [
-    { id: "j1", title: "Naenae lawn reset", client: "Mere H.", worker: "Howard", status: "in_progress", date: "2026-06-29", time: "08:00", price: 65, service: "Lawn mowing", billing: "Fixed price", duration: "1.5 hours", proof: "2 photos", recurring: "Fortnightly", address: "Naenae", notes: "Front and back lawn, send photos after finish.", issue: "" },
-    { id: "j2", title: "Petone unit cleanup", client: "Petone Units", worker: "Alex", status: "assigned", date: "2026-06-29", time: "10:30", price: 180, service: "Cleanup", billing: "Fixed + extras", duration: "2 hours", proof: "No proof yet", recurring: "One-off", address: "Petone", notes: "Confirm arrival with tenants.", issue: "" },
-    { id: "j3", title: "Belmont hedge trim", client: "Belmont Villas", worker: "Sam", status: "proof_ready", date: "2026-06-29", time: "12:00", price: 420, service: "Hedge trimming", billing: "Package price", duration: "3 hours", proof: "3 photos + note", recurring: "Monthly", address: "Belmont", notes: "Package price saved. Photos required.", issue: "" },
-    { id: "j4", title: "Wainui quote visit", client: "Wainui School", worker: "Howard", status: "quote_draft", date: "2026-06-29", time: "14:00", price: 0, service: "Quote visit", billing: "Quote required", duration: "45 minutes", proof: "Site notes", recurring: "One-off", address: "Wainuiomata", notes: "Quote approval required.", issue: "quote approval" },
-    { id: "j5", title: "Birchville tidy", client: "Birchville Dairy", worker: "Alex", status: "needs_check", date: "2026-06-29", time: "16:00", price: 120, service: "Property tidy", billing: "Hourly + extras", duration: "2 hours", proof: "Worker message", recurring: "Weekly", address: "Birchville", notes: "Extra green waste reported by worker.", issue: "extra green waste" },
-  ],
-  clients: [
-    { id: "c1", name: "Mere H.", phone: "027 000 000", email: "mere@example.com", address: "Naenae", notes: "Gate code saved. Likes Friday mornings.", service: "Fortnightly lawns", price: "$65 regular", schedule: "Friday morning", jobs: 5, quotes: 2, invoices: 4 },
-    { id: "c2", name: "Belmont Villas", phone: "04 000 000", email: "office@example.com", address: "Belmont", notes: "Send photos after every visit.", service: "Hedge and lawn care", price: "$420 package", schedule: "Monthly", jobs: 8, quotes: 1, invoices: 7 },
-    { id: "c3", name: "Naenae Dairy", phone: "022 000 000", email: "dairy@example.com", address: "Naenae", notes: "Back entry access.", service: "Monthly tidy", price: "$120", schedule: "Monthly", jobs: 3, quotes: 0, invoices: 3 },
-    { id: "c4", name: "Petone Units", phone: "021 000 000", email: "units@example.com", address: "Petone", notes: "Confirm arrival with tenants.", service: "Cleanup", price: "$180", schedule: "As needed", jobs: 2, quotes: 1, invoices: 1 },
-  ],
-  workers: [
-    { id: "w1", name: "Howard", role: "Owner", status: "Clocked in", job: "Naenae lawn reset", app: "Active", payroll: "Ready", gps: "Naenae", timesheet: "7.5h", start: "07:45", end: "", break: "30 min", proof: "2 photos uploaded", messages: "No unread messages", slip: "Slip ready", notes: "On site. Photos required before completion." },
-    { id: "w2", name: "Alex", role: "Worker", status: "Driving", job: "Petone unit cleanup", app: "Active", payroll: "Review", gps: "Petone", timesheet: "6.0h", start: "08:10", end: "", break: "20 min", proof: "No proof yet", messages: "1 worker message", slip: "Needs time check", notes: "Driving to next job. Confirm clock-out." },
-    { id: "w3", name: "Sam", role: "Worker", status: "Proof upload", job: "Belmont hedge trim", app: "Active", payroll: "Ready", gps: "Belmont", timesheet: "5.5h", start: "08:30", end: "14:05", break: "30 min", proof: "3 photos + note", messages: "Proof note uploaded", slip: "Slip ready", notes: "Proof uploaded for owner review." },
-    { id: "w4", name: "Tui", role: "Subcontractor", status: "Clocked out", job: "Yard", app: "Invited", payroll: "Pending", gps: "Yard", timesheet: "0h", start: "", end: "", break: "", proof: "No proof", messages: "Invite pending", slip: "Not ready", notes: "Worker app invite still pending." },
-  ],
-  quotes: [
-    { id: "q1", title: "Fence repair", client: "Mere H.", status: "Draft", amount: 620, scope: "Repair leaning fence section and remove old timber.", followUp: "Ready today", prepared: "Client history, site notes and saved address", terms: "Valid 14 days", next: "Waiting in Command before sending" },
-    { id: "q2", title: "Grounds tidy", client: "Wainui School", status: "Sent", amount: 1180, scope: "Full grounds tidy, green waste and proof photos.", followUp: "Tomorrow", prepared: "Quote visit and recurring notes", terms: "Valid 14 days", next: "Follow-up ready" },
-    { id: "q3", title: "Hedge package", client: "Belmont Villas", status: "Viewed", amount: 420, scope: "Monthly hedge and lawn package.", followUp: "Ready", prepared: "Price memory and previous invoice", terms: "Monthly package", next: "Follow-up ready" },
-    { id: "q4", title: "Cleanup", client: "Petone Units", status: "Accepted", amount: 180, scope: "Unit cleanup and tenant access check.", followUp: "Convert to job", prepared: "Customer message and saved service", terms: "One-off", next: "Job can be created" },
-  ],
-  invoices: [
-    { id: "i1", number: "INV-1042", client: "Belmont Villas", status: "Draft", amount: 420, due: "2026-06-29", job: "Belmont hedge trim", sync: "Command approval", line: "Monthly hedge and lawn package", evidence: "3 photos + note" },
-    { id: "i2", number: "INV-1041", client: "Petone Units", status: "Due today", amount: 180, due: "2026-06-29", job: "Petone unit cleanup", sync: "Xero ready", line: "Cleanup", evidence: "Worker notes" },
-    { id: "i3", number: "INV-1038", client: "Naenae Dairy", status: "Overdue", amount: 120, due: "2026-06-21", job: "Monthly tidy", sync: "Not synced", line: "Monthly tidy", evidence: "Site notes" },
-    { id: "i4", number: "INV-1034", client: "Mere H.", status: "Paid", amount: 65, due: "2026-06-20", job: "Naenae lawn reset", sync: "Synced", line: "Fortnightly lawn service", evidence: "2 photos" },
-  ],
-  messages: [
-    { id: "m1", from: "Worker", subject: "Gate locked", detail: "Worker needs customer reply.", draft: "Hi Mere, the gate looks locked. Can you confirm access?", history: "2 replies", client: "Mere H.", job: "Naenae lawn reset", priority: "Needs reply", channel: "Worker app" },
-    { id: "m2", from: "Customer", subject: "Friday request", detail: "Customer wants Friday morning.", draft: "Friday morning works. I have kept your arrival window.", history: "4 replies", client: "Mere H.", job: "Fortnightly lawns", priority: "Draft ready", channel: "SMS" },
-    { id: "m3", from: "Worker", subject: "Extra green waste", detail: "Extra charge may be needed.", draft: "There is extra green waste on site. I can add it to the job if approved.", history: "1 note", client: "Birchville Dairy", job: "Birchville tidy", priority: "Command issue", channel: "Worker app" },
-  ],
-  command: [
-    { id: "a1", type: "Invoice ready", title: "Belmont hedge trim", status: "Filled invoice", owner: "Approve", client: "Belmont Villas", amount: 420, filled: "Draft invoice prepared from completed hedge trim, proof photos and saved package price.", evidence: "Job marked proof ready. 3 photos uploaded. Client price memory: $420 package.", check: "Confirm photos and price, then approve draft invoice creation." },
-    { id: "a2", type: "Quote ready", title: "Fence repair", status: "Filled quote", owner: "Edit", client: "Mere H.", amount: 620, filled: "Quote drafted from site notes and client history.", evidence: "Customer asked for fence repair. Prior client record is active. Follow-up ready.", check: "Edit scope or price before sending." },
-    { id: "a3", type: "Message ready", title: "Friday request", status: "Draft reply", owner: "Approve", client: "Mere H.", amount: 0, filled: "Reply drafted to confirm Friday morning arrival window.", evidence: "Customer requested Friday. Client prefers Friday mornings.", check: "Approve to send reply, or edit wording." },
-    { id: "a4", type: "Client/job issue", title: "Extra green waste", status: "Needs call", owner: "Park", client: "Birchville Dairy", amount: 0, filled: "Issue captured from worker message and linked to today job.", evidence: "Worker flagged extra green waste from site.", check: "Park for later, or edit job/invoice note." },
-    { id: "a5", type: "Timesheet/proof/slip issue", title: "Alex clock-out", status: "Mismatch", owner: "Edit", client: "Petone Units", amount: 0, filled: "Timesheet mismatch detected against job status and worker clock-out.", evidence: "Worker status driving, payroll review required, job still assigned.", check: "Edit time or park until worker confirms." },
-  ],
-};
+  jobs: [],
+  clients: [],
+  workers: [],
+  quotes: [],
+  invoices: [],
+  messages: [],
+  command: [],
+}
 
 const optionSets = {
   status: ["assigned", "acknowledged", "in_progress", "proof_ready", "completed", "needs_check", "quote_draft"],
@@ -75,8 +39,8 @@ const optionSets = {
   recurring: ["One-off", "Weekly", "Fortnightly", "Monthly", "Custom"],
   billing: ["Fixed price", "Hourly", "Fixed + extras", "Hourly + extras", "Package price", "Quote required"],
   service: ["Lawn mowing", "Hedge trimming", "Property tidy", "Cleanup", "Quote visit", "Other"],
-  worker: ["Howard", "Alex", "Sam", "Tui"],
-  client: ["Mere H.", "Belmont Villas", "Naenae Dairy", "Petone Units", "Wainui School", "Birchville Dairy"],
+  worker: ["Unassigned"],
+  client: ["No client selected"],
   role: ["Owner", "Manager", "Worker", "Subcontractor", "Payroll only"],
   access: ["Full access", "Jobs only", "Worker app", "Payroll review", "No access"],
 };
@@ -124,11 +88,11 @@ function useOsData() {
       const responses = await Promise.allSettled([api.get("/jobs"), api.get("/clients"), api.get("/team"), api.get("/quotes"), api.get("/invoices"), api.get("/messages"), api.get("/ai/actions"), api.get("/xero/status")]);
       if (!alive) return;
       const jobs = listFrom(responses[0].value, "jobs").map((job, index) => {
-        const fallback = seed.jobs[index % seed.jobs.length];
+        const fallback = seed.jobs[index % Math.max(seed.jobs.length, 1)] || {};
         return { ...fallback, ...job, id: idOf(job) || `job-${index}`, title: textOf(job.title, job.job_title, job.job_name, job.description, fallback.title), client: textOf(job.client_name, job.customer_name, job.client?.name, fallback.client), worker: textOf(job.assigned_worker_name, job.worker_name, job.worker?.name, fallback.worker), status: textOf(job.status, job.job_status, job.stage, fallback.status), date: textOf(job.scheduled_date, job.date, fallback.date), time: textOf(job.scheduled_time, job.start_time, job.time, fallback.time), price: Number(job.price ?? job.amount ?? job.total ?? fallback.price ?? 0), issue: textOf(job.issue, job.problem, job.needs_attention, fallback.issue) };
       });
       const clients = listFrom(responses[1].value, "clients").map((client, index) => ({ ...seed.clients[index % seed.clients.length], ...client, id: idOf(client) || `client-${index}`, name: textOf(client.name, client.client_name, client.customer_name, seed.clients[index % seed.clients.length]?.name) }));
-      const workers = listFrom(responses[2].value, "team").map((worker, index) => { const fallback = seed.workers[index % seed.workers.length]; return { ...fallback, ...worker, id: idOf(worker) || `worker-${index}`, name: textOf(worker.name, worker.full_name, worker.email, fallback.name), role: textOf(worker.role, worker.access, fallback.role), status: textOf(worker.status, worker.clock_status, fallback.status), job: textOf(worker.current_job, worker.job_title, fallback.job), app: textOf(worker.app_status, worker.invite_status, fallback.app), payroll: textOf(worker.payroll_status, fallback.payroll), gps: textOf(worker.gps, worker.location, fallback.gps), timesheet: textOf(worker.timesheet, worker.hours_today, fallback.timesheet), proof: textOf(worker.proof, worker.photo_status, fallback.proof), messages: textOf(worker.messages, worker.message_status, fallback.messages), start: textOf(worker.start, worker.clock_in, worker.start_time, fallback.start), end: textOf(worker.end, worker.clock_out, worker.end_time, fallback.end), slip: textOf(worker.slip, worker.pay_slip_status, fallback.slip) }; });
+      const workers = listFrom(responses[2].value, "team").map((worker, index) => { const fallback = seed.workers[index % Math.max(seed.workers.length, 1)] || {}; return { ...fallback, ...worker, id: idOf(worker) || `worker-${index}`, name: textOf(worker.name, worker.full_name, worker.email, fallback.name), role: textOf(worker.role, worker.access, fallback.role), status: textOf(worker.status, worker.clock_status, fallback.status), job: textOf(worker.current_job, worker.job_title, fallback.job), app: textOf(worker.app_status, worker.invite_status, fallback.app), payroll: textOf(worker.payroll_status, fallback.payroll), gps: textOf(worker.gps, worker.location, fallback.gps), timesheet: textOf(worker.timesheet, worker.hours_today, fallback.timesheet), proof: textOf(worker.proof, worker.photo_status, fallback.proof), messages: textOf(worker.messages, worker.message_status, fallback.messages), start: textOf(worker.start, worker.clock_in, worker.start_time, fallback.start), end: textOf(worker.end, worker.clock_out, worker.end_time, fallback.end), slip: textOf(worker.slip, worker.pay_slip_status, fallback.slip) }; });
       const quotes = listFrom(responses[3].value, "quotes").map((quote, index) => ({ ...seed.quotes[index % seed.quotes.length], ...quote, id: idOf(quote) || `quote-${index}` }));
       const invoices = listFrom(responses[4].value, "invoices").map((invoice, index) => ({ ...seed.invoices[index % seed.invoices.length], ...invoice, id: idOf(invoice) || `invoice-${index}` }));
       const messages = listFrom(responses[5].value, "messages").map((message, index) => ({ ...seed.messages[index % seed.messages.length], ...message, id: idOf(message) || `message-${index}` }));
@@ -198,11 +162,11 @@ function WeekStrip({ jobs, workers, approvals, moneyDue }) {
 function Today({ data, open }) {
   const due = data.invoices.filter((invoice) => /due|draft|ready/i.test(`${invoice.status} ${invoice.sync}`)).reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0);
   const issues = data.jobs.filter((job) => job.issue);
-  return <div className="cocPage today"><Panel title="Today Control" className="wide"><WeekStrip jobs={data.jobs.length} workers={data.workers.filter((worker) => !/clocked out/i.test(worker.status)).length} approvals={data.command.length} moneyDue={money(due)} /></Panel><Panel title="Next Owner Check" tone="amber"><h3>{data.command[0]?.type || "Nothing waiting"}</h3><p>{data.command[0]?.title || "No approval required right now."}</p><span className="chip amber">open in Command</span></Panel><Panel title="Jobs Today" className="wide"><div className="scroll">{data.jobs.slice(0, 5).map((job) => <Row key={job.id} title={`${job.time} ${job.title}`} meta={`${job.client} - ${job.worker} - ${job.status}`} onClick={() => open("Job", job)} />)}</div></Panel><Panel title="Money Due Today" tone="amber"><strong className="money">{money(due)}</strong><span className="chip amber">{data.invoices.filter((invoice) => /due/i.test(invoice.status)).length} due today</span></Panel><Panel title="Who Is Working" tone="blue"><div className="scroll">{data.workers.slice(0, 5).map((worker) => <Row key={worker.id} title={`${worker.name}: ${worker.status}`} meta={`${worker.job} - GPS ${worker.gps}`} tone="blue" onClick={() => open("Worker", worker)} />)}</div></Panel><Panel title="Messages / Photos" tone="coral">{data.messages.slice(0, 3).map((message) => <span key={message.id} className="chip coral" onClick={() => open("Message", message)}>{message.subject}</span>)}<span className="chip coral">proof photos ready</span></Panel><Panel title="Problems Today" tone="red">{issues.length ? issues.slice(0, 5).map((job) => <span key={job.id} className="chip red" onClick={() => open("Job", job)}>In Command: {job.issue}</span>) : <p>No job problems right now.</p>}</Panel><Panel title="Approvals Waiting" tone="amber" className="wide">{data.command.slice(0, 5).map((item) => <Row key={item.id} title={item.type} meta={item.title} tone="amber" onClick={() => open("Command item", item)} />)}</Panel></div>;
+  return <div className="cocPage today"><Panel title="Today Control" className="wide"><WeekStrip jobs={data.jobs.length} workers={data.workers.filter((worker) => !/clocked out/i.test(worker.status)).length} approvals={data.command.length} moneyDue={money(due)} /></Panel><Panel title="Next Owner Check" tone="amber"><h3>{data.command[0]?.type || "Nothing waiting"}</h3><p>{data.command[0]?.title || "No approval required right now."}</p><span className="chip amber">open in Command</span></Panel><Panel title="Jobs Today" className="wide"><div className="scroll">{data.jobs.slice(0, 5).map((job) => <Row key={job.id} title={`${job.time} ${job.title}`} meta={`${job.client} - ${job.worker} - ${job.status}`} onClick={() => open("Job", job)} />)}</div></Panel><Panel title="Money Due Today" tone="amber"><strong className="money">{money(due)}</strong><span className="chip amber">{data.invoices.filter((invoice) => /due/i.test(invoice.status)).length} due today</span></Panel><Panel title="Who Is Working" tone="blue"><div className="scroll">{data.workers.slice(0, 5).map((worker) => <Row key={worker.id} title={`${worker.name}: ${worker.status}`} meta={`${worker.job} - GPS ${worker.gps}`} tone="blue" onClick={() => open("Worker", worker)} />)}</div></Panel><Panel title="Messages / Photos" tone="coral">{data.messages.slice(0, 3).map((message) => <span key={message.id} className="chip coral" onClick={() => open("Message", message)}>{message.subject}</span>)}</Panel><Panel title="Problems Today" tone="red">{issues.length ? issues.slice(0, 5).map((job) => <span key={job.id} className="chip red" onClick={() => open("Job", job)}>In Command: {job.issue}</span>) : <p>No job problems right now.</p>}</Panel><Panel title="Approvals Waiting" tone="amber" className="wide">{data.command.slice(0, 5).map((item) => <Row key={item.id} title={item.type} meta={item.title} tone="amber" onClick={() => open("Command item", item)} />)}</Panel></div>;
 }
 
 function Command({ data, open }) {
-  const selected = data.command[0] || seed.command[0];
+  const selected = data.command[0] || { type: "No admin waiting", title: "Command is clear", status: "Clear", owner: "None", client: "", amount: 0, filled: "No real approvals are waiting.", evidence: "Churvox is showing live records only.", check: "Run admin recovery sweep if you want Churvox to check for missing admin." };
   return <div className="cocPage command"><Panel title="Waiting For Approval" tone="coral"><div className="scroll">{data.command.slice(0, 5).map((item) => <Row key={item.id} title={item.type} meta={`${item.title} - ${item.status}`} tone="coral" onClick={() => open("Command item", item)} />)}</div></Panel><Panel title="Filled Approval Form" tone="blue" className="wide"><h3>{selected.type}</h3><p>Churvox prepared this from job records, client memory, messages, time, photos and accounting state.</p><div className="formGrid"><Field label="Record" value={selected.title} /><Field label="Client" value={selected.client} /><Field label="Prepared status" value={selected.status} /><Field label="Recommended action" value={selected.owner} options={["Approve", "Edit", "Park"]} /><Field label="What Churvox filled" value={selected.filled} textarea /><Field label="Evidence checked" value={selected.evidence} textarea /></div></Panel><Panel title="Owner Actions" tone="amber"><div className="ownerActions"><button className="action">Approve</button><button className="action dark">Edit</button><button className="action quiet">Park</button></div><p>Command remains the approval desk.</p></Panel></div>;
 }
 
@@ -211,7 +175,7 @@ function Jobs({ data, open }) {
 }
 
 function Clients({ data, open }) {
-  const client = data.clients[0] || seed.clients[0];
+  const client = data.clients[0] || null;
   const clientJobs = data.jobs.filter((job) => job.client === client?.name);
   const clientQuotes = data.quotes.filter((quote) => quote.client === client?.name);
   const clientInvoices = data.invoices.filter((invoice) => invoice.client === client?.name);
