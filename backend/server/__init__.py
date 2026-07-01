@@ -185,26 +185,24 @@ async def _cv_worker_jobs_for(user):
     return rows
 
 
-async def _cv_worker_login(payload: dict = Body(default={}), response: Response = None):
+async def _cv_worker_login(response: Response, payload: dict | None = Body(default=None)):
+    payload = payload or {}
     db = getattr(legacy, "db", None)
-    email = _cv_lower((payload or {}).get("email"))
-    password = _cv_text((payload or {}).get("password"))
+    email = _cv_lower(payload.get("email"))
+    password = _cv_text(payload.get("password"))
     if not email or not password:
-        if response:
-            response.status_code = 400
+        response.status_code = 400
         return {"success": False, "detail": "Enter worker email and password."}
     clear = getattr(legacy, "clear_auth_cookies", None)
-    if response and clear:
+    if clear:
         clear(response)
     collection_name, worker_doc = await _cv_find_worker(email)
     if not worker_doc:
-        if response:
-            response.status_code = 401
+        response.status_code = 401
         return {"success": False, "detail": "Worker account not found."}
     ok, stored_hash = _cv_check_password(password, worker_doc)
     if not ok:
-        if response:
-            response.status_code = 401
+        response.status_code = 401
         return {"success": False, "detail": "Invalid worker email or password."}
     ObjectId = getattr(legacy, "ObjectId", None)
     create_access_token = getattr(legacy, "create_access_token", None)
@@ -212,8 +210,7 @@ async def _cv_worker_login(payload: dict = Body(default={}), response: Response 
     set_auth_cookies = getattr(legacy, "set_auth_cookies", None)
     hash_password = getattr(legacy, "hash_password", None)
     if not all([db, ObjectId, create_access_token, create_refresh_token, set_auth_cookies, hash_password]):
-        if response:
-            response.status_code = 503
+        response.status_code = 503
         return {"success": False, "detail": "Worker login service unavailable."}
     existing = await db.users.find_one({"email": email})
     password_hash = stored_hash or hash_password(password)
@@ -253,8 +250,7 @@ async def _cv_worker_login(payload: dict = Body(default={}), response: Response 
         user = update
     token = create_access_token(str(user["_id"]), email)
     refresh = create_refresh_token(str(user["_id"]))
-    if response:
-        set_auth_cookies(response, token, refresh)
+    set_auth_cookies(response, token, refresh)
     safe_user = {
         "id": str(user.get("_id") or user.get("id")),
         "email": email,
