@@ -7,7 +7,7 @@ import "./AuthPublicCommand.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
-const LOGIN_TIMEOUT_MS = 10000;
+const LOGIN_TIMEOUT_MS = 28000;
 
 function setupPendingLocally() {
   try {
