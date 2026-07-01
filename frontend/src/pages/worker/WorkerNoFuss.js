@@ -1,112 +1,55 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { Briefcase, CreditCard, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
+import { Briefcase, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
 import "./WorkerNoFuss.css";
 
-const DRAFT_KEY = "churvox-worker-message-draft";
-const c = (value) => String(value || "").replace(/\s+/g, " ").trim();
-const arr = (value) => Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : Array.isArray(value?.jobs) ? value.jobs : Array.isArray(value?.items) ? value.items : Array.isArray(value?.results) ? value.results : [];
-const oid = (value) => !value ? "" : typeof value === "string" || typeof value === "number" ? String(value) : typeof value === "object" ? oid(value.$oid || value.id || value._id || value.job_id || "") : "";
-const id = (job) => oid(job?.id || job?._id || job?.job_id);
-const name = (job) => c(job?.title || job?.job_name || job?.job_title || job?.service_type || "Job");
-const who = (job) => c(job?.client_name || job?.customer_name || job?.client || "Customer");
-const where = (job) => c(job?.address || job?.site_address || job?.service_address || job?.location || "");
-const what = (job) => c(job?.worker_instructions || job?.instructions || job?.description || job?.notes || "No instructions.");
-const msg = (job) => c(job?.worker_message || job?.office_message || job?.boss_message || job?.job_message || job?.message || "");
-const day = (job) => c(job?.scheduled_date || job?.date || job?.start).slice(0, 10);
-const time = (job) => c(job?.scheduled_time || job?.time);
-const stat = (job) => c(job?.status || job?.job_status || job?.workflow_status).toLowerCase();
-const done = (job) => /complete|done|finished|cancelled|archived/.test(stat(job));
-const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-const map = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-const planText = (user) => c(user?.plan || user?.business_plan || user?.subscription_plan || user?.business?.plan || user?.company?.plan || user?.account?.plan || "").toLowerCase();
-const canTakeOnSitePayments = (user) => /operator|command|pro|enterprise/.test(planText(user));
-const jobAmount = (job) => {
-  const raw = job?.payment_due || job?.amount_due || job?.invoice_total || job?.total || job?.price || job?.quote_total || job?.job_price;
-  const number = Number(String(raw || "").replace(/[^0-9.]/g, ""));
-  if (!number) return "Office sets amount";
-  return `$${number.toFixed(number % 1 === 0 ? 0 : 2)}`;
+const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
+const list = (value) => Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : Array.isArray(value?.jobs) ? value.jobs : Array.isArray(value?.items) ? value.items : [];
+const objectId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "object") return objectId(value.$oid || value.id || value._id || value.job_id || "");
+  return "";
 };
-const jobAmountCents = (job) => {
-  const raw = job?.payment_due || job?.amount_due || job?.invoice_total || job?.total || job?.price || job?.quote_total || job?.job_price;
-  const number = Number(String(raw || "").replace(/[^0-9.]/g, ""));
-  return number > 0 ? Math.round(number * 100) : 0;
-};
+const jobId = (job) => objectId(job?.id || job?._id || job?.job_id);
+const jobTitle = (job) => clean(job?.title || job?.job_name || job?.job_title || job?.service_type || "Job");
+const customer = (job) => clean(job?.client_name || job?.customer_name || job?.client || "Customer");
+const address = (job) => clean(job?.address || job?.site_address || job?.service_address || job?.location || "");
+const instructions = (job) => clean(job?.worker_instructions || job?.instructions || job?.description || job?.notes || "No instructions added.");
+const status = (job) => clean(job?.status || job?.job_status || job?.workflow_status).toLowerCase();
+const isDone = (job) => /complete|done|finished|cancelled|archived/.test(status(job));
+const mapsUrl = (place) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`;
 
-const readDone = () => {
-  try { return JSON.parse(localStorage.getItem("churvox-worker-finished") || "[]"); } catch { return []; }
-};
-const markDone = (jobId) => {
-  try { localStorage.setItem("churvox-worker-finished", JSON.stringify(Array.from(new Set([...readDone(), jobId])))); } catch {}
-};
-const setDraft = (message) => {
-  try { localStorage.setItem(DRAFT_KEY, message); } catch {}
-};
-const takeDraft = () => {
-  try {
-    const value = localStorage.getItem(DRAFT_KEY) || "";
-    localStorage.removeItem(DRAFT_KEY);
-    return value;
-  } catch { return ""; }
-};
-
-function openJobs(jobs) {
-  const gone = new Set(readDone());
-  return jobs
-    .filter((job) => id(job) && !done(job) && !gone.has(id(job)))
-    .sort((a, b) => `${day(a) || "9999"} ${time(a) || "99"}`.localeCompare(`${day(b) || "9999"} ${time(b) || "99"}`));
-}
-
-function useJobs() {
+function useWorkerJobs() {
   const { get } = useApi();
   const [jobs, setJobs] = useState([]);
-  const [load, setLoad] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  async function go() {
-    setLoad(true);
+
+  async function refresh() {
+    setLoading(true);
     setError("");
     try {
-      let response = await get("/worker/jobs");
-      let rows = arr(response?.data || response);
-      if (response?.success === false) setError(response.error || "Could not load worker jobs.");
-      if (!rows.length) {
-        try {
-          response = await get("/jobs");
-          rows = arr(response?.data || response);
-        } catch {}
-      }
-      setJobs(rows.filter((item) => id(item)));
+      const response = await get("/worker/jobs");
+      const rows = list(response?.data || response).filter((job) => jobId(job));
+      setJobs(rows);
     } catch (err) {
-      setError(err?.message || "Could not load worker jobs.");
       setJobs([]);
+      setError(err?.response?.data?.detail || err?.message || "Could not load worker jobs.");
+    } finally {
+      setLoading(false);
     }
-    setLoad(false);
   }
-  useEffect(() => { go(); }, []);
-  return { jobs, load, error, go };
-}
 
-async function beacon(post, job, state) {
-  try {
-    await post("/onsite/worker-beacon", {
-      state,
-      source: state === "stop" ? "finish-job" : "start-job",
-      job_id: id(job),
-      job_title: name(job),
-      address: where(job),
-      location: where(job),
-    });
-  } catch {}
-}
-
-async function timer(post, job, action, note) {
-  try { return await post(`/jobs/${id(job)}/${action}`, { worker_notes: note, source: "worker-app" }); } catch { return null; }
+  useEffect(() => { refresh(); }, []);
+  return { jobs, loading, error, refresh };
 }
 
 function Shell({ tab, title, children }) {
+  const nav = [["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/messages"], ["Help", "/worker/help"], ["Me", "/worker/profile"]];
   return (
     <main className="simpleWorkerApp">
       <section className="swHero">
@@ -115,290 +58,149 @@ function Shell({ tab, title, children }) {
       </section>
       <section className="swBody">{children}</section>
       <nav className="swNav">
-        {[["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/messages"], ["Help", "/worker/help"], ["Me", "/worker/profile"]].map(([label, href]) => (
-          <Link key={label} className={label === tab ? "active" : ""} to={href}>{label}</Link>
-        ))}
+        {nav.map(([label, href]) => <Link key={label} className={label === tab ? "active" : ""} to={href}>{label}</Link>)}
       </nav>
     </main>
   );
 }
 
-function Fact({ label, value }) {
-  if (!c(value)) return null;
-  return <span className="swFact"><b>{label}</b>{value}</span>;
+function Empty({ icon: Icon = Briefcase, children }) {
+  return <section className="swEmpty"><Icon />{children}</section>;
 }
 
-function Alerts() {
-  const [ok, setOk] = useState(typeof Notification === "undefined" || Notification.permission === "granted");
-  async function on() {
-    if (typeof Notification === "undefined") { setOk(true); return; }
-    setOk(await Notification.requestPermission() === "granted");
-  }
-  return ok ? null : (
-    <section className="swCard swActionCard">
-      <span>Alerts</span>
-      <h2>Turn on job alerts</h2>
-      <button className="swPrimary" onClick={on}>Turn on alerts</button>
-    </section>
-  );
-}
-
-function InfoCard({ job, count }) {
-  if (!job) return <section className="swEmpty"><Briefcase />No jobs today.</section>;
+function JobCard({ job, action = "Open job" }) {
+  const place = address(job);
   return (
     <section className="swCard swJob">
-      <span>{time(job) || day(job) || "Next"}</span>
-      <h2>{name(job)}</h2>
+      <span>{clean(job?.scheduled_time || job?.time || job?.scheduled_date || job?.date) || "Next"}</span>
+      <h2>{jobTitle(job)}</h2>
       <div className="swFacts">
-        <Fact label="Customer" value={who(job)} />
-        <Fact label="Queue" value={count > 1 ? `${count} jobs` : "Last job"} />
+        <span className="swFact"><b>Customer</b>{customer(job)}</span>
+        {status(job) ? <span className="swFact"><b>Status</b>{status(job)}</span> : null}
       </div>
-      {where(job) ? <small><MapPin size={15} />{where(job)}</small> : null}
+      {place ? <small><MapPin size={15} />{place}</small> : null}
+      <Link className="swPrimary" to={`/worker/jobs/${jobId(job)}`}>{action}</Link>
     </section>
   );
 }
 
-function PaymentCard({ job, enabled, onPay, busy }) {
-  return (
-    <section className={`swCard swActionCard swPayment ${enabled ? "" : "locked"}`}>
-      <span>Payment</span>
-      <h2>{enabled ? "Take payment on site" : "Payment locked"}</h2>
-      <div className="swFacts">
-        <Fact label="Plan" value={enabled ? "Operator / Command" : "Operator or Command"} />
-        <Fact label="Amount" value={jobAmount(job)} />
-      </div>
-      <small>Customer taps card. Funds go to the business account, not the worker.</small>
-      <button className={enabled ? "swPrimary" : "swLight"} type="button" disabled={busy} onClick={onPay}><CreditCard size={16} />{enabled ? (busy ? "Preparing" : "Take payment") : "Locked"}</button>
-    </section>
-  );
-}
-
-function WorkCard({ job, started, finish, note, setNote, busy, act, canPay, onPay, payBusy }) {
-  const address = where(job);
-  return (
-    <>
-      <section className="swCard swActionCard">
-        <span>Where</span>
-        <h2>{address || "No address"}</h2>
-        {address ? <a className="swPrimary" href={map(address)} target="_blank" rel="noreferrer"><Navigation size={16} />Directions</a> : null}
-      </section>
-
-      {msg(job) ? (
-        <section className="swCard">
-          <span>Office</span>
-          <h2>{msg(job)}</h2>
-        </section>
-      ) : null}
-
-      <section className="swCard">
-        <span>Do this</span>
-        <h2>{what(job)}</h2>
-      </section>
-
-      <PaymentCard job={job} enabled={canPay} onPay={onPay} busy={payBusy} />
-
-      <section className="swCard swActionCard">
-        <span>{finish ? "Before finish" : "Note"}</span>
-        {finish ? <h2>Anything to add?</h2> : null}
-        <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder={finish ? "Add note if needed" : "Optional note"} />
-        {finish ? <button className="swLight" onClick={() => setNote(note || "No extra note needed.")}>No note</button> : null}
-      </section>
-
-      <button className={`swBig ${started ? "finish" : ""}`} disabled={busy} onClick={act}>{busy ? "Saving" : started ? (finish ? "Send to office" : "Finish job") : "Start job"}</button>
-    </>
-  );
+function openJobs(jobs) {
+  return jobs.filter((job) => !isDone(job));
 }
 
 export function NoFussToday() {
-  const { jobs, load, error } = useJobs();
-  const todayJobs = openJobs(jobs).filter((job) => day(job) === today());
-  const queue = todayJobs.length ? todayJobs : openJobs(jobs);
-  const first = queue[0];
+  const { jobs, loading, error, refresh } = useWorkerJobs();
+  const nextJob = openJobs(jobs)[0];
   return (
     <Shell tab="Today" title="Today">
-      <Alerts />
-      {load ? <section className="swEmpty"><RefreshCw className="spin" />Loading</section> : null}
-      {!load && error ? <section className="swEmpty"><AlertText text={error} /></section> : null}
-      {!load ? <InfoCard job={first} count={queue.length} /> : null}
-      {first ? <Link className="swPrimary" to={`/worker/jobs/${id(first)}`}>Open job</Link> : null}
-      {first && msg(first) ? <section className="swCard"><span>Office</span><h2>{msg(first)}</h2></section> : <section className="swEmpty"><MessageCircle />No office messages.</section>}
+      {loading ? <Empty icon={RefreshCw}>Loading</Empty> : null}
+      {!loading && error ? <Empty>{error}</Empty> : null}
+      {!loading && nextJob ? <JobCard job={nextJob} /> : null}
+      {!loading && !nextJob && !error ? <Empty>No open jobs assigned.</Empty> : null}
+      <button className="swLight" type="button" onClick={refresh}>Refresh</button>
     </Shell>
   );
 }
 
-function AlertText({ text }) {
-  return <>{text || "Could not load."}</>;
-}
-
 export function NoFussJobs() {
-  const { jobs, load, error, go } = useJobs();
-  const [tick, setTick] = useState(0);
+  const { jobs, loading, error, refresh } = useWorkerJobs();
   const queue = openJobs(jobs);
-  const job = queue[0];
   return (
     <Shell tab="Jobs" title="Jobs">
-      {load ? <section className="swEmpty"><RefreshCw className="spin" />Loading</section> : null}
-      {!load && error ? <section className="swEmpty"><AlertText text={error} /></section> : null}
-      {!load && job ? <InfoCard job={job} count={queue.length} /> : null}
-      {!load && job ? <Link className="swPrimary" to={`/worker/jobs/${id(job)}`}>Start current job</Link> : null}
-      {!load && !job ? <section className="swEmpty"><Briefcase />No open jobs assigned.</section> : null}
-      <button className="swLight" onClick={() => { setTick(tick + 1); go(); }}>Refresh</button>
+      {loading ? <Empty icon={RefreshCw}>Loading</Empty> : null}
+      {!loading && error ? <Empty>{error}</Empty> : null}
+      {!loading && !error && !queue.length ? <Empty>No open jobs assigned.</Empty> : null}
+      {queue.map((job) => <JobCard key={jobId(job)} job={job} action="View job" />)}
+      <button className="swLight" type="button" onClick={refresh}>Refresh</button>
     </Shell>
   );
 }
 
 export function NoFussJob() {
-  const { id: jid } = useParams();
-  const { jobs, load, go } = useJobs();
+  const { id } = useParams();
+  const { jobs, loading, error, refresh } = useWorkerJobs();
   const { post, patch } = useApi();
-  const { user } = useAuth();
-  const queue = openJobs(jobs);
-  const picked = jobs.find((item) => id(item) === jid && !readDone().includes(id(item))) || queue[0];
-  const job = picked;
-  const jobId = id(job);
-  const [started, setStarted] = useState(false);
-  const [finish, setFinish] = useState(false);
   const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [payBusy, setPayBusy] = useState(false);
-  const paymentEnabled = canTakeOnSitePayments(user);
+  const [saving, setSaving] = useState(false);
+  const job = useMemo(() => jobs.find((item) => jobId(item) === id) || openJobs(jobs)[0], [jobs, id]);
+  const place = address(job);
 
-  useEffect(() => {
-    setStarted(/progress|started|active/.test(stat(job || {})));
-    setNote(c(job?.worker_notes || ""));
-  }, [jid, load, jobId]);
-
-  async function requestPayment() {
-    if (!paymentEnabled) {
-      toast.error("On-site payments are Operator and Command only");
-      return;
-    }
-    const amountCents = jobAmountCents(job);
-    if (!amountCents) {
-      toast.error("Office needs to set the payment amount first");
-      return;
-    }
-    setPayBusy(true);
-    try {
-      const result = await post("/payments/on-site/payment-intent", { job_id: jobId, amount_cents: amountCents, currency: "nzd", description: `${name(job)} - ${who(job)}` });
-      const data = result?.data || result;
-      if (data?.client_secret) {
-        toast.success("Payment ready. Connect Stripe Terminal reader to tap card.");
-      } else {
-        toast.info(data?.detail || "Payment setup needs owner attention");
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.detail || error?.message || "Payment setup needs owner attention");
-    } finally {
-      setPayBusy(false);
-    }
-  }
-
-  async function act() {
+  async function startJob() {
     if (!job) return;
-    if (started && !finish) { setFinish(true); return; }
-    setBusy(true);
-    const end = started;
-    await beacon(post, job, end ? "stop" : "start");
+    setSaving(true);
     try {
-      if (end) {
-        await post(`/worker/jobs/${jobId}/proof-passport`, {
-          finish_summary: note || "Completed by worker.",
-          worker_note: note || "Completed by worker.",
-          steps: { finish_summary: true, worker_note: Boolean(note) },
-          source: "worker_finish",
-        });
-        if (/(extra|unsafe|issue|problem|wrong|blocked|customer|material|green waste|price)/i.test(note || "")) {
-          await post(`/worker/jobs/${jobId}/field-slip`, {
-            type: "worker_issue",
-            kind: "worker_issue",
-            text: note,
-            note,
-            summary: note,
-            source: "worker_finish_issue",
-          });
-        }
-        await post(`/worker/jobs/${jobId}/complete`, { worker_notes: note });
-        await timer(post, job, "complete", note);
-      } else {
-        await timer(post, job, "start", note);
-        await patch(`/worker/jobs/${jobId}/field-update`, { worker_notes: note });
-      }
-    } catch {}
-    if (end) markDone(jobId);
-    setBusy(false);
-    if (end) {
-      toast.success("Sent to office");
-      await go();
-      window.location.assign("/worker/jobs");
-    } else {
-      setStarted(true);
+      await post(`/jobs/${jobId(job)}/start`, { worker_notes: note, source: "worker-app" });
       toast.success("Started");
+      await refresh();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.message || "Could not start job");
+    } finally {
+      setSaving(false);
     }
   }
 
-  if (load || !job) {
-    return <Shell tab="Jobs" title="Jobs"><section className="swEmpty">{load ? "Loading" : "No open jobs assigned."}</section></Shell>;
+  async function finishJob() {
+    if (!job) return;
+    setSaving(true);
+    try {
+      await patch(`/worker/jobs/${jobId(job)}/field-update`, { worker_notes: note });
+      await post(`/jobs/${jobId(job)}/complete`, { worker_notes: note, source: "worker-app" });
+      toast.success("Sent to office");
+      await refresh();
+      window.location.assign("/worker/jobs");
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.message || "Could not finish job");
+    } finally {
+      setSaving(false);
+    }
   }
-  return <Shell tab="Jobs" title={name(job)}><WorkCard job={job} started={started} finish={finish} note={note} setNote={setNote} busy={busy} act={act} canPay={paymentEnabled} onPay={requestPayment} payBusy={payBusy} /></Shell>;
+
+  if (loading) return <Shell tab="Jobs" title="Job"><Empty icon={RefreshCw}>Loading</Empty></Shell>;
+  if (error) return <Shell tab="Jobs" title="Job"><Empty>{error}</Empty></Shell>;
+  if (!job) return <Shell tab="Jobs" title="Job"><Empty>No job found.</Empty></Shell>;
+
+  return (
+    <Shell tab="Jobs" title={jobTitle(job)}>
+      <section className="swCard swJob">
+        <span>{customer(job)}</span>
+        <h2>{jobTitle(job)}</h2>
+        {place ? <small><MapPin size={15} />{place}</small> : null}
+        {place ? <a className="swPrimary" href={mapsUrl(place)} target="_blank" rel="noreferrer"><Navigation size={16} />Directions</a> : null}
+      </section>
+      <section className="swCard">
+        <span>Do this</span>
+        <h2>{instructions(job)}</h2>
+      </section>
+      <section className="swCard swActionCard">
+        <span>Note</span>
+        <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note for office" />
+      </section>
+      <button className="swBig" type="button" disabled={saving} onClick={startJob}>{saving ? "Saving" : "Start job"}</button>
+      <button className="swBig finish" type="button" disabled={saving} onClick={finishJob}>{saving ? "Saving" : "Finish job"}</button>
+    </Shell>
+  );
 }
 
 export function NoFussMessages() {
   const { post } = useApi();
-  const { jobs } = useJobs();
-  const [text, setText] = useState(() => takeDraft());
-  const [busy, setBusy] = useState(false);
-  const job = openJobs(jobs)[0] || jobs[0];
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function send() {
-    const body = c(text);
-    if (!body) { toast.error("Type a message first"); return; }
-    setBusy(true);
+    const body = clean(text);
+    if (!body) {
+      toast.error("Type a message first");
+      return;
+    }
+    setSaving(true);
     try {
-      const jobId = id(job);
-      let result = null;
-      if (jobId) {
-        result = await post(`/worker/jobs/${jobId}/field-slip`, {
-          type: "worker_message",
-          kind: "worker_message",
-          text: body,
-          note: body,
-          summary: body,
-          source: "worker_messages",
-        });
-      }
-      if (!result || result.success === false) {
-        result = await post("/worker/field-slip", {
-          type: "worker_message",
-          kind: "worker_message",
-          text: body,
-          note: body,
-          summary: body,
-          source: "worker_messages_no_job",
-        });
-      }
-      if (!result || result.success === false) {
-        result = await post("/command/execute-approved", {
-          kind: "command_record",
-          item: {
-            type: "Worker message",
-            title: "Worker message needs owner review",
-            summary: body,
-            message: body,
-            status: "waiting_owner_review",
-            source: "worker_messages",
-            owner_approved: false,
-            auto_sent: false,
-          },
-        });
-      }
-      if (result?.success === false) throw new Error(result.error || "Could not send message");
+      await post("/worker/field-slip", { type: "worker_message", kind: "worker_message", text: body, note: body, summary: body, source: "worker_messages" });
       setText("");
-      toast.success("Sent to office and added to Command");
-    } catch (error) {
-      toast.error(error?.message || "Message could not be sent");
+      toast.success("Sent to office");
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.message || "Could not send message");
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   }
 
@@ -406,27 +208,21 @@ export function NoFussMessages() {
     <Shell tab="Messages" title="Messages">
       <section className="swCard swActionCard">
         <MessageCircle />
-        <h2>Office</h2>
+        <h2>Message office</h2>
         <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Type message" />
-        <button className="swPrimary" disabled={busy} onClick={send}>{busy ? "Sending" : "Send to Command"}</button>
+        <button className="swPrimary" type="button" disabled={saving} onClick={send}>{saving ? "Sending" : "Send"}</button>
       </section>
     </Shell>
   );
 }
 
 export function NoFussHelp() {
-  const options = ["Wrong address", "Customer issue", "Unsafe work", "Need more info", "Other"];
-  function choose(option) {
-    setDraft(option === "Other" ? "" : option);
-    window.location.assign("/worker/messages");
-  }
   return (
     <Shell tab="Help" title="Help">
       <section className="swCard swActionCard">
-        <h2>Message office</h2>
-        <div className="swChips">
-          {options.map((option) => <button key={option} type="button" onClick={() => choose(option)}>{option}</button>)}
-        </div>
+        <h2>Need help?</h2>
+        <p>Send the office a message and Churvox will pass it through.</p>
+        <Link className="swPrimary" to="/worker/messages">Message office</Link>
       </section>
     </Shell>
   );
@@ -434,38 +230,24 @@ export function NoFussHelp() {
 
 export function NoFussMe() {
   const { user, logout } = useAuth();
-  const guide = [
-    ["Today", "Next job only"],
-    ["Jobs", "Start, finish, send"],
-    ["Payments", "Operator and Command only"],
-    ["Messages", "Talk to office"],
-    ["Help", "Pick a quick reason"],
-  ];
   return (
     <Shell tab="Me" title="Me">
       <section className="swCard">
         <UserRound />
-        <h2>{c(user?.name || user?.email || "Worker")}</h2>
-        <div className="swFacts"><Fact label="Email" value={c(user?.email)} /><Fact label="Payments" value={canTakeOnSitePayments(user) ? "Operator / Command" : "Locked"} /></div>
+        <h2>{clean(user?.name || user?.email || "Worker")}</h2>
+        <div className="swFacts"><span className="swFact"><b>Email</b>{clean(user?.email)}</span></div>
       </section>
-      <section className="swCard">
-        <span>App guide</span>
-        <div className="swGuide">
-          {guide.map(([label, value]) => <span key={label}><b>{label}</b>{value}</span>) }
-        </div>
-      </section>
-      <button className="swPrimary danger" onClick={logout}><LogOut size={16} />Log out</button>
+      <button className="swPrimary danger" type="button" onClick={logout}><LogOut size={16} />Log out</button>
     </Shell>
   );
 }
 
 export default function NoFussRoute() {
-  const location = useLocation();
-  const path = location.pathname;
-  if (path.startsWith("/worker/jobs/") && path !== "/worker/jobs") return <NoFussJob />;
-  if (path === "/worker/jobs") return <NoFussJobs />;
-  if (path === "/worker/ops" || path === "/worker/messages") return <NoFussMessages />;
-  if (path === "/worker/help") return <NoFussHelp />;
-  if (path === "/worker/settings" || path === "/worker/profile") return <NoFussMe />;
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/worker/jobs/") && pathname !== "/worker/jobs") return <NoFussJob />;
+  if (pathname === "/worker/jobs") return <NoFussJobs />;
+  if (pathname === "/worker/messages" || pathname === "/worker/ops") return <NoFussMessages />;
+  if (pathname === "/worker/help") return <NoFussHelp />;
+  if (pathname === "/worker/profile" || pathname === "/worker/settings") return <NoFussMe />;
   return <NoFussToday />;
 }
