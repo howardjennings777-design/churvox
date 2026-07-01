@@ -17,7 +17,7 @@ function normalizeEndpoint(endpoint) {
   if (endpoint === "/team") return "/team/workers";
   if (endpoint === "/workers") return "/team/workers";
   if (endpoint === "/messages") return "/approved-notifications";
-  if (endpoint === "/ai/actions") return "/ai-review-items";
+  if (endpoint === "/ai-review-items") return "/ai/actions";
   return endpoint;
 }
 

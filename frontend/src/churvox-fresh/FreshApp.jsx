@@ -78,6 +78,42 @@ function money(value) {
   return Number(value || 0).toLocaleString("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 });
 }
 
+function fallbackFrom(list, index) {
+  return Array.isArray(list) && list.length ? list[index % list.length] : {};
+}
+
+const EMPTY_MESSAGE = {
+  id: "empty-message",
+  from: "Churvox",
+  subject: "No messages yet",
+  detail: "Worker and customer messages will appear here when real messages arrive.",
+  draft: "No drafted reply waiting.",
+  history: "No message history yet.",
+  client: "No client selected",
+  job: "No job selected",
+  priority: "Clear",
+  channel: "None",
+};
+
+const EMPTY_WORKER = {
+  id: "empty-worker",
+  name: "No team member yet",
+  role: "Not set",
+  access: "Not set",
+  status: "No worker active",
+  job: "No job assigned",
+  app: "Not invited",
+  payroll: "No payroll review",
+  gps: "No GPS yet",
+  timesheet: "No time recorded",
+  proof: "No proof yet",
+  messages: "No worker messages",
+  start: "",
+  end: "",
+  slip: "No slip",
+  notes: "",
+};
+
 function useOsData() {
   const api = useApi();
   const [data, setData] = React.useState({ ...seed, xero: { connected: false, tenant_name: "" } });
@@ -91,12 +127,27 @@ function useOsData() {
         const fallback = seed.jobs[index % Math.max(seed.jobs.length, 1)] || {};
         return { ...fallback, ...job, id: idOf(job) || `job-${index}`, title: textOf(job.title, job.job_title, job.job_name, job.description, fallback.title), client: textOf(job.client_name, job.customer_name, job.client?.name, fallback.client), worker: textOf(job.assigned_worker_name, job.worker_name, job.worker?.name, fallback.worker), status: textOf(job.status, job.job_status, job.stage, fallback.status), date: textOf(job.scheduled_date, job.date, fallback.date), time: textOf(job.scheduled_time, job.start_time, job.time, fallback.time), price: Number(job.price ?? job.amount ?? job.total ?? fallback.price ?? 0), issue: textOf(job.issue, job.problem, job.needs_attention, fallback.issue) };
       });
-      const clients = listFrom(responses[1].value, "clients").map((client, index) => ({ ...seed.clients[index % seed.clients.length], ...client, id: idOf(client) || `client-${index}`, name: textOf(client.name, client.client_name, client.customer_name, seed.clients[index % seed.clients.length]?.name) }));
+      const clients = listFrom(responses[1].value, "clients").map((client, index) => {
+        const fallback = fallbackFrom(seed.clients, index);
+        return { ...fallback, ...client, id: idOf(client) || `client-${index}`, name: textOf(client.name, client.client_name, client.customer_name, fallback.name) };
+      });
       const workers = listFrom(responses[2].value, "team").map((worker, index) => { const fallback = seed.workers[index % Math.max(seed.workers.length, 1)] || {}; return { ...fallback, ...worker, id: idOf(worker) || `worker-${index}`, name: textOf(worker.name, worker.full_name, worker.email, fallback.name), role: textOf(worker.role, worker.access, fallback.role), status: textOf(worker.status, worker.clock_status, fallback.status), job: textOf(worker.current_job, worker.job_title, fallback.job), app: textOf(worker.app_status, worker.invite_status, fallback.app), payroll: textOf(worker.payroll_status, fallback.payroll), gps: textOf(worker.gps, worker.location, fallback.gps), timesheet: textOf(worker.timesheet, worker.hours_today, fallback.timesheet), proof: textOf(worker.proof, worker.photo_status, fallback.proof), messages: textOf(worker.messages, worker.message_status, fallback.messages), start: textOf(worker.start, worker.clock_in, worker.start_time, fallback.start), end: textOf(worker.end, worker.clock_out, worker.end_time, fallback.end), slip: textOf(worker.slip, worker.pay_slip_status, fallback.slip) }; });
-      const quotes = listFrom(responses[3].value, "quotes").map((quote, index) => ({ ...seed.quotes[index % seed.quotes.length], ...quote, id: idOf(quote) || `quote-${index}` }));
-      const invoices = listFrom(responses[4].value, "invoices").map((invoice, index) => ({ ...seed.invoices[index % seed.invoices.length], ...invoice, id: idOf(invoice) || `invoice-${index}` }));
-      const messages = listFrom(responses[5].value, "messages").map((message, index) => ({ ...seed.messages[index % seed.messages.length], ...message, id: idOf(message) || `message-${index}` }));
-      const command = listFrom(responses[6].value, "actions").map((item, index) => ({ ...seed.command[index % seed.command.length], ...item, id: idOf(item) || `command-${index}` }));
+      const quotes = listFrom(responses[3].value, "quotes").map((quote, index) => {
+        const fallback = fallbackFrom(seed.quotes, index);
+        return { ...fallback, ...quote, id: idOf(quote) || `quote-${index}` };
+      });
+      const invoices = listFrom(responses[4].value, "invoices").map((invoice, index) => {
+        const fallback = fallbackFrom(seed.invoices, index);
+        return { ...fallback, ...invoice, id: idOf(invoice) || `invoice-${index}` };
+      });
+      const messages = listFrom(responses[5].value, "messages").map((message, index) => {
+        const fallback = fallbackFrom(seed.messages, index);
+        return { ...fallback, ...message, id: idOf(message) || `message-${index}` };
+      });
+      const command = listFrom(responses[6].value, "actions").map((item, index) => {
+        const fallback = fallbackFrom(seed.command, index);
+        return { ...fallback, ...item, id: idOf(item) || `command-${index}` };
+      });
       const xeroRaw = responses[7].value?.data?.data || responses[7].value?.data || {};
       setData((current) => ({ jobs: jobs.length ? jobs : current.jobs, clients: clients.length ? clients : current.clients, workers: workers.length ? workers : current.workers, quotes: quotes.length ? quotes : current.quotes, invoices: invoices.length ? invoices : current.invoices, messages: messages.length ? messages : current.messages, command: command.length ? command : current.command, xero: { connected: Boolean(xeroRaw.connected || xeroRaw.xero_connected), tenant_name: textOf(xeroRaw.tenant_name, xeroRaw.tenantName, "") } }));
     }
@@ -397,15 +448,17 @@ function Invoices({ data, open }) {
 }
 
 function Messages({ data, open }) {
-  const msg = data.messages[0] || seed.messages[0];
-  return <div className="cocPage messagesPage"><Panel title="Worker Messages" tone="coral">{data.messages.filter((message) => /worker/i.test(message.from)).slice(0, 5).map((message) => <Row key={message.id} title={message.subject} meta={`${message.client || "Client"} - ${message.priority || message.detail}`} tone="coral" onClick={() => open("Message", message)} />)}</Panel><Panel title="Customer Messages" tone="blue">{data.messages.filter((message) => /customer/i.test(message.from)).slice(0, 5).map((message) => <Row key={message.id} title={message.subject} meta={`${message.client || "Customer"} - ${message.priority || message.detail}`} tone="blue" onClick={() => open("Message", message)} />)}</Panel><Panel title="Opened Thread" tone="blue"><div className="bubble"><b>{msg.subject}</b><p>{msg.detail}</p><small>{msg.client} - {msg.job} - {msg.history}</small></div></Panel><Panel title="Churvox Drafted Reply" className="wide"><div className="bubble draft"><p>{msg.draft}</p><small>Reply is prepared here. Sending approval happens in Command.</small></div></Panel><Panel title="Message History" tone="amber" className="wide"><div className="proofGrid">{data.messages.slice(0, 3).map((message) => <Row key={message.id} title={message.subject} meta={`${message.channel || message.from} - ${message.history}`} tone="amber" onClick={() => open("Message", message)} />)}</div></Panel></div>;
+  const msg = data.messages[0] || EMPTY_MESSAGE;
+  const workerMessages = data.messages.filter((message) => /worker/i.test(message.from || message.type || message.source));
+  const customerMessages = data.messages.filter((message) => /customer|client/i.test(message.from || message.type || message.source));
+  return <div className="cocPage messagesPage"><Panel title="Worker Messages" tone="coral">{workerMessages.length ? workerMessages.slice(0, 5).map((message) => <Row key={message.id} title={message.subject || message.title || "Worker message"} meta={`${message.client || "Client"} - ${message.priority || message.detail || message.summary || "Waiting owner review"}`} tone="coral" onClick={() => open("Message", message)} />) : <p>No worker messages yet.</p>}</Panel><Panel title="Customer Messages" tone="blue">{customerMessages.length ? customerMessages.slice(0, 5).map((message) => <Row key={message.id} title={message.subject || message.title || "Customer message"} meta={`${message.client || "Customer"} - ${message.priority || message.detail || message.summary || "No detail"}`} tone="blue" onClick={() => open("Message", message)} />) : <p>No customer messages yet.</p>}</Panel><Panel title="Opened Thread" tone="blue"><div className="bubble"><b>{msg.subject}</b><p>{msg.detail}</p><small>{msg.client} - {msg.job} - {msg.history}</small></div></Panel><Panel title="Churvox Drafted Reply" className="wide"><div className="bubble draft"><p>{msg.draft}</p><small>Reply is prepared here. Sending approval happens in Command.</small></div></Panel><Panel title="Message History" tone="amber" className="wide"><div className="proofGrid">{data.messages.length ? data.messages.slice(0, 3).map((message) => <Row key={message.id} title={message.subject || message.title || "Message"} meta={`${message.channel || message.from || "Churvox"} - ${message.history || message.created_at || "recent"}`} tone="amber" onClick={() => open("Message", message)} />) : <p>No message history yet.</p>}</div></Panel></div>;
 }
 
 function Team({ data, open }) {
   const active = data.workers.filter((worker) => /active/i.test(worker.app)).length;
   const payroll = data.workers.filter((worker) => /ready|review/i.test(worker.payroll)).length;
-  const selected = data.workers[0] || seed.workers[0];
-  return <div className="cocPage teamPage"><Panel title="Team Pulse" tone="blue" className="wide compactPanel"><div className="miniStats"><Stat label="staff" value={data.workers.length} tone="blue" /><Stat label="app active" value={active} /><Stat label="payroll" value={payroll} tone="amber" /><Stat label="roles" value="live" tone="coral" /></div><div className="teamQuickGrid">{data.workers.slice(0, 4).map((worker) => <Row key={worker.id} title={worker.name} meta={`${worker.role} - ${worker.app} - ${worker.payroll}`} tone="blue" onClick={() => open("Person", worker)} />)}</div></Panel><Panel title="Payroll Review" tone="amber" className="compactPanel"><div className="scroll">{data.workers.map((worker) => <Row key={worker.id} title={worker.name} meta={`${worker.timesheet} - ${worker.payroll}`} tone="amber" onClick={() => open("Person", worker)} />)}</div></Panel><Panel title="Staff Cards" tone="blue" className="wide compactPanel"><div className="workerCards">{data.workers.map((worker) => <button key={worker.id} type="button" className="workerCard" onClick={() => open("Person", worker)}><b>{worker.name}</b><small>{worker.role} - {worker.app}</small><span>{worker.job} - {worker.gps}</span><em>{worker.payroll}</em><i>{worker.timesheet} - {worker.slip}</i></button>)}</div></Panel><Panel title="Editable Person Form" tone="blue" className="compactPanel"><div className="formGrid compactForm"><Field label="Name" value={selected.name} /><Field label="Role/access" value={selected.role} options={optionSets.role} /><Field label="Payroll review" value={selected.payroll} /><Field label="Worker app" value={selected.app} /><Field label="Current job" value={selected.job} /><Field label="Timesheet" value={selected.timesheet} /></div></Panel><Panel title="Roles + Access" tone="coral"><div className="teamQuickGrid">{data.workers.map((worker) => <Row key={worker.id} title={worker.name} meta={`${worker.role} - ${worker.app}`} tone="coral" onClick={() => open("Person", worker)} />)}</div></Panel></div>;
+  const selected = data.workers[0] || EMPTY_WORKER;
+  return <div className="cocPage teamPage"><Panel title="Team Pulse" tone="blue" className="wide compactPanel"><div className="miniStats"><Stat label="staff" value={data.workers.length} tone="blue" /><Stat label="app active" value={active} /><Stat label="payroll" value={payroll} tone="amber" /><Stat label="roles" value={data.workers.length ? "live" : "empty"} tone="coral" /></div><div className="teamQuickGrid">{data.workers.length ? data.workers.slice(0, 4).map((worker) => <Row key={worker.id} title={worker.name} meta={`${worker.role} - ${worker.app} - ${worker.payroll}`} tone="blue" onClick={() => open("Person", worker)} />) : <p>No staff added yet.</p>}</div></Panel><Panel title="Payroll Review" tone="amber" className="compactPanel"><div className="scroll">{data.workers.length ? data.workers.map((worker) => <Row key={worker.id} title={worker.name} meta={`${worker.timesheet} - ${worker.payroll}`} tone="amber" onClick={() => open("Person", worker)} />) : <p>No payroll review waiting.</p>}</div></Panel><Panel title="Staff Cards" tone="blue" className="wide compactPanel"><div className="workerCards">{data.workers.length ? data.workers.map((worker) => <button key={worker.id} type="button" className="workerCard" onClick={() => open("Person", worker)}><b>{worker.name}</b><small>{worker.role} - {worker.app}</small><span>{worker.job} - {worker.gps}</span><em>{worker.payroll}</em><i>{worker.timesheet} - {worker.slip}</i></button>) : <p>No staff cards yet.</p>}</div></Panel><Panel title="Editable Person Form" tone="blue" className="compactPanel"><div className="formGrid compactForm"><Field label="Name" value={selected.name} /><Field label="Role/access" value={selected.role} options={optionSets.role} /><Field label="Payroll review" value={selected.payroll} /><Field label="Worker app" value={selected.app} /><Field label="Current job" value={selected.job} /><Field label="Timesheet" value={selected.timesheet} /></div></Panel><Panel title="Roles + Access" tone="coral"><div className="teamQuickGrid">{data.workers.length ? data.workers.map((worker) => <Row key={worker.id} title={worker.name} meta={`${worker.role} - ${worker.app}`} tone="coral" onClick={() => open("Person", worker)} />) : <p>No roles assigned yet.</p>}</div></Panel></div>;
 }
 
 function Xero({ data, open }) {
@@ -413,8 +466,14 @@ function Xero({ data, open }) {
   return <div className="cocPage"><Panel title="Connection" className="full"><h3>{data.xero.connected ? `Connected: ${data.xero.tenant_name || "Xero"}` : "Not connected yet"}</h3><span className="chip green">draft sync only</span></Panel><Panel title="Guardrails" tone="coral">{["No tax filing", "No payout files", "Owner-approved sync only", "Draft invoices only"].map((rule) => <Row key={rule} title={rule} meta="locked" tone="coral" />)}</Panel><Panel title="Ready To Sync" tone="blue" className="wide">{ready.slice(0, 5).map((invoice) => <Row key={invoice.id} title={invoice.number} meta={`${invoice.sync} - approval decision in Command`} tone="blue" onClick={() => open("Invoice", invoice)} />)}</Panel></div>;
 }
 
-function Settings() {
-  return <div className="cocPage"><Panel title="Business Controls" tone="dark" className="wide"><div className="formGrid"><Field label="Business name" value="Churvox business" /><Field label="Logo" value="Uploaded" /><Field label="Email" value="hello@churvox.com" /><Field label="GST" value="15%" /><Field label="Country" value="New Zealand" /><Field label="Notifications" value="On" /></div></Panel><Panel title="Rules + Exports" tone="blue">{["Worker app rules", "CSV defaults", "Security", "Data export", "Billing controls"].map((rule) => <Row key={rule} title={rule} meta="control" tone="blue" />)}</Panel></div>;
+function Settings({ user }) {
+  const businessName = textOf(user?.business_name, user?.company_name, user?.business?.name, user?.name, "Not set");
+  const email = textOf(user?.business_email, user?.company_email, user?.email, "Not set");
+  const gst = textOf(user?.gst_rate, user?.business?.gst_rate, user?.tax_rate, "Not set");
+  const country = textOf(user?.country, user?.business?.country, "Not set");
+  const logo = user?.business_logo || user?.logo_url || user?.business?.logo_url ? "Uploaded" : "Not uploaded";
+  const notifications = user?.notifications_enabled === false ? "Off" : "On";
+  return <div className="cocPage"><Panel title="Business Controls" tone="dark" className="wide"><div className="formGrid"><Field label="Business name" value={businessName} /><Field label="Logo" value={logo} /><Field label="Email" value={email} /><Field label="GST" value={gst} /><Field label="Country" value={country} /><Field label="Notifications" value={notifications} /></div><p>These controls show live account values. Use the save drawer or full settings form to update records.</p></Panel><Panel title="Rules + Exports" tone="blue">{["Worker app rules", "CSV defaults", "Security", "Data export", "Billing controls"].map((rule) => <Row key={rule} title={rule} meta="control" tone="blue" />)}</Panel></div>;
 }
 
 function Plans() {
@@ -426,7 +485,7 @@ function Help() {
   return <div className="cocPage"><Panel title="Contact" tone="coral" className="full"><h3>hello@churvox.com</h3><button className="action">New ticket</button></Panel><Panel title="Open Help">{["Setup help", "CSV import", "Worker app", "Billing"].map((item) => <Row key={item} title={item} meta="ticket" />)}</Panel><Panel title="Short Guides" tone="blue" className="wide">{["Add client", "Approve in Command", "Import CSV", "Xero guardrails"].map((item) => <Row key={item} title={item} meta="guide" tone="blue" />)}</Panel></div>;
 }
 
-function Page({ page, data, open, api }) {
+function Page({ page, data, open, api, user }) {
   if (page === "today") return <Today data={data} open={open} />;
   if (page === "command") return <Command data={data} open={open} api={api} />;
   if (page === "jobs") return <Jobs data={data} open={open} />;
@@ -437,7 +496,7 @@ function Page({ page, data, open, api }) {
   if (page === "messages") return <Messages data={data} open={open} />;
   if (page === "team") return <Team data={data} open={open} />;
   if (page === "xero") return <Xero data={data} open={open} />;
-  if (page === "settings") return <Settings />;
+  if (page === "settings") return <Settings user={user} />;
   if (page === "plans") return <Plans />;
   return <Help />;
 }
@@ -472,5 +531,5 @@ export default function FreshApp() {
   };
   const open = (type, item) => setSelected({ ...item, type });
 
-  return <main className="churvoxOptionC"><style>{baseCss}</style><header className="cocBar"><div className="brand"><i /><b>Churvox</b><small>does the admin</small></div><div className="title"><h1>{title}</h1><p>{subtitle}</p></div><div className="owner"><span>Owner checks</span><b>{user?.business_name || user?.name || "Boss view"}</b></div></header><nav className="cocNav" aria-label="Churvox OS navigation">{NAV.map((item) => { const key = keyOf(item); return <button key={key} type="button" className={page === key ? "active" : ""} onClick={() => go(key)}>{item}</button>; })}</nav><section className="workspace"><Page page={page} data={data} open={open} api={api} /></section><Drawer selected={selected} onClose={() => setSelected(null)} api={api} /></main>;
+  return <main className="churvoxOptionC"><style>{baseCss}</style><header className="cocBar"><div className="brand"><i /><b>Churvox</b><small>does the admin</small></div><div className="title"><h1>{title}</h1><p>{subtitle}</p></div><div className="owner"><span>Owner checks</span><b>{user?.business_name || user?.name || "Boss view"}</b></div></header><nav className="cocNav" aria-label="Churvox OS navigation">{NAV.map((item) => { const key = keyOf(item); return <button key={key} type="button" className={page === key ? "active" : ""} onClick={() => go(key)}>{item}</button>; })}</nav><section className="workspace"><Page page={page} data={data} open={open} api={api} user={user} /></section><Drawer selected={selected} onClose={() => setSelected(null)} api={api} /></main>;
 }
