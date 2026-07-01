@@ -51,7 +51,7 @@ except Exception:
 def _install_launch_patch(module_name):
     try:
         module = __import__(module_name)
-        installer = getattr(module, 'install', None)
+        installer = getattr(module, 'install', None) or getattr(module, '_install', None)
         if installer:
             installer(legacy)
     except Exception as exc:
