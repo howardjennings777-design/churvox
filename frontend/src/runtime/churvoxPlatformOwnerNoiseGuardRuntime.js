@@ -33,18 +33,40 @@
     }
   }
 
-  function safeResponse(input) {
-    return new Response(JSON.stringify({
-      success: false,
+  function methodOf(init) {
+    return String(init?.method || 'GET').trim().toUpperCase() || 'GET';
+  }
+
+  function jsonResponse(body, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json', 'X-Churvox-Guarded': 'platform-owner' },
+    });
+  }
+
+  function safeResponse(init) {
+    const method = methodOf(init);
+    if (method !== 'GET' && method !== 'HEAD') {
+      return jsonResponse({
+        success: false,
+        guarded: true,
+        detail: 'Platform-owner action blocked for this browser session.',
+      }, 403);
+    }
+
+    return jsonResponse({
+      success: true,
       guarded: true,
-      detail: 'Platform-owner cockpit endpoint blocked for this browser session.',
+      detail: 'Platform-owner cockpit endpoint quieted for this browser session.',
       items: [],
       testers: [],
+      paid_users: [],
+      trial_users: [],
+      free_testers: [],
+      no_plan_users: [],
+      counts: {},
       lists: {},
       metrics: {},
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', 'X-Churvox-Guarded': 'platform-owner' },
     });
   }
 
@@ -52,7 +74,7 @@
   if (typeof originalFetch === 'function') {
     window.fetch = function guardedFetch(input, init) {
       if (isAdminOwnerUrl(input) && !isPlatformOwnerSession()) {
-        return Promise.resolve(safeResponse(input));
+        return Promise.resolve(safeResponse(init));
       }
       return originalFetch.apply(this, arguments);
     };
