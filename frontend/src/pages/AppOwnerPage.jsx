@@ -1,1 +1,1 @@
-export { default } from "./AppOwnerCockpitV2";
+export { default } from "./AppOwnerCockpit";
