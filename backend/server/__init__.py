@@ -26,27 +26,21 @@ spec = spec_from_file_location('churvox_legacy_server', legacy_path)
 legacy = module_from_spec(spec)
 sys.modules['churvox_legacy_server'] = legacy
 
-# Some older emergency edits left a plain-English note inside server.py.
-# Clean that exact note before compiling so the legacy backend can still boot.
-try:
-    source = legacy_path.read_text(encoding='utf-8')
-    source = source.replace(
-        'app.include_router(api_router) moved to bottom after all routes',
-        '# app.include_router(api_router) moved to bottom after all routes',
-    )
-    code = compile(source, str(legacy_path), 'exec')
-    exec(code, legacy.__dict__)
-except Exception:
-    if spec and spec.loader:
-        spec.loader.exec_module(legacy)
-    else:
-        raise
+# Some older emergency edits left plain-English notes / stale calls inside server.py.
+# Clean those exact lines before compiling so the legacy backend can still boot.
+source = legacy_path.read_text(encoding='utf-8')
+source = source.replace(
+    'app.include_router(api_router) moved to bottom after all routes',
+    '# app.include_router(api_router) moved to bottom after all routes',
+)
+source = source.replace(
+    'register_command_hub_routes(api_router, db, get_current_user, get_user_business_id)',
+    "globals().get('register_command_hub_routes', lambda *args, **kwargs: None)(api_router, db, get_current_user, get_user_business_id)",
+)
+code = compile(source, str(legacy_path), 'exec')
+exec(code, legacy.__dict__)
 
 app = getattr(legacy, 'app', None)
-if app is None:
-    legacy_namespace = runpy.run_path(str(legacy_path))
-    app = legacy_namespace.get('app')
-
 if app is None:
     raise RuntimeError('Churvox backend boot failed: backend/server.py did not expose app')
 
