@@ -2,24 +2,62 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 
-const NAV = ["Today", "Command", "Jobs", "Clients", "Workers", "Quotes", "Invoices", "Messages", "Team", "Xero", "Settings", "Plans", "Help"];
+const NAV = ["AI Guide", "Command", "Jobs", "Clients", "Quotes", "Invoices", "Team", "Payroll", "Workers", "Xero", "Settings", "Plans", "Support"];
 const keyOf = (value) => String(value || "").toLowerCase().replace(/\s+/g, "");
-const aliases = { "": "today", dashboard: "today", smart: "today", hub: "today", support: "help", guide: "help", payroll: "team", worker: "workers", accounting: "xero", sync: "xero" };
+const aliases = {
+  "": "aiguide",
+  dashboard: "aiguide",
+  smart: "aiguide",
+  hub: "aiguide",
+  today: "aiguide",
+  setup: "aiguide",
+  setupassistant: "aiguide",
+  firstrun: "aiguide",
+  guide: "aiguide",
+  ai: "aiguide",
+  aioperator: "command",
+  quickcreateai: "command",
+  planday: "jobs",
+  recurring: "jobs",
+  dispatch: "workers",
+  routes: "workers",
+  areas: "workers",
+  worker: "workers",
+  workers: "workers",
+  quoteai: "quotes",
+  invoicecheck: "invoices",
+  payments: "invoices",
+  time: "payroll",
+  payroll: "payroll",
+  accounting: "xero",
+  sync: "xero",
+  integrations: "xero",
+  reports: "invoices",
+  profit: "invoices",
+  expenses: "invoices",
+  photos: "jobs",
+  documents: "clients",
+  automation: "command",
+  launchcontrol: "settings",
+  security: "settings",
+  support: "support",
+  help: "support"
+};
 
 const subtitles = {
-  today: "Jobs, workers, money, messages and problems for today.",
+  aiguide: "Setup, first jobs, worker app, pricing, billing and owner approval basics.",
   command: "The only approval desk: approve, edit or park.",
   jobs: "Job cards, editable job forms, recurring, proof and status.",
   clients: "Client list, editable forms, service memory and history.",
-  workers: "Clock-ins, GPS, current jobs, proof and timesheets.",
   quotes: "Drafts, sent quotes, viewed quotes, accepted quotes and follow-up.",
   invoices: "Drafts, due today, overdue, paid and sync-ready invoices.",
-  messages: "Worker messages, customer messages, drafted replies and history.",
-  team: "Staff, roles, access, payroll review and worker app status.",
+  team: "Staff, roles, access and worker app status.",
+  payroll: "Timesheets, worker slips and payroll review without tax filing or payout files.",
+  workers: "Clock-ins, GPS, current jobs, proof and timesheets.",
   xero: "Draft sync only, no tax filing, no payout files.",
   settings: "Real business controls without clutter.",
   plans: "Locked Churvox pricing and add-ons.",
-  help: "Support, setup help and short guides.",
+  support: "Support, setup help and short guides.",
 };
 
 const seed = {
@@ -481,12 +519,17 @@ function Plans() {
   return <div className="cocPage"><Panel title="Plans" tone="amber" className="full"><div className="planList">{plans.map(([name, price, detail]) => <div key={name} className={name === "Operator" ? "popular" : ""}><b>{name}</b><strong>{price}</strong><small>/month + GST</small><p>{detail}</p>{name === "Operator" ? <em>Most Popular</em> : null}</div>)}</div></Panel><Panel title="Add-ons" tone="blue" className="full"><p>Command Growth Pack $99/month + GST | Accounting Sync Add-on $39/month + GST for non-Command tiers.</p></Panel></div>;
 }
 
-function Help() {
-  return <div className="cocPage"><Panel title="Contact" tone="coral" className="full"><h3>hello@churvox.com</h3><button className="action">New ticket</button></Panel><Panel title="Open Help">{["Setup help", "CSV import", "Worker app", "Billing"].map((item) => <Row key={item} title={item} meta="ticket" />)}</Panel><Panel title="Short Guides" tone="blue" className="wide">{["Add client", "Approve in Command", "Import CSV", "Xero guardrails"].map((item) => <Row key={item} title={item} meta="guide" tone="blue" />)}</Panel></div>;
+function Support() {
+  return <div className="cocPage supportPage"><Panel title="Contact" tone="coral" className="full"><h3>hello@churvox.com</h3><button className="action">New ticket</button></Panel><Panel title="Open Support">{["Setup help", "CSV import", "Worker app", "Billing"].map((item) => <Row key={item} title={item} meta="ticket" />)}</Panel><Panel title="Short Guides" tone="blue" className="wide">{["Add client", "Approve in Command", "Import CSV", "Xero guardrails"].map((item) => <Row key={item} title={item} meta="guide" tone="blue" />)}</Panel></div>;
+}
+
+function AiGuide() {
+  return <div className="cocPage aiGuidePage"><Panel title="AI Guide" tone="blue" className="wide"><h3>Churvox does the admin. You approve.</h3><p>Use Command for approval decisions, Jobs for job records, Clients for customer memory, Team for people, Payroll for timesheets, Xero for owner-approved draft sync, and Settings for business controls.</p></Panel><Panel title="First setup" tone="amber"><Row title="Add your first client" meta="Client memory starts here" tone="amber" /><Row title="Create your first job" meta="Job, price, date, worker and recurrence" tone="amber" /><Row title="Review in Command" meta="Approve, edit or park only inside Command" tone="amber" /></Panel><Panel title="Launch guardrails" tone="coral" className="wide">{["No automatic invoice sending", "No tax filing", "No bank payout files", "Only mark paid after accounting refresh confirms paid"].map((rule) => <Row key={rule} title={rule} meta="locked" tone="coral" />)}</Panel></div>;
 }
 
 function Page({ page, data, open, api, user }) {
-  if (page === "today") return <Today data={data} open={open} />;
+  if (page === "aiguide") return <AiGuide />;
+  if (page === "today") return <AiGuide />;
   if (page === "command") return <Command data={data} open={open} api={api} />;
   if (page === "jobs") return <Jobs data={data} open={open} />;
   if (page === "clients") return <Clients data={data} open={open} />;
@@ -495,14 +538,15 @@ function Page({ page, data, open, api, user }) {
   if (page === "invoices") return <Invoices data={data} open={open} />;
   if (page === "messages") return <Messages data={data} open={open} />;
   if (page === "team") return <Team data={data} open={open} />;
+  if (page === "payroll") return <Team data={data} open={open} />;
   if (page === "xero") return <Xero data={data} open={open} />;
   if (page === "settings") return <Settings user={user} />;
   if (page === "plans") return <Plans />;
-  return <Help />;
+  return <Support />;
 }
 
 const baseCss = `
-.churvoxOptionC,.churvoxOptionC *{box-sizing:border-box}.churvoxOptionC{min-height:100vh;display:grid;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.churvoxOptionC button,.churvoxOptionC input,.churvoxOptionC textarea,.churvoxOptionC select{font:inherit}.cocBar{display:grid}.brand{display:flex;align-items:center}.brand i{display:block}.title,.brand,.owner{min-width:0}.title h1,.title p{margin:0}.owner{display:none!important}.owner span,.owner b,.cocRow b,.cocRow small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cocNav{display:flex}.workspace{min-width:0}.cocPage{display:grid}.toolbar{display:flex;flex-wrap:wrap}.cocPanel{position:relative}.scroll{display:grid;overflow:visible}.scroll.tight{max-height:none}.cocRow{display:grid;align-items:center;border:0;cursor:pointer}.cocRow i{display:block;border-radius:50%}.cocRow em{font-style:normal}.cocWeek,.pulse,.proofGrid,.moneyStrip,.miniStats,.ownerActions,.approvalActions{display:flex;flex-wrap:wrap}.ownerActions,.approvalActions{gap:8px}.approvalActions{grid-column:1/-1;margin-top:16px;padding-top:14px;border-top:1px solid rgba(16,21,19,.12)}.approvalActions .action{min-height:42px;min-width:118px}.dayControl{display:grid;gap:12px}.miniStats{gap:8px}.miniStat{display:grid;min-width:92px;border-radius:12px;padding:10px 12px;background:#eef2ed;color:#151c19}.miniStat b{font-size:20px;line-height:1}.miniStat small{font-size:11px;font-weight:900;color:#5e6b65}.chip{display:inline-flex;align-items:center;cursor:pointer}.map{position:relative;overflow:hidden}.googleMapShell{min-height:290px}.googleMap{position:absolute;inset:0;border-radius:inherit;overflow:hidden;background:#eef2ed}.googleMap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.googleMap a{position:absolute;right:10px;bottom:10px;border-radius:999px;padding:7px 10px;background:#101513;color:#fff;font-size:11px;font-weight:950;text-decoration:none;box-shadow:0 10px 22px rgba(16,21,19,.2)}table{width:100%}.formGrid{display:grid}.cocField{display:grid}.cocField input,.cocField textarea,.cocField select{width:100%;min-height:42px;border:1px solid rgba(16,21,19,.12);border-radius:12px;padding:9px 10px;background:#fff;color:#151c19;font-weight:850}.cocField textarea{min-height:96px;resize:vertical}.cocDrawer{position:fixed}.cocDrawer>div{display:grid}.jobCards,.workerCards,.workCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.jobCard,.workerCard,.workCard{display:grid;gap:5px;min-height:118px;border:1px solid rgba(16,21,19,.12);border-radius:14px;padding:12px;background:#fff;color:#151c19;text-align:left;cursor:pointer;box-shadow:0 10px 22px rgba(16,21,19,.05)}.jobCard b,.workerCard b,.workCard b{font-size:14px}.jobCard small,.jobCard span,.workerCard small,.workerCard span,.workCard small,.workCard span{color:#5e6b65;font-size:12px;font-weight:850}.jobCard em,.workerCard em,.workCard em{font-style:normal;font-weight:950}.jobCard i,.workerCard i,.workCard i{justify-self:start;border-radius:999px;padding:5px 8px;background:#eef2ed;color:#5e6b65;font-size:11px;font-style:normal;font-weight:950}.ledgerList{display:grid;gap:8px}.ledgerRow{display:grid;grid-template-columns:110px 1fr 110px 100px 170px;gap:10px;align-items:center;border:1px solid rgba(16,21,19,.12);border-radius:12px;padding:10px 12px;background:#fff;color:#151c19;text-align:left;cursor:pointer}.ledgerRow b{font-weight:950}.ledgerRow span,.ledgerRow em{overflow:hidden;color:#5e6b65;font-size:12px;font-style:normal;font-weight:850;text-overflow:ellipsis;white-space:nowrap}.bubble.draft{background:#fff7ee}.bubble b{display:block;margin-bottom:8px}.bubble p{margin:0 0 8px}.bubble small{color:#5e6b65;font-weight:850}.jobSlip .cocField:has(textarea),.cocDrawer .cocField:has(textarea){grid-column:1/-1}.clientsPage .wide .miniStats,.workersPage .miniStats,.quotesPage .miniStats,.teamPage .miniStats{margin-bottom:12px}.clientsPage .proofGrid,.workersPage .proofGrid,.quotesPage .proofGrid,.messagesPage .proofGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.compactPanel{min-height:0!important}.quotesPage .cocPanel,.teamPage .cocPanel{min-height:0!important}.quotesPage .workCard,.teamPage .workerCard{min-height:94px!important;padding:10px}.quoteStageGrid,.teamQuickGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.quoteStageGrid .cocRow,.teamQuickGrid .cocRow{min-height:46px}.compactForm{gap:8px}.compactForm .cocField input,.compactForm .cocField select{min-height:36px}.compactForm .cocField span{font-size:11px}@media(max-width:860px){.jobCards,.workerCards,.workCards,.quoteStageGrid,.teamQuickGrid{grid-template-columns:1fr}.ledgerRow{grid-template-columns:1fr}.clientsPage .proofGrid,.workersPage .proofGrid,.quotesPage .proofGrid,.messagesPage .proofGrid{grid-template-columns:1fr}}
+.churvoxOptionC,.churvoxOptionC *{box-sizing:border-box}.churvoxOptionC{width:100%;max-width:100vw;min-height:100vh;display:grid;overflow-x:hidden;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.churvoxOptionC button,.churvoxOptionC input,.churvoxOptionC textarea,.churvoxOptionC select{font:inherit}.cocBar{display:grid}.brand{display:flex;align-items:center}.brand i{display:block}.title,.brand,.owner{min-width:0}.title h1,.title p{margin:0}.owner{display:none!important}.owner span,.owner b,.cocRow b,.cocRow small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cocNav{display:flex}.workspace{min-width:0;max-width:100%;overflow-x:hidden}.cocPage{display:grid;min-width:0;max-width:100%}.toolbar{display:flex;flex-wrap:wrap}.cocPanel{position:relative}.scroll{display:grid;overflow:visible}.scroll.tight{max-height:none}.cocRow{display:grid;align-items:center;border:0;cursor:pointer}.cocRow i{display:block;border-radius:50%}.cocRow em{font-style:normal}.cocWeek,.pulse,.proofGrid,.moneyStrip,.miniStats,.ownerActions,.approvalActions{display:flex;flex-wrap:wrap}.ownerActions,.approvalActions{gap:8px}.approvalActions{grid-column:1/-1;margin-top:16px;padding-top:14px;border-top:1px solid rgba(16,21,19,.12)}.approvalActions .action{min-height:42px;min-width:118px}.dayControl{display:grid;gap:12px}.miniStats{gap:8px}.miniStat{display:grid;min-width:92px;border-radius:12px;padding:10px 12px;background:#eef2ed;color:#151c19}.miniStat b{font-size:20px;line-height:1}.miniStat small{font-size:11px;font-weight:900;color:#5e6b65}.chip{display:inline-flex;align-items:center;cursor:pointer}.map{position:relative;overflow:hidden}.googleMapShell{min-height:290px}.googleMap{position:absolute;inset:0;border-radius:inherit;overflow:hidden;background:#eef2ed}.googleMap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.googleMap a{position:absolute;right:10px;bottom:10px;border-radius:999px;padding:7px 10px;background:#101513;color:#fff;font-size:11px;font-weight:950;text-decoration:none;box-shadow:0 10px 22px rgba(16,21,19,.2)}table{width:100%}.formGrid{display:grid}.cocField{display:grid}.cocField input,.cocField textarea,.cocField select{width:100%;min-height:42px;border:1px solid rgba(16,21,19,.12);border-radius:12px;padding:9px 10px;background:#fff;color:#151c19;font-weight:850}.cocField textarea{min-height:96px;resize:vertical}.cocDrawer{position:fixed}.cocDrawer>div{display:grid}.jobCards,.workerCards,.workCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.jobCard,.workerCard,.workCard{display:grid;gap:5px;min-height:118px;border:1px solid rgba(16,21,19,.12);border-radius:14px;padding:12px;background:#fff;color:#151c19;text-align:left;cursor:pointer;box-shadow:0 10px 22px rgba(16,21,19,.05)}.jobCard b,.workerCard b,.workCard b{font-size:14px}.jobCard small,.jobCard span,.workerCard small,.workerCard span,.workCard small,.workCard span{color:#5e6b65;font-size:12px;font-weight:850}.jobCard em,.workerCard em,.workCard em{font-style:normal;font-weight:950}.jobCard i,.workerCard i,.workCard i{justify-self:start;border-radius:999px;padding:5px 8px;background:#eef2ed;color:#5e6b65;font-size:11px;font-style:normal;font-weight:950}.ledgerList{display:grid;gap:8px}.ledgerRow{display:grid;grid-template-columns:110px 1fr 110px 100px 170px;gap:10px;align-items:center;border:1px solid rgba(16,21,19,.12);border-radius:12px;padding:10px 12px;background:#fff;color:#151c19;text-align:left;cursor:pointer}.ledgerRow b{font-weight:950}.ledgerRow span,.ledgerRow em{overflow:hidden;color:#5e6b65;font-size:12px;font-style:normal;font-weight:850;text-overflow:ellipsis;white-space:nowrap}.bubble.draft{background:#fff7ee}.bubble b{display:block;margin-bottom:8px}.bubble p{margin:0 0 8px}.bubble small{color:#5e6b65;font-weight:850}.jobSlip .cocField:has(textarea),.cocDrawer .cocField:has(textarea){grid-column:1/-1}.clientsPage .wide .miniStats,.workersPage .miniStats,.quotesPage .miniStats,.teamPage .miniStats{margin-bottom:12px}.clientsPage .proofGrid,.workersPage .proofGrid,.quotesPage .proofGrid,.messagesPage .proofGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.compactPanel{min-height:0!important}.quotesPage .cocPanel,.teamPage .cocPanel{min-height:0!important}.quotesPage .workCard,.teamPage .workerCard{min-height:94px!important;padding:10px}.quoteStageGrid,.teamQuickGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.quoteStageGrid .cocRow,.teamQuickGrid .cocRow{min-height:46px}.compactForm{gap:8px}.compactForm .cocField input,.compactForm .cocField select{min-height:36px}.compactForm .cocField span{font-size:11px}@media(max-width:860px){.jobCards,.workerCards,.workCards,.quoteStageGrid,.teamQuickGrid{grid-template-columns:1fr}.ledgerRow{grid-template-columns:1fr}.clientsPage .proofGrid,.workersPage .proofGrid,.quotesPage .proofGrid,.messagesPage .proofGrid{grid-template-columns:1fr}}
 `;
 
 export default function FreshApp() {
@@ -527,7 +571,7 @@ export default function FreshApp() {
   const go = (key) => {
     setPage(key);
     setSelected(null);
-    if (typeof window !== "undefined") window.history.replaceState({}, "", key === "today" ? "/dashboard" : `/dashboard#${key}`);
+    if (typeof window !== "undefined") window.history.replaceState({}, "", key === "aiguide" ? "/dashboard#setupassistant" : `/dashboard#${key}`);
   };
   const open = (type, item) => setSelected({ ...item, type });
 

@@ -66,7 +66,10 @@ function useWorkerJobs() {
     setLoading(true);
     setError("");
     try {
-      const response = await get("/worker/jobs");
+      const response = await Promise.race([
+        get("/worker/jobs"),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Worker jobs took too long to load.")), 12000)),
+      ]);
       const rows = list(response?.data || response).filter((job) => jobId(job));
       setJobs(rows);
     } catch (err) {
