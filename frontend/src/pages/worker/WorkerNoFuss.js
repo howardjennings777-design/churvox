@@ -119,7 +119,7 @@ export function NoFussJobs() {
 export function NoFussJob() {
   const { id } = useParams();
   const { jobs, loading, error, refresh } = useWorkerJobs();
-  const { post, patch } = useApi();
+  const { post } = useApi();
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const job = useMemo(() => jobs.find((item) => jobId(item) === id) || openJobs(jobs)[0], [jobs, id]);
@@ -143,7 +143,6 @@ export function NoFussJob() {
     if (!job) return;
     setSaving(true);
     try {
-      await patch(`/worker/jobs/${jobId(job)}/field-update`, { worker_notes: note });
       await post(`/jobs/${jobId(job)}/complete`, { worker_notes: note, source: "worker-app" });
       toast.success("Sent to office");
       await refresh();
