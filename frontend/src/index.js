@@ -21,6 +21,7 @@ import './runtime/churvoxCommandPreparedSlipsRuntime';
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
+import './runtime/churvoxPublicBusinessPagesRuntime';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
 import './churvox-fresh/optionCCommandBarFix.css';
@@ -78,10 +79,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <App />
-    <RecordWorkspacePopupBridgeV2 />
-  </React.StrictMode>
+const staticPublicPageRendered = Boolean(
+  typeof window !== 'undefined' && window.__CHURVOX_STATIC_PUBLIC_PAGE_RENDERED__ === true
 );
+
+if (!staticPublicPageRendered) {
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(
+    <React.StrictMode>
+      <App />
+      <RecordWorkspacePopupBridgeV2 />
+    </React.StrictMode>
+  );
+}
