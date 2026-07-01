@@ -411,15 +411,28 @@ export function NoFussJob() {
         {place ? <a className="swPrimary" href={mapsUrl(place)} target="_blank" rel="noreferrer"><Navigation size={16} />Directions</a> : null}
       </section>
       <section className="swCard">
-        <span>Do this</span>
+        <span>Job checklist</span>
         <h2>{instructions(job)}</h2>
+        <div className="swFacts">
+          <span className="swFact"><b>Work</b>Check address, complete service, add notes, send photos if needed.</span>
+          <span className="swFact"><b>Assigned</b>{status(job) || "assigned"}</span>
+        </div>
       </section>
-      <WorkerPaymentCard job={job} />
       <section className="swCard swActionCard">
-        <span>Note</span>
+        <span>Work timer</span>
+        <h2>Start current job</h2>
+        <button className="swBig" type="button" disabled={saving} onClick={startJob}>{saving ? "Saving" : "Start job"}</button>
+      </section>
+      <section className="swCard swActionCard">
+        <span>Job notes</span>
         <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note for office" />
       </section>
-      <button className="swBig" type="button" disabled={saving} onClick={startJob}>{saving ? "Saving" : "Start job"}</button>
+      <section className="swCard swActionCard">
+        <span>Photos</span>
+        <h2>Photos for office</h2>
+        <p>Photo upload will sit here. Use notes if photos are not needed for this job.</p>
+      </section>
+      <WorkerPaymentCard job={job} />
       <button className="swBig finish" type="button" disabled={saving} onClick={finishJob}>{saving ? "Saving" : "Finish job"}</button>
     </Shell>
   );

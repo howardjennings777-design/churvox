@@ -10,9 +10,12 @@ import './runtime/churvoxNativeTimerRuntime';
 import './runtime/churvoxRouteAliasRuntime';
 import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
-import './runtime/churvoxWorkerNoFussHardCleanRuntime';
-import './runtime/churvoxWorkerJobsFallbackRuntime';
-import './runtime/churvoxWorkerBlankFallbackRuntime';
+// Disabled for paid launch: old worker fallback runtime caused worker page DOM freezes.
+// import './runtime/churvoxWorkerNoFussHardCleanRuntime';
+// Disabled for paid launch: old worker fallback runtime caused worker page DOM freezes.
+// import './runtime/churvoxWorkerJobsFallbackRuntime';
+// Disabled for paid launch: old worker fallback runtime caused worker page DOM freezes.
+// import './runtime/churvoxWorkerBlankFallbackRuntime';
 import './runtime/churvoxDrawerClickSafetyRuntime';
 import './runtime/churvoxPlainSendGuardRuntime';
 import './runtime/churvoxPlanPersistenceRuntime';
@@ -73,6 +76,7 @@ import './churvox-fresh/optionFReadinessActionFixRuntime';
 import './churvox-fresh/optionFApprovalExecutionRuntime';
 import './churvox-fresh/optionFInvoiceVaultRuntime.css';
 import './styles/churvoxResponsiveFit.css';
+import './styles/churvoxPaidLaunchGuard.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

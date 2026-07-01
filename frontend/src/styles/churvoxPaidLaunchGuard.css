@@ -1,0 +1,48 @@
+/* Churvox paid launch guard: prevent app-wide horizontal overflow and runtime freezes. */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body:has(.churvoxOptionC) {
+  margin: 0;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.churvoxOptionC,
+.churvoxOptionC .cocBar,
+.churvoxOptionC .cocNav,
+.churvoxOptionC .workspace,
+.churvoxOptionC .cocPage,
+.churvoxOptionC .cocPanel {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.churvoxOptionC {
+  width: 100%;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+.churvoxOptionC .workspace {
+  overflow-x: hidden !important;
+}
+
+.churvoxOptionC .cocNav {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain;
+}
+
+.churvoxOptionC .cocNav button,
+.churvoxOptionC .cocRow,
+.churvoxOptionC .jobCard,
+.churvoxOptionC .workerCard,
+.churvoxOptionC .workCard {
+  max-width: 100% !important;
+}
