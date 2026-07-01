@@ -195,11 +195,12 @@ def install(module):
             "created_by": owner.get("email"),
             "updated_at": now_utc(),
         }
+        await db.app_owner_testers.update_one({"email": email}, {"$set": tester_doc, "$setOnInsert": {"created_at": now_utc()}}, upsert=True)
         if existing:
             existing, _ = await grant_if_tester(existing)
             tester_doc["status"] = "access_granted"
             tester_doc["user_id"] = str(existing["_id"])
-        await db.app_owner_testers.update_one({"email": email}, {"$set": tester_doc, "$setOnInsert": {"created_at": now_utc()}}, upsert=True)
+            await db.app_owner_testers.update_one({"email": email}, {"$set": {"status": "access_granted", "user_id": str(existing["_id"]), "updated_at": now_utc()}})
         signup_link = f"{front_url()}/signup?{urlencode({'tester': '1', 'email': email})}"
         email_status = {"email_sent": False}
         if payload.get("send_email", True):
