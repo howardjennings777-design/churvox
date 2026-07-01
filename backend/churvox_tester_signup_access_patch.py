@@ -201,32 +201,39 @@ def install(module):
             tester_doc["status"] = "access_granted"
             tester_doc["user_id"] = str(existing["_id"])
             await db.app_owner_testers.update_one({"email": email}, {"$set": {"status": "access_granted", "user_id": str(existing["_id"]), "updated_at": now_utc()}})
-        signup_link = f"{front_url()}/signup?{urlencode({'tester': '1', 'email': email})}"
+        link_path = "/login" if existing else "/signup"
+        link_query = {"email": email}
+        if not existing:
+            link_query["tester"] = "1"
+        access_link = f"{front_url()}{link_path}?{urlencode(link_query)}"
         email_status = {"email_sent": False}
         if payload.get("send_email", True):
             subject = "Your Churvox tester access"
-            safe_name = html.escape(clean(payload.get("name")) or "there")
-            link = html.escape(signup_link, quote=True)
+            safe_name = html.escape(clean(payload.get("name")) or clean((existing or {}).get("name")) or "there")
+            link = html.escape(access_link, quote=True)
+            action_text = "Sign in to Churvox" if existing else "Open Churvox signup"
+            body_line = "Your Churvox tester access is now active. Sign in with this email." if existing else f"You have been added as a Churvox tester. Use the button below and sign up with <strong>{html.escape(email)}</strong>."
+            next_line = "No Stripe checkout is needed for this tester access." if existing else "After signup, Churvox will unlock your tester access automatically."
             html_body = f"""
             <div style='font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;background:#f8fafc;padding:24px;'>
               <div style='max-width:560px;margin:auto;background:white;border:1px solid #e2e8f0;border-radius:14px;padding:28px;'>
                 <h2 style='margin:0 0 12px;'>Your Churvox tester access is ready</h2>
                 <p>Hi {safe_name},</p>
-                <p>You have been added as a Churvox tester. Use the button below and sign up with <strong>{html.escape(email)}</strong>.</p>
-                <p>After signup, Churvox will unlock your tester access automatically.</p>
-                <p><a href='{link}' style='display:inline-block;background:#0f172a;color:white;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:800;'>Open Churvox signup</a></p>
+                <p>{body_line}</p>
+                <p>{next_line}</p>
+                <p><a href='{link}' style='display:inline-block;background:#0f172a;color:white;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:800;'>{action_text}</a></p>
                 <p style='font-size:13px;color:#64748b;'>If the button does not work, copy this link:<br><a href='{link}'>{link}</a></p>
               </div>
             </div>
             """
-            text_body = f"Your Churvox tester access is ready. Sign up with {email}: {signup_link}"
+            text_body = f"Your Churvox tester access is ready. {'Sign in' if existing else 'Sign up'} with {email}: {access_link}"
             try:
                 sent = await mailer.send(email, subject, html_body, text_body)
                 email_status = {"email_sent": bool(sent.success), "provider": sent.provider, "error": sent.error}
             except Exception as exc:
                 email_status = {"email_sent": False, "error": str(exc)}
-        await db.app_owner_control_log.insert_one({"created_at": now_utc(), "owner_email": owner.get("email"), "action": "tester_intake", "target_email": email, "payload": safe(payload), "result": safe({"tester": tester_doc, "signup_link": signup_link, "email": email_status})})
-        return {"success": True, "message": "Tester access granted" if existing else "Tester email sent" if email_status.get("email_sent") else "Tester saved; send them the signup link", "tester": safe(tester_doc), "user": safe(existing), "signup_link": signup_link, "email": safe(email_status)}
+        await db.app_owner_control_log.insert_one({"created_at": now_utc(), "owner_email": owner.get("email"), "action": "tester_intake", "target_email": email, "payload": safe(payload), "result": safe({"tester": tester_doc, "access_link": access_link, "email": email_status})})
+        return {"success": True, "message": "Tester access granted" if existing else "Tester email sent" if email_status.get("email_sent") else "Tester saved; send them the signup link", "tester": safe(tester_doc), "user": safe(existing), "signup_link": None if existing else access_link, "login_link": access_link if existing else None, "email": safe(email_status)}
 
     async def patched_me(request: Request):
         current = await get_current_user(request)
