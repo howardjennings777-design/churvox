@@ -44,6 +44,22 @@ app = getattr(legacy, 'app', None)
 if app is None:
     raise RuntimeError('Churvox backend boot failed: backend/server.py did not expose app')
 
+# The real backend is loaded as churvox_legacy_server, not plain server.py.
+# Install Churvox runtime patches directly onto that legacy module so Render gets them.
+for patch_name in [
+    'churvox_auth_login_fast_patch',
+    'churvox_worker_login_bridge_patch',
+    'churvox_worker_app_deep_fix_patch',
+    'churvox_owner_cockpit_control_patch',
+]:
+    try:
+        patch = __import__(patch_name)
+        installer = getattr(patch, 'install', None)
+        if callable(installer):
+            installer(legacy)
+    except Exception as exc:
+        print(f'Churvox wrapper patch install skipped for {patch_name}: {exc}', file=sys.stderr)
+
 try:
     app.router.on_startup.clear()
 except Exception:
