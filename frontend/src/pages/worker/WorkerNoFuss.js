@@ -292,6 +292,22 @@ export function NoFussJob() {
     await beacon(post, job, end ? "stop" : "start");
     try {
       if (end) {
+        await post(`/worker/jobs/${jobId}/proof-passport`, {
+          finish_summary: note || "Completed by worker.",
+          worker_note: note || "Completed by worker.",
+          steps: { finish_summary: true, worker_note: Boolean(note) },
+          source: "worker_finish",
+        });
+        if (/(extra|unsafe|issue|problem|wrong|blocked|customer|material|green waste|price)/i.test(note || "")) {
+          await post(`/worker/jobs/${jobId}/field-slip`, {
+            type: "worker_issue",
+            kind: "worker_issue",
+            text: note,
+            note,
+            summary: note,
+            source: "worker_finish_issue",
+          });
+        }
         await post(`/worker/jobs/${jobId}/complete`, { worker_notes: note });
         await timer(post, job, "complete", note);
       } else {
@@ -339,6 +355,16 @@ export function NoFussMessages() {
           note: body,
           summary: body,
           source: "worker_messages",
+        });
+      }
+      if (!result || result.success === false) {
+        result = await post("/worker/field-slip", {
+          type: "worker_message",
+          kind: "worker_message",
+          text: body,
+          note: body,
+          summary: body,
+          source: "worker_messages_no_job",
         });
       }
       if (!result || result.success === false) {

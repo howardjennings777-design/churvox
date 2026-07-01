@@ -101,7 +101,11 @@ function useOsData() {
       setData((current) => ({ jobs: jobs.length ? jobs : current.jobs, clients: clients.length ? clients : current.clients, workers: workers.length ? workers : current.workers, quotes: quotes.length ? quotes : current.quotes, invoices: invoices.length ? invoices : current.invoices, messages: messages.length ? messages : current.messages, command: command.length ? command : current.command, xero: { connected: Boolean(xeroRaw.connected || xeroRaw.xero_connected), tenant_name: textOf(xeroRaw.tenant_name, xeroRaw.tenantName, "") } }));
     }
     load();
-    return () => { alive = false; };
+    window.addEventListener("churvox:fresh-data-updated", load);
+    return () => {
+      alive = false;
+      window.removeEventListener("churvox:fresh-data-updated", load);
+    };
   }, [api]);
 
   return data;
@@ -115,10 +119,12 @@ function Panel({ title, tone = "green", className = "", children }) {
   return <section className={`cocPanel ${tone} ${className}`}><h2>{title}</h2>{children}</section>;
 }
 
-function Field({ label, value, textarea = false, type = "text", options, readOnly = false }) {
-  if (options) return <label className="cocField"><span>{label}</span><select defaultValue={value ?? ""}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
+function Field({ name, label, value, textarea = false, type = "text", options, readOnly = false, onChange }) {
+  const fieldName = name || label;
+  const common = { name: fieldName, readOnly, disabled: readOnly, onChange };
+  if (options) return <label className="cocField"><span>{label}</span><select {...common} value={value ?? ""}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
   const Tag = textarea ? "textarea" : "input";
-  return <label className="cocField"><span>{label}</span><Tag type={textarea ? undefined : type} step={type === "number" ? "0.01" : undefined} defaultValue={value ?? ""} readOnly={readOnly} rows={textarea ? 4 : undefined} /></label>;
+  return <label className="cocField"><span>{label}</span><Tag {...common} type={textarea ? undefined : type} step={type === "number" ? "0.01" : undefined} value={value ?? ""} rows={textarea ? 4 : undefined} /></label>;
 }
 
 function Stat({ label, value, tone = "green" }) {
@@ -149,10 +155,183 @@ function detailFor(selected) {
   return { title: "Editable job form", note: "Edit the job like a real record: service, price, date, time, worker, status and repeat schedule.", job: true, fields: [["Job name", selected.title], ["Client", selected.client, false, "text", optionSets.client], ["Site address", selected.address], ["Service", selected.service, false, "text", optionSets.service], ["Assigned worker", selected.worker, false, "text", optionSets.worker], ["Scheduled date", selected.date, false, "date"], ["Start time", selected.time, false, "time"], ["Estimated duration", selected.duration], ["Price NZD", selected.price, false, "number"], ["Billing type", selected.billing, false, "text", optionSets.billing], ["Frequency", selected.recurring, false, "text", optionSets.recurring], ["Status", selected.status, false, "text", optionSets.status], ["Proof/photos", selected.proof], ["Issue status", selected.issue ? `Waiting in Command: ${selected.issue}` : "No issue", false, "text", null, true], ["Job notes", selected.notes, true]] };
 }
 
-function Drawer({ selected, onClose }) {
-  if (!selected) return null;
-  const detail = detailFor(selected);
-  return <aside className={`cocDrawer ${detail.approval ? "approvalSlip" : ""} ${detail.job ? "jobSlip" : ""}`}><button type="button" onClick={onClose}>Close</button><em>{selected.type || "Record"}</em><h2>{detail.title}</h2><p>{detail.note}</p><div>{detail.fields.map(([label, value, textarea, type, options, readOnly]) => <Field key={label} label={label} value={value} textarea={textarea} type={type} options={options} readOnly={readOnly} />)}</div>{detail.approval ? <div className="approvalActions"><button type="button" className="action">Approve</button><button type="button" className="action dark">Edit form</button><button type="button" className="action quiet">Park</button></div> : null}{detail.job ? <div className="approvalActions"><button type="button" className="action">Save job</button><button type="button" className="action dark">Create quote</button><button type="button" className="action quiet">Close</button></div> : null}{detail.client ? <div className="approvalActions"><button type="button" className="action">Save client</button><button type="button" className="action dark">Add job</button><button type="button" className="action quiet">New quote</button></div> : null}{detail.worker ? <div className="approvalActions"><button type="button" className="action">Save day</button><button type="button" className="action dark">Message worker</button><button type="button" className="action quiet">Open timesheet</button></div> : null}{detail.quote ? <div className="approvalActions"><button type="button" className="action">Save quote</button><button type="button" className="action dark">Edit quote</button><button type="button" className="action quiet">Close</button></div> : null}{detail.invoice ? <div className="approvalActions"><button type="button" className="action">Save invoice</button><button type="button" className="action dark">Edit invoice</button><button type="button" className="action quiet">Close</button></div> : null}{detail.message ? <div className="approvalActions"><button type="button" className="action">Save draft</button><button type="button" className="action dark">Edit reply</button><button type="button" className="action quiet">Close</button></div> : null}{detail.person ? <div className="approvalActions"><button type="button" className="action">Save person</button><button type="button" className="action dark">Update access</button><button type="button" className="action quiet">Payroll review</button></div> : null}</aside>;
+function detailMode(detail) {
+  if (detail.job) return "job";
+  if (detail.client) return "client";
+  if (detail.worker) return "worker";
+  if (detail.quote) return "quote";
+  if (detail.invoice) return "invoice";
+  if (detail.message) return "message";
+  if (detail.person) return "person";
+  if (detail.approval) return "approval";
+  return "record";
+}
+
+function getField(fields, ...names) {
+  for (const name of names) {
+    const hit = Object.keys(fields || {}).find((key) => key.toLowerCase() === String(name).toLowerCase());
+    if (hit && String(fields[hit] ?? "").trim()) return fields[hit];
+  }
+  return "";
+}
+
+function payloadFor(mode, fields) {
+  if (mode === "job") return {
+    title: getField(fields, "Job name"),
+    client_name: getField(fields, "Client"),
+    address: getField(fields, "Site address"),
+    service: getField(fields, "Service"),
+    assigned_worker_name: getField(fields, "Assigned worker"),
+    scheduled_date: getField(fields, "Scheduled date"),
+    scheduled_time: getField(fields, "Start time"),
+    duration: getField(fields, "Estimated duration"),
+    price: getField(fields, "Price NZD"),
+    billing: getField(fields, "Billing type"),
+    recurring: getField(fields, "Frequency"),
+    status: getField(fields, "Status"),
+    proof: getField(fields, "Proof/photos"),
+    notes: getField(fields, "Job notes"),
+  };
+  if (mode === "client") return {
+    name: getField(fields, "Name"),
+    phone: getField(fields, "Phone"),
+    email: getField(fields, "Email"),
+    address: getField(fields, "Address"),
+    service: getField(fields, "Preferred service"),
+    price: getField(fields, "Saved price"),
+    schedule: getField(fields, "Preferred schedule"),
+    notes: getField(fields, "Access notes"),
+  };
+  if (mode === "invoice") return {
+    client_name: getField(fields, "Client"),
+    job_title: getField(fields, "Job"),
+    amount: getField(fields, "Amount"),
+    due_date: getField(fields, "Due date"),
+    status: getField(fields, "Status"),
+    accounting_status: getField(fields, "Xero/MYOB status"),
+    line_item: getField(fields, "Line item"),
+    evidence: getField(fields, "Evidence"),
+  };
+  if (mode === "quote") return {
+    title: getField(fields, "Quote"),
+    client_name: getField(fields, "Client"),
+    amount: getField(fields, "Amount"),
+    status: getField(fields, "Status"),
+    scope: getField(fields, "Scope"),
+    terms: getField(fields, "Terms"),
+    follow_up: getField(fields, "Follow-up"),
+    next_step: getField(fields, "Next step"),
+  };
+  if (mode === "worker" || mode === "person") return {
+    name: getField(fields, "Worker", "Name"),
+    role: getField(fields, "Role/access", "Role"),
+    access: getField(fields, "Access"),
+    status: getField(fields, "Clock status"),
+    current_job: getField(fields, "Current job"),
+    gps: getField(fields, "GPS/location"),
+    clock_in: getField(fields, "Clock in"),
+    clock_out: getField(fields, "Clock out"),
+    proof: getField(fields, "Proof/photos"),
+    messages: getField(fields, "Worker messages"),
+    timesheet: getField(fields, "Timesheet"),
+    notes: getField(fields, "Day notes", "Notes"),
+  };
+  return { fields };
+}
+
+async function firstGood(calls) {
+  let last = null;
+  for (const call of calls) {
+    try {
+      const res = await call();
+      if (res?.success !== false) return res;
+      last = res?.error || res?.data?.detail;
+    } catch (error) {
+      last = error?.message;
+    }
+  }
+  throw new Error(last || "Could not save");
+}
+
+function Drawer({ selected, onClose, api }) {
+  const detail = selected ? detailFor(selected) : null;
+  const [values, setValues] = React.useState({});
+  const [busy, setBusy] = React.useState(false);
+  const [notice, setNotice] = React.useState("");
+
+  React.useEffect(() => {
+    if (!selected) return;
+    const next = {};
+    detailFor(selected).fields.forEach(([label, value]) => { next[label] = value ?? ""; });
+    setValues(next);
+    setNotice("");
+  }, [selected]);
+
+  if (!selected || !detail) return null;
+
+  const mode = detailMode(detail);
+  const id = idOf(selected);
+  const change = (event) => setValues((current) => ({ ...current, [event.target.name]: event.target.value }));
+
+  async function save(action) {
+    setBusy(true);
+    setNotice("");
+    const payload = payloadFor(mode, values);
+
+    try {
+      if (mode === "approval") {
+        await firstGood([
+          () => api.post(`/command/approvals/${encodeURIComponent(id || selected.id || selected.title || "approval")}/execute`, { action_id: id || selected.id, kind: "command_record", item: { ...selected, fields: values, action } }),
+          () => api.post("/command/execute-approved", { kind: "command_record", item: { ...selected, fields: values, action } }),
+        ]);
+        setNotice(action === "park" ? "Parked in Command." : "Approved in Command.");
+      } else if (mode === "job") {
+        await firstGood([() => api.patch(`/jobs/${id}`, payload), () => api.patch(`/jobs/${id}/field-update`, payload), () => api.post("/command/execute-approved", { kind: "command_record", item: { type: "Saved job edit", fields: values, payload } })]);
+        setNotice("Job saved.");
+      } else if (mode === "client") {
+        await firstGood([() => api.patch(`/clients/${id}`, payload), () => api.put(`/clients/${id}`, payload), () => api.post("/command/execute-approved", { kind: "command_record", item: { type: "Saved client edit", fields: values, payload } })]);
+        setNotice("Client saved.");
+      } else if (mode === "invoice") {
+        await firstGood([() => api.patch(`/invoices/${id}`, payload), () => api.put(`/invoices/${id}`, payload), () => api.post("/command/execute-approved", { kind: "invoice", item: { ...selected, fields: values, payload } })]);
+        setNotice("Invoice saved. Sending/sync still waits in Command.");
+      } else if (mode === "quote") {
+        await firstGood([() => api.patch(`/quotes/${id}`, payload), () => api.put(`/quotes/${id}`, payload), () => api.post("/command/execute-approved", { kind: "quote", item: { ...selected, fields: values, payload } })]);
+        setNotice("Quote saved. Sending still waits in Command.");
+      } else if (mode === "worker" || mode === "person") {
+        await firstGood([() => api.patch(`/team/workers/${id}`, payload), () => api.patch(`/team/${id}`, payload), () => api.post("/command/execute-approved", { kind: "internal_record", item: { type: "Saved worker edit", fields: values, payload } })]);
+        setNotice("Worker/person saved.");
+      } else {
+        await api.post("/command/execute-approved", { kind: "command_record", item: { type: "Saved admin note", fields: values, payload } });
+        setNotice("Saved to Command.");
+      }
+
+      window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated"));
+    } catch (error) {
+      setNotice(error?.message || "Could not save yet.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <aside className={`cocDrawer ${detail.approval ? "approvalSlip" : ""} ${detail.job ? "jobSlip" : ""}`}>
+    <button type="button" onClick={onClose}>Close</button>
+    <em>{selected.type || "Record"}</em>
+    <h2>{detail.title}</h2>
+    <p>{detail.note}</p>
+    <div>{detail.fields.map(([label, value, textarea, type, options, readOnly]) => <Field key={label} name={label} label={label} value={values[label] ?? value ?? ""} textarea={textarea} type={type} options={options} readOnly={readOnly || busy} onChange={change} />)}</div>
+    {notice ? <p className="drawerNotice">{notice}</p> : null}
+    <div className="approvalActions">
+      {detail.approval ? <>
+        <button type="button" className="action" disabled={busy} onClick={() => save("approve")}>Approve</button>
+        <button type="button" className="action dark" disabled={busy} onClick={() => save("edit")}>Save edit</button>
+        <button type="button" className="action quiet" disabled={busy} onClick={() => save("park")}>Park</button>
+      </> : <>
+        <button type="button" className="action" disabled={busy} onClick={() => save("save")}>Save</button>
+        <button type="button" className="action dark" disabled={busy} onClick={() => save("save_refresh")}>Save and refresh</button>
+        <button type="button" className="action quiet" onClick={onClose}>Close</button>
+      </>}
+    </div>
+  </aside>;
 }
 
 function WeekStrip({ jobs, workers, approvals, moneyDue }) {
@@ -165,9 +344,22 @@ function Today({ data, open }) {
   return <div className="cocPage today"><Panel title="Today Control" className="wide"><WeekStrip jobs={data.jobs.length} workers={data.workers.filter((worker) => !/clocked out/i.test(worker.status)).length} approvals={data.command.length} moneyDue={money(due)} /></Panel><Panel title="Next Owner Check" tone="amber"><h3>{data.command[0]?.type || "Nothing waiting"}</h3><p>{data.command[0]?.title || "No approval required right now."}</p><span className="chip amber">open in Command</span></Panel><Panel title="Jobs Today" className="wide"><div className="scroll">{data.jobs.slice(0, 5).map((job) => <Row key={job.id} title={`${job.time} ${job.title}`} meta={`${job.client} - ${job.worker} - ${job.status}`} onClick={() => open("Job", job)} />)}</div></Panel><Panel title="Money Due Today" tone="amber"><strong className="money">{money(due)}</strong><span className="chip amber">{data.invoices.filter((invoice) => /due/i.test(invoice.status)).length} due today</span></Panel><Panel title="Who Is Working" tone="blue"><div className="scroll">{data.workers.slice(0, 5).map((worker) => <Row key={worker.id} title={`${worker.name}: ${worker.status}`} meta={`${worker.job} - GPS ${worker.gps}`} tone="blue" onClick={() => open("Worker", worker)} />)}</div></Panel><Panel title="Messages / Photos" tone="coral">{data.messages.slice(0, 3).map((message) => <span key={message.id} className="chip coral" onClick={() => open("Message", message)}>{message.subject}</span>)}</Panel><Panel title="Problems Today" tone="red">{issues.length ? issues.slice(0, 5).map((job) => <span key={job.id} className="chip red" onClick={() => open("Job", job)}>In Command: {job.issue}</span>) : <p>No job problems right now.</p>}</Panel><Panel title="Approvals Waiting" tone="amber" className="wide">{data.command.slice(0, 5).map((item) => <Row key={item.id} title={item.type} meta={item.title} tone="amber" onClick={() => open("Command item", item)} />)}</Panel></div>;
 }
 
-function Command({ data, open }) {
+function Command({ data, open, api }) {
+  const [busy, setBusy] = React.useState(false);
+  const [notice, setNotice] = React.useState("");
   const selected = data.command[0] || { type: "No admin waiting", title: "Command is clear", status: "Clear", owner: "None", client: "", amount: 0, filled: "No real approvals are waiting.", evidence: "Churvox is showing live records only.", check: "Run admin recovery sweep if you want Churvox to check for missing admin." };
-  return <div className="cocPage command"><Panel title="Waiting For Approval" tone="coral"><div className="scroll">{data.command.slice(0, 5).map((item) => <Row key={item.id} title={item.type} meta={`${item.title} - ${item.status}`} tone="coral" onClick={() => open("Command item", item)} />)}</div></Panel><Panel title="Filled Approval Form" tone="blue" className="wide"><h3>{selected.type}</h3><p>Churvox prepared this from job records, client memory, messages, time, photos and accounting state.</p><div className="formGrid"><Field label="Record" value={selected.title} /><Field label="Client" value={selected.client} /><Field label="Prepared status" value={selected.status} /><Field label="Recommended action" value={selected.owner} options={["Approve", "Edit", "Park"]} /><Field label="What Churvox filled" value={selected.filled} textarea /><Field label="Evidence checked" value={selected.evidence} textarea /></div></Panel><Panel title="Owner Actions" tone="amber"><div className="ownerActions"><button className="action">Approve</button><button className="action dark">Edit</button><button className="action quiet">Park</button></div><p>Command remains the approval desk.</p></Panel></div>;
+
+  async function runSweep() {
+    setBusy(true);
+    setNotice("");
+    const result = await api.post("/command/recovery-sweep", { source: "owner_command_paid_launch" });
+    if (result?.success === false) setNotice(result.error || "Sweep could not run.");
+    else setNotice(`Sweep complete. ${result?.data?.created || result?.created || 0} admin item(s) prepared.`);
+    window.dispatchEvent(new CustomEvent("churvox:fresh-data-updated"));
+    setBusy(false);
+  }
+
+  return <div className="cocPage command"><Panel title="Waiting For Approval" tone="coral"><button type="button" className="action dark" disabled={busy} onClick={runSweep}>{busy ? "Checking admin..." : "Run admin sweep"}</button><div className="scroll">{data.command.length ? data.command.slice(0, 5).map((item) => <Row key={item.id} title={item.type} meta={`${item.title} - ${item.status}`} tone="coral" onClick={() => open("Command item", item)} />) : <p>No approvals waiting. Run the sweep to let Churvox check missing admin.</p>}</div>{notice ? <p className="drawerNotice">{notice}</p> : null}</Panel><Panel title="Filled Approval Form" tone="blue" className="wide"><h3>{selected.type}</h3><p>Churvox prepared this from job records, client memory, messages, time, photos and accounting state.</p><div className="formGrid"><Field label="Record" value={selected.title} /><Field label="Client" value={selected.client} /><Field label="Prepared status" value={selected.status} /><Field label="Recommended action" value={selected.owner} options={["Approve", "Edit", "Park"]} /><Field label="What Churvox filled" value={selected.filled} textarea /><Field label="Evidence checked" value={selected.evidence} textarea /></div></Panel><Panel title="Owner Actions" tone="amber"><div className="ownerActions"><button className="action" disabled={!data.command.length} onClick={() => data.command[0] && open("Command item", data.command[0])}>Open approval</button><button className="action dark" onClick={runSweep}>Sweep</button><button className="action quiet" disabled={!data.command.length}>Park inside slip</button></div><p>Command remains the approval desk.</p></Panel></div>;
 }
 
 function Jobs({ data, open }) {
@@ -234,9 +426,9 @@ function Help() {
   return <div className="cocPage"><Panel title="Contact" tone="coral" className="full"><h3>hello@churvox.com</h3><button className="action">New ticket</button></Panel><Panel title="Open Help">{["Setup help", "CSV import", "Worker app", "Billing"].map((item) => <Row key={item} title={item} meta="ticket" />)}</Panel><Panel title="Short Guides" tone="blue" className="wide">{["Add client", "Approve in Command", "Import CSV", "Xero guardrails"].map((item) => <Row key={item} title={item} meta="guide" tone="blue" />)}</Panel></div>;
 }
 
-function Page({ page, data, open }) {
+function Page({ page, data, open, api }) {
   if (page === "today") return <Today data={data} open={open} />;
-  if (page === "command") return <Command data={data} open={open} />;
+  if (page === "command") return <Command data={data} open={open} api={api} />;
   if (page === "jobs") return <Jobs data={data} open={open} />;
   if (page === "clients") return <Clients data={data} open={open} />;
   if (page === "workers") return <Workers data={data} open={open} />;
@@ -256,6 +448,7 @@ const baseCss = `
 
 export default function FreshApp() {
   const { user } = useAuth();
+  const api = useApi();
   const data = useOsData();
   const [page, setPage] = React.useState(pageFromLocation);
   const [selected, setSelected] = React.useState(null);
@@ -279,5 +472,5 @@ export default function FreshApp() {
   };
   const open = (type, item) => setSelected({ ...item, type });
 
-  return <main className="churvoxOptionC"><style>{baseCss}</style><header className="cocBar"><div className="brand"><i /><b>Churvox</b><small>does the admin</small></div><div className="title"><h1>{title}</h1><p>{subtitle}</p></div><div className="owner"><span>Owner checks</span><b>{user?.business_name || user?.name || "Boss view"}</b></div></header><nav className="cocNav" aria-label="Churvox OS navigation">{NAV.map((item) => { const key = keyOf(item); return <button key={key} type="button" className={page === key ? "active" : ""} onClick={() => go(key)}>{item}</button>; })}</nav><section className="workspace"><Page page={page} data={data} open={open} /></section><Drawer selected={selected} onClose={() => setSelected(null)} /></main>;
+  return <main className="churvoxOptionC"><style>{baseCss}</style><header className="cocBar"><div className="brand"><i /><b>Churvox</b><small>does the admin</small></div><div className="title"><h1>{title}</h1><p>{subtitle}</p></div><div className="owner"><span>Owner checks</span><b>{user?.business_name || user?.name || "Boss view"}</b></div></header><nav className="cocNav" aria-label="Churvox OS navigation">{NAV.map((item) => { const key = keyOf(item); return <button key={key} type="button" className={page === key ? "active" : ""} onClick={() => go(key)}>{item}</button>; })}</nav><section className="workspace"><Page page={page} data={data} open={open} api={api} /></section><Drawer selected={selected} onClose={() => setSelected(null)} api={api} /></main>;
 }
