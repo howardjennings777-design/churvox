@@ -10,6 +10,19 @@ import "./AuthPublicCommand.css";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
 
+function queryParams() {
+  try { return new URLSearchParams(window.location.search || ""); } catch { return new URLSearchParams(); }
+}
+
+function isTesterSignup() {
+  const params = queryParams();
+  return params.get("tester") === "1" || params.get("tester") === "true" || params.get("free_tester") === "1";
+}
+
+function queryEmail() {
+  return String(queryParams().get("email") || "").trim().toLowerCase();
+}
+
 function lockInputText(el) {
   if (!el) return;
   el.style.setProperty("color", "#000000", "important");
@@ -38,9 +51,23 @@ async function sendWelcomeEmail(token) {
   }
 }
 
+async function refreshCurrentUser(token) {
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
+      credentials: "include",
+      headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    return await response.json().catch(() => ({}));
+  } catch {
+    return {};
+  }
+}
+
 export default function SignupPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, checkAuth } = useAuth();
+  const testerSignup = isTesterSignup();
+  const testerEmail = queryEmail();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [country, setCountry] = useState(() => {
@@ -69,6 +96,7 @@ export default function SignupPage() {
 
     if (!name) return setError("Enter your full name.");
     if (!email) return setError("Enter your email.");
+    if (testerSignup && testerEmail && email !== testerEmail) return setError(`Use the tester email ${testerEmail} so Churvox can unlock the tester access.`);
     if (password !== confirmPassword) return setError("Passwords do not match.");
     if (password.length < 6) return setError("Password must be at least 6 characters.");
 
@@ -79,7 +107,6 @@ export default function SignupPage() {
 
       try {
         localStorage.setItem(FIRST_SETUP_KEY, "true");
-        localStorage.setItem(PLAN_REQUIRED_KEY, "true");
         localStorage.removeItem("churvox_first_setup_seen");
         localStorage.removeItem("churvox:fresh-demo-mode:v1");
         localStorage.removeItem("churvox:fresh-command-inbox:v1");
@@ -89,6 +116,21 @@ export default function SignupPage() {
       } catch {}
 
       sendWelcomeEmail(result.token);
+
+      if (testerSignup) {
+        const me = await refreshCurrentUser(result.token);
+        try { await checkAuth?.(); } catch {}
+        if (me?.has_app_access || me?.free_tester_access || me?.subscription_status === "tester_free" || me?.user?.has_app_access || me?.user?.free_tester_access) {
+          try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
+          navigate(`/setup-guide?first_setup=1&tester=1`, { replace: true });
+          return;
+        }
+        try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
+        navigate(`/contact?tester_signup=1`, { replace: true });
+        return;
+      }
+
+      try { localStorage.setItem(PLAN_REQUIRED_KEY, "true"); } catch {}
       navigate(`/plans?first_setup=1&must_choose_plan=1&country=${encodeURIComponent(billingCountry)}`, { replace: true });
     } catch (err) {
       setError(err?.response?.data?.detail || err?.response?.data?.message || err?.message || "Registration failed. Please try again.");
@@ -102,10 +144,10 @@ export default function SignupPage() {
       <Nav />
       <section className="cvPublicAuthShell cvPublicSignupShell">
         <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
-          <p className="cvPublicAuthKicker">Start trial</p>
-          <h1>Create your Churvox account.</h1>
+          <p className="cvPublicAuthKicker">{testerSignup ? "Tester access" : "Start trial"}</p>
+          <h1>{testerSignup ? "Create your tester account." : "Create your Churvox account."}</h1>
           <p className="cvPublicAuthIntro">
-            Create the account, choose Start, Crew, Operator or Command, then Churvox opens the setup path for your business.
+            {testerSignup ? "Use the email you were invited with. Churvox will unlock your tester access after signup." : "Create the account, choose Start, Crew, Operator or Command, then Churvox opens the setup path for your business."}
           </p>
 
           {error ? <p className="cvPublicAuthError">{error}</p> : null}
@@ -117,7 +159,7 @@ export default function SignupPage() {
             </label>
             <label>
               Email
-              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="you@business.co.nz" required />
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="you@business.co.nz" defaultValue={testerEmail} readOnly={Boolean(testerSignup && testerEmail)} required />
             </label>
             <label>
               Business name
@@ -139,18 +181,29 @@ export default function SignupPage() {
             </label>
           </div>
 
-          <button className="cvPublicAuthSubmit" type="submit" disabled={loading}>{loading ? "Creating account..." : "Create account and choose plan"}</button>
+          <button className="cvPublicAuthSubmit" type="submit" disabled={loading}>{loading ? "Creating account..." : testerSignup ? "Create tester account" : "Create account and choose plan"}</button>
           <p className="cvPublicAuthBottom">Already have an account? <Link to="/login">Sign in</Link></p>
         </form>
 
         <aside className="cvPublicAuthPanel">
-          <p>Trial path</p>
-          <h2>Start clean. Choose the plan. Then set up the OS.</h2>
+          <p>{testerSignup ? "Tester path" : "Trial path"}</p>
+          <h2>{testerSignup ? "Create the login. Churvox unlocks the tester access." : "Start clean. Choose the plan. Then set up the OS."}</h2>
           <ul>
-            <li>Create the account first.</li>
-            <li>Choose Start, Crew, Operator or Command.</li>
-            <li>Stripe starts the 14-day trial for the selected plan.</li>
-            <li>After checkout, Churvox opens setup and Command.</li>
+            {testerSignup ? (
+              <>
+                <li>Use the invited tester email.</li>
+                <li>Create your password.</li>
+                <li>Churvox checks the tester list automatically.</li>
+                <li>No Stripe checkout needed for tester access.</li>
+              </>
+            ) : (
+              <>
+                <li>Create the account first.</li>
+                <li>Choose Start, Crew, Operator or Command.</li>
+                <li>Stripe starts the 14-day trial for the selected plan.</li>
+                <li>After checkout, Churvox opens setup and Command.</li>
+              </>
+            )}
           </ul>
         </aside>
       </section>
