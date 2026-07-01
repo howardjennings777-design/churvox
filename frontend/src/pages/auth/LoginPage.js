@@ -7,6 +7,7 @@ import "./AuthPublicCommand.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
+const LOGIN_TIMEOUT_MS = 10000;
 
 function setupPendingLocally() {
   try {
@@ -14,6 +15,14 @@ function setupPendingLocally() {
   } catch {
     return false;
   }
+}
+
+function withTimeout(promise, ms, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = window.setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timer));
 }
 
 function rawRole(user = {}, payload = {}) {
@@ -116,7 +125,7 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const result = await login(cleanEmail, password);
+      const result = await withTimeout(login(cleanEmail, password), LOGIN_TIMEOUT_MS, "Login is taking too long. Try again in a fresh tab.");
 
       if (!loginLooksValid(result)) {
         setError("Invalid email or password.");
@@ -134,7 +143,7 @@ export default function LoginPage() {
 
       let fresh = null;
       try {
-        fresh = await checkAuth?.();
+        fresh = await withTimeout(checkAuth?.(), 6000, "Login worked, but profile refresh was slow.");
       } catch {
         // Login already succeeded. The app shell can refresh again after navigation.
       }
