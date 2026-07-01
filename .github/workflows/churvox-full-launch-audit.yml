@@ -43,7 +43,7 @@ jobs:
           CI: true
         run: |
           set +e
-          npx playwright test tests/e2e/churvox-big-launch-audit.spec.js --project=chromium --project=mobile-chrome 2>&1 | tee ../churvox-audit-output.txt
+          npx playwright test tests/e2e/churvox-big-launch-audit.spec.js --project=desktop-chromium --project=mobile-chromium 2>&1 | tee ../churvox-audit-output.txt
           status=${PIPESTATUS[0]}
           echo "status=$status" >> "$GITHUB_OUTPUT"
           exit 0
