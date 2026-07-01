@@ -1,6 +1,11 @@
 import inspect
 import sys
 
+try:
+    import churvox_auth_login_fast_patch  # noqa: F401
+except Exception:
+    pass
+
 
 def _install_churvox_real_ai_hook():
     try:
