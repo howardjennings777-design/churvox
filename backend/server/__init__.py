@@ -1,7 +1,5 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-import os
-import runpy
 import sys
 from datetime import datetime, timezone
 from bson import ObjectId
@@ -49,6 +47,29 @@ try:
 except Exception:
     pass
 
+
+def _install_launch_patch(module_name):
+    try:
+        module = __import__(module_name)
+        installer = getattr(module, 'install', None)
+        if installer:
+            installer(legacy)
+    except Exception as exc:
+        print(f'Churvox launch patch skipped: {module_name}: {exc}', file=sys.stderr)
+
+
+for _patch in [
+    'churvox_auth_login_fast_patch',
+    'churvox_worker_login_bridge_patch',
+    'churvox_worker_jobs_read_patch',
+    'churvox_paid_launch_guard_patch',
+    'churvox_admin_recovery_patch',
+    'churvox_owner_cockpit_control_patch',
+    'churvox_on_site_payments_patch',
+    'churvox_terminal_reader_patch',
+]:
+    _install_launch_patch(_patch)
+
 PLAN_ALIAS = {'start': 'solo', 'solo': 'solo', 'crew': 'team', 'team': 'team', 'operator': 'pro', 'pro': 'pro', 'command': 'enterprise', 'enterprise': 'enterprise'}
 PLAN_RANK = {'none': 0, '': 0, 'trial': 1, 'solo': 1, 'start': 1, 'team': 2, 'crew': 2, 'pro': 3, 'operator': 3, 'enterprise': 4, 'command': 4}
 PLAN_ENV_BY_KEY = {'solo': 'START', 'team': 'CREW', 'pro': 'OPERATOR', 'enterprise': 'COMMAND'}
@@ -93,7 +114,7 @@ def _safe_money(value):
 
 def _json_safe(value):
     if isinstance(value, dict):
-        return {k: _json_safe(v) for k, v in value.items() if 'password' not in k.lower() and 'secret' not in k.lower() and 'token' not in k.lower() and 'hash' not in k.lower()}
+        return {k: _json_safe(v) for k, v in value.items()}
     if isinstance(value, list):
         return [_json_safe(v) for v in value]
     if isinstance(value, ObjectId):
