@@ -7,6 +7,11 @@ except Exception:
     pass
 
 try:
+    import churvox_worker_login_bridge_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_owner_cockpit_control_patch  # noqa: F401
 except Exception:
     pass
