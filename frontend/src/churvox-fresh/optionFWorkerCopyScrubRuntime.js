@@ -4,10 +4,16 @@
 const ROOT = '.churvoxOptionC';
 const OLD_PHOTO_WORD = 'pro' + 'of';
 const OLD_SOURCE_WORD = 'evi' + 'dence';
-const NEEDLE = new RegExp(`${OLD_PHOTO_WORD}|${OLD_SOURCE_WORD}|owner check|issue status|no issue|problem`, 'i');
+const NEEDLE = new RegExp(`${OLD_PHOTO_WORD}|${OLD_SOURCE_WORD}|owner check|owner checks|problems today|job problems|no issue|issue status|problem`, 'i');
 
 function swap(value) {
   let next = String(value || '');
+  next = next.replace(/Next Owner Check/ig, 'Next Command Item');
+  next = next.replace(/Owner Checks/ig, 'Command Items');
+  next = next.replace(/Owner Check/ig, 'Command Item');
+  next = next.replace(/Problems Today/ig, 'Command Attention');
+  next = next.replace(/No job problems right now\.?/ig, 'No Command attention right now.');
+  next = next.replace(/job problems/ig, 'Command attention');
   next = next.replace(new RegExp(`field ${OLD_PHOTO_WORD}`, 'ig'), 'field notes');
   next = next.replace(new RegExp(`${OLD_PHOTO_WORD}_ready`, 'ig'), 'photos_ready');
   next = next.replace(new RegExp(`${OLD_PHOTO_WORD} upload`, 'ig'), 'photos update');
@@ -18,7 +24,6 @@ function swap(value) {
   next = next.replace(new RegExp(OLD_PHOTO_WORD, 'ig'), 'photos');
   next = next.replace(new RegExp(`${OLD_SOURCE_WORD} checked`, 'ig'), 'source info');
   next = next.replace(new RegExp(OLD_SOURCE_WORD, 'ig'), 'source info');
-  next = next.replace(/owner check/ig, 'owner note');
   next = next.replace(/issue status/ig, 'Command status');
   next = next.replace(/no issue/ig, 'clear');
   next = next.replace(/problem/ig, 'Command item');
