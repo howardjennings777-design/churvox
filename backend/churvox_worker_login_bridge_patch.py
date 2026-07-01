@@ -6,6 +6,11 @@ import importlib.abc
 import importlib.machinery
 import sys
 
+try:
+    import churvox_worker_app_deep_fix_patch  # noqa: F401
+except Exception:
+    pass
+
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
 WORKER_COLLECTIONS = ["users", "workers", "team", "team_members", "staff", "employees"]
