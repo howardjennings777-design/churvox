@@ -76,8 +76,9 @@ import './churvox-fresh/optionFReadinessActionFixRuntime';
 import './churvox-fresh/optionFApprovalExecutionRuntime';
 import './churvox-fresh/optionFInvoiceVaultRuntime.css';
 import './styles/churvoxResponsiveFit.css';
-import './styles/churvoxPaidLaunchGuard.css';
-import './styles/churvoxPaidLaunchNoOverflowFinal.css';
+// Retired: these audit CSS files forced the fake launch proof rail visible and broke the old app screen.
+// import './styles/churvoxPaidLaunchGuard.css';
+// import './styles/churvoxPaidLaunchNoOverflowFinal.css';
 import './runtime/churvoxPaidLaunchOverflowRuntime';
 
 if ('serviceWorker' in navigator) {
