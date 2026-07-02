@@ -1,4 +1,4 @@
-/* Final paid launch no-overflow shell. Keep the real nav visible, remove the extra proof rail. */
+/* Final paid launch no-overflow shell. Keep the real nav visible, remove legacy rails/docks. */
 html:has(.churvoxOptionC),
 body:has(.churvoxOptionC),
 body:has(.churvoxOptionC) #root {
@@ -10,6 +10,7 @@ body:has(.churvoxOptionC) #root {
 
 body:has(.churvoxOptionC) {
   margin: 0 !important;
+  overflow-x: hidden !important;
 }
 
 body:has(.churvoxOptionC) *,
@@ -19,15 +20,29 @@ body:has(.churvoxOptionC) *::after {
   min-width: 0 !important;
 }
 
+body:has(.churvoxOptionC) .xcf10-dock,
+body:has(.churvoxOptionC) .xcf10-dock-launch,
+body:has(.churvoxOptionC) .launchNavProof,
+.churvoxOptionC .launchNavProof {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  min-width: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+
 .churvoxOptionC {
   width: 100% !important;
   max-width: 100% !important;
+  min-width: 0 !important;
   overflow-x: hidden !important;
   grid-template-columns: minmax(0, 1fr) !important;
-}
-
-.churvoxOptionC .launchNavProof {
-  display: none !important;
 }
 
 .churvoxOptionC .cocBar,
@@ -37,12 +52,13 @@ body:has(.churvoxOptionC) *::after {
 .churvoxOptionC .cocPanel {
   width: 100% !important;
   max-width: 100% !important;
+  min-width: 0 !important;
   overflow-x: hidden !important;
 }
 
 .churvoxOptionC .cocNav {
   display: grid !important;
-  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(92px, 100%), 1fr)) !important;
   gap: 6px !important;
   white-space: normal !important;
   padding: 8px !important;
@@ -60,7 +76,7 @@ body:has(.churvoxOptionC) *::after {
 
 .churvoxOptionC .aiGuidePage,
 .churvoxOptionC .cocPage {
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)) !important;
 }
 
 .churvoxOptionC .wide,
@@ -80,7 +96,14 @@ body:has(.churvoxOptionC) *::after {
 .churvoxOptionC .moneyStrip,
 .churvoxOptionC table {
   max-width: 100% !important;
+  min-width: 0 !important;
   overflow-x: hidden !important;
+}
+
+body:has(.churvoxOptionC) [style*="width"],
+body:has(.churvoxOptionC) [style*="min-width"] {
+  max-width: 100% !important;
+  min-width: 0 !important;
 }
 
 @media (max-width: 1100px) {
