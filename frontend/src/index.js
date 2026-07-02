@@ -28,6 +28,7 @@ import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxPublicBusinessPagesRuntime';
 import './runtime/churvoxPublicBusinessPolishRuntime';
+import './pages/worker/WorkerNoFussPolish.css';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
 import './churvox-fresh/optionCCommandBarFix.css';
