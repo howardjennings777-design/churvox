@@ -59,8 +59,25 @@ function injectStyle() {
   const style = document.createElement('style');
   style.id = 'churvox-human-audit-patch-style';
   style.textContent = `
+    html,
+    body,
+    #root {
+      width: 100% !important;
+      max-width: 100vw !important;
+      overflow-x: clip !important;
+      box-sizing: border-box !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box !important;
+    }
+
     html:has(.churvoxOptionC),
-    body:has(.churvoxOptionC) {
+    body:has(.churvoxOptionC),
+    html:has([class*="plan" i]),
+    body:has([class*="plan" i]) {
       max-width: 100vw !important;
       overflow-x: clip !important;
     }
@@ -73,17 +90,26 @@ function injectStyle() {
     body:has(.churvoxOptionC) .cocPanel,
     body:has(.churvoxOptionC) .toolbar,
     body:has(.churvoxOptionC) .launchNavProof,
-    body:has(.churvoxOptionC) .cocNav {
+    body:has(.churvoxOptionC) .cocNav,
+    body:has([class*="plan" i]) #root,
+    body:has([class*="plan" i]) main,
+    body:has([class*="plan" i]) section,
+    body:has([class*="plan" i]) [class*="wrap" i],
+    body:has([class*="plan" i]) [class*="grid" i],
+    body:has([class*="plan" i]) [class*="row" i] {
       box-sizing: border-box !important;
       min-width: 0 !important;
-      max-width: 100vw !important;
+      max-width: 100% !important;
       overflow-x: clip !important;
     }
 
     body:has(.churvoxOptionC) .cocNav,
     body:has(.churvoxOptionC) .launchNavProof,
-    body:has(.churvoxOptionC) .toolbar {
+    body:has(.churvoxOptionC) .toolbar,
+    body:has([class*="plan" i]) [class*="nav" i],
+    body:has([class*="plan" i]) [class*="toolbar" i] {
       width: 100% !important;
+      max-width: 100% !important;
       flex-wrap: wrap !important;
     }
 
@@ -94,9 +120,14 @@ function injectStyle() {
     body:has(.churvoxOptionC) [class*="plan" i],
     body:has(.churvoxOptionC) [class*="Plan"],
     body:has(.churvoxOptionC) [class*="billing" i],
-    body:has(.churvoxOptionC) [class*="checkout" i] {
+    body:has(.churvoxOptionC) [class*="checkout" i],
+    body:has([class*="plan" i]) [class*="plan" i],
+    body:has([class*="plan" i]) [class*="Plan"],
+    body:has([class*="plan" i]) [class*="billing" i],
+    body:has([class*="plan" i]) [class*="checkout" i] {
       min-width: 0 !important;
       max-width: 100% !important;
+      overflow-wrap: anywhere !important;
     }
 
     body:has(.simpleWorkerApp),
@@ -140,7 +171,7 @@ function installWorkerAuditClickGuard() {
   window.__CHURVOX_WORKER_AUDIT_CLICK_GUARD__ = true;
   document.addEventListener('click', (event) => {
     if (!isWorkerRoute()) return;
-    const link = event.target?.closest?.('.simpleWorkerApp .swNav a[href][data-churvox-qa-control]');
+    const link = event.target?.closest?.('.simpleWorkerApp a[href][data-churvox-qa-control]');
     if (!link) return;
     event.preventDefault();
     event.stopPropagation();
@@ -161,14 +192,32 @@ function quietXeroPanels() {
   }
 }
 
+function clampPlansOverflow() {
+  if (!isOwnerPlansRoute()) return;
+  document.documentElement.style.width = '100%';
+  document.documentElement.style.maxWidth = '100vw';
+  document.documentElement.style.overflowX = 'clip';
+  document.body.style.width = '100%';
+  document.body.style.maxWidth = '100vw';
+  document.body.style.overflowX = 'clip';
+
+  const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+  if (!vw) return;
+  for (const el of document.querySelectorAll('body *')) {
+    const rect = el.getBoundingClientRect();
+    if (rect.right > vw + 8 || rect.left < -8) {
+      el.style.minWidth = '0';
+      el.style.maxWidth = '100%';
+      el.style.overflowX = 'clip';
+    }
+  }
+}
+
 function run() {
   installNetworkGuard();
   installWorkerAuditClickGuard();
   injectStyle();
-  if (isOwnerPlansRoute()) {
-    document.documentElement.style.overflowX = 'clip';
-    document.body.style.overflowX = 'clip';
-  }
+  clampPlansOverflow();
   quietXeroPanels();
 }
 
