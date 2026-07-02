@@ -1,0 +1,148 @@
+.cvxCleanWork {
+  gap: 18px !important;
+}
+
+/* Live backend data can be large. Keep pages controlled instead of letting cards flood the screen. */
+.cvxPanel.cvxWide .cvxRecordGrid {
+  max-height: 520px !important;
+  overflow-y: auto !important;
+  padding: 6px 8px 8px 2px !important;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)) !important;
+  align-content: start !important;
+}
+
+.cvxPanel.cvxWide .cvxRecordGrid::-webkit-scrollbar,
+.cvxPanel.cvxWide .cvxMiniList::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.cvxPanel.cvxWide .cvxRecordGrid::-webkit-scrollbar-thumb,
+.cvxPanel.cvxWide .cvxMiniList::-webkit-scrollbar-thumb {
+  background: rgba(16, 21, 19, 0.26) !important;
+  border-radius: 999px !important;
+}
+
+.cvxRecordCard {
+  min-height: 158px !important;
+  padding: 15px !important;
+}
+
+.cvxRecordCard h3 {
+  font-size: 19px !important;
+  line-height: 1.05 !important;
+  margin-top: 10px !important;
+  margin-bottom: 7px !important;
+}
+
+.cvxRecordCard p {
+  min-height: 42px !important;
+  max-height: 46px !important;
+  overflow: hidden !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+
+.cvxRecordMeta {
+  gap: 5px 8px !important;
+}
+
+.cvxRecordMeta strong {
+  font-size: 16px !important;
+}
+
+.cvxRecordMeta small,
+.cvxRecordMeta b {
+  font-size: 11px !important;
+}
+
+/* Do not let client/job history become a giant wall of repeated rows. */
+.cvxPanel.cvxWide .cvxMiniList {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)) !important;
+  gap: 10px !important;
+  padding-right: 8px !important;
+}
+
+.cvxMiniList div {
+  min-height: 68px !important;
+  padding: 11px 12px !important;
+}
+
+.cvxMiniList b {
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+
+.cvxMiniList span {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+
+/* Forms should feel like work panels, not giant empty areas. */
+.cvxFormGrid {
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)) !important;
+}
+
+.cvxFormGrid label {
+  font-size: 12px !important;
+}
+
+.cvxFormGrid input,
+.cvxFormGrid select,
+.cvxFormGrid textarea {
+  padding: 10px 11px !important;
+  min-height: 42px !important;
+}
+
+.cvxFormGrid textarea {
+  min-height: 82px !important;
+}
+
+.cvxPanel {
+  min-height: 0 !important;
+}
+
+.cvxPanel:not(.cvxWide) {
+  min-height: 210px !important;
+}
+
+/* Make the first live-record section feel like a controlled work tray. */
+.cvxPanel.cvxWide:first-child {
+  max-height: 650px !important;
+}
+
+.cvxPanel.cvxWide:first-child:after {
+  content: "Scroll inside this work tray for more records";
+  display: block;
+  margin-top: 10px;
+  color: var(--cv-old-muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+/* On laptop/tablet widths, keep the app readable and stop full-width walls. */
+@media (max-width: 1180px) {
+  .cvxPanel.cvxWide .cvxRecordGrid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    max-height: 470px !important;
+  }
+
+  .cvxRecordCard {
+    min-height: 148px !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .cvxPanel.cvxWide .cvxRecordGrid,
+  .cvxPanel.cvxWide .cvxMiniList {
+    grid-template-columns: 1fr !important;
+    max-height: 440px !important;
+  }
+
+  .cvxRecordCard {
+    min-height: 145px !important;
+  }
+}
