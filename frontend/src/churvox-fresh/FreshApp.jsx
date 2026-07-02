@@ -2,6 +2,7 @@ import React from "react";
 import BackendApp from "./FreshAppBackend";
 import "../churvox-clean/ChurvoxBackendLayoutFix.css";
 import "../churvox-clean/ChurvoxPageSpecificLayouts.css";
+import "../churvox-clean/ChurvoxScreenFitLayouts.css";
 
 const pages = ["aiguide", "command", "jobs", "clients", "quotes", "invoices", "team", "payroll", "workers", "xero", "settings", "plans", "support"];
 const aliases = {
@@ -67,13 +68,28 @@ export default function FreshApp() {
 
   React.useEffect(() => {
     const refresh = () => setPage(currentPage());
+    const clickRefresh = (event) => {
+      if (event.target?.closest?.(".cvxCleanNav button")) {
+        window.setTimeout(refresh, 0);
+        window.setTimeout(refresh, 60);
+      }
+    };
+    const originalReplaceState = window.history.replaceState;
+    window.history.replaceState = function replaceStateWithChurvoxRefresh(...args) {
+      const result = originalReplaceState.apply(this, args);
+      window.setTimeout(refresh, 0);
+      return result;
+    };
     window.addEventListener("hashchange", refresh);
     window.addEventListener("popstate", refresh);
+    document.addEventListener("click", clickRefresh, true);
     window.setTimeout(refresh, 0);
     window.setTimeout(refresh, 250);
     return () => {
+      window.history.replaceState = originalReplaceState;
       window.removeEventListener("hashchange", refresh);
       window.removeEventListener("popstate", refresh);
+      document.removeEventListener("click", clickRefresh, true);
     };
   }, []);
 
