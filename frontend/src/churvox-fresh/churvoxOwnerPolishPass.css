@@ -1,0 +1,368 @@
+/* Final owner-app polish pass. CSS-only: no auth, API, routing or pricing changes. */
+
+.churvoxOptionC {
+  --cv-shadow-soft: 0 18px 42px rgba(16, 21, 19, 0.09);
+  --cv-shadow-card: 0 12px 30px rgba(16, 21, 19, 0.07);
+  --cv-shadow-lift: 0 22px 46px rgba(16, 21, 19, 0.12);
+  --cv-glass: rgba(255, 255, 255, 0.78);
+}
+
+.churvoxOptionC .cocBar {
+  position: sticky !important;
+  isolation: isolate !important;
+}
+
+.churvoxOptionC .cocBar::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  background:
+    linear-gradient(115deg, transparent 0 32%, rgba(255, 255, 255, 0.07) 32% 33%, transparent 33% 54%, rgba(240, 100, 47, 0.12) 54% 55%, transparent 55%),
+    radial-gradient(circle at 96% 10%, rgba(255, 122, 61, 0.28), transparent 34%) !important;
+  opacity: 0.95 !important;
+}
+
+.churvoxOptionC .brand i {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.churvoxOptionC .brand i::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 9px !important;
+  border: 2px solid rgba(255, 255, 255, 0.74) !important;
+  border-left-color: transparent !important;
+  border-radius: 8px !important;
+  transform: rotate(-12deg) !important;
+}
+
+.churvoxOptionC .cocNav {
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+
+.churvoxOptionC .cocNav button {
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease, color 140ms ease !important;
+}
+
+.churvoxOptionC .cocNav button:hover,
+.churvoxOptionC .cocNav button:focus-visible {
+  transform: translateY(-1px) !important;
+  outline: none !important;
+  box-shadow: 0 10px 18px rgba(16, 21, 19, 0.09) !important;
+}
+
+.churvoxOptionC .cocNav button:focus-visible {
+  box-shadow: 0 0 0 3px rgba(240, 100, 47, 0.22), 0 10px 18px rgba(16, 21, 19, 0.09) !important;
+}
+
+.churvoxOptionC .workspace::-webkit-scrollbar,
+.churvoxOptionC .cocNav::-webkit-scrollbar,
+.churvoxOptionC .cocDrawer > div::-webkit-scrollbar {
+  width: 10px !important;
+  height: 8px !important;
+}
+
+.churvoxOptionC .workspace::-webkit-scrollbar-thumb,
+.churvoxOptionC .cocNav::-webkit-scrollbar-thumb,
+.churvoxOptionC .cocDrawer > div::-webkit-scrollbar-thumb {
+  background: rgba(96, 112, 106, 0.34) !important;
+  border-radius: 999px !important;
+}
+
+.churvoxOptionC .cocPanel {
+  isolation: isolate !important;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease !important;
+}
+
+.churvoxOptionC .cocPanel::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 0 auto 0 !important;
+  height: 5px !important;
+  background: var(--cv-green) !important;
+  opacity: 0.98 !important;
+}
+
+.churvoxOptionC .cocPanel.blue::before { background: var(--cv-blue) !important; }
+.churvoxOptionC .cocPanel.amber::before { background: var(--cv-amber) !important; }
+.churvoxOptionC .cocPanel.coral::before { background: var(--cv-orange) !important; }
+.churvoxOptionC .cocPanel.dark::before { background: #151c19 !important; }
+
+.churvoxOptionC .cocPanel:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--cv-shadow-lift) !important;
+  border-color: rgba(21, 28, 25, 0.16) !important;
+}
+
+.churvoxOptionC .cocPanel h2 {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.churvoxOptionC .cocPanel h2::before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: var(--cv-orange) !important;
+  box-shadow: 0 0 0 4px rgba(240, 100, 47, 0.12) !important;
+}
+
+.churvoxOptionC .cocPanel.blue h2::before { background: var(--cv-blue) !important; box-shadow: 0 0 0 4px rgba(36, 113, 132, 0.12) !important; }
+.churvoxOptionC .cocPanel.amber h2::before { background: var(--cv-amber) !important; box-shadow: 0 0 0 4px rgba(191, 138, 34, 0.12) !important; }
+.churvoxOptionC .cocPanel.green h2::before { background: var(--cv-green) !important; box-shadow: 0 0 0 4px rgba(31, 131, 95, 0.12) !important; }
+.churvoxOptionC .cocPanel.dark h2::before { background: #151c19 !important; box-shadow: 0 0 0 4px rgba(21, 28, 25, 0.10) !important; }
+
+.churvoxOptionC .cocRow,
+.churvoxOptionC .jobCard,
+.churvoxOptionC .workerCard,
+.churvoxOptionC .workCard,
+.churvoxOptionC .ledgerRow {
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease !important;
+}
+
+.churvoxOptionC .cocRow:hover,
+.churvoxOptionC .jobCard:hover,
+.churvoxOptionC .workerCard:hover,
+.churvoxOptionC .workCard:hover,
+.churvoxOptionC .ledgerRow:hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(240, 100, 47, 0.20) !important;
+  background: #ffffff !important;
+  box-shadow: var(--cv-shadow-card) !important;
+}
+
+.churvoxOptionC .cocRow:focus-visible,
+.churvoxOptionC .jobCard:focus-visible,
+.churvoxOptionC .workerCard:focus-visible,
+.churvoxOptionC .workCard:focus-visible,
+.churvoxOptionC .ledgerRow:focus-visible,
+.churvoxOptionC .action:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(240, 100, 47, 0.22), var(--cv-shadow-card) !important;
+}
+
+.churvoxOptionC .miniStat {
+  border: 1px solid rgba(16, 21, 19, 0.08) !important;
+  background: linear-gradient(180deg, #ffffff, #eef2ed) !important;
+}
+
+.churvoxOptionC .chip.green,
+.churvoxOptionC .miniStat.green {
+  background: rgba(31, 131, 95, 0.10) !important;
+  color: #176449 !important;
+}
+
+.churvoxOptionC .chip.blue,
+.churvoxOptionC .miniStat.blue {
+  background: rgba(36, 113, 132, 0.10) !important;
+  color: #1f6374 !important;
+}
+
+.churvoxOptionC .chip.amber,
+.churvoxOptionC .miniStat.amber {
+  background: rgba(191, 138, 34, 0.12) !important;
+  color: #8c6218 !important;
+}
+
+.churvoxOptionC .chip.coral,
+.churvoxOptionC .miniStat.coral {
+  background: rgba(240, 100, 47, 0.11) !important;
+  color: var(--cv-orange-dark) !important;
+}
+
+.churvoxOptionC .toolbar,
+.churvoxOptionC .worktop {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 6 !important;
+  padding: 0 0 12px !important;
+  background: linear-gradient(180deg, rgba(238, 242, 237, 0.98) 70%, rgba(238, 242, 237, 0)) !important;
+}
+
+.churvoxOptionC .worktop label {
+  min-width: min(420px, 100%) !important;
+  border: 1px solid rgba(21, 28, 25, 0.12) !important;
+  border-radius: 16px !important;
+  padding: 8px 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(16, 21, 19, 0.05) !important;
+}
+
+.churvoxOptionC .worktop span {
+  display: block !important;
+  color: var(--cv-muted) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+}
+
+.churvoxOptionC .worktop input {
+  width: 100% !important;
+  border: 0 !important;
+  outline: 0 !important;
+  color: var(--cv-ink) !important;
+  font-weight: 900 !important;
+  background: transparent !important;
+}
+
+.churvoxOptionC .ledgerRow {
+  grid-template-columns: 110px minmax(0, 1fr) 120px 100px minmax(130px, 170px) !important;
+  align-items: center !important;
+  min-height: 62px !important;
+}
+
+.churvoxOptionC .planList {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.churvoxOptionC .planList > div {
+  position: relative !important;
+  min-height: 210px !important;
+  display: grid !important;
+  gap: 7px !important;
+  align-content: start !important;
+  padding: 18px !important;
+  border: 1px solid rgba(16, 21, 19, 0.10) !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  color: var(--cv-ink) !important;
+  box-shadow: var(--cv-shadow-card) !important;
+  overflow: hidden !important;
+}
+
+.churvoxOptionC .planList > div.popular {
+  border-color: rgba(240, 100, 47, 0.32) !important;
+  box-shadow: 0 18px 44px rgba(240, 100, 47, 0.14) !important;
+}
+
+.churvoxOptionC .planList > div.popular::before {
+  content: "Most Popular" !important;
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  border-radius: 999px !important;
+  padding: 5px 9px !important;
+  background: var(--cv-orange) !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: 1000 !important;
+}
+
+.churvoxOptionC .planList b {
+  color: var(--cv-ink) !important;
+  font-size: 19px !important;
+  font-weight: 1000 !important;
+}
+
+.churvoxOptionC .planList strong {
+  color: var(--cv-ink) !important;
+  font-size: 38px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+  letter-spacing: -0.07em !important;
+}
+
+.churvoxOptionC .planList small,
+.churvoxOptionC .planList p {
+  color: var(--cv-muted) !important;
+  font-weight: 850 !important;
+}
+
+.churvoxOptionC .planList em {
+  justify-self: start !important;
+  border-radius: 999px !important;
+  padding: 6px 10px !important;
+  background: rgba(240, 100, 47, 0.10) !important;
+  color: var(--cv-orange-dark) !important;
+  font-style: normal !important;
+  font-weight: 1000 !important;
+}
+
+.churvoxOptionC .googleMapShell,
+.churvoxOptionC .map {
+  min-height: 320px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(16, 21, 19, 0.10) !important;
+  background: #dfe7e0 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.46) !important;
+}
+
+.churvoxOptionC .googleMap a {
+  background: var(--cv-orange) !important;
+  color: #ffffff !important;
+}
+
+.churvoxOptionC .bubble {
+  border: 1px solid rgba(16, 21, 19, 0.09) !important;
+  border-radius: 18px !important;
+  padding: 14px !important;
+  background: #ffffff !important;
+  box-shadow: var(--cv-shadow-card) !important;
+}
+
+.churvoxOptionC .bubble.draft {
+  background: linear-gradient(180deg, #fff7ef, #ffffff) !important;
+  border-color: rgba(240, 100, 47, 0.18) !important;
+}
+
+.churvoxOptionC .cocDrawer > div {
+  border: 1px solid rgba(255, 255, 255, 0.44) !important;
+}
+
+.churvoxOptionC .cocDrawer h2,
+.churvoxOptionC .cocDrawer h3 {
+  color: var(--cv-ink) !important;
+}
+
+.churvoxOptionC .cocField input:focus,
+.churvoxOptionC .cocField textarea:focus,
+.churvoxOptionC .cocField select:focus {
+  outline: none !important;
+  border-color: rgba(240, 100, 47, 0.40) !important;
+  box-shadow: 0 0 0 3px rgba(240, 100, 47, 0.14) !important;
+}
+
+@media (max-width: 1180px) {
+  .churvoxOptionC .cocPage {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .churvoxOptionC .planList {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .churvoxOptionC .title h1 {
+    white-space: normal !important;
+    font-size: clamp(30px, 10vw, 44px) !important;
+  }
+
+  .churvoxOptionC .title p {
+    white-space: normal !important;
+  }
+
+  .churvoxOptionC .cocNav button {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+  }
+
+  .churvoxOptionC .planList,
+  .churvoxOptionC .ledgerRow {
+    grid-template-columns: 1fr !important;
+  }
+
+  .churvoxOptionC .cocPanel {
+    min-height: 0 !important;
+    padding: 16px !important;
+  }
+}
