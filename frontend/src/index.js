@@ -79,6 +79,7 @@ import './styles/churvoxResponsiveFit.css';
 import './styles/churvoxPaidLaunchGuard.css';
 import './styles/churvoxPaidLaunchNoOverflowFinal.css';
 import './runtime/churvoxPaidLaunchOverflowRuntime';
+import './styles/churvoxHideProofRailFinal.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
