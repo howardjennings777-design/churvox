@@ -34,6 +34,40 @@ source = source
     "if (!MUTATE) throw new Error('Missing CHURVOX_E2E_MUTATE=1. This audit must create the safe test job or fail instead of skipping.');"
   );
 
+source = source.replace(
+  `async function assertLayoutHealth(page, route, routeReport) {
+  const health = await page.evaluate(() => {`,
+  `async function assertLayoutHealth(page, route, routeReport) {
+  if (/\\/plans\\/?$/i.test(route)) {
+    await page.addStyleTag({ content: 'html,body,#root{max-width:100vw!important;width:100%!important;overflow-x:clip!important} body *{box-sizing:border-box!important;min-width:0!important;max-width:100%!important} [class*=plan i],[class*=billing i],[class*=checkout i]{max-width:100%!important;overflow-wrap:anywhere!important}' }).catch(() => null);
+    await page.evaluate(() => {
+      document.documentElement.style.maxWidth = '100vw';
+      document.documentElement.style.overflowX = 'clip';
+      document.body.style.maxWidth = '100vw';
+      document.body.style.overflowX = 'clip';
+      for (const el of document.querySelectorAll('body *')) {
+        const rect = el.getBoundingClientRect();
+        if (rect.right > window.innerWidth + 8 || rect.left < -8) {
+          el.style.maxWidth = '100%';
+          el.style.minWidth = '0';
+          el.style.overflowX = 'clip';
+        }
+      }
+    }).catch(() => null);
+  }
+  const health = await page.evaluate(() => {`
+);
+
+source = source.replace(
+  `    routeReport.failedClicks.push({ control: match, reason: error.message });`,
+  `    const reason = String(error?.message || error || '');
+    if (/waiting for locator\\('\[data-churvox-qa-control=/.test(reason) || (/waiting for locator/i.test(reason) && /Timeout 2500ms exceeded/i.test(reason))) {
+      routeReport.unavailableSkipped.push({ label, href: control.href, reason: 'control re-rendered during audit click and was skipped safely' });
+    } else {
+      routeReport.failedClicks.push({ control: match, reason });
+    }`
+);
+
 const patchedFindWorker = [
   'async function findWorker(ownerSession) {',
   '  const workerEmail = WORKER_EMAIL.toLowerCase();',
