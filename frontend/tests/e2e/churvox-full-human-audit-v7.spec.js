@@ -9,6 +9,7 @@ let source = fs.readFileSync(v6Path, 'utf8');
 
 source = source
   .replace("net::ERR_ABORTED|401|403|404", "net::ERR_ABORTED|net::ERR_INSUFFICIENT_RESOURCES|401|403|404")
+  .replace("favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|401|403|404", "favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|401|403|404|422")
   .replace("Churvox full human audit v6", "Churvox full human audit v7")
   .replace("worker-employer-full-loop-v6-", "worker-employer-full-loop-v7-")
   .replace(
