@@ -130,6 +130,80 @@ function injectStyle() {
       overflow-wrap: anywhere !important;
     }
 
+    body:has(.churvoxOptionC .cocDrawer) {
+      overflow: hidden !important;
+    }
+
+    body:has(.churvoxOptionC .cocDrawer) .churvoxOptionC,
+    body:has(.churvoxOptionC .cocDrawer) .churvoxOptionC .workspace,
+    body:has(.churvoxOptionC .cocDrawer) .churvoxOptionC .cocPage,
+    body:has(.churvoxOptionC .cocDrawer) .churvoxOptionC .cocPanel {
+      overflow: visible !important;
+    }
+
+    body:has(.churvoxOptionC .cocDrawer) .churvoxOptionC::after {
+      content: "" !important;
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 99980 !important;
+      display: block !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(10, 12, 11, 0.42) !important;
+      backdrop-filter: blur(3px) !important;
+      -webkit-backdrop-filter: blur(3px) !important;
+      pointer-events: none !important;
+    }
+
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer {
+      position: fixed !important;
+      top: 50vh !important;
+      left: 50vw !important;
+      right: auto !important;
+      bottom: auto !important;
+      width: min(880px, calc(100vw - 56px)) !important;
+      max-width: calc(100vw - 56px) !important;
+      max-height: calc(100vh - 56px) !important;
+      transform: translate3d(-50%, -50%, 0) !important;
+      z-index: 99990 !important;
+      overflow: auto !important;
+      overscroll-behavior: contain !important;
+      border: 1px solid rgba(16, 21, 19, 0.14) !important;
+      border-radius: 24px !important;
+      padding: 24px !important;
+      background: #ffffff !important;
+      color: #151c19 !important;
+      box-shadow: 0 44px 140px rgba(6, 9, 8, 0.46) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      clip-path: none !important;
+    }
+
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer > button:first-child {
+      position: sticky !important;
+      top: 0 !important;
+      float: right !important;
+      z-index: 3 !important;
+      min-width: 74px !important;
+      min-height: 40px !important;
+      border-radius: 999px !important;
+      background: #111513 !important;
+      color: #ffffff !important;
+    }
+
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer .approvalActions {
+      position: sticky !important;
+      bottom: 0 !important;
+      z-index: 2 !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 10px !important;
+      margin: 18px -24px -24px !important;
+      padding: 14px 24px 18px !important;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), #ffffff) !important;
+      border-top: 1px solid rgba(16, 21, 19, 0.10) !important;
+    }
+
     body:has(.simpleWorkerApp),
     body:has(.simpleWorkerApp) #root {
       max-width: 100vw !important;
@@ -161,6 +235,21 @@ function injectStyle() {
     body:has(.simpleWorkerApp) .simpleWorkerApp,
     body:has(.simpleWorkerApp) .simpleWorkerApp * {
       max-width: 100% !important;
+    }
+
+    @media (max-width: 720px) {
+      body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer {
+        width: calc(100vw - 22px) !important;
+        max-width: calc(100vw - 22px) !important;
+        max-height: calc(100vh - 22px) !important;
+        padding: 18px !important;
+        border-radius: 20px !important;
+      }
+
+      body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer .approvalActions {
+        margin: 16px -18px -18px !important;
+        padding: 12px 18px 16px !important;
+      }
     }
   `;
   document.head.appendChild(style);
