@@ -31,6 +31,49 @@
   border-radius: 999px;
 }
 
+.cvxPageGrid {
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.cvxRecordGrid {
+  gap: 16px !important;
+}
+
+.cvxRecordCard {
+  min-height: 190px !important;
+}
+
+.cvxRecordMeta {
+  padding-top: 10px !important;
+  border-top: 1px solid rgba(16, 21, 19, 0.08) !important;
+}
+
+.cvxPanel:hover,
+.cvxPlans section:hover,
+.cvxRecordCard:hover {
+  border-color: rgba(240, 100, 47, 0.24) !important;
+  box-shadow: 0 18px 42px rgba(16, 21, 19, 0.1) !important;
+}
+
+.cvxCleanNav button {
+  transition: transform 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+.cvxCleanNav button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 18px rgba(16, 21, 19, 0.13) !important;
+}
+
+.cvxDrawerActions {
+  position: sticky !important;
+  bottom: -22px !important;
+  margin: 8px -22px -22px !important;
+  padding: 14px 22px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.9), #fff) !important;
+  border-top: 1px solid rgba(16, 21, 19, 0.08) !important;
+}
+
 @media (min-width: 1180px) {
   .cvxPageGrid {
     grid-template-columns: 1.08fr 0.92fr;
@@ -38,5 +81,25 @@
 
   .cvxRecordGrid {
     grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  }
+
+  .cvxCleanShell {
+    width: min(1540px, calc(100vw - 42px)) !important;
+  }
+}
+
+@media (max-width: 1040px) {
+  .cvxTable div {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .cvxRecordCard {
+    min-height: 168px !important;
+  }
+
+  .cvxCleanTitle h1 {
+    font-size: 40px !important;
   }
 }
