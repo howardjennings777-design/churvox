@@ -1,0 +1,103 @@
+html, body, #root { height: 100%; }
+body:has(.chxApp) { overflow: hidden; background: #eef1ec; }
+.chxApp { height: 100vh; overflow: hidden; padding: 12px; color: #111916; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: radial-gradient(circle at 18% -8%, rgba(240,100,47,.18), transparent 30%), linear-gradient(180deg,#fafbf7,#eef1ec); }
+.chxShell { width: min(1720px, calc(100vw - 24px)); height: calc(100vh - 24px); margin: 0 auto; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
+.chxTop { overflow: hidden; border-radius: 28px; background: linear-gradient(90deg, rgba(240,100,47,.26) 0 8px, transparent 8px), linear-gradient(135deg,#101513,#1d2a25); box-shadow: 0 24px 60px rgba(16,21,19,.24); }
+.chxHead { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 16px; padding: 16px 18px 10px; }
+.chxBrand { display:flex; align-items:center; gap:10px; color:#fff; }
+.chxMark { width:42px; height:42px; border-radius:15px; background:#f0642f; box-shadow:0 10px 26px rgba(240,100,47,.28); }
+.chxBrand b { display:block; font-size:19px; letter-spacing:-.04em; }
+.chxBrand small { display:block; color:#cbd7d1; font-weight:900; font-size:11px; }
+.chxTitle h1 { margin:0; color:#fff; font-size:clamp(34px,3.8vw,54px); line-height:.9; letter-spacing:-.08em; }
+.chxTitle p { margin:4px 0 0; color:#d7e1dc; font-weight:900; font-size:13px; }
+.chxLogout { text-decoration:none; color:#b94b24; background:#fff0e8; border-radius:999px; padding:10px 14px; font-weight:950; }
+.chxNav { display:flex; gap:8px; overflow-x:auto; padding:0 18px 15px; }
+.chxNav button { flex:0 0 auto; border:1px solid rgba(16,21,19,.14); background:#eef1ec; color:#17201c; border-radius:999px; padding:9px 13px; font-weight:950; cursor:pointer; }
+.chxNav button.active { background:#f0642f; color:#fff; border-color:rgba(255,255,255,.2); box-shadow:0 10px 22px rgba(240,100,47,.22); }
+.chxStage { min-height:0; overflow:hidden; }
+.chxScreen { height:100%; min-height:0; display:grid; gap:12px; overflow:hidden; }
+.chxPanel { min-height:0; overflow:hidden; border:1px solid rgba(16,21,19,.1); border-radius:24px; background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,249,245,.94)); box-shadow:0 14px 36px rgba(16,21,19,.08); display:flex; flex-direction:column; }
+.chxPanelHead { flex:0 0 auto; min-height:52px; padding:11px 14px; background:linear-gradient(90deg,#f0642f 0 6px, transparent 6px),linear-gradient(135deg,#101513,#1b2823); color:#fff; }
+.chxPanelHead small { display:block; color:#cbd7d1; text-transform:uppercase; letter-spacing:.14em; font-size:10px; font-weight:950; }
+.chxPanelHead h2 { margin:2px 0 0; font-size:22px; line-height:1; letter-spacing:-.055em; }
+.chxPanelBody { min-height:0; flex:1 1 auto; padding:14px; overflow:hidden; }
+.chxScroll { min-height:0; overflow-y:auto; padding-right:6px; }
+.chxScroll::-webkit-scrollbar { width:8px; }
+.chxScroll::-webkit-scrollbar-thumb { background:rgba(16,21,19,.26); border-radius:999px; }
+.chxCardGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; }
+.chxCard, .chxRow, .chxLaneCard { border:1px solid rgba(16,21,19,.1); background:linear-gradient(180deg,#fff,#f4f6f2); border-radius:18px; padding:12px; text-align:left; color:#111916; cursor:pointer; }
+.chxCard:hover, .chxRow:hover, .chxLaneCard:hover { border-color:rgba(240,100,47,.35); box-shadow:0 14px 30px rgba(16,21,19,.1); }
+.chxPill { display:inline-flex; align-items:center; border-radius:999px; padding:5px 8px; background:#ffe3d5; color:#b94b24; font-size:10px; font-weight:950; }
+.chxCard h3, .chxRow h3, .chxLaneCard h3 { margin:8px 0 5px; font-size:17px; line-height:1.05; letter-spacing:-.04em; }
+.chxCard p, .chxRow p, .chxLaneCard p { margin:0; color:#5e6b65; font-size:12px; font-weight:820; line-height:1.35; }
+.chxMeta { display:grid; grid-template-columns:1fr auto; gap:4px 8px; margin-top:10px; padding-top:8px; border-top:1px solid rgba(16,21,19,.08); font-size:11px; color:#5e6b65; font-weight:850; }
+.chxMeta strong { color:#b94b24; font-size:15px; }
+.chxRows { display:grid; gap:8px; }
+.chxRow { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; }
+.chxRowMain { min-width:0; }
+.chxRowMain h3 { margin-top:4px; }
+.chxRowAside { text-align:right; color:#5e6b65; font-size:11px; font-weight:900; }
+.chxRowAside strong { display:block; color:#b94b24; font-size:16px; }
+.chxFields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.chxFields label { display:grid; gap:5px; color:#33413b; font-size:12px; font-weight:950; }
+.chxFields input, .chxFields select, .chxFields textarea { width:100%; border:1px solid rgba(16,21,19,.14); border-radius:14px; background:#fff; color:#111916; padding:10px; font:inherit; font-weight:820; outline:none; }
+.chxFields textarea { min-height:86px; resize:vertical; }
+.chxFull { grid-column:1/-1; }
+.chxBtn { border:0; border-radius:999px; background:#f0642f; color:#fff; padding:11px 15px; font-weight:950; cursor:pointer; }
+.chxBtn.soft { background:#fff0e8; color:#b94b24; border:1px solid rgba(240,100,47,.22); }
+.chxNotice { border:1px solid rgba(240,100,47,.24); border-radius:18px; background:#fff0e8; color:#9c3d1c; padding:12px; font-weight:900; line-height:1.45; }
+.chxMiniGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
+.chxMini { border:1px solid rgba(16,21,19,.09); background:#eef2ed; border-radius:16px; padding:11px; }
+.chxMini b { display:block; font-size:14px; }
+.chxMini span { display:block; margin-top:4px; color:#5e6b65; font-size:12px; font-weight:820; }
+.chxTable { display:grid; gap:8px; }
+.chxTableRow { display:grid; grid-template-columns:minmax(150px,1fr) repeat(4,auto); gap:10px; align-items:center; min-height:48px; border:1px solid rgba(16,21,19,.09); border-radius:16px; background:#eef2ed; padding:10px; font-weight:850; }
+.chxMap { position:relative; min-height:0; height:100%; border:1px solid rgba(16,21,19,.1); border-radius:20px; overflow:hidden; background:#eef2ed; }
+.chxMap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+.chxMap a { position:absolute; right:12px; bottom:12px; z-index:2; text-decoration:none; background:#101513; color:#fff; border-radius:999px; padding:8px 11px; font-size:12px; font-weight:950; }
+.chxDrawer { position:fixed; inset:16px 16px 16px auto; z-index:120; width:min(560px,calc(100vw - 32px)); overflow:auto; border-radius:28px; background:#fff; box-shadow:0 40px 120px rgba(16,21,19,.44); padding:18px; display:grid; gap:12px; }
+.chxDrawerTop { display:flex; justify-content:space-between; align-items:start; gap:12px; }
+.chxDrawer h2 { margin:0; font-size:30px; letter-spacing:-.06em; }
+.chxClose { border:1px solid rgba(16,21,19,.12); background:#eef2ed; border-radius:999px; padding:8px 12px; font-weight:950; cursor:pointer; }
+.chxDrawerActions { position:sticky; bottom:-18px; margin:8px -18px -18px; padding:14px 18px; background:#fff; border-top:1px solid rgba(16,21,19,.08); display:flex; gap:8px; flex-wrap:wrap; }
+.chxPulse { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.chxPulse .chxMini { min-height:100px; display:grid; align-content:center; }
+.chxPulse b { font-size:28px; letter-spacing:-.055em; }
+.chxAi { grid-template-columns:1fr 1fr; grid-template-rows:auto minmax(0,1fr) minmax(190px,.42fr); }
+.chxAi .pulsePanel { grid-column:1/-1; }
+.chxCommand { grid-template-columns:minmax(0,1fr) minmax(380px,.42fr); grid-template-rows:minmax(0,1fr) minmax(210px,.44fr); }
+.chxCommand .queue { grid-row:1/3; }
+.chxJobs { grid-template-columns:minmax(0,1fr) minmax(390px,.42fr); grid-template-rows:minmax(0,1fr) minmax(210px,.42fr); }
+.chxJobs .board { grid-row:1/3; }
+.chxJobColumns { height:100%; display:grid; grid-template-columns:repeat(3,minmax(220px,1fr)); gap:10px; }
+.chxJobLane { min-height:0; display:flex; flex-direction:column; border-radius:18px; background:#eef2ed; padding:10px; }
+.chxJobLane h3 { margin:0 0 8px; font-size:16px; }
+.chxJobLane .chxScroll { flex:1; }
+.chxClients { grid-template-columns:minmax(310px,.82fr) minmax(430px,1.08fr) minmax(300px,.68fr); grid-template-rows:minmax(0,1fr) minmax(190px,.38fr); }
+.chxClients .clientList { grid-row:1/3; }
+.chxClients .clientHistory { grid-column:2/4; }
+.chxClientListRows { display:grid; gap:8px; }
+.chxClientRow { min-height:74px; display:grid; grid-template-columns:1fr auto; gap:8px; }
+.chxQuotes, .chxInvoices, .chxTeam, .chxSettings, .chxSupport { grid-template-columns:minmax(0,1fr) minmax(390px,.44fr); grid-template-rows:minmax(0,1fr) minmax(200px,.42fr); }
+.chxQuotes .pipeline, .chxInvoices .invoiceList, .chxTeam .peopleList { grid-row:1/3; }
+.chxLanes { height:100%; display:grid; grid-template-columns:repeat(4,minmax(190px,1fr)); gap:10px; }
+.chxLane { min-height:0; display:flex; flex-direction:column; border-radius:18px; background:#eef2ed; padding:10px; }
+.chxLane h3 { margin:0 0 8px; font-size:15px; }
+.chxWorkers { grid-template-columns:minmax(0,1fr) minmax(340px,.42fr); grid-template-rows:minmax(0,1fr) minmax(210px,.42fr); }
+.chxWorkers .mapPanel { grid-column:1/2; }
+.chxWorkers .slipsPanel { grid-column:1/2; }
+.chxWorkers .proofPanel { grid-column:2/3; grid-row:1/2; }
+.chxWorkers .messagePanel { grid-column:2/3; grid-row:2/3; }
+.chxPayroll { grid-template-columns:minmax(320px,.4fr) minmax(0,1fr); grid-template-rows:minmax(0,1fr) minmax(200px,.42fr); }
+.chxPayroll .hoursPanel { grid-column:2/3; grid-row:1/2; }
+.chxPayroll .slipsPanel { grid-column:1/3; }
+.chxXero { grid-template-columns:minmax(420px,.46fr) minmax(0,1fr); grid-template-rows:minmax(0,1fr); }
+.chxPlans { overflow:auto; }
+.chxPlansGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+.chxPlan { min-height:310px; border:1px solid rgba(16,21,19,.1); border-radius:24px; background:#fff; padding:18px; display:grid; gap:12px; align-content:start; box-shadow:0 14px 36px rgba(16,21,19,.08); }
+.chxPlan.popular { border-color:rgba(240,100,47,.4); box-shadow:0 18px 46px rgba(240,100,47,.14); }
+.chxPlan em { justify-self:start; border-radius:999px; background:#f0642f; color:#fff; padding:6px 10px; font-style:normal; font-size:11px; font-weight:950; }
+.chxPlan h2 { margin:0; font-size:42px; letter-spacing:-.08em; }
+.chxPlan small { display:block; color:#5e6b65; font-size:13px; letter-spacing:0; }
+.chxPlan ul { margin:0; padding-left:18px; color:#5e6b65; font-weight:820; line-height:1.55; }
+@media (max-width:1100px){ body:has(.chxApp){overflow:auto}.chxApp{height:auto;min-height:100vh;overflow:visible}.chxShell{height:auto}.chxStage,.chxScreen{height:auto;overflow:visible}.chxScreen{grid-template-columns:1fr!important;grid-template-rows:auto!important}.chxPanel{grid-column:1/-1!important;grid-row:auto!important;max-height:none}.chxScroll{max-height:430px}.chxClients .clientList,.chxClients .clientHistory,.chxJobs .board,.chxCommand .queue,.chxQuotes .pipeline,.chxInvoices .invoiceList,.chxTeam .peopleList{grid-column:1/-1!important;grid-row:auto!important}.chxJobColumns,.chxLanes{grid-template-columns:1fr}.chxTableRow{grid-template-columns:1fr 1fr}.chxHead{grid-template-columns:1fr}.chxLogout{justify-self:start}}
