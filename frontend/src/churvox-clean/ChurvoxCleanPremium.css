@@ -68,6 +68,35 @@
     repeating-linear-gradient(90deg, transparent 0 34px, rgba(16, 21, 19, 0.06) 34px 35px) !important;
 }
 
+.cvxGoogleMap {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+.cvxGoogleMap iframe {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+}
+
+.cvxGoogleMap a {
+  position: absolute !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  z-index: 2 !important;
+  border-radius: 999px !important;
+  background: var(--cv-old-black) !important;
+  color: #fff !important;
+  padding: 8px 11px !important;
+  text-decoration: none !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
 .cvxMap span::after {
   content: " · route pins · time on site · open maps later";
   display: block;
@@ -75,6 +104,10 @@
   color: var(--cv-old-muted);
   font-size: 13px;
   letter-spacing: 0;
+}
+
+.cvxGoogleMap span::after {
+  content: none !important;
 }
 
 .cvxNotice,
