@@ -1,6 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import "../churvox-clean/ChurvoxSpecificPages.css";
+import "../churvox-clean/ChurvoxHeaderIdentity.css";
 
 const nav = ["AI Guide", "Command", "Jobs", "Clients", "Quotes", "Invoices", "Team", "Payroll", "Workers", "Xero", "Settings", "Plans", "Support"];
 const aliases = { dashboard: "aiguide", smart: "aiguide", today: "aiguide", approvals: "command", automation: "command", recurring: "jobs", calendar: "jobs", schedule: "jobs", customers: "clients", payments: "invoices", reports: "invoices", staff: "team", people: "team", timesheets: "payroll", dispatch: "workers", routes: "workers", accounting: "xero", sync: "xero", billing: "plans", help: "support" };
