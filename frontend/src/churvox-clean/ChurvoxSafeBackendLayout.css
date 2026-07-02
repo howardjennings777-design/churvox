@@ -1,0 +1,157 @@
+/* Safe backend layout reset.
+   Purpose: stop live backend data from wrecking the app while keeping the clean Churvox UI. */
+
+.cvxClean {
+  min-height: 100vh !important;
+  overflow: visible !important;
+  padding: 16px !important;
+}
+
+.cvxCleanShell {
+  max-width: 1500px !important;
+  width: min(1500px, calc(100vw - 32px)) !important;
+  margin: 0 auto !important;
+  display: grid !important;
+  gap: 16px !important;
+}
+
+.cvxCleanTop {
+  position: sticky !important;
+  top: 10px !important;
+  z-index: 50 !important;
+}
+
+.cvxCleanWork,
+.cvxPageGrid {
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+.cvxPageGrid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.48fr) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+.cvxWide {
+  grid-column: 1 / -1 !important;
+}
+
+.cvxPanel,
+.cvxRecordCard,
+.cvxPlans section {
+  background: #ffffff !important;
+  color: var(--cv-old-ink) !important;
+  overflow: hidden !important;
+}
+
+.cvxPanel {
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+/* Stop backend record lists becoming full-page walls. */
+.cvxPanel.cvxWide .cvxRecordGrid,
+.cvxPanel.cvxWide .cvxMiniList {
+  max-height: 440px !important;
+  overflow-y: auto !important;
+  padding-right: 8px !important;
+}
+
+.cvxPanel.cvxWide .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)) !important;
+  align-items: stretch !important;
+}
+
+.cvxPanel.cvxWide .cvxMiniList {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.cvxRecordCard {
+  min-height: 170px !important;
+  padding: 15px !important;
+  border-radius: 22px !important;
+}
+
+.cvxRecordCard h3 {
+  font-size: 20px !important;
+  line-height: 1.05 !important;
+  margin: 10px 0 8px !important;
+}
+
+.cvxRecordCard p {
+  min-height: 40px !important;
+  max-height: 48px !important;
+  overflow: hidden !important;
+  line-height: 1.35 !important;
+}
+
+.cvxRecordMeta {
+  border-top: 1px solid rgba(16, 21, 19, 0.08) !important;
+  padding-top: 9px !important;
+}
+
+/* Clients: make live clients a database-like list instead of huge cards. */
+.cvxCleanWork[data-cvx-page='clients'] .cvxPanel:first-child .cvxRecordGrid,
+body:has(.cvxCleanTitle h1) .cvxPageGrid .cvxPanel:first-child .cvxRecordGrid {
+  max-height: 460px !important;
+}
+
+/* Forms stay compact. */
+.cvxFormGrid {
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.cvxFormGrid input,
+.cvxFormGrid select,
+.cvxFormGrid textarea,
+.cvxDrawer input,
+.cvxDrawer select,
+.cvxDrawer textarea {
+  min-height: 42px !important;
+  padding: 10px 11px !important;
+}
+
+.cvxFormGrid textarea {
+  min-height: 86px !important;
+}
+
+.cvxMiniList div {
+  min-height: 62px !important;
+}
+
+.cvxTable {
+  max-height: 390px !important;
+  overflow-y: auto !important;
+}
+
+.cvxGoogleMap {
+  min-height: 360px !important;
+}
+
+.cvxDrawer {
+  z-index: 1000 !important;
+}
+
+@media (max-width: 1050px) {
+  .cvxClean {
+    padding: 10px !important;
+  }
+
+  .cvxCleanShell {
+    width: calc(100vw - 20px) !important;
+  }
+
+  .cvxPageGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cvxPanel.cvxWide .cvxRecordGrid,
+  .cvxPanel.cvxWide .cvxMiniList {
+    max-height: 420px !important;
+  }
+}
