@@ -1,12 +1,40 @@
-/* Restore Churvox header identity without touching the page-specific layouts. */
+/* Churvox top-tier polish layer.
+   This file is intentionally loaded last and only improves visual finish.
+   It does not replace page-specific React layouts or backend data wiring. */
+:root {
+  --chx-ink: #111916;
+  --chx-graphite: #18241f;
+  --chx-deep: #0b100e;
+  --chx-orange: #f0642f;
+  --chx-orange-dark: #b94b24;
+  --chx-paper: #fbfcf8;
+  --chx-soft: #f2f5ef;
+  --chx-line: rgba(16, 21, 19, 0.10);
+  --chx-shadow: 0 18px 46px rgba(16, 21, 19, 0.10);
+  --chx-shadow-strong: 0 28px 86px rgba(16, 21, 19, 0.22);
+}
+
+.chxApp {
+  background:
+    radial-gradient(circle at 12% -10%, rgba(240, 100, 47, 0.20), transparent 28%),
+    radial-gradient(circle at 98% 10%, rgba(16, 21, 19, 0.13), transparent 27%),
+    linear-gradient(180deg, #fcfdf8 0%, #eef2ec 100%) !important;
+}
+
+.chxShell {
+  gap: 14px !important;
+}
+
+/* Header: premium industrial Churvox identity */
 .chxTop {
   position: relative;
-  border-radius: 32px !important;
+  border-radius: 34px !important;
   background:
-    radial-gradient(circle at 92% -20%, rgba(240, 100, 47, 0.24), transparent 34%),
-    linear-gradient(120deg, rgba(240, 100, 47, 0.20) 0 7px, transparent 7px 28px),
-    linear-gradient(135deg, #0a0d0c 0%, #101916 42%, #1d2a25 72%, #26362f 100%) !important;
-  box-shadow: 0 26px 72px rgba(16, 21, 19, 0.30) !important;
+    radial-gradient(circle at 92% -20%, rgba(240, 100, 47, 0.26), transparent 34%),
+    linear-gradient(120deg, rgba(240, 100, 47, 0.22) 0 7px, transparent 7px 28px),
+    linear-gradient(135deg, #080b0a 0%, #101916 40%, #1b2923 72%, #2b3b33 100%) !important;
+  box-shadow: var(--chx-shadow-strong) !important;
+  isolation: isolate;
 }
 
 .chxTop::before {
@@ -14,20 +42,20 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.22;
+  opacity: 0.25;
   background:
-    linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.08) 15% 16%, transparent 16% 36%, rgba(255,255,255,.055) 36% 37%, transparent 37%),
-    repeating-linear-gradient(135deg, transparent 0 18px, rgba(240,100,47,.08) 18px 19px, transparent 19px 42px);
+    linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.10) 15% 16%, transparent 16% 36%, rgba(255,255,255,.06) 36% 37%, transparent 37%),
+    repeating-linear-gradient(135deg, transparent 0 18px, rgba(240,100,47,.09) 18px 19px, transparent 19px 42px);
 }
 
 .chxTop::after {
   content: "";
   position: absolute;
-  right: -120px;
-  top: -155px;
-  width: 410px;
-  height: 270px;
-  background: radial-gradient(circle, rgba(240, 100, 47, 0.30), transparent 67%);
+  right: -118px;
+  top: -158px;
+  width: 420px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(240, 100, 47, 0.34), transparent 67%);
   pointer-events: none;
 }
 
@@ -37,33 +65,38 @@
   z-index: 2;
 }
 
+.chxHead {
+  padding: 17px 19px 12px !important;
+}
+
 .chxBrand {
-  min-width: 150px;
+  min-width: 152px;
 }
 
 .chxMark {
   width: 48px !important;
   height: 48px !important;
-  border-radius: 16px !important;
+  border-radius: 17px !important;
   background:
-    linear-gradient(135deg, #ff7747, #f0642f 55%, #b94b24) !important;
+    linear-gradient(135deg, #ff7b4d 0%, #f0642f 56%, #b94b24 100%) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.25),
-    0 14px 30px rgba(240,100,47,.34) !important;
+    inset 0 1px 0 rgba(255,255,255,.28),
+    0 15px 34px rgba(240,100,47,.36) !important;
 }
 
 .chxBrand b {
   font-size: 20px !important;
-  letter-spacing: -0.055em !important;
+  letter-spacing: -0.06em !important;
 }
 
 .chxBrand small {
-  color: rgba(239, 246, 242, 0.86) !important;
+  color: rgba(239, 246, 242, 0.88) !important;
   letter-spacing: -0.02em !important;
 }
 
 .chxTitle h1 {
-  text-shadow: 0 12px 28px rgba(0,0,0,.32) !important;
+  text-shadow: 0 12px 28px rgba(0,0,0,.34) !important;
+  letter-spacing: -0.09em !important;
 }
 
 .chxTitle p {
@@ -72,22 +105,303 @@
 
 .chxNav {
   align-items: center !important;
+  padding-bottom: 17px !important;
+  gap: 9px !important;
+}
+
+.chxNav::-webkit-scrollbar {
+  height: 7px;
+}
+
+.chxNav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.18);
+  border-radius: 999px;
 }
 
 .chxNav button {
-  background: rgba(248, 250, 247, 0.94) !important;
-  border-color: rgba(255,255,255,.28) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 8px 18px rgba(0,0,0,.16) !important;
+  background: rgba(248, 250, 247, 0.95) !important;
+  border-color: rgba(255,255,255,.30) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 9px 20px rgba(0,0,0,.17) !important;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease !important;
+}
+
+.chxNav button:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.84), 0 13px 26px rgba(0,0,0,.20) !important;
 }
 
 .chxNav button.active {
-  background: linear-gradient(135deg, #ff7848, #f0642f) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 12px 28px rgba(240,100,47,.35) !important;
+  background: linear-gradient(135deg, #ff7b4d, #f0642f) !important;
+  color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.30), 0 14px 30px rgba(240,100,47,.38) !important;
 }
 
 .chxLogout {
   background: rgba(255, 240, 232, 0.96) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 12px 24px rgba(0,0,0,.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 12px 25px rgba(0,0,0,.15) !important;
+}
+
+/* App surfaces */
+.chxPanel,
+.chxPlan,
+.chxDrawer {
+  border-color: rgba(16, 21, 19, 0.09) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,249,245,.94)) !important;
+  box-shadow: var(--chx-shadow) !important;
+}
+
+.chxPanel {
+  border-radius: 26px !important;
+}
+
+.chxPanelHead {
+  min-height: 54px !important;
+  padding: 12px 15px !important;
+  background:
+    linear-gradient(90deg, var(--chx-orange) 0 7px, transparent 7px),
+    linear-gradient(135deg, #0b100e 0%, #14201b 64%, #22332b 100%) !important;
+}
+
+.chxPanelHead small {
+  color: rgba(228, 238, 233, 0.82) !important;
+  letter-spacing: .15em !important;
+}
+
+.chxPanelHead h2 {
+  font-size: 23px !important;
+  letter-spacing: -0.065em !important;
+}
+
+.chxPanelBody {
+  padding: 15px !important;
+}
+
+/* Cards, rows, lanes */
+.chxCard,
+.chxRow,
+.chxLaneCard,
+.chxMini,
+.chxTableRow {
+  border-color: rgba(16, 21, 19, 0.08) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(243,246,241,.95)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72) !important;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease !important;
+}
+
+.chxCard:hover,
+.chxRow:hover,
+.chxLaneCard:hover {
+  transform: translateY(-1px);
+  border-color: rgba(240,100,47,.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 14px 32px rgba(16,21,19,.11) !important;
+}
+
+.chxPill {
+  background: linear-gradient(180deg, #ffe6db, #ffd9c9) !important;
+  color: var(--chx-orange-dark) !important;
+  border: 1px solid rgba(240,100,47,.16) !important;
+}
+
+.chxCard h3,
+.chxRow h3,
+.chxLaneCard h3 {
+  color: var(--chx-ink) !important;
+}
+
+.chxCard p,
+.chxRow p,
+.chxLaneCard p,
+.chxMini span,
+.chxPlan p,
+.chxPlan li {
+  color: #53615b !important;
+}
+
+.chxMeta {
+  border-top-color: rgba(16, 21, 19, 0.07) !important;
+}
+
+.chxMeta strong,
+.chxRowAside strong {
+  color: var(--chx-orange-dark) !important;
+}
+
+/* Forms */
+.chxFields {
+  gap: 11px !important;
+}
+
+.chxFields label {
+  color: #26342e !important;
+}
+
+.chxFields input,
+.chxFields select,
+.chxFields textarea {
+  border-color: rgba(16,21,19,.12) !important;
+  background: linear-gradient(180deg,#fff,#fbfcf8) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.86) !important;
+  transition: border-color .15s ease, box-shadow .15s ease !important;
+}
+
+.chxFields input:focus,
+.chxFields select:focus,
+.chxFields textarea:focus {
+  border-color: rgba(240,100,47,.48) !important;
+  box-shadow: 0 0 0 3px rgba(240,100,47,.12) !important;
+}
+
+.chxBtn {
+  background: linear-gradient(135deg, #ff7648, var(--chx-orange)) !important;
+  box-shadow: 0 12px 24px rgba(240,100,47,.22) !important;
+  transition: transform .15s ease, box-shadow .15s ease !important;
+}
+
+.chxBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(240,100,47,.28) !important;
+}
+
+.chxBtn.soft {
+  background: linear-gradient(180deg,#fff5ef,#ffe9dd) !important;
+  color: var(--chx-orange-dark) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8) !important;
+}
+
+.chxNotice {
+  background: linear-gradient(180deg,#fff3ec,#ffe9dc) !important;
+  border-color: rgba(240,100,47,.24) !important;
+}
+
+/* Page-specific premium finish */
+.chxAi .pulsePanel .chxPanelBody {
+  background:
+    radial-gradient(circle at 4% 0%, rgba(240,100,47,.12), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,.5), transparent);
+}
+
+.chxPulse .chxMini {
+  min-height: 112px !important;
+  align-content: center !important;
+}
+
+.chxPulse b {
+  font-size: 34px !important;
+  letter-spacing: -0.08em !important;
+}
+
+.chxCommand .queue .chxCardGrid,
+.chxQuotes .pipeline .chxLanes,
+.chxInvoices .invoiceList .chxLanes,
+.chxJobs .chxJobColumns {
+  gap: 12px !important;
+}
+
+.chxJobLane,
+.chxLane {
+  border: 1px solid rgba(16, 21, 19, 0.08) !important;
+  background:
+    linear-gradient(180deg, rgba(238,242,237,.92), rgba(232,237,230,.88)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55) !important;
+}
+
+.chxJobLane h3,
+.chxLane h3 {
+  color: #28362f !important;
+  letter-spacing: -0.04em !important;
+  padding: 2px 2px 8px !important;
+  border-bottom: 1px solid rgba(16,21,19,.08);
+}
+
+.chxClients .clientList .chxPanelBody {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.52), transparent),
+    radial-gradient(circle at 0 0, rgba(240,100,47,.10), transparent 40%);
+}
+
+.chxClientRow {
+  border-radius: 16px !important;
+}
+
+.chxWorkers .mapPanel .chxPanelBody {
+  padding: 12px !important;
+}
+
+.chxMap {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 16px 38px rgba(16,21,19,.10) !important;
+}
+
+.chxPlansGrid {
+  gap: 14px !important;
+}
+
+.chxPlan {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px !important;
+  padding: 19px !important;
+}
+
+.chxPlan::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 7px;
+  background: linear-gradient(90deg, rgba(240,100,47,.58), rgba(240,100,47,.08));
+}
+
+.chxPlan.popular {
+  border-color: rgba(240,100,47,.38) !important;
+  box-shadow: 0 24px 60px rgba(240,100,47,.16) !important;
+}
+
+.chxPlan h2 {
+  color: var(--chx-ink) !important;
+}
+
+.chxPlan em {
+  background: linear-gradient(135deg, #ff7848, var(--chx-orange)) !important;
+  box-shadow: 0 12px 24px rgba(240,100,47,.22) !important;
+}
+
+/* Drawer */
+.chxDrawer {
+  border: 1px solid rgba(16,21,19,.10) !important;
+  box-shadow: 0 40px 130px rgba(16,21,19,.45) !important;
+}
+
+.chxDrawer h2 {
+  color: var(--chx-ink) !important;
+}
+
+.chxDrawerActions {
+  box-shadow: 0 -10px 30px rgba(16,21,19,.06) !important;
+}
+
+/* Better dense pages on laptop screenshots */
+@media (min-width: 1101px) {
+  .chxCardGrid {
+    grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)) !important;
+  }
+
+  .chxCommand .queue .chxCardGrid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+  }
+
+  .chxClients .clientList .chxRow h3 {
+    font-size: 16px !important;
+  }
+
+  .chxClients .clientList .chxRow p {
+    font-size: 11.5px !important;
+  }
+
+  .chxQuotes .chxLane .chxRow,
+  .chxInvoices .chxLane .chxRow {
+    min-height: 102px !important;
+  }
 }
 
 @media (max-width: 1100px) {
@@ -97,5 +411,37 @@
 
   .chxBrand {
     min-width: 0;
+  }
+
+  .chxTitle h1 {
+    font-size: clamp(34px, 9vw, 48px) !important;
+  }
+
+  .chxPanel,
+  .chxPlan {
+    border-radius: 22px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .chxApp {
+    padding: 9px !important;
+  }
+
+  .chxShell {
+    width: calc(100vw - 18px) !important;
+  }
+
+  .chxHead {
+    padding: 14px !important;
+  }
+
+  .chxNav {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .chxFields {
+    grid-template-columns: 1fr !important;
   }
 }
