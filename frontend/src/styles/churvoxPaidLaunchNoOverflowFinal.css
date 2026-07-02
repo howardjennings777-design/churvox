@@ -1,4 +1,4 @@
-/* Final paid launch no-overflow shell. Keep the real nav visible, remove legacy rails/docks. */
+/* Final paid launch no-overflow shell. Keep the real nav visible, remove legacy docks, keep safe nav proof labels. */
 html:has(.churvoxOptionC),
 body:has(.churvoxOptionC),
 body:has(.churvoxOptionC) #root {
@@ -21,9 +21,7 @@ body:has(.churvoxOptionC) *::after {
 }
 
 body:has(.churvoxOptionC) .xcf10-dock,
-body:has(.churvoxOptionC) .xcf10-dock-launch,
-body:has(.churvoxOptionC) .launchNavProof,
-.churvoxOptionC .launchNavProof {
+body:has(.churvoxOptionC) .xcf10-dock-launch {
   display: none !important;
   visibility: hidden !important;
   width: 0 !important;
@@ -43,6 +41,43 @@ body:has(.churvoxOptionC) .launchNavProof,
   min-width: 0 !important;
   overflow-x: hidden !important;
   grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.churvoxOptionC .launchNavProof {
+  display: grid !important;
+  visibility: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr)) !important;
+  gap: 4px !important;
+  padding: 6px 8px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.churvoxOptionC .launchNavProof span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 18px !important;
+  padding: 2px 4px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: rgba(234, 88, 12, 0.08) !important;
+  color: #7c2d12 !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  line-height: 1.1 !important;
+  text-align: center !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
 .churvoxOptionC .cocBar,
@@ -119,6 +154,10 @@ body:has(.churvoxOptionC) [style*="min-width"] {
   }
 
   .churvoxOptionC .cocNav {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .churvoxOptionC .launchNavProof {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
