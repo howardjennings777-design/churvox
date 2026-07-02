@@ -108,3 +108,62 @@ body:has(.churvoxOptionC) {
     padding: 4px 5px;
   }
 }
+
+/* Paid launch hard overflow fix: every Churvox OS element must include padding
+   and borders inside its width so setup/mobile audits cannot create document scroll. */
+.churvoxOptionC,
+.churvoxOptionC *,
+.churvoxOptionC *::before,
+.churvoxOptionC *::after {
+  box-sizing: border-box !important;
+}
+
+.churvoxOptionC,
+.churvoxOptionC .cocShell,
+.churvoxOptionC .cocBar,
+.churvoxOptionC .cocNav,
+.churvoxOptionC .workspace,
+.churvoxOptionC .cocPage,
+.churvoxOptionC .cocPanel,
+.churvoxOptionC .launchNavProof {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.churvoxOptionC .cocBar,
+.churvoxOptionC .workspace,
+.churvoxOptionC .cocPage,
+.churvoxOptionC .launchNavProof {
+  overflow-x: clip !important;
+}
+
+.churvoxOptionC .cocPage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+}
+
+.churvoxOptionC .cocPage > *,
+.churvoxOptionC .toolbar,
+.churvoxOptionC .dayControl,
+.churvoxOptionC .miniStats,
+.churvoxOptionC .formGrid,
+.churvoxOptionC .proofGrid,
+.churvoxOptionC .jobCards,
+.churvoxOptionC .workerCards,
+.churvoxOptionC .workCards,
+.churvoxOptionC .ledgerList,
+.churvoxOptionC .moneyStrip,
+.churvoxOptionC .quoteStageGrid {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.churvoxOptionC button,
+.churvoxOptionC input,
+.churvoxOptionC select,
+.churvoxOptionC textarea,
+.churvoxOptionC iframe {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
