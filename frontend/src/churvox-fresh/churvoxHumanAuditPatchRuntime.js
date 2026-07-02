@@ -161,12 +161,13 @@ function injectStyle() {
       left: 50vw !important;
       right: auto !important;
       bottom: auto !important;
-      width: min(880px, calc(100vw - 56px)) !important;
-      max-width: calc(100vw - 56px) !important;
-      max-height: calc(100vh - 56px) !important;
+      width: min(1180px, calc(100vw - 28px)) !important;
+      max-width: calc(100vw - 28px) !important;
+      max-height: calc(100vh - 48px) !important;
       transform: translate3d(-50%, -50%, 0) !important;
       z-index: 99990 !important;
-      overflow: auto !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
       overscroll-behavior: contain !important;
       border: 1px solid rgba(16, 21, 19, 0.14) !important;
       border-radius: 24px !important;
@@ -177,6 +178,30 @@ function injectStyle() {
       opacity: 1 !important;
       visibility: visible !important;
       clip-path: none !important;
+    }
+
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer,
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer * {
+      min-width: 0 !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer > div:not(.approvalActions) {
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 12px !important;
+    }
+
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer .cocField,
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer input,
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer select,
+    body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer textarea {
+      width: 100% !important;
+      max-width: 100% !important;
     }
 
     body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer > button:first-child {
@@ -195,13 +220,16 @@ function injectStyle() {
       position: sticky !important;
       bottom: 0 !important;
       z-index: 2 !important;
+      width: 100% !important;
+      max-width: 100% !important;
       display: flex !important;
       flex-wrap: wrap !important;
       gap: 10px !important;
-      margin: 18px -24px -24px !important;
-      padding: 14px 24px 18px !important;
+      margin: 18px 0 0 !important;
+      padding: 14px 0 0 !important;
       background: linear-gradient(180deg, rgba(255,255,255,0.92), #ffffff) !important;
       border-top: 1px solid rgba(16, 21, 19, 0.10) !important;
+      overflow-x: hidden !important;
     }
 
     body:has(.simpleWorkerApp),
@@ -246,9 +274,13 @@ function injectStyle() {
         border-radius: 20px !important;
       }
 
+      body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer > div:not(.approvalActions) {
+        grid-template-columns: 1fr !important;
+      }
+
       body:has(.churvoxOptionC) .churvoxOptionC .cocDrawer .approvalActions {
-        margin: 16px -18px -18px !important;
-        padding: 12px 18px 16px !important;
+        margin: 16px 0 0 !important;
+        padding: 12px 0 0 !important;
       }
     }
   `;
