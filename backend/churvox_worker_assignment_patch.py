@@ -6,13 +6,12 @@ ObjectId business ids, so this patch makes job creation use the same flexible
 business matching without changing the owner-approval model.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, timezone
 
 from bson import ObjectId
 from fastapi import Depends, HTTPException, Request
 from fastapi.routing import APIRoute
+from pydantic import ValidationError
 
 
 def _oid(value):
@@ -45,8 +44,21 @@ def _enum_value(value, fallback=""):
     return str(raw or fallback)
 
 
+def _model_data(model):
+    if hasattr(model, "model_dump"):
+        return model.model_dump(exclude={"assigned_worker_id", "client_id"})
+    return model.dict(exclude={"assigned_worker_id", "client_id"})
+
+
 def _jsonable_id(value):
     return str(value) if value is not None else None
+
+
+def _validation_detail(exc):
+    try:
+        return exc.errors()
+    except Exception:
+        return str(exc)
 
 
 def install(module):
@@ -70,7 +82,7 @@ def install(module):
     if getattr(app.state, "churvox_worker_assignment_patch", False):
         return
 
-    async def patched_create_job(job_data: JobCreate, request: Request, current_user: dict = Depends(get_current_user)):
+    async def patched_create_job(request: Request, current_user: dict = Depends(get_current_user)):
         business_id = await get_user_business_id(current_user)
         user = await get_current_user(request)
 
@@ -78,12 +90,19 @@ def install(module):
             raise HTTPException(status_code=403, detail="Only employers can create jobs")
 
         raw_body = await request.json()
+        try:
+            job_data = JobCreate(**raw_body)
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=_validation_detail(exc))
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
         user_business_id = user.get("business_id")
         business_obj = _oid(user_business_id) or _oid(business_id)
         business_values = _business_values(business_id, user_business_id)
 
         job_doc = {
-            **job_data.model_dump(exclude={"assigned_worker_id", "client_id"}),
+            **_model_data(job_data),
             "contractor_id": business_obj,
             "business_id": str(business_id),
             "created_by": _oid(user.get("id")),
