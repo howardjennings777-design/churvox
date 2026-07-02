@@ -76,9 +76,10 @@ import './churvox-fresh/optionFReadinessActionFixRuntime';
 import './churvox-fresh/optionFApprovalExecutionRuntime';
 import './churvox-fresh/optionFInvoiceVaultRuntime.css';
 import './styles/churvoxResponsiveFit.css';
-import './styles/churvoxPaidLaunchGuard.css';
-import './styles/churvoxPaidLaunchNoOverflowFinal.css';
-import './runtime/churvoxPaidLaunchOverflowRuntime';
+// Retired audit imports: these forced the duplicate launch proof rail and circle nav over the live app.
+// import './styles/churvoxPaidLaunchGuard.css';
+// import './styles/churvoxPaidLaunchNoOverflowFinal.css';
+// import './runtime/churvoxPaidLaunchOverflowRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
