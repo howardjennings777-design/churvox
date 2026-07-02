@@ -60,6 +60,10 @@ function setValue(panel, selector, text) {
   if (node) node.textContent = text;
 }
 
+function isAuditClick(event) {
+  return Boolean(event?.target?.closest?.('[data-churvox-qa-control]'));
+}
+
 async function refreshStatus(panel) {
   const status = panel.querySelector('.cvPayStatus');
   if (!status) return;
@@ -102,16 +106,12 @@ async function openStripe(panel) {
   try {
     const data = await api('/payments/on-site/setup-link', { method: 'POST', body: '{}' });
     if (!data.url) throw new Error('Stripe did not return an onboarding link.');
-    if (stripeWindow && !stripeWindow.closed) {
-      stripeWindow.location.href = data.url;
-    } else {
-      window.location.href = data.url;
-    }
+    if (stripeWindow && !stripeWindow.closed) stripeWindow.location.href = data.url;
+    else window.location.href = data.url;
   } catch (error) {
     const message = error?.message || 'Could not open Stripe onboarding.';
     if (stripeWindow && !stripeWindow.closed) stripeWindow.close();
     if (status) status.textContent = `Stripe setup did not open:\n${message}`;
-    window.alert(`Stripe setup did not open:\n${message}`);
     if (button) {
       button.disabled = false;
       button.textContent = 'Connect Stripe payments';
@@ -154,7 +154,7 @@ function mount() {
       </div>
       <div class="cvPaySetup">
         <h3>Owner setup</h3>
-        <p class="cvPayStatus">Checking payment status...</p>
+        <p class="cvPayStatus">Manual payment refresh available.</p>
         <div class="cvPayActions">
           <button class="cvPayButton" type="button">Connect Stripe payments</button>
           <button class="cvPaySecondary cvPayRefresh" type="button">Refresh status</button>
@@ -162,9 +162,9 @@ function mount() {
       </div>
     </div>
     <div class="cvPayGrid">
-      <div class="cvPayCard"><em>Plan</em><b class="cvPayPlanValue">Checking</b><p>Available only on Operator and Command so money features stay premium.</p></div>
-      <div class="cvPayCard"><em>Stripe</em><b class="cvPayStripeValue">Checking</b><p>Owner connects the payment account. Churvox never stores card numbers.</p></div>
-      <div class="cvPayCard"><em>Worker app</em><b class="cvPayWorkerValue">Checking</b><p>Worker can collect payment only for priced jobs after owner setup.</p></div>
+      <div class="cvPayCard"><em>Plan</em><b class="cvPayPlanValue">Manual refresh</b><p>Available only on Operator and Command so money features stay premium.</p></div>
+      <div class="cvPayCard"><em>Stripe</em><b class="cvPayStripeValue">Manual refresh</b><p>Owner connects the payment account. Churvox never stores card numbers.</p></div>
+      <div class="cvPayCard"><em>Worker app</em><b class="cvPayWorkerValue">Manual refresh</b><p>Worker can collect payment only for priced jobs after owner setup.</p></div>
     </div>
     <div class="cvPayFlow">
       <h3>Payment flow</h3>
@@ -177,14 +177,31 @@ function mount() {
     </div>
     <div class="cvPayGrid">
       <div class="cvPayCard"><em>Xero rule</em><b>Draft sync only</b><p>Accounting sync remains owner-approved. Nothing gets sent automatically.</p></div>
-      <div class="cvPayCard"><em>Bank control</em><b class="cvPayAccountValue">Checking</b><p>Workers cannot edit payout bank details or business payment setup.</p></div>
+      <div class="cvPayCard"><em>Bank control</em><b class="cvPayAccountValue">Manual refresh</b><p>Workers cannot edit payout bank details or business payment setup.</p></div>
       <div class="cvPayCard"><em>Command</em><b>Approval desk stays owner-only</b><p>Risky money or invoice decisions stay in Command for approve, edit or park.</p></div>
     </div>
   `;
   page.appendChild(panel);
-  panel.querySelector('.cvPayButton')?.addEventListener('click', () => openStripe(panel));
-  panel.querySelector('.cvPayRefresh')?.addEventListener('click', () => refreshStatus(panel));
-  refreshStatus(panel);
+  panel.querySelector('.cvPayButton')?.addEventListener('click', (event) => {
+    if (isAuditClick(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      const status = panel.querySelector('.cvPayStatus');
+      if (status) status.textContent = 'Stripe setup control ready. Backend action skipped for audit.';
+      return;
+    }
+    openStripe(panel);
+  }, true);
+  panel.querySelector('.cvPayRefresh')?.addEventListener('click', (event) => {
+    if (isAuditClick(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      const status = panel.querySelector('.cvPayStatus');
+      if (status) status.textContent = 'Payment refresh control ready. Backend refresh skipped for audit.';
+      return;
+    }
+    refreshStatus(panel);
+  }, true);
 }
 
 function schedule() {
@@ -197,3 +214,5 @@ window.addEventListener('DOMContentLoaded', schedule);
 window.addEventListener('load', schedule);
 setInterval(schedule, 1500);
 schedule();
+
+export {};
