@@ -7,6 +7,32 @@
   --cv-glass: rgba(255, 255, 255, 0.78);
 }
 
+body:has(.churvoxOptionC) #churvox-first-run-setup {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+}
+
+body:has(.churvoxOptionC),
+body:has(.churvoxOptionC) #root,
+body:has(.churvoxOptionC) .churvoxOptionC {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+body:has(.churvoxOptionC) .churvoxOptionC *,
+body:has(.churvoxOptionC) .churvoxOptionC *::before,
+body:has(.churvoxOptionC) .churvoxOptionC *::after {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
 .churvoxOptionC .cocBar {
   position: sticky !important;
   isolation: isolate !important;
@@ -340,6 +366,34 @@
 }
 
 @media (max-width: 720px) {
+  .churvoxOptionC {
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding: 8px !important;
+  }
+
+  .churvoxOptionC .cocBar,
+  .churvoxOptionC .cocNav,
+  .churvoxOptionC .workspace,
+  .churvoxOptionC .cocPage,
+  .churvoxOptionC .cocPanel,
+  .churvoxOptionC .formGrid,
+  .churvoxOptionC .jobCards,
+  .churvoxOptionC .workerCards,
+  .churvoxOptionC .workCards,
+  .churvoxOptionC .quoteStageGrid,
+  .churvoxOptionC .teamQuickGrid,
+  .churvoxOptionC .ledgerList,
+  .churvoxOptionC .planList,
+  .churvoxOptionC .moneyStrip,
+  .churvoxOptionC .proofGrid,
+  .churvoxOptionC .miniStats {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
   .churvoxOptionC .title h1 {
     white-space: normal !important;
     font-size: clamp(30px, 10vw, 44px) !important;
@@ -349,9 +403,15 @@
     white-space: normal !important;
   }
 
+  .churvoxOptionC .cocNav {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
   .churvoxOptionC .cocNav button {
     height: 36px !important;
     min-height: 36px !important;
+    max-width: max-content !important;
     padding: 0 12px !important;
     font-size: 12px !important;
   }
@@ -359,6 +419,11 @@
   .churvoxOptionC .planList,
   .churvoxOptionC .ledgerRow {
     grid-template-columns: 1fr !important;
+  }
+
+  .churvoxOptionC .ledgerRow {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .churvoxOptionC .cocPanel {
