@@ -139,6 +139,16 @@ def install(module):
 
         return auth_user_response(user_doc, access_token)
 
+    # FastAPI must receive real annotation objects here. This file uses
+    # `from __future__ import annotations`, and this function is nested,
+    # so leaving annotations as strings makes FastAPI treat user_data,
+    # response and request as query parameters on the live patched route.
+    fast_login.__annotations__ = {
+        "user_data": UserLogin,
+        "response": Response,
+        "request": Request,
+    }
+
     remove_route(app, "/api/auth/login", "POST")
     app.add_api_route("/api/auth/login", fast_login, methods=["POST"])
     INSTALLED.add(name)
