@@ -2,17 +2,17 @@
 html,
 body,
 #root {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  overflow-x: hidden;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: clip !important;
 }
 
 html:has(.churvoxOptionC),
 body:has(.churvoxOptionC),
 body:has(.churvoxOptionC) #root {
-  width: 100vw !important;
-  max-width: 100vw !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-width: 0 !important;
   overflow-x: clip !important;
 }
@@ -20,7 +20,7 @@ body:has(.churvoxOptionC) #root {
 body:has(.churvoxOptionC) {
   margin: 0;
   position: relative;
-  max-width: 100vw;
+  max-width: 100%;
   overflow-x: clip !important;
 }
 
@@ -44,8 +44,8 @@ body:has(.churvoxOptionC) * {
 }
 
 .churvoxOptionC {
-  width: 100vw !important;
-  max-width: 100vw !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-width: 0 !important;
   overflow-x: clip !important;
   contain: inline-size;
@@ -189,4 +189,71 @@ body:has(.churvoxOptionC) * {
 .churvoxOptionC iframe {
   min-width: 0 !important;
   max-width: 100% !important;
+}
+
+/* Final audit clamp: document scrollWidth includes oversized scroll-container contents,
+   so the top nav and proof rail must wrap inside the viewport instead of scrolling inline. */
+html:has(.churvoxOptionC),
+body:has(.churvoxOptionC),
+body:has(.churvoxOptionC) #root,
+body:has(.churvoxOptionC) main.churvoxOptionC {
+  inline-size: 100% !important;
+  max-inline-size: 100% !important;
+  overflow-inline: clip !important;
+}
+
+body:has(.churvoxOptionC) main.churvoxOptionC {
+  contain: layout paint inline-size !important;
+}
+
+.churvoxOptionC .cocBar,
+.churvoxOptionC .workspace,
+.churvoxOptionC .cocPage,
+.churvoxOptionC .cocPanel,
+.churvoxOptionC .launchNavProof,
+.churvoxOptionC .cocNav {
+  contain: layout paint inline-size !important;
+  overflow-inline: clip !important;
+}
+
+.churvoxOptionC .cocNav {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  padding-inline: 8px !important;
+}
+
+.churvoxOptionC .cocNav button {
+  display: inline-flex !important;
+  justify-content: center !important;
+  inline-size: 100% !important;
+  min-inline-size: 0 !important;
+  max-inline-size: 100% !important;
+  padding-inline: 8px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.churvoxOptionC .launchNavProof {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 1100px) {
+  .churvoxOptionC .cocNav {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .churvoxOptionC .cocNav,
+  .churvoxOptionC .launchNavProof {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .churvoxOptionC .cocNav button,
+  .churvoxOptionC .launchNavProof span {
+    font-size: 9px !important;
+    padding-inline: 4px !important;
+  }
 }
