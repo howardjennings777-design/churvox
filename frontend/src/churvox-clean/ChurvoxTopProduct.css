@@ -1,0 +1,350 @@
+/* Final product-grade Churvox layer.
+   Loaded last. Visual only: no backend or page-logic changes. */
+
+.chxApp {
+  background:
+    radial-gradient(circle at 6% -8%, rgba(240, 100, 47, 0.18), transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(16, 21, 19, 0.15), transparent 30%),
+    linear-gradient(180deg, #fcfdf9 0%, #eef2ec 100%) !important;
+}
+
+.chxStage {
+  border-radius: 28px !important;
+}
+
+.chxPanel {
+  position: relative !important;
+}
+
+.chxPanel::after,
+.chxPlan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.chxPanelHead {
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,.05) !important;
+}
+
+.chxPanelBody {
+  background: radial-gradient(circle at 0 0, rgba(240,100,47,.045), transparent 38%) !important;
+}
+
+/* Premium Plans page: product pricing screen, not skinny cards on an empty sheet. */
+.chxPlans {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.chxPlansGrid {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-rows: minmax(0, 1fr) minmax(210px, 0.48fr) !important;
+  gap: 14px !important;
+  overflow: hidden !important;
+}
+
+.chxPlan {
+  position: relative !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(16,21,19,.10) !important;
+  border-radius: 28px !important;
+  padding: 22px !important;
+  background:
+    radial-gradient(circle at 100% -20%, rgba(240,100,47,.14), transparent 36%),
+    linear-gradient(180deg, #ffffff 0%, #f6f8f4 100%) !important;
+  box-shadow: 0 18px 46px rgba(16,21,19,.10) !important;
+  align-content: start !important;
+}
+
+.chxPlan::before {
+  height: 9px !important;
+  background: linear-gradient(90deg, rgba(240,100,47,.82), rgba(240,100,47,.18)) !important;
+}
+
+.chxPlan:nth-child(1),
+.chxPlan:nth-child(2),
+.chxPlan:nth-child(3),
+.chxPlan:nth-child(4) {
+  grid-row: 1 / 2 !important;
+}
+
+.chxPlan:nth-child(5) {
+  grid-column: 1 / 3 !important;
+  grid-row: 2 / 3 !important;
+  display: grid !important;
+  grid-template-columns: 0.62fr 1fr !important;
+  column-gap: 20px !important;
+  align-items: start !important;
+}
+
+.chxPlan:nth-child(6) {
+  grid-column: 3 / 5 !important;
+  grid-row: 2 / 3 !important;
+  display: grid !important;
+  grid-template-columns: 0.62fr 1fr !important;
+  column-gap: 20px !important;
+  align-items: start !important;
+}
+
+.chxPlan.popular {
+  background:
+    radial-gradient(circle at 105% -15%, rgba(240,100,47,.36), transparent 42%),
+    linear-gradient(150deg, #101513 0%, #19251f 56%, #283a31 100%) !important;
+  border-color: rgba(240,100,47,.50) !important;
+  box-shadow: 0 28px 80px rgba(16,21,19,.25), 0 18px 48px rgba(240,100,47,.16) !important;
+  color: #fff !important;
+  transform: translateY(-4px) !important;
+}
+
+.chxPlan.popular .chxPill,
+.chxPlan.popular p,
+.chxPlan.popular li,
+.chxPlan.popular small {
+  color: rgba(240,246,242,.88) !important;
+}
+
+.chxPlan.popular h2,
+.chxPlan.popular b,
+.chxPlan.popular strong {
+  color: #fff !important;
+}
+
+.chxPlan.popular .chxPill {
+  background: rgba(255,255,255,.12) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+
+.chxPlan em {
+  position: absolute !important;
+  top: 18px !important;
+  right: 18px !important;
+}
+
+.chxPlan .chxPill {
+  width: fit-content !important;
+  margin-bottom: 8px !important;
+}
+
+.chxPlan h2 {
+  font-size: clamp(34px, 3.1vw, 52px) !important;
+  letter-spacing: -0.085em !important;
+  margin-top: 4px !important;
+}
+
+.chxPlan small {
+  margin-top: 3px !important;
+  font-size: 12px !important;
+}
+
+.chxPlan p {
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  max-width: 280px !important;
+}
+
+.chxPlan ul {
+  margin-top: 2px !important;
+  display: grid !important;
+  gap: 7px !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+}
+
+.chxPlan li {
+  padding-left: 2px !important;
+}
+
+.chxPlan:nth-child(5) ul,
+.chxPlan:nth-child(6) ul {
+  grid-column: 2 / 3 !important;
+  grid-row: 1 / span 5 !important;
+  align-self: center !important;
+}
+
+/* Page-specific premium shaping */
+.chxAi {
+  grid-template-columns: 0.95fr 1.05fr !important;
+  grid-template-rows: 128px minmax(0, 1fr) 205px !important;
+}
+
+.chxAi .pulsePanel {
+  grid-column: 1 / -1 !important;
+}
+
+.chxAi .pulsePanel .chxPanelBody {
+  padding: 12px !important;
+}
+
+.chxPulse {
+  height: 100% !important;
+}
+
+.chxPulse .chxMini {
+  border-radius: 18px !important;
+  min-height: 0 !important;
+}
+
+.chxCommand .queue .chxCard,
+.chxJobs .chxRow,
+.chxQuotes .chxRow,
+.chxInvoices .chxRow {
+  border-radius: 18px !important;
+}
+
+.chxCommand .queue .chxCardGrid {
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)) !important;
+}
+
+.chxJobs .chxJobLane,
+.chxQuotes .chxLane,
+.chxInvoices .chxLane {
+  background:
+    linear-gradient(180deg, rgba(241,245,239,.96), rgba(231,237,229,.92)) !important;
+  border-radius: 22px !important;
+  padding: 12px !important;
+}
+
+.chxJobs .chxJobLane h3,
+.chxQuotes .chxLane h3,
+.chxInvoices .chxLane h3 {
+  font-size: 16px !important;
+  color: #111916 !important;
+}
+
+.chxClients .clientList .chxPanelBody,
+.chxTeam .peopleList .chxPanelBody,
+.chxInvoices .invoiceList .chxPanelBody,
+.chxQuotes .pipeline .chxPanelBody {
+  padding: 12px !important;
+}
+
+.chxClients .chxClientRow {
+  min-height: 82px !important;
+  background:
+    linear-gradient(180deg, #fff 0%, #f5f7f3 100%) !important;
+}
+
+.chxClients .chxClientRow h3 {
+  font-size: 15px !important;
+  line-height: 1.1 !important;
+}
+
+.chxClients .chxClientRow p {
+  max-height: 30px !important;
+  overflow: hidden !important;
+}
+
+.chxWorkers .mapPanel {
+  box-shadow: 0 22px 64px rgba(16,21,19,.13) !important;
+}
+
+.chxWorkers .chxMap {
+  border-radius: 22px !important;
+}
+
+.chxPayroll .hoursPanel .chxPanelBody,
+.chxXero .chxPanelBody {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(240,100,47,.08), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,.4), transparent) !important;
+}
+
+.chxTableRow {
+  border-radius: 17px !important;
+}
+
+.chxXero .chxNotice,
+.chxInvoices .chxNotice,
+.chxPayroll .chxNotice {
+  border-left: 6px solid #f0642f !important;
+}
+
+.chxSettings .chxFields input,
+.chxSettings .chxFields select,
+.chxSettings .chxFields textarea,
+.chxClients .chxFields input,
+.chxClients .chxFields select,
+.chxClients .chxFields textarea,
+.chxJobs .chxFields input,
+.chxJobs .chxFields select,
+.chxJobs .chxFields textarea {
+  min-height: 42px !important;
+}
+
+/* Make the whole shell feel designed, not default browser-sized. */
+@media (min-width: 1101px) {
+  .chxShell {
+    width: min(1680px, calc(100vw - 28px)) !important;
+  }
+
+  .chxStage {
+    min-height: 0 !important;
+  }
+
+  .chxPanelBody > .chxScroll,
+  .chxJobLane .chxScroll,
+  .chxLane .chxScroll {
+    scrollbar-gutter: stable !important;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 1101px) {
+  .chxPlansGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important;
+    overflow-y: auto !important;
+  }
+
+  .chxPlan:nth-child(1),
+  .chxPlan:nth-child(2),
+  .chxPlan:nth-child(3),
+  .chxPlan:nth-child(4),
+  .chxPlan:nth-child(5),
+  .chxPlan:nth-child(6) {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .chxPlan:nth-child(5) ul,
+  .chxPlan:nth-child(6) ul {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .chxPlans {
+    overflow: visible !important;
+  }
+
+  .chxPlansGrid {
+    height: auto !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+    overflow: visible !important;
+  }
+
+  .chxPlan:nth-child(n) {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    transform: none !important;
+  }
+
+  .chxPlan:nth-child(5) ul,
+  .chxPlan:nth-child(6) ul {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+}
