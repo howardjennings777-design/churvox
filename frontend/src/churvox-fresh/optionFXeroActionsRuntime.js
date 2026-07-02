@@ -21,6 +21,10 @@ function api(endpoint) {
   return `${API_BASE || ''}/api${endpoint}`;
 }
 
+function allowManualXeroStatus() {
+  window.__CHURVOX_MANUAL_XERO_STATUS_UNTIL__ = Date.now() + 5000;
+}
+
 function ensureStyle() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
@@ -96,6 +100,7 @@ async function connectXero() {
 }
 
 async function refreshStatus() {
+  allowManualXeroStatus();
   setLog('Refreshing Xero status...');
   try {
     const body = await request('/xero/status', { method: 'GET' });
