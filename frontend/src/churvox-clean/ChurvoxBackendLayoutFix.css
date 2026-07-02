@@ -3,6 +3,11 @@
 }
 
 /* Live backend data can be large. Keep pages controlled instead of letting cards flood the screen. */
+.cvxPanel.cvxWide {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+
 .cvxPanel.cvxWide .cvxRecordGrid {
   max-height: 520px !important;
   overflow-y: auto !important;
@@ -114,13 +119,157 @@
 }
 
 .cvxPanel.cvxWide:first-child:after {
-  content: "Scroll inside this work tray for more records";
+  content: "Live records stay inside this work tray";
   display: block;
   margin-top: 10px;
   color: var(--cv-old-muted);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.02em;
+}
+
+/* PAGE-SPECIFIC LAYOUTS — stop every backend page looking the same. */
+.cvxClean:has(.cvxCleanNav button:nth-child(3).active) .cvxPageGrid,
+.cvxClean:has(.cvxCleanNav button:nth-child(4).active) .cvxPageGrid,
+.cvxClean:has(.cvxCleanNav button:nth-child(5).active) .cvxPageGrid,
+.cvxClean:has(.cvxCleanNav button:nth-child(6).active) .cvxPageGrid,
+.cvxClean:has(.cvxCleanNav button:nth-child(7).active) .cvxPageGrid,
+.cvxClean:has(.cvxCleanNav button:nth-child(8).active) .cvxPageGrid,
+.cvxClean:has(.cvxCleanNav button:nth-child(9).active) .cvxPageGrid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr) !important;
+  align-items: start !important;
+}
+
+/* Jobs = dispatch board: one strong board, form/proof underneath. */
+.cvxClean:has(.cvxCleanNav button:nth-child(3).active) .cvxCleanWork {
+  background:
+    linear-gradient(90deg, rgba(16,21,19,.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(16,21,19,.045) 1px, transparent 1px) !important;
+  background-size: 34px 34px !important;
+  border-radius: 28px !important;
+  padding: 6px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(3).active) .cvxPageGrid > .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+  max-height: 430px !important;
+  border-radius: 30px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(3).active) .cvxPageGrid > .cvxPanel:first-child .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)) !important;
+  max-height: 310px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(3).active) .cvxRecordCard {
+  background: linear-gradient(180deg, #fff, #f5f7f2) !important;
+  border-radius: 20px !important;
+  border-left: 5px solid var(--cv-old-orange) !important;
+}
+
+/* Clients = directory workspace: compact address-book cards and tighter memory. */
+.cvxClean:has(.cvxCleanNav button:nth-child(4).active) .cvxPageGrid > .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+  max-height: 460px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(4).active) .cvxPageGrid > .cvxPanel:first-child .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)) !important;
+  max-height: 330px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(4).active) .cvxRecordCard {
+  min-height: 140px !important;
+  border-radius: 24px 24px 18px 18px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(4).active) .cvxRecordCard h3 {
+  font-size: 17px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(4).active) .cvxRecordCard p {
+  max-height: 34px !important;
+  min-height: 34px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(4).active) .cvxPageGrid > .cvxPanel:nth-child(4) {
+  grid-column: 1 / -1 !important;
+  max-height: 310px !important;
+}
+
+/* Command = decision desk: darker decision cards so it does not feel like Clients/Jobs. */
+.cvxClean:has(.cvxCleanNav button:nth-child(2).active) .cvxPageGrid > .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+  background: linear-gradient(180deg, #111814, #1c2924) !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(2).active) .cvxPageGrid > .cvxPanel:first-child .cvxRecordCard {
+  background: linear-gradient(180deg, #fff7f2, #f7f8f4) !important;
+  border-left: 6px solid var(--cv-old-orange) !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(2).active) .cvxPageGrid > .cvxPanel:first-child h2 {
+  color: #fff !important;
+}
+
+/* Quotes and invoices = document trays. */
+.cvxClean:has(.cvxCleanNav button:nth-child(5).active) .cvxPageGrid > .cvxPanel:first-child,
+.cvxClean:has(.cvxCleanNav button:nth-child(6).active) .cvxPageGrid > .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+  max-height: 430px !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(5).active) .cvxRecordCard,
+.cvxClean:has(.cvxCleanNav button:nth-child(6).active) .cvxRecordCard {
+  border-radius: 16px !important;
+  box-shadow: 0 10px 22px rgba(16,21,19,.07) !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(6).active) .cvxRecordCard:before {
+  content: "Draft";
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  color: rgba(16,21,19,.22);
+  font-weight: 950;
+  font-size: 24px;
+  transform: rotate(-8deg);
+}
+
+/* Team/payroll = table and people systems, not card clones. */
+.cvxClean:has(.cvxCleanNav button:nth-child(7).active) .cvxPageGrid > .cvxPanel:first-child,
+.cvxClean:has(.cvxCleanNav button:nth-child(8).active) .cvxPageGrid > .cvxPanel:nth-child(2) {
+  grid-column: 1 / -1 !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(8).active) .cvxTable div {
+  background: #fff !important;
+  border-left: 5px solid var(--cv-old-orange) !important;
+}
+
+/* Workers = map-first operations screen. */
+.cvxClean:has(.cvxCleanNav button:nth-child(9).active) .cvxPageGrid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, .55fr) !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(9).active) .cvxPageGrid > .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(9).active) .cvxGoogleMap {
+  min-height: 470px !important;
+}
+
+/* AI guide gets a control-room feel. */
+.cvxClean:has(.cvxCleanNav button:nth-child(1).active) .cvxMetrics article:first-child {
+  background: linear-gradient(135deg, #101513, #24352e) !important;
+  color: #fff !important;
+}
+
+.cvxClean:has(.cvxCleanNav button:nth-child(1).active) .cvxMetrics article:first-child span,
+.cvxClean:has(.cvxCleanNav button:nth-child(1).active) .cvxMetrics article:first-child small,
+.cvxClean:has(.cvxCleanNav button:nth-child(1).active) .cvxMetrics article:first-child b {
+  color: #fff !important;
 }
 
 /* On laptop/tablet widths, keep the app readable and stop full-width walls. */
@@ -136,6 +285,10 @@
 }
 
 @media (max-width: 780px) {
+  .cvxClean:has(.cvxCleanNav button.active) .cvxPageGrid {
+    grid-template-columns: 1fr !important;
+  }
+
   .cvxPanel.cvxWide .cvxRecordGrid,
   .cvxPanel.cvxWide .cvxMiniList {
     grid-template-columns: 1fr !important;
