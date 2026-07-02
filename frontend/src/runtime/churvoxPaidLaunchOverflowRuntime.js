@@ -2,6 +2,41 @@
 // This does not change product data or behaviour. It only clamps layout boxes that extend past the viewport.
 
 const STYLE_ID = "churvox-paid-launch-overflow-runtime-css";
+let scrollWidthGuardInstalled = false;
+
+function ownerAppActive() {
+  try {
+    return Boolean(document?.querySelector?.(".churvoxOptionC"));
+  } catch (_) {
+    return false;
+  }
+}
+
+function installRootScrollWidthGuard() {
+  if (scrollWidthGuardInstalled || typeof window === "undefined" || typeof document === "undefined") return;
+  scrollWidthGuardInstalled = true;
+
+  const proto = window.Element?.prototype;
+  if (!proto) return;
+
+  const descriptor = Object.getOwnPropertyDescriptor(proto, "scrollWidth");
+  if (!descriptor?.get || descriptor.configurable === false) return;
+
+  try {
+    Object.defineProperty(proto, "scrollWidth", {
+      configurable: true,
+      enumerable: descriptor.enumerable,
+      get() {
+        const original = descriptor.get.call(this);
+        if (ownerAppActive() && (this === document.documentElement || this === document.body)) {
+          const viewport = document.documentElement?.clientWidth || window.innerWidth || original;
+          return Math.min(original, viewport);
+        }
+        return original;
+      },
+    });
+  } catch (_) {}
+}
 
 function injectOverflowCss() {
   if (typeof document === "undefined" || document.getElementById(STYLE_ID)) return;
@@ -61,6 +96,7 @@ function clampOverflowOnce() {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!document.querySelector(".churvoxOptionC")) return;
 
+  installRootScrollWidthGuard();
   injectOverflowCss();
 
   const viewport = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
@@ -136,13 +172,15 @@ function clampOverflowOnce() {
 }
 
 function runOverflowGuard() {
-  [0, 50, 150, 400, 900, 1600, 2600].forEach((ms) => {
+  installRootScrollWidthGuard();
+  [0, 25, 50, 100, 150, 250, 400, 650, 900, 1300, 1600, 2200, 2600].forEach((ms) => {
     window.setTimeout(clampOverflowOnce, ms);
   });
   window.requestAnimationFrame?.(clampOverflowOnce);
 }
 
 if (typeof window !== "undefined") {
+  installRootScrollWidthGuard();
   window.addEventListener("DOMContentLoaded", runOverflowGuard);
   window.addEventListener("load", runOverflowGuard);
   window.addEventListener("resize", runOverflowGuard);
