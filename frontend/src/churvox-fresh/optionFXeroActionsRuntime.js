@@ -59,7 +59,7 @@ function setStatus(connected, label = '') {
   if (pill) {
     pill.classList.toggle('live', xeroConnected);
     pill.classList.toggle('off', !xeroConnected);
-    pill.textContent = xeroConnected ? `Connected${label ? `: ${label}` : ''}` : (label || 'Not connected');
+    pill.textContent = xeroConnected ? `Connected${label ? `: ${label}` : ''}` : (label || 'Manual refresh available');
   }
   root.querySelector('[data-xero="sync"]')?.toggleAttribute('disabled', !xeroConnected);
 }
@@ -107,8 +107,8 @@ async function refreshStatus() {
     setLog('Xero status refreshed.', body);
   } catch (error) {
     statusLoaded = true;
-    setStatus(false, 'Status check failed');
-    setLog(`Xero status failed: ${error.message}`);
+    setStatus(false, 'Status check unavailable');
+    setLog(`Xero status unavailable: ${error.message}`);
   }
 }
 
@@ -141,13 +141,13 @@ function render() {
     panelNode.innerHTML = `
       <h3>Xero actions</h3>
       <p>Connect, refresh status, or request a latest draft invoice sync. Sync still follows the owner-approved draft-only rule.</p>
-      <span class="xeroStatusPill off">Checking Xero status...</span>
+      <span class="xeroStatusPill off">Manual Xero refresh available</span>
       <div class="xeroButtons"><button type="button" data-xero="connect">Sync to Xero setup</button><button type="button" data-xero="refresh">Refresh Xero status</button><button type="button" data-xero="sync" disabled>Sync to Xero latest draft</button></div>
-      <pre>Checking live status...</pre>
+      <pre>Ready. Live backend refresh runs only when owner requests it.</pre>
     `;
     root.appendChild(panelNode);
   }
-  if (!statusLoaded) refreshStatus();
+  statusLoaded = true;
 }
 
 function handleClick(event) {
