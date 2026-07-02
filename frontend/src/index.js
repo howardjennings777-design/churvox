@@ -77,6 +77,7 @@ import './churvox-fresh/optionFApprovalExecutionRuntime';
 import './churvox-fresh/optionFInvoiceVaultRuntime.css';
 import './styles/churvoxResponsiveFit.css';
 import './styles/churvoxPaidLaunchGuard.css';
+import './runtime/churvoxPaidLaunchOverflowRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
