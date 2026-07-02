@@ -1,4 +1,7 @@
-import FreshAppSpecific from "./FreshAppSpecific";
-import "../churvox-clean/ChurvoxPremiumCorrection.css";
+import FreshAppBackend from "./FreshAppBackend";
 
-export default FreshAppSpecific;
+function FreshApp() {
+  return <FreshAppBackend />;
+}
+
+export default FreshApp;
