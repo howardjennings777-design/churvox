@@ -71,8 +71,11 @@
 .cvxGoogleMap {
   position: relative !important;
   overflow: hidden !important;
-  padding: 0 !important;
   display: block !important;
+  min-height: 420px !important;
+  border: 1px solid rgba(16, 21, 19, 0.12) !important;
+  border-radius: 24px !important;
+  background: #eef2ed !important;
 }
 
 .cvxGoogleMap iframe {
@@ -110,6 +113,51 @@
   content: none !important;
 }
 
+.cvxProofGrid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.cvxProofGrid article {
+  min-height: 112px !important;
+  border: 1px dashed rgba(240, 100, 47, 0.32) !important;
+  border-radius: 18px !important;
+  background: var(--cv-old-warm) !important;
+  padding: 13px !important;
+  display: grid !important;
+  align-content: center !important;
+}
+
+.cvxProofGrid b {
+  color: var(--cv-old-orange-dark) !important;
+  font-size: 15px !important;
+}
+
+.cvxProofGrid span {
+  margin-top: 5px !important;
+  color: var(--cv-old-muted) !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.cvxFormGrid textarea {
+  width: 100% !important;
+  min-height: 96px !important;
+  border: 1px solid rgba(16, 21, 19, 0.14) !important;
+  border-radius: 15px !important;
+  background: #fff !important;
+  color: var(--cv-old-ink) !important;
+  padding: 12px !important;
+  font: inherit !important;
+  font-weight: 820 !important;
+  resize: vertical !important;
+}
+
+.cvxFormGrid label:has(textarea) {
+  grid-column: 1 / -1 !important;
+}
+
 .cvxNotice,
 .cvxMiniList div,
 .cvxMetrics article,
@@ -131,5 +179,9 @@
   .cvxPanel .cvxEyebrow,
   .cvxPlans .cvxEyebrow {
     margin-top: -59px !important;
+  }
+
+  .cvxGoogleMap {
+    min-height: 310px !important;
   }
 }
