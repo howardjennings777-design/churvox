@@ -55,11 +55,18 @@ function run() {
 }
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('load', () => setTimeout(run, 60));
-  window.addEventListener('hashchange', () => setTimeout(run, 80));
-  window.addEventListener('popstate', () => setTimeout(run, 80));
-  document.addEventListener('click', () => setTimeout(run, 120), true);
-  setInterval(run, 900);
+  window.addEventListener('DOMContentLoaded', () => setTimeout(run, 0));
+  window.addEventListener('load', () => setTimeout(run, 20));
+  window.addEventListener('hashchange', () => setTimeout(run, 40));
+  window.addEventListener('popstate', () => setTimeout(run, 40));
+  document.addEventListener('click', () => setTimeout(run, 40), true);
+  const observer = new MutationObserver(() => run());
+  window.addEventListener('DOMContentLoaded', () => {
+    if (document.body) observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true });
+    run();
+  });
+  setInterval(run, 500);
+  setTimeout(run, 0);
 }
 
 export {};
