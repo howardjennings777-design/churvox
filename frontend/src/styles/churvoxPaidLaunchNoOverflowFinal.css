@@ -1,4 +1,5 @@
 /* Final paid launch no-overflow shell. Keep the real nav visible, remove legacy docks, keep safe nav proof labels. */
+/* DEPLOY_TRIGGER: paid-launch-clean-build-20260702 */
 html:has(.churvoxOptionC),
 body:has(.churvoxOptionC),
 body:has(.churvoxOptionC) #root {
