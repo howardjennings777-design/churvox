@@ -77,6 +77,7 @@ import './churvox-fresh/optionFApprovalExecutionRuntime';
 import './churvox-fresh/optionFInvoiceVaultRuntime.css';
 import './styles/churvoxResponsiveFit.css';
 import './churvox-fresh/churvoxRestoreAppBack.css';
+import './churvox-fresh/churvoxOwnerPolishPass.css';
 // Retired audit imports: these forced the duplicate launch proof rail and circle nav over the live app.
 // import './styles/churvoxPaidLaunchGuard.css';
 // import './styles/churvoxPaidLaunchNoOverflowFinal.css';
