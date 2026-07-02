@@ -1,5 +1,16 @@
 /* Page-detail cleanup after restored owner shell. CSS-only visual guard. */
 
+body:has(.churvoxOptionC) {
+  overflow-x: hidden !important;
+}
+
+body:has(.churvoxOptionC) .workspace,
+body:has(.churvoxOptionC) .cocPage,
+body:has(.churvoxOptionC) .cocPanel {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
 .churvoxOptionC .cocPage > .toolbar {
   grid-column: 1 / -1 !important;
   align-self: start !important;
@@ -140,6 +151,26 @@ body:has(#option-f-xero-actions-panel) .churvoxOptionC .workspace .cocPage > .co
 }
 
 @media (max-width: 720px) {
+  .churvoxOptionC {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .churvoxOptionC .cocBar,
+  .churvoxOptionC .workspace,
+  .churvoxOptionC .cocPage,
+  .churvoxOptionC .cocPanel {
+    width: 100% !important;
+    max-width: calc(100vw - 12px) !important;
+  }
+
+  .churvoxOptionC .cocNav {
+    width: 100% !important;
+    max-width: calc(100vw - 12px) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
   .churvoxOptionC .cocPage > .toolbar {
     position: relative !important;
     display: flex !important;
