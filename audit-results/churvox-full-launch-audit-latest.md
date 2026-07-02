@@ -1,23 +1,23 @@
 # Churvox Full Launch Audit
 
 - Site: https://www.churvox.com
-- Commit: 500bb668062fff1da3859a698ae2d0fc52d40d6c
-- Run: 28544528406
+- Commit: 5f9d907a2bbbfd540684c1ecfdf337a57ea0cd12
+- Run: 28555864756
 - Status code: 0
-- Time: Wed Jul  1 20:08:29 UTC 2026
+- Time: Thu Jul  2 00:02:24 UTC 2026
 
 ## Output
 ```txt
 
 Running 82 tests using 1 worker
 
-  ✓   1 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: / (1.8s)
-  ✓   2 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /features (1.4s)
-  ✓   3 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /pricing (1.6s)
-  ✓   4 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /login (1.4s)
-  ✓   5 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /signup (1.4s)
-  ✓   6 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /privacy (1.2s)
-  ✓   7 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /terms (1.2s)
+  ✓   1 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: / (1.6s)
+  ✓   2 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /features (1.3s)
+  ✓   3 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /pricing (1.5s)
+  ✓   4 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /login (1.3s)
+  ✓   5 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /signup (1.3s)
+  ✓   6 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /privacy (1.3s)
+  ✓   7 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /terms (1.0s)
   -   8 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: setupassistant
   -   9 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: command
   -  10 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: aioperator
@@ -52,13 +52,13 @@ Running 82 tests using 1 worker
   -  39 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:161:3 › Churvox full launch owner audit › sidebar keeps full launch feature navigation
   -  40 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:184:3 › Churvox full launch worker audit › worker jobs page is launch-clean and worker-scoped
   -  41 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:191:3 › Churvox full launch worker audit › worker job detail has real field controls when a job is assigned
-  ✓  42 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: / (2.1s)
-  ✓  43 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /features (2.1s)
+  ✓  42 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: / (2.0s)
+  ✓  43 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /features (2.0s)
   ✓  44 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /pricing (2.2s)
-  ✓  45 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /login (1.8s)
-  ✓  46 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /signup (1.8s)
-  ✓  47 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /privacy (1.3s)
-  ✓  48 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /terms (1.2s)
+  ✓  45 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /login (1.6s)
+  ✓  46 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /signup (1.7s)
+  ✓  47 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /privacy (1.1s)
+  ✓  48 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /terms (1.0s)
   -  49 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: setupassistant
   -  50 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: command
   -  51 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: aioperator
@@ -95,5 +95,5 @@ Running 82 tests using 1 worker
   -  82 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:191:3 › Churvox full launch worker audit › worker job detail has real field controls when a job is assigned
 
   68 skipped
-  14 passed (42.7s)
+  14 passed (40.8s)
 ```
