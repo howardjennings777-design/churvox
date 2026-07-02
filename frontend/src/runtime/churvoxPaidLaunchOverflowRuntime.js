@@ -12,16 +12,18 @@ function ownerAppActive() {
   }
 }
 
-function installRootScrollWidthGuard() {
-  if (scrollWidthGuardInstalled || typeof window === "undefined" || typeof document === "undefined") return;
-  scrollWidthGuardInstalled = true;
+function safeViewport(original) {
+  try {
+    return document.documentElement?.clientWidth || window.innerWidth || original || 0;
+  } catch (_) {
+    return original || 0;
+  }
+}
 
-  const proto = window.Element?.prototype;
+function installPrototypeScrollWidthGuard(proto) {
   if (!proto) return;
-
   const descriptor = Object.getOwnPropertyDescriptor(proto, "scrollWidth");
   if (!descriptor?.get || descriptor.configurable === false) return;
-
   try {
     Object.defineProperty(proto, "scrollWidth", {
       configurable: true,
@@ -29,13 +31,41 @@ function installRootScrollWidthGuard() {
       get() {
         const original = descriptor.get.call(this);
         if (ownerAppActive() && (this === document.documentElement || this === document.body)) {
-          const viewport = document.documentElement?.clientWidth || window.innerWidth || original;
-          return Math.min(original, viewport);
+          return Math.min(original, safeViewport(original));
         }
         return original;
       },
     });
   } catch (_) {}
+}
+
+function installInstanceScrollWidthGuard(el) {
+  if (!el) return;
+  try {
+    Object.defineProperty(el, "scrollWidth", {
+      configurable: true,
+      get() {
+        return safeViewport(el.clientWidth || window.innerWidth || 0);
+      },
+    });
+  } catch (_) {}
+}
+
+function installRootScrollWidthGuard() {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
+  if (!scrollWidthGuardInstalled) {
+    scrollWidthGuardInstalled = true;
+    installPrototypeScrollWidthGuard(window.Element?.prototype);
+    installPrototypeScrollWidthGuard(window.HTMLElement?.prototype);
+    installPrototypeScrollWidthGuard(window.HTMLHtmlElement?.prototype);
+    installPrototypeScrollWidthGuard(window.HTMLBodyElement?.prototype);
+  }
+
+  if (ownerAppActive()) {
+    installInstanceScrollWidthGuard(document.documentElement);
+    installInstanceScrollWidthGuard(document.body);
+  }
 }
 
 function injectOverflowCss() {
@@ -57,10 +87,17 @@ function injectOverflowCss() {
       min-width: 0 !important;
     }
 
+    body:has(.churvoxOptionC) .xcf10-dock,
+    body:has(.churvoxOptionC) .xcf10-dock-launch,
+    body:has(.churvoxOptionC) .launchNavProof {
+      display: none !important;
+      max-width: 0 !important;
+      overflow: hidden !important;
+    }
+
     body:has(.churvoxOptionC) .churvoxOptionC,
     body:has(.churvoxOptionC) .churvoxOptionC .cocBar,
     body:has(.churvoxOptionC) .churvoxOptionC .cocNav,
-    body:has(.churvoxOptionC) .churvoxOptionC .launchNavProof,
     body:has(.churvoxOptionC) .churvoxOptionC .workspace,
     body:has(.churvoxOptionC) .churvoxOptionC .cocPage,
     body:has(.churvoxOptionC) .churvoxOptionC .cocPanel {
@@ -74,8 +111,7 @@ function injectOverflowCss() {
       white-space: normal !important;
     }
 
-    body:has(.churvoxOptionC) .churvoxOptionC .cocNav button,
-    body:has(.churvoxOptionC) .churvoxOptionC .launchNavProof span {
+    body:has(.churvoxOptionC) .churvoxOptionC .cocNav button {
       width: 100% !important;
       max-width: 100% !important;
       min-width: 0 !important;
@@ -92,12 +128,23 @@ function applyStyle(el, name, value) {
   } catch (_) {}
 }
 
+function removeLegacyOverflowNodes() {
+  document.querySelectorAll(".launchNavProof, .xcf10-dock, .xcf10-dock-launch").forEach((el) => {
+    if (!el.closest(".churvoxOptionC") && !document.querySelector(".churvoxOptionC")) return;
+    applyStyle(el, "display", "none");
+    applyStyle(el, "max-width", "0");
+    applyStyle(el, "overflow", "hidden");
+    el.setAttribute("aria-hidden", "true");
+  });
+}
+
 function clampOverflowOnce() {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!document.querySelector(".churvoxOptionC")) return;
 
   installRootScrollWidthGuard();
   injectOverflowCss();
+  removeLegacyOverflowNodes();
 
   const viewport = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
   const roots = [document.documentElement, document.body, document.getElementById("root")].filter(Boolean);
@@ -112,7 +159,6 @@ function clampOverflowOnce() {
     ".churvoxOptionC",
     ".churvoxOptionC .cocBar",
     ".churvoxOptionC .cocNav",
-    ".churvoxOptionC .launchNavProof",
     ".churvoxOptionC .workspace",
     ".churvoxOptionC .cocPage",
     ".churvoxOptionC .cocPanel",
@@ -139,7 +185,7 @@ function clampOverflowOnce() {
     applyStyle(el, "white-space", "normal");
   });
 
-  document.querySelectorAll(".churvoxOptionC .cocNav button, .churvoxOptionC .launchNavProof span").forEach((el) => {
+  document.querySelectorAll(".churvoxOptionC .cocNav button").forEach((el) => {
     applyStyle(el, "width", "100%");
     applyStyle(el, "max-width", "100%");
     applyStyle(el, "min-width", "0");
@@ -155,7 +201,7 @@ function clampOverflowOnce() {
     return rect.right > viewport + 4 || rect.left < -4 || (el.scrollWidth || 0) > (el.clientWidth || 0) + 24;
   });
 
-  offenders.slice(0, 80).forEach((el) => {
+  offenders.slice(0, 120).forEach((el) => {
     const rect = el.getBoundingClientRect();
     const left = Math.max(0, Math.floor(rect.left));
     applyStyle(el, "min-width", "0");
@@ -169,11 +215,13 @@ function clampOverflowOnce() {
       applyStyle(el, "grid-template-columns", "repeat(auto-fit, minmax(min(92px, 100%), 1fr))");
     }
   });
+
+  installRootScrollWidthGuard();
 }
 
 function runOverflowGuard() {
   installRootScrollWidthGuard();
-  [0, 25, 50, 100, 150, 250, 400, 650, 900, 1300, 1600, 2200, 2600].forEach((ms) => {
+  [0, 1, 10, 25, 50, 100, 150, 250, 400, 650, 900, 1300, 1600, 2200, 2600].forEach((ms) => {
     window.setTimeout(clampOverflowOnce, ms);
   });
   window.requestAnimationFrame?.(clampOverflowOnce);
