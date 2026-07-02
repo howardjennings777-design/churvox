@@ -1,0 +1,129 @@
+/* Header nav integration. Visual-only: nav pills feel built into the Churvox OS header. */
+
+.churvoxOptionC {
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  gap: 8px !important;
+}
+
+.churvoxOptionC .cocBar {
+  min-height: 132px !important;
+  align-items: start !important;
+  padding: 18px 22px 70px !important;
+  overflow: hidden !important;
+  background:
+    linear-gradient(118deg, rgba(255,255,255,.07) 0 1px, transparent 1px 9px),
+    linear-gradient(145deg, rgba(240,100,47,.20), transparent 35%),
+    radial-gradient(circle at 93% 12%, rgba(240,100,47,.44), transparent 28%),
+    radial-gradient(circle at 74% 115%, rgba(255,122,61,.24), transparent 30%),
+    linear-gradient(135deg, #0d1110 0%, #151c19 52%, #342016 100%) !important;
+  background-size: auto, auto, auto, auto, auto !important;
+}
+
+.churvoxOptionC .cocBar::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  background:
+    linear-gradient(110deg, transparent 0 30%, rgba(255,255,255,.08) 30% 30.5%, transparent 30.5% 47%, rgba(240,100,47,.14) 47% 47.7%, transparent 47.7%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.055) 0 1px, transparent 1px 18px) !important;
+  opacity: .9 !important;
+}
+
+.churvoxOptionC .cocBar::after {
+  content: "" !important;
+  position: absolute !important;
+  right: -56px !important;
+  top: -88px !important;
+  width: 270px !important;
+  height: 270px !important;
+  border-radius: 999px !important;
+  border: 34px solid rgba(240, 100, 47, .18) !important;
+  box-shadow: 0 0 0 34px rgba(240, 100, 47, .055) !important;
+  pointer-events: none !important;
+}
+
+.churvoxOptionC .brand,
+.churvoxOptionC .title {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.churvoxOptionC .title h1 {
+  text-shadow: 0 18px 42px rgba(0,0,0,.24) !important;
+}
+
+.churvoxOptionC .title p {
+  max-width: 860px !important;
+}
+
+.churvoxOptionC .cocNav {
+  grid-row: 2 !important;
+  position: sticky !important;
+  top: 104px !important;
+  z-index: 34 !important;
+  width: calc(100% - 32px) !important;
+  margin: -64px 16px 0 !important;
+  min-height: 50px !important;
+  padding: 7px !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  border-radius: 999px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.08)),
+    rgba(14, 19, 17, .58) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.16),
+    0 18px 34px rgba(16,21,19,.18) !important;
+  backdrop-filter: blur(18px) saturate(1.25) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.25) !important;
+}
+
+.churvoxOptionC .cocNav button {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  background: rgba(255,255,255,.13) !important;
+  color: rgba(255,255,255,.88) !important;
+  box-shadow: none !important;
+}
+
+.churvoxOptionC .cocNav button:hover,
+.churvoxOptionC .cocNav button:focus-visible {
+  background: rgba(255,255,255,.22) !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+}
+
+.churvoxOptionC .cocNav button.active {
+  border-color: rgba(255,255,255,.20) !important;
+  background: linear-gradient(135deg, #ff7840, #f0642f) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 24px rgba(240,100,47,.34) !important;
+}
+
+.churvoxOptionC .workspace {
+  padding-top: 10px !important;
+}
+
+@media (max-width: 900px) {
+  .churvoxOptionC .cocBar {
+    min-height: 150px !important;
+    grid-template-columns: 1fr !important;
+    padding: 16px 16px 72px !important;
+  }
+
+  .churvoxOptionC .cocNav {
+    position: sticky !important;
+    top: 8px !important;
+    width: calc(100% - 16px) !important;
+    margin: -62px 8px 0 !important;
+    border-radius: 20px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
+  .churvoxOptionC .cocNav button {
+    flex: 0 0 auto !important;
+  }
+}
