@@ -1,5 +1,6 @@
 import React from "react";
 import "../churvox-clean/ChurvoxCleanApp.css";
+import "../churvox-clean/ChurvoxCleanDensity.css";
 
 const nav = ["AI Guide", "Command", "Jobs", "Clients", "Quotes", "Invoices", "Team", "Payroll", "Workers", "Xero", "Settings", "Plans", "Support"];
 const key = (v) => String(v || "").toLowerCase().replace(/\s+/g, "");
