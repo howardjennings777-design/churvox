@@ -1,9 +1,1 @@
-.churvoxOptionC .cocBar {
-  grid-template-columns: 260px minmax(0, 1fr) 190px;
-}
-
-@media (max-width: 1100px) {
-  .churvoxOptionC .cocBar {
-    grid-template-columns: 1fr;
-  }
-}
+/* Retired after paid launch audit pass. Empty import shim kept so builds do not break. */
