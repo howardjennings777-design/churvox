@@ -62,6 +62,7 @@ for _patch in [
     'churvox_auth_login_fast_patch',
     'churvox_worker_login_bridge_patch',
     'churvox_worker_jobs_read_patch',
+    'churvox_worker_assignment_patch',
     'churvox_paid_launch_guard_patch',
     'churvox_admin_recovery_patch',
     'churvox_owner_cockpit_control_patch',
