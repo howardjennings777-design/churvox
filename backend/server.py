@@ -1293,6 +1293,24 @@ async def login(user_data: UserLogin, response: Response, request: Request):
     set_auth_cookies(response, access_token, refresh_token)
 
     updates = {"last_login_at": datetime.now(timezone.utc)}
+
+    # Repair legacy owner records that were accidentally saved as workers.
+    # If a user owns their own business record, they must enter the owner app,
+    # not be redirected into worker view.
+    try:
+        owner_business_id = user_doc.get("business_id") or user_doc.get("_id")
+        is_self_owned_business = str(owner_business_id) == str(user_doc.get("_id"))
+        saved_role = str(user_doc.get("role") or "").strip().lower()
+        if is_self_owned_business and saved_role in {"worker", "payroll", "payroll_user"}:
+            updates["role"] = "employer"
+            updates["user_role"] = "employer"
+            updates["worker_role"] = None
+            updates["is_worker"] = False
+            updates["worker"] = False
+            updates["worker_login"] = False
+    except Exception:
+        pass
+
     if matched_field and matched_field != "password_hash":
         try:
             updates["password_hash"] = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
