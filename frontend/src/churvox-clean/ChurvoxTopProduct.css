@@ -1,11 +1,10 @@
-/* Churvox safe premium reset.
-   Loaded through ChurvoxHeaderIdentity.css.
-   Purpose: remove broken fake heroes/overlap and make every page feel clean, premium and controlled. */
+/* Churvox safe premium product layer.
+   No fake heroes. No fixed pricing rows. No pseudo content. No stretched blank cards. */
 
 .chxApp {
   background:
-    radial-gradient(circle at 8% -12%, rgba(240, 100, 47, 0.16), transparent 32%),
-    radial-gradient(circle at 100% 0%, rgba(12, 17, 14, 0.12), transparent 30%),
+    radial-gradient(circle at 8% -12%, rgba(240, 100, 47, 0.14), transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(12, 17, 14, 0.10), transparent 30%),
     linear-gradient(180deg, #fbfcf8 0%, #eef3ec 100%) !important;
 }
 
@@ -16,7 +15,7 @@
 
 .chxStage {
   border-radius: 30px !important;
-  background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(238,243,236,.76)) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.66), rgba(238,243,236,.78)) !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 22px 60px rgba(16,21,19,.09) !important;
   padding: 10px !important;
 }
@@ -111,7 +110,7 @@
   box-shadow: 0 0 0 4px rgba(240,100,47,.12) !important;
 }
 
-/* Page feel: all pages get stronger primary work areas without fake hero text. */
+/* Stronger primary work areas across all app pages, without changing layout logic. */
 .chxCommand .queue,
 .chxJobs .board,
 .chxClients .clientList,
@@ -206,11 +205,14 @@
   background: linear-gradient(180deg, #fff1ea, #ffe4d7) !important;
 }
 
-/* Plans: no fake CSS hero, no overlap. Clean premium pricing grid. */
+/* Plans: dead-safe premium grid. No pseudo hero, no row stretching, no nth-child layout hacks. */
 .chxPlans {
   display: block !important;
-  overflow: auto !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   border-radius: 30px !important;
+  padding: 2px !important;
 }
 
 .chxPlans::before,
@@ -220,24 +222,37 @@
 }
 
 .chxPlansGrid {
+  height: auto !important;
   min-height: 0 !important;
-  height: 100% !important;
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  grid-template-rows: minmax(360px, 1fr) minmax(190px, .46fr) !important;
-  gap: 14px !important;
-  overflow: hidden !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  grid-auto-rows: auto !important;
+  grid-template-rows: none !important;
+  gap: 16px !important;
+  overflow: visible !important;
+  align-items: stretch !important;
 }
 
-.chxPlan {
-  position: relative !important;
-  min-height: 0 !important;
+.chxPlan,
+.chxPlan:nth-child(1),
+.chxPlan:nth-child(2),
+.chxPlan:nth-child(3),
+.chxPlan:nth-child(4),
+.chxPlan:nth-child(5),
+.chxPlan:nth-child(6) {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  min-height: 285px !important;
+  max-height: none !important;
   border-radius: 30px !important;
   padding: 24px !important;
   background: linear-gradient(180deg, #ffffff 0%, #f7faf4 100%) !important;
   border: 1px solid rgba(16,21,19,.08) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 20px 56px rgba(16,21,19,.10) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 18px 48px rgba(16,21,19,.09) !important;
   align-content: start !important;
+  transform: none !important;
 }
 
 .chxPlan::before {
@@ -245,45 +260,11 @@
   background: linear-gradient(90deg, rgba(240,100,47,.78), rgba(240,100,47,.08)) !important;
 }
 
-.chxPlan:nth-child(1),
-.chxPlan:nth-child(2),
-.chxPlan:nth-child(3),
-.chxPlan:nth-child(4) {
-  grid-row: 1 / 2 !important;
-  grid-column: auto !important;
-}
-
-.chxPlan:nth-child(5) {
-  grid-column: 1 / 3 !important;
-  grid-row: 2 / 3 !important;
-}
-
-.chxPlan:nth-child(6) {
-  grid-column: 3 / 5 !important;
-  grid-row: 2 / 3 !important;
-}
-
-.chxPlan:nth-child(5),
-.chxPlan:nth-child(6) {
-  display: grid !important;
-  grid-template-columns: 210px 1fr !important;
-  column-gap: 22px !important;
-  align-items: center !important;
-  background: linear-gradient(90deg, #ffffff 0%, #faf6f1 100%) !important;
-}
-
-.chxPlan:nth-child(5) ul,
-.chxPlan:nth-child(6) ul {
-  grid-column: 2 / 3 !important;
-  grid-row: 1 / span 5 !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 8px 16px !important;
-}
-
 .chxPlan h2 {
-  font-size: clamp(42px, 4vw, 62px) !important;
+  font-size: clamp(42px, 3.6vw, 58px) !important;
   letter-spacing: -.09em !important;
-  line-height: .9 !important;
+  line-height: .92 !important;
+  margin-bottom: 8px !important;
 }
 
 .chxPlan p,
@@ -291,12 +272,22 @@
   font-weight: 900 !important;
 }
 
+.chxPlan ul,
+.chxPlan:nth-child(5) ul,
+.chxPlan:nth-child(6) ul {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 7px !important;
+}
+
 .chxPlan.popular {
-  transform: translateY(-5px) !important;
   background:
-    radial-gradient(circle at 90% -10%, rgba(240,100,47,.36), transparent 36%),
+    radial-gradient(circle at 90% -10%, rgba(240,100,47,.32), transparent 36%),
     linear-gradient(145deg, #080d0b 0%, #101916 48%, #20332a 100%) !important;
-  box-shadow: 0 32px 88px rgba(16,21,19,.32), 0 18px 50px rgba(240,100,47,.16) !important;
+  box-shadow: 0 30px 78px rgba(16,21,19,.30), 0 16px 44px rgba(240,100,47,.14) !important;
+  border-color: rgba(240,100,47,.35) !important;
 }
 
 .chxPlan.popular h2,
@@ -322,29 +313,6 @@
   box-shadow: 0 44px 140px rgba(16,21,19,.50) !important;
 }
 
-@media (max-width: 1320px) and (min-width: 1101px) {
-  .chxPlansGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important;
-    overflow-y: auto !important;
-  }
-
-  .chxPlan:nth-child(n) {
-    grid-column: auto !important;
-    grid-row: auto !important;
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    transform: none !important;
-  }
-
-  .chxPlan:nth-child(5) ul,
-  .chxPlan:nth-child(6) ul {
-    grid-column: auto !important;
-    grid-row: auto !important;
-    grid-template-columns: 1fr !important;
-  }
-}
-
 @media (max-width: 1100px) {
   .chxShell {
     width: min(100%, calc(100vw - 18px)) !important;
@@ -355,24 +323,6 @@
   }
 
   .chxPlansGrid {
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .chxPlan:nth-child(n) {
-    grid-column: auto !important;
-    grid-row: auto !important;
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    transform: none !important;
-  }
-
-  .chxPlan:nth-child(5) ul,
-  .chxPlan:nth-child(6) ul {
-    grid-column: auto !important;
-    grid-row: auto !important;
     grid-template-columns: 1fr !important;
   }
 }
