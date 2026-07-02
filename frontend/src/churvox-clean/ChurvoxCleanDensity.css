@@ -1,1 +1,42 @@
-.cvxClean{padding-bottom:48px!important}.cvxCleanWork{min-height:calc(100vh - 230px)!important;align-content:start!important}.cvxCleanGrid{grid-template-columns:1.15fr 1fr!important;align-items:stretch!important}.cvxCleanGrid .cvxCleanPanel{min-height:180px!important}.cvxCleanCards{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important}.cvxCleanPanel .cvxCleanCards{margin-top:12px!important}.cvxCleanCard{min-height:190px!important;display:grid!important;align-content:start!important}.cvxCleanCard div{margin-top:auto!important}.cvxCleanStats{margin-top:10px!important}.cvxCleanStats span{min-height:78px!important;display:grid!important;align-content:center!important}.cvxCleanForm{align-content:start!important}.cvxCleanPlans section{min-height:190px!important}.cvxCleanPanel:nth-child(1){border-top:5px solid rgba(249,115,22,.72)!important}.cvxCleanPanel:nth-child(2){border-top:5px solid rgba(15,23,42,.72)!important}.cvxCleanPanel:nth-child(3){border-top:5px solid rgba(37,99,235,.55)!important}.cvxCleanNotice{display:block!important;margin-top:12px!important}.cvxCleanPanel:has(.cvxCleanCards){grid-column:span 2!important}.cvxCleanMap{min-height:360px!important}.cvxCleanDrawer{max-width:calc(100vw - 32px)!important}.cvxCleanTop{margin-bottom:2px!important}.cvxCleanNav button{min-width:76px!important}.cvxCleanPanel h2{line-height:1!important}.cvxCleanPanel p+div,.cvxCleanPanel p+ul,.cvxCleanPanel p+ol{margin-top:10px!important}@media(max-width:980px){.cvxCleanGrid{grid-template-columns:1fr!important}.cvxCleanPanel:has(.cvxCleanCards){grid-column:auto!important}.cvxCleanWork{min-height:auto!important}}
+.cvxCleanWork {
+  padding-bottom: 48px;
+}
+
+.cvxPanel,
+.cvxRecordCard,
+.cvxPlans section {
+  min-width: 0;
+}
+
+.cvxRecordGrid,
+.cvxMetrics,
+.cvxActions,
+.cvxMiniList,
+.cvxFormGrid,
+.cvxTable {
+  min-width: 0;
+}
+
+.cvxLimited::-webkit-scrollbar,
+.cvxCleanNav::-webkit-scrollbar,
+.cvxDrawer::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.cvxLimited::-webkit-scrollbar-thumb,
+.cvxCleanNav::-webkit-scrollbar-thumb,
+.cvxDrawer::-webkit-scrollbar-thumb {
+  background: rgba(16, 21, 19, 0.24);
+  border-radius: 999px;
+}
+
+@media (min-width: 1180px) {
+  .cvxPageGrid {
+    grid-template-columns: 1.08fr 0.92fr;
+  }
+
+  .cvxRecordGrid {
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  }
+}
