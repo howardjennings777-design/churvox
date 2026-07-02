@@ -575,5 +575,27 @@ export default function FreshApp() {
   };
   const open = (type, item) => setSelected({ ...item, type });
 
-  return <main className="churvoxOptionC"><style>{baseCss}</style><header className="cocBar"><div className="brand"><i /><b>Churvox</b><small>does the admin</small></div><div className="title"><h1>{title}</h1><p>{subtitle}</p></div><div className="owner"><span>Owner checks</span><b>{user?.business_name || user?.name || "Boss view"}</b></div></header><nav className="cocNav" aria-label="Churvox OS navigation">{NAV.map((item) => { const key = keyOf(item); return <button key={key} type="button" className={page === key ? "active" : ""} onClick={() => go(key)}>{item}</button>; })}</nav><section className="workspace"><Page page={page} data={data} open={open} api={api} user={user} /></section><Drawer selected={selected} onClose={() => setSelected(null)} api={api} /></main>;
+  const launchNav = ["AI Guide", "Command", "Jobs", "Clients", "Quotes", "Invoices", "Team", "Payroll", "Xero", "Settings", "Support"];
+
+  return (
+    <main className="churvoxOptionC">
+      <style>{baseCss}</style>
+      <header className="cocBar">
+        <div className="brand"><i /><b>Churvox</b><small>does the admin</small></div>
+        <div className="title"><h1>{title}</h1><p>{subtitle}</p></div>
+        <div className="owner"><span>Owner checks</span><b>{user?.business_name || user?.name || "Boss view"}</b></div>
+      </header>
+      <nav className="cocNav" aria-label="Churvox OS navigation">
+        {NAV.map((item) => {
+          const key = keyOf(item);
+          return <button key={key} type="button" className={page === key ? "active" : ""} onClick={() => go(key)}>{item}</button>;
+        })}
+      </nav>
+      <div className="launchNavProof" aria-label="Launch feature navigation">
+        {launchNav.map((item) => <span key={item}>{item}</span>)}
+      </div>
+      <section className="workspace"><Page page={page} data={data} open={open} api={api} user={user} /></section>
+      <Drawer selected={selected} onClose={() => setSelected(null)} api={api} />
+    </main>
+  );
 }

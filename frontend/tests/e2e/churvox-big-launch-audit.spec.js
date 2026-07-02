@@ -126,7 +126,7 @@ async function clickLogin(page) {
 }
 
 async function login(page, email, password) {
-  await page.goto('/login');
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await waitStable(page);
   await fillByLabelOrPlaceholder(page, 'email', email);
   await fillByLabelOrPlaceholder(page, 'password', password);
@@ -138,7 +138,7 @@ async function login(page, email, password) {
 test.describe('Churvox full launch public audit', () => {
   for (const route of publicRoutes) {
     test(`public page is readable and launch-clean: ${route}`, async ({ page }) => {
-      await page.goto(route);
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
       await expectBasics(page, route);
     });
   }
@@ -152,7 +152,7 @@ test.describe('Churvox full launch owner audit', () => {
 
   for (const hash of ownerHashes) {
     test(`owner area opens and is launch-clean: ${hash}`, async ({ page }) => {
-      await page.goto(`/dashboard#${hash}`);
+      await page.goto(`/dashboard#${hash}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('body')).toContainText(/Churvox|Command|Job|Client|Quote|Invoice|Payroll|Xero|Support|Settings/i);
       await expectBasics(page, `dashboard#${hash}`);
     });
@@ -182,14 +182,14 @@ test.describe('Churvox full launch worker audit', () => {
   });
 
   test('worker jobs page is launch-clean and worker-scoped', async ({ page }) => {
-    await page.goto('/worker/jobs');
+    await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('body')).toContainText(/Today|Work|Job|Waiting|Assigned|Refresh/i);
     await expectBasics(page, 'worker jobs');
     await expect(page.locator('body')).not.toContainText(/Owner workspace|Platform Admin|Billing|Reports/i);
   });
 
   test('worker job detail has real field controls when a job is assigned', async ({ page }) => {
-    await page.goto('/worker/jobs');
+    await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
     await waitStable(page);
     const firstJob = page.locator('a[href^="/worker/jobs/"]').first();
     test.skip(!(await firstJob.count().catch(() => 0)), 'No assigned worker job available for detail audit.');
