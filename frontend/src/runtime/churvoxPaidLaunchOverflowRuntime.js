@@ -1,5 +1,5 @@
 // Paid launch overflow guard.
-// Keeps legacy docks out of the owner app while preserving visible launch nav proof labels.
+// Keeps legacy docks out of the owner app. The old launch proof rail is now hidden.
 
 const STYLE_ID = "churvox-paid-launch-overflow-runtime-css";
 
@@ -35,19 +35,24 @@ function installCss() {
     }
 
     body:has(.churvoxOptionC) .xcf10-dock,
-    body:has(.churvoxOptionC) .xcf10-dock-launch {
+    body:has(.churvoxOptionC) .xcf10-dock-launch,
+    body:has(.churvoxOptionC) .launchNavProof,
+    body:has(.churvoxOptionC) .churvoxOptionC .launchNavProof {
       display: none !important;
       visibility: hidden !important;
       width: 0 !important;
       max-width: 0 !important;
       height: 0 !important;
+      max-height: 0 !important;
       overflow: hidden !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: 0 !important;
     }
 
     .churvoxOptionC,
     .churvoxOptionC .cocBar,
     .churvoxOptionC .cocNav,
-    .churvoxOptionC .launchNavProof,
     .churvoxOptionC .workspace,
     .churvoxOptionC .cocPage,
     .churvoxOptionC .cocPanel {
@@ -57,17 +62,13 @@ function installCss() {
       overflow-x: hidden !important;
     }
 
-    .churvoxOptionC .cocNav,
-    .churvoxOptionC .launchNavProof {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr)) !important;
-      gap: 4px !important;
+    .churvoxOptionC .cocNav {
+      max-width: 100% !important;
+      min-width: 0 !important;
       white-space: normal !important;
     }
 
-    .churvoxOptionC .cocNav button,
-    .churvoxOptionC .launchNavProof span {
-      width: 100% !important;
+    .churvoxOptionC .cocNav button {
       max-width: 100% !important;
       min-width: 0 !important;
       overflow: hidden !important;
@@ -99,18 +100,20 @@ function hideLegacyDocks() {
   });
 }
 
-function showSafeProofLabels() {
-  document.querySelectorAll(".churvoxOptionC .launchNavProof").forEach((el) => {
-    putStyle(el, "display", "grid");
-    putStyle(el, "visibility", "visible");
-    putStyle(el, "width", "100%");
-    putStyle(el, "max-width", "100%");
+function hideProofLabels() {
+  document.querySelectorAll(".churvoxOptionC .launchNavProof, .launchNavProof").forEach((el) => {
+    putStyle(el, "display", "none");
+    putStyle(el, "visibility", "hidden");
+    putStyle(el, "width", "0");
+    putStyle(el, "max-width", "0");
     putStyle(el, "min-width", "0");
-    putStyle(el, "height", "auto");
-    putStyle(el, "max-height", "none");
+    putStyle(el, "height", "0");
+    putStyle(el, "max-height", "0");
     putStyle(el, "overflow", "hidden");
-    putStyle(el, "grid-template-columns", "repeat(auto-fit, minmax(min(88px, 100%), 1fr))");
-    el.removeAttribute("aria-hidden");
+    putStyle(el, "padding", "0");
+    putStyle(el, "margin", "0");
+    putStyle(el, "border", "0");
+    el.setAttribute("aria-hidden", "true");
   });
 }
 
@@ -119,16 +122,11 @@ function clampOwnerShell() {
   installCss();
   clampRootScrollWidth();
   hideLegacyDocks();
-  showSafeProofLabels();
+  hideProofLabels();
 
   document.querySelectorAll(".churvoxOptionC, .churvoxOptionC *").forEach((el) => {
     putStyle(el, "min-width", "0");
     putStyle(el, "max-width", "100%");
-  });
-
-  document.querySelectorAll(".churvoxOptionC .cocNav, .churvoxOptionC .launchNavProof").forEach((el) => {
-    putStyle(el, "display", "grid");
-    putStyle(el, "overflow-x", "hidden");
   });
 }
 
