@@ -23,6 +23,10 @@
   letter-spacing: -0.085em !important;
 }
 
+.cvxCleanNav {
+  gap: 9px !important;
+}
+
 .cvxCleanNav button {
   border-radius: 18px !important;
   padding: 10px 15px !important;
@@ -121,16 +125,85 @@
   box-shadow: 0 38px 120px rgba(16, 21, 19, 0.42) !important;
 }
 
+.cvxRecordCard:focus-visible,
+.cvxCleanNav button:focus-visible,
+.cvxActions button:focus-visible,
+.cvxFormGrid button:focus-visible,
+.cvxDrawerActions button:focus-visible,
+.cvxClose:focus-visible {
+  outline: 3px solid rgba(240, 100, 47, 0.38) !important;
+  outline-offset: 3px !important;
+}
+
+.cvxRecordCard,
+.cvxActions button,
+.cvxCleanNav button,
+.cvxFormGrid button,
+.cvxDrawerActions button,
+.cvxClose {
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+}
+
+.cvxPanel h2,
+.cvxPlans h2,
+.cvxRecordCard h3,
+.cvxDrawer h2 {
+  text-wrap: balance !important;
+}
+
+.cvxRecordCard p,
+.cvxMiniList span,
+.cvxRules,
+.cvxNotice,
+.cvxProofGrid span {
+  text-wrap: pretty !important;
+}
+
+.cvxMetrics article,
+.cvxMiniList div,
+.cvxTable div,
+.cvxProofGrid article {
+  border-color: rgba(16, 21, 19, 0.08) !important;
+}
+
+.cvxTable div {
+  min-height: 54px !important;
+}
+
+.cvxPlans section {
+  min-height: 304px !important;
+}
+
+.cvxPopularPlan {
+  border-color: rgba(240, 100, 47, 0.34) !important;
+}
+
 @media (max-width: 780px) {
   .cvxCleanTop {
     border-radius: 26px !important;
   }
 
+  .cvxCleanHead {
+    padding: 15px !important;
+  }
+
+  .cvxCleanNav {
+    gap: 7px !important;
+  }
+
   .cvxCleanNav button {
     border-radius: 999px !important;
+    padding: 9px 12px !important;
   }
 
   .cvxCleanTitle h1 {
     font-size: 40px !important;
+  }
+
+  .cvxPanel,
+  .cvxRecordCard,
+  .cvxPlans section {
+    border-radius: 22px !important;
   }
 }
