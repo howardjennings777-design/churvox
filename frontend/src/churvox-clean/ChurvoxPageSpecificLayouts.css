@@ -1,0 +1,300 @@
+/* Page-specific Churvox layouts. This stops live backend data from turning every tab into the same generic card wall. */
+
+body[class*="cvxBodyPage--"] .cvxCleanWork {
+  transition: opacity 0.12s ease;
+}
+
+/* AI GUIDE: owner pulse, not a generic record list */
+body.cvxBodyPage--aiguide .cvxCleanWork {
+  grid-template-columns: 1.05fr 0.95fr !important;
+}
+
+body.cvxBodyPage--aiguide .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+body.cvxBodyPage--aiguide .cvxMetrics article {
+  min-height: 118px !important;
+}
+
+body.cvxBodyPage--aiguide .cvxMetrics b {
+  font-size: 34px !important;
+}
+
+/* COMMAND: decision desk, horizontal approval tray with messages below */
+body.cvxBodyPage--command .cvxCleanWork {
+  grid-template-columns: 1.15fr 0.85fr !important;
+}
+
+body.cvxBodyPage--command .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+  background: linear-gradient(180deg, #ffffff, #f8faf6) !important;
+}
+
+body.cvxBodyPage--command .cvxPanel:first-child .cvxRecordGrid {
+  grid-template-columns: repeat(5, minmax(205px, 1fr)) !important;
+  max-height: 330px !important;
+  overflow-y: auto !important;
+}
+
+body.cvxBodyPage--command .cvxRecordCard {
+  min-height: 178px !important;
+}
+
+body.cvxBodyPage--command .cvxPanel:nth-child(2) {
+  background: linear-gradient(180deg, #fff5ef, #fff) !important;
+}
+
+body.cvxBodyPage--command .cvxPanel:last-child {
+  grid-column: 1 / -1 !important;
+}
+
+/* JOBS: job board with work form and proof/rules side panels */
+body.cvxBodyPage--jobs .cvxCleanWork {
+  grid-template-columns: 1.25fr 0.75fr !important;
+}
+
+body.cvxBodyPage--jobs .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+body.cvxBodyPage--jobs .cvxPanel:first-child .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)) !important;
+  max-height: 390px !important;
+  overflow-y: auto !important;
+}
+
+body.cvxBodyPage--jobs .cvxPanel:nth-child(2) {
+  grid-row: span 2 !important;
+}
+
+body.cvxBodyPage--jobs .cvxFormGrid {
+  grid-template-columns: repeat(2, minmax(170px, 1fr)) !important;
+}
+
+/* CLIENTS: database layout: records left, add/import right, compact memory below */
+body.cvxBodyPage--clients .cvxCleanWork {
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr) !important;
+  align-items: start !important;
+}
+
+body.cvxBodyPage--clients .cvxPanel:first-child {
+  grid-column: 1 / 2 !important;
+  grid-row: span 2 !important;
+  max-height: 620px !important;
+}
+
+body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordGrid {
+  grid-template-columns: 1fr !important;
+  max-height: 500px !important;
+  overflow-y: auto !important;
+  gap: 10px !important;
+}
+
+body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordCard {
+  min-height: 112px !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  grid-template-areas:
+    "pill price"
+    "title meta"
+    "note meta" !important;
+  gap: 4px 12px !important;
+}
+
+body.cvxBodyPage--clients .cvxPanel:first-child .cvxPill { grid-area: pill !important; }
+body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordCard h3 { grid-area: title !important; margin: 4px 0 !important; }
+body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordCard p { grid-area: note !important; min-height: 22px !important; max-height: 34px !important; }
+body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordMeta { grid-area: meta !important; align-self: end !important; min-width: 130px !important; border-top: 0 !important; padding-top: 0 !important; }
+
+body.cvxBodyPage--clients .cvxPanel:nth-child(2),
+body.cvxBodyPage--clients .cvxPanel:nth-child(3) {
+  grid-column: 2 / 3 !important;
+}
+
+body.cvxBodyPage--clients .cvxPanel:nth-child(4) {
+  grid-column: 1 / -1 !important;
+}
+
+body.cvxBodyPage--clients .cvxPanel:nth-child(4) .cvxMiniList {
+  max-height: 260px !important;
+  overflow-y: auto !important;
+  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)) !important;
+}
+
+body.cvxBodyPage--clients .cvxPanel:nth-child(4) .cvxMiniList div {
+  min-height: 58px !important;
+}
+
+/* QUOTES: proposal desk */
+body.cvxBodyPage--quotes .cvxCleanWork {
+  grid-template-columns: 1.2fr 0.8fr !important;
+}
+
+body.cvxBodyPage--quotes .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+body.cvxBodyPage--quotes .cvxPanel:first-child .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important;
+  max-height: 360px !important;
+  overflow-y: auto !important;
+}
+
+/* INVOICES: finance/review desk */
+body.cvxBodyPage--invoices .cvxCleanWork {
+  grid-template-columns: 1.15fr 0.85fr !important;
+}
+
+body.cvxBodyPage--invoices .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+body.cvxBodyPage--invoices .cvxPanel:first-child .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)) !important;
+  max-height: 360px !important;
+  overflow-y: auto !important;
+}
+
+body.cvxBodyPage--invoices .cvxPanel:nth-child(3) {
+  background: linear-gradient(180deg, #fff5ef, #fff) !important;
+}
+
+/* TEAM: people/access grid */
+body.cvxBodyPage--team .cvxCleanWork {
+  grid-template-columns: 1.1fr 0.9fr !important;
+}
+
+body.cvxBodyPage--team .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+body.cvxBodyPage--team .cvxPanel:first-child .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+  max-height: 360px !important;
+  overflow-y: auto !important;
+}
+
+/* PAYROLL: table-first review page */
+body.cvxBodyPage--payroll .cvxCleanWork {
+  grid-template-columns: 0.76fr 1.24fr !important;
+}
+
+body.cvxBodyPage--payroll .cvxPanel:nth-child(2) {
+  grid-column: 2 / 3 !important;
+  grid-row: 1 / span 2 !important;
+}
+
+body.cvxBodyPage--payroll .cvxTable div {
+  min-height: 50px !important;
+  grid-template-columns: minmax(150px, 1fr) repeat(4, auto) !important;
+}
+
+body.cvxBodyPage--payroll .cvxPanel:nth-child(3) {
+  grid-column: 1 / -1 !important;
+}
+
+body.cvxBodyPage--payroll .cvxPanel:nth-child(3) .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)) !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+/* WORKERS: map first, slips and controls under it */
+body.cvxBodyPage--workers .cvxCleanWork {
+  grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr) !important;
+}
+
+body.cvxBodyPage--workers .cvxPanel:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+body.cvxBodyPage--workers .cvxGoogleMap {
+  min-height: 390px !important;
+}
+
+body.cvxBodyPage--workers .cvxPanel:nth-child(2) {
+  grid-column: 1 / 2 !important;
+}
+
+body.cvxBodyPage--workers .cvxPanel:nth-child(2) .cvxRecordGrid {
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)) !important;
+  max-height: 340px !important;
+  overflow-y: auto !important;
+}
+
+body.cvxBodyPage--workers .cvxPanel:nth-child(3),
+body.cvxBodyPage--workers .cvxPanel:nth-child(4) {
+  grid-column: 2 / 3 !important;
+}
+
+/* XERO: guardrail page */
+body.cvxBodyPage--xero .cvxCleanWork {
+  grid-template-columns: 0.9fr 1.1fr !important;
+}
+
+body.cvxBodyPage--xero .cvxPanel:first-child {
+  background: linear-gradient(180deg, #fff5ef, #fff) !important;
+}
+
+/* SETTINGS: controls page */
+body.cvxBodyPage--settings .cvxCleanWork {
+  grid-template-columns: 1.2fr 0.8fr !important;
+}
+
+body.cvxBodyPage--settings .cvxPanel:first-child {
+  grid-row: span 2 !important;
+}
+
+/* PLANS: pricing cards should breathe */
+body.cvxBodyPage--plans .cvxPlans {
+  grid-template-columns: repeat(auto-fit, minmax(285px, 1fr)) !important;
+}
+
+body.cvxBodyPage--plans .cvxPlans section {
+  min-height: 320px !important;
+}
+
+/* SUPPORT: guide cards not a data grid */
+body.cvxBodyPage--support .cvxCleanWork {
+  grid-template-columns: 1fr 1fr !important;
+}
+
+body.cvxBodyPage--support .cvxPanel:nth-child(3) {
+  grid-column: 1 / -1 !important;
+}
+
+@media (max-width: 1040px) {
+  body[class*="cvxBodyPage--"] .cvxCleanWork {
+    grid-template-columns: 1fr !important;
+  }
+
+  body[class*="cvxBodyPage--"] .cvxPanel {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+
+  body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordCard {
+    grid-template-columns: 1fr !important;
+    grid-template-areas: none !important;
+  }
+
+  body.cvxBodyPage--clients .cvxPanel:first-child .cvxPill,
+  body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordCard h3,
+  body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordCard p,
+  body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordMeta {
+    grid-area: auto !important;
+  }
+}
+
+@media (max-width: 780px) {
+  body[class*="cvxBodyPage--"] .cvxPanel:first-child .cvxRecordGrid,
+  body[class*="cvxBodyPage--"] .cvxPanel.cvxWide .cvxRecordGrid {
+    grid-template-columns: 1fr !important;
+    max-height: 420px !important;
+  }
+
+  body.cvxBodyPage--clients .cvxPanel:first-child .cvxRecordGrid {
+    max-height: 430px !important;
+  }
+}
