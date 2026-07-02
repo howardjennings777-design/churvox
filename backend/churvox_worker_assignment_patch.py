@@ -58,7 +58,14 @@ def install(module):
     get_user_business_id = getattr(module, "get_user_business_id", None)
     normalize_recurring_job_fields = getattr(module, "normalize_recurring_job_fields", lambda doc: doc)
 
-    if not all([app, db, JobCreate, JobStatus, get_current_user, get_user_business_id]):
+    if (
+        app is None
+        or db is None
+        or JobCreate is None
+        or JobStatus is None
+        or get_current_user is None
+        or get_user_business_id is None
+    ):
         return
     if getattr(app.state, "churvox_worker_assignment_patch", False):
         return
