@@ -1,0 +1,167 @@
+/* Page-detail cleanup after restored owner shell. CSS-only visual guard. */
+
+.churvoxOptionC .cocPage > .toolbar {
+  grid-column: 1 / -1 !important;
+  align-self: start !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 8px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(16, 21, 19, 0.08) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: 0 10px 24px rgba(16, 21, 19, 0.04) !important;
+  position: relative !important;
+  top: auto !important;
+  overflow: visible !important;
+}
+
+.churvoxOptionC .cocPage > .toolbar button,
+.churvoxOptionC .cocPage > .toolbar .action {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  padding: 0 16px !important;
+  background: #f0642f !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: 0 12px 24px rgba(240, 100, 47, 0.18) !important;
+  transform: none !important;
+  aspect-ratio: auto !important;
+}
+
+.churvoxOptionC .cocPage > .toolbar button:nth-child(2),
+.churvoxOptionC .cocPage > .toolbar button:nth-child(3) {
+  background: #14223a !important;
+  box-shadow: 0 12px 24px rgba(20, 34, 58, 0.16) !important;
+}
+
+.churvoxOptionC .quotesPage > .toolbar {
+  min-height: 56px !important;
+}
+
+.churvoxOptionC .quotesPage > .toolbar button {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+}
+
+.churvoxOptionC .quotesPage .compactPanel,
+.churvoxOptionC .workersPage .cocPanel,
+.churvoxOptionC .teamPage .compactPanel {
+  min-height: 0 !important;
+}
+
+.churvoxOptionC .quotesPage .quoteStageGrid,
+.churvoxOptionC .quotesPage .workCards {
+  align-items: stretch !important;
+}
+
+.churvoxOptionC .quotesPage .workCard,
+.churvoxOptionC .workersPage .workerCard,
+.churvoxOptionC .teamPage .workerCard {
+  min-height: 96px !important;
+}
+
+body:has(#option-f-xero-actions-panel) .churvoxOptionC .workspace .cocPage > .cocPanel:nth-of-type(3) {
+  display: none !important;
+}
+
+#option-f-xero-actions-panel pre {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+
+#option-f-xero-actions-panel,
+#churvox-xero-payments-panel {
+  max-width: 100% !important;
+}
+
+#option-f-xero-actions-panel .xeroButtons,
+#churvox-xero-payments-panel .cvPayActions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+#option-f-xero-actions-panel button,
+#churvox-xero-payments-panel button {
+  width: auto !important;
+  min-width: max-content !important;
+  max-width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  padding: 0 16px !important;
+}
+
+#churvox-xero-payments-panel .cvPayStatus {
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+#churvox-xero-payments-panel .cvPayHero {
+  min-height: 160px !important;
+}
+
+.churvoxOptionC .moneyStrip > span,
+.churvoxOptionC .proofGrid > *,
+.churvoxOptionC .miniStats > *,
+.churvoxOptionC .ownerActions > *,
+.churvoxOptionC .approvalActions > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 720px) {
+  .churvoxOptionC .cocPage > .toolbar {
+    position: relative !important;
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    flex-wrap: nowrap !important;
+    padding: 8px !important;
+  }
+
+  .churvoxOptionC .cocPage > .toolbar button {
+    flex: 0 0 auto !important;
+  }
+
+  #option-f-xero-actions-panel .xeroButtons,
+  #churvox-xero-payments-panel .cvPayActions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  #option-f-xero-actions-panel button,
+  #churvox-xero-payments-panel button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
