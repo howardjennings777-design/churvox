@@ -61,7 +61,8 @@ source = source.replace(
 source = source.replace(
   `    routeReport.failedClicks.push({ control: match, reason: error.message });`,
   `    const reason = String(error?.message || error || '');
-    if (/waiting for locator\\('\[data-churvox-qa-control=/.test(reason) || (/waiting for locator/i.test(reason) && /Timeout 2500ms exceeded/i.test(reason))) {
+    const locatorRerendered = reason.includes('waiting for locator') && reason.includes('data-churvox-qa-control') && reason.includes('Timeout 2500ms exceeded');
+    if (locatorRerendered) {
       routeReport.unavailableSkipped.push({ label, href: control.href, reason: 'control re-rendered during audit click and was skipped safely' });
     } else {
       routeReport.failedClicks.push({ control: match, reason });
