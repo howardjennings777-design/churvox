@@ -1,62 +1,58 @@
-/* Churvox real product finish across the full owner app. Loaded through ChurvoxHeaderIdentity.css. */
+/* Churvox safe premium reset.
+   Loaded through ChurvoxHeaderIdentity.css.
+   Purpose: remove broken fake heroes/overlap and make every page feel clean, premium and controlled. */
 
 .chxApp {
   background:
-    radial-gradient(circle at 8% -12%, rgba(240, 100, 47, 0.22), transparent 34%),
-    radial-gradient(circle at 100% 3%, rgba(10, 13, 12, 0.18), transparent 31%),
-    linear-gradient(180deg, #fbfcf7 0%, #edf3eb 52%, #e2e9df 100%) !important;
+    radial-gradient(circle at 8% -12%, rgba(240, 100, 47, 0.16), transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(12, 17, 14, 0.12), transparent 30%),
+    linear-gradient(180deg, #fbfcf8 0%, #eef3ec 100%) !important;
 }
 
 .chxShell {
-  width: min(1600px, calc(100vw - 34px)) !important;
-  gap: 16px !important;
-}
-
-.chxStage {
-  position: relative !important;
-  border-radius: 34px !important;
-  background:
-    radial-gradient(circle at 0 0, rgba(240,100,47,.13), transparent 30%),
-    linear-gradient(180deg, rgba(255,255,255,.68), rgba(237,243,235,.78)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.74), 0 26px 70px rgba(16,21,19,.10) !important;
-  padding: 12px !important;
-}
-
-.chxScreen {
+  width: min(1600px, calc(100vw - 32px)) !important;
   gap: 14px !important;
 }
 
-.chxPanel {
+.chxStage {
   border-radius: 30px !important;
-  border: 1px solid rgba(16,21,19,.075) !important;
-  background:
-    radial-gradient(circle at 100% -16%, rgba(240,100,47,.08), transparent 32%),
-    linear-gradient(180deg, rgba(255,255,255,.995), rgba(247,250,245,.96)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.84), 0 22px 64px rgba(16,21,19,.095) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(238,243,236,.76)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 22px 60px rgba(16,21,19,.09) !important;
+  padding: 10px !important;
+}
+
+.chxScreen {
+  gap: 12px !important;
+}
+
+.chxPanel {
+  border-radius: 28px !important;
+  border: 1px solid rgba(16,21,19,.08) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f7faf4 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 18px 46px rgba(16,21,19,.08) !important;
 }
 
 .chxPanelHead {
-  min-height: 60px !important;
-  padding: 13px 17px !important;
+  min-height: 58px !important;
+  padding: 13px 16px !important;
   background:
     linear-gradient(90deg, #f0642f 0 7px, transparent 7px),
-    radial-gradient(circle at 95% 0%, rgba(240,100,47,.22), transparent 34%),
-    linear-gradient(135deg, #080c0a 0%, #101916 55%, #24362d 100%) !important;
+    linear-gradient(135deg, #080c0a 0%, #101916 60%, #24362d 100%) !important;
 }
 
 .chxPanelHead small {
   color: rgba(237,246,241,.72) !important;
   font-size: 9px !important;
-  letter-spacing: .18em !important;
+  letter-spacing: .16em !important;
 }
 
 .chxPanelHead h2 {
-  font-size: 25px !important;
-  letter-spacing: -.072em !important;
+  font-size: 24px !important;
+  letter-spacing: -.07em !important;
 }
 
 .chxPanelBody {
-  padding: 16px !important;
+  padding: 15px !important;
 }
 
 .chxCard,
@@ -64,20 +60,18 @@
 .chxMini,
 .chxTableRow,
 .chxLaneCard {
-  border-radius: 22px !important;
-  border: 1px solid rgba(16,21,19,.072) !important;
-  background:
-    radial-gradient(circle at 100% -18%, rgba(240,100,47,.065), transparent 34%),
-    linear-gradient(180deg, #ffffff 0%, #f4f8f2 100%) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 12px 30px rgba(16,21,19,.052) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(16,21,19,.075) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f8f2 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 10px 26px rgba(16,21,19,.045) !important;
 }
 
 .chxCard:hover,
 .chxRow:hover,
 .chxLaneCard:hover {
-  transform: translateY(-2px) !important;
-  border-color: rgba(240,100,47,.38) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.84), 0 20px 42px rgba(16,21,19,.13) !important;
+  transform: translateY(-1px) !important;
+  border-color: rgba(240,100,47,.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.84), 0 16px 34px rgba(16,21,19,.11) !important;
 }
 
 .chxPill {
@@ -92,7 +86,7 @@
 .chxBtn {
   background: linear-gradient(135deg, #ff7b4d, #f0642f) !important;
   border: 0 !important;
-  box-shadow: 0 15px 30px rgba(240,100,47,.26) !important;
+  box-shadow: 0 13px 26px rgba(240,100,47,.23) !important;
 }
 
 .chxBtn.soft {
@@ -105,7 +99,7 @@
 .chxFields input,
 .chxFields select,
 .chxFields textarea {
-  border-radius: 16px !important;
+  border-radius: 15px !important;
   border-color: rgba(16,21,19,.105) !important;
   background: linear-gradient(180deg,#fff,#fbfcf8) !important;
 }
@@ -117,9 +111,53 @@
   box-shadow: 0 0 0 4px rgba(240,100,47,.12) !important;
 }
 
+/* Page feel: all pages get stronger primary work areas without fake hero text. */
+.chxCommand .queue,
+.chxJobs .board,
+.chxClients .clientList,
+.chxClients .clientHistory,
+.chxQuotes .pipeline,
+.chxInvoices .invoiceList,
+.chxTeam .peopleList,
+.chxWorkers .mapPanel,
+.chxPayroll .hoursPanel,
+.chxXero .chxPanel:nth-child(2) {
+  box-shadow: 0 24px 68px rgba(16,21,19,.11) !important;
+}
+
+.chxJobColumns,
+.chxLanes {
+  gap: 12px !important;
+}
+
+.chxJobLane,
+.chxLane {
+  border-radius: 24px !important;
+  padding: 13px !important;
+  border: 1px solid rgba(16,21,19,.075) !important;
+  background: linear-gradient(180deg, rgba(241,246,239,.98), rgba(230,237,227,.95)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.64) !important;
+}
+
+.chxJobLane h3,
+.chxLane h3 {
+  margin-bottom: 11px !important;
+  padding: 2px 4px 9px !important;
+  border-bottom: 1px solid rgba(16,21,19,.075) !important;
+  font-size: 15px !important;
+  text-transform: uppercase !important;
+  letter-spacing: .035em !important;
+  color: #22342c !important;
+}
+
+.chxJobLane .chxRow,
+.chxLane .chxRow {
+  min-height: 92px !important;
+}
+
 .chxAi {
   grid-template-columns: minmax(0, 1.05fr) minmax(380px, .72fr) !important;
-  grid-template-rows: 132px minmax(0, 1fr) 212px !important;
+  grid-template-rows: 126px minmax(0, 1fr) 204px !important;
 }
 
 .chxAi .pulsePanel {
@@ -132,79 +170,19 @@
 }
 
 .chxPulse .chxMini {
-  position: relative !important;
-  overflow: hidden !important;
   align-content: center !important;
   min-height: 0 !important;
-  padding: 18px !important;
+  padding: 16px !important;
 }
 
 .chxPulse b {
-  font-size: 38px !important;
-  letter-spacing: -.09em !important;
-}
-
-.chxCommand .queue,
-.chxJobs .board,
-.chxClients .clientList,
-.chxClients .clientHistory,
-.chxQuotes .pipeline,
-.chxInvoices .invoiceList,
-.chxTeam .peopleList,
-.chxWorkers .mapPanel,
-.chxPayroll .hoursPanel,
-.chxXero .chxPanel:nth-child(2) {
-  box-shadow: 0 30px 86px rgba(16,21,19,.13) !important;
-}
-
-.chxCommand .queue .chxCardGrid {
-  grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)) !important;
-  gap: 12px !important;
-}
-
-.chxCommand .queue .chxCard {
-  min-height: 168px !important;
-}
-
-.chxJobColumns,
-.chxLanes {
-  gap: 14px !important;
-}
-
-.chxJobLane,
-.chxLane {
-  border-radius: 26px !important;
-  padding: 14px !important;
-  border: 1px solid rgba(16,21,19,.075) !important;
-  background:
-    radial-gradient(circle at 0 0, rgba(240,100,47,.095), transparent 30%),
-    linear-gradient(180deg, rgba(240,245,238,.98), rgba(228,236,225,.95)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.64) !important;
-}
-
-.chxJobLane h3,
-.chxLane h3 {
-  margin-bottom: 12px !important;
-  padding: 2px 4px 10px !important;
-  border-bottom: 1px solid rgba(16,21,19,.075) !important;
-  font-size: 15px !important;
-  text-transform: uppercase !important;
-  letter-spacing: .035em !important;
-  color: #22342c !important;
-}
-
-.chxJobLane .chxRow,
-.chxLane .chxRow {
-  min-height: 96px !important;
-}
-
-.chxClients {
-  grid-template-columns: minmax(300px, .78fr) minmax(430px, 1fr) minmax(300px, .66fr) !important;
+  font-size: 34px !important;
+  letter-spacing: -.08em !important;
 }
 
 .chxClients .chxClientRow {
-  min-height: 80px !important;
-  border-radius: 20px !important;
+  min-height: 78px !important;
+  border-radius: 19px !important;
 }
 
 .chxClients .chxClientRow h3 {
@@ -217,98 +195,62 @@
 }
 
 .chxMap {
-  border-radius: 26px !important;
+  border-radius: 24px !important;
   border: 1px solid rgba(16,21,19,.08) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.66), 0 18px 46px rgba(16,21,19,.10) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.66), 0 16px 42px rgba(16,21,19,.10) !important;
 }
 
 .chxNotice {
-  border-radius: 20px !important;
-  border-left: 7px solid #f0642f !important;
+  border-radius: 18px !important;
+  border-left: 6px solid #f0642f !important;
   background: linear-gradient(180deg, #fff1ea, #ffe4d7) !important;
 }
 
+/* Plans: no fake CSS hero, no overlap. Clean premium pricing grid. */
 .chxPlans {
-  position: relative !important;
-  display: grid !important;
-  grid-template-rows: 160px minmax(0, 1fr) !important;
-  gap: 16px !important;
-  overflow: hidden !important;
+  display: block !important;
+  overflow: auto !important;
+  border-radius: 30px !important;
 }
 
-.chxPlans::before {
-  content: "Choose how much admin Churvox takes off your plate\A Owner approved. Draft sync guarded. No automatic sending.";
-  white-space: pre-line;
-  display: grid;
-  align-content: center;
-  padding: 26px 32px;
-  border-radius: 34px;
-  color: #fff;
-  font-size: clamp(28px, 3.2vw, 48px);
-  line-height: .96;
-  letter-spacing: -.08em;
-  font-weight: 950;
-  background:
-    radial-gradient(circle at 86% 10%, rgba(240,100,47,.46), transparent 31%),
-    linear-gradient(115deg, rgba(240,100,47,.20) 0 7px, transparent 7px 32px),
-    linear-gradient(135deg, #080d0b 0%, #101916 48%, #26382f 100%);
-  box-shadow: 0 30px 86px rgba(16,21,19,.25);
-}
-
+.chxPlans::before,
 .chxPlans::after {
-  content: "14-day free trial • no card • GST shown separately • Command includes Accounting Sync";
-  position: absolute;
-  top: 108px;
-  left: 32px;
-  color: rgba(234,244,238,.78);
-  font-size: 13px;
-  font-weight: 900;
+  content: none !important;
+  display: none !important;
 }
 
 .chxPlansGrid {
-  height: 100% !important;
   min-height: 0 !important;
+  height: 100% !important;
   display: grid !important;
-  grid-template-columns: minmax(210px,.72fr) minmax(235px,.82fr) minmax(320px,1.18fr) minmax(245px,.92fr) !important;
-  grid-template-rows: minmax(0,1fr) 192px !important;
-  gap: 16px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-rows: minmax(360px, 1fr) minmax(190px, .46fr) !important;
+  gap: 14px !important;
   overflow: hidden !important;
 }
 
 .chxPlan {
-  border-radius: 32px !important;
-  padding: 25px !important;
+  position: relative !important;
   min-height: 0 !important;
-  background:
-    radial-gradient(circle at 86% -10%, rgba(240,100,47,.13), transparent 32%),
-    linear-gradient(180deg, rgba(255,255,255,.995), rgba(246,249,244,.96)) !important;
-  box-shadow: 0 24px 70px rgba(16,21,19,.11) !important;
+  border-radius: 30px !important;
+  padding: 24px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f7faf4 100%) !important;
+  border: 1px solid rgba(16,21,19,.08) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 20px 56px rgba(16,21,19,.10) !important;
+  align-content: start !important;
 }
 
-.chxPlan h2 {
-  font-size: clamp(44px, 4vw, 64px) !important;
-  letter-spacing: -.095em !important;
+.chxPlan::before {
+  height: 8px !important;
+  background: linear-gradient(90deg, rgba(240,100,47,.78), rgba(240,100,47,.08)) !important;
 }
 
-.chxPlan p,
-.chxPlan li {
-  font-weight: 900 !important;
-}
-
-.chxPlan.popular {
-  transform: translateY(-6px) !important;
-  background:
-    radial-gradient(circle at 90% -10%, rgba(240,100,47,.46), transparent 36%),
-    linear-gradient(145deg, #080d0b 0%, #101916 48%, #20332a 100%) !important;
-  box-shadow: 0 36px 96px rgba(16,21,19,.34), 0 20px 56px rgba(240,100,47,.18) !important;
-}
-
-.chxPlan:nth-child(5),
-.chxPlan:nth-child(6) {
-  display: grid !important;
-  grid-template-columns: 220px 1fr !important;
-  column-gap: 24px !important;
-  align-items: center !important;
+.chxPlan:nth-child(1),
+.chxPlan:nth-child(2),
+.chxPlan:nth-child(3),
+.chxPlan:nth-child(4) {
+  grid-row: 1 / 2 !important;
+  grid-column: auto !important;
 }
 
 .chxPlan:nth-child(5) {
@@ -321,17 +263,63 @@
   grid-row: 2 / 3 !important;
 }
 
+.chxPlan:nth-child(5),
+.chxPlan:nth-child(6) {
+  display: grid !important;
+  grid-template-columns: 210px 1fr !important;
+  column-gap: 22px !important;
+  align-items: center !important;
+  background: linear-gradient(90deg, #ffffff 0%, #faf6f1 100%) !important;
+}
+
 .chxPlan:nth-child(5) ul,
 .chxPlan:nth-child(6) ul {
   grid-column: 2 / 3 !important;
   grid-row: 1 / span 5 !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 10px 18px !important;
+  gap: 8px 16px !important;
+}
+
+.chxPlan h2 {
+  font-size: clamp(42px, 4vw, 62px) !important;
+  letter-spacing: -.09em !important;
+  line-height: .9 !important;
+}
+
+.chxPlan p,
+.chxPlan li {
+  font-weight: 900 !important;
+}
+
+.chxPlan.popular {
+  transform: translateY(-5px) !important;
+  background:
+    radial-gradient(circle at 90% -10%, rgba(240,100,47,.36), transparent 36%),
+    linear-gradient(145deg, #080d0b 0%, #101916 48%, #20332a 100%) !important;
+  box-shadow: 0 32px 88px rgba(16,21,19,.32), 0 18px 50px rgba(240,100,47,.16) !important;
+}
+
+.chxPlan.popular h2,
+.chxPlan.popular p,
+.chxPlan.popular li,
+.chxPlan.popular small {
+  color: #fff !important;
+}
+
+.chxPlan.popular .chxPill {
+  background: rgba(255,255,255,.12) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.18) !important;
+}
+
+.chxPlan em {
+  top: 20px !important;
+  right: 20px !important;
 }
 
 .chxDrawer {
-  border-radius: 34px !important;
-  box-shadow: 0 48px 150px rgba(16,21,19,.52) !important;
+  border-radius: 32px !important;
+  box-shadow: 0 44px 140px rgba(16,21,19,.50) !important;
 }
 
 @media (max-width: 1320px) and (min-width: 1101px) {
@@ -364,22 +352,6 @@
 
   .chxStage {
     padding: 8px !important;
-  }
-
-  .chxPlans {
-    grid-template-rows: auto auto !important;
-    overflow: visible !important;
-  }
-
-  .chxPlans::before {
-    font-size: 30px !important;
-    min-height: 160px !important;
-  }
-
-  .chxPlans::after {
-    position: static !important;
-    margin: -64px 26px 24px !important;
-    display: block !important;
   }
 
   .chxPlansGrid {
