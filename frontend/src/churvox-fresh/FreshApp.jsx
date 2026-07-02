@@ -1,4 +1,4 @@
 import BackendApp from "./FreshAppBackend";
-import "../churvox-clean/ChurvoxBackendLayoutFix.css";
+import "../churvox-clean/ChurvoxSafeBackendLayout.css";
 
 export default BackendApp;
