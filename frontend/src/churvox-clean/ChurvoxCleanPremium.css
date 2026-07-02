@@ -18,3 +18,85 @@
 .cvxPopularPlan em {
   background: var(--cv-old-orange) !important;
 }
+
+/* Screenshot polish: the black panel title bars were clipping on some laptop zoom levels. */
+.cvxPanel,
+.cvxPlans section {
+  padding-top: 74px !important;
+}
+
+.cvxPanel::before,
+.cvxPlans section::before {
+  height: 58px !important;
+}
+
+.cvxPanel .cvxEyebrow,
+.cvxPlans .cvxEyebrow {
+  margin-top: -64px !important;
+  margin-bottom: 5px !important;
+}
+
+.cvxPanel h2,
+.cvxPlans h2 {
+  min-height: 30px !important;
+  margin-bottom: 20px !important;
+  overflow: visible !important;
+}
+
+/* Keep the clean shell feeling like the old app: real work areas, tighter whitespace, stronger records. */
+.cvxPageGrid {
+  align-items: start !important;
+}
+
+.cvxRecordCard {
+  min-height: 186px !important;
+}
+
+.cvxRecordCard p {
+  min-height: 44px !important;
+}
+
+.cvxMap {
+  min-height: 410px !important;
+  background:
+    linear-gradient(135deg, rgba(232, 239, 241, 0.86), rgba(255, 240, 232, 0.9)),
+    radial-gradient(circle at 22% 24%, rgba(240, 100, 47, 0.2) 0 8px, transparent 9px),
+    radial-gradient(circle at 62% 62%, rgba(16, 21, 19, 0.2) 0 7px, transparent 8px),
+    linear-gradient(28deg, transparent 0 43%, rgba(16, 21, 19, 0.12) 43% 45%, transparent 45%),
+    linear-gradient(125deg, transparent 0 48%, rgba(16, 21, 19, 0.12) 48% 50%, transparent 50%),
+    repeating-linear-gradient(0deg, transparent 0 34px, rgba(16, 21, 19, 0.06) 34px 35px),
+    repeating-linear-gradient(90deg, transparent 0 34px, rgba(16, 21, 19, 0.06) 34px 35px) !important;
+}
+
+.cvxMap span::after {
+  content: " · route pins · time on site · open maps later";
+  display: block;
+  margin-top: 10px;
+  color: var(--cv-old-muted);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.cvxNotice,
+.cvxMiniList div,
+.cvxMetrics article,
+.cvxTable div {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+}
+
+@media (max-width: 780px) {
+  .cvxPanel,
+  .cvxPlans section {
+    padding-top: 68px !important;
+  }
+
+  .cvxPanel::before,
+  .cvxPlans section::before {
+    height: 54px !important;
+  }
+
+  .cvxPanel .cvxEyebrow,
+  .cvxPlans .cvxEyebrow {
+    margin-top: -59px !important;
+  }
+}
