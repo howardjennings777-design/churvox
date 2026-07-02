@@ -87,6 +87,7 @@ import './churvox-fresh/churvoxJobsPagePanelsRuntime';
 import './churvox-fresh/churvoxInvoicesPagePanelsRuntime';
 import './churvox-fresh/churvoxSettingsPagePanelsRuntime';
 import './churvox-fresh/churvoxPlansPagePanelsRuntime';
+import './churvox-fresh/churvoxHumanAuditPatchRuntime';
 import './runtime/churvoxNoAiWordingRuntime';
 // Retired audit imports: these forced the duplicate launch proof rail and circle nav over the live app.
 // import './styles/churvoxPaidLaunchGuard.css';
