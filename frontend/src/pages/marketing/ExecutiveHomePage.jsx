@@ -6,12 +6,12 @@ import "./SimplePublicStrong.css";
 import "./ExecutivePublicPolish.css";
 
 const navLinks = [
-  ["/features", "How it works", "route"],
-  ["/pricing", "Pricing", "route"],
-  ["/about", "About", "static"],
-  ["/security", "Security", "static"],
-  ["/contact", "Contact", "static"],
-  ["/login", "Log in", "route"],
+  ["/features", "How it works"],
+  ["/pricing", "Pricing"],
+  ["/about", "About"],
+  ["/security", "Security"],
+  ["/contact", "Contact"],
+  ["/login", "Log in"],
 ];
 
 const proof = [
@@ -64,8 +64,7 @@ const trustPoints = [
   ["Built around control", "Churvox prepares admin, but the business owner stays in charge."],
 ];
 
-function PublicNavLink({ to, label, type }) {
-  if (type === "static") return <a href={to}>{label}</a>;
+function PublicNavLink({ to, label }) {
   return <Link to={to}>{label}</Link>;
 }
 
@@ -81,8 +80,8 @@ export function Nav() {
       </Link>
 
       <div className="publicLinks">
-        {navLinks.map(([to, label, type]) => (
-          <PublicNavLink key={to} to={to} label={label} type={type} />
+        {navLinks.map(([to, label]) => (
+          <PublicNavLink key={to} to={to} label={label} />
         ))}
         <Link to="/signup" className="publicPrimary">Start trial</Link>
       </div>
@@ -103,10 +102,10 @@ export function Footer() {
       <nav aria-label="Footer navigation">
         <Link to="/features">How it works</Link>
         <Link to="/pricing">Pricing</Link>
-        <a href="/about">About</a>
-        <a href="/security">Security</a>
-        <a href="/contact">Contact</a>
-        <a href="/refunds-cancellations">Refunds & cancellations</a>
+        <Link to="/about">About</Link>
+        <Link to="/security">Security</Link>
+        <Link to="/contact">Contact</Link>
+        <Link to="/refunds-cancellations">Refunds & cancellations</Link>
         <Link to="/request">Customer request form</Link>
         <Link to="/privacy-policy">Privacy</Link>
         <Link to="/terms-of-service">Terms</Link>
@@ -167,7 +166,7 @@ function ProductMock() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_BUSINESS_READY_20260701">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_BUSINESS_READY_20260704_NAV_SAFE">
       <Nav />
 
       <section className="publicHero">
