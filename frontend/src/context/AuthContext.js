@@ -9,6 +9,8 @@ const AuthContext = createContext(null);
 const AUTH_TIMEOUT_MS = 15000;
 const WORKER_AUTH_TIMEOUT_MS = 10000;
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
+const SESSION_CACHE_KEY = "churvox_last_valid_user";
+const SESSION_CACHE_MAX_MS = 1000 * 60 * 60 * 24 * 14;
 const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
 const GOOD_STATUSES = new Set(["active", "paid", "trialing", "trial", "past_due", "tester_free", "worker"]);
 
@@ -19,6 +21,7 @@ function clearStoredAuth() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("owner_portal_session");
     localStorage.removeItem("platform_owner_email");
+    localStorage.removeItem(SESSION_CACHE_KEY);
   } catch {}
 }
 
@@ -110,8 +113,43 @@ function shouldTryWorkerFallback(err) {
   return [400, 401, 403, 404, 408, 422, 500, 502, 503, 504].includes(status);
 }
 
+function readCachedUser() {
+  try {
+    const raw = localStorage.getItem(SESSION_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const savedAt = Number(parsed?.saved_at || 0);
+    if (!savedAt || Date.now() - savedAt > SESSION_CACHE_MAX_MS) {
+      localStorage.removeItem(SESSION_CACHE_KEY);
+      return null;
+    }
+    const cached = userFrom(parsed?.user || parsed);
+    if (!cached?.email) return null;
+    const token = parsed?.token || cached.token || localStorage.getItem("token") || "";
+    if (token) cached.token = token;
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
+function rememberUser(user) {
+  try {
+    const safe = userFrom(user);
+    if (!safe?.email) return;
+    const token = safe.token || localStorage.getItem("token") || "";
+    localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({ saved_at: Date.now(), token, user: safe }));
+    if (token) localStorage.setItem("token", token);
+    const email = String(safe.email || "").toLowerCase();
+    if (email === "hello@churvox.com" || safe?.is_platform_owner === true || safe?.is_admin === true) {
+      localStorage.setItem("owner_portal_session", "true");
+      localStorage.setItem("platform_owner_email", email);
+    }
+  } catch {}
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => readCachedUser());
   const [loading, setLoading] = useState(true);
 
   const fetchMe = useCallback(async (token) => {
@@ -129,14 +167,24 @@ export function AuthProvider({ children }) {
 
   const checkAuth = useCallback(async () => {
     let token = "";
-    try { token = localStorage.getItem("token") || ""; } catch {}
+    let cached = null;
+    try {
+      cached = readCachedUser();
+      token = localStorage.getItem("token") || cached?.token || "";
+    } catch {}
     try {
       const me = await fetchMe(token || undefined);
       if (me?.has_app_access || inferredWorker(me) || inferredPayroll(me) || hasValidPlan(me)) removePlanFlag();
+      rememberUser(me);
       setUser(me);
       return me;
     } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      const status = err?.response?.status;
+      if (cached?.email && [401, 403, 408, 429, 500, 502, 503, 504].includes(Number(status || 0))) {
+        setUser(cached);
+        return cached;
+      }
+      if (status === 401 || status === 403) {
         clearStoredAuth();
         setUser(null);
       }
@@ -226,13 +274,8 @@ export function AuthProvider({ children }) {
     }
 
     if (nextUser?.has_app_access || inferredWorker(nextUser) || inferredPayroll(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
+    rememberUser(nextUser);
     setUser(nextUser);
-
-    const finalEmail = String(nextUser.email || "").trim().toLowerCase();
-    if (finalEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
-      localStorage.setItem("owner_portal_session", "true");
-      localStorage.setItem("platform_owner_email", finalEmail);
-    }
 
     return { ...response.data, user: nextUser, ...nextUser };
   }, []);
@@ -256,6 +299,7 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem(PLAN_REQUIRED_KEY, "true");
     const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
+    rememberUser(locked);
     setUser(locked);
     return { ...response.data, user: locked, ...locked };
   }, []);
@@ -288,7 +332,11 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const updateUser = useCallback((updates) => setUser((prev) => (prev ? { ...prev, ...updates } : prev)), []);
+  const updateUser = useCallback((updates) => setUser((prev) => {
+    const next = prev ? { ...prev, ...updates } : prev;
+    if (next) rememberUser(next);
+    return next;
+  }), []);
 
   const roleValue = rawRole(user || {});
   const isWorker = inferredWorker(user || {});
@@ -328,6 +376,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
 }
