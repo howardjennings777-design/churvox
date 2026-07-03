@@ -69,6 +69,7 @@ for _patch in [
     'churvox_tester_signup_access_patch',
     'churvox_on_site_payments_patch',
     'churvox_terminal_reader_patch',
+    'churvox_plan_trial_guard_patch',
 ]:
     _install_launch_patch(_patch)
 
@@ -78,7 +79,7 @@ PLAN_ENV_BY_KEY = {'solo': 'START', 'team': 'CREW', 'pro': 'OPERATOR', 'enterpri
 SUPPORTED_COUNTRIES = {'NZ', 'AU', 'US', 'UK'}
 FEATURE_ROUTES = [
     ('/api/team', 'team'), ('/api/time', 'team'), ('/api/dispatch', 'team'), ('/api/routes', 'team'), ('/api/areas', 'team'), ('/api/photos', 'team'), ('/api/documents', 'team'), ('/api/recurring', 'team'),
-    ('/api/slips', 'pro'), ('/api/command', 'pro'), ('/api/operator', 'pro'), ('/api/ai', 'pro'), ('/api/approval', 'pro'), ('/api/approvals', 'pro'), ('/api/alerts', 'pro'), ('/api/automation', 'pro'), ('/api/messages', 'pro'), ('/api/reviews', 'pro'),
+    ('/api/slips', 'pro'), ('/api/operator', 'pro'), ('/api/ai', 'pro'), ('/api/approval', 'pro'), ('/api/approvals', 'pro'), ('/api/alerts', 'pro'), ('/api/automation', 'pro'), ('/api/messages', 'team'), ('/api/reviews', 'pro'),
     ('/api/payroll', 'enterprise'), ('/api/reports', 'enterprise'), ('/api/exports', 'enterprise'), ('/api/roles', 'enterprise'), ('/api/profit', 'enterprise'), ('/api/assets', 'enterprise'), ('/api/inventory', 'enterprise'), ('/api/gps', 'enterprise')
 ]
 PUBLIC_PREFIXES = ('/api/auth', '/api/billing', '/api/admin', '/api/lifecycle', '/api/platform/visit', '/api/support', '/api/invite', '/api/health')
