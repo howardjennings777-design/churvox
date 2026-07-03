@@ -64,10 +64,12 @@ function makeButton(id, className, text = "Out") {
 }
 
 function installOwnerLogout() {
-  const nav = document.querySelector(".cocNav");
-  if (!nav || document.getElementById(LOGOUT_ID)) return;
-  const button = makeButton(LOGOUT_ID, "cocLogoutNavButton", "Out");
-  nav.appendChild(button);
+  const target = document.querySelector(".cocBar") || document.querySelector(".churvoxOptionC");
+  if (!target) return;
+  let button = document.getElementById(LOGOUT_ID);
+  if (!button) button = makeButton(LOGOUT_ID, "cocLogoutHeaderChip", "Out");
+  button.className = "cocLogoutHeaderChip";
+  if (button.parentElement !== target) target.appendChild(button);
 }
 
 function installWorkerLogout() {
@@ -87,10 +89,11 @@ function installStyles() {
   const style = document.createElement("style");
   style.id = "churvox-logout-nav-style";
   style.textContent = `
-    .cocLogoutNavButton,
+    .cocBar{position:relative!important;}
+    .cocLogoutHeaderChip,
     .swLogoutNavButton{
       border:1px solid rgba(239,68,68,.22)!important;
-      background:rgba(239,68,68,.07)!important;
+      background:rgba(17,24,39,.72)!important;
       color:#fecaca!important;
       cursor:pointer!important;
       font-weight:950!important;
@@ -98,27 +101,33 @@ function installStyles() {
       width:auto!important;
       min-width:0!important;
       max-width:max-content!important;
-      flex:0 0 auto!important;
       box-shadow:none!important;
       transform:none!important;
+      z-index:90!important;
     }
-    .cocLogoutNavButton:hover,
+    .cocLogoutHeaderChip:hover,
     .swLogoutNavButton:hover{
       border-color:rgba(248,113,113,.62)!important;
       background:rgba(239,68,68,.14)!important;
       color:#fff!important;
     }
-    .cocNav .cocLogoutNavButton{
-      margin-left:auto!important;
+    .cocLogoutHeaderChip{
+      position:absolute!important;
+      top:8px!important;
+      right:8px!important;
       border-radius:999px!important;
       padding:3px 7px!important;
-      min-height:22px!important;
-      height:22px!important;
-      max-height:22px!important;
-      font-size:9px!important;
+      min-height:20px!important;
+      height:20px!important;
+      max-height:20px!important;
+      font-size:8px!important;
       line-height:1!important;
       letter-spacing:.01em!important;
       white-space:nowrap!important;
+    }
+    .cocNav .cocLogoutNavButton,
+    .cocNav .cocLogoutHeaderChip{
+      display:none!important;
     }
     .swNav .swLogoutNavButton{
       border-radius:999px!important;
@@ -130,12 +139,13 @@ function installStyles() {
       line-height:1!important;
     }
     @media(max-width:760px){
-      .cocNav .cocLogoutNavButton{
-        margin-left:0!important;
-        padding:3px 6px!important;
-        min-height:20px!important;
-        height:20px!important;
-        max-height:20px!important;
+      .cocLogoutHeaderChip{
+        top:6px!important;
+        right:6px!important;
+        padding:2px 6px!important;
+        min-height:18px!important;
+        height:18px!important;
+        max-height:18px!important;
         font-size:8px!important;
       }
     }
