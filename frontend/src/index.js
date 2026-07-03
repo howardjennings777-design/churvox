@@ -28,7 +28,8 @@ import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxPublicBusinessPagesRuntime';
 import './runtime/churvoxPublicBusinessPolishRuntime';
-import './runtime/churvoxTopTierFeaturesRuntime';
+// Disabled: top-tier runtime was too broad and affected live layout. Rebuild as proper React components later.
+// import './runtime/churvoxTopTierFeaturesRuntime';
 import './pages/worker/WorkerNoFussPolish.css';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
