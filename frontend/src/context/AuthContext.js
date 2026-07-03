@@ -165,13 +165,26 @@ export function AuthProvider({ children }) {
     return nextUser;
   }, []);
 
-  const checkAuth = useCallback(async () => {
+  const checkAuth = useCallback(async ({ force = false } = {}) => {
     let token = "";
     let cached = null;
     try {
       cached = readCachedUser();
       token = localStorage.getItem("token") || cached?.token || "";
     } catch {}
+
+    if (cached?.email && !force) {
+      setUser(cached);
+      setLoading(false);
+      return cached;
+    }
+
+    if (!token && !cached?.email) {
+      setUser(null);
+      setLoading(false);
+      return null;
+    }
+
     try {
       const me = await fetchMe(token || undefined);
       if (me?.has_app_access || inferredWorker(me) || inferredPayroll(me) || hasValidPlan(me)) removePlanFlag();
@@ -180,7 +193,7 @@ export function AuthProvider({ children }) {
       return me;
     } catch (err) {
       const status = err?.response?.status;
-      if (cached?.email && [401, 403, 408, 429, 500, 502, 503, 504].includes(Number(status || 0))) {
+      if (cached?.email && [401, 403, 408, 422, 429, 500, 502, 503, 504].includes(Number(status || 0))) {
         setUser(cached);
         return cached;
       }
@@ -200,7 +213,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const refreshAuthAfterBilling = () => {
-      checkAuth().catch(() => {});
+      checkAuth({ force: true }).catch(() => {});
     };
     window.addEventListener("churvox-auth-refresh", refreshAuthAfterBilling);
     window.addEventListener("storage", refreshAuthAfterBilling);
