@@ -8,7 +8,7 @@ try:
 except Exception:  # pragma: no cover
     ObjectId = None
 
-from fastapi import Body, Form, HTTPException, Request
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
 PLAN_ALIAS = {
@@ -18,6 +18,7 @@ PLAN_ALIAS = {
     "command": "enterprise", "enterprise": "enterprise",
 }
 PLAN_RANK = {"": 0, "none": 0, "solo": 1, "team": 2, "pro": 3, "enterprise": 4}
+UI_PLAN = {"solo": "start", "team": "crew", "pro": "operator", "enterprise": "command"}
 PLAN_LIMITS = {
     "solo": {"clients": 250, "jobsPerMonth": 50, "activeTeamMembers": 1, "aiOperatorActions": 25},
     "team": {"clients": 1000, "jobsPerMonth": 150, "activeTeamMembers": 5, "aiOperatorActions": 100},
@@ -167,8 +168,10 @@ def owner_has_access(owner_doc: dict) -> bool:
     if PLAN_RANK.get(plan, 0) <= 0:
         return False
     status = safe_text(owner_doc.get("subscription_status") or owner_doc.get("billing_status") or owner_doc.get("stripe_status")).lower()
-    if status in {"active", "paid", "tester_free"}:
-        return not trial_expired(owner_doc) if status == "tester_free" else True
+    if status in {"active", "paid"}:
+        return True
+    if status == "tester_free":
+        return not trial_expired(owner_doc)
     if status == "trialing":
         return not trial_expired(owner_doc)
     return False
@@ -239,7 +242,6 @@ async def owner_doc_for(module, user_doc: dict):
 
 def required_plan_for(path: str, method: str, owner_doc: dict):
     path = path.lower()
-    method = method.upper()
     if path.startswith(PUBLIC_API_PREFIXES):
         return None
     if path.startswith(ACCOUNTING_PREFIXES):
@@ -338,27 +340,66 @@ async def start_no_card_trial(module, request: Request, token: str, plan: str, u
     user = await db.users.find_one({"_id": oid})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
     key = normalize_plan(plan or ui_plan)
     if key not in PLAN_RANK or PLAN_RANK[key] <= 0:
         raise HTTPException(status_code=400, detail="Choose Start, Crew, Operator or Command")
+
     now = utcnow()
+    current_status = safe_text(user.get("subscription_status") or user.get("billing_status") or "none").lower()
+    current_trial_start = parse_dt(user.get("trial_started_at"))
+    current_trial_end = parse_dt(user.get("trial_ends_at"))
+    clean_country = safe_text(country or user.get("billing_country") or user.get("country"), "NZ").upper()
+    clean_ui_plan = UI_PLAN.get(key, key)
+
+    if current_status in {"active", "paid"}:
+        return key, current_trial_end, "paid_active"
+
+    if current_trial_start or current_trial_end:
+        if current_status == "trialing" and current_trial_end and current_trial_end > now:
+            await db.users.update_one({"_id": oid}, {"$set": {
+                "plan": key,
+                "ui_plan": clean_ui_plan,
+                "subscription_plan": key,
+                "billing_plan": key,
+                "billing_country": clean_country,
+                "country": clean_country,
+                "billing_lock_reason": "trial_active",
+                "updated_at": now,
+            }})
+            return key, current_trial_end, "trial_active"
+
+        await db.users.update_one({"_id": oid}, {"$set": {
+            "subscription_status": "payment_required",
+            "billing_status": "payment_required",
+            "billing_lock_reason": "payment_required",
+            "plan": key,
+            "ui_plan": clean_ui_plan,
+            "subscription_plan": key,
+            "billing_plan": key,
+            "billing_country": clean_country,
+            "country": clean_country,
+            "updated_at": now,
+        }})
+        return key, current_trial_end, "trial_expired"
+
     trial_end = now + timedelta(days=TRIAL_DAYS)
     update = {
         "plan": key,
-        "ui_plan": ui_plan or {"solo": "start", "team": "crew", "pro": "operator", "enterprise": "command"}.get(key, key),
+        "ui_plan": clean_ui_plan,
         "subscription_plan": key,
         "billing_plan": key,
         "subscription_status": "trialing",
         "trial_started_at": now,
         "trial_ends_at": trial_end,
         "billing_lock_reason": "trial_active",
-        "billing_country": safe_text(country, "NZ").upper(),
-        "country": safe_text(country, "NZ").upper(),
+        "billing_country": clean_country,
+        "country": clean_country,
         "trial_days": TRIAL_DAYS,
         "updated_at": now,
     }
     await db.users.update_one({"_id": oid}, {"$set": update})
-    return key, trial_end
+    return key, trial_end, "trial_started"
 
 
 def install(module):
@@ -391,7 +432,7 @@ def install(module):
                 "plan": normalize_plan(owner_doc.get("plan")),
                 "subscription_status": safe_text(owner_doc.get("subscription_status")),
                 "trial_ends_at": json_safe(owner_doc.get("trial_ends_at")),
-                "detail": "Your 14-day trial has ended or no active plan is selected. Choose a plan to continue.",
+                "detail": "Your 14-day trial has ended or no active plan is selected. Choose a paid plan to continue.",
             })
         required = required_plan_for(path, method, owner_doc)
         plan = normalize_plan(owner_doc.get("plan"))
@@ -411,14 +452,20 @@ def install(module):
         if not owner_doc:
             raise HTTPException(status_code=401, detail="Not logged in")
         plan = normalize_plan(owner_doc.get("plan"))
+        trial_end = parse_dt(owner_doc.get("trial_ends_at"))
+        days_left = None
+        if trial_end:
+            days_left = max(0, int((trial_end - utcnow()).total_seconds() // 86400) + (1 if (trial_end - utcnow()).total_seconds() % 86400 > 0 else 0))
         return json_safe({
             "success": True,
             "plan": plan,
             "plan_name": plan,
-            "ui_plan": owner_doc.get("ui_plan"),
+            "ui_plan": owner_doc.get("ui_plan") or UI_PLAN.get(plan, plan),
             "subscription_status": owner_doc.get("subscription_status") or "none",
+            "trial_started_at": owner_doc.get("trial_started_at"),
             "trial_ends_at": owner_doc.get("trial_ends_at"),
             "trial_expired": trial_expired(owner_doc),
+            "trial_days_left": days_left,
             "trial_days": TRIAL_DAYS,
             "has_app_access": owner_has_access(owner_doc),
             "billing_lock_reason": owner_doc.get("billing_lock_reason") or "",
@@ -437,8 +484,15 @@ def install(module):
         ui_plan = safe_text(form.get("ui_plan") or plan)
         country = safe_text(form.get("country") or form.get("billing_country") or "NZ").upper()
         email = safe_text(form.get("email"))
-        key, trial_end = await start_no_card_trial(module, request, token, plan, ui_plan, country, email)
-        url = f"{frontend_url(module)}/setup-guide?first_setup=1&trial_started=1&checkout=saved&plan={key}"
+        key, trial_end, state = await start_no_card_trial(module, request, token, plan, ui_plan, country, email)
+        if state == "trial_expired":
+            url = f"{frontend_url(module)}/plans?trial=expired&payment_required=1&plan={key}"
+        elif state == "paid_active":
+            url = f"{frontend_url(module)}/plans?paid_account=1&plan={key}"
+        elif state == "trial_active":
+            url = f"{frontend_url(module)}/setup-guide?first_setup=1&trial_active=1&plan={key}"
+        else:
+            url = f"{frontend_url(module)}/setup-guide?first_setup=1&trial_started=1&checkout=saved&plan={key}"
         return RedirectResponse(url=url, status_code=303)
 
     remove_route(app, "/api/billing/subscription-status", "GET")
