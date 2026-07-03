@@ -46,6 +46,7 @@ import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import HomePage from "./pages/marketing/ExecutiveHomePage";
 import PricingPage from "./pages/marketing/ExecutivePricingPage";
 import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
+import { AboutPage, SecurityPage, ContactPage, RefundsCancellationsPage } from "./pages/marketing/ExecutiveTrustPages";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import ChurvoxHelpWidget from "./components/ChurvoxHelpWidget";
 import GlobalJobCreateModal from "./components/GlobalJobCreateModal";
@@ -119,6 +120,7 @@ function App() {
     <Route path="/worker/settings" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
     <Route path="/worker/profile" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
     <Route path="/privacy" element={<PrivacyPage />} /><Route path="/terms" element={<TermsPage />} /><Route path="/privacy-policy" element={<PrivacyPolicyPage />} /><Route path="/terms-of-service" element={<TermsOfServicePage />} /><Route path="/account-deletion" element={<AccountDeletionPage />} /><Route path="/platform-unlock" element={<PlatformUnlock />} />
+    <Route path="/about" element={<AboutPage />} /><Route path="/security" element={<SecurityPage />} /><Route path="/contact" element={<ContactPage />} /><Route path="/refunds-cancellations" element={<RefundsCancellationsPage />} />
     <Route path="/" element={<HomePage />} /><Route path="/pricing" element={<PricingPage />} /><Route path="/features" element={<FeaturesPage />} /><Route path="*" element={<RoleRedirect />} />
     <Route path="/fresh" element={<Navigate to="/dashboard" replace />} />
   </Routes></ErrorBoundary></AuthProvider></BrowserRouter>;
