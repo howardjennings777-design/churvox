@@ -65,14 +65,14 @@ function makeButton(id, className, text = "Log out") {
 function installOwnerLogout() {
   const nav = document.querySelector(".cocNav");
   if (!nav || document.getElementById(LOGOUT_ID)) return;
-  const button = makeButton(LOGOUT_ID, "cocLogoutNavButton", "Log out");
+  const button = makeButton(LOGOUT_ID, "cocLogoutNavButton", "Logout");
   nav.appendChild(button);
 }
 
 function installWorkerLogout() {
   const nav = document.querySelector(".swNav");
   if (!nav || document.getElementById(WORKER_LOGOUT_ID)) return;
-  const button = makeButton(WORKER_LOGOUT_ID, "swLogoutNavButton", "Log out");
+  const button = makeButton(WORKER_LOGOUT_ID, "swLogoutNavButton", "Logout");
   nav.appendChild(button);
 }
 
@@ -88,34 +88,52 @@ function installStyles() {
   style.textContent = `
     .cocLogoutNavButton,
     .swLogoutNavButton{
-      border:1px solid rgba(239,68,68,.35)!important;
-      background:rgba(239,68,68,.10)!important;
+      border:1px solid rgba(239,68,68,.26)!important;
+      background:rgba(239,68,68,.08)!important;
       color:#fecaca!important;
       cursor:pointer!important;
       font-weight:950!important;
       text-decoration:none!important;
+      width:auto!important;
+      min-width:0!important;
+      max-width:max-content!important;
+      flex:0 0 auto!important;
     }
     .cocLogoutNavButton:hover,
     .swLogoutNavButton:hover{
-      border-color:rgba(248,113,113,.75)!important;
-      background:rgba(239,68,68,.18)!important;
+      border-color:rgba(248,113,113,.68)!important;
+      background:rgba(239,68,68,.16)!important;
       color:#fff!important;
     }
     .cocNav .cocLogoutNavButton{
       margin-left:auto!important;
       border-radius:999px!important;
-      padding:10px 14px!important;
-      min-height:40px!important;
+      padding:6px 10px!important;
+      min-height:30px!important;
+      height:30px!important;
+      font-size:11px!important;
+      line-height:1!important;
+      letter-spacing:.01em!important;
       white-space:nowrap!important;
+      box-shadow:none!important;
     }
     .swNav .swLogoutNavButton{
-      border-radius:16px!important;
-      padding:8px 10px!important;
-      font-size:12px!important;
-      line-height:1.1!important;
+      border-radius:999px!important;
+      padding:6px 9px!important;
+      min-height:28px!important;
+      height:28px!important;
+      font-size:11px!important;
+      line-height:1!important;
+      box-shadow:none!important;
     }
     @media(max-width:760px){
-      .cocNav .cocLogoutNavButton{margin-left:0!important;}
+      .cocNav .cocLogoutNavButton{
+        margin-left:0!important;
+        padding:6px 9px!important;
+        min-height:28px!important;
+        height:28px!important;
+        font-size:10px!important;
+      }
     }
   `;
   document.head.appendChild(style);
