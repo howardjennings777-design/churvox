@@ -150,6 +150,25 @@ body:has(#option-f-xero-actions-panel) .churvoxOptionC .workspace .cocPage > .co
   max-width: 100% !important;
 }
 
+/* Keep slips as clean working forms. Admin trail/proof explanation panels belong in Command, not inside the form modal. */
+.churvoxOptionC .cocDrawer .real-review-owner-panel,
+.churvoxOptionC .cocDrawer .adminTrail,
+.churvoxOptionC .cocDrawer .admin-trail,
+.churvoxOptionC .cocDrawer [data-admin-trail],
+.churvoxOptionC .cocDrawer section:has(.rrEyebrow),
+.churvoxOptionC .cocDrawer article:has(.rrEyebrow),
+.churvoxOptionC .cocDrawer div:has(> .rrEyebrow) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 @media (max-width: 720px) {
   .churvoxOptionC {
     padding-left: 6px !important;
