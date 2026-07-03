@@ -47,13 +47,14 @@ async function logout() {
   window.location.href = "/login";
 }
 
-function makeButton(id, className, text = "Log out") {
+function makeButton(id, className, text = "Out") {
   const button = document.createElement("button");
   button.id = id;
   button.type = "button";
   button.className = className;
   button.textContent = text;
   button.setAttribute("aria-label", "Log out of Churvox");
+  button.title = "Logout";
   button.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -65,14 +66,14 @@ function makeButton(id, className, text = "Log out") {
 function installOwnerLogout() {
   const nav = document.querySelector(".cocNav");
   if (!nav || document.getElementById(LOGOUT_ID)) return;
-  const button = makeButton(LOGOUT_ID, "cocLogoutNavButton", "Logout");
+  const button = makeButton(LOGOUT_ID, "cocLogoutNavButton", "Out");
   nav.appendChild(button);
 }
 
 function installWorkerLogout() {
   const nav = document.querySelector(".swNav");
   if (!nav || document.getElementById(WORKER_LOGOUT_ID)) return;
-  const button = makeButton(WORKER_LOGOUT_ID, "swLogoutNavButton", "Logout");
+  const button = makeButton(WORKER_LOGOUT_ID, "swLogoutNavButton", "Out");
   nav.appendChild(button);
 }
 
@@ -88,8 +89,8 @@ function installStyles() {
   style.textContent = `
     .cocLogoutNavButton,
     .swLogoutNavButton{
-      border:1px solid rgba(239,68,68,.26)!important;
-      background:rgba(239,68,68,.08)!important;
+      border:1px solid rgba(239,68,68,.22)!important;
+      background:rgba(239,68,68,.07)!important;
       color:#fecaca!important;
       cursor:pointer!important;
       font-weight:950!important;
@@ -98,41 +99,44 @@ function installStyles() {
       min-width:0!important;
       max-width:max-content!important;
       flex:0 0 auto!important;
+      box-shadow:none!important;
+      transform:none!important;
     }
     .cocLogoutNavButton:hover,
     .swLogoutNavButton:hover{
-      border-color:rgba(248,113,113,.68)!important;
-      background:rgba(239,68,68,.16)!important;
+      border-color:rgba(248,113,113,.62)!important;
+      background:rgba(239,68,68,.14)!important;
       color:#fff!important;
     }
     .cocNav .cocLogoutNavButton{
       margin-left:auto!important;
       border-radius:999px!important;
-      padding:6px 10px!important;
-      min-height:30px!important;
-      height:30px!important;
-      font-size:11px!important;
+      padding:3px 7px!important;
+      min-height:22px!important;
+      height:22px!important;
+      max-height:22px!important;
+      font-size:9px!important;
       line-height:1!important;
       letter-spacing:.01em!important;
       white-space:nowrap!important;
-      box-shadow:none!important;
     }
     .swNav .swLogoutNavButton{
       border-radius:999px!important;
-      padding:6px 9px!important;
-      min-height:28px!important;
-      height:28px!important;
-      font-size:11px!important;
+      padding:3px 7px!important;
+      min-height:22px!important;
+      height:22px!important;
+      max-height:22px!important;
+      font-size:9px!important;
       line-height:1!important;
-      box-shadow:none!important;
     }
     @media(max-width:760px){
       .cocNav .cocLogoutNavButton{
         margin-left:0!important;
-        padding:6px 9px!important;
-        min-height:28px!important;
-        height:28px!important;
-        font-size:10px!important;
+        padding:3px 6px!important;
+        min-height:20px!important;
+        height:20px!important;
+        max-height:20px!important;
+        font-size:8px!important;
       }
     }
   `;
