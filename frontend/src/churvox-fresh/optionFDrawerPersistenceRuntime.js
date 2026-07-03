@@ -35,6 +35,8 @@ function ensureStyle() {
   style.textContent = `
     #${TOAST_ID}{position:fixed;left:18px;bottom:72px;z-index:999999;max-width:380px;padding:12px 14px;border-radius:14px;background:#101513;color:#fff;box-shadow:0 18px 44px rgba(16,21,19,.24);font:900 13px/1.35 Inter,system-ui,sans-serif;opacity:0;transform:translateY(12px);transition:.18s ease;pointer-events:none}#${TOAST_ID}.show{opacity:1;transform:translateY(0)}#${TOAST_ID} small{display:block;margin-top:4px;color:rgba(255,255,255,.72);font-weight:800}
     .churvoxOptionC .cocDrawer[data-saved-state="saved"]{box-shadow:0 30px 90px rgba(22,101,52,.22)!important}.churvoxOptionC .cocDrawer[data-saved-state="command"]{box-shadow:0 30px 90px rgba(234,88,12,.28)!important}
+    .churvoxSlipClosing{opacity:0!important;transform:translate3d(-50%,-48%,0) scale(.985)!important;pointer-events:none!important;transition:opacity .14s ease,transform .14s ease!important}
+    body.churvoxSlipOpen{overflow:hidden!important}
     @media(max-width:760px){#${TOAST_ID}{left:10px;right:10px;bottom:70px;max-width:none}}
   `;
   document.head.appendChild(style);
@@ -48,6 +50,24 @@ function toast(title, detail = '') {
   node.classList.add('show');
   clearTimeout(node._timer);
   node._timer = setTimeout(() => node.classList.remove('show'), 2600);
+}
+
+function closeDrawer(drawer, reason = 'closed') {
+  const node = drawer || document.querySelector('.churvoxOptionC .cocDrawer');
+  if (!node) return;
+  node.dataset.closingReason = reason;
+  node.classList.add('churvoxSlipClosing');
+  try { window.dispatchEvent(new CustomEvent('churvox:close-slip', { detail: { reason } })); } catch (_) {}
+  try { document.dispatchEvent(new CustomEvent('churvox:close-slip', { detail: { reason } })); } catch (_) {}
+  window.setTimeout(() => {
+    try { node.remove(); } catch (_) {}
+    updateSlipBodyState();
+  }, 90);
+}
+
+function updateSlipBodyState() {
+  const open = Boolean(document.querySelector('.churvoxOptionC .cocDrawer'));
+  document.body.classList.toggle('churvoxSlipOpen', open);
 }
 
 function fieldsFromDrawer(drawer) {
@@ -224,10 +244,19 @@ function handleDrawerButton(event) {
   const label = lower(button.textContent);
   const kind = drawerKind(drawer);
 
+  if (/^(close|cancel|done|back)$/.test(label) || label.includes('close')) {
+    event.preventDefault();
+    event.stopPropagation();
+    closeDrawer(drawer, 'close_button');
+    return;
+  }
+
   if (kind === 'command' && ['approve', 'park'].includes(label)) {
     event.preventDefault();
     event.stopPropagation();
     commandDecision(drawer, label === 'approve' ? 'approved' : 'parked');
+    setTimeout(() => closeDrawer(drawer, label), 120);
+    setTimeout(() => window.dispatchEvent(new Event('hashchange')), 180);
     return;
   }
 
@@ -239,12 +268,42 @@ function handleDrawerButton(event) {
   saveRecord(kind, record, missing);
   drawer.dataset.savedState = missing.length ? 'command' : 'saved';
   toast(missing.length ? 'Saved and sent to Command' : 'Saved', missing.length ? `Missing ${missing.join(', ')}.` : `${titleFor(kind, record)} is usable.`);
-  setTimeout(() => window.dispatchEvent(new Event('hashchange')), 80);
+  setTimeout(() => closeDrawer(drawer, 'save_button'), 120);
+  setTimeout(() => window.dispatchEvent(new Event('hashchange')), 180);
+}
+
+function handleEscape(event) {
+  if (event.key !== 'Escape') return;
+  const drawer = document.querySelector('.churvoxOptionC .cocDrawer');
+  if (!drawer) return;
+  event.preventDefault();
+  closeDrawer(drawer, 'escape');
+}
+
+function handleOutsideClick(event) {
+  const app = document.querySelector('.churvoxOptionC');
+  const drawer = document.querySelector('.churvoxOptionC .cocDrawer');
+  if (!app || !drawer) return;
+  if (drawer.contains(event.target)) return;
+  const clickedInsideWorkspace = Boolean(event.target.closest('.churvoxOptionC .workspace, .churvoxOptionC .cocNav, .churvoxOptionC .cocBar'));
+  if (!clickedInsideWorkspace) return;
+  closeDrawer(drawer, 'outside_click');
+}
+
+function observeDrawers() {
+  updateSlipBodyState();
 }
 
 if (typeof window !== 'undefined') {
   window.addEventListener('load', ensureStyle);
   document.addEventListener('click', handleDrawerButton, true);
+  document.addEventListener('keydown', handleEscape, true);
+  document.addEventListener('pointerdown', handleOutsideClick, false);
+  const observer = new MutationObserver(observeDrawers);
+  window.addEventListener('DOMContentLoaded', () => {
+    if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+    observeDrawers();
+  });
 }
 
 export {};
