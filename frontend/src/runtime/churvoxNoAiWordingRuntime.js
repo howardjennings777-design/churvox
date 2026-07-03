@@ -49,9 +49,72 @@ function scrubAttributes(root) {
   });
 }
 
+function normalizeSetupGuideRoute() {
+  const path = window.location.pathname || '';
+  const hash = String(window.location.hash || '').toLowerCase();
+  const setupPath = /^\/(guide|setup|setup-guide)\/?$/i.test(path);
+  const setupHash = ['#setup', '#setupguide', '#setup-guide', '#setupassistant', '#firstrun'].includes(hash);
+  if (!setupPath && !setupHash) return;
+
+  const title = document.querySelector('.churvoxOptionC .title h1');
+  if (title && /^(today|ai guide|churvox guide)$/i.test((title.textContent || '').trim())) {
+    title.textContent = 'Setup Guide';
+  }
+
+  const subtitle = document.querySelector('.churvoxOptionC .title p');
+  if (subtitle && !/setup|first jobs|approval/i.test(subtitle.textContent || '')) {
+    subtitle.textContent = 'Setup, first jobs, worker app, pricing, billing and owner approval basics.';
+  }
+
+  document.querySelectorAll('.churvoxOptionC .cocNav button').forEach((button) => {
+    if (/^(ai guide|setup guide)$/i.test((button.textContent || '').trim())) {
+      button.textContent = 'Setup Guide';
+      button.classList.add('active');
+    }
+  });
+}
+
+function openFreshSection(section) {
+  const target = String(section || '').toLowerCase();
+  if (!target) return;
+  const path = `/dashboard#${target}`;
+  window.history.replaceState({}, '', path);
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+  setTimeout(() => {
+    const wanted = target === 'workers' ? /workers/i : new RegExp(`^${target}$`, 'i');
+    const button = Array.from(document.querySelectorAll('.churvoxOptionC .cocNav button'))
+      .find((node) => wanted.test((node.textContent || '').trim().replace(/\s+/g, '')) || wanted.test((node.textContent || '').trim()));
+    if (button) button.click();
+  }, 20);
+}
+
+function installSetupGuideClicks() {
+  if (window.__CHURVOX_SETUP_GUIDE_CLICKS__) return;
+  window.__CHURVOX_SETUP_GUIDE_CLICKS__ = true;
+  document.addEventListener('click', (event) => {
+    const row = event.target?.closest?.('.aiGuidePage .cocRow, .aiGuidePage button');
+    if (!row) return;
+    const text = String(row.textContent || '').toLowerCase();
+    let target = '';
+    if (/client/.test(text)) target = 'clients';
+    else if (/job/.test(text)) target = 'jobs';
+    else if (/command|approve|approval|park/.test(text)) target = 'command';
+    else if (/worker/.test(text)) target = 'workers';
+    else if (/price|pricing|billing|plan/.test(text)) target = 'plans';
+    else if (/xero|myob|accounting|sync/.test(text)) target = 'xero';
+    else if (/setting|business/.test(text)) target = 'settings';
+    if (!target) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openFreshSection(target);
+  }, true);
+}
+
 function run() {
   scrubText(document.body);
   scrubAttributes(document.body);
+  normalizeSetupGuideRoute();
+  installSetupGuideClicks();
 }
 
 if (typeof window !== 'undefined') {
