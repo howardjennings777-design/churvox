@@ -30,6 +30,7 @@ import './runtime/churvoxPublicBusinessPagesRuntime';
 import './runtime/churvoxPublicBusinessPolishRuntime';
 // Disabled: top-tier runtime was too broad and affected live layout. Rebuild as proper React components later.
 // import './runtime/churvoxTopTierFeaturesRuntime';
+import './runtime/churvoxOwnerReadableRecordsRuntime';
 import './pages/worker/WorkerNoFussPolish.css';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
