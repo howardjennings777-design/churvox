@@ -1,6 +1,6 @@
 function isPublicPath(pathname) {
   const path = String(pathname || "/");
-  return ["/", "/features", "/pricing", "/signup", "/login"].includes(path.replace(/\/+$/, "") || "/");
+  return ["/", "/features", "/pricing", "/about", "/security", "/contact", "/refunds-cancellations", "/signup", "/login"].includes(path.replace(/\/+$/, "") || "/");
 }
 
 function redirectSupportLinks() {
@@ -54,17 +54,57 @@ function injectMobileDeclutter() {
       .publicNav {
         position: sticky !important;
         top: 8px !important;
-        align-items: center !important;
-        gap: 8px !important;
+        z-index: 80 !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 10px !important;
+        overflow: hidden !important;
       }
 
-      .publicBrand small,
-      .publicLinks a:not(.publicPrimary) {
+      .publicBrand {
+        min-width: 0 !important;
+      }
+
+      .publicBrand small {
         display: none !important;
       }
 
       .publicLinks {
+        display: flex !important;
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        gap: 7px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        padding: 2px 2px 4px !important;
+        scrollbar-width: thin !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      .publicLinks a,
+      .publicLinks .publicPrimary {
+        display: inline-flex !important;
         flex: 0 0 auto !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 40px !important;
+        min-width: max-content !important;
+        border-radius: 999px !important;
+        padding: 0 13px !important;
+        font-size: 12px !important;
+        font-weight: 1000 !important;
+        white-space: nowrap !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+
+      .publicLinks a:not(.publicPrimary) {
+        border: 1px solid rgba(15,23,42,.10) !important;
+        background: rgba(255,255,255,.76) !important;
       }
 
       .publicPrimary,
