@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { Briefcase, CreditCard, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, UserRound } from "lucide-react";
+import { Briefcase, CreditCard, LogOut, MapPin, MessageCircle, Navigation, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
@@ -33,6 +33,10 @@ const moneyLabel = (job) => {
 };
 
 const apiBody = (result) => result?.data || result || {};
+const singleJob = (result) => {
+  const body = apiBody(result);
+  return body?.job || body?.data?.job || body?.data || body;
+};
 
 function loadStripeTerminalSdk() {
   if (typeof window === "undefined") return Promise.reject(new Error("Browser required"));
@@ -111,7 +115,7 @@ function JobCard({ job, action = "Open job" }) {
       <span>{clean(job?.scheduled_time || job?.time || job?.scheduled_date || job?.date) || "Next"}</span>
       <h2>{jobTitle(job)}</h2>
       <div className="swFacts">
-        <span className="swFact"><b>Customer</b>{customer(job)}</span>
+        <span className="swFact"><b>Site</b>{customer(job)}</span>
         {status(job) ? <span className="swFact"><b>Status</b>{status(job)}</span> : null}
       </div>
       {place ? <small><MapPin size={15} />{place}</small> : null}
@@ -122,6 +126,19 @@ function JobCard({ job, action = "Open job" }) {
 
 function openJobs(jobs) {
   return jobs.filter((job) => !isDone(job));
+}
+
+function WorkerPrivacyCard() {
+  return (
+    <section className="swCard swGuard">
+      <ShieldCheck size={18} />
+      <div>
+        <span>Customer guard</span>
+        <h2>Assigned work only</h2>
+        <p>Worker view shows the job/site details needed to complete the work. Customer lists, pricing decisions, invoice sending and accounting stay with the owner.</p>
+      </div>
+    </section>
+  );
 }
 
 function WorkerPaymentCard({ job }) {
@@ -298,12 +315,12 @@ function WorkerPaymentCard({ job }) {
       <span>Payment</span>
       <h2>{terminalReady ? "Take card payment" : "Payment locked"}</h2>
       <div className="swFacts">
-        <span className="swFact"><b>Plan</b>{statusRow?.enabled_for_plan ? "Operator / Command" : "Operator or Command"}</span>
+        <span className="swFact"><b>Control</b>Owner sets amount</span>
         <span className="swFact"><b>Amount</b>{moneyLabel(job)}</span>
         <span className="swFact"><b>Reader</b>{reader?.label || reader?.serial_number || connectionStatus}</span>
         <span className="swFact"><b>Status</b>{paymentStatus || step}</span>
       </div>
-      <small>Worker can collect only. Funds go to the business Stripe account.</small>
+      <p className="swFine">Worker can collect only when the office has set the amount and Stripe is ready. No invoice sending, tax filing or payout files happen from worker view.</p>
 
       {!terminalReady ? (
         <button className="swLight" type="button" disabled>Locked</button>
@@ -341,6 +358,7 @@ export function NoFussToday() {
       {!loading && error ? <Empty>{error}</Empty> : null}
       {!loading && nextJob ? <JobCard job={nextJob} /> : null}
       {!loading && !nextJob && !error ? <Empty>No open jobs assigned.</Empty> : null}
+      <WorkerPrivacyCard />
       <button className="swLight" type="button" onClick={refresh}>Refresh</button>
     </Shell>
   );
@@ -355,6 +373,7 @@ export function NoFussJobs() {
       {!loading && error ? <Empty>{error}</Empty> : null}
       {!loading && !error && !queue.length ? <Empty>No open jobs assigned.</Empty> : null}
       {queue.map((job) => <JobCard key={jobId(job)} job={job} action="View job" />)}
+      <WorkerPrivacyCard />
       <button className="swLight" type="button" onClick={refresh}>Refresh</button>
     </Shell>
   );
@@ -363,11 +382,43 @@ export function NoFussJobs() {
 export function NoFussJob() {
   const { id } = useParams();
   const { jobs, loading, error, refresh } = useWorkerJobs();
-  const { post } = useApi();
+  const { get, post } = useApi();
+  const [directJob, setDirectJob] = useState(null);
+  const [directLoading, setDirectLoading] = useState(Boolean(id));
+  const [directError, setDirectError] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const job = useMemo(() => jobs.find((item) => jobId(item) === id) || openJobs(jobs)[0], [jobs, id]);
+  const listedJob = useMemo(() => jobs.find((item) => jobId(item) === id) || null, [jobs, id]);
+  const fallbackJob = !id ? openJobs(jobs)[0] : null;
+  const job = listedJob || directJob || fallbackJob;
   const place = address(job);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadExactJob() {
+      if (!id || listedJob) {
+        setDirectLoading(false);
+        return;
+      }
+      setDirectLoading(true);
+      setDirectError("");
+      try {
+        const result = await Promise.race([
+          get(`/jobs/${encodeURIComponent(id)}`),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Job detail took too long to load.")), 10000)),
+        ]);
+        const found = singleJob(result);
+        if (alive && jobId(found)) setDirectJob(found);
+        if (alive && !jobId(found)) setDirectError("This job is not available in worker view.");
+      } catch (err) {
+        if (alive) setDirectError(err?.response?.data?.detail || err?.message || "Could not load this worker job.");
+      } finally {
+        if (alive) setDirectLoading(false);
+      }
+    }
+    loadExactJob();
+    return () => { alive = false; };
+  }, [get, id, listedJob]);
 
   async function startJob() {
     if (!job) return;
@@ -398,8 +449,9 @@ export function NoFussJob() {
     }
   }
 
-  if (loading) return <Shell tab="Jobs" title="Job"><Empty icon={RefreshCw}>Loading</Empty></Shell>;
-  if (error) return <Shell tab="Jobs" title="Job"><Empty>{error}</Empty></Shell>;
+  if (loading || directLoading) return <Shell tab="Jobs" title="Job"><Empty icon={RefreshCw}>Loading exact job</Empty></Shell>;
+  if (error && !job) return <Shell tab="Jobs" title="Job"><Empty>{error}</Empty></Shell>;
+  if (directError && !job) return <Shell tab="Jobs" title="Job"><Empty>{directError}</Empty></Shell>;
   if (!job) return <Shell tab="Jobs" title="Job"><Empty>No job found.</Empty></Shell>;
 
   return (
@@ -418,6 +470,7 @@ export function NoFussJob() {
           <span className="swFact"><b>Assigned</b>{status(job) || "assigned"}</span>
         </div>
       </section>
+      <WorkerPrivacyCard />
       <section className="swCard swActionCard">
         <span>Work timer</span>
         <h2>Start current job</h2>
