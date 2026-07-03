@@ -47,14 +47,14 @@ async function logout() {
   window.location.href = "/login";
 }
 
-function makeButton(id, className, text = "Out") {
+function makeButton(id, className, text = "Log out") {
   const button = document.createElement("button");
   button.id = id;
   button.type = "button";
   button.className = className;
   button.textContent = text;
   button.setAttribute("aria-label", "Log out of Churvox");
-  button.title = "Logout";
+  button.title = "Log out";
   button.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -67,15 +67,16 @@ function installOwnerLogout() {
   const target = document.querySelector(".cocBar") || document.querySelector(".churvoxOptionC");
   if (!target) return;
   let button = document.getElementById(LOGOUT_ID);
-  if (!button) button = makeButton(LOGOUT_ID, "cocLogoutHeaderChip", "Out");
+  if (!button) button = makeButton(LOGOUT_ID, "cocLogoutHeaderChip", "Log out");
   button.className = "cocLogoutHeaderChip";
+  button.textContent = "Log out";
   if (button.parentElement !== target) target.appendChild(button);
 }
 
 function installWorkerLogout() {
   const nav = document.querySelector(".swNav");
   if (!nav || document.getElementById(WORKER_LOGOUT_ID)) return;
-  const button = makeButton(WORKER_LOGOUT_ID, "swLogoutNavButton", "Out");
+  const button = makeButton(WORKER_LOGOUT_ID, "swLogoutNavButton", "Log out");
   nav.appendChild(button);
 }
 
@@ -92,35 +93,35 @@ function installStyles() {
     .cocBar{position:relative!important;}
     .cocLogoutHeaderChip,
     .swLogoutNavButton{
-      border:1px solid rgba(239,68,68,.22)!important;
-      background:rgba(17,24,39,.72)!important;
+      border:1px solid rgba(239,68,68,.28)!important;
+      background:rgba(17,24,39,.82)!important;
       color:#fecaca!important;
       cursor:pointer!important;
       font-weight:950!important;
       text-decoration:none!important;
       width:auto!important;
-      min-width:0!important;
+      min-width:max-content!important;
       max-width:max-content!important;
-      box-shadow:none!important;
+      box-shadow:0 8px 18px rgba(15,23,42,.12)!important;
       transform:none!important;
       z-index:90!important;
     }
     .cocLogoutHeaderChip:hover,
     .swLogoutNavButton:hover{
-      border-color:rgba(248,113,113,.62)!important;
-      background:rgba(239,68,68,.14)!important;
+      border-color:rgba(248,113,113,.70)!important;
+      background:rgba(239,68,68,.18)!important;
       color:#fff!important;
     }
     .cocLogoutHeaderChip{
       position:absolute!important;
-      top:8px!important;
-      right:8px!important;
+      top:9px!important;
+      right:10px!important;
       border-radius:999px!important;
-      padding:3px 7px!important;
-      min-height:20px!important;
-      height:20px!important;
-      max-height:20px!important;
-      font-size:8px!important;
+      padding:6px 12px!important;
+      min-height:30px!important;
+      height:30px!important;
+      max-height:30px!important;
+      font-size:12px!important;
       line-height:1!important;
       letter-spacing:.01em!important;
       white-space:nowrap!important;
@@ -131,22 +132,22 @@ function installStyles() {
     }
     .swNav .swLogoutNavButton{
       border-radius:999px!important;
-      padding:3px 7px!important;
-      min-height:22px!important;
-      height:22px!important;
-      max-height:22px!important;
-      font-size:9px!important;
+      padding:6px 10px!important;
+      min-height:30px!important;
+      height:30px!important;
+      max-height:30px!important;
+      font-size:12px!important;
       line-height:1!important;
     }
     @media(max-width:760px){
       .cocLogoutHeaderChip{
-        top:6px!important;
-        right:6px!important;
-        padding:2px 6px!important;
-        min-height:18px!important;
-        height:18px!important;
-        max-height:18px!important;
-        font-size:8px!important;
+        top:7px!important;
+        right:7px!important;
+        padding:5px 10px!important;
+        min-height:28px!important;
+        height:28px!important;
+        max-height:28px!important;
+        font-size:11px!important;
       }
     }
   `;
