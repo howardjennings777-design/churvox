@@ -32,6 +32,7 @@ import './runtime/churvoxPublicBusinessPolishRuntime';
 // import './runtime/churvoxTopTierFeaturesRuntime';
 import './runtime/churvoxOwnerReadableRecordsRuntime';
 import './runtime/churvoxTierUiGuardRuntime';
+import './runtime/churvoxTrialExpiryRedirectRuntime';
 import './pages/worker/WorkerNoFussPolish.css';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
