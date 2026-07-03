@@ -1,9 +1,12 @@
 // CHURVOX_COMMAND_PREPARED_SLIPS_20260630
-// Shows backend-prepared Command slips when available. Fails silently until backend deploys.
+// Shows backend-prepared Command slips when available. Stops quietly if backend route is not deployed.
 
 const BACKEND = 'https://grassley-backend.onrender.com';
 const STYLE_ID = 'churvox-command-prepared-slips-style';
 const PANEL_ID = 'churvox-command-prepared-slips';
+let disabled = false;
+let missingRouteSeen = false;
+let lastFetchAt = 0;
 
 function apiUrl(path) {
   const host = String(window.location.hostname || '').toLowerCase();
@@ -21,12 +24,23 @@ function headers() {
   return out;
 }
 async function loadSlips() {
+  if (disabled || missingRouteSeen) return [];
+  const now = Date.now();
+  if (now - lastFetchAt < 15000) return [];
+  lastFetchAt = now;
   try {
     const res = await fetch(apiUrl('/api/command/prepared-slips'), { credentials: 'include', headers: headers() });
+    if (res.status === 404 || res.status === 422) {
+      missingRouteSeen = true;
+      disabled = true;
+      return [];
+    }
     if (!res.ok) return [];
     const body = await res.json();
     return Array.isArray(body.slips) ? body.slips : Array.isArray(body.items) ? body.items : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 function ensureStyle() {
   if (document.getElementById(STYLE_ID)) return;
@@ -41,6 +55,7 @@ function target() {
   return document.querySelector('.churvoxOptionC .workspace') || document.querySelector('.churvoxOptionC .cocPage') || document.querySelector('.freshApp') || document.querySelector('.churvoxOptionC');
 }
 async function render() {
+  if (disabled || missingRouteSeen) { document.getElementById(PANEL_ID)?.remove(); return; }
   if (!isCommand()) { document.getElementById(PANEL_ID)?.remove(); return; }
   const parent = target();
   if (!parent) return;
@@ -62,7 +77,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_COMMAND_PREPARED_SLIPS__)
   window.addEventListener('hashchange', () => setTimeout(render, 350));
   window.addEventListener('popstate', () => setTimeout(render, 350));
   document.addEventListener('click', () => setTimeout(render, 500), true);
-  setInterval(render, 5000);
+  setInterval(render, 30000);
 }
 
 export {};
