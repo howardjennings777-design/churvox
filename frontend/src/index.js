@@ -32,8 +32,8 @@ import './runtime/churvoxPublicBusinessPolishRuntime';
 // import './runtime/churvoxTopTierFeaturesRuntime';
 import './runtime/churvoxOwnerReadableRecordsRuntime';
 // Disabled: billing/tier browser runtimes interfered with navigation/loading. Backend remains source of truth.
-// import './runtime/churvoxTierUiGuardRuntime';
-// import './runtime/churvoxTrialExpiryRedirectRuntime';
+// // import './runtime/churvoxTierUiGuardRuntime';
+// // import './runtime/churvoxTrialExpiryRedirectRuntime';
 import './pages/worker/WorkerNoFussPolish.css';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';

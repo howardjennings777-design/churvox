@@ -69,7 +69,7 @@ for _patch in [
     'churvox_tester_signup_access_patch',
     'churvox_on_site_payments_patch',
     'churvox_terminal_reader_patch',
-    'churvox_plan_trial_guard_patch',
+    # 'churvox_plan_trial_guard_patch',
 ]:
     _install_launch_patch(_patch)
 
