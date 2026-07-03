@@ -112,7 +112,7 @@ function JobCard({ job, action = "Open job" }) {
   const place = address(job);
   return (
     <section className="swCard swJob">
-      <span>{clean(job?.scheduled_time || job?.time || job?.scheduled_date || job?.date) || "Next"}</span>
+      <span>{clean(job?.scheduled_time || job?.time || job?.scheduled_date || job?.date) || "Any time"}</span>
       <h2>{jobTitle(job)}</h2>
       <div className="swFacts">
         <span className="swFact"><b>Site</b>{customer(job)}</span>
@@ -298,6 +298,10 @@ function WorkerPaymentCard({ job }) {
           currency: intent.currency || "nzd",
           stripe_account_id: intent.stripe_account_id,
           status: paidIntent.status || "processed",
+          source: "worker_on_site_card_reader",
+          payment_source_label: "Worker on-site card reader",
+          channel: "worker_app",
+          reader: reader?.label || reader?.serial_number || "Stripe Terminal reader",
         });
       } catch {}
 
@@ -313,14 +317,14 @@ function WorkerPaymentCard({ job }) {
   return (
     <section className={`swCard swActionCard swPayment ${terminalReady ? "" : "locked"}`}>
       <span>Payment</span>
-      <h2>{terminalReady ? "Take card payment" : "Payment locked"}</h2>
+      <h2>{terminalReady ? "Take payment for this job" : "Payment locked"}</h2>
       <div className="swFacts">
         <span className="swFact"><b>Control</b>Owner sets amount</span>
         <span className="swFact"><b>Amount</b>{moneyLabel(job)}</span>
-        <span className="swFact"><b>Reader</b>{reader?.label || reader?.serial_number || connectionStatus}</span>
+        <span className="swFact"><b>Source</b>Worker on-site card reader</span>
         <span className="swFact"><b>Status</b>{paymentStatus || step}</span>
       </div>
-      <p className="swFine">Worker can collect only when the office has set the amount and Stripe is ready. No invoice sending, tax filing or payout files happen from worker view.</p>
+      <p className="swFine">This payment is tied to this exact job and sent back with the worker, reader, amount and payment reference.</p>
 
       {!terminalReady ? (
         <button className="swLight" type="button" disabled>Locked</button>
@@ -340,11 +344,11 @@ function WorkerPaymentCard({ job }) {
 
       {terminalReady ? (
         <button className="swPrimary" type="button" disabled={busy || !reader} onClick={takePayment}>
-          <CreditCard size={16} />{busy ? step : "Take card payment"}
+          <CreditCard size={16} />{busy ? step : "Take payment"}
         </button>
       ) : null}
 
-      <small>{step}</small>
+      <small>{reader ? `Reader: ${reader.label || reader.serial_number || "connected"}` : step}</small>
     </section>
   );
 }
@@ -366,13 +370,13 @@ export function NoFussToday() {
 
 export function NoFussJobs() {
   const { jobs, loading, error, refresh } = useWorkerJobs();
-  const queue = openJobs(jobs);
+  const queue = jobs;
   return (
     <Shell tab="Jobs" title="Jobs">
       {loading ? <Empty icon={RefreshCw}>Loading</Empty> : null}
       {!loading && error ? <Empty>{error}</Empty> : null}
-      {!loading && !error && !queue.length ? <Empty>No open jobs assigned.</Empty> : null}
-      {queue.map((job) => <JobCard key={jobId(job)} job={job} action="View job" />)}
+      {!loading && !error && !queue.length ? <Empty>No jobs assigned yet.</Empty> : null}
+      {queue.map((job) => <JobCard key={jobId(job)} job={job} action={isDone(job) ? "Open / take payment" : "View job"} />)}
       <WorkerPrivacyCard />
       <button className="swLight" type="button" onClick={refresh}>Refresh</button>
     </Shell>
