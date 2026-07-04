@@ -22,7 +22,7 @@ import './runtime/churvoxPlanPersistenceRuntime';
 import './runtime/churvoxFirstRunSetupRuntime';
 import './runtime/churvoxCommandPreparedSlipsRuntime';
 import './runtime/churvoxLogoutNavRuntime';
-import './runtime/churvoxPlatformOwnerNoiseGuardRuntime';
+// disabled churvoxPlatformOwnerNoiseGuardRuntime
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
@@ -32,8 +32,8 @@ import './runtime/churvoxPublicBusinessPolishRuntime';
 // import './runtime/churvoxTopTierFeaturesRuntime';
 import './runtime/churvoxOwnerReadableRecordsRuntime';
 // Disabled: billing/tier browser runtimes interfered with navigation/loading. Backend remains source of truth.
-// // import './runtime/churvoxTierUiGuardRuntime';
-// // import './runtime/churvoxTrialExpiryRedirectRuntime';
+// // // disabled churvoxTierUiGuardRuntime
+// // // disabled churvoxTrialExpiryRedirectRuntime
 import './pages/worker/WorkerNoFussPolish.css';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
