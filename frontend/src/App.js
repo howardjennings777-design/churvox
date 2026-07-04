@@ -51,7 +51,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import ChurvoxHelpWidget from "./components/ChurvoxHelpWidget";
 import GlobalJobCreateModal from "./components/GlobalJobCreateModal";
 
-import ConceptCFrame from ".//ConceptCFrame";
+import ConceptCFrame from "./ConceptCFrame";
 import CommandDeskOperatorPage from "./pages/CommandDeskOperatorPageV4";
 import WorkerMapCommandPage from "./pages/WorkerMapCommandPage";
 import PayrollCommandPage from "./pages/PayrollCommandPage";
