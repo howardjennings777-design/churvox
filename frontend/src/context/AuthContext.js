@@ -155,16 +155,33 @@ export function AuthProvider({ children }) {
   const registerAbortRef = useRef(null);
 
   const fetchMe = useCallback(async (token) => {
-    const response = await axios.get(`${API_BASE}/api/auth/me`, {
-      headers: headersFor(token),
-      withCredentials: true,
-      timeout: AUTH_TIMEOUT_MS,
-    });
-    const nextToken = tokenFrom(response.data) || token || "";
-    const nextUser = userFrom(response.data);
-    if (!nextUser) throw new Error("No current user returned.");
-    if (nextToken) nextUser.token = nextToken;
-    return nextUser;
+    // IMPORTANT: If no token is provided, this will fail with 422 on the backend
+    // because the Authorization header will be missing or invalid
+    if (!token) {
+      throw new Error("No authentication token available");
+    }
+
+    try {
+      const response = await axios.get(`${API_BASE}/api/auth/me`, {
+        headers: headersFor(token),
+        withCredentials: true,
+        timeout: AUTH_TIMEOUT_MS,
+      });
+      const nextToken = tokenFrom(response.data) || token || "";
+      const nextUser = userFrom(response.data);
+      if (!nextUser) throw new Error("No current user returned.");
+      if (nextToken) nextUser.token = nextToken;
+      return nextUser;
+    } catch (err) {
+      // Log 422 errors specifically for debugging
+      if (err?.response?.status === 422) {
+        console.error("Auth 422 error - possible missing/invalid token:", {
+          token: token ? `${token.slice(0, 20)}...` : "null",
+          detail: err.response?.data?.detail,
+        });
+      }
+      throw err;
+    }
   }, []);
 
   const checkAuth = useCallback(async ({ force = false } = {}) => {
@@ -199,7 +216,7 @@ export function AuthProvider({ children }) {
         setUser(cached);
         return cached;
       }
-      if (status === 401 || status === 403) {
+      if (status === 401 || status === 403 || status === 422) {
         clearStoredAuth();
         setUser(null);
       }
