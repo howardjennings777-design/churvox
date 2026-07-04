@@ -6,14 +6,14 @@ import { Nav, Footer } from "./ExecutiveHomePage";
 
 const guardrails = [
   ["Owner approval", "Churvox prepares admin, but the owner approves, edits or parks important actions in Command."],
-  ["Accounting safety", "Draft sync only where available. No tax filing, no automatic invoice sending and no bank payout files."],
+  ["Accounting safety", "Draft sync only where available. No tax filing, no automatic invoice sending and no payout files."],
   ["Worker simplicity", "Workers see assigned work, directions, notes and job actions. Customer records and pricing decisions stay with the owner."],
   ["Clear setup", "The trial starts simple: set business details, add clients, add jobs, invite workers and check Command."],
 ];
 
 function TrustPage({ kicker, title, text, cards, cta = true }) {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_TRUST_PAGES_20260704">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_TRUST_FRESH_20260705">
       <Nav />
       <section className="publicHero publicHeroCompact">
         <div className="publicHeroCopy">
@@ -81,9 +81,9 @@ export function AboutPage() {
     <TrustPage
       kicker="About Churvox"
       title="Built for service businesses that need less admin chasing."
-      text="Churvox is made for owners running jobs, workers, customers, quotes and invoices at the same time. The point is simple: keep the business moving, prepare the admin, and let the owner approve important decisions from one place."
+      text="Churvox is made for owners running jobs, workers, customers, quotes and invoices at the same time. The point is simple: keep the business moving, prepare the admin and let the owner approve important decisions from one place."
       cards={[
-        ["Who it helps", "Trades, property services, cleaning, lawn care, landscaping, handyman work and mobile service teams."],
+        ["Who it helps", "Trades, property services, cleaning, lawn care, landscaping, pest control, handyman work and mobile service teams."],
         ["Why it exists", "Owners should not need to hunt through messages, notes, invoices and worker updates just to know what needs a decision."],
         ["What makes it different", "Command is the approval desk. Churvox prepares the next admin move, then the owner checks it."],
         ["How to start", "Use the trial, add a few clients and jobs, invite a worker, then check what Command prepares."],
@@ -101,7 +101,7 @@ export function SecurityPage() {
       cards={[
         ["Owner-approved actions", "Sending invoices, parking decisions and accounting handoff stay controlled by the owner."],
         ["Worker access", "Workers see assigned job details, directions, notes and finish flow. They do not manage customer records or accounting."],
-        ["Accounting guardrails", "Draft sync only where available. Churvox does not file tax, send bank payout files or automatically send invoices."],
+        ["Accounting guardrails", "Draft sync only where available. Churvox does not file tax, create payout files or automatically send invoices."],
         ["Clear records", "Jobs, clients, quotes, invoices, messages and worker updates stay tied to the relevant record where possible."],
       ]}
     />
@@ -113,7 +113,7 @@ export function ContactPage() {
     <TrustPage
       kicker="Contact"
       title="Need help setting up Churvox?"
-      text="Send a message and include what type of business you run, how many workers you have, and what you want Churvox to help clean up first."
+      text="Send a message and include what type of business you run, how many workers you have and what you want Churvox to help clean up first."
       cta={false}
       cards={[
         ["Email", "hello@churvox.com"],
