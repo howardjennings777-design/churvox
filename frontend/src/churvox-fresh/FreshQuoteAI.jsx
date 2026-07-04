@@ -1,5 +1,5 @@
 import React from "react";
-import { sendFreshSlipToCommand } from ".//* DISABLED_CONFLICT_commandBridge */";
+import { sendFreshSlipToCommand } from "./";
 
 export default function FreshQuoteAI({ onNavigate }) {
   const sendQuoteReview = () => {

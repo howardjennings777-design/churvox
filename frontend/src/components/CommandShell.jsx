@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function /* DISABLED_CONFLICT_CommandShell */({ children }) {
+export default function ({ children }) {
   React.useEffect(() => {
     try {
       document.body.classList.remove("cv-industrial-shell");

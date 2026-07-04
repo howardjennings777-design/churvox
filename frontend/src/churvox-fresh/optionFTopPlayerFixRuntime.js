@@ -1,4 +1,4 @@
-import './/* DISABLED_CONFLICT_optionFCommand */IdentityGuardRuntime';
+import './IdentityGuardRuntime';
 import API_BASE from '../lib/apiBase';
 
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }

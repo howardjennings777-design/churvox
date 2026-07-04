@@ -3,7 +3,7 @@ import { Building2, Mail, Phone, Copy, LifeBuoy, Send, X } from "lucide-react";
 import { PremiumButton, PremiumCard } from "@/components/premium";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "sonner";
-import { sendFreshSlipToCommand } from "@/churvox-fresh//* DISABLED_CONFLICT_commandBridge */";
+import { sendFreshSlipToCommand } from "@/churvox-fresh/";
 import { useAuth } from "@/context/AuthContext";
 import "./WorkerContactOfficePanel.css";
 

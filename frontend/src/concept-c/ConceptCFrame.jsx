@@ -84,7 +84,7 @@ export default function ConceptCFrame({ area = "jobs", children }) {
 
   if (isRecordPath(pathname)) {
     return (
-      <main className="/* DISABLED_CONFLICT_concept-c */2 c2-record-fullscreen" data-churvox-record-workspace="true" data-version="CHURVOX_RECORD_FULLSCREEN_20260605">
+      <main className="2 c2-record-fullscreen" data-churvox-record-workspace="true" data-version="CHURVOX_RECORD_FULLSCREEN_20260605">
         <header className="c2-record-fullscreen-topbar">
           <Link className="c2-brand" to="/dashboard">
             <span>C</span>
@@ -100,7 +100,7 @@ export default function ConceptCFrame({ area = "jobs", children }) {
   }
 
   return (
-    <main className="/* DISABLED_CONFLICT_concept-c */2 /* DISABLED_CONFLICT_concept-c */2-frame" data-version="CHURVOX_FULL_COMMAND_NAV_20260601">
+    <main className="2 2-frame" data-version="CHURVOX_FULL_COMMAND_NAV_20260601">
       <div className="c2-noise" />
 
       <header className="c2-topbar">

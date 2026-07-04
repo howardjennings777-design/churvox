@@ -1,7 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { hideDemoRecords } from "./freshDemoRecords";
-import { sendFreshSlipToCommand } from ".//* DISABLED_CONFLICT_commandBridge */";
+import { sendFreshSlipToCommand } from "./";
 
 const fallbackInvoices = [
   {

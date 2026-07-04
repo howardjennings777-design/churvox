@@ -1,5 +1,5 @@
 import React from "react";
-import { sendFreshSlipToCommand } from ".//* DISABLED_CONFLICT_commandBridge */";
+import { sendFreshSlipToCommand } from "./";
 
 const copy = {
   hub: ["Dashboard", "Today: what needs action, what is booked, and where money is waiting."],

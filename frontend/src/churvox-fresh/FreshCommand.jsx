@@ -451,7 +451,7 @@ export default function FreshCommand({ onNavigate }) {
         <article><b>Memory</b><span>Past prices and owner patterns</span></article>
       </section>
 
-      <section className="fresh/* DISABLED_CONFLICT_CommandBoard */">
+      <section className="fresh">
         <aside className="freshCommandQueuePanel">
           <div className="freshCommandPanelTitle"><span>Approval queue</span><b>{visibleGroups.length}</b></div>
           <div className="freshCommandFilters">
