@@ -235,44 +235,12 @@ def install(module):
         await db.app_owner_control_log.insert_one({"created_at": now_utc(), "owner_email": owner.get("email"), "action": "tester_intake", "target_email": email, "payload": safe(payload), "result": safe({"tester": tester_doc, "access_link": access_link, "email": email_status})})
         return {"success": True, "message": "Tester access granted" if existing else "Tester email sent" if email_status.get("email_sent") else "Tester saved; send them the signup link", "tester": safe(tester_doc), "user": safe(existing), "signup_link": None if existing else access_link, "login_link": access_link if existing else None, "email": safe(email_status)}
 
-    async def patched_me(request: Request):
-        current = await get_current_user(request)
-        uid = obj_id(current.get("id") or current.get("_id") or current.get("user_id"))
-        user_doc = await db.users.find_one({"_id": uid}) if uid else await db.users.find_one({"email": lower(current.get("email"))})
-        if not user_doc:
-            raise HTTPException(status_code=401, detail="User not found")
-        user_doc, _ = await grant_if_tester(user_doc)
-        return user_payload(user_doc)
+   remove_route(app, "/api/admin/owner/tester-intake", "POST")
 
-    async def patched_billing_status(request: Request):
-        current = await get_current_user(request)
-        uid = obj_id(current.get("id") or current.get("_id") or current.get("user_id"))
-        user_doc = await db.users.find_one({"_id": uid}) if uid else await db.users.find_one({"email": lower(current.get("email"))})
-        if not user_doc:
-            raise HTTPException(status_code=401, detail="User not found")
-        user_doc, _ = await grant_if_tester(user_doc)
-        plan = user_doc.get("plan") or "none"
-        return safe({
-            "success": True,
-            "plan": plan,
-            "plan_name": {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command"}.get(plan, plan),
-            "subscription_status": user_doc.get("subscription_status") or "none",
-            "trial_ends_at": user_doc.get("trial_ends_at"),
-            "stripe_customer_id": user_doc.get("stripe_customer_id"),
-            "stripe_subscription_id": user_doc.get("stripe_subscription_id"),
-            "free_tester_access": bool(user_doc.get("free_tester_access")),
-            "free_tester_until": user_doc.get("free_tester_until"),
-            "has_app_access": bool(user_doc.get("has_app_access")),
-            "billing_lock_reason": user_doc.get("billing_lock_reason"),
-            "billing_country": user_doc.get("billing_country", "NZ"),
-        })
+app.add_api_route(
+    "/api/admin/owner/tester-intake",
+    tester_intake,
+    methods=["POST"],
+)
 
-    for path, method, endpoint in [
-        ("/api/admin/owner/tester-intake", "POST", tester_intake),
-        ("/api/auth/me", "GET", patched_me),
-        ("/api/billing/subscription-status", "GET", patched_billing_status),
-    ]:
-        remove_route(app, path, method)
-        app.add_api_route(path, endpoint, methods=[method])
-
-    INSTALLED.add(name)
+INSTALLED.add(name)
