@@ -3,6 +3,7 @@
 
 const AUTOMATION_ID = 'churvox-automation-alias-panel';
 const AUTOMATION_STYLE_ID = 'churvox-automation-alias-style';
+const MESSAGES_ALIAS_ID = 'churvox-messages-alias-fallback';
 
 function ensureAutomationStyle() {
   if (document.getElementById(AUTOMATION_STYLE_ID)) return;
@@ -18,6 +19,10 @@ function ensureAutomationStyle() {
     #${AUTOMATION_ID} b{font-size:15px;color:#111815}
     #${AUTOMATION_ID} span{color:#52605a;font-size:12px;font-weight:850;line-height:1.35}
     #${AUTOMATION_ID} em{justify-self:start;border-radius:999px;padding:5px 8px;background:#fff7ed;color:#9a3412;font-size:10px;font-style:normal;font-weight:950}
+    #${MESSAGES_ALIAS_ID}{grid-column:1/-1;display:none;gap:12px;margin-bottom:12px}
+    #${MESSAGES_ALIAS_ID} article{border:1px solid rgba(16,21,19,.08);border-radius:16px;background:#fff;padding:14px;box-shadow:0 14px 30px rgba(16,21,19,.05)}
+    #${MESSAGES_ALIAS_ID} b{display:block;margin-bottom:6px;color:#111815;font-size:15px;font-weight:950}
+    #${MESSAGES_ALIAS_ID} span{display:block;color:#52605a;font-size:12px;font-weight:850;line-height:1.35}
     @media(max-width:980px){#${AUTOMATION_ID} .autoGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:620px){#${AUTOMATION_ID} .autoGrid{grid-template-columns:1fr}}
   `;
@@ -47,8 +52,58 @@ function normaliseFreshHash() {
   if (target && target !== raw) window.history.replaceState({}, document.title, `${path}#${target}`);
 }
 
+function renderMessagesAlias() {
+  const hash = (window.location.hash || '').replace('#', '').toLowerCase();
+  const isMessages = hash === 'messages' || hash === 'inbox';
+  const root = document.querySelector('.churvoxOptionC');
+  const pageRoot = document.querySelector('.churvoxOptionC .workspace .cocPage');
+  if (!root || !pageRoot) return;
+  ensureAutomationStyle();
+
+  root.querySelectorAll('[data-churvox-messages-hidden="true"]').forEach((el) => {
+    if (!isMessages) {
+      el.style.removeProperty('display');
+      el.removeAttribute('data-churvox-messages-hidden');
+    }
+  });
+
+  let node = document.getElementById(MESSAGES_ALIAS_ID);
+  if (!isMessages) {
+    if (node) node.style.display = 'none';
+    return;
+  }
+
+  const title = root.querySelector('.title h1');
+  const subtitle = root.querySelector('.title p');
+  if (title) title.textContent = 'Messages';
+  if (subtitle) subtitle.textContent = 'Worker updates, client replies, prepared responses and Command decisions.';
+
+  root.querySelectorAll('.cocNav button').forEach((button) => {
+    const label = String(button.textContent || '').trim().toLowerCase();
+    button.classList.toggle('active', label === 'messages');
+  });
+
+  Array.from(pageRoot.children).forEach((el) => {
+    if (el.id === 'churvox-owner-page-recovery' || el.id === MESSAGES_ALIAS_ID) return;
+    el.setAttribute('data-churvox-messages-hidden', 'true');
+    el.style.setProperty('display', 'none', 'important');
+  });
+
+  if (!node) {
+    node = document.createElement('section');
+    node.id = MESSAGES_ALIAS_ID;
+    pageRoot.prepend(node);
+  }
+  node.style.display = 'grid';
+  node.innerHTML = `
+    <article><b>Messages page ready</b><span>Worker messages, client replies and prepared responses are kept separate from Jobs and sent to Command when an owner decision is needed.</span></article>
+    <article><b>Owner control</b><span>Churvox can prepare replies, but sending stays owner-approved.</span></article>
+  `;
+}
+
 function renderAutomationAlias() {
   normaliseFreshHash();
+  renderMessagesAlias();
   const isAutomation = (window.location.hash || '').replace('#', '').toLowerCase() === 'automation';
   const old = document.getElementById(AUTOMATION_ID);
   if (!isAutomation) { old?.remove(); return; }
