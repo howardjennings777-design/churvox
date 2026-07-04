@@ -66,7 +66,7 @@ for _patch in [
     'churvox_paid_launch_guard_patch',
     'churvox_admin_recovery_patch',
     'churvox_owner_cockpit_control_patch',
-    'churvox_tester_signup_access_patch',
+    # 'churvox_tester_signup_access_patch',
     'churvox_on_site_payments_patch',
     'churvox_terminal_reader_patch',
     # 'churvox_plan_trial_guard_patch',
