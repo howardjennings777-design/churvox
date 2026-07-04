@@ -40,6 +40,8 @@ function normaliseFreshHash() {
     help: 'support',
     guide: 'aiguide',
     payroll: 'payroll',
+    messages: 'messages',
+    inbox: 'messages',
   };
   const target = aliases[raw];
   if (target && target !== raw) window.history.replaceState({}, document.title, `${path}#${target}`);
@@ -95,6 +97,9 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
     '/setup': '/setup-guide',
     '/smart-hub': '/dashboard',
     '/automation': '/dashboard#automation',
+    '/messages': '/dashboard#messages',
+    '/messages-board': '/dashboard#messages',
+    '/inbox': '/dashboard#messages',
     '/dispatch-board': '/dashboard#workers',
     '/dispatch': '/dashboard#workers',
     '/schedule': '/dashboard#workers',
