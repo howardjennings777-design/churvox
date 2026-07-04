@@ -50,7 +50,6 @@ import './churvox-fresh/churvoxInvoicesPagePanelsRuntime';
 import './churvox-fresh/churvoxSettingsPagePanelsRuntime';
 import './churvox-fresh/churvoxPlansPagePanelsRuntime';
 import './churvox-fresh/churvoxHumanAuditPatchRuntime';
-import './runtime/churvoxNoAiWordingRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
