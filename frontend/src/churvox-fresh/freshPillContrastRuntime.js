@@ -62,7 +62,7 @@ function effectiveBackground(el) {
 
 function isInsideDarkPanel(el) {
   return Boolean(el.closest(
-    ".freshDark, .freshHero, .freshShellSidebar, .freshAskHero, .tellHero, .freshTellLauncherHero, .freshCommandHero, .freshWorkerAppHero, .freshAIHubHero, .freshWorkerAppSummary, .freshCommandBoard, .freshCommandBox, [class*='Hero'], [class*='Dark'], [class*='dark']"
+    ".freshDark, .freshHero, .freshShellSidebar, .freshAskHero, .tellHero, .freshTellLauncherHero, .freshCommandHero, .freshWorkerAppHero, .freshAIHubHero, .freshWorkerAppSummary, .fresh/* DISABLED_CONFLICT_CommandBoard */, .freshCommandBox, [class*='Hero'], [class*='Dark'], [class*='dark']"
   ));
 }
 

@@ -70,7 +70,7 @@ import './churvox-fresh/optionFHideSeedDemoRuntime';
 import './churvox-fresh/optionFPlainLanguageRuntime';
 import './churvox-fresh/optionFWorkerCopyScrubRuntime';
 import './churvox-fresh/optionFHideHelperButtonsRuntime';
-import './churvox-fresh/optionFCommandCleanupRuntime';
+import './churvox-fresh//* DISABLED_CONFLICT_optionFCommand */CleanupRuntime';
 import './churvox-fresh/optionFTodayScheduleGuardRuntime';
 import './churvox-fresh/optionFAutoAdminFlowRuntime';
 import './churvox-fresh/optionFDecisionEffectsRuntime';

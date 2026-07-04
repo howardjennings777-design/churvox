@@ -1,5 +1,5 @@
 import React from "react";
-import { sendFreshSlipToCommand } from "./commandBridge";
+import { sendFreshSlipToCommand } from ".//* DISABLED_CONFLICT_commandBridge */";
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 

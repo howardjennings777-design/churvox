@@ -73,7 +73,7 @@ function ActionCard({ action, onPrimary, onDismiss }) {
   return <article className="smart-command-row"><div className="smart-command-badges"><span className="smart-command-badge">{action.priority}</span><span className="smart-command-badge type">{action.type}</span></div><p className="smart-command-row-title">{action.title}</p><p className="smart-command-row-text">{action.summary}</p><p className="smart-command-row-text"><b>Why Command picked this:</b> {action.reason}</p><p className="smart-command-row-text"><b>What happens next:</b> {action.next}</p><div className="smart-command-actions"><button type="button" className="smart-command-btn light" onClick={() => onPrimary(action)}>{primaryLabel}</button><button type="button" className="smart-command-btn light" onClick={() => { window.location.assign(openPath(action)); }}>Open</button><button type="button" className="smart-command-btn light" onClick={() => onDismiss(action)}>Dismiss</button></div></article>;
 }
 
-export default function CommandHubPage() {
+export default function /* DISABLED_CONFLICT_CommandHub */Page() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true); const [notice, setNotice] = useState(""); const [error, setError] = useState("");
   const [tab, setTab] = useState("today"); const [queueOpen, setQueueOpen] = useState(false); const [dismissed, setDismissed] = useState({});

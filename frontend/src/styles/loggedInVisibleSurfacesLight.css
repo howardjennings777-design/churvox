@@ -20,11 +20,11 @@ main.fixed.inset-0 > .flex,
 main.fixed.inset-0 > .flex > section,
 main.fixed.inset-0 section.min-w-0,
 main.fixed.inset-0 section.h-full,
-.concept-c2-frame,
-.concept-c2-frame .c2-frame,
-.concept-c2-frame .c2-stage,
-.concept-c2-frame .c2-real-page-stage,
-.concept-c2-frame .c2-real-page-card,
+./* DISABLED_CONFLICT_concept-c */2-frame,
+./* DISABLED_CONFLICT_concept-c */2-frame .c2-frame,
+./* DISABLED_CONFLICT_concept-c */2-frame .c2-stage,
+./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-stage,
+./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card,
 .xcf-real-page,
 .xcf-workspace,
 .xcf-shell.xcf-real-page {
@@ -51,13 +51,13 @@ main.fixed.inset-0 .bg-amber-950,
 main.fixed.inset-0 .bg-red-950,
 main.fixed.inset-0 .bg-rose-950,
 main.fixed.inset-0 .bg-violet-950,
-.concept-c2-frame .c2-real-page-card,
-.concept-c2-frame section.rounded-\[30px\],
-.concept-c2-frame section.rounded-\[28px\],
-.concept-c2-frame div.rounded-\[30px\],
-.concept-c2-frame div.rounded-\[28px\],
-.concept-c2-frame div.rounded-2xl,
-.concept-c2-frame article.rounded-\[22px\] {
+./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card,
+./* DISABLED_CONFLICT_concept-c */2-frame section.rounded-\[30px\],
+./* DISABLED_CONFLICT_concept-c */2-frame section.rounded-\[28px\],
+./* DISABLED_CONFLICT_concept-c */2-frame div.rounded-\[30px\],
+./* DISABLED_CONFLICT_concept-c */2-frame div.rounded-\[28px\],
+./* DISABLED_CONFLICT_concept-c */2-frame div.rounded-2xl,
+./* DISABLED_CONFLICT_concept-c */2-frame article.rounded-\[22px\] {
   background: var(--chv-surface) !important;
   background-color: var(--chv-surface) !important;
   background-image: none !important;
@@ -81,16 +81,16 @@ main.fixed.inset-0 .text-blue-900,
 main.fixed.inset-0 .text-emerald-900,
 main.fixed.inset-0 .text-amber-950,
 main.fixed.inset-0 .text-red-800,
-.concept-c2-frame h1,
-.concept-c2-frame h2,
-.concept-c2-frame h3,
-.concept-c2-frame h4,
-.concept-c2-frame strong,
-.concept-c2-frame b,
-.concept-c2-frame .text-white,
-.concept-c2-frame .text-slate-50,
-.concept-c2-frame .text-slate-950,
-.concept-c2-frame .text-slate-900 {
+./* DISABLED_CONFLICT_concept-c */2-frame h1,
+./* DISABLED_CONFLICT_concept-c */2-frame h2,
+./* DISABLED_CONFLICT_concept-c */2-frame h3,
+./* DISABLED_CONFLICT_concept-c */2-frame h4,
+./* DISABLED_CONFLICT_concept-c */2-frame strong,
+./* DISABLED_CONFLICT_concept-c */2-frame b,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-white,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-50,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-950,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-900 {
   color: var(--chv-text) !important;
   text-shadow: none !important;
 }
@@ -105,14 +105,14 @@ main.fixed.inset-0 .text-slate-500,
 main.fixed.inset-0 .text-slate-400,
 main.fixed.inset-0 .text-slate-300,
 main.fixed.inset-0 .text-slate-200,
-.concept-c2-frame p,
-.concept-c2-frame li,
-.concept-c2-frame small,
-.concept-c2-frame .text-slate-700,
-.concept-c2-frame .text-slate-600,
-.concept-c2-frame .text-slate-500,
-.concept-c2-frame .text-slate-400,
-.concept-c2-frame .text-slate-300 {
+./* DISABLED_CONFLICT_concept-c */2-frame p,
+./* DISABLED_CONFLICT_concept-c */2-frame li,
+./* DISABLED_CONFLICT_concept-c */2-frame small,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-700,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-600,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-500,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-400,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-300 {
   color: var(--chv-muted) !important;
   text-shadow: none !important;
 }
@@ -122,10 +122,10 @@ main.fixed.inset-0 button.bg-cyan-300,
 main.fixed.inset-0 a.bg-cyan-300,
 main.fixed.inset-0 .bg-cyan-300,
 main.fixed.inset-0 .bg-blue-600,
-.concept-c2-frame button.bg-cyan-300,
-.concept-c2-frame a.bg-cyan-300,
-.concept-c2-frame .bg-cyan-300,
-.concept-c2-frame .bg-blue-600 {
+./* DISABLED_CONFLICT_concept-c */2-frame button.bg-cyan-300,
+./* DISABLED_CONFLICT_concept-c */2-frame a.bg-cyan-300,
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-cyan-300,
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-blue-600 {
   background: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee) !important;
   color: #020617 !important;
   border-color: rgba(250, 204, 21, 0.45) !important;
@@ -134,9 +134,9 @@ main.fixed.inset-0 .bg-blue-600,
 main.fixed.inset-0 input,
 main.fixed.inset-0 textarea,
 main.fixed.inset-0 select,
-.concept-c2-frame input,
-.concept-c2-frame textarea,
-.concept-c2-frame select {
+./* DISABLED_CONFLICT_concept-c */2-frame input,
+./* DISABLED_CONFLICT_concept-c */2-frame textarea,
+./* DISABLED_CONFLICT_concept-c */2-frame select {
   background: #ffffff !important;
   border-color: rgba(15, 23, 42, 0.14) !important;
   color: var(--chv-text) !important;

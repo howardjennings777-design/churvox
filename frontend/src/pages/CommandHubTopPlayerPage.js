@@ -122,7 +122,7 @@ function DraftBox({ title, text, form, set, askAi, prompt }) {
   return <div className="command-drawer-stack"><div className="command-editor-card"><h3>{title}</h3><p>{text}</p></div><label>Details<textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Write notes, message, or instructions here" /></label><label>Draft message<textarea value={form.message} onChange={(e) => set("message", e.target.value)} placeholder="AI/owner draft" /></label><div className="command-card-actions"><Button onClick={() => askAi(prompt)}>Ask AI to prepare</Button><Button tone="light" onClick={() => set("draftSavedAt", new Date().toISOString())}>Save draft</Button><Button tone="dark">Mark ready for approval</Button></div></div>;
 }
 
-export default function CommandHubTopPlayerPage() {
+export default function /* DISABLED_CONFLICT_CommandHub */TopPlayerPage() {
   const { user } = useAuth();
   const [data, setData] = useState({ jobs: [], clients: [], invoices: [], quotes: [], workers: [], proof: [], actions: [], enquiries: [], recurring: [], updates: [], drafts: [], memory: [], plan: {}, health: {} });
   const [drawer, setDrawer] = useState(null);

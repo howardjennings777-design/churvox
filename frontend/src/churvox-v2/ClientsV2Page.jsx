@@ -1,7 +1,7 @@
 import React from "react";
 import "./churvox-v2.css";
 import "../styles/churvox-v2-route-force.css";
-import { sendFreshSlipToCommand } from "../churvox-fresh/commandBridge";
+import { sendFreshSlipToCommand } from "../churvox-fresh//* DISABLED_CONFLICT_commandBridge */";
 
 const CLIENTS = [
   {

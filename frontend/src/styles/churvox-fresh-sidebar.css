@@ -18,7 +18,7 @@
   body.cvx-command-shell .ch4Root,
   body.cvx-command-shell .scRoot,
   body.cvx-command-shell .dwRoot,
-  body.cvx-command-shell .concept-c2-frame,
+  body.cvx-command-shell ./* DISABLED_CONFLICT_concept-c */2-frame,
   body.cvx-command-shell .xcf-real-page,
   body.cvx-command-shell .xcf-workspace,
   body.cvx-command-shell .xcf-shell.xcf-real-page {
@@ -43,7 +43,7 @@
   body.cvx-command-shell .ch4Root,
   body.cvx-command-shell .scRoot,
   body.cvx-command-shell .dwRoot,
-  body.cvx-command-shell .concept-c2-frame,
+  body.cvx-command-shell ./* DISABLED_CONFLICT_concept-c */2-frame,
   body.cvx-command-shell .xcf-real-page,
   body.cvx-command-shell .xcf-workspace,
   body.cvx-command-shell .xcf-shell.xcf-real-page {

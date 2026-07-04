@@ -148,7 +148,7 @@
   -webkit-text-fill-color: #fed7aa !important;
 }
 
-.freshCommandBoard {
+.fresh/* DISABLED_CONFLICT_CommandBoard */ {
   display: grid !important;
   grid-template-columns: minmax(360px, 0.92fr) minmax(560px, 1.28fr) minmax(300px, 0.74fr) !important;
   gap: 14px !important;
@@ -423,7 +423,7 @@
 }
 
 @media (max-width: 1180px) {
-  .freshCommandBoard,
+  .fresh/* DISABLED_CONFLICT_CommandBoard */,
   .freshCommandPowerStrip {
     grid-template-columns: 1fr !important;
   }

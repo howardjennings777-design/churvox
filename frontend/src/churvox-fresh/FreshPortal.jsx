@@ -1,5 +1,5 @@
 import React from "react";
-import { sendFreshSlipToCommand } from "./commandBridge";
+import { sendFreshSlipToCommand } from ".//* DISABLED_CONFLICT_commandBridge */";
 
 const portalMoves = [
   {

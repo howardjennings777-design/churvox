@@ -1,15 +1,15 @@
-@import './concept-c/OperatorProofHistoryPanel.css';
-@import './concept-c/WorkerMobileFlowPolish.css';
+@import './/* DISABLED_CONFLICT_concept-c *//OperatorProofHistoryPanel.css';
+@import './/* DISABLED_CONFLICT_concept-c *//WorkerMobileFlowPolish.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
-@import './concept-c/WorkSlipFixChecklist.css';
-@import './concept-c/WorkspaceGuideLayoutFix.css';
-@import './concept-c/WorkSlipFullStructure.css';
-@import './concept-c/InvoiceApprovalFlowPolish.css';
-@import './concept-c/WorkSlipRealScrollFix.css';
-@import './concept-c/WorkSlipPanelScrollLast.css';
-@import './concept-c/ChurvoxTopTierPanel.css';
-@import './concept-c/WorkSlipTopTierActions.css';
-@import './concept-c/ChurvoxPremiumDocuments.css';
+@import './/* DISABLED_CONFLICT_concept-c *//WorkSlipFixChecklist.css';
+@import './/* DISABLED_CONFLICT_concept-c *//WorkspaceGuideLayoutFix.css';
+@import './/* DISABLED_CONFLICT_concept-c *//WorkSlipFullStructure.css';
+@import './/* DISABLED_CONFLICT_concept-c *//InvoiceApprovalFlowPolish.css';
+@import './/* DISABLED_CONFLICT_concept-c *//WorkSlipRealScrollFix.css';
+@import './/* DISABLED_CONFLICT_concept-c *//WorkSlipPanelScrollLast.css';
+@import './/* DISABLED_CONFLICT_concept-c *//ChurvoxTopTierPanel.css';
+@import './/* DISABLED_CONFLICT_concept-c *//WorkSlipTopTierActions.css';
+@import './/* DISABLED_CONFLICT_concept-c *//ChurvoxPremiumDocuments.css';
 
 @tailwind base;
 @tailwind components;
@@ -50,8 +50,8 @@
   }
 }
 
-@import "./concept-c/ChurvoxLaunchFinish.css";
-@import "./concept-c/ChurvoxTopTierFinalPolish.css";
+@import ".//* DISABLED_CONFLICT_concept-c *//ChurvoxLaunchFinish.css";
+@import ".//* DISABLED_CONFLICT_concept-c *//ChurvoxTopTierFinalPolish.css";
 @import "./launch-mobile-polish.css";
 
 /* CHURVOX_COMMAND_DOCK_VISIBILITY_20260601 */

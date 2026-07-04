@@ -22,7 +22,7 @@
 main.fixed.inset-0.z-\[2147483000\],
 main.fixed.inset-0.z-\[2147483600\],
 main.fixed.inset-0,
-.concept-c2-frame,
+./* DISABLED_CONFLICT_concept-c */2-frame,
 .xcf-real-page,
 .xcf-workspace,
 .xcf-shell.xcf-real-page {
@@ -44,9 +44,9 @@ main.fixed.inset-0 .bg-\[\#f5f7f1\],
 main.fixed.inset-0 .bg-\[\#f4f6f8\],
 main.fixed.inset-0 .bg-white,
 main.fixed.inset-0 .bg-slate-50,
-.concept-c2-frame .bg-white,
-.concept-c2-frame .bg-slate-50,
-.concept-c2-frame .bg-\[\#f5f7f1\] {
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-white,
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-slate-50,
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-\[\#f5f7f1\] {
   background: transparent !important;
   color: var(--cvi-text) !important;
 }
@@ -89,13 +89,13 @@ main.fixed.inset-0 .bg-violet-100,
 main.fixed.inset-0 .bg-violet-950,
 main.fixed.inset-0 .bg-slate-950,
 main.fixed.inset-0 .bg-\[\#0f1722\],
-.concept-c2-frame .c2-real-page-card,
-.concept-c2-frame section.rounded-\[30px\],
-.concept-c2-frame section.rounded-\[28px\],
-.concept-c2-frame div.rounded-2xl,
-.concept-c2-frame div.rounded-\[30px\],
-.concept-c2-frame div.rounded-\[28px\],
-.concept-c2-frame article.rounded-\[22px\] {
+./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card,
+./* DISABLED_CONFLICT_concept-c */2-frame section.rounded-\[30px\],
+./* DISABLED_CONFLICT_concept-c */2-frame section.rounded-\[28px\],
+./* DISABLED_CONFLICT_concept-c */2-frame div.rounded-2xl,
+./* DISABLED_CONFLICT_concept-c */2-frame div.rounded-\[30px\],
+./* DISABLED_CONFLICT_concept-c */2-frame div.rounded-\[28px\],
+./* DISABLED_CONFLICT_concept-c */2-frame article.rounded-\[22px\] {
   border-color: var(--cvi-border) !important;
   background: var(--cvi-panel-bg) !important;
   color: var(--cvi-text) !important;
@@ -120,13 +120,13 @@ main.fixed.inset-0 .text-amber-950,
 main.fixed.inset-0 .text-amber-900,
 main.fixed.inset-0 .text-amber-800,
 main.fixed.inset-0 .text-red-800,
-.concept-c2-frame h1,
-.concept-c2-frame h2,
-.concept-c2-frame h3,
-.concept-c2-frame strong,
-.concept-c2-frame b,
-.concept-c2-frame .text-slate-950,
-.concept-c2-frame .text-slate-900 {
+./* DISABLED_CONFLICT_concept-c */2-frame h1,
+./* DISABLED_CONFLICT_concept-c */2-frame h2,
+./* DISABLED_CONFLICT_concept-c */2-frame h3,
+./* DISABLED_CONFLICT_concept-c */2-frame strong,
+./* DISABLED_CONFLICT_concept-c */2-frame b,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-950,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-900 {
   color: #ffffff !important;
 }
 
@@ -139,12 +139,12 @@ main.fixed.inset-0 .text-slate-500,
 main.fixed.inset-0 .text-slate-400,
 main.fixed.inset-0 .text-slate-300,
 main.fixed.inset-0 .text-slate-200,
-.concept-c2-frame p,
-.concept-c2-frame li,
-.concept-c2-frame .text-slate-700,
-.concept-c2-frame .text-slate-600,
-.concept-c2-frame .text-slate-500,
-.concept-c2-frame .text-slate-400 {
+./* DISABLED_CONFLICT_concept-c */2-frame p,
+./* DISABLED_CONFLICT_concept-c */2-frame li,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-700,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-600,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-500,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-slate-400 {
   color: var(--cvi-muted) !important;
 }
 
@@ -157,10 +157,10 @@ main.fixed.inset-0 .text-amber-600,
 main.fixed.inset-0 .text-red-700,
 main.fixed.inset-0 .text-\[10px\],
 main.fixed.inset-0 .text-\[11px\],
-.concept-c2-frame .text-blue-600,
-.concept-c2-frame .text-amber-600,
-.concept-c2-frame .text-\[10px\],
-.concept-c2-frame .text-\[11px\] {
+./* DISABLED_CONFLICT_concept-c */2-frame .text-blue-600,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-amber-600,
+./* DISABLED_CONFLICT_concept-c */2-frame .text-\[10px\],
+./* DISABLED_CONFLICT_concept-c */2-frame .text-\[11px\] {
   color: var(--cvi-amber) !important;
 }
 
@@ -176,19 +176,19 @@ main.fixed.inset-0 .border-emerald-200,
 main.fixed.inset-0 .border-red-200,
 main.fixed.inset-0 .border-white\/10,
 main.fixed.inset-0 .border-white\/15,
-.concept-c2-frame .border-slate-300,
-.concept-c2-frame .border-slate-200,
-.concept-c2-frame .border-white\/10,
-.concept-c2-frame .border-white\/15 {
+./* DISABLED_CONFLICT_concept-c */2-frame .border-slate-300,
+./* DISABLED_CONFLICT_concept-c */2-frame .border-slate-200,
+./* DISABLED_CONFLICT_concept-c */2-frame .border-white\/10,
+./* DISABLED_CONFLICT_concept-c */2-frame .border-white\/15 {
   border-color: var(--cvi-border) !important;
 }
 
 main.fixed.inset-0 input,
 main.fixed.inset-0 textarea,
 main.fixed.inset-0 select,
-.concept-c2-frame input,
-.concept-c2-frame textarea,
-.concept-c2-frame select {
+./* DISABLED_CONFLICT_concept-c */2-frame input,
+./* DISABLED_CONFLICT_concept-c */2-frame textarea,
+./* DISABLED_CONFLICT_concept-c */2-frame select {
   background: rgba(2,6,23,.52) !important;
   border-color: rgba(250,204,21,.24) !important;
   color: var(--cvi-text) !important;
@@ -196,8 +196,8 @@ main.fixed.inset-0 select,
 
 main.fixed.inset-0 input::placeholder,
 main.fixed.inset-0 textarea::placeholder,
-.concept-c2-frame input::placeholder,
-.concept-c2-frame textarea::placeholder {
+./* DISABLED_CONFLICT_concept-c */2-frame input::placeholder,
+./* DISABLED_CONFLICT_concept-c */2-frame textarea::placeholder {
   color: rgba(226,232,240,.55) !important;
 }
 
@@ -208,10 +208,10 @@ main.fixed.inset-0 .bg-cyan-500,
 main.fixed.inset-0 .bg-amber-500,
 main.fixed.inset-0 button.bg-cyan-300,
 main.fixed.inset-0 a.bg-cyan-300,
-.concept-c2-frame .bg-cyan-300,
-.concept-c2-frame .bg-cyan-400,
-.concept-c2-frame .bg-cyan-500,
-.concept-c2-frame .bg-amber-500 {
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-cyan-300,
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-cyan-400,
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-cyan-500,
+./* DISABLED_CONFLICT_concept-c */2-frame .bg-amber-500 {
   background: var(--cvi-action) !important;
   color: #020617 !important;
   border-color: rgba(250,204,21,.45) !important;
@@ -225,7 +225,7 @@ body:has(.cv-industrial-sidebar) main.fixed.inset-0 {
   max-width: calc(100vw - 286px) !important;
 }
 
-body:has(.cv-industrial-sidebar) .concept-c2-frame,
+body:has(.cv-industrial-sidebar) ./* DISABLED_CONFLICT_concept-c */2-frame,
 body:has(.cv-industrial-sidebar) .xcf-real-page,
 body:has(.cv-industrial-sidebar) .xcf-workspace,
 body:has(.cv-industrial-sidebar) .xcf-shell.xcf-real-page {
@@ -236,7 +236,7 @@ body:has(.cv-industrial-sidebar) .xcf-shell.xcf-real-page {
 
 @media (max-width: 1023px) {
   body:has(.cv-industrial-sidebar) main.fixed.inset-0,
-  body:has(.cv-industrial-sidebar) .concept-c2-frame,
+  body:has(.cv-industrial-sidebar) ./* DISABLED_CONFLICT_concept-c */2-frame,
   body:has(.cv-industrial-sidebar) .xcf-real-page,
   body:has(.cv-industrial-sidebar) .xcf-workspace,
   body:has(.cv-industrial-sidebar) .xcf-shell.xcf-real-page {

@@ -245,7 +245,7 @@ function PreviewItem({ item, drawer, onJob, onExecute }) {
   return <article className="command-preview-row"><b>{item.title || item.name || item.business_name || item.company_name || item.invoice_number || item.quote_number || item.email || `Item`}</b><span>{item.status || item.role || item.email || drawer.subtitle}</span>{drawer.title === "Jobs" || item.address ? <button onClick={() => onJob(id)}>Edit</button> : null}</article>;
 }
 
-export default function CommandHubRealPage() {
+export default function /* DISABLED_CONFLICT_CommandHub */RealPage() {
   const { user } = useAuth();
   const [data, setData] = useState({ jobs: [], clients: [], invoices: [], quotes: [], workers: [], proofPacks: [], receptionist: [], recurring: [], customerUpdates: [], quoteDrafts: [], memory: [], health: {}, backendActions: [], backendPlan: null });
   const [hidden, setHidden] = useState({});
