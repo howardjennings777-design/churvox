@@ -28,6 +28,7 @@ import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxPublicBusinessPagesRuntime';
 import './runtime/churvoxPublicBusinessPolishRuntime';
+import './runtime/churvoxPublicAuthStyleRuntime';
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
 import './churvox-fresh/optionCCommandBarFix.css';
@@ -79,6 +80,11 @@ import './styles/churvoxResponsiveFit.css';
 import './styles/churvoxPaidLaunchGuard.css';
 import './styles/churvoxPaidLaunchNoOverflowFinal.css';
 import './runtime/churvoxPaidLaunchOverflowRuntime';
+
+// Final owner/public restore imports. These intentionally load last so old layout CSS cannot turn the owner app into the blue circle layout again.
+import './churvox-fresh/optionFRestoreScreenshotTargetRuntime';
+import './churvox-fresh/optionFRestoreDecidedAppPagesRuntime';
+import './churvox-fresh/optionFFixOwnerAppBlueCircleRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
