@@ -123,9 +123,11 @@ if (typeof window !== 'undefined') {
   window.addEventListener('hashchange', () => setTimeout(run, 40));
   window.addEventListener('popstate', () => setTimeout(run, 40));
   document.addEventListener('click', () => setTimeout(run, 40), true);
-// const observer = new MutationObserver(() => run());  window.addEventListener('DOMContentLoaded', () => {
-// if (document.body) observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true });    run();
-  });
+window.addEventListener('DOMContentLoaded', () => {
+  run();
+});
+
+setTimeout(run, 0);
 
   setTimeout(run, 0);
 }
