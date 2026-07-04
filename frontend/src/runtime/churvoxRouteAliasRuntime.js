@@ -158,6 +158,14 @@ function handleOwnerShortcutClick(event) {
   if (!button?.closest?.('.churvoxOptionC')) return false;
   const label = String(button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
   const exact = label.replace(/^\+\s*/, '');
+
+  if (/^email support$|^contact support$|^hello@churvox\.com$/.test(label)) {
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.href = 'mailto:hello@churvox.com';
+    return true;
+  }
+
   const routes = [
     [/^add job$|^new job$/, '/jobs/new'],
     [/^add client$|^new client$/, '/clients/new'],
