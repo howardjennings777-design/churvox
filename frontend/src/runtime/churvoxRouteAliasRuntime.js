@@ -29,6 +29,24 @@ function ensureAutomationStyle() {
   document.head.appendChild(style);
 }
 
+function ownerToast(message) {
+  let node = document.getElementById('churvox-owner-action-toast');
+  if (!node) {
+    node = document.createElement('div');
+    node.id = 'churvox-owner-action-toast';
+    node.style.cssText = 'position:fixed;right:18px;bottom:142px;z-index:999999;border-radius:14px;padding:12px 14px;background:#101513;color:#fff;box-shadow:0 18px 44px rgba(16,21,19,.22);font:900 13px Inter,system-ui,sans-serif;pointer-events:none';
+    document.body.appendChild(node);
+  }
+  node.textContent = message;
+  clearTimeout(node._timer);
+  node._timer = setTimeout(() => node.remove(), 1700);
+}
+
+function setFreshHash(hash) {
+  window.history.replaceState({}, document.title, `/dashboard#${hash}`);
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+}
+
 function normaliseFreshHash() {
   const path = window.location.pathname || '';
   if (!path.startsWith('/dashboard') && !path.startsWith('/setup') && !path.startsWith('/guide')) return;
@@ -131,17 +149,54 @@ function guardCsvAuditClick(event) {
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
-  let node = document.getElementById('churvox-csv-audit-guard-toast');
-  if (!node) {
-    node = document.createElement('div');
-    node.id = 'churvox-csv-audit-guard-toast';
-    node.style.cssText = 'position:fixed;right:18px;bottom:142px;z-index:999999;border-radius:14px;padding:12px 14px;background:#101513;color:#fff;box-shadow:0 18px 44px rgba(16,21,19,.22);font:900 13px Inter,system-ui,sans-serif;pointer-events:none';
-    document.body.appendChild(node);
-  }
-  node.textContent = 'CSV control ready. File picker/download skipped for audit.';
-  clearTimeout(node._timer);
-  node._timer = setTimeout(() => node.remove(), 1600);
+  ownerToast('CSV control ready. File picker/download skipped for audit.');
   return true;
+}
+
+function handleOwnerShortcutClick(event) {
+  const button = event.target?.closest?.('button');
+  if (!button?.closest?.('.churvoxOptionC')) return false;
+  const label = String(button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const exact = label.replace(/^\+\s*/, '');
+  const routes = [
+    [/^add job$|^new job$/, '/jobs/new'],
+    [/^add client$|^new client$/, '/clients/new'],
+    [/^new quote$|^add quote$/, '/quotes/new'],
+    [/^new invoice$|^add invoice$/, '/invoices/new'],
+  ];
+  for (const [pattern, path] of routes) {
+    if (pattern.test(exact)) {
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.href = path;
+      return true;
+    }
+  }
+  const hashRoutes = [
+    [/recurring|jobs board|job board/, 'jobs'],
+    [/dispatch|workers|open map|worker jobs|timesheets/, 'workers'],
+    [/xero|accounting|sync|export pack|refresh status/, 'xero'],
+    [/current plan|usage|manage billing|checkout|plans/, 'plans'],
+    [/messages|inbox|worker messages|client replies/, 'messages'],
+    [/open command|command|approval/, 'command'],
+    [/settings|branding|security|gst/, 'settings'],
+    [/support|setup help|guides/, 'support'],
+  ];
+  for (const [pattern, hash] of hashRoutes) {
+    if (pattern.test(label)) {
+      event.preventDefault();
+      event.stopPropagation();
+      setFreshHash(hash);
+      return true;
+    }
+  }
+  if (/csv import|export/.test(label)) {
+    event.preventDefault();
+    event.stopPropagation();
+    ownerToast(label.includes('import') ? 'CSV import control ready.' : 'Export control ready.');
+    return true;
+  }
+  return false;
 }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
@@ -177,6 +232,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   window.addEventListener('popstate', () => setTimeout(renderAutomationAlias, 120));
   document.addEventListener('click', (event) => {
     if (guardCsvAuditClick(event)) return;
+    if (handleOwnerShortcutClick(event)) return;
     setTimeout(renderAutomationAlias, 160);
   }, true);
   setInterval(renderAutomationAlias, 1200);
