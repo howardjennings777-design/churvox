@@ -5,8 +5,8 @@ body,
 }
 
 main.fixed.inset-0,
-./* DISABLED_CONFLICT_concept-c */2-frame,
-./* DISABLED_CONFLICT_concept-c */2,
+.2-frame,
+.2,
 .xcf-shell,
 .xcf-workspace {
   background: #f5f7f1 !important;
@@ -14,9 +14,9 @@ main.fixed.inset-0,
 
 main.fixed.inset-0 > div > section,
 main.fixed.inset-0 > div > section > section,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-stage,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-stage,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card {
+.2-frame .c2-stage,
+.2-frame .c2-real-page-stage,
+.2-frame .c2-real-page-card {
   background: transparent !important;
   box-shadow: none !important;
 }
@@ -105,19 +105,19 @@ main.fixed.inset-0 aside a[href="/billing-confidence"],
 .plans-command-shell aside a[href="/integrations"],
 .plans-command-shell aside a[href="/operator-tools"],
 .plans-command-shell aside a[href="/billing-confidence"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/ai-operator"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/ai-operator/approvals"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/notifications"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/money-desk"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/crew-ops"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/payroll"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/reports"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/onboarding"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/trade-presets"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/automation"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/integrations"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/operator-tools"],
-./* DISABLED_CONFLICT_concept-c */2-frame aside a[href="/billing-confidence"] {
+.2-frame aside a[href="/ai-operator"],
+.2-frame aside a[href="/ai-operator/approvals"],
+.2-frame aside a[href="/notifications"],
+.2-frame aside a[href="/money-desk"],
+.2-frame aside a[href="/crew-ops"],
+.2-frame aside a[href="/payroll"],
+.2-frame aside a[href="/reports"],
+.2-frame aside a[href="/onboarding"],
+.2-frame aside a[href="/trade-presets"],
+.2-frame aside a[href="/automation"],
+.2-frame aside a[href="/integrations"],
+.2-frame aside a[href="/operator-tools"],
+.2-frame aside a[href="/billing-confidence"] {
   display: none !important;
 }
 

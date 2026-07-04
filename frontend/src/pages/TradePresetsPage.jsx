@@ -3,7 +3,7 @@
 // CHURVOX_TRADE_PRESETS_HOOK_NAME_FIX_20260528
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getTradePresets } from "..//churvoxTopTierApi";
+import { getTradePresets } from "../churvoxTopTierApi";
 import "./TradePresetsPage.css";
 
 const fallbackPresets = [

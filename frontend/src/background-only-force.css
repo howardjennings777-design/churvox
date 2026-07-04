@@ -19,7 +19,7 @@ main.fixed.inset-0 section.min-w-0,
 main.fixed.inset-0 section.flex-1,
 main[data-industrial-simple-page="command"],
 main[data-industrial-simple-page="command"] > section,
-./* DISABLED_CONFLICT_concept-c */2-frame,
+.2-frame,
 .xcf-real-page,
 .xcf-workspace,
 .xcf-shell.xcf-real-page {

@@ -57,7 +57,7 @@
   border-radius: 20px !important;
 }
 
-.fresh/* DISABLED_CONFLICT_CommandBoard */ {
+.fresh {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
 }
 
@@ -83,7 +83,7 @@
   .freshFlowCards,
   .freshCommandPulse,
   .freshLaunchGrid,
-  .fresh/* DISABLED_CONFLICT_CommandBoard */ {
+  .fresh {
     grid-template-columns: 1fr !important;
   }
 }

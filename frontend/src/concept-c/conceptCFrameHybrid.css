@@ -2,7 +2,7 @@
    Detail/create/edit pages now use the same industrial theme and global sidebar.
 */
 
-./* DISABLED_CONFLICT_concept-c */2-frame {
+.2-frame {
   min-height: 100dvh !important;
   color: #f8fafc !important;
   background:
@@ -13,30 +13,30 @@
   overflow-y: auto !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame * {
+.2-frame * {
   box-sizing: border-box;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame a {
+.2-frame a {
   text-decoration: none;
   color: inherit;
 }
 
-body.cv-industrial-shell ./* DISABLED_CONFLICT_concept-c */2-frame {
+body.cv-industrial-shell .2-frame {
   margin-left: 286px !important;
   width: calc(100vw - 286px) !important;
   max-width: calc(100vw - 286px) !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-noise,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-topbar,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-spine,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-ai,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-dock {
+.2-frame .c2-noise,
+.2-frame .c2-topbar,
+.2-frame .c2-spine,
+.2-frame .c2-ai,
+.2-frame .c2-dock {
   display: none !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-frame {
+.2-frame .c2-frame {
   position: relative !important;
   z-index: 1 !important;
   width: min(1180px, 100%) !important;
@@ -45,13 +45,13 @@ body.cv-industrial-shell ./* DISABLED_CONFLICT_concept-c */2-frame {
   display: block !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-stage {
+.2-frame .c2-stage {
   min-width: 0 !important;
   overflow: visible !important;
   border-radius: 0 !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card {
+.2-frame .c2-real-page-card {
   min-height: calc(100dvh - 44px) !important;
   overflow: visible !important;
   border: 1px solid rgba(250, 204, 21, .20) !important;
@@ -65,7 +65,7 @@ body.cv-industrial-shell ./* DISABLED_CONFLICT_concept-c */2-frame {
   padding: 24px !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card > ./* DISABLED_CONFLICT_concept-c */2-frame {
+.2-frame .c2-real-page-card > .2-frame {
   min-height: auto !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -75,106 +75,106 @@ body.cv-industrial-shell ./* DISABLED_CONFLICT_concept-c */2-frame {
   overflow: visible !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .px-app,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .min-h-screen,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-white,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-slate-50,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-\[\#f5f7f1\] {
+.2-frame .c2-real-page-card .px-app,
+.2-frame .c2-real-page-card .min-h-screen,
+.2-frame .c2-real-page-card .bg-white,
+.2-frame .c2-real-page-card .bg-slate-50,
+.2-frame .c2-real-page-card .bg-\[\#f5f7f1\] {
   min-height: auto !important;
   background: transparent !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card h1,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card h2,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card h3,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card h4,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card strong,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card b,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-950,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-900,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-blue-950 {
+.2-frame .c2-real-page-card h1,
+.2-frame .c2-real-page-card h2,
+.2-frame .c2-real-page-card h3,
+.2-frame .c2-real-page-card h4,
+.2-frame .c2-real-page-card strong,
+.2-frame .c2-real-page-card b,
+.2-frame .c2-real-page-card .text-slate-950,
+.2-frame .c2-real-page-card .text-slate-900,
+.2-frame .c2-real-page-card .text-blue-950 {
   color: #ffffff !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card p,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card li,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-600,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-500,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-400,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-300 {
+.2-frame .c2-real-page-card p,
+.2-frame .c2-real-page-card li,
+.2-frame .c2-real-page-card .text-slate-600,
+.2-frame .c2-real-page-card .text-slate-500,
+.2-frame .c2-real-page-card .text-slate-400,
+.2-frame .c2-real-page-card .text-slate-300 {
   color: rgba(226, 232, 240, .82) !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-blue-600,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-cyan-200,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-amber-600,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-\[10px\],
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-\[11px\] {
+.2-frame .c2-real-page-card .text-blue-600,
+.2-frame .c2-real-page-card .text-cyan-200,
+.2-frame .c2-real-page-card .text-amber-600,
+.2-frame .c2-real-page-card .text-\[10px\],
+.2-frame .c2-real-page-card .text-\[11px\] {
   color: #facc15 !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card section.rounded-\[30px\],
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card section.rounded-\[28px\],
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card div.rounded-\[30px\],
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card div.rounded-\[28px\],
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card div.rounded-2xl,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card article.rounded-\[22px\],
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card aside.rounded-\[30px\] {
+.2-frame .c2-real-page-card section.rounded-\[30px\],
+.2-frame .c2-real-page-card section.rounded-\[28px\],
+.2-frame .c2-real-page-card div.rounded-\[30px\],
+.2-frame .c2-real-page-card div.rounded-\[28px\],
+.2-frame .c2-real-page-card div.rounded-2xl,
+.2-frame .c2-real-page-card article.rounded-\[22px\],
+.2-frame .c2-real-page-card aside.rounded-\[30px\] {
   border-color: rgba(250, 204, 21, .20) !important;
   background: linear-gradient(135deg, rgba(17,24,39,.94), rgba(11,18,32,.88)) !important;
   color: #f8fafc !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.05) !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card input,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card textarea,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card select {
+.2-frame .c2-real-page-card input,
+.2-frame .c2-real-page-card textarea,
+.2-frame .c2-real-page-card select {
   background: rgba(2, 6, 23, .52) !important;
   color: #f8fafc !important;
   border-color: rgba(250, 204, 21, .24) !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card input::placeholder,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card textarea::placeholder {
+.2-frame .c2-real-page-card input::placeholder,
+.2-frame .c2-real-page-card textarea::placeholder {
   color: rgba(226, 232, 240, .55) !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card button.bg-cyan-300,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card a.bg-cyan-300,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-cyan-300,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-cyan-400,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-cyan-500 {
+.2-frame .c2-real-page-card button.bg-cyan-300,
+.2-frame .c2-real-page-card a.bg-cyan-300,
+.2-frame .c2-real-page-card .bg-cyan-300,
+.2-frame .c2-real-page-card .bg-cyan-400,
+.2-frame .c2-real-page-card .bg-cyan-500 {
   background: linear-gradient(135deg, #facc15, #fb923c 52%, #22d3ee) !important;
   color: #020617 !important;
   border-color: rgba(250, 204, 21, .45) !important;
   box-shadow: 0 14px 38px rgba(251, 146, 60, .22) !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .border-slate-900,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .border-slate-800,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .border-slate-200,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .border-white\/10,
-./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .border-white\/15 {
+.2-frame .c2-real-page-card .border-slate-900,
+.2-frame .c2-real-page-card .border-slate-800,
+.2-frame .c2-real-page-card .border-slate-200,
+.2-frame .c2-real-page-card .border-white\/10,
+.2-frame .c2-real-page-card .border-white\/15 {
   border-color: rgba(250, 204, 21, .20) !important;
 }
 
 @media (max-width: 1023px) {
-  body.cv-industrial-shell ./* DISABLED_CONFLICT_concept-c */2-frame {
+  body.cv-industrial-shell .2-frame {
     margin-left: 0 !important;
     width: 100vw !important;
     max-width: 100vw !important;
   }
 
-  ./* DISABLED_CONFLICT_concept-c */2-frame {
+  .2-frame {
     padding: 12px !important;
   }
 
-  ./* DISABLED_CONFLICT_concept-c */2-frame .c2-frame,
-  ./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card {
+  .2-frame .c2-frame,
+  .2-frame .c2-real-page-card {
     min-height: auto !important;
   }
 
-  ./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card {
+  .2-frame .c2-real-page-card {
     padding: 16px !important;
     padding-bottom: 88px !important;
   }

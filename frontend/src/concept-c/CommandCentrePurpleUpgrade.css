@@ -18,16 +18,16 @@
 }
 
 body:has(.xcf-command-10),
-body:has(./* DISABLED_CONFLICT_concept-c */2-frame),
-body:has(./* DISABLED_CONFLICT_concept-c */-page),
+body:has(.2-frame),
+body:has(.-page),
 body:has(.xcf-shell) {
   background: #070914 !important;
 }
 
 /* Exact dashboard shell — deliberately high specificity so older CSS cannot win. */
 .xcf-command-10.xcf-command-10,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page,
+.2-frame.2-frame,
+.-page.-page,
 .xcf-shell.xcf-shell,
 .xcf-workspace.xcf-workspace {
   min-height: 100dvh !important;
@@ -54,11 +54,11 @@ body:has(.xcf-shell) {
 .xcf-command-10.xcf-command-10 .xcf10-business-card.xcf10-business-card,
 .xcf-command-10.xcf-command-10 .xcf10-snapshot.xcf10-snapshot,
 .xcf-command-10.xcf-command-10 .cv-command-switcher.cv-command-switcher,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-topbar.c2-topbar,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-spine.c2-spine,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-ai.c2-ai,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-stage.c2-stage,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card.c2-real-page-card {
+.2-frame.2-frame .c2-topbar.c2-topbar,
+.2-frame.2-frame .c2-spine.c2-spine,
+.2-frame.2-frame .c2-ai.c2-ai,
+.2-frame.2-frame .c2-stage.c2-stage,
+.2-frame.2-frame .c2-real-page-card.c2-real-page-card {
   border: 1px solid rgba(255,255,255,.12) !important;
   background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.045)) !important;
   box-shadow: 0 28px 80px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.08) !important;
@@ -70,7 +70,7 @@ body:has(.xcf-shell) {
 /* Make Dashboard look like the preview: purple AI command hero. */
 .xcf-command-10.xcf-command-10 .xcf10-hero.xcf10-hero,
 .xcf-command-10.xcf-command-10 .xcf10-next.xcf10-next,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-spine.c2-spine {
+.2-frame.2-frame .c2-spine.c2-spine {
   position: relative !important;
   overflow: hidden !important;
   border-radius: 28px !important;
@@ -94,18 +94,18 @@ body:has(.xcf-shell) {
 .xcf-command-10.xcf-command-10 h4,
 .xcf-command-10.xcf-command-10 b,
 .xcf-command-10.xcf-command-10 strong,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame h1,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame h2,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame h3,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame h4,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame b,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame strong,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page h1,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page h2,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page h3,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page h4,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page b,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page strong {
+.2-frame.2-frame h1,
+.2-frame.2-frame h2,
+.2-frame.2-frame h3,
+.2-frame.2-frame h4,
+.2-frame.2-frame b,
+.2-frame.2-frame strong,
+.-page.-page h1,
+.-page.-page h2,
+.-page.-page h3,
+.-page.-page h4,
+.-page.-page b,
+.-page.-page strong {
   color: #ffffff !important;
   letter-spacing: -0.045em !important;
 }
@@ -114,14 +114,14 @@ body:has(.xcf-shell) {
 .xcf-command-10.xcf-command-10 span,
 .xcf-command-10.xcf-command-10 small,
 .xcf-command-10.xcf-command-10 em,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame p,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame span,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame small,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame em,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page p,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page span,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page small,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page em {
+.2-frame.2-frame p,
+.2-frame.2-frame span,
+.2-frame.2-frame small,
+.2-frame.2-frame em,
+.-page.-page p,
+.-page.-page span,
+.-page.-page small,
+.-page.-page em {
   color: var(--cvx-command-muted) !important;
 }
 
@@ -174,8 +174,8 @@ body:has(.xcf-shell) {
 .xcf-command-10.xcf-command-10 .xcf10-next button,
 .xcf-command-10.xcf-command-10 .xcf10-lane > button,
 .xcf-command-10.xcf-command-10 .xcf10-lanes-head button,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame button:not([disabled]),
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page button:not([disabled]) {
+.2-frame.2-frame button:not([disabled]),
+.-page.-page button:not([disabled]) {
   border-color: rgba(196,181,253,.24) !important;
   background: linear-gradient(135deg, var(--cvx-command-purple), var(--cvx-command-purple-2)) !important;
   color: #ffffff !important;
@@ -184,8 +184,8 @@ body:has(.xcf-shell) {
 
 /* Bottom command switcher */
 .xcf-command-10.xcf-command-10 .cv-command-switcher.cv-command-switcher,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-dock.c2-dock,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-dock-full.c2-dock-full,
+.2-frame.2-frame .c2-dock.c2-dock,
+.2-frame.2-frame .c2-dock-full.c2-dock-full,
 .xcf-shell.xcf-shell .xcf-bottom-nav.xcf-bottom-nav,
 .xcf-shell.xcf-shell .xcf-bottom-nav-full.xcf-bottom-nav-full {
   background: rgba(7,9,20,.94) !important;
@@ -194,8 +194,8 @@ body:has(.xcf-shell) {
 }
 
 .xcf-command-10.xcf-command-10 .cv-command-switcher a,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-dock a,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-dock-full a,
+.2-frame.2-frame .c2-dock a,
+.2-frame.2-frame .c2-dock-full a,
 .xcf-shell.xcf-shell .xcf-bottom-nav a,
 .xcf-shell.xcf-shell .xcf-bottom-nav-full a {
   background: rgba(255,255,255,.075) !important;
@@ -205,8 +205,8 @@ body:has(.xcf-shell) {
 
 .xcf-command-10.xcf-command-10 .cv-command-switcher a.active,
 .xcf-command-10.xcf-command-10 .cv-command-switcher a:first-child,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-dock a.active,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-dock-full a.active,
+.2-frame.2-frame .c2-dock a.active,
+.2-frame.2-frame .c2-dock-full a.active,
 .xcf-shell.xcf-shell .xcf-bottom-nav a.active,
 .xcf-shell.xcf-shell .xcf-bottom-nav-full a.active {
   background: linear-gradient(135deg, var(--cvx-command-purple), var(--cvx-command-purple-2)) !important;
@@ -215,39 +215,39 @@ body:has(.xcf-shell) {
 }
 
 /* App pages inside ConceptCFrame: dark but still easy to read. */
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-white,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-slate-50,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .bg-gray-50,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card article,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card section,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card [class*="card"],
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card [class*="Card"] {
+.2-frame.2-frame .c2-real-page-card .bg-white,
+.2-frame.2-frame .c2-real-page-card .bg-slate-50,
+.2-frame.2-frame .c2-real-page-card .bg-gray-50,
+.2-frame.2-frame .c2-real-page-card article,
+.2-frame.2-frame .c2-real-page-card section,
+.2-frame.2-frame .c2-real-page-card [class*="card"],
+.2-frame.2-frame .c2-real-page-card [class*="Card"] {
   background: linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.042)) !important;
   border-color: rgba(255,255,255,.10) !important;
   color: #fff !important;
   box-shadow: 0 18px 54px rgba(0,0,0,.22) !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-950,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-900,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-gray-900,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-black {
+.2-frame.2-frame .c2-real-page-card .text-slate-950,
+.2-frame.2-frame .c2-real-page-card .text-slate-900,
+.2-frame.2-frame .c2-real-page-card .text-gray-900,
+.2-frame.2-frame .c2-real-page-card .text-black {
   color: #fff !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-600,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-slate-500,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-gray-600,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card .text-gray-500 {
+.2-frame.2-frame .c2-real-page-card .text-slate-600,
+.2-frame.2-frame .c2-real-page-card .text-slate-500,
+.2-frame.2-frame .c2-real-page-card .text-gray-600,
+.2-frame.2-frame .c2-real-page-card .text-gray-500 {
   color: var(--cvx-command-muted) !important;
 }
 
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame input,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame textarea,
-./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame select,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page input,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page textarea,
-./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page select {
+.2-frame.2-frame input,
+.2-frame.2-frame textarea,
+.2-frame.2-frame select,
+.-page.-page input,
+.-page.-page textarea,
+.-page.-page select {
   background: rgba(0,0,0,.26) !important;
   border-color: rgba(255,255,255,.12) !important;
   color: #fff !important;
@@ -256,8 +256,8 @@ body:has(.xcf-shell) {
 /* Mobile */
 @media (max-width: 760px) {
   .xcf-command-10.xcf-command-10,
-  ./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame,
-  ./* DISABLED_CONFLICT_concept-c */-page./* DISABLED_CONFLICT_concept-c */-page,
+  .2-frame.2-frame,
+  .-page.-page,
   .xcf-shell.xcf-shell {
     background:
       radial-gradient(circle at 22% -12%, rgba(124,58,237,.35), transparent 38%),
@@ -273,7 +273,7 @@ body:has(.xcf-shell) {
   .xcf-command-10.xcf-command-10 .xcf10-lane,
   .xcf-command-10.xcf-command-10 .xcf10-business-card,
   .xcf-command-10.xcf-command-10 .xcf10-snapshot,
-  ./* DISABLED_CONFLICT_concept-c */2-frame./* DISABLED_CONFLICT_concept-c */2-frame .c2-real-page-card {
+  .2-frame.2-frame .c2-real-page-card {
     border-radius: 22px !important;
   }
 }

@@ -5,7 +5,7 @@
   margin-bottom: 14px;
 }
 
-.fresh/* DISABLED_CONFLICT_CommandBoard */ {
+.fresh {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
@@ -184,7 +184,7 @@
 
 @media (max-width: 950px) {
   .freshCommandPulse,
-  .fresh/* DISABLED_CONFLICT_CommandBoard */ {
+  .fresh {
     grid-template-columns: 1fr;
     gap: 10px;
   }

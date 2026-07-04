@@ -287,7 +287,7 @@
   color: #111827;
 }
 
-.fresh/* DISABLED_CONFLICT_CommandBoard */ {
+.fresh {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
@@ -558,7 +558,7 @@
 
 @media (max-width: 1150px) {
   .freshFlowCards,
-  .fresh/* DISABLED_CONFLICT_CommandBoard */ {
+  .fresh {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -567,7 +567,7 @@
   .freshCommandPulse,
   .freshFlowCards,
   .freshLaunchGrid,
-  .fresh/* DISABLED_CONFLICT_CommandBoard */,
+  .fresh,
   .freshGrid.two {
     grid-template-columns: 1fr;
   }
