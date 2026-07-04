@@ -1,5 +1,5 @@
 // CHURVOX_ROUTE_ALIAS_RUNTIME_20260630
-// Normalises legacy/simple route names before React Router mounts and fills simple alias-only pages.
+// Normalises legacy/simple route names before and after React Router mounts.
 
 const AUTOMATION_ID = 'churvox-automation-alias-panel';
 const AUTOMATION_STYLE_ID = 'churvox-automation-alias-style';
@@ -72,9 +72,9 @@ function normalisePathAliases() {
 }
 
 function normaliseFreshHash() {
-  if (normalisePathAliases()) return;
+  if (normalisePathAliases()) return true;
   const path = window.location.pathname || '';
-  if (!path.startsWith('/dashboard') && !path.startsWith('/setup') && !path.startsWith('/guide')) return;
+  if (!path.startsWith('/dashboard') && !path.startsWith('/setup') && !path.startsWith('/guide')) return false;
   const raw = (window.location.hash || '').replace('#', '').toLowerCase();
   const aliases = {
     dispatch: 'workers',
@@ -92,7 +92,12 @@ function normaliseFreshHash() {
     inbox: 'messages',
   };
   const target = aliases[raw];
-  if (target && target !== raw) window.history.replaceState({}, document.title, `${path}#${target}`);
+  if (target && target !== raw) {
+    window.history.replaceState({}, document.title, `${path}#${target}`);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    return true;
+  }
+  return false;
 }
 
 function renderMessagesAlias() {
@@ -232,19 +237,23 @@ function handleOwnerShortcutClick(event) {
   return false;
 }
 
+function runAliases() {
+  normaliseFreshHash();
+  renderAutomationAlias();
+}
+
 if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   window.__CHURVOX_ROUTE_ALIAS_RUNTIME__ = true;
-  normalisePathAliases();
-  normaliseFreshHash();
-  window.addEventListener('load', () => setTimeout(renderAutomationAlias, 120));
-  window.addEventListener('hashchange', () => setTimeout(renderAutomationAlias, 120));
-  window.addEventListener('popstate', () => setTimeout(renderAutomationAlias, 120));
+  runAliases();
+  window.addEventListener('load', () => setTimeout(runAliases, 120));
+  window.addEventListener('hashchange', () => setTimeout(runAliases, 40));
+  window.addEventListener('popstate', () => setTimeout(runAliases, 40));
   document.addEventListener('click', (event) => {
     if (guardCsvAuditClick(event)) return;
     if (handleOwnerShortcutClick(event)) return;
-    setTimeout(renderAutomationAlias, 160);
+    setTimeout(runAliases, 80);
   }, true);
-  setInterval(renderAutomationAlias, 1200);
+  setInterval(runAliases, 500);
 }
 
 export {};
