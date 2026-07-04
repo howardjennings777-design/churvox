@@ -4,19 +4,19 @@ import { Nav, Footer } from "./ExecutiveHomePage";
 // removed broken css import
 
 const featureAreas = [
-  ["Today", "A clean day view for jobs moving, active workers, due money and messages that matter."],
+  ["Smart Hub", "Setup, today’s work, money due, messages and owner basics."],
   ["Command", "The approval desk. Prepared admin waits here for approve, edit or park."],
   ["Jobs", "Editable job forms with client, worker, address, price, date, time and recurrence."],
-  ["Clients", "Client records, notes, service history, price memory and job history."],
-  ["Workers", "Simple worker flow for directions, messages, start, finish, notes and photos."],
-  ["Quotes", "Create, review, send and follow up quotes from the job and client record."],
+  ["Clients", "Client records, notes, service history, price memory, CSV import and job history."],
+  ["Workers", "Google Maps/GPS, current jobs, proof, messages, timesheets and simple worker flow."],
+  ["Quotes", "Create, review, follow up and convert accepted quotes to jobs."],
   ["Invoices", "Prepare invoices from jobs, time, notes and price details before owner approval."],
-  ["Messages", "Worker and customer messages stay connected to the record they belong to."],
+  ["Payroll", "Timesheet review and export only. No tax filing and no payout files."],
   ["Settings", "Business details, team access, billing, exports and safe accounting controls."],
 ];
 
 const commandItems = [
-  ["Quote ready", "Prepared from client, service, price and job details."],
+  ["Quote ready", "Prepared from client, service, price, scope and job details."],
   ["Invoice ready", "Prepared from job records, time, notes, photos and pricing memory."],
   ["Message ready", "A reply can be prepared from the current thread and record history."],
   ["Missing detail", "Unclear date, time, price, address or worker detail goes to attention."],
@@ -34,21 +34,21 @@ const buildFlow = [
 
 const guardrails = [
   ["Approval stays in Command", "Other pages show details. Final decisions stay in one place."],
-  ["Today stays useful", "Work needs a usable date and time before it becomes a Today item."],
+  ["Recurring lives in Jobs", "Repeat work is part of job setup, not a separate confusing page."],
+  ["Maps live with Workers", "GPS and Google Maps belong with the worker view and field activity."],
   ["Accounting stays safe", "Draft sync only where available. No tax filing. No payout files."],
-  ["Missing info is visible", "Incomplete records become attention items instead of disappearing."],
 ];
 
 const workerFlow = [
   ["See the job", "Worker sees the current job, address, instructions and office message."],
-  ["Get there", "Directions stay one tap away."],
-  ["Do the work", "Start job, add a note if needed, finish job."],
+  ["Get there", "Directions and location stay one tap away."],
+  ["Do the work", "Start job, add a note or photo if needed, then finish."],
   ["Send to office", "Updates come back clearly so the owner can review the next step."],
 ];
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_FEATURES_10_OUT_OF_10_20260630">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_FEATURES_FRESH_20260705">
       <Nav />
 
       <section className="publicHero publicHeroCompact">
