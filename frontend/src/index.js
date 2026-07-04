@@ -51,6 +51,7 @@ import './churvox-fresh/churvoxSettingsPagePanelsRuntime';
 import './churvox-fresh/churvoxPlansPagePanelsRuntime';
 import './churvox-fresh/churvoxHumanAuditPatchRuntime';
 import './churvox-fresh/optionFRestoreScreenshotTargetRuntime';
+import './churvox-fresh/optionFRestoreDecidedAppPagesRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
