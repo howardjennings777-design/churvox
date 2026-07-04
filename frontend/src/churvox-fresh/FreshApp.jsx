@@ -571,7 +571,13 @@ export default function FreshApp() {
   const go = (key) => {
     setPage(key);
     setSelected(null);
-    if (typeof window !== "undefined") window.history.replaceState({}, "", key === "aiguide" ? "/dashboard#setupassistant" : `/dashboard#${key}`);
+if (typeof window !== "undefined") window.history.replaceState({}, "", key === "aiguide" ? "/guide" : `/dashboard#${key}`);  window.history.replaceState(
+    {},
+    "",
+    key === "aiguide"
+      ? "/guide"
+      : `/dashboard#${key}`
+  );
   };
   const open = (type, item) => setSelected({ ...item, type });
 
