@@ -36,12 +36,13 @@ function normaliseFreshHash() {
     map: 'workers',
     reports: 'invoices',
     report: 'invoices',
-    support: 'help',
-    guide: 'help',
-    payroll: 'team',
+    support: 'support',
+    help: 'support',
+    guide: 'aiguide',
+    payroll: 'payroll',
   };
   const target = aliases[raw];
-  if (target) window.history.replaceState({}, document.title, `${path}#${target}`);
+  if (target && target !== raw) window.history.replaceState({}, document.title, `${path}#${target}`);
 }
 
 function renderAutomationAlias() {
@@ -90,7 +91,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   window.__CHURVOX_ROUTE_ALIAS_RUNTIME__ = true;
   const path = window.location.pathname || '';
   const aliases = {
-    '/help': '/dashboard#help',
+    '/help': '/dashboard#support',
     '/setup': '/setup-guide',
     '/smart-hub': '/dashboard',
     '/automation': '/dashboard#automation',
@@ -100,6 +101,8 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
     '/calendar': '/dashboard#workers',
     '/reports-board': '/dashboard#invoices',
     '/reports': '/dashboard#invoices',
+    '/payroll-board': '/dashboard#payroll',
+    '/payroll': '/dashboard#payroll',
     '/worker/messages': '/worker/ops',
     '/worker/profile': '/worker/settings',
     '/worker/me': '/worker/settings',
