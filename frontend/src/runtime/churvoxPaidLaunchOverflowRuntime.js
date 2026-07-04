@@ -1,10 +1,15 @@
 // Owner app visual guard.
-// Hides the audit-only proof rail and lets the real FreshApp page layouts render.
+// Hides the audit-only proof rail, lets real FreshApp pages render, and restores Payroll when old routing points it at Team.
 
 const STYLE_ID = "churvox-owner-original-pages-visual-guard";
+const PAYROLL_ID = "churvox-payroll-page-restore";
 
 function putStyle(el, key, value) {
   try { el.style.setProperty(key, value, "important"); } catch (_) {}
+}
+
+function removeStyle(el, key) {
+  try { el.style.removeProperty(key); } catch (_) {}
 }
 
 function installCss() {
@@ -59,9 +64,66 @@ function installCss() {
     .churvoxOptionC .cocField { display:grid !important; gap:5px !important; }
     .churvoxOptionC .cocField input, .churvoxOptionC .cocField textarea, .churvoxOptionC .cocField select { width:100% !important; min-height:40px !important; border:1px solid rgba(16,21,19,.12) !important; border-radius:12px !important; padding:9px 10px !important; background:#fff !important; color:#151c19 !important; font-weight:850 !important; }
 
-    @media(max-width:980px){ .churvoxOptionC .cocBar{grid-template-columns:1fr !important; margin:12px !important;} .churvoxOptionC .title h1{font-size:30px !important;} .churvoxOptionC .cocNav{margin:0 12px 10px !important;} .churvoxOptionC .workspace{margin:0 12px 16px !important;} .churvoxOptionC .cocPage, .churvoxOptionC .jobCards, .churvoxOptionC .workerCards, .churvoxOptionC .workCards, .churvoxOptionC .formGrid{grid-template-columns:1fr !important;} }
+    #${PAYROLL_ID} { grid-column:1/-1 !important; display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:12px !important; }
+    #${PAYROLL_ID} section { border:1px solid rgba(16,21,19,.08) !important; border-radius:16px !important; background:rgba(255,255,255,.84) !important; color:#111815 !important; box-shadow:0 13px 30px rgba(16,21,19,.06) !important; padding:16px !important; }
+    #${PAYROLL_ID} .payHero { grid-column:1/-1 !important; background:radial-gradient(circle at 88% 18%,rgba(239,85,60,.22),transparent 32%),linear-gradient(135deg,#101513,#1f2925 68%,#ef553c) !important; color:#fff !important; }
+    #${PAYROLL_ID} h2, #${PAYROLL_ID} h3 { margin:0 0 8px !important; font-weight:950 !important; letter-spacing:-.03em !important; }
+    #${PAYROLL_ID} .payHero h2 { color:#fff !important; font-size:28px !important; }
+    #${PAYROLL_ID} .payHero p { color:rgba(255,255,255,.86) !important; }
+    #${PAYROLL_ID} p, #${PAYROLL_ID} span, #${PAYROLL_ID} small { color:#44504c !important; font-weight:800 !important; }
+    #${PAYROLL_ID} .payRow { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; gap:10px !important; align-items:center !important; min-height:48px !important; border-radius:12px !important; background:#fff !important; border:1px solid rgba(16,21,19,.08) !important; padding:10px 12px !important; margin-top:8px !important; }
+    #${PAYROLL_ID} .payActions { display:flex !important; flex-wrap:wrap !important; gap:8px !important; margin-top:10px !important; }
+    #${PAYROLL_ID} button { border:0 !important; border-radius:999px !important; min-height:34px !important; padding:8px 14px !important; background:#111815 !important; color:#fff !important; font-size:12px !important; font-weight:950 !important; }
+
+    @media(max-width:980px){ .churvoxOptionC .cocBar{grid-template-columns:1fr !important; margin:12px !important;} .churvoxOptionC .title h1{font-size:30px !important;} .churvoxOptionC .cocNav{margin:0 12px 10px !important;} .churvoxOptionC .workspace{margin:0 12px 16px !important;} .churvoxOptionC .cocPage, .churvoxOptionC .jobCards, .churvoxOptionC .workerCards, .churvoxOptionC .workCards, .churvoxOptionC .formGrid, #${PAYROLL_ID}{grid-template-columns:1fr !important;} }
   `;
   document.head.appendChild(style);
+}
+
+function payrollRows(root) {
+  const cards = Array.from(root.querySelectorAll('.workerCard, .cocRow')).slice(0, 6);
+  const rows = cards.map((card) => {
+    const title = card.querySelector('b')?.textContent || card.textContent?.trim()?.slice(0, 40) || 'Worker';
+    const meta = card.querySelector('small, span')?.textContent || 'Timesheet ready for review';
+    return `<div class="payRow"><span><b>${title}</b><small>${meta}</small></span><em>review</em></div>`;
+  }).join('');
+  return rows || `<div class="payRow"><span><b>No workers yet</b><small>Timesheets will appear when staff clock time.</small></span><em>empty</em></div>`;
+}
+
+function restorePayrollPage() {
+  const hash = (window.location.hash || '').replace('#', '').toLowerCase();
+  const isPayroll = hash === 'payroll' || window.location.pathname === '/payroll' || window.location.pathname === '/payroll-board';
+  const pageRoot = document.querySelector('.churvoxOptionC .workspace .cocPage');
+  if (!pageRoot) return;
+
+  const existing = document.getElementById(PAYROLL_ID);
+  if (!isPayroll) {
+    existing?.remove();
+    pageRoot.querySelectorAll('[data-churvox-payroll-hidden="true"]').forEach((el) => {
+      removeStyle(el, 'display');
+      el.removeAttribute('data-churvox-payroll-hidden');
+    });
+    return;
+  }
+
+  pageRoot.querySelectorAll(':scope > *').forEach((el) => {
+    if (el.id === PAYROLL_ID) return;
+    el.setAttribute('data-churvox-payroll-hidden', 'true');
+    putStyle(el, 'display', 'none');
+  });
+
+  let node = existing;
+  if (!node) {
+    node = document.createElement('div');
+    node.id = PAYROLL_ID;
+    pageRoot.prepend(node);
+  }
+  node.innerHTML = `
+    <section class="payHero"><h2>Payroll review</h2><p>Review worker time, slips and pay periods. Churvox does not file tax and does not create bank payout files.</p></section>
+    <section><h3>Pay period</h3><div class="payActions"><button>Weekly</button><button>Fortnightly</button><button>Monthly</button><button>Export CSV</button></div><p>Use this page to review hours before exporting records.</p></section>
+    <section><h3>Timesheets</h3>${payrollRows(pageRoot)}</section>
+    <section><h3>Locked guardrails</h3><div class="payRow"><span><b>No tax filing</b><small>Review and export only.</small></span><em>locked</em></div><div class="payRow"><span><b>No bank payout files</b><small>Owner keeps payment control.</small></span><em>locked</em></div></section>
+  `;
 }
 
 function fixOwnerShell() {
@@ -78,6 +140,7 @@ function fixOwnerShell() {
   });
   root.querySelectorAll(".cocNav").forEach((el) => { putStyle(el, "display", "flex"); putStyle(el, "overflow-x", "auto"); });
   root.querySelectorAll(".cocNav button").forEach((el) => { putStyle(el, "width", "auto"); putStyle(el, "height", "auto"); putStyle(el, "min-height", "32px"); putStyle(el, "aspect-ratio", "auto"); putStyle(el, "border-radius", "999px"); });
+  restorePayrollPage();
 }
 
 function run() {
