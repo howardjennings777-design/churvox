@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import axios from "axios";
 import API_BASE from "../lib/apiBase";
 import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } from "../lib/roles";
@@ -34,7 +34,7 @@ function cleanPlan(value) {
 }
 
 function userPlan(user = {}) {
-  return cleanPlan(user.plan || user.ui_plan || user.current_plan || user.subscription_plan || user.billing_plan || user.tier || user.plan_name || user?.business?.plan || user?.business?.subscription_plan);
+  return cleanPlan(user.plan || user.ui_plan || user.current_plan || user.subscription_plan || user.billing_plan || user.tier || user.plan_name || user?.business?.plan || user?.business?.subscription_plan || "");
 }
 
 function hasValidPlan(user = {}) {
@@ -151,6 +151,8 @@ function rememberUser(user) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readCachedUser());
   const [loading, setLoading] = useState(true);
+  const loginAbortRef = useRef(null);
+  const registerAbortRef = useRef(null);
 
   const fetchMe = useCallback(async (token) => {
     const response = await axios.get(`${API_BASE}/api/auth/me`, {
@@ -240,84 +242,117 @@ export function AuthProvider({ children }) {
   }
 
   const login = useCallback(async (email, password) => {
-    clearStoredAuth();
-    setUser(null);
+    // Abort previous login if one is in progress
+    if (loginAbortRef.current) {
+      loginAbortRef.current.abort();
+    }
 
-    const cleanEmail = String(email || "").trim().toLowerCase();
-    let response;
-    let normalLoginError = null;
+    const controller = new AbortController();
+    loginAbortRef.current = controller;
 
     try {
-      response = await axios.post(
-        `${API_BASE}/api/auth/login`,
-        { email: cleanEmail, password },
-        { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
-      );
-    } catch (err) {
-      normalLoginError = err;
-      if (!shouldTryWorkerFallback(err)) throw err;
-      response = await workerLoginBridge(cleanEmail, password, err);
-    }
+      clearStoredAuth();
+      setUser(null);
 
-    if (response.data?.success === false) {
+      const cleanEmail = String(email || "").trim().toLowerCase();
+      let response;
+      let normalLoginError = null;
+
       try {
-        response = await workerLoginBridge(cleanEmail, password, normalLoginError);
+        response = await axios.post(
+          `${API_BASE}/api/auth/login`,
+          { email: cleanEmail, password },
+          { withCredentials: true, timeout: AUTH_TIMEOUT_MS, signal: controller.signal }
+        );
       } catch (err) {
-        throw new Error(authError(response.data) || err.message);
+        if (err.name === "CanceledError") throw err;
+        normalLoginError = err;
+        if (!shouldTryWorkerFallback(err)) throw err;
+        response = await workerLoginBridge(cleanEmail, password, err);
       }
+
+      if (response.data?.success === false) {
+        try {
+          response = await workerLoginBridge(cleanEmail, password, normalLoginError);
+        } catch (err) {
+          throw new Error(authError(response.data) || err.message);
+        }
+      }
+
+      const token = tokenFrom(response.data);
+      const nextUser = userFrom(response.data);
+
+      if (!nextUser) {
+        throw new Error("Login failed because the server did not return account JSON.");
+      }
+
+      const returnedEmail = String(nextUser.email || "").trim().toLowerCase();
+      if (returnedEmail && returnedEmail !== cleanEmail) {
+        throw new Error("Churvox returned a different account than the email entered.");
+      }
+
+      if (token) {
+        nextUser.token = token;
+        localStorage.setItem("token", token);
+      } else {
+        localStorage.removeItem("token");
+      }
+
+      if (nextUser?.has_app_access || inferredWorker(nextUser) || inferredPayroll(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
+      rememberUser(nextUser);
+      setUser(nextUser);
+
+      return { ...response.data, user: nextUser, ...nextUser };
+    } finally {
+      loginAbortRef.current = null;
     }
-
-    const token = tokenFrom(response.data);
-    const nextUser = userFrom(response.data);
-
-    if (!nextUser) {
-      throw new Error("Login failed because the server did not return account JSON.");
-    }
-
-    const returnedEmail = String(nextUser.email || "").trim().toLowerCase();
-    if (returnedEmail && returnedEmail !== cleanEmail) {
-      throw new Error("Churvox returned a different account than the email entered.");
-    }
-
-    if (token) {
-      nextUser.token = token;
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("token");
-    }
-
-    if (nextUser?.has_app_access || inferredWorker(nextUser) || inferredPayroll(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
-    rememberUser(nextUser);
-    setUser(nextUser);
-
-    return { ...response.data, user: nextUser, ...nextUser };
   }, []);
 
   const register = useCallback(async (userData) => {
-    clearStoredAuth();
-    setUser(null);
-    const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
-    if (response.data?.success === false) throw new Error(authError(response.data));
-
-    const token = tokenFrom(response.data);
-    const nextUser = userFrom(response.data);
-    if (!nextUser) throw new Error("Account was created but Churvox could not load the session.");
-
-    if (token) {
-      nextUser.token = token;
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("token");
+    // Abort previous register if one is in progress
+    if (registerAbortRef.current) {
+      registerAbortRef.current.abort();
     }
 
-    localStorage.setItem(PLAN_REQUIRED_KEY, "true");
-    const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
-    rememberUser(locked);
-    setUser(locked);
-    return { ...response.data, user: locked, ...locked };
+    const controller = new AbortController();
+    registerAbortRef.current = controller;
+
+    try {
+      clearStoredAuth();
+      setUser(null);
+      const response = await axios.post(`${API_BASE}/api/auth/register`, userData, {
+        withCredentials: true,
+        timeout: AUTH_TIMEOUT_MS,
+        signal: controller.signal,
+      });
+      if (response.data?.success === false) throw new Error(authError(response.data));
+
+      const token = tokenFrom(response.data);
+      const nextUser = userFrom(response.data);
+      if (!nextUser) throw new Error("Account was created but Churvox could not load the session.");
+
+      if (token) {
+        nextUser.token = token;
+        localStorage.setItem("token", token);
+      } else {
+        localStorage.removeItem("token");
+      }
+
+      localStorage.setItem(PLAN_REQUIRED_KEY, "true");
+      const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
+      rememberUser(locked);
+      setUser(locked);
+      return { ...response.data, user: locked, ...locked };
+    } finally {
+      registerAbortRef.current = null;
+    }
   }, []);
 
   const logout = useCallback(async () => {
+    // Abort any in-progress auth operations
+    if (loginAbortRef.current) loginAbortRef.current.abort();
+    if (registerAbortRef.current) registerAbortRef.current.abort();
+
     try {
       const token = localStorage.getItem("token") || "";
       await axios.post(`${API_BASE}/api/auth/logout`, {}, { headers: headersFor(token), withCredentials: true, timeout: AUTH_TIMEOUT_MS });
