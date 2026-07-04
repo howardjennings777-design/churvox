@@ -128,7 +128,7 @@ if (typeof window !== 'undefined') {
     if (document.body) observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true });
     run();
   });
-  setInterval(run, 500);
+
   setTimeout(run, 0);
 }
 
