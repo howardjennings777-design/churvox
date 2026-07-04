@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
 import { LifeBuoy, RefreshCw } from "lucide-react";
-import "./BackupRecoveryPage.css";
+// removed broken css import
 
 const arr = (v) => Array.isArray(v) ? v : [];
 

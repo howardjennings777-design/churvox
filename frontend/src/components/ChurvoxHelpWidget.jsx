@@ -2,7 +2,7 @@ import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import "./ChurvoxHelpWidget.css";
+// removed broken css import
 
 const HELP_TYPES = [
   "Setup help",

@@ -46,9 +46,9 @@ if (typeof navigator !== "undefined" && navigator.serviceWorker) {
 
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "@/index.css";
+// removed broken css import
 import App from "@/App";
-import "./hard-tap-fix.css";
+// removed broken css import
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then((regs) => {
     regs.forEach((reg) => reg.unregister());

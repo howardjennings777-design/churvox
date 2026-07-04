@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Nav } from "../marketing/ExecutiveHomePage";
-import "./AuthPublicCommand.css";
+// removed broken css import
 
 const inputStyle = {
   color: "#000000",

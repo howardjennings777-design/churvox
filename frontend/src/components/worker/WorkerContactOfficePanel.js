@@ -5,7 +5,7 @@ import { useApi } from "@/hooks/useApi";
 import { toast } from "sonner";
 import { sendFreshSlipToCommand } from "@/churvox-fresh/";
 import { useAuth } from "@/context/AuthContext";
-import "./WorkerContactOfficePanel.css";
+// removed broken css import
 
 export default function WorkerContactOfficePanel({ open, onClose, defaultMessage = "", jobId = "", jobTitle = "" }) {
   const { get, post } = useApi();

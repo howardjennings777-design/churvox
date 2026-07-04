@@ -1,6 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
-import "./freshPlans.css";
+// removed broken css import
 
 const TRACE = "checkout-js-trace-20260615-stable-billing-v1";
 

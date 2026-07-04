@@ -16,7 +16,7 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
-import "./AIOperatorApprovalsCommand.css";
+// removed broken css import
 
 const safeArray = (v) => (Array.isArray(v) ? v : []);
 

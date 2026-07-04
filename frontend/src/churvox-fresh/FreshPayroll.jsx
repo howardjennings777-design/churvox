@@ -1,8 +1,8 @@
 import React from "react";
 import { readFreshFocus } from "./freshFocus";
 import { useApi } from "../hooks/useApi";
-import "./freshPayroll.css";
-import "./freshPayrollModal.css";
+// removed broken css import
+// removed broken css import
 
 const PAYROLL_PERIOD_KEY = "churvox:fresh-payroll-period:v1";
 const PAYROLL_EDIT_KEY = "churvox:fresh-payroll-edits:v1";

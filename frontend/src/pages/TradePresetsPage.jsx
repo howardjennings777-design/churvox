@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getTradePresets } from "../churvoxTopTierApi";
-import "./TradePresetsPage.css";
+// removed broken css import
 
 const fallbackPresets = [
   { id: "lawn_care", name: "Lawn Care", job_types: ["Mow", "Edge", "Hedge trim", "Spray weeds"], invoice_line: "Lawn and grounds maintenance completed." },

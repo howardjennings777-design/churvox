@@ -4,7 +4,7 @@ import { useApi } from "../hooks/useApi";
 import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
 import { AlertTriangle, Clock, HardHat, RefreshCw, UserCheck } from "lucide-react";
 import { toast } from "sonner";
-import "./CrewOperationsPage.css";
+// removed broken css import
 
 function arr(value) { return Array.isArray(value) ? value : []; }
 function idOf(value) { return String(value?.id || value?._id || ""); }

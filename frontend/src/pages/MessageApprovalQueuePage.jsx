@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import "./MessageApprovalQueuePage.css";
+// removed broken css import
 
 // Message approvals are approval-first. This page uses stable live records only:
 // /jobs, /invoices, /quotes and /clients. It does not call missing placeholder routes.

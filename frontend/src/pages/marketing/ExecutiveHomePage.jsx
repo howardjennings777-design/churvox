@@ -1,9 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
-import "./SimplePublic.css";
-import "./SimplePublicStrong.css";
-import "./ExecutivePublicPolish.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
 
 const navLinks = [
   ["/features", "How it works"],

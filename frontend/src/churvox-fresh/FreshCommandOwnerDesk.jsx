@@ -2,7 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import "./freshReviewActionForms.css";
+// removed broken css import
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 

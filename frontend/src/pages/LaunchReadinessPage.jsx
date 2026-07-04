@@ -1,7 +1,7 @@
 // CHURVOX_LAUNCH_READINESS_PAGE_20260528
 import React from "react";
 import { Link } from "react-router-dom";
-import "./LaunchReadinessPage.css";
+// removed broken css import
 
 const essentials = [
   ["Command Floor", "Owner approval flow for work, invoices, messages, issues and crew decisions.", "/dashboard"],

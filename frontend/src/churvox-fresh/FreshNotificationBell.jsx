@@ -1,7 +1,7 @@
 import React from "react";
 import { Bell, CheckCheck, Trash2, X } from "lucide-react";
 import { useApi } from "../hooks/useApi";
-import "./freshNotificationBell.css";
+// removed broken css import
 
 const CLEAR_BEFORE_KEY = "churvox:notifications-clear-before:v1";
 

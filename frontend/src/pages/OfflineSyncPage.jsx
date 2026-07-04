@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
-import "./OfflineSyncPage.css";
+// removed broken css import
 
 // Offline sync now applies safe job updates through stable /jobs/:id PATCH calls.
 // Photo binary upload and provider-specific offline sends stay queued until their real

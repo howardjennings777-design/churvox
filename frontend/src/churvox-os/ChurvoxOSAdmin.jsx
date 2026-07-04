@@ -1,7 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
-import "./churvoxOSAdmin.css";
+// removed broken css import
 
 const STATE_KEY = "churvox.os.admin.forms.v2";
 

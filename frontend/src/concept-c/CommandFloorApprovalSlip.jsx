@@ -2,7 +2,7 @@
 // CHURVOX_WORKER_NOTES_OPTIONAL_APPROVAL_20260529
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import "./CommandFloorApprovalSlipCleanRebuild.css";
+// removed broken css import
 
 const str = (v) => String(v || "").trim();
 const low = (v) => str(v).toLowerCase();

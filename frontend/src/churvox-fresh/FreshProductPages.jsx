@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import FreshPlans from "./FreshPlans";
-import "./freshProductPages.css";
+// removed broken css import
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 

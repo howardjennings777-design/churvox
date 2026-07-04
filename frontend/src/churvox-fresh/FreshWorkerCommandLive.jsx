@@ -1,8 +1,8 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { hideDemoRecords } from "./freshDemoRecords";
-import "./freshWorkerCommand.css";
-import "./freshWorkerCommandLive.css";
+// removed broken css import
+// removed broken css import
 
 const WORKER_ENDPOINTS = ["/worker/live-status", "/team/workers", "/team", "/workers"];
 

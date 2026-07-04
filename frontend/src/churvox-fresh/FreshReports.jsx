@@ -1,5 +1,5 @@
 import React from "react";
-import "./freshPayrollCompact.css";
+// removed broken css import
 
 const storageKeys = {
   jobs: "churvox:fresh-jobs:v1",

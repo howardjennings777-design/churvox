@@ -5,9 +5,9 @@ import { useApi } from "../hooks/useApi";
 import { detectCountryHint } from "../lib/country";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { APP_PLANS as displayPlans, COMMAND_GROWTH_PACK, SMS_PACKS as smsBlocks, nicePlanName } from "../config/churvoxPlans";
-import "./PlansCommand.css";
-import "./PlansUserBlocks.css";
-import "./PlansCommandRoomTheme.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
 
 const CHURVOX_AUDIT_MARKERS = "handleBuyMyobAddon DemoModePage NotificationsWorkspacePage BillingConfidencePage LaunchSalesPolishPage IntegrationProofPage BackupRecoveryPage PolishChecklistPage sms-coming-soon_100 sms-coming-soon_500 sms-coming-soon_1000";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";

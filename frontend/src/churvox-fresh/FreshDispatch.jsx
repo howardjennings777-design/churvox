@@ -1,6 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
-import "./freshDispatchPolish.css";
+// removed broken css import
 
 const lanes = ["Unconfirmed", "Ready", "On site", "Complete", "Blocked"];
 

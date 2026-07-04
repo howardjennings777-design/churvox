@@ -2,7 +2,7 @@
 // CHURVOX_PUBLIC_PROOF_PACK_ACTIONS_20260528
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import "./PublicProofPackPage.css";
+// removed broken css import
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "";
 const cleanBase = (base) => String(base || "").replace(/\/+$/, "");

@@ -1,8 +1,8 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
-import "./freshPayrollCompact.css";
-import "./freshJobsPolish.css";
-import "./freshCommandPreviewFix.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
 
 export const COMMAND_REPLACED_APPROVAL_PAGE_MARKER_20260627 = "COMMAND_REPLACED_APPROVAL_PAGE_MARKER_20260627";
 

@@ -4,7 +4,7 @@ import { useApi } from "../hooks/useApi";
 import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
 import { Building2, RefreshCw, ShieldCheck, Activity, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import "./ChurvoxHQPage.css";
+// removed broken css import
 
 const arr = (v) => Array.isArray(v) ? v : [];
 const money = (v) => Number(v || 0).toLocaleString("en-NZ", { style: "currency", currency: "NZD" });

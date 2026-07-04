@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import { businessSettingsCompletion, loadBusinessSettings } from "../lib/businessSettings";
-import "./FirstSetupGuide.css";
+// removed broken css import
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const DISMISSED_KEY = "churvox_first_setup_dismissed";

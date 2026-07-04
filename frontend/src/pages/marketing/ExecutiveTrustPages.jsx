@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
-import "./SimplePublic.css";
-import "./ExecutivePublicPolish.css";
+// removed broken css import
+// removed broken css import
 
 const guardrails = [
   ["Owner approval", "Churvox prepares admin, but the owner approves, edits or parks important actions in Command."],

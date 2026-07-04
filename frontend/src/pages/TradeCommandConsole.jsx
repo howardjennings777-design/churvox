@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import "../styles/churvoxTradeCommandConsole.css";
+// removed broken css import
 
 const arr = (v) =>
   Array.isArray(v) ? v :

@@ -1,7 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
-import "./churvoxOSWorkAdmin.css";
+// removed broken css import
 
 const STORE_KEY = "churvox.workAdmin.v1";
 const PAGES = [

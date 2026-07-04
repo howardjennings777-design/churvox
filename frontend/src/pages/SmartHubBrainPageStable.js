@@ -3,7 +3,7 @@ import Layout from "../components/Layout";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import "../styles/smartCommandSystem.css";
+// removed broken css import
 
 const norm = (v) => String(v || "").toLowerCase().trim();
 const idOf = (obj) => String(obj?.id || obj?._id || obj?.uuid || "");

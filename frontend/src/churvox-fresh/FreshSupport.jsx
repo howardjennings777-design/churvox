@@ -1,6 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
-import "./freshPayrollCompact.css";
+// removed broken css import
 
 const SUPPORT_EMAIL = "hello@churvox.com";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";

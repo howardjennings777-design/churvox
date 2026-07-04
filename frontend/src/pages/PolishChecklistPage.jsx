@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
 import { Paintbrush, RefreshCw } from "lucide-react";
-import "./PolishChecklistPage.css";
+// removed broken css import
 
 const arr = (v) => Array.isArray(v) ? v : [];
 

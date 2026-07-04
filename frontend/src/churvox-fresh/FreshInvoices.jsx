@@ -3,7 +3,7 @@ import { useApi } from "../hooks/useApi";
 import InvoiceQuickCreateForm from "../components/forms/InvoiceQuickCreateForm";
 import { hideDemoRecords } from "./freshDemoRecords";
 import { mergeRecentInvoices } from "./freshRecentInvoices";
-import "./freshRoutePopups.css";
+// removed broken css import
 
 const filters = ["All", "Draft", "Sent", "Overdue", "Paid"];
 const SELECTED_JOB_INVOICE_KEY = "churvox:selected-job-for-invoice";

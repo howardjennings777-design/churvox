@@ -4,7 +4,7 @@ import { Briefcase, CreditCard, LogOut, MapPin, MessageCircle, Navigation, Refre
 import { toast } from "sonner";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
-import "./WorkerNoFuss.css";
+// removed broken css import
 
 const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
 const list = (value) => Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : Array.isArray(value?.jobs) ? value.jobs : Array.isArray(value?.items) ? value.items : [];

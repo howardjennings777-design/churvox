@@ -1,6 +1,6 @@
 import React from "react";
-import "./churvox-v2.css";
-import "../styles/churvox-v2-route-force.css";
+// removed broken css import
+// removed broken css import
 import { sendFreshSlipToCommand } from "../churvox-fresh/";
 
 const CLIENTS = [

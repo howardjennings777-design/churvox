@@ -1,5 +1,5 @@
 import React from "react";
-import "./churvox-v2.css";
+// removed broken css import
 
 const PAGE = {
   jobs: {

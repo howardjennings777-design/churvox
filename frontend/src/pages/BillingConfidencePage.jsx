@@ -4,7 +4,7 @@ import { useApi } from "../hooks/useApi";
 import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
 import { CreditCard, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import "./BillingConfidencePage.css";
+// removed broken css import
 
 const arr = (v) => Array.isArray(v) ? v : [];
 

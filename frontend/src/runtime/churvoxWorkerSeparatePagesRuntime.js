@@ -1,4 +1,4 @@
-import './churvoxWorkerSeparatePages.css';
+// removed broken css import
 
 let queued = false;
 

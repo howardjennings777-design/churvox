@@ -11,7 +11,7 @@ import {
   pricingNotesForCountry,
   normalizeCountry,
 } from "../../config/churvoxPlans";
-import "./SimplePublic.css";
+// removed broken css import
 
 function isOperator(plan) {
   return String(plan?.name || "").toLowerCase() === "operator";

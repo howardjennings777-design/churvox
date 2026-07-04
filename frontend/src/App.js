@@ -7,12 +7,12 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "sonner";
 import { toast } from "sonner";
 import { getDefaultRoute } from "./lib/roles";
-import "./styles/command-slip-theme.css";
-import "./styles/churvox-global-polish.css";
-import "./styles/worker-public-polish.css";
-import "./pages/worker/WorkerCommand.css";
-import "./styles/public-dark-login-theme.css";
-import "./styles/job-slip-restore.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
 
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";

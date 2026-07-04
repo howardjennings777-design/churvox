@@ -1,5 +1,5 @@
 import React from "react";
-import "./freshPlansClean.css";
+// removed broken css import
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
 import {

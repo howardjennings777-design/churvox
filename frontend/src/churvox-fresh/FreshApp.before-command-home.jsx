@@ -1,74 +1,74 @@
 import React from "react";
-import "./fresh.css";
-import "./freshAIActions.css";
-import "./freshAIHub.css";
-import "./freshAlerts.css";
-import "./freshApprovals.css";
-import "./freshAutomation.css";
-import "./freshAvailability.css";
-import "./freshBilling.css";
-import "./freshClients.css";
-import "./freshCommand.css";
-import "./freshCommandDesk.css";
-import "./freshDispatch.css";
-import "./freshDocuments.css";
-import "./freshExpenses.css";
-import "./freshExports.css";
-import "./freshExtras.css";
-import "./freshFeedback.css";
-import "./freshFlags.css";
-import "./freshFollowUps.css";
-import "./freshGps.css";
-import "./freshImports.css";
-import "./freshIntegrations.css";
-import "./freshInventory.css";
-import "./freshInvoices.css";
-import "./freshJobs.css";
-import "./freshLaunch.css";
-import "./freshLeads.css";
-import "./freshMessages.css";
-import "./freshOnboarding.css";
-import "./freshPayments.css";
-import "./freshPayroll.css";
-import "./freshPhotos.css";
-import "./freshPlans.css";
-import "./freshProfit.css";
-import "./freshQuality.css";
-import "./freshQuotes.css";
-import "./freshRecurring.css";
-import "./freshReports.css";
-import "./freshReviews.css";
-import "./freshRoadmap.css";
-import "./freshRoutes.css";
-import "./freshSafety.css";
-import "./freshSearch.css";
-import "./freshSearchReallyFinal.css";
-import "./freshSearchTypingFix.css";
-import "./freshSearchVisibleText.css";
-import "./freshSecurity.css";
-import "./freshTrustCenter.css";
-import "./freshHelpDesk.css";
-import "./freshServices.css";
-import "./freshSettingsLive.css";
-import "./freshSetup.css";
-import "./freshSmartHub.css";
-import "./freshSmartCoreFlow.css";
-import "./freshTellLauncher.css";
-import "./freshOwnerAiNext.css";
-import "./freshCommandOwnerDesk.css";
-import "./freshAiOperatorStudio.css";
-import "./freshAiQuickCreate.css";
-import "./freshAiFollowUpWriter.css";
-import "./freshPlanMyDay.css";
-import "./freshSubcontractors.css";
-import "./freshTeamLive.css";
-import "./freshTemplates.css";
-import "./freshTimeLogs.css";
-import "./freshTopStatus.css";
-import "./freshTopbar.css";
-import "./freshUltimateContrast.css";
-import "./freshVariations.css";
-import "./freshWarranties.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
 import FreshShell from "./FreshShell";
 import FreshSimple from "./FreshSimple";
 import FreshSmartHub from "./FreshSmartHub";
@@ -126,8 +126,8 @@ import FreshMaterialsAI from "./FreshMaterialsAI";
 import FreshNz from "./FreshNz";
 import FreshPortal from "./FreshPortal";
 import { installPillContrastRuntime } from "./freshPillContrastRuntime";
-import "./freshFinalContrastLock.css";
-import "./freshPillContrastSystem.css";
+// removed broken css import
+// removed broken css import
 
 const pages = {
   smart: FreshSmartHub,

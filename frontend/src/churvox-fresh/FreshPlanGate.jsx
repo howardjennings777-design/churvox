@@ -1,6 +1,6 @@
 import React from "react";
 import { ACCOUNTING_ADDON_NAME, ACCOUNTING_ADDON_PRICE, GROWTH_PACK_NAME, GROWTH_PACK_PRICE, PLAN_LABELS, accessForPage } from "./planRules";
-import "./freshPlanGate.css";
+// removed broken css import
 
 export default function FreshPlanGate({ page, user, onNavigate, children }) {
   const access = accessForPage(page, user);

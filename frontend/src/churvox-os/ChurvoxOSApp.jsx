@@ -1,9 +1,9 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
-import "./churvoxOS.css";
-import "./churvoxOSReadablePills.css";
-import "./churvoxOSWiring.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
 
 const STORAGE_KEY = "churvox.os.command.state.v4";
 

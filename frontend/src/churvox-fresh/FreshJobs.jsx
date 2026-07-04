@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import { hideDemoRecords } from "./freshDemoRecords";
 import { mergeRecentInvoices } from "./freshRecentInvoices";
-import "./freshJobsPolish.css";
+// removed broken css import
 
 const filters = ["All", "Ready", "In progress", "Blocked", "Completed", "Needs invoice"];
 const STORY_ENDPOINTS = { quotes: "/quotes", invoices: "/invoices", clients: "/clients", workers: "/team/workers" };

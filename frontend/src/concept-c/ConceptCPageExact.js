@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import ConceptCPageExact from "./ConceptCPageExact.jsx";
 import TeamWorkspacePage from "../pages/TeamWorkspacePage";
-import "./CommandFirstSetupPrompt.css";
+// removed broken css import
 
 const SETUP_KEY = "churvox_first_setup_pending";
 

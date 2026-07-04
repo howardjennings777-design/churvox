@@ -4,9 +4,9 @@ import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { useAuth } from "../context/AuthContext";
 import { get, patch, post } from "../lib/api";
 import { idOf, listFrom, money, norm, unwrap } from "../lib/commandHubUtils";
-import "../styles/smartCommandSystem.css";
-import "../styles/commandHubReal.css";
-import "../styles/commandHubModernFix.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
 
 const OWNER_ROLES = ["owner", "employer", "admin", "manager", "office_admin", "business_owner", "platform_owner"];
 const canUse = (role) => OWNER_ROLES.includes(norm(role));

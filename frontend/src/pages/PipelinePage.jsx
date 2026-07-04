@@ -4,7 +4,7 @@ import { useApi } from "../hooks/useApi";
 import { PremiumCard, PremiumHero, PremiumPage, PremiumButton } from "../components/premium";
 import { CheckCircle, FileText, Receipt, RefreshCw, Send, Workflow } from "lucide-react";
 import { toast } from "sonner";
-import "./PipelinePage.css";
+// removed broken css import
 
 function arr(value) {
   return Array.isArray(value) ? value : [];

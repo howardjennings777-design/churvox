@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
-import "../styles/operatorDeskV2.css";
+// removed broken css import
 
 const arr = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.actions) ? v.actions : Array.isArray(v?.logs) ? v.logs : [];
 const idOf = (v) => String(v?.id || v?._id || "");

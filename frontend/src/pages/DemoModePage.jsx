@@ -4,7 +4,7 @@ import { useApi } from "../hooks/useApi";
 import { PremiumButton, PremiumCard, PremiumHero, PremiumPage } from "../components/premium";
 import { DatabaseZap, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import "./DemoModePage.css";
+// removed broken css import
 
 const arr = (v) => Array.isArray(v) ? v : [];
 

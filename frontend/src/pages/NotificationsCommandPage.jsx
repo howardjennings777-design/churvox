@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import CommandSlipEverything from "../components/CommandSlipEverything";
-import "./freshPayrollCompact.css";
+// removed broken css import
 
 const navGroups = [
   { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },

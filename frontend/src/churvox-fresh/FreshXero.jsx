@@ -2,7 +2,7 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import API_BASE from "../lib/apiBase";
 import { hideDemoRecords } from "./freshDemoRecords";
-import "./freshXero.css";
+// removed broken css import
 
 function unwrap(result) {
   return result?.data ?? result;

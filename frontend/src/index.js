@@ -2,9 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import RecordWorkspacePopupBridgeV2 from './components/RecordWorkspacePopupBridgeV2';
-import './index.css';
-import './styles/churvoxFullPageModals.css';
-import './components/recordWorkspacePopup.css';
+// removed broken css import
+// removed broken css import
+// removed broken css import
 import './runtime/churvoxWorkerPreReactShell';
 import './runtime/churvoxNativeTimerRuntime';
 import './runtime/churvoxRouteAliasRuntime';
@@ -23,7 +23,7 @@ import './runtime/churvoxFirstRunSetupRuntime';
 import './runtime/churvoxCommandPreparedSlipsRuntime';
 import './runtime/churvoxLogoutNavRuntime';
 // disabled churvoxPlatformOwnerNoiseGuardRuntime
-import './pages/marketing/PublicAdminOS.css';
+// removed broken css import
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxPublicBusinessPagesRuntime';
@@ -34,25 +34,25 @@ import './runtime/churvoxOwnerReadableRecordsRuntime';
 // Disabled: billing/tier browser runtimes interfered with navigation/loading. Backend remains source of truth.
 // // // disabled churvoxTierUiGuardRuntime
 // // // disabled churvoxTrialExpiryRedirectRuntime
-import './pages/worker/WorkerNoFussPolish.css';
+// removed broken css import
 import './churvox-fresh/optionFPageActionRuntime';
 import './churvox-fresh/optionFRestoreTimersRuntime';
-import './churvox-fresh/optionCCommandBarFix.css';
-import './churvox-fresh/optionCPolish.css';
-import './churvox-fresh/optionCProperFinish.css';
-import './churvox-fresh/optionDLaunch.css';
-import './churvox-fresh/optionFModernEasy.css';
-import './churvox-fresh/optionFTopNav.css';
-import './churvox-fresh/optionFSearchTidy.css';
-import './churvox-fresh/optionFIndustrialHeaders.css';
-import './churvox-fresh/optionFNoCommandPill.css';
-import './churvox-fresh/optionFHeaderPattern.css';
-import './churvox-fresh/optionFGreyScrollbars.css';
-import './churvox-fresh/optionFCenteredRecordModal.css';
-import './churvox-fresh/optionFProblemSlipRuntime.css';
-import './churvox-fresh/optionFFinalPagePolish.css';
-import './churvox-fresh/optionFWorkspaceTighten.css';
-import './churvox-fresh/optionFControlPages.css';
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
 import './churvox-fresh/optionFControlPagesRuntime';
 import './churvox-fresh/optionFControlPagesRuntimeGuard';
 import './churvox-fresh/optionFPlansLiveCheckoutRuntimeV2';
@@ -77,17 +77,17 @@ import './churvox-fresh/optionFDecisionEffectsRuntime';
 import './churvox-fresh/optionFRecordHydrationRuntime';
 import './churvox-fresh/optionFAiFillMissingRuntime';
 import './churvox-fresh/optionFDrawerPersistenceRuntime';
-import './churvox-fresh/optionFRealReviewFeatureRuntime.css';
-import './churvox-fresh/optionFRealReviewBackendSyncRuntime.css';
+// removed broken css import
+// removed broken css import
 import './churvox-fresh/optionFReadinessActionFixRuntime';
 import './churvox-fresh/optionFApprovalExecutionRuntime';
-import './churvox-fresh/optionFInvoiceVaultRuntime.css';
-import './styles/churvoxResponsiveFit.css';
-import './churvox-fresh/churvoxRestoreAppBack.css';
-import './churvox-fresh/churvoxOwnerPolishPass.css';
-import './churvox-fresh/churvoxOwnerDetailCleanup.css';
-import './churvox-fresh/churvoxAiGuideCleanup.css';
-import './churvox-fresh/churvoxHeaderNavInside.css';
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
 // removed missing owner surface import
 import './churvox-fresh/churvoxJobsPagePanelsRuntime';
 import './churvox-fresh/churvoxInvoicesPagePanelsRuntime';
@@ -96,8 +96,8 @@ import './churvox-fresh/churvoxPlansPagePanelsRuntime';
 import './churvox-fresh/churvoxHumanAuditPatchRuntime';
 import './runtime/churvoxNoAiWordingRuntime';
 // Retired audit imports: these forced the duplicate launch proof rail and circle nav over the live app.
-// import './styles/churvoxPaidLaunchGuard.css';
-// import './styles/churvoxPaidLaunchNoOverflowFinal.css';
+// // removed broken css import
+// // removed broken css import
 // import './runtime/churvoxPaidLaunchOverflowRuntime';
 
 if ('serviceWorker' in navigator) {

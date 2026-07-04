@@ -1,6 +1,6 @@
 import React from "react";
-import "./freshPreparedCommandDesk.css";
-import "../styles/command-right-preview.css";
+// removed broken css import
+// removed broken css import
 
 const OLD_KEY = "churvox:fresh-command-inbox:v1";
 const KEY = "churvox:fresh-command-inbox:v3";

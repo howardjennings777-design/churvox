@@ -3,9 +3,9 @@ import Layout from "../components/Layout";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, post, patch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import "../styles/smartCommandSystem.css";
-import "../styles/commandHubReal.css";
-import "../styles/commandHubCompact.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
 
 const norm = (value) => String(value || "").toLowerCase().trim();
 const idOf = (item) => String(item?.id || item?._id || item?.uuid || "");

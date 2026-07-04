@@ -1,7 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
-import "./churvoxOSWorkAdmin.css";
+// removed broken css import
 
 const STORE_KEY = "churvox.realAdmin.v3";
 const OWNER_INPUT = "Needs owner input";

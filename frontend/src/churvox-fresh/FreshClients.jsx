@@ -3,7 +3,7 @@ import { useApi } from "../hooks/useApi";
 import { readFreshFocus } from "./freshFocus";
 import { hideDemoRecords } from "./freshDemoRecords";
 import FreshCsvImportButton from "./FreshCsvImportButton";
-import "./freshJobsPolish.css";
+// removed broken css import
 
 const OPEN_CLIENT_MODAL_KEY = "churvox:fresh-open-client-modal:v1";
 const OPEN_JOB_MODAL_KEY = "churvox:fresh-open-job-modal:v1";

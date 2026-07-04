@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "sonner";
-import "./PublicRequestPage.css";
+// removed broken css import
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 

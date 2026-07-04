@@ -1,5 +1,5 @@
 import React from "react";
-import "./freshPayrollCompact.css";
+// removed broken css import
 
 const AUTOMATION_KEY = "churvox:fresh-automation-rules:v1";
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";

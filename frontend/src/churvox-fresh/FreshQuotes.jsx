@@ -2,8 +2,8 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import QuoteCreateForm from "../components/forms/QuoteCreateForm";
 import { hideDemoRecords } from "./freshDemoRecords";
-import "./freshRoutePopups.css";
-import "./freshJobsPolish.css";
+// removed broken css import
+// removed broken css import
 
 const filters = ["All", "Draft", "Sent", "Accepted", "Declined"];
 const OPEN_QUOTE_MODAL_KEY = "churvox:fresh-open-quote-modal:v1";

@@ -1,11 +1,11 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
-import "./churvoxOS.css";
-import "./churvoxOSReadablePills.css";
-import "./churvoxOSWiring.css";
-import "./churvoxOSSidebarPolish.css";
-import "./churvoxOSProper.css";
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
+// removed broken css import
 
 const COMMAND_STATE_KEY = "churvox.os.command.state.v5";
 

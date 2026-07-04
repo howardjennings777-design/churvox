@@ -1,5 +1,5 @@
 import React from "react";
-import "./freshPreparedCommandDesk.css";
+// removed broken css import
 
 const KEY = "churvox:fresh-command-inbox:v1";
 const API = "/api/command";

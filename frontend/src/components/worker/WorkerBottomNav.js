@@ -1,6 +1,6 @@
 import React from "react";
 import { Briefcase, CalendarDays, Camera, MessageCircle, UserCircle2 } from "lucide-react";
-import "./WorkerIphoneFix.css";
+// removed broken css import
 
 const items = [
   { key: "today", label: "Today", to: "/worker/today", icon: CalendarDays },

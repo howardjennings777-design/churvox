@@ -1,7 +1,7 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
 import { hideDemoRecords } from "./freshDemoRecords";
-import "./freshAdminDebtRadar.css";
+// removed broken css import
 
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
 

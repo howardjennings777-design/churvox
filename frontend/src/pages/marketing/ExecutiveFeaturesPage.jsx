@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
-import "./SimplePublic.css";
+// removed broken css import
 
 const featureAreas = [
   ["Today", "A clean day view for jobs moving, active workers, due money and messages that matter."],

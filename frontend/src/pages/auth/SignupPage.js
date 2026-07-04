@@ -5,7 +5,7 @@ import API_BASE from "../../lib/apiBase";
 import { saveBusinessSettings } from "../../lib/businessSettings";
 import { Nav } from "../marketing/ExecutiveHomePage";
 import { COUNTRY_OPTIONS, detectCountryCode, normalizeCountry } from "../../config/churvoxPlans";
-import "./AuthPublicCommand.css";
+// removed broken css import
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";

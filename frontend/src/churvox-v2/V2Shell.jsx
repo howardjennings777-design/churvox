@@ -1,5 +1,5 @@
 import React from "react";
-import "./v2-shell.css";
+// removed broken css import
 
 const navGroups = [
   {
