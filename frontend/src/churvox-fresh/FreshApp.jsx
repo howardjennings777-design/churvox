@@ -88,7 +88,7 @@ function pageFromLocation() {
   const path = window.location.pathname.replace(/^\/+/, "").split("/")[0].toLowerCase();
   const hash = window.location.hash.replace(/^#/, "").toLowerCase();
   const raw = hash || path;
-  return aliases[raw] || (NAV.map(keyOf).includes(raw) ? raw : "today");
+ return aliases[raw] || (NAV.map(keyOf).includes(raw) ? raw : "aiguide");
 }
 
 function listFrom(payload, key) {
