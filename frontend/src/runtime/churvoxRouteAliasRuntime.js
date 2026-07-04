@@ -47,7 +47,32 @@ function setFreshHash(hash) {
   window.dispatchEvent(new HashChangeEvent('hashchange'));
 }
 
+function normalisePathAliases() {
+  const path = window.location.pathname || '';
+  const aliases = {
+    '/help': '/dashboard#support',
+    '/support': '/dashboard#support',
+    '/support-board': '/dashboard#support',
+    '/messages': '/dashboard#messages',
+    '/messages-board': '/dashboard#messages',
+    '/inbox': '/dashboard#messages',
+    '/payroll': '/dashboard#payroll',
+    '/payroll-board': '/dashboard#payroll',
+    '/smart-hub': '/dashboard#aiguide',
+    '/reports': '/dashboard#invoices',
+    '/reports-board': '/dashboard#invoices',
+  };
+  const target = aliases[path];
+  if (target && `${window.location.pathname}${window.location.hash}` !== target) {
+    window.history.replaceState({}, document.title, target);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    return true;
+  }
+  return false;
+}
+
 function normaliseFreshHash() {
+  if (normalisePathAliases()) return;
   const path = window.location.pathname || '';
   if (!path.startsWith('/dashboard') && !path.startsWith('/setup') && !path.startsWith('/guide')) return;
   const raw = (window.location.hash || '').replace('#', '').toLowerCase();
@@ -209,31 +234,7 @@ function handleOwnerShortcutClick(event) {
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   window.__CHURVOX_ROUTE_ALIAS_RUNTIME__ = true;
-  const path = window.location.pathname || '';
-  const aliases = {
-    '/help': '/dashboard#support',
-    '/setup': '/setup-guide',
-    '/smart-hub': '/dashboard',
-    '/automation': '/dashboard#automation',
-    '/messages': '/dashboard#messages',
-    '/messages-board': '/dashboard#messages',
-    '/inbox': '/dashboard#messages',
-    '/dispatch-board': '/dashboard#workers',
-    '/dispatch': '/dashboard#workers',
-    '/schedule': '/dashboard#workers',
-    '/calendar': '/dashboard#workers',
-    '/reports-board': '/dashboard#invoices',
-    '/reports': '/dashboard#invoices',
-    '/payroll-board': '/dashboard#payroll',
-    '/payroll': '/dashboard#payroll',
-    '/worker/messages': '/worker/ops',
-    '/worker/profile': '/worker/settings',
-    '/worker/me': '/worker/settings',
-  };
-  const target = aliases[path];
-  if (target) {
-    window.history.replaceState({}, document.title, target);
-  }
+  normalisePathAliases();
   normaliseFreshHash();
   window.addEventListener('load', () => setTimeout(renderAutomationAlias, 120));
   window.addEventListener('hashchange', () => setTimeout(renderAutomationAlias, 120));
