@@ -4,6 +4,8 @@
 const STORE_KEY = 'churvox.owner.createDrafts.v1';
 
 const REPLACEMENTS = [
+  [/Open Command/g, 'Review in Command'],
+  [/open Command/g, 'review in Command'],
   [/Send to Command/g, 'Review in Command'],
   [/send to Command/g, 'appears in Command'],
   [/Sent to Command/g, 'Prepared in Command'],
