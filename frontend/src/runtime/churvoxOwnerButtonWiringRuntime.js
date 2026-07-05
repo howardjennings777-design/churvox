@@ -42,8 +42,15 @@ function toast(message, ok = true) {
   node._timer = setTimeout(() => node.remove(), 2600);
 }
 
+function isVisible(node) {
+  if (!node) return false;
+  const style = window.getComputedStyle(node);
+  const rect = node.getBoundingClientRect();
+  return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+}
+
 function visibleRows() {
-  const nodes = [...document.querySelectorAll('.cvxRow:visible, .cvxList button, .cvxTiles button, article')];
+  const nodes = [...document.querySelectorAll('.cvxRow, .cvxList button, .cvxTiles button, article')].filter(isVisible);
   return nodes.map((node) => clean(node.textContent)).filter(Boolean);
 }
 
