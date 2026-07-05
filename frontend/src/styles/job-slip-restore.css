@@ -1,5 +1,0 @@
-.freshJobPopupCard{display:block!important;overflow:auto!important;padding:16px!important;width:min(900px,calc(100vw - 56px))!important;max-height:min(760px,calc(100dvh - 56px))!important;border-radius:26px!important}
-.freshJobPopupHero{display:block!important;margin:0 0 12px!important;padding:22px 26px!important;min-height:124px!important;border-radius:22px!important;background:linear-gradient(135deg,#111827,#1f2937 58%,#f97316)!important;color:#fffaf0!important;border:0!important}
-.freshJobPopupHero h1{margin:8px 0 5px!important;color:#fffaf0!important;font-size:clamp(34px,4.5vw,58px)!important;line-height:.94!important}
-.freshJobPopupHero p{display:block!important;color:#ffedd5!important}
-.freshJobPopupBody{display:block!important;overflow:visible!important;padding:0!important}
