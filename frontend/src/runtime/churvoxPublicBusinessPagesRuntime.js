@@ -7,7 +7,7 @@ const PUBLIC_BUSINESS_PAGES = {
     body: `
       <section class="cvStaticGrid">
         <article><b>Email</b><span><a href="mailto:hello@churvox.com">hello@churvox.com</a></span><small>Best for support, billing, setup and partnership messages.</small></article>
-        <article><b>Based in</b><span>New Zealand</span><small>Built for tradies and service businesses that need cleaner admin.</small></article>
+        <article><b>Based in</b><span>New Zealand</span><small>Made for tradies and service businesses that need cleaner admin.</small></article>
         <article><b>Support topics</b><span>Setup, billing, jobs, workers, invoices, accounting sync and account help.</span></article>
       </section>
       <section class="cvStaticCard">
@@ -39,13 +39,13 @@ const PUBLIC_BUSINESS_PAGES = {
   "/about": {
     title: "About Churvox",
     kicker: "About",
-    heading: "Churvox is built to take admin pressure off service businesses.",
+    heading: "Churvox is made to take admin pressure off service businesses.",
     intro: "The product direction is simple: Churvox does the admin. You approve. Owners stay in control, workers stay simple, and important decisions go to Command.",
     body: `
       <section class="cvStaticGrid">
         <article><b>Who it is for</b><span>Tradies, lawn care, cleaning, landscaping, handyman, pest control, mobile teams and other service businesses.</span></article>
         <article><b>What it handles</b><span>Jobs, clients, workers, quotes, invoices, messages, worker notes, photos and safe accounting handoff.</span></article>
-        <article><b>How it is different</b><span>Churvox is built around owner approval. It prepares the work, but the owner approves the important steps.</span></article>
+        <article><b>How it is different</b><span>Churvox is centred around owner approval. It prepares the work, but the owner approves the important steps.</span></article>
       </section>
       <section class="cvStaticCard"><h2>Plain business promise</h2><p>Less chasing. Less guessing. Cleaner records. Better handover. One place for the owner to approve what matters.</p></section>
     `,
@@ -154,7 +154,7 @@ function layout(page) {
       </section>
       <section class="cvStaticMain">${page.body}</section>
       <footer class="cvStaticFooter">
-        <span>© ${new Date().getFullYear()} Churvox. Built for service businesses.</span>
+        <span>© ${new Date().getFullYear()} Churvox. Made for service businesses.</span>
         <span><a href="/privacy-policy">Privacy</a><a href="/terms-of-service">Terms</a><a href="/refunds-cancellations">Refunds</a><a href="/contact">Contact</a></span>
       </footer>
     </main>`;
