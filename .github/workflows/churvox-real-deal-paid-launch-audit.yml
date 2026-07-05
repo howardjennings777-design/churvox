@@ -1,0 +1,70 @@
+name: Churvox Real Deal Paid Launch Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Live site URL to test"
+        required: true
+        default: "https://www.churvox.com"
+      mutate:
+        description: "Actually create safe client/job/quote/invoice test records"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  real-deal-paid-launch-audit:
+    name: Real deal paid launch audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run real deal paid launch audit
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ github.event.inputs.base_url }}
+          CHURVOX_E2E_MUTATE: ${{ github.event.inputs.mutate == 'true' && '1' || '0' }}
+          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+          CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+        run: npx playwright test tests/e2e/churvox-real-deal-paid-launch-audit.spec.js --project=desktop-chromium --reporter=list,html
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-real-deal-paid-launch-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-real-deal-paid-launch-results
+          path: frontend/test-results
+          if-no-files-found: ignore
