@@ -4,8 +4,8 @@ import { Nav, Footer } from "./ExecutiveHomePage";
 import "./SimplePublic.css";
 
 const featureAreas = [
-  ["Today", "A clean day view for jobs moving, active workers, due money and messages that matter."],
-  ["Command", "The approval desk. Prepared admin waits here for approve, edit or park."],
+  ["Today", "A clear day view for jobs moving, active workers, due money and messages that matter."],
+  ["Command", "The owner approval desk. Prepared admin waits here to approve, edit or park."],
   ["Jobs", "Editable job forms with client, worker, address, price, date, time and recurrence."],
   ["Clients", "Client records, notes, service history, price memory and job history."],
   ["Workers", "Simple worker flow for directions, messages, start, finish, notes and photos."],
@@ -16,20 +16,20 @@ const featureAreas = [
 ];
 
 const commandItems = [
-  ["Quote ready", "Prepared from client, service, price and job details."],
-  ["Invoice ready", "Prepared from job records, time, notes, photos and pricing memory."],
-  ["Message ready", "A reply can be prepared from the current thread and record history."],
-  ["Missing detail", "Unclear date, time, price, address or worker detail goes to attention."],
-  ["Worker update", "Notes, photos or job changes can be reviewed before the next admin step."],
-  ["Accounting decision", "Draft handoff stays owner-approved and guarded."],
+  ["Quote ready to review", "Client, service, price and job details are lined up for approval."],
+  ["Invoice ready to review", "Job records, time, notes, photos and pricing are pulled together."],
+  ["Reply ready to review", "The message thread and record history stay connected."],
+  ["Missing detail found", "Unclear date, time, price, address or worker details are flagged."],
+  ["Worker update ready", "Notes, photos or job changes are held for the next owner decision."],
+  ["Accounting handoff", "Draft handoff stays owner-approved and guarded."],
 ];
 
-const buildFlow = [
-  ["1", "Set up", "Business details, plan, invoice defaults, team access and imports."],
-  ["2", "Run work", "Jobs, workers, clients, messages, quotes and invoices stay connected."],
-  ["3", "Catch gaps", "Missing date, time, price, address or worker details are surfaced."],
-  ["4", "Prepare admin", "Churvox turns the records into a clear next step."],
-  ["5", "Approve in Command", "The owner approves, edits or parks the prepared action."],
+const operatingFlow = [
+  ["1", "Start clean", "Business details, invoice settings, team access and imports are kept tidy."],
+  ["2", "Run the day", "Jobs, workers, clients, messages, quotes and invoices stay connected."],
+  ["3", "Churvox checks gaps", "Missing date, time, price, address or worker details are flagged."],
+  ["4", "Prepare the next step", "Churvox turns the records into a clear action."],
+  ["5", "Approve in Command", "The owner approves, edits or parks the prepared admin."],
 ];
 
 const guardrails = [
@@ -40,10 +40,10 @@ const guardrails = [
 ];
 
 const workerFlow = [
-  ["See the job", "Worker sees the current job, address, instructions and office message."],
-  ["Get there", "Directions stay one tap away."],
-  ["Do the work", "Start job, add a note if needed, finish job."],
-  ["Send to office", "Updates come back clearly so the owner can review the next step."],
+  ["See today's job", "The worker sees the job, address, instructions and office message."],
+  ["Open directions", "Directions stay one tap away."],
+  ["Start and finish", "Start the job, add a note if needed, then mark it finished."],
+  ["Send it back", "Updates come back clearly so the owner can review the next step."],
 ];
 
 export default function ExecutiveFeaturesPage() {
@@ -56,7 +56,7 @@ export default function ExecutiveFeaturesPage() {
           <span className="publicKicker">How Churvox works</span>
           <h1>Real work becomes prepared admin.</h1>
           <p>
-            Churvox connects the business records, catches missing details, prepares the next admin step and puts the owner decision in Command.
+            Churvox connects the records, catches missing details, prepares the next admin step and puts owner decisions in Command.
           </p>
           <div className="publicActions">
             <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
@@ -72,11 +72,11 @@ export default function ExecutiveFeaturesPage() {
 
       <section className="publicBand">
         <div className="publicSectionHead">
-          <span className="publicKicker">Operating flow</span>
-          <h2>The system should be obvious.</h2>
+          <span className="publicKicker">How it runs</span>
+          <h2>From job to approval, without chasing.</h2>
         </div>
         <div className="publicFlow">
-          {buildFlow.map(([num, title, text]) => (
+          {operatingFlow.map(([num, title, text]) => (
             <article key={title}>
               <i>{num}</i>
               <b>{title}</b>
@@ -88,10 +88,10 @@ export default function ExecutiveFeaturesPage() {
 
       <section className="publicBand publicSplit">
         <div>
-          <span className="publicKicker">Command items</span>
-          <h2>What gets prepared for the owner.</h2>
+          <span className="publicKicker">Command</span>
+          <h2>What Command prepares for you.</h2>
           <p>
-            Command should feel like a useful approval desk, not a vague notification list. Each item needs enough context to make a decision quickly.
+            Command gives each owner decision enough context to move quickly. You see what Churvox prepared, what is missing, and what needs approval.
           </p>
         </div>
         <div className="publicAreaGrid">
@@ -107,9 +107,9 @@ export default function ExecutiveFeaturesPage() {
       <section className="publicBand publicSplit">
         <div>
           <span className="publicKicker">Worker app</span>
-          <h2>Workers should not need office software.</h2>
+          <h2>Workers get only what they need.</h2>
           <p>
-            The worker side stays deliberately simple: job, address, message, directions, start, finish and send to office.
+            The worker side stays simple: job, address, message, directions, start, finish and send back to the office.
           </p>
         </div>
         <div className="publicAreaGrid">
@@ -125,7 +125,7 @@ export default function ExecutiveFeaturesPage() {
       <section className="publicBand">
         <div className="publicSectionHead">
           <span className="publicKicker">Product areas</span>
-          <h2>One product, clear pages.</h2>
+          <h2>One workspace, clear pages.</h2>
         </div>
         <div className="publicFeatureGrid">
           {featureAreas.map(([title, text]) => (
@@ -140,7 +140,7 @@ export default function ExecutiveFeaturesPage() {
       <section className="publicBand publicDarkBand">
         <div>
           <span className="publicKicker">Guardrails</span>
-          <h2>Hard rules keep it simple for the boss.</h2>
+          <h2>Hard rules keep decisions clear.</h2>
         </div>
         <div className="publicCardGrid">
           {guardrails.map(([title, text]) => (
