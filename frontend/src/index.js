@@ -79,6 +79,7 @@ import './styles/churvoxResponsiveFit.css';
 import './styles/churvoxPaidLaunchGuard.css';
 import './styles/churvoxPaidLaunchNoOverflowFinal.css';
 import './runtime/churvoxPaidLaunchOverflowRuntime';
+import './runtime/churvoxOwnerVisualStabilityRuntime';
 import './runtime/churvoxOwnerRecoverySlipRuntime';
 import './runtime/churvoxOwnerRecoveryActionSlipRuntime';
 import './runtime/churvoxOwnerPageContainmentRuntime';
