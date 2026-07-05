@@ -1,6 +1,7 @@
 // Normalise old owner hashes that still point at retired setup/today pages.
 
 import './churvoxCommandLanguageGuardRuntime';
+import './churvoxCommandPreparedQueueRuntime';
 
 function normaliseOwnerHash() {
   const path = window.location.pathname || '';
