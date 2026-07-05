@@ -5,6 +5,7 @@ import './churvoxGuideCommandAssuranceRuntime';
 import './churvoxOwnerCorePagesCleanRuntime';
 import './churvoxOwnerSoftTidyRuntime';
 import './churvoxOwnerHashNormalizeRuntime';
+import './churvoxOwnerPagesLiteCleanRuntime';
 
 const PANEL_ID = 'churvox-owner-draft-memory-panel';
 const MODAL_ID = 'churvox-owner-draft-open-modal';
