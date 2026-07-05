@@ -3,6 +3,7 @@
 
 import './churvoxGuideCommandAssuranceRuntime';
 import './churvoxOwnerCorePagesCleanRuntime';
+import './churvoxOwnerSoftTidyRuntime';
 
 const PANEL_ID = 'churvox-owner-draft-memory-panel';
 const MODAL_ID = 'churvox-owner-draft-open-modal';
