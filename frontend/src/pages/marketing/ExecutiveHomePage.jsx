@@ -2,15 +2,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./SimplePublic.css";
-import "./SimplePublicStrong.css";
-import "./ExecutivePublicPolish.css";
 
 const navLinks = [
   ["/features", "How it works", "route"],
   ["/pricing", "Pricing", "route"],
-  ["/about", "About", "static"],
-  ["/security", "Security", "static"],
-  ["/contact", "Contact", "static"],
+  ["/request", "Request form", "route"],
+  ["mailto:hello@churvox.com", "Contact", "external"],
   ["/login", "Log in", "route"],
 ];
 
@@ -65,7 +62,7 @@ const trustPoints = [
 ];
 
 function PublicNavLink({ to, label, type }) {
-  if (type === "static") return <a href={to}>{label}</a>;
+  if (type === "external") return <a href={to}>{label}</a>;
   return <Link to={to}>{label}</Link>;
 }
 
@@ -103,11 +100,8 @@ export function Footer() {
       <nav aria-label="Footer navigation">
         <Link to="/features">How it works</Link>
         <Link to="/pricing">Pricing</Link>
-        <a href="/about">About</a>
-        <a href="/security">Security</a>
-        <a href="/contact">Contact</a>
-        <a href="/refunds-cancellations">Refunds & cancellations</a>
         <Link to="/request">Customer request form</Link>
+        <a href="mailto:hello@churvox.com">Contact</a>
         <Link to="/privacy-policy">Privacy</Link>
         <Link to="/terms-of-service">Terms</Link>
         <Link to="/login">Log in</Link>
@@ -167,7 +161,7 @@ function ProductMock() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_BUSINESS_READY_20260701">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_CLEAN_SITE_20260706">
       <Nav />
 
       <section className="publicHero">
