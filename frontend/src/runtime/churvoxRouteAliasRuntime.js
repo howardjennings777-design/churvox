@@ -1,5 +1,7 @@
-// Product-safe route aliases only.
-// This file must not inject panels or rewrite the owner app layout.
+// Product-safe route aliases and product finishing only.
+// This file must not inject old audit panels or rewrite page content.
+
+const PRODUCT_STYLE_ID = 'churvox-product-final-style';
 
 function replaceUrl(pathAndHash) {
   try {
@@ -10,6 +12,53 @@ function replaceUrl(pathAndHash) {
   } catch (_) {
     return false;
   }
+}
+
+function productPage() {
+  const raw = (window.location.hash || window.location.pathname.split('/')[1] || '').replace('#', '').toLowerCase();
+  const key = raw.replace(/[^a-z0-9]/g, '');
+  const aliases = {
+    '': 'today',
+    dashboard: 'today',
+    aiguide: 'today',
+    guide: 'today',
+    setupassistant: 'today',
+    firstrun: 'today',
+    smart: 'today',
+    hub: 'today',
+    help: 'support',
+    inbox: 'messages',
+    message: 'messages',
+    time: 'payroll',
+    dispatch: 'workers',
+    routes: 'workers',
+    map: 'workers',
+    accounting: 'xero',
+    sync: 'xero',
+  };
+  const pages = ['today','command','jobs','clients','quotes','invoices','messages','team','payroll','workers','xero','settings','plans','support'];
+  return aliases[key] || (pages.includes(key) ? key : 'today');
+}
+
+function ensureProductStyle() {
+  if (document.getElementById(PRODUCT_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = PRODUCT_STYLE_ID;
+  style.textContent = `
+    body[data-cvx-page="plans"] .cvxProduct .cvxPage > .cvxPanel:nth-of-type(1),
+    body[data-cvx-page="plans"] .cvxProduct .cvxPage > .cvxPanel:nth-of-type(2),
+    body[data-cvx-page="settings"] .cvxProduct .cvxPage > .cvxPanel:nth-of-type(1),
+    body[data-cvx-page="settings"] .cvxProduct .cvxPage > .cvxPanel:nth-of-type(2),
+    body[data-cvx-page="support"] .cvxProduct .cvxPage > .cvxPanel:nth-of-type(1),
+    body[data-cvx-page="support"] .cvxProduct .cvxPage > .cvxPanel:nth-of-type(2){display:none!important}
+    .cvxProduct .cvxPanel,.cvxProduct .cvxHero,.cvxProduct .cvxKpis span,.cvxProduct .cvxPlans article,.cvxProduct .cvxTiles button{animation:cvxSettle .18s ease-out both}
+    @keyframes cvxSettle{from{opacity:.88;transform:translateY(4px)}to{opacity:1;transform:none}}
+    .cvxProduct .cvxPage{padding-bottom:34px}
+    .cvxProduct .cvxNav button{white-space:nowrap}
+    .cvxProduct .cvxPanelHead button:empty{display:none!important}
+    .cvxProduct .cvxRow:focus-visible,.cvxProduct .cvxTiles button:focus-visible,.cvxProduct button:focus-visible{outline:3px solid rgba(242,102,34,.34);outline-offset:2px}
+  `;
+  document.head.appendChild(style);
 }
 
 function normalisePathAliases() {
@@ -134,8 +183,15 @@ function handleOwnerShortcutClick(event) {
   return false;
 }
 
+function markProductPage() {
+  if (!document.body) return;
+  document.body.dataset.cvxPage = productPage();
+}
+
 function runAliases() {
+  ensureProductStyle();
   normaliseFreshHash();
+  markProductPage();
 }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
