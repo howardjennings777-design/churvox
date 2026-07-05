@@ -3,6 +3,7 @@ import './churvoxProductWorkbenchRuntime';
 import './churvoxCommandRealSlipRuntime';
 import './churvoxHeaderFitRuntime';
 import './churvoxOwnerHeaderLogoRuntime';
+import './churvoxHeaderProperFitRuntime';
 import './churvoxSmartAdminAuditRuntime';
 import './churvoxProductCopyCleanRuntime';
 
