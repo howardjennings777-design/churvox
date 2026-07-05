@@ -41,6 +41,7 @@ async function syncWorkflow() {
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.__CHURVOX_OWNER_WORKFLOW_SYNC_BRIDGE__) {
   window.__CHURVOX_OWNER_WORKFLOW_SYNC_BRIDGE__ = true;
   import('./churvoxOwnerBackendHydrationRuntime').catch(() => {});
+  import('./churvoxOwnerDecisionApiRuntime').catch(() => {});
   addEventListener('churvox:owner-workflow-automation', () => setTimeout(syncWorkflow, 700));
   addEventListener('churvox:command-prepared', () => setTimeout(syncWorkflow, 1200));
   addEventListener('churvox:owner-backend-hydrated', () => setTimeout(syncWorkflow, 1400));
