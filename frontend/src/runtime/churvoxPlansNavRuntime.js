@@ -1,5 +1,5 @@
 // Plans page duplicate guard + billing nav.
-// Keeps the real billing/checkout page, hides duplicate product Plans, and places nav inside the billing page.
+// Loads directly on #plans and inserts a real billing nav into the visible billing page.
 
 const STYLE_ID = 'churvox-plans-nav-runtime-style';
 const BILLING_NAV_ID = 'churvox-billing-page-nav';
@@ -29,7 +29,7 @@ const css = `
 
   .cvxBillingPageNav {
     position: relative !important;
-    z-index: 20 !important;
+    z-index: 80 !important;
     display: flex !important;
     align-items: center !important;
     gap: 7px !important;
@@ -40,7 +40,7 @@ const css = `
     padding: 7px !important;
     border: 1px solid rgba(17, 21, 19, .08) !important;
     border-radius: 16px !important;
-    background: rgba(255, 254, 250, .82) !important;
+    background: rgba(255, 254, 250, .92) !important;
     box-shadow: 0 10px 24px rgba(17, 21, 19, .06) !important;
     backdrop-filter: blur(10px) !important;
     overflow-x: auto !important;
@@ -81,6 +81,10 @@ function page() {
   return (window.location.hash || '#today').replace('#', '').toLowerCase() || 'today';
 }
 
+function onPlansPage() {
+  return page() === 'plans' || window.location.pathname === '/plans';
+}
+
 function ensureStyle() {
   if (typeof document === 'undefined') return;
   let style = document.getElementById(STYLE_ID);
@@ -96,7 +100,7 @@ function ensureStyle() {
 }
 
 function removeDuplicateProductPlans() {
-  if (page() !== 'plans') return;
+  if (!onPlansPage()) return;
   document.querySelectorAll('#churvox-product-ops-strip,.cvxProductOpsStrip,#churvox-plans-page-nav,.cvxPlansPageNav').forEach((node) => node.remove());
 
   document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxHero').forEach((hero) => {
@@ -110,54 +114,30 @@ function removeDuplicateProductPlans() {
   });
 }
 
-function realBillingRoot() {
-  const panels = [...document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxPage > *, .cvxProduct[data-product-version="v2"] .cvxWorkspace > *, main > *, #root > *')];
-  return panels.find((node) => /plans and billing|refresh billing|manage billing|live plan usage/i.test(node.textContent || '')) || document.querySelector('.cvxProduct[data-product-version="v2"] .cvxPage') || document.querySelector('#root');
+function visibleText(node) {
+  return String(node?.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
-function topBillingBlock(root) {
-  if (!root) return null;
-  const candidates = [...root.querySelectorAll('section, article, div')].filter((node) => node.id !== BILLING_NAV_ID && !node.closest(`#${BILLING_NAV_ID}`));
-  const match = candidates.find((node) => {
-    const text = String(node.textContent || '').toLowerCase();
-    return text.includes('plans and billing') && (text.includes('refresh billing') || text.includes('manage billing') || text.includes('pricing region'));
+function candidates() {
+  return [...document.querySelectorAll('main, section, article, div')].filter((node) => {
+    if (!node || node.id === BILLING_NAV_ID || node.closest?.(`#${BILLING_NAV_ID}`)) return false;
+    const rect = node.getBoundingClientRect?.();
+    return !rect || rect.width > 80;
   });
-  if (!match) return root.firstElementChild || root;
-
-  let block = match;
-  while (block.parentElement && block.parentElement !== root) {
-    const parentText = String(block.parentElement.textContent || '').toLowerCase();
-    if (parentText.includes('live plan usage') || parentText.includes('checkout: start')) break;
-    block = block.parentElement;
-  }
-  return block;
 }
 
-function sectionByText(patterns) {
-  const nodes = [...document.querySelectorAll('section, article, div')].filter((node) => node.id !== BILLING_NAV_ID && !node.closest(`#${BILLING_NAV_ID}`));
-  return nodes.find((node) => patterns.some((pattern) => pattern.test(node.textContent || '')));
+function realBillingRoot() {
+  return candidates().find((node) => /plans and billing/i.test(visibleText(node)) && /live plan usage|refresh billing|manage billing/i.test(visibleText(node))) ||
+    document.querySelector('.cvxProduct[data-product-version="v2"] .cvxPage') ||
+    document.querySelector('main') ||
+    document.querySelector('#root');
 }
 
-function scrollToBilling(kind) {
-  const patterns = {
-    overview: [/plans and billing/i, /no plan selected/i, /choose plan/i],
-    usage: [/live plan usage/i, /clients/i, /jobs this month/i],
-    plans: [/checkout: start/i, /start\s*\$39/i, /crew\s*\$89/i, /operator\s*\$149/i],
-    addons: [/command growth pack/i, /accounting sync add-on/i, /add-ons/i],
-    help: [/manage billing/i, /billing email/i, /pricing region/i],
-  }[kind] || [];
-  const target = sectionByText(patterns);
-  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function findSection(patterns) {
+  return candidates().find((node) => patterns.some((pattern) => pattern.test(visibleText(node))));
 }
 
-function buildBillingNav() {
-  if (page() !== 'plans') {
-    document.getElementById(BILLING_NAV_ID)?.remove();
-    return;
-  }
-  const root = realBillingRoot();
-  if (!root) return;
-
+function createNav() {
   let nav = document.getElementById(BILLING_NAV_ID);
   if (!nav) {
     nav = document.createElement('nav');
@@ -172,24 +152,62 @@ function buildBillingNav() {
       <button type="button" data-cvx-billing-nav="help">Billing help</button>
     `;
   }
+  return nav;
+}
 
-  const block = topBillingBlock(root);
-  if (block && nav.previousElementSibling !== block) {
-    block.insertAdjacentElement('afterend', nav);
-  } else if (!block && nav.parentElement !== root) {
-    root.insertAdjacentElement('afterbegin', nav);
+function placeNav() {
+  if (!onPlansPage()) {
+    document.getElementById(BILLING_NAV_ID)?.remove();
+    return;
   }
+
+  const nav = createNav();
+  const root = realBillingRoot();
+  if (!root) return;
+
+  const trialStrip = findSection([/1\.\s*trial/i, /stripe checkout/i, /command rules/i]);
+  const usage = findSection([/live plan usage/i]);
+  const topCard = findSection([/plans and billing/i, /refresh billing/i, /manage billing/i]);
+
+  if (trialStrip && trialStrip.parentElement) {
+    if (nav.previousElementSibling !== trialStrip) trialStrip.insertAdjacentElement('afterend', nav);
+    return;
+  }
+
+  if (usage && usage.parentElement) {
+    if (nav.nextElementSibling !== usage) usage.insertAdjacentElement('beforebegin', nav);
+    return;
+  }
+
+  if (topCard && topCard.parentElement) {
+    if (nav.previousElementSibling !== topCard) topCard.insertAdjacentElement('afterend', nav);
+    return;
+  }
+
+  if (nav.parentElement !== root) root.insertAdjacentElement('afterbegin', nav);
+}
+
+function scrollToBilling(kind) {
+  const patterns = {
+    overview: [/plans and billing/i, /no plan selected/i, /choose plan/i],
+    usage: [/live plan usage/i, /clients/i, /jobs this month/i],
+    plans: [/checkout: start/i, /start\s*\$39/i, /crew\s*\$89/i, /operator\s*\$149/i],
+    addons: [/command growth pack/i, /accounting sync add-on/i, /add-ons/i],
+    help: [/manage billing/i, /billing email/i, /pricing region/i],
+  }[kind] || [];
+  const target = findSection(patterns);
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function run() {
   if (typeof document !== 'undefined') document.body.dataset.cvxOwnerPage = page();
   ensureStyle();
   removeDuplicateProductPlans();
-  buildBillingNav();
+  placeNav();
 }
 
-if (typeof window !== 'undefined' && !window.__CHURVOX_PLANS_NAV_RUNTIME__) {
-  window.__CHURVOX_PLANS_NAV_RUNTIME__ = true;
+if (typeof window !== 'undefined' && !window.__CHURVOX_PLANS_NAV_RUNTIME_V2__) {
+  window.__CHURVOX_PLANS_NAV_RUNTIME_V2__ = true;
   run();
   window.addEventListener('load', () => setTimeout(run, 100));
   window.addEventListener('hashchange', () => setTimeout(run, 100));
@@ -202,8 +220,10 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_PLANS_NAV_RUNTIME__) {
   }, true);
   const observer = new MutationObserver(() => setTimeout(run, 80));
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  setTimeout(run, 400);
-  setInterval(run, 1500);
+  setTimeout(run, 250);
+  setTimeout(run, 600);
+  setTimeout(run, 1200);
+  setInterval(run, 1600);
 }
 
 export {};
