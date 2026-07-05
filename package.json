@@ -17,6 +17,7 @@
     "test:real-deal:desktop": "npm --prefix frontend run test:real-deal:desktop",
     "test:real-deal:mobile": "npm --prefix frontend run test:real-deal:mobile",
     "test:real-deal:mutate": "npm --prefix frontend run test:real-deal:mutate",
+    "test:paid-diagnostics": "PLAYWRIGHT_BASE_URL=https://www.churvox.com npm --prefix frontend exec playwright test tests/e2e/churvox-paid-launch-diagnostics.spec.js --project=desktop-chromium --reporter=line",
     "test:ai": "npm --prefix frontend run test:ai",
     "test:ai:live": "npm --prefix frontend run test:ai:live"
   },
