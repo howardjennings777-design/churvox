@@ -1,5 +1,5 @@
 // CHURVOX_OWNER_CLARITY_LAYER_20260630
-// Stable launch version: clear owner wording, Command-only decisions, saved record trail, throttled DOM observer.
+// Quiet launch version: Command-only decisions and save trail without moving owner panels.
 
 const ROOT = '.churvoxOptionC';
 const STYLE_ID = 'churvox-owner-clarity-style';
@@ -18,7 +18,7 @@ function currentPage() {
   const hash = String(window.location.hash || '').replace(/^#/, '').toLowerCase();
   const path = String(window.location.pathname || '').replace(/^\//, '').split('/')[0].toLowerCase();
   if (hash) return hash;
-  if (path === 'dashboard' || path === '') return 'today';
+  if (path === 'dashboard' || path === '') return 'aiguide';
   return path;
 }
 function isCommandPage() { return currentPage() === 'command' || String(window.location.hash || '').toLowerCase().includes('command'); }
@@ -46,7 +46,7 @@ function flash(message, tone = 'good') {
   node.className = `show ${tone}`;
   node.textContent = message;
   clearTimeout(window.__cvOwnerClarityToastTimer);
-  window.__cvOwnerClarityToastTimer = setTimeout(() => { node.className = ''; }, 2600);
+  window.__cvOwnerClarityToastTimer = setTimeout(() => { node.className = ''; }, 2200);
 }
 
 function installStyle() {
@@ -55,31 +55,16 @@ function installStyle() {
   style.id = STYLE_ID;
   style.textContent = `
     #cv-owner-clarity-toast{position:fixed;right:18px;bottom:18px;z-index:2147483647;max-width:min(420px,calc(100vw - 36px));padding:14px 16px;border-radius:18px;background:#111815;color:#fff;font:900 13px/1.35 Inter,system-ui,sans-serif;box-shadow:0 24px 70px rgba(17,24,21,.28);transform:translateY(18px);opacity:0;pointer-events:none;transition:.18s ease}#cv-owner-clarity-toast.show{transform:translateY(0);opacity:1}#cv-owner-clarity-toast.warn{background:#9a3412}#cv-owner-clarity-toast.good{background:#166534}
-    .cvOwnerClarityBanner{display:grid;gap:6px;margin:0 0 14px;padding:14px 16px;border:1px solid rgba(234,88,12,.22);border-radius:22px;background:linear-gradient(135deg,#fff7ed,#fff);box-shadow:0 14px 34px rgba(15,23,42,.06)}.cvOwnerClarityBanner b{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#9a3412}.cvOwnerClarityBanner p{margin:0;color:#334155;font-size:13px;font-weight:850;line-height:1.35}
-    .cvOwnerCockpit{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 14px}.cvOwnerLane{border:1px solid rgba(15,23,42,.09);border-radius:22px;background:#fff;padding:14px;box-shadow:0 12px 28px rgba(15,23,42,.06)}.cvOwnerLane span{display:inline-flex;border-radius:999px;background:#111815;color:#fff;padding:5px 9px;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}.cvOwnerLane b{display:block;margin-top:9px;font-size:18px;line-height:1.05}.cvOwnerLane small{display:block;margin-top:5px;color:#64748b;font-weight:800;line-height:1.3}
+    .cvOwnerClarityBanner,.cvOwnerCockpit{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;max-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;border:0!important;opacity:0!important}
     .cvAdminTrail{display:grid;gap:10px;margin:16px 0;padding:14px;border:1px solid rgba(15,23,42,.10);border-radius:18px;background:linear-gradient(135deg,#f8fafc,#fff)}.cvAdminTrail>span{font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em;color:#ea580c}.cvAdminTrail div{display:grid;gap:2px}.cvAdminTrail b{font-size:12px;color:#111815}.cvAdminTrail p{margin:0;color:#475569;font-size:12px;font-weight:800;line-height:1.35}
     .cvSaveNote{display:grid;gap:4px;margin:10px 0 0;padding:10px 12px;border-radius:14px;background:#ecfdf5;color:#14532d;font-weight:900;font-size:12px}.cvSaveNote.warn{background:#fff7ed;color:#9a3412}.cvEmptyState{grid-column:1/-1;border:1px dashed rgba(15,23,42,.2);border-radius:22px;background:#fff;padding:18px;text-align:left}.cvEmptyState b{display:block;color:#111815}.cvEmptyState p{margin:6px 0 0;color:#64748b;font-weight:850}.cvSeedHidden{display:none!important}
     .churvoxOptionC .cocDrawer:not(.approvalSlip) .approvalActions button[data-cv-command-only="true"]{background:#111815!important;color:#fff!important}.churvoxOptionC .cocPanel h2 .cvCommandMini{display:inline-flex;margin-left:8px;border-radius:999px;background:#fff7ed;color:#9a3412;padding:3px 7px;font-size:9px;font-weight:950;vertical-align:middle}
-    @media(max-width:760px){.cvOwnerCockpit{grid-template-columns:1fr}.cvOwnerClarityBanner{margin:0 0 10px}.cvOwnerLane b{font-size:16px}}
   `;
   document.head.appendChild(style);
 }
 
-function addOwnerBanner(app) {
-  if (app.querySelector('.cvOwnerClarityBanner')) return;
-  const workspace = app.querySelector('.workspace') || app.querySelector('.cocPage') || app;
-  const banner = document.createElement('section');
-  banner.className = 'cvOwnerClarityBanner';
-  banner.innerHTML = '<b>Churvox is preparing the admin</b><p>Review details on each page. Final owner decisions stay in Command.</p>';
-  workspace.prepend(banner);
-}
-function addCockpit(app) {
-  const page = app.querySelector('.cocPage.today');
-  if (!page || page.querySelector('.cvOwnerCockpit')) return;
-  const cockpit = document.createElement('section');
-  cockpit.className = 'cvOwnerCockpit';
-  cockpit.innerHTML = [['Do now','Handle the next decision','Anything needing approval belongs in Command.'],['Watch today','Jobs, workers and money in motion','See the day without office clutter.'],['Ready for Command','Admin prepared for approval','Quotes, invoices and key changes wait there.']].map(([a,b,c]) => `<div class="cvOwnerLane"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
-  page.prepend(cockpit);
+function removeMovingPanels(app) {
+  app.querySelectorAll('.cvOwnerClarityBanner,.cvOwnerCockpit').forEach((node) => node.remove());
 }
 function addCommandBadges(app) {
   app.querySelectorAll('.cocPanel h2').forEach((h2) => {
@@ -108,7 +93,7 @@ function ensureEmptyStates(app) {
     if (visible.length || list.querySelector('.cvEmptyState')) return;
     const empty = document.createElement('div');
     empty.className = 'cvEmptyState';
-    empty.innerHTML = '<b>Nothing here yet.</b><p>Add the first record, or let Churvox prepare it and review it in Command.</p>';
+    empty.innerHTML = '<b>Nothing here yet.</b><p>Churvox will prepare what it can and place owner decisions in Command.</p>';
     list.appendChild(empty);
   });
 }
@@ -118,7 +103,7 @@ function adminTrailFor(drawer) {
   const command = isCommandDrawer(drawer);
   const section = document.createElement('section');
   section.className = 'cvAdminTrail';
-  section.innerHTML = `<span>Admin Trail</span><div><b>What Churvox prepared</b><p>${command ? 'A clear owner decision from the latest job, client, worker, money or accounting details.' : `The ${title.toLowerCase()} details above are the working record.`}</p></div><div><b>Where it came from</b><p>Saved records, worker updates, customer messages, time, photos, notes and pricing memory.</p></div><div><b>What needs approval</b><p>${command ? 'Approve, edit or park here in Command.' : 'Sending, syncing, money and final owner decisions move to Command.'}</p></div><div><b>What happens next</b><p>${command ? 'Your decision updates the record and keeps the trail clear.' : 'Save changes here. Use Command when an owner decision is needed.'}</p></div>`;
+  section.innerHTML = `<span>Admin Trail</span><div><b>What Churvox prepared</b><p>${command ? 'A clear owner decision from the latest job, client, worker, money or accounting details.' : `The ${title.toLowerCase()} details above are the working record.`}</p></div><div><b>Where it came from</b><p>Saved records, worker updates, customer messages, time, photos, notes and pricing memory.</p></div><div><b>What needs approval</b><p>${command ? 'Approve, edit or park here in Command.' : 'Anything unresolved is prepared in Command automatically.'}</p></div><div><b>What happens next</b><p>${command ? 'Your decision updates the record and keeps the trail clear.' : 'This page stays a workspace. Command handles owner decisions.'}</p></div>`;
   const form = drawer.querySelector('.cocField')?.parentElement;
   if (form) form.after(section); else drawer.appendChild(section);
 }
@@ -141,7 +126,7 @@ async function queueSave(drawer, buttonLabel) {
   note.classList.remove('warn');
   note.innerHTML = '<b>Saving...</b><span>Churvox is keeping the admin trail clear.</span>';
   const ok = await sendSave(row);
-  if (ok) { note.innerHTML = '<b>Saved for review.</b><span>This record is safely kept with the admin trail.</span>'; flash('Saved for review.', 'good'); }
+  if (ok) { note.innerHTML = '<b>Saved.</b><span>This record is safely kept with the admin trail.</span>'; flash('Saved.', 'good'); }
   else { note.classList.add('warn'); note.innerHTML = '<b>Kept here for now.</b><span>Churvox could not reach the server, so this stays on this device until it can be saved.</span>'; flash('Kept here for now.', 'warn'); }
 }
 function isMessageSend(label) { return /send message|message|reply|note|help/.test(label) && !/invoice|quote|sync|approval|approve/.test(label); }
@@ -162,7 +147,7 @@ function commandOnlyGuard(event) {
   event.stopPropagation();
   event.stopImmediatePropagation();
   button.setAttribute('data-cv-command-only', 'true');
-  flash('That decision lives in Command.', 'warn');
+  flash('That decision is already prepared in Command.', 'warn');
   setTimeout(() => { window.location.href = '/dashboard#command'; }, 450);
 }
 function saveClick(event) {
@@ -179,27 +164,18 @@ function saveClick(event) {
   }
 }
 
-let lastRunSig = '';
 function run() {
   const app = root();
   if (!app) return;
   const drawer = app.querySelector('.cocDrawer');
-  const sig = `${currentPage()}:${!!drawer}:${app.querySelectorAll('.cvOwnerClarityBanner,.cvOwnerCockpit,.cvCommandMini,.cvEmptyState,.cvAdminTrail').length}`;
   installStyle();
-  addOwnerBanner(app);
-  addCockpit(app);
+  removeMovingPanels(app);
   addCommandBadges(app);
   hideSeedRows(app);
   ensureEmptyStates(app);
   if (drawer) adminTrailFor(drawer);
-  lastRunSig = sig;
 }
-let scheduled = false;
-function scheduleRun(delay = 180) {
-  if (scheduled) return;
-  scheduled = true;
-  setTimeout(() => { scheduled = false; run(); }, delay);
-}
+function scheduleRun(delay = 180) { setTimeout(run, delay); }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_OWNER_CLARITY_LAYER__) {
   window.__CHURVOX_OWNER_CLARITY_LAYER__ = true;
