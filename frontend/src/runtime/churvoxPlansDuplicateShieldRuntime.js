@@ -1,32 +1,25 @@
 // CSS-only duplicate Plans shield.
-// Never removes DOM. It only hides the old product Plans shell when the real billing page is present.
+// Never removes DOM. Only hides known duplicate product-shell pieces when the real billing page is present.
 
 const STYLE_ID = 'churvox-plans-duplicate-shield-style';
 
 const css = `
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxTop,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxNav,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxToolbar,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxHero,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPlans,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPlanGrid,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPricingGrid,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxKpis,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxProductOpsStrip,
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) #churvox-product-ops-strip {
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) > .cvxTop,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) > .cvxNav,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPage > .cvxToolbar,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPage > .cvxHero,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPage > .cvxPlans,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPage > .cvxPlanGrid,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPage > .cvxPricingGrid,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPage > .cvxKpis,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPage > .cvxProductOpsStrip,
+  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) .cvxPage > #churvox-product-ops-strip {
     display: none !important;
   }
 
-  .cvxProduct[data-product-version="v2"] .cvxPage:has(> #option-f-plans-pricing-desk) > *:not(#option-f-plans-pricing-desk) {
-    display: none !important;
-  }
-
-  .cvxProduct[data-product-version="v2"] .cvxPage:has(> #option-f-plans-pricing-desk) > #option-f-plans-pricing-desk {
+  .cvxProduct[data-product-version="v2"] #option-f-plans-pricing-desk {
     display: grid !important;
-  }
-
-  .cvxProduct[data-product-version="v2"]:has(#option-f-plans-pricing-desk) {
-    min-height: auto !important;
+    visibility: visible !important;
   }
 `;
 
