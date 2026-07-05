@@ -59,6 +59,12 @@ function normalisePathAliases() {
     '/payroll': '/dashboard#payroll',
     '/payroll-board': '/dashboard#payroll',
     '/smart-hub': '/dashboard#aiguide',
+    '/guide': '/dashboard#aiguide',
+    '/ai-guide': '/dashboard#aiguide',
+    '/aiguide': '/dashboard#aiguide',
+    '/command': '/dashboard#command',
+    '/command-desk': '/dashboard#command',
+    '/command-board': '/dashboard#command',
     '/reports': '/dashboard#invoices',
     '/reports-board': '/dashboard#invoices',
   };
@@ -87,6 +93,13 @@ function normaliseFreshHash() {
     support: 'support',
     help: 'support',
     guide: 'aiguide',
+    'ai-guide': 'aiguide',
+    'smart-hub': 'aiguide',
+    smart: 'aiguide',
+    hub: 'aiguide',
+    command: 'command',
+    'command-desk': 'command',
+    'command-board': 'command',
     payroll: 'payroll',
     messages: 'messages',
     inbox: 'messages',
@@ -211,6 +224,7 @@ function handleOwnerShortcutClick(event) {
     }
   }
   const hashRoutes = [
+    [/smart hub|ai guide|guide|setup guide|home|dashboard/, 'aiguide'],
     [/recurring|jobs board|job board/, 'jobs'],
     [/dispatch|workers|open map|worker jobs|timesheets/, 'workers'],
     [/xero|accounting|sync|export pack|refresh status/, 'xero'],
