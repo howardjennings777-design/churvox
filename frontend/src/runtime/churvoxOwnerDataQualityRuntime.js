@@ -1,5 +1,5 @@
 // Owner data quality radar.
-// Finds duplicate/messy records and prepares clean Command items.
+// Finds duplicate/messy records and prepares clean Command items without repaint loops.
 
 const RECORD_KEY = 'churvox.owner.records.v1';
 const COMMAND_KEY = 'churvox.command.prepared.v1';
@@ -43,17 +43,14 @@ function duplicateGroups(records, page, keyFn) {
 
 function runChecks(records) {
   const issues = [];
-
   duplicateGroups(records, 'clients', (r) => clean(r.values?.email || r.values?.name || r.title)).forEach(([key, rows]) => {
     const first = rows[0];
     issues.push({ key: `dup-client:${key}`, title: 'Possible duplicate client', sourcePage: 'clients', linkedRecordId: first.id, confidence: 76, note: `${rows.length} client records look similar. Churvox prepared a merge/review decision.` });
   });
-
   duplicateGroups(records, 'invoices', (r) => clean(r.values?.invoiceNo || `${r.values?.client} ${r.values?.amount}`)).forEach(([key, rows]) => {
     const first = rows[0];
     issues.push({ key: `dup-invoice:${key}`, title: 'Possible duplicate invoice', sourcePage: 'invoices', linkedRecordId: first.id, confidence: 70, note: `${rows.length} invoice records look similar. Review before sending or syncing.` });
   });
-
   Object.values(records).forEach((r) => {
     const v = r.values || {};
     if (r.page === 'clients' && !v.phone && !v.email) issues.push({ key: `client-contact:${r.id}`, title: 'Client missing contact details', sourcePage: 'clients', linkedRecordId: r.id, confidence: 64, note: 'Client has no phone or email. Churvox prepared this so future job/quote/invoice follow-up does not fail.' });
@@ -63,7 +60,6 @@ function runChecks(records) {
     if (r.page === 'quotes' && !v.total) issues.push({ key: `quote-total:${r.id}`, title: 'Quote missing total', sourcePage: 'quotes', linkedRecordId: r.id, confidence: 66, note: 'Quote has no total. Churvox prepared this before it can be sent or converted.' });
     if (r.page === 'workers' && /complete/i.test(String(v.status || '')) && !String(v.proof || '').trim()) issues.push({ key: `worker-proof:${r.id}`, title: 'Worker completion missing proof', sourcePage: 'workers', linkedRecordId: r.id, confidence: 62, note: 'Worker marked work complete but proof is missing or unclear.' });
   });
-
   issues.slice(0, 10).forEach(command);
   return issues;
 }
@@ -76,35 +72,44 @@ function installStyle() {
   document.head.appendChild(style);
 }
 
+let lastHtml = '';
 function mount(issues) {
   const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
   if (!root) return;
   installStyle();
   let panel = document.getElementById(PANEL_ID);
-  if (!panel) { panel = document.createElement('section'); panel.id = PANEL_ID; root.appendChild(panel); }
+  if (!panel) { panel = document.createElement('section'); panel.id = PANEL_ID; root.appendChild(panel); lastHtml = ''; }
   panel.removeAttribute('data-proper-hidden');
   panel.removeAttribute('data-core-hidden');
   panel.removeAttribute('data-lite-hidden');
   const rows = issues.length ? issues.slice(0, 6).map((x) => `<div class="row"><span><b>${esc(x.title)}</b>${esc(x.note)}</span><em>${esc(x.sourcePage)}</em></div>`).join('') : '<div class="row"><span><b>Data quality clear</b>No duplicate or unsafe records found on this pass.</span><em>clear</em></div>';
-  panel.innerHTML = `<h3>Data quality radar</h3><p>Checks duplicates, missing contact info, proof gaps and money/accounting guardrails.</p><div class="rows">${rows}</div>`;
+  const html = `<h3>Data quality radar</h3><p>Checks duplicates, missing contact info, proof gaps and money/accounting guardrails.</p><div class="rows">${rows}</div>`;
+  if (html === lastHtml) return;
+  lastHtml = html;
+  panel.innerHTML = html;
 }
 
+let lastIssueSig = '';
 function run() {
   const records = read(RECORD_KEY, {});
   const issues = runChecks(records);
+  const sig = JSON.stringify(issues.map((x) => x.key).sort());
   mount(issues);
-  if (issues.length) dispatchEvent(new CustomEvent('churvox:owner-data-quality', { detail: issues }));
+  if (issues.length && sig !== lastIssueSig) {
+    lastIssueSig = sig;
+    dispatchEvent(new CustomEvent('churvox:owner-data-quality', { detail: issues }));
+  }
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.__CHURVOX_OWNER_DATA_QUALITY__) {
   window.__CHURVOX_OWNER_DATA_QUALITY__ = true;
   addEventListener('load', () => setTimeout(run, 2200));
   addEventListener('hashchange', () => setTimeout(run, 1400));
-  addEventListener('churvox:owner-backend-hydrated', () => setTimeout(run, 400));
-  addEventListener('churvox:owner-record-api-synced', () => setTimeout(run, 600));
-  addEventListener('churvox:owner-workflow-automation', () => setTimeout(run, 700));
-  document.addEventListener('click', () => setTimeout(run, 700), true);
-  setInterval(run, 7000);
+  addEventListener('churvox:owner-backend-hydrated', () => setTimeout(run, 500));
+  addEventListener('churvox:owner-record-api-synced', () => setTimeout(run, 800));
+  addEventListener('churvox:owner-workflow-automation', () => setTimeout(run, 900));
+  document.addEventListener('click', () => setTimeout(run, 1000), true);
+  setInterval(run, 15000);
 }
 
 export {};
