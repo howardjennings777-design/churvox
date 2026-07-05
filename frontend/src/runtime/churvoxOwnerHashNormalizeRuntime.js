@@ -1,5 +1,7 @@
 // Normalise old owner hashes that still point at retired setup/today pages.
 
+import './churvoxCommandLanguageGuardRuntime';
+
 function normaliseOwnerHash() {
   const path = window.location.pathname || '';
   if (!path.startsWith('/dashboard')) return;
