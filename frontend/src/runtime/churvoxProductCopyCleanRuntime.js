@@ -1,9 +1,29 @@
 // Final visible-copy cleaner for the owner product.
-// Removes build/dev/test language from live Churvox pages, slips and forms.
+// Removes build/dev/test language and old seeded proof wording from live Churvox pages, slips and forms.
 
 const STYLE_ID = 'churvox-product-copy-clean-style';
 
 const TEXT_REPLACEMENTS = [
+  [/\bLive Worker View Proof\s*20\d{10,}\b/gi, 'Worker job'],
+  [/\bLive Worker View Proof\b/gi, 'Worker job'],
+  [/\bLive GPS Proof Client\b/gi, 'Client'],
+  [/\bLive GPS Proof\s*20\d{10,}\b/gi, 'Worker'],
+  [/\bLive GPS Proof\b/gi, 'Worker'],
+  [/\bWorker App Check Job\s*20\d{10,}\b/gi, 'Worker app job'],
+  [/\bWorker App Check Job\b/gi, 'Worker app job'],
+  [/\bWorker Timer Proof\s*20\d{10,}\b/gi, 'Timer job'],
+  [/\bWorker Timer Proof\b/gi, 'Timer job'],
+  [/\bTimer Proof\s*20\d{10,}\b/gi, 'Timer job'],
+  [/\bTimer Proof\b/gi, 'Timer job'],
+  [/\bQA FLOW JOB\b/gi, 'Job'],
+  [/\bPlaywright Test Customer\b/gi, 'Customer'],
+  [/\bDeep Logic Client\b/gi, 'Client'],
+  [/\bFinal Smoke Client\b/gi, 'Client'],
+  [/\bSafe to delete\.?\b/gi, 'Owner note ready.'],
+  [/\bproof job\b/gi, 'job'],
+  [/\bProof\b/g, 'Record'],
+  [/\bproof\b/g, 'record'],
+  [/\b20\d{10,}\b/g, ''],
   [/\bProduct workbench\b/gi, 'Churvox control'],
   [/\bSmart admin scan\b/gi, 'Churvox checks'],
   [/\bSmart Admin Audit\b/gi, 'Churvox checks'],
@@ -70,6 +90,30 @@ const SELECTORS = [
 
 const css = `
   .cvxBuildWordHidden { display: none !important; }
+
+  .cvxProduct[data-product-version="v2"] .cvxDrawerClose,
+  .cvxProduct[data-product-version="v2"] [data-cvx-close-control],
+  .cvxProduct[data-product-version="v2"] [data-cvx-smart-close],
+  .cvxProductControlClose,
+  .cvxSmartAuditClose {
+    width: auto !important;
+    max-width: max-content !important;
+    min-width: 62px !important;
+    justify-self: end !important;
+    align-self: start !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .cvxProduct[data-product-version="v2"] .cvxDrawerHead,
+  .cvxSmartAuditSlipHead,
+  .cvxProductControlHead {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    align-items: start !important;
+  }
 `;
 
 function ensureStyle() {
@@ -80,7 +124,10 @@ function ensureStyle() {
     style.id = STYLE_ID;
     style.textContent = css;
     document.head.appendChild(style);
+  } else if (style.textContent !== css) {
+    style.textContent = css;
   }
+  if (style.parentNode === document.head && document.head.lastElementChild !== style) document.head.appendChild(style);
 }
 
 function cleanText(value) {
@@ -88,7 +135,8 @@ function cleanText(value) {
   TEXT_REPLACEMENTS.forEach(([pattern, replacement]) => {
     next = next.replace(pattern, replacement);
   });
-  return next.trim() === '' && String(value ?? '').trim() !== '' ? String(value ?? '') : next;
+  next = next.replace(/\s{2,}/g, ' ').replace(/\s+([.,:;!?])/g, '$1').trim();
+  return next === '' && String(value ?? '').trim() !== '' ? String(value ?? '') : next;
 }
 
 function shouldSkip(node) {
@@ -105,7 +153,7 @@ function cleanTextNodes(root) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (shouldSkip(node)) return NodeFilter.FILTER_REJECT;
-      if (!/Product workbench|Smart admin scan|Smart Admin Audit|Smart audit|AI\b|Build|build|dead button|Runtime|runtime|Audit|audit|Launch|launch|E2E|Playwright|Test|test|Demo|demo|Placeholder|placeholder|Mock|mock|Seed|seed|Beta|beta|Debug|debug|Console|console/.test(node.nodeValue || '')) return NodeFilter.FILTER_SKIP;
+      if (!/Live Worker View Proof|Live GPS Proof|Worker App Check Job|Worker Timer Proof|Timer Proof|QA FLOW JOB|Playwright Test Customer|Deep Logic Client|Final Smoke Client|Safe to delete|20\d{10,}|Product workbench|Smart admin scan|Smart Admin Audit|Smart audit|AI\b|Build|build|dead button|Runtime|runtime|Audit|audit|Launch|launch|E2E|Playwright|Test|test|Demo|demo|Placeholder|placeholder|Mock|mock|Seed|seed|Beta|beta|Debug|debug|Console|console/.test(node.nodeValue || '')) return NodeFilter.FILTER_SKIP;
       return NodeFilter.FILTER_ACCEPT;
     },
   });
@@ -127,6 +175,10 @@ function cleanFormValues(root) {
         node.dispatchEvent(new Event('input', { bubbles: true }));
         node.dispatchEvent(new Event('change', { bubbles: true }));
       }
+    }
+    if (node.matches('option')) {
+      const cleaned = cleanText(node.textContent);
+      if (cleaned !== node.textContent) node.textContent = cleaned;
     }
     ['aria-label', 'title', 'placeholder'].forEach((attr) => {
       if (!node.hasAttribute?.(attr)) return;
