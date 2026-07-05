@@ -10,15 +10,8 @@ import './runtime/churvoxPlainSendGuardRuntime';
 import './runtime/churvoxLogoutNavRuntime';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxPlansBillingNavClickGuard';
+import './runtime/churvoxStripeCheckoutLiveRuntime';
 import './runtime/churvoxKiwiCopyGuard';
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.getRegistrations()
-      .then((regs) => Promise.all(regs.map((reg) => reg.unregister())))
-      .catch(() => {});
-  });
-}
 
 const staticPublicPageRendered = Boolean(
   typeof window !== 'undefined' && window.__CHURVOX_STATIC_PUBLIC_PAGE_RENDERED__ === true
