@@ -1,6 +1,8 @@
 // Owner draft memory open runtime.
 // Lets recently prepared draft cards open as review slips without rewriting the existing panel.
 
+import './churvoxGuideCommandAssuranceRuntime';
+
 const PANEL_ID = 'churvox-owner-draft-memory-panel';
 const MODAL_ID = 'churvox-owner-draft-open-modal';
 const STYLE_ID = 'churvox-owner-draft-open-style';
