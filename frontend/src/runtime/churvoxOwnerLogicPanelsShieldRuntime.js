@@ -1,6 +1,7 @@
 // Keep owner logic panels stable without fighting page cleanup every few hundred ms.
 
 const STYLE_ID = 'churvox-owner-logic-panels-shield-style';
+const PROPER_LAYOUT_ID = 'churvox-owner-proper-page-layout';
 const IDS = [
   'churvox-owner-record-engine-panel',
   'churvox-owner-workflow-automation-panel',
@@ -37,6 +38,29 @@ function protectSetAttribute() {
   };
 }
 
+function protectDuplicateInnerHtml() {
+  if (window.__CHURVOX_OWNER_PROPER_DUPLICATE_HTML_GUARD__) return;
+  window.__CHURVOX_OWNER_PROPER_DUPLICATE_HTML_GUARD__ = true;
+  const proto = Element.prototype;
+  const desc = Object.getOwnPropertyDescriptor(proto, 'innerHTML');
+  if (!desc?.get || !desc?.set) return;
+  Object.defineProperty(proto, 'innerHTML', {
+    configurable: true,
+    enumerable: desc.enumerable,
+    get() { return desc.get.call(this); },
+    set(value) {
+      try {
+        if (this?.id === PROPER_LAYOUT_ID) {
+          const next = String(value || '');
+          if (this.__churvoxLastProperHtml === next) return;
+          this.__churvoxLastProperHtml = next;
+        }
+      } catch (_) {}
+      return desc.set.call(this, value);
+    },
+  });
+}
+
 function unhide(node) {
   if (!node) return false;
   let changed = false;
@@ -53,6 +77,7 @@ let last = '';
 function run() {
   installStyle();
   protectSetAttribute();
+  protectDuplicateInnerHtml();
   const sig = IDS.map((id) => {
     const node = document.getElementById(id);
     return node ? `${id}:${node.getAttribute('data-proper-hidden') || ''}:${node.getAttribute('data-core-hidden') || ''}:${node.getAttribute('data-lite-hidden') || ''}:${node.getAttribute('hidden') || ''}:${node.getAttribute('aria-hidden') || ''}:${node.style.display || ''}:${node.style.visibility || ''}:${node.style.opacity || ''}` : `${id}:missing`;
@@ -67,6 +92,7 @@ function schedule(ms = 80) { setTimeout(run, ms); }
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.__CHURVOX_OWNER_LOGIC_PANELS_SHIELD__) {
   window.__CHURVOX_OWNER_LOGIC_PANELS_SHIELD__ = true;
   protectSetAttribute();
+  protectDuplicateInnerHtml();
   addEventListener('DOMContentLoaded', run);
   addEventListener('load', run);
   addEventListener('hashchange', () => schedule(120));
