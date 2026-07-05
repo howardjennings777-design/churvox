@@ -3,6 +3,7 @@ import './churvoxProductWorkbenchRuntime';
 import './churvoxCommandRealSlipRuntime';
 import './churvoxHeaderFitRuntime';
 import './churvoxSmartAdminAuditRuntime';
+import './churvoxProductCopyCleanRuntime';
 
 // Center Churvox slips and record drawers like proper review modals.
 // Loaded last so approval slips do not open as side drawers.
