@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import axios from "axios";
 import API_BASE from "../lib/apiBase";
 import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } from "../lib/roles";
@@ -82,7 +82,7 @@ function inferredPayroll(user = {}) {
 }
 
 function tokenFrom(data = {}) {
-  return data?.token || data?.access_token || data?.auth_token || data?.user?.token || data?.user?.access_token || "";
+  return data?.token || data?.access_token || data?.auth_token || data?.jwt || data?.accessToken || data?.user?.token || data?.user?.access_token || data?.user?.accessToken || "";
 }
 
 function userFrom(data = {}) {
@@ -111,7 +111,7 @@ function authError(data = {}) {
 function shouldTryWorkerFallback(err) {
   const status = err?.response?.status;
   if (!status) return true;
-  return [400, 401, 403, 404, 408, 422, 500, 502, 503, 504].includes(status);
+  return [404, 408, 422, 500, 502, 503, 504].includes(status);
 }
 
 function validStoredUser(user) {
@@ -164,6 +164,7 @@ function rememberPlatformOwner(nextUser = {}) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredAuthSnapshot());
   const [loading, setLoading] = useState(true);
+  const authRunRef = useRef(0);
 
   const fetchMe = useCallback(async (token) => {
     const response = await axios.get(`${API_BASE}/api/auth/me`, {
@@ -179,6 +180,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const checkAuth = useCallback(async () => {
+    const runId = ++authRunRef.current;
     let token = "";
     try { token = localStorage.getItem("token") || ""; } catch {}
     const storedSession = readStoredAuthSnapshot(AUTH_REFRESH_GRACE_MS);
@@ -190,26 +192,26 @@ export function AuthProvider({ children }) {
       if (me?.token) localStorage.setItem("token", me.token);
       saveStoredAuthSnapshot(me);
       rememberPlatformOwner(me);
-      setUser(me);
+      if (runId === authRunRef.current) setUser(me);
       return me;
     } catch (err) {
       const status = err?.response?.status;
-      if (storedSession && (status === 401 || status === 403 || !status)) {
-        setUser(storedSession);
+      if (storedSession && !status) {
+        if (runId === authRunRef.current) setUser(storedSession);
         return storedSession;
       }
       if (status === 401 || status === 403) {
         clearStoredAuth();
-        setUser(null);
+        if (runId === authRunRef.current) setUser(null);
       }
       throw err;
     } finally {
-      setLoading(false);
+      if (runId === authRunRef.current) setLoading(false);
     }
   }, [fetchMe]);
 
   useEffect(() => {
-    checkAuth().catch(() => {});
+    checkAuth().catch(() => setLoading(false));
   }, [checkAuth]);
 
   useEffect(() => {
@@ -241,6 +243,8 @@ export function AuthProvider({ children }) {
   }
 
   const login = useCallback(async (email, password) => {
+    const runId = ++authRunRef.current;
+    setLoading(true);
     clearStoredAuth();
     setUser(null);
 
@@ -249,84 +253,104 @@ export function AuthProvider({ children }) {
     let normalLoginError = null;
 
     try {
-      response = await axios.post(
-        `${API_BASE}/api/auth/login`,
-        { email: cleanEmail, password },
-        { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
-      );
-    } catch (err) {
-      normalLoginError = err;
-      if (!shouldTryWorkerFallback(err)) throw err;
-      response = await workerLoginBridge(cleanEmail, password, err);
-    }
-
-    if (response.data?.success === false) {
       try {
-        response = await workerLoginBridge(cleanEmail, password, normalLoginError);
+        response = await axios.post(
+          `${API_BASE}/api/auth/login`,
+          { email: cleanEmail, password },
+          { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
+        );
       } catch (err) {
-        throw new Error(authError(response.data) || err.message);
+        normalLoginError = err;
+        if (!shouldTryWorkerFallback(err)) throw err;
+        response = await workerLoginBridge(cleanEmail, password, err);
       }
+
+      if (response.data?.success === false) {
+        try {
+          response = await workerLoginBridge(cleanEmail, password, normalLoginError);
+        } catch (err) {
+          throw new Error(authError(response.data) || err.message);
+        }
+      }
+
+      const token = tokenFrom(response.data);
+      const nextUser = userFrom(response.data);
+
+      if (!nextUser) {
+        throw new Error("Login failed because the server did not return account JSON.");
+      }
+
+      const returnedEmail = String(nextUser.email || "").trim().toLowerCase();
+      if (returnedEmail && returnedEmail !== cleanEmail) {
+        throw new Error("Churvox returned a different account than the email entered.");
+      }
+
+      if (token) {
+        nextUser.token = token;
+        localStorage.setItem("token", token);
+      } else {
+        localStorage.removeItem("token");
+      }
+
+      if (nextUser?.has_app_access || inferredWorker(nextUser) || inferredPayroll(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
+      saveStoredAuthSnapshot(nextUser);
+      rememberPlatformOwner(nextUser);
+      if (runId === authRunRef.current) setUser(nextUser);
+
+      return { ...response.data, user: nextUser, ...nextUser };
+    } catch (err) {
+      if (runId === authRunRef.current) {
+        clearStoredAuth();
+        setUser(null);
+      }
+      throw err;
+    } finally {
+      if (runId === authRunRef.current) setLoading(false);
     }
-
-    const token = tokenFrom(response.data);
-    const nextUser = userFrom(response.data);
-
-    if (!nextUser) {
-      throw new Error("Login failed because the server did not return account JSON.");
-    }
-
-    const returnedEmail = String(nextUser.email || "").trim().toLowerCase();
-    if (returnedEmail && returnedEmail !== cleanEmail) {
-      throw new Error("Churvox returned a different account than the email entered.");
-    }
-
-    if (token) {
-      nextUser.token = token;
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("token");
-    }
-
-    if (nextUser?.has_app_access || inferredWorker(nextUser) || inferredPayroll(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
-    saveStoredAuthSnapshot(nextUser);
-    rememberPlatformOwner(nextUser);
-    setUser(nextUser);
-
-    return { ...response.data, user: nextUser, ...nextUser };
   }, []);
 
   const register = useCallback(async (userData) => {
+    const runId = ++authRunRef.current;
+    setLoading(true);
     clearStoredAuth();
     setUser(null);
-    const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
-    if (response.data?.success === false) throw new Error(authError(response.data));
+    try {
+      const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
+      if (response.data?.success === false) throw new Error(authError(response.data));
 
-    const token = tokenFrom(response.data);
-    const nextUser = userFrom(response.data);
-    if (!nextUser) throw new Error("Account was created but Churvox could not load the session.");
+      const token = tokenFrom(response.data);
+      const nextUser = userFrom(response.data);
+      if (!nextUser) throw new Error("Account was created but Churvox could not load the session.");
 
-    if (token) {
-      nextUser.token = token;
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("token");
+      if (token) {
+        nextUser.token = token;
+        localStorage.setItem("token", token);
+      } else {
+        localStorage.removeItem("token");
+      }
+
+      localStorage.setItem(PLAN_REQUIRED_KEY, "true");
+      const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
+      saveStoredAuthSnapshot(locked);
+      if (runId === authRunRef.current) setUser(locked);
+      return { ...response.data, user: locked, ...locked };
+    } finally {
+      if (runId === authRunRef.current) setLoading(false);
     }
-
-    localStorage.setItem(PLAN_REQUIRED_KEY, "true");
-    const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
-    saveStoredAuthSnapshot(locked);
-    setUser(locked);
-    return { ...response.data, user: locked, ...locked };
   }, []);
 
   const logout = useCallback(async () => {
+    const runId = ++authRunRef.current;
     try {
       const token = localStorage.getItem("token") || "";
       await axios.post(`${API_BASE}/api/auth/logout`, {}, { headers: headersFor(token), withCredentials: true, timeout: AUTH_TIMEOUT_MS });
     } catch {}
     clearStoredAuth();
     try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
-    setUser(null);
+    if (runId === authRunRef.current) {
+      setUser(null);
+      setLoading(false);
+    }
   }, []);
 
   const forgotPassword = useCallback(async (email) => {
