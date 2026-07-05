@@ -1,6 +1,8 @@
 // AI Guide and Command assurance runtime.
 // Keeps the owner home and approval desk labelled correctly after legacy fallbacks or route aliases run.
 
+import './churvoxGuideCommandLayoutRuntime';
+
 const STYLE_ID = 'churvox-guide-command-assurance-style';
 
 function pageKey() {
