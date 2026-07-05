@@ -41,10 +41,8 @@ if (!staticPublicPageRendered) {
 
 let ownerRuntimeLoaded = false;
 let workerRuntimeLoaded = false;
-let plansRuntimeLoaded = false;
 
 const ownerRuntimeImports = [
-  () => import('./runtime/churvoxPlansNavRuntime'),
   () => import('./runtime/churvoxWorkerPreReactShell'),
   () => import('./runtime/churvoxNativeTimerRuntime'),
   () => import('./runtime/churvoxRouteAliasRuntime'),
@@ -107,17 +105,6 @@ function runImports(imports) {
   });
 }
 
-function isPlansPage() {
-  if (typeof window === 'undefined') return false;
-  return (window.location.pathname === '/dashboard' && window.location.hash === '#plans') || window.location.pathname === '/plans';
-}
-
-function loadPlansRuntimeWhenOnPlans() {
-  if (plansRuntimeLoaded || !isPlansPage()) return;
-  plansRuntimeLoaded = true;
-  import('./runtime/churvoxPlansNavRuntime').catch(() => {});
-}
-
 function loadOwnerRuntimeWhenInsideApp() {
   if (ownerRuntimeLoaded || typeof window === 'undefined') return;
   const path = window.location.pathname || '';
@@ -136,7 +123,6 @@ function loadWorkerRuntimeWhenInsideWorkerApp() {
 }
 
 function checkRuntimeLoads() {
-  loadPlansRuntimeWhenOnPlans();
   loadOwnerRuntimeWhenInsideApp();
   loadWorkerRuntimeWhenInsideWorkerApp();
 }
