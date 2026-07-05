@@ -1,5 +1,5 @@
 // Plans & billing page navigation.
-// Keeps Plans as a clean billing workspace, not a promo page.
+// Keeps Plans as a clean billing workspace.
 
 const STYLE_ID = 'churvox-plans-nav-runtime-style';
 const NAV_ID = 'churvox-plans-page-nav';
@@ -9,7 +9,8 @@ const css = `
     overflow-x: hidden !important;
   }
 
-  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxHero,
+  body[data-cvx-owner-page="plans"] #churvox-product-ops-strip,
+  body[data-cvx-owner-page="plans"] .cvxProductOpsStrip,
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxToolbar {
     display: none !important;
   }
@@ -67,6 +68,7 @@ const css = `
   }
 
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPanel,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxHero,
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlans,
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxKpis {
     min-width: 0 !important;
@@ -140,7 +142,7 @@ function ensureStyle() {
 }
 
 function findByText(patterns) {
-  const nodes = [...document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxPanel, .cvxProduct[data-product-version="v2"] .cvxPlans, .cvxProduct[data-product-version="v2"] .cvxKpis')];
+  const nodes = [...document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxPanel, .cvxProduct[data-product-version="v2"] .cvxHero, .cvxProduct[data-product-version="v2"] .cvxPlans, .cvxProduct[data-product-version="v2"] .cvxKpis')];
   return nodes.find((node) => patterns.some((pattern) => pattern.test(node.textContent || '')));
 }
 
@@ -154,6 +156,11 @@ function scrollToSection(kind) {
   }[kind] || [];
   const target = findByText(targets);
   if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function removeWrongPlansStrip() {
+  if (page() !== 'plans') return;
+  document.querySelectorAll('#churvox-product-ops-strip,.cvxProductOpsStrip').forEach((node) => node.remove());
 }
 
 function buildNav() {
@@ -180,6 +187,7 @@ function buildNav() {
 function run() {
   if (typeof document !== 'undefined') document.body.dataset.cvxOwnerPage = page();
   ensureStyle();
+  removeWrongPlansStrip();
   buildNav();
 }
 
