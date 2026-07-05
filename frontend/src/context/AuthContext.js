@@ -9,6 +9,9 @@ const AuthContext = createContext(null);
 const AUTH_TIMEOUT_MS = 15000;
 const WORKER_AUTH_TIMEOUT_MS = 10000;
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
+const AUTH_SNAPSHOT_KEY = "churvox_auth_session_snapshot_v1";
+const AUTH_SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
+const AUTH_REFRESH_GRACE_MS = 1000 * 60 * 60 * 12;
 const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
 const GOOD_STATUSES = new Set(["active", "paid", "trialing", "trial", "past_due", "tester_free", "worker"]);
 
@@ -19,6 +22,7 @@ function clearStoredAuth() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("owner_portal_session");
     localStorage.removeItem("platform_owner_email");
+    localStorage.removeItem(AUTH_SNAPSHOT_KEY);
   } catch {}
 }
 
@@ -110,8 +114,55 @@ function shouldTryWorkerFallback(err) {
   return [400, 401, 403, 404, 408, 422, 500, 502, 503, 504].includes(status);
 }
 
+function validStoredUser(user) {
+  return Boolean(user && typeof user === "object" && (user.email || user.id || user._id || user.role || user.user_role || user.worker_id || user.business_id || user.businessId));
+}
+
+function readStoredAuthSnapshot(maxAgeMs = AUTH_SNAPSHOT_MAX_AGE_MS) {
+  try {
+    const raw = localStorage.getItem(AUTH_SNAPSHOT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const at = Number(parsed?.at || 0);
+    if (!at || Date.now() - at > maxAgeMs) return null;
+    const storedUser = parsed?.user;
+    if (!validStoredUser(storedUser)) return null;
+    const storedToken = parsed?.token || localStorage.getItem("token") || "";
+    return {
+      ...storedUser,
+      id: String(storedUser.id || storedUser._id || storedUser.business_id || storedUser.email || ""),
+      email: String(storedUser.email || "").trim().toLowerCase(),
+      business_id: String(storedUser.business_id || storedUser.businessId || storedUser.id || storedUser._id || ""),
+      ...(storedToken ? { token: storedToken } : {}),
+      restored_session: true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredAuthSnapshot(user = {}) {
+  if (!validStoredUser(user)) return;
+  try {
+    const token = user.token || localStorage.getItem("token") || "";
+    const safeUser = { ...user };
+    if (token) safeUser.token = token;
+    localStorage.setItem(AUTH_SNAPSHOT_KEY, JSON.stringify({ at: Date.now(), token, user: safeUser }));
+  } catch {}
+}
+
+function rememberPlatformOwner(nextUser = {}) {
+  const finalEmail = String(nextUser.email || "").trim().toLowerCase();
+  if (finalEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
+    try {
+      localStorage.setItem("owner_portal_session", "true");
+      localStorage.setItem("platform_owner_email", finalEmail);
+    } catch {}
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => readStoredAuthSnapshot());
   const [loading, setLoading] = useState(true);
 
   const fetchMe = useCallback(async (token) => {
@@ -130,13 +181,24 @@ export function AuthProvider({ children }) {
   const checkAuth = useCallback(async () => {
     let token = "";
     try { token = localStorage.getItem("token") || ""; } catch {}
+    const storedSession = readStoredAuthSnapshot(AUTH_REFRESH_GRACE_MS);
+    if (storedSession) setUser((current) => current || storedSession);
+
     try {
-      const me = await fetchMe(token || undefined);
+      const me = await fetchMe(token || storedSession?.token || undefined);
       if (me?.has_app_access || inferredWorker(me) || inferredPayroll(me) || hasValidPlan(me)) removePlanFlag();
+      if (me?.token) localStorage.setItem("token", me.token);
+      saveStoredAuthSnapshot(me);
+      rememberPlatformOwner(me);
       setUser(me);
       return me;
     } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
+      const status = err?.response?.status;
+      if (storedSession && (status === 401 || status === 403 || !status)) {
+        setUser(storedSession);
+        return storedSession;
+      }
+      if (status === 401 || status === 403) {
         clearStoredAuth();
         setUser(null);
       }
@@ -226,13 +288,9 @@ export function AuthProvider({ children }) {
     }
 
     if (nextUser?.has_app_access || inferredWorker(nextUser) || inferredPayroll(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
+    saveStoredAuthSnapshot(nextUser);
+    rememberPlatformOwner(nextUser);
     setUser(nextUser);
-
-    const finalEmail = String(nextUser.email || "").trim().toLowerCase();
-    if (finalEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
-      localStorage.setItem("owner_portal_session", "true");
-      localStorage.setItem("platform_owner_email", finalEmail);
-    }
 
     return { ...response.data, user: nextUser, ...nextUser };
   }, []);
@@ -256,6 +314,7 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem(PLAN_REQUIRED_KEY, "true");
     const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
+    saveStoredAuthSnapshot(locked);
     setUser(locked);
     return { ...response.data, user: locked, ...locked };
   }, []);
@@ -288,7 +347,13 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const updateUser = useCallback((updates) => setUser((prev) => (prev ? { ...prev, ...updates } : prev)), []);
+  const updateUser = useCallback((updates) => {
+    setUser((prev) => {
+      const next = prev ? { ...prev, ...updates } : prev;
+      if (next) saveStoredAuthSnapshot(next);
+      return next;
+    });
+  }, []);
 
   const roleValue = rawRole(user || {});
   const isWorker = inferredWorker(user || {});
@@ -328,6 +393,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
 }
