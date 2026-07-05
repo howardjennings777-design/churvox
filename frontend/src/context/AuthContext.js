@@ -161,6 +161,17 @@ function rememberPlatformOwner(nextUser = {}) {
   }
 }
 
+function explicitBillingLock(user = {}) {
+  const status = subscriptionStatus(user);
+  return Boolean(
+    isLockedStatus(status) ||
+    user.billing_lock_reason ||
+    user.locked_reason ||
+    user.account_locked === true ||
+    user.has_app_access === false
+  );
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredAuthSnapshot());
   const [loading, setLoading] = useState(true);
@@ -395,17 +406,18 @@ export function AuthProvider({ children }) {
   const hasAppAccess = (() => {
     if (!user) return false;
     if (isWorker || isPayroll) return true;
+    if (explicitBillingLock(user)) return false;
+    if (isTrialExpired) return false;
+    if (typeof user.has_app_access === "boolean") return user.has_app_access;
 
     const status = subscriptionStatus(user);
     const validPlan = hasValidPlan(user);
-    if (validPlan && !isLockedStatus(status) && !isTrialExpired) return true;
-    if (validPlan && GOOD_STATUSES.has(status) && !isTrialExpired) return true;
+    if (validPlan) return true;
+    if (GOOD_STATUSES.has(status)) return true;
 
-    if (typeof user.has_app_access === "boolean") return user.has_app_access;
-
-    if (!validPlan) return false;
-    if ((status === "trialing" || !status) && !isTrialExpired) return true;
-    return false;
+    // Important: do not block a valid signed-in owner just because an older backend response omitted plan text.
+    // Missing plan/status should send billing UI to Plans, not break app loading or sign-in.
+    return true;
   })();
 
   return (
