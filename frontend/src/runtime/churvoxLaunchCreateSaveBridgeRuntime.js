@@ -16,6 +16,15 @@ function text(value) {
   return String(value || '').trim();
 }
 
+function money(value, fallback = '95') {
+  const raw = text(value || fallback).replace(/[^0-9.]/g, '');
+  return raw || fallback;
+}
+
+function today() {
+  return new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+}
+
 function fieldName(el, index) {
   const explicit = text(el.getAttribute('name') || el.getAttribute('id') || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('data-testid'));
   if (explicit) return explicit.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `field_${index}`;
@@ -51,29 +60,47 @@ function shapePayload(cfg, raw) {
     const key = Object.keys(data).find((k) => patterns.some((p) => k.includes(p)));
     return key ? data[key] : '';
   };
+  const client = data.client_name || data.customer_name || any(['client', 'customer']) || primary;
+  const address = data.address || data.site_address || data.service_address || any(['address', 'site', 'service']) || 'Address to confirm';
+  const notes = data.notes || data.description || data.scope || any(['note', 'description', 'scope', 'service']) || 'Created from Churvox launch save bridge.';
   if (cfg.kind === 'client') {
     data.name = data.name || any(['client', 'customer', 'name', 'title']) || primary;
+    data.customer_name = data.name;
     data.email = data.email || any(['email']);
     data.phone = data.phone || any(['phone', 'mobile']);
-    data.address = data.address || any(['address', 'site', 'service']);
-    data.notes = data.notes || any(['note', 'description', 'scope', 'service']);
+    data.address = address;
+    data.notes = notes;
   } else if (cfg.kind === 'job') {
     data.title = data.title || data.name || any(['job', 'title', 'name']) || primary;
-    data.client_name = data.client_name || any(['client', 'customer']);
-    data.site_address = data.site_address || any(['address', 'site', 'service']);
+    data.customer_name = client;
+    data.client_name = client;
+    data.job_type = data.job_type || data.service_type || 'General service';
+    data.address = address;
+    data.site_address = address;
+    data.scheduled_date = data.scheduled_date || data.date || today();
+    data.description = notes;
+    data.notes = notes;
     data.assigned_worker_name = data.assigned_worker_name || any(['worker', 'assigned']);
-    data.price = data.price || data.amount || data.total || any(['price', 'amount', 'total']);
-    data.notes = data.notes || any(['note', 'description', 'scope', 'instruction']);
+    data.price = money(data.price || data.amount || data.total || any(['price', 'amount', 'total']));
   } else if (cfg.kind === 'quote') {
     data.title = data.title || data.name || any(['quote', 'title', 'description', 'scope']) || primary;
-    data.client_name = data.client_name || any(['client', 'customer']);
-    data.total = data.total || data.price || data.amount || any(['total', 'price', 'amount']);
-    data.scope = data.scope || data.description || data.notes || any(['scope', 'description', 'note', 'service']);
+    data.customer_name = client;
+    data.client_name = client;
+    data.address = address;
+    data.job_description = data.job_description || notes;
+    data.description = data.description || notes;
+    data.price = money(data.price || data.total || data.amount || any(['total', 'price', 'amount']));
+    data.total = data.total || data.price;
+    data.scope = data.scope || notes;
   } else if (cfg.kind === 'invoice') {
     data.title = data.title || data.name || any(['invoice', 'title', 'description', 'line']) || primary;
-    data.client_name = data.client_name || any(['client', 'customer']);
-    data.amount = data.amount || data.total || data.price || any(['amount', 'total', 'price']);
-    data.line_items = data.line_items || data.description || data.notes || any(['line', 'description', 'note', 'service']);
+    data.customer_name = client;
+    data.client_name = client;
+    data.description = data.description || data.line_items || notes;
+    data.line_items = data.line_items || data.description;
+    data.subtotal = money(data.subtotal || data.amount || data.total || data.price || any(['amount', 'total', 'price']));
+    data.amount = data.amount || data.subtotal;
+    data.total = data.total || data.subtotal;
   }
   data.launch_audit_token = primary;
   return data;
