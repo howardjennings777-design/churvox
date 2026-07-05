@@ -1,0 +1,2 @@
+Redeploy trigger for Churvox Plans nav runtime.
+Commit purpose: force Render to pick up main after Plans nav fixes.
