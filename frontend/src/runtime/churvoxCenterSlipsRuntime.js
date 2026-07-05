@@ -2,6 +2,7 @@ import './churvoxProductControlsRuntime';
 import './churvoxProductWorkbenchRuntime';
 import './churvoxCommandRealSlipRuntime';
 import './churvoxHeaderFitRuntime';
+import './churvoxOwnerHeaderLogoRuntime';
 import './churvoxSmartAdminAuditRuntime';
 import './churvoxProductCopyCleanRuntime';
 
