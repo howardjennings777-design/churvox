@@ -71,14 +71,17 @@ const getPostLoginPath = (payload = {}) => {
   if (looksPayroll(user, payload)) return "/payroll-board";
   if (isWorkerRole(role) || isPayrollRole(role)) return getDefaultRoute(role);
 
-  const plan = String(user?.plan || payload?.plan || "").trim().toLowerCase();
   const status = String(user?.subscription_status || payload?.subscription_status || "").trim().toLowerCase();
-  const noPlan = !plan || plan === "none" || plan === "free" || plan === "null" || plan === "undefined";
-  const inactiveBilling = status === "cancelled" || status === "canceled" || status === "incomplete" || status === "incomplete_expired" || status === "locked" || status === "disabled";
+  const explicitlyLocked =
+    user?.has_app_access === false ||
+    payload?.has_app_access === false ||
+    user?.billing_lock_reason ||
+    payload?.billing_lock_reason ||
+    ["cancelled", "canceled", "incomplete", "incomplete_expired", "locked", "disabled"].includes(status);
 
-  if (user?.has_app_access === false || payload?.has_app_access === false || noPlan || inactiveBilling) return "/plans";
+  if (explicitlyLocked) return "/plans";
   if (setupPendingLocally()) return "/setup-guide?first_setup=1";
-  return getDefaultRoute(role);
+  return getDefaultRoute(role) || "/dashboard";
 };
 
 const loginLooksValid = (result = {}) => {
@@ -138,6 +141,9 @@ export default function LoginPage() {
       const finalPath = getPostLoginPath(result);
       setSubmitting(false);
       navigate(finalPath, { replace: true });
+      if (finalPath.startsWith("/dashboard") || finalPath === "/plans") {
+        window.setTimeout(() => window.dispatchEvent(new Event("churvox-owner-app-ready")), 120);
+      }
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
