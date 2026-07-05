@@ -46,6 +46,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.
   import('./churvoxOwnerRecordEngineApiSyncRuntime').catch(() => {});
   import('./churvoxOwnerWorkflowAutomationRuntime').catch(() => {});
   import('./churvoxOwnerWorkflowSyncBridgeRuntime').catch(() => {});
+  import('./churvoxOwnerTimelinePanelRuntime').catch(() => {});
 }
 
 export {};
