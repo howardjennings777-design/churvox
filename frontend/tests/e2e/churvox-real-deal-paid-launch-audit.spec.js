@@ -104,9 +104,14 @@ async function createRecord(page, flow) {
   expect(filled, `${flow.kind} should accept useful fields`).toBeGreaterThanOrEqual(2);
   expect(await save(page), `${flow.kind} should save/create`).toBeTruthy();
   await assertNoFatal(page, `${flow.kind} after save`);
-  await expect.poll(async () => await apiHas(page, flow.api, token) || await pageHas(page, flow.listUrl, token), { timeout: 30000, intervals: [800, 1200, 2000, 3000] }).toBeTruthy();
+  const found = await expect.poll(async () => {
+    const api = await apiHas(page, flow.api, token);
+    const list = api ? true : await pageHas(page, flow.listUrl, token);
+    return { api, list, found: api || list, url: page.url(), text: (await bodyText(page)).slice(0, 500) };
+  }, { timeout: 30000, intervals: [800, 1200, 2000, 3000], message: `${flow.kind} should appear after save` }).toMatchObject({ found: true });
   await page.goto('/dashboard#command'); await waitHuman(page, 900); await assertNoFatal(page, `Command after ${flow.kind}`);
   expect(await apiHas(page, flow.api, token) || await pageHas(page, flow.listUrl, token), `${flow.kind} should still exist after navigation`).toBeTruthy();
+  return found;
 }
 
 test.describe('Churvox real deal paid launch audit', () => {
@@ -142,7 +147,9 @@ test.describe('Churvox real deal paid launch audit', () => {
       { kind: 'quote', title: 'Real Deal Quote', newUrl: '/quotes/new', listUrl: '/dashboard#quotes', api: '/api/quotes' },
       { kind: 'invoice', title: 'Real Deal Invoice', newUrl: '/invoices/new', listUrl: '/dashboard#invoices', api: '/api/invoices' },
     ];
-    for (const flow of flows) await createRecord(page, flow);
+    for (const flow of flows) {
+      await test.step(`create ${flow.kind}`, async () => { await createRecord(page, flow); });
+    }
     await page.goto('/dashboard#aiguide'); await waitHuman(page, 1200);
     expect(await bodyText(page)).toMatch(/record engine|workflow|timeline|data quality|paid launch|Command/i);
   });
