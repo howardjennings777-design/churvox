@@ -1,5 +1,5 @@
 // Plans page duplicate guard + billing nav.
-// Keeps the real billing/checkout page, hides duplicate product Plans, and adds a clear billing nav.
+// Keeps the real billing/checkout page, hides duplicate product Plans, and places nav inside the billing page.
 
 const STYLE_ID = 'churvox-plans-nav-runtime-style';
 const BILLING_NAV_ID = 'churvox-billing-page-nav';
@@ -28,22 +28,21 @@ const css = `
   }
 
   .cvxBillingPageNav {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 80 !important;
+    position: relative !important;
+    z-index: 20 !important;
     display: flex !important;
     align-items: center !important;
     gap: 7px !important;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
-    margin: 0 0 10px !important;
-    padding: 8px !important;
-    border: 1px solid rgba(17, 21, 19, .1) !important;
-    border-radius: 18px !important;
-    background: rgba(255, 254, 250, .94) !important;
-    box-shadow: 0 14px 34px rgba(17, 21, 19, .08) !important;
-    backdrop-filter: blur(14px) !important;
+    margin: 10px 0 12px !important;
+    padding: 7px !important;
+    border: 1px solid rgba(17, 21, 19, .08) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 254, 250, .82) !important;
+    box-shadow: 0 10px 24px rgba(17, 21, 19, .06) !important;
+    backdrop-filter: blur(10px) !important;
     overflow-x: auto !important;
     scrollbar-width: thin !important;
   }
@@ -51,13 +50,13 @@ const css = `
   .cvxBillingPageNav button {
     flex: 1 0 auto !important;
     min-width: max-content !important;
-    min-height: 34px !important;
+    min-height: 30px !important;
     border: 0 !important;
     border-radius: 999px !important;
-    padding: 8px 12px !important;
-    background: rgba(17, 21, 19, .07) !important;
+    padding: 7px 11px !important;
+    background: rgba(17, 21, 19, .06) !important;
     color: #111713 !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 1000 !important;
     white-space: nowrap !important;
     cursor: pointer !important;
@@ -72,7 +71,7 @@ const css = `
   @media (max-width: 800px) {
     .cvxBillingPageNav button {
       flex: 0 0 auto !important;
-      font-size: 11px !important;
+      font-size: 10.5px !important;
       padding: 7px 10px !important;
     }
   }
@@ -116,6 +115,24 @@ function realBillingRoot() {
   return panels.find((node) => /plans and billing|refresh billing|manage billing|live plan usage/i.test(node.textContent || '')) || document.querySelector('.cvxProduct[data-product-version="v2"] .cvxPage') || document.querySelector('#root');
 }
 
+function topBillingBlock(root) {
+  if (!root) return null;
+  const candidates = [...root.querySelectorAll('section, article, div')].filter((node) => node.id !== BILLING_NAV_ID && !node.closest(`#${BILLING_NAV_ID}`));
+  const match = candidates.find((node) => {
+    const text = String(node.textContent || '').toLowerCase();
+    return text.includes('plans and billing') && (text.includes('refresh billing') || text.includes('manage billing') || text.includes('pricing region'));
+  });
+  if (!match) return root.firstElementChild || root;
+
+  let block = match;
+  while (block.parentElement && block.parentElement !== root) {
+    const parentText = String(block.parentElement.textContent || '').toLowerCase();
+    if (parentText.includes('live plan usage') || parentText.includes('checkout: start')) break;
+    block = block.parentElement;
+  }
+  return block;
+}
+
 function sectionByText(patterns) {
   const nodes = [...document.querySelectorAll('section, article, div')].filter((node) => node.id !== BILLING_NAV_ID && !node.closest(`#${BILLING_NAV_ID}`));
   return nodes.find((node) => patterns.some((pattern) => pattern.test(node.textContent || '')));
@@ -138,22 +155,30 @@ function buildBillingNav() {
     document.getElementById(BILLING_NAV_ID)?.remove();
     return;
   }
-  if (document.getElementById(BILLING_NAV_ID)) return;
   const root = realBillingRoot();
   if (!root) return;
 
-  const nav = document.createElement('nav');
-  nav.id = BILLING_NAV_ID;
-  nav.className = 'cvxBillingPageNav';
-  nav.setAttribute('aria-label', 'Plans and billing navigation');
-  nav.innerHTML = `
-    <button type="button" data-cvx-billing-nav="overview">Overview</button>
-    <button type="button" data-cvx-billing-nav="usage">Usage</button>
-    <button type="button" data-cvx-billing-nav="plans">Plans</button>
-    <button type="button" data-cvx-billing-nav="addons">Add-ons</button>
-    <button type="button" data-cvx-billing-nav="help">Billing help</button>
-  `;
-  root.insertAdjacentElement('afterbegin', nav);
+  let nav = document.getElementById(BILLING_NAV_ID);
+  if (!nav) {
+    nav = document.createElement('nav');
+    nav.id = BILLING_NAV_ID;
+    nav.className = 'cvxBillingPageNav';
+    nav.setAttribute('aria-label', 'Plans and billing navigation');
+    nav.innerHTML = `
+      <button type="button" data-cvx-billing-nav="overview">Overview</button>
+      <button type="button" data-cvx-billing-nav="usage">Usage</button>
+      <button type="button" data-cvx-billing-nav="plans">Plans</button>
+      <button type="button" data-cvx-billing-nav="addons">Add-ons</button>
+      <button type="button" data-cvx-billing-nav="help">Billing help</button>
+    `;
+  }
+
+  const block = topBillingBlock(root);
+  if (block && nav.previousElementSibling !== block) {
+    block.insertAdjacentElement('afterend', nav);
+  } else if (!block && nav.parentElement !== root) {
+    root.insertAdjacentElement('afterbegin', nav);
+  }
 }
 
 function run() {
