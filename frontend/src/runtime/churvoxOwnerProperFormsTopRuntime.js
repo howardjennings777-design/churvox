@@ -64,6 +64,7 @@ function click(event) {
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.__CHURVOX_OWNER_PROPER_FORM_ALIASES__) {
   window.__CHURVOX_OWNER_PROPER_FORM_ALIASES__ = true;
   document.addEventListener('click', click, true);
+  import('./churvoxOwnerRecordEngineRuntime').catch(() => {});
 }
 
 export {};
