@@ -68,6 +68,8 @@ for _patch in [
     'churvox_tester_signup_access_patch',
     'churvox_on_site_payments_patch',
     'churvox_terminal_reader_patch',
+    'churvox_os_v2_saved_records_patch',
+    'churvox_owner_record_engine_routes_patch',
 ]:
     _install_launch_patch(_patch)
 
