@@ -11,7 +11,6 @@ function read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)
 function write(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {} }
 function text(value) { return String(value || '').trim(); }
 function norm(value) { return text(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 70); }
-function pageKey() { return String(location.hash || '').replace('#','').toLowerCase() || 'aiguide'; }
 function esc(value) { return String(value || '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
 
 function timeline(event) {
@@ -55,19 +54,7 @@ function runQuoteToJob(records, actions) {
     const status = text(quote.values?.status).toLowerCase();
     if (!status.includes('accepted')) return;
     const title = `Job from ${quote.values?.quoteNo || quote.title || 'accepted quote'}`;
-    const created = addRecord(records, 'jobs', title, {
-      client: quote.values?.client || '',
-      site: quote.values?.address || '',
-      worker: '',
-      date: '',
-      time: '',
-      status: 'Draft',
-      priceType: quote.values?.priceType || 'Fixed',
-      price: quote.values?.total || '',
-      repeat: 'None',
-      scope: quote.values?.scope || '',
-      notes: 'Created from accepted quote. Assign worker and schedule date/time.',
-    }, quote.id);
+    const created = addRecord(records, 'jobs', title, { client: quote.values?.client || '', site: quote.values?.address || '', worker: '', date: '', time: '', status: 'Draft', priceType: quote.values?.priceType || 'Fixed', price: quote.values?.total || '', repeat: 'None', scope: quote.values?.scope || '', notes: 'Created from accepted quote. Assign worker and schedule date/time.' }, quote.id);
     if (created) actions.push('Accepted quote created a draft job.');
     command({ key: `quote-to-job:${quote.id}`, title: 'Accepted quote ready to become job', sourcePage: 'quotes', linkedRecordId: quote.id, confidence: 82, note: 'Quote is accepted. Churvox created a draft job and needs owner to confirm schedule/worker.' });
   });
@@ -83,17 +70,7 @@ function runJobToInvoice(records, actions) {
       return;
     }
     const title = `Invoice from ${job.title || job.values?.client || 'completed job'}`;
-    const created = addRecord(records, 'invoices', title, {
-      client: job.values?.client || '',
-      invoiceNo: `DRAFT-${Date.now().toString().slice(-6)}`,
-      job: job.title || '',
-      status: 'Draft',
-      amount: job.values?.price || '',
-      due: '',
-      sync: 'Draft sync only',
-      paidRule: 'Only mark paid after accounting refresh confirms paid',
-      lineItems: job.values?.scope || '',
-    }, job.id);
+    const created = addRecord(records, 'invoices', title, { client: job.values?.client || '', invoiceNo: `DRAFT-${Date.now().toString().slice(-6)}`, job: job.title || '', status: 'Draft', amount: job.values?.price || '', due: '', sync: 'Draft sync only', paidRule: 'Only mark paid after accounting refresh confirms paid', lineItems: job.values?.scope || '' }, job.id);
     if (created) actions.push('Completed job created a draft invoice.');
     command({ key: `job-invoice:${job.id}`, title: 'Draft invoice ready from completed job', sourcePage: 'jobs', linkedRecordId: job.id, confidence: 88, note: 'Churvox prepared a draft invoice from completed job. Owner approves before sending or syncing.' });
   });
@@ -141,25 +118,36 @@ function installStyle() {
   document.head.appendChild(style);
 }
 
+let lastPanelHtml = '';
 function mount(actions) {
   const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
   if (!root) return;
   installStyle();
   let panel = document.getElementById(PANEL_ID);
-  if (!panel) { panel = document.createElement('section'); panel.id = PANEL_ID; root.prepend(panel); }
+  if (!panel) { panel = document.createElement('section'); panel.id = PANEL_ID; root.prepend(panel); lastPanelHtml = ''; }
   panel.removeAttribute('data-proper-hidden');
-  panel.innerHTML = `<h3>Churvox workflow engine</h3><p>Connects pages into real admin flows: quote to job, job to invoice, recurring, overdue follow-up and field issues.</p><div class="chips">${(actions.length ? actions.slice(0,5) : ['No workflow changes needed on this pass']).map((x,i)=>`<span class="${i===0&&actions.length?'hot':''}">${esc(x)}</span>`).join('')}</div>`;
+  const chips = (actions.length ? actions.slice(0,5) : ['No workflow changes needed on this pass']).map((x,i)=>`<span class="${i===0&&actions.length?'hot':''}">${esc(x)}</span>`).join('');
+  const html = `<h3>Churvox workflow engine</h3><p>Connects pages into real admin flows: quote to job, job to invoice, recurring, overdue follow-up and field issues.</p><div class="chips">${chips}</div>`;
+  if (html === lastPanelHtml) return;
+  lastPanelHtml = html;
+  panel.innerHTML = html;
 }
 
+let lastRecordSig = '';
 function run() {
   const records = read(RECORD_KEY, {});
+  const before = JSON.stringify(records);
   const actions = [];
   runQuoteToJob(records, actions);
   runJobToInvoice(records, actions);
   runRecurring(records, actions);
   runOverdueInvoices(records, actions);
   runWorkerIssues(records, actions);
-  write(RECORD_KEY, records);
+  const after = JSON.stringify(records);
+  if (after !== before && after !== lastRecordSig) {
+    write(RECORD_KEY, records);
+    lastRecordSig = after;
+  }
   mount(actions);
   if (actions.length) dispatchEvent(new CustomEvent('churvox:owner-workflow-automation', { detail: actions }));
 }
@@ -168,11 +156,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.
   window.__CHURVOX_OWNER_WORKFLOW_AUTOMATION__ = true;
   addEventListener('DOMContentLoaded', run);
   addEventListener('load', run);
-  addEventListener('hashchange', () => setTimeout(run, 180));
-  addEventListener('churvox:owner-record-api-synced', () => setTimeout(run, 220));
-  addEventListener('churvox:owner-record-autofilled', () => setTimeout(run, 260));
-  document.addEventListener('click', () => setTimeout(run, 500), true);
-  setInterval(run, 2200);
+  addEventListener('hashchange', () => setTimeout(run, 220));
+  addEventListener('churvox:owner-record-api-synced', () => setTimeout(run, 450));
+  addEventListener('churvox:owner-record-autofilled', () => setTimeout(run, 450));
+  addEventListener('churvox:owner-backend-hydrated', () => setTimeout(run, 650));
+  document.addEventListener('click', () => setTimeout(run, 900), true);
+  setInterval(run, 10000);
   run();
 }
 
