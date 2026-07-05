@@ -42,6 +42,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.
   document.addEventListener('click', click, true);
   import('./churvoxOwnerRecordEngineRuntime').catch(() => {});
   import('./churvoxOwnerAutoFillLogicRuntime').catch(() => {});
+  import('./churvoxOwnerDecisionEffectsRuntime').catch(() => {});
 }
 
 export {};
