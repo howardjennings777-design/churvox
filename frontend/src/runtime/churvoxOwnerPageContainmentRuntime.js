@@ -2,6 +2,7 @@
 // Keeps recovered owner pages tidy: capped lists, clean card scroll areas, visible tap states, and one main workspace scroll.
 
 import './churvoxOwnerCreateRouteRecoveryRuntime';
+import './churvoxOwnerDraftMemoryRuntime';
 
 const STYLE_ID = 'churvox-owner-page-containment-style';
 
