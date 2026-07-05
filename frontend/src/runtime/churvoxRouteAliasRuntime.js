@@ -1,5 +1,5 @@
 // CHURVOX_ROUTE_ALIAS_RUNTIME_20260630
-// Normalises legacy/simple route names before and after React Router mounts.
+// Normalises legacy/simple route names before and after React Router mounts without constant repainting.
 
 const AUTOMATION_ID = 'churvox-automation-alias-panel';
 const AUTOMATION_STYLE_ID = 'churvox-automation-alias-style';
@@ -16,15 +16,9 @@ function ensureAutomationStyle() {
     #${AUTOMATION_ID} p{margin:0;color:#52605a;font-size:13px;font-weight:850;line-height:1.4}
     #${AUTOMATION_ID} .autoGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
     #${AUTOMATION_ID} article{display:grid;gap:6px;min-height:112px;padding:14px;border:1px solid rgba(16,21,19,.08);border-radius:16px;background:#fff;box-shadow:0 14px 30px rgba(16,21,19,.05)}
-    #${AUTOMATION_ID} b{font-size:15px;color:#111815}
-    #${AUTOMATION_ID} span{color:#52605a;font-size:12px;font-weight:850;line-height:1.35}
-    #${AUTOMATION_ID} em{justify-self:start;border-radius:999px;padding:5px 8px;background:#fff7ed;color:#9a3412;font-size:10px;font-style:normal;font-weight:950}
-    #${MESSAGES_ALIAS_ID}{grid-column:1/-1;display:none;gap:12px;margin-bottom:12px}
-    #${MESSAGES_ALIAS_ID} article{border:1px solid rgba(16,21,19,.08);border-radius:16px;background:#fff;padding:14px;box-shadow:0 14px 30px rgba(16,21,19,.05)}
-    #${MESSAGES_ALIAS_ID} b{display:block;margin-bottom:6px;color:#111815;font-size:15px;font-weight:950}
-    #${MESSAGES_ALIAS_ID} span{display:block;color:#52605a;font-size:12px;font-weight:850;line-height:1.35}
-    @media(max-width:980px){#${AUTOMATION_ID} .autoGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:620px){#${AUTOMATION_ID} .autoGrid{grid-template-columns:1fr}}
+    #${AUTOMATION_ID} b{font-size:15px;color:#111815}#${AUTOMATION_ID} span{color:#52605a;font-size:12px;font-weight:850;line-height:1.35}#${AUTOMATION_ID} em{justify-self:start;border-radius:999px;padding:5px 8px;background:#fff7ed;color:#9a3412;font-size:10px;font-style:normal;font-weight:950}
+    #${MESSAGES_ALIAS_ID}{grid-column:1/-1;display:none;gap:12px;margin-bottom:12px}#${MESSAGES_ALIAS_ID} article{border:1px solid rgba(16,21,19,.08);border-radius:16px;background:#fff;padding:14px;box-shadow:0 14px 30px rgba(16,21,19,.05)}#${MESSAGES_ALIAS_ID} b{display:block;margin-bottom:6px;color:#111815;font-size:15px;font-weight:950}#${MESSAGES_ALIAS_ID} span{display:block;color:#52605a;font-size:12px;font-weight:850;line-height:1.35}
+    @media(max-width:980px){#${AUTOMATION_ID} .autoGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){#${AUTOMATION_ID} .autoGrid{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
 }
@@ -43,31 +37,15 @@ function ownerToast(message) {
 }
 
 function setFreshHash(hash) {
-  window.history.replaceState({}, document.title, `/dashboard#${hash}`);
+  const next = `/dashboard#${hash}`;
+  if (`${window.location.pathname}${window.location.hash}` === next) return;
+  window.history.replaceState({}, document.title, next);
   window.dispatchEvent(new HashChangeEvent('hashchange'));
 }
 
 function normalisePathAliases() {
   const path = window.location.pathname || '';
-  const aliases = {
-    '/help': '/dashboard#support',
-    '/support': '/dashboard#support',
-    '/support-board': '/dashboard#support',
-    '/messages': '/dashboard#messages',
-    '/messages-board': '/dashboard#messages',
-    '/inbox': '/dashboard#messages',
-    '/payroll': '/dashboard#payroll',
-    '/payroll-board': '/dashboard#payroll',
-    '/smart-hub': '/dashboard#aiguide',
-    '/guide': '/dashboard#aiguide',
-    '/ai-guide': '/dashboard#aiguide',
-    '/aiguide': '/dashboard#aiguide',
-    '/command': '/dashboard#command',
-    '/command-desk': '/dashboard#command',
-    '/command-board': '/dashboard#command',
-    '/reports': '/dashboard#invoices',
-    '/reports-board': '/dashboard#invoices',
-  };
+  const aliases = { '/help':'/dashboard#support','/support':'/dashboard#support','/support-board':'/dashboard#support','/messages':'/dashboard#messages','/messages-board':'/dashboard#messages','/inbox':'/dashboard#messages','/payroll':'/dashboard#payroll','/payroll-board':'/dashboard#payroll','/smart-hub':'/dashboard#aiguide','/guide':'/dashboard#aiguide','/ai-guide':'/dashboard#aiguide','/aiguide':'/dashboard#aiguide','/command':'/dashboard#command','/command-desk':'/dashboard#command','/command-board':'/dashboard#command','/reports':'/dashboard#invoices','/reports-board':'/dashboard#invoices' };
   const target = aliases[path];
   if (target && `${window.location.pathname}${window.location.hash}` !== target) {
     window.history.replaceState({}, document.title, target);
@@ -82,37 +60,19 @@ function normaliseFreshHash() {
   const path = window.location.pathname || '';
   if (!path.startsWith('/dashboard') && !path.startsWith('/setup') && !path.startsWith('/guide')) return false;
   const raw = (window.location.hash || '').replace('#', '').toLowerCase();
-  const aliases = {
-    dispatch: 'workers',
-    despatch: 'workers',
-    schedule: 'workers',
-    calendar: 'workers',
-    map: 'workers',
-    reports: 'invoices',
-    report: 'invoices',
-    support: 'support',
-    help: 'support',
-    guide: 'aiguide',
-    'ai-guide': 'aiguide',
-    'smart-hub': 'aiguide',
-    smart: 'aiguide',
-    hub: 'aiguide',
-    command: 'command',
-    'command-desk': 'command',
-    'command-board': 'command',
-    payroll: 'payroll',
-    messages: 'messages',
-    inbox: 'messages',
-  };
+  const aliases = { dispatch:'workers', despatch:'workers', schedule:'workers', calendar:'workers', map:'workers', reports:'invoices', report:'invoices', support:'support', help:'support', guide:'aiguide', 'ai-guide':'aiguide', 'smart-hub':'aiguide', smart:'aiguide', hub:'aiguide', command:'command', 'command-desk':'command', 'command-board':'command', payroll:'payroll', messages:'messages', inbox:'messages' };
   const target = aliases[raw];
   if (target && target !== raw) {
-    window.history.replaceState({}, document.title, `${path}#${target}`);
+    const next = `${path}#${target}`;
+    if (`${window.location.pathname}${window.location.hash}` === next) return false;
+    window.history.replaceState({}, document.title, next);
     window.dispatchEvent(new HashChangeEvent('hashchange'));
     return true;
   }
   return false;
 }
 
+let lastMessagesHtml = '';
 function renderMessagesAlias() {
   const hash = (window.location.hash || '').replace('#', '').toLowerCase();
   const isMessages = hash === 'messages' || hash === 'inbox';
@@ -120,68 +80,45 @@ function renderMessagesAlias() {
   const pageRoot = document.querySelector('.churvoxOptionC .workspace .cocPage');
   if (!root || !pageRoot) return;
   ensureAutomationStyle();
-
   root.querySelectorAll('[data-churvox-messages-hidden="true"]').forEach((el) => {
-    if (!isMessages) {
-      el.style.removeProperty('display');
-      el.removeAttribute('data-churvox-messages-hidden');
-    }
+    if (!isMessages) { el.style.removeProperty('display'); el.removeAttribute('data-churvox-messages-hidden'); }
   });
-
   let node = document.getElementById(MESSAGES_ALIAS_ID);
-  if (!isMessages) {
-    if (node) node.style.display = 'none';
-    return;
-  }
-
+  if (!isMessages) { if (node) node.style.display = 'none'; lastMessagesHtml = ''; return; }
   const title = root.querySelector('.title h1');
   const subtitle = root.querySelector('.title p');
-  if (title) title.textContent = 'Messages';
-  if (subtitle) subtitle.textContent = 'Worker updates, client replies, prepared responses and Command decisions.';
-
+  if (title && title.textContent !== 'Messages') title.textContent = 'Messages';
+  if (subtitle && subtitle.textContent !== 'Worker updates, client replies, prepared responses and Command decisions.') subtitle.textContent = 'Worker updates, client replies, prepared responses and Command decisions.';
   root.querySelectorAll('.cocNav button').forEach((button) => {
     const label = String(button.textContent || '').trim().toLowerCase();
-    button.classList.toggle('active', label === 'messages');
+    const active = label === 'messages';
+    if (button.classList.contains('active') !== active) button.classList.toggle('active', active);
   });
-
   Array.from(pageRoot.children).forEach((el) => {
     if (el.id === 'churvox-owner-page-recovery' || el.id === MESSAGES_ALIAS_ID) return;
-    el.setAttribute('data-churvox-messages-hidden', 'true');
-    el.style.setProperty('display', 'none', 'important');
+    if (el.getAttribute('data-churvox-messages-hidden') !== 'true') el.setAttribute('data-churvox-messages-hidden', 'true');
+    if (el.style.display !== 'none') el.style.setProperty('display', 'none', 'important');
   });
-
-  if (!node) {
-    node = document.createElement('section');
-    node.id = MESSAGES_ALIAS_ID;
-    pageRoot.prepend(node);
-  }
+  if (!node) { node = document.createElement('section'); node.id = MESSAGES_ALIAS_ID; pageRoot.prepend(node); lastMessagesHtml = ''; }
   node.style.display = 'grid';
-  node.innerHTML = `
-    <article><b>Messages page ready</b><span>Worker messages, client replies and prepared responses are kept separate from Jobs and sent to Command when an owner decision is needed.</span></article>
-    <article><b>Owner control</b><span>Churvox can prepare replies, but sending stays owner-approved.</span></article>
-  `;
+  const html = `<article><b>Messages page ready</b><span>Worker messages, client replies and prepared responses are kept separate from Jobs and sent to Command when an owner decision is needed.</span></article><article><b>Owner control</b><span>Churvox can prepare replies, but sending stays owner-approved.</span></article>`;
+  if (html !== lastMessagesHtml) { lastMessagesHtml = html; node.innerHTML = html; }
 }
 
+let lastAutomationHtml = '';
 function renderAutomationAlias() {
   normaliseFreshHash();
   renderMessagesAlias();
   const isAutomation = (window.location.hash || '').replace('#', '').toLowerCase() === 'automation';
   const old = document.getElementById(AUTOMATION_ID);
-  if (!isAutomation) { old?.remove(); return; }
+  if (!isAutomation) { old?.remove(); lastAutomationHtml = ''; return; }
   const root = document.querySelector('.churvoxOptionC .workspace .cocPage');
   if (!root) return;
   ensureAutomationStyle();
   let node = old;
-  if (!node) { node = document.createElement('section'); node.id = AUTOMATION_ID; root.prepend(node); }
-  node.innerHTML = `
-    <div class="autoHero"><h2>Automation control</h2><p>Owner-approved automation only. Churvox prepares reminders, follow-ups and checks, but risky work waits in Command.</p></div>
-    <div class="autoGrid">
-      <article><b>Follow-up checks</b><span>Quote, invoice and customer follow-up drafts can be prepared for review.</span><em>Ready</em></article>
-      <article><b>Worker reminders</b><span>Missing job info and worker updates stay simple and office-safe.</span><em>Ready</em></article>
-      <article><b>Invoice checks</b><span>Draft invoices can be checked before send or accounting sync.</span><em>Guarded</em></article>
-      <article><b>Command approval</b><span>Approve, edit or park remains the final owner decision.</span><em>Locked</em></article>
-    </div>
-  `;
+  if (!node) { node = document.createElement('section'); node.id = AUTOMATION_ID; root.prepend(node); lastAutomationHtml = ''; }
+  const html = `<div class="autoHero"><h2>Automation control</h2><p>Owner-approved automation only. Churvox prepares reminders, follow-ups and checks, but risky work waits in Command.</p></div><div class="autoGrid"><article><b>Follow-up checks</b><span>Quote, invoice and customer follow-up drafts can be prepared for review.</span><em>Ready</em></article><article><b>Worker reminders</b><span>Missing job info and worker updates stay simple and office-safe.</span><em>Ready</em></article><article><b>Invoice checks</b><span>Draft invoices can be checked before send or accounting sync.</span><em>Guarded</em></article><article><b>Command approval</b><span>Approve, edit or park remains the final owner decision.</span><em>Locked</em></article></div>`;
+  if (html !== lastAutomationHtml) { lastAutomationHtml = html; node.innerHTML = html; }
 }
 
 function guardCsvAuditClick(event) {
@@ -189,9 +126,7 @@ function guardCsvAuditClick(event) {
   if (!button?.closest?.('[data-churvox-qa-control]')) return false;
   const label = String(button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
   if (!label.includes('csv import') && label !== 'export') return false;
-  event.preventDefault();
-  event.stopPropagation();
-  event.stopImmediatePropagation();
+  event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
   ownerToast('CSV control ready. File picker/download skipped for audit.');
   return true;
 }
@@ -201,73 +136,25 @@ function handleOwnerShortcutClick(event) {
   if (!button?.closest?.('.churvoxOptionC')) return false;
   const label = String(button.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
   const exact = label.replace(/^\+\s*/, '');
-
-  if (/^email support$|^contact support$|^hello@churvox\.com$/.test(label)) {
-    event.preventDefault();
-    event.stopPropagation();
-    window.location.href = 'mailto:hello@churvox.com';
-    return true;
-  }
-
-  const routes = [
-    [/^add job$|^new job$/, '/jobs/new'],
-    [/^add client$|^new client$/, '/clients/new'],
-    [/^new quote$|^add quote$/, '/quotes/new'],
-    [/^new invoice$|^add invoice$/, '/invoices/new'],
-  ];
-  for (const [pattern, path] of routes) {
-    if (pattern.test(exact)) {
-      event.preventDefault();
-      event.stopPropagation();
-      window.location.href = path;
-      return true;
-    }
-  }
-  const hashRoutes = [
-    [/smart hub|ai guide|guide|setup guide|home|dashboard/, 'aiguide'],
-    [/recurring|jobs board|job board/, 'jobs'],
-    [/dispatch|workers|open map|worker jobs|timesheets/, 'workers'],
-    [/xero|accounting|sync|export pack|refresh status/, 'xero'],
-    [/current plan|usage|manage billing|checkout|plans/, 'plans'],
-    [/messages|inbox|worker messages|client replies/, 'messages'],
-    [/open command|command|approval/, 'command'],
-    [/settings|branding|security|gst/, 'settings'],
-    [/support|setup help|guides/, 'support'],
-  ];
-  for (const [pattern, hash] of hashRoutes) {
-    if (pattern.test(label)) {
-      event.preventDefault();
-      event.stopPropagation();
-      setFreshHash(hash);
-      return true;
-    }
-  }
-  if (/csv import|export/.test(label)) {
-    event.preventDefault();
-    event.stopPropagation();
-    ownerToast(label.includes('import') ? 'CSV import control ready.' : 'Export control ready.');
-    return true;
-  }
+  if (/^email support$|^contact support$|^hello@churvox\.com$/.test(label)) { event.preventDefault(); event.stopPropagation(); window.location.href = 'mailto:hello@churvox.com'; return true; }
+  const routes = [[/^add job$|^new job$/, '/jobs/new'], [/^add client$|^new client$/, '/clients/new'], [/^new quote$|^add quote$/, '/quotes/new'], [/^new invoice$|^add invoice$/, '/invoices/new']];
+  for (const [pattern, path] of routes) { if (pattern.test(exact)) { event.preventDefault(); event.stopPropagation(); window.location.href = path; return true; } }
+  const hashRoutes = [[/smart hub|ai guide|guide|setup guide|home|dashboard/, 'aiguide'], [/recurring|jobs board|job board/, 'jobs'], [/dispatch|workers|open map|worker jobs|timesheets/, 'workers'], [/xero|accounting|sync|export pack|refresh status/, 'xero'], [/current plan|usage|manage billing|checkout|plans/, 'plans'], [/messages|inbox|worker messages|client replies/, 'messages'], [/open command|command|approval/, 'command'], [/settings|branding|security|gst/, 'settings'], [/support|setup help|guides/, 'support']];
+  for (const [pattern, hash] of hashRoutes) { if (pattern.test(label)) { event.preventDefault(); event.stopPropagation(); setFreshHash(hash); return true; } }
+  if (/csv import|export/.test(label)) { event.preventDefault(); event.stopPropagation(); ownerToast(label.includes('import') ? 'CSV import control ready.' : 'Export control ready.'); return true; }
   return false;
 }
 
-function runAliases() {
-  normaliseFreshHash();
-  renderAutomationAlias();
-}
+function runAliases() { normaliseFreshHash(); renderAutomationAlias(); }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_ROUTE_ALIAS_RUNTIME__) {
   window.__CHURVOX_ROUTE_ALIAS_RUNTIME__ = true;
   runAliases();
-  window.addEventListener('load', () => setTimeout(runAliases, 120));
-  window.addEventListener('hashchange', () => setTimeout(runAliases, 40));
-  window.addEventListener('popstate', () => setTimeout(runAliases, 40));
-  document.addEventListener('click', (event) => {
-    if (guardCsvAuditClick(event)) return;
-    if (handleOwnerShortcutClick(event)) return;
-    setTimeout(runAliases, 80);
-  }, true);
-  setInterval(runAliases, 500);
+  window.addEventListener('load', () => setTimeout(runAliases, 180));
+  window.addEventListener('hashchange', () => setTimeout(runAliases, 120));
+  window.addEventListener('popstate', () => setTimeout(runAliases, 120));
+  document.addEventListener('click', (event) => { if (guardCsvAuditClick(event)) return; if (handleOwnerShortcutClick(event)) return; setTimeout(runAliases, 400); }, true);
+  setInterval(runAliases, 7000);
 }
 
 export {};
