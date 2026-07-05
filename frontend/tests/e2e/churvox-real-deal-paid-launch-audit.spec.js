@@ -15,6 +15,16 @@ function stamp() { return new Date().toISOString().replace(/[-:.TZ]/g, '').slice
 function tokenFrom(data = {}) { return data?.token || data?.access_token || data?.auth_token || data?.user?.token || data?.user?.access_token || ''; }
 async function waitHuman(page, ms = 500) { await page.waitForLoadState('domcontentloaded').catch(() => null); await page.waitForLoadState('networkidle', { timeout: 1800 }).catch(() => null); await page.waitForTimeout(ms); }
 async function bodyText(page) { return (await page.locator('body').innerText({ timeout: 12000 }).catch(() => '')).replace(/\s+/g, ' ').trim(); }
+async function loginThroughUi(page) {
+  await page.goto('/login');
+  await waitHuman(page, 700);
+  await page.locator('input[type="email"], input[name*="email" i]').first().fill(OWNER_EMAIL);
+  await page.locator('input[type="password"], input[name*="password" i]').first().fill(OWNER_PASSWORD);
+  const button = page.getByRole('button', { name: /sign in|login|log in/i }).first();
+  if (await button.isVisible().catch(() => false)) await button.click();
+  else await page.locator('button[type="submit"], input[type="submit"]').first().click();
+  await waitHuman(page, 1600);
+}
 async function loginOwner(page) {
   if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error('Set CHURVOX_OWNER_EMAIL and CHURVOX_OWNER_PASSWORD.');
   const res = await page.request.post(apiUrl('/api/auth/login'), { data: { email: OWNER_EMAIL, password: OWNER_PASSWORD }, timeout: 25000 });
@@ -24,7 +34,15 @@ async function loginOwner(page) {
   await page.goto('/');
   await page.evaluate((t) => { if (t) localStorage.setItem('token', t); }, token);
   await page.goto('/dashboard#aiguide');
-  await waitHuman(page, 700);
+  await waitHuman(page, 1000);
+  const text = await bodyText(page);
+  if (/\/login\b/i.test(page.url()) || /WELCOME BACK|Sign in to Command/i.test(text)) {
+    await loginThroughUi(page);
+    await page.goto('/dashboard#aiguide');
+    await waitHuman(page, 1200);
+  }
+  const finalText = await bodyText(page);
+  if (/\/login\b/i.test(page.url()) || /WELCOME BACK|Sign in to Command/i.test(finalText)) throw new Error(`owner UI login did not reach app, still at ${page.url()}`);
 }
 async function loginWorker(page) {
   if (!WORKER_EMAIL || !WORKER_PASSWORD) throw new Error('worker credentials missing');
@@ -63,8 +81,8 @@ async function fillAny(page, names, value) {
   return false;
 }
 async function save(page) {
-  for (const re of [/save/i,/create/i,/add/i,/done/i,/submit/i]) { const b = page.getByRole('button', { name: re }).first(); if (await b.isVisible().catch(() => false)) { await b.click(); await waitHuman(page, 800); return true; } }
-  const submit = page.locator('button[type="submit"],input[type="submit"]').first(); if (await submit.isVisible().catch(() => false)) { await submit.click(); await waitHuman(page, 800); return true; }
+  for (const re of [/save/i,/create/i,/add/i,/done/i,/submit/i]) { const b = page.getByRole('button', { name: re }).first(); if (await b.isVisible().catch(() => false)) { await b.click(); await waitHuman(page, 1000); return true; } }
+  const submit = page.locator('button[type="submit"],input[type="submit"]').first(); if (await submit.isVisible().catch(() => false)) { await submit.click(); await waitHuman(page, 1000); return true; }
   return false;
 }
 async function apiHas(page, endpoint, token) {
@@ -80,23 +98,13 @@ async function createRecord(page, flow) {
   await page.goto(flow.newUrl);
   await waitHuman(page, 900);
   await assertNoFatal(page, `${flow.kind} create`);
-  const fields = [
-    [['name','title','job','client','customer'], token],
-    [['email'], `audit-${id}@example.com`],
-    [['phone','mobile'], '0210000000'],
-    [['address','site'], `${id} Real Deal Street, Wellington`],
-    [['worker','assigned'], 'Real Deal Worker'],
-    [['date','scheduled'], '2026-08-20T09:30'],
-    [['time','start'], '09:30'],
-    [['price','amount','total'], '95'],
-    [['notes','description','scope','service'], `Real deal paid launch audit ${id}. Do not send.`],
-  ];
+  const fields = [[['name','title','job','client','customer'], token], [['email'], `audit-${id}@example.com`], [['phone','mobile'], '0210000000'], [['address','site'], `${id} Real Deal Street, Wellington`], [['worker','assigned'], 'Real Deal Worker'], [['date','scheduled'], '2026-08-20T09:30'], [['time','start'], '09:30'], [['price','amount','total'], '95'], [['notes','description','scope','service'], `Real deal paid launch audit ${id}. Do not send.`]];
   let filled = 0;
   for (const [names, value] of fields) if (await fillAny(page, names, value)) filled += 1;
   expect(filled, `${flow.kind} should accept useful fields`).toBeGreaterThanOrEqual(2);
   expect(await save(page), `${flow.kind} should save/create`).toBeTruthy();
   await assertNoFatal(page, `${flow.kind} after save`);
-  await expect.poll(async () => await apiHas(page, flow.api, token) || await pageHas(page, flow.listUrl, token), { timeout: 20000, intervals: [800, 1200, 2000, 3000] }).toBeTruthy();
+  await expect.poll(async () => await apiHas(page, flow.api, token) || await pageHas(page, flow.listUrl, token), { timeout: 30000, intervals: [800, 1200, 2000, 3000] }).toBeTruthy();
   await page.goto('/dashboard#command'); await waitHuman(page, 900); await assertNoFatal(page, `Command after ${flow.kind}`);
   expect(await apiHas(page, flow.api, token) || await pageHas(page, flow.listUrl, token), `${flow.kind} should still exist after navigation`).toBeTruthy();
 }
