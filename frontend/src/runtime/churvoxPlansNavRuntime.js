@@ -1,5 +1,5 @@
 // Plans & billing page navigation.
-// Adds a clear page-level nav so Plans does not feel like one long stacked billing screen.
+// Keeps Plans as a clean billing workspace, not a promo page.
 
 const STYLE_ID = 'churvox-plans-nav-runtime-style';
 const NAV_ID = 'churvox-plans-page-nav';
@@ -7,6 +7,16 @@ const NAV_ID = 'churvox-plans-page-nav';
 const css = `
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxWorkspace {
     overflow-x: hidden !important;
+  }
+
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxHero,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxToolbar {
+    display: none !important;
+  }
+
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPage {
+    gap: 10px !important;
+    padding-top: 12px !important;
   }
 
   .cvxPlansPageNav {
@@ -52,21 +62,34 @@ const css = `
     color: #fff;
   }
 
-  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxHero {
-    margin-bottom: 0 !important;
-  }
-
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlans {
     scroll-margin-top: 150px;
   }
 
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPanel,
-  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxHero,
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlans,
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxKpis {
     min-width: 0 !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+  }
+
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlans,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlanGrid,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPricingGrid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlan,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlanCard,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPricingCard {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    border-radius: 18px !important;
+    padding: 14px !important;
   }
 
   @media (max-width: 980px) {
@@ -80,6 +103,20 @@ const css = `
       flex: 0 0 auto;
       font-size: 11px;
       padding: 7px 10px;
+    }
+
+    body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlans,
+    body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlanGrid,
+    body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPricingGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+
+  @media (max-width: 620px) {
+    body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlans,
+    body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlanGrid,
+    body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPricingGrid {
+      grid-template-columns: 1fr !important;
     }
   }
 `;
@@ -103,7 +140,7 @@ function ensureStyle() {
 }
 
 function findByText(patterns) {
-  const nodes = [...document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxPanel, .cvxProduct[data-product-version="v2"] .cvxPlans, .cvxProduct[data-product-version="v2"] .cvxKpis, .cvxProduct[data-product-version="v2"] .cvxHero')];
+  const nodes = [...document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxPanel, .cvxProduct[data-product-version="v2"] .cvxPlans, .cvxProduct[data-product-version="v2"] .cvxKpis')];
   return nodes.find((node) => patterns.some((pattern) => pattern.test(node.textContent || '')));
 }
 
@@ -126,7 +163,6 @@ function buildNav() {
   }
   const workspace = document.querySelector('.cvxProduct[data-product-version="v2"] .cvxPage');
   if (!workspace || document.getElementById(NAV_ID)) return;
-  const hero = workspace.querySelector('.cvxHero');
   const nav = document.createElement('nav');
   nav.id = NAV_ID;
   nav.className = 'cvxPlansPageNav';
@@ -138,11 +174,11 @@ function buildNav() {
     <button type="button" data-cvx-plans-nav="addons">Add-ons</button>
     <button type="button" data-cvx-plans-nav="help">Billing help</button>
   `;
-  if (hero) hero.insertAdjacentElement('afterend', nav);
-  else workspace.prepend(nav);
+  workspace.prepend(nav);
 }
 
 function run() {
+  if (typeof document !== 'undefined') document.body.dataset.cvxOwnerPage = page();
   ensureStyle();
   buildNav();
 }
