@@ -1,8 +1,9 @@
 // Owner create-route recovery runtime.
-// If a direct create route is weak or blank, show a usable owner form and route back to the right owner page.
+// If a direct create route is weak or blank, show a usable owner form and keep a small local owner draft memory.
 
 const CREATE_ID = 'churvox-owner-create-route-recovery';
 const STYLE_ID = 'churvox-owner-create-route-recovery-style';
+const STORE_KEY = 'churvox.owner.createDrafts.v1';
 
 const ROUTES = {
   '/jobs/new': { page: 'jobs', title: 'New job', fields: ['Client', 'Service', 'Worker', 'Price', 'Date', 'Time', 'Repeat', 'Billing type', 'Site notes'] },
@@ -11,13 +12,8 @@ const ROUTES = {
   '/invoices/new': { page: 'invoices', title: 'New invoice', fields: ['Client', 'Job', 'Amount', 'Due date', 'Line items', 'Proof', 'Draft sync status'] },
 };
 
-function routeConfig() {
-  return ROUTES[window.location.pathname || ''] || null;
-}
-
-function esc(value) {
-  return String(value || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+function routeConfig() { return ROUTES[window.location.pathname || ''] || null; }
+function esc(value) { return String(value || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 function installStyle() {
   if (document.getElementById(STYLE_ID)) return;
@@ -59,6 +55,23 @@ function valueFor(field) {
   return '';
 }
 
+function readDrafts() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]').filter(Boolean); } catch (_) { return []; }
+}
+
+function saveDraft(config, status) {
+  const node = document.getElementById(CREATE_ID);
+  const values = {};
+  node?.querySelectorAll('label').forEach((label) => {
+    const key = String(label.childNodes[0]?.textContent || '').trim();
+    const input = label.querySelector('input,textarea,select');
+    if (key && input) values[key] = input.value || '';
+  });
+  const draft = { id: `draft-${Date.now()}`, page: config.page, title: config.title, status, values, savedAt: new Date().toISOString() };
+  try { localStorage.setItem(STORE_KEY, JSON.stringify([draft, ...readDrafts()].slice(0, 12))); } catch (_) {}
+  window.dispatchEvent(new CustomEvent('churvox:owner-draft-saved', { detail: draft }));
+}
+
 function renderCreateForm(config) {
   installStyle();
   let node = document.getElementById(CREATE_ID);
@@ -70,9 +83,11 @@ function renderCreateForm(config) {
       const close = event.target.closest('[data-create-close]');
       const save = event.target.closest('[data-create-save]');
       const command = event.target.closest('[data-create-command]');
-      if (close) { backToPage(config.page); return; }
-      if (save) { backToPage(config.page); return; }
-      if (command) { backToPage('command'); }
+      const configNow = routeConfig();
+      if (!configNow) return;
+      if (close) { backToPage(configNow.page); return; }
+      if (save) { saveDraft(configNow, 'Saved draft'); backToPage(configNow.page); return; }
+      if (command) { saveDraft(configNow, 'Sent to Command'); backToPage('command'); }
     });
   }
   const fields = config.fields.map((field) => {
@@ -83,11 +98,7 @@ function renderCreateForm(config) {
   node.innerHTML = `<section class="createBox"><header><div><small>${esc(config.page)}</small><h2>${esc(config.title)}</h2><p>Fill the form, then save for owner review or send to Command.</p></div><button type="button" class="close" data-create-close>×</button></header><div class="body"><div class="grid">${fields}<label>Owner rule<textarea rows="3">Churvox does the admin. You approve.</textarea></label></div><div class="actions"><button type="button" data-create-save>Save draft</button><button type="button" data-create-command>Send to Command</button><button type="button" data-create-close>Cancel</button></div></div></section>`;
 }
 
-function run() {
-  const config = routeConfig();
-  if (!config) return;
-  renderCreateForm(config);
-}
+function run() { const config = routeConfig(); if (config) renderCreateForm(config); }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.__CHURVOX_OWNER_CREATE_ROUTE_RECOVERY__) {
   window.__CHURVOX_OWNER_CREATE_ROUTE_RECOVERY__ = true;
