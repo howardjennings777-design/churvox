@@ -60,6 +60,16 @@ def _base_doc(payload, user):
     return doc
 
 
+def _prioritize(app):
+    names = {"create_client_launch", "create_job_launch", "create_quote_launch", "create_invoice_launch"}
+    try:
+        mine = [r for r in app.router.routes if getattr(getattr(r, "endpoint", None), "__name__", "") in names]
+        rest = [r for r in app.router.routes if getattr(getattr(r, "endpoint", None), "__name__", "") not in names]
+        app.router.routes[:] = mine + rest
+    except Exception:
+        pass
+
+
 def _install(module):
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
@@ -75,7 +85,7 @@ def _install(module):
         return current_user
 
     @router.post("/clients")
-    async def create_client(payload: dict, current_user: dict = Depends(get_current_user)):
+    async def create_client_launch(payload: dict, current_user: dict = Depends(get_current_user)):
         user = await owner_user(current_user)
         if user is None:
             return {"success": False, "error": "Only owner/admin roles can create clients"}
@@ -86,51 +96,67 @@ def _install(module):
         doc.setdefault("address", _text(doc.get("address") or doc.get("site_address") or doc.get("service_address")))
         result = await db.clients.insert_one(doc)
         saved = await db.clients.find_one({"_id": result.inserted_id})
-        return {"success": True, "record": _safe(saved), "client": _safe(saved), **_safe(saved)}
+        safe = _safe(saved)
+        return {"success": True, "record": safe, "client": safe, **safe}
 
     @router.post("/jobs")
-    async def create_job(payload: dict, current_user: dict = Depends(get_current_user)):
+    async def create_job_launch(payload: dict, current_user: dict = Depends(get_current_user)):
         user = await owner_user(current_user)
         if user is None:
             return {"success": False, "error": "Only owner/admin roles can create jobs"}
         doc = _base_doc(payload, user)
+        client = _text(doc.get("client_name") or doc.get("customer_name") or doc.get("client"), "No client")
         doc.setdefault("title", _text(doc.get("title") or doc.get("job_title") or doc.get("name"), "New job"))
-        doc.setdefault("client_name", _text(doc.get("client_name") or doc.get("customer_name") or doc.get("client")))
-        doc.setdefault("site_address", _text(doc.get("site_address") or doc.get("address") or doc.get("service_address")))
-        doc.setdefault("assigned_worker_name", _text(doc.get("assigned_worker_name") or doc.get("worker") or doc.get("assigned")))
-        doc.setdefault("status", "assigned")
+        doc.setdefault("customer_name", client)
+        doc.setdefault("client_name", client)
+        doc.setdefault("job_type", _text(doc.get("job_type") or doc.get("service_type"), "General service"))
+        doc.setdefault("address", _text(doc.get("address") or doc.get("site_address") or doc.get("service_address"), "Address to confirm"))
+        doc.setdefault("scheduled_date", _text(doc.get("scheduled_date") or doc.get("date"), datetime.now().strftime("%Y-%m-%d")))
+        doc.setdefault("description", _text(doc.get("description") or doc.get("notes") or doc.get("scope"), "Created from Churvox launch audit."))
         doc.setdefault("price", _number(doc.get("price") or doc.get("amount") or doc.get("total"), 0))
+        doc.setdefault("status", "assigned")
         doc.setdefault("photos", [])
         doc.setdefault("time_entries", [])
         doc.setdefault("timer_running", False)
         result = await db.jobs.insert_one(doc)
         saved = await db.jobs.find_one({"_id": result.inserted_id})
-        return {"success": True, "record": _safe(saved), "job": _safe(saved), **_safe(saved)}
+        safe = _safe(saved)
+        return {"success": True, "record": safe, "job": safe, **safe}
 
     @router.post("/quotes")
-    async def create_quote(payload: dict, current_user: dict = Depends(get_current_user)):
+    async def create_quote_launch(payload: dict, current_user: dict = Depends(get_current_user)):
         user = await owner_user(current_user)
         if user is None:
             return {"success": False, "error": "Only owner/admin roles can create quotes"}
         doc = _base_doc(payload, user)
-        doc.setdefault("title", _text(doc.get("title") or doc.get("name") or doc.get("description"), "New quote"))
-        doc.setdefault("client_name", _text(doc.get("client_name") or doc.get("customer_name") or doc.get("client")))
+        client = _text(doc.get("customer_name") or doc.get("client_name") or doc.get("client"), "New lead")
+        price = _number(doc.get("price") or doc.get("total") or doc.get("amount"), 0)
+        doc.setdefault("title", _text(doc.get("title") or doc.get("name") or doc.get("job_description"), "New quote"))
+        doc.setdefault("customer_name", client)
+        doc.setdefault("client_name", client)
+        doc.setdefault("address", _text(doc.get("address") or doc.get("site_address"), "Address to confirm"))
+        doc.setdefault("job_description", _text(doc.get("job_description") or doc.get("scope") or doc.get("description"), "Quote created from Churvox launch audit."))
+        doc.setdefault("price", price)
+        doc.setdefault("total", price)
         doc.setdefault("status", "draft")
         doc.setdefault("quote_number", f"QT-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}")
-        doc.setdefault("total", _number(doc.get("total") or doc.get("price") or doc.get("amount"), 0))
         result = await db.quotes.insert_one(doc)
         saved = await db.quotes.find_one({"_id": result.inserted_id})
-        return {"success": True, "record": _safe(saved), "quote": _safe(saved), **_safe(saved)}
+        safe = _safe(saved)
+        return {"success": True, "record": safe, "quote": safe, **safe}
 
     @router.post("/invoices")
-    async def create_invoice(payload: dict, current_user: dict = Depends(get_current_user)):
+    async def create_invoice_launch(payload: dict, current_user: dict = Depends(get_current_user)):
         user = await owner_user(current_user)
         if user is None:
             return {"success": False, "error": "Only owner/admin roles can create invoices"}
         doc = _base_doc(payload, user)
         subtotal = _number(doc.get("subtotal") or doc.get("amount") or doc.get("price") or doc.get("total"), 0)
         gst_rate = _number(doc.get("gst_rate"), 15)
-        doc.setdefault("client_name", _text(doc.get("client_name") or doc.get("customer_name") or doc.get("client")))
+        client = _text(doc.get("customer_name") or doc.get("client_name") or doc.get("client"), "Customer to confirm")
+        doc.setdefault("customer_name", client)
+        doc.setdefault("client_name", client)
+        doc.setdefault("description", _text(doc.get("description") or doc.get("line_items") or doc.get("notes"), "Invoice created from Churvox launch audit."))
         doc.setdefault("status", "draft")
         doc.setdefault("invoice_number", f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}")
         doc["subtotal"] = subtotal
@@ -141,9 +167,11 @@ def _install(module):
         doc.setdefault("myob_sync_status", "not_synced")
         result = await db.invoices.insert_one(doc)
         saved = await db.invoices.find_one({"_id": result.inserted_id})
-        return {"success": True, "record": _safe(saved), "invoice": _safe(saved), **_safe(saved)}
+        safe = _safe(saved)
+        return {"success": True, "record": safe, "invoice": safe, **safe}
 
     app.include_router(router)
+    _prioritize(app)
     app.state.launch_create_records_patch = True
 
 
