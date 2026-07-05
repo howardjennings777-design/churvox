@@ -119,6 +119,7 @@ function loadOwnerRuntimeWhenInsideApp() {
   ownerRuntimeLoaded = true;
   import('./runtime/churvoxProductPremiumVisualRuntime').catch(() => {});
   import('./runtime/churvoxCenterSlipsRuntime').catch(() => {});
+  import('./runtime/churvoxOwnerButtonWiringRuntime').catch(() => {});
 }
 
 loadOwnerRuntimeWhenInsideApp();
