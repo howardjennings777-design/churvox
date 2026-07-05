@@ -4,6 +4,13 @@
 const AUTOMATION_ID = 'churvox-automation-alias-panel';
 const AUTOMATION_STYLE_ID = 'churvox-automation-alias-style';
 const MESSAGES_ALIAS_ID = 'churvox-messages-alias-fallback';
+const ENGINE_PANEL_IDS = [
+  'churvox-owner-record-engine-panel',
+  'churvox-owner-workflow-automation-panel',
+  'churvox-owner-timeline-panel',
+  'churvox-owner-data-quality-panel',
+  'churvox-paid-launch-readiness-panel',
+];
 
 function ensureAutomationStyle() {
   if (document.getElementById(AUTOMATION_STYLE_ID)) return;
@@ -72,6 +79,18 @@ function normaliseFreshHash() {
   return false;
 }
 
+function restoreEnginePanel(el) {
+  if (!el || !ENGINE_PANEL_IDS.includes(el.id)) return false;
+  el.removeAttribute('data-churvox-messages-hidden');
+  el.removeAttribute('data-proper-hidden');
+  el.removeAttribute('data-core-hidden');
+  el.removeAttribute('data-lite-hidden');
+  el.style.removeProperty('display');
+  el.style.removeProperty('visibility');
+  el.style.removeProperty('opacity');
+  return true;
+}
+
 let lastMessagesHtml = '';
 function renderMessagesAlias() {
   const hash = (window.location.hash || '').replace('#', '').toLowerCase();
@@ -80,7 +99,9 @@ function renderMessagesAlias() {
   const pageRoot = document.querySelector('.churvoxOptionC .workspace .cocPage');
   if (!root || !pageRoot) return;
   ensureAutomationStyle();
+  ENGINE_PANEL_IDS.forEach((id) => restoreEnginePanel(document.getElementById(id)));
   root.querySelectorAll('[data-churvox-messages-hidden="true"]').forEach((el) => {
+    if (restoreEnginePanel(el)) return;
     if (!isMessages) { el.style.removeProperty('display'); el.removeAttribute('data-churvox-messages-hidden'); }
   });
   let node = document.getElementById(MESSAGES_ALIAS_ID);
@@ -95,7 +116,7 @@ function renderMessagesAlias() {
     if (button.classList.contains('active') !== active) button.classList.toggle('active', active);
   });
   Array.from(pageRoot.children).forEach((el) => {
-    if (el.id === 'churvox-owner-page-recovery' || el.id === MESSAGES_ALIAS_ID) return;
+    if (el.id === 'churvox-owner-page-recovery' || el.id === MESSAGES_ALIAS_ID || restoreEnginePanel(el)) return;
     if (el.getAttribute('data-churvox-messages-hidden') !== 'true') el.setAttribute('data-churvox-messages-hidden', 'true');
     if (el.style.display !== 'none') el.style.setProperty('display', 'none', 'important');
   });
