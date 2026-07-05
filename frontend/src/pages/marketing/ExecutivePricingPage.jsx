@@ -17,9 +17,16 @@ function isOperator(plan) {
   return String(plan?.name || "").toLowerCase() === "operator";
 }
 
+function cleanFeature(item) {
+  return String(item || "")
+    .replace(/AI Operator Actions/gi, "admin actions")
+    .replace(/AI Operator/gi, "prepared admin")
+    .replace(/Customer Follow-Up Brain/gi, "Customer follow-up tools");
+}
+
 function featureList(plan) {
   const list = plan.features || plan.includes || [];
-  return Array.isArray(list) ? list.slice(0, 8) : [];
+  return Array.isArray(list) ? list.slice(0, 8).map(cleanFeature) : [];
 }
 
 function taxInclusive(plan) {
@@ -69,7 +76,7 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_PRICING_10_OUT_OF_10_20260630">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_PRICING_CLEAN_20260706">
       <Nav />
 
       <section className="publicHero publicHeroCompact">
@@ -112,7 +119,7 @@ export default function ExecutivePricingPage() {
               <h3>{plan.name}</h3>
               <div className="publicPlanPrice">{plan.priceLabel}</div>
               {taxInclusive(plan) ? <div className="publicPlanTax">{taxInclusive(plan)}</div> : null}
-              <p>{plan.summary}</p>
+              <p>{cleanFeature(plan.summary)}</p>
               <ul>
                 {featureList(plan).map((item) => <li key={item}>{item}</li>)}
               </ul>
