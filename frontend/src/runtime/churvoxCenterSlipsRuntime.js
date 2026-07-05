@@ -36,7 +36,7 @@ const css = `
     height: 100vh !important;
     max-width: 100vw !important;
     max-height: 100vh !important;
-    padding: 22px !important;
+    padding: 18px !important;
     overflow: hidden !important;
     background: rgba(13,17,15,.52) !important;
     backdrop-filter: blur(9px) !important;
@@ -57,27 +57,30 @@ const css = `
     right: auto !important;
     top: auto !important;
     bottom: auto !important;
-    width: min(860px, calc(100vw - 44px)) !important;
-    max-width: min(860px, calc(100vw - 44px)) !important;
+    width: min(720px, calc(100vw - 36px)) !important;
+    max-width: min(720px, calc(100vw - 36px)) !important;
     min-width: 0 !important;
     height: auto !important;
     min-height: 0 !important;
-    max-height: calc(100vh - 44px) !important;
+    max-height: min(78vh, 760px) !important;
     margin: 0 auto !important;
-    border-radius: 30px !important;
-    overflow: auto !important;
+    border-radius: 24px !important;
+    overflow: hidden !important;
     transform: none !important;
     background: linear-gradient(180deg,#fffefa,#f7f2ea) !important;
     color: #111713 !important;
-    box-shadow: 0 36px 110px rgba(10,14,12,.38) !important;
+    box-shadow: 0 30px 86px rgba(10,14,12,.34) !important;
     animation: churvoxCenteredSlipIn .16s ease-out both !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
   }
 
   .cvxProduct[data-product-version="v2"] .cvxDrawer.approval,
   .churvoxOptionC .cocDrawer.approval,
   .churvoxOptionC .properSlip.approval,
   .churvoxOptionC .properFormBox.approval {
-    width: min(820px, calc(100vw - 44px)) !important;
+    width: min(700px, calc(100vw - 36px)) !important;
+    max-width: min(700px, calc(100vw - 36px)) !important;
   }
 
   .cvxProduct[data-product-version="v2"] .cvxDrawerClose,
@@ -91,10 +94,10 @@ const css = `
     top: 0 !important;
     z-index: 6 !important;
     min-width: 64px !important;
-    min-height: 38px !important;
+    min-height: 36px !important;
     border: 0 !important;
     border-radius: 999px !important;
-    padding: 9px 13px !important;
+    padding: 8px 12px !important;
     background: #111713 !important;
     color: #ffffff !important;
     font-size: 12px !important;
@@ -105,12 +108,31 @@ const css = `
     cursor: pointer !important;
   }
 
+  .cvxProduct[data-product-version="v2"] .cvxDrawerBody,
+  .cvxSmartAuditSlipBody,
+  .cvxProductControlBody,
+  .recordWorkspacePopupBody,
+  .recordWorkspacePopupContent {
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow: auto !important;
+    padding: 14px 16px 16px !important;
+  }
+
+  .cvxProduct[data-product-version="v2"] .cvxDrawerHead,
+  .cvxSmartAuditSlipHead,
+  .cvxProductControlHead,
+  .recordWorkspacePopupHeader {
+    min-height: 0 !important;
+    padding: 14px 16px !important;
+  }
+
   .cvxSmartAuditSlipGrid,
   .cvxProductControlGrid,
   .cvxProduct[data-product-version="v2"] .cvxFormGrid {
     display: grid !important;
     grid-template-columns: repeat(2,minmax(0,1fr)) !important;
-    gap: 10px !important;
+    gap: 8px !important;
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -121,6 +143,31 @@ const css = `
     min-width: 0 !important;
     max-width: 100% !important;
     overflow-wrap: anywhere !important;
+  }
+
+  .cvxProduct[data-product-version="v2"] input,
+  .cvxProduct[data-product-version="v2"] select,
+  .cvxProductControlField input,
+  .cvxProductControlField select {
+    min-height: 36px !important;
+    padding: 8px 10px !important;
+  }
+
+  .cvxProduct[data-product-version="v2"] textarea,
+  .cvxProductControlField textarea {
+    min-height: 76px !important;
+    max-height: 150px !important;
+    padding: 8px 10px !important;
+  }
+
+  .cvxProduct[data-product-version="v2"] .cvxDrawerActions,
+  .cvxSmartAuditActions,
+  .cvxProductControlActions {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 4 !important;
+    padding-top: 10px !important;
+    background: linear-gradient(180deg, rgba(255,254,250,0), #fffefa 35%) !important;
   }
 
   @keyframes churvoxCenteredSlipIn {
@@ -154,8 +201,8 @@ const css = `
     .cvxProductControlModal {
       width: calc(100vw - 20px) !important;
       max-width: calc(100vw - 20px) !important;
-      max-height: calc(100vh - 20px) !important;
-      border-radius: 24px !important;
+      max-height: min(86vh, calc(100vh - 20px)) !important;
+      border-radius: 22px !important;
     }
 
     .cvxSmartAuditSlipGrid,
