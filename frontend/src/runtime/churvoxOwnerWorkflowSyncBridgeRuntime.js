@@ -45,6 +45,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.
   import('./churvoxOwnerDataQualityRuntime').catch(() => {});
   import('./churvoxPaidLaunchReadinessRuntime').catch(() => {});
   import('./churvoxAiGuideStabilityGuardRuntime').catch(() => {});
+  import('./churvoxLaunchCreateSaveBridgeRuntime').catch(() => {});
   addEventListener('churvox:owner-workflow-automation', () => setTimeout(syncWorkflow, 700));
   addEventListener('churvox:command-prepared', () => setTimeout(syncWorkflow, 1200));
   addEventListener('churvox:owner-backend-hydrated', () => setTimeout(syncWorkflow, 1400));
