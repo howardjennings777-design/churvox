@@ -1,4 +1,4 @@
-/* Final paid launch no-overflow shell. Keep the real nav visible, remove legacy docks, keep safe nav proof labels. */
+/* Final paid launch + real-site shell. Keep one clean owner workspace, no legacy docks, no fake proof strips. */
 html:has(.churvoxOptionC),
 body:has(.churvoxOptionC),
 body:has(.churvoxOptionC) #root {
@@ -6,11 +6,11 @@ body:has(.churvoxOptionC) #root {
   max-width: 100% !important;
   min-width: 0 !important;
   overflow-x: hidden !important;
+  background: #eee9df !important;
 }
 
 body:has(.churvoxOptionC) {
   margin: 0 !important;
-  overflow-x: hidden !important;
 }
 
 body:has(.churvoxOptionC) *,
@@ -21,7 +21,13 @@ body:has(.churvoxOptionC) *::after {
 }
 
 body:has(.churvoxOptionC) .xcf10-dock,
-body:has(.churvoxOptionC) .xcf10-dock-launch {
+body:has(.churvoxOptionC) .xcf10-dock-launch,
+.churvoxOptionC .launchNavProof,
+.churvoxOptionC #churvox-page-checked-note,
+.churvoxOptionC [data-page-check-note],
+.churvoxOptionC .open-command-pill,
+.churvoxOptionC .owner-checks-pill,
+.churvoxOptionC .owner {
   display: none !important;
   visibility: hidden !important;
   width: 0 !important;
@@ -36,48 +42,16 @@ body:has(.churvoxOptionC) .xcf10-dock-launch {
 }
 
 .churvoxOptionC {
+  isolation: isolate !important;
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
   overflow-x: hidden !important;
   grid-template-columns: minmax(0, 1fr) !important;
-}
-
-.churvoxOptionC .launchNavProof {
-  display: grid !important;
-  visibility: visible !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  height: auto !important;
-  max-height: none !important;
-  overflow: hidden !important;
-  grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr)) !important;
-  gap: 4px !important;
-  padding: 6px 8px !important;
-  margin: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-}
-
-.churvoxOptionC .launchNavProof span {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  min-height: 18px !important;
-  padding: 2px 4px !important;
-  overflow: hidden !important;
-  border-radius: 999px !important;
-  background: rgba(234, 88, 12, 0.08) !important;
-  color: #7c2d12 !important;
-  font-size: 9px !important;
-  font-weight: 950 !important;
-  line-height: 1.1 !important;
-  text-align: center !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 122, 24, 0.20), transparent 32%),
+    radial-gradient(circle at 92% 8%, rgba(15, 23, 42, 0.12), transparent 26%),
+    linear-gradient(180deg, #fffaf2 0%, #f3eee4 46%, #ebe6dc 100%) !important;
 }
 
 .churvoxOptionC .cocBar,
@@ -91,39 +65,163 @@ body:has(.churvoxOptionC) .xcf10-dock-launch {
   overflow-x: hidden !important;
 }
 
+.churvoxOptionC .cocBar {
+  min-height: 82px !important;
+  grid-template-columns: minmax(190px, 260px) minmax(0, 1fr) !important;
+  border-bottom: 1px solid rgba(255,255,255,.12) !important;
+  background:
+    linear-gradient(135deg, #090c0b 0%, #111713 34%, #271408 66%, #f97316 135%) !important;
+}
+
+.churvoxOptionC .cocBar::after {
+  content: "" !important;
+  position: absolute !important;
+  right: -120px !important;
+  top: -90px !important;
+  width: 360px !important;
+  height: 220px !important;
+  transform: rotate(-18deg) !important;
+  border-radius: 42px !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,0)) !important;
+  pointer-events: none !important;
+}
+
+.churvoxOptionC .title h1 {
+  max-width: 860px !important;
+  text-transform: none !important;
+}
+
+.churvoxOptionC .title p {
+  max-width: 920px !important;
+  color: rgba(255,255,255,.82) !important;
+}
+
 .churvoxOptionC .cocNav {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(min(92px, 100%), 1fr)) !important;
-  gap: 6px !important;
-  white-space: normal !important;
-  padding: 8px !important;
+  display: flex !important;
+  top: 82px !important;
+  padding: 12px 18px !important;
+  gap: 9px !important;
+  white-space: nowrap !important;
+  background: rgba(255,250,243,.94) !important;
+  box-shadow: 0 14px 35px rgba(18,23,21,.08) !important;
 }
 
 .churvoxOptionC .cocNav button {
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  padding: 0 6px !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: auto !important;
+  max-width: none !important;
+  min-height: 42px !important;
+  padding: 10px 14px !important;
+  border: 1px solid rgba(18,23,21,.10) !important;
+  border-radius: 999px !important;
+  background: #fffdfa !important;
+  color: #2f3934 !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  overflow: visible !important;
 }
 
-.churvoxOptionC .aiGuidePage,
+.churvoxOptionC .cocNav button.active {
+  border-color: #111713 !important;
+  background: #111713 !important;
+  color: #fff !important;
+}
+
+.churvoxOptionC .workspace {
+  width: min(1500px, 100%) !important;
+  margin: 0 auto !important;
+  padding: 22px !important;
+}
+
 .churvoxOptionC .cocPage {
-  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)) !important;
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  align-items: start !important;
 }
 
-.churvoxOptionC .wide,
+.churvoxOptionC .cocPanel {
+  grid-column: span 4 !important;
+  min-height: unset !important;
+  border-radius: 28px !important;
+  background: rgba(255,253,249,.94) !important;
+  border: 1px solid rgba(18,23,21,.10) !important;
+  box-shadow: 0 18px 45px rgba(18,23,21,.09) !important;
+}
+
+.churvoxOptionC .cocPanel.wide,
+.churvoxOptionC .wide {
+  grid-column: span 8 !important;
+}
+
+.churvoxOptionC .cocPanel.full,
 .churvoxOptionC .full {
-  grid-column: auto !important;
+  grid-column: 1 / -1 !important;
 }
 
-.churvoxOptionC .cocPanel,
+.churvoxOptionC .heroPanel,
+.churvoxOptionC .commandDesk .slipPreview {
+  background:
+    linear-gradient(135deg, rgba(255,253,249,.98), rgba(255,242,225,.94)),
+    radial-gradient(circle at top right, rgba(249,115,22,.18), transparent 28%) !important;
+}
+
+.churvoxOptionC .toolbar {
+  position: sticky !important;
+  top: 146px !important;
+  z-index: 12 !important;
+  grid-column: 1 / -1 !important;
+  margin: -4px 0 2px !important;
+  padding: 10px !important;
+  border: 1px solid rgba(18,23,21,.08) !important;
+  border-radius: 22px !important;
+  background: rgba(255,250,243,.88) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.churvoxOptionC .toolbar button,
+.churvoxOptionC .action {
+  min-height: 42px !important;
+  letter-spacing: -.01em !important;
+}
+
 .churvoxOptionC .cocRow,
-.churvoxOptionC .miniStats,
-.churvoxOptionC .proofGrid,
+.churvoxOptionC .workTile,
+.churvoxOptionC .ledgerRow {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease !important;
+}
+
+.churvoxOptionC .cocRow:hover,
+.churvoxOptionC .workTile:hover,
+.churvoxOptionC .ledgerRow:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(249,115,22,.54) !important;
+  box-shadow: 0 18px 42px rgba(18,23,21,.12) !important;
+}
+
+.churvoxOptionC .cocRow:focus-visible,
+.churvoxOptionC .workTile:focus-visible,
+.churvoxOptionC .ledgerRow:focus-visible,
+.churvoxOptionC .toolbar button:focus-visible,
+.churvoxOptionC .action:focus-visible {
+  outline: 3px solid rgba(249,115,22,.35) !important;
+  outline-offset: 2px !important;
+}
+
+.churvoxOptionC .cocRow strong,
+.churvoxOptionC .cocRow em,
+.churvoxOptionC .workTile em,
+.churvoxOptionC .workTile i {
+  background: #111713 !important;
+  color: #fff !important;
+}
+
 .churvoxOptionC .formGrid,
+.churvoxOptionC .drawerGrid,
 .churvoxOptionC .jobCards,
 .churvoxOptionC .workerCards,
 .churvoxOptionC .workCards,
@@ -135,6 +233,49 @@ body:has(.churvoxOptionC) .xcf10-dock-launch {
   overflow-x: hidden !important;
 }
 
+.churvoxOptionC .formGrid,
+.churvoxOptionC .drawerGrid {
+  gap: 12px !important;
+}
+
+.churvoxOptionC .cocField input,
+.churvoxOptionC .cocField textarea,
+.churvoxOptionC .cocField select {
+  border-radius: 16px !important;
+  border-color: rgba(18,23,21,.16) !important;
+  background: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+
+.churvoxOptionC .cocField input:not(:disabled):focus,
+.churvoxOptionC .cocField textarea:not(:disabled):focus,
+.churvoxOptionC .cocField select:not(:disabled):focus {
+  outline: 3px solid rgba(249,115,22,.22) !important;
+  border-color: rgba(249,115,22,.72) !important;
+}
+
+.churvoxOptionC .cocDrawer {
+  border-radius: 32px !important;
+  background: linear-gradient(180deg,#fffdfa,#fff8ef) !important;
+  box-shadow: 0 34px 110px rgba(9,12,11,.36) !important;
+}
+
+.churvoxOptionC .closeDrawer {
+  background: #111713 !important;
+  color: #fff !important;
+  border-color: #111713 !important;
+}
+
+.churvoxOptionC .emptyState {
+  background: linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,244,231,.66)) !important;
+  border-color: rgba(249,115,22,.30) !important;
+}
+
+.churvoxOptionC .googleMapShell {
+  min-height: 360px !important;
+  box-shadow: inset 0 0 0 1px rgba(18,23,21,.10) !important;
+}
+
 body:has(.churvoxOptionC) [style*="width"],
 body:has(.churvoxOptionC) [style*="min-width"] {
   max-width: 100% !important;
@@ -142,27 +283,40 @@ body:has(.churvoxOptionC) [style*="min-width"] {
 }
 
 @media (max-width: 1100px) {
-  .churvoxOptionC .cocNav {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  .churvoxOptionC .cocPanel,
+  .churvoxOptionC .cocPanel.wide,
+  .churvoxOptionC .wide {
+    grid-column: span 6 !important;
+  }
+  .churvoxOptionC .full {
+    grid-column: 1 / -1 !important;
   }
 }
 
-@media (max-width: 680px) {
-  .churvoxOptionC {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
+@media (max-width: 860px) {
+  .churvoxOptionC .cocBar {
+    min-height: 96px !important;
+    grid-template-columns: 1fr !important;
   }
-
   .churvoxOptionC .cocNav {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    top: 96px !important;
   }
-
-  .churvoxOptionC .launchNavProof {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  .churvoxOptionC .toolbar {
+    top: 160px !important;
   }
-
-  .churvoxOptionC .cocNav button {
-    font-size: 9px !important;
-    padding: 0 3px !important;
+  .churvoxOptionC .workspace {
+    padding: 12px !important;
+  }
+  .churvoxOptionC .cocPage,
+  .churvoxOptionC .aiGuidePage {
+    grid-template-columns: 1fr !important;
+  }
+  .churvoxOptionC .cocPanel,
+  .churvoxOptionC .cocPanel.wide,
+  .churvoxOptionC .wide,
+  .churvoxOptionC .cocPanel.full,
+  .churvoxOptionC .full {
+    grid-column: 1 / -1 !important;
+    border-radius: 22px !important;
   }
 }
