@@ -1,5 +1,5 @@
 // Final visible-copy cleaner for the owner product.
-// Removes build/dev/test language and old seeded proof wording from live Churvox pages, slips and forms.
+// Removes build/dev/test language, old seeded wording, and highlights items Churvox cannot fix without owner input.
 
 const STYLE_ID = 'churvox-product-copy-clean-style';
 
@@ -73,6 +73,9 @@ const TEXT_REPLACEMENTS = [
   [/\s+([.,:;!?])/g, '$1'],
 ];
 
+const CANT_FIX_RE = /missing|not saved|not ready|owner check|fix\/check|worker clash|same worker|clash|overload|unlinked|not linked|no worker|no date|no time|no price|no amount|no address|phone or email|required|cannot|can't|manual|owner must|owner should/i;
+const CAN_PREPARE_RE = /prepared|ready to review|draft|suggested|found|pulled|checked/i;
+
 const SELECTORS = [
   '.cvxProduct',
   '.cvxProductControlLayer',
@@ -113,6 +116,55 @@ const css = `
     grid-template-columns: minmax(0, 1fr) auto !important;
     gap: 10px !important;
     align-items: start !important;
+  }
+
+  .cvxCantFixRow,
+  .cvxProduct[data-product-version="v2"] .cvxRow.cvxCantFixRow,
+  .cvxSmartAuditRow.cvxCantFixRow {
+    border-color: rgba(220, 38, 38, .34) !important;
+    background: linear-gradient(90deg, rgba(254, 226, 226, .82), rgba(255, 255, 255, .86)) !important;
+    box-shadow: inset 4px 0 0 #dc2626 !important;
+  }
+
+  .cvxCantFixPill {
+    display: inline-flex !important;
+    align-items: center !important;
+    width: max-content !important;
+    max-width: 100% !important;
+    border-radius: 999px !important;
+    padding: 5px 8px !important;
+    background: #dc2626 !important;
+    color: #fff !important;
+    font-size: 10px !important;
+    font-weight: 1000 !important;
+    letter-spacing: .06em !important;
+    text-transform: uppercase !important;
+    line-height: 1 !important;
+  }
+
+  .cvxCantFixBanner {
+    display: grid !important;
+    gap: 5px !important;
+    margin: 10px 0 12px !important;
+    border: 1px solid rgba(220, 38, 38, .22) !important;
+    border-left: 5px solid #dc2626 !important;
+    border-radius: 16px !important;
+    padding: 11px 12px !important;
+    background: linear-gradient(180deg, rgba(254, 242, 242, .98), rgba(255, 247, 237, .9)) !important;
+    color: #7f1d1d !important;
+  }
+
+  .cvxCantFixBanner b {
+    color: #7f1d1d !important;
+    font-size: 13px !important;
+    font-weight: 1000 !important;
+  }
+
+  .cvxCantFixBanner span {
+    color: #7f1d1d !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    font-weight: 780 !important;
   }
 `;
 
@@ -189,6 +241,57 @@ function cleanFormValues(root) {
   });
 }
 
+function textOf(node) {
+  return String(node?.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function valuesOf(node) {
+  const values = [];
+  node.querySelectorAll?.('input, textarea, select, option').forEach((control) => {
+    values.push(control.value || control.textContent || '');
+  });
+  return values.join(' ');
+}
+
+function needsOwnerInput(node) {
+  const text = `${textOf(node)} ${valuesOf(node)}`;
+  return CANT_FIX_RE.test(text) && !/paid|complete|completed/i.test(text);
+}
+
+function addPill(row) {
+  if (row.querySelector('.cvxCantFixPill')) return;
+  const pill = document.createElement('span');
+  pill.className = 'cvxCantFixPill';
+  pill.textContent = 'Owner needed';
+  const target = row.querySelector('em') || row.querySelector('small') || row.querySelector('span') || row;
+  target.insertAdjacentElement('afterend', pill);
+}
+
+function addBanner(panel) {
+  if (panel.querySelector('.cvxCantFixBanner')) return;
+  const banner = document.createElement('div');
+  banner.className = 'cvxCantFixBanner';
+  banner.innerHTML = '<b>Churvox cannot finish this alone.</b><span>This item needs owner input or a decision before it can move forward.</span>';
+  const head = panel.querySelector('.cvxDrawerHead,.cvxSmartAuditSlipHead,.cvxProductControlHead,h1,h2');
+  if (head?.parentElement) head.parentElement.insertBefore(banner, head.nextSibling);
+  else panel.prepend(banner);
+}
+
+function highlightCantFixItems() {
+  const rows = document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxRow, .cvxSmartAuditRow, .cvxCommandRow, .cvxApprovalRow');
+  rows.forEach((row) => {
+    if (!needsOwnerInput(row)) return;
+    row.classList.add('cvxCantFixRow');
+    addPill(row);
+  });
+
+  const slips = document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxDrawer, .cvxSmartAuditSlip, .cvxProductControlModal, [role="dialog"]');
+  slips.forEach((slip) => {
+    if (!needsOwnerInput(slip)) return;
+    addBanner(slip);
+  });
+}
+
 function cleanVisibleCopy() {
   ensureStyle();
   const roots = new Set();
@@ -197,6 +300,7 @@ function cleanVisibleCopy() {
     cleanTextNodes(root);
     cleanFormValues(root);
   });
+  highlightCantFixItems();
 }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_PRODUCT_COPY_CLEAN_RUNTIME__) {
