@@ -5,88 +5,15 @@ import RecordWorkspacePopupBridgeV2 from './components/RecordWorkspacePopupBridg
 import './index.css';
 import './styles/churvoxFullPageModals.css';
 import './components/recordWorkspacePopup.css';
-import './runtime/churvoxWorkerPreReactShell';
-import './runtime/churvoxNativeTimerRuntime';
-import './runtime/churvoxRouteAliasRuntime';
 import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
-// Disabled for paid launch: old worker fallback runtime caused worker page DOM freezes.
-// import './runtime/churvoxWorkerNoFussHardCleanRuntime';
-// Disabled for paid launch: old worker fallback runtime caused worker page DOM freezes.
-// import './runtime/churvoxWorkerJobsFallbackRuntime';
-// Disabled for paid launch: old worker fallback runtime caused worker page DOM freezes.
-// import './runtime/churvoxWorkerBlankFallbackRuntime';
-import './runtime/churvoxDrawerClickSafetyRuntime';
 import './runtime/churvoxPlainSendGuardRuntime';
-import './runtime/churvoxPlanPersistenceRuntime';
-import './runtime/churvoxFirstRunSetupRuntime';
-import './runtime/churvoxCommandPreparedSlipsRuntime';
 import './runtime/churvoxLogoutNavRuntime';
-import './runtime/churvoxPlatformOwnerNoiseGuardRuntime';
 import './pages/marketing/PublicAdminOS.css';
 import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxPublicBusinessPagesRuntime';
 import './runtime/churvoxPublicBusinessPolishRuntime';
-import './churvox-fresh/optionFPageActionRuntime';
-import './churvox-fresh/optionFRestoreTimersRuntime';
-import './churvox-fresh/optionCCommandBarFix.css';
-import './churvox-fresh/optionCPolish.css';
-import './churvox-fresh/optionCProperFinish.css';
-import './churvox-fresh/optionDLaunch.css';
-import './churvox-fresh/optionFModernEasy.css';
-import './churvox-fresh/optionFTopNav.css';
-import './churvox-fresh/optionFSearchTidy.css';
-import './churvox-fresh/optionFIndustrialHeaders.css';
-import './churvox-fresh/optionFNoCommandPill.css';
-import './churvox-fresh/optionFHeaderPattern.css';
-import './churvox-fresh/optionFGreyScrollbars.css';
-import './churvox-fresh/optionFCenteredRecordModal.css';
-import './churvox-fresh/optionFProblemSlipRuntime.css';
-import './churvox-fresh/optionFFinalPagePolish.css';
-import './churvox-fresh/optionFWorkspaceTighten.css';
-import './churvox-fresh/optionFControlPages.css';
-import './churvox-fresh/optionFControlPagesRuntime';
-import './churvox-fresh/optionFControlPagesRuntimeGuard';
-import './churvox-fresh/optionFPlansLiveCheckoutRuntimeV2';
-import './churvox-fresh/optionFPlansIsolationRuntime';
-import './churvox-fresh/optionFStripeManagedPriceDisplayRuntime';
-import './churvox-fresh/optionFPlansUsageRuntime';
-import './churvox-fresh/optionFBackendSyncRuntime';
-import './churvox-fresh/optionFImportExportRuntime';
-import './churvox-fresh/optionFXeroActionsRuntime';
-import './churvox-fresh/optionFXeroPaymentsRuntime';
-import './churvox-fresh/optionFOperationsRuntime';
-import './churvox-fresh/optionFAdminBrainRuntime';
-import './churvox-fresh/optionFNoLeakRuntime';
-import './churvox-fresh/optionFHideSeedDemoRuntime';
-import './churvox-fresh/optionFPlainLanguageRuntime';
-import './churvox-fresh/optionFWorkerCopyScrubRuntime';
-import './churvox-fresh/optionFHideHelperButtonsRuntime';
-import './churvox-fresh/optionFCommandCleanupRuntime';
-import './churvox-fresh/optionFTodayScheduleGuardRuntime';
-import './churvox-fresh/optionFAutoAdminFlowRuntime';
-import './churvox-fresh/optionFDecisionEffectsRuntime';
-import './churvox-fresh/optionFRecordHydrationRuntime';
-import './churvox-fresh/optionFAiFillMissingRuntime';
-import './churvox-fresh/optionFDrawerPersistenceRuntime';
-import './churvox-fresh/optionFRealReviewFeatureRuntime.css';
-import './churvox-fresh/optionFRealReviewBackendSyncRuntime.css';
-import './churvox-fresh/optionFReadinessActionFixRuntime';
-import './churvox-fresh/optionFApprovalExecutionRuntime';
-import './churvox-fresh/optionFInvoiceVaultRuntime.css';
-import './styles/churvoxResponsiveFit.css';
-import './styles/churvoxPaidLaunchGuard.css';
-import './styles/churvoxPaidLaunchNoOverflowFinal.css';
-import './runtime/churvoxPaidLaunchOverflowRuntime';
-import './runtime/churvoxOwnerVisualStabilityRuntime';
-import './runtime/churvoxOwnerRecoverySlipRuntime';
-import './runtime/churvoxOwnerRecoveryActionSlipRuntime';
-import './runtime/churvoxOwnerPageContainmentRuntime';
-import './runtime/churvoxOwnerProperPageLayoutsRuntime';
-import './runtime/churvoxOwnerProperPageShieldRuntime';
-import './runtime/churvoxOwnerProperFormsRuntime';
-import './runtime/churvoxOwnerProperFormsTopRuntime';
 import './churvox-product/productModern.css';
 
 if ('serviceWorker' in navigator) {
@@ -112,18 +39,96 @@ if (!staticPublicPageRendered) {
 }
 
 let ownerRuntimeLoaded = false;
-function loadOwnerRuntimeWhenInsideApp() {
-  if (ownerRuntimeLoaded || typeof window === 'undefined') return;
-  const isOwnerApp = window.location.pathname === '/dashboard' || window.location.pathname === '/plans' || window.location.pathname.startsWith('/dashboard');
-  if (!isOwnerApp) return;
-  ownerRuntimeLoaded = true;
-  import('./runtime/churvoxProductPremiumVisualRuntime').catch(() => {});
-  import('./runtime/churvoxCenterSlipsRuntime').catch(() => {});
-  import('./runtime/churvoxOwnerButtonWiringRuntime').catch(() => {});
+let workerRuntimeLoaded = false;
+
+const ownerRuntimeImports = [
+  () => import('./runtime/churvoxWorkerPreReactShell'),
+  () => import('./runtime/churvoxNativeTimerRuntime'),
+  () => import('./runtime/churvoxRouteAliasRuntime'),
+  () => import('./runtime/churvoxDrawerClickSafetyRuntime'),
+  () => import('./runtime/churvoxPlanPersistenceRuntime'),
+  () => import('./runtime/churvoxFirstRunSetupRuntime'),
+  () => import('./runtime/churvoxCommandPreparedSlipsRuntime'),
+  () => import('./runtime/churvoxPlatformOwnerNoiseGuardRuntime'),
+  () => import('./churvox-fresh/optionFPageActionRuntime'),
+  () => import('./churvox-fresh/optionFRestoreTimersRuntime'),
+  () => import('./churvox-fresh/optionFControlPagesRuntime'),
+  () => import('./churvox-fresh/optionFControlPagesRuntimeGuard'),
+  () => import('./churvox-fresh/optionFPlansLiveCheckoutRuntimeV2'),
+  () => import('./churvox-fresh/optionFPlansIsolationRuntime'),
+  () => import('./churvox-fresh/optionFStripeManagedPriceDisplayRuntime'),
+  () => import('./churvox-fresh/optionFPlansUsageRuntime'),
+  () => import('./churvox-fresh/optionFBackendSyncRuntime'),
+  () => import('./churvox-fresh/optionFImportExportRuntime'),
+  () => import('./churvox-fresh/optionFXeroActionsRuntime'),
+  () => import('./churvox-fresh/optionFXeroPaymentsRuntime'),
+  () => import('./churvox-fresh/optionFOperationsRuntime'),
+  () => import('./churvox-fresh/optionFAdminBrainRuntime'),
+  () => import('./churvox-fresh/optionFNoLeakRuntime'),
+  () => import('./churvox-fresh/optionFHideSeedDemoRuntime'),
+  () => import('./churvox-fresh/optionFPlainLanguageRuntime'),
+  () => import('./churvox-fresh/optionFWorkerCopyScrubRuntime'),
+  () => import('./churvox-fresh/optionFHideHelperButtonsRuntime'),
+  () => import('./churvox-fresh/optionFCommandCleanupRuntime'),
+  () => import('./churvox-fresh/optionFTodayScheduleGuardRuntime'),
+  () => import('./churvox-fresh/optionFAutoAdminFlowRuntime'),
+  () => import('./churvox-fresh/optionFDecisionEffectsRuntime'),
+  () => import('./churvox-fresh/optionFRecordHydrationRuntime'),
+  () => import('./churvox-fresh/optionFAiFillMissingRuntime'),
+  () => import('./churvox-fresh/optionFDrawerPersistenceRuntime'),
+  () => import('./churvox-fresh/optionFReadinessActionFixRuntime'),
+  () => import('./churvox-fresh/optionFApprovalExecutionRuntime'),
+  () => import('./runtime/churvoxPaidLaunchOverflowRuntime'),
+  () => import('./runtime/churvoxOwnerVisualStabilityRuntime'),
+  () => import('./runtime/churvoxOwnerRecoverySlipRuntime'),
+  () => import('./runtime/churvoxOwnerRecoveryActionSlipRuntime'),
+  () => import('./runtime/churvoxOwnerPageContainmentRuntime'),
+  () => import('./runtime/churvoxOwnerProperPageLayoutsRuntime'),
+  () => import('./runtime/churvoxOwnerProperPageShieldRuntime'),
+  () => import('./runtime/churvoxOwnerProperFormsRuntime'),
+  () => import('./runtime/churvoxOwnerProperFormsTopRuntime'),
+  () => import('./runtime/churvoxProductPremiumVisualRuntime'),
+  () => import('./runtime/churvoxCenterSlipsRuntime'),
+  () => import('./runtime/churvoxOwnerButtonWiringRuntime'),
+];
+
+const workerRuntimeImports = [
+  () => import('./runtime/churvoxWorkerPreReactShell'),
+  () => import('./runtime/churvoxNativeTimerRuntime'),
+  () => import('./churvox-fresh/optionFWorkerCopyScrubRuntime'),
+];
+
+function runImports(imports) {
+  imports.forEach((load) => {
+    try { load().catch(() => {}); } catch {}
+  });
 }
 
-loadOwnerRuntimeWhenInsideApp();
-window.addEventListener('popstate', loadOwnerRuntimeWhenInsideApp);
-window.addEventListener('hashchange', loadOwnerRuntimeWhenInsideApp);
-window.addEventListener('churvox-owner-app-ready', loadOwnerRuntimeWhenInsideApp);
-setTimeout(loadOwnerRuntimeWhenInsideApp, 1200);
+function loadOwnerRuntimeWhenInsideApp() {
+  if (ownerRuntimeLoaded || typeof window === 'undefined') return;
+  const path = window.location.pathname || '';
+  const isOwnerApp = path === '/dashboard' || path === '/plans' || path.startsWith('/dashboard');
+  if (!isOwnerApp) return;
+  ownerRuntimeLoaded = true;
+  runImports(ownerRuntimeImports);
+}
+
+function loadWorkerRuntimeWhenInsideWorkerApp() {
+  if (workerRuntimeLoaded || typeof window === 'undefined') return;
+  const path = window.location.pathname || '';
+  if (!path.startsWith('/worker')) return;
+  workerRuntimeLoaded = true;
+  runImports(workerRuntimeImports);
+}
+
+function checkRuntimeLoads() {
+  loadOwnerRuntimeWhenInsideApp();
+  loadWorkerRuntimeWhenInsideWorkerApp();
+}
+
+checkRuntimeLoads();
+window.addEventListener('popstate', checkRuntimeLoads);
+window.addEventListener('hashchange', checkRuntimeLoads);
+window.addEventListener('churvox-owner-app-ready', checkRuntimeLoads);
+setTimeout(checkRuntimeLoads, 800);
+setTimeout(checkRuntimeLoads, 1800);
