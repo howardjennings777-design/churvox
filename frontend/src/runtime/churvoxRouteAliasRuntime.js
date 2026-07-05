@@ -89,7 +89,7 @@ function normalisePathAliases() {
 function normaliseFreshHash() {
   if (normalisePathAliases()) return true;
   const path = window.location.pathname || '';
-  if (!path.startsWith('/dashboard') && !path.startsWith('/setup') && !path.startsWith('/plans')) return false;
+  if (!path.startsWith('/dashboard') && !path.startsWith('/setup')) return false;
 
   const raw = (window.location.hash || '').replace('#', '').toLowerCase();
   const aliases = {
