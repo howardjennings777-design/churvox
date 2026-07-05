@@ -41,12 +41,19 @@ async function snap(page) {
     const proper = document.getElementById('churvox-owner-proper-page-layout');
     const rect = proper?.getBoundingClientRect?.();
     const panels = ['churvox-owner-record-engine-panel','churvox-owner-workflow-automation-panel','churvox-owner-timeline-panel','churvox-owner-data-quality-panel','churvox-paid-launch-readiness-panel'];
+    const scrollables = [...document.querySelectorAll('.churvoxOptionC .workspace, .churvoxOptionC .cocPage, .churvoxOptionC .cocRows, .churvoxOptionC .scroll, .churvoxOptionC .ledgerList, .churvoxOptionC .jobCards, .churvoxOptionC .workerCards, .churvoxOptionC .workCards')].map((el, index) => {
+      const r = el.getBoundingClientRect();
+      return { index, cls: String(el.className || ''), top: Math.round(r.top), height: Math.round(r.height), scrollTop: Math.round(el.scrollTop || 0), scrollHeight: Math.round(el.scrollHeight || 0), clientHeight: Math.round(el.clientHeight || 0) };
+    });
     return {
       url: location.href,
       scrollY: window.scrollY,
       bodyHeight: Math.max(document.body?.scrollHeight || 0, document.documentElement.scrollHeight || 0),
       properTop: rect ? Math.round(rect.top) : null,
       properHeight: rect ? Math.round(rect.height) : null,
+      workspaceScrollTop: document.querySelector('.churvoxOptionC .workspace')?.scrollTop || 0,
+      workspaceHeight: document.querySelector('.churvoxOptionC .workspace')?.scrollHeight || 0,
+      scrollables,
       hiddenPanels: panels.filter((id) => {
         const el = document.getElementById(id);
         if (!el) return false;
@@ -58,6 +65,16 @@ async function snap(page) {
     };
   });
 }
+function maxScrollDelta(a, b) {
+  const byKey = new Map((a.scrollables || []).map((item) => [`${item.index}:${item.cls}`, item]));
+  let max = 0;
+  for (const item of (b.scrollables || [])) {
+    const old = byKey.get(`${item.index}:${item.cls}`);
+    if (!old) continue;
+    max = Math.max(max, Math.abs((item.scrollTop || 0) - (old.scrollTop || 0)));
+  }
+  return max;
+}
 
 test.describe('Churvox owner page jump audit', () => {
   test.setTimeout(360000);
@@ -68,22 +85,32 @@ test.describe('Churvox owner page jump audit', () => {
     for (const hash of ownerPages) {
       await page.goto(`/dashboard#${hash}`);
       await waitHuman(page, 1200);
-      await page.evaluate(() => window.scrollTo(0, Math.min(260, Math.max(0, document.body.scrollHeight - window.innerHeight - 20))));
+      await page.evaluate(() => {
+        const workspace = document.querySelector('.churvoxOptionC .workspace');
+        if (workspace) workspace.scrollTop = Math.min(260, Math.max(0, workspace.scrollHeight - workspace.clientHeight - 20));
+        else window.scrollTo(0, Math.min(260, Math.max(0, document.body.scrollHeight - window.innerHeight - 20)));
+      });
       await page.waitForTimeout(300);
-      const a = await snap(page);
-      await page.waitForTimeout(5200);
-      const b = await snap(page);
+      const samples = [];
+      for (let i = 0; i < 16; i += 1) { samples.push(await snap(page)); await page.waitForTimeout(350); }
+      const a = samples[0];
+      const b = samples[samples.length - 1];
       const result = {
         hash,
         start: a,
         end: b,
         scrollDelta: Math.abs((b.scrollY || 0) - (a.scrollY || 0)),
+        workspaceScrollDelta: Math.abs((b.workspaceScrollTop || 0) - (a.workspaceScrollTop || 0)),
+        maxInternalScrollDelta: maxScrollDelta(a, b),
         properTopDelta: a.properTop == null || b.properTop == null ? 0 : Math.abs(b.properTop - a.properTop),
         heightDelta: Math.abs((b.bodyHeight || 0) - (a.bodyHeight || 0)),
+        sampleSummary: samples.map((s) => ({ properTop: s.properTop, properHeight: s.properHeight, workspaceScrollTop: s.workspaceScrollTop, workspaceHeight: s.workspaceHeight, hiddenPanels: s.hiddenPanels, textLength: s.textLength })),
       };
       results.push(result);
       expect(b.hiddenPanels, `${hash} should not hide protected panels`).toEqual([]);
-      expect(result.scrollDelta, `${hash} scroll jumped`).toBeLessThanOrEqual(90);
+      expect(result.scrollDelta, `${hash} window scroll jumped`).toBeLessThanOrEqual(90);
+      expect(result.workspaceScrollDelta, `${hash} workspace scroll jumped`).toBeLessThanOrEqual(90);
+      expect(result.maxInternalScrollDelta, `${hash} internal list scroll jumped`).toBeLessThanOrEqual(90);
       expect(result.properTopDelta, `${hash} top layout shifted`).toBeLessThanOrEqual(80);
       expect(result.heightDelta, `${hash} page height changed too much`).toBeLessThanOrEqual(900);
       expect(b.textLength, `${hash} visible text should remain stable`).toBeGreaterThanOrEqual(Math.max(80, a.textLength - 500));
