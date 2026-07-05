@@ -68,7 +68,7 @@ function installStyle() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
   style.id = STYLE_ID;
-  style.textContent = `#${PANEL_ID}{grid-column:1/-1!important;display:grid!important;gap:9px!important;border:1px solid rgba(239,85,60,.14)!important;border-radius:17px!important;background:#fff7f0!important;padding:12px!important;color:#111815!important}#${PANEL_ID} h3{margin:0!important;font:950 16px Inter,system-ui,sans-serif!important}#${PANEL_ID} p{margin:0!important;color:#52605a!important;font:850 12px Inter,system-ui,sans-serif!important}#${PANEL_ID} .rows{display:grid!important;gap:7px!important;max-height:180px!important;overflow:auto!important}#${PANEL_ID} .row{display:grid!important;grid-template-columns:1fr auto!important;gap:8px!important;border:1px solid rgba(16,21,19,.07)!important;border-radius:12px!important;background:#fff!important;padding:9px!important}#${PANEL_ID} b{display:block!important;font-size:12px!important;font-weight:950!important}#${PANEL_ID} span{display:block!important;color:#52605a!important;font-size:10px!important;font-weight:850!important}#${PANEL_ID} em{font-style:normal!important;border-radius:999px!important;background:#fff0e8!important;color:#b9381e!important;padding:5px 7px!important;font-size:9px!important;font-weight:950!important;text-transform:uppercase!important}`;
+  style.textContent = `#${PANEL_ID}{grid-column:1/-1!important;display:grid!important;gap:9px!important;border:1px solid rgba(239,85,60,.14)!important;border-radius:17px!important;background:#fff7f0!important;padding:12px!important;color:#111815!important;min-height:154px!important;contain:layout paint!important}#${PANEL_ID} h3{margin:0!important;font:950 16px Inter,system-ui,sans-serif!important}#${PANEL_ID} p{margin:0!important;color:#52605a!important;font:850 12px Inter,system-ui,sans-serif!important}#${PANEL_ID} .rows{display:grid!important;gap:7px!important;max-height:180px!important;overflow:auto!important;scrollbar-gutter:stable!important}#${PANEL_ID} .row{display:grid!important;grid-template-columns:1fr auto!important;gap:8px!important;border:1px solid rgba(16,21,19,.07)!important;border-radius:12px!important;background:#fff!important;padding:9px!important;min-height:51px!important}#${PANEL_ID} b{display:block!important;font-size:12px!important;font-weight:950!important}#${PANEL_ID} span{display:block!important;color:#52605a!important;font-size:10px!important;font-weight:850!important}#${PANEL_ID} em{font-style:normal!important;border-radius:999px!important;background:#fff0e8!important;color:#b9381e!important;padding:5px 7px!important;font-size:9px!important;font-weight:950!important;text-transform:uppercase!important}`;
   document.head.appendChild(style);
 }
 
@@ -82,7 +82,9 @@ function mount(issues) {
   panel.removeAttribute('data-proper-hidden');
   panel.removeAttribute('data-core-hidden');
   panel.removeAttribute('data-lite-hidden');
-  const rows = issues.length ? issues.slice(0, 6).map((x) => `<div class="row"><span><b>${esc(x.title)}</b>${esc(x.note)}</span><em>${esc(x.sourcePage)}</em></div>`).join('') : '<div class="row"><span><b>Data quality clear</b>No duplicate or unsafe records found on this pass.</span><em>clear</em></div>';
+  const bodyRows = issues.length ? issues.slice(0, 6).map((x) => `<div class="row"><span><b>${esc(x.title)}</b>${esc(x.note)}</span><em>${esc(x.sourcePage)}</em></div>`) : [`<div class="row"><span><b>Data quality clear</b>No duplicate or unsafe records found on this pass.</span><em>clear</em></div>`];
+  while (bodyRows.length < 2) bodyRows.push('<div class="row" aria-hidden="true"><span><b>&nbsp;</b>&nbsp;</span><em>&nbsp;</em></div>');
+  const rows = bodyRows.join('');
   const html = `<h3>Data quality radar</h3><p>Checks duplicates, missing contact info, proof gaps and money/accounting guardrails.</p><div class="rows">${rows}</div>`;
   if (html === lastHtml) return;
   lastHtml = html;
