@@ -1,5 +1,5 @@
 // CHURVOX_OWNER_CLARITY_LAYER_20260630
-// Product layer: clear owner wording, live-mode empty states, Command-only decisions, saved record trail, and Today cockpit labels.
+// Stable launch version: clear owner wording, Command-only decisions, saved record trail, throttled DOM observer.
 
 const ROOT = '.churvoxOptionC';
 const STYLE_ID = 'churvox-owner-clarity-style';
@@ -25,48 +25,24 @@ function isCommandPage() { return currentPage() === 'command' || String(window.l
 function isCommandDrawer(drawer) { return drawer?.classList.contains('approvalSlip') || /approval|command/i.test(cleanText(drawer?.querySelector('h2'))); }
 function readSaved() { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '[]'); } catch { return []; } }
 function writeSaved(row) { try { localStorage.setItem(SAVE_KEY, JSON.stringify([row, ...readSaved()].slice(0, 80))); } catch {} }
-function authHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
-  try {
-    const token = localStorage.getItem('token') || '';
-    if (token) headers.Authorization = `Bearer ${token}`;
-  } catch {}
-  return headers;
-}
-function fieldValue(field) {
-  const input = field?.querySelector('input,textarea,select');
-  return input ? input.value : '';
-}
+function authHeaders() { const headers = { 'Content-Type': 'application/json' }; try { const token = localStorage.getItem('token') || ''; if (token) headers.Authorization = `Bearer ${token}`; } catch {} return headers; }
+function fieldValue(field) { const input = field?.querySelector('input,textarea,select'); return input ? input.value : ''; }
 function fieldsFromDrawer(drawer) {
   const out = {};
-  drawer.querySelectorAll('.cocField').forEach((field) => {
-    const label = cleanText(field.querySelector('span')) || 'Field';
-    out[label] = fieldValue(field);
-  });
+  drawer.querySelectorAll('.cocField').forEach((field) => { const label = cleanText(field.querySelector('span')) || 'Field'; out[label] = fieldValue(field); });
   return out;
 }
 async function sendSave(row) {
   try {
-    const res = await fetch(apiUrl('/api/os-v2/saved-records'), {
-      method: 'POST',
-      credentials: 'include',
-      headers: authHeaders(),
-      body: JSON.stringify(row),
-    });
+    const res = await fetch(apiUrl('/api/os-v2/saved-records'), { method: 'POST', credentials: 'include', headers: authHeaders(), body: JSON.stringify(row) });
     if (!res.ok) return false;
     const body = await res.json().catch(() => ({}));
     return body?.success !== false;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 function flash(message, tone = 'good') {
   let node = document.getElementById('cv-owner-clarity-toast');
-  if (!node) {
-    node = document.createElement('div');
-    node.id = 'cv-owner-clarity-toast';
-    document.body.appendChild(node);
-  }
+  if (!node) { node = document.createElement('div'); node.id = 'cv-owner-clarity-toast'; document.body.appendChild(node); }
   node.className = `show ${tone}`;
   node.textContent = message;
   clearTimeout(window.__cvOwnerClarityToastTimer);
@@ -97,20 +73,14 @@ function addOwnerBanner(app) {
   banner.innerHTML = '<b>Churvox is preparing the admin</b><p>Review details on each page. Final owner decisions stay in Command.</p>';
   workspace.prepend(banner);
 }
-
 function addCockpit(app) {
   const page = app.querySelector('.cocPage.today');
   if (!page || page.querySelector('.cvOwnerCockpit')) return;
   const cockpit = document.createElement('section');
   cockpit.className = 'cvOwnerCockpit';
-  cockpit.innerHTML = [
-    ['Do now', 'Handle the next decision', 'Anything needing approval belongs in Command.'],
-    ['Watch today', 'Jobs, workers and money in motion', 'See the day without office clutter.'],
-    ['Ready for Command', 'Admin prepared for approval', 'Quotes, invoices and key changes wait there.'],
-  ].map(([a,b,c]) => `<div class="cvOwnerLane"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+  cockpit.innerHTML = [['Do now','Handle the next decision','Anything needing approval belongs in Command.'],['Watch today','Jobs, workers and money in motion','See the day without office clutter.'],['Ready for Command','Admin prepared for approval','Quotes, invoices and key changes wait there.']].map(([a,b,c]) => `<div class="cvOwnerLane"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
   page.prepend(cockpit);
 }
-
 function addCommandBadges(app) {
   app.querySelectorAll('.cocPanel h2').forEach((h2) => {
     if (h2.querySelector('.cvCommandMini')) return;
@@ -122,17 +92,16 @@ function addCommandBadges(app) {
     h2.appendChild(node);
   });
 }
-
 function hideSeedRows(app) {
   const all = cleanText(app);
   const seedHits = SEED_NAMES.filter((name) => all.includes(name)).length;
   if (seedHits < 3) return;
   app.querySelectorAll('.cocRow,.jobCard,.workerCard,.workCard,.ledgerRow').forEach((row) => {
+    if (row.classList.contains('cvSeedHidden')) return;
     const rowText = cleanText(row);
     if (SEED_NAMES.some((name) => rowText.includes(name))) row.classList.add('cvSeedHidden');
   });
 }
-
 function ensureEmptyStates(app) {
   app.querySelectorAll('.scroll,.jobCards,.workerCards,.workCards,.ledgerList,.proofGrid,.teamQuickGrid').forEach((list) => {
     const visible = Array.from(list.children).filter((child) => !child.classList.contains('cvSeedHidden') && !child.classList.contains('cvEmptyState'));
@@ -143,24 +112,16 @@ function ensureEmptyStates(app) {
     list.appendChild(empty);
   });
 }
-
 function adminTrailFor(drawer) {
   if (!drawer || drawer.querySelector('.cvAdminTrail')) return;
   const title = cleanText(drawer.querySelector('h2')) || 'Record';
   const command = isCommandDrawer(drawer);
   const section = document.createElement('section');
   section.className = 'cvAdminTrail';
-  section.innerHTML = `
-    <span>Admin Trail</span>
-    <div><b>What Churvox prepared</b><p>${command ? 'A clear owner decision from the latest job, client, worker, money or accounting details.' : `The ${title.toLowerCase()} details above are the working record.`}</p></div>
-    <div><b>Where it came from</b><p>Saved records, worker updates, customer messages, time, photos, notes and pricing memory.</p></div>
-    <div><b>What needs approval</b><p>${command ? 'Approve, edit or park here in Command.' : 'Sending, syncing, money and final owner decisions move to Command.'}</p></div>
-    <div><b>What happens next</b><p>${command ? 'Your decision updates the record and keeps the trail clear.' : 'Save changes here. Use Command when an owner decision is needed.'}</p></div>
-  `;
+  section.innerHTML = `<span>Admin Trail</span><div><b>What Churvox prepared</b><p>${command ? 'A clear owner decision from the latest job, client, worker, money or accounting details.' : `The ${title.toLowerCase()} details above are the working record.`}</p></div><div><b>Where it came from</b><p>Saved records, worker updates, customer messages, time, photos, notes and pricing memory.</p></div><div><b>What needs approval</b><p>${command ? 'Approve, edit or park here in Command.' : 'Sending, syncing, money and final owner decisions move to Command.'}</p></div><div><b>What happens next</b><p>${command ? 'Your decision updates the record and keeps the trail clear.' : 'Save changes here. Use Command when an owner decision is needed.'}</p></div>`;
   const form = drawer.querySelector('.cocField')?.parentElement;
   if (form) form.after(section); else drawer.appendChild(section);
 }
-
 function recordKind(drawer) {
   const title = cleanText(drawer.querySelector('h2')).toLowerCase();
   if (title.includes('job')) return 'job';
@@ -172,33 +133,18 @@ function recordKind(drawer) {
   if (title.includes('approval')) return 'command';
   return 'record';
 }
-
 async function queueSave(drawer, buttonLabel) {
   const row = { at: new Date().toISOString(), kind: recordKind(drawer), action: buttonLabel, fields: fieldsFromDrawer(drawer) };
   writeSaved(row);
   let note = drawer.querySelector('.cvSaveNote');
-  if (!note) {
-    note = document.createElement('div');
-    note.className = 'cvSaveNote';
-    drawer.querySelector('.approvalActions')?.before(note);
-  }
+  if (!note) { note = document.createElement('div'); note.className = 'cvSaveNote'; drawer.querySelector('.approvalActions')?.before(note); }
   note.classList.remove('warn');
   note.innerHTML = '<b>Saving...</b><span>Churvox is keeping the admin trail clear.</span>';
   const ok = await sendSave(row);
-  if (ok) {
-    note.innerHTML = '<b>Saved for review.</b><span>This record is safely kept with the admin trail.</span>';
-    flash('Saved for review.', 'good');
-  } else {
-    note.classList.add('warn');
-    note.innerHTML = '<b>Kept here for now.</b><span>Churvox could not reach the server, so this stays on this device until it can be saved.</span>';
-    flash('Kept here for now.', 'warn');
-  }
+  if (ok) { note.innerHTML = '<b>Saved for review.</b><span>This record is safely kept with the admin trail.</span>'; flash('Saved for review.', 'good'); }
+  else { note.classList.add('warn'); note.innerHTML = '<b>Kept here for now.</b><span>Churvox could not reach the server, so this stays on this device until it can be saved.</span>'; flash('Kept here for now.', 'warn'); }
 }
-
-function isMessageSend(label) {
-  return /send message|message|reply|note|help/.test(label) && !/invoice|quote|sync|approval|approve/.test(label);
-}
-
+function isMessageSend(label) { return /send message|message|reply|note|help/.test(label) && !/invoice|quote|sync|approval|approve/.test(label); }
 function commandOnlyGuard(event) {
   const button = event.target?.closest?.('button');
   if (!button) return;
@@ -219,7 +165,6 @@ function commandOnlyGuard(event) {
   flash('That decision lives in Command.', 'warn');
   setTimeout(() => { window.location.href = '/dashboard#command'; }, 450);
 }
-
 function saveClick(event) {
   const button = event.target?.closest?.('.cocDrawer .approvalActions button');
   if (!button || !button.closest(ROOT)) return;
@@ -234,31 +179,39 @@ function saveClick(event) {
   }
 }
 
+let lastRunSig = '';
 function run() {
   const app = root();
   if (!app) return;
+  const drawer = app.querySelector('.cocDrawer');
+  const sig = `${currentPage()}:${!!drawer}:${app.querySelectorAll('.cvOwnerClarityBanner,.cvOwnerCockpit,.cvCommandMini,.cvEmptyState,.cvAdminTrail').length}`;
   installStyle();
   addOwnerBanner(app);
   addCockpit(app);
   addCommandBadges(app);
   hideSeedRows(app);
   ensureEmptyStates(app);
-  const drawer = app.querySelector('.cocDrawer');
   if (drawer) adminTrailFor(drawer);
+  lastRunSig = sig;
+}
+let scheduled = false;
+function scheduleRun(delay = 180) {
+  if (scheduled) return;
+  scheduled = true;
+  setTimeout(() => { scheduled = false; run(); }, delay);
 }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_OWNER_CLARITY_LAYER__) {
   window.__CHURVOX_OWNER_CLARITY_LAYER__ = true;
-  window.addEventListener('load', () => setTimeout(run, 250));
-  window.addEventListener('hashchange', () => setTimeout(run, 180));
-  window.addEventListener('popstate', () => setTimeout(run, 180));
+  window.addEventListener('load', () => scheduleRun(300));
+  window.addEventListener('hashchange', () => scheduleRun(260));
+  window.addEventListener('popstate', () => scheduleRun(260));
   document.addEventListener('click', commandOnlyGuard, true);
   document.addEventListener('click', saveClick, true);
-  document.addEventListener('input', () => setTimeout(run, 120), true);
-  document.addEventListener('change', () => setTimeout(run, 120), true);
-  const observer = new MutationObserver(() => run());
+  document.addEventListener('input', () => scheduleRun(500), true);
+  document.addEventListener('change', () => scheduleRun(500), true);
+  const observer = new MutationObserver(() => scheduleRun(700));
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  setInterval(run, 1400);
 }
 
 export {};
