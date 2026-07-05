@@ -1,5 +1,5 @@
 // Plans page duplicate guard + billing nav.
-// Loads directly on #plans and inserts a real billing nav into the visible billing page.
+// Loads directly on #plans, keeps the real billing/checkout page, and removes the duplicate owner shell underneath.
 
 const STYLE_ID = 'churvox-plans-nav-runtime-style';
 const BILLING_NAV_ID = 'churvox-billing-page-nav';
@@ -18,13 +18,25 @@ const css = `
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlans,
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPlanGrid,
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPricingGrid,
-  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxKpis {
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxKpis,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxTop,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxNav {
     display: none !important;
   }
 
   body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPage {
     gap: 0 !important;
     padding-top: 0 !important;
+  }
+
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPage > section,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPage > article,
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPage > div {
+    display: none !important;
+  }
+
+  body[data-cvx-owner-page="plans"] .cvxProduct[data-product-version="v2"] .cvxPage > .cvxBillingPageNav {
+    display: flex !important;
   }
 
   .cvxBillingPageNav {
@@ -99,21 +111,6 @@ function ensureStyle() {
   if (style.parentNode === document.head && document.head.lastElementChild !== style) document.head.appendChild(style);
 }
 
-function removeDuplicateProductPlans() {
-  if (!onPlansPage()) return;
-  document.querySelectorAll('#churvox-product-ops-strip,.cvxProductOpsStrip,#churvox-plans-page-nav,.cvxPlansPageNav').forEach((node) => node.remove());
-
-  document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxHero').forEach((hero) => {
-    const text = String(hero.textContent || '').toLowerCase();
-    if (text.includes('locked churvox pricing') || text.includes('plans stay clear')) hero.remove();
-  });
-
-  document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxPlans').forEach((plans) => {
-    const text = String(plans.textContent || '').toLowerCase();
-    if (text.includes('choose start') || text.includes('choose crew') || text.includes('choose command') || text.includes('$39')) plans.remove();
-  });
-}
-
 function visibleText(node) {
   return String(node?.textContent || '').replace(/\s+/g, ' ').trim();
 }
@@ -126,15 +123,20 @@ function candidates() {
   });
 }
 
-function realBillingRoot() {
-  return candidates().find((node) => /plans and billing/i.test(visibleText(node)) && /live plan usage|refresh billing|manage billing/i.test(visibleText(node))) ||
-    document.querySelector('.cvxProduct[data-product-version="v2"] .cvxPage') ||
-    document.querySelector('main') ||
-    document.querySelector('#root');
-}
-
 function findSection(patterns) {
   return candidates().find((node) => patterns.some((pattern) => pattern.test(visibleText(node))));
+}
+
+function removeDuplicateProductPlans() {
+  if (!onPlansPage()) return;
+  document.querySelectorAll('#churvox-product-ops-strip,.cvxProductOpsStrip,#churvox-plans-page-nav,.cvxPlansPageNav').forEach((node) => node.remove());
+  document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxTop,.cvxProduct[data-product-version="v2"] .cvxNav,.cvxProduct[data-product-version="v2"] .cvxToolbar,.cvxProduct[data-product-version="v2"] .cvxHero,.cvxProduct[data-product-version="v2"] .cvxPlans,.cvxProduct[data-product-version="v2"] .cvxPlanGrid,.cvxProduct[data-product-version="v2"] .cvxPricingGrid,.cvxProduct[data-product-version="v2"] .cvxKpis').forEach((node) => node.remove());
+
+  document.querySelectorAll('.cvxProduct[data-product-version="v2"] .cvxPage > section, .cvxProduct[data-product-version="v2"] .cvxPage > article, .cvxProduct[data-product-version="v2"] .cvxPage > div').forEach((node) => {
+    if (node.id === BILLING_NAV_ID || node.classList.contains('cvxBillingPageNav')) return;
+    const text = visibleText(node).toLowerCase();
+    if (text.includes('command growth pack') || text.includes('accounting sync add-on') || text.includes('locked churvox pricing') || text.includes('choose start') || text.includes('choose command')) node.remove();
+  });
 }
 
 function createNav() {
@@ -162,9 +164,6 @@ function placeNav() {
   }
 
   const nav = createNav();
-  const root = realBillingRoot();
-  if (!root) return;
-
   const trialStrip = findSection([/1\.\s*trial/i, /stripe checkout/i, /command rules/i]);
   const usage = findSection([/live plan usage/i]);
   const topCard = findSection([/plans and billing/i, /refresh billing/i, /manage billing/i]);
@@ -184,7 +183,8 @@ function placeNav() {
     return;
   }
 
-  if (nav.parentElement !== root) root.insertAdjacentElement('afterbegin', nav);
+  const root = document.querySelector('.cvxProduct[data-product-version="v2"] .cvxPage') || document.querySelector('main') || document.querySelector('#root');
+  if (root && nav.parentElement !== root) root.insertAdjacentElement('afterbegin', nav);
 }
 
 function scrollToBilling(kind) {
@@ -202,12 +202,13 @@ function scrollToBilling(kind) {
 function run() {
   if (typeof document !== 'undefined') document.body.dataset.cvxOwnerPage = page();
   ensureStyle();
+  placeNav();
   removeDuplicateProductPlans();
   placeNav();
 }
 
-if (typeof window !== 'undefined' && !window.__CHURVOX_PLANS_NAV_RUNTIME_V2__) {
-  window.__CHURVOX_PLANS_NAV_RUNTIME_V2__ = true;
+if (typeof window !== 'undefined' && !window.__CHURVOX_PLANS_NAV_RUNTIME_V3__) {
+  window.__CHURVOX_PLANS_NAV_RUNTIME_V3__ = true;
   run();
   window.addEventListener('load', () => setTimeout(run, 100));
   window.addEventListener('hashchange', () => setTimeout(run, 100));
@@ -223,7 +224,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_PLANS_NAV_RUNTIME_V2__) {
   setTimeout(run, 250);
   setTimeout(run, 600);
   setTimeout(run, 1200);
-  setInterval(run, 1600);
+  setInterval(run, 1200);
 }
 
 export {};
