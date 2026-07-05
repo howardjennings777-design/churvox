@@ -81,6 +81,7 @@
     "test:logic:deep": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js",
     "test:logic:deep:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js --project=desktop-chromium",
     "test:logic:deep:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js --project=mobile-chromium",
+    "test:logic:wiring": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-owner-logical-wiring-contract.spec.js --project=desktop-chromium",
     "test:real-deal": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-deal-paid-launch-audit.spec.js",
     "test:real-deal:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-deal-paid-launch-audit.spec.js --project=desktop-chromium",
     "test:real-deal:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-deal-paid-launch-audit.spec.js --project=mobile-chromium",
