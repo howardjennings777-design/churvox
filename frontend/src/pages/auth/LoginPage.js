@@ -74,7 +74,7 @@ const getPostLoginPath = (payload = {}) => {
   const plan = String(user?.plan || payload?.plan || "").trim().toLowerCase();
   const status = String(user?.subscription_status || payload?.subscription_status || "").trim().toLowerCase();
   const noPlan = !plan || plan === "none" || plan === "free" || plan === "null" || plan === "undefined";
-  const inactiveBilling = !status || status === "none" || status === "cancelled" || status === "canceled" || status === "incomplete" || status === "past_due";
+  const inactiveBilling = status === "cancelled" || status === "canceled" || status === "incomplete" || status === "incomplete_expired" || status === "locked" || status === "disabled";
 
   if (user?.has_app_access === false || payload?.has_app_access === false || noPlan || inactiveBilling) return "/plans";
   if (setupPendingLocally()) return "/setup-guide?first_setup=1";
@@ -88,9 +88,12 @@ const loginLooksValid = (result = {}) => {
       (result?.token ||
         result?.access_token ||
         result?.auth_token ||
+        result?.accessToken ||
+        result?.jwt ||
         result?.cookieSession ||
         result?.user?.token ||
         result?.user?.access_token ||
+        result?.user?.accessToken ||
         user?.email ||
         user?.id ||
         user?._id ||
@@ -103,7 +106,7 @@ const loginLooksValid = (result = {}) => {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, checkAuth } = useAuth();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -132,23 +135,7 @@ export default function LoginPage() {
         return;
       }
 
-      const resultPath = getPostLoginPath(result);
-
-      if (resultPath.startsWith("/worker")) {
-        setSubmitting(false);
-        navigate(resultPath, { replace: true });
-        checkAuth?.().catch(() => {});
-        return;
-      }
-
-      let fresh = null;
-      try {
-        fresh = await withTimeout(checkAuth?.(), 6000, "Login worked, but profile refresh was slow.");
-      } catch {
-        // Login already succeeded. The app shell can refresh again after navigation.
-      }
-
-      const finalPath = getPostLoginPath(fresh || result);
+      const finalPath = getPostLoginPath(result);
       setSubmitting(false);
       navigate(finalPath, { replace: true });
     } catch (err) {
