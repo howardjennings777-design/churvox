@@ -22,9 +22,13 @@ function installStyle() {
   document.head.appendChild(style);
 }
 
+let lastSig = '';
 function run() {
   installStyle();
   const proper = document.getElementById(PROPER_ID);
+  const sig = [proper?.getAttribute('data-core-hidden') || '', proper?.getAttribute('data-lite-hidden') || '', proper?.getAttribute('data-proper-hidden') || '', ...OLD_IDS.map((id) => document.getElementById(id)?.getAttribute('aria-hidden') || '')].join('|');
+  if (sig === lastSig) return;
+  lastSig = sig;
   if (proper) {
     proper.removeAttribute('data-core-hidden');
     proper.removeAttribute('data-lite-hidden');
@@ -32,7 +36,7 @@ function run() {
   }
   OLD_IDS.forEach((id) => {
     const old = document.getElementById(id);
-    if (old) old.setAttribute('aria-hidden', 'true');
+    if (old && old.getAttribute('aria-hidden') !== 'true') old.setAttribute('aria-hidden', 'true');
   });
 }
 
@@ -40,9 +44,9 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window.
   window.__CHURVOX_OWNER_PROPER_PAGE_SHIELD__ = true;
   window.addEventListener('DOMContentLoaded', run);
   window.addEventListener('load', run);
-  window.addEventListener('hashchange', () => setTimeout(run, 80));
-  window.addEventListener('popstate', () => setTimeout(run, 80));
-  setInterval(run, 300);
+  window.addEventListener('hashchange', () => setTimeout(run, 120));
+  window.addEventListener('popstate', () => setTimeout(run, 120));
+  setInterval(run, 5000);
   run();
 }
 
