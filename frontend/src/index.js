@@ -85,6 +85,7 @@ import './runtime/churvoxOwnerPageContainmentRuntime';
 import './runtime/churvoxOwnerProperPageLayoutsRuntime';
 import './runtime/churvoxOwnerProperPageShieldRuntime';
 import './runtime/churvoxOwnerProperFormsRuntime';
+import './runtime/churvoxOwnerProperFormsTopRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
