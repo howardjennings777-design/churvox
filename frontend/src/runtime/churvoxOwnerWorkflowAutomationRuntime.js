@@ -11,7 +11,6 @@ function read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)
 function write(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {} }
 function text(value) { return String(value || '').trim(); }
 function norm(value) { return text(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 70); }
-function empty(value) { return text(value) === '' || /^none$|^draft$/i.test(text(value)); }
 function pageKey() { return String(location.hash || '').replace('#','').toLowerCase() || 'aiguide'; }
 function esc(value) { return String(value || '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
 
@@ -44,8 +43,8 @@ function nextDate(value, repeat) {
   const d = value ? new Date(value) : new Date();
   if (Number.isNaN(d.getTime())) return '';
   const r = String(repeat || '').toLowerCase();
-  if (r.includes('week')) d.setDate(d.getDate() + 7);
-  else if (r.includes('fortnight')) d.setDate(d.getDate() + 14);
+  if (r.includes('fortnight')) d.setDate(d.getDate() + 14);
+  else if (r.includes('week')) d.setDate(d.getDate() + 7);
   else if (r.includes('month')) d.setMonth(d.getMonth() + 1);
   else return '';
   return d.toISOString().slice(0, 10);
@@ -70,7 +69,7 @@ function runQuoteToJob(records, actions) {
       notes: 'Created from accepted quote. Assign worker and schedule date/time.',
     }, quote.id);
     if (created) actions.push('Accepted quote created a draft job.');
-    command({ key: `quote-to-job:${quote.id}`, title: `Accepted quote ready to become job`, sourcePage: 'quotes', linkedRecordId: quote.id, confidence: 82, note: 'Quote is accepted. Churvox created a draft job and needs owner to confirm schedule/worker.' });
+    command({ key: `quote-to-job:${quote.id}`, title: 'Accepted quote ready to become job', sourcePage: 'quotes', linkedRecordId: quote.id, confidence: 82, note: 'Quote is accepted. Churvox created a draft job and needs owner to confirm schedule/worker.' });
   });
 }
 
@@ -80,7 +79,7 @@ function runJobToInvoice(records, actions) {
     const proof = text(job.values?.proof || job.values?.proofStatus || job.values?.notes).toLowerCase();
     if (!status.includes('completed')) return;
     if (!proof.includes('upload') && !proof.includes('photo') && !proof.includes('proof')) {
-      command({ key: `job-proof:${job.id}`, title: `Completed job needs proof check`, sourcePage: 'jobs', linkedRecordId: job.id, confidence: 68, note: 'Job is completed but proof is unclear. Review in Command before invoice draft.' });
+      command({ key: `job-proof:${job.id}`, title: 'Completed job needs proof check', sourcePage: 'jobs', linkedRecordId: job.id, confidence: 68, note: 'Job is completed but proof is unclear. Review in Command before invoice draft.' });
       return;
     }
     const title = `Invoice from ${job.title || job.values?.client || 'completed job'}`;
@@ -96,20 +95,21 @@ function runJobToInvoice(records, actions) {
       lineItems: job.values?.scope || '',
     }, job.id);
     if (created) actions.push('Completed job created a draft invoice.');
-    command({ key: `job-invoice:${job.id}`, title: `Draft invoice ready from completed job`, sourcePage: 'jobs', linkedRecordId: job.id, confidence: 88, note: 'Churvox prepared a draft invoice from completed job. Owner approves before sending or syncing.' });
+    command({ key: `job-invoice:${job.id}`, title: 'Draft invoice ready from completed job', sourcePage: 'jobs', linkedRecordId: job.id, confidence: 88, note: 'Churvox prepared a draft invoice from completed job. Owner approves before sending or syncing.' });
   });
 }
 
 function runRecurring(records, actions) {
   Object.values(records).filter((r) => r.page === 'jobs').forEach((job) => {
+    if (job.source === 'churvox-workflow' && job.sourceRecordId) return;
     const repeat = text(job.values?.repeat);
     if (!repeat || /^none$/i.test(repeat)) return;
     const next = nextDate(job.values?.date, repeat);
     if (!next) return;
     const title = `${job.title || job.values?.client || 'Recurring job'} · ${next}`;
-    const created = addRecord(records, 'jobs', title, { ...job.values, date: next, status: 'Draft', notes: `Next ${repeat.toLowerCase()} job prepared from recurring schedule.` }, job.id);
+    const created = addRecord(records, 'jobs', title, { ...job.values, date: next, status: 'Draft', repeat: 'None', notes: `Next ${repeat.toLowerCase()} job prepared from recurring schedule. Set to one-off until owner confirms the pattern.` }, job.id);
     if (created) actions.push('Recurring job prepared next visit.');
-    command({ key: `recurring:${job.id}:${next}`, title: `Next recurring job prepared`, sourcePage: 'jobs', linkedRecordId: job.id, confidence: 78, note: `Churvox prepared the next ${repeat.toLowerCase()} job for ${next}. Owner confirms if needed.` });
+    command({ key: `recurring:${job.id}:${next}`, title: 'Next recurring job prepared', sourcePage: 'jobs', linkedRecordId: job.id, confidence: 78, note: `Churvox prepared the next ${repeat.toLowerCase()} job for ${next}. Owner confirms if needed.` });
   });
 }
 
@@ -119,7 +119,7 @@ function runOverdueInvoices(records, actions) {
     const due = text(invoice.values?.due);
     const status = text(invoice.values?.status).toLowerCase();
     if (!due || due >= today || status.includes('paid')) return;
-    command({ key: `overdue:${invoice.id}:${due}`, title: `Overdue invoice follow-up prepared`, sourcePage: 'invoices', linkedRecordId: invoice.id, confidence: 84, note: `Invoice due ${due} is not paid. Churvox prepared a follow-up; owner reviews before sending.` });
+    command({ key: `overdue:${invoice.id}:${due}`, title: 'Overdue invoice follow-up prepared', sourcePage: 'invoices', linkedRecordId: invoice.id, confidence: 84, note: `Invoice due ${due} is not paid. Churvox prepared a follow-up; owner reviews before sending.` });
     actions.push('Overdue invoice follow-up prepared.');
   });
 }
@@ -128,7 +128,7 @@ function runWorkerIssues(records, actions) {
   Object.values(records).filter((r) => r.page === 'workers' || r.page === 'messages').forEach((record) => {
     const body = `${record.values?.message || ''} ${record.values?.ownerNote || ''}`.toLowerCase();
     if (!/extra|locked|problem|issue|customer asked|unsafe|damage|angry|payment|invoice/.test(body)) return;
-    command({ key: `field-issue:${record.id}`, title: `Field issue needs owner decision`, sourcePage: record.page, linkedRecordId: record.id, confidence: 72, note: 'Worker/client update contains a decision word. Churvox prepared it in Command.' });
+    command({ key: `field-issue:${record.id}`, title: 'Field issue needs owner decision', sourcePage: record.page, linkedRecordId: record.id, confidence: 72, note: 'Worker/client update contains a decision word. Churvox prepared it in Command.' });
     actions.push('Field issue prepared in Command.');
   });
 }
