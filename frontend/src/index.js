@@ -88,8 +88,6 @@ import './runtime/churvoxOwnerProperPageShieldRuntime';
 import './runtime/churvoxOwnerProperFormsRuntime';
 import './runtime/churvoxOwnerProperFormsTopRuntime';
 import './churvox-product/productModern.css';
-import './runtime/churvoxProductPremiumVisualRuntime';
-import './runtime/churvoxCenterSlipsRuntime';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -112,3 +110,19 @@ if (!staticPublicPageRendered) {
     </React.StrictMode>
   );
 }
+
+let ownerRuntimeLoaded = false;
+function loadOwnerRuntimeWhenInsideApp() {
+  if (ownerRuntimeLoaded || typeof window === 'undefined') return;
+  const isOwnerApp = window.location.pathname === '/dashboard' || window.location.pathname === '/plans' || window.location.pathname.startsWith('/dashboard');
+  if (!isOwnerApp) return;
+  ownerRuntimeLoaded = true;
+  import('./runtime/churvoxProductPremiumVisualRuntime').catch(() => {});
+  import('./runtime/churvoxCenterSlipsRuntime').catch(() => {});
+}
+
+loadOwnerRuntimeWhenInsideApp();
+window.addEventListener('popstate', loadOwnerRuntimeWhenInsideApp);
+window.addEventListener('hashchange', loadOwnerRuntimeWhenInsideApp);
+window.addEventListener('churvox-owner-app-ready', loadOwnerRuntimeWhenInsideApp);
+setTimeout(loadOwnerRuntimeWhenInsideApp, 1200);
