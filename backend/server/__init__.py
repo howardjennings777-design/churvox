@@ -70,6 +70,7 @@ for _patch in [
     'churvox_terminal_reader_patch',
     'churvox_os_v2_saved_records_patch',
     'churvox_owner_record_engine_routes_patch',
+    'churvox_launch_create_records_patch',
 ]:
     _install_launch_patch(_patch)
 
