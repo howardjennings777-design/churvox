@@ -5,6 +5,7 @@ import './churvoxHeaderFitRuntime';
 import './churvoxOwnerHeaderLogoRuntime';
 import './churvoxHeaderProperFitRuntime';
 import './churvoxSmartAdminAuditRuntime';
+import './churvoxCommandFocusRuntime';
 import './churvoxProductCopyCleanRuntime';
 
 // Center Churvox slips and record drawers like proper review modals.
