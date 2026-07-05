@@ -62,8 +62,8 @@ function normalizeAiBody(rawEndpoint, body) {
           ? body
           : [];
   const actions = rows.map((item, index) => ({
-    id: item.id || item._id || item.action_id || `ai-${index}`,
-    type: item.type || item.action || item.category || "AI review item",
+    id: item.id || item._id || item.action_id || `command-${index}`,
+    type: item.type || item.action || item.category || "Admin review",
     title: item.title || item.summary || item.label || "Prepared admin item",
     status: item.status || (item.preparedForApproval ? "Ready" : "Review"),
     owner: item.owner || item.recommended_action || "Approve",
