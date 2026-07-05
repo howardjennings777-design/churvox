@@ -1,5 +1,6 @@
 import './churvoxProductControlsRuntime';
 import './churvoxProductWorkbenchRuntime';
+import './churvoxCommandRealSlipRuntime';
 
 // Center Churvox slips and record drawers like proper review modals.
 // Loaded last so approval slips do not open as side drawers.
