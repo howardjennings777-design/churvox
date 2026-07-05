@@ -2,6 +2,7 @@
 
 import './churvoxCommandLanguageGuardRuntime';
 import './churvoxCommandPreparedQueueRuntime';
+import './churvoxPageCheckedRuntime';
 
 function normaliseOwnerHash() {
   const path = window.location.pathname || '';
