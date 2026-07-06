@@ -39,17 +39,43 @@ async function assertOwnerApp(page, label) {
   return body;
 }
 
+async function tryFillLocator(locator, value) {
+  const count = await locator.count().catch(() => 0);
+  for (let i = 0; i < count; i += 1) {
+    const item = locator.nth(i);
+    if (!(await item.isVisible().catch(() => false))) continue;
+    if (!(await item.isEnabled().catch(() => false))) continue;
+    await item.scrollIntoViewIfNeeded().catch(() => null);
+    try {
+      await item.fill(String(value), { timeout: 2500 });
+      return true;
+    } catch {
+      try {
+        await item.click({ force: true });
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+        await page.keyboard.type(String(value));
+        return true;
+      } catch {}
+    }
+  }
+  return false;
+}
+
 async function fillAny(page, name, value) {
+  const exact = new RegExp(`^${name}$`, 'i');
+  const loose = new RegExp(name, 'i');
   const locators = [
-    page.getByLabel(new RegExp(name, 'i')).first(),
-    page.getByPlaceholder(new RegExp(name, 'i')).first(),
-    page.locator(`input[name*="${name}" i], textarea[name*="${name}" i]`).first(),
+    page.getByLabel(exact),
+    page.getByPlaceholder(exact),
+    page.locator(`input[aria-label="${name}" i], textarea[aria-label="${name}" i], select[aria-label="${name}" i]`),
+    page.locator(`input[name="${name}" i], textarea[name="${name}" i], select[name="${name}" i]`),
+    page.getByLabel(loose),
+    page.getByPlaceholder(loose),
+    page.locator(`input[name*="${name}" i], textarea[name*="${name}" i], select[name*="${name}" i]`),
+    page.locator(`input[id*="${name}" i], textarea[id*="${name}" i], select[id*="${name}" i]`),
   ];
   for (const locator of locators) {
-    if (await locator.isVisible().catch(() => false)) {
-      await locator.fill(String(value));
-      return true;
-    }
+    if (await tryFillLocator(locator, value)) return true;
   }
   return false;
 }
