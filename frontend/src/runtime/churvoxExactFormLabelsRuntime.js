@@ -47,19 +47,11 @@ function removePaidLaunchFallbackDrawers() {
   document.getElementById('churvox-paid-launch-client-form')?.remove();
 }
 
-function closeFallbackDrawersForOwnerNavigation() {
-  removePaidLaunchFallbackDrawers();
-  window.setTimeout(removePaidLaunchFallbackDrawers, 0);
-  window.setTimeout(removePaidLaunchFallbackDrawers, 80);
-}
-
-function installOwnerNavEscapeStyles() {
+function installFallbackOverlayStyles() {
   if (document.getElementById('churvox-exact-form-labels-nav-style')) return;
   const style = document.createElement('style');
   style.id = 'churvox-exact-form-labels-nav-style';
   style.textContent = `
-    .cvxProduct .cvxTop,
-    .cvxProduct .cvxNav{position:relative;z-index:999999}
     .cvxPaidLaunchFallbackForm{pointer-events:none}
     .cvxPaidLaunchFallbackForm .cvxDrawer{pointer-events:auto}
   `;
@@ -72,19 +64,9 @@ function schedule() {
 
 if (typeof window !== 'undefined' && !window[FORM_LABEL_RUNTIME_FLAG]) {
   window[FORM_LABEL_RUNTIME_FLAG] = true;
-  installOwnerNavEscapeStyles();
+  installFallbackOverlayStyles();
   schedule();
-  document.addEventListener('pointerdown', (event) => {
-    if (event.target?.closest?.('.cvxNav button, .cvxTop button, [data-stripe-live-plan], [data-plan-card] button')) {
-      closeFallbackDrawersForOwnerNavigation();
-    }
-  }, true);
-  document.addEventListener('click', (event) => {
-    if (event.target?.closest?.('.cvxNav button, .cvxTop button, [data-stripe-live-plan], [data-plan-card] button')) {
-      closeFallbackDrawersForOwnerNavigation();
-    }
-    schedule();
-  }, true);
+  document.addEventListener('click', schedule, true);
   window.addEventListener('hashchange', () => { removePaidLaunchFallbackDrawers(); schedule(); });
   window.addEventListener('popstate', () => { removePaidLaunchFallbackDrawers(); schedule(); });
   window.addEventListener('churvox:data-refresh', schedule);
