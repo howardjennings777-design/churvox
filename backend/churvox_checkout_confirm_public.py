@@ -1,6 +1,6 @@
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import Request
 
 PLAN_ALIAS = {
@@ -64,6 +64,23 @@ def _user_filter(user_id, business_id, email):
     return {"$or": clauses} if clauses else {"_id": "__no_user_match__"}
 
 
+def _trial_ends_from_session(session, now):
+    try:
+        subscription = getattr(session, "subscription", None)
+        app = _server()
+        stripe = getattr(app, "stripe", None)
+        secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        if subscription and stripe and secret:
+            stripe.api_key = secret
+            sub = stripe.Subscription.retrieve(subscription)
+            trial_end = getattr(sub, "trial_end", None) or (sub.get("trial_end") if isinstance(sub, dict) else None)
+            if trial_end:
+                return datetime.fromtimestamp(int(trial_end), tz=timezone.utc)
+    except Exception:
+        pass
+    return now + timedelta(days=14)
+
+
 async def _save_session(session_id):
     app = _server()
     db = getattr(app, "db", None)
@@ -88,6 +105,7 @@ async def _save_session(session_id):
     email = _clean(getattr(session, "customer_email", "") or meta.get("email") or meta.get("customer_email"))
 
     now = datetime.now(timezone.utc)
+    trial_ends_at = _trial_ends_from_session(session, now)
     update = {
         "plan": plan,
         "subscription_plan": plan,
@@ -97,10 +115,14 @@ async def _save_session(session_id):
         "business_country": country,
         "country": country,
         "subscription_status": "trialing",
+        "plan_status": "trialing",
         "has_app_access": True,
+        "billing_lock_reason": None,
         "stripe_customer_id": _clean(getattr(session, "customer", "")),
         "stripe_subscription_id": _clean(getattr(session, "subscription", "")),
         "trial_started_at": now,
+        "trial_ends_at": trial_ends_at,
+        "trial_days": 14,
         "updated_at": now,
     }
 
@@ -109,13 +131,13 @@ async def _save_session(session_id):
 
     await db.billing_plan_sessions.update_one(
         {"stripe_session_id": session_id},
-        {"$set": {"status": "confirmed" if matched else "save_failed", "matched_users": matched, "plan": plan, "country": country, "business_id": business_id, "owner_user_id": user_id, "customer_email": email, "updated_at": now}},
+        {"$set": {"status": "confirmed" if matched else "save_failed", "matched_users": matched, "plan": plan, "country": country, "business_id": business_id, "owner_user_id": user_id, "customer_email": email, "trial_ends_at": trial_ends_at, "updated_at": now}},
         upsert=True,
     )
 
     if matched < 1:
         return {"success": False, "error": "No user matched Stripe metadata", "metadata": meta, "customer_email": email}
-    return {"success": True, "plan": plan, "country": country, "matched_users": matched}
+    return {"success": True, "plan": plan, "country": country, "matched_users": matched, "subscription_status": "trialing", "trial_ends_at": trial_ends_at.isoformat(), "has_app_access": True}
 
 
 def install(router):
