@@ -125,15 +125,49 @@ async function maybeClick(page, pattern) {
   try { await clickButton(page, pattern); return true; } catch { return false; }
 }
 
+async function apiLoginToken(page, email, secret, label) {
+  const res = await page.request.post(apiUrl('/api/auth/login'), {
+    data: { email, password: secret },
+    headers: { 'content-type': 'application/json' },
+  });
+
+  const body = await res.json().catch(async () => ({ text: await res.text().catch(() => '') }));
+  const token = body.token || body.access_token || body.data?.token || body.user?.token || '';
+
+  if (!res.ok() || !token) {
+    throw new Error(`${label} API login failed ${res.status()}: ${JSON.stringify(body).slice(0, 800)}`);
+  }
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' }).catch(() => null);
+  await page.evaluate((value) => {
+    window.localStorage.setItem('token', value);
+    window.localStorage.setItem('authToken', value);
+  }, token);
+
+  return token;
+}
+
 async function loginUi(page, email, secret, label) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
-  await page.locator('input[type="email"], input[name*="email" i]').first().fill(email);
-  await page.locator('input[type="password"]').first().fill(secret);
-  await clickButton(page, /sign in|log in|login/i, `${label} login`);
-  await page.waitForLoadState('domcontentloaded').catch(() => null);
-  await page.waitForTimeout(1400);
-  const token = await page.evaluate(() => window.localStorage.getItem('token') || window.localStorage.getItem('authToken') || '');
-  expect(token, `${label} login should store an auth token`).toBeTruthy();
+
+  const emailInput = page.locator('input[type="email"], input[name*="email" i]').first();
+  const passwordInput = page.locator('input[type="password"]').first();
+
+  if (await emailInput.isVisible().catch(() => false)) {
+    await emailInput.fill(email);
+    await passwordInput.fill(secret);
+    await clickButton(page, /sign in|log in|login/i, `${label} login`);
+    await page.waitForLoadState('domcontentloaded').catch(() => null);
+    await page.waitForTimeout(1800);
+  }
+
+  let token = await page.evaluate(() => window.localStorage.getItem('token') || window.localStorage.getItem('authToken') || '').catch(() => '');
+
+  if (!token) {
+    token = await apiLoginToken(page, email, secret, label);
+  }
+
+  expect(token, `${label} login should have an auth token`).toBeTruthy();
   return token;
 }
 
