@@ -1,3 +1,186 @@
-/* CHURVOX_PUBLIC_REBUILD_FORCE_REMOVED_20260706
-   The public pages now use their real component-level rebuild styles.
-   This file stays imported as a harmless marker so older imports do not break. */
+/* CHURVOX_PUBLIC_POLISH_20260706
+   Final public polish only: sizing, spacing and contrast cleanup.
+   No pricing or product logic changes. */
+
+.publicSite .cv2HeroCopy h1,
+.publicSite .publicHero h1 {
+  font-size: clamp(42px, 5.8vw, 78px) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.07em !important;
+}
+
+.publicSite .cv2Section h2,
+.publicSite .publicBand h2,
+.publicSite .publicCta h2,
+.publicSite .cv2FinalCta h2 {
+  font-size: clamp(30px, 3.7vw, 54px) !important;
+  line-height: 0.96 !important;
+  letter-spacing: -0.055em !important;
+}
+
+.publicSite .publicFeaturePanel b,
+.publicSite .slimPanel b {
+  font-size: clamp(26px, 3.2vw, 42px) !important;
+  line-height: 0.98 !important;
+}
+
+.publicSite .publicHero,
+.publicSite .cv2Hero {
+  padding-top: clamp(28px, 4.8vw, 62px) !important;
+  padding-bottom: 20px !important;
+}
+
+.publicSite .publicBand,
+.publicSite .cv2Section,
+.publicSite .cv2FinalCta {
+  margin-bottom: 18px !important;
+  padding: clamp(20px, 3vw, 34px) !important;
+  border-radius: 28px !important;
+}
+
+.publicSite .publicHero p,
+.publicSite .publicBand p,
+.publicSite .cv2Section p {
+  font-size: 14.5px !important;
+  line-height: 1.55 !important;
+  max-width: 700px !important;
+}
+
+.publicSite .publicKicker {
+  margin-bottom: 10px !important;
+  padding: 7px 10px !important;
+  font-size: 9px !important;
+}
+
+.publicSite .publicPrimary,
+.publicSite .publicSecondary {
+  min-height: 40px !important;
+  padding: 9px 14px !important;
+  font-size: 12px !important;
+}
+
+.publicSite .publicLinks a {
+  min-height: 34px !important;
+  padding: 8px 10px !important;
+  font-size: 11.5px !important;
+}
+
+.publicSite .publicFeatureGrid,
+.publicSite .publicAreaGrid,
+.publicSite .publicCardGrid,
+.publicSite .publicFlow,
+.publicSite .cv2TradeGrid,
+.publicSite .cv2PlanRail,
+.publicSite .cv2ContactCards,
+.publicSite .publicPlanGrid {
+  gap: 12px !important;
+}
+
+.publicSite .publicFeatureGrid article,
+.publicSite .publicAreaGrid article,
+.publicSite .publicCardGrid article,
+.publicSite .publicFlow article,
+.publicSite .cv2TradeGrid article,
+.publicSite .cv2PlanRail article,
+.publicSite .cv2ContactCards article,
+.publicSite .publicPlanGrid article,
+.publicSite .publicAddOnGrid article {
+  padding: 16px !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 252, 0.9) !important;
+}
+
+.publicSite .publicDarkBand article {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.publicSite .publicDarkBand article b,
+.publicSite .publicDarkBand article span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.publicSite .publicPlanPrice,
+.publicSite .cv2PlanRail strong,
+.publicSite .publicAddOnGrid strong {
+  font-size: clamp(24px, 3vw, 38px) !important;
+  line-height: 1 !important;
+}
+
+.publicSite.publicPageSlim .publicFeatureGrid.fiveCards {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+.publicSite.publicPageSlim .smallActionGrid {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+}
+
+.publicSite.publicPageSlim .smallActionGrid article span {
+  font-size: 12px !important;
+}
+
+.cvPublicAuth .cvPublicAuthCard h1 {
+  font-size: clamp(38px, 5vw, 58px) !important;
+  line-height: 0.98 !important;
+}
+
+.cvPublicAuth .cvPublicAuthPanel h2 {
+  font-size: clamp(32px, 4.2vw, 52px) !important;
+  line-height: 0.98 !important;
+}
+
+.cvPublicAuth .cvPublicAuthShell {
+  padding-top: clamp(18px, 3vw, 36px) !important;
+  padding-bottom: clamp(18px, 3vw, 36px) !important;
+}
+
+.crqShell .crqCard h1,
+.crqShell .crqDone h1 {
+  font-size: clamp(36px, 5vw, 58px) !important;
+  line-height: 0.98 !important;
+}
+
+.crqShell .crqCard,
+.crqShell .crqDone {
+  border-radius: 28px !important;
+  padding: clamp(20px, 3vw, 34px) !important;
+}
+
+.cpd-shell .cpd-head h1,
+.cpp-shell .cpp-hero h1 {
+  font-size: clamp(38px, 5.6vw, 68px) !important;
+  line-height: 0.94 !important;
+}
+
+.cpd-shell .cpd-document,
+.cpp-shell .cpp-hero > div,
+.cpp-shell .cpp-hero > aside,
+.cpp-shell .cpp-card {
+  border-radius: 28px !important;
+}
+
+@media (max-width: 1120px) {
+  .publicSite.publicPageSlim .publicFeatureGrid.fiveCards,
+  .publicSite.publicPageSlim .smallActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .publicSite .cv2HeroCopy h1,
+  .publicSite .publicHero h1 {
+    font-size: clamp(36px, 11vw, 52px) !important;
+  }
+
+  .publicSite .cv2Section h2,
+  .publicSite .publicBand h2,
+  .publicSite .publicCta h2,
+  .publicSite .cv2FinalCta h2 {
+    font-size: clamp(28px, 9vw, 42px) !important;
+  }
+
+  .publicSite.publicPageSlim .publicFeatureGrid.fiveCards,
+  .publicSite.publicPageSlim .smallActionGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
