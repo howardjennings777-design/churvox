@@ -6,187 +6,49 @@ XERO_SCOPES_DEFAULT = "openid profile email offline_access accounting.invoices"
 BACKEND_PUBLIC_URL_DEFAULT = "https://churvox-backend.onrender.com"
 FRONTEND_URL_DEFAULT = "https://www.churvox.com"
 
-try:
-    import churvox_plan_limits_current_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_xero_addon_alias_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_worker_role_alias_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_worker_jobs_read_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_xero_routes_install_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_worker_complete_elapsed_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_monthly_job_limit  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_ai_action_limit  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_job_timer_routes_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_old_backend_bridge_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_field_truth_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_field_truth_fix_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_field_truth_hardening_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_command_readiness_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_command_readiness_fix_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_command_readiness_hardening_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_approval_execution_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_invoice_vault_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_invoice_vault_guard_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_plan_usage_guard_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_top_player_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_top_player_fix_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_onsite_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_logic_audit_hardening_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_logic_audit_idempotency_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_command_execution_lock_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_worker_onsite_signal_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_live_ping_onsite_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_onsite_beacon_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_onsite_debug_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_on_site_payments_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_terminal_reader_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_payment_account_env_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_field_loop_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_record_bridge_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_admin_recovery_patch  # noqa: F401
-except Exception:
-    pass
-
-try:
-    import churvox_paid_launch_guard_patch  # noqa: F401
-except Exception:
-    pass
+for _module in [
+    "churvox_plan_limits_current_patch",
+    "churvox_xero_addon_alias_patch",
+    "churvox_worker_role_alias_patch",
+    "churvox_worker_jobs_read_patch",
+    "churvox_xero_routes_install_patch",
+    "churvox_worker_complete_elapsed_patch",
+    "churvox_monthly_job_limit",
+    "churvox_ai_action_limit",
+    "churvox_job_timer_routes_patch",
+    "churvox_old_backend_bridge_patch",
+    "churvox_field_truth_patch",
+    "churvox_field_truth_fix_patch",
+    "churvox_field_truth_hardening_patch",
+    "churvox_command_readiness_patch",
+    "churvox_command_readiness_fix_patch",
+    "churvox_command_readiness_hardening_patch",
+    "churvox_approval_execution_patch",
+    "churvox_invoice_vault_patch",
+    "churvox_invoice_vault_guard_patch",
+    "churvox_plan_usage_guard_patch",
+    "churvox_top_player_patch",
+    "churvox_top_player_fix_patch",
+    "churvox_onsite_patch",
+    "churvox_logic_audit_hardening_patch",
+    "churvox_logic_audit_idempotency_patch",
+    "churvox_command_execution_lock_patch",
+    "churvox_worker_onsite_signal_patch",
+    "churvox_live_ping_onsite_patch",
+    "churvox_onsite_beacon_patch",
+    "churvox_onsite_debug_patch",
+    "churvox_on_site_payments_patch",
+    "churvox_terminal_reader_patch",
+    "churvox_payment_account_env_patch",
+    "churvox_field_loop_patch",
+    "churvox_record_bridge_patch",
+    "churvox_owner_visibility_v2_patch",
+    "churvox_owner_data_debug_patch",
+    "churvox_wiring_health_patch",
+    "churvox_admin_recovery_patch",
+    "churvox_paid_launch_guard_patch",
+]:
+    try:
+        __import__(_module)  # noqa: F401
+    except Exception:
+        pass
