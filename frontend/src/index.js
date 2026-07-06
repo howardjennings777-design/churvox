@@ -36,6 +36,7 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxWorkerPreReactShell'),
   () => import('./runtime/churvoxNativeTimerRuntime'),
   () => import('./churvox-fresh/optionFWorkerCopyScrubRuntime'),
+  () => import('./pages/worker/WorkerNoFussPremium.css'),
 ];
 
 function runImports(imports) {
