@@ -71,6 +71,7 @@ for _patch in [
     'churvox_os_v2_saved_records_patch',
     'churvox_owner_record_engine_routes_patch',
     'churvox_launch_create_records_patch',
+    'churvox_legit_wiring_patch',
 ]:
     _install_launch_patch(_patch)
 
