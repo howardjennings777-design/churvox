@@ -68,16 +68,9 @@
     "test:business:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-business-audit.spec.js",
     "test:human": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-human-flow.spec.js --project=desktop-chromium",
     "test:human:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-human-flow.spec.js --project=mobile-chromium",
-    "test:human:full:v7": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v7.spec.js --project=desktop-chromium",
-    "test:human:full:v7:all": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v7.spec.js",
-    "test:human:full": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v8.spec.js --project=desktop-chromium",
-    "test:human:full:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v8.spec.js --project=mobile-chromium",
-    "test:human:full:all": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v8.spec.js",
     "test:paid-launch": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-full-audit.spec.js",
     "test:paid-launch:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-full-audit.spec.js --project=desktop-chromium",
     "test:paid-launch:mutate": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-full-audit.spec.js --project=desktop-chromium",
-    "test:paid-launch:ready": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v7.spec.js && PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-full-audit.spec.js --grep-invert \"owner login can reach app owner|owner can add a tester|backend paid-launch routes answer\"",
-    "test:paid-launch:ready:desktop": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-full-human-audit-v7.spec.js --project=desktop-chromium && PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-full-audit.spec.js --project=desktop-chromium --grep-invert \"owner login can reach app owner|owner can add a tester|backend paid-launch routes answer\"",
     "test:paid-launch:own-it": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js",
     "test:paid-launch:own-it:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js --project=desktop-chromium",
     "test:paid-launch:own-it:mutate": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js --project=desktop-chromium",
@@ -107,7 +100,7 @@
   },
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "development": ["last 1 chrome version", "last 1 firefox version"]
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
