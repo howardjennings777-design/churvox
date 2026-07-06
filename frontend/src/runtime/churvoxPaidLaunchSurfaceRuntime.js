@@ -1,5 +1,6 @@
 const FALLBACK_CLIENT_FORM_ID = 'churvox-paid-launch-client-form';
 const FALLBACK_STYLE_ID = 'churvox-paid-launch-surface-style';
+const STABLE_TEXT_ID = 'churvox-paid-launch-stable-owner-text';
 
 function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
@@ -11,6 +12,10 @@ function pageKey() {
   const title = clean(document.querySelector('.cvxTopTitle h1')?.textContent || document.querySelector('h1')?.textContent).toLowerCase();
   if (/workers?/.test(title)) return 'workers';
   if (/clients?/.test(title)) return 'clients';
+  if (/command/.test(title)) return 'command';
+  if (/jobs?/.test(title)) return 'jobs';
+  if (/quotes?/.test(title)) return 'quotes';
+  if (/invoices?/.test(title)) return 'invoices';
   return '';
 }
 
@@ -25,6 +30,17 @@ function panelByTitle(pattern) {
     const title = clean(panel.querySelector('h3')?.textContent || panel.textContent || '');
     return pattern.test(title);
   });
+}
+
+function ensureStableOwnerText() {
+  const path = window.location.pathname || '';
+  if (!path.startsWith('/dashboard')) return;
+  if (document.getElementById(STABLE_TEXT_ID)) return;
+  const node = document.createElement('div');
+  node.id = STABLE_TEXT_ID;
+  node.className = 'cvxPaidLaunchStableText';
+  node.textContent = 'Owner control room. Run sheet, checks, messages and money stay ready while Churvox loads the owner command floor.';
+  document.body.appendChild(node);
 }
 
 function mapUrl() {
@@ -125,6 +141,7 @@ function installStyles() {
     .cvxProduct .cvxMap iframe{display:block;width:100%;min-height:310px;border:0}
     .cvxProduct .cvxPaidLaunchToolbar{grid-column:1/-1}
     .cvxPaidLaunchFallbackForm .cvxDrawer{width:min(1040px,calc(100vw - 28px))}
+    .cvxPaidLaunchStableText{position:fixed;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;color:#101513;background:#fff}
   `;
   document.head.appendChild(style);
 }
@@ -132,6 +149,7 @@ function installStyles() {
 function apply() {
   if (typeof window === 'undefined') return;
   installStyles();
+  ensureStableOwnerText();
   ensureWorkerMap();
   ensureClientAddButton();
 }
