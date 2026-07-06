@@ -1,5 +1,6 @@
 const LOGOUT_ID = "churvox-runtime-logout-button";
 const WORKER_LOGOUT_ID = "churvox-worker-runtime-logout-button";
+const PRODUCT_LOGOUT_ID = "churvox-product-runtime-logout-button";
 
 function clearAuthStorage() {
   try {
@@ -69,6 +70,13 @@ function installOwnerLogout() {
   nav.appendChild(button);
 }
 
+function installProductLogout() {
+  const nav = document.querySelector(".cvxProduct .cvxNav");
+  if (!nav || document.getElementById(PRODUCT_LOGOUT_ID)) return;
+  const button = makeButton(PRODUCT_LOGOUT_ID, "cvxLogoutNavButton", "Log out");
+  nav.appendChild(button);
+}
+
 function installWorkerLogout() {
   const nav = document.querySelector(".swNav");
   if (!nav || document.getElementById(WORKER_LOGOUT_ID)) return;
@@ -78,6 +86,7 @@ function installWorkerLogout() {
 
 function installLogoutButtons() {
   installOwnerLogout();
+  installProductLogout();
   installWorkerLogout();
 }
 
@@ -87,6 +96,7 @@ function installStyles() {
   style.id = "churvox-logout-nav-style";
   style.textContent = `
     .cocLogoutNavButton,
+    .cvxLogoutNavButton,
     .swLogoutNavButton{
       border:1px solid rgba(239,68,68,.35)!important;
       background:rgba(239,68,68,.10)!important;
@@ -96,6 +106,7 @@ function installStyles() {
       text-decoration:none!important;
     }
     .cocLogoutNavButton:hover,
+    .cvxLogoutNavButton:hover,
     .swLogoutNavButton:hover{
       border-color:rgba(248,113,113,.75)!important;
       background:rgba(239,68,68,.18)!important;
@@ -108,6 +119,22 @@ function installStyles() {
       min-height:40px!important;
       white-space:nowrap!important;
     }
+    .cvxProduct .cvxNav .cvxLogoutNavButton{
+      margin-left:auto!important;
+      min-width:94px!important;
+      min-height:44px!important;
+      border-radius:16px!important;
+      padding:8px 11px!important;
+      font-size:12px!important;
+      color:#991b1b!important;
+      background:#fff1f2!important;
+      border-color:rgba(220,38,38,.22)!important;
+    }
+    .cvxProduct .cvxNav .cvxLogoutNavButton:hover{
+      color:#7f1d1d!important;
+      background:#ffe4e6!important;
+      border-color:rgba(220,38,38,.42)!important;
+    }
     .swNav .swLogoutNavButton{
       border-radius:16px!important;
       padding:8px 10px!important;
@@ -115,7 +142,8 @@ function installStyles() {
       line-height:1.1!important;
     }
     @media(max-width:760px){
-      .cocNav .cocLogoutNavButton{margin-left:0!important;}
+      .cocNav .cocLogoutNavButton,
+      .cvxProduct .cvxNav .cvxLogoutNavButton{margin-left:0!important;}
     }
   `;
   document.head.appendChild(style);
@@ -130,6 +158,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("DOMContentLoaded", boot);
   window.addEventListener("hashchange", () => window.setTimeout(boot, 50));
   window.addEventListener("popstate", () => window.setTimeout(boot, 50));
+  window.addEventListener("churvox-owner-app-ready", () => window.setTimeout(boot, 50));
   window.setInterval(installLogoutButtons, 800);
   boot();
 }
