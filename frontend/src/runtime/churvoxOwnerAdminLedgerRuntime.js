@@ -15,6 +15,11 @@ function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
+function removeLedger() {
+  document.querySelector('[data-churvox-command-ledger]')?.remove();
+  lastHtml = '';
+}
+
 function isCommand() {
   const path = window.location.pathname || '';
   const hash = (window.location.hash || '').replace('#', '');
@@ -32,9 +37,9 @@ function listFrom(payload) {
 function laneOf(item) {
   const text = clean([item?.lane, item?.type, item?.kind, item?.action_type, item?.status, item?.title].join(' ')).toLowerCase();
   if (/worker problem|field issue|job issue|problem/.test(text)) return 'Worker problems';
-  if (/missing|ledger|incomplete|needs/.test(text)) return 'Missing info';
   if (/invoice|money|paid|payment|overdue/.test(text)) return 'Money waiting';
   if (/day close|close/.test(text)) return 'Day close';
+  if (/missing|ledger|incomplete|needs/.test(text)) return 'Missing info';
   return 'Ready to approve';
 }
 
@@ -48,11 +53,15 @@ function buildHtml(actions) {
   const counts = Object.fromEntries(LANES.map(([name]) => [name, 0]));
   actions.forEach((item) => { counts[laneOf(item)] = (counts[laneOf(item)] || 0) + 1; });
   const cards = LANES.map(([name, tone, note]) => `<article class="cvxAdminLedgerLane ${tone}"><b>${counts[name] || 0}</b><span>${name}</span><small>${note}</small></article>`).join('');
-  return `<section class="cvxAdminLedgerLanes" data-churvox-command-ledger="true"><header><div><h3>Admin ledger lanes</h3><p>Churvox sorts the owner pile into problems, missing info, money, approvals and day close.</p></div><span class="cvxAdminLedgerStamp">Command only</span></header><div class="cvxAdminLedgerLaneGrid">${cards}</div></section>`;
+  return `<section class="cvxAdminLedgerLanes" data-churvox-command-ledger="true"><header><div><h3>Command lanes</h3><p>Problems, missing info, money checks and ready decisions stay in Command.</p></div><span class="cvxAdminLedgerStamp">Owner approval desk</span></header><div class="cvxAdminLedgerLaneGrid">${cards}</div></section>`;
 }
 
 async function apply() {
-  if (typeof window === 'undefined' || !isCommand() || loading) return;
+  if (typeof window === 'undefined' || loading) return;
+  if (!isCommand()) {
+    removeLedger();
+    return;
+  }
   const page = document.querySelector('.cvxPage');
   if (!page) return;
   loading = true;
