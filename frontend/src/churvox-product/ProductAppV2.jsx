@@ -3,6 +3,7 @@ import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import API_BASE from "../lib/apiBase";
 import "./productApp.css";
+import "./productPlanLocks.css";
 
 const NAV = [
   ["today", "Today", "Daily control"],
