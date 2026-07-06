@@ -60,12 +60,6 @@ const guardrails = [
   ["Draft accounting sync only", "Xero/MYOB handoff stays draft, safe and owner-approved where available."],
 ];
 
-const trustPoints = [
-  ["Simple for the owner", "See the day, the money, the workers and the decisions without hunting."],
-  ["Simple for workers", "They see the job, address, notes, directions, messages, start and finish."],
-  ["Clean demo story", "Public previews use believable example records, not audit noise or test wording."],
-];
-
 function PublicNavLink({ to, label, type }) {
   if (type === "external") return <a href={to}>{label}</a>;
   return <Link to={to}>{label}</Link>;
@@ -180,7 +174,7 @@ function MiniWorkerLoop() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_APPROVAL_DESK_SITE_20260706">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_TIGHT_SITE_20260706">
       <Nav />
 
       <section className="publicHero publicHeroPremium">
@@ -246,9 +240,9 @@ export default function ExecutiveHomePage() {
       <section className="publicBand publicSplit">
         <div>
           <span className="publicKicker">Made for real work</span>
-          <h2>Useful across the service businesses Churvox is built for.</h2>
+          <h2>Built for service businesses that move fast.</h2>
           <p>
-            The product stays broad enough for different trades, but practical enough to feel like it understands jobs, workers, clients and money.
+            Churvox stays broad enough for different trades, but practical enough to understand jobs, workers, clients and money.
           </p>
         </div>
         <div className="publicAreaGrid">
@@ -302,21 +296,6 @@ export default function ExecutiveHomePage() {
         </div>
         <div className="publicCardGrid">
           {guardrails.map(([title, text]) => (
-            <article key={title}>
-              <b>{title}</b>
-              <span>{text}</span>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="publicBand">
-        <div className="publicSectionHead">
-          <span className="publicKicker">Ready for launch polish</span>
-          <h2>Make every preview feel believable, clean and premium.</h2>
-        </div>
-        <div className="publicCardGrid">
-          {trustPoints.map(([title, text]) => (
             <article key={title}>
               <b>{title}</b>
               <span>{text}</span>
