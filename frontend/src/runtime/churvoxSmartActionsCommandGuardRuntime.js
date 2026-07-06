@@ -87,19 +87,23 @@ function safeCopy(value) {
     .replace(/before anything is sent/gi, "before anything goes out");
 }
 
+function setTextIfDifferent(node, text) {
+  if (node && node.textContent !== text) node.textContent = text;
+}
+
 function tightenSmartDock() {
   const root = document.getElementById(SMART_ROOT_ID);
   if (!root) return;
   const command = isCommand();
   root.querySelectorAll(".cvSmartIntro span").forEach((item) => {
-    item.textContent = command
+    setTextIfDifferent(item, command
       ? "You are in Command, so Approve, Edit and Park can be used here. Nothing is auto-sent."
-      : "This page only prepares smart review slips. Approve, Edit and Park stay inside Command.";
+      : "This page only prepares smart review slips. Approve, Edit and Park stay inside Command.");
   });
   root.querySelectorAll(".cvSmartFoot").forEach((item) => {
-    item.textContent = command
+    setTextIfDifferent(item, command
       ? "Nothing is auto-sent. Approve runs the prepared action, Edit saves a review slip, Park keeps it in Command for later."
-      : "Nothing is auto-sent. Outside Command, suggestions are sent to Command for owner review.";
+      : "Nothing is auto-sent. Outside Command, suggestions are sent to Command for owner review.");
   });
   root.querySelectorAll(".cvSmartCard p, .cvSmartDetails span").forEach((item) => {
     const next = safeCopy(item.textContent);
@@ -110,19 +114,29 @@ function tightenSmartDock() {
     const edit = actions.querySelector("[data-smart-edit]");
     const park = actions.querySelector("[data-smart-park]");
     if (command) {
-      if (approve) approve.hidden = false;
-      if (edit) edit.hidden = false;
-      if (park) park.hidden = false;
+      if (approve && approve.hidden) approve.hidden = false;
+      if (edit && edit.hidden) edit.hidden = false;
+      if (park && park.hidden) park.hidden = false;
       return;
     }
     if (approve) {
-      approve.textContent = "Send to Command";
-      approve.hidden = false;
-      approve.setAttribute("aria-label", "Send smart action to Command for owner review");
+      if (approve.textContent !== "Send to Command") approve.textContent = "Send to Command";
+      if (approve.hidden) approve.hidden = false;
+      if (approve.getAttribute("aria-label") !== "Send smart action to Command for owner review") approve.setAttribute("aria-label", "Send smart action to Command for owner review");
     }
-    if (edit) edit.hidden = true;
-    if (park) park.hidden = true;
+    if (edit && !edit.hidden) edit.hidden = true;
+    if (park && !park.hidden) park.hidden = true;
   });
+}
+
+let scheduled = false;
+function scheduleTighten(delay = 120) {
+  if (scheduled) return;
+  scheduled = true;
+  setTimeout(() => {
+    scheduled = false;
+    tightenSmartDock();
+  }, delay);
 }
 
 async function interceptOutsideCommand(event) {
@@ -150,12 +164,12 @@ function start() {
   if (window.__CHURVOX_SMART_ACTIONS_COMMAND_GUARD__) return;
   window.__CHURVOX_SMART_ACTIONS_COMMAND_GUARD__ = true;
   document.addEventListener("click", interceptOutsideCommand, true);
-  const observer = new MutationObserver(() => tightenSmartDock());
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-  window.addEventListener("hashchange", () => setTimeout(tightenSmartDock, 60));
-  window.addEventListener("popstate", () => setTimeout(tightenSmartDock, 60));
-  window.addEventListener("churvox:data-refresh", () => setTimeout(tightenSmartDock, 120));
-  setTimeout(tightenSmartDock, 600);
+  const observer = new MutationObserver(() => scheduleTighten(180));
+  observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
+  window.addEventListener("hashchange", () => scheduleTighten(80));
+  window.addEventListener("popstate", () => scheduleTighten(80));
+  window.addEventListener("churvox:data-refresh", () => scheduleTighten(160));
+  scheduleTighten(600);
   setTimeout(tightenSmartDock, 1200);
 }
 
