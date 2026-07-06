@@ -4,10 +4,10 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./SimplePublic.css";
 
 const navLinks = [
-  ["/features", "How it works", "route"],
   ["/pricing", "Pricing", "route"],
+  ["/features", "How it works", "route"],
   ["/request", "Request form", "route"],
-  ["mailto:hello@churvox.com", "Contact", "external"],
+  ["/contact", "Contact", "route"],
   ["/login", "Log in", "route"],
 ];
 
@@ -97,10 +97,10 @@ export function Footer() {
         </span>
       </div>
       <nav aria-label="Footer navigation">
-        <Link to="/features">How it works</Link>
         <Link to="/pricing">Pricing</Link>
-        <Link to="/request">Customer request form</Link>
-        <a href="mailto:hello@churvox.com">Contact</a>
+        <Link to="/features">How it works</Link>
+        <Link to="/request">Request form</Link>
+        <Link to="/contact">Contact</Link>
         <Link to="/privacy-policy">Privacy</Link>
         <Link to="/terms-of-service">Terms</Link>
         <Link to="/login">Log in</Link>
@@ -174,7 +174,7 @@ function MiniWorkerLoop() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_TIGHT_SITE_20260706">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_NAV_FIXED_20260706">
       <Nav />
 
       <section className="publicHero publicHeroPremium">
