@@ -31,8 +31,6 @@ const ownerRuntimeImports = [
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
   () => import('./runtime/churvoxCommandBrainRuntime'),
   () => import('./runtime/churvoxPaymentSetupRuntime'),
-  () => import('./runtime/churvoxSmartActionsRuntime'),
-  () => import('./runtime/churvoxSmartActionsCommandGuardRuntime'),
 ];
 
 const workerRuntimeImports = [
