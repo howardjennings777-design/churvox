@@ -60,6 +60,7 @@ const ownerRuntimeImports = [
 const workerRuntimeImports = [
   () => import('./runtime/churvoxWorkerPreReactShell'),
   () => import('./runtime/churvoxNativeTimerRuntime'),
+  () => import('./runtime/churvoxWorkerSendBackNoticeRuntime'),
   () => import('./churvox-fresh/optionFWorkerCopyScrubRuntime'),
   () => import('./pages/worker/WorkerNoFussPremium.css'),
   () => import('./pages/worker/WorkerAdminLedger.css'),
