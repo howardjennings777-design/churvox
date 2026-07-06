@@ -7,7 +7,7 @@ const navLinks = [
   ["/pricing", "Pricing", "route"],
   ["/features", "How it works", "route"],
   ["/request", "Request form", "route"],
-  ["/contact", "Contact", "route"],
+  ["/#contact", "Contact", "external"],
   ["/login", "Log in", "route"],
 ];
 
@@ -100,7 +100,7 @@ export function Footer() {
         <Link to="/pricing">Pricing</Link>
         <Link to="/features">How it works</Link>
         <Link to="/request">Request form</Link>
-        <Link to="/contact">Contact</Link>
+        <a href="/#contact">Contact</a>
         <Link to="/privacy-policy">Privacy</Link>
         <Link to="/terms-of-service">Terms</Link>
         <Link to="/login">Log in</Link>
@@ -174,7 +174,7 @@ function MiniWorkerLoop() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_NAV_FIXED_20260706">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_CONTACT_ANCHOR_20260706">
       <Nav />
 
       <section className="publicHero publicHeroPremium">
@@ -301,6 +301,28 @@ export default function ExecutiveHomePage() {
               <span>{text}</span>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section id="contact" className="publicBand publicSplit publicContactBand">
+        <div>
+          <span className="publicKicker">Contact</span>
+          <h2>Talk to Churvox.</h2>
+          <p>Email <b>hello@churvox.com</b> for setup help, questions, demos or trial support.</p>
+        </div>
+        <div className="publicCardGrid">
+          <article>
+            <b>Email</b>
+            <span>hello@churvox.com</span>
+          </article>
+          <article>
+            <b>Request form</b>
+            <span>Use the public request form when a customer needs work reviewed by the owner.</span>
+          </article>
+          <article>
+            <b>Owner review</b>
+            <span>Requests, quotes and invoices stay owner-approved before important action happens.</span>
+          </article>
         </div>
       </section>
 
