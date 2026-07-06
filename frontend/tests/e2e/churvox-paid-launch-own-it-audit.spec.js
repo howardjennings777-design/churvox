@@ -9,6 +9,7 @@ const RUN_MUTATION = /^(1|true|yes)$/i.test(process.env.CHURVOX_E2E_MUTATE || ''
 const ownerPages = ['today', 'command', 'jobs', 'clients', 'workers', 'messages', 'quotes', 'invoices', 'team', 'payroll', 'xero', 'settings', 'plans', 'support'];
 const publicRoutes = ['/', '/features', '/pricing', '/contact', '/security', '/support', '/login', '/signup'];
 const fatalPattern = /Something went wrong|Application error|Cannot read properties|undefined is not an object|Minified React error|ChunkLoadError|Script error|Loading chunk failed/i;
+const loginPagePattern = /WELCOME BACK|Sign in to Command|Email Password Show Sign in|Forgot password/i;
 
 async function gotoFast(page, route) {
   await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(async () => {
@@ -26,6 +27,13 @@ async function assertHealthy(page, label) {
   expect(body.length, `${label} should render useful text`).toBeGreaterThan(50);
   expect(body, `${label} should not show fatal UI`).not.toMatch(fatalPattern);
   expect(body, `${label} should not show raw placeholders`).not.toMatch(/lorem ipsum|placeholder text|sample data/i);
+  return body;
+}
+
+async function assertOwnerApp(page, label) {
+  const body = await assertHealthy(page, label);
+  expect(body, `${label} is still on login/public page. Check CHURVOX_OWNER_PASSWORD and active plan access.`).not.toMatch(loginPagePattern);
+  expect(body, `${label} should render the owner app`).toMatch(/Today|Command|Jobs|Clients|Workers|Quotes|Invoices|Settings|Plans|Churvox/i);
   return body;
 }
 
@@ -70,6 +78,14 @@ async function login(page, email, password) {
   await page.waitForTimeout(1400);
 }
 
+async function ownerLogin(page) {
+  test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
+  expect(OWNER_PASSWORD, 'Replace CHURVOX_OWNER_PASSWORD with the real password in your terminal.').not.toMatch(/YOUR_REAL_PASSWORD_HERE|PASTE_YOUR_PASSWORD_HERE/i);
+  await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+  await gotoFast(page, '/dashboard');
+  await assertOwnerApp(page, 'owner login');
+}
+
 async function mobileNoOverflow(page, route) {
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoFast(page, route);
@@ -105,8 +121,7 @@ test.describe('Churvox paid launch owner-level audit', () => {
   });
 
   test('owner app pages keep distinct page contracts and no duplicate setup coach', async ({ page }) => {
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
-    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+    await ownerLogin(page);
 
     const contracts = {
       today: /Owner control room|Run sheet|Checks|Messages|Money/i,
@@ -120,7 +135,7 @@ test.describe('Churvox paid launch owner-level audit', () => {
 
     for (const pageId of ownerPages) {
       await gotoFast(page, pageId === 'today' ? '/dashboard' : `/dashboard#${pageId}`);
-      const body = await assertHealthy(page, pageId);
+      const body = await assertOwnerApp(page, pageId);
       const setupCount = await page.locator('[data-churvox-setup-coach], .cvxSetupCoach').count();
       expect(setupCount, `${pageId} should not show setup coach overlay`).toBe(0);
       if (contracts[pageId]) expect(body, `${pageId} should show its page contract`).toMatch(contracts[pageId]);
@@ -128,26 +143,24 @@ test.describe('Churvox paid launch owner-level audit', () => {
   });
 
   test('Command is the only place with approval decision controls', async ({ page }) => {
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
-    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+    await ownerLogin(page);
 
     for (const pageId of ownerPages.filter((item) => item !== 'command')) {
       await gotoFast(page, pageId === 'today' ? '/dashboard' : `/dashboard#${pageId}`);
-      await assertHealthy(page, pageId);
+      await assertOwnerApp(page, pageId);
       const buttons = (await visibleButtonTexts(page)).join(' | ');
       expect(buttons, `${pageId} should not expose approve/park controls`).not.toMatch(/(^|\|)\s*(Approve|Park)\s*(\||$)/i);
     }
 
     await gotoFast(page, '/dashboard#command');
-    const command = await assertHealthy(page, 'command');
+    const command = await assertOwnerApp(page, 'command');
     expect(command).toMatch(/Approve|Edit|Park|Approval|Command/i);
   });
 
   test('Workers page has one clean GPS map panel and no raw worker pin block', async ({ page }) => {
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
-    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+    await ownerLogin(page);
     await gotoFast(page, '/dashboard#workers');
-    const body = await assertHealthy(page, 'workers');
+    const body = await assertOwnerApp(page, 'workers');
     expect(body).toMatch(/GPS map|Worker status|Proof|messages|slips/i);
     const extraPins = await page.locator('[data-churvox-worker-pin-map]').count();
     expect(extraPins, 'worker pin should update GPS panel, not create an extra map block').toBe(0);
@@ -156,8 +169,7 @@ test.describe('Churvox paid launch owner-level audit', () => {
   });
 
   test('owner forms open for the records a paid tester will touch', async ({ page }) => {
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
-    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+    await ownerLogin(page);
 
     for (const [pageId, openText, expected] of [
       ['jobs', /Add job|Job form|Run sheet/i, /Job name|Client|Site address|Assigned worker|Scheduled date|Price/i],
@@ -167,11 +179,11 @@ test.describe('Churvox paid launch owner-level audit', () => {
       ['invoices', /New invoice draft|Invoice form/i, /Invoice|Client|Job|Amount|Due date|Status/i],
     ]) {
       await gotoFast(page, `/dashboard#${pageId}`);
-      await assertHealthy(page, pageId);
+      await assertOwnerApp(page, pageId);
       const opened = await clickLike(page, openText);
       expect(opened, `${pageId} should open a form`).toBeTruthy();
       await page.waitForTimeout(500);
-      const body = await assertHealthy(page, `${pageId} form`);
+      const body = await assertOwnerApp(page, `${pageId} form`);
       expect(body, `${pageId} form should include real fields`).toMatch(expected);
       await clickLike(page, /^Close$/i);
     }
@@ -199,12 +211,11 @@ test.describe('Churvox paid launch owner-level audit', () => {
   });
 
   test('guardrail wording remains safe on sensitive product areas', async ({ page }) => {
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
-    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+    await ownerLogin(page);
 
     for (const route of ['/dashboard#xero', '/dashboard#payroll', '/dashboard#invoices', '/dashboard#command']) {
       await gotoFast(page, route);
-      const body = await assertHealthy(page, route);
+      const body = await assertOwnerApp(page, route);
       if (route.includes('xero')) expect(body).toMatch(/Draft sync only|Owner-approved|No automatic/i);
       if (route.includes('payroll')) expect(body).toMatch(/review only|Export/i);
       if (route.includes('invoices')) expect(body).toMatch(/draft|review|sync/i);
@@ -214,8 +225,7 @@ test.describe('Churvox paid launch owner-level audit', () => {
 
   test('mutating happy path can create launch records when explicitly enabled', async ({ page }) => {
     test.skip(!RUN_MUTATION, 'Mutation test disabled. Set CHURVOX_E2E_MUTATE=1 to create real test records.');
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
-    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+    await ownerLogin(page);
 
     const stamp = Date.now();
     const client = `Paid Launch Client ${stamp}`;
