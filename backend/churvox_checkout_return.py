@@ -1,6 +1,6 @@
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from fastapi import Request
 from fastapi.responses import RedirectResponse
@@ -88,6 +88,23 @@ def _backend():
     return (os.environ.get("BACKEND_PUBLIC_URL") or os.environ.get("API_PUBLIC_URL") or "https://grassley-backend.onrender.com").rstrip("/")
 
 
+def _trial_ends_from_session(session, now):
+    try:
+        subscription = getattr(session, "subscription", None)
+        app = _server()
+        stripe = getattr(app, "stripe", None)
+        secret = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+        if subscription and stripe and secret:
+            stripe.api_key = secret
+            sub = stripe.Subscription.retrieve(subscription)
+            trial_end = getattr(sub, "trial_end", None) or (sub.get("trial_end") if isinstance(sub, dict) else None)
+            if trial_end:
+                return datetime.fromtimestamp(int(trial_end), tz=timezone.utc)
+    except Exception:
+        pass
+    return now + timedelta(days=14)
+
+
 async def _save_from_session(session):
     app = _server()
     db = getattr(app, "db", None)
@@ -107,6 +124,7 @@ async def _save_from_session(session):
 
     owner_oid = owner_oid or user_oid
     now = datetime.now(timezone.utc)
+    trial_ends_at = _trial_ends_from_session(session, now)
     update = {
         "plan": plan,
         "subscription_plan": plan,
@@ -116,10 +134,14 @@ async def _save_from_session(session):
         "business_country": country,
         "country": country,
         "subscription_status": "trialing",
+        "plan_status": "trialing",
         "has_app_access": True,
+        "billing_lock_reason": None,
         "stripe_customer_id": _clean(getattr(session, "customer", "")),
         "stripe_subscription_id": _clean(getattr(session, "subscription", "")),
         "trial_started_at": now,
+        "trial_ends_at": trial_ends_at,
+        "trial_days": 14,
         "updated_at": now,
     }
 
@@ -145,6 +167,7 @@ async def _save_from_session(session):
             "matched_users": matched,
             "stripe_customer_id": update["stripe_customer_id"],
             "stripe_subscription_id": update["stripe_subscription_id"],
+            "trial_ends_at": trial_ends_at,
             "confirmed_at": now,
             "source": "checkout_return_backend_save",
         }},
@@ -153,7 +176,7 @@ async def _save_from_session(session):
 
     if matched <= 0:
         return {"success": False, "error": "No user document matched Stripe metadata", "metadata": meta}
-    return {"success": True, "plan": plan, "country": country, "matched": matched}
+    return {"success": True, "plan": plan, "country": country, "matched": matched, "subscription_status": "trialing", "trial_ends_at": trial_ends_at.isoformat(), "has_app_access": True}
 
 
 async def _retrieve_and_save(session_id):
