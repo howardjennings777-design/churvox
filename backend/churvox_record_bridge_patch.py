@@ -9,7 +9,7 @@ COLLECTIONS = {"jobs": "jobs", "clients": "clients", "quotes": "quotes", "invoic
 
 
 def now(): return datetime.now(timezone.utc)
-def txt(v, fallback=""): 
+def txt(v, fallback=""):
     s = str(v or "").strip()
     return s if s else fallback
 
@@ -31,6 +31,17 @@ def safe(v):
 def bid(user): return txt(user.get("business_id") or user.get("owner_business_id") or user.get("id") or user.get("_id"))
 def owner(user): return txt(user.get("role")).lower() in {"employer", "owner", "admin", "manager", "office_admin"} or user.get("is_admin") is True
 
+def bid_values(user, ObjectId):
+    raw = bid(user)
+    vals = [raw]
+    try: vals.append(ObjectId(raw))
+    except Exception: pass
+    return vals
+
+def business_filter(user, ObjectId):
+    vals = bid_values(user, ObjectId)
+    return {"$or": [{"business_id": {"$in": vals}}, {"businessId": {"$in": vals}}, {"contractor_id": {"$in": vals}}]}
+
 def remove(app, path, method):
     try: app.router.routes = [r for r in app.router.routes if not (getattr(r,"path","") == path and method in set(getattr(r,"methods",set()) or set()))]
     except Exception: pass
@@ -41,6 +52,9 @@ def idq(raw, ObjectId):
     try: arr.append({"_id": ObjectId(raw)})
     except Exception: pass
     return {"$or": arr}
+
+def record_filter(user, ObjectId, record_id):
+    return {"$and": [business_filter(user, ObjectId), idq(record_id, ObjectId)]}
 
 def number(v):
     try: return float(str(v or 0).replace("$", "").replace(",", ""))
@@ -87,7 +101,7 @@ def install(module):
         user = await get_user(request)
         items = []
         try:
-            cursor = collection(kind).find({"business_id": bid(user)}).sort("created_at", -1).limit(300)
+            cursor = collection(kind).find(business_filter(user, ObjectId)).sort("created_at", -1).limit(300)
             async for row in cursor: items.append(safe(row))
         except Exception: items = []
         return {"success": True, kind: items, "items": items, "data": items}
@@ -106,9 +120,10 @@ def install(module):
         if not owner(user): raise HTTPException(status_code=403, detail="Owner access required")
         payload = normalize(kind, await request.json())
         payload.update({"updated_at": now()})
-        result = await collection(kind).update_one({"business_id": bid(user), **idq(record_id, ObjectId)}, {"$set": payload})
+        query = record_filter(user, ObjectId, record_id)
+        result = await collection(kind).update_one(query, {"$set": payload})
         if result.matched_count == 0: raise HTTPException(status_code=404, detail="Record not found")
-        row = await collection(kind).find_one({"business_id": bid(user), **idq(record_id, ObjectId)})
+        row = await collection(kind).find_one(query)
         return {"success": True, "record": safe(row), "data": safe(row)}
 
     for kind in COLLECTIONS:
