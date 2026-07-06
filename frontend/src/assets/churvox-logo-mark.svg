@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Churvox mark</title>
+  <desc id="desc">Compact Churvox CV command mark for app icons and mobile.</desc>
+  <defs>
+    <linearGradient id="cvx-bg" x1="22" y1="22" x2="236" y2="236" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff7a2c"/>
+      <stop offset="0.45" stop-color="#f36b21"/>
+      <stop offset="1" stop-color="#0b0f0d"/>
+    </linearGradient>
+    <linearGradient id="cvx-cut" x1="50" y1="48" x2="205" y2="203" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff7ed"/>
+      <stop offset="1" stop-color="#ffd1a3"/>
+    </linearGradient>
+    <filter id="cvx-shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#0b0f0d" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect x="18" y="18" width="220" height="220" rx="54" fill="url(#cvx-bg)" filter="url(#cvx-shadow)"/>
+  <path d="M72 85c0-21 16-37 38-37h22v32h-18c-7 0-11 4-11 11v74c0 7 4 11 11 11h18v32h-22c-22 0-38-16-38-37V85Z" fill="url(#cvx-cut)"/>
+  <path d="M139 49h37l-36 158h-37l36-158Z" fill="#ffffff" opacity="0.94"/>
+  <path d="M162 49h36l-43 158h-36l43-158Z" fill="#fff7ed" opacity="0.62"/>
+  <path d="M47 194h162" stroke="#fff7ed" stroke-width="12" stroke-linecap="round" opacity="0.28"/>
+</svg>
