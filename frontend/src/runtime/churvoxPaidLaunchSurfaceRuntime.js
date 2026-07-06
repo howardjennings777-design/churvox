@@ -113,6 +113,81 @@ function openClientForm() {
   document.body.appendChild(layer);
 }
 
+
+function ensureRealClientDrawerFields() {
+  if (pageKey() !== 'clients') return;
+
+  const drawer = [...document.querySelectorAll('.cvxDrawerLayer .cvxDrawer, [role="dialog"], .cvxDrawer')]
+    .find((node) => visible(node) && /name/i.test(clean(node.textContent || '')) && /phone/i.test(clean(node.textContent || '')) && /email/i.test(clean(node.textContent || '')));
+
+  if (!drawer) return;
+
+  const labels = [...drawer.querySelectorAll('label')];
+
+  function labelText(label) {
+    return clean(label.querySelector('span')?.textContent || label.textContent || '');
+  }
+
+  function rename(fromPattern, toText) {
+    const label = labels.find((item) => fromPattern.test(labelText(item)));
+    if (!label) return false;
+    const span = label.querySelector('span');
+    if (span) span.textContent = toText;
+    const input = label.querySelector('input, textarea, select');
+    if (input) input.name = toText;
+    return true;
+  }
+
+  function addField(afterPattern, label, type = 'text', options = null, wide = false) {
+    if (labels.some((item) => new RegExp(`^${label}$`, 'i').test(labelText(item)))) return;
+
+    const wrapper = document.createElement('label');
+    wrapper.className = `cvxField${wide ? ' wide' : ''}`;
+
+    const span = document.createElement('span');
+    span.textContent = label;
+    wrapper.appendChild(span);
+
+    if (Array.isArray(options) && options.length) {
+      const select = document.createElement('select');
+      select.name = label;
+      options.forEach((option) => {
+        const node = document.createElement('option');
+        node.value = option;
+        node.textContent = option;
+        select.appendChild(node);
+      });
+      wrapper.appendChild(select);
+    } else if (type === 'textarea') {
+      const area = document.createElement('textarea');
+      area.name = label;
+      area.rows = 4;
+      wrapper.appendChild(area);
+    } else {
+      const input = document.createElement('input');
+      input.name = label;
+      input.type = type;
+      wrapper.appendChild(input);
+    }
+
+    const form = drawer.querySelector('.cvxForm') || drawer.querySelector('form') || drawer;
+    const after = [...form.querySelectorAll('label')].reverse().find((item) => afterPattern.test(labelText(item)));
+    if (after?.parentNode) after.parentNode.insertBefore(wrapper, after.nextSibling);
+    else form.appendChild(wrapper);
+  }
+
+  rename(/^Service$/i, 'Preferred service');
+  rename(/^Schedule$/i, 'Preferred schedule');
+  rename(/^Notes$/i, 'Access notes');
+  rename(/^Price$|^Saved price$|^Default price$/i, 'Saved price');
+
+  addField(/^Address$/i, 'Preferred service', 'text', ['Lawn mowing', 'Landscaping', 'Cleaning', 'Handyman', 'Painting', 'Plumbing', 'Electrical', 'Pest control', 'Other']);
+  addField(/^Preferred service$|^Saved price$/i, 'Saved price', 'number');
+  addField(/^Saved price$|^Preferred service$/i, 'Preferred schedule', 'text', ['One-off', 'Weekly', 'Fortnightly', 'Monthly', 'Custom']);
+  addField(/^Preferred schedule$|^Notes$/i, 'Access notes', 'textarea', null, true);
+}
+
+
 function ensureClientAddButton() {
   if (pageKey() !== 'clients') return;
   const page = document.querySelector('.cvxProduct .cvxPage');
@@ -155,6 +230,7 @@ function apply() {
   ensureStableOwnerText();
   ensureWorkerMap();
   ensureClientAddButton();
+  ensureRealClientDrawerFields();
 }
 
 function schedule() {
