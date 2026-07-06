@@ -42,6 +42,11 @@ const ownerRuntimeImports = [
   () => import('./runtime/churvoxPageIdentityRuntime'),
   () => import('./churvox-product/productCommandIdentity.css'),
   () => import('./churvox-product/productJobsIdentity.css'),
+  () => import('./churvox-product/productClientsMessagesIdentity.css'),
+  () => import('./churvox-product/productWorkersTeamIdentity.css'),
+  () => import('./churvox-product/productMoneyIdentity.css'),
+  () => import('./churvox-product/productOpsIdentity.css'),
+  () => import('./churvox-product/productSupportIdentity.css'),
 ];
 
 const workerRuntimeImports = [
