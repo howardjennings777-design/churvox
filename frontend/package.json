@@ -82,6 +82,8 @@
     "test:paid-launch:own-it:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js --project=desktop-chromium",
     "test:paid-launch:own-it:mutate": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js --project=desktop-chromium",
     "test:paid-launch:full-all": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js tests/e2e/churvox-worker-message-flow.spec.js --project=desktop-chromium --workers=1",
+    "test:everything": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e --project=desktop-chromium --workers=1",
+    "test:everything:all-projects": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e --workers=1",
     "test:logic:deep": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js",
     "test:logic:deep:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js --project=desktop-chromium",
     "test:logic:deep:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js --project=mobile-chromium",
