@@ -29,7 +29,7 @@ def safe(value):
     if isinstance(value, dict):
         clean = {}
         for key, item in value.items():
-            if key == "password_hash":
+            if key in {"password", "password_hash", "hashed_password", "token", "access_token", "refresh_token"}:
                 continue
             clean["id" if key == "_id" else key] = safe(item)
         return clean
@@ -64,9 +64,15 @@ def scope(user, ObjectId):
         {"created_by": {"$in": final_values}},
         {"created_by_id": {"$in": final_values}},
         {"employer_id": {"$in": final_values}},
+        {"account_id": {"$in": final_values}},
     ]
     if email:
-        ors.extend([{"owner_email": email}, {"created_by_email": email}])
+        ors.extend([
+            {"owner_email": email},
+            {"created_by_email": email},
+            {"business_email": email},
+            {"email": email},
+        ])
     return {"$or": ors}
 
 
@@ -82,8 +88,6 @@ def remove_route(app, path, method):
 
 def install(module):
     name = getattr(module, "__name__", "")
-    if name in INSTALLED:
-        return
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
