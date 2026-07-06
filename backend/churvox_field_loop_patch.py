@@ -40,10 +40,15 @@ def id_query(raw, ObjectId):
     except Exception: pass
     return {"$or": arr}
 
+def business_filter(user, ObjectId):
+    raw = bid(user)
+    vals = [raw]
+    try: vals.append(ObjectId(raw))
+    except Exception: pass
+    return {"$or": [{"business_id": {"$in": vals}}, {"businessId": {"$in": vals}}, {"contractor_id": {"$in": vals}}]}
+
 async def find_job(db, user, ObjectId, job_id):
-    job = await db.jobs.find_one({"business_id": bid(user), **id_query(job_id, ObjectId)})
-    if job: return job
-    return await db.jobs.find_one(id_query(job_id, ObjectId))
+    return await db.jobs.find_one({"$and": [business_filter(user, ObjectId), id_query(job_id, ObjectId)]})
 
 async def owner_email(db, user, ObjectId):
     owner = None
