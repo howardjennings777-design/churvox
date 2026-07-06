@@ -34,8 +34,25 @@ const amount = (item) => Number(String(item?.amount || item?.total || item?.pric
 const status = (item) => clean(item?.status || item?.job_status || item?.state || '').toLowerCase();
 const has = (item, ...keys) => keys.some((key) => clean(item?.[key]));
 
+function pageKey() {
+  const path = clean((window.location.pathname || '').split('/')[1] || 'dashboard').toLowerCase();
+  const hash = clean((window.location.hash || '').replace(/^#/, '').split('?')[0]).toLowerCase();
+  if (hash) return hash;
+  if (path === 'dashboard') return 'today';
+  return path || 'today';
+}
+
+function shouldShowBrain() {
+  const path = window.location.pathname || '';
+  return (path === '/dashboard' || path.startsWith('/dashboard')) && pageKey() === 'command';
+}
+
+function removePanel() {
+  document.querySelector('[data-cvx-command-brain]')?.remove();
+}
+
 function push(list, tone, titleText, text, action = 'Open', target = 'command') {
-  if (list.length >= 5) return;
+  if (list.length >= 4) return;
   list.push({ tone, title: titleText, text, action, target });
 }
 
@@ -45,7 +62,6 @@ function buildBrain(data) {
   const workers = data.workers || [];
   const quotes = data.quotes || [];
   const invoices = data.invoices || [];
-  const messages = data.messages || [];
   const command = data.command || [];
   const xero = data.xero || {};
   const payments = data.payments || {};
@@ -61,9 +77,9 @@ function buildBrain(data) {
   if (invoices.length) push(done, 'ok', `${invoices.length} invoice records`, 'Drafts and ledger records are visible.', 'Invoices', 'invoices');
   if (xero.connected || xero.xero_connected) push(done, 'ok', 'Accounting connected', `Tenant: ${clean(xero.tenant_name || xero.tenant || 'connected')}.`, 'Xero', 'xero');
 
-  command.slice(0, 5).forEach((item) => push(waiting, 'blocked', title(item), clean(item.summary || item.detail || item.description || 'Owner approval needed.'), 'Open slip', 'command'));
+  command.slice(0, 4).forEach((item) => push(waiting, 'blocked', title(item), clean(item.summary || item.detail || item.description || 'Owner approval needed.'), 'Open slip', 'command'));
   invoices.filter((item) => /draft|ready|due/.test(status(item))).slice(0, 2).forEach((item) => push(waiting, 'blocked', `Review invoice ${clean(item.invoice_number || item.number || '')}`, `${title(item)} · ${amount(item) ? `$${amount(item).toFixed(0)}` : 'no amount'}`, 'Invoices', 'invoices'));
-  quotes.filter((item) => /ready|draft|sent/.test(status(item))).slice(0, 2).forEach((item) => push(waiting, 'blocked', `Quote needs follow-up`, `${title(item)} · ${clean(item.status || 'draft')}`, 'Quotes', 'quotes'));
+  quotes.filter((item) => /ready|draft|sent/.test(status(item))).slice(0, 2).forEach((item) => push(waiting, 'blocked', 'Quote needs follow-up', `${title(item)} · ${clean(item.status || 'draft')}`, 'Quotes', 'quotes'));
 
   jobs.filter((job) => !amount(job)).slice(0, 2).forEach((job) => push(blocked, 'blocked', 'Cannot invoice yet', `${title(job)} has no price set.`, 'Fix price', 'jobs'));
   jobs.filter((job) => !has(job, 'assigned_worker_name', 'worker_name', 'worker')).slice(0, 2).forEach((job) => push(blocked, 'blocked', 'Cannot dispatch yet', `${title(job)} has no worker assigned.`, 'Assign worker', 'jobs'));
@@ -109,7 +125,8 @@ function lane(titleText, items) {
 }
 
 function render(brain) {
-  const root = document.querySelector('.cvxWorkspace');
+  if (!shouldShowBrain()) { removePanel(); return; }
+  const root = document.querySelector('.cvxPage') || document.querySelector('.cvxWorkspace');
   if (!root) return;
   let panel = document.querySelector('[data-cvx-command-brain]');
   if (!panel) {
@@ -118,13 +135,13 @@ function render(brain) {
     panel.className = 'cvxCommandBrain';
     root.prepend(panel);
   }
-  panel.innerHTML = `<header class="cvxBrainHead"><div><small>Command Brain</small><h2>Handled, waiting, blocked.</h2><p>Churvox shows what it did, what needs the owner, and what it honestly cannot do until missing info or setup is fixed.</p></div><div class="cvxBrainScore"><span><b>${brain.counts.done}</b><small>handled</small></span><span><b>${brain.counts.waiting}</b><small>waiting</small></span><span><b>${brain.counts.blocked + brain.counts.missing}</b><small>blocked</small></span></div><button type="button" class="cvxBrainRefresh">Refresh brain</button></header><div class="cvxBrainGrid">${lane('Done by Churvox', brain.done)}${lane('Waiting for owner', brain.waiting)}${lane('Can’t do yet', brain.blocked)}${lane('Missing info', brain.missing)}${lane('Suggested next move', brain.next)}</div>`;
+  panel.innerHTML = `<header class="cvxBrainHead"><div><small>Command Brain</small><h2>Handled, waiting, blocked.</h2><p>What Churvox did, what needs the owner, and what cannot move until info or setup is fixed.</p></div><div class="cvxBrainScore"><span><b>${brain.counts.done}</b><small>handled</small></span><span><b>${brain.counts.waiting}</b><small>waiting</small></span><span><b>${brain.counts.blocked + brain.counts.missing}</b><small>blocked</small></span></div><button type="button" class="cvxBrainRefresh">Refresh</button></header><div class="cvxBrainGrid">${lane('Done', brain.done)}${lane('Waiting', brain.waiting)}${lane('Blocked', brain.blocked)}${lane('Missing', brain.missing)}${lane('Next move', brain.next)}</div>`;
   panel.querySelectorAll('[data-cvx-brain-target]').forEach((button) => button.addEventListener('click', () => go(button.dataset.cvxBrainTarget)));
   panel.querySelector('.cvxBrainRefresh')?.addEventListener('click', refresh);
 }
 
 async function refresh() {
-  if (!/\/(dashboard|plans|guide|setup)/.test(window.location.pathname)) return;
+  if (!shouldShowBrain()) { removePanel(); return; }
   state.data = await loadData();
   render(buildBrain(state.data));
 }
@@ -135,6 +152,7 @@ function start() {
   setTimeout(refresh, 600);
   setTimeout(refresh, 1800);
   window.addEventListener('hashchange', () => setTimeout(refresh, 120));
+  window.addEventListener('popstate', () => setTimeout(refresh, 120));
   window.addEventListener('churvox:data-refresh', () => setTimeout(refresh, 120));
   window.addEventListener('churvox-auth-refresh', () => setTimeout(refresh, 120));
 }
