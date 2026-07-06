@@ -66,7 +66,6 @@ function stat(a,b,c){return {value:a,label:b,note:c||''};}
 function model(key,d){
   const data = {
     today: {label:'Today brain', title:`${d.command.length} owner checks, ${missingJobInfo(d.jobs)} jobs need admin`, copy:'Today should tell the owner what matters now: work, admin, money and problems.', cta:'Open Command', target:'#command', tone:true, stats:[stat(d.jobs.length,'Jobs in system'),stat(d.command.length,'Command checks'),stat(invoiceReady(d.jobs,d.invoices),'Invoice chances')]},
-    command: {label:'Command brain', title:'Owner decisions are sorted here', copy:'Churvox keeps approval work in Command so the owner can review, edit, approve or park in one place.', cta:'Review queue', target:'#command', tone:true, stats:[stat(d.command.length,'Waiting'),stat(missingJobInfo(d.jobs),'Missing info'),stat(invoiceReady(d.jobs,d.invoices),'Money checks')]},
     jobs: {label:'Jobs brain', title:`${d.jobs.length - missingJobInfo(d.jobs)} clean jobs, ${missingJobInfo(d.jobs)} need admin`, copy:'Jobs are the truth record. Churvox checks whether each job is ready to run, finish and invoice.', cta:'Add job', target:'#jobs', stats:[stat(d.jobs.length,'Total jobs'),stat(completeJobs(d.jobs),'Completed'),stat(invoiceReady(d.jobs,d.invoices),'Ready to invoice')]},
     clients: {label:'Client memory', title:`${d.clients.length} clients, ${d.clients.filter(c=>!clean(c.address || c.site_address)).length} missing site details`, copy:'Client pages should remember usual work, site notes, unpaid work and the next job.', cta:'Add client', target:'#clients', stats:[stat(d.clients.length,'Clients'),stat(d.jobs.length,'Linked jobs'),stat(d.invoices.length,'Invoices')]},
     workers: {label:'Worker brain', title:`${d.team.length} people set up`, copy:'Workers should show job load, proof, problems and field status without making the owner hunt.', cta:'Open workers', target:'#workers', stats:[stat(d.team.length,'People'),stat(d.jobs.filter(j=>clean(j.worker || j.worker_name || j.assigned_worker_name)).length,'Assigned jobs'),stat(d.messages.length,'Messages')]},
@@ -84,6 +83,25 @@ function model(key,d){
 }
 function html(m){return `<section class="cvxPageSmartHeader ${m.tone?'cvxPageSmartHeaderTone':''}" data-churvox-page-smart-header="true"><div class="cvxPageSmartHeaderInner"><div><small>${m.label}</small><h3>${m.title}</h3><p>${m.copy}</p><div class="cvxPageSmartHeaderAction"><button type="button" data-smart-go="${m.target}">${m.cta}</button><button type="button" class="light" data-smart-go="#today">Back to Today</button></div></div><div class="cvxPageSmartHeaderStats">${m.stats.map(s=>`<article class="cvxPageSmartHeaderStat"><b>${s.value}</b><span>${s.label}</span></article>`).join('')}</div></div></section>`}
 function bind(node){node.querySelectorAll('[data-smart-go]').forEach(btn=>btn.addEventListener('click',()=>{const target=btn.getAttribute('data-smart-go')||'#today';document.querySelector('[data-churvox-page-smart-header]')?.remove();window.location.hash=target;window.dispatchEvent(new Event('hashchange'));}))}
-async function apply(){if(typeof window==='undefined'||busy)return;const key=pageKey();const page=document.querySelector('.cvxPage');if(!key||!page)return;busy=true;try{const built=html(model(key,await loadData()));const existing=document.querySelector('[data-churvox-page-smart-header]');if(existing&&lastKey===key&&lastHtml===built)return;if(existing)existing.remove();const hero=page.querySelector('.cvxHero');const wrap=document.createElement('div');wrap.innerHTML=built;const node=wrap.firstElementChild;if(hero?.nextSibling)page.insertBefore(node,hero.nextSibling);else page.prepend(node);bind(node);lastKey=key;lastHtml=built;}catch{}finally{busy=false}}
+async function apply(){
+  if(typeof window==='undefined'||busy)return;
+  const key=pageKey();
+  const existing=document.querySelector('[data-churvox-page-smart-header]');
+  if(key==='command'){ existing?.remove(); lastKey=''; lastHtml=''; return; }
+  const page=document.querySelector('.cvxPage');
+  if(!key||!page){ existing?.remove(); return; }
+  busy=true;
+  try{
+    const built=html(model(key,await loadData()));
+    if(existing&&lastKey===key&&lastHtml===built)return;
+    if(existing)existing.remove();
+    const hero=page.querySelector('.cvxHero');
+    const wrap=document.createElement('div');
+    wrap.innerHTML=built;
+    const node=wrap.firstElementChild;
+    if(hero?.nextSibling)page.insertBefore(node,hero.nextSibling);else page.prepend(node);
+    bind(node);lastKey=key;lastHtml=built;
+  }catch{}finally{busy=false}
+}
 function schedule(){[0,350,900,1800].forEach(t=>setTimeout(apply,t))}
 schedule();window.addEventListener('hashchange',schedule);window.addEventListener('popstate',schedule);window.addEventListener('churvox-owner-app-ready',schedule);window.addEventListener('churvox:data-refresh',()=>{cache={at:0,data:null};document.querySelector('[data-churvox-page-smart-header]')?.remove();schedule()});
