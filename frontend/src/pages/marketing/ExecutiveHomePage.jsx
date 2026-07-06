@@ -4,11 +4,11 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./SimplePublic.css";
 
 const navLinks = [
-  ["/features", "Product", "route"],
+  ["/product", "Product", "route"],
   ["/demo", "Demo", "route"],
   ["/pricing", "Pricing", "route"],
   ["/request", "Request", "route"],
-  ["/#contact", "Contact", "external"],
+  ["/contact", "Contact", "route"],
   ["/login", "Log in", "route"],
 ];
 
@@ -98,11 +98,11 @@ export function Footer() {
         </span>
       </div>
       <nav aria-label="Footer navigation">
-        <Link to="/features">Product</Link>
+        <Link to="/product">Product</Link>
         <Link to="/demo">Demo</Link>
         <Link to="/pricing">Pricing</Link>
         <Link to="/request">Request</Link>
-        <a href="/#contact">Contact</a>
+        <Link to="/contact">Contact</Link>
         <Link to="/privacy-policy">Privacy</Link>
         <Link to="/terms-of-service">Terms</Link>
         <Link to="/login">Log in</Link>
@@ -153,7 +153,7 @@ function CommandScreen() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite cv2Site" data-version="CHURVOX_PUBLIC_REBUILD_20260706">
+    <main className="publicSite cv2Site" data-version="CHURVOX_PUBLIC_REBUILD_NAV_PAGES_20260706">
       <Nav />
 
       <section className="cv2Hero">
@@ -192,7 +192,7 @@ export default function ExecutiveHomePage() {
           <span className="publicKicker">Command</span>
           <h2>Approve, edit and park are not scattered everywhere.</h2>
           <p>Other pages show the work. Command is where decisions happen: invoice drafts, quote follow-ups, worker issues, missing details and customer replies.</p>
-          <Link to="/features" className="publicPrimary">See product flow</Link>
+          <Link to="/product" className="publicPrimary">See product flow</Link>
         </div>
         <div className="cv2DecisionStack">
           {smart.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
