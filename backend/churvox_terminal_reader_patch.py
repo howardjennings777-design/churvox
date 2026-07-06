@@ -117,6 +117,12 @@ def install(module):
         remove_route(app, path, method)
         app.add_api_route(path, endpoint, methods=[method])
 
+    try:
+        import churvox_field_loop_patch
+        churvox_field_loop_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox field loop skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
