@@ -10,14 +10,15 @@ INSTALLED = set()
 
 
 def install(module):
-    name = getattr(module, "__name__", "")
+    target = getattr(module, "legacy", None) or module
+    name = getattr(target, "__name__", getattr(module, "__name__", ""))
     if name in INSTALLED:
         return
     try:
         patch = importlib.import_module("churvox_admin_ledger_routes_patch")
         installer = getattr(patch, "install", None)
         if installer:
-            installer(module)
+            installer(target)
             INSTALLED.add(name)
     except Exception as exc:
         print(f"Churvox admin ledger autoload skipped: {exc}", file=sys.stderr)
