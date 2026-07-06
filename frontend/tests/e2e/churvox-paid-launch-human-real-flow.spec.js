@@ -226,7 +226,7 @@ async function createClientThroughOwnerUi(page, token) {
     { timeout: 20000 }
   ).catch(() => null);
 
-  await clickButton(page, /Create record|Save record/i, 'save client');
+  await clickButton(page, /Save|Create record|Save record/i, 'save client');
 
   const postResponse = await postPromise;
   const visibleBody = await pageText(page);
@@ -261,7 +261,7 @@ async function createJobThroughOwnerUi(page, token, clientToken, workerName) {
   await fillFirst(page, [/Price/i], '149');
   await fillFirst(page, [/Billing/i], 'Fixed price');
   await fillFirst(page, [/Frequency/i], 'Weekly');
-  await clickButton(page, /Create record|Save record/i, 'save job');
+  await clickButton(page, /Save|Create record|Save record/i, 'save job');
   await page.waitForTimeout(1300);
 }
 
@@ -273,7 +273,7 @@ async function createQuoteThroughOwnerUi(page, clientToken) {
   await fillFirst(page, [/Amount/i], '149');
   await fillFirst(page, [/Status/i], 'Ready');
   await fillFirst(page, [/Scope/i], 'Weekly service created during paid launch human audit.');
-  await clickButton(page, /Create record|Save record/i, 'save quote');
+  await clickButton(page, /Save|Create record|Save record/i, 'save quote');
   await page.waitForTimeout(1000);
 }
 
@@ -287,7 +287,7 @@ async function createInvoiceThroughOwnerUi(page, clientToken, jobToken) {
   await fillFirst(page, [/Due date|Due/i], new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
   await fillFirst(page, [/Status/i], 'Draft');
   await fillFirst(page, [/Line item/i], 'Weekly service draft invoice');
-  await clickButton(page, /Create record|Save record/i, 'save invoice');
+  await clickButton(page, /Save|Create record|Save record/i, 'save invoice');
   await page.waitForTimeout(1100);
 }
 

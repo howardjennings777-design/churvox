@@ -43,6 +43,7 @@ const ownerRuntimeImports = [
   () => import('./runtime/churvoxPageIdentityRuntime'),
   () => import('./runtime/churvoxWorkerMapPinRuntime'),
   () => import('./runtime/churvoxPaidLaunchSurfaceRuntime'),
+  () => import('./runtime/churvoxLiveOwnerSaveBridgeRuntime'),
   () => import('./churvox-product/productCommandIdentity.css'),
   () => import('./churvox-product/productJobsIdentity.css'),
   () => import('./churvox-product/productClientsMessagesIdentity.css'),
