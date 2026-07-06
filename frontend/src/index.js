@@ -34,6 +34,8 @@ const ownerRuntimeImports = [
   () => import('./runtime/churvoxPaymentSetupRuntime'),
   () => import('./churvox-product/productAdminLedgerLanes.css'),
   () => import('./runtime/churvoxOwnerAdminLedgerRuntime'),
+  () => import('./churvox-product/productJobLedger.css'),
+  () => import('./runtime/churvoxOwnerJobLedgerRuntime'),
 ];
 
 const workerRuntimeImports = [
