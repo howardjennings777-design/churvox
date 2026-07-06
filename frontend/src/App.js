@@ -24,6 +24,7 @@ import PublicRequestPage from "./pages/public/PublicRequestPage";
 import HomePage from "./pages/marketing/ExecutiveHomePage";
 import PricingPage from "./pages/marketing/ExecutivePricingPage";
 import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
+import PublicDemoPage from "./pages/marketing/PublicDemoPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
@@ -142,6 +143,8 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/demo" element={<PublicDemoPage />} />
+            <Route path="/public/demo" element={<PublicDemoPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signin" element={<AppRedirect to="/login" />} />
             <Route path="/sign-in" element={<AppRedirect to="/login" />} />
