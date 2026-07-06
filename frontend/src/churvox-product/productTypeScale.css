@@ -1,0 +1,54 @@
+.cvxProduct .cvxTop{min-height:68px;padding:10px 20px;grid-template-columns:220px minmax(0,1fr) minmax(150px,240px)}
+.cvxProduct .cvxBrand span{width:40px;height:40px;border-radius:15px;font-size:14px}
+.cvxProduct .cvxBrand b{font-size:19px;gap:3px}
+.cvxProduct .cvxBrand small,.cvxProduct .cvxTopTitle small,.cvxProduct .cvxBusiness small{font-size:8px;letter-spacing:.12em}
+.cvxProduct .cvxTopTitle h1{font-size:24px;line-height:1;letter-spacing:-.06em}
+.cvxProduct .cvxTopTitle p{margin-top:5px;font-size:11px;line-height:1.35;max-width:940px}
+.cvxProduct .cvxBusiness b{font-size:12px;margin-top:4px}
+.cvxProduct .cvxNav{top:68px;padding:8px 18px;gap:7px}
+.cvxProduct .cvxNav button{min-width:94px;min-height:44px;border-radius:16px;padding:8px 11px}
+.cvxProduct .cvxNav button b{font-size:12px}
+.cvxProduct .cvxNav button small{font-size:8px;letter-spacing:.04em}
+.cvxProduct .cvxWorkspace{padding:15px 20px 34px}
+.cvxProduct .cvxPage{gap:12px}
+.cvxProduct .cvxHero{min-height:118px;border-radius:28px;padding:18px;grid-template-columns:minmax(0,1fr) minmax(320px,470px)}
+.cvxProduct .cvxHero small{font-size:9px;letter-spacing:.15em}
+.cvxProduct .cvxHero h2{font-size:clamp(25px,3.1vw,48px);line-height:.94;letter-spacing:-.07em;margin:6px 0}
+.cvxProduct .cvxHero p{font-size:13px;line-height:1.45;max-width:720px}
+.cvxProduct .cvxHeroStats{gap:8px}
+.cvxProduct .cvxHeroStats span{min-height:68px;border-radius:20px;padding:11px}
+.cvxProduct .cvxHeroStats b{font-size:20px;letter-spacing:-.05em}
+.cvxProduct .cvxHeroStats small{font-size:9px}
+.cvxProduct .cvxKpis{gap:10px}
+.cvxProduct .cvxKpis span{min-height:82px;border-radius:22px;padding:13px}
+.cvxProduct .cvxKpis b{font-size:23px;letter-spacing:-.06em}
+.cvxProduct .cvxKpis small{font-size:9px;letter-spacing:.1em}
+.cvxProduct .cvxPanel{min-height:260px;border-radius:24px}
+.cvxProduct .cvxPanel>header{min-height:52px;padding:12px 14px}
+.cvxProduct .cvxPanel h3{font-size:15px;letter-spacing:-.04em}
+.cvxProduct .cvxPanel header button,.cvxProduct .cvxToolbar button,.cvxProduct .cvxRule button{min-height:34px;padding:8px 11px;font-size:11px}
+.cvxProduct .cvxList{gap:8px;padding:12px;max-height:500px}
+.cvxProduct .cvxList.compact{max-height:310px}
+.cvxProduct .cvxRow{min-height:62px;border-radius:18px;padding:10px;gap:10px}
+.cvxProduct .cvxRow .dot{height:28px}
+.cvxProduct .cvxRow b{font-size:13px;letter-spacing:-.025em}
+.cvxProduct .cvxRow small{font-size:11px;margin-top:4px}
+.cvxProduct .cvxRow em{font-size:10px;padding:6px 9px}
+.cvxProduct .cvxEmpty{border-radius:20px;padding:15px;margin:12px;gap:6px}
+.cvxProduct .cvxEmpty b{font-size:14px}
+.cvxProduct .cvxPreview{padding:13px}
+.cvxProduct .cvxPreviewTop h3{font-size:21px;line-height:1}
+.cvxProduct .cvxPreviewTop small{font-size:9px;letter-spacing:.14em}
+.cvxProduct .cvxPreviewTop button{padding:8px 11px;font-size:11px}
+.cvxProduct .cvxField span{font-size:9px;letter-spacing:.1em}
+.cvxProduct .cvxField input,.cvxProduct .cvxField select,.cvxProduct .cvxField textarea{min-height:40px;border-radius:13px;padding:9px 11px;font-size:13px}
+.cvxProduct .cvxDrawer{border-radius:28px;padding:20px;width:min(960px,calc(100vw - 28px))}
+.cvxProduct .cvxDrawer>small{font-size:9px;letter-spacing:.14em}
+.cvxProduct .cvxDrawer h2{font-size:34px;line-height:.96;letter-spacing:-.07em}
+.cvxProduct .cvxDrawer p{font-size:13px;line-height:1.45;margin-bottom:15px}
+.cvxProduct .cvxDrawerActions button{min-height:40px;padding:10px 14px;font-size:12px}
+.cvxProduct .cvxMoney b{font-size:32px!important}
+.cvxProduct .cvxRule b{font-size:16px!important}
+.cvxProduct .cvxTiles button b{font-size:15px!important}
+.cvxProduct .cvxPipeline h3{font-size:15px!important}
+@media(max-width:900px){.cvxProduct .cvxTop{grid-template-columns:1fr;gap:8px;min-height:auto}.cvxProduct .cvxNav{top:0}.cvxProduct .cvxHero{grid-template-columns:1fr}.cvxProduct .cvxHero h2{font-size:30px}.cvxProduct .cvxKpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
