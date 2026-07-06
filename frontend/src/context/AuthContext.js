@@ -14,6 +14,7 @@ const AUTH_SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 const AUTH_REFRESH_GRACE_MS = 1000 * 60 * 60 * 12;
 const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
 const GOOD_STATUSES = new Set(["active", "paid", "trialing", "trial", "past_due", "tester_free", "worker"]);
+const ACTIVE_PAID_STATUSES = new Set(["active", "paid", "tester_free", "worker"]);
 
 function clearStoredAuth() {
   try {
@@ -43,15 +44,18 @@ function hasValidPlan(user = {}) {
 }
 
 function subscriptionStatus(user = {}) {
-  return String(user.subscription_status || user.billing_status || user.stripe_status || "").trim().toLowerCase();
+  return String(user.subscription_status || user.plan_status || user.billing_status || user.stripe_status || "").trim().toLowerCase();
 }
 
 function isLockedStatus(status) {
-  return ["cancelled", "canceled", "unpaid", "incomplete_expired", "locked", "disabled"].includes(status);
+  return ["cancelled", "canceled", "unpaid", "incomplete_expired", "locked", "disabled", "expired"].includes(status);
 }
 
 function rawRole(user = {}) {
   const business = user?.business && typeof user.business === "object" ? user.business : {};
+  for (const key of ["role", "user_role", "account_type", "staff_role", "worker_role", "type", "worker_type"]) {
+    if (user.get?.(key)) return String(user.get(key)).trim().toLowerCase().replace(" ", "_").replace("-", "_");
+  }
   return (
     user.role || user.user_role || user.account_role || user.member_role || user.team_role || user.staff_role || user.worker_role ||
     user.type || user.user_type || user.account_type || user.member_type || user.staff_type || user.worker_type ||
@@ -399,7 +403,8 @@ export function AuthProvider({ children }) {
 
   const isTrialExpired = (() => {
     if (!user?.trial_ends_at) return false;
-    if (String(user?.subscription_status || "").toLowerCase() === "active") return false;
+    const status = subscriptionStatus(user);
+    if (ACTIVE_PAID_STATUSES.has(status)) return false;
     try { return new Date(user.trial_ends_at) < new Date(); } catch { return false; }
   })();
 
@@ -412,12 +417,12 @@ export function AuthProvider({ children }) {
 
     const status = subscriptionStatus(user);
     const validPlan = hasValidPlan(user);
-    if (validPlan) return true;
+    if (ACTIVE_PAID_STATUSES.has(status)) return true;
+    if (["trialing", "trial"].includes(status)) return Boolean(user.trial_ends_at || user.stripe_subscription_id);
+    if (validPlan && user.stripe_subscription_id) return true;
     if (GOOD_STATUSES.has(status)) return true;
 
-    // Important: do not block a valid signed-in owner just because an older backend response omitted plan text.
-    // Missing plan/status should send billing UI to Plans, not break app loading or sign-in.
-    return true;
+    return false;
   })();
 
   return (
