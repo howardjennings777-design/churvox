@@ -60,32 +60,40 @@ function mapsUrl(place) {
 function openUrl(place) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`;
 }
-function removePinMap() {
-  document.querySelector('[data-churvox-worker-pin-map]')?.remove();
+function removeExtraPinMap() {
+  document.querySelectorAll('[data-churvox-worker-pin-map]').forEach((node) => node.remove());
 }
-function build(worker) {
+function gpsPanel(page) {
+  return [...page.querySelectorAll('.cvxPanel')].find((panel) => /gps map/i.test(clean(panel.querySelector('h3')?.textContent || panel.textContent || '')));
+}
+function mapMeta(worker, place) {
   const name = workerName(worker);
-  const place = workerPlace(worker);
   const status = workerStatus(worker);
   const job = workerJob(worker);
-  return `<section class="cvxWorkerPinMap" data-churvox-worker-pin-map="true"><header><div><b>${name} worker pin</b><small>${place}</small></div><a href="${openUrl(place)}" target="_blank" rel="noreferrer">Open map</a></header><iframe title="${name} worker map" src="${mapsUrl(place)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="pinMeta"><span>${status}</span><span>${job}</span><span>Worker location</span></div></section>`;
+  return `<div class="cvxWorkerMapMeta" data-worker-map-meta="true"><b>${name}</b><span>${place}</span><em>${status}</em><em>${job}</em><a href="${openUrl(place)}" target="_blank" rel="noreferrer">Open map</a></div>`;
 }
 async function apply() {
   if (typeof window === 'undefined' || busy) return;
-  if (!isWorkersPage()) { removePinMap(); return; }
+  removeExtraPinMap();
+  if (!isWorkersPage()) return;
   const page = document.querySelector('.cvxPage');
   const hero = page?.querySelector('.cvxHero');
-  if (!page || !hero) { removePinMap(); return; }
+  if (!page || !hero) return;
   busy = true;
   try {
     const worker = firstRealWorker(await getWorkers());
-    if (!worker) { removePinMap(); return; }
-    removePinMap();
+    if (!worker) return;
+    const place = workerPlace(worker);
+    const panel = gpsPanel(page);
+    const iframe = panel?.querySelector('iframe');
+    if (!panel || !iframe) return;
+    iframe.src = mapsUrl(place);
+    iframe.title = `${workerName(worker)} worker map`;
+    panel.querySelector('[data-worker-map-meta]')?.remove();
+    const map = panel.querySelector('.cvxMap') || iframe.parentElement || panel;
     const wrap = document.createElement('div');
-    wrap.innerHTML = build(worker);
-    const node = wrap.firstElementChild;
-    if (hero.nextSibling) page.insertBefore(node, hero.nextSibling);
-    else page.appendChild(node);
+    wrap.innerHTML = mapMeta(worker, place);
+    map.prepend(wrap.firstElementChild);
   } catch {} finally { busy = false; }
 }
 function schedule() { [0, 300, 900, 1800, 3500, 6000].forEach((delay) => setTimeout(apply, delay)); }
