@@ -46,7 +46,7 @@ function workerPlace(worker) {
   const lat = clean(worker?.lat || worker?.latitude || worker?.gps_lat || worker?.last_latitude || worker?.location_lat);
   const lng = clean(worker?.lng || worker?.longitude || worker?.gps_lng || worker?.last_longitude || worker?.location_lng);
   if (lat && lng) return `${lat},${lng}`;
-  return clean(worker?.address || worker?.location || worker?.current_address || worker?.site_address || worker?.area || worker?.region || 'Auckland New Zealand');
+  return clean(worker?.gps || worker?.location || worker?.address || worker?.current_address || worker?.site_address || worker?.area || worker?.region || 'Auckland New Zealand');
 }
 function workerStatus(worker) {
   return clean(worker?.status || worker?.app || worker?.availability || worker?.role || 'Field worker');
@@ -74,21 +74,21 @@ async function apply() {
   if (typeof window === 'undefined' || busy) return;
   if (!isWorkersPage()) { removePinMap(); return; }
   const page = document.querySelector('.cvxPage');
-  if (!page) return;
+  const hero = page?.querySelector('.cvxHero');
+  if (!page || !hero) { removePinMap(); return; }
   busy = true;
   try {
     const worker = firstRealWorker(await getWorkers());
-    if (!worker) return;
+    if (!worker) { removePinMap(); return; }
     removePinMap();
-    const hero = page.querySelector('.cvxHero');
     const wrap = document.createElement('div');
     wrap.innerHTML = build(worker);
     const node = wrap.firstElementChild;
-    if (hero?.nextSibling) page.insertBefore(node, hero.nextSibling);
-    else page.prepend(node);
+    if (hero.nextSibling) page.insertBefore(node, hero.nextSibling);
+    else page.appendChild(node);
   } catch {} finally { busy = false; }
 }
-function schedule() { [0, 300, 900, 1800].forEach((delay) => setTimeout(apply, delay)); }
+function schedule() { [0, 300, 900, 1800, 3500, 6000].forEach((delay) => setTimeout(apply, delay)); }
 schedule();
 window.addEventListener('hashchange', schedule);
 window.addEventListener('popstate', schedule);
