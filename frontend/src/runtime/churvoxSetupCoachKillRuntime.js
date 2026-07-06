@@ -1,3 +1,5 @@
+import './churvoxWorkerMapPinRuntime';
+
 function killSetupCoach(){
   if (typeof document === 'undefined') return;
   document.querySelectorAll('[data-churvox-setup-coach], .cvxSetupCoach').forEach((node) => node.remove());
