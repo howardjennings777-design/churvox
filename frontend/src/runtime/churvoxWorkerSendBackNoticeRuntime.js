@@ -4,56 +4,12 @@ function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
-function idOf(value) {
-  if (!value) return '';
-  if (typeof value === 'string' || typeof value === 'number') return String(value);
-  if (typeof value === 'object') return idOf(value.id || value._id || value.job_id || value.$oid || value.oid || '');
-  return '';
+function escapeHtml(value) {
+  return clean(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 }
 
-function listFrom(payload) {
-  const data = payload?.data ?? payload;
-  if (Array.isArray(data)) return data;
-  for (const key of ['jobs', 'items', 'records', 'results', 'data']) {
-    if (Array.isArray(data?.[key])) return data[key];
-  }
-  return [];
-}
-
-function apiBase() {
-  const host = window.location.hostname.toLowerCase();
-  if (host === 'www.churvox.com' || host === 'churvox.com') return 'https://grassley-backend.onrender.com';
-  return '';
-}
-
-function jobIdFromPath() {
-  const match = window.location.pathname.match(/^\/worker\/jobs\/([^/?#]+)/i);
-  return match ? decodeURIComponent(match[1]) : '';
-}
-
-function sentBackText(job) {
-  return clean(
-    job?.send_back_note ||
-    job?.boss_note ||
-    job?.owner_note ||
-    job?.owner_message ||
-    job?.sent_back_note ||
-    job?.worker_action_note ||
-    job?.review_note ||
-    job?.admin_note ||
-    ''
-  );
-}
-
-function hasSentBackState(job) {
-  const state = clean([
-    job?.work_review_status,
-    job?.review_status,
-    job?.owner_review_status,
-    job?.worker_action_required,
-    job?.status,
-  ].join(' ')).toLowerCase();
-  return /sent[_ -]?back|owner needs fix|worker action required|true/.test(state) || Boolean(sentBackText(job));
+function isWorkerJobDetail() {
+  return /^\/worker\/jobs\/[^/?#]+/i.test(window.location.pathname || '');
 }
 
 function installStyles() {
@@ -70,10 +26,11 @@ function installStyles() {
 }
 
 function renderNotice(note) {
+  if (!isWorkerJobDetail()) return false;
   const body = document.querySelector('.swBody');
-  if (!body) return;
+  if (!body) return false;
   const existing = document.getElementById('churvox-worker-sendback-notice');
-  if (existing) existing.remove();
+  if (existing) return true;
 
   const card = document.createElement('section');
   card.id = 'churvox-worker-sendback-notice';
@@ -81,37 +38,16 @@ function renderNotice(note) {
   card.innerHTML = `
     <span>Owner needs fix</span>
     <h2>Boss sent this back</h2>
-    <p>${escapeHtml(note || 'Owner needs fix before this job is finished.')}</p>
+    <p>${escapeHtml(note || 'Checking sent back notes and owner updates for this job.')}</p>
   `;
   body.insertBefore(card, body.firstChild);
-}
-
-function escapeHtml(value) {
-  return clean(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
-}
-
-async function refreshSendBackNotice() {
-  const jobId = jobIdFromPath();
-  if (!jobId) return;
-  const token = window.localStorage.getItem('token') || '';
-  if (!token) return;
-
-  try {
-    const res = await fetch(`${apiBase()}/api/worker/jobs?ts=${Date.now()}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: 'include',
-    });
-    if (!res.ok) return;
-    const payload = await res.json().catch(() => ({}));
-    const jobs = listFrom(payload);
-    const job = jobs.find((item) => idOf(item) === jobId);
-    if (!job || !hasSentBackState(job)) return;
-    renderNotice(sentBackText(job));
-  } catch {}
+  return true;
 }
 
 function schedule() {
-  [0, 250, 800, 1600, 3200].forEach((delay) => window.setTimeout(refreshSendBackNotice, delay));
+  [0, 100, 250, 600, 1200, 2500, 5000, 9000, 13000].forEach((delay) => {
+    window.setTimeout(() => renderNotice(''), delay);
+  });
 }
 
 if (typeof window !== 'undefined' && !window[SEND_BACK_NOTICE_FLAG]) {
@@ -121,8 +57,6 @@ if (typeof window !== 'undefined' && !window[SEND_BACK_NOTICE_FLAG]) {
   window.addEventListener('popstate', schedule);
   window.addEventListener('hashchange', schedule);
   window.addEventListener('churvox-worker-app-ready', schedule);
-  const observer = new MutationObserver(() => {
-    if (window.location.pathname.startsWith('/worker/jobs/')) schedule();
-  });
+  const observer = new MutationObserver(schedule);
   observer.observe(document.body, { childList: true, subtree: true });
 }
