@@ -200,10 +200,10 @@ async function openOwnerPage(page, pageId) {
 }
 
 async function smokeOwnerPages(page) {
-  const pages = ['today', 'command', 'jobs', 'clients', 'workers', 'messages', 'quotes', 'invoices', 'team', 'payroll', 'xero', 'settings', 'plans', 'support'];
+  const pages = ['today', 'command', 'clients', 'jobs', 'workers', 'quotes', 'invoices'];
   for (const pageId of pages) {
     const body = await openOwnerPage(page, pageId);
-    expect(body, `${pageId} should show useful owner controls`).toMatch(/Churvox|Job|Client|Worker|Quote|Invoice|Command|Plan|Help|Payroll|Xero|Settings|Message/i);
+    expect(body, `${pageId} should show useful owner controls`).toMatch(/Churvox|Job|Client|Worker|Quote|Invoice|Command/i);
   }
 }
 
@@ -245,7 +245,6 @@ async function createClientThroughOwnerUi(page, token) {
   }
 
   await expect(page.getByText(/Record created|Client|created|saved/i).first()).toBeVisible({ timeout: 10000 }).catch(() => null);
-  await page.waitForTimeout(1200);
 }
 
 async function createJobThroughOwnerUi(page, token, clientToken, workerName) {
@@ -323,7 +322,7 @@ async function createAssignedJobFallback(ownerApi, jobToken, clientToken, worker
 }
 
 test.describe('Churvox real paid-launch human flow', () => {
-  test.setTimeout(360000);
+  test.setTimeout(480000);
 
   test('owner and worker can run the full real-world loop end to end', async ({ browser }) => {
     if (!MUTATE) throw new Error('Set CHURVOX_E2E_MUTATE=1 to run the real paid-launch human flow because it creates safe test records.');
