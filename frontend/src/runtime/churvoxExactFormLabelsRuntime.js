@@ -54,8 +54,27 @@ function installFallbackOverlayStyles() {
   style.textContent = `
     .cvxPaidLaunchFallbackForm{pointer-events:none}
     .cvxPaidLaunchFallbackForm .cvxDrawer{pointer-events:auto}
+    .cvxPaidLaunchFallbackForm .cvxDrawer.cvxOwnerNavUnblocked{pointer-events:none}
   `;
   document.head.appendChild(style);
+}
+
+function eventIsInsideOwnerNav(event) {
+  const nav = document.querySelector('.cvxNav');
+  if (!nav) return false;
+  const rect = nav.getBoundingClientRect();
+  const x = Number(event.clientX || 0);
+  const y = Number(event.clientY || 0);
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
+function unblockOwnerNav(event) {
+  if (!eventIsInsideOwnerNav(event)) return;
+  document.querySelectorAll('[id^="churvox-paid-launch-fallback-"] .cvxDrawer').forEach((drawer) => {
+    drawer.classList.add('cvxOwnerNavUnblocked');
+  });
+  window.setTimeout(removePaidLaunchFallbackDrawers, 0);
+  window.setTimeout(removePaidLaunchFallbackDrawers, 80);
 }
 
 function schedule() {
@@ -66,7 +85,9 @@ if (typeof window !== 'undefined' && !window[FORM_LABEL_RUNTIME_FLAG]) {
   window[FORM_LABEL_RUNTIME_FLAG] = true;
   installFallbackOverlayStyles();
   schedule();
-  document.addEventListener('click', schedule, true);
+  document.addEventListener('pointerdown', unblockOwnerNav, true);
+  document.addEventListener('mousedown', unblockOwnerNav, true);
+  document.addEventListener('click', (event) => { unblockOwnerNav(event); schedule(); }, true);
   window.addEventListener('hashchange', () => { removePaidLaunchFallbackDrawers(); schedule(); });
   window.addEventListener('popstate', () => { removePaidLaunchFallbackDrawers(); schedule(); });
   window.addEventListener('churvox:data-refresh', schedule);
