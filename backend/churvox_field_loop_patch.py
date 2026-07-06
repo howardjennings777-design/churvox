@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import importlib, importlib.abc, importlib.machinery, sys
+from fastapi import Request as FastAPIRequest
 
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
@@ -79,14 +80,14 @@ def install(module):
     ObjectId = getattr(module, "ObjectId", None); Request = getattr(module, "Request", None); HTTPException = getattr(module, "HTTPException", None)
     if not app or db is None or not get_user or ObjectId is None or Request is None or HTTPException is None: return
 
-    async def field_slip(request: Request):
+    async def field_slip(request: FastAPIRequest):
         user = await get_user(request)
         if not is_field(user): raise HTTPException(status_code=403, detail="Worker access required")
         payload = await request.json()
         row = await save_note(db, user, payload)
         return {"success": True, "slip": row, "data": row}
 
-    async def action(job_id: str, request: Request, name: str):
+    async def action(job_id: str, request: FastAPIRequest, name: str):
         user = await get_user(request)
         if not is_field(user): raise HTTPException(status_code=403, detail="Worker access required")
         try: payload = await request.json()
@@ -103,11 +104,11 @@ def install(module):
         saved = await db.jobs.find_one({"_id": job.get("_id")})
         return {"success": True, "job": safe(saved), "data": safe(saved)}
 
-    async def ack(job_id: str, request: Request): return await action(job_id, request, "acknowledge")
-    async def start(job_id: str, request: Request): return await action(job_id, request, "start")
-    async def pause(job_id: str, request: Request): return await action(job_id, request, "pause")
-    async def resume(job_id: str, request: Request): return await action(job_id, request, "resume")
-    async def complete(job_id: str, request: Request): return await action(job_id, request, "complete")
+    async def ack(job_id: str, request: FastAPIRequest): return await action(job_id, request, "acknowledge")
+    async def start(job_id: str, request: FastAPIRequest): return await action(job_id, request, "start")
+    async def pause(job_id: str, request: FastAPIRequest): return await action(job_id, request, "pause")
+    async def resume(job_id: str, request: FastAPIRequest): return await action(job_id, request, "resume")
+    async def complete(job_id: str, request: FastAPIRequest): return await action(job_id, request, "complete")
 
     for path, endpoint in [("/api/worker/field-slip", field_slip), ("/api/jobs/{job_id}/acknowledge", ack), ("/api/jobs/{job_id}/start", start), ("/api/jobs/{job_id}/pause", pause), ("/api/jobs/{job_id}/resume", resume), ("/api/jobs/{job_id}/complete", complete)]:
         remove(app, path, "POST"); app.add_api_route(path, endpoint, methods=["POST"])
