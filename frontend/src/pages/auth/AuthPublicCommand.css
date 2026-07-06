@@ -1,4 +1,4 @@
-/* CHURVOX_PUBLIC_AUTH_MODERN_OS_20260629 */
+/* CHURVOX_PUBLIC_AUTH_PREMIUM_20260706 */
 
 .cvPublicAuth,
 .cvPublicAuth * {
@@ -15,11 +15,21 @@
   overflow-x: clip;
   color: #111318;
   background:
-    linear-gradient(90deg, rgba(17, 19, 24, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(17, 19, 24, 0.035) 1px, transparent 1px),
-    radial-gradient(circle at 12% 0%, rgba(240, 90, 40, 0.16), transparent 360px),
-    linear-gradient(180deg, #f9fafb 0%, #eef1f5 100%);
-  background-size: 36px 36px, 36px 36px, auto, auto;
+    radial-gradient(circle at 12% -6%, rgba(243, 107, 33, 0.24), transparent 34%),
+    radial-gradient(circle at 94% 12%, rgba(17, 20, 23, 0.16), transparent 30%),
+    linear-gradient(180deg, #fffaf2 0%, #f1eadf 56%, #e8ddcf 100%);
+}
+
+.cvPublicAuth::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(17, 20, 23, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(17, 20, 23, 0.028) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.5), transparent 76%);
 }
 
 .cvPublicAuth > * {
@@ -28,37 +38,37 @@
 }
 
 .cvPublicAuthShell {
-  width: calc(100% - 96px);
-  max-width: 1180px;
-  min-height: calc(100vh - 72px);
+  width: min(1180px, calc(100% - 40px));
+  min-height: calc(100vh - 74px);
   margin: 0 auto;
-  padding: 34px 0;
+  padding: clamp(22px, 4vw, 46px) 0;
   display: grid;
-  grid-template-columns: minmax(330px, 0.82fr) minmax(360px, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(320px, 0.84fr) minmax(360px, 1fr);
+  gap: 16px;
   align-items: stretch;
 }
 
 .cvPublicSignupShell {
-  grid-template-columns: minmax(460px, 1fr) minmax(340px, 0.62fr);
+  grid-template-columns: minmax(460px, 1fr) minmax(340px, 0.64fr);
 }
 
 .cvPublicAuthCard,
 .cvPublicAuthPanel {
   position: relative;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 34px;
   border: 1px solid rgba(17, 19, 24, 0.12);
-  background: rgba(255, 255, 255, 0.94);
-  color: #111318;
-  box-shadow: 0 20px 60px rgba(17, 19, 24, 0.12);
+  box-shadow: 0 26px 78px rgba(17, 20, 23, 0.14);
 }
 
 .cvPublicAuthCard {
   display: grid;
   align-content: center;
-  gap: 14px;
-  padding: clamp(22px, 4vw, 42px);
+  gap: 16px;
+  padding: clamp(24px, 4vw, 46px);
+  background: rgba(255, 255, 252, 0.92);
+  color: #111318;
+  backdrop-filter: blur(18px);
 }
 
 .cvPublicAuthCard::before,
@@ -66,66 +76,91 @@
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
-  width: 5px;
-  background: linear-gradient(180deg, #f05a28, #c63e1d);
+  width: 7px;
+  background: linear-gradient(180deg, #f36b21, #ff9b45);
+}
+
+.cvPublicAuthCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 100% 0, rgba(243, 107, 33, 0.09), transparent 34%);
+}
+
+.cvPublicAuthCard > *,
+.cvPublicAuthPanel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .cvPublicAuthPanel {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  min-height: 560px;
-  padding: clamp(22px, 4vw, 42px);
+  min-height: 580px;
+  padding: clamp(24px, 4vw, 46px);
+  color: #fff;
+  background:
+    radial-gradient(circle at 100% 2%, rgba(243, 107, 33, 0.36), transparent 34%),
+    linear-gradient(135deg, #111417 0%, #20262d 58%, #3a1a0a 100%);
+}
+
+.cvPublicAuthPanel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(135deg, #171a20, #222731);
-  background-size: 28px 28px, 28px 28px, auto;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(135deg, rgba(0,0,0,.56), transparent 70%);
 }
 
 .cvPublicAuthKicker,
 .cvPublicAuthPanel p {
-  width: max-content;
-  max-width: 100%;
-  min-height: 30px;
   display: inline-flex;
   align-items: center;
+  width: max-content;
+  max-width: 100%;
+  min-height: 32px;
   margin: 0;
-  padding: 0 10px;
+  padding: 0 11px;
+  border: 1px solid rgba(243, 107, 33, 0.24);
   border-radius: 999px;
-  color: #c63e1d;
-  background: rgba(240, 90, 40, 0.12);
-  border: 1px solid rgba(240, 90, 40, 0.2);
-  font-size: 12px;
-  font-weight: 950;
-  letter-spacing: 0;
+  color: #a1430a;
+  background: rgba(255, 240, 223, 0.9);
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .cvPublicAuthPanel p {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.12);
   margin-bottom: 14px;
+  border-color: rgba(255, 255, 255, 0.13);
+  color: #ffc08b;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .cvPublicAuthCard h1,
 .cvPublicAuthPanel h2 {
   margin: 0;
-  font-weight: 950;
-  line-height: 0.98;
-  letter-spacing: 0;
+  font-weight: 1000;
+  line-height: 0.94;
+  letter-spacing: -0.072em;
 }
 
 .cvPublicAuthCard h1 {
   color: #111318;
-  font-size: clamp(42px, 5vw, 68px);
+  font-size: clamp(44px, 5.5vw, 74px);
 }
 
 .cvPublicAuthPanel h2 {
+  margin-bottom: 18px;
   color: #fff;
   font-size: clamp(38px, 5vw, 66px);
-  margin-bottom: 18px;
 }
 
 .cvPublicAuthIntro,
@@ -134,14 +169,14 @@
   color: #5d6572;
   font-size: 16px;
   font-weight: 780;
-  line-height: 1.52;
+  line-height: 1.55;
 }
 
 .cvPublicAuthBottom a {
   color: #111318;
-  font-weight: 950;
+  font-weight: 1000;
   text-decoration: underline;
-  text-decoration-color: rgba(240, 90, 40, 0.44);
+  text-decoration-color: rgba(243, 107, 33, 0.44);
   text-underline-offset: 4px;
 }
 
@@ -153,10 +188,10 @@
 
 .cvPublicAuthCard label {
   display: grid;
-  gap: 7px;
-  color: #111318;
+  gap: 8px;
+  color: #171a20;
   font-size: 13px;
-  font-weight: 950;
+  font-weight: 1000;
 }
 
 .cvPublicAuthCard input,
@@ -164,19 +199,19 @@
 .cvPublicNativeInput,
 .cvPublicAuth input {
   width: 100%;
-  min-height: 52px;
-  border: 1px solid rgba(17, 19, 24, 0.16);
-  border-radius: 8px;
+  min-height: 54px;
+  border: 1px solid rgba(17, 19, 24, 0.15);
+  border-radius: 17px;
   background: #fff !important;
   background-color: #fff !important;
   color: #000 !important;
   -webkit-text-fill-color: #000 !important;
   caret-color: #000 !important;
-  padding: 0 14px;
+  padding: 0 15px;
   font-size: 16px !important;
   font-weight: 850 !important;
   outline: none;
-  box-shadow: none;
+  box-shadow: 0 12px 28px rgba(17, 20, 23, 0.045);
   appearance: auto;
   -webkit-appearance: auto;
 }
@@ -189,75 +224,86 @@
 
 .cvPublicAuthCard input:focus,
 .cvPublicAuthCard select:focus {
-  border-color: #f05a28;
-  box-shadow: 0 0 0 4px rgba(240, 90, 40, 0.14);
+  border-color: #f36b21;
+  box-shadow: 0 0 0 4px rgba(243, 107, 33, 0.14), 0 14px 32px rgba(17, 20, 23, 0.06);
 }
 
 .cvPublicAuth .password-row {
   display: grid;
-  grid-template-columns: 1fr minmax(76px, auto);
+  grid-template-columns: 1fr minmax(82px, auto);
   gap: 10px;
 }
 
 .cvPublicAuthSubmit,
 .cvPublicAuthGhost {
-  min-height: 52px;
-  border-radius: 8px;
+  min-height: 54px;
+  border-radius: 17px;
   padding: 0 18px;
   font-size: 15px;
-  font-weight: 950;
+  font-weight: 1000;
   cursor: pointer;
 }
 
 .cvPublicAuthSubmit {
-  border: 1px solid rgba(198, 62, 29, 0.35);
-  background: linear-gradient(135deg, #f05a28, #c63e1d);
-  color: #fff;
-  -webkit-text-fill-color: #fff;
-  box-shadow: 0 14px 28px rgba(240, 90, 40, 0.24);
+  border: 1px solid rgba(243, 107, 33, 0.34);
+  background: linear-gradient(135deg, #f36b21, #ff9b45);
+  color: #211006;
+  -webkit-text-fill-color: #211006;
+  box-shadow: 0 15px 34px rgba(243, 107, 33, 0.24);
 }
 
 .cvPublicAuthGhost {
   border: 1px solid rgba(17, 19, 24, 0.12);
-  background: #eef1f5;
+  background: #f0ece4;
   color: #111318;
   -webkit-text-fill-color: #111318;
 }
 
 .cvPublicAuthSubmit:disabled {
-  opacity: 0.7 !important;
+  opacity: 0.68 !important;
   cursor: wait;
 }
 
-.cvPublicAuthError {
+.cvPublicAuthError,
+.cvPublicAuthSuccess {
   margin: 0;
-  border: 1px solid rgba(185, 28, 28, 0.28);
-  border-radius: 8px;
-  background: rgba(254, 226, 226, 0.9);
-  color: #7f1d1d;
-  -webkit-text-fill-color: #7f1d1d;
-  padding: 12px 14px;
+  border-radius: 18px;
+  padding: 13px 14px;
   font-weight: 900;
   line-height: 1.45;
 }
 
+.cvPublicAuthError {
+  border: 1px solid rgba(185, 28, 28, 0.28);
+  background: rgba(254, 226, 226, 0.9);
+  color: #7f1d1d;
+  -webkit-text-fill-color: #7f1d1d;
+}
+
+.cvPublicAuthSuccess {
+  border: 1px solid rgba(22, 163, 74, 0.24);
+  background: rgba(220, 252, 231, 0.92);
+  color: #14532d;
+  -webkit-text-fill-color: #14532d;
+}
+
 .cvPublicAuthPanel ul {
-  margin: 0;
-  padding: 0;
   display: grid;
   gap: 10px;
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
 .cvPublicAuthPanel li {
-  min-height: 54px;
+  min-height: 56px;
   display: flex;
   align-items: center;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  padding: 12px 14px;
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.82);
-  padding: 0 14px;
   font-weight: 850;
   line-height: 1.35;
 }
@@ -283,12 +329,13 @@
 
   .cvPublicAuthCard,
   .cvPublicAuthPanel {
-    padding: 20px;
+    border-radius: 26px;
+    padding: 21px;
   }
 
   .cvPublicAuthCard h1,
   .cvPublicAuthPanel h2 {
-    font-size: clamp(34px, 11vw, 50px);
+    font-size: clamp(36px, 11vw, 52px);
   }
 
   .cvPublicFormGrid,
