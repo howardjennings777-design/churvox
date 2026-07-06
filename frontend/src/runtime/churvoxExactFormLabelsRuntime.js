@@ -55,6 +55,10 @@ function installFallbackOverlayStyles() {
     .cvxPaidLaunchFallbackForm{pointer-events:none}
     .cvxPaidLaunchFallbackForm .cvxDrawer{pointer-events:none}
     .cvxPaidLaunchFallbackForm .cvxClose,
+    .cvxPaidLaunchFallbackForm input,
+    .cvxPaidLaunchFallbackForm textarea,
+    .cvxPaidLaunchFallbackForm select,
+    .cvxPaidLaunchFallbackForm label,
     .cvxPaidLaunchFallbackForm [data-fallback-close],
     .cvxPaidLaunchFallbackForm [data-fallback-save]{pointer-events:auto}
   `;
