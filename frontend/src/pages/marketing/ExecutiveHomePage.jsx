@@ -4,60 +4,64 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./SimplePublic.css";
 
 const navLinks = [
+  ["/features", "Product", "route"],
+  ["/demo", "Demo", "route"],
   ["/pricing", "Pricing", "route"],
-  ["/features", "How it works", "route"],
-  ["/request", "Request form", "route"],
+  ["/request", "Request", "route"],
   ["/#contact", "Contact", "external"],
   ["/login", "Log in", "route"],
 ];
 
-const proof = [
-  "14-day free trial",
-  "No card upfront",
-  "Owner-approved by design",
-  "Built for service businesses",
+const commandQueue = [
+  ["Invoice draft", "Belmont Villas", "$340", "Approve"],
+  ["Worker issue", "Gate locked", "Check"],
+  ["Quote follow-up", "Garden tidy", "$780", "Park"],
 ];
 
-const workflow = [
-  ["1", "Work comes in", "Add a job, import a client, receive a worker update or capture a customer request."],
-  ["2", "Churvox prepares the admin", "Forms, slips, draft invoices, follow-ups and next steps are organised from the records."],
-  ["3", "You approve in Command", "Approve, edit or park important actions from one owner approval desk."],
+const stack = [
+  ["Today", "What needs doing now."],
+  ["Command", "What needs your decision."],
+  ["Jobs", "The run sheet and job forms."],
+  ["Workers", "Field updates, photos and notes."],
+  ["Money", "Quotes, invoices and safe handoff."],
 ];
 
-const commandSlips = [
-  ["Quote ready", "Client, scope, price and follow-up are lined up for owner review."],
-  ["Invoice draft", "Job, worker notes, photos, price and evidence sit together before sending."],
-  ["Worker issue", "Locked gate, extra work or missing detail becomes a clear owner decision."],
-  ["Reply drafted", "Customer and worker messages stay connected to the job or client record."],
-  ["Accounting handoff", "Draft sync stays owner-approved and guarded."],
-  ["Missing info", "Date, time, price, address or worker gaps are surfaced before anything moves."],
+const proof = ["14-day trial", "No card upfront", "Owner-approved", "Built for service crews"];
+
+const outcomes = [
+  ["Less hunting", "Jobs, workers, messages and money stop living in different places."],
+  ["Cleaner decisions", "Important admin waits in Command with the context beside it."],
+  ["Faster follow-up", "Quotes, invoices, customer replies and issue slips are prepared from records."],
+  ["Safer control", "Churvox prepares the next step, but the owner still checks and approves."],
 ];
 
-const trades = [
-  ["Landscaping", "Recurring work, job notes, photos, quotes, worker updates and invoice drafts."],
-  ["Cleaning", "Schedules, teams, client access notes, proof, messages and follow-ups."],
-  ["Property maintenance", "Job history, issue slips, client files and owner-approved next steps."],
-  ["Handyman & repairs", "One-off jobs, quotes, site notes, worker messages and clean invoices."],
+const flow = [
+  ["01", "Work comes in", "Add jobs, receive worker updates, capture customer requests or build quotes."],
+  ["02", "Churvox organises it", "The records connect: client, worker, price, proof, messages and next step."],
+  ["03", "Command decides", "The owner approves, edits or parks anything important before it moves."],
 ];
 
-const workerLoop = [
-  ["Worker sends", "Gate locked. Customer asked for extra hedge trim. Photos attached."],
-  ["Churvox prepares", "Job issue slip with client, address, worker note, photos and suggested next step."],
-  ["Owner decides", "Approve the change, edit the message, or park it in Command."],
+const smart = [
+  ["Assign", "Worker suggested by run, area and workload."],
+  ["Schedule", "Time and recurrence kept practical."],
+  ["Quote", "Draft built from service and client details."],
+  ["Invoice", "Draft built from job notes, proof and price."],
+  ["Problem slip", "Worker issues become owner decisions."],
+  ["Day close", "Tomorrow and unfinished admin surfaced cleanly."],
+];
+
+const tradeCards = [
+  ["Landscaping", "Recurring jobs, proof photos, quotes and clean invoice drafts."],
+  ["Cleaning", "Team runs, client access notes, messages and follow-ups."],
+  ["Property maintenance", "Issue slips, site history, worker notes and customer updates."],
+  ["Repairs", "One-off work, quotes, job proof and owner-approved next steps."],
 ];
 
 const planLadder = [
-  ["Start", "$39/mo + GST", "Solo owner getting organised", "Jobs, clients, quotes and invoices."],
-  ["Crew", "$89/mo + GST", "Small team", "Adds workers, team flow, messages and proof."],
-  ["Operator", "$149/mo + GST", "Busy owner", "Churvox prepares admin for owner approval.", "Most Popular"],
-  ["Command", "$299/mo + GST", "Larger operation", "Full approval desk, payroll review and accounting handoff."],
-];
-
-const guardrails = [
-  ["No automatic invoice sending", "Invoices can be prepared, but sending stays owner-approved."],
-  ["No tax filing", "Churvox keeps accounting handoff practical and guarded."],
-  ["No bank payout files", "Payroll review and exports stay review-only."],
-  ["Draft accounting sync only", "Xero/MYOB handoff stays draft, safe and owner-approved where available."],
+  ["Start", "$39/mo + GST", "Jobs, clients, quotes and invoices."],
+  ["Crew", "$89/mo + GST", "Workers, messages and team flow."],
+  ["Operator", "$149/mo + GST", "Prepared admin plus Command.", "Most Popular"],
+  ["Command", "$299/mo + GST", "Full approval desk and controls."],
 ];
 
 function PublicNavLink({ to, label, type }) {
@@ -67,20 +71,17 @@ function PublicNavLink({ to, label, type }) {
 
 export function Nav() {
   return (
-    <nav className="publicNav" aria-label="Public navigation">
-      <Link to="/" className="publicBrand" aria-label="Churvox home">
+    <nav className="publicNav cv2Nav" aria-label="Public navigation">
+      <Link to="/" className="publicBrand cv2Brand" aria-label="Churvox home">
         <ChurvoxLogo variant="mark" size="lg" />
         <span>
           <b>Churvox</b>
           <small>does the admin</small>
         </span>
       </Link>
-
-      <div className="publicLinks">
-        {navLinks.map(([to, label, type]) => (
-          <PublicNavLink key={to} to={to} label={label} type={type} />
-        ))}
-        <Link to="/signup" className="publicPrimary">Start trial</Link>
+      <div className="publicLinks cv2Links">
+        {navLinks.map(([to, label, type]) => <PublicNavLink key={to} to={to} label={label} type={type} />)}
+        <Link to="/signup" className="publicPrimary cv2NavCta">Start trial</Link>
       </div>
     </nav>
   );
@@ -88,7 +89,7 @@ export function Nav() {
 
 export function Footer() {
   return (
-    <footer className="publicFooter">
+    <footer className="publicFooter cv2Footer">
       <div className="publicFooterBrand">
         <ChurvoxLogo variant="mark" size="md" />
         <span>
@@ -97,9 +98,10 @@ export function Footer() {
         </span>
       </div>
       <nav aria-label="Footer navigation">
+        <Link to="/features">Product</Link>
+        <Link to="/demo">Demo</Link>
         <Link to="/pricing">Pricing</Link>
-        <Link to="/features">How it works</Link>
-        <Link to="/request">Request form</Link>
+        <Link to="/request">Request</Link>
         <a href="/#contact">Contact</a>
         <Link to="/privacy-policy">Privacy</Link>
         <Link to="/terms-of-service">Terms</Link>
@@ -109,229 +111,144 @@ export function Footer() {
   );
 }
 
-function ProductMock() {
+function CommandScreen() {
   return (
-    <aside className="publicMock publicHeroMock" aria-label="Churvox owner approval desk preview">
-      <div className="publicMockTop">
-        <span>Live preview</span>
-        <b>Command approval desk</b>
+    <aside className="cv2CommandScreen" aria-label="Churvox Command preview">
+      <div className="cv2ScreenTop">
+        <div>
+          <span>Owner command floor</span>
+          <b>Today needs 3 decisions</b>
+        </div>
+        <em>Live demo</em>
       </div>
-      <div className="publicMockTabs">
-        <span>Today</span>
-        <span className="active">Command</span>
-        <span>Jobs</span>
-        <span>Workers</span>
+      <div className="cv2ScreenNav">
+        {stack.map(([name], index) => <span key={name} className={index === 1 ? "active" : ""}>{name}</span>)}
       </div>
-      <div className="publicMockGrid">
-        <section>
+      <div className="cv2ScreenGrid">
+        <section className="cv2Queue">
           <small>Waiting for owner</small>
-          <article>
-            <b>Invoice draft ready</b>
-            <span>Belmont Villas · Hedge trim · $340</span>
-          </article>
-          <article>
-            <b>Worker issue</b>
-            <span>Gate locked · photo and note attached</span>
-          </article>
-          <article>
-            <b>Quote follow-up</b>
-            <span>Garden tidy quote viewed yesterday</span>
-          </article>
+          {commandQueue.map(([type, client, value, action]) => (
+            <article key={`${type}-${client}`}>
+              <div><b>{type}</b><span>{client}</span></div>
+              <strong>{value}</strong>
+              <em>{action}</em>
+            </article>
+          ))}
         </section>
-        <section>
+        <section className="cv2Slip">
           <small>Approval slip</small>
-          <div className="publicSlip">
-            <b>Invoice draft ready</b>
-            <span>Client: Belmont Villas</span>
-            <span>Job: Hedge trim and green waste</span>
-            <span>Proof: 3 photos + worker note</span>
-            <span>Next step: approve, edit or park</span>
-          </div>
-          <div className="publicMockActions">
-            <span>Approve</span>
-            <span>Edit</span>
-            <span>Park</span>
-          </div>
+          <h3>Invoice draft ready</h3>
+          <dl>
+            <div><dt>Client</dt><dd>Belmont Villas</dd></div>
+            <div><dt>Job</dt><dd>Hedge trim</dd></div>
+            <div><dt>Proof</dt><dd>3 photos + worker note</dd></div>
+            <div><dt>Next</dt><dd>Approve, edit or park</dd></div>
+          </dl>
+          <div className="cv2SlipActions"><button>Approve</button><button>Edit</button><button>Park</button></div>
         </section>
       </div>
     </aside>
   );
 }
 
-function MiniWorkerLoop() {
-  return (
-    <div className="publicLoopPreview">
-      {workerLoop.map(([title, text], index) => (
-        <article key={title}>
-          <i>{index + 1}</i>
-          <b>{title}</b>
-          <span>{text}</span>
-        </article>
-      ))}
-    </div>
-  );
-}
-
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_CONTACT_ANCHOR_20260706">
+    <main className="publicSite cv2Site" data-version="CHURVOX_PUBLIC_REBUILD_20260706">
       <Nav />
 
-      <section className="publicHero publicHeroPremium">
-        <div className="publicHeroCopy">
-          <span className="publicKicker">Owner-approved admin for service businesses</span>
-          <h1>Churvox does the admin. You approve.</h1>
+      <section className="cv2Hero">
+        <div className="cv2HeroCopy">
+          <span className="publicKicker cv2Kicker">Owner approval desk for service businesses</span>
+          <h1>Run the day from one Command floor.</h1>
           <p>
-            Churvox keeps jobs, clients, workers, quotes, invoices, messages and safe accounting handoff in one clean system. It prepares the admin from real records, then brings important decisions back to Command.
+            Churvox keeps jobs, workers, clients, quotes, invoices and messages connected. It prepares the admin, then brings important decisions back to the owner.
           </p>
-          <div className="publicActions">
+          <div className="publicActions cv2HeroActions">
             <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
-            <Link to="/features" className="publicSecondary">See how Command works</Link>
+            <Link to="/demo" className="publicSecondary">Open public demo</Link>
           </div>
-          <div className="publicProof">
-            {proof.map((item) => <span key={item}>{item}</span>)}
-          </div>
+          <div className="cv2ProofRail">{proof.map((item) => <span key={item}>{item}</span>)}</div>
         </div>
-        <ProductMock />
+        <CommandScreen />
       </section>
 
-      <section className="publicBand publicStatement">
-        <span className="publicKicker">The difference</span>
-        <h2>Not another messy job list. One place for the owner to decide.</h2>
-        <p>
-          Jobs, workers and admin can move fast, but final decisions should not be scattered. Churvox prepares the next move and keeps approval, edits and parking inside Command.
-        </p>
+      <section className="cv2OutcomeStrip">
+        {outcomes.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
       </section>
 
-      <section className="publicBand">
-        <div className="publicSectionHead">
-          <span className="publicKicker">How Churvox works</span>
-          <h2>Three steps that are easy to understand.</h2>
+      <section className="cv2Section cv2FlowSection">
+        <div className="cv2SectionHead">
+          <span className="publicKicker">How it works</span>
+          <h2>From messy work to clear approval.</h2>
+          <p>Churvox is built around one simple rule: admin can be prepared, but the owner approves the important stuff.</p>
         </div>
-        <div className="publicFlow publicFlowThree">
-          {workflow.map(([num, title, text]) => (
-            <article key={title}>
-              <i>{num}</i>
-              <b>{title}</b>
-              <span>{text}</span>
-            </article>
-          ))}
+        <div className="cv2FlowCards">
+          {flow.map(([num, title, text]) => <article key={title}><i>{num}</i><b>{title}</b><span>{text}</span></article>)}
         </div>
       </section>
 
-      <section className="publicBand publicCommandFeature">
-        <div className="publicSectionHead">
+      <section className="cv2Section cv2SplitFeature">
+        <div>
           <span className="publicKicker">Command</span>
-          <h2>The owner approval desk.</h2>
-          <p>
-            Command is where the important stuff waits for you. Churvox can prepare the admin, but sending, syncing, approving and parking stays under owner control.
-          </p>
+          <h2>Approve, edit and park are not scattered everywhere.</h2>
+          <p>Other pages show the work. Command is where decisions happen: invoice drafts, quote follow-ups, worker issues, missing details and customer replies.</p>
+          <Link to="/features" className="publicPrimary">See product flow</Link>
         </div>
-        <div className="publicAreaGrid">
-          {commandSlips.map(([title, text]) => (
-            <article key={title}>
-              <b>{title}</b>
-              <span>{text}</span>
-            </article>
-          ))}
+        <div className="cv2DecisionStack">
+          {smart.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
         </div>
       </section>
 
-      <section className="publicBand publicSplit">
-        <div>
-          <span className="publicKicker">Made for real work</span>
-          <h2>Built for service businesses that move fast.</h2>
-          <p>
-            Churvox stays broad enough for different trades, but practical enough to understand jobs, workers, clients and money.
-          </p>
+      <section className="cv2Section">
+        <div className="cv2SectionHead row">
+          <div>
+            <span className="publicKicker">Built for real work</span>
+            <h2>Simple enough for a busy owner.</h2>
+          </div>
+          <p>Different trades, same admin problem: work moves fast, records get messy, and owners need one clear place to decide.</p>
         </div>
-        <div className="publicAreaGrid">
-          {trades.map(([title, text]) => (
-            <article key={title}>
-              <b>{title}</b>
-              <span>{text}</span>
-            </article>
-          ))}
+        <div className="cv2TradeGrid">
+          {tradeCards.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
         </div>
       </section>
 
-      <section className="publicBand publicSplit publicWorkerLoopBand">
-        <div>
-          <span className="publicKicker">Worker to owner loop</span>
-          <h2>Field updates become clear owner decisions.</h2>
-          <p>
-            When a worker sends a note, issue or photo, it should not disappear into a message thread. Churvox ties it to the job and sends the decision back to Command.
-          </p>
+      <section className="cv2Section cv2PricingTeaser">
+        <div className="cv2SectionHead row">
+          <div>
+            <span className="publicKicker">Plans</span>
+            <h2>Start small. Add Command when the business needs it.</h2>
+          </div>
+          <Link to="/pricing" className="publicSecondary">View full pricing</Link>
         </div>
-        <MiniWorkerLoop />
-      </section>
-
-      <section className="publicBand">
-        <div className="publicSectionHead">
-          <span className="publicKicker">Pricing by business stage</span>
-          <h2>Start simple. Add power when the business needs it.</h2>
-          <p>14-day trial. No card upfront. Pricing stays clear and the owner stays in control.</p>
-        </div>
-        <div className="publicPlanGrid publicPlanPreviewGrid">
-          {planLadder.map(([name, price, fit, text, badge]) => (
+        <div className="cv2PlanRail">
+          {planLadder.map(([name, price, text, badge]) => (
             <article key={name} className={badge ? "featured" : ""}>
               {badge ? <small>{badge}</small> : null}
-              <h3>{name}</h3>
-              <div className="publicPlanPrice small">{price}</div>
-              <p><b>{fit}</b></p>
-              <p>{text}</p>
-            </article>
-          ))}
-        </div>
-        <div className="publicActions publicCenteredActions">
-          <Link to="/pricing" className="publicPrimary">View full pricing</Link>
-          <Link to="/signup" className="publicSecondary">Start trial</Link>
-        </div>
-      </section>
-
-      <section className="publicBand publicDarkBand">
-        <div>
-          <span className="publicKicker">Owner-approved by design</span>
-          <h2>Useful admin help, with hard guardrails.</h2>
-        </div>
-        <div className="publicCardGrid">
-          {guardrails.map(([title, text]) => (
-            <article key={title}>
-              <b>{title}</b>
+              <b>{name}</b>
+              <strong>{price}</strong>
               <span>{text}</span>
             </article>
           ))}
         </div>
       </section>
 
-      <section id="contact" className="publicBand publicSplit publicContactBand">
+      <section id="contact" className="cv2Section cv2ContactBand">
         <div>
           <span className="publicKicker">Contact</span>
           <h2>Talk to Churvox.</h2>
-          <p>Email <b>hello@churvox.com</b> for setup help, questions, demos or trial support.</p>
+          <p>Email <b>hello@churvox.com</b> for setup help, trial support, demos or tester access.</p>
         </div>
-        <div className="publicCardGrid">
-          <article>
-            <b>Email</b>
-            <span>hello@churvox.com</span>
-          </article>
-          <article>
-            <b>Request form</b>
-            <span>Use the public request form when a customer needs work reviewed by the owner.</span>
-          </article>
-          <article>
-            <b>Owner review</b>
-            <span>Requests, quotes and invoices stay owner-approved before important action happens.</span>
-          </article>
+        <div className="cv2ContactCards">
+          <article><b>Email</b><span>hello@churvox.com</span></article>
+          <article><b>Public demo</b><span>Use churvox.com/demo to show the workflow without logging in.</span></article>
+          <article><b>Customer request</b><span>Use the request form when a customer wants work reviewed by the owner.</span></article>
         </div>
       </section>
 
-      <section className="publicBand publicCta">
-        <div>
-          <span className="publicKicker">Start clean</span>
-          <h2>Put the business into Churvox and let Command handle the approvals.</h2>
-        </div>
-        <div className="publicActions">
+      <section className="cv2FinalCta">
+        <span>Churvox does the admin. You approve.</span>
+        <h2>Put the business into one clean Command floor.</h2>
+        <div className="publicActions cv2HeroActions">
           <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
           <Link to="/pricing" className="publicSecondary">View plans</Link>
         </div>
