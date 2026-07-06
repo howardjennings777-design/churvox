@@ -4,62 +4,62 @@ import { Nav, Footer } from "./ExecutiveHomePage";
 import "./SimplePublic.css";
 
 const productAreas = [
-  ["Today", "The day view: jobs, workers, messages and money that need attention."],
-  ["Command", "The owner approval desk for decisions, edits and parked items."],
-  ["Jobs", "Job forms with client, worker, address, time, price and recurrence."],
-  ["Workers", "Simple field flow for directions, updates, notes and photos."],
-  ["Money", "Quotes and invoice drafts prepared from real job records."],
+  ["Today", "The work that needs attention now: jobs, workers, messages and money."],
+  ["Command", "The owner desk for approvals, edits and parked work."],
+  ["Jobs", "Clear job forms with client, worker, address, time, price and repeat work."],
+  ["Workers", "A simple field flow for directions, updates, notes and photos."],
+  ["Money", "Quote and invoice drafts built from real job records."],
 ];
 
 const commandItems = [
-  ["Invoice draft", "Job, price, proof and client details ready for review."],
-  ["Worker issue", "Field notes and photos become a clear owner decision."],
-  ["Missing info", "Unclear date, time, price or worker details are surfaced."],
+  ["Ready to send", "Quotes, replies and invoices wait for one final check."],
+  ["Needs a decision", "Worker issues and changes come back with context."],
+  ["Missing detail", "Unclear price, time, address or worker info is surfaced early."],
 ];
 
 const smartActions = [
-  ["Assign", "Suggest the worker."],
-  ["Schedule", "Find the practical time."],
+  ["Assign", "Pick the sensible worker."],
+  ["Schedule", "Place the job cleanly."],
   ["Quote", "Prepare the draft."],
-  ["Invoice", "Build from the job."],
-  ["Problem slip", "Turn issues into decisions."],
-  ["Day close", "Show what is unfinished."],
+  ["Invoice", "Build from proof and price."],
+  ["Issue", "Turn field problems into decisions."],
+  ["Close", "Show what still needs attention."],
 ];
 
 const workerFlow = [
-  ["See job", "Address, instructions and office message."],
-  ["Do job", "Directions, start, finish and notes."],
-  ["Send back", "Photos and updates return to the owner."],
+  ["Know the job", "Address, notes and office message in one place."],
+  ["Do the work", "Directions, start, finish and quick updates."],
+  ["Send proof", "Photos and notes return to the owner cleanly."],
 ];
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PRODUCT_SLIM_20260706">
+    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PRODUCT_COPY_20260706">
       <Nav />
 
       <section className="publicHero publicHeroCompact slimHero">
         <div className="publicHeroCopy">
           <span className="publicKicker">Product</span>
-          <h1>Work becomes owner-ready admin.</h1>
+          <h1>The admin layer between the job and the owner.</h1>
           <p>
-            Churvox connects the job record, prepares the next admin step, and puts the decision back in Command.
+            Churvox keeps the record clean, prepares the next step and sends important choices to Command. The owner stays in charge without doing all the admin by hand.
           </p>
           <div className="publicActions">
-            <Link to="/demo" className="publicPrimary">Open demo</Link>
+            <Link to="/demo" className="publicPrimary">See the demo</Link>
             <Link to="/pricing" className="publicSecondary">View pricing</Link>
           </div>
         </div>
         <aside className="publicFeaturePanel slimPanel">
-          <small>Main rule</small>
-          <b>Command is where decisions happen.</b>
-          <span>Other pages hold work details. Approve, edit and park stay in one owner desk.</span>
+          <small>Product rule</small>
+          <b>Work pages show details. Command holds decisions.</b>
+          <span>That split is what keeps Churvox simple for owners and workers.</span>
         </aside>
       </section>
 
       <section className="publicBand slimBand">
         <div className="publicSectionHead compactHead">
-          <span className="publicKicker">Pages</span>
-          <h2>One workspace, clear jobs.</h2>
+          <span className="publicKicker">Workspace</span>
+          <h2>Every page has a job.</h2>
         </div>
         <div className="publicFeatureGrid slimGrid fiveCards">
           {productAreas.map(([title, text]) => (
@@ -74,8 +74,8 @@ export default function ExecutiveFeaturesPage() {
       <section className="publicBand publicSplit slimBand">
         <div>
           <span className="publicKicker">Command</span>
-          <h2>Important items wait for the owner.</h2>
-          <p>Churvox can prepare the admin, but anything important comes back to Command before it moves.</p>
+          <h2>The place where admin becomes a decision.</h2>
+          <p>Churvox can prepare the work. Command is where the owner decides what happens next.</p>
         </div>
         <div className="publicAreaGrid slimGrid">
           {commandItems.map(([title, text]) => (
@@ -89,9 +89,9 @@ export default function ExecutiveFeaturesPage() {
 
       <section className="publicBand publicSplit slimBand">
         <div>
-          <span className="publicKicker">Workers</span>
-          <h2>The field app stays simple.</h2>
-          <p>Workers see what they need, send back proof, and the owner gets the next decision clearly.</p>
+          <span className="publicKicker">Worker side</span>
+          <h2>Field updates without the back-and-forth.</h2>
+          <p>Workers get the job. Owners get the update. Churvox keeps the record tied together.</p>
         </div>
         <div className="publicAreaGrid slimGrid">
           {workerFlow.map(([title, text]) => (
@@ -106,8 +106,8 @@ export default function ExecutiveFeaturesPage() {
       <section className="publicBand slimBand">
         <div className="publicSectionHead compactHead">
           <span className="publicKicker">Smart Actions</span>
-          <h2>Helpful, not noisy.</h2>
-          <p>Churvox prepares useful next steps without taking owner control away.</p>
+          <h2>Useful prompts. No noise.</h2>
+          <p>Churvox prepares the obvious next step, then leaves the important call with the owner.</p>
         </div>
         <div className="publicAreaGrid slimGrid smallActionGrid">
           {smartActions.map(([title, text]) => (
@@ -121,11 +121,11 @@ export default function ExecutiveFeaturesPage() {
 
       <section className="publicBand publicCta slimCta">
         <div>
-          <span className="publicKicker">See it</span>
-          <h2>Open the public demo.</h2>
+          <span className="publicKicker">See it working</span>
+          <h2>Use the public demo first.</h2>
         </div>
         <div className="publicActions">
-          <Link to="/demo" className="publicPrimary">Open demo</Link>
+          <Link to="/demo" className="publicPrimary">See the demo</Link>
           <Link to="/signup" className="publicSecondary">Start trial</Link>
         </div>
       </section>
