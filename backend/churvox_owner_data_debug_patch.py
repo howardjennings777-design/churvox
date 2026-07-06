@@ -1,8 +1,12 @@
 from datetime import datetime, timezone
+import importlib
+import importlib.abc
+import importlib.machinery
 import sys
 
 from fastapi import Request
 
+TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
 COLLECTIONS = ["jobs", "clients", "quotes", "invoices", "users", "worker_messages", "worker_field_slips", "approved_notifications", "notifications"]
 
@@ -98,7 +102,8 @@ async def sample_owned(db, collection_name, query):
         if not row:
             return None
         clean = safe(row)
-        return {key: clean.get(key) for key in ["id", "business_id", "businessId", "contractor_id", "owner_business_id", "owner_id", "user_id", "created_by", "created_by_id", "employer_id", "owner_email", "created_by_email", "email", "title", "name", "client_name", "status"] if key in clean}
+        wanted = ["id", "business_id", "businessId", "contractor_id", "owner_business_id", "owner_id", "user_id", "created_by", "created_by_id", "employer_id", "owner_email", "created_by_email", "email", "title", "name", "client_name", "status"]
+        return {key: clean.get(key) for key in wanted if key in clean}
     except Exception:
         return None
 
@@ -157,3 +162,34 @@ def install(module):
     remove_route(app, "/api/health/owner-data", "GET")
     app.add_api_route("/api/health/owner-data", owner_data, methods=["GET"])
     INSTALLED.add(name)
+
+
+class Loader(importlib.abc.Loader):
+    def __init__(self, original):
+        self.original = original
+
+    def create_module(self, spec):
+        return self.original.create_module(spec) if hasattr(self.original, "create_module") else None
+
+    def exec_module(self, module):
+        self.original.exec_module(module)
+        install(module)
+
+
+class Finder(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname not in TARGETS:
+            return None
+        spec = importlib.machinery.PathFinder.find_spec(fullname, path)
+        if spec and spec.loader and not isinstance(spec.loader, Loader):
+            spec.loader = Loader(spec.loader)
+        return spec
+
+
+if not any(isinstance(finder, Finder) for finder in sys.meta_path):
+    sys.meta_path.insert(0, Finder())
+
+for module_name in list(TARGETS):
+    loaded = sys.modules.get(module_name)
+    if loaded:
+        install(loaded)
