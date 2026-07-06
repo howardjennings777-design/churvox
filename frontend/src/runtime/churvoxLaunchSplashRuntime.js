@@ -1,21 +1,25 @@
-// CHURVOX_LOGO_LAUNCH_SPLASH_20260629
-// Shows a short branded launch screen for the worker app and first-load app shell.
+// CHURVOX_REAL_PWA_ICON_AND_LAUNCH_20260707
+// Keeps the installed-app icon and first-load splash aligned with the real PNG PWA system.
 
 const STYLE_ID = 'churvox-launch-splash-style';
 const NODE_ID = 'churvox-launch-splash';
-const SESSION_KEY = 'churvox-launch-splash-seen-v1';
-const ICON_VERSION = 'worker-app-redesign-20260629';
+const SESSION_KEY = 'churvox-launch-splash-seen-v2-real-pwa';
+const ICON_VERSION = 'real-pwa-icon-20260707';
 
 function isWorkerApp() {
   return typeof window !== 'undefined' && window.location.pathname.startsWith('/worker');
 }
 
+function isOwnerApp() {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname || '';
+  return path === '/app' || path === '/dashboard' || path === '/plans' || path.startsWith('/dashboard');
+}
+
 function shouldShow() {
   if (typeof window === 'undefined') return false;
   if (isWorkerApp()) return true;
-  if (window.location.pathname === '/dashboard' || window.location.pathname === '/plans') {
-    return !window.sessionStorage.getItem(SESSION_KEY);
-  }
+  if (isOwnerApp()) return !window.sessionStorage.getItem(SESSION_KEY);
   return false;
 }
 
@@ -29,7 +33,7 @@ function setMeta(name, content) {
   node.setAttribute('content', content);
 }
 
-function upsertLinks(rel, href, type) {
+function upsertLinks(rel, href, type, sizes) {
   const nodes = Array.from(document.querySelectorAll(`link[rel="${rel}"]`));
   if (!nodes.length) {
     const node = document.createElement('link');
@@ -39,54 +43,64 @@ function upsertLinks(rel, href, type) {
   }
   nodes.forEach((node) => {
     if (type) node.setAttribute('type', type);
+    if (sizes) node.setAttribute('sizes', sizes);
     node.setAttribute('href', href);
-    node.setAttribute('data-cvx-runtime', 'true');
+    node.setAttribute('data-cvx-runtime', 'real-pwa-icon');
   });
 }
 
 function ensureBranding() {
   if (typeof document === 'undefined' || !document.head) return;
   document.title = isWorkerApp()
-    ? 'Churvox Worker App - Today, jobs, messages'
-    : 'Churvox - Churvox does the admin. The owner approves.';
-  setMeta('theme-color', '#111820');
+    ? 'Churvox Worker App'
+    : 'Churvox App - Owner Command';
+  setMeta('theme-color', '#0b100e');
   setMeta('apple-mobile-web-app-title', isWorkerApp() ? 'Churvox Worker' : 'Churvox');
-  setMeta('description', 'Churvox does the admin. The owner checks and approves. Jobs, workers, quotes, invoices, messages and safe accounting handoff.');
-  upsertLinks('icon', `/favicon.svg?v=${ICON_VERSION}`, 'image/svg+xml');
-  upsertLinks('apple-touch-icon', `/churvox-app-icon.svg?v=${ICON_VERSION}`);
+  setMeta('description', 'Churvox does the admin. You approve. Owner-approved job admin for service businesses.');
+  upsertLinks('icon', `/app-icon-192.png?v=${ICON_VERSION}`, 'image/png', '192x192');
+  upsertLinks('apple-touch-icon', `/apple-touch-icon.png?v=${ICON_VERSION}`, 'image/png', '180x180');
   upsertLinks('manifest', `/manifest.json?v=${ICON_VERSION}`);
 }
 
 function markSvg() {
   return `
-    <svg viewBox="0 0 256 256" aria-hidden="true" class="cvxSplashMark">
+    <svg viewBox="0 0 128 128" aria-hidden="true" class="cvxSplashMark">
       <defs>
-        <linearGradient id="cvxSplashBg" x1="20" y1="12" x2="232" y2="244" gradientUnits="userSpaceOnUse"><stop stop-color="#2b3038"/><stop offset=".52" stop-color="#111820"/><stop offset="1" stop-color="#05070b"/></linearGradient>
-        <linearGradient id="cvxSplashOrange" x1="45" y1="36" x2="218" y2="218" gradientUnits="userSpaceOnUse"><stop stop-color="#ffbd72"/><stop offset=".42" stop-color="#ff7a22"/><stop offset="1" stop-color="#ef5b1d"/></linearGradient>
-        <linearGradient id="cvxSplashWhite" x1="66" y1="92" x2="213" y2="158" gradientUnits="userSpaceOnUse"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#d9dee7"/></linearGradient>
-        <radialGradient id="cvxSplashGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(184 58) rotate(126) scale(170)"><stop stop-color="#ff8a2a" stop-opacity=".38"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient>
+        <linearGradient id="cvxRealSplashBg" x1="18" y1="10" x2="112" y2="118" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#161c18"/><stop offset="0.58" stop-color="#090d0b"/><stop offset="1" stop-color="#030404"/>
+        </linearGradient>
+        <linearGradient id="cvxRealSplashOrange" x1="21" y1="18" x2="105" y2="109" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#ffad55"/><stop offset="0.5" stop-color="#f97316"/><stop offset="1" stop-color="#dc3f17"/>
+        </linearGradient>
+        <linearGradient id="cvxRealSplashWhite" x1="39" y1="43" x2="95" y2="86" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#ffffff"/><stop offset="1" stop-color="#dce3ec"/>
+        </linearGradient>
+        <filter id="cvxRealSplashLift" x="-25%" y="-25%" width="150%" height="150%">
+          <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.36"/>
+        </filter>
       </defs>
-      <rect x="10" y="10" width="236" height="236" rx="56" fill="url(#cvxSplashBg)"/>
-      <rect x="10" y="10" width="236" height="236" rx="56" fill="url(#cvxSplashGlow)"/>
-      <rect x="15" y="15" width="226" height="226" rx="51" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3"/>
-      <path d="M56 70h132M68 195h116" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round"/>
-      <path d="M190 63A82 82 0 0 0 71 66" fill="none" stroke="url(#cvxSplashOrange)" stroke-width="28" stroke-linecap="round"/>
-      <path d="M64 181A82 82 0 0 0 195 181" fill="none" stroke="url(#cvxSplashOrange)" stroke-width="28" stroke-linecap="round"/>
-      <path d="M43 105h50M33 132h59M53 159h52" fill="none" stroke="url(#cvxSplashOrange)" stroke-width="12" stroke-linecap="round"/>
-      <path d="M73 137L112 122L145 151L207 92" fill="none" stroke="url(#cvxSplashWhite)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="73" cy="137" r="14" fill="#f8fafc"/><circle cx="112" cy="122" r="13" fill="#f8fafc"/><circle cx="207" cy="92" r="13" fill="#f8fafc"/>
+      <rect x="7" y="7" width="114" height="114" rx="29" fill="url(#cvxRealSplashBg)"/>
+      <rect x="8.5" y="8.5" width="111" height="111" rx="27.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+      <g filter="url(#cvxRealSplashLift)">
+        <path d="M92 38C85 27 73 21 60 21C37 21 18 40 18 64C18 88 37 107 60 107C75 107 87 100 95 89" fill="none" stroke="url(#cvxRealSplashOrange)" stroke-width="15" stroke-linecap="round"/>
+        <path d="M39 66L56 82L92 43" fill="none" stroke="url(#cvxRealSplashWhite)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <circle cx="95" cy="38" r="6.5" fill="#f97316"/>
     </svg>`;
 }
 
 function ensureStyle() {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
+  let style = document.getElementById(STYLE_ID);
+  if (!style) {
+    style = document.createElement('style');
+    style.id = STYLE_ID;
+    document.head.appendChild(style);
+  }
   style.textContent = `
-    #${NODE_ID}{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 25%,rgba(255,122,34,.24),transparent 28%),linear-gradient(145deg,#05070b 0%,#111820 54%,#2c1209 100%);color:#fffaf3;font-family:Inter,system-ui,sans-serif;overflow:hidden;transition:opacity .34s ease,visibility .34s ease;pointer-events:none!important}#${NODE_ID}.hide{opacity:0;visibility:hidden}#${NODE_ID}:before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 180deg,transparent,rgba(255,122,34,.18),transparent 34%);animation:cvxSplashSweep 2.8s linear infinite}#${NODE_ID}:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at 50% 45%,#000,transparent 72%)}.cvxSplashCard{position:relative;z-index:1;display:grid;justify-items:center;gap:16px;text-align:center}.cvxSplashMark{width:min(144px,38vw);height:auto;filter:drop-shadow(0 24px 44px rgba(0,0,0,.48));animation:cvxSplashPop .72s cubic-bezier(.2,.9,.25,1.2)}.cvxSplashCard h1{margin:0;font-size:clamp(34px,10vw,74px);line-height:.9;letter-spacing:-.08em;font-weight:1000}.cvxSplashCard p{margin:0;max-width:360px;color:#ffd7ba;font-size:13px;font-weight:900;line-height:1.45}.cvxSplashBar{width:min(260px,68vw);height:6px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}.cvxSplashBar i{display:block;width:42%;height:100%;border-radius:999px;background:linear-gradient(90deg,#ffbd72,#f06423);animation:cvxSplashLoad .92s ease-in-out infinite alternate}@keyframes cvxSplashSweep{to{transform:rotate(360deg)}}@keyframes cvxSplashPop{from{transform:scale(.8) translateY(16px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes cvxSplashLoad{to{transform:translateX(142%)}}
-    @media (prefers-reduced-motion: reduce){#${NODE_ID}:before,.cvxSplashMark,.cvxSplashBar i{animation:none!important}}
+    #${NODE_ID}{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 25%,rgba(249,115,22,.30),transparent 30%),radial-gradient(circle at 20% 86%,rgba(249,115,22,.15),transparent 28%),linear-gradient(135deg,#050706 0%,#101511 58%,#1b0f07 100%);color:#fff;font-family:Inter,system-ui,sans-serif;overflow:hidden;transition:opacity .34s ease,visibility .34s ease;pointer-events:none!important}#${NODE_ID}.hide{opacity:0;visibility:hidden}#${NODE_ID}:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 0 55%,rgba(249,115,22,.11) 76%,transparent 100%),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:auto,48px 48px,48px 48px}.cvxSplashCard{position:relative;z-index:1;width:min(420px,100%);min-height:min(650px,calc(100svh - 44px));display:grid;align-content:center;justify-items:center;gap:14px;border:1px solid rgba(255,255,255,.13);border-radius:44px;padding:34px 24px;text-align:center;background:radial-gradient(circle at 50% 24%,rgba(255,255,255,.08),transparent 32%),linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025)),linear-gradient(180deg,#151a17,#050706 70%,#120905);box-shadow:0 34px 110px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.10);overflow:hidden}.cvxSplashCard:after{content:"";position:absolute;left:16%;right:16%;bottom:-3px;height:3px;border-radius:999px;background:linear-gradient(90deg,transparent,#f97316,transparent);box-shadow:0 0 34px rgba(249,115,22,.8)}.cvxSplashMark{width:132px;height:132px;display:block;margin-bottom:6px;border-radius:35px;filter:drop-shadow(0 24px 60px rgba(0,0,0,.40));animation:cvxSplashPop .72s cubic-bezier(.2,.9,.25,1.2)}.cvxSplashCard h1{margin:0;color:#fff;font-size:clamp(50px,13vw,72px);line-height:.88;font-weight:1000;letter-spacing:-.082em}.cvxSplashCard p{margin:0;color:rgba(255,255,255,.72);font-size:17px;line-height:1.35;font-weight:800}.cvxSplashCard p b{color:#f97316}.cvxSplashBar{width:min(220px,72%);height:7px;margin-top:30px;border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden}.cvxSplashBar i{display:block;width:46%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#f97316,#ffad55);box-shadow:0 0 20px rgba(249,115,22,.65);animation:cvxSplashLoad 1.05s ease-in-out infinite alternate}.cvxSplashCard small{margin-top:4px;color:rgba(255,255,255,.48);font-size:10px;line-height:1;font-weight:1000;letter-spacing:.16em;text-transform:uppercase}@keyframes cvxSplashPop{from{transform:scale(.8) translateY(16px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}@keyframes cvxSplashLoad{to{transform:translateX(135%)}}
+    @media (max-width:520px){#${NODE_ID}{padding:0}.cvxSplashCard{width:100%;min-height:100svh;border-radius:0;border-left:0;border-right:0}}
+    @media (prefers-reduced-motion:reduce){.cvxSplashMark,.cvxSplashBar i{animation:none!important}}
   `;
-  document.head.appendChild(style);
 }
 
 function showSplash() {
@@ -94,11 +108,11 @@ function showSplash() {
   ensureStyle();
   const node = document.createElement('div');
   node.id = NODE_ID;
-  node.innerHTML = `<section class="cvxSplashCard">${markSvg()}<div><h1>Churvox</h1><p>${isWorkerApp() ? 'Worker app loading. Today, Jobs and Messages.' : 'Churvox does the admin. The owner checks and approves.'}</p></div><span class="cvxSplashBar"><i></i></span></section>`;
+  node.innerHTML = `<section class="cvxSplashCard">${markSvg()}<h1>Churvox</h1><p>Does the admin. <b>You approve.</b></p><span class="cvxSplashBar"><i></i></span><small>${isWorkerApp() ? 'Opening worker app' : 'Opening owner command floor'}</small></section>`;
   document.body.appendChild(node);
   window.sessionStorage.setItem(SESSION_KEY, '1');
-  window.setTimeout(() => node.classList.add('hide'), isWorkerApp() ? 900 : 750);
-  window.setTimeout(() => node.remove(), isWorkerApp() ? 1150 : 950);
+  window.setTimeout(() => node.classList.add('hide'), isWorkerApp() ? 1050 : 1050);
+  window.setTimeout(() => node.remove(), isWorkerApp() ? 1350 : 1350);
 }
 
 function bootLaunchBranding() {
