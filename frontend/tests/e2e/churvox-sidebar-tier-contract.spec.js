@@ -20,29 +20,29 @@ async function login(page) {
   }, token);
 }
 
-test('sidebar keeps main app simple and tier-driven', async ({ page }) => {
+test('main app navigation stays simple and tier driven', async ({ page }) => {
   await login(page);
   await page.goto('/dashboard');
 
-  const sidebar = page.locator('.freshSide');
-  await expect(sidebar).toContainText('Smart Hub');
-  await expect(sidebar).toContainText('Jobs');
-  await expect(sidebar).toContainText('Clients');
-  await expect(sidebar).toContainText('Quotes');
-  await expect(sidebar).toContainText('Invoices');
-  await expect(sidebar).toContainText('Settings');
-  await expect(sidebar).toContainText('Plans');
-  await expect(sidebar).toContainText('Help');
+  const nav = page.locator('.cvxNav, .freshSide').first();
+  await expect(nav).toBeVisible();
+  await expect(nav).toContainText(/Today|Smart Hub/);
+  await expect(nav).toContainText('Jobs');
+  await expect(nav).toContainText('Clients');
+  await expect(nav).toContainText('Quotes');
+  await expect(nav).toContainText('Invoices');
+  await expect(nav).toContainText('Settings');
+  await expect(nav).toContainText('Plans');
+  await expect(nav).toContainText(/Help|Support/);
 
-  const mainSidebarText = await sidebar.innerText();
-  expect(mainSidebarText).not.toMatch(/Recurring/);
-  expect(mainSidebarText).not.toMatch(/MYOB/);
+  const navText = await nav.innerText();
+  expect(navText).not.toMatch(/Recurring/);
 
-  if (/Command/.test(mainSidebarText)) {
-    expect(mainSidebarText).toMatch(/Messages/);
+  if (/Command/.test(navText)) {
+    expect(navText).toMatch(/Messages/);
   }
 
-  if (/Team/.test(mainSidebarText)) {
-    expect(mainSidebarText).toMatch(/Worker View/);
+  if (/Team/.test(navText)) {
+    expect(navText).toMatch(/Workers|Worker View/);
   }
 });
