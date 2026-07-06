@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="cvPublicAuth">
+    <main className="cvPublicAuth" data-version="CHURVOX_FORGOT_PASSWORD_PREMIUM_20260706">
       <Nav />
 
       <section className="cvPublicAuthShell">
@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
 
           {success ? (
             <>
-              <p className="cvPublicAuthError" style={{ background: "rgba(43,189,145,.14)", borderColor: "rgba(43,189,145,.28)", color: "#bbf7d0", WebkitTextFillColor: "#bbf7d0" }}>
+              <p className="cvPublicAuthSuccess">
                 Reset link sent. Check your email shortly.
               </p>
               <Link to="/login" className="cvPublicAuthSubmit" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
                 <input
                   style={inputStyle}
                   type="email"
-                  placeholder="hello@churvox.com"
+                  placeholder="you@business.co.nz"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
