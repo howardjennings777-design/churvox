@@ -129,6 +129,12 @@ def install(module):
     except Exception as exc:
         print(f"Churvox record bridge skipped: {exc}", file=sys.stderr)
 
+    try:
+        import churvox_wiring_health_patch
+        churvox_wiring_health_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox wiring health skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
