@@ -15,6 +15,19 @@ const featureAreas = [
   ["Settings", "Business details, team access, billing, exports and safe accounting controls."],
 ];
 
+const smartActions = [
+  ["Smart Assign", "Suggests the best worker by area, skills, availability and workload."],
+  ["Smart Schedule", "Finds a sensible date and time without crowding the run sheet."],
+  ["Smart Run Builder", "Groups recurring or nearby jobs into a cleaner daily run."],
+  ["Smart Quote Builder", "Prepares a quote draft from service type, client notes and similar work."],
+  ["Smart Invoice Builder", "Builds an invoice draft from job price, notes, proof and time."],
+  ["Smart Client Memory", "Saves access notes, preferred timing, pricing and proof preferences."],
+  ["Smart Missing Info", "Flags missing date, time, worker, address, price or client details."],
+  ["Smart Follow-up", "Prepares quote, invoice or client follow-ups for owner approval."],
+  ["Smart Problem Slip", "Turns worker issues into clear owner decisions inside Command."],
+  ["Smart Day Close", "Wraps up the day with jobs, invoice drafts, messages and tomorrow checks."],
+];
+
 const commandItems = [
   ["Quote ready to review", "Client, service, price and job details are lined up for approval."],
   ["Invoice ready to review", "Job records, time, notes, photos and pricing are pulled together."],
@@ -48,7 +61,7 @@ const workerFlow = [
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_FEATURES_10_OUT_OF_10_20260630">
+    <main className="publicSite" data-version="CHURVOX_PUBLIC_FEATURES_SMART_ACTIONS_20260706">
       <Nav />
 
       <section className="publicHero publicHeroCompact">
@@ -68,6 +81,22 @@ export default function ExecutiveFeaturesPage() {
           <b>Command is the approval desk.</b>
           <span>Approve, edit and park are not scattered through the product. The owner checks them in one place.</span>
         </aside>
+      </section>
+
+      <section className="publicBand publicCommandFeature">
+        <div className="publicSectionHead">
+          <span className="publicKicker">Command Smart Actions</span>
+          <h2>Churvox gets clever without taking control away.</h2>
+          <p>It can suggest the worker, time, run, quote, invoice, missing info, follow-up, problem slip and day close. The owner still approves.</p>
+        </div>
+        <div className="publicAreaGrid">
+          {smartActions.map(([title, text]) => (
+            <article key={title}>
+              <b>{title}</b>
+              <span>{text}</span>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="publicBand">
