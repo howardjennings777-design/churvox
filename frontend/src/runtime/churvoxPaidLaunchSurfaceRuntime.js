@@ -69,8 +69,11 @@ function ensureWorkerMap() {
   }
 }
 
-function field(label, type = 'text') {
+function field(label, type = 'text', options = null) {
   const wide = /address|notes/i.test(label) ? ' wide' : '';
+  if (Array.isArray(options) && options.length) {
+    return `<label class="cvxField${wide}"><span>${label}</span><select name="${label}">${options.map((option) => `<option value="${option}">${option}</option>`).join('')}</select></label>`;
+  }
   if (/notes/i.test(label)) {
     return `<label class="cvxField${wide}"><span>${label}</span><textarea name="${label}" rows="4"></textarea></label>`;
   }
@@ -93,10 +96,10 @@ function openClientForm() {
         ${field('Phone')}
         ${field('Email', 'email')}
         ${field('Address')}
-        ${field('Preferred service')}
-        ${field('Saved price')}
-        ${field('Schedule')}
-        ${field('Notes')}
+        ${field('Preferred service', 'text', ['Lawn mowing', 'Landscaping', 'Cleaning', 'Handyman', 'Painting', 'Plumbing', 'Electrical', 'Pest control', 'Other'])}
+        ${field('Saved price', 'number')}
+        ${field('Preferred schedule', 'text', ['One-off', 'Weekly', 'Fortnightly', 'Monthly', 'Custom'])}
+        ${field('Access notes')}
       </div>
       <div class="cvxDrawerActions">
         <button type="button" class="good" data-fallback-save="true">Save record</button>
