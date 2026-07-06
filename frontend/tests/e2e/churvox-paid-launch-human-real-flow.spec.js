@@ -51,23 +51,53 @@ async function assertHealthy(page, label) {
   return body;
 }
 
-async function fillFirst(page, patterns, value) {
-  for (const pattern of patterns) {
-    const candidates = [
-      page.getByLabel(pattern).first(),
-      page.getByPlaceholder(pattern).first(),
-      page.locator('input, textarea, select').filter({ hasText: pattern }).first(),
-    ];
-    for (const locator of candidates) {
-      if (await locator.isVisible().catch(() => false)) {
-        const tag = await locator.evaluate((node) => node.tagName.toLowerCase()).catch(() => 'input');
-        if (tag === 'select') await locator.selectOption({ label: String(value) }).catch(async () => locator.selectOption(String(value)).catch(() => null));
-        else await locator.fill(String(value));
-        return true;
-      }
+function editableSelector(pattern) {
+  const text = String(pattern).replace(/^\\//, '').replace(/\\/[a-z]*$/, '').replace(/\\\\/g, '');
+  const safe = text.replace(/[^a-z0-9 _-]/gi, ' ').trim().split(/\\s+/)[0] || '';
+  return safe
+    ? `input:not([disabled]):not([readonly])[name*="${safe}" i], textarea:not([disabled]):not([readonly])[name*="${safe}" i], select:not([disabled])[name*="${safe}" i]`
+    : 'input:not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly]), select:not([disabled])';
+}
+
+async function fillEditableLocator(locator, value) {
+  const count = await locator.count().catch(() => 0);
+  for (let index = 0; index < count; index += 1) {
+    const item = locator.nth(index);
+    if (!(await item.isVisible().catch(() => false))) continue;
+    if (!(await item.isEnabled().catch(() => false))) continue;
+
+    const tag = await item.evaluate((node) => node.tagName.toLowerCase()).catch(() => 'input');
+    const readonly = await item.evaluate((node) => Boolean(node.readOnly || node.getAttribute('readonly') !== null)).catch(() => false);
+    if (readonly && tag !== 'select') continue;
+
+    if (tag === 'select') {
+      await item.selectOption({ label: String(value) }).catch(async () => item.selectOption(String(value)).catch(() => null));
+      return true;
     }
+
+    await item.fill(String(value), { timeout: 5000 });
+    return true;
   }
   return false;
+}
+
+async function fillFirst(page, patterns, value) {
+  const scopes = [
+    page.locator('.cvxDrawerLayer:visible, [role="dialog"]:visible').first(),
+    page.locator('body'),
+  ];
+
+  for (const scope of scopes) {
+    if (!(await scope.isVisible().catch(() => false))) continue;
+
+    for (const pattern of patterns) {
+      if (await fillEditableLocator(scope.getByLabel(pattern), value)) return true;
+      if (await fillEditableLocator(scope.getByPlaceholder(pattern), value)) return true;
+      if (await fillEditableLocator(scope.locator(editableSelector(pattern)), value)) return true;
+    }
+  }
+
+  throw new Error(`Could not find editable field for ${patterns.map(String).join(' or ')}`);
 }
 
 async function clickButton(page, pattern, label = String(pattern)) {
