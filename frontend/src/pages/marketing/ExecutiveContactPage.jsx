@@ -4,41 +4,39 @@ import { Nav, Footer } from "./ExecutiveHomePage";
 import "./SimplePublic.css";
 
 const contactCards = [
-  ["General contact", "hello@churvox.com", "Questions, demos, setup help or early access."],
-  ["Product help", "Use Help inside Churvox", "Logged-in owners can use the Help area so requests stay tied to the account."],
-  ["Customer requests", "Request form", "Send work requests into Churvox for owner review before quoting or booking."],
+  ["Email", "hello@churvox.com", "Setup help, demos, tester access and trial questions."],
+  ["Demo", "churvox.com/demo", "Show the workflow without using a real account."],
+  ["Request", "churvox.com/request", "Send work details for owner review."],
 ];
 
 export default function ExecutiveContactPage() {
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_CONTACT_20260706">
+    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_CONTACT_SLIM_20260706">
       <Nav />
 
-      <section className="publicHero publicHeroCompact">
+      <section className="publicHero publicHeroCompact slimHero">
         <div className="publicHeroCopy">
-          <span className="publicKicker">Contact Churvox</span>
-          <h1>Need help or want to talk through Churvox?</h1>
-          <p>
-            Email Churvox directly or use the request form if you are sending work to a business using Churvox. Nothing is booked automatically without owner review.
-          </p>
+          <span className="publicKicker">Contact</span>
+          <h1>Talk to Churvox.</h1>
+          <p>Email us for setup help, trial support, tester access or a walkthrough.</p>
           <div className="publicActions">
-            <a className="publicPrimary" href="mailto:hello@churvox.com">Email hello@churvox.com</a>
-            <Link to="/request" className="publicSecondary">Open request form</Link>
+            <a className="publicPrimary" href="mailto:hello@churvox.com">Email Churvox</a>
+            <Link to="/demo" className="publicSecondary">Open demo</Link>
           </div>
         </div>
-        <aside className="publicFeaturePanel">
-          <small>Owner-approved</small>
-          <b>Churvox keeps the owner in control.</b>
-          <span>Requests, quotes, invoices and accounting handoff are reviewed before important action happens.</span>
+        <aside className="publicFeaturePanel slimPanel">
+          <small>Best email</small>
+          <b>hello@churvox.com</b>
+          <span>Tell us what kind of business you run and what you want to test.</span>
         </aside>
       </section>
 
-      <section className="publicBand">
-        <div className="publicSectionHead">
-          <span className="publicKicker">Contact options</span>
-          <h2>Choose the right way to reach us.</h2>
+      <section className="publicBand slimBand">
+        <div className="publicSectionHead compactHead">
+          <span className="publicKicker">Options</span>
+          <h2>Choose the right path.</h2>
         </div>
-        <div className="publicCardGrid">
+        <div className="publicCardGrid slimGrid">
           {contactCards.map(([title, action, text]) => (
             <article key={title}>
               <b>{title}</b>
@@ -49,14 +47,14 @@ export default function ExecutiveContactPage() {
         </div>
       </section>
 
-      <section className="publicBand publicCta">
+      <section className="publicBand publicCta slimCta">
         <div>
-          <span className="publicKicker">Start clean</span>
-          <h2>Try Churvox with the 14-day trial.</h2>
+          <span className="publicKicker">Next step</span>
+          <h2>Open the demo or start the trial.</h2>
         </div>
         <div className="publicActions">
-          <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
-          <Link to="/pricing" className="publicSecondary">View pricing</Link>
+          <Link to="/demo" className="publicPrimary">Open demo</Link>
+          <Link to="/signup" className="publicSecondary">Start trial</Link>
         </div>
       </section>
 
