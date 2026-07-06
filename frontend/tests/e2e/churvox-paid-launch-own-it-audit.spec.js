@@ -10,6 +10,7 @@ const ownerPages = ['today', 'command', 'jobs', 'clients', 'workers', 'messages'
 const publicRoutes = ['/', '/features', '/pricing', '/contact', '/security', '/support', '/login', '/signup'];
 const fatalPattern = /Something went wrong|Application error|Cannot read properties|undefined is not an object|Minified React error|ChunkLoadError|Script error|Loading chunk failed/i;
 const loginPagePattern = /WELCOME BACK|Sign in to Command|Email Password Show Sign in|Forgot password/i;
+const credentialPlaceholderPattern = /YOUR_REAL_PASSWORD_HERE|PUT_REAL_PASSWORD_HERE|PASTE_YOUR_PASSWORD_HERE|REPLACE_WITH_REAL_PASSWORD/i;
 
 async function gotoFast(page, route) {
   await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(async () => {
@@ -80,7 +81,7 @@ async function login(page, email, password) {
 
 async function ownerLogin(page) {
   test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
-  expect(OWNER_PASSWORD, 'Replace CHURVOX_OWNER_PASSWORD with the real password in your terminal.').not.toMatch(/YOUR_REAL_PASSWORD_HERE|PASTE_YOUR_PASSWORD_HERE/i);
+  expect(OWNER_PASSWORD, 'Replace CHURVOX_OWNER_PASSWORD with the real password in your terminal, not a placeholder.').not.toMatch(credentialPlaceholderPattern);
   await login(page, OWNER_EMAIL, OWNER_PASSWORD);
   await gotoFast(page, '/dashboard');
   await assertOwnerApp(page, 'owner login');
@@ -197,6 +198,7 @@ test.describe('Churvox paid launch owner-level audit', () => {
     await mobileNoOverflow(page, '/worker/today');
 
     test.skip(!WORKER_EMAIL || !WORKER_PASSWORD, 'Worker credentials not supplied for logged-in worker flow.');
+    expect(WORKER_PASSWORD, 'Replace CHURVOX_WORKER_PASSWORD with the real worker password in your terminal, not a placeholder.').not.toMatch(credentialPlaceholderPattern);
     await login(page, WORKER_EMAIL, WORKER_PASSWORD);
     await gotoFast(page, '/worker/jobs');
     body = await assertHealthy(page, 'worker jobs');
