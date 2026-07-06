@@ -52,8 +52,13 @@ async function assertHealthy(page, label) {
 }
 
 function editableSelector(pattern) {
-  const text = String(pattern).replace(/^\\//, '').replace(/\\/[a-z]*$/, '').replace(/\\\\/g, '');
-  const safe = text.replace(/[^a-z0-9 _-]/gi, ' ').trim().split(/\\s+/)[0] || '';
+  let text = String(pattern || '');
+  if (text.startsWith('/')) text = text.slice(1);
+  const lastSlash = text.lastIndexOf('/');
+  if (lastSlash > 0) text = text.slice(0, lastSlash);
+  text = text.replaceAll(String.fromCharCode(92), '');
+
+  const safe = text.replace(/[^a-z0-9 _-]/gi, ' ').trim().split(/\s+/)[0] || '';
   return safe
     ? `input:not([disabled]):not([readonly])[name*="${safe}" i], textarea:not([disabled]):not([readonly])[name*="${safe}" i], select:not([disabled])[name*="${safe}" i]`
     : 'input:not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly]), select:not([disabled])';
@@ -205,6 +210,9 @@ async function smokeOwnerPages(page) {
 async function createClientThroughOwnerUi(page, token) {
   await openOwnerPage(page, 'clients');
   await clickButton(page, /Add client/i, 'Add client');
+
+  await expect(page.locator('.cvxDrawerLayer:visible, [role="dialog"]:visible').first(), 'client drawer should open').toBeVisible({ timeout: 10000 });
+
   await fillFirst(page, [/Name/i], token);
   await fillFirst(page, [/Phone/i], '0210000000');
   await fillFirst(page, [/Email/i], `${token.toLowerCase().replace(/[^a-z0-9]/g, '')}@example.com`);
@@ -212,8 +220,32 @@ async function createClientThroughOwnerUi(page, token) {
   await fillFirst(page, [/Preferred service|Service/i], 'Lawn mowing');
   await fillFirst(page, [/Saved price|Price/i], '149');
   await fillFirst(page, [/Preferred schedule|Schedule/i], 'Weekly');
+
+  const postPromise = page.waitForResponse(
+    (response) => response.url().includes('/api/clients') && response.request().method() === 'POST',
+    { timeout: 20000 }
+  ).catch(() => null);
+
   await clickButton(page, /Create record|Save record/i, 'save client');
-  await page.waitForTimeout(1100);
+
+  const postResponse = await postPromise;
+  const visibleBody = await pageText(page);
+
+  if (!postResponse) {
+    throw new Error(`Client UI save did not send POST /api/clients. Visible page text: ${visibleBody.slice(0, 1000)}`);
+  }
+
+  const responseText = await postResponse.text().catch(() => '');
+  if (!postResponse.ok()) {
+    throw new Error(`Client UI save POST /api/clients failed ${postResponse.status()}: ${responseText.slice(0, 1000)}`);
+  }
+
+  if (/Could not save|Request failed|server took too long|Please check/i.test(visibleBody)) {
+    throw new Error(`Client UI showed save error after POST /api/clients ${postResponse.status()}: ${visibleBody.slice(0, 1000)} | response ${responseText.slice(0, 1000)}`);
+  }
+
+  await expect(page.getByText(/Record created|Client|created|saved/i).first()).toBeVisible({ timeout: 10000 }).catch(() => null);
+  await page.waitForTimeout(1200);
 }
 
 async function createJobThroughOwnerUi(page, token, clientToken, workerName) {
