@@ -5,8 +5,9 @@ import importlib
 import importlib.abc
 import importlib.machinery
 import sys
+from fastapi import Request as FastAPIRequest
 
-TARGETS = {"server", "backend.server"}
+TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
 
 
@@ -142,7 +143,7 @@ def install(module):
     if not app or db is None or not get_current_user or Request is None:
         return
 
-    async def general_worker_field_slip_endpoint(request: Request):
+    async def general_worker_field_slip_endpoint(request: FastAPIRequest):
         user = await get_current_user(request)
         payload = await read_payload(request)
         slip = await create_general_slip(db, user, payload)
