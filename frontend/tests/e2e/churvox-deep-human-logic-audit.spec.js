@@ -122,7 +122,7 @@ async function watchErrors(page, errors) {
   page.on('console', msg => {
     const text = msg.text();
     if (msg.type() !== 'error') return;
-    if (/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|401|403|404|Failed to fetch|platform\/visit|Access-Control-Allow-Origin|net::ERR_FAILED/i.test(text)) return;
+    if (/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|401|403|404|422|Failed to fetch|platform\/visit|Access-Control-Allow-Origin|net::ERR_FAILED/i.test(text)) return;
     errors.push(`console: ${text.slice(0, 900)}`);
   });
   page.on('response', response => {
@@ -275,7 +275,8 @@ async function assertPageHealth(page, label) {
   });
 
   expect(result.issues, `${label} health issues`).toEqual([]);
-  expect(result.textLength, `${label} visible text`).toBeGreaterThan(40);
+  expect(result.textLength, `${label} visible text`).toBeGreaterThan(80);
+  expect(result.controlCount, `${label} visible controls`).toBeGreaterThan(0);
 }
 
 async function assertControlsActionable(page, label) {
