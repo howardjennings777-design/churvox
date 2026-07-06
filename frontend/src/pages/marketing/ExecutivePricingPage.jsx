@@ -26,32 +26,18 @@ function cleanFeature(item) {
 
 function featureList(plan) {
   const list = plan.features || plan.includes || [];
-  return Array.isArray(list) ? list.slice(0, 8).map(cleanFeature) : [];
+  return Array.isArray(list) ? list.slice(0, 5).map(cleanFeature) : [];
 }
 
 function taxInclusive(plan) {
   return plan.taxInclusiveLabel || "";
 }
 
-const planFit = [
-  ["Start", "Solo owner", "Core records: jobs, clients, quotes and invoices kept tidy."],
-  ["Crew", "Small team", "Worker flow, messages, job handover and cleaner team control."],
-  ["Operator", "Busy owner", "Churvox prepares the admin. The owner approves in Command."],
-  ["Command", "Larger operation", "Full owner approval desk, deeper controls, reporting and accounting handoff."],
-];
-
-const pricingRules = [
-  ["No card upfront", "Start the 14-day trial before committing."],
-  ["Clear monthly price", "Monthly price is shown before tax, with tax-inclusive totals where applicable."],
-  ["Simple upgrade path", "Start with records, add team control, then add prepared admin and Command control."],
-  ["Owner stays in charge", "Churvox prepares important admin, but approval stays in Command."],
-];
-
-const valueSteps = [
-  ["Records", "Keep jobs, clients, quotes and invoices together."],
-  ["Team", "Give workers a simple flow for jobs, directions and updates."],
-  ["Prepared admin", "Churvox organises the next step from real records."],
-  ["Command", "The owner approves, edits or parks important actions."],
+const fitNotes = [
+  ["Start", "Solo owner getting records under control."],
+  ["Crew", "Small team with workers and messages."],
+  ["Operator", "Busy owner wanting Command control."],
+  ["Command", "Larger operation with deeper approvals."],
 ];
 
 export default function ExecutivePricingPage() {
@@ -76,16 +62,14 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="publicSite" data-version="CHURVOX_PUBLIC_PRICING_CLEAN_20260706">
+    <main className="publicSite cv2Site publicPageSlim pricingSlim" data-version="CHURVOX_PRICING_SLIM_20260706">
       <Nav />
 
-      <section className="publicHero publicHeroCompact">
+      <section className="publicHero publicHeroCompact slimHero">
         <div className="publicHeroCopy">
-          <span className="publicKicker">Simple plan ladder</span>
-          <h1>Choose how much admin Churvox should prepare.</h1>
-          <p>
-            Start with clean records, add team control, then let Churvox prepare admin for owner approval. Pricing stays readable and the important decisions stay in Command.
-          </p>
+          <span className="publicKicker">Pricing</span>
+          <h1>Simple plans for different stages.</h1>
+          <p>Start with clean records, add workers, then add Command when you want Churvox preparing admin for approval.</p>
           <label className="publicCountrySelect">
             <span>Pricing region</span>
             <select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>
@@ -95,24 +79,20 @@ export default function ExecutivePricingPage() {
             </select>
           </label>
           <p className="publicFinePrint">Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes.join(" ")}</p>
-          <div className="publicActions">
-            <Link to={signupTo} className="publicPrimary">Start 14-day trial</Link>
-            <Link to="/features" className="publicSecondary">See how it works</Link>
-          </div>
         </div>
-        <aside className="publicFeaturePanel publicOperatorPanel">
+        <aside className="publicFeaturePanel slimPanel">
           <small>Most popular</small>
           <b>Operator</b>
-          <span>For owners who want the main Churvox promise: Churvox does the admin. You approve.</span>
+          <span>For owners who want the main promise: Churvox does the admin. You approve.</span>
         </aside>
       </section>
 
-      <section className="publicBand">
-        <div className="publicSectionHead">
-          <span className="publicKicker">Plan cards</span>
-          <h2>Actual monthly cost, plus what is included.</h2>
+      <section className="publicBand slimBand pricingCardsBand">
+        <div className="publicSectionHead compactHead">
+          <span className="publicKicker">Plans</span>
+          <h2>Pick the level you need.</h2>
         </div>
-        <div className="publicPlanGrid">
+        <div className="publicPlanGrid slimPlanGrid">
           {displayPlans.map((plan) => (
             <article key={plan.name} className={isOperator(plan) ? "featured" : ""}>
               {isOperator(plan) ? <small>Most Popular</small> : null}
@@ -129,85 +109,51 @@ export default function ExecutivePricingPage() {
         </div>
       </section>
 
-      <section className="publicBand">
-        <div className="publicSectionHead">
-          <span className="publicKicker">Value ladder</span>
-          <h2>What you add as the business grows.</h2>
-        </div>
-        <div className="publicFlow">
-          {valueSteps.map(([title, text], index) => (
-            <article key={title}>
-              <i>{index + 1}</i>
-              <b>{title}</b>
-              <span>{text}</span>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="publicBand publicSplit">
+      <section className="publicBand publicSplit slimBand">
         <div>
-          <span className="publicKicker">Which one fits</span>
-          <h2>Pick by operating need, not by guesswork.</h2>
-          <p>
-            The tiers are meant to be easy to understand: records first, workers next, prepared admin next, full Command operation last.
-          </p>
+          <span className="publicKicker">Best fit</span>
+          <h2>Choose by how much admin you want Churvox to prepare.</h2>
+          <p>No card upfront. Start with a trial, then move plans as the business grows.</p>
         </div>
-        <div className="publicAreaGrid">
-          {planFit.map(([title, who, text]) => (
+        <div className="publicAreaGrid slimGrid">
+          {fitNotes.map(([title, text]) => (
             <article key={title}>
               <b>{title}</b>
-              <small>{who}</small>
               <span>{text}</span>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="publicBand">
-        <div className="publicSectionHead">
+      <section className="publicBand slimBand">
+        <div className="publicSectionHead compactHead">
           <span className="publicKicker">Add-ons</span>
-          <h2>Extra capacity stays explicit.</h2>
+          <h2>Only add extras when needed.</h2>
         </div>
-        <div className="publicAddOnGrid">
+        <div className="publicAddOnGrid slimGrid">
           <article>
             <b>Command Growth Pack</b>
             <strong>{growthPack.priceLabel}</strong>
             {growthPack.taxInclusiveLabel ? <span>{growthPack.taxInclusiveLabel}</span> : null}
-            <p>Adds extra team, job, automation, admin and payroll capacity for larger Command accounts.</p>
+            <p>Extra Command capacity for larger teams and heavier admin.</p>
           </article>
           <article>
             <b>Accounting Sync Add-on</b>
             <strong>{accountingAddon.priceLabel}</strong>
             {accountingAddon.taxInclusiveLabel ? <span>{accountingAddon.taxInclusiveLabel}</span> : null}
-            <p>Optional accounting draft invoice sync for non-Command tiers where available. Owner approval required.</p>
+            <p>Optional draft invoice sync for non-Command tiers where available.</p>
           </article>
         </div>
       </section>
 
-      <section className="publicBand publicDarkBand">
-        <div>
-          <span className="publicKicker">Pricing rules</span>
-          <h2>Clear pricing, clear control.</h2>
-        </div>
-        <div className="publicCardGrid">
-          {pricingRules.map(([title, text]) => (
-            <article key={title}>
-              <b>{title}</b>
-              <span>{text}</span>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="publicBand publicCta">
+      <section className="publicBand publicCta slimCta">
         <div>
           <span className="publicKicker">Start clean</span>
-          <h2>Start the trial and put the business into Churvox.</h2>
+          <h2>Try Churvox for 14 days.</h2>
         </div>
         <div className="publicActions">
-          <Link to={signupTo} className="publicPrimary">Start 14-day trial</Link>
-          <Link to="/features" className="publicSecondary">See the workflow</Link>
+          <Link to={signupTo} className="publicPrimary">Start trial</Link>
+          <Link to="/product" className="publicSecondary">View product</Link>
         </div>
       </section>
 
