@@ -37,6 +37,10 @@ function visible(node) {
   return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
 }
 
+function visibleDrawer() {
+  return [...document.querySelectorAll('.cvxDrawerLayer .cvxDrawer, [role="dialog"], .cvxDrawer')].find(visible) || null;
+}
+
 function labelText(label) {
   return clean(label?.querySelector?.('span')?.textContent || label?.textContent || '');
 }
@@ -46,7 +50,7 @@ function hasLabel(root, label) {
 }
 
 function getFieldValueFromDrawer(label) {
-  const drawer = document.querySelector('.cvxDrawerLayer:visible .cvxDrawer, [role="dialog"]:visible, .cvxDrawer:visible');
+  const drawer = visibleDrawer();
   if (!drawer) return '';
   const wanted = [...drawer.querySelectorAll('label')].find((node) => new RegExp(`^${label}$`, 'i').test(labelText(node)));
   const input = wanted?.querySelector?.('input, textarea, select');
@@ -136,7 +140,7 @@ function enrichAccountingPayload(url, options = {}) {
     next.invoice_title = body.invoice_title || getFieldValueFromDrawer('Invoice title') || defaults.invoice_title;
     next.business_id_value = body.business_id_value || getFieldValueFromDrawer('Business ID') || defaults.business_id_value;
     next.auto_sent = false;
-    next.owner_approved_required = true;
+    next.owner_approval_required = true;
     next.accounting_handoff = 'draft_sync_or_export_only';
   } else {
     next.payment_terms = body.payment_terms || body.terms || defaults.payment_terms;
