@@ -30,6 +30,7 @@ let workerRuntimeLoaded = false;
 const ownerRuntimeImports = [
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
   () => import('./runtime/churvoxCommandBrainRuntime'),
+  () => import('./runtime/churvoxPaymentSetupRuntime'),
 ];
 
 const workerRuntimeImports = [
