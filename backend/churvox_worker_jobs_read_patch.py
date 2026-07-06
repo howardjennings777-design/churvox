@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import builtins
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
 _ORIGINAL_IMPORT = builtins.__import__
+LIVE_PATCH_VERSION = "worker-jobs-owner-visibility-direct-health-20260706"
 
 
 def _text(value):
@@ -124,6 +125,17 @@ def _business_query(user):
     }
 
 
+def _route_loaded(app, path, method):
+    method = method.upper()
+    try:
+        for route in getattr(app.router, "routes", []):
+            if getattr(route, "path", "") == path and method in set(getattr(route, "methods", set()) or set()):
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def _install_extra_owner_visibility(module):
     try:
         import churvox_owner_data_visibility_patch
@@ -161,6 +173,31 @@ def _install(module):
         except Exception:
             rows = []
         return {"success": True, "jobs": rows, "items": rows, "data": rows}
+
+    @router.get("/health/wiring")
+    async def direct_wiring_health():
+        routes = [
+            ("/api/jobs", "GET"), ("/api/clients", "GET"), ("/api/quotes", "GET"), ("/api/invoices", "GET"),
+            ("/api/team", "GET"), ("/api/messages", "GET"), ("/api/command/actions", "GET"),
+            ("/api/worker/jobs", "GET"), ("/api/worker/field-slip", "POST"),
+            ("/api/jobs/{job_id}/acknowledge", "POST"), ("/api/jobs/{job_id}/start", "POST"), ("/api/jobs/{job_id}/complete", "POST"),
+        ]
+        checks = [{"path": path, "method": method, "loaded": _route_loaded(app, path, method)} for path, method in routes]
+        missing = [row for row in checks if not row["loaded"]]
+        return {
+            "success": True,
+            "version": LIVE_PATCH_VERSION,
+            "status": "ready" if not missing else "missing_routes",
+            "loaded_count": len(checks) - len(missing),
+            "required_count": len(checks),
+            "missing": missing,
+            "checks": checks,
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    @router.get("/health/live-version")
+    async def live_version():
+        return {"success": True, "version": LIVE_PATCH_VERSION, "checked_at": datetime.now(timezone.utc).isoformat()}
 
     app.include_router(router)
     try:
