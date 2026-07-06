@@ -8,6 +8,7 @@ from datetime import datetime
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends
+from fastapi.responses import RedirectResponse
 
 _ORIGINAL_IMPORT = builtins.__import__
 
@@ -162,6 +163,12 @@ def _install(module):
         return {"success": True, "jobs": rows, "items": rows, "data": rows}
 
     app.include_router(router)
+    try:
+        @app.get("/favicon.ico", include_in_schema=False)
+        async def favicon_ico():
+            return RedirectResponse(url="https://www.churvox.com/favicon.svg", status_code=307)
+    except Exception:
+        pass
     app.state.worker_jobs_read_patch = True
     _install_extra_owner_visibility(module)
 
