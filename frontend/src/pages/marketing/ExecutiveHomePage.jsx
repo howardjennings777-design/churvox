@@ -13,32 +13,32 @@ const navLinks = [
 ];
 
 const commandQueue = [
-  ["Invoice draft", "Belmont Villas", "$340", "Approve"],
-  ["Worker issue", "Gate locked", "Check"],
-  ["Quote follow-up", "Garden tidy", "$780", "Park"],
+  ["Invoice ready", "Belmont Villas", "$340", "Approve"],
+  ["Gate issue", "Northwood", "Check", "Edit"],
+  ["Quote viewed", "Garden tidy", "$780", "Park"],
 ];
 
 const stack = ["Today", "Command", "Jobs", "Workers", "Money"];
 
-const proof = ["14-day trial", "No card upfront", "Owner-approved", "Built for service crews"];
+const proof = ["14-day trial", "No card upfront", "Owner approval built in", "Made for service work"];
 
 const flow = [
-  ["01", "Work comes in", "Jobs, worker updates, customer requests, quotes and invoices."],
-  ["02", "Churvox prepares", "The record is organised into the next admin step."],
-  ["03", "Owner approves", "Important decisions wait in Command before they move."],
+  ["01", "Work lands", "Jobs, requests, worker notes and invoice drafts arrive in one place."],
+  ["02", "Churvox sorts it", "The record is cleaned up with the client, job, price, proof and next step together."],
+  ["03", "You decide", "Anything important waits in Command until the owner approves, edits or parks it."],
 ];
 
 const commandCards = [
-  ["Approve", "Ready items move forward."],
-  ["Edit", "Fix details before anything goes out."],
-  ["Park", "Hold unclear work until later."],
+  ["Approve", "Send the ready work forward."],
+  ["Edit", "Fix the detail before it leaves."],
+  ["Park", "Hold anything unclear without losing it."],
 ];
 
 const planLadder = [
-  ["Start", "$39/mo + GST", "Jobs, clients, quotes and invoices."],
-  ["Crew", "$89/mo + GST", "Workers, messages and team flow."],
+  ["Start", "$39/mo + GST", "Core jobs, clients, quotes and invoices."],
+  ["Crew", "$89/mo + GST", "Worker flow, team messages and field updates."],
   ["Operator", "$149/mo + GST", "Prepared admin plus Command.", "Most Popular"],
-  ["Command", "$299/mo + GST", "Full approval desk and controls."],
+  ["Command", "$299/mo + GST", "Full owner approval desk and controls."],
 ];
 
 function PublicNavLink({ to, label, type }) {
@@ -93,17 +93,17 @@ function CommandScreen() {
     <aside className="cv2CommandScreen" aria-label="Churvox Command preview">
       <div className="cv2ScreenTop">
         <div>
-          <span>Owner command floor</span>
-          <b>3 decisions waiting</b>
+          <span>Command</span>
+          <b>3 owner checks waiting</b>
         </div>
-        <em>Demo</em>
+        <em>Live style</em>
       </div>
       <div className="cv2ScreenNav">
         {stack.map((name, index) => <span key={name} className={index === 1 ? "active" : ""}>{name}</span>)}
       </div>
       <div className="cv2ScreenGrid">
         <section className="cv2Queue">
-          <small>Waiting for owner</small>
+          <small>Ready for review</small>
           {commandQueue.map(([type, client, value, action]) => (
             <article key={`${type}-${client}`}>
               <div><b>{type}</b><span>{client}</span></div>
@@ -114,12 +114,12 @@ function CommandScreen() {
         </section>
         <section className="cv2Slip">
           <small>Approval slip</small>
-          <h3>Invoice draft ready</h3>
+          <h3>Invoice ready</h3>
           <dl>
             <div><dt>Client</dt><dd>Belmont Villas</dd></div>
-            <div><dt>Job</dt><dd>Hedge trim</dd></div>
-            <div><dt>Proof</dt><dd>Photos + note</dd></div>
-            <div><dt>Next</dt><dd>Approve, edit or park</dd></div>
+            <div><dt>Work</dt><dd>Hedge trim</dd></div>
+            <div><dt>Proof</dt><dd>Photos + worker note</dd></div>
+            <div><dt>Owner</dt><dd>Approve, edit or park</dd></div>
           </dl>
           <div className="cv2SlipActions"><button>Approve</button><button>Edit</button><button>Park</button></div>
         </section>
@@ -130,19 +130,19 @@ function CommandScreen() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PUBLIC_HOME_SLIM_20260706">
+    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PUBLIC_COPY_HOME_20260706">
       <Nav />
 
       <section className="cv2Hero slimHero">
         <div className="cv2HeroCopy">
-          <span className="publicKicker cv2Kicker">Owner approval desk for service businesses</span>
-          <h1>Run the day from one Command floor.</h1>
+          <span className="publicKicker cv2Kicker">For service businesses drowning in admin</span>
+          <h1>Churvox does the admin. You approve.</h1>
           <p>
-            Churvox keeps jobs, workers, clients, quotes, invoices and messages connected. It prepares the admin. You approve.
+            Jobs, workers, quotes, invoices and customer messages stay connected. Churvox prepares the next step, then brings the decision back to Command.
           </p>
           <div className="publicActions cv2HeroActions">
             <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
-            <Link to="/demo" className="publicSecondary">Open demo</Link>
+            <Link to="/demo" className="publicSecondary">See the demo</Link>
           </div>
           <div className="cv2ProofRail">{proof.map((item) => <span key={item}>{item}</span>)}</div>
         </div>
@@ -151,8 +151,8 @@ export default function ExecutiveHomePage() {
 
       <section className="cv2Section cv2FlowSection slimBand">
         <div className="cv2SectionHead compactHead">
-          <span className="publicKicker">How it works</span>
-          <h2>Work goes in. Clear decisions come out.</h2>
+          <span className="publicKicker">The Churvox loop</span>
+          <h2>No chasing. No scattered decisions.</h2>
         </div>
         <div className="cv2FlowCards">
           {flow.map(([num, title, text]) => <article key={title}><i>{num}</i><b>{title}</b><span>{text}</span></article>)}
@@ -162,9 +162,9 @@ export default function ExecutiveHomePage() {
       <section className="cv2Section cv2SplitFeature slimBand">
         <div>
           <span className="publicKicker">Command</span>
-          <h2>One place for owner decisions.</h2>
-          <p>Approve, edit and park stay in Command so important admin is not scattered through the product.</p>
-          <Link to="/product" className="publicPrimary">View product</Link>
+          <h2>The owner desk for the work that matters.</h2>
+          <p>Command is where prepared admin becomes a decision. It keeps approvals out of random pages and puts the owner back in control.</p>
+          <Link to="/product" className="publicPrimary">See product</Link>
         </div>
         <div className="cv2DecisionStack">
           {commandCards.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
@@ -175,7 +175,7 @@ export default function ExecutiveHomePage() {
         <div className="cv2SectionHead row">
           <div>
             <span className="publicKicker">Plans</span>
-            <h2>Start simple. Add power when needed.</h2>
+            <h2>Start with the level that fits today.</h2>
           </div>
           <Link to="/pricing" className="publicSecondary">View pricing</Link>
         </div>
@@ -192,10 +192,10 @@ export default function ExecutiveHomePage() {
       </section>
 
       <section className="cv2FinalCta slimCta">
-        <span>Churvox does the admin. You approve.</span>
-        <h2>Try the public demo or start the trial.</h2>
+        <span>Ready when you are</span>
+        <h2>Open the demo, then start the trial.</h2>
         <div className="publicActions cv2HeroActions">
-          <Link to="/demo" className="publicPrimary">Open demo</Link>
+          <Link to="/demo" className="publicPrimary">See the demo</Link>
           <Link to="/signup" className="publicSecondary">Start trial</Link>
         </div>
       </section>
