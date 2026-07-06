@@ -1,145 +1,150 @@
-// Owner header logo + fit polish.
-// Replaces the orange placeholder block with a proper Churvox mark and keeps the header tidy.
+// Proper Churvox owner-app logo integration.
+// This replaces the old CV tile with a real inline mark, tight sizing and header fit.
 
 const STYLE_ID = 'churvox-owner-header-logo-style';
 
 const markSvg = `
-  <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+  <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" class="cvxIntegratedMarkSvg">
     <defs>
-      <linearGradient id="cvxOwnerMarkGradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#ff7a2a" />
-        <stop offset="1" stop-color="#e5441f" />
+      <linearGradient id="cvxMarkShell" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#17211c" />
+        <stop offset="0.55" stop-color="#0b100e" />
+        <stop offset="1" stop-color="#050606" />
       </linearGradient>
+      <linearGradient id="cvxMarkHeat" x1="14" y1="10" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#ffc06f" />
+        <stop offset="0.42" stop-color="#f97316" />
+        <stop offset="1" stop-color="#de4519" />
+      </linearGradient>
+      <linearGradient id="cvxMarkSteel" x1="20" y1="21" x2="47" y2="44" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#ffffff" />
+        <stop offset="1" stop-color="#d7dee8" />
+      </linearGradient>
+      <filter id="cvxMarkLift" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#000000" flood-opacity="0.35" />
+      </filter>
     </defs>
-    <rect x="7" y="7" width="50" height="50" rx="15" fill="#101411" />
-    <path d="M43.5 21.5c-3-3.1-6.9-4.9-11.3-4.9-8.6 0-15.4 6.8-15.4 15.4s6.8 15.4 15.4 15.4c4.4 0 8.3-1.8 11.3-4.9l-6.2-6.1c-1.3 1.2-3 1.9-5 1.9-3.6 0-6.3-2.7-6.3-6.3s2.7-6.3 6.3-6.3c2 0 3.7.7 5 1.9l6.2-6.1Z" fill="url(#cvxOwnerMarkGradient)" />
-    <path d="M18 32h17.5" stroke="#fff4ea" stroke-width="5" stroke-linecap="round" />
-    <path d="M38.5 32h7.5" stroke="#ff7a2a" stroke-width="5" stroke-linecap="round" />
+    <rect x="5" y="5" width="54" height="54" rx="17" fill="url(#cvxMarkShell)" />
+    <path d="M14 18h36M14 46h36" stroke="#ffffff" stroke-opacity="0.06" stroke-width="5" stroke-linecap="round" />
+    <path d="M50 11c6 13 4 29-4 40-9 11-22 16-37 13" fill="none" stroke="#f97316" stroke-opacity="0.13" stroke-width="11" stroke-linecap="round" />
+    <g filter="url(#cvxMarkLift)">
+      <path d="M44.2 19.7C40.9 15.9 36.1 14 30.9 14 21.2 14 13.4 21.8 13.4 31.6S21.2 49.2 31 49.2c6.1 0 11.4-3 14.7-7.7" fill="none" stroke="url(#cvxMarkHeat)" stroke-width="8.5" stroke-linecap="round" />
+      <path d="M22.5 33.4l7 6.8 14.7-17" fill="none" stroke="url(#cvxMarkSteel)" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+    <circle cx="47.5" cy="19" r="4.4" fill="#f97316" />
+    <circle cx="47.5" cy="19" r="1.7" fill="#111827" />
   </svg>
 `;
 
 const css = `
-  .cvxProduct[data-product-version="v2"] .cvxTop {
-    grid-template-columns: minmax(180px, 235px) minmax(0, 1fr) minmax(84px, 130px) !important;
+  .cvxProduct .cvxTop {
+    grid-template-columns: minmax(230px, 285px) minmax(0, 1fr) minmax(150px, 240px) !important;
+    min-height: 76px !important;
     align-items: center !important;
-    gap: 12px !important;
-    padding: 9px clamp(12px, 1.6vw, 22px) !important;
-    min-height: 58px !important;
-    overflow: hidden !important;
   }
 
-  .cvxProduct[data-product-version="v2"] .cvxBrand {
+  .cvxProduct .cvxBrand {
+    position: relative !important;
     display: grid !important;
-    grid-template-columns: 42px minmax(0, 1fr) !important;
+    grid-template-columns: 50px minmax(0, 1fr) !important;
     align-items: center !important;
-    gap: 9px !important;
+    gap: 11px !important;
     min-width: 0 !important;
-    max-width: 100% !important;
+    padding: 6px 9px 6px 6px !important;
+    border-radius: 22px !important;
+    background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.025)) !important;
+    border: 1px solid rgba(255,255,255,.10) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 30px rgba(0,0,0,.12) !important;
   }
 
-  .cvxProduct[data-product-version="v2"] .cvxBrand i {
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
+  .cvxProduct .cvxBrand:hover {
+    transform: translateY(-1px) !important;
+    border-color: rgba(249,115,22,.34) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 16px 34px rgba(0,0,0,.16) !important;
+  }
+
+  .cvxProduct .cvxBrand span:first-child,
+  .cvxProduct .cvxBrand i:first-child,
+  .cvxProduct .cvxBrand .cvxIntegratedLogoMark {
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
     display: grid !important;
     place-items: center !important;
-    border-radius: 14px !important;
+    border-radius: 18px !important;
+    color: transparent !important;
     background: transparent !important;
-    box-shadow: 0 12px 28px rgba(10, 14, 12, .25) !important;
-    overflow: hidden !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    letter-spacing: 0 !important;
+    font-size: 0 !important;
   }
 
-  .cvxProduct[data-product-version="v2"] .cvxBrand i svg {
-    width: 42px !important;
-    height: 42px !important;
+  .cvxProduct .cvxBrand .cvxIntegratedMarkSvg,
+  .cvxProduct .cvxBrand span:first-child svg,
+  .cvxProduct .cvxBrand i:first-child svg {
+    width: 50px !important;
+    height: 50px !important;
     display: block !important;
+    filter: drop-shadow(0 12px 22px rgba(0,0,0,.28)) !important;
   }
 
-  .cvxProduct[data-product-version="v2"] .cvxBrand b {
-    font-size: 16px !important;
-    line-height: .96 !important;
-    letter-spacing: -.035em !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+  .cvxProduct .cvxBrand b {
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 4px !important;
+    color: #fff !important;
+    font-size: 21px !important;
+    line-height: .9 !important;
+    font-weight: 1000 !important;
+    letter-spacing: -.06em !important;
+    text-shadow: 0 1px 18px rgba(0,0,0,.24) !important;
   }
 
-  .cvxProduct[data-product-version="v2"] .cvxBrand small {
-    margin-top: 2px !important;
+  .cvxProduct .cvxBrand small {
+    color: #ffb879 !important;
     font-size: 8.5px !important;
     line-height: 1 !important;
-    letter-spacing: .09em !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  .cvxProduct[data-product-version="v2"] .cvxTitle {
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
-
-  .cvxProduct[data-product-version="v2"] .cvxTitle h1 {
-    font-size: clamp(19px, 1.75vw, 24px) !important;
-    line-height: 1 !important;
-    margin: 0 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  .cvxProduct[data-product-version="v2"] .cvxTitle p {
-    margin-top: 4px !important;
-    font-size: clamp(10px, .92vw, 12px) !important;
-    line-height: 1.2 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  .cvxProduct[data-product-version="v2"] .cvxAccount {
-    min-width: 0 !important;
-    max-width: 130px !important;
-    overflow: hidden !important;
-    justify-self: end !important;
-  }
-
-  .cvxProduct[data-product-version="v2"] .cvxNav {
-    display: flex !important;
-    gap: 5px !important;
-    padding: 6px clamp(10px, 1.5vw, 20px) !important;
-    max-width: 100vw !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scrollbar-width: thin !important;
-  }
-
-  .cvxProduct[data-product-version="v2"] .cvxNav button {
-    flex: 0 0 auto !important;
-    min-height: 32px !important;
-    padding: 7px 10px !important;
-    border-radius: 999px !important;
-    font-size: 11px !important;
+    font-weight: 1000 !important;
+    letter-spacing: .12em !important;
+    text-transform: uppercase !important;
     white-space: nowrap !important;
   }
 
-  @media (max-width: 920px) {
-    .cvxProduct[data-product-version="v2"] .cvxTop {
-      grid-template-columns: minmax(164px, 210px) minmax(0, 1fr) !important;
+  .cvxProduct .cvxTopTitle { min-width: 0 !important; }
+  .cvxProduct .cvxTopTitle h1 { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+  .cvxProduct .cvxTopTitle p { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+
+  @media (max-width: 980px) {
+    .cvxProduct .cvxTop {
+      grid-template-columns: minmax(210px, 255px) minmax(0, 1fr) !important;
     }
-    .cvxProduct[data-product-version="v2"] .cvxAccount { display: none !important; }
+    .cvxProduct .cvxBusiness { display: none !important; }
   }
 
-  @media (max-width: 640px) {
-    .cvxProduct[data-product-version="v2"] .cvxTop {
+  @media (max-width: 650px) {
+    .cvxProduct .cvxTop {
       grid-template-columns: minmax(0, 1fr) !important;
-      gap: 7px !important;
+      min-height: auto !important;
+      gap: 8px !important;
     }
-    .cvxProduct[data-product-version="v2"] .cvxBrand { grid-template-columns: 38px minmax(0, 1fr) !important; }
-    .cvxProduct[data-product-version="v2"] .cvxBrand i,
-    .cvxProduct[data-product-version="v2"] .cvxBrand i svg { width: 38px !important; height: 38px !important; min-width: 38px !important; }
-    .cvxProduct[data-product-version="v2"] .cvxTitle p { white-space: normal !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; }
+    .cvxProduct .cvxBrand {
+      grid-template-columns: 46px minmax(0, 1fr) !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .cvxProduct .cvxBrand span:first-child,
+    .cvxProduct .cvxBrand i:first-child,
+    .cvxProduct .cvxBrand .cvxIntegratedLogoMark,
+    .cvxProduct .cvxBrand .cvxIntegratedMarkSvg,
+    .cvxProduct .cvxBrand span:first-child svg,
+    .cvxProduct .cvxBrand i:first-child svg {
+      width: 46px !important;
+      height: 46px !important;
+      min-width: 46px !important;
+    }
+    .cvxProduct .cvxBrand b { font-size: 20px !important; }
+    .cvxProduct .cvxTopTitle p { white-space: normal !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; }
   }
 `;
 
@@ -149,20 +154,22 @@ function ensureStyle() {
   if (!style) {
     style = document.createElement('style');
     style.id = STYLE_ID;
-    style.textContent = css;
     document.head.appendChild(style);
-  } else if (style.textContent !== css) {
-    style.textContent = css;
   }
+  if (style.textContent !== css) style.textContent = css;
   if (style.parentNode === document.head && document.head.lastElementChild !== style) document.head.appendChild(style);
 }
 
 function replaceMark() {
-  const mark = document.querySelector('.cvxProduct[data-product-version="v2"] .cvxBrand i');
-  if (!mark || mark.dataset.cvxLogoMark === 'done') return;
-  mark.innerHTML = markSvg;
-  mark.dataset.cvxLogoMark = 'done';
-  mark.setAttribute('aria-hidden', 'true');
+  const brands = document.querySelectorAll('.cvxProduct .cvxBrand');
+  brands.forEach((brand) => {
+    const first = brand.querySelector('span:first-child, i:first-child, .cvxIntegratedLogoMark');
+    if (!first || first.dataset.cvxLogoMark === 'integrated') return;
+    first.classList.add('cvxIntegratedLogoMark');
+    first.innerHTML = markSvg;
+    first.dataset.cvxLogoMark = 'integrated';
+    first.setAttribute('aria-hidden', 'true');
+  });
 }
 
 function run() {
@@ -177,9 +184,12 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_OWNER_HEADER_LOGO_RUNTIME
   window.addEventListener('hashchange', () => setTimeout(run, 80));
   window.addEventListener('popstate', () => setTimeout(run, 80));
   window.addEventListener('resize', () => setTimeout(run, 40));
-  setTimeout(run, 350);
+  window.addEventListener('churvox-owner-app-ready', () => setTimeout(run, 80));
+  window.addEventListener('churvox:data-refresh', () => setTimeout(run, 80));
+  setTimeout(run, 120);
+  setTimeout(run, 500);
   setTimeout(run, 1200);
-  setInterval(run, 2500);
+  setInterval(run, 1600);
 }
 
 export {};
