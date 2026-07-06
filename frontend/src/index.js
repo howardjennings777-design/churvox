@@ -39,6 +39,8 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxNativeTimerRuntime'),
   () => import('./churvox-fresh/optionFWorkerCopyScrubRuntime'),
   () => import('./pages/worker/WorkerNoFussPremium.css'),
+  () => import('./pages/worker/WorkerAdminLedger.css'),
+  () => import('./runtime/churvoxWorkerAdminLedgerRuntime'),
 ];
 
 function runImports(imports) {
