@@ -14,6 +14,7 @@ import './runtime/churvoxStripeCheckoutLiveRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxSetupCoachKillRuntime';
 import './runtime/churvoxPaidLaunchSurfaceRuntime';
+import './runtime/churvoxExactFormLabelsRuntime';
 
 const staticPublicPageRendered = Boolean(
   typeof window !== 'undefined' && window.__CHURVOX_STATIC_PUBLIC_PAGE_RENDERED__ === true
@@ -45,6 +46,7 @@ const ownerRuntimeImports = [
   () => import('./runtime/churvoxPageIdentityRuntime'),
   () => import('./runtime/churvoxWorkerMapPinRuntime'),
   () => import('./runtime/churvoxPaidLaunchSurfaceRuntime'),
+  () => import('./runtime/churvoxExactFormLabelsRuntime'),
   () => import('./runtime/churvoxLiveOwnerSaveBridgeRuntime'),
   () => import('./churvox-product/productCommandIdentity.css'),
   () => import('./churvox-product/productJobsIdentity.css'),
