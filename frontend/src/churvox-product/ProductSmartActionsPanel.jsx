@@ -1,5 +1,6 @@
 import React from "react";
 import { buildProductSmartActions, smartActionsForPage, ownerActionRecord } from "./productSmartActions";
+import "./productSmartActionsPanel.css";
 
 function actionTone(type) {
   if (/Missing|Problem/i.test(type)) return "bad";
