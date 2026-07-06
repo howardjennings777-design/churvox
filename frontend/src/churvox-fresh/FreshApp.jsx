@@ -1,3 +1,3 @@
-import ProductAppV2 from "../churvox-product/ProductAppV2";
+import ProductAppV2WithLedger from "../churvox-product/ProductAppV2WithLedger";
 
-export default ProductAppV2;
+export default ProductAppV2WithLedger;
