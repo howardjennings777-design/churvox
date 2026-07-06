@@ -72,6 +72,20 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
+}
+
+function controlId(label) {
+  return `cvx-fallback-${clean(label).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function apiBase() {
+  const host = window.location.hostname.toLowerCase();
+  if (host === 'www.churvox.com' || host === 'churvox.com') return 'https://grassley-backend.onrender.com';
+  return '';
+}
+
 function pageKey() {
   const hash = clean((window.location.hash || '').replace('#', '').split('?')[0]).toLowerCase();
   if (hash) return hash;
@@ -153,14 +167,15 @@ function ensureWorkerMap() {
 
 function field(label, type = 'text', options = null, wide = false) {
   const fieldClass = `cvxField${wide || /address|notes|scope|evidence/i.test(label) ? ' wide' : ''}`;
-  const safeLabel = escapeHtml(label);
+  const safeLabel = escapeAttr(label);
+  const id = controlId(label);
   if (Array.isArray(options) && options.length) {
-    return `<label class="${fieldClass}" data-cvx-human-label="${safeLabel}"><span>${safeLabel}</span><select name="${safeLabel}">${options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join('')}</select></label>`;
+    return `<label class="${fieldClass}" for="${id}" data-cvx-human-label="${safeLabel}"><span>${safeLabel}</span><select id="${id}" aria-label="${safeLabel}" name="${safeLabel}">${options.map((option) => `<option value="${escapeAttr(option)}">${escapeHtml(option)}</option>`).join('')}</select></label>`;
   }
   if (type === 'textarea' || /notes|scope|evidence/i.test(label)) {
-    return `<label class="${fieldClass}" data-cvx-human-label="${safeLabel}"><span>${safeLabel}</span><textarea name="${safeLabel}" rows="4"></textarea></label>`;
+    return `<label class="${fieldClass}" for="${id}" data-cvx-human-label="${safeLabel}"><span>${safeLabel}</span><textarea id="${id}" aria-label="${safeLabel}" name="${safeLabel}" rows="4"></textarea></label>`;
   }
-  return `<label class="${fieldClass}" data-cvx-human-label="${safeLabel}"><span>${safeLabel}</span><input name="${safeLabel}" type="${escapeHtml(type)}" /></label>`;
+  return `<label class="${fieldClass}" for="${id}" data-cvx-human-label="${safeLabel}"><span>${safeLabel}</span><input id="${id}" aria-label="${safeLabel}" name="${safeLabel}" type="${escapeAttr(type)}" /></label>`;
 }
 
 function defsFor(kind) {
@@ -181,6 +196,118 @@ function fallbackLead(kind) {
 function removeFallbackForms() {
   [...document.querySelectorAll(`[id^="${FALLBACK_FORM_PREFIX}"]`)].forEach((node) => node.remove());
   document.getElementById(FALLBACK_CLIENT_FORM_ID)?.remove();
+}
+
+function valuesFrom(layer) {
+  const values = {};
+  layer.querySelectorAll('input, textarea, select').forEach((control) => {
+    values[clean(control.getAttribute('aria-label') || control.name)] = control.value;
+  });
+  return values;
+}
+
+function valueFor(values, ...names) {
+  for (const name of names) {
+    const match = Object.keys(values).find((key) => key.toLowerCase() === name.toLowerCase());
+    if (match) return clean(values[match]);
+  }
+  return '';
+}
+
+function fallbackPayload(kind, values) {
+  if (kind === 'client') return {
+    name: valueFor(values, 'Name'),
+    phone: valueFor(values, 'Phone'),
+    email: valueFor(values, 'Email'),
+    address: valueFor(values, 'Address'),
+    service: valueFor(values, 'Preferred service'),
+    price: valueFor(values, 'Saved price'),
+    schedule: valueFor(values, 'Preferred schedule'),
+    notes: valueFor(values, 'Access notes'),
+    source: 'churvox_paid_launch_fallback_form',
+  };
+  if (kind === 'job') return {
+    title: valueFor(values, 'Job name'),
+    client_name: valueFor(values, 'Client'),
+    address: valueFor(values, 'Site address'),
+    service: valueFor(values, 'Service'),
+    assigned_worker_name: valueFor(values, 'Assigned worker'),
+    scheduled_date: valueFor(values, 'Scheduled date'),
+    scheduled_time: valueFor(values, 'Start time'),
+    price: valueFor(values, 'Price NZD'),
+    billing: valueFor(values, 'Billing type'),
+    recurring: valueFor(values, 'Frequency'),
+    status: valueFor(values, 'Status') || 'assigned',
+    proof: valueFor(values, 'Proof/photos'),
+    notes: valueFor(values, 'Job notes'),
+    source: 'churvox_paid_launch_fallback_form',
+  };
+  if (kind === 'quote') return {
+    title: valueFor(values, 'Quote'),
+    client_name: valueFor(values, 'Client'),
+    amount: valueFor(values, 'Amount'),
+    status: valueFor(values, 'Status') || 'Draft',
+    scope: valueFor(values, 'Scope'),
+    terms: valueFor(values, 'Terms'),
+    follow_up: valueFor(values, 'Follow-up'),
+    next_step: valueFor(values, 'Next step'),
+    source: 'churvox_paid_launch_fallback_form',
+  };
+  return {
+    invoice_number: valueFor(values, 'Invoice'),
+    client_name: valueFor(values, 'Client'),
+    job_title: valueFor(values, 'Job'),
+    amount: valueFor(values, 'Amount'),
+    due_date: valueFor(values, 'Due date'),
+    status: valueFor(values, 'Status') || 'Draft',
+    accounting_status: valueFor(values, 'Xero/MYOB status'),
+    line_item: valueFor(values, 'Line item'),
+    evidence: valueFor(values, 'Evidence'),
+    source: 'churvox_paid_launch_fallback_form',
+  };
+}
+
+function endpointFor(kind) {
+  return ({ client: '/clients', job: '/jobs', quote: '/quotes', invoice: '/invoices' })[kind] || '/clients';
+}
+
+function titleFrom(kind, values) {
+  return valueFor(values, 'Name', 'Job name', 'Quote', 'Invoice', 'Client') || `${formTitle(kind)} saved`;
+}
+
+function showFallbackSaveState(layer, kind, values, ok, message = '') {
+  const existing = layer.querySelector('.cvxFallbackSaveState');
+  if (existing) existing.remove();
+  const note = document.createElement('div');
+  note.className = `cvxFallbackSaveState ${ok ? 'good' : 'bad'}`;
+  note.innerHTML = `<b>${ok ? 'Record saved' : 'Could not save'}</b><span>${escapeHtml(titleFrom(kind, values))}${message ? ` · ${escapeHtml(message)}` : ''}</span>`;
+  const actions = layer.querySelector('.cvxDrawerActions');
+  actions?.parentNode?.insertBefore(note, actions);
+}
+
+async function saveFallbackForm(layer, kind) {
+  const values = valuesFrom(layer);
+  const payload = fallbackPayload(kind, values);
+  const token = window.localStorage.getItem('token') || window.localStorage.getItem('authToken') || '';
+  const button = layer.querySelector('[data-fallback-save]');
+  if (button) button.disabled = true;
+  try {
+    const response = await fetch(`${apiBase()}/api${endpointFor(kind)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error(`save ${response.status}`);
+    showFallbackSaveState(layer, kind, values, true);
+    window.dispatchEvent(new Event('churvox:data-refresh'));
+    window.dispatchEvent(new Event('churvox-owner-app-ready'));
+    window.setTimeout(() => layer.remove(), 2600);
+  } catch (error) {
+    showFallbackSaveState(layer, kind, values, false, error?.message || 'try again');
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 function openFallbackForm(kind = 'client') {
@@ -204,7 +331,11 @@ function openFallbackForm(kind = 'client') {
     </aside>`;
   layer.addEventListener('click', (event) => {
     const target = event.target;
-    if (target?.matches?.('[data-fallback-close], [data-fallback-save]')) layer.remove();
+    if (target?.matches?.('[data-fallback-close]')) layer.remove();
+    if (target?.matches?.('[data-fallback-save]')) {
+      event.preventDefault();
+      saveFallbackForm(layer, kind);
+    }
   });
   document.body.appendChild(layer);
 }
@@ -236,7 +367,10 @@ function renameLabel(scope, fromPattern, toText) {
   if (span) span.textContent = toText;
   else label.insertBefore(Object.assign(document.createElement('span'), { textContent: toText }), label.firstChild);
   const control = label.querySelector('input, textarea, select');
-  if (control) control.name = toText;
+  if (control) {
+    control.name = toText;
+    control.setAttribute('aria-label', toText);
+  }
   label.setAttribute('data-cvx-human-label', toText);
   return true;
 }
@@ -365,9 +499,10 @@ function installStyles() {
     .cvxProduct .cvxPaidLaunchToolbar{grid-column:1/-1}
     .cvxPaidLaunchFallbackForm .cvxDrawer{width:min(1040px,calc(100vw - 28px))}
     .cvxPaidLaunchStableText{position:fixed;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;color:#101513;background:#fff}
-    .cvxAccountingGuard{display:flex;gap:10px;align-items:flex-start;margin:8px 0 14px;padding:12px 14px;border:1px solid rgba(15,23,42,.12);border-radius:16px;background:#fff8ed;color:#101513}
-    .cvxAccountingGuard b{white-space:nowrap}
-    .cvxAccountingGuard span{font-size:13px;line-height:1.45}
+    .cvxAccountingGuard,.cvxFallbackSaveState{display:flex;gap:10px;align-items:flex-start;margin:8px 0 14px;padding:12px 14px;border:1px solid rgba(15,23,42,.12);border-radius:16px;background:#fff8ed;color:#101513}
+    .cvxFallbackSaveState.good{background:#ecfdf5}.cvxFallbackSaveState.bad{background:#fef2f2}
+    .cvxAccountingGuard b,.cvxFallbackSaveState b{white-space:nowrap}
+    .cvxAccountingGuard span,.cvxFallbackSaveState span{font-size:13px;line-height:1.45}
   `;
   document.head.appendChild(style);
 }
