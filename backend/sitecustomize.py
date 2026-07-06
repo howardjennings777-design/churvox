@@ -161,7 +161,6 @@ try:
 except Exception:
     pass
 
-
 try:
     import churvox_terminal_reader_patch  # noqa: F401
 except Exception:
@@ -169,6 +168,16 @@ except Exception:
 
 try:
     import churvox_payment_account_env_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
+    import churvox_field_loop_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
+    import churvox_record_bridge_patch  # noqa: F401
 except Exception:
     pass
 
