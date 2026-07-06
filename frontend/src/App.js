@@ -10,6 +10,7 @@ import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import LoginPage from "./pages/auth/LoginPage";
+import PwaLaunchPage from "./pages/auth/PwaLaunchPage";
 import SignupPage from "./pages/auth/SignupPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
@@ -142,6 +143,7 @@ function App() {
           <Toaster position="top-right" richColors />
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/app" element={<PwaLaunchPage />} />
             <Route path="/product" element={<FeaturesPage />} />
             <Route path="/features" element={<FeaturesPage />} />
             <Route path="/demo" element={<PublicDemoPage />} />
