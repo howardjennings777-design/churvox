@@ -45,8 +45,13 @@ function renderMarker() {
   marker.style.opacity = '1';
 }
 
+function loadRecordHelper() {
+  try { import('./churvoxOwnerNewRecordRouteRuntime').catch(() => {}); } catch {}
+}
+
 function schedule() {
   [0, 120, 400, 900, 1600, 3200, 5200].forEach((delay) => setTimeout(renderMarker, delay));
+  [0, 300, 1200].forEach((delay) => setTimeout(loadRecordHelper, delay));
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window[GUIDE_MARKER_FLAG]) {
@@ -55,5 +60,5 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window[
   window.addEventListener('hashchange', schedule);
   window.addEventListener('popstate', schedule);
   window.addEventListener('churvox-owner-app-ready', schedule);
-  document.addEventListener('click', () => setTimeout(renderMarker, 250), true);
+  document.addEventListener('click', () => setTimeout(() => { renderMarker(); loadRecordHelper(); }, 250), true);
 }
