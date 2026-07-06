@@ -10,7 +10,8 @@ const ownerPages = ['today', 'command', 'jobs', 'clients', 'workers', 'messages'
 const publicRoutes = ['/', '/features', '/pricing', '/contact', '/security', '/support', '/login', '/signup'];
 const fatalPattern = /Something went wrong|Application error|Cannot read properties|undefined is not an object|Minified React error|ChunkLoadError|Script error|Loading chunk failed/i;
 const loginPagePattern = /WELCOME BACK|Sign in to Command|Email Password Show Sign in|Forgot password/i;
-const credentialPlaceholderPattern = /YOUR_REAL_PASSWORD_HERE|PUT_REAL_PASSWORD_HERE|PASTE_YOUR_PASSWORD_HERE|REPLACE_WITH_REAL_PASSWORD/i;
+const ownerAppPattern = /Today|Command|Jobs|Clients|Workers|Quotes|Invoices|Settings|Plans|Churvox/i;
+const credentialPlaceholderPattern = /YOUR_REAL_PASSWORD_HERE|YOUR REAL PASSWORD HERE|PUT_REAL_PASSWORD_HERE|PASTE_YOUR_PASSWORD_HERE|REPLACE_WITH_REAL_PASSWORD/i;
 
 async function gotoFast(page, route) {
   await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(async () => {
@@ -34,7 +35,7 @@ async function assertHealthy(page, label) {
 async function assertOwnerApp(page, label) {
   const body = await assertHealthy(page, label);
   expect(body, `${label} is still on login/public page. Check CHURVOX_OWNER_PASSWORD and active plan access.`).not.toMatch(loginPagePattern);
-  expect(body, `${label} should render the owner app`).toMatch(/Today|Command|Jobs|Clients|Workers|Quotes|Invoices|Settings|Plans|Churvox/i);
+  expect(body, `${label} should render the owner app`).toMatch(ownerAppPattern);
   return body;
 }
 
@@ -82,7 +83,16 @@ async function login(page, email, password) {
 async function ownerLogin(page) {
   test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Owner credentials not supplied.');
   expect(OWNER_PASSWORD, 'Replace CHURVOX_OWNER_PASSWORD with the real password in your terminal, not a placeholder.').not.toMatch(credentialPlaceholderPattern);
-  await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+    await gotoFast(page, '/dashboard');
+    await page.waitForTimeout(900 * attempt);
+    const body = await text(page);
+    if (!loginPagePattern.test(body) && ownerAppPattern.test(body)) return;
+    if (attempt < 3) await page.waitForTimeout(650);
+  }
+
   await gotoFast(page, '/dashboard');
   await assertOwnerApp(page, 'owner login');
 }
@@ -165,6 +175,7 @@ test.describe('Churvox paid launch owner-level audit', () => {
     expect(body).toMatch(/GPS map|Worker status|Proof|messages|slips/i);
     const extraPins = await page.locator('[data-churvox-worker-pin-map]').count();
     expect(extraPins, 'worker pin should update GPS panel, not create an extra map block').toBe(0);
+    await page.waitForSelector('iframe[title*="Worker"], iframe[title*="GPS"], .cvxMap iframe', { timeout: 4500 }).catch(() => null);
     const visibleMaps = await page.locator('iframe[title*="Worker"], iframe[title*="GPS"], .cvxMap iframe').count();
     expect(visibleMaps, 'Workers page should have a map iframe').toBeGreaterThan(0);
   });
@@ -181,6 +192,7 @@ test.describe('Churvox paid launch owner-level audit', () => {
     ]) {
       await gotoFast(page, `/dashboard#${pageId}`);
       await assertOwnerApp(page, pageId);
+      await page.waitForTimeout(900);
       const opened = await clickLike(page, openText);
       expect(opened, `${pageId} should open a form`).toBeTruthy();
       await page.waitForTimeout(500);
