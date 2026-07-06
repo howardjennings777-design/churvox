@@ -29,6 +29,7 @@ let workerRuntimeLoaded = false;
 
 const ownerRuntimeImports = [
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
+  () => import('./runtime/churvoxCommandBrainRuntime'),
 ];
 
 const workerRuntimeImports = [
@@ -46,7 +47,7 @@ function runImports(imports) {
 function loadOwnerRuntimeWhenInsideApp() {
   if (ownerRuntimeLoaded || typeof window === 'undefined') return;
   const path = window.location.pathname || '';
-  const isOwnerApp = path === '/dashboard' || path === '/plans' || path.startsWith('/dashboard');
+  const isOwnerApp = path === '/dashboard' || path === '/plans' || path === '/guide' || path === '/setup' || path === '/setup-guide' || path.startsWith('/dashboard');
   if (!isOwnerApp) return;
   ownerRuntimeLoaded = true;
   runImports(ownerRuntimeImports);
