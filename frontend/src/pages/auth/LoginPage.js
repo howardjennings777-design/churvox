@@ -9,6 +9,41 @@ const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const LOGIN_TIMEOUT_MS = 28000;
 
+function ChurvoxAppLogo({ compact = false }) {
+  return (
+    <div className={`cvAppLogoMark ${compact ? "compact" : ""}`} aria-hidden="true">
+      <svg viewBox="0 0 128 128" focusable="false">
+        <defs>
+          <linearGradient id="cvAppLogoBg" x1="18" y1="10" x2="112" y2="118" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#161c18" />
+            <stop offset="0.58" stopColor="#090d0b" />
+            <stop offset="1" stopColor="#030404" />
+          </linearGradient>
+          <linearGradient id="cvAppLogoOrange" x1="21" y1="18" x2="105" y2="109" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffad55" />
+            <stop offset="0.5" stopColor="#f97316" />
+            <stop offset="1" stopColor="#dc3f17" />
+          </linearGradient>
+          <linearGradient id="cvAppLogoWhite" x1="39" y1="43" x2="95" y2="86" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffffff" />
+            <stop offset="1" stopColor="#dce3ec" />
+          </linearGradient>
+          <filter id="cvAppLogoLift" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#000000" floodOpacity="0.36" />
+          </filter>
+        </defs>
+        <rect x="7" y="7" width="114" height="114" rx="29" fill="url(#cvAppLogoBg)" />
+        <rect x="8.5" y="8.5" width="111" height="111" rx="27.5" fill="none" stroke="#ffffff" strokeOpacity="0.08" strokeWidth="2" />
+        <g filter="url(#cvAppLogoLift)">
+          <path d="M92 38C85 27 73 21 60 21C37 21 18 40 18 64C18 88 37 107 60 107C75 107 87 100 95 89" fill="none" stroke="url(#cvAppLogoOrange)" strokeWidth="15" strokeLinecap="round" />
+          <path d="M39 66L56 82L92 43" fill="none" stroke="url(#cvAppLogoWhite)" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+        <circle cx="95" cy="38" r="6.5" fill="#f97316" />
+      </svg>
+    </div>
+  );
+}
+
 function setupPendingLocally() {
   try {
     return window.localStorage.getItem(FIRST_SETUP_KEY) === "true" && window.localStorage.getItem(GUIDE_COMPLETE_KEY) !== "true";
@@ -157,14 +192,51 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_LOGIN_MODERN_OS_20260629">
+    <main className="cvPublicAuth cvRealAppLogin" data-version="CHURVOX_REAL_APP_LOGO_SCREEN_20260707">
       <Nav />
-      <section className="cvPublicAuthShell">
-        <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
+      <section className="cvPublicAuthShell cvRealAppShell">
+        <aside className="cvAppScreenStage" aria-label="Churvox mobile app logo screen preview">
+          <div className="cvAppScreenBrandLockup">
+            <ChurvoxAppLogo />
+            <div>
+              <h2>Churvox</h2>
+              <p>Does the admin. <strong>You approve.</strong></p>
+            </div>
+          </div>
+
+          <div className="cvPhoneFrame" aria-hidden="true">
+            <div className="cvPhoneStatus"><span>9:41</span><i /></div>
+            <div className="cvPhoneSplashLogo"><ChurvoxAppLogo /></div>
+            <div className="cvPhoneWordmark">Churvo<span>x</span></div>
+            <p className="cvPhonePromise">Does the admin. <b>You approve.</b></p>
+            <div className="cvPhoneSignals">
+              <span><b>5</b><small>approvals</small></span>
+              <span><b>8</b><small>jobs today</small></span>
+              <span><b>$24k</b><small>waiting</small></span>
+              <span><b>3</b><small>field updates</small></span>
+            </div>
+          </div>
+
+          <div className="cvAppScreenNotes">
+            <span>Owner command</span>
+            <span>Field flow</span>
+            <span>Proof + messages</span>
+          </div>
+        </aside>
+
+        <form className="cvPublicAuthCard cvRealAppAuthCard" onSubmit={handleSubmit}>
+          <div className="cvLoginMiniBrand">
+            <ChurvoxAppLogo compact />
+            <div>
+              <b>Churvox</b>
+              <small>Owner approval desk</small>
+            </div>
+          </div>
+
           <p className="cvPublicAuthKicker">Welcome back</p>
-          <h1>Sign in to Command.</h1>
+          <h1>Open Command.</h1>
           <p className="cvPublicAuthIntro">
-            Open the owner desk, check what Churvox prepared, and keep jobs, money, workers and messages moving.
+            Sign in to check the admin Churvox prepared, approve what is ready, and keep work moving.
           </p>
 
           {error ? <div className="cvPublicAuthError">{error}</div> : null}
@@ -208,17 +280,6 @@ export default function LoginPage() {
             <Link to="/signup">Start trial</Link>
           </p>
         </form>
-
-        <aside className="cvPublicAuthPanel">
-          <p>Owner-approved admin OS</p>
-          <h2>Churvox does the admin. The owner checks and approves.</h2>
-          <ul>
-            <li>Today shows dated work and live business signals.</li>
-            <li>Command holds approvals, edits and parked items.</li>
-            <li>Jobs, clients, workers, quotes, invoices and messages stay connected.</li>
-            <li>Accounting handoff stays guarded and owner-approved.</li>
-          </ul>
-        </aside>
       </section>
     </main>
   );
