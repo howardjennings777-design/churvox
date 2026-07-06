@@ -130,6 +130,12 @@ def install(module):
         print(f"Churvox record bridge skipped: {exc}", file=sys.stderr)
 
     try:
+        import churvox_owner_data_visibility_patch
+        churvox_owner_data_visibility_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox owner data visibility skipped: {exc}", file=sys.stderr)
+
+    try:
         import churvox_wiring_health_patch
         churvox_wiring_health_patch.install(module)
     except Exception as exc:
