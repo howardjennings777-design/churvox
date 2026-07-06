@@ -42,16 +42,51 @@ function normaliseForms() {
   });
 }
 
+function removePaidLaunchFallbackDrawers() {
+  document.querySelectorAll('[id^="churvox-paid-launch-fallback-"]').forEach((node) => node.remove());
+  document.getElementById('churvox-paid-launch-client-form')?.remove();
+}
+
+function closeFallbackDrawersForOwnerNavigation() {
+  removePaidLaunchFallbackDrawers();
+  window.setTimeout(removePaidLaunchFallbackDrawers, 0);
+  window.setTimeout(removePaidLaunchFallbackDrawers, 80);
+}
+
+function installOwnerNavEscapeStyles() {
+  if (document.getElementById('churvox-exact-form-labels-nav-style')) return;
+  const style = document.createElement('style');
+  style.id = 'churvox-exact-form-labels-nav-style';
+  style.textContent = `
+    .cvxProduct .cvxTop,
+    .cvxProduct .cvxNav{position:relative;z-index:999999}
+    .cvxPaidLaunchFallbackForm{pointer-events:none}
+    .cvxPaidLaunchFallbackForm .cvxDrawer{pointer-events:auto}
+  `;
+  document.head.appendChild(style);
+}
+
 function schedule() {
   [0, 50, 150, 350, 800, 1400].forEach((delay) => window.setTimeout(normaliseForms, delay));
 }
 
 if (typeof window !== 'undefined' && !window[FORM_LABEL_RUNTIME_FLAG]) {
   window[FORM_LABEL_RUNTIME_FLAG] = true;
+  installOwnerNavEscapeStyles();
   schedule();
-  document.addEventListener('click', schedule, true);
-  window.addEventListener('hashchange', schedule);
-  window.addEventListener('popstate', schedule);
+  document.addEventListener('pointerdown', (event) => {
+    if (event.target?.closest?.('.cvxNav button, .cvxTop button, [data-stripe-live-plan], [data-plan-card] button')) {
+      closeFallbackDrawersForOwnerNavigation();
+    }
+  }, true);
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('.cvxNav button, .cvxTop button, [data-stripe-live-plan], [data-plan-card] button')) {
+      closeFallbackDrawersForOwnerNavigation();
+    }
+    schedule();
+  }, true);
+  window.addEventListener('hashchange', () => { removePaidLaunchFallbackDrawers(); schedule(); });
+  window.addEventListener('popstate', () => { removePaidLaunchFallbackDrawers(); schedule(); });
   window.addEventListener('churvox:data-refresh', schedule);
   window.addEventListener('churvox-owner-app-ready', schedule);
   const observer = new MutationObserver(schedule);
