@@ -11,6 +11,7 @@ import './runtime/churvoxPlansCountryRuntime';
 import './runtime/churvoxPlansBillingNavClickGuard';
 import './runtime/churvoxStripeCheckoutLiveRuntime';
 import './runtime/churvoxKiwiCopyGuard';
+import './runtime/churvoxSetupCoachKillRuntime';
 
 const staticPublicPageRendered = Boolean(
   typeof window !== 'undefined' && window.__CHURVOX_STATIC_PUBLIC_PAGE_RENDERED__ === true
@@ -36,8 +37,6 @@ const ownerRuntimeImports = [
   () => import('./runtime/churvoxOwnerAdminLedgerRuntime'),
   () => import('./churvox-product/productJobLedger.css'),
   () => import('./runtime/churvoxOwnerJobLedgerRuntime'),
-  () => import('./churvox-product/productSetupCoach.css'),
-  () => import('./runtime/churvoxSetupCoachRuntime'),
   () => import('./churvox-product/productPageSmartHeaders.css'),
   () => import('./runtime/churvoxPageSmartHeadersRuntime'),
 ];
