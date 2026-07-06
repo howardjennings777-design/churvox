@@ -1,31 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Churvox app icon">
   <defs>
-    <linearGradient id="shell" x1="24" y1="16" x2="236" y2="240" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#18231e"/>
-      <stop offset="0.54" stop-color="#0b100e"/>
-      <stop offset="1" stop-color="#050606"/>
+    <linearGradient id="bg" x1="36" y1="20" x2="220" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#151b18"/>
+      <stop offset="0.58" stop-color="#090d0b"/>
+      <stop offset="1" stop-color="#030404"/>
     </linearGradient>
-    <linearGradient id="heat" x1="48" y1="36" x2="212" y2="218" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ffc06f"/>
-      <stop offset="0.42" stop-color="#f97316"/>
-      <stop offset="1" stop-color="#de4519"/>
+    <linearGradient id="orange" x1="44" y1="38" x2="210" y2="214" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffad55"/>
+      <stop offset="0.5" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#dc3f17"/>
     </linearGradient>
-    <linearGradient id="steel" x1="76" y1="80" x2="188" y2="172" gradientUnits="userSpaceOnUse">
+    <linearGradient id="white" x1="76" y1="86" x2="188" y2="170" gradientUnits="userSpaceOnUse">
       <stop stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#d7dee8"/>
+      <stop offset="1" stop-color="#dce3ec"/>
     </linearGradient>
-    <filter id="lift" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="16" stdDeviation="12" flood-color="#000000" flood-opacity="0.42"/>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#000000" flood-opacity="0.40"/>
     </filter>
   </defs>
-  <rect x="10" y="10" width="236" height="236" rx="58" fill="url(#shell)"/>
-  <path d="M43 55h170M43 202h170" stroke="#ffffff" stroke-opacity="0.055" stroke-width="12" stroke-linecap="round"/>
-  <path d="M205 29c20 44 13 95-13 130-27 38-72 57-118 50" fill="none" stroke="#f97316" stroke-opacity="0.16" stroke-width="34" stroke-linecap="round"/>
-  <g filter="url(#lift)">
-    <path d="M181 65c-14-16-34-26-57-26-45 0-82 37-82 82s37 82 82 82c28 0 53-14 68-36" fill="none" stroke="url(#heat)" stroke-width="25" stroke-linecap="round"/>
-    <path d="M74 131l33 31 78-82" fill="none" stroke="url(#steel)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#bg)"/>
+  <rect x="13.5" y="13.5" width="229" height="229" rx="52.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
+  <g filter="url(#shadow)">
+    <path d="M184 75C171 54 148 41 121 41C74 41 36 79 36 128C36 177 74 215 121 215C150 215 175 201 190 179" fill="none" stroke="url(#orange)" stroke-width="28" stroke-linecap="round"/>
+    <path d="M76 132L111 164L184 86" fill="none" stroke="url(#white)" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <circle cx="196" cy="68" r="16" fill="#f97316"/>
-  <circle cx="196" cy="68" r="7" fill="#111827"/>
+  <circle cx="190" cy="75" r="13" fill="#f97316"/>
 </svg>
