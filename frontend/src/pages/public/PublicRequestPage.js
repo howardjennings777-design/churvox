@@ -112,11 +112,11 @@ export default function PublicRequestPage() {
 
   if (sent) {
     return (
-      <main className="crqShell">
+      <main className="crqShell" data-version="CHURVOX_REQUEST_COPY_SENT_20260706">
         <section className="crqDone">
           <span>Request sent</span>
-          <h1>Thanks — your request is with the business.</h1>
-          <p>The owner will review it before creating a quote or job. Nothing is booked automatically.</p>
+          <h1>Done — the business has your request.</h1>
+          <p>The owner can review the details, then quote, reply or schedule the work.</p>
           <button type="button" onClick={() => { setSent(false); setForm(initialForm); setPhotos([]); }}>Send another request</button>
         </section>
       </main>
@@ -124,12 +124,12 @@ export default function PublicRequestPage() {
   }
 
   return (
-    <main className="crqShell">
+    <main className="crqShell" data-version="CHURVOX_REQUEST_COPY_20260706">
       <form className="crqCard" onSubmit={submit}>
         <header>
           <span>Request work</span>
-          <h1>Tell us what you need done.</h1>
-          <p>This creates a request for the owner to review. It does not automatically book a job or send a quote.</p>
+          <h1>Send the job details in cleanly.</h1>
+          <p>Add the work, address, timing and photos. Churvox passes it to the owner as a clear request.</p>
         </header>
 
         <div className="crqGrid">
@@ -150,7 +150,7 @@ export default function PublicRequestPage() {
 
           <label>
             <span>Address</span>
-            <input value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Job address" />
+            <input value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Where is the work?" />
           </label>
 
           <label className="wide">
@@ -159,8 +159,8 @@ export default function PublicRequestPage() {
           </label>
 
           <label>
-            <span>Preferred day</span>
-            <input value={form.preferred_day} onChange={(e) => update("preferred_day", e.target.value)} placeholder="Any day, Friday, next week..." />
+            <span>Preferred timing</span>
+            <input value={form.preferred_day} onChange={(e) => update("preferred_day", e.target.value)} placeholder="Friday, next week, mornings..." />
           </label>
 
           <label>
@@ -174,8 +174,8 @@ export default function PublicRequestPage() {
           </label>
 
           <label className="wide">
-            <span>More detail</span>
-            <textarea value={form.message} onChange={(e) => update("message", e.target.value)} placeholder="Tell us access details, size, photos needed, or anything important." />
+            <span>Details</span>
+            <textarea value={form.message} onChange={(e) => update("message", e.target.value)} placeholder="Access notes, size, problem areas, dogs on site, photos needed, or anything the owner should know." />
           </label>
 
           <label className="wide crqPhotoInput">
@@ -186,8 +186,8 @@ export default function PublicRequestPage() {
         </div>
 
         <section className="crqSafety">
-          <b>Owner reviews first</b>
-          <span>Your request goes to the business owner. They decide whether to quote, book, or ask for more info.</span>
+          <b>Owner reviews it</b>
+          <span>The request is checked before the business quotes, replies or schedules the job.</span>
         </section>
 
         <button className="crqSubmit" type="submit" disabled={saving}>{saving ? "Sending..." : "Send request"}</button>
