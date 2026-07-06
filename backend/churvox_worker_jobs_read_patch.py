@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
 _ORIGINAL_IMPORT = builtins.__import__
-LIVE_PATCH_VERSION = "worker-jobs-owner-visibility-direct-health-20260706"
+LIVE_PATCH_VERSION = "worker-jobs-owner-visibility-v2-20260706"
 
 
 def _text(value):
@@ -142,6 +142,11 @@ def _install_extra_owner_visibility(module):
         churvox_owner_data_visibility_patch.install(module)
     except Exception as exc:
         print(f"Churvox owner data visibility skipped: {exc}", file=sys.stderr)
+    try:
+        import churvox_owner_visibility_v2_patch
+        churvox_owner_visibility_v2_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox owner visibility v2 skipped: {exc}", file=sys.stderr)
     try:
         import churvox_wiring_health_patch
         churvox_wiring_health_patch.install(module)
