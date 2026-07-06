@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib, importlib.abc, importlib.machinery, sys
 from datetime import datetime, timezone
 
-TARGETS = {"server", "backend.server"}
+TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
 REQUIRED = [
     ("/api/jobs", "GET"), ("/api/jobs", "POST"), ("/api/jobs/{record_id}", "PATCH"),
@@ -18,26 +18,31 @@ REQUIRED = [
     ("/api/payments/on-site/status", "GET"), ("/api/payments/on-site/setup-link", "POST"), ("/api/payments/on-site/payment-intent", "POST"), ("/api/payments/on-site/reader-key", "POST"), ("/api/payments/on-site/reader-result", "POST"),
 ]
 
+
 def remove(app, path, method):
     try:
         app.router.routes = [r for r in app.router.routes if not (getattr(r, "path", "") == path and method in set(getattr(r, "methods", set()) or set()))]
     except Exception:
         pass
 
+
+def route_loaded(app, path, method):
+    try:
+        return any(getattr(r, "path", "") == path and method in set(getattr(r, "methods", set()) or set()) for r in getattr(app.router, "routes", []))
+    except Exception:
+        return False
+
+
 def install(module):
     name = getattr(module, "__name__", "")
-    if name in INSTALLED: return
+    if name in INSTALLED:
+        return
     app = getattr(module, "app", None)
-    Request = getattr(module, "Request", None)
-    if not app or Request is None: return
+    if not app:
+        return
 
-    async def wiring_health(request: Request):
-        active = set()
-        for route in getattr(app.router, "routes", []):
-            path = getattr(route, "path", "")
-            for method in set(getattr(route, "methods", set()) or set()):
-                active.add((path, method))
-        checks = [{"path": path, "method": method, "loaded": (path, method) in active} for path, method in REQUIRED]
+    async def wiring_health():
+        checks = [{"path": path, "method": method, "loaded": route_loaded(app, path, method)} for path, method in REQUIRED]
         missing = [row for row in checks if not row["loaded"]]
         return {
             "success": True,
@@ -51,10 +56,20 @@ def install(module):
             "checked_at": datetime.now(timezone.utc).isoformat(),
         }
 
+    async def live_version():
+        return {
+            "success": True,
+            "version": "wiring-health-fixed-request-20260706",
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
+
     for path in ["/api/health/wiring", "/api/logic/wiring-health"]:
         remove(app, path, "GET")
         app.add_api_route(path, wiring_health, methods=["GET"])
+    remove(app, "/api/health/live-version", "GET")
+    app.add_api_route("/api/health/live-version", live_version, methods=["GET"])
     INSTALLED.add(name)
+
 
 class Loader(importlib.abc.Loader):
     def __init__(self, original): self.original = original
