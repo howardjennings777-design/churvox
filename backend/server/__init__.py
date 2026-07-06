@@ -62,9 +62,6 @@ for _patch in [
     'churvox_auth_login_fast_patch',
     'churvox_worker_login_bridge_patch',
     'churvox_worker_jobs_read_patch',
-    'churvox_owner_visibility_v2_patch',
-    'churvox_owner_data_debug_patch',
-    'churvox_wiring_health_patch',
     'churvox_paid_launch_guard_patch',
     'churvox_admin_recovery_patch',
     'churvox_owner_cockpit_control_patch',
@@ -75,6 +72,9 @@ for _patch in [
     'churvox_owner_record_engine_routes_patch',
     'churvox_launch_create_records_patch',
     'churvox_legit_wiring_patch',
+    'churvox_owner_visibility_v2_patch',
+    'churvox_owner_data_debug_patch',
+    'churvox_wiring_health_patch',
 ]:
     _install_launch_patch(_patch)
 
