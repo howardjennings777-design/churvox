@@ -118,15 +118,32 @@ def _business_query(user):
             {"business_id": {"$in": values}},
             {"businessId": {"$in": values}},
             {"contractor_id": {"$in": values}},
+            {"owner_business_id": {"$in": values}},
         ]
     }
+
+
+def _install_extra_owner_visibility(module):
+    try:
+        import churvox_owner_data_visibility_patch
+        churvox_owner_data_visibility_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox owner data visibility skipped: {exc}", file=sys.stderr)
+    try:
+        import churvox_wiring_health_patch
+        churvox_wiring_health_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox wiring health skipped: {exc}", file=sys.stderr)
 
 
 def _install(module):
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
-    if app is None or db is None or get_current_user is None or getattr(app.state, "worker_jobs_read_patch", False):
+    if app is None or db is None or get_current_user is None:
+        return
+    if getattr(app.state, "worker_jobs_read_patch", False):
+        _install_extra_owner_visibility(module)
         return
     router = APIRouter(prefix="/api")
 
@@ -146,6 +163,7 @@ def _install(module):
 
     app.include_router(router)
     app.state.worker_jobs_read_patch = True
+    _install_extra_owner_visibility(module)
 
 
 def _patched_import(name, globals=None, locals=None, fromlist=(), level=0):  # noqa: A002
@@ -159,7 +177,7 @@ if getattr(builtins, "__churvox_worker_jobs_read_patch__", False) is not True:
     builtins.__churvox_worker_jobs_read_patch__ = True
     builtins.__import__ = _patched_import
 
-for module_name in ("server", "backend.server"):
+for module_name in ("server", "backend.server", "churvox_legacy_server"):
     loaded = sys.modules.get(module_name)
     if loaded is not None:
         _install(loaded)
