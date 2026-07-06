@@ -36,6 +36,7 @@ const ownerRuntimeImports = [
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
   () => import('./runtime/churvoxCommandBrainRuntime'),
   () => import('./runtime/churvoxPaymentSetupRuntime'),
+  () => import('./runtime/churvoxOwnerHeaderLogoRuntime'),
   () => import('./churvox-product/productAdminLedgerLanes.css'),
   () => import('./runtime/churvoxOwnerAdminLedgerRuntime'),
   () => import('./runtime/churvoxTrueAdminLedgerFormsRuntime'),
