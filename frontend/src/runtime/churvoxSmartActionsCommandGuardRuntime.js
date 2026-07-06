@@ -1,7 +1,6 @@
 /* Keeps Smart Actions aligned with the Churvox rule:
    Approve, Edit and Park belong in Command only. */
 
-const GUARD_ID = "churvox-smart-actions-command-guard-v1";
 const SMART_ROOT_ID = "churvoxSmartActionsRoot";
 const API_BASE = String(process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
