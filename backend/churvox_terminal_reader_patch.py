@@ -123,6 +123,12 @@ def install(module):
     except Exception as exc:
         print(f"Churvox field loop skipped: {exc}", file=sys.stderr)
 
+    try:
+        import churvox_record_bridge_patch
+        churvox_record_bridge_patch.install(module)
+    except Exception as exc:
+        print(f"Churvox record bridge skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
