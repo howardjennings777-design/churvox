@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { normalizeRole, getDefaultRoute, isWorkerRole, isPayrollRole } from "@/lib/roles";
 import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
+import "./RealAppLoginScreen.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
