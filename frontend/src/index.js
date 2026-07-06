@@ -13,6 +13,7 @@ import './runtime/churvoxPlansBillingNavClickGuard';
 import './runtime/churvoxStripeCheckoutLiveRuntime';
 import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxSetupCoachKillRuntime';
+import './runtime/churvoxPaidLaunchSurfaceRuntime';
 
 const staticPublicPageRendered = Boolean(
   typeof window !== 'undefined' && window.__CHURVOX_STATIC_PUBLIC_PAGE_RENDERED__ === true
@@ -96,3 +97,4 @@ window.addEventListener('hashchange', checkRuntimeLoads);
 window.addEventListener('churvox-owner-app-ready', checkRuntimeLoads);
 setTimeout(checkRuntimeLoads, 300);
 setTimeout(checkRuntimeLoads, 800);
+setInterval(checkRuntimeLoads, 1200);
