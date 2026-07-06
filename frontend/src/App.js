@@ -25,6 +25,7 @@ import HomePage from "./pages/marketing/ExecutiveHomePage";
 import PricingPage from "./pages/marketing/ExecutivePricingPage";
 import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
 import PublicDemoPage from "./pages/marketing/PublicDemoPage";
+import ContactPage from "./pages/marketing/ExecutiveContactPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
@@ -141,10 +142,14 @@ function App() {
           <Toaster position="top-right" richColors />
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/product" element={<FeaturesPage />} />
             <Route path="/features" element={<FeaturesPage />} />
             <Route path="/demo" element={<PublicDemoPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/request" element={<PublicRequestPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/public/demo" element={<PublicDemoPage />} />
+            <Route path="/public/request" element={<PublicRequestPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signin" element={<AppRedirect to="/login" />} />
             <Route path="/sign-in" element={<AppRedirect to="/login" />} />
@@ -221,8 +226,6 @@ function App() {
             <Route path="/worker/settings" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
             <Route path="/worker/profile" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
 
-            <Route path="/request" element={<PublicRequestPage />} />
-            <Route path="/public/request" element={<PublicRequestPage />} />
             <Route path="/public/quote/:token" element={<PublicQuotePage />} />
             <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
             <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
