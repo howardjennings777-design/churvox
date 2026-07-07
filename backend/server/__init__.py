@@ -68,7 +68,6 @@ for _patch in [
     'churvox_owner_cockpit_control_patch',
     'churvox_tester_signup_access_patch',
     'churvox_hq_owner_access_fix_patch',
-    'churvox_api_request_422_fix_patch',
     'churvox_on_site_payments_patch',
     'churvox_terminal_reader_patch',
     'churvox_os_v2_saved_records_patch',
@@ -78,6 +77,7 @@ for _patch in [
     'churvox_owner_visibility_v2_patch',
     'churvox_owner_data_debug_patch',
     'churvox_wiring_health_patch',
+    'churvox_api_request_422_fix_patch',
 ]:
     _install_launch_patch(_patch)
 
