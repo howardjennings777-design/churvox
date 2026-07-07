@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+<!-- CHURVOX_WORKER_FIRST_CLICK_SHELL_20260707 -->
 <!-- CHURVOX_REAL_PWA_PNG_ICON_20260707 -->
 <!-- CHURVOX_OS_PRODUCTION_DEPLOY_20260628_1058 -->
 <!-- CHURVOX_PUBLIC_FULLSCREEN_FORCE_20260612 -->
@@ -10,14 +11,14 @@
 <!-- CHURVOX COMMAND SLIP PORTAL FIX 2026-06-07 -->
 <!-- CHURVOX COMMAND SLIP SIDEBAR COVER FIX 2026-06-07 -->
 <!-- CHURVOX ORANGE APP ICON 2026-06-14 -->
-    <meta name="churvox-build-cache-reset" content="churvox-real-pwa-png-icon-20260707" />
+    <meta name="churvox-build-cache-reset" content="churvox-worker-first-click-shell-20260707" />
     <meta charset="utf-8" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/app-icon-192.png?v=real-pwa-icon-20260707" />
-    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/app-icon-512.png?v=real-pwa-icon-20260707" />
-    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=real-pwa-icon-20260707" />
+    <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/app-icon-192.png?v=worker-first-click-shell-20260707" />
+    <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/app-icon-512.png?v=worker-first-click-shell-20260707" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=worker-first-click-shell-20260707" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0b100e" />
     <meta name="description" content="Churvox does the admin. You approve. Owner-approved job admin for service businesses: jobs, workers, quotes, invoices, follow-ups and safe accounting handoff." />
@@ -29,16 +30,16 @@
     <meta property="og:title" content="Churvox — Churvox does the admin. You approve." />
     <meta property="og:description" content="Owner-approved job admin for service businesses. Churvox prepares jobs, quotes, invoices, worker updates and safe accounting handoff for you to approve." />
     <meta property="og:url" content="https://www.churvox.com/" />
-    <meta property="og:image" content="https://www.churvox.com/app-icon-512.png?v=real-pwa-icon-20260707" />
+    <meta property="og:image" content="https://www.churvox.com/app-icon-512.png?v=worker-first-click-shell-20260707" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Churvox — Churvox does the admin. You approve." />
     <meta name="twitter:description" content="Job admin, worker updates, quotes, invoices and safe accounting handoff prepared for owner approval." />
-    <meta name="twitter:image" content="https://www.churvox.com/app-icon-512.png?v=real-pwa-icon-20260707" />
+    <meta name="twitter:image" content="https://www.churvox.com/app-icon-512.png?v=worker-first-click-shell-20260707" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Churvox" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=real-pwa-icon-20260707" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=worker-first-click-shell-20260707" />
     <title>Churvox — Churvox does the admin. You approve.</title>
     <script type="application/ld+json">
       {
@@ -97,12 +98,12 @@
     <script>
       (function () {
         var path = window.location.pathname.replace(/\/+$/, '');
-        if (path !== '/worker/today' && path !== '/worker/jobs') return;
+        if (path.indexOf('/worker') !== 0) return;
         var root = document.getElementById('root');
         if (!root) return;
-        var isJobs = path === '/worker/jobs';
-        document.title = isJobs ? 'Worker Jobs - Churvox' : 'Worker Today - Churvox';
-        root.innerHTML = '<main data-worker-pre-react-shell="true" style="min-height:100vh;box-sizing:border-box;padding:18px 18px 92px;display:grid;gap:14px;background:#f5f7f1;color:#111827;font-family:Inter,system-ui,sans-serif"><section style="border-radius:24px;background:#111827;color:white;padding:22px"><p style="margin:0 0 8px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#fb923c">' + (isJobs ? 'Jobs' : 'Today') + '</p><h1 style="margin:0;font-size:38px;letter-spacing:-.05em">Worker</h1><p style="margin:10px 0 0;font-weight:800;color:#e5e7eb">' + (isJobs ? 'One job at a time. No open jobs.' : 'Today shows schedule, info, messages and jobs clearly.') + '</p></section><section style="border-radius:20px;background:white;padding:16px;box-shadow:0 12px 30px rgba(15,23,42,.08)"><h2 style="margin:0 0 8px;font-size:22px">' + (isJobs ? 'No open jobs' : 'Info only') + '</h2><p style="margin:0 0 14px;font-weight:800;color:#475569">' + (isJobs ? 'All jobs done. Jobs are worked one job at a time.' : 'Today shows schedule, jobs and messages. Open jobs when you are ready.') + '</p><a href="' + (isJobs ? '/worker/today' : '/worker/jobs') + '" style="display:block;text-align:center;border-radius:999px;background:#111827;color:white;padding:14px;text-decoration:none;font-weight:900">' + (isJobs ? 'Back to Today' : 'Open Jobs') + '</a></section><nav style="position:fixed;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:#111827;padding:8px;border-radius:18px"><a href="/worker/today" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px;' + (!isJobs ? 'background:#f97316;color:#111827' : '') + '">Today</a><a href="/worker/jobs" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px;' + (isJobs ? 'background:#f97316;color:#111827' : '') + '">Jobs</a><a href="/worker/messages" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px">Messages</a><a href="/worker/help" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px">Help</a><a href="/worker/profile" style="color:white;text-align:center;text-decoration:none;font-weight:900;font-size:12px;padding:10px 0;border-radius:12px">Me</a></nav></main>';
+        var tab = path.indexOf('/worker/jobs') === 0 ? 'Jobs' : path.indexOf('/worker/messages') === 0 || path.indexOf('/worker/ops') === 0 ? 'Messages' : path.indexOf('/worker/help') === 0 ? 'Help' : path.indexOf('/worker/profile') === 0 || path.indexOf('/worker/settings') === 0 ? 'Me' : 'Today';
+        document.title = 'Churvox Worker - ' + tab;
+        root.innerHTML = '<main data-worker-pre-react-shell="true" style="min-height:100dvh;box-sizing:border-box;display:grid;grid-template-rows:auto auto 1fr auto;gap:14px;padding:14px 12px 94px;background:radial-gradient(circle at 12% 2%,rgba(249,115,22,.25),transparent 19rem),linear-gradient(180deg,#0b0f0d 0,#16211b 45%,#f7f3ea 45%,#f7f3ea 100%);color:#0f172a;font-family:Inter,system-ui,sans-serif"><section style="display:flex;align-items:center;gap:10px;color:#fff"><span style="display:grid;place-items:center;width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#f97316,#111827);box-shadow:0 16px 34px rgba(249,115,22,.28);font-weight:1000;color:#fff">CV</span><b style="display:grid;font-size:18px;line-height:1;color:#fff">Churvox<small style="margin-top:3px;color:#fed7aa;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.14em">Worker app</small></b></section><section style="position:relative;overflow:hidden;border-radius:32px;padding:22px;background:linear-gradient(135deg,#0f172a,#111827 58%,#f97316);box-shadow:0 24px 58px rgba(2,6,23,.34);color:#fff"><span style="display:inline-flex;border-radius:999px;background:rgba(255,255,255,.14);color:#fed7aa;padding:7px 11px;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.14em">' + tab + '</span><h1 style="margin:12px 0 8px;color:#fff;font-size:48px;line-height:.84;font-weight:1000;letter-spacing:-.09em">Ready for the field.</h1><p style="margin:0;color:rgba(255,255,255,.8);font-size:14px;font-weight:780;line-height:1.4">Jobs, directions, proof and messages load into one simple worker screen.</p></section><section style="display:grid;gap:12px;border:1px solid rgba(15,23,42,.08);border-radius:28px;background:rgba(255,255,255,.96);padding:18px;box-shadow:0 18px 42px rgba(15,23,42,.1)"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="border-radius:999px;background:#fff7ed;color:#9a3412;padding:6px 10px;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.1em">Loading live jobs</span><i style="width:34px;height:34px;border:4px solid #fed7aa;border-top-color:#f97316;border-radius:999px;display:block"></i></div><h2 style="margin:0;color:#0f172a;font-size:28px;line-height:1;font-weight:1000;letter-spacing:-.055em">Getting your run sheet</h2><p style="margin:0;color:#64748b;font-size:14px;font-weight:820">Checking assigned work, office notes and job actions.</p></section><nav style="position:fixed;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;border:1px solid rgba(15,23,42,.1);border-radius:24px;background:rgba(255,255,255,.95);padding:7px;box-shadow:0 18px 44px rgba(15,23,42,.22)"><a href="/worker/today" style="display:grid;place-items:center;min-height:46px;border-radius:18px;color:#64748b;text-decoration:none;font-size:12px;font-weight:1000;' + (tab === 'Today' ? 'background:#111827;color:#fff' : '') + '">Today</a><a href="/worker/jobs" style="display:grid;place-items:center;min-height:46px;border-radius:18px;color:#64748b;text-decoration:none;font-size:12px;font-weight:1000;' + (tab === 'Jobs' ? 'background:#111827;color:#fff' : '') + '">Jobs</a><a href="/worker/messages" style="display:grid;place-items:center;min-height:46px;border-radius:18px;color:#64748b;text-decoration:none;font-size:12px;font-weight:1000;' + (tab === 'Messages' ? 'background:#111827;color:#fff' : '') + '">Messages</a><a href="/worker/help" style="display:grid;place-items:center;min-height:46px;border-radius:18px;color:#64748b;text-decoration:none;font-size:12px;font-weight:1000;' + (tab === 'Help' ? 'background:#111827;color:#fff' : '') + '">Help</a><a href="/worker/profile" style="display:grid;place-items:center;min-height:46px;border-radius:18px;color:#64748b;text-decoration:none;font-size:12px;font-weight:1000;' + (tab === 'Me' ? 'background:#111827;color:#fff' : '') + '">Me</a></nav></main>';
       })();
     </script>
   </body>
