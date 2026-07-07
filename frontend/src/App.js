@@ -3,39 +3,40 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { getDefaultRoute } from "./lib/roles";
-import AppOwnerPage from "./pages/AppOwnerPage";
-import ChurvoxHQPage from "./pages/ChurvoxHQPage";
-import AdminUsagePage from "./pages/AdminUsagePage";
-import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
-import PlatformUnlock from "./pages/admin/PlatformUnlock";
-import QAAuditorPage from "./pages/admin/QAAuditorPage";
-import LoginPage from "./pages/auth/LoginPage";
-import PwaLaunchPage from "./pages/auth/PwaLaunchPage";
-import SignupPage from "./pages/auth/SignupPage";
-import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
-import InviteSetupPage from "./pages/auth/InviteSetupPage";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import WorkerNoFussRoute from "./pages/worker/WorkerNoFuss";
-import PublicQuotePage from "./pages/public/PublicQuotePage";
-import PublicInvoicePage from "./pages/public/PublicInvoicePage";
-import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
-import PublicProofPackPage from "./pages/public/PublicProofPackPage";
-import PublicRequestPage from "./pages/public/PublicRequestPage";
-import HomePage from "./pages/marketing/ExecutiveHomePage";
-import PricingPage from "./pages/marketing/ExecutivePricingPage";
-import FeaturesPage from "./pages/marketing/ExecutiveFeaturesPage";
-import PublicDemoPage from "./pages/marketing/PublicDemoPage";
-import ContactPage from "./pages/marketing/ExecutiveContactPage";
-import PrivacyPage from "./pages/legal/PrivacyPage";
-import TermsPage from "./pages/legal/TermsPage";
-import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
-import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
-import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
-import BillingReturnPage from "./pages/BillingReturnPage";
-import FreshApp from "./churvox-fresh/FreshApp";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { trackPlatformVisit } from "./lib/platformTelemetry";
+
+const AppOwnerPage = React.lazy(() => import("./pages/AppOwnerPage"));
+const ChurvoxHQPage = React.lazy(() => import("./pages/ChurvoxHQPage"));
+const AdminUsagePage = React.lazy(() => import("./pages/AdminUsagePage"));
+const PlatformAdminRoute = React.lazy(() => import("./components/admin/PlatformAdminRoute"));
+const PlatformUnlock = React.lazy(() => import("./pages/admin/PlatformUnlock"));
+const QAAuditorPage = React.lazy(() => import("./pages/admin/QAAuditorPage"));
+const LoginPage = React.lazy(() => import("./pages/auth/LoginPage"));
+const PwaLaunchPage = React.lazy(() => import("./pages/auth/PwaLaunchPage"));
+const SignupPage = React.lazy(() => import("./pages/auth/SignupPage"));
+const VerifyEmailPage = React.lazy(() => import("./pages/auth/VerifyEmailPage"));
+const InviteSetupPage = React.lazy(() => import("./pages/auth/InviteSetupPage"));
+const ForgotPasswordPage = React.lazy(() => import("./pages/auth/ForgotPasswordPage"));
+const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage"));
+const WorkerNoFussRoute = React.lazy(() => import("./pages/worker/WorkerNoFuss"));
+const PublicQuotePage = React.lazy(() => import("./pages/public/PublicQuotePage"));
+const PublicInvoicePage = React.lazy(() => import("./pages/public/PublicInvoicePage"));
+const PublicClientPortalPage = React.lazy(() => import("./pages/public/PublicClientPortalPage"));
+const PublicProofPackPage = React.lazy(() => import("./pages/public/PublicProofPackPage"));
+const PublicRequestPage = React.lazy(() => import("./pages/public/PublicRequestPage"));
+const HomePage = React.lazy(() => import("./pages/marketing/ExecutiveHomePage"));
+const PricingPage = React.lazy(() => import("./pages/marketing/ExecutivePricingPage"));
+const FeaturesPage = React.lazy(() => import("./pages/marketing/ExecutiveFeaturesPage"));
+const PublicDemoPage = React.lazy(() => import("./pages/marketing/PublicDemoPage"));
+const ContactPage = React.lazy(() => import("./pages/marketing/ExecutiveContactPage"));
+const PrivacyPage = React.lazy(() => import("./pages/legal/PrivacyPage"));
+const TermsPage = React.lazy(() => import("./pages/legal/TermsPage"));
+const PrivacyPolicyPage = React.lazy(() => import("./pages/legal/PrivacyPolicyPage"));
+const TermsOfServicePage = React.lazy(() => import("./pages/legal/TermsOfServicePage"));
+const AccountDeletionPage = React.lazy(() => import("./pages/legal/AccountDeletionPage"));
+const BillingReturnPage = React.lazy(() => import("./pages/BillingReturnPage"));
+const FreshApp = React.lazy(() => import("./churvox-fresh/FreshApp"));
 
 const Spinner = () => (
   <main className="min-h-screen bg-[#f5f2ec] p-6 text-center text-slate-950 grid place-items-center">
@@ -141,120 +142,122 @@ function App() {
       <AuthProvider>
         <ErrorBoundary>
           <Toaster position="top-right" richColors />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/app" element={<PwaLaunchPage />} />
-            <Route path="/product" element={<FeaturesPage />} />
-            <Route path="/features" element={<FeaturesPage />} />
-            <Route path="/demo" element={<PublicDemoPage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/request" element={<PublicRequestPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/public/demo" element={<PublicDemoPage />} />
-            <Route path="/public/request" element={<PublicRequestPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signin" element={<AppRedirect to="/login" />} />
-            <Route path="/sign-in" element={<AppRedirect to="/login" />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/signup/" element={<SignupPage />} />
-            <Route path="/register" element={<SignupPage />} />
-            <Route path="/register/" element={<SignupPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-            <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
-            <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
+          <React.Suspense fallback={<Spinner />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/app" element={<PwaLaunchPage />} />
+              <Route path="/product" element={<FeaturesPage />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/demo" element={<PublicDemoPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/request" element={<PublicRequestPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/public/demo" element={<PublicDemoPage />} />
+              <Route path="/public/request" element={<PublicRequestPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signin" element={<AppRedirect to="/login" />} />
+              <Route path="/sign-in" element={<AppRedirect to="/login" />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/signup/" element={<SignupPage />} />
+              <Route path="/register" element={<SignupPage />} />
+              <Route path="/register/" element={<SignupPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+              <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+              <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
 
-            <Route path="/dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
-            <Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
-            <Route path="/guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
-            <Route path="/setup" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
-            <Route path="/setup-guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
-            <Route path="/fresh" element={<AppRedirect to="/dashboard" />} />
-            <Route path="/overview" element={<AppRedirect to="/dashboard" />} />
-            <Route path="/smart-hub" element={<AppRedirect to="/dashboard" />} />
-            <Route path="/command-board" element={<AppRedirect to="/dashboard#command" />} />
-            <Route path="/operator-tools" element={<AppRedirect to="/dashboard#command" />} />
-            <Route path="/cockpit" element={<AppRedirect to="/dashboard#command" />} />
+              <Route path="/dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
+              <Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
+              <Route path="/guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
+              <Route path="/setup" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
+              <Route path="/setup-guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
+              <Route path="/fresh" element={<AppRedirect to="/dashboard" />} />
+              <Route path="/overview" element={<AppRedirect to="/dashboard" />} />
+              <Route path="/smart-hub" element={<AppRedirect to="/dashboard" />} />
+              <Route path="/command-board" element={<AppRedirect to="/dashboard#command" />} />
+              <Route path="/operator-tools" element={<AppRedirect to="/dashboard#command" />} />
+              <Route path="/cockpit" element={<AppRedirect to="/dashboard#command" />} />
 
-            <Route path="/jobs" element={<AppRedirect to="/dashboard#jobs" />} />
-            <Route path="/jobs-board" element={<AppRedirect to="/dashboard#jobs" />} />
-            <Route path="/jobs/new" element={<AppRedirect to="/dashboard#jobs" />} />
-            <Route path="/jobs/:id" element={<AppRedirect to="/dashboard#jobs" />} />
-            <Route path="/jobs/:id/edit" element={<AppRedirect to="/dashboard#jobs" />} />
-            <Route path="/clients" element={<AppRedirect to="/dashboard#clients" />} />
-            <Route path="/clients-board" element={<AppRedirect to="/dashboard#clients" />} />
-            <Route path="/clients/new" element={<AppRedirect to="/dashboard#clients" />} />
-            <Route path="/clients/:id" element={<AppRedirect to="/dashboard#clients" />} />
-            <Route path="/clients/:id/edit" element={<AppRedirect to="/dashboard#clients" />} />
-            <Route path="/clients/:clientId/workbench" element={<AppRedirect to="/dashboard#clients" />} />
-            <Route path="/quotes" element={<AppRedirect to="/dashboard#quotes" />} />
-            <Route path="/quotes-board" element={<AppRedirect to="/dashboard#quotes" />} />
-            <Route path="/quotes/new" element={<AppRedirect to="/dashboard#quotes" />} />
-            <Route path="/quotes/:id" element={<AppRedirect to="/dashboard#quotes" />} />
-            <Route path="/quotes/:id/edit" element={<AppRedirect to="/dashboard#quotes" />} />
-            <Route path="/invoices" element={<AppRedirect to="/dashboard#invoices" />} />
-            <Route path="/invoices-board" element={<AppRedirect to="/dashboard#invoices" />} />
-            <Route path="/invoices/new" element={<AppRedirect to="/dashboard#invoices" />} />
-            <Route path="/invoices/:id" element={<AppRedirect to="/dashboard#invoices" />} />
-            <Route path="/invoices/:id/edit" element={<AppRedirect to="/dashboard#invoices" />} />
-            <Route path="/reports" element={<AppRedirect to="/dashboard#invoices" />} />
-            <Route path="/reports-board" element={<AppRedirect to="/dashboard#invoices" />} />
-            <Route path="/team" element={<AppRedirect to="/dashboard#team" />} />
-            <Route path="/team-board" element={<AppRedirect to="/dashboard#team" />} />
-            <Route path="/payroll" element={<AppRedirect to="/dashboard#payroll" />} />
-            <Route path="/payroll-board" element={<AppRedirect to="/dashboard#payroll" />} />
-            <Route path="/dispatch" element={<AppRedirect to="/dashboard#workers" />} />
-            <Route path="/dispatch-board" element={<AppRedirect to="/dashboard#workers" />} />
-            <Route path="/dispatch/map" element={<AppRedirect to="/dashboard#workers" />} />
-            <Route path="/crew-map" element={<AppRedirect to="/dashboard#workers" />} />
-            <Route path="/schedule" element={<AppRedirect to="/dashboard#workers" />} />
-            <Route path="/calendar" element={<AppRedirect to="/dashboard#workers" />} />
-            <Route path="/settings" element={<AppRedirect to="/dashboard#settings" />} />
-            <Route path="/settings-board" element={<AppRedirect to="/dashboard#settings" />} />
-            <Route path="/support" element={<AppRedirect to="/dashboard#support" />} />
-            <Route path="/support-board" element={<AppRedirect to="/dashboard#support" />} />
-            <Route path="/offline-sync" element={<AppRedirect to="/dashboard#support" />} />
-            <Route path="/onboarding" element={<AppRedirect to="/dashboard#support" />} />
+              <Route path="/jobs" element={<AppRedirect to="/dashboard#jobs" />} />
+              <Route path="/jobs-board" element={<AppRedirect to="/dashboard#jobs" />} />
+              <Route path="/jobs/new" element={<AppRedirect to="/dashboard#jobs" />} />
+              <Route path="/jobs/:id" element={<AppRedirect to="/dashboard#jobs" />} />
+              <Route path="/jobs/:id/edit" element={<AppRedirect to="/dashboard#jobs" />} />
+              <Route path="/clients" element={<AppRedirect to="/dashboard#clients" />} />
+              <Route path="/clients-board" element={<AppRedirect to="/dashboard#clients" />} />
+              <Route path="/clients/new" element={<AppRedirect to="/dashboard#clients" />} />
+              <Route path="/clients/:id" element={<AppRedirect to="/dashboard#clients" />} />
+              <Route path="/clients/:id/edit" element={<AppRedirect to="/dashboard#clients" />} />
+              <Route path="/clients/:clientId/workbench" element={<AppRedirect to="/dashboard#clients" />} />
+              <Route path="/quotes" element={<AppRedirect to="/dashboard#quotes" />} />
+              <Route path="/quotes-board" element={<AppRedirect to="/dashboard#quotes" />} />
+              <Route path="/quotes/new" element={<AppRedirect to="/dashboard#quotes" />} />
+              <Route path="/quotes/:id" element={<AppRedirect to="/dashboard#quotes" />} />
+              <Route path="/quotes/:id/edit" element={<AppRedirect to="/dashboard#quotes" />} />
+              <Route path="/invoices" element={<AppRedirect to="/dashboard#invoices" />} />
+              <Route path="/invoices-board" element={<AppRedirect to="/dashboard#invoices" />} />
+              <Route path="/invoices/new" element={<AppRedirect to="/dashboard#invoices" />} />
+              <Route path="/invoices/:id" element={<AppRedirect to="/dashboard#invoices" />} />
+              <Route path="/invoices/:id/edit" element={<AppRedirect to="/dashboard#invoices" />} />
+              <Route path="/reports" element={<AppRedirect to="/dashboard#invoices" />} />
+              <Route path="/reports-board" element={<AppRedirect to="/dashboard#invoices" />} />
+              <Route path="/team" element={<AppRedirect to="/dashboard#team" />} />
+              <Route path="/team-board" element={<AppRedirect to="/dashboard#team" />} />
+              <Route path="/payroll" element={<AppRedirect to="/dashboard#payroll" />} />
+              <Route path="/payroll-board" element={<AppRedirect to="/dashboard#payroll" />} />
+              <Route path="/dispatch" element={<AppRedirect to="/dashboard#workers" />} />
+              <Route path="/dispatch-board" element={<AppRedirect to="/dashboard#workers" />} />
+              <Route path="/dispatch/map" element={<AppRedirect to="/dashboard#workers" />} />
+              <Route path="/crew-map" element={<AppRedirect to="/dashboard#workers" />} />
+              <Route path="/schedule" element={<AppRedirect to="/dashboard#workers" />} />
+              <Route path="/calendar" element={<AppRedirect to="/dashboard#workers" />} />
+              <Route path="/settings" element={<AppRedirect to="/dashboard#settings" />} />
+              <Route path="/settings-board" element={<AppRedirect to="/dashboard#settings" />} />
+              <Route path="/support" element={<AppRedirect to="/dashboard#support" />} />
+              <Route path="/support-board" element={<AppRedirect to="/dashboard#support" />} />
+              <Route path="/offline-sync" element={<AppRedirect to="/dashboard#support" />} />
+              <Route path="/onboarding" element={<AppRedirect to="/dashboard#support" />} />
 
-            <Route path="/worker" element={<AppRedirect to="/worker/today" />} />
-            <Route path="/worker/today" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-            <Route path="/worker/jobs" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-            <Route path="/worker/help" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-            <Route path="/worker/ops" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-            <Route path="/worker/messages" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-            <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-            <Route path="/worker/settings" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-            <Route path="/worker/profile" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker" element={<AppRedirect to="/worker/today" />} />
+              <Route path="/worker/today" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker/jobs" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker/help" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker/ops" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker/messages" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker/settings" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker/profile" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
 
-            <Route path="/public/quote/:token" element={<PublicQuotePage />} />
-            <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
-            <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
-            <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
-            <Route path="/billing" element={<BillingReturnBridge />} />
-            <Route path="/billing/success" element={<BillingReturnBridge />} />
-            <Route path="/billing/cancel" element={<BillingReturnBridge cancelled />} />
+              <Route path="/public/quote/:token" element={<PublicQuotePage />} />
+              <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
+              <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
+              <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
+              <Route path="/billing" element={<BillingReturnBridge />} />
+              <Route path="/billing/success" element={<BillingReturnBridge />} />
+              <Route path="/billing/cancel" element={<BillingReturnBridge cancelled />} />
 
-            <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-            <Route path="/churvox-hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
-            <Route path="/admin/hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
-            <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-            <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-            <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-            <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
-            <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
-            <Route path="/owner-login" element={<AppRedirect to="/login" />} />
-            <Route path="/admin/login" element={<AppRedirect to="/login" />} />
-            <Route path="/owner" element={<AppRedirect to="/admin" />} />
-            <Route path="/owner/login" element={<AppRedirect to="/login" />} />
-            <Route path="/platform-unlock" element={<PlatformUnlock />} />
+              <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+              <Route path="/churvox-hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
+              <Route path="/admin/hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
+              <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+              <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+              <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+              <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
+              <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
+              <Route path="/owner-login" element={<AppRedirect to="/login" />} />
+              <Route path="/admin/login" element={<AppRedirect to="/login" />} />
+              <Route path="/owner" element={<AppRedirect to="/admin" />} />
+              <Route path="/owner/login" element={<AppRedirect to="/login" />} />
+              <Route path="/platform-unlock" element={<PlatformUnlock />} />
 
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-            <Route path="/account-deletion" element={<AccountDeletionPage />} />
-            <Route path="*" element={<RoleRedirect />} />
-          </Routes>
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+              <Route path="/account-deletion" element={<AccountDeletionPage />} />
+              <Route path="*" element={<RoleRedirect />} />
+            </Routes>
+          </React.Suspense>
         </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
