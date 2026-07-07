@@ -16,10 +16,6 @@ import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxSetupCoachKillRuntime';
 import './runtime/churvoxPaidLaunchSurfaceRuntime';
 import './runtime/churvoxExactFormLabelsRuntime';
-import './runtime/churvoxPlatformOwnerControlCentreRuntime';
-import './runtime/churvoxPlatformOwnerTesterInviteRuntime';
-import './runtime/churvoxHqTesterMobilePolishRuntime';
-import './runtime/churvoxHqReadyBannerRuntime';
 import './runtime/churvoxFirstWinGuideEntryRuntime';
 
 const staticPublicPageRendered = Boolean(
@@ -37,6 +33,7 @@ if (!staticPublicPageRendered) {
 
 let ownerRuntimeLoaded = false;
 let workerRuntimeLoaded = false;
+let hqRuntimeLoaded = false;
 
 const ownerRuntimeImports = [
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
@@ -76,6 +73,13 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxWorkerAdminLedgerRuntime'),
 ];
 
+const hqRuntimeImports = [
+  () => import('./runtime/churvoxPlatformOwnerControlCentreRuntime'),
+  () => import('./runtime/churvoxPlatformOwnerTesterInviteRuntime'),
+  () => import('./runtime/churvoxHqTesterMobilePolishRuntime'),
+  () => import('./runtime/churvoxHqReadyBannerRuntime'),
+];
+
 function runImports(imports) {
   imports.forEach((load) => {
     try { load().catch(() => {}); } catch {}
@@ -99,15 +103,23 @@ function loadWorkerRuntimeWhenInsideWorkerApp() {
   runImports(workerRuntimeImports);
 }
 
+function loadHqRuntimeWhenInsideHq() {
+  if (hqRuntimeLoaded || typeof window === 'undefined') return;
+  const path = window.location.pathname || '';
+  const isHq = path === '/admin' || path === '/churvox-hq' || path === '/admin/hq' || path === '/owner/dashboard' || path === '/platform-dashboard' || path === '/app-owner' || path === '/admin/usage' || path === '/admin/qa-auditor';
+  if (!isHq) return;
+  hqRuntimeLoaded = true;
+  runImports(hqRuntimeImports);
+}
+
 function checkRuntimeLoads() {
   loadOwnerRuntimeWhenInsideApp();
   loadWorkerRuntimeWhenInsideWorkerApp();
+  loadHqRuntimeWhenInsideHq();
 }
 
 checkRuntimeLoads();
 window.addEventListener('popstate', checkRuntimeLoads);
 window.addEventListener('hashchange', checkRuntimeLoads);
 window.addEventListener('churvox-owner-app-ready', checkRuntimeLoads);
-setTimeout(checkRuntimeLoads, 300);
-setTimeout(checkRuntimeLoads, 800);
-setInterval(checkRuntimeLoads, 1200);
+[250, 650, 1400, 3000, 6500].forEach((delay) => setTimeout(checkRuntimeLoads, delay));
