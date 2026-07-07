@@ -16,6 +16,7 @@ import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxSetupCoachKillRuntime';
 import './runtime/churvoxPaidLaunchSurfaceRuntime';
 import './runtime/churvoxExactFormLabelsRuntime';
+import './runtime/churvoxSiteCopyPolishRuntime';
 import './runtime/churvoxFirstWinGuideEntryRuntime';
 
 const staticPublicPageRendered = Boolean(
