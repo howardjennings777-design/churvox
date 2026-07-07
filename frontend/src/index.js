@@ -19,6 +19,7 @@ import './runtime/churvoxExactFormLabelsRuntime';
 import './runtime/churvoxPlatformOwnerControlCentreRuntime';
 import './runtime/churvoxPlatformOwnerTesterInviteRuntime';
 import './runtime/churvoxHqTesterMobilePolishRuntime';
+import './runtime/churvoxHqReadyBannerRuntime';
 import './runtime/churvoxFirstWinGuideEntryRuntime';
 
 const staticPublicPageRendered = Boolean(
