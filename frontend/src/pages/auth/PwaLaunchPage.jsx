@@ -7,7 +7,7 @@ import "./PwaLaunchPage.css";
 function AppLogo() {
   return (
     <div className="pwaLaunchLogo" aria-label="Churvox logo">
-      <img src="/churvox-app-icon.svg?v=real-logo-login-flow-20260707" alt="Churvox" />
+      <img src="/churvox-mark.svg?v=transparent-real-mark-20260707" alt="Churvox" />
     </div>
   );
 }
@@ -42,10 +42,10 @@ export default function PwaLaunchPage() {
   }, [hasAppAccess, isPayroll, isWorker, loading, navigate, normalizedRole, user]);
 
   return (
-    <main className="pwaLaunchScreen" data-version="CHURVOX_REAL_LOGO_LOGIN_FLOW_20260707">
+    <main className="pwaLaunchScreen" data-version="CHURVOX_TRANSPARENT_REAL_LOGO_LAUNCH_20260707">
       <section className="pwaLaunchCard" aria-label="Opening Churvox">
         <AppLogo />
-        <img className="pwaLaunchWordmark" src="/churvox-mark.svg?v=real-logo-login-flow-20260707" alt="Churvox" />
+        <h1>Churvox</h1>
         <p>Loading secure sign in.</p>
         <div className="pwaLaunchLoader"><span /></div>
         <small>Workers and owners sign in here</small>
