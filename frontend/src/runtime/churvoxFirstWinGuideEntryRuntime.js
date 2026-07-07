@@ -24,10 +24,12 @@ function isAppPath() {
 function wantsGuide() {
   if (!isAppPath()) return false;
   const path = String(window.location.pathname || '').toLowerCase();
+  const hash = String(window.location.hash || '');
   const search = new URLSearchParams(window.location.search || '');
   if (path === '/guide' || path === '/setup' || path === '/setup-guide') return true;
+  if (hash) return false;
   if (search.get('first_setup') === '1' || search.get('tester') === '1') return true;
-  try { return localStorage.getItem(FIRST_SETUP_KEY) === 'true'; } catch { return false; }
+  try { return path === '/dashboard' && localStorage.getItem(FIRST_SETUP_KEY) === 'true'; } catch { return false; }
 }
 
 function normaliseToGuidePath() {
@@ -103,15 +105,17 @@ async function loadProgress() {
   try { return prepare(await api('/onboarding/progress')); } catch { return prepare(fallbackProgress()); }
 }
 
-function pageLabel(page) {
-  const labels = { today: 'Today', command: 'Command', jobs: 'Jobs', clients: 'Clients', workers: 'Workers', messages: 'Messages', quotes: 'Quotes', invoices: 'Invoices', team: 'Team', payroll: 'Payroll', xero: 'Xero', settings: 'Settings', plans: 'Plans', support: 'Help' };
-  return labels[page] || page || 'Today';
-}
-
 function go(page) {
   const target = page || 'today';
+  document.body.classList.remove('cvxFirstWinGuideMode');
+  document.getElementById(ROOT_ID)?.remove();
   try {
-    localStorage.setItem(FIRST_SETUP_KEY, 'true');
+    if (target === 'today') {
+      localStorage.removeItem(FIRST_SETUP_KEY);
+      localStorage.removeItem(PLAN_REQUIRED_KEY);
+    } else {
+      localStorage.setItem(FIRST_SETUP_KEY, 'true');
+    }
     window.history.pushState({}, '', `/dashboard${target === 'today' ? '' : `#${target}`}`);
     window.dispatchEvent(new Event('hashchange'));
     window.dispatchEvent(new Event('popstate'));
@@ -229,7 +233,11 @@ function render(progress) {
 
 async function renderGuide(force = false) {
   normaliseToGuidePath();
-  if (!wantsGuide() && !force) return;
+  if (!wantsGuide() && !force) {
+    document.body.classList.remove('cvxFirstWinGuideMode');
+    document.getElementById(ROOT_ID)?.remove();
+    return;
+  }
   installStyle();
   const workspace = document.querySelector('.cvxWorkspace');
   if (!workspace) return;
