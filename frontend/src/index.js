@@ -17,6 +17,7 @@ import './runtime/churvoxPaidLaunchSurfaceRuntime';
 import './runtime/churvoxExactFormLabelsRuntime';
 import './runtime/churvoxPlatformOwnerControlCentreRuntime';
 import './runtime/churvoxPlatformOwnerTesterInviteRuntime';
+import './runtime/churvoxFirstWinGuideEntryRuntime';
 
 const staticPublicPageRendered = Boolean(
   typeof window !== 'undefined' && window.__CHURVOX_STATIC_PUBLIC_PAGE_RENDERED__ === true
