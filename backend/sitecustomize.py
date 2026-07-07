@@ -53,6 +53,7 @@ for _module in [
     "churvox_wiring_health_patch",
     "churvox_admin_recovery_patch",
     "churvox_paid_launch_guard_patch",
+    "churvox_command_approval_tolerant_routes_patch",
 ]:
     try:
         __import__(_module)  # noqa: F401
