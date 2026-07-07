@@ -68,6 +68,7 @@ for _patch in [
     'churvox_owner_cockpit_control_patch',
     'churvox_tester_signup_access_patch',
     'churvox_hq_owner_access_fix_patch',
+    'churvox_api_request_422_fix_patch',
     'churvox_on_site_payments_patch',
     'churvox_terminal_reader_patch',
     'churvox_os_v2_saved_records_patch',
@@ -120,15 +121,3 @@ def _safe_money(value):
         return '${:,.2f}'.format(amount)
     except Exception:
         return None
-
-
-def _json_safe(value):
-    if isinstance(value, dict):
-        return {k: _json_safe(v) for k, v in value.items()}
-    if isinstance(value, list):
-        return [_json_safe(v) for v in value]
-    if isinstance(value, ObjectId):
-        return str(value)
-    if isinstance(value, datetime):
-        return value.isoformat()
-    return value
