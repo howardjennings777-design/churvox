@@ -8,6 +8,11 @@ function text(node) {
   return String(node?.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
+function syncBodyClass() {
+  if (!document?.body) return;
+  document.body.classList.toggle('churvoxWorkerCleanBody', isWorkerRoute());
+}
+
 function removeOwnerOverlays() {
   if (!isWorkerRoute()) return;
   const workerRoot = document.querySelector('.simpleWorkerApp');
@@ -38,13 +43,18 @@ function markWorkerReady() {
   }
 }
 
+function cleanNow() {
+  syncBodyClass();
+  if (!isWorkerRoute()) return;
+  removeOwnerOverlays();
+  markWorkerReady();
+}
+
 function schedule() {
+  syncBodyClass();
   if (!isWorkerRoute()) return;
   [0, 60, 160, 360, 800, 1500, 2800, 5000].forEach((delay) => {
-    window.setTimeout(() => {
-      removeOwnerOverlays();
-      markWorkerReady();
-    }, delay);
+    window.setTimeout(cleanNow, delay);
   });
 }
 
@@ -56,12 +66,7 @@ if (typeof window !== 'undefined' && !window[FLAG]) {
   window.addEventListener('popstate', schedule);
   window.addEventListener('hashchange', schedule);
   window.addEventListener('churvox:data-refresh', schedule);
-  const observer = new MutationObserver(() => {
-    if (isWorkerRoute()) {
-      removeOwnerOverlays();
-      markWorkerReady();
-    }
-  });
+  const observer = new MutationObserver(cleanNow);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
