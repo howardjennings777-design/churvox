@@ -10,37 +10,10 @@ const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const LOGIN_TIMEOUT_MS = 28000;
 
-function ChurvoxAppLogo({ compact = false }) {
+function ChurvoxAppLogo({ compact = false, wordmark = false }) {
   return (
-    <div className={`cvAppLogoMark ${compact ? "compact" : ""}`} aria-hidden="true">
-      <svg viewBox="0 0 128 128" focusable="false">
-        <defs>
-          <linearGradient id="cvAppLogoBg" x1="18" y1="10" x2="112" y2="118" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#161c18" />
-            <stop offset="0.58" stopColor="#090d0b" />
-            <stop offset="1" stopColor="#030404" />
-          </linearGradient>
-          <linearGradient id="cvAppLogoOrange" x1="21" y1="18" x2="105" y2="109" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#ffad55" />
-            <stop offset="0.5" stopColor="#f97316" />
-            <stop offset="1" stopColor="#dc3f17" />
-          </linearGradient>
-          <linearGradient id="cvAppLogoWhite" x1="39" y1="43" x2="95" y2="86" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#ffffff" />
-            <stop offset="1" stopColor="#dce3ec" />
-          </linearGradient>
-          <filter id="cvAppLogoLift" x="-25%" y="-25%" width="150%" height="150%">
-            <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#000000" floodOpacity="0.36" />
-          </filter>
-        </defs>
-        <rect x="7" y="7" width="114" height="114" rx="29" fill="url(#cvAppLogoBg)" />
-        <rect x="8.5" y="8.5" width="111" height="111" rx="27.5" fill="none" stroke="#ffffff" strokeOpacity="0.08" strokeWidth="2" />
-        <g filter="url(#cvAppLogoLift)">
-          <path d="M92 38C85 27 73 21 60 21C37 21 18 40 18 64C18 88 37 107 60 107C75 107 87 100 95 89" fill="none" stroke="url(#cvAppLogoOrange)" strokeWidth="15" strokeLinecap="round" />
-          <path d="M39 66L56 82L92 43" fill="none" stroke="url(#cvAppLogoWhite)" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
-        </g>
-        <circle cx="95" cy="38" r="6.5" fill="#f97316" />
-      </svg>
+    <div className={`cvAppLogoMark ${compact ? "compact" : ""} ${wordmark ? "wordmark" : ""}`} aria-label="Churvox logo">
+      <img src={wordmark ? "/churvox-mark.svg?v=real-logo-login-flow-20260707" : "/churvox-app-icon.svg?v=real-logo-login-flow-20260707"} alt="Churvox" />
     </div>
   );
 }
@@ -99,11 +72,12 @@ const getPostLoginPath = (payload = {}) => {
   const role = normalizeRole(roleRaw);
   const isPlatformOwner =
     email === "hello@churvox.com" ||
+    email === "howardjennings77@gmail.com" ||
     user?.is_platform_owner === true ||
     user?.is_admin === true;
 
   if (isPlatformOwner) return "/admin";
-  if (looksWorker(user, payload)) return "/worker/jobs";
+  if (looksWorker(user, payload)) return "/worker/today";
   if (looksPayroll(user, payload)) return "/payroll-board";
   if (isWorkerRole(role) || isPayrollRole(role)) return getDefaultRoute(role);
 
@@ -152,6 +126,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const appMode = typeof window !== "undefined" && new URLSearchParams(window.location.search || "").get("app") === "1";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -193,87 +168,71 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="cvPublicAuth cvRealAppLogin" data-version="CHURVOX_REAL_APP_LOGO_SCREEN_20260707">
-      <Nav />
+    <main className={`cvPublicAuth cvRealAppLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_REAL_LOGO_LOGIN_FLOW_20260707">
+      {!appMode ? <Nav /> : null}
       <section className="cvPublicAuthShell cvRealAppShell">
-        <aside className="cvAppScreenStage" aria-label="Churvox mobile app logo screen preview">
-          <div className="cvAppScreenBrandLockup">
-            <ChurvoxAppLogo />
-            <div>
-              <h2>Churvox</h2>
-              <p>Does the admin. <strong>You approve.</strong></p>
+        {!appMode ? (
+          <aside className="cvAppScreenStage" aria-label="Churvox mobile app logo screen preview">
+            <div className="cvAppScreenBrandLockup">
+              <ChurvoxAppLogo />
+              <div>
+                <h2>Churvox</h2>
+                <p>Does the admin. <strong>You approve.</strong></p>
+              </div>
             </div>
-          </div>
 
-          <div className="cvPhoneFrame" aria-hidden="true">
-            <div className="cvPhoneStatus"><span>9:41</span><i /></div>
-            <div className="cvPhoneSplashLogo"><ChurvoxAppLogo /></div>
-            <div className="cvPhoneWordmark">Churvo<span>x</span></div>
-            <p className="cvPhonePromise">Does the admin. <b>You approve.</b></p>
-            <div className="cvPhoneSignals">
-              <span><b>5</b><small>approvals</small></span>
-              <span><b>8</b><small>jobs today</small></span>
-              <span><b>$24k</b><small>waiting</small></span>
-              <span><b>3</b><small>field updates</small></span>
+            <div className="cvPhoneFrame" aria-hidden="true">
+              <div className="cvPhoneStatus"><span>9:41</span><i /></div>
+              <div className="cvPhoneSplashLogo"><ChurvoxAppLogo /></div>
+              <div className="cvPhoneWordmark">Churvo<span>x</span></div>
+              <p className="cvPhonePromise">Does the admin. <b>You approve.</b></p>
+              <div className="cvPhoneSignals">
+                <span><b>5</b><small>approvals</small></span>
+                <span><b>8</b><small>jobs today</small></span>
+                <span><b>$24k</b><small>waiting</small></span>
+                <span><b>3</b><small>field updates</small></span>
+              </div>
             </div>
-          </div>
 
-          <div className="cvAppScreenNotes">
-            <span>Owner command</span>
-            <span>Field flow</span>
-            <span>Proof + messages</span>
-          </div>
-        </aside>
+            <div className="cvAppScreenNotes">
+              <span>Owner command</span>
+              <span>Field flow</span>
+              <span>Proof + messages</span>
+            </div>
+          </aside>
+        ) : null}
 
         <form className="cvPublicAuthCard cvRealAppAuthCard" onSubmit={handleSubmit}>
           <div className="cvLoginMiniBrand">
             <ChurvoxAppLogo compact />
             <div>
               <b>Churvox</b>
-              <small>Owner approval desk</small>
+              <small>{appMode ? "Worker and owner sign in" : "Owner approval desk"}</small>
             </div>
           </div>
 
           <p className="cvPublicAuthKicker">Welcome back</p>
-          <h1>Open Command.</h1>
+          <h1>{appMode ? "Sign in." : "Open Command."}</h1>
           <p className="cvPublicAuthIntro">
-            Sign in to check the admin Churvox prepared, approve what is ready, and keep work moving.
+            {appMode ? "Use your Churvox login. Workers open the field app. Owners open the command floor." : "Sign in to check the admin Churvox prepared, approve what is ready, and keep work moving."}
           </p>
 
           {error ? <div className="cvPublicAuthError">{error}</div> : null}
 
           <label>
             Email
-            <input
-              className="cvPublicNativeInput"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@business.co.nz"
-              autoComplete="email"
-            />
+            <input className="cvPublicNativeInput" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@business.co.nz" autoComplete="email" />
           </label>
 
           <label>
             Password
             <div className="password-row">
-              <input
-                className="cvPublicNativeInput"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Your password"
-                autoComplete="current-password"
-              />
-              <button className="cvPublicAuthGhost" type="button" onClick={() => setShowPassword((v) => !v)}>
-                {showPassword ? "Hide" : "Show"}
-              </button>
+              <input className="cvPublicNativeInput" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" autoComplete="current-password" />
+              <button className="cvPublicAuthGhost" type="button" onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Hide" : "Show"}</button>
             </div>
           </label>
 
-          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting}>
-            {submitting ? "Signing in..." : "Sign in"}
-          </button>
+          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting}>{submitting ? "Signing in..." : "Sign in"}</button>
 
           <p className="cvPublicAuthBottom">
             <Link to="/forgot-password">Forgot password?</Link>
