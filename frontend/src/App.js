@@ -175,8 +175,6 @@ function App() {
             <Route path="/command-board" element={<AppRedirect to="/dashboard#command" />} />
             <Route path="/operator-tools" element={<AppRedirect to="/dashboard#command" />} />
             <Route path="/cockpit" element={<AppRedirect to="/dashboard#command" />} />
-            <Route path="/ai-operator" element={<AppRedirect to="/dashboard#command" />} />
-            <Route path="/ai-operator/approvals" element={<AppRedirect to="/dashboard#command" />} />
 
             <Route path="/jobs" element={<AppRedirect to="/dashboard#jobs" />} />
             <Route path="/jobs-board" element={<AppRedirect to="/dashboard#jobs" />} />
