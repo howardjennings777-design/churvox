@@ -78,6 +78,7 @@ for _patch in [
     'churvox_owner_data_debug_patch',
     'churvox_wiring_health_patch',
     'churvox_api_request_422_fix_patch',
+    'churvox_tester_email_send_final_patch',
 ]:
     _install_launch_patch(_patch)
 
