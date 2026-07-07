@@ -5,6 +5,7 @@ import { normalizeRole, getDefaultRoute, isWorkerRole, isPayrollRole } from "@/l
 import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
 import "./RealAppLoginScreen.css";
+import "./RealLogoBlend.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
@@ -13,7 +14,7 @@ const LOGIN_TIMEOUT_MS = 28000;
 function ChurvoxAppLogo({ compact = false, wordmark = false }) {
   return (
     <div className={`cvAppLogoMark ${compact ? "compact" : ""} ${wordmark ? "wordmark" : ""}`} aria-label="Churvox logo">
-      <img src={wordmark ? "/churvox-mark.svg?v=real-logo-login-flow-20260707" : "/churvox-app-icon.svg?v=real-logo-login-flow-20260707"} alt="Churvox" />
+      <img src="/churvox-mark.svg?v=transparent-real-mark-20260707" alt="Churvox" />
     </div>
   );
 }
@@ -168,7 +169,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className={`cvPublicAuth cvRealAppLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_REAL_LOGO_LOGIN_FLOW_20260707">
+    <main className={`cvPublicAuth cvRealAppLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_TRANSPARENT_REAL_LOGO_LOGIN_20260707">
       {!appMode ? <Nav /> : null}
       <section className="cvPublicAuthShell cvRealAppShell">
         {!appMode ? (
