@@ -9,7 +9,7 @@ function keyOf(value) {
 function pageKey() {
   const hash = keyOf(String(location.hash || '').replace(/^#/, '').split('?')[0]);
   const path = keyOf((location.pathname || '').split('/')[1] || 'dashboard');
-  const aliases = { aiguide: 'guide', guide: 'guide', dashboard: 'guide', smarthub: 'guide', today: 'guide' };
+  const aliases = { aiguide: 'guide', guide: 'guide', help: 'guide', support: 'guide' };
   return aliases[hash] || aliases[path] || hash || path;
 }
 
@@ -27,9 +27,17 @@ function installStyles() {
   document.head.appendChild(style);
 }
 
+function removeMarker() {
+  document.getElementById(PROPER_ID)?.remove();
+  document.getElementById(OLD_ID)?.remove();
+}
+
 function renderMarker() {
   installStyles();
-  if (pageKey() !== 'guide') return;
+  if (pageKey() !== 'guide') {
+    removeMarker();
+    return;
+  }
   const workspace = document.querySelector('.cvxPage, .cocPage, .workspace, main');
   if (!workspace) return;
   document.getElementById(OLD_ID)?.remove();
