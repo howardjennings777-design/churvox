@@ -49,9 +49,21 @@ function hasLabel(root, label) {
   return [...root.querySelectorAll('label')].some((node) => new RegExp(`^${label}$`, 'i').test(labelText(node)));
 }
 
+function isCommandApprovalDrawer(drawer) {
+  if (!drawer) return false;
+  if (drawer.classList?.contains('approval')) return true;
+  const text = clean(drawer.textContent).toLowerCase();
+  return /command slip|approval slip|approval type|recommended action|what churvox filled|owner check/.test(text);
+}
+
+function removeLedgerFields(drawer) {
+  if (!drawer) return;
+  drawer.querySelectorAll(`[${FIELD_MARK}="true"]`).forEach((node) => node.remove());
+}
+
 function getFieldValueFromDrawer(label) {
   const drawer = visibleDrawer();
-  if (!drawer) return '';
+  if (!drawer || isCommandApprovalDrawer(drawer)) return '';
   const wanted = [...drawer.querySelectorAll('label')].find((node) => new RegExp(`^${label}$`, 'i').test(labelText(node)));
   const input = wanted?.querySelector?.('input, textarea, select');
   return clean(input?.value || '');
@@ -81,17 +93,23 @@ function addField(root, label, value, type = 'text', afterPattern = /Amount|Clie
 }
 
 function isQuoteDrawer(drawer) {
+  if (isCommandApprovalDrawer(drawer)) return false;
   const text = clean(drawer.textContent).toLowerCase();
   return /quote/.test(text) && (/scope/.test(text) || /terms/.test(text) || /follow-up/.test(text));
 }
 
 function isInvoiceDrawer(drawer) {
+  if (isCommandApprovalDrawer(drawer)) return false;
   const text = clean(drawer.textContent).toLowerCase();
-  return /invoice/.test(text) && (/xero|myob|due date|line item|evidence/.test(text));
+  return /invoice/.test(text) && (/xero|myob|due date|line item/.test(text));
 }
 
 function enhanceDrawer(drawer) {
   if (!drawer || !visible(drawer)) return;
+  if (isCommandApprovalDrawer(drawer)) {
+    removeLedgerFields(drawer);
+    return;
+  }
   const defaults = ledgerDefaults();
 
   if (isQuoteDrawer(drawer)) {
@@ -106,7 +124,6 @@ function enhanceDrawer(drawer) {
     addField(drawer, 'Currency', defaults.currency, 'text', /Amount|Client|Job/i);
     addField(drawer, 'Tax name', defaults.tax_name, 'text', /Currency|Amount/i);
     addField(drawer, 'Tax rate', defaults.tax_rate, 'number', /Tax name|Currency/i);
-    addField(drawer, 'Business ID', defaults.business_id_value, 'text', /Tax rate|Tax name/i);
   }
 }
 
@@ -138,7 +155,7 @@ function enrichAccountingPayload(url, options = {}) {
 
   if (isInvoice) {
     next.invoice_title = body.invoice_title || getFieldValueFromDrawer('Invoice title') || defaults.invoice_title;
-    next.business_id_value = body.business_id_value || getFieldValueFromDrawer('Business ID') || defaults.business_id_value;
+    next.business_id_value = body.business_id_value || getFieldValueFromDrawer('Business ID') || defaults.business_id_value || 'not supplied';
     next.auto_sent = false;
     next.owner_approval_required = true;
     next.accounting_handoff = 'draft_sync_or_export_only';
