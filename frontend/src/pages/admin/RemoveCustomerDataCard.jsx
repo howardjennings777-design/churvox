@@ -41,23 +41,23 @@ export default function RemoveCustomerDataCard({ onRemoved }) {
   }
 
   return (
-    <section className="rounded-[28px] border border-red-500/30 bg-red-500/10 p-5">
-      <h3 className="mb-2 text-xl font-black text-red-100">Remove customer records by email</h3>
-      <p className="max-w-2xl text-sm font-bold leading-6 text-red-100/80">
+    <section className="rounded-[30px] border border-red-200 bg-red-50 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.07)]">
+      <h3 className="mb-2 text-xl font-black text-red-800">Remove customer records by email</h3>
+      <p className="max-w-2xl text-sm font-bold leading-6 text-red-700">
         Owner-only data removal for a customer email and connected Churvox workspace records. Type DELETE to confirm.
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_180px_auto]">
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@churvox.com" className="rounded-2xl border border-red-500/30 bg-slate-950 px-4 py-3 text-sm font-bold text-white outline-none" />
-        <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Type DELETE" className="rounded-2xl border border-red-500/30 bg-slate-950 px-4 py-3 text-sm font-bold text-white outline-none" />
-        <button type="button" onClick={removeCustomerRecords} disabled={busy || confirm !== "DELETE" || !email} className="rounded-2xl border border-red-400/40 bg-red-500 px-5 py-3 text-sm font-black text-white disabled:opacity-40">
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="customer@email.com" className="rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none focus:border-red-400" />
+        <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Type DELETE" className="rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-slate-950 outline-none focus:border-red-400" />
+        <button type="button" onClick={removeCustomerRecords} disabled={busy || confirm !== "DELETE" || !email} className="rounded-2xl border border-red-500 bg-red-600 px-5 py-3 text-sm font-black text-white disabled:opacity-40">
           {busy ? "Removing…" : "Remove records"}
         </button>
       </div>
-      {error ? <p className="mt-3 rounded-2xl border border-red-500/30 bg-red-950/60 p-3 text-sm font-black text-red-100">{error}</p> : null}
+      {error ? <p className="mt-3 rounded-2xl border border-red-200 bg-white p-3 text-sm font-black text-red-700">{error}</p> : null}
       {result ? (
-        <div className="mt-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm font-black text-emerald-100">
+        <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-black text-emerald-700">
           <p>{result.message}</p>
-          <pre className="mt-2 overflow-auto text-xs text-emerald-100">{JSON.stringify(result.deleted || {}, null, 2)}</pre>
+          <pre className="mt-2 overflow-auto text-xs text-emerald-700">{JSON.stringify(result.deleted || {}, null, 2)}</pre>
         </div>
       ) : null}
     </section>
