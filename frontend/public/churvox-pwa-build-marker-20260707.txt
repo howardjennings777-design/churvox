@@ -1,0 +1,5 @@
+CHURVOX_PWA_BUILD_MARKER_20260707
+Expected assets:
+/app
+/app-icon-512.png
+/manifest.json
