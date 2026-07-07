@@ -24,6 +24,7 @@ for _module in [
     "churvox_command_readiness_fix_patch",
     "churvox_command_readiness_hardening_patch",
     "churvox_approval_execution_patch",
+    "churvox_auto_smart_patch",
     "churvox_invoice_vault_patch",
     "churvox_invoice_vault_guard_patch",
     "churvox_plan_usage_guard_patch",
