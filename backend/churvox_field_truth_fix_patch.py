@@ -123,12 +123,26 @@ def install(module):
         slip = await fixed_create_field_slip(db, user, ObjectId, job_id, payload)
         return base.json_safe({"success": True, "slip": slip, "command_item": base.command_item_from_slip(slip)})
 
+    async def loose_field_slip_endpoint(request: Request):
+        user = await get_current_user(request)
+        payload = await base.read_payload(request)
+        job_id = base.clean(
+            (payload or {}).get("job_id")
+            or (payload or {}).get("jobId")
+            or (payload or {}).get("record_id")
+            or (payload or {}).get("recordId")
+            or "general-message"
+        )
+        slip = await fixed_create_field_slip(db, user, ObjectId, job_id, payload)
+        return base.json_safe({"success": True, "slip": slip, "command_item": base.command_item_from_slip(slip)})
+
     async def offline_sync_endpoint(request: Request):
         user = await get_current_user(request)
         return base.json_safe(await fixed_offline_sync(db, user, ObjectId, await base.read_payload(request)))
 
     for method, path, endpoint in [
         ("POST", "/api/worker/jobs/{job_id}/field-slip", field_slip_endpoint),
+        ("POST", "/api/worker/field-slip", loose_field_slip_endpoint),
         ("POST", "/api/worker/offline-sync", offline_sync_endpoint),
     ]:
         remove_route(app, path, method)
