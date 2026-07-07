@@ -5,6 +5,7 @@ import './index.css';
 import './churvox-product/productTypeScale.css';
 import './styles/public-premium-force.css';
 import './styles/churvoxMobileAppPolish.css';
+import './pages/marketing/PublicMobileFirst.css';
 import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxPlainSendGuardRuntime';
@@ -59,6 +60,7 @@ const ownerRuntimeImports = [
   () => import('./churvox-product/productMoneyIdentity.css'),
   () => import('./churvox-product/productOpsIdentity.css'),
   () => import('./churvox-product/productSupportIdentity.css'),
+  () => import('./runtime/churvoxOwnerPocketCommandRuntime'),
 ];
 
 const workerRuntimeImports = [
