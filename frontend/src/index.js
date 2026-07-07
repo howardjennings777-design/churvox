@@ -15,6 +15,7 @@ import './runtime/churvoxKiwiCopyGuard';
 import './runtime/churvoxSetupCoachKillRuntime';
 import './runtime/churvoxPaidLaunchSurfaceRuntime';
 import './runtime/churvoxExactFormLabelsRuntime';
+import './runtime/churvoxPlatformOwnerControlCentreRuntime';
 
 const staticPublicPageRendered = Boolean(
   typeof window !== 'undefined' && window.__CHURVOX_STATIC_PUBLIC_PAGE_RENDERED__ === true
