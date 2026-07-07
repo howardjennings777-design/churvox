@@ -68,8 +68,8 @@ const workerRuntimeImports = [
   () => import('./churvox-fresh/optionFWorkerCopyScrubRuntime'),
   () => import('./pages/worker/WorkerNoFussPremium.css'),
   () => import('./pages/worker/WorkerRealLogo.css'),
-  () => import('./pages/worker/WorkerAdminLedger.css'),
-  () => import('./runtime/churvoxWorkerAdminLedgerRuntime'),
+  () => import('./pages/worker/WorkerAppCleanMobile.css'),
+  () => import('./runtime/churvoxWorkerAppCleanRuntime'),
 ];
 
 const hqRuntimeImports = [
