@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { getDefaultRoute } from "@/lib/roles";
 import "./PwaLaunchPage.css";
+import "./PwaLaunchLogoBlend.css";
 
 function AppLogo() {
   return (
