@@ -26,6 +26,7 @@ for _module in [
     "churvox_approval_execution_patch",
     "churvox_auto_smart_patch",
     "churvox_auto_smart_safe_patch",
+    "churvox_auto_smart_memory_patch",
     "churvox_invoice_vault_patch",
     "churvox_invoice_vault_guard_patch",
     "churvox_plan_usage_guard_patch",
