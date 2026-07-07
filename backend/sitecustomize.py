@@ -29,6 +29,7 @@ for _module in [
     "churvox_auto_smart_memory_patch",
     "churvox_command_truth_guard_patch",
     "churvox_command_execution_safety_patch",
+    "churvox_command_trust_desk_routes_patch",
     "churvox_invoice_vault_patch",
     "churvox_invoice_vault_guard_patch",
     "churvox_plan_usage_guard_patch",
