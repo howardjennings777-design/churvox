@@ -30,6 +30,17 @@ function parseBody(init) {
   return {};
 }
 
+function apiRootFromUrl(url) {
+  try {
+    const text = clean(url);
+    const index = text.indexOf('/api/admin/owner/tester-intake');
+    if (index <= 0) return '';
+    return text.slice(0, index).replace(/\/$/, '');
+  } catch {
+    return '';
+  }
+}
+
 function linkFromInvite(invite) {
   const body = invite?.response || {};
   const request = invite?.request || {};
@@ -85,7 +96,8 @@ async function resendInvite(button) {
   button.textContent = 'Resending…';
   button.disabled = true;
   try {
-    const response = await window.__CHURVOX_ORIGINAL_FETCH__(`${window.__CHURVOX_API_BASE__ || ''}/api/admin/owner/tester-intake`, {
+    const apiRoot = clean(invite?.apiRoot || window.__CHURVOX_LAST_TESTER_API_ROOT__ || '');
+    const response = await window.__CHURVOX_ORIGINAL_FETCH__(`${apiRoot}/api/admin/owner/tester-intake`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -96,7 +108,7 @@ async function resendInvite(button) {
       body: JSON.stringify(request),
     });
     const body = await response.json().catch(() => ({}));
-    setLastInvite({ request, response: body, at: Date.now() });
+    setLastInvite({ request, response: body, apiRoot, at: Date.now() });
     button.textContent = body?.email?.email_sent ? 'Email resent' : 'Saved again';
     setTimeout(injectPanel, 50);
   } catch {
@@ -148,12 +160,14 @@ function installFetchCapture() {
     const url = typeof input === 'string' ? input : input?.url || '';
     const isTesterIntake = ENDPOINT_RE.test(url);
     const request = isTesterIntake ? parseBody(init) : null;
+    const apiRoot = isTesterIntake ? apiRootFromUrl(url) : '';
     const response = await window.__CHURVOX_ORIGINAL_FETCH__(input, init);
     if (isTesterIntake) {
       try {
         const cloned = response.clone();
         const body = await cloned.json().catch(() => ({}));
-        setLastInvite({ request, response: body, at: Date.now() });
+        try { window.__CHURVOX_LAST_TESTER_API_ROOT__ = apiRoot; } catch {}
+        setLastInvite({ request, response: body, apiRoot, at: Date.now() });
         setTimeout(injectPanel, 80);
         setTimeout(injectPanel, 350);
       } catch {}
@@ -190,9 +204,6 @@ function schedule() {
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window[FLAG]) {
   window[FLAG] = true;
-  try {
-    window.__CHURVOX_API_BASE__ = window.__CHURVOX_API_BASE__ || '';
-  } catch {}
   installFetchCapture();
   installEvents();
   schedule();
