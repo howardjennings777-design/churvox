@@ -4,10 +4,15 @@ const FLAG = '__CHURVOX_PLATFORM_OWNER_CONTROL_CENTRE_RUNTIME__';
 const ROOT_ID = 'churvox-platform-owner-bug-watch';
 const STYLE_ID = 'churvox-platform-owner-light-style';
 const API_ROOT = String(API_BASE || '').replace(/\/$/, '');
+const NATIVE_HQ_SELECTOR = '[data-churvox-native-hq="1"]';
 
 function isPlatformOwnerPath() {
   const path = String(window.location.pathname || '').toLowerCase();
   return path === '/admin' || path === '/admin/hq' || path === '/churvox-hq' || path === '/owner/dashboard' || path === '/platform-dashboard' || path === '/app-owner';
+}
+
+function shouldRuntimeBackOff() {
+  return Boolean(document.querySelector(NATIVE_HQ_SELECTOR));
 }
 
 function token() {
@@ -28,23 +33,15 @@ async function apiGet(path) {
 function arr(value) { return Array.isArray(value) ? value : []; }
 function txt(value, fallback = '—') { return String(value ?? '').replace(/\s+/g, ' ').trim() || fallback; }
 function money(value) { return Number(value || 0).toLocaleString('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 0 }); }
-function low(value) { return String(value || '').toLowerCase(); }
+function htmlEscape(value) {
+  return txt(value, '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
 
 function installStyle() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    body:has(#${ROOT_ID}){background:#f7f3ea!important}
-    body:has(#${ROOT_ID}) main{background:#f7f3ea!important;color:#0f172a!important}
-    body:has(#${ROOT_ID}) aside{background:rgba(255,255,255,.96)!important;border-color:#e2e8f0!important;color:#0f172a!important}
-    body:has(#${ROOT_ID}) aside section,body:has(#${ROOT_ID}) header,body:has(#${ROOT_ID}) article{background:#fff!important;border-color:#e2e8f0!important;color:#0f172a!important;box-shadow:0 14px 36px rgba(15,23,42,.06)!important}
-    body:has(#${ROOT_ID}) h1,body:has(#${ROOT_ID}) h2,body:has(#${ROOT_ID}) h3,body:has(#${ROOT_ID}) b{color:#0f172a!important}
-    body:has(#${ROOT_ID}) p,body:has(#${ROOT_ID}) span,body:has(#${ROOT_ID}) td{color:#475569!important}
-    body:has(#${ROOT_ID}) table{background:#fff!important;color:#0f172a!important}
-    body:has(#${ROOT_ID}) thead{background:#f8fafc!important;color:#64748b!important}
-    body:has(#${ROOT_ID}) tr{border-color:#e2e8f0!important}
-    body:has(#${ROOT_ID}) input,body:has(#${ROOT_ID}) select,body:has(#${ROOT_ID}) textarea{background:#fff!important;border-color:#cbd5e1!important;color:#0f172a!important}
     #${ROOT_ID}{margin:0 0 22px;grid-column:1/-1;color:#0f172a;font-family:inherit}
     #${ROOT_ID} *{box-sizing:border-box}
     .hqControlShell{position:relative;overflow:hidden;border:1px solid #fed7aa;border-radius:34px;background:linear-gradient(135deg,#fff 0%,#fff7ed 48%,#f8fafc 100%);box-shadow:0 24px 80px rgba(15,23,42,.1)}
@@ -94,7 +91,7 @@ function buildSignals(state) {
   const billingIssues = arr(lists.users).filter((user) => /past|fail|required|locked|unpaid|cancel/i.test(txt(user.subscription_status || user.billing_status || user.status, ''))).length;
   if (billingIssues) issues.push(makeIssue('watch', `${billingIssues} billing/access issue${billingIssues === 1 ? '' : 's'}`, 'Open Billing and inspect accounts needing payment/access help.'));
   const retentionFailures = arr(overview.retention_email_state?.last_result?.failures || overview.retention_email_state?.failures);
-  if (retentionFailures.length) issues.push(makeIssue('watch', `${retentionFailures.length} email send failure${retentionFailures.length === 1 ? '' : 's'}`, 'Check lifecycle email/Postmark status.'));
+  if (retentionFailures.length) issues.push(makeIssue('watch', `${retentionFailures.length} email send failure${retentionFailures.length === 1 ? '' : 's'}`, 'Check lifecycle email delivery status.'));
   const supportSignals = arr(lists.businesses).filter((user) => {
     const id = String(user.business_id || user.id || user._id || '');
     const jobs = arr(lists.jobs).filter((job) => String(job.business_id || job.owner_id || '') === id).length;
@@ -103,10 +100,6 @@ function buildSignals(state) {
   }).length;
   if (supportSignals) issues.push(makeIssue('watch', `${supportSignals} setup/support signal${supportSignals === 1 ? '' : 's'}`, 'Some businesses may need onboarding help.'));
   return issues.length ? issues : [makeIssue('clear', 'No urgent bugs detected', 'Core HQ data loaded and no serious warning was found.')];
-}
-
-function htmlEscape(value) {
-  return txt(value, '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
 function render(root, state) {
@@ -124,7 +117,7 @@ function render(root, state) {
           <div>
             <span class="hqControlBadge">Churvox owner control</span>
             <h2>HQ control centre</h2>
-            <p>This is for you, the app owner. It watches users, plans, testers, support signals and bug indicators without showing this cockpit inside customer accounts.</p>
+            <p>This fallback panel only appears on HQ routes that do not already have the native light cockpit. Customer accounts do not get this control centre.</p>
           </div>
           <div class="hqControlActions">
             <small>${state.loadedAt ? `Updated ${state.loadedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Loading live data'}</small>
@@ -152,7 +145,7 @@ function render(root, state) {
             <div class="hqBugList">
               <div class="hqBugItem clear"><span><b>Owner lock</b><span>HQ is locked to hello@churvox.com.</span></span><em>secure</em></div>
               <div class="hqBugItem ${state.endpointErrors.length ? 'bad' : 'clear'}"><span><b>Admin APIs</b><span>${state.endpointErrors.length ? `${state.endpointErrors.length} endpoint problem(s)` : 'Overview, plan and retention endpoints loaded.'}</span></span><em>${state.endpointErrors.length ? 'check' : 'ok'}</em></div>
-              <div class="hqBugItem watch"><span><b>Customer app untouched</b><span>This cockpit only runs on admin/HQ routes.</span></span><em>admin only</em></div>
+              <div class="hqBugItem watch"><span><b>Customer app untouched</b><span>This fallback only runs on admin/HQ routes.</span></span><em>admin only</em></div>
             </div>
           </section>
         </div>
@@ -182,7 +175,7 @@ async function loadState() {
 }
 
 async function ensureControlCentre() {
-  if (!isPlatformOwnerPath()) {
+  if (!isPlatformOwnerPath() || shouldRuntimeBackOff()) {
     document.getElementById(ROOT_ID)?.remove();
     return;
   }
