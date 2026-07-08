@@ -82,6 +82,7 @@ for _patch in [
     'churvox_email_provider_status_patch',
     'churvox_nav_attention_counts_patch',
     'churvox_nav_attention_counts_status_fix_patch',
+    'churvox_nav_attention_request_signature_fix_patch',
     'churvox_industry_mode_patch',
     'churvox_industry_mode_request_fix_patch',
     'churvox_business_profile_required_patch',
