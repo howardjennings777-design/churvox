@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
-import { BusinessCoverageSection, ProfessionStrip, TradeFlowSection } from "./PublicProfessionSections";
+import { BetaProofSection, BusinessCoverageSection, ProductScreensSection, ProfessionStrip, TradeFlowSection } from "./PublicProfessionSections";
 import "../../runtime/churvoxPublicCopyRuntime";
 import "./SimplePublic.css";
 
@@ -21,7 +21,6 @@ const commandQueue = [
 ];
 
 const stack = ["Today", "Command", "Jobs", "Workers", "Money"];
-
 const proof = ["14-day trial", "No card upfront", "Owner approval built in", "For service trades and crews"];
 
 const flow = [
@@ -132,7 +131,7 @@ function CommandScreen() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PUBLIC_SERVICE_PLATFORM_20260708">
+    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PUBLIC_JOINED_UP_PLATFORM_20260708">
       <Nav />
 
       <section className="cv2Hero slimHero">
@@ -164,6 +163,7 @@ export default function ExecutiveHomePage() {
       </section>
 
       <TradeFlowSection />
+      <ProductScreensSection />
 
       <section className="cv2Section cv2SplitFeature slimBand">
         <div>
@@ -178,6 +178,7 @@ export default function ExecutiveHomePage() {
       </section>
 
       <BusinessCoverageSection />
+      <BetaProofSection />
 
       <section className="cv2Section cv2PricingTeaser slimBand">
         <div className="cv2SectionHead row">
