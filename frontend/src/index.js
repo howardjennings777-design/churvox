@@ -12,6 +12,7 @@ import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxForbiddenExampleScrubRuntime';
+import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 
 const rootEl = document.getElementById('root');
 const staticPublicPageRendered = Boolean(
