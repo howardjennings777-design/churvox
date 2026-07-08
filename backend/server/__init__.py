@@ -74,6 +74,7 @@ for _patch in [
     'churvox_hq_unique_visitors_patch',
     'churvox_hq_growth_report_patch',
     'churvox_internal_support_patch',
+    'churvox_record_delete_patch',
     'churvox_on_site_payments_patch',
     'churvox_on_site_payments_request_signature_fix_patch',
     'churvox_terminal_reader_patch',
