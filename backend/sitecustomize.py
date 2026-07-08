@@ -16,6 +16,7 @@ for _module in [
     "churvox_monthly_job_limit",
     "churvox_ai_action_limit",
     "churvox_job_timer_routes_patch",
+    "churvox_permissions_policy_patch",
     "churvox_old_backend_bridge_patch",
     "churvox_field_truth_patch",
     "churvox_field_truth_fix_patch",
