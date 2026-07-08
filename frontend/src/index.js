@@ -78,6 +78,7 @@ const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxDrawerRecordActionsRuntime'),
+  () => import('./runtime/churvoxAllPagesPolishRuntime'),
   () => import('./runtime/churvoxMessagesPagePolishRuntime'),
   () => import('./runtime/churvoxAppIndustryRuntime'),
   () => import('./runtime/churvoxInternalSupportRuntime'),
