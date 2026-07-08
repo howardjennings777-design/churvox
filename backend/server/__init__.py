@@ -93,6 +93,7 @@ for _patch in [
     'churvox_business_logic_health_patch',
     'churvox_business_system_suite_patch',
     'churvox_auto_smart_patch',
+    'churvox_auto_smart_request_signature_fix_patch',
     'churvox_jobs_proof_pack_safe_patch',
     'churvox_jobs_proof_pack_middleware_guard_patch',
 ]:
