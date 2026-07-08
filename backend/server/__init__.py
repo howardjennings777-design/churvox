@@ -80,6 +80,8 @@ for _patch in [
     'churvox_api_request_422_fix_patch',
     'churvox_tester_email_send_final_patch',
     'churvox_email_provider_status_patch',
+    'churvox_business_logic_health_patch',
+    'churvox_business_system_suite_patch',
 ]:
     _install_launch_patch(_patch)
 
