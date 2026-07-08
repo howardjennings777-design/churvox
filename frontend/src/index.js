@@ -82,6 +82,7 @@ const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxMessagesPagePolishRuntime'),
   () => import('./runtime/churvoxRemovePageIntentStripRuntime'),
   () => import('./runtime/churvoxCompactHeroDesignRuntime'),
+  () => import('./runtime/churvoxNoHeroPageStartsRuntime'),
   () => import('./runtime/churvoxAppIndustryRuntime'),
   () => import('./runtime/churvoxInternalSupportRuntime'),
   () => import('./runtime/churvoxTidyRealSlipRuntime'),
