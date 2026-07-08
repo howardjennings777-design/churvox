@@ -28,6 +28,8 @@ if (rootEl && !staticPublicPageRendered) {
 }
 
 let ownerRuntimeLoaded = false;
+let ownerHeavyRuntimeLoaded = false;
+let setupRuntimeLoaded = false;
 let workerRuntimeLoaded = false;
 let hqRuntimeLoaded = false;
 let globalHelpersLoaded = false;
@@ -47,14 +49,16 @@ const globalHelperImports = [
   () => import('./runtime/churvoxFirstWinGuideEntryRuntime'),
 ];
 
-const ownerRuntimeImports = [
-  () => import('./runtime/churvoxIndustryModeRuntime'),
+const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxCommandSlipPolishRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
-  () => import('./runtime/churvoxCommandBrainRuntime'),
   () => import('./runtime/churvoxPaymentSetupRuntime'),
   () => import('./runtime/churvoxOwnerHeaderLogoRuntime'),
+];
+
+const ownerHeavyRuntimeImports = [
+  () => import('./runtime/churvoxCommandBrainRuntime'),
   () => import('./churvox-product/productAdminLedgerLanes.css'),
   () => import('./runtime/churvoxOwnerAdminLedgerRuntime'),
   () => import('./runtime/churvoxTrueAdminLedgerFormsRuntime'),
@@ -100,25 +104,49 @@ function currentPath() {
   return typeof window === 'undefined' ? '' : window.location.pathname || '';
 }
 
+function currentParams() {
+  try { return new URLSearchParams(window.location.search || ''); } catch { return new URLSearchParams(); }
+}
+
 function isPublicFastPath(path) {
   return path === '/' || path === '/product' || path === '/features' || path === '/demo' || path === '/pricing' || path === '/request' || path === '/contact' || path.startsWith('/public') || path === '/login' || path === '/signup' || path === '/forgot-password' || path === '/reset-password';
+}
+
+function isSetupProfilePath(path) {
+  const q = currentParams();
+  return path === '/setup' || path === '/setup-guide' || path === '/guide' || q.get('business_profile') === '1' || q.get('profile') === '1' || q.get('tester') === '1' || q.get('first_setup') === '1';
 }
 
 function loadGlobalHelpersAfterPaint() {
   if (globalHelpersLoaded || typeof window === 'undefined') return;
   globalHelpersLoaded = true;
   const path = currentPath();
-  const delay = isPublicFastPath(path) ? 1800 : 450;
+  const delay = isPublicFastPath(path) ? 2200 : 900;
   window.setTimeout(() => runImports(globalHelperImports), delay);
 }
 
+function loadSetupRuntimeWhenNeeded() {
+  if (setupRuntimeLoaded || typeof window === 'undefined') return;
+  const path = currentPath();
+  if (!isSetupProfilePath(path)) return;
+  setupRuntimeLoaded = true;
+  window.setTimeout(() => runImports([() => import('./runtime/churvoxIndustryModeRuntime')]), 350);
+}
+
 function loadOwnerRuntimeWhenInsideApp() {
-  if (ownerRuntimeLoaded || typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return;
   const path = currentPath();
   const isOwnerApp = path === '/dashboard' || path === '/plans' || path === '/guide' || path === '/setup' || path === '/setup-guide' || path.startsWith('/dashboard');
   if (!isOwnerApp) return;
-  ownerRuntimeLoaded = true;
-  window.setTimeout(() => runImports(ownerRuntimeImports), 300);
+  if (!ownerRuntimeLoaded) {
+    ownerRuntimeLoaded = true;
+    window.setTimeout(() => runImports(ownerFastRuntimeImports), 650);
+  }
+  loadSetupRuntimeWhenNeeded();
+  if (!ownerHeavyRuntimeLoaded && !isSetupProfilePath(path)) {
+    ownerHeavyRuntimeLoaded = true;
+    window.setTimeout(() => runImports(ownerHeavyRuntimeImports), 2600);
+  }
 }
 
 function loadWorkerRuntimeWhenInsideWorkerApp() {
@@ -135,7 +163,7 @@ function loadHqRuntimeWhenInsideHq() {
   const isHq = path === '/admin' || path === '/churvox-hq' || path === '/admin/hq' || path === '/owner/dashboard' || path === '/platform-dashboard' || path === '/app-owner' || path === '/admin/usage' || path === '/admin/qa-auditor';
   if (!isHq) return;
   hqRuntimeLoaded = true;
-  window.setTimeout(() => runImports(hqRuntimeImports), 300);
+  window.setTimeout(() => runImports(hqRuntimeImports), 700);
 }
 
 function checkRuntimeLoads() {
@@ -152,5 +180,5 @@ if (typeof window !== 'undefined') {
   window.addEventListener('popstate', checkRuntimeLoads);
   window.addEventListener('hashchange', checkRuntimeLoads);
   window.addEventListener('churvox-owner-app-ready', checkRuntimeLoads);
-  [700, 2200, 6500].forEach((delay) => setTimeout(checkRuntimeLoads, delay));
+  [900, 2600, 7000].forEach((delay) => setTimeout(checkRuntimeLoads, delay));
 }
