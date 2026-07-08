@@ -89,6 +89,7 @@ const workerRuntimeImports = [
 const hqRuntimeImports = [
   () => import('./runtime/churvoxPlatformOwnerControlCentreRuntime'),
   () => import('./runtime/churvoxHqUniqueVisitorsRuntime'),
+  () => import('./runtime/churvoxHqAcceptedTestersRuntime'),
   () => import('./runtime/churvoxPlatformOwnerTesterInviteRuntime'),
   () => import('./runtime/churvoxHqTesterMobilePolishRuntime'),
   () => import('./runtime/churvoxHqReadyBannerRuntime'),
