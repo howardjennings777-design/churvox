@@ -36,7 +36,7 @@ const workerFlow = [
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PRODUCT_JOINED_UP_20260708">
+    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PRODUCT_NO_PRICING_20260708">
       <Nav />
 
       <section className="publicHero publicHeroCompact slimHero">
@@ -48,7 +48,7 @@ export default function ExecutiveFeaturesPage() {
           </p>
           <div className="publicActions">
             <Link to="/demo" className="publicPrimary">See the demo</Link>
-            <Link to="/pricing" className="publicSecondary">View pricing</Link>
+            <Link to="/signup" className="publicSecondary">Start trial</Link>
           </div>
         </div>
         <aside className="publicFeaturePanel slimPanel">
@@ -110,7 +110,7 @@ export default function ExecutiveFeaturesPage() {
         </div>
       </section>
 
-      <BusinessCoverageSection />
+      <BusinessCoverageSection secondaryTo="/signup" secondaryLabel="Start trial" />
       <BetaProofSection />
 
       <section className="publicBand slimBand">
