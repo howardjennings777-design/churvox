@@ -1,0 +1,40 @@
+.cvOfficeNotice {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: rgba(23, 18, 14, 0.06);
+  color: #51483f;
+  font-size: 0.68rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.cvDecisionCard .cvDecisionMeta span {
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.cvDecisionCard small {
+  min-height: 1.1em;
+}
+
+.cvDecisionActions button:active {
+  transform: translateY(1px);
+}
+
+.cvOfficeStatusLead span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cvOfficeStatusLead span::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+}
