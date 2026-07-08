@@ -6,35 +6,53 @@ let restoring = false;
 
 const css = `
   .cv3WorkerMapPanel {
-    min-height: 520px;
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-height: 620px;
     align-self: stretch;
+    display: block !important;
+    overflow: visible !important;
   }
   .cv3WorkerMapPanel > header {
     position: relative;
     z-index: 2;
   }
   .cv3WorkerMapPanel .cv3WorkerMapShell {
-    height: clamp(360px, 42vh, 540px);
-    margin: 12px 14px 14px;
+    height: clamp(430px, 56vh, 680px);
+    min-height: 430px;
+    margin: 14px;
     border: 1px solid rgba(16,21,19,.10);
     border-radius: 24px;
     overflow: hidden;
     background: #dfe9df;
     position: relative;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), 0 16px 38px rgba(16,21,19,.08);
+  }
+  .cv3WorkerMapPanel .cv3WorkerMapShell::before {
+    content: 'Loading worker map...';
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #3e4a45;
+    font-size: 13px;
+    font-weight: 1000;
+    z-index: 0;
   }
   .cv3WorkerMapPanel iframe {
+    position: relative;
+    z-index: 1;
     width: 100%;
     height: 100%;
     min-height: 100%;
     border: 0;
     display: block;
-    filter: saturate(.96) contrast(1.02);
+    filter: saturate(.98) contrast(1.03);
     background: #dfe9df;
   }
   .cv3WorkerMapPinBar {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 8px;
     margin: 0 14px 12px;
   }
@@ -43,15 +61,15 @@ const css = `
     border: 1px solid rgba(16,21,19,.10);
     border-radius: 16px;
     padding: 10px 11px;
-    background: rgba(255,255,255,.9);
+    background: rgba(255,255,255,.92);
     color: #101513;
     text-align: left;
     cursor: pointer;
   }
   .cv3WorkerPin[disabled] {
     cursor: not-allowed;
-    opacity: .68;
-    background: rgba(244,241,235,.78);
+    opacity: .72;
+    background: rgba(244,241,235,.82);
   }
   .cv3WorkerPin[aria-pressed="true"] {
     border-color: rgba(243,107,33,.85);
@@ -88,7 +106,7 @@ const css = `
     color: #101513;
     font-weight: 1000;
   }
-  @media(max-width:720px){.cv3WorkerMapPanel{min-height:430px}.cv3WorkerMapPanel .cv3WorkerMapShell{height:300px;margin:12px;border-radius:20px}.cv3WorkerMapPinBar{grid-template-columns:1fr;margin:0 12px 10px}}
+  @media(max-width:720px){.cv3WorkerMapPanel{min-height:500px}.cv3WorkerMapPanel .cv3WorkerMapShell{height:340px;min-height:340px;margin:12px;border-radius:20px}.cv3WorkerMapPinBar{grid-template-columns:1fr;margin:0 12px 10px}}
 `;
 
 function ensureStyle() {
@@ -238,7 +256,7 @@ function pinButton(pin, index, active) {
 }
 function makeMapPanel(pins) {
   const section = document.createElement('section');
-  section.className = 'cv3Panel cv3WorkerMapPanel span7';
+  section.className = 'cv3Panel cv3WorkerMapPanel span12';
   section.dataset.churvoxSingleWorkerMap = 'true';
   const activeIndex = Math.max(0, pins.findIndex((pin) => pin.place?.place));
   const active = pins[activeIndex]?.place?.place ? pins[activeIndex] : null;
@@ -247,7 +265,7 @@ function makeMapPanel(pins) {
     <header><div><small>field map</small><h3>Worker map</h3></div></header>
     <div class="cv3WorkerMapShell"><iframe title="Worker map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${mapUrl(startPlace)}"></iframe></div>
     <div class="cv3WorkerMapPinBar">${pins.length ? pins.map((pin, index) => pinButton(pin, index, index === activeIndex && Boolean(active))).join('') : '<button type="button" class="cv3WorkerPin" disabled><b>No workers yet</b><span>Add workers and save GPS/location or current job address.</span><em>No pin</em></button>'}</div>
-    ${active ? `<a class="cv3WorkerPinOpen" href="${openUrl(active.place.place)}" target="_blank" rel="noreferrer">Open ${escapeHtml(active.name)} in Maps</a>` : ''}
+    ${active ? `<a class="cv3WorkerPinOpen" href="${openUrl(active.place.place)}" target="_blank" rel="noreferrer">Open ${escapeHtml(active.name)} in Maps</a>` : `<a class="cv3WorkerPinOpen" href="${openUrl(startPlace)}" target="_blank" rel="noreferrer">Open map</a>`}
     <div class="cv3WorkerMapNote"><b>${pins.filter((pin) => pin.place?.place).length || 0} pinned</b><span>Uses live lat/lng first, then GPS text, location, job/site address, or current job text.</span></div>
   `;
   wireMapPanel(section, pins, activeIndex);
@@ -285,6 +303,7 @@ function wireMapPanel(panel, pins, startIndex = 0) {
 }
 function updateMapPanel(panel, pins) {
   const fresh = makeMapPanel(pins);
+  panel.className = fresh.className;
   panel.innerHTML = fresh.innerHTML;
   wireMapPanel(panel, pins, Math.max(0, pins.findIndex((pin) => pin.place?.place)));
 }
