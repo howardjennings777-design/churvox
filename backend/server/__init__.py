@@ -73,6 +73,7 @@ for _patch in [
     'churvox_hq_tester_status_patch',
     'churvox_hq_unique_visitors_patch',
     'churvox_hq_growth_report_patch',
+    'churvox_internal_support_patch',
     'churvox_on_site_payments_patch',
     'churvox_on_site_payments_request_signature_fix_patch',
     'churvox_terminal_reader_patch',
@@ -146,6 +147,8 @@ def _install_wrapper_proof_pack_guard():
     def _checklist(profile, mode):
         k = _key(profile)
         m = _key(mode)
+        if 'barber' in k or 'hair' in k or 'salon' in k or 'beauty' in k:
+            return ['Client service notes', 'Before/after note if needed', 'Product or colour note', 'Follow-up reminder', 'Payment/invoice note']
         if 'lawn' in k or 'landscape' in k or 'garden' in k:
             return ['Before lawn/garden photo', 'After lawn/garden photo', 'Gate/access note', 'Green waste or extra work note', 'Weather issue note']
         if 'clean' in k or 'visit' in m:
