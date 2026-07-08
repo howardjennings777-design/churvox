@@ -13,6 +13,16 @@ from starlette.responses import JSONResponse
 
 TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
+ALLOWED_ORIGINS = {
+    "https://www.churvox.com",
+    "https://churvox.com",
+    "https://www.churvox.onrender.com",
+    "https://churvox.onrender.com",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+}
 
 
 def now_iso() -> str:
@@ -32,6 +42,23 @@ def low(value: Any) -> str:
 
 def key(value: Any) -> str:
     return "".join(ch for ch in low(value) if ch.isalnum())
+
+
+def cors_headers(request: Request):
+    origin = text(request.headers.get("origin"))
+    allow_origin = origin if origin in ALLOWED_ORIGINS else "https://www.churvox.com"
+    return {
+        "Access-Control-Allow-Origin": allow_origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Access-Control-Allow-Headers": request.headers.get("access-control-request-headers") or "authorization,content-type,x-requested-with",
+        "Access-Control-Max-Age": "600",
+        "Vary": "Origin",
+    }
+
+
+def cors_json(request: Request, data: Any, status_code: int = 200):
+    return JSONResponse(data, status_code=status_code, headers=cors_headers(request))
 
 
 def read(user: Any, *names: str):
@@ -163,14 +190,16 @@ def install(module):
     @app.middleware("http")
     async def proof_pack_middleware(request: Request, call_next):
         if request.url.path == "/api/jobs/proof-pack":
+            if request.method.upper() == "OPTIONS":
+                return cors_json(request, {"ok": True})
             try:
                 if request.method.upper() == "POST":
-                    return JSONResponse(await save_payload(request))
-                return JSONResponse(await payload(request))
+                    return cors_json(request, await save_payload(request))
+                return cors_json(request, await payload(request))
             except HTTPException as exc:
-                return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+                return cors_json(request, {"detail": exc.detail}, status_code=exc.status_code)
             except Exception:
-                return JSONResponse({
+                return cors_json(request, {
                     "success": True,
                     "source": "churvox_jobs_proof_pack_middleware_guard_fallback",
                     "industry_key": "field_service",
