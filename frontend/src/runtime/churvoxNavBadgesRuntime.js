@@ -15,6 +15,23 @@ function key(value) { return clean(value).toLowerCase().replace(/[^a-z0-9]/g, ''
 function token() { try { return localStorage.getItem('token') || ''; } catch { return ''; } }
 function label(value) { const n = Number(value || 0); if (!Number.isFinite(n) || n <= 0) return ''; return n > 99 ? '99+' : String(n); }
 
+const OWNER_ALIASES = {
+  command: ['command', 'approvals', 'approvaldesk'],
+  jobs: ['jobs', 'job', 'appointments', 'appointment', 'visits', 'visit', 'projects', 'project', 'bookings', 'booking', 'sessions', 'session'],
+  workers: ['workers', 'worker', 'staff', 'crew', 'technicians', 'technician', 'cleaners', 'cleaner', 'artists', 'artist', 'groomers', 'groomer', 'practitioners', 'practitioner', 'coaches', 'coach', 'team'],
+  messages: ['messages', 'message', 'replies', 'reply', 'inbox'],
+  quotes: ['quotes', 'quote', 'estimates', 'estimate', 'consults', 'consult', 'proposals', 'proposal', 'plans', 'plan'],
+  invoices: ['invoices', 'invoice', 'payments', 'payment'],
+};
+
+function aliasId(value, aliases) {
+  const target = key(value);
+  for (const [id, words] of Object.entries(aliases)) {
+    if (words.includes(target)) return id;
+  }
+  return '';
+}
+
 function clearAllBadges() {
   document.querySelectorAll('.cvxNavBadge,.cvxWorkerNavBadge').forEach((node) => node.remove());
   document.querySelectorAll('[data-cvx-has-badge]').forEach((node) => node.removeAttribute('data-cvx-has-badge'));
@@ -52,12 +69,13 @@ async function getCounts(force = false) {
 }
 
 function ownerButtonId(button) {
-  const text = key(button.querySelector('b')?.textContent || button.textContent);
-  return ({ command: 'command', jobs: 'jobs', workers: 'workers', messages: 'messages', quotes: 'quotes', invoices: 'invoices' })[text] || '';
+  const labelNode = button.querySelector('b') || button;
+  const original = labelNode.dataset.cvxOriginalLabel || button.dataset.cvxNavKey || labelNode.textContent || button.textContent;
+  return aliasId(original, OWNER_ALIASES);
 }
 
 function workerLinkId(link) {
-  return ({ jobs: 'jobs', messages: 'messages' })[key(link.textContent)] || '';
+  return aliasId(link.dataset.cvxOriginalLabel || link.textContent, { jobs: OWNER_ALIASES.jobs, messages: OWNER_ALIASES.messages });
 }
 
 function putBadge(target, value, className) {
@@ -113,6 +131,7 @@ if (typeof window !== 'undefined' && !window[FLAG]) {
   window.addEventListener('churvox:data-refresh', () => schedule(true));
   window.addEventListener('churvox-owner-app-ready', () => schedule(true));
   window.addEventListener('churvox-worker-app-ready', () => schedule(true));
+  window.addEventListener('churvox:industry-mode-change', () => schedule(true));
 }
 
 export {};
