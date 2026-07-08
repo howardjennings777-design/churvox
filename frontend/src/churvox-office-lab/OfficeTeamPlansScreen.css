@@ -1,0 +1,105 @@
+.cvPlansGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvPlansGrid button,
+.cvPlanDetail {
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 13px;
+  background: rgba(255,255,255,.62);
+  padding: 14px;
+}
+
+.cvPlansGrid button {
+  min-height: 310px;
+  color: #17120e;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cvPlansGrid button.active {
+  border-color: rgba(249,115,22,.44);
+  background: rgba(249,115,22,.12);
+}
+
+.cvPlansGrid span,
+.cvPlanDetail span {
+  color: #9a3412;
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cvPlansGrid strong {
+  display: block;
+  margin-top: 10px;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  line-height: .95;
+  letter-spacing: -.065em;
+}
+
+.cvPlansGrid strong small {
+  display: block;
+  margin-top: 5px;
+  color: #655c52;
+  font-size: .72rem;
+  letter-spacing: 0;
+}
+
+.cvPlansGrid p,
+.cvPlansGrid li,
+.cvPlanDetail p,
+.cvPlanDetail small {
+  color: #655c52;
+  font-size: .76rem;
+  line-height: 1.34;
+  font-weight: 740;
+}
+
+.cvPlansGrid ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+
+.cvPlansGrid li + li {
+  margin-top: 5px;
+}
+
+.cvPlanDetail {
+  margin-top: 10px;
+}
+
+.cvPlanDetail h3 {
+  margin: 8px 0 4px;
+  font-size: clamp(1.25rem, 2vw, 2rem);
+  letter-spacing: -.045em;
+}
+
+.cvPlanDetail > strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.cvPlanDetail small {
+  display: block;
+  margin-top: 8px;
+}
+
+@media (max-width: 1180px) {
+  .cvPlansGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .cvPlansGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .cvPlansGrid button {
+    min-height: 0;
+  }
+}
