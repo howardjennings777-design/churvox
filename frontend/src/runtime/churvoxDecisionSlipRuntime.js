@@ -8,85 +8,95 @@ const css = `
   }
   .cv3Drawer.approval > small,
   .cv3Drawer.approval > h2,
-  .cv3Drawer.approval > p {
+  .cv3Drawer.approval > p,
+  .cv3Drawer.approval .cv3RealSlip,
+  .cv3Drawer.approval .cv3DecisionSlip,
+  .cv3Drawer.approval .cv3DecisionFormLabel {
     display: none !important;
   }
-  .cv3DecisionSlip {
-    display: grid;
-    gap: 12px;
-    margin: 0 0 16px;
-    padding: 14px;
-    border-radius: 24px;
+  .cv3Drawer.approval .cv3Form {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin: 0 0 14px !important;
+    padding: 16px !important;
+    border-radius: 28px !important;
+    border: 1px solid rgba(16,21,19,.11) !important;
     background:
-      radial-gradient(circle at 100% 0%, rgba(243,107,33,.16), transparent 34%),
-      linear-gradient(135deg, rgba(255,255,255,.96), rgba(255,247,236,.82));
-    border: 1px solid rgba(16,21,19,.1);
-    box-shadow: 0 18px 42px rgba(37,28,17,.08), inset 0 1px 0 rgba(255,255,255,.75);
-    position: relative;
-    overflow: hidden;
+      radial-gradient(circle at 100% 0%, rgba(243,107,33,.15), transparent 34%),
+      linear-gradient(135deg, rgba(255,255,255,.96), rgba(255,247,236,.84)) !important;
+    box-shadow: 0 18px 42px rgba(37,28,17,.075), inset 0 1px 0 rgba(255,255,255,.75) !important;
+    overflow: hidden !important;
   }
-  .cv3DecisionSlip::after {
+  .cv3Drawer.approval .cv3Form::after {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: .45;
-    background: repeating-linear-gradient(135deg, rgba(16,21,19,.035) 0 1px, transparent 1px 18px);
+    opacity: .42;
+    background: repeating-linear-gradient(135deg, rgba(16,21,19,.032) 0 1px, transparent 1px 18px);
     mask-image: linear-gradient(90deg, transparent 0%, #000 36%, #000 100%);
   }
-  .cv3DecisionSlip > * { position: relative; z-index: 1; }
-  .cv3DecisionHead {
+  .cv3Drawer.approval .cv3Form > * {
+    position: relative;
+    z-index: 1;
+  }
+  .cv3NativeSlipHeader {
+    grid-column: 1 / -1;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 12px;
     align-items: start;
+    padding: 0 0 12px;
+    border-bottom: 1px solid rgba(16,21,19,.08);
   }
-  .cv3DecisionHead small {
+  .cv3NativeSlipHeader small {
     display: block;
     color: #af4f17;
-    text-transform: uppercase;
-    letter-spacing: .13em;
     font-size: 10px;
     font-weight: 900;
+    letter-spacing: .13em;
+    text-transform: uppercase;
   }
-  .cv3DecisionHead h3 {
+  .cv3NativeSlipHeader h3 {
     margin: 5px 0 0;
     color: #101513;
-    font-size: clamp(26px, 3.4vw, 42px);
+    font-size: clamp(26px, 3.2vw, 40px);
     line-height: .95;
-    letter-spacing: -.065em;
-    font-weight: 760;
+    letter-spacing: -.06em;
+    font-weight: 720;
   }
-  .cv3DecisionHead p {
+  .cv3NativeSlipHeader p {
     margin: 7px 0 0;
     color: #47534d;
     font-size: 13px;
     line-height: 1.35;
-    font-weight: 620;
+    font-weight: 600;
   }
-  .cv3DecisionBadge {
+  .cv3NativeSlipHeader em {
     border-radius: 999px;
     padding: 8px 10px;
-    color: #fff;
     background: #101513;
+    color: #fff;
+    font-style: normal;
     font-size: 11px;
     font-weight: 900;
     white-space: nowrap;
   }
-  .cv3DecisionOutcome {
+  .cv3NativeSlipChecks {
+    grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
   }
-  .cv3DecisionOutcome article,
-  .cv3DecisionChecks article {
+  .cv3NativeSlipChecks article {
     border: 1px solid rgba(16,21,19,.08);
-    border-radius: 18px;
-    background: rgba(255,255,255,.74);
-    padding: 12px;
+    border-radius: 17px;
+    padding: 10px 11px;
+    background: rgba(255,255,255,.68);
   }
-  .cv3DecisionOutcome small,
-  .cv3DecisionChecks small {
+  .cv3NativeSlipChecks small {
     display: block;
     color: #7a857f;
     font-size: 9px;
@@ -94,71 +104,73 @@ const css = `
     letter-spacing: .11em;
     text-transform: uppercase;
   }
-  .cv3DecisionOutcome b,
-  .cv3DecisionChecks b {
+  .cv3NativeSlipChecks b {
     display: block;
     margin-top: 5px;
     color: #101513;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.2;
-    font-weight: 760;
-    overflow-wrap: anywhere;
-  }
-  .cv3DecisionChecks {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-  }
-  .cv3DecisionWarning {
-    border-left: 4px solid #f36b21;
-    border-radius: 16px;
-    padding: 10px 12px;
-    background: rgba(243,107,33,.1);
-    color: #533018;
-    font-size: 12px;
-    line-height: 1.35;
     font-weight: 700;
   }
-  .cv3DecisionFormLabel {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin: 4px 0 -4px;
-    padding: 9px 11px;
-    border-radius: 16px;
-    background: rgba(16,21,19,.06);
-    color: #101513;
-    font-size: 12px;
-    font-weight: 850;
+  .cv3Drawer.approval .cv3Field {
+    margin: 0 !important;
   }
-  .cv3DecisionFormLabel span { color: #66736d; font-weight: 700; }
-  .cv3Drawer.approval .cv3RealSlip { display: none !important; }
-  .cv3Drawer.approval .cv3Form {
-    border: 1px solid rgba(16,21,19,.08) !important;
-    border-radius: 22px !important;
-    padding: 12px !important;
-    background: rgba(255,255,255,.58) !important;
+  .cv3Drawer.approval .cv3Field span {
+    font-size: 9.5px !important;
+    letter-spacing: .12em !important;
+    color: #7a4b2c !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
   }
-  .cv3Drawer.approval .cv3Field span { font-size: 10px !important; letter-spacing: .12em !important; color: #7a4b2c !important; }
   .cv3Drawer.approval .cv3Field input,
   .cv3Drawer.approval .cv3Field textarea,
   .cv3Drawer.approval .cv3Field select {
-    background: rgba(255,255,255,.78) !important;
-    border-color: rgba(16,21,19,.11) !important;
+    min-height: 48px !important;
+    background: rgba(255,255,255,.72) !important;
+    border-color: rgba(16,21,19,.1) !important;
+    color: #101513 !important;
     font-weight: 650 !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.65) !important;
+  }
+  .cv3Drawer.approval .cv3Field textarea {
+    min-height: 88px !important;
+  }
+  .cv3Drawer.approval .cv3Field.wide,
+  .cv3Drawer.approval label:has(textarea) {
+    grid-column: 1 / -1 !important;
   }
   .cv3Drawer.approval .cv3DrawerActions {
     position: sticky !important;
     bottom: 0 !important;
-    padding-top: 12px !important;
-    background: linear-gradient(180deg, transparent, #fbf7ef 40%) !important;
+    margin-top: 6px !important;
+    padding: 13px 0 2px !important;
+    background: linear-gradient(180deg, transparent, #fbf7ef 42%) !important;
+    z-index: 5 !important;
+  }
+  .cv3Drawer.approval .cvxDrawerExtraActions {
+    margin-top: 4px !important;
+    border-top: 0 !important;
   }
   @media(max-width: 760px) {
-    .cv3DecisionHead, .cv3DecisionOutcome, .cv3DecisionChecks { grid-template-columns: 1fr; }
-    .cv3DecisionBadge { justify-self: start; }
+    .cv3Drawer.approval .cv3Form,
+    .cv3NativeSlipHeader,
+    .cv3NativeSlipChecks {
+      grid-template-columns: 1fr !important;
+    }
+    .cv3NativeSlipHeader em { justify-self: start; }
   }
 `;
+
+const LABELS = {
+  'approval type': 'Slip type',
+  record: 'What will change',
+  client: 'Who it affects',
+  amount: 'Money impact',
+  'recommended action': 'Owner decision',
+  'what churvox prepared': 'Proposed change',
+  'evidence checked': 'Evidence used',
+  'owner check': 'Check before approving',
+};
 
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
 function lower(value) { return clean(value).toLowerCase(); }
@@ -172,89 +184,91 @@ function ensureStyle() {
   }
   if (style.textContent !== css) style.textContent = css;
 }
-function fieldValue(root, label) {
-  const fields = Array.from(root.querySelectorAll('.cv3Field,label'));
-  const found = fields.find((field) => lower(field.querySelector('span,small,b')?.textContent).includes(lower(label)));
-  const control = found?.querySelector('input,textarea,select');
-  return clean(control?.value || control?.textContent || '');
+function fields(root) { return Array.from(root.querySelectorAll('.cv3Field,label')).filter((field) => field.querySelector('input,textarea,select')); }
+function labelText(field) { return clean(field.querySelector('span,small,b')?.textContent); }
+function control(field) { return field.querySelector('input,textarea,select'); }
+function fieldByOriginal(root, name) {
+  const wanted = lower(name);
+  return fields(root).find((field) => lower(control(field)?.name || '').includes(wanted) || lower(labelText(field)).includes(wanted));
+}
+function fieldValue(root, name) {
+  const found = fieldByOriginal(root, name);
+  const input = control(found);
+  return clean(input?.value || input?.textContent || '');
+}
+function relabel(root) {
+  fields(root).forEach((field) => {
+    const input = control(field);
+    const original = lower(input?.name || labelText(field));
+    const label = Object.entries(LABELS).find(([key]) => original.includes(key));
+    const span = field.querySelector('span,small,b');
+    if (span && label) span.textContent = label[1];
+  });
 }
 function actionFrom(text, type) {
   const hay = lower(`${type} ${text}`);
-  if (/invoice/.test(hay)) return 'Create or update an invoice draft for owner review.';
-  if (/quote/.test(hay)) return 'Prepare a quote so it can be checked before sending.';
-  if (/message|reply/.test(hay)) return 'Prepare a reply linked to the right message or job.';
-  if (/client|customer/.test(hay)) return 'Update the client file or customer memory.';
-  if (/worker|staff|team/.test(hay)) return 'Update worker, team or field information.';
-  if (/run|schedule|recurring/.test(hay)) return 'Build or adjust the run plan before jobs are sent.';
-  return 'Update the linked record after owner approval.';
+  if (/invoice/.test(hay)) return 'Approve only if the draft amount, client and due date are right.';
+  if (/quote/.test(hay)) return 'Approve only if the scope and price are ready to send.';
+  if (/message|reply/.test(hay)) return 'Approve only if the reply is clear and linked to the right job.';
+  if (/client|customer/.test(hay)) return 'Approve only if this client record should be updated.';
+  if (/worker|staff|team/.test(hay)) return 'Approve only if the worker change is right.';
+  if (/run|schedule|recurring|assign|job/.test(hay)) return 'Approve only if the job/run change should go ahead.';
+  return 'Approve only if this owner decision is correct.';
 }
-function checkFrom(text, type) {
-  const hay = lower(`${type} ${text}`);
+function titleFor(type, record) {
+  const hay = lower(`${type} ${record}`);
+  if (/invoice/.test(hay)) return 'Invoice draft approval';
+  if (/quote/.test(hay)) return 'Quote approval';
+  if (/message|reply/.test(hay)) return 'Reply approval';
+  if (/run|schedule|recurring/.test(hay)) return 'Run plan approval';
+  if (/assign|worker/.test(hay)) return 'Worker assignment approval';
+  if (/job/.test(hay)) return 'Job approval';
+  if (/client|customer/.test(hay)) return 'Client record approval';
+  return 'Owner approval';
+}
+function checksFor(type, record) {
+  const hay = lower(`${type} ${record}`);
   if (/invoice/.test(hay)) return ['Amount', 'Client', 'Due date'];
   if (/quote/.test(hay)) return ['Scope', 'Price', 'Client'];
-  if (/message|reply/.test(hay)) return ['Tone', 'Client', 'Job context'];
+  if (/message|reply/.test(hay)) return ['Reply', 'Client', 'Job context'];
+  if (/assign|worker/.test(hay)) return ['Worker', 'Job', 'Reason'];
   if (/run|schedule|job|recurring/.test(hay)) return ['Client', 'Worker', 'Date/time'];
   if (/client|customer/.test(hay)) return ['Name', 'Site notes', 'Service'];
-  return ['Record', 'Details', 'Owner decision'];
+  return ['Record', 'Details', 'Decision'];
 }
-function badgeFor(type, record) {
-  const hay = lower(`${type} ${record}`);
-  if (/invoice/.test(hay)) return 'Invoice check';
-  if (/quote/.test(hay)) return 'Quote check';
-  if (/message|reply/.test(hay)) return 'Reply check';
-  if (/run|schedule|job|recurring/.test(hay)) return 'Job/run check';
-  if (/client|customer/.test(hay)) return 'Client check';
-  return 'Owner check';
-}
-function slipTitle(type, record) {
-  const hay = lower(`${type} ${record}`);
-  if (/invoice/.test(hay)) return 'Invoice draft needs approval';
-  if (/quote/.test(hay)) return 'Quote needs approval';
-  if (/message|reply/.test(hay)) return 'Reply needs approval';
-  if (/run|schedule|job|recurring/.test(hay)) return 'Run plan needs approval';
-  if (/client|customer/.test(hay)) return 'Client change needs approval';
-  return 'Owner decision needed';
-}
-function insertDecisionSlip(drawer) {
-  if (!drawer || !/approval|command slip|approval slip/i.test(drawer.textContent || '')) return;
+function insertNativeSlipHeader(drawer) {
+  if (!drawer || !/approval|command slip|approval slip|owner check/i.test(drawer.textContent || '')) return;
   ensureStyle();
+  drawer.querySelectorAll('.cv3DecisionSlip,.cv3DecisionFormLabel').forEach((node) => node.remove());
+  const form = drawer.querySelector('.cv3Form');
+  if (!form) return;
+  relabel(drawer);
   const type = fieldValue(drawer, 'Approval type') || 'Owner check';
   const record = fieldValue(drawer, 'Record') || 'Linked record';
   const client = fieldValue(drawer, 'Client') || 'Business';
   const amount = fieldValue(drawer, 'Amount') || 'Not money related';
-  const prepared = fieldValue(drawer, 'What Churvox prepared') || fieldValue(drawer, 'Owner check') || 'Details are ready for owner review.';
-  const evidence = fieldValue(drawer, 'Evidence checked') || 'Matched against available Churvox records.';
-  const ownerCheck = fieldValue(drawer, 'Owner check') || 'Approve if correct. Edit if needed. Park if not ready.';
-  const action = actionFrom(`${record} ${prepared}`, type);
-  const checks = checkFrom(`${record} ${ownerCheck}`, type);
-  let slip = drawer.querySelector('.cv3DecisionSlip');
-  if (!slip) {
-    slip = document.createElement('section');
-    slip.className = 'cv3DecisionSlip';
-    const form = drawer.querySelector('.cv3Form');
-    if (form) form.insertAdjacentElement('beforebegin', slip);
-    else drawer.insertAdjacentElement('afterbegin', slip);
+  const proposed = fieldValue(drawer, 'What Churvox prepared') || fieldValue(drawer, 'Owner check') || 'Review the prepared change before it moves.';
+  const title = titleFor(type, record);
+  const action = actionFrom(`${type} ${record} ${proposed}`, type);
+  const checks = checksFor(type, record);
+  let header = form.querySelector(':scope > .cv3NativeSlipHeader');
+  if (!header) {
+    header = document.createElement('section');
+    header.className = 'cv3NativeSlipHeader';
+    form.insertAdjacentElement('afterbegin', header);
   }
-  slip.innerHTML = `
-    <header class="cv3DecisionHead"><div><small>${escapeHtml(badgeFor(type, record))}</small><h3>${escapeHtml(slipTitle(type, record))}</h3><p>${escapeHtml(action)}</p></div><em class="cv3DecisionBadge">Waiting for owner</em></header>
-    <section class="cv3DecisionOutcome"><article><small>Linked record</small><b>${escapeHtml(record)}</b></article><article><small>Client / amount</small><b>${escapeHtml(client)} · ${escapeHtml(amount)}</b></article></section>
-    <section class="cv3DecisionChecks">${checks.map((item) => `<article><small>Check</small><b>${escapeHtml(item)}</b></article>`).join('')}</section>
-    <div class="cv3DecisionWarning">${escapeHtml(ownerCheck)}</div>
-    <section class="cv3DecisionOutcome"><article><small>Evidence</small><b>${escapeHtml(evidence)}</b></article><article><small>If approved</small><b>${escapeHtml(action)}</b></article></section>
-  `;
-  if (!drawer.querySelector('.cv3DecisionFormLabel')) {
-    const form = drawer.querySelector('.cv3Form');
-    if (form) {
-      const label = document.createElement('div');
-      label.className = 'cv3DecisionFormLabel';
-      label.innerHTML = '<b>Edit details before approving</b><span>These fields are the slip, not a sales pitch.</span>';
-      form.insertAdjacentElement('beforebegin', label);
-    }
+  header.innerHTML = `<div><small>${escapeHtml(type)}</small><h3>${escapeHtml(title)}</h3><p>${escapeHtml(action)}</p></div><em>Owner decision</em>`;
+  let checkRow = form.querySelector(':scope > .cv3NativeSlipChecks');
+  if (!checkRow) {
+    checkRow = document.createElement('section');
+    checkRow.className = 'cv3NativeSlipChecks';
+    header.insertAdjacentElement('afterend', checkRow);
   }
+  checkRow.innerHTML = `<article><small>Affects</small><b>${escapeHtml(client)}</b></article><article><small>Money</small><b>${escapeHtml(amount)}</b></article>${checks.map((item) => `<article><small>Check</small><b>${escapeHtml(item)}</b></article>`).join('')}`;
 }
 function run() {
   document.querySelectorAll('.cv3Drawer.approval,.cv3Drawer,[role="dialog"]').forEach((drawer) => {
-    if (/approval slip|command slip|what churvox prepared|evidence checked|owner check/i.test(drawer.textContent || '')) insertDecisionSlip(drawer);
+    if (/approval slip|command slip|what churvox prepared|evidence checked|owner check/i.test(drawer.textContent || '')) insertNativeSlipHeader(drawer);
   });
 }
 function schedule(delay = 80) { setTimeout(run, delay); }
