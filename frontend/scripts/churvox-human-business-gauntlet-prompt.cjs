@@ -4,7 +4,7 @@ const { spawn } = require('node:child_process');
 const readline = require('node:readline');
 
 const DEFAULT_FRONTEND = 'https://www.churvox.com';
-const DEFAULT_BACKEND = 'https://churvox-backend.onrender.com';
+const DEFAULT_BACKEND = 'https://grassley-backend.onrender.com';
 
 function ask(label, fallback = '') {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
