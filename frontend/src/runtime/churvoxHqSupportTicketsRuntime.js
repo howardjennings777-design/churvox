@@ -1,3 +1,4 @@
+import './churvoxHqAccountDeleteRuntime';
 import API_BASE from '../lib/apiBase';
 
 const STYLE_ID = 'churvox-hq-support-tickets-style';
@@ -21,7 +22,7 @@ function ensureStyle() { if (typeof document === 'undefined' || document.getElem
 function token() { try { return localStorage.getItem('token') || ''; } catch { return ''; } }
 function headers() { const auth = token(); return { Accept:'application/json', ...(auth ? { Authorization:`Bearer ${auth}` } : {}) }; }
 function host() { return String(API_BASE || '').replace(/\/$/, ''); }
-function escapeHtml(value) { return String(value || '').replace(/[&<>\"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[char])); }
+function escapeHtml(value) { return String(value || '').replace(/[&<>"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[char])); }
 async function fetchTickets() { const res = await fetch(`${host()}/api/admin/owner/support-tickets`, { credentials:'include', headers:headers() }); const body = await res.json().catch(() => ({})); if (!res.ok || body?.success === false) throw new Error(body?.detail || body?.message || body?.error || `Support tickets failed ${res.status}`); return body; }
 function anchor() { return document.querySelector('.aomMain .aomHero') || document.querySelector('.aomMain'); }
 function dateText(value) { try { const d = new Date(value); return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('en-NZ'); } catch { return ''; } }
