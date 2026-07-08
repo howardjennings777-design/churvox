@@ -2,6 +2,8 @@
 // Safe local business setup used until the backend settings endpoint is proven live.
 // Prevents the settings page and document forms from calling missing routes.
 
+import { DEFAULT_INDUSTRY, normalizeIndustry } from "../config/churvoxIndustrySystem";
+
 export const BUSINESS_SETTINGS_KEY = "churvox_business_settings_v1";
 
 export const defaultBusinessSettings = {
@@ -21,7 +23,8 @@ export const defaultBusinessSettings = {
   default_gst_rate: 15,
   default_invoice_due_days: 7,
   default_quote_expiry_days: 14,
-  trade_industry_type: "",
+  trade_industry_type: DEFAULT_INDUSTRY,
+  industry_mode: DEFAULT_INDUSTRY,
   service_area_region: "",
   working_hours: "",
   default_job_types: [],
@@ -31,6 +34,9 @@ export const defaultBusinessSettings = {
 
 export function normaliseBusinessSettings(settings = {}) {
   const next = { ...defaultBusinessSettings, ...(settings || {}) };
+  const industry = normalizeIndustry(next.industry_mode || next.trade_industry_type);
+  next.trade_industry_type = industry;
+  next.industry_mode = industry;
   next.default_gst_rate = Number(next.default_gst_rate || 15);
   next.default_invoice_due_days = Number(next.default_invoice_due_days || 7);
   next.default_quote_expiry_days = Number(next.default_quote_expiry_days || 14);
@@ -48,10 +54,13 @@ export function loadBusinessSettings(user = null) {
   } catch {
     saved = {};
   }
+  let storedIndustry = "";
+  try { storedIndustry = localStorage.getItem("churvox:industry-mode") || ""; } catch {}
   return normaliseBusinessSettings({
     business_name: user?.business_name || user?.company_name || "",
     email: user?.email || "",
-    trade_industry_type: user?.trade_type || "",
+    trade_industry_type: user?.trade_industry_type || user?.trade_type || user?.industry || user?.business_profile?.industry_key || storedIndustry || DEFAULT_INDUSTRY,
+    industry_mode: user?.industry_mode || user?.business_profile?.industry_key || user?.business_profile?.industry || storedIndustry || DEFAULT_INDUSTRY,
     default_gst_rate: user?.gst_rate || 15,
     ...saved,
   });
@@ -61,6 +70,7 @@ export function saveBusinessSettings(settings) {
   const next = normaliseBusinessSettings(settings);
   try {
     localStorage.setItem(BUSINESS_SETTINGS_KEY, JSON.stringify(next));
+    localStorage.setItem("churvox:industry-mode", next.industry_mode);
   } catch {}
   window.dispatchEvent(new CustomEvent("churvox-business-settings-updated", { detail: next }));
   return next;
@@ -89,7 +99,7 @@ export function businessSettingsCompletion(settings = {}) {
   const total = Object.keys(labels).length;
   return {
     labels,
-    percent: total ? Math.round(((total - missing.length) / total) * 100) : 100,
+    percent: total ? Math.round(((total - missing.length) / total) / 1 * 100) : 100,
     missing_fields: missing,
     missing_count: missing.length,
     is_complete: missing.length === 0,
