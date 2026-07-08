@@ -1,0 +1,125 @@
+/* Ops layer: make the hidden lab feel like the real daily control room. */
+.officeHero {
+  order: 2;
+}
+
+.commandSection {
+  order: 3;
+}
+
+.officePrinciples {
+  order: 4;
+}
+
+.rolesSection {
+  order: 5;
+}
+
+.officeHero::after {
+  content: "Business playbook  ·  General Service active  ·  Work can be called jobs, bookings, visits, appointments or services  ·  Staff can be called workers, crew, barbers, stylists, nail techs or cleaners";
+  grid-column: 1 / -1;
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid rgba(21,18,15,.1);
+  border-radius: 12px;
+  background: rgba(255,252,246,.94);
+  color: #51483f;
+  box-shadow: 0 8px 18px rgba(37,29,20,.06);
+  font-size: .76rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.commandSection::before {
+  content: "Needs owner now  ·  1 invoice decision  ·  1 rebooking decision  ·  1 payroll timer check  ·  1 client memory save  ·  Nothing auto-sent";
+  display: block;
+  margin-bottom: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #15120f, #2a2119);
+  color: #fff7ec;
+  box-shadow: 0 10px 24px rgba(37,29,20,.12);
+  font-size: .78rem;
+  font-weight: 950;
+  letter-spacing: -.01em;
+}
+
+.commandSection .sectionTitle {
+  display: none;
+}
+
+.commandTrays {
+  margin-bottom: 10px;
+}
+
+.decisionCard:first-child {
+  outline: 2px solid rgba(249,115,22,.36);
+  outline-offset: 0;
+}
+
+.decisionCard:first-child::before {
+  content: "Top priority";
+  display: inline-flex;
+  width: max-content;
+  margin-bottom: 8px;
+  padding: 5px 7px;
+  border-radius: 999px;
+  background: rgba(249,115,22,.12);
+  color: #9a3412;
+  font-size: .58rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.rolesSection::before {
+  content: "Live office activity\A Bookkeeper checked invoices 2 min ago\A Receptionist found one regular client with no next booking\A Payroll Clerk is waiting on one odd timer\A Client Memory Clerk prepared one note from service history";
+  display: block;
+  white-space: pre-line;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid rgba(21,18,15,.1);
+  border-radius: 12px;
+  background: rgba(255,252,246,.94);
+  color: #51483f;
+  box-shadow: 0 8px 18px rgba(37,29,20,.06);
+  font-size: .76rem;
+  font-weight: 760;
+  line-height: 1.55;
+}
+
+.rolesSection::after {
+  content: "Rule: mimics prepare work, Command receives only the owner decision.";
+  display: block;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(21,18,15,.06);
+  color: #51483f;
+  font-size: .76rem;
+  font-weight: 850;
+}
+
+.officePrinciples {
+  opacity: .82;
+}
+
+.officePrinciples::before {
+  content: "Operating rules";
+  grid-column: 1 / -1;
+  display: block;
+  color: #7c2d12;
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1180px) {
+  .officeHero::after,
+  .commandSection::before,
+  .rolesSection::before,
+  .rolesSection::after {
+    font-size: .72rem;
+  }
+}
