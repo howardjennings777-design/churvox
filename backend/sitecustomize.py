@@ -60,6 +60,7 @@ for _module in [
     "churvox_nav_attention_counts_patch",
     "churvox_nav_attention_counts_status_fix_patch",
     "churvox_industry_mode_patch",
+    "churvox_industry_mode_request_fix_patch",
 ]:
     try:
         __import__(_module)  # noqa: F401
