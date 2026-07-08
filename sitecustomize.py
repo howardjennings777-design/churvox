@@ -24,6 +24,11 @@ except Exception:
     pass
 
 try:
+    import backend.churvox_permissions_policy_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import backend.churvox_plan_usage_routes  # noqa: F401
 except Exception:
     pass
