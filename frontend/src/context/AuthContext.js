@@ -6,8 +6,8 @@ import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } f
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
-const AUTH_TIMEOUT_MS = 15000;
-const WORKER_AUTH_TIMEOUT_MS = 10000;
+const AUTH_TIMEOUT_MS = 6000;
+const WORKER_AUTH_TIMEOUT_MS = 6000;
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
 const AUTH_SNAPSHOT_KEY = "churvox_auth_session_snapshot_v1";
 const AUTH_SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
@@ -226,7 +226,9 @@ export function AuthProvider({ children }) {
   }, [fetchMe]);
 
   useEffect(() => {
-    checkAuth().catch(() => setLoading(false));
+    const release = window.setTimeout(() => setLoading(false), AUTH_TIMEOUT_MS + 750);
+    checkAuth().catch(() => setLoading(false)).finally(() => window.clearTimeout(release));
+    return () => window.clearTimeout(release);
   }, [checkAuth]);
 
   useEffect(() => {
