@@ -3,6 +3,7 @@ import API_BASE from '../lib/apiBase';
 const STYLE_ID = 'churvox-admin-brain-surface-style';
 const FLAG = '__CHURVOX_ADMIN_BRAIN_SURFACE_RUNTIME__';
 let lastSig = '';
+let observerStarted = false;
 
 const css = `
   .cvxAdminBrainSurface {
@@ -35,15 +36,18 @@ const css = `
   .cvxAdminBrainHead small { display: block; color: #ffb879; font-size: 10px; font-weight: 1000; letter-spacing: .14em; text-transform: uppercase; }
   .cvxAdminBrainHead h3 { margin: 5px 0 0; font-size: clamp(22px, 2.5vw, 34px); line-height: .98; letter-spacing: -.055em; font-weight: 780; }
   .cvxAdminBrainHead p { margin: 7px 0 0; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.35; font-weight: 650; }
-  .cvxAdminBrainHead em { border-radius: 999px; padding: 8px 10px; background: #f36b21; color: #fff; font-style: normal; font-size: 11px; font-weight: 1000; white-space: nowrap; }
+  .cvxAdminBrainMeta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+  .cvxAdminBrainMeta em, .cvxAdminBrainMeta button { border: 0; border-radius: 999px; padding: 8px 10px; font-style: normal; font-size: 11px; font-weight: 1000; white-space: nowrap; }
+  .cvxAdminBrainMeta em { background: #f36b21; color: #fff; }
+  .cvxAdminBrainMeta button { background: rgba(255,255,255,.12); color: #fff; cursor: pointer; }
   .cvxAdminBrainGrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
-  .cvxAdminBrainGrid article { border: 1px solid rgba(255,255,255,.1); border-radius: 18px; padding: 11px; background: rgba(255,255,255,.07); min-height: 116px; }
+  .cvxAdminBrainGrid article { border: 1px solid rgba(255,255,255,.1); border-radius: 18px; padding: 11px; background: rgba(255,255,255,.07); min-height: 116px; cursor: pointer; }
   .cvxAdminBrainGrid small { display: block; color: #ffb879; font-size: 9px; font-weight: 1000; letter-spacing: .12em; text-transform: uppercase; }
   .cvxAdminBrainGrid b { display: block; margin-top: 6px; color: #fff; font-size: 13px; line-height: 1.2; font-weight: 850; }
   .cvxAdminBrainGrid span { display: block; margin-top: 7px; color: rgba(255,255,255,.72); font-size: 11.5px; line-height: 1.35; font-weight: 620; }
   .cvxAdminBrainGrid i { display: inline-flex; margin-top: 8px; border-radius: 999px; padding: 5px 7px; background: rgba(255,184,121,.16); color: #ffd2ad; font-style: normal; font-size: 9px; font-weight: 1000; letter-spacing: .09em; text-transform: uppercase; }
   @media(max-width: 980px) { .cvxAdminBrainGrid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-  @media(max-width: 620px) { .cvxAdminBrainHead, .cvxAdminBrainGrid { grid-template-columns: 1fr; } .cvxAdminBrainHead em { justify-self: start; } }
+  @media(max-width: 620px) { .cvxAdminBrainHead, .cvxAdminBrainGrid { grid-template-columns: 1fr; } .cvxAdminBrainMeta { justify-content: flex-start; } }
 `;
 
 function isOwnerApp() {
@@ -67,29 +71,47 @@ function ensureStyle() {
 function host() { return String(API_BASE || '').replace(/\/$/, ''); }
 function token() { try { return localStorage.getItem('token') || ''; } catch { return ''; } }
 function headers() { const t = token(); return { Accept: 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) }; }
-function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
 function escapeHtml(value) { return String(value || '').replace(/[&<>"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch])); }
 async function fetchBrain() {
   const res = await fetch(`${host()}/api/admin-brain/scan`, { credentials: 'include', headers: headers() });
   const body = await res.json().catch(() => ({}));
+  if (res.status === 401 || res.status === 403) return null;
   if (!res.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Admin Brain failed ${res.status}`);
   return body;
 }
 function anchor() {
   const page = document.querySelector('.cv3Page');
   if (!page) return null;
-  return page.querySelector(':scope > .cvxPageStartRow') || page.querySelector(':scope > .cv3Toolbar') || page.firstElementChild;
+  return page.querySelector(':scope > .cv3Hero') || page.querySelector(':scope > .cvxPageStartRow') || page.querySelector(':scope > .cv3Toolbar') || page.firstElementChild;
+}
+function goCommand() {
+  try {
+    if (window.location.hash !== '#command') window.location.hash = '#command';
+    window.dispatchEvent(new Event('hashchange'));
+    window.dispatchEvent(new Event('churvox:data-refresh'));
+  } catch {}
+}
+function pageRankedActions(actions, page) {
+  if (page === 'today' || page === 'command') return actions;
+  const target = page.replace(/s$/, '');
+  return [...actions].sort((a, b) => {
+    const ar = String(a.record_type || '').toLowerCase() === target ? 0 : 1;
+    const br = String(b.record_type || '').toLowerCase() === target ? 0 : 1;
+    return ar - br;
+  });
 }
 function render(body) {
   if (!isOwnerApp()) return;
   const page = pageId();
   if (!['today', 'command', 'jobs', 'clients', 'messages', 'invoices', 'quotes'].includes(page)) {
-    document.querySelectorAll('.cvxAdminBrainSurface').forEach((n) => n.remove());
+    document.querySelectorAll('.cvxAdminBrainSurface').forEach((node) => node.remove());
     return;
   }
+  if (!body) return;
   const actions = Array.isArray(body?.actions) ? body.actions : Array.isArray(body?.items) ? body.items : [];
   const counts = body?.counts || {};
-  const sig = `${page}|${counts.total || actions.length}|${actions.slice(0,4).map((a) => a.id || a.title).join('|')}`;
+  const ranked = pageRankedActions(actions, page);
+  const sig = `${page}|${counts.total || actions.length}|${ranked.slice(0,4).map((a) => a.id || a.title).join('|')}`;
   if (sig === lastSig && document.querySelector('.cvxAdminBrainSurface')) return;
   lastSig = sig;
   ensureStyle();
@@ -100,23 +122,34 @@ function render(body) {
     card = document.createElement('section');
     card.className = 'cvxAdminBrainSurface';
     a.insertAdjacentElement('afterend', card);
+  } else if (card.previousElementSibling !== a) {
+    a.insertAdjacentElement('afterend', card);
   }
-  const top = actions.slice(0, 4);
-  const rows = top.length ? top.map((item) => `<article><small>${escapeHtml(item.record_type || item.kind || 'admin')}</small><b>${escapeHtml(item.problem || item.title || 'Admin decision')}</b><span>${escapeHtml(item.why || item.suggestion || item.summary || 'Owner review needed.').slice(0, 150)}</span><i>${escapeHtml(item.priority || 'medium')}</i></article>`).join('') : `<article><small>clear</small><b>No admin problems found</b><span>Churvox is still watching jobs, clients, invoices, quotes, messages and workers.</span><i>watching</i></article>`;
-  card.innerHTML = `<header class="cvxAdminBrainHead"><div><small>admin brain</small><h3>Churvox found ${counts.total ?? actions.length} owner decision${Number(counts.total ?? actions.length) === 1 ? '' : 's'}</h3><p>These are live admin gaps Churvox found across jobs, clients, workers, quotes, invoices and messages. Nothing is sent or synced until the owner approves.</p></div><em>${counts.high || 0} high</em></header><div class="cvxAdminBrainGrid">${rows}</div>`;
+  const top = ranked.slice(0, 4);
+  const rows = top.length ? top.map((item) => `<article data-cvx-open-command="true"><small>${escapeHtml(item.record_type || item.kind || 'admin')}</small><b>${escapeHtml(item.problem || item.title || 'Admin decision')}</b><span>${escapeHtml(item.why || item.suggestion || item.summary || 'Owner review needed.').slice(0, 150)}</span><i>${escapeHtml(item.priority || 'medium')}</i></article>`).join('') : `<article><small>clear</small><b>No admin problems found</b><span>Churvox is still watching jobs, clients, invoices, quotes, messages and workers.</span><i>watching</i></article>`;
+  card.innerHTML = `<header class="cvxAdminBrainHead"><div><small>admin brain</small><h3>Churvox found ${counts.total ?? actions.length} owner decision${Number(counts.total ?? actions.length) === 1 ? '' : 's'}</h3><p>These are live admin gaps Churvox found across jobs, clients, workers, quotes, invoices and messages. Nothing is sent, synced or money-changed unless the owner approves the next step.</p></div><div class="cvxAdminBrainMeta"><em>${counts.high || 0} high</em><button type="button" data-cvx-open-command="true">Review in Command</button></div></header><div class="cvxAdminBrainGrid">${rows}</div>`;
+  card.querySelectorAll('[data-cvx-open-command="true"]').forEach((node) => node.addEventListener('click', goCommand));
 }
 async function run() {
   if (!isOwnerApp()) return;
   try { render(await fetchBrain()); } catch {}
 }
 function schedule(delay = 200) { setTimeout(run, delay); }
+function observe() {
+  if (observerStarted || typeof MutationObserver === 'undefined') return;
+  observerStarted = true;
+  const root = document.getElementById('root') || document.body;
+  const observer = new MutationObserver(() => schedule(180));
+  observer.observe(root, { childList: true, subtree: true });
+}
 if (typeof window !== 'undefined' && !window[FLAG]) {
   window[FLAG] = true;
-  [600, 1600, 3600, 7000].forEach(schedule);
-  window.addEventListener('load', () => schedule(500));
-  window.addEventListener('hashchange', () => [250, 900].forEach(schedule));
-  window.addEventListener('popstate', () => [250, 900].forEach(schedule));
-  window.addEventListener('churvox:data-refresh', () => [400, 1200].forEach(schedule));
-  window.addEventListener('churvox-owner-app-ready', () => [400, 1200].forEach(schedule));
+  [300, 900, 1800, 3600, 7000].forEach(schedule);
+  window.addEventListener('load', () => { observe(); schedule(500); });
+  window.addEventListener('hashchange', () => [160, 700].forEach(schedule));
+  window.addEventListener('popstate', () => [160, 700].forEach(schedule));
+  window.addEventListener('churvox:data-refresh', () => [250, 900].forEach(schedule));
+  window.addEventListener('churvox-owner-app-ready', () => [250, 900].forEach(schedule));
+  if (document.readyState !== 'loading') observe();
 }
 export {};
