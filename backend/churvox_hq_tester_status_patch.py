@@ -110,8 +110,8 @@ def display_tester(email: str, user: Dict[str, Any] | None = None, invite: Dict[
         "active": status == "active",
         "plan": (user or {}).get("plan") or (invite or {}).get("plan") or "operator",
         "subscription_status": (user or {}).get("subscription_status") or (invite or {}).get("status") or "invited",
-        "free_tester_until": (user or {}).get("free_tester_until") or (invite or {}).get("free_tester_until"),
-        "invited_at": (invite or {}).get("created_at") or (invite or {}).get("invited_at") or (user or {}).get("free_tester_granted_at"),
+        "free_tester_until": (user or {}).get("free_tester_until") or (invite or {}).get("free_tester_until") or (invite or {}).get("free_until"),
+        "invited_at": (invite or {}).get("created_at") or (invite or {}).get("invited_at") or (invite or {}).get("updated_at") or (user or {}).get("free_tester_granted_at"),
         "accepted_at": accepted_at,
         "last_active": active_at,
         "source": "user" if user else "invite",
@@ -133,9 +133,12 @@ async def read_collection(db, name: str, query: Dict[str, Any], limit: int = 500
             return []
         cursor = db[name].find(query)
         try:
-            cursor = cursor.sort("created_at", -1)
+            cursor = cursor.sort("updated_at", -1)
         except Exception:
-            pass
+            try:
+                cursor = cursor.sort("created_at", -1)
+            except Exception:
+                pass
         return await cursor.limit(limit).to_list(length=limit)
     except Exception:
         return []
@@ -181,18 +184,26 @@ def install(module):
                 users_by_email[email] = user
 
         invite_rows = []
+        # app_owner_testers is the live HQ invite/intake collection used by the Tester form.
+        invite_rows.extend(await read_collection(db, "app_owner_testers", {}, 1000))
+        invite_rows.extend(await read_collection(db, "app_owner_control_log", {"action": "tester_intake"}, 1000))
         for collection in ["tester_invites", "tester_intake", "tester_access", "tester_invite_log", "invite_tokens", "invite_emails"]:
             invite_rows.extend(await read_collection(db, collection, {"$or": [
                 {"tester": True},
                 {"is_tester": True},
                 {"type": {"$in": ["tester", "tester_invite", "tester_access"]}},
                 {"kind": {"$in": ["tester", "tester_invite", "tester_access"]}},
-                {"status": {"$in": ["invited", "accepted", "access_granted", "active", "signed_up", "signup_complete", "tester_free"]}},
+                {"status": {"$in": ["pending_signup", "invited", "accepted", "access_granted", "active", "signed_up", "signup_complete", "tester_free"]}},
                 {"free_tester_access": True},
             ]}, 1000))
 
         invites_by_email = {}
-        for invite in invite_rows:
+        for row in invite_rows:
+            invite = dict(row or {})
+            if "payload" in invite and isinstance(invite.get("payload"), dict):
+                invite = {**invite, **invite.get("payload", {})}
+            if "result" in invite and isinstance(invite.get("result"), dict):
+                invite = {**invite, **invite.get("result", {})}
             email = email_of(invite)
             if email and not is_internal(invite):
                 invites_by_email[email] = invite
