@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { getDefaultRoute } from "./lib/roles";
+import { OWNER_MAINTENANCE_MODE } from "./lib/maintenanceMode";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { trackPlatformVisit } from "./lib/platformTelemetry";
 
@@ -19,6 +20,7 @@ const VerifyEmailPage = React.lazy(() => import("./pages/auth/VerifyEmailPage"))
 const InviteSetupPage = React.lazy(() => import("./pages/auth/InviteSetupPage"));
 const ForgotPasswordPage = React.lazy(() => import("./pages/auth/ForgotPasswordPage"));
 const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage"));
+const MaintenancePage = React.lazy(() => import("./pages/MaintenancePage"));
 const WorkerNoFussRoute = React.lazy(() => import("./pages/worker/WorkerNoFuss"));
 const PublicQuotePage = React.lazy(() => import("./pages/public/PublicQuotePage"));
 const PublicInvoicePage = React.lazy(() => import("./pages/public/PublicInvoicePage"));
@@ -65,6 +67,7 @@ const Spinner = () => (
 );
 
 const AppPage = ({ children }) => <>{children}</>;
+const OwnerMaintenance = () => <MaintenancePage workerAccess />;
 
 function PublicRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
@@ -85,9 +88,10 @@ function FreshBusinessRoute({ children }) {
   const isCheckoutReturn = currentSearch.includes("checkout=saved") || currentSearch.includes("checkout=save_failed");
   const isTesterProfileSetup = (currentPath === "/setup" || currentPath === "/setup-guide" || currentPath === "/guide") && (search.get("tester") === "1" || search.get("business_profile") === "1");
 
+  if (user && isWorker) return <Navigate to="/worker/today" replace />;
+  if (OWNER_MAINTENANCE_MODE) return <OwnerMaintenance />;
   if (!user && (isPlans || isCheckoutReturn)) return <AppPage>{children}</AppPage>;
   if (!user) return <Navigate to="/login" replace />;
-  if (isWorker) return <Navigate to="/worker/today" replace />;
   if (isPayroll) return <Navigate to="/dashboard#payroll" replace />;
 
   const testerAccess = user?.free_tester_access === true || user?.is_tester === true || String(user?.subscription_status || "").toLowerCase() === "tester_free";
@@ -109,13 +113,14 @@ function FreshBusinessRoute({ children }) {
 function WorkerRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login?worker=1" replace />;
   return <AppPage>{children}</AppPage>;
 }
 
 function QaAuditorRoute({ children }) {
   const { user, loading, normalizedRole, isPayroll, isWorker } = useAuth();
   if (loading) return <Spinner />;
+  if (OWNER_MAINTENANCE_MODE) return <OwnerMaintenance />;
   if (!user) return <Navigate to="/login" replace />;
   const allowed = isPlatformOwnerUser(user) || normalizedRole === "owner";
   if (!allowed || isWorker || isPayroll) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
@@ -123,8 +128,10 @@ function QaAuditorRoute({ children }) {
 }
 
 function RoleRedirect() {
-  const { user, loading, normalizedRole } = useAuth();
+  const { user, loading, normalizedRole, isWorker } = useAuth();
   if (loading) return <Spinner />;
+  if (user && isWorker) return <Navigate to="/worker/today" replace />;
+  if (OWNER_MAINTENANCE_MODE) return <OwnerMaintenance />;
   if (!user) return <Navigate to="/login" replace />;
   return <Navigate to={isPlatformOwnerUser(user) ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
 }
@@ -179,14 +186,14 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signin" element={<AppRedirect to="/login" />} />
               <Route path="/sign-in" element={<AppRedirect to="/login" />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/signup/" element={<SignupPage />} />
-              <Route path="/register" element={<SignupPage />} />
-              <Route path="/register/" element={<SignupPage />} />
-              <Route path="/verify-email" element={<VerifyEmailPage />} />
-              <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-              <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
-              <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
+              <Route path="/signup" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <SignupPage />} />
+              <Route path="/signup/" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <SignupPage />} />
+              <Route path="/register" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <SignupPage />} />
+              <Route path="/register/" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <SignupPage />} />
+              <Route path="/verify-email" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <VerifyEmailPage />} />
+              <Route path="/forgot-password" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+              <Route path="/reset-password" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PublicRoute><ResetPasswordPage /></PublicRoute>} />
+              <Route path="/invite/setup/:token" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <InviteSetupPage />} />
 
               <Route path="/dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
@@ -258,19 +265,19 @@ function App() {
               <Route path="/billing/success" element={<BillingReturnBridge />} />
               <Route path="/billing/cancel" element={<BillingReturnBridge cancelled />} />
 
-              <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-              <Route path="/churvox-hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
-              <Route path="/admin/hq" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
-              <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-              <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-              <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-              <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
+              <Route path="/admin" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+              <Route path="/churvox-hq" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
+              <Route path="/admin/hq" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
+              <Route path="/owner/dashboard" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+              <Route path="/platform-dashboard" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+              <Route path="/app-owner" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+              <Route path="/admin/usage" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
               <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
               <Route path="/owner-login" element={<AppRedirect to="/login" />} />
               <Route path="/admin/login" element={<AppRedirect to="/login" />} />
               <Route path="/owner" element={<AppRedirect to="/admin" />} />
-              <Route path="/admin/unlock" element={<PlatformUnlock />} />
-              <Route path="/platform/unlock" element={<PlatformUnlock />} />
+              <Route path="/admin/unlock" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformUnlock />} />
+              <Route path="/platform/unlock" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformUnlock />} />
 
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
