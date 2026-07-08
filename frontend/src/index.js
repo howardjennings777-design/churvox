@@ -93,9 +93,10 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
 ];
 
-// HQ is a real React app surface. Load only the connection check, not the old overlay widgets.
+// HQ is a real React app surface. Load only clean connection/visitor checks, not old overlay widgets.
 const hqRuntimeImports = [
   () => import('./runtime/churvoxHqConnectionRuntime'),
+  () => import('./runtime/churvoxHqRealVisitorsRuntime'),
 ];
 
 function runImports(imports) {
