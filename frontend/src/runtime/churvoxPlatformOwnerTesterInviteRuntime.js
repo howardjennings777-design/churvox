@@ -1,6 +1,7 @@
 const FLAG = '__CHURVOX_HQ_TESTER_INVITE_RUNTIME__';
 const PANEL_ID = 'churvox-hq-tester-invite-panel';
 const ENDPOINT_RE = /\/api\/admin\/owner\/tester-intake(?:\?|$)/;
+const HISTORY_KEY = 'churvox.hq.tester.invite.history.v1';
 
 function isHq() {
   try {
@@ -14,12 +15,38 @@ function clean(value) {
   return String(value || '').trim();
 }
 
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+}
+
+function saveHistory(invite) {
+  try {
+    const request = invite?.request || {};
+    const response = invite?.response || {};
+    const email = clean(response?.tester?.email || request.email).toLowerCase();
+    if (!email || !email.includes('@')) return;
+    const row = {
+      email,
+      name: clean(response?.tester?.name || request.name),
+      business_name: clean(response?.tester?.business_name || request.business_name),
+      plan: clean(response?.tester?.plan || request.plan || 'operator'),
+      status: clean(response?.tester?.status || 'pending_signup') || 'pending_signup',
+      invited_at: new Date(invite?.at || Date.now()).toISOString(),
+      free_tester_until: response?.tester?.free_until || response?.tester?.free_tester_until || '',
+      source: 'local_invite_capture',
+    };
+    const next = [row, ...getHistory().filter((item) => clean(item.email).toLowerCase() !== email)].slice(0, 100);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent('churvox:hq-tester-history-change', { detail: row }));
+  } catch {}
+}
+
 function getLastInvite() {
   try { return window.__CHURVOX_LAST_TESTER_INVITE__ || null; } catch { return null; }
 }
 
 function setLastInvite(value) {
-  try { window.__CHURVOX_LAST_TESTER_INVITE__ = value; } catch {}
+  try { window.__CHURVOX_LAST_TESTER_INVITE__ = value; saveHistory(value); } catch {}
 }
 
 function parseBody(init) {
