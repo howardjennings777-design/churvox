@@ -37,23 +37,7 @@ function installStyle() {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    #${ROOT_ID}{grid-column:1/-1;margin:0 0 18px;color:#111827;font-family:inherit}
-    #${ROOT_ID} *{box-sizing:border-box}
-    .hqUniqueShell{border:1px solid rgba(249,115,22,.24);border-radius:28px;background:linear-gradient(135deg,#111827 0%,#1f2937 46%,#f97316 150%);box-shadow:0 20px 54px rgba(15,23,42,.16);overflow:hidden}
-    .hqUniqueInner{padding:18px;display:grid;gap:14px;color:white}
-    .hqUniqueTop{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
-    .hqUniqueTop small{display:inline-flex;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);border-radius:999px;padding:7px 10px;color:#fed7aa;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.12em}
-    .hqUniqueTop h3{margin:8px 0 4px;font-size:24px;line-height:1;letter-spacing:-.04em;color:white}
-    .hqUniqueTop p{margin:0;max-width:760px;color:#e5e7eb;font-size:13px;font-weight:750;line-height:1.45}
-    .hqUniqueRefresh{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);color:white;border-radius:14px;padding:10px 13px;font-weight:950;cursor:pointer}
-    .hqUniqueMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-    .hqUniqueMetric{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.1);border-radius:18px;padding:12px}
-    .hqUniqueMetric b{display:block;font-size:28px;line-height:1;color:white;font-weight:1000;letter-spacing:-.04em}
-    .hqUniqueMetric span{display:block;margin-top:5px;color:#fed7aa;font-size:11px;font-weight:1000;text-transform:uppercase;letter-spacing:.08em}
-    .hqUniqueList{display:grid;gap:7px;max-height:340px;overflow:auto;padding-right:4px}
-    .hqUniqueRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);border-radius:16px;padding:10px}
-    .hqUniqueRow b{display:block;color:white;font-size:13px}.hqUniqueRow span{display:block;color:#d1d5db;font-size:12px;margin-top:2px}.hqUniqueRow em{font-style:normal;color:#fed7aa;font-size:11px;font-weight:950;white-space:nowrap}
-    @media(max-width:860px){.hqUniqueTop{display:block}.hqUniqueRefresh{margin-top:10px}.hqUniqueMetrics{grid-template-columns:1fr 1fr}.hqUniqueRow{grid-template-columns:1fr}}
+    #${ROOT_ID}{grid-column:1/-1;margin:0 0 10px;color:#111827;font-family:inherit}.hqUniqueShell{border:1px solid rgba(249,115,22,.2);border-radius:20px;background:linear-gradient(135deg,#111827 0%,#1f2937 55%,#ea580c 155%);box-shadow:0 12px 32px rgba(15,23,42,.12);overflow:hidden}.hqUniqueInner{padding:12px;display:grid;gap:10px;color:white}.hqUniqueTop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.hqUniqueTop small{display:inline-flex;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);border-radius:999px;padding:5px 8px;color:#fed7aa;font-size:10px;font-weight:1000;text-transform:uppercase;letter-spacing:.1em}.hqUniqueTop h3{margin:5px 0 0;font-size:18px;line-height:1;letter-spacing:-.035em;color:white}.hqUniqueTop p{margin:4px 0 0;max-width:760px;color:#e5e7eb;font-size:11px;font-weight:800;line-height:1.35}.hqUniqueRefresh{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.1);color:white;border-radius:12px;padding:8px 10px;font-size:11px;font-weight:950;cursor:pointer}.hqUniqueMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.hqUniqueMetric{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);border-radius:14px;padding:8px 10px}.hqUniqueMetric b{display:block;font-size:20px;line-height:1;color:white;font-weight:1000;letter-spacing:-.04em}.hqUniqueMetric span{display:block;margin-top:4px;color:#fed7aa;font-size:9px;font-weight:1000;text-transform:uppercase;letter-spacing:.07em}.hqUniqueList{display:grid;gap:6px;max-height:112px;overflow:auto;padding-right:4px}.hqUniqueRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.07);border-radius:12px;padding:8px 9px}.hqUniqueRow b{display:block;color:white;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hqUniqueRow span{display:block;color:#d1d5db;font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hqUniqueRow em{font-style:normal;color:#fed7aa;font-size:10px;font-weight:950;white-space:nowrap}@media(max-width:860px){.hqUniqueTop{display:block}.hqUniqueRefresh{margin-top:8px}.hqUniqueMetrics{grid-template-columns:1fr 1fr}.hqUniqueRow{grid-template-columns:1fr}.hqUniqueList{max-height:150px}}
   `;
   document.head.appendChild(style);
 }
@@ -86,12 +70,8 @@ function fallbackFromOverview(overview) {
 }
 
 async function loadUniqueData() {
-  try {
-    return await apiGet('/api/admin/owner/unique-visitors');
-  } catch (firstError) {
-    const overview = await apiGet('/api/admin/owner-overview');
-    return fallbackFromOverview(overview);
-  }
+  try { return await apiGet('/api/admin/owner/unique-visitors'); }
+  catch { return fallbackFromOverview(await apiGet('/api/admin/owner-overview')); }
 }
 
 function render(root, data, error = '') {
@@ -99,39 +79,20 @@ function render(root, data, error = '') {
   const visitors = arr(data?.visitors);
   const isFallback = data?.source === 'hq_overview_fallback';
   root.innerHTML = `
-    <section class="hqUniqueShell">
-      <div class="hqUniqueInner">
-        <div class="hqUniqueTop">
-          <div>
-            <small>Real unique visitors${isFallback ? ' · fallback' : ''}</small>
-            <h3>One person counted once.</h3>
-            <p>${isFallback ? 'Using the existing HQ overview visit data until the dedicated unique visitor endpoint is available on the live backend.' : 'This uses a stable browser visitor ID and the backend stores one unique visitor record. Pageviews are still tracked, but this list does not repeat the same visitor every time they refresh or come back.'}</p>
-          </div>
-          <button type="button" class="hqUniqueRefresh" data-hq-unique-refresh>Refresh</button>
-        </div>
-        ${error ? `<div class="hqUniqueRow"><b>Could not load unique visitors</b><span>${esc(error)}</span><em>check</em></div>` : `
-          <div class="hqUniqueMetrics">
-            <div class="hqUniqueMetric"><b>${num(counts.unique_total)}</b><span>Total unique</span></div>
-            <div class="hqUniqueMetric"><b>${num(counts.new_unique_today)}</b><span>New today</span></div>
-            <div class="hqUniqueMetric"><b>${num(counts.unique_active_7d)}</b><span>Active 7 days</span></div>
-            <div class="hqUniqueMetric"><b>${num(counts.pageviews_total)}</b><span>Pageviews</span></div>
-          </div>
-          <div class="hqUniqueList">
-            ${visitors.slice(0, 25).map((visitor) => {
-              const name = visitor.user_email || visitor.business_name || visitor.last_referrer || visitor.last_source || visitor.ip || 'Unknown visitor';
-              const meta = `${visitor.first_path || visitor.last_path || visitor.path || 'site visit'} · first ${dateText(visitor.first_seen || visitor.created_at)} · last ${dateText(visitor.last_seen || visitor.created_at)}`;
-              return `<div class="hqUniqueRow"><span><b>${esc(name)}</b><span>${esc(meta)}</span></span><em>${num(visitor.pageview_count || visitor.visit_count || 1)} views</em></div>`;
-            }).join('') || '<div class="hqUniqueRow"><b>No unique visitors yet</b><span>Once someone lands on Churvox, they will appear here once.</span><em>empty</em></div>'}
-          </div>`}
-      </div>
-    </section>`;
+    <section class="hqUniqueShell"><div class="hqUniqueInner">
+      <div class="hqUniqueTop"><div><small>Unique visitors${isFallback ? ' · fallback' : ''}</small><h3>Real visitor count</h3><p>${isFallback ? 'Using existing HQ overview until the dedicated endpoint is live.' : 'One browser visitor is counted once. Refreshes stay as pageviews.'}</p></div><button type="button" class="hqUniqueRefresh" data-hq-unique-refresh>Refresh</button></div>
+      ${error ? `<div class="hqUniqueRow"><b>Could not load unique visitors</b><span>${esc(error)}</span><em>check</em></div>` : `
+      <div class="hqUniqueMetrics"><div class="hqUniqueMetric"><b>${num(counts.unique_total)}</b><span>Total unique</span></div><div class="hqUniqueMetric"><b>${num(counts.new_unique_today)}</b><span>New today</span></div><div class="hqUniqueMetric"><b>${num(counts.unique_active_7d)}</b><span>Active 7d</span></div><div class="hqUniqueMetric"><b>${num(counts.pageviews_total)}</b><span>Pageviews</span></div></div>
+      <div class="hqUniqueList">${visitors.slice(0, 8).map((visitor) => {
+        const name = visitor.user_email || visitor.business_name || visitor.last_referrer || visitor.last_source || visitor.ip || 'Unknown visitor';
+        const meta = `${visitor.first_path || visitor.last_path || visitor.path || 'site visit'} · last ${dateText(visitor.last_seen || visitor.created_at)}`;
+        return `<div class="hqUniqueRow"><span><b>${esc(name)}</b><span>${esc(meta)}</span></span><em>${num(visitor.pageview_count || visitor.visit_count || 1)} views</em></div>`;
+      }).join('') || '<div class="hqUniqueRow"><b>No unique visitors yet</b><span>Once someone lands on Churvox, they will appear here.</span><em>empty</em></div>'}</div>`}
+    </div></section>`;
 }
 
 async function mount() {
-  if (!isHqPath()) {
-    document.getElementById(ROOT_ID)?.remove();
-    return;
-  }
+  if (!isHqPath()) { document.getElementById(ROOT_ID)?.remove(); return; }
   installStyle();
   const main = document.querySelector('main');
   if (!main) return;
@@ -144,12 +105,9 @@ async function mount() {
     else main.insertBefore(root, main.firstChild);
     root.addEventListener('click', (event) => { if (event.target.closest('[data-hq-unique-refresh]')) mount(); });
   }
-  root.innerHTML = '<section class="hqUniqueShell"><div class="hqUniqueInner"><div class="hqUniqueRow"><b>Loading unique visitors…</b><span>Checking real visitors counted once.</span><em>live</em></div></div></section>';
-  try {
-    render(root, await loadUniqueData());
-  } catch (error) {
-    render(root, null, error?.message || 'Could not load');
-  }
+  root.innerHTML = '<section class="hqUniqueShell"><div class="hqUniqueInner"><div class="hqUniqueRow"><b>Loading unique visitors…</b><span>Checking one-person count.</span><em>live</em></div></div></section>';
+  try { render(root, await loadUniqueData()); }
+  catch (error) { render(root, null, error?.message || 'Could not load'); }
 }
 
 function schedule() { [0, 400, 1200, 3000].forEach((delay) => setTimeout(mount, delay)); }
