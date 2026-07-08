@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './runtime/churvoxDateInputIsoGuardRuntime';
 import App from './App';
 import API_BASE from './lib/apiBase';
 import './index.css';
