@@ -99,12 +99,20 @@ def _internal(doc: Dict[str, Any] | None) -> bool:
         return True
     if _email(doc) in owner_emails():
         return True
-    hay = " ".join(str(doc.get(k) or "") for k in ["email", "user_email", "business_name", "referrer", "source", "user_agent"]).lower()
+    hay = " ".join(str(doc.get(k) or "") for k in ["email", "user_email", "business_name", "referrer", "last_referrer", "source", "last_source", "user_agent"]).lower()
     return any(marker in hay for marker in INTERNAL_MARKERS)
 
 
 def _client_ip(request: Request) -> str:
     return request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (request.client.host if request.client else "") or ""
+
+
+def _today_start(now: datetime):
+    return now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def _visit_time(row: Dict[str, Any]):
+    return _parse_dt((row or {}).get("created_at") or (row or {}).get("last_seen") or (row or {}).get("updated_at"))
 
 
 def install(module):
@@ -153,6 +161,7 @@ def install(module):
             await db.platform_visits.create_index("visitor_key")
             await db.platform_visits.create_index("created_at")
             await db.platform_visits.create_index("traffic_type")
+            await db.platform_visits.create_index("internal")
         except Exception:
             pass
 
@@ -225,28 +234,39 @@ def install(module):
                     pass
         except Exception:
             pass
-        return {"ok": True, "unique": True, "visitor_key": visitor_key, "traffic_type": "public" if not is_internal else "internal"}
+        return {"ok": True, "visitor_key": visitor_key, "traffic_type": "public" if not is_internal else "internal"}
 
     async def unique_visitors(request: Request):
         await require_owner(request)
         await ensure_indexes()
         now = _now()
-        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today = _today_start(now)
+        tomorrow = today + timedelta(days=1)
         seven_days = now - timedelta(days=7)
         thirty_days = now - timedelta(days=30)
+
         rows = []
         try:
             rows = await db.platform_unique_visitors.find({}).sort("last_seen", -1).limit(5000).to_list(length=5000)
         except Exception:
             rows = []
-        if not rows:
+
+        visits = []
+        try:
+            visits = await db.platform_visits.find({"created_at": {"$gte": today, "$lt": tomorrow}}).sort("created_at", -1).limit(20000).to_list(length=20000)
+        except Exception:
             visits = []
+        public_visits_today = [visit for visit in visits if not _internal(visit)]
+        today_visitor_keys = {visit.get("visitor_key") or _visitor_key("", visit.get("ip", ""), visit.get("user_agent", "")) for visit in public_visits_today}
+
+        if not rows:
+            all_visits = []
             try:
-                visits = await db.platform_visits.find({}).sort("last_seen", -1).limit(12000).to_list(length=12000)
+                all_visits = await db.platform_visits.find({}).sort("last_seen", -1).limit(12000).to_list(length=12000)
             except Exception:
-                visits = []
+                all_visits = []
             seen = {}
-            for visit in visits:
+            for visit in all_visits:
                 key = visit.get("visitor_key") or _visitor_key("", visit.get("ip", ""), visit.get("user_agent", ""))
                 current = seen.get(key) or {"visitor_key": key, "first_seen": visit.get("created_at"), "last_seen": visit.get("last_seen") or visit.get("created_at"), "first_path": visit.get("path"), "last_path": visit.get("path"), "user_email": visit.get("user_email"), "business_name": visit.get("business_name"), "pageview_count": 0}
                 current["pageview_count"] = int(current.get("pageview_count") or 0) + 1
@@ -256,23 +276,35 @@ def install(module):
                     current.update({"last_seen": visit.get("last_seen") or visit.get("created_at"), "last_path": visit.get("path"), "last_referrer": visit.get("referrer"), "last_source": visit.get("source"), "user_email": visit.get("user_email"), "business_name": visit.get("business_name"), "internal": _internal(visit), "traffic_type": "public" if not _internal(visit) else "internal"})
                 seen[key] = current
             rows = list(seen.values())
+
         public_rows = [r for r in rows if not _internal(r)]
         def at(row, field):
             return _parse_dt(row.get(field))
-        unique_today = [r for r in public_rows if (at(r, "first_seen") or at(r, "created_at") or at(r, "last_seen")) and (at(r, "first_seen") or at(r, "created_at") or at(r, "last_seen")) >= today]
+        new_unique_today = [r for r in public_rows if (at(r, "first_seen") or at(r, "created_at") or at(r, "last_seen")) and today <= (at(r, "first_seen") or at(r, "created_at") or at(r, "last_seen")) < tomorrow]
         active_7d = [r for r in public_rows if (at(r, "last_seen") or at(r, "created_at")) and (at(r, "last_seen") or at(r, "created_at")) >= seven_days]
         active_30d = [r for r in public_rows if (at(r, "last_seen") or at(r, "created_at")) and (at(r, "last_seen") or at(r, "created_at")) >= thirty_days]
+        pageviews_total = sum(int(r.get("pageview_count") or r.get("visit_count") or 0) for r in public_rows)
+        if not pageviews_total:
+            try:
+                pageviews_total = await db.platform_visits.count_documents({"internal": {"$ne": True}, "traffic_type": "public"})
+            except Exception:
+                pageviews_total = 0
+
         return {
             "success": True,
             "source": "platform_unique_visitors_real_public",
             "generated_at": now.isoformat(),
+            "periods": {"today_start": today.isoformat(), "today_end": tomorrow.isoformat(), "timezone": "UTC"},
             "counts": {
+                "visits_today": len(public_visits_today),
+                "unique_visits_today": len(today_visitor_keys),
+                "new_unique_today": len(new_unique_today),
                 "unique_total": len(public_rows),
-                "new_unique_today": len(unique_today),
                 "unique_active_7d": len(active_7d),
                 "unique_active_30d": len(active_30d),
-                "pageviews_total": sum(int(r.get("pageview_count") or r.get("visit_count") or 0) for r in public_rows),
+                "pageviews_total": pageviews_total,
             },
+            "today_visits": [_safe_value(v) for v in public_visits_today[:500]],
             "visitors": [_safe_value(r) for r in public_rows[:500]],
         }
 
