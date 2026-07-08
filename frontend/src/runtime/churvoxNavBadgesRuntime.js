@@ -66,6 +66,14 @@ function unread(row) {
   return /unread|newmessage|newreply|replyneeded|needsreply|messagewaiting/.test(s);
 }
 
+function isOfficeToWorker(row) {
+  const direction = key(row?.direction || row?.from_role || row?.source_role || '');
+  if (/workertooffice|worker/.test(direction) && !/office|owner|admin/.test(direction)) return false;
+  if (/officetoworker|ownertoworker|admintoworker|office|owner|admin/.test(direction)) return true;
+  const from = key(row?.from || row?.sender || row?.source || '');
+  return /office|owner|admin|command/.test(from);
+}
+
 async function fetchJson(endpoint, timeout = 4500) {
   const headers = {};
   const t = token();
@@ -164,7 +172,7 @@ async function workerCounts() {
   const messages = rows(messagesRaw.value, 'messages');
   return {
     jobs: jobs.filter((row) => !isDone(row)).length,
-    messages: messages.filter(unread).length,
+    messages: messages.filter((row) => isOfficeToWorker(row) && unread(row)).length,
   };
 }
 
