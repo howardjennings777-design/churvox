@@ -11,7 +11,9 @@ const css = `
   .cvxFinalCommandSlip > p,
   .cvxFinalCommandSlip .cv3RealSlip,
   .cvxFinalCommandSlip .cv3DecisionSlip,
-  .cvxFinalCommandSlip .cv3DecisionFormLabel {
+  .cvxFinalCommandSlip .cv3DecisionFormLabel,
+  .cvxFinalCommandSlip .cv3NativeSlipHeader,
+  .cvxFinalCommandSlip .cv3NativeSlipChecks {
     display: none !important;
   }
   .cvxFinalCommandSlip .cv3Form {
@@ -23,9 +25,7 @@ const css = `
     padding: 16px !important;
     border-radius: 28px !important;
     border: 1px solid rgba(16,21,19,.11) !important;
-    background:
-      radial-gradient(circle at 100% 0%, rgba(243,107,33,.15), transparent 34%),
-      linear-gradient(135deg, rgba(255,255,255,.97), rgba(255,247,236,.86)) !important;
+    background: radial-gradient(circle at 100% 0%, rgba(243,107,33,.15), transparent 34%), linear-gradient(135deg, rgba(255,255,255,.97), rgba(255,247,236,.86)) !important;
     box-shadow: 0 18px 42px rgba(37,28,17,.075), inset 0 1px 0 rgba(255,255,255,.75) !important;
     overflow: hidden !important;
   }
@@ -38,10 +38,7 @@ const css = `
     background: repeating-linear-gradient(135deg, rgba(16,21,19,.03) 0 1px, transparent 1px 18px);
     mask-image: linear-gradient(90deg, transparent 0%, #000 38%, #000 100%);
   }
-  .cvxFinalCommandSlip .cv3Form > * {
-    position: relative;
-    z-index: 1;
-  }
+  .cvxFinalCommandSlip .cv3Form > * { position: relative; z-index: 1; }
   .cvxFinalSlipHeader {
     grid-column: 1 / -1;
     display: grid;
@@ -113,9 +110,7 @@ const css = `
     font-weight: 700;
     overflow-wrap: anywhere;
   }
-  .cvxFinalCommandSlip .cv3Field {
-    margin: 0 !important;
-  }
+  .cvxFinalCommandSlip .cv3Field { margin: 0 !important; }
   .cvxFinalCommandSlip .cv3Field span {
     color: #7a4b2c !important;
     font-size: 9.5px !important;
@@ -177,7 +172,7 @@ function ensureStyle() {
   if (style.parentNode === document.head && document.head.lastElementChild !== style) document.head.appendChild(style);
 }
 function isSlip(drawer) {
-  return drawer && /approval slip|command slip|what churvox prepared|evidence checked|owner check|recommended action/i.test(drawer.textContent || '');
+  return drawer && /approval slip|command slip|what churvox prepared|evidence checked|owner check|recommended action|slip type|proposed change/i.test(drawer.textContent || '');
 }
 function fields(root) { return Array.from(root.querySelectorAll('.cv3Field,label')).filter((field) => field.querySelector('input,textarea,select')); }
 function labelText(field) { return clean(field.querySelector('span,small,b')?.textContent); }
@@ -231,19 +226,28 @@ function checksFor(type, record) {
   if (/client|customer/.test(hay)) return ['Name', 'Site notes', 'Service'];
   return ['Record', 'Details', 'Decision'];
 }
+function removeOldSlipBits(drawer) {
+  drawer.querySelectorAll('.cv3DecisionSlip,.cv3DecisionFormLabel,.cv3RealSlip,.cv3NativeSlipHeader,.cv3NativeSlipChecks').forEach((node) => node.remove());
+  const form = drawer.querySelector('.cv3Form');
+  if (!form) return;
+  Array.from(form.children).forEach((child) => {
+    if (child.classList?.contains('cvxFinalSlipHeader') || child.classList?.contains('cvxFinalSlipChecks')) return;
+    if (child.classList?.contains('cv3NativeSlipHeader') || child.classList?.contains('cv3NativeSlipChecks')) child.remove();
+  });
+}
 function apply(drawer) {
   if (!isSlip(drawer)) return;
   ensureStyle();
   drawer.classList.add('cvxFinalCommandSlip');
-  drawer.querySelectorAll('.cv3DecisionSlip,.cv3DecisionFormLabel,.cv3RealSlip').forEach((node) => node.remove());
+  removeOldSlipBits(drawer);
   const form = drawer.querySelector('.cv3Form');
   if (!form) return;
   relabel(drawer);
-  const type = fieldValue(drawer, 'Approval type') || 'Owner check';
-  const record = fieldValue(drawer, 'Record') || 'Linked record';
-  const client = fieldValue(drawer, 'Client') || 'Business';
-  const amount = fieldValue(drawer, 'Amount') || 'Not money related';
-  const proposed = fieldValue(drawer, 'What Churvox prepared') || fieldValue(drawer, 'Owner check') || '';
+  const type = fieldValue(drawer, 'Approval type') || fieldValue(drawer, 'Slip type') || 'Owner check';
+  const record = fieldValue(drawer, 'Record') || fieldValue(drawer, 'What will change') || 'Linked record';
+  const client = fieldValue(drawer, 'Client') || fieldValue(drawer, 'Who it affects') || 'Business';
+  const amount = fieldValue(drawer, 'Amount') || fieldValue(drawer, 'Money impact') || 'Not money related';
+  const proposed = fieldValue(drawer, 'What Churvox prepared') || fieldValue(drawer, 'Proposed change') || fieldValue(drawer, 'Owner check') || '';
   let header = form.querySelector(':scope > .cvxFinalSlipHeader');
   if (!header) {
     header = document.createElement('section');
