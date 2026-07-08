@@ -62,22 +62,33 @@ function PublicRoute({ children }) {
 function FreshBusinessRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
   if (loading) return <Spinner />;
-  const setupAccess = typeof window !== "undefined" && (
-    window.location.pathname === "/plans" ||
-    window.location.pathname === "/guide" ||
-    window.location.pathname === "/setup" ||
-    window.location.pathname === "/setup-guide" ||
-    window.location.search.includes("first_setup=1") ||
-    window.location.search.includes("checkout=saved") ||
-    window.location.search.includes("checkout=save_failed") ||
-    window.location.hash === "#setupassistant" ||
-    window.location.hash === "#firstrun"
-  );
-  if (!user && setupAccess) return <AppPage>{children}</AppPage>;
+
+  const currentPath = typeof window === "undefined" ? "" : window.location.pathname;
+  const currentSearch = typeof window === "undefined" ? "" : window.location.search || "";
+  const currentHash = typeof window === "undefined" ? "" : window.location.hash || "";
+  const search = new URLSearchParams(currentSearch);
+  const isPlans = currentPath === "/plans";
+  const isCheckoutReturn = currentSearch.includes("checkout=saved") || currentSearch.includes("checkout=save_failed");
+  const isTesterProfileSetup = (currentPath === "/setup" || currentPath === "/setup-guide" || currentPath === "/guide") && (search.get("tester") === "1" || search.get("business_profile") === "1");
+
+  if (!user && (isPlans || isCheckoutReturn)) return <AppPage>{children}</AppPage>;
   if (!user) return <Navigate to="/login" replace />;
   if (isWorker) return <Navigate to="/worker/today" replace />;
   if (isPayroll) return <Navigate to="/dashboard#payroll" replace />;
-  if (!hasAppAccess && !setupAccess) return <Navigate to="/plans" replace />;
+
+  const testerAccess = user?.free_tester_access === true || user?.is_tester === true || String(user?.subscription_status || "").toLowerCase() === "tester_free";
+  if (!hasAppAccess && !(isPlans || isCheckoutReturn || (testerAccess && isTesterProfileSetup))) {
+    return <Navigate to="/plans" replace />;
+  }
+
+  if (!hasAppAccess && isTesterProfileSetup && !testerAccess) {
+    return <Navigate to="/plans" replace />;
+  }
+
+  if (!hasAppAccess && currentPath !== "/plans" && currentHash !== "#setupassistant" && currentHash !== "#firstrun") {
+    return <Navigate to="/plans" replace />;
+  }
+
   return <AppPage>{children}</AppPage>;
 }
 
