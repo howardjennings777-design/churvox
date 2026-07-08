@@ -50,6 +50,7 @@ const globalHelperImports = [
 ];
 
 const ownerFastRuntimeImports = [
+  () => import('./runtime/churvoxBusinessSystemSuiteRuntime'),
   () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxCommandSlipPolishRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
