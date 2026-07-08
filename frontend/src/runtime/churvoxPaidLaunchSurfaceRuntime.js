@@ -135,7 +135,7 @@ function ensureStableOwnerText() {
   const node = document.createElement('div');
   node.id = STABLE_TEXT_ID;
   node.className = 'cvxPaidLaunchStableText';
-  node.textContent = 'Owner control room. Run sheet, checks, messages and money stay ready while Churvox loads the owner command floor.';
+  node.textContent = 'Owner control room. Run sheet, checks, messages and money stay ready while Churvox loads the owner command floor. Churvox business system: Autopilot, Office live feed, Daily closeout, Proof pack and Client memory.';
   document.body.appendChild(node);
 }
 
