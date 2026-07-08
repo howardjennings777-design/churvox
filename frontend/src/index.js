@@ -6,6 +6,7 @@ import './churvox-product/productTypeScale.css';
 import './styles/public-premium-force.css';
 import './styles/churvoxMobileAppPolish.css';
 import './pages/marketing/PublicMobileFirst.css';
+import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/authInputVisibilityGuard';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxPlainSendGuardRuntime';
@@ -64,7 +65,6 @@ const ownerRuntimeImports = [
 ];
 
 const workerRuntimeImports = [
-  () => import('./runtime/churvoxWorkerPreReactShell'),
   () => import('./runtime/churvoxNativeTimerRuntime'),
   () => import('./runtime/churvoxWorkerAppCleanRuntime'),
 ];
