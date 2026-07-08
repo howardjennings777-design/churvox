@@ -18,32 +18,35 @@ function syncBodyClass() {
   document.body.classList.toggle('churvoxWorkerCleanBody', worker);
   if (worker) {
     document.body.classList.remove('cvxPocketOwnerReady');
-    document.getElementById('cvxPocketOwner')?.remove();
+    const pocket = document.getElementById('cvxPocketOwner');
+    if (pocket) pocket.innerHTML = '';
   }
+}
+
+function touchesWorkerApp(node, workerRoot) {
+  if (!node || !workerRoot) return false;
+  return node === workerRoot || workerRoot.contains(node) || node.contains(workerRoot);
 }
 
 function removeStrayLogout(workerRoot) {
   if (!isWorkerRoute() || isProfileRoute()) return;
   document.querySelectorAll('button,a').forEach((node) => {
+    if (touchesWorkerApp(node, workerRoot) && node.closest?.('.swNav')) return;
     const copy = text(node).toLowerCase();
-    if (copy === 'log out' || copy === 'logout') node.remove();
-  });
-  if (!workerRoot) return;
-  workerRoot.querySelectorAll('button,a').forEach((node) => {
-    const copy = text(node).toLowerCase();
-    if (copy === 'log out' || copy === 'logout') node.remove();
+    if ((copy === 'log out' || copy === 'logout') && !touchesWorkerApp(node, workerRoot)) node.remove();
   });
 }
 
 function removeDuplicateSplashes() {
   if (!isWorkerRoute()) return;
+  const workerRoot = document.querySelector('.simpleWorkerApp');
   [
     '#churvox-worker-pre-react-shell', '#churvox-launch-splash', '#churvox-loading-splash', '#launch-splash',
     '.churvoxLaunchSplash', '.launchSplash', '.appSplash', '.loadingSplash', '.workerSplash',
     '[data-churvox-splash]', '[data-churvox-worker-pre-react]', '[data-splash]', '[id*="splash"]', '[class*="Splash"]'
   ].forEach((selector) => {
     document.querySelectorAll(selector).forEach((node) => {
-      if (node.closest?.('.simpleWorkerApp')) return;
+      if (touchesWorkerApp(node, workerRoot)) return;
       node.remove();
     });
   });
@@ -54,7 +57,8 @@ function removeOwnerOverlays() {
   const workerRoot = document.querySelector('.simpleWorkerApp');
   removeDuplicateSplashes();
   document.body.classList.remove('cvxPocketOwnerReady');
-  document.getElementById('cvxPocketOwner')?.remove();
+  const pocket = document.getElementById('cvxPocketOwner');
+  if (pocket) pocket.innerHTML = '';
   const selectors = [
     '.cvxDrawerLayer', '.cvxDrawer', '.cvxModal', '.cvxSheet', '.cvxPanel', '.cvxRecordDrawer',
     '[data-cvx-drawer]', '[data-cvx-record]', '[data-churvox-command-ledger]', '[data-cvx-command-brain]',
@@ -63,14 +67,14 @@ function removeOwnerOverlays() {
   ];
   selectors.forEach((selector) => {
     document.querySelectorAll(selector).forEach((node) => {
-      if (workerRoot && workerRoot.contains(node) && node.classList?.contains('swNav')) return;
+      if (touchesWorkerApp(node, workerRoot)) return;
       node.remove();
     });
   });
   document.querySelectorAll('section,div,main,aside,form').forEach((node) => {
-    if (workerRoot && workerRoot.contains(node)) return;
+    if (touchesWorkerApp(node, workerRoot)) return;
     const copy = text(node).toLowerCase();
-    if (/new record|add job|job form|working job form|save record|payment not ready|take card payment|admin ledger|command lanes|loading your run sheet|opening owner command/.test(copy) && copy.length < 1500) node.remove();
+    if (/new record|add job|job form|working job form|save record|payment not ready|admin ledger|command lanes|loading your run sheet|opening owner command/.test(copy) && copy.length < 1500) node.remove();
   });
   removeStrayLogout(workerRoot);
 }
