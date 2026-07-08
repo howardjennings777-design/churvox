@@ -1,0 +1,187 @@
+.cvOfficeTidy {
+  gap: 10px;
+}
+
+.cvTidyStatus {
+  grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(120px, 0.42fr));
+}
+
+.cvTidyStatus .cvOfficeStatusLead h1 {
+  max-width: 640px;
+}
+
+.cvTidyGrid {
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 10px;
+}
+
+.cvTidyCommand {
+  min-height: 560px;
+}
+
+.cvTidyDepartments {
+  grid-template-columns: repeat(7, minmax(88px, 1fr));
+  padding: 7px;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 13px;
+  background: rgba(23,18,14,.03);
+}
+
+.cvTidyDepartments button {
+  min-height: 62px;
+  box-shadow: none;
+}
+
+.cvTidyDepartments button:not(.active) strong {
+  color: #9a3412;
+}
+
+.cvTidyDecisionBoard {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.cvTidyDecisionBoard .cvDecisionCard {
+  min-height: 330px;
+}
+
+.cvTidyDecisionBoard .cvDecisionCard h3 {
+  font-size: 1rem;
+}
+
+.cvTidyDecisionBoard .cvDecisionCard p,
+.cvTidyDecisionBoard .cvDecisionCard dd {
+  font-size: .74rem;
+}
+
+.cvTidyRail {
+  position: sticky;
+  top: 76px;
+  max-height: calc(100vh - 90px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.cvTidyWorkbench .cvPanelHeader,
+.cvTidyBuild .cvPanelHeader {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(23,18,14,.08);
+}
+
+.cvTidyWorkbench .cvTeamLayout {
+  grid-template-columns: 290px minmax(0, 1fr);
+}
+
+.cvTidyWorkbench .cvRoleList {
+  max-height: 520px;
+  padding: 7px;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 13px;
+  background: rgba(23,18,14,.03);
+}
+
+.cvTidyWorkbench .cvRoleList button {
+  background: rgba(255,255,255,.72);
+}
+
+.cvTidyWorkbench .cvRoleDetail {
+  min-height: 360px;
+}
+
+.cvTidyBuild ol {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.cvTidyBuild li {
+  padding-top: 38px;
+  padding-left: 11px;
+  min-height: 122px;
+}
+
+.cvTidyBuild li::before {
+  top: 11px;
+}
+
+.cvEmptyTray {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  place-items: start;
+  min-height: 260px;
+  padding: 18px;
+  border: 1px dashed rgba(23,18,14,.18);
+  border-radius: 14px;
+  background: rgba(255,255,255,.48);
+}
+
+.cvEmptyTray strong {
+  font-size: 1rem;
+  letter-spacing: -.03em;
+}
+
+.cvEmptyTray p {
+  max-width: 520px;
+  margin: 0;
+  color: #655c52;
+  font-size: .78rem;
+  line-height: 1.4;
+  font-weight: 750;
+}
+
+.cvEmptyTray button {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 9px;
+  color: #fff7ec;
+  background: #17120e;
+  font-size: .68rem;
+  font-weight: 950;
+}
+
+.cvOfficeTidy .cvPlaybookCard,
+.cvOfficeTidy .cvActivityCard,
+.cvOfficeTidy .cvRoleControls {
+  box-shadow: 0 8px 18px rgba(37,29,20,.07);
+}
+
+.cvOfficeTidy .cvPanelHeader {
+  gap: 10px;
+}
+
+.cvOfficeTidy .cvPanelHeader h2 {
+  font-size: clamp(1rem, 1.35vw, 1.35rem);
+}
+
+.cvOfficeTidy .cvPanelHeader p {
+  max-width: 390px;
+}
+
+@media (max-width: 1280px) {
+  .cvTidyGrid,
+  .cvTidyStatus,
+  .cvTidyWorkbench .cvTeamLayout,
+  .cvTidyBuild ol {
+    grid-template-columns: 1fr;
+  }
+
+  .cvTidyRail {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .cvTidyDecisionBoard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .cvTidyDepartments,
+  .cvTidyDecisionBoard {
+    grid-template-columns: 1fr;
+  }
+
+  .cvTidyDecisionBoard .cvDecisionCard {
+    min-height: 0;
+  }
+}
