@@ -36,6 +36,43 @@
   color: #9a3412;
 }
 
+.cvQueueSummary {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 10px;
+  padding: 8px 9px;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 11px;
+  background: rgba(255,255,255,.58);
+}
+
+.cvQueueSummary strong,
+.cvQueueSummary span,
+.cvQueueSummary em {
+  font-size: .68rem;
+  font-weight: 900;
+}
+
+.cvQueueSummary strong {
+  color: #17120e;
+}
+
+.cvQueueSummary span {
+  color: #655c52;
+}
+
+.cvQueueSummary em {
+  justify-self: end;
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: #9a3412;
+  background: rgba(249,115,22,.1);
+  font-style: normal;
+  white-space: nowrap;
+}
+
 .cvTidyDecisionBoard {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
@@ -177,8 +214,13 @@
 
 @media (max-width: 760px) {
   .cvTidyDepartments,
-  .cvTidyDecisionBoard {
+  .cvTidyDecisionBoard,
+  .cvQueueSummary {
     grid-template-columns: 1fr;
+  }
+
+  .cvQueueSummary em {
+    justify-self: start;
   }
 
   .cvTidyDecisionBoard .cvDecisionCard {
