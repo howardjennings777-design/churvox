@@ -4,6 +4,7 @@ import { loadBusinessSettings } from '../lib/businessSettings';
 
 const STYLE_ID = 'churvox-internal-support-runtime-style';
 let busy = false;
+let renderSeq = 0;
 
 const css = `
   .cv3InternalSupportPanel { grid-column: 1 / -1 !important; border-color: rgba(243,107,33,.22) !important; background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(255,244,232,.9)) !important; }
@@ -21,7 +22,8 @@ const css = `
   .cv3SupportTicketList article { border:1px solid rgba(16,21,19,.08); border-radius:16px; background:#fff; padding:10px; }
   .cv3SupportTicketList strong { display:block; color:#101513; font-size:12px; font-weight:1000; }
   .cv3SupportTicketList small { display:block; margin-top:3px; color:#66716b; font-size:11px; font-weight:850; }
-  .cv3SupportMailtoKilled { display:none !important; }
+  .cv3SupportMailtoKilled,
+  .cv3LegacySupportContactKilled { display:none !important; }
   @media(max-width:780px){.cv3InternalSupportBody{grid-template-columns:1fr}}
 `;
 
@@ -51,7 +53,7 @@ function settings() { return loadBusinessSettings(null); }
 function industryKey() { const s = settings(); return normalizeIndustry(s.industry_mode || s.trade_industry_type); }
 function headers() { const auth = token(); return { Accept:'application/json', 'Content-Type':'application/json', ...(auth ? { Authorization:`Bearer ${auth}` } : {}) }; }
 function host() { return String(API_BASE || '').replace(/\/$/, ''); }
-function escapeHtml(value) { return String(value || '').replace(/[&<>\"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[char])); }
+function escapeHtml(value) { return String(value || '').replace(/[&<>"]/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[char])); }
 
 async function getTickets() {
   const res = await fetch(`${host()}/api/support/tickets`, { credentials:'include', headers:headers() });
@@ -66,6 +68,31 @@ async function sendTicket(payload) {
   return body;
 }
 
+function pageRoot() {
+  return document.querySelector('.cv3Page');
+}
+
+function removeDuplicateSupportPanels() {
+  const panels = Array.from(document.querySelectorAll('.cv3InternalSupportPanel'));
+  panels.slice(1).forEach((panel) => panel.remove());
+  return panels[0] || null;
+}
+
+function removeLegacyContactPanel() {
+  const page = pageRoot();
+  if (!page) return;
+  page.querySelectorAll('.cv3Panel').forEach((panel) => {
+    if (panel.classList.contains('cv3InternalSupportPanel')) return;
+    const text = (panel.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const isOldContact = text.includes('need help?') && (text.includes('email support') || text.includes('hello@churvox.com'));
+    const isOldContactTitle = text.startsWith('support contact') || (text.includes('contact') && text.includes('email hello@churvox.com'));
+    if (isOldContact || isOldContactTitle) {
+      panel.classList.add('cv3LegacySupportContactKilled');
+      panel.remove();
+    }
+  });
+}
+
 function killMailtoLinks() {
   document.querySelectorAll('a[href^="mailto:"]').forEach((a) => {
     a.classList.add('cv3SupportMailtoKilled');
@@ -75,7 +102,8 @@ function killMailtoLinks() {
     const text = (node.textContent || '').toLowerCase();
     const href = (node.getAttribute?.('href') || '').toLowerCase();
     if (href.includes('mailto:') || text.includes('email support') || text.includes('hello@churvox.com')) {
-      if (href.includes('mailto:')) node.classList.add('cv3SupportMailtoKilled');
+      node.classList.add('cv3SupportMailtoKilled');
+      node.setAttribute?.('aria-hidden', 'true');
     }
   });
 }
@@ -97,15 +125,27 @@ function panelHtml(industry, tickets = []) {
 }
 
 async function renderPanel() {
-  if (!isOwnerApp() || !isSupportPage()) return;
+  if (!isOwnerApp()) return;
   ensureStyle();
+  if (!isSupportPage()) {
+    document.querySelectorAll('.cv3InternalSupportPanel').forEach((panel) => panel.remove());
+    return;
+  }
+
+  const seq = ++renderSeq;
   killMailtoLinks();
-  const page = document.querySelector('.cv3Page');
+  removeLegacyContactPanel();
+  removeDuplicateSupportPanels();
+
+  const page = pageRoot();
   const hero = page?.querySelector('.cv3Hero');
   if (!page || !hero) return;
-  let panel = page.querySelector('.cv3InternalSupportPanel');
   const industry = getIndustry(industryKey());
   const tickets = await getTickets().catch(() => []);
+  if (seq !== renderSeq) return;
+
+  removeLegacyContactPanel();
+  let panel = removeDuplicateSupportPanels();
   if (!panel) {
     panel = document.createElement('section');
     panel.className = 'cv3Panel cv3InternalSupportPanel span12';
@@ -131,7 +171,7 @@ async function renderPanel() {
       });
       status.textContent = 'Saved inside Churvox. No external email opened.';
       form.reset();
-      setTimeout(renderPanel, 400);
+      schedule(500);
     } catch (error) {
       status.textContent = error?.message || 'Could not save support ticket.';
     } finally {
@@ -149,7 +189,6 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_INTERNAL_SUPPORT_RUNTIME_
   window.addEventListener('hashchange', () => [80, 260, 900].forEach(schedule));
   window.addEventListener('popstate', () => [80, 260, 900].forEach(schedule));
   window.addEventListener('churvox:data-refresh', () => schedule(300));
-  document.addEventListener('click', () => schedule(160), true);
 }
 
 export {};
