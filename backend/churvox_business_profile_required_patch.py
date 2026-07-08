@@ -20,7 +20,7 @@ def _truthy(value):
         return value
     if isinstance(value, (int, float)):
         return value > 0
-    return str(value or "").strip().lower() in {"1", "true", "yes", "done", "complete", "completed"}
+    return str(value or "").strip().lower() in {"1", "true", "yes", "done", "complete", "completed", "active", "paid", "trialing", "tester_free"}
 
 
 def _first(row, *keys):
@@ -92,8 +92,21 @@ def _is_tester(user):
     )
 
 
+def _has_plan_or_access(user):
+    status = base.text((user or {}).get("subscription_status") or (user or {}).get("plan_status") or (user or {}).get("billing_status")).lower()
+    plan = base.text((user or {}).get("plan") or (user or {}).get("current_plan") or (user or {}).get("subscription_plan") or (user or {}).get("tier")).lower()
+    return bool(
+        _is_tester(user)
+        or (user or {}).get("has_app_access") is True
+        or status in {"active", "paid", "trialing", "trial", "tester_free"}
+        or plan in {"start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"}
+    )
+
+
 def _access_next(user):
-    return "dashboard" if _is_tester(user) else "plans"
+    # Normal signup flow is plan first, then business profile, then app.
+    # If someone somehow reaches the profile before plan/access, send them back to Plans.
+    return "dashboard" if _has_plan_or_access(user) else "plans"
 
 
 def _safe_update(payload, selected, work_style):
@@ -154,6 +167,7 @@ def install(module):
         response["business_profile_completed"] = fields["completed"]
         response["next_after_profile"] = _access_next(user)
         response["tester_access"] = _is_tester(user)
+        response["plan_first"] = not _is_tester(user)
         return response
 
     async def profile_status(request: Request):
@@ -168,6 +182,7 @@ def install(module):
             "business_profile": fields,
             "next_after_profile": _access_next(user),
             "tester_access": _is_tester(user),
+            "plan_first": not _is_tester(user),
             "updated_at": base.now(),
         }
 
@@ -206,6 +221,7 @@ def install(module):
         }
         response["next_after_profile"] = _access_next(user)
         response["tester_access"] = _is_tester(user)
+        response["plan_first"] = not _is_tester(user)
         response["saved_payload"] = base.safe_doc(update_doc)
         return response
 
