@@ -6,6 +6,7 @@ import OfficeTeamRoleControls from "./OfficeTeamRoleControls";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
 
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-office-tidy-20260709";
+const COMMAND_CARD_LIMIT = 3;
 
 const departments = [
   ["command", "Command", 0],
@@ -56,6 +57,8 @@ const demoDecisions = [
   d("demo-2", "Bookings", "Receptionist", "Next", "Regular client has no next booking", "Jay usually books every 3 weeks but has no next appointment.", ["last visit", "usual cycle", "preferred staff", "calendar space"], "Rebooking message and suggested date are ready.", "Send rebooking message or create booking now?", ["Send", "Book", "Edit date", "Park"]),
   d("demo-3", "Staff", "Payroll Clerk", "Needs check", "Hours review has one odd timer", "Cam has 36.5 hours ready, with one timer much longer than usual.", ["period", "timers", "manual time", "rate"], "Hours review is ready and the odd timer is flagged.", "Approve, edit timer, or ask Cam?", ["Approve", "Edit", "Ask Cam", "Park"]),
   d("demo-4", "Clients", "Client Memory", "Low risk", "Service note should become client memory", "Sarah’s appointment note includes colour, shape and sensitivity detail.", ["existing notes", "latest service", "duplicates"], "Client memory update is ready.", "Save this to client memory?", ["Save", "Save + rebook", "Edit", "Ignore"]),
+  d("demo-5", "Quality", "Quality Checker", "Parkable", "Completed work is missing proof", "A completed work record is missing its final proof note.", ["complete", "proof missing", "invoice not sent"], "Ask-staff prompt is ready.", "Ask staff for proof or complete anyway?", ["Ask staff", "Complete", "Park"]),
+  d("demo-6", "Operations", "Profit Checker", "Pattern", "Recurring work may be underpriced", "A repeat service has taken longer than normal three times this month.", ["hours", "price", "repeat pattern"], "Price review prompt is ready before the next visit.", "Review the recurring price before it repeats?", ["Review price", "Keep", "Park"]),
 ];
 
 const fallbackActivity = [
@@ -80,7 +83,7 @@ export default function OfficeTeamLabTidy() {
   const [activePlaybook, setActivePlaybook] = useState(playbooks[0]);
   const [snapshot, setSnapshot] = useState({ source: "demo", decisions: [], counts: null });
   const [notice, setNotice] = useState("Demo preview. Sign in as an owner to load live Admin Brain decisions.");
-  const [marks, setMarks] = useState({});
+  const [resolved, setResolved] = useState({});
 
   useEffect(() => {
     let mounted = true;
@@ -88,6 +91,7 @@ export default function OfficeTeamLabTidy() {
       .then((data) => {
         if (!mounted) return;
         setSnapshot(data || { source: "demo", decisions: [], counts: null });
+        setResolved({});
         if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required before anything changes.");
         else if (data?.source === "clear-live") setNotice("Live scan is clear. Demo cards stay visible so the page can still be reviewed.");
       })
@@ -96,12 +100,16 @@ export default function OfficeTeamLabTidy() {
   }, []);
 
   const decisions = snapshot.decisions?.length ? snapshot.decisions : demoDecisions;
-  const counts = useMemo(() => countDepartments(decisions), [decisions]);
-  const boardDecisions = useMemo(() => activeDepartment === "command" ? decisions : decisions.filter((item) => trayKey(item.tray) === activeDepartment), [activeDepartment, decisions]);
+  const pendingDecisions = useMemo(() => decisions.filter((item) => !resolved[decisionKey(item)]), [decisions, resolved]);
+  const counts = useMemo(() => countDepartments(pendingDecisions), [pendingDecisions]);
+  const trayQueue = useMemo(() => activeDepartment === "command" ? pendingDecisions : pendingDecisions.filter((item) => trayKey(item.tray) === activeDepartment), [activeDepartment, pendingDecisions]);
+  const boardDecisions = useMemo(() => trayQueue.slice(0, COMMAND_CARD_LIMIT), [trayQueue]);
+  const waitingCount = Math.max(0, trayQueue.length - boardDecisions.length);
   const visibleRoles = useMemo(() => roles.filter((item) => item.dept === activeDepartment || (activeDepartment === "command" && item.dept === "command")), [activeDepartment]);
   const activeRole = roles.find((item) => item.name === activeRoleName) || visibleRoles[0] || roles[0];
-  const activityRows = snapshot.decisions?.length ? decisions.slice(0, 4).map((item) => [item.roleName || item.tray, `${item.title} prepared for owner review.`, "live now"]) : fallbackActivity;
-  const metrics = makeStatusCards(snapshot.counts, decisions.length);
+  const activityRows = pendingDecisions.length ? pendingDecisions.slice(0, 4).map((item) => [item.roleName || item.tray, `${item.title} waiting in Command.`, "queued"]) : fallbackActivity;
+  const liveCounts = { total: pendingDecisions.length, high: pendingDecisions.filter((item) => item.level === "Top priority").length, parked: Object.keys(resolved).length };
+  const metrics = makeStatusCards(liveCounts, pendingDecisions.length);
   const sourceLabel = snapshot.source === "admin-brain" ? "Live Admin Brain" : snapshot.source === "clear-live" ? "Live scan clear" : "Demo mode";
 
   function chooseDepartment(key) {
@@ -111,13 +119,19 @@ export default function OfficeTeamLabTidy() {
   }
 
   async function handleDecision(item, action) {
-    const id = item.id || item.title;
-    setMarks((current) => ({ ...current, [id]: action }));
+    const id = decisionKey(item);
+    setResolved((current) => ({ ...current, [id]: action }));
+    setNotice(`${action} moved out of Command. The next waiting decision is now shown. Nothing was sent or synced.`);
     try {
       const result = await recordOfficeTeamDecision(item, action);
-      setNotice(result?.localOnly ? `${action} saved in lab preview. Nothing was sent or synced.` : `${action} recorded safely. Nothing was sent or synced.`);
+      setNotice(result?.localOnly ? `${action} saved in lab preview. The card left Command and the next one replaced it.` : `${action} recorded safely. The card left Command and the next one replaced it.`);
     } catch (err) {
-      setNotice(`Could not record ${action}: ${err.message || "try again"}. Nothing was sent or synced.`);
+      setResolved((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      setNotice(`Could not record ${action}: ${err.message || "try again"}. The card was returned to Command. Nothing was sent or synced.`);
     }
   }
 
@@ -128,10 +142,11 @@ export default function OfficeTeamLabTidy() {
 
       <section className="cvOfficeGrid cvTidyGrid" id="command">
         <section className="cvCommandPanel cvTidyCommand">
-          <PanelHeader eyebrow="Needs owner now" title="Command Queue" text="Prepared by the office team. Filter by tray, decide, then move on." />
+          <PanelHeader eyebrow="Needs owner now" title="Command Queue" text={`Showing ${COMMAND_CARD_LIMIT} at a time. Actioned cards leave Command and the next waiting decision replaces them.`} />
           <DepartmentRail active={activeDepartment} counts={counts} onChoose={chooseDepartment} />
+          <QueueSummary shown={boardDecisions.length} total={trayQueue.length} waiting={waitingCount} activeDepartment={activeDepartment} />
           <div className="cvDecisionBoard cvTidyDecisionBoard">
-            {boardDecisions.length ? boardDecisions.map((item) => <DecisionCard key={item.id || item.title} item={item} mark={marks[item.id || item.title]} onAction={handleDecision} />) : <EmptyTray activeDepartment={activeDepartment} />}
+            {boardDecisions.length ? boardDecisions.map((item) => <DecisionCard key={decisionKey(item)} item={item} onAction={handleDecision} />) : <EmptyTray activeDepartment={activeDepartment} />}
           </div>
         </section>
 
@@ -170,6 +185,11 @@ function DepartmentRail({ active, counts, onChoose }) {
   return <div className="cvDepartmentRail cvTidyDepartments">{departments.map(([key, label, fallback]) => <button key={key} className={active === key ? "active" : ""} onClick={() => onChoose(key)}><strong>{counts[key] ?? fallback}</strong><span>{label}</span></button>)}</div>;
 }
 
+function QueueSummary({ shown, total, waiting, activeDepartment }) {
+  const label = activeDepartment === "command" ? "all trays" : activeDepartment;
+  return <div className="cvQueueSummary"><strong>{shown} showing</strong><span>{total} waiting in {label}</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div>;
+}
+
 function PlaybookCard({ activePlaybook, onPick }) {
   return <section className="cvPlaybookCard" id="playbooks"><PanelHeader eyebrow="Business playbook" title={activePlaybook[0]} /><div className="cvPlaybookButtons">{playbooks.map((item) => <button key={item[0]} className={activePlaybook[0] === item[0] ? "active" : ""} onClick={() => onPick(item)}>{item[0]}</button>)}</div><dl className="cvPlaybookTerms"><div><dt>Work word</dt><dd>{activePlaybook[1]}</dd></div><div><dt>Staff word</dt><dd>{activePlaybook[2]}</dd></div><div><dt>Customer word</dt><dd>{activePlaybook[3]}</dd></div></dl></section>;
 }
@@ -182,12 +202,12 @@ function RoleDetail({ role }) {
   return <article className="cvRoleDetail"><div className="cvRoleHero"><span>{role.dept}</span><h3>{role.name}</h3><p>{role.summary}</p></div><div className="cvRoleColumns"><RoleBlock title="Checks" items={role.checks} /><RoleBlock title="Prepares" items={role.prepares} /><section><h4>Owner question</h4><p>{role.ownerAsk}</p></section></div></article>;
 }
 
-function EmptyTray({ activeDepartment }) {
+function EmptyTray() {
   return <article className="cvEmptyTray"><strong>No decisions in this tray</strong><p>The office team is still watching. Anything important will appear here before anything is sent, synced or changed.</p><button type="button">Approval lock on</button></article>;
 }
 
-function DecisionCard({ item, mark, onAction }) {
-  return <article className="cvDecisionCard"><div className="cvDecisionMeta"><span>{mark || item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <span key={x}>{x}</span>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><div className="cvDecisionActions">{(item.actions || []).map((action, i) => <button key={action} onClick={() => onAction(item, action)} className={i === 0 ? "primary" : ""}>{action}</button>)}</div><small>{mark ? `Marked: ${mark} · ` : ""}Approval locked · no auto-send · no auto-sync</small></article>;
+function DecisionCard({ item, onAction }) {
+  return <article className="cvDecisionCard"><div className="cvDecisionMeta"><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <span key={x}>{x}</span>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><div className="cvDecisionActions">{(item.actions || []).map((action, i) => <button key={action} onClick={() => onAction(item, action)} className={i === 0 ? "primary" : ""}>{action}</button>)}</div><small>Approval locked · leaves Command after action · no auto-send</small></article>;
 }
 
 function PanelHeader({ eyebrow, title, text }) { return <div className="cvPanelHeader"><div><span>{eyebrow}</span><h2>{title}</h2></div>{text && <p>{text}</p>}</div>; }
@@ -195,5 +215,6 @@ function Metric({ value, label, note }) { return <article><strong>{value}</stron
 function RoleBlock({ title, items }) { return <section><h4>{title}</h4><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section>; }
 function r(name, dept, summary, checks, prepares, ownerAsk) { return { name, dept, summary, checks, prepares, ownerAsk }; }
 function d(id, tray, roleName, level, title, happened, checked, prepared, need, actions) { return { id, tray, roleName, level, title, happened, checked, prepared, need, actions }; }
+function decisionKey(item = {}) { return item.id || item.action_id || item.title; }
 function trayKey(tray = "") { const t = String(tray).toLowerCase(); if (t.includes("money")) return "money"; if (t.includes("booking")) return "bookings"; if (t.includes("staff")) return "staff"; if (t.includes("client")) return "clients"; if (t.includes("quality")) return "quality"; if (t.includes("operation")) return "ops"; return "command"; }
 function countDepartments(items = []) { return items.reduce((acc, item) => { acc.command += 1; const key = trayKey(item.tray); acc[key] = (acc[key] || 0) + 1; return acc; }, { command: 0, money: 0, bookings: 0, staff: 0, clients: 0, quality: 0, ops: 0 }); }
