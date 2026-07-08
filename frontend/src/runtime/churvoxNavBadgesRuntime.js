@@ -49,11 +49,21 @@ function isDone(row) {
   return /complete|completed|done|finished|paid|converted|cancelled|canceled|archived|declined/.test(status(row));
 }
 
+function hasMessageContent(row) {
+  return Boolean(clean(row?.message || row?.body || row?.detail || row?.text || row?.subject || row?.title || row?.draft || row?.reply));
+}
+
+function isCommandNotification(row) {
+  const type = key(row?.type || row?.kind || row?.event_type || row?.source || row?.channel || row?.category || '');
+  return /approval|command|invoice|quote|job|payment|system|notification|ai|action/.test(type) && !/message|reply|sms|email|chat/.test(type);
+}
+
 function unread(row) {
-  if (row?.read === true || row?.is_read === true || row?.seen === true) return false;
-  if (row?.unread === true || row?.is_unread === true || row?.read === false || row?.is_read === false) return true;
+  if (!hasMessageContent(row) || isCommandNotification(row)) return false;
+  if (row?.read === true || row?.is_read === true || row?.seen === true || row?.opened === true || row?.acknowledged === true) return false;
+  if (row?.unread === true || row?.is_unread === true || row?.read === false || row?.is_read === false || row?.seen === false) return true;
   const s = status(row);
-  return !/read|seen|closed|done|complete/.test(s);
+  return /unread|newmessage|newreply|replyneeded|needsreply|messagewaiting/.test(s);
 }
 
 async function fetchJson(endpoint, timeout = 4500) {
@@ -147,15 +157,14 @@ async function ownerCounts() {
 }
 
 async function workerCounts() {
-  const [jobsRaw, messagesRaw, fallbackRaw] = await Promise.allSettled([
-    fetchJson('/worker/jobs'), fetchJson('/worker/messages'), fetchJson('/approved-notifications'),
+  const [jobsRaw, messagesRaw] = await Promise.allSettled([
+    fetchJson('/worker/jobs'), fetchJson('/worker/messages'),
   ]);
   const jobs = rows(jobsRaw.value, 'jobs');
   const messages = rows(messagesRaw.value, 'messages');
-  const fallback = rows(fallbackRaw.value, 'notifications');
   return {
     jobs: jobs.filter((row) => !isDone(row)).length,
-    messages: (messages.length ? messages : fallback).filter(unread).length,
+    messages: messages.filter(unread).length,
   };
 }
 
