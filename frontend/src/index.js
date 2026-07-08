@@ -80,7 +80,6 @@ const ownerHeavyRuntimeImports = [
   () => import('./churvox-product/productWorkersTeamIdentity.css'),
   () => import('./churvox-product/productMoneyIdentity.css'),
   () => import('./churvox-product/productOpsIdentity.css'),
-  () => import('./churvox-product/productSupportIdentity.css'),
   () => import('./runtime/churvoxOwnerPocketCommandRuntime'),
 ];
 
@@ -90,15 +89,9 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
 ];
 
-const hqRuntimeImports = [
-  () => import('./runtime/churvoxPlatformOwnerControlCentreRuntime'),
-  () => import('./runtime/churvoxHqUniqueVisitorsRuntime'),
-  () => import('./runtime/churvoxHqAcceptedTestersRuntime'),
-  () => import('./runtime/churvoxHqBusinessHealthRuntime'),
-  () => import('./runtime/churvoxPlatformOwnerTesterInviteRuntime'),
-  () => import('./runtime/churvoxHqTesterMobilePolishRuntime'),
-  () => import('./runtime/churvoxHqReadyBannerRuntime'),
-];
+// HQ is now a real React app surface (AppOwnerMachine). Do not load old overlay runtimes here,
+// otherwise they inject the previous HQ control cards on top of the new machine.
+const hqRuntimeImports = [];
 
 function runImports(imports) {
   imports.forEach((load) => {
@@ -169,7 +162,7 @@ function loadHqRuntimeWhenInsideHq() {
   const isHq = path === '/admin' || path === '/churvox-hq' || path === '/admin/hq' || path === '/owner/dashboard' || path === '/platform-dashboard' || path === '/app-owner' || path === '/admin/usage' || path === '/admin/qa-auditor';
   if (!isHq) return;
   hqRuntimeLoaded = true;
-  window.setTimeout(() => runImports(hqRuntimeImports), 700);
+  runImports(hqRuntimeImports);
 }
 
 function checkRuntimeLoads() {
