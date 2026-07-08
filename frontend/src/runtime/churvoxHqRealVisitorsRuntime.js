@@ -135,7 +135,8 @@ function upsertCard(body, error = '') {
   const pageviewsTotal = Number(counts.pageviews_total || 0);
   const source = body?.source || 'real endpoint';
   const start = body?.periods?.today_start || '';
-  const signature = error ? `error:${error}` : `${visitsToday}|${uniqueToday}|${totalUnique}|${active7}|${active30}|${pageviewsTotal}|${source}|${start}`;
+  const timezone = body?.periods?.timezone || 'Pacific/Auckland';
+  const signature = error ? `error:${error}` : `${visitsToday}|${uniqueToday}|${totalUnique}|${active7}|${active30}|${pageviewsTotal}|${source}|${start}|${timezone}`;
   if (signature === lastSignature && document.querySelector('.aomRealVisitorsCard')) return;
   lastSignature = signature;
   let card = document.querySelector('.aomRealVisitorsCard');
@@ -149,7 +150,7 @@ function upsertCard(body, error = '') {
     <div><small>real visitor tracker</small><h3>Visits not connected yet.</h3><p>${escapeHtml(error)}. This means HQ is not showing real visit counts until backend deploy finishes.</p></div>
     <div class="aomRealVisitorsNumbers"><div class="aomRealVisitorsNumber"><b>—</b><span>offline</span></div></div>
   ` : `
-    <div><small>real visitor tracker · ${escapeHtml(source)}</small><h3>Today visits + total unique</h3><p><b>${visitsToday}</b> public visits today. Today resets at midnight UTC. Total unique stays separate and does not reset. ${uniqueToday} unique visitors today · ${active7} active 7d · ${active30} active 30d · ${pageviewsTotal} all-time pageviews.</p></div>
+    <div><small>real visitor tracker · ${escapeHtml(source)}</small><h3>Today visits + total unique</h3><p><b>${visitsToday}</b> public visits today. Today resets at midnight New Zealand time. Total unique stays separate and does not reset. ${uniqueToday} unique visitors today · ${active7} active 7d · ${active30} active 30d · ${pageviewsTotal} all-time pageviews.</p></div>
     <div class="aomRealVisitorsNumbers"><div class="aomRealVisitorsNumber today"><b>${visitsToday}</b><span>visits today</span></div><div class="aomRealVisitorsNumber"><b>${totalUnique}</b><span>total unique</span></div></div>
   `;
   window.__CHURVOX_HQ_REAL_UNIQUE_VISITORS__ = body;
@@ -172,7 +173,7 @@ function syncExistingMetric(totalUnique, visitsToday, uniqueToday, active7, acti
     }
     if (label === 'visits today') {
       if (value) value.textContent = String(visitsToday);
-      if (note) note.textContent = `Resets daily · ${uniqueToday} unique visitors today`;
+      if (note) note.textContent = `Resets daily at NZ midnight · ${uniqueToday} unique visitors today`;
     }
   });
   document.querySelectorAll('.aomPulse div').forEach((row) => {
