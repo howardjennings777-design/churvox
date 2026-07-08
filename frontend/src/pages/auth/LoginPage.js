@@ -10,11 +10,12 @@ import "./RealLogoBlend.css";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const LOGIN_TIMEOUT_MS = 28000;
+const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b";
 
 function ChurvoxAppLogo({ compact = false, wordmark = false }) {
   return (
-    <div className={`cvAppLogoMark ${compact ? "compact" : ""} ${wordmark ? "wordmark" : ""}`} aria-label="Churvox logo">
-      <img src="/churvox-mark.svg?v=transparent-real-mark-20260707" alt="Churvox" />
+    <div className={`cvAppLogoMark cvIntegratedAuthLogo ${compact ? "compact" : ""} ${wordmark ? "wordmark" : ""}`} aria-label="Churvox logo">
+      <img src={BRAND_ICON} alt="Churvox" />
     </div>
   );
 }
@@ -169,7 +170,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className={`cvPublicAuth cvRealAppLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_TRANSPARENT_REAL_LOGO_LOGIN_20260707">
+    <main className={`cvPublicAuth cvRealAppLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_INTEGRATED_LOGO_LOGIN_20260708B">
       {!appMode ? <Nav /> : null}
       <section className="cvPublicAuthShell cvRealAppShell">
         {!appMode ? (
