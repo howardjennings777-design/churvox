@@ -22,6 +22,41 @@ const css = `
     display: block;
     filter: saturate(.92) contrast(.98);
   }
+  .cv3WorkerMapPinBar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin: 0 14px 12px;
+  }
+  .cv3WorkerPin {
+    appearance: none;
+    border: 1px solid rgba(16,21,19,.10);
+    border-radius: 16px;
+    padding: 10px 11px;
+    background: rgba(255,255,255,.86);
+    color: #101513;
+    text-align: left;
+    cursor: pointer;
+  }
+  .cv3WorkerPin[aria-pressed="true"] {
+    border-color: rgba(243,107,33,.75);
+    box-shadow: 0 0 0 3px rgba(243,107,33,.14);
+  }
+  .cv3WorkerPin b { display:block; font-size: 12px; font-weight: 1000; line-height: 1.15; }
+  .cv3WorkerPin span { display:block; margin-top:3px; color:#59655f; font-size: 11px; font-weight: 820; line-height: 1.25; overflow-wrap:anywhere; }
+  .cv3WorkerPin em { display:inline-flex; margin-top:7px; border-radius:999px; padding:4px 7px; background:rgba(16,21,19,.08); color:#101513; font-size:9px; font-style:normal; font-weight:1000; letter-spacing:.06em; text-transform:uppercase; }
+  .cv3WorkerPinOpen {
+    display:inline-flex;
+    margin: 0 14px 12px;
+    width: fit-content;
+    border-radius:999px;
+    padding:8px 11px;
+    background:#101513;
+    color:white;
+    text-decoration:none;
+    font-size:11px;
+    font-weight:1000;
+  }
   .cv3WorkerMapPanel .cv3WorkerMapNote {
     display: flex;
     flex-wrap: wrap;
@@ -37,7 +72,7 @@ const css = `
     color: #101513;
     font-weight: 1000;
   }
-  @media(max-width:720px){.cv3WorkerMapPanel .cv3WorkerMapShell{height:280px;margin:12px;border-radius:20px}}
+  @media(max-width:720px){.cv3WorkerMapPanel .cv3WorkerMapShell{height:280px;margin:12px;border-radius:20px}.cv3WorkerMapPinBar{grid-template-columns:1fr;margin:0 12px 10px}}
 `;
 
 function ensureStyle() {
@@ -54,6 +89,8 @@ function ensureStyle() {
 }
 
 function clean(value) { return String(value ?? '').replace(/\s+/g, ' ').trim(); }
+function lower(value) { return clean(value).toLowerCase(); }
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char])); }
 function authHeaders() {
   try {
     const token = localStorage.getItem('token');
@@ -70,22 +107,100 @@ function rowsFromPayload(body) {
   if (Array.isArray(body?.data?.workers)) return body.data.workers;
   if (Array.isArray(body?.data)) return body.data;
   if (Array.isArray(body?.items)) return body.items;
+  if (Array.isArray(body?.results)) return body.results;
   return [];
+}
+async function fetchWorkers(path) {
+  try {
+    const response = await fetch(`${API_BASE}/api${path}`, { credentials: 'include', headers: authHeaders() });
+    if (!response.ok) return [];
+    return rowsFromPayload(await response.json()).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 async function loadWorkers() {
   const now = Date.now();
   if (now - cache.at < 15000) return cache.workers;
-  try {
-    const response = await fetch(`${API_BASE}/api/team`, { credentials: 'include', headers: authHeaders() });
-    if (!response.ok) throw new Error('team fetch failed');
-    cache = { at: now, workers: rowsFromPayload(await response.json()) };
-  } catch {
-    cache = { at: now, workers: [] };
+  const paths = ['/team', '/team/workers', '/workers'];
+  const seen = new Set();
+  const workers = [];
+  for (const path of paths) {
+    const rows = await fetchWorkers(path);
+    rows.forEach((row, index) => {
+      const key = clean(row.id || row._id || row.user_id || row.email || row.phone || row.name || row.full_name || `${path}-${index}`).toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      workers.push(row);
+    });
   }
+  cache = { at: now, workers };
   return cache.workers;
 }
-function workerLocation(worker) {
-  return clean(worker.gps || worker.location || worker.current_location || worker.address || worker.site_address || worker.current_job_address || worker.current_job || worker.job_title || '');
+function first(row, keys) {
+  for (const key of keys) {
+    const value = row?.[key];
+    if (value !== undefined && value !== null && clean(value)) return clean(value);
+  }
+  return '';
+}
+function workerName(worker, index = 0) {
+  return first(worker, ['name', 'full_name', 'display_name', 'worker_name', 'email']) || `Worker ${index + 1}`;
+}
+function workerStatus(worker) {
+  return first(worker, ['status', 'clock_status', 'availability', 'app_status', 'invite_status', 'role']) || 'Field worker';
+}
+function workerJob(worker) {
+  return first(worker, ['current_job', 'job', 'job_title', 'assigned_job', 'current_job_title']) || 'No current job';
+}
+function numberValue(value) {
+  const raw = clean(value).replace(/[^0-9.-]/g, '');
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+function latLng(worker) {
+  const lat = numberValue(first(worker, ['lat', 'latitude', 'gps_lat', 'last_latitude', 'location_lat', 'current_latitude', 'worker_latitude']));
+  const lng = numberValue(first(worker, ['lng', 'lon', 'long', 'longitude', 'gps_lng', 'gps_lon', 'last_longitude', 'location_lng', 'current_longitude', 'worker_longitude']));
+  if (lat === null || lng === null) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng, place: `${lat},${lng}`, label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, kind: 'GPS' };
+}
+function gpsPairFromText(value) {
+  const match = clean(value).match(/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
+  if (!match) return null;
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng, place: `${lat},${lng}`, label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, kind: 'GPS' };
+}
+function workerPlace(worker) {
+  const direct = latLng(worker);
+  if (direct) return direct;
+  const text = first(worker, ['gps', 'location', 'current_location', 'last_location', 'address', 'site_address', 'current_job_address', 'current_address', 'area', 'region']);
+  const pair = gpsPairFromText(text);
+  if (pair) return pair;
+  const job = first(worker, ['current_job', 'job_title', 'assigned_job']);
+  const fallback = text || job;
+  if (!fallback) return null;
+  return { place: fallback, label: fallback, kind: text ? 'Location' : 'Job' };
+}
+function mapUrl(place, zoom = 13) {
+  return `https://www.google.com/maps?q=${encodeURIComponent(place)}&z=${zoom}&output=embed`;
+}
+function openUrl(place) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`;
+}
+function pinData(workers) {
+  return workers.map((worker, index) => {
+    const place = workerPlace(worker);
+    return {
+      id: clean(worker.id || worker._id || worker.user_id || worker.email || worker.phone || workerName(worker, index) || index),
+      name: workerName(worker, index),
+      status: workerStatus(worker),
+      job: workerJob(worker),
+      place,
+    };
+  }).filter((pin) => pin.name);
 }
 function isWorkersPage() {
   const hash = (window.location.hash || '').toLowerCase();
@@ -97,16 +212,59 @@ function mapQueryFromDom() {
   const text = Array.from(document.querySelectorAll('.cv3Row small,.cv3Tiles small')).map((node) => clean(node.textContent)).filter(Boolean).join(' ');
   return text || 'Auckland New Zealand';
 }
-function makeMapPanel(query, workerCount) {
+function pinButton(pin, index, active) {
+  const hasPlace = Boolean(pin.place?.place);
+  return `<button type="button" class="cv3WorkerPin" data-worker-pin-index="${index}" aria-pressed="${active ? 'true' : 'false'}" ${hasPlace ? '' : 'disabled'}>
+    <b>${escapeHtml(pin.name)}</b>
+    <span>${escapeHtml(pin.place?.label || 'No GPS/location saved yet')}</span>
+    <span>${escapeHtml(pin.job)}</span>
+    <em>${escapeHtml(hasPlace ? pin.place.kind : 'No pin')}</em>
+  </button>`;
+}
+function makeMapPanel(pins) {
   const section = document.createElement('section');
   section.className = 'cv3Panel cv3WorkerMapPanel span7';
   section.dataset.churvoxSingleWorkerMap = 'true';
+  const activeIndex = Math.max(0, pins.findIndex((pin) => pin.place?.place));
+  const active = pins[activeIndex]?.place?.place ? pins[activeIndex] : null;
+  const startPlace = active?.place?.place || mapQueryFromDom();
   section.innerHTML = `
     <header><div><small>field map</small><h3>Worker map</h3></div></header>
-    <div class="cv3WorkerMapShell"><iframe title="Worker map" loading="lazy" src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed"></iframe></div>
-    <div class="cv3WorkerMapNote"><b>${workerCount || 'Field'} view</b><span>Uses worker GPS/location notes, current job address, or job text when live GPS is not available.</span></div>
+    <div class="cv3WorkerMapShell"><iframe title="Worker map" loading="lazy" src="${mapUrl(startPlace)}"></iframe></div>
+    <div class="cv3WorkerMapPinBar">${pins.length ? pins.map((pin, index) => pinButton(pin, index, index === activeIndex && Boolean(active))).join('') : '<button type="button" class="cv3WorkerPin" disabled><b>No workers yet</b><span>Add workers and save GPS/location or current job address.</span><em>No pin</em></button>'}</div>
+    ${active ? `<a class="cv3WorkerPinOpen" href="${openUrl(active.place.place)}" target="_blank" rel="noreferrer">Open ${escapeHtml(active.name)} in Maps</a>` : ''}
+    <div class="cv3WorkerMapNote"><b>${pins.filter((pin) => pin.place?.place).length || 0} pinned</b><span>Uses live lat/lng first, then GPS text, location, job/site address, or current job text.</span></div>
   `;
+  wireMapPanel(section, pins, activeIndex);
   return section;
+}
+function wireMapPanel(panel, pins, startIndex = 0) {
+  panel.querySelectorAll('[data-worker-pin-index]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const index = Number(button.getAttribute('data-worker-pin-index'));
+      const pin = pins[index];
+      if (!pin?.place?.place) return;
+      const iframe = panel.querySelector('iframe');
+      if (iframe) {
+        iframe.src = mapUrl(pin.place.place, pin.place.kind === 'GPS' ? 15 : 13);
+        iframe.title = `${pin.name} worker map`;
+      }
+      panel.querySelectorAll('.cv3WorkerPin').forEach((node) => node.setAttribute('aria-pressed', 'false'));
+      button.setAttribute('aria-pressed', 'true');
+      const link = panel.querySelector('.cv3WorkerPinOpen');
+      if (link) {
+        link.href = openUrl(pin.place.place);
+        link.textContent = `Open ${pin.name} in Maps`;
+      }
+    });
+  });
+  const firstButton = panel.querySelector(`[data-worker-pin-index="${startIndex}"]`);
+  if (firstButton) firstButton.setAttribute('aria-pressed', 'true');
+}
+function updateMapPanel(panel, pins) {
+  const fresh = makeMapPanel(pins);
+  panel.innerHTML = fresh.innerHTML;
+  wireMapPanel(panel, pins, Math.max(0, pins.findIndex((pin) => pin.place?.place)));
 }
 function heroNode(page) {
   return page.querySelector('.cv3Hero') || Array.from(page.children).find((node) => /Know what is happening outside|Workers/i.test(node.textContent || '')) || null;
@@ -136,22 +294,18 @@ async function restoreMap() {
   const page = document.querySelector('.cv3Page');
   if (!page) return;
   ensureStyle();
-  const existing = removeDuplicateMaps(page);
-  if (existing) {
-    placeMap(page, existing);
-    return;
-  }
   restoring = true;
   try {
     const workers = await loadWorkers();
-    const stillExisting = removeDuplicateMaps(page);
-    if (stillExisting) {
-      placeMap(page, stillExisting);
+    const pins = pinData(workers);
+    const existing = removeDuplicateMaps(page);
+    if (existing) {
+      updateMapPanel(existing, pins);
+      placeMap(page, existing);
       return;
     }
     if (!isWorkersPage()) return;
-    const query = workers.map(workerLocation).filter(Boolean).join(' ') || mapQueryFromDom();
-    const panel = makeMapPanel(query || 'Auckland New Zealand', workers.length);
+    const panel = makeMapPanel(pins);
     placeMap(page, panel);
     removeDuplicateMaps(page);
   } finally {
