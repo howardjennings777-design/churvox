@@ -4,7 +4,7 @@ import API_BASE from '../lib/apiBase';
 
 const FLAG = '__CHURVOX_NAV_BADGES_TRUSTED_COUNTS__';
 const API_ROOT = `${String(API_BASE || '').replace(/\/$/, '')}/api`;
-const OWNER_KEYS = ['command', 'jobs', 'workers', 'messages', 'quotes', 'invoices'];
+const OWNER_KEYS = ['command', 'jobs', 'workers', 'messages', 'quotes', 'invoices', 'support'];
 const WORKER_KEYS = ['jobs', 'messages'];
 let lastFetch = 0;
 let cached = { owner: {}, worker: {} };
@@ -24,6 +24,7 @@ const OWNER_ALIASES = {
   messages: ['messages', 'message', 'replies', 'reply', 'inbox'],
   quotes: ['quotes', 'quote', 'estimates', 'estimate', 'consults', 'consult', 'proposals', 'proposal', 'plans', 'plan'],
   invoices: ['invoices', 'invoice', 'payments', 'payment'],
+  support: ['support', 'help', 'tickets', 'ticket', 'setup'],
 };
 
 function aliasId(value, aliases) {
