@@ -84,6 +84,7 @@ for _patch in [
     'churvox_industry_mode_request_fix_patch',
     'churvox_business_profile_required_patch',
     'churvox_industry_isolation_patch',
+    'churvox_industry_request_signature_fix_patch',
     'churvox_business_logic_health_patch',
     'churvox_business_system_suite_patch',
 ]:
