@@ -18,6 +18,10 @@ def lower(value):
     return text(value).lower()
 
 
+def upper(value):
+    return text(value).upper()
+
+
 def safe(value):
     if isinstance(value, datetime):
         return value.isoformat()
@@ -35,9 +39,7 @@ def business_id(user):
 
 
 def cents(value):
-    if value is None:
-        return 0
-    if isinstance(value, bool):
+    if value is None or isinstance(value, bool):
         return 0
     try:
         if isinstance(value, int):
@@ -83,10 +85,6 @@ def money(cents_value, currency="nzd"):
     return f"{prefix}{dollars:.2f}"
 
 
-def upper(value):
-    return text(value).upper()
-
-
 async def find_job(db, user, job_id, ObjectId):
     bid = business_id(user)
     queries = [{"id": job_id}, {"job_id": job_id}]
@@ -125,12 +123,13 @@ def install(module):
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
     ObjectId = getattr(module, "ObjectId", None)
+    Request = getattr(module, "Request", None)
     HTTPException = getattr(module, "HTTPException", None)
 
-    if not app or db is None or not get_current_user or ObjectId is None or HTTPException is None:
+    if not app or db is None or not get_current_user or ObjectId is None or Request is None or HTTPException is None:
         return
 
-    async def payment_summary(job_id: str, request=None):
+    async def payment_summary(job_id: str, request: Request):
         user = await get_current_user(request)
         bid = business_id(user)
         jid = text(job_id)
@@ -195,7 +194,7 @@ def install(module):
             "balance_label": money(balance_cents, currency) if balance_cents else "$0",
             "payment_status": payment_status,
             "last_status": last_status,
-            "last_method": last_method or "card reader" if events else "",
+            "last_method": (last_method or "card reader") if events else "",
             "events": events,
         })
 
