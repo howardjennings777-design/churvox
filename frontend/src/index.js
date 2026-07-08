@@ -80,6 +80,7 @@ const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxDrawerRecordActionsRuntime'),
   () => import('./runtime/churvoxAllPagesPolishRuntime'),
   () => import('./runtime/churvoxMessagesPagePolishRuntime'),
+  () => import('./runtime/churvoxRemovePageIntentStripRuntime'),
   () => import('./runtime/churvoxAppIndustryRuntime'),
   () => import('./runtime/churvoxInternalSupportRuntime'),
   () => import('./runtime/churvoxTidyRealSlipRuntime'),
