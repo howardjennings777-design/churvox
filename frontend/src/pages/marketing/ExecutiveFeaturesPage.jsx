@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
-import { BusinessCoverageSection, ProfessionStrip, TradeFlowSection } from "./PublicProfessionSections";
+import { BetaProofSection, BusinessCoverageSection, ProductScreensSection, ProfessionStrip, TradeFlowSection } from "./PublicProfessionSections";
 import "./SimplePublic.css";
 
 const productAreas = [
@@ -10,7 +10,7 @@ const productAreas = [
   ["Jobs", "Clear job forms with client, worker, address, time, price and repeat work."],
   ["Workers", "A simple field flow for directions, updates, notes, location and photos."],
   ["Money", "Quote and invoice drafts built from real job records."],
-  ["Settings", "Business rules, GST, branding, exports and safe account controls."],
+  ["Settings", "Business rules, industry mode, GST, branding, exports and safe account controls."],
 ];
 
 const commandItems = [
@@ -36,7 +36,7 @@ const workerFlow = [
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PRODUCT_SERVICE_PLATFORM_20260708">
+    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PRODUCT_JOINED_UP_20260708">
       <Nav />
 
       <section className="publicHero publicHeroCompact slimHero">
@@ -57,6 +57,8 @@ export default function ExecutiveFeaturesPage() {
           <span>That split is what keeps Churvox simple for owners, office admins and workers.</span>
         </aside>
       </section>
+
+      <ProductScreensSection />
 
       <section className="publicBand slimBand">
         <div className="publicSectionHead compactHead">
@@ -109,6 +111,7 @@ export default function ExecutiveFeaturesPage() {
       </section>
 
       <BusinessCoverageSection />
+      <BetaProofSection />
 
       <section className="publicBand slimBand">
         <div className="publicSectionHead compactHead">
