@@ -7,7 +7,6 @@ const STYLE_ID = 'churvox-business-system-suite-style';
 const API_ROOT = `${String(API_BASE || '').replace(/\/$/, '')}/api`;
 
 function path() { return window.location.pathname || ''; }
-function hash() { return String(window.location.hash || '').toLowerCase(); }
 function isOwnerApp() { const p = path(); return p === '/dashboard' || p.startsWith('/dashboard'); }
 function isHq() { const p = path().toLowerCase(); return ['/admin', '/admin/hq', '/churvox-hq', '/owner/dashboard', '/platform-dashboard', '/app-owner', '/admin/usage'].includes(p); }
 function token() { try { return localStorage.getItem('token') || ''; } catch { return ''; } }
