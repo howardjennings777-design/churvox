@@ -5,6 +5,7 @@ import './index.css';
 import './churvox-product/productTypeScale.css';
 import './styles/public-premium-force.css';
 import './styles/churvoxMobileAppPolish.css';
+import './styles/churvoxUnifiedLogo.css';
 import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/authInputVisibilityGuard';
