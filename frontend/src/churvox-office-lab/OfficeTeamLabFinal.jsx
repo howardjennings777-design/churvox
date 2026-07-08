@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OfficeTeamLabFinal.css";
+import "./OfficeTeamLabLive.css";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
 
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-office-final-20260709";
