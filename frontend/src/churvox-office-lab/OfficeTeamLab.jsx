@@ -1,8 +1,8 @@
 import React from 'react'
-import OfficeTeamLabFinal from './OfficeTeamLabFinal'
+import OfficeTeamLabTidy from './OfficeTeamLabTidy'
 
 function OfficeTeamLab() {
-  return React.createElement(OfficeTeamLabFinal)
+  return React.createElement(OfficeTeamLabTidy)
 }
 
 export default OfficeTeamLab
