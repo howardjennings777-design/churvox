@@ -13,6 +13,10 @@ function emptyData() {
   return { jobs: [], workers: [], quotes: [], invoices: [], messages: [], command: [], xero: {}, payments: {} };
 }
 
+function isWorkerRoute() {
+  return (window.location.pathname || '').startsWith('/worker');
+}
+
 function isOwnerRoute() {
   const path = window.location.pathname || '';
   if (path.startsWith('/worker') || path.startsWith('/admin')) return false;
@@ -84,7 +88,7 @@ async function post(path, body) {
 }
 
 async function loadData() {
-  if (!isOwnerRoute() || !isMobile()) return;
+  if (!isOwnerRoute() || !isMobile() || isWorkerRoute()) { releasePocket(); return; }
   state = { ...state, loading: true, error: '' };
   render();
   const calls = await Promise.allSettled([
@@ -108,10 +112,10 @@ async function loadData() {
   render();
 }
 
-function shell(title, subtitle, body) {
+function shell(titleText, subtitle, body) {
   return `<main class="cvxPocket" aria-label="Churvox owner mobile">
     <header class="cvxPocketTop"><div class="cvxPocketBrand"><span class="cvxPocketMark">CV</span><div><b>Churvox</b><small>Pocket Command</small></div></div><span class="cvxPocketLive">Live</span></header>
-    <section class="cvxPocketHero"><span>${state.tab}</span><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></section>
+    <section class="cvxPocketHero"><span>${state.tab}</span><h1>${escapeHtml(titleText)}</h1><p>${escapeHtml(subtitle)}</p></section>
     <section class="cvxPocketBody">${body}</section>
     <nav class="cvxPocketBottom" aria-label="Owner mobile navigation">${tabs.map((tab) => `<button type="button" data-pocket-tab="${tab}" class="${state.tab === tab ? 'active' : ''}">${tab}</button>`).join('')}</nav>
   </main>`;
@@ -131,9 +135,9 @@ function statsHtml() {
 
 function rowHtml(row, kind, buttons = '') {
   const client = pick(row, 'client_name', 'customer_name', 'client', 'from', 'sender') || kind;
-  const status = pick(row, 'status', 'state', 'job_status', 'workflow_status') || 'Ready';
+  const rowStatus = pick(row, 'status', 'state', 'job_status', 'workflow_status') || 'Ready';
   const amount = money(row) || pick(row, 'amount', 'total') || '—';
-  return `<article class="cvxPocketRow" data-pocket-id="${escapeHtml(idOf(row))}"><div class="cvxPocketRowTop"><b>${escapeHtml(title(row, kind))}</b><em>${escapeHtml(status)}</em></div><p>${escapeHtml(client)}</p><div class="cvxPocketMini"><span><b>Value</b>${escapeHtml(amount)}</span><span><b>Next</b>${escapeHtml(kind)}</span></div>${buttons}</article>`;
+  return `<article class="cvxPocketRow" data-pocket-id="${escapeHtml(idOf(row))}"><div class="cvxPocketRowTop"><b>${escapeHtml(title(row, kind))}</b><em>${escapeHtml(rowStatus)}</em></div><p>${escapeHtml(client)}</p><div class="cvxPocketMini"><span><b>Value</b>${escapeHtml(amount)}</span><span><b>Next</b>${escapeHtml(kind)}</span></div>${buttons}</article>`;
 }
 
 function todayHtml() {
@@ -184,11 +188,17 @@ function mountRoot() {
   return root;
 }
 
+function releasePocket() {
+  document.body?.classList.remove('cvxPocketOwnerReady');
+  const root = document.getElementById(ROOT_ID);
+  if (root) root.innerHTML = '';
+}
+
 function render() {
-  const active = isOwnerRoute() && isMobile();
-  document.body.classList.toggle('cvxPocketOwnerReady', active);
+  const active = isOwnerRoute() && isMobile() && !isWorkerRoute();
+  if (!active) { releasePocket(); return; }
+  document.body.classList.add('cvxPocketOwnerReady');
   const root = mountRoot();
-  if (!active) { root.innerHTML = ''; return; }
   root.innerHTML = currentHtml();
   root.querySelectorAll('[data-pocket-tab]').forEach((button) => button.addEventListener('click', () => { state = { ...state, tab: button.dataset.pocketTab || 'Today' }; render(); }));
   root.querySelectorAll('[data-go-hash]').forEach((button) => button.addEventListener('click', () => { window.location.assign(`/dashboard#${button.dataset.goHash}`); }));
@@ -209,7 +219,7 @@ async function decide(id, action) {
 
 function scheduleLoad() {
   render();
-  if (!isOwnerRoute() || !isMobile()) return;
+  if (!isOwnerRoute() || !isMobile() || isWorkerRoute()) { releasePocket(); return; }
   window.clearTimeout(refreshTimer);
   refreshTimer = window.setTimeout(loadData, 80);
 }
@@ -225,7 +235,8 @@ if (typeof window !== 'undefined' && !window[FLAG]) {
   window.addEventListener('hashchange', scheduleLoad);
   window.addEventListener('churvox:data-refresh', loadData);
   window.addEventListener('churvox-auth-refresh', loadData);
-  window.setInterval(() => { if (isOwnerRoute() && isMobile()) loadData(); }, 5 * 60 * 1000);
+  window.addEventListener('churvox-worker-app-ready', releasePocket);
+  window.setInterval(() => { if (isOwnerRoute() && isMobile() && !isWorkerRoute()) loadData(); else releasePocket(); }, 5 * 60 * 1000);
 }
 
 export {};
