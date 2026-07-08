@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { MAINTENANCE_STARTED_LABEL } from "../lib/maintenanceMode";
-import "./marketing/ExecutiveHomePage.css";
 import "./auth/AuthPublicCommand.css";
 import "./auth/RealAppLoginScreen.css";
 
