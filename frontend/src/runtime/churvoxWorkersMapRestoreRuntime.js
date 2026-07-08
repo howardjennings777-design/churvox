@@ -2,6 +2,7 @@ import API_BASE from '../lib/apiBase';
 
 const STYLE_ID = 'churvox-workers-map-restore-style';
 let cache = { at: 0, workers: [] };
+let restoring = false;
 
 const css = `
   .cv3WorkerMapPanel { min-height: 420px; }
@@ -99,6 +100,7 @@ function mapQueryFromDom() {
 function makeMapPanel(query, workerCount) {
   const section = document.createElement('section');
   section.className = 'cv3Panel cv3WorkerMapPanel span7';
+  section.dataset.churvoxSingleWorkerMap = 'true';
   section.innerHTML = `
     <header><div><small>field map</small><h3>Worker map</h3></div></header>
     <div class="cv3WorkerMapShell"><iframe title="Worker map" loading="lazy" src="https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed"></iframe></div>
@@ -106,28 +108,46 @@ function makeMapPanel(query, workerCount) {
   `;
   return section;
 }
+function removeDuplicateMaps(page) {
+  const panels = Array.from(page.querySelectorAll('.cv3WorkerMapPanel,[data-churvox-single-worker-map="true"]'));
+  panels.slice(1).forEach((panel) => panel.remove());
+  return panels[0] || null;
+}
 async function restoreMap() {
-  if (typeof document === 'undefined' || !isWorkersPage()) return;
-  ensureStyle();
+  if (typeof document === 'undefined' || restoring || !isWorkersPage()) return;
   const page = document.querySelector('.cv3Page');
-  if (!page || page.querySelector('.cv3WorkerMapPanel')) return;
-  const workers = await loadWorkers();
-  const query = workers.map(workerLocation).filter(Boolean).join(' ') || mapQueryFromDom();
-  const panel = makeMapPanel(query || 'Auckland New Zealand', workers.length);
-  const fieldBoard = Array.from(page.querySelectorAll('.cv3Panel')).find((panelNode) => /Field board/i.test(panelNode.textContent || ''));
-  if (fieldBoard) fieldBoard.insertAdjacentElement('afterend', panel);
-  else page.appendChild(panel);
+  if (!page) return;
+  ensureStyle();
+  const existing = removeDuplicateMaps(page);
+  if (existing) return;
+  restoring = true;
+  try {
+    const workers = await loadWorkers();
+    const stillExisting = removeDuplicateMaps(page);
+    if (stillExisting || !isWorkersPage()) return;
+    const query = workers.map(workerLocation).filter(Boolean).join(' ') || mapQueryFromDom();
+    const panel = makeMapPanel(query || 'Auckland New Zealand', workers.length);
+    const fieldBoard = Array.from(page.querySelectorAll('.cv3Panel')).find((panelNode) => /Field board/i.test(panelNode.textContent || ''));
+    if (fieldBoard) fieldBoard.insertAdjacentElement('afterend', panel);
+    else page.appendChild(panel);
+    removeDuplicateMaps(page);
+  } finally {
+    restoring = false;
+  }
+}
+function scheduleRestore(delay = 80) {
+  setTimeout(restoreMap, delay);
 }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_WORKERS_MAP_RESTORE_RUNTIME__) {
   window.__CHURVOX_WORKERS_MAP_RESTORE_RUNTIME__ = true;
   restoreMap();
-  window.addEventListener('load', () => setTimeout(restoreMap, 120));
-  window.addEventListener('hashchange', () => setTimeout(restoreMap, 120));
-  window.addEventListener('popstate', () => setTimeout(restoreMap, 120));
-  window.addEventListener('churvox:data-refresh', () => { cache = { at: 0, workers: [] }; setTimeout(restoreMap, 160); });
-  document.addEventListener('click', () => setTimeout(restoreMap, 80), true);
-  const observer = new MutationObserver(() => setTimeout(restoreMap, 80));
+  window.addEventListener('load', () => scheduleRestore(120));
+  window.addEventListener('hashchange', () => scheduleRestore(120));
+  window.addEventListener('popstate', () => scheduleRestore(120));
+  window.addEventListener('churvox:data-refresh', () => { cache = { at: 0, workers: [] }; scheduleRestore(160); });
+  document.addEventListener('click', () => scheduleRestore(80), true);
+  const observer = new MutationObserver(() => scheduleRestore(80));
   observer.observe(document.documentElement, { childList: true, subtree: true });
   setInterval(restoreMap, 2500);
 }
