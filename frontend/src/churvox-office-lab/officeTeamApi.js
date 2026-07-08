@@ -12,13 +12,12 @@ function token() {
   }
 }
 
-function authHeaders(extra = {}) {
+function authHeaders({ json = true } = {}) {
   const t = token();
   return {
     Accept: "application/json",
-    "Content-Type": "application/json",
+    ...(json ? { "Content-Type": "application/json" } : {}),
     ...(t ? { Authorization: `Bearer ${t}` } : {}),
-    ...extra,
   };
 }
 
@@ -86,7 +85,7 @@ export async function fetchOfficeTeamSnapshot() {
   if (!base) return { source: "demo", decisions: [] };
   const response = await fetch(`${base}/api/admin-brain/scan`, {
     credentials: "include",
-    headers: authHeaders({ "Content-Type": undefined }),
+    headers: authHeaders({ json: false }),
   });
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403) return { source: "demo", decisions: [] };
