@@ -18,12 +18,17 @@ function dateText(value) {
   if (!value) return '—';
   try { return new Date(value).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return String(value); }
 }
+function visitKey(visitor, index) { return visitor.visitor_key || visitor.user_email || visitor.ip || visitor.id || `visit-${index}`; }
 
 async function apiGet(path) {
   const headers = { Accept: 'application/json', ...(token() ? { Authorization: `Bearer ${token()}` } : {}) };
   const response = await fetch(`${API_ROOT}${path}`, { credentials: 'include', headers });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body?.success === false || body?.ok === false) throw new Error(body?.detail || body?.message || body?.error || `HTTP ${response.status}`);
+  if (!response.ok || body?.success === false || body?.ok === false) {
+    const error = new Error(body?.detail || body?.message || body?.error || `HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
   return body;
 }
 
@@ -53,17 +58,54 @@ function installStyle() {
   document.head.appendChild(style);
 }
 
+function fallbackFromOverview(overview) {
+  const metrics = overview?.metrics || {};
+  const visits = arr(overview?.lists?.visitors);
+  const seen = new Map();
+  visits.forEach((visit, index) => {
+    const key = visitKey(visit, index);
+    const current = seen.get(key) || { ...visit, visitor_key: key, pageview_count: 0, first_seen: visit.created_at || visit.first_seen, last_seen: visit.last_seen || visit.created_at };
+    current.pageview_count = Number(current.pageview_count || 0) + 1;
+    const currentLast = new Date(current.last_seen || 0).getTime();
+    const nextLast = new Date(visit.last_seen || visit.created_at || 0).getTime();
+    if (nextLast >= currentLast) Object.assign(current, { ...visit, visitor_key: key, pageview_count: current.pageview_count, last_seen: visit.last_seen || visit.created_at, last_path: visit.path || visit.last_path });
+    seen.set(key, current);
+  });
+  const visitors = Array.from(seen.values()).sort((a, b) => new Date(b.last_seen || b.created_at || 0) - new Date(a.last_seen || a.created_at || 0));
+  return {
+    success: true,
+    source: 'hq_overview_fallback',
+    counts: {
+      unique_total: visitors.length || Number(metrics.unique_visitors_7d || 0),
+      new_unique_today: Number(metrics.unique_visitors_today || 0),
+      unique_active_7d: Number(metrics.unique_visitors_7d || 0),
+      pageviews_total: Number(metrics.visitors_7d || visits.length || 0),
+    },
+    visitors,
+  };
+}
+
+async function loadUniqueData() {
+  try {
+    return await apiGet('/api/admin/owner/unique-visitors');
+  } catch (firstError) {
+    const overview = await apiGet('/api/admin/owner-overview');
+    return fallbackFromOverview(overview);
+  }
+}
+
 function render(root, data, error = '') {
   const counts = data?.counts || {};
   const visitors = arr(data?.visitors);
+  const isFallback = data?.source === 'hq_overview_fallback';
   root.innerHTML = `
     <section class="hqUniqueShell">
       <div class="hqUniqueInner">
         <div class="hqUniqueTop">
           <div>
-            <small>Real unique visitors</small>
+            <small>Real unique visitors${isFallback ? ' · fallback' : ''}</small>
             <h3>One person counted once.</h3>
-            <p>This uses a stable browser visitor ID and the backend stores one unique visitor record. Pageviews are still tracked, but this list does not repeat the same visitor every time they refresh or come back.</p>
+            <p>${isFallback ? 'Using the existing HQ overview visit data until the dedicated unique visitor endpoint is available on the live backend.' : 'This uses a stable browser visitor ID and the backend stores one unique visitor record. Pageviews are still tracked, but this list does not repeat the same visitor every time they refresh or come back.'}</p>
           </div>
           <button type="button" class="hqUniqueRefresh" data-hq-unique-refresh>Refresh</button>
         </div>
@@ -76,8 +118,8 @@ function render(root, data, error = '') {
           </div>
           <div class="hqUniqueList">
             ${visitors.slice(0, 25).map((visitor) => {
-              const name = visitor.user_email || visitor.business_name || visitor.last_referrer || visitor.last_source || 'Unknown visitor';
-              const meta = `${visitor.first_path || visitor.last_path || 'site visit'} · first ${dateText(visitor.first_seen || visitor.created_at)} · last ${dateText(visitor.last_seen)}`;
+              const name = visitor.user_email || visitor.business_name || visitor.last_referrer || visitor.last_source || visitor.ip || 'Unknown visitor';
+              const meta = `${visitor.first_path || visitor.last_path || visitor.path || 'site visit'} · first ${dateText(visitor.first_seen || visitor.created_at)} · last ${dateText(visitor.last_seen || visitor.created_at)}`;
               return `<div class="hqUniqueRow"><span><b>${esc(name)}</b><span>${esc(meta)}</span></span><em>${num(visitor.pageview_count || visitor.visit_count || 1)} views</em></div>`;
             }).join('') || '<div class="hqUniqueRow"><b>No unique visitors yet</b><span>Once someone lands on Churvox, they will appear here once.</span><em>empty</em></div>'}
           </div>`}
@@ -104,7 +146,7 @@ async function mount() {
   }
   root.innerHTML = '<section class="hqUniqueShell"><div class="hqUniqueInner"><div class="hqUniqueRow"><b>Loading unique visitors…</b><span>Checking real visitors counted once.</span><em>live</em></div></div></section>';
   try {
-    render(root, await apiGet('/api/admin/owner/unique-visitors'));
+    render(root, await loadUniqueData());
   } catch (error) {
     render(root, null, error?.message || 'Could not load');
   }
