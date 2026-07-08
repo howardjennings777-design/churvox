@@ -30,18 +30,30 @@ const TONES = {
 };
 
 const css = `
-  .cv3Product.cvxNoHeroStarts .cv3Hero,
-  .cv3Product.cvxNoHeroStarts .cvxPageIntentNote,
-  .cv3Product.cvxNoHeroStarts .cvxMessageBoardNote,
-  .cv3Product.cvxNoHeroStarts .cvxHeroMiddleIntent { display: none !important; }
+  body .cv3Product .cv3Hero,
+  body .cv3Product.cvxCompactHeroDesign .cv3Hero,
+  body .cv3Product.cvxAllPagesPolished .cv3Hero,
+  body .cv3Product.cvxMessagesPolished .cv3Hero,
+  body .cv3Product .cvxPageIntentNote,
+  body .cv3Product .cvxMessageBoardNote,
+  body .cv3Product .cvxHeroMiddleIntent {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
   .cv3Product.cvxNoHeroStarts .cv3Workspace { padding-top: 14px !important; }
   .cv3Product.cvxNoHeroStarts .cv3Page { gap: 14px !important; }
   .cvxPageStartRow { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(280px, 1fr) 170px 170px; gap: 12px; align-items: stretch; margin: 0; }
   .cvxPageStartMain, .cvxPageStartBox { position: relative; overflow: hidden; min-height: 72px; border: 1px solid rgba(16,21,19,.08); border-radius: 24px; box-shadow: 0 16px 34px rgba(37,28,17,.055), inset 0 1px 0 rgba(255,255,255,.72); }
-  .cvxPageStartMain { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 12px; align-items: center; padding: 13px 15px; background: radial-gradient(circle at 100% 0%, var(--startAccent), transparent 38%), linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,250,243,.74)); }
+  .cvxPageStartMain { display: grid; grid-template-columns: minmax(0,1fr); gap: 0; align-items: center; padding: 13px 16px; background: radial-gradient(circle at 100% 0%, var(--startAccent), transparent 38%), linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,250,243,.74)); }
   .cvxPageStartBox { display: grid; align-content: center; gap: 4px; padding: 12px 13px; background: radial-gradient(circle at 98% 0%, var(--startSoft), transparent 40%), rgba(255,255,255,.74); }
   .cvxPageStartMain::after, .cvxPageStartBox::after { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .48; background: repeating-linear-gradient(135deg, rgba(16,21,19,.034) 0 1px, transparent 1px 17px); mask-image: linear-gradient(90deg, transparent 0%, #000 38%, #000 100%); }
-  .cvxStartIcon { position: relative; z-index: 1; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 16px; background: #101513; color: #fff; font-size: 13px; font-weight: 700; box-shadow: 0 12px 24px rgba(16,21,19,.16); }
+  .cvxStartIcon { display: none !important; }
   .cvxPageStartText, .cvxPageStartBox b, .cvxPageStartBox span { position: relative; z-index: 1; }
   .cvxPageStartText b { display: block; color: #101513; font-size: 17px; line-height: 1.05; letter-spacing: -.03em; font-weight: 650; }
   .cvxPageStartText span { display: block; margin-top: 4px; color: #4f5b55; font-size: 12px; line-height: 1.28; font-weight: 560; white-space: normal; }
@@ -87,7 +99,7 @@ function upsert(page) {
   const stats = statTexts();
   row.style.setProperty('--startAccent', tone[0]);
   row.style.setProperty('--startSoft', tone[1]);
-  row.innerHTML = `<div class="cvxPageStartMain"><i class="cvxStartIcon">CV</i><div class="cvxPageStartText"><b>${page[0]}</b><span>${page[1]}</span></div></div><div class="cvxPageStartBox"><b>${stats[0] || page[2]}</b><span>${page[2]}</span></div><div class="cvxPageStartBox"><b>${stats[1] || page[3]}</b><span>${page[3]}</span></div>`;
+  row.innerHTML = `<div class="cvxPageStartMain"><div class="cvxPageStartText"><b>${page[0]}</b><span>${page[1]}</span></div></div><div class="cvxPageStartBox"><b>${stats[0] || page[2]}</b><span>${page[2]}</span></div><div class="cvxPageStartBox"><b>${stats[1] || page[3]}</b><span>${page[3]}</span></div>`;
 }
 function run() { const product = document.querySelector('.cv3Product'); const id = pageId(); const page = PAGES[id]; if (!product || !page) return; ensureStyle(); product.classList.add('cvxNoHeroStarts'); removeOld(); upsert(page); }
 function schedule(d = 100) { setTimeout(run, d); }
