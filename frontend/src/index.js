@@ -7,6 +7,7 @@ import './styles/public-premium-force.css';
 import './styles/churvoxMobileAppPolish.css';
 import './styles/churvoxUnifiedLogo.css';
 import './styles/churvoxNavBadges.css';
+import './styles/churvoxIndustryMode.css';
 import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
@@ -46,6 +47,7 @@ const globalHelperImports = [
 ];
 
 const ownerRuntimeImports = [
+  () => import('./runtime/churvoxIndustryModeRuntime'),
   () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxCommandSlipPolishRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
