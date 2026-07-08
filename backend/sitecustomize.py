@@ -66,6 +66,7 @@ for _module in [
     "churvox_hq_unique_visitors_patch",
     "churvox_hq_tester_status_patch",
     "churvox_business_logic_health_patch",
+    "churvox_business_system_suite_patch",
 ]:
     try:
         __import__(_module)  # noqa: F401
