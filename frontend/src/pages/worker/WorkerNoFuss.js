@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import "./WorkerNoFuss.css";
 
 const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
-const list = (value) => Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : Array.isArray(value?.jobs) ? value.jobs : Array.isArray(value?.items) ? value.items : [];
+const list = (value) => Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : Array.isArray(value?.jobs) ? value.jobs : Array.isArray(value?.messages) ? value.messages : Array.isArray(value?.notifications) ? value.notifications : Array.isArray(value?.items) ? value.items : [];
 const objectId = (value) => {
   if (!value) return "";
   if (typeof value === "string" || typeof value === "number") return String(value);
@@ -34,6 +34,9 @@ const moneyLabel = (job) => {
 const jobTime = (job) => clean(job?.scheduled_time || job?.time || job?.scheduled_date || job?.date || "Next");
 const apiBody = (result) => result?.data || result || {};
 const openJobs = (jobs) => jobs.filter((job) => !isDone(job));
+const messageText = (row) => clean(row?.message || row?.body || row?.detail || row?.text || row?.summary || row?.subject || row?.title || "Office update");
+const messageWhen = (row) => clean(row?.created_at || row?.updated_at || row?.time || "recent");
+const messageFrom = (row) => clean(row?.from || row?.sender || row?.worker_name || row?.source || (row?.direction === "worker_to_office" ? "You" : "Office"));
 
 const PROBLEMS = [
   ["late", "Running late", "Worker is running late and the schedule may need office review."],
@@ -103,6 +106,31 @@ function useWorkerJobs() {
   }
   useEffect(() => { refresh(); }, []);
   return { jobs, loading, error, refresh };
+}
+
+function useWorkerMessages() {
+  const { get } = useApi();
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  async function refresh() {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await Promise.race([
+        get("/worker/messages"),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Worker messages took too long to load.")), 8000)),
+      ]);
+      setMessages(list(response?.data || response).filter((row) => messageText(row)));
+    } catch (err) {
+      setMessages([]);
+      setError(err?.response?.data?.detail || err?.message || "Could not load messages yet.");
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => { refresh(); }, []);
+  return { messages, loading, error, refresh };
 }
 
 function stage(job) {
@@ -209,6 +237,22 @@ function IssueCard({ job, note, setNote, saving, sendProblem }) {
   );
 }
 
+function MessageRow({ row }) {
+  const direction = clean(row?.direction);
+  const tone = direction === "worker_to_office" ? "muted" : "";
+  return (
+    <article className={`swCard fieldMessageCard ${tone}`}>
+      <span>{direction === "worker_to_office" ? "Sent to office" : "From office"}</span>
+      <h2>{messageFrom(row)}</h2>
+      <p>{messageText(row)}</p>
+      <div className="fieldMiniGrid">
+        <span><b>Job</b>{clean(row?.job_title) || "General"}</span>
+        <span><b>When</b>{messageWhen(row)}</span>
+      </div>
+    </article>
+  );
+}
+
 function PaymentCard({ job }) {
   const { get, post } = useApi();
   const terminalRef = useRef(null);
@@ -276,10 +320,12 @@ function PaymentCard({ job }) {
       if (processed.error) throw new Error(processed.error.message || "Payment was not processed");
       const paidIntent = processed.paymentIntent || {};
       try { await post("/payments/on-site/reader-result", { job_id: jobId(job), payment_intent_id: paidIntent.id || intent.payment_intent_id, amount_cents: amountCents, currency: intent.currency || "nzd", stripe_account_id: intent.stripe_account_id, status: paidIntent.status || "processed" }); } catch {}
+      try { await post("/worker/field-slip", { type: "payment_completed", kind: "payment_completed", job_id: jobId(job), job_title: jobTitle(job), client_name: customer(job), amount_cents: amountCents, text: `Payment completed for ${jobTitle(job)}.`, source: "churvox-field-payment" }); } catch {}
       setStep("Payment complete");
       toast.success("Payment complete");
     } catch (error) {
       setStep("Payment needs office check");
+      try { await post("/worker/field-slip", { type: "payment_check_needed", kind: "payment_check_needed", job_id: jobId(job), job_title: jobTitle(job), client_name: customer(job), amount_cents: amountCents, text: error.message || "Payment needs office attention", source: "churvox-field-payment" }); } catch {}
       toast.error(error.message || "Payment needs office attention");
     } finally {
       setBusy(false);
@@ -355,10 +401,10 @@ export function NoFussJob() {
   }
 
   const slipBase = () => ({ job_id: jobId(job), job_title: jobTitle(job), client_name: customer(job), source: "churvox-field", note, text: clean(note) });
-  const acknowledgeJob = () => action("acknowledge", [[`/jobs/${jobId(job)}/acknowledge`, { source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_acknowledged", kind: "job_acknowledged" }]], "Office notified");
-  const startJob = () => action("start job", [[`/jobs/${jobId(job)}/start`, { worker_notes: note, source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_started", kind: "job_started" }]], "Started");
-  const pauseJob = () => action("pause job", [[`/jobs/${jobId(job)}/pause`, { worker_notes: note, source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_paused", kind: "job_paused" }]], "Paused");
-  const resumeJob = () => action("resume job", [[`/jobs/${jobId(job)}/resume`, { worker_notes: note, source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_resumed", kind: "job_resumed" }]], "Resumed");
+  const acknowledgeJob = () => action("acknowledge", [[`/jobs/${jobId(job)}/acknowledge`, { source: "churvox-field", worker_notes: clean(note) || "Worker acknowledged the job." }], ["/worker/field-slip", { ...slipBase(), type: "job_acknowledged", kind: "job_acknowledged" }]], "Office notified");
+  const startJob = () => action("start job", [[`/jobs/${jobId(job)}/start`, { worker_notes: clean(note) || "Worker started the job.", source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_started", kind: "job_started" }]], "Started and office notified");
+  const pauseJob = () => action("pause job", [[`/jobs/${jobId(job)}/pause`, { worker_notes: clean(note) || "Worker paused the job.", source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_paused", kind: "job_paused" }]], "Paused and office notified");
+  const resumeJob = () => action("resume job", [[`/jobs/${jobId(job)}/resume`, { worker_notes: clean(note) || "Worker resumed the job.", source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_resumed", kind: "job_resumed" }]], "Resumed and office notified");
 
   async function sendProblem(key, label, body) {
     if (!job) return;
@@ -386,7 +432,7 @@ export function NoFussJob() {
   async function finishJob() {
     if (!job) return;
     const names = Array.from(proofFiles || []).map((file) => file.name);
-    await action("finish job", [[`/jobs/${jobId(job)}/complete`, { worker_notes: note, proof_photo_names: names, proof_photo_count: names.length, source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_completed", kind: "job_completed", photo_names: names, photo_count: names.length }]], "Finished and sent to office");
+    await action("finish job", [[`/jobs/${jobId(job)}/complete`, { worker_notes: clean(note) || "Worker finished the job.", proof_photo_names: names, proof_photo_count: names.length, source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_completed", kind: "job_completed", photo_names: names, photo_count: names.length }]], "Finished and sent to office");
     window.setTimeout(() => window.location.assign("/worker/jobs"), 450);
   }
 
@@ -422,6 +468,7 @@ export function NoFussJob() {
 
 export function NoFussMessages() {
   const { post } = useApi();
+  const { messages, loading, error, refresh } = useWorkerMessages();
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   async function send() {
@@ -429,12 +476,30 @@ export function NoFussMessages() {
     if (!body) { toast.error("Type a message first"); return; }
     setSaving(true);
     try {
-      await post("/worker/field-slip", { type: "worker_message", kind: "worker_message", text: body, note: body, summary: body, source: "churvox-field-messages" });
-      setText(""); toast.success("Sent to office");
+      await tryPost(post, [["/worker/messages", { text: body, message: body, body, summary: body }], ["/worker/field-slip", { type: "worker_message", kind: "worker_message", text: body, note: body, summary: body, source: "churvox-field-messages" }]]);
+      setText(""); toast.success("Sent to office"); await refresh();
     } catch (err) { toast.error(err?.response?.data?.detail || err?.message || "Could not send message"); }
     finally { setSaving(false); }
   }
-  return <Shell tab="Messages" title="Messages" subtitle="Send a clean note to office or the owner."><section className="swCard fieldMessageCard"><MessageCircle size={24} /><h2>Message office</h2><p>Use this for updates that are not tied to one button.</p><textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Type message..." /><button className="swPrimary" type="button" disabled={saving} onClick={send}><Send size={16} />{saving ? "Sending" : "Send message"}</button></section></Shell>;
+  return (
+    <Shell tab="Messages" title="Messages" subtitle="Worker and office updates in one place.">
+      <section className="swCard fieldMessageCard">
+        <MessageCircle size={24} />
+        <h2>Message office</h2>
+        <p>Use this for updates that are not tied to one button.</p>
+        <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Type message..." />
+        <button className="swPrimary" type="button" disabled={saving} onClick={send}><Send size={16} />{saving ? "Sending" : "Send message"}</button>
+      </section>
+      <section className="fieldList">
+        <span>Office loop</span>
+        {loading ? <LoadingCard text="Loading messages" /> : null}
+        {!loading && error ? <Empty icon={AlertTriangle} title="Could not load messages">{error}</Empty> : null}
+        {!loading && !error && !messages.length ? <Empty icon={MessageCircle} title="No messages yet">Office updates and your sent messages will show here.</Empty> : null}
+        {!loading && !error && messages.length ? messages.slice(0, 20).map((row, index) => <MessageRow key={objectId(row?.id || row?._id) || `${messageWhen(row)}-${index}`} row={row} />) : null}
+      </section>
+      <button className="swLight" type="button" onClick={refresh}><RefreshCw size={16} />Refresh messages</button>
+    </Shell>
+  );
 }
 
 export function NoFussHelp() {
