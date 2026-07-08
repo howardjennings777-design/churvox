@@ -5,6 +5,7 @@ import hashlib
 import importlib
 import importlib.abc
 import importlib.machinery
+import os
 import sys
 from typing import Any, Dict
 
@@ -13,8 +14,10 @@ from starlette.requests import Request
 
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
-PLATFORM_OWNER_EMAIL = "hello@churvox.com"
-INTERNAL_MARKERS = ["test", "demo", "sample", "fake", "mock", "preview", "seed", "example.com", "mailinator", "tempmail", "john@churvox", "johnworker"]
+OWNER_EMAILS = {"hello@churvox.com", "howardjennings77@gmail.com", "howardjennings777@gmail.com"}
+# Keep this list narrow. Public paths like /demo are real marketing traffic and must not be filtered out.
+INTERNAL_MARKERS = ["sample", "fake", "seed", "example.com", "mailinator", "tempmail", "john@churvox", "johnworker", "localhost", "127.0.0.1"]
+INTERNAL_PATH_PREFIXES = ("/admin", "/churvox-hq", "/owner", "/platform-dashboard", "/app-owner", "/dashboard", "/worker", "/plans", "/setup", "/setup-guide", "/guide")
 
 
 def _now():
@@ -25,8 +28,18 @@ def _text(value):
     return str(value or "").strip()
 
 
+def _lower(value):
+    return _text(value).lower()
+
+
+def owner_emails():
+    raw = os.environ.get("PLATFORM_OWNER_EMAILS") or os.environ.get("CHURVOX_PLATFORM_OWNER_EMAILS") or ""
+    configured = {_lower(item) for item in raw.replace(";", ",").split(",") if _lower(item)}
+    return OWNER_EMAILS | configured
+
+
 def _email(doc: Dict[str, Any] | None) -> str:
-    return _text((doc or {}).get("email") or (doc or {}).get("user_email")).lower()
+    return _lower((doc or {}).get("email") or (doc or {}).get("user_email") or (doc or {}).get("owner_email"))
 
 
 def _safe_value(value: Any):
@@ -72,9 +85,22 @@ def _visitor_key(visitor_id: str, ip: str, user_agent: str) -> str:
     return _fingerprint(f"fallback:{ip}|{user_agent}")
 
 
+def _is_public_path(path: str) -> bool:
+    p = "/" + _text(path).split("?")[0].lstrip("/")
+    if p == "//":
+        p = "/"
+    return not any(p.startswith(prefix) for prefix in INTERNAL_PATH_PREFIXES)
+
+
 def _internal(doc: Dict[str, Any] | None) -> bool:
-    hay = " ".join(str((doc or {}).get(k) or "") for k in ["email", "user_email", "business_name", "path", "referrer", "source", "user_agent"]).lower()
-    return _email(doc) == PLATFORM_OWNER_EMAIL or any(marker in hay for marker in INTERNAL_MARKERS)
+    doc = doc or {}
+    path = _text(doc.get("path") or doc.get("last_path") or doc.get("first_path"))
+    if not _is_public_path(path):
+        return True
+    if _email(doc) in owner_emails():
+        return True
+    hay = " ".join(str(doc.get(k) or "") for k in ["email", "user_email", "business_name", "referrer", "source", "user_agent"]).lower()
+    return any(marker in hay for marker in INTERNAL_MARKERS)
 
 
 def _client_ip(request: Request) -> str:
@@ -99,8 +125,16 @@ def install(module):
 
     async def require_owner(request: Request):
         user = await get_current_user(request)
-        if _email(user) != PLATFORM_OWNER_EMAIL:
-            raise HTTPException(status_code=403, detail="Churvox HQ is locked to hello@churvox.com")
+        role = _lower((user or {}).get("role") or (user or {}).get("user_role") or (user or {}).get("account_type")).replace("-", "_").replace(" ", "_")
+        allowed = _email(user) in owner_emails() or role in {"platform_owner", "platform_admin", "super_admin", "superadmin", "admin"} or bool((user or {}).get("is_platform_owner") or (user or {}).get("is_platform_admin") or (user or {}).get("is_super_admin") or (user or {}).get("is_admin"))
+        checker = getattr(module, "is_platform_owner", None)
+        if not allowed and checker:
+            try:
+                allowed = bool(checker(user))
+            except Exception:
+                allowed = False
+        if not allowed:
+            raise HTTPException(status_code=403, detail="Churvox HQ unique visitors are locked to the platform owner")
         return user
 
     def remove_route(path, method):
@@ -114,7 +148,11 @@ def install(module):
             await db.platform_unique_visitors.create_index("visitor_key", unique=True)
             await db.platform_unique_visitors.create_index("first_seen")
             await db.platform_unique_visitors.create_index("last_seen")
+            await db.platform_unique_visitors.create_index("internal")
+            await db.platform_unique_visitors.create_index("traffic_type")
             await db.platform_visits.create_index("visitor_key")
+            await db.platform_visits.create_index("created_at")
+            await db.platform_visits.create_index("traffic_type")
         except Exception:
             pass
 
@@ -130,6 +168,7 @@ def install(module):
         title = _text(payload.get("title") or "Churvox")[:200]
         referrer = _text(request.headers.get("referer") or payload.get("referrer"))[:500]
         source = _text(payload.get("source"))[:200]
+        public_path = _is_public_path(path)
         pageview = {
             "created_at": now,
             "last_seen": now,
@@ -142,12 +181,14 @@ def install(module):
             "visitor_id_present": bool(visitor_id),
             "user_agent": user_agent,
             "kind": "pageview",
+            "traffic_type": "public" if public_path else "app_internal",
             "user_id": (user or {}).get("id") or (user or {}).get("_id"),
             "user_email": (user or {}).get("email"),
             "user_name": (user or {}).get("name"),
             "business_id": (user or {}).get("business_id"),
             "business_name": (user or {}).get("business_name"),
         }
+        is_internal = _internal(pageview)
         unique_doc = {
             "visitor_key": visitor_key,
             "last_seen": now,
@@ -162,11 +203,12 @@ def install(module):
             "user_name": pageview.get("user_name"),
             "business_id": pageview.get("business_id"),
             "business_name": pageview.get("business_name"),
-            "internal": _internal(pageview),
+            "internal": is_internal,
+            "traffic_type": "public" if not is_internal else "internal",
             "updated_at": now,
         }
         try:
-            await db.platform_visits.insert_one(pageview)
+            await db.platform_visits.insert_one({**pageview, "internal": is_internal})
             await db.platform_unique_visitors.update_one(
                 {"visitor_key": visitor_key},
                 {
@@ -183,7 +225,7 @@ def install(module):
                     pass
         except Exception:
             pass
-        return {"ok": True, "unique": True, "visitor_key": visitor_key}
+        return {"ok": True, "unique": True, "visitor_key": visitor_key, "traffic_type": "public" if not is_internal else "internal"}
 
     async def unique_visitors(request: Request):
         await require_owner(request)
@@ -194,13 +236,13 @@ def install(module):
         thirty_days = now - timedelta(days=30)
         rows = []
         try:
-            rows = await db.platform_unique_visitors.find({}).sort("last_seen", -1).limit(2000).to_list(length=2000)
+            rows = await db.platform_unique_visitors.find({}).sort("last_seen", -1).limit(5000).to_list(length=5000)
         except Exception:
             rows = []
         if not rows:
             visits = []
             try:
-                visits = await db.platform_visits.find({}).sort("last_seen", -1).limit(4000).to_list(length=4000)
+                visits = await db.platform_visits.find({}).sort("last_seen", -1).limit(12000).to_list(length=12000)
             except Exception:
                 visits = []
             seen = {}
@@ -211,7 +253,7 @@ def install(module):
                 d = _parse_dt(visit.get("last_seen") or visit.get("created_at"))
                 cd = _parse_dt(current.get("last_seen"))
                 if d and (not cd or d >= cd):
-                    current.update({"last_seen": visit.get("last_seen") or visit.get("created_at"), "last_path": visit.get("path"), "last_referrer": visit.get("referrer"), "last_source": visit.get("source"), "user_email": visit.get("user_email"), "business_name": visit.get("business_name")})
+                    current.update({"last_seen": visit.get("last_seen") or visit.get("created_at"), "last_path": visit.get("path"), "last_referrer": visit.get("referrer"), "last_source": visit.get("source"), "user_email": visit.get("user_email"), "business_name": visit.get("business_name"), "internal": _internal(visit), "traffic_type": "public" if not _internal(visit) else "internal"})
                 seen[key] = current
             rows = list(seen.values())
         public_rows = [r for r in rows if not _internal(r)]
@@ -222,14 +264,14 @@ def install(module):
         active_30d = [r for r in public_rows if (at(r, "last_seen") or at(r, "created_at")) and (at(r, "last_seen") or at(r, "created_at")) >= thirty_days]
         return {
             "success": True,
-            "source": "churvox_unique_visitors_once",
+            "source": "platform_unique_visitors_real_public",
             "generated_at": now.isoformat(),
             "counts": {
                 "unique_total": len(public_rows),
                 "new_unique_today": len(unique_today),
                 "unique_active_7d": len(active_7d),
                 "unique_active_30d": len(active_30d),
-                "pageviews_total": sum(int(r.get("pageview_count") or 0) for r in public_rows),
+                "pageviews_total": sum(int(r.get("pageview_count") or r.get("visit_count") or 0) for r in public_rows),
             },
             "visitors": [_safe_value(r) for r in public_rows[:500]],
         }
