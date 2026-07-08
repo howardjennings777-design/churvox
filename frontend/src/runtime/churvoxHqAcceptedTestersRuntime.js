@@ -121,12 +121,19 @@ function testerRow(tester, invited = false) {
   return `<div class="hqTesterRow ${invited ? 'invited' : ''}"><span><b>${esc(name)}</b><span>${esc(meta)}</span></span><em>${esc(end)}</em></div>`;
 }
 
+function emptyRow(title, body, tag = 'empty') {
+  return `<div class="hqTesterRow"><b>${esc(title)}</b><span>${esc(body)}</span><em>${esc(tag)}</em></div>`;
+}
+
 function render(root, data, error = '') {
   const counts = data?.counts || {};
   const accepted = arr(data?.accepted_testers);
-  const active = arr(data?.active_testers);
   const invited = arr(data?.invited_testers);
   const isFallback = data?.source === 'hq_existing_data_fallback';
+  const acceptedHtml = accepted.slice(0, 35).map((tester) => testerRow(tester, false)).join('') || emptyRow('No accepted testers yet', 'When a tester accepts access, they will appear here.', 'empty');
+  const invitedFallbackCopy = isFallback ? 'Fallback mode can show accepted testers, but pending invite records need the dedicated tester endpoint.' : 'All visible testers have accepted, or no invites are stored yet.';
+  const invitedHtml = invited.slice(0, 35).map((tester) => testerRow(tester, true)).join('') || emptyRow('No pending invites visible', invitedFallbackCopy, 'clear');
+
   root.innerHTML = `
     <section class="hqTesterShell">
       <div class="hqTesterInner">
@@ -146,8 +153,8 @@ function render(root, data, error = '') {
             <div class="hqTesterMetric"><b>${num(counts.invited_not_accepted)}</b><span>Invited only</span></div>
           </div>
           <div class="hqTesterColumns">
-            <section class="hqTesterPanel"><h4>Accepted / active testers</h4><div class="hqTesterList">${accepted.slice(0, 35).map((tester) => testerRow(tester, false)).join('') || '<div class="hqTesterRow"><b>No accepted testers yet</b><span>When a tester accepts access, they will appear here.</span><em>empty</em></div>'}</div></section>
-            <section class="hqTesterPanel"><h4>Invited but not accepted</h4><div class="hqTesterList">${invited.slice(0, 35).map((tester) => testerRow(tester, true)).join('') || '<div class="hqTesterRow"><b>No pending invites visible</b><span>${isFallback ? 'Fallback mode can show accepted testers, but pending invite records need the dedicated tester endpoint.' : 'All visible testers have accepted, or no invites are stored yet.'}</span><em>clear</em></div>'}</div></section>
+            <section class="hqTesterPanel"><h4>Accepted / active testers</h4><div class="hqTesterList">${acceptedHtml}</div></section>
+            <section class="hqTesterPanel"><h4>Invited but not accepted</h4><div class="hqTesterList">${invitedHtml}</div></section>
           </div>`}
       </div>
     </section>`;
