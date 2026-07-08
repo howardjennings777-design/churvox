@@ -40,6 +40,7 @@ const TermsOfServicePage = React.lazy(() => import("./pages/legal/TermsOfService
 const AccountDeletionPage = React.lazy(() => import("./pages/legal/AccountDeletionPage"));
 const BillingReturnPage = React.lazy(() => import("./pages/BillingReturnPage"));
 const FreshApp = React.lazy(() => import("./churvox-fresh/FreshApp"));
+const OfficeTeamLab = React.lazy(() => import("./churvox-office-lab/OfficeTeamLab"));
 
 const PLATFORM_OWNER_EMAILS = new Set(["hello@churvox.com", "howardjennings77@gmail.com", "howardjennings777@gmail.com"]);
 
@@ -172,6 +173,10 @@ function App() {
           <Toaster position="top-right" richColors />
           <React.Suspense fallback={<Spinner />}>
             <Routes>
+              <Route path="/office-team-lab" element={<OfficeTeamLab />} />
+              <Route path="/office-lab" element={<OfficeTeamLab />} />
+              <Route path="/new-command-lab" element={<OfficeTeamLab />} />
+
               <Route path="/" element={<HomePage />} />
               <Route path="/app" element={<PwaLaunchPage />} />
               <Route path="/product" element={<FeaturesPage />} />
