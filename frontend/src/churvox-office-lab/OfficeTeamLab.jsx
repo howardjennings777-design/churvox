@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import "./OfficeTeamLab.css";
+import "./OfficeTeamLabTight.css";
 
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-office-team-lab-20260709";
 
