@@ -1,5 +1,21 @@
 export const DEFAULT_INDUSTRY = "field-service";
 
+const defaultCapabilities = {
+  usesFieldMap: true,
+  usesProof: true,
+  usesRecurring: true,
+  usesTimesheets: true,
+  usesPayroll: true,
+  usesSiteAddress: true,
+  usesQuotes: true,
+  usesInvoices: true,
+  usesMessages: true,
+  serviceLabel: "Service",
+  addressLabel: "Site address",
+  proofLabel: "Proof/photos",
+  workerStatusLabel: "Worker status",
+};
+
 export const INDUSTRIES = {
   "field-service": {
     title: "Field service",
@@ -8,9 +24,10 @@ export const INDUSTRIES = {
     intro: "Churvox keeps job detail, client detail, worker updates, proof, quotes, invoices and owner decisions connected for service businesses.",
     examples: ["Jobs", "Clients", "Workers", "Proof", "Quotes", "Invoices", "Command"],
     services: ["Service visit", "Repair", "Maintenance", "Quote required", "Follow-up", "Other"],
-    jobWords: { job: "Job", jobs: "Jobs", worker: "Worker", workers: "Workers", client: "Client", clients: "Clients", proof: "Proof" },
+    jobWords: { job: "Job", jobs: "Jobs", worker: "Worker", workers: "Workers", client: "Client", clients: "Clients", proof: "Proof", team: "Team" },
     emptyJob: "Add a job with client, worker, price, date, time and recurrence.",
     flow: ["Capture the work", "Send the field update", "Owner approves the next step"],
+    capabilities: defaultCapabilities,
   },
   "lawn-care": {
     title: "Lawn & garden",
@@ -19,9 +36,10 @@ export const INDUSTRIES = {
     intro: "Churvox keeps regular rounds, one-off tidy ups, photos, access notes, worker updates and invoice drafts tied to the right client.",
     examples: ["Fortnightly mowing rounds", "Hedge trim extras", "Gate and access notes", "Before/after proof", "Quick invoice drafts"],
     services: ["Lawn mowing", "Hedge trim", "Garden tidy", "Weed control", "Green waste", "One-off clean up", "Other"],
-    jobWords: { job: "Job", jobs: "Jobs", worker: "Worker", workers: "Workers", client: "Client", clients: "Clients", proof: "Photos" },
+    jobWords: { job: "Job", jobs: "Jobs", worker: "Worker", workers: "Workers", client: "Client", clients: "Clients", proof: "Photos", team: "Team" },
     emptyJob: "Add a mowing, garden tidy, hedge trim or recurring round with access notes and proof.",
     flow: ["Book the round", "Worker completes and sends proof", "Owner checks extras and invoice"],
+    capabilities: { ...defaultCapabilities, serviceLabel: "Outdoor service", proofLabel: "Before/after photos" },
   },
   landscaping: {
     title: "Landscaping",
@@ -30,9 +48,10 @@ export const INDUSTRIES = {
     intro: "For landscaping jobs, Churvox keeps the accepted scope, materials, crew notes, progress proof and invoice decisions together.",
     examples: ["Quote-led projects", "Materials and extras", "Crew notes", "Progress photos", "Staged billing review"],
     services: ["Landscape quote", "Planting", "Mulch/bark", "Retaining/garden bed", "Staged project", "Materials extra", "Other"],
-    jobWords: { job: "Job", jobs: "Jobs", worker: "Crew", workers: "Crew", client: "Client", clients: "Clients", proof: "Progress proof" },
+    jobWords: { job: "Job", jobs: "Jobs", worker: "Crew", workers: "Crew", client: "Client", clients: "Clients", proof: "Progress proof", team: "Crew" },
     emptyJob: "Add a landscaping job with scope, crew, materials, proof and staged billing notes.",
     flow: ["Quote the scope", "Convert into staged jobs", "Approve extras before invoicing"],
+    capabilities: { ...defaultCapabilities, serviceLabel: "Project type", proofLabel: "Progress proof" },
   },
   cleaning: {
     title: "Cleaning",
@@ -41,9 +60,10 @@ export const INDUSTRIES = {
     intro: "Cleaning teams can keep site checklists, key/access notes, cleaner updates, client replies and repeat invoices in one clean record.",
     examples: ["Recurring visits", "Site checklists", "Access/key notes", "Cleaner updates", "Client follow-up"],
     services: ["Regular clean", "Deep clean", "Move-out clean", "Commercial clean", "Checklist visit", "Extra supplies", "Other"],
-    jobWords: { job: "Visit", jobs: "Visits", worker: "Cleaner", workers: "Cleaners", client: "Client", clients: "Clients", proof: "Checklist/proof" },
+    jobWords: { job: "Visit", jobs: "Visits", worker: "Cleaner", workers: "Cleaners", client: "Client", clients: "Clients", proof: "Checklist/proof", team: "Cleaners" },
     emptyJob: "Add a cleaning visit with access notes, checklist, cleaner and recurring schedule.",
     flow: ["Schedule the visit", "Cleaner sends update", "Owner reviews client reply or invoice"],
+    capabilities: { ...defaultCapabilities, serviceLabel: "Cleaning type", proofLabel: "Checklist/proof", workerStatusLabel: "Cleaner status" },
   },
   "property-maintenance": {
     title: "Property maintenance",
@@ -52,9 +72,10 @@ export const INDUSTRIES = {
     intro: "Property maintenance work changes every day. Churvox keeps tenants, landlords, job notes, photos, workers and money steps connected.",
     examples: ["Mixed repair jobs", "Tenant/landlord notes", "Keys and access", "Urgent fixes", "Job history"],
     services: ["Repair", "Inspection", "Tenant issue", "Key/access job", "Urgent fix", "Quote required", "Other"],
-    jobWords: { job: "Job", jobs: "Jobs", worker: "Worker", workers: "Workers", client: "Property/client", clients: "Properties/clients", proof: "Proof" },
+    jobWords: { job: "Job", jobs: "Jobs", worker: "Worker", workers: "Workers", client: "Property/client", clients: "Properties/clients", proof: "Proof", team: "Team" },
     emptyJob: "Add a maintenance job with property, access notes, worker, proof and owner check.",
     flow: ["Record the issue", "Assign the right person", "Send proof and approve billing"],
+    capabilities: { ...defaultCapabilities, serviceLabel: "Maintenance type", addressLabel: "Property address" },
   },
   handyman: {
     title: "Handyman & repairs",
@@ -63,9 +84,10 @@ export const INDUSTRIES = {
     intro: "Churvox helps handyman businesses keep parts, photos, client approvals, quotes, job notes and invoices from turning into messy messages.",
     examples: ["Small repairs", "Parts notes", "Photos", "Client approvals", "Quick quotes"],
     services: ["Repair", "Install", "Parts needed", "Small job", "Quote required", "Follow-up", "Other"],
-    jobWords: { job: "Job", jobs: "Jobs", worker: "Worker", workers: "Workers", client: "Client", clients: "Clients", proof: "Photos/notes" },
+    jobWords: { job: "Job", jobs: "Jobs", worker: "Worker", workers: "Workers", client: "Client", clients: "Clients", proof: "Photos/notes", team: "Team" },
     emptyJob: "Add a repair job with parts, proof, quote or invoice details.",
     flow: ["Create the job", "Capture parts and proof", "Owner approves the invoice"],
+    capabilities: { ...defaultCapabilities, serviceLabel: "Repair type", proofLabel: "Photos/notes" },
   },
   painting: {
     title: "Painting",
@@ -74,9 +96,10 @@ export const INDUSTRIES = {
     intro: "Painting jobs need clear scope and proof. Churvox keeps rooms/areas, quote details, progress notes, extras and owner-approved billing in order.",
     examples: ["Room/area scope", "Quote details", "Progress proof", "Extras", "Final invoice check"],
     services: ["Interior painting", "Exterior painting", "Prep work", "Touch-up", "Extra room/area", "Quote required", "Other"],
-    jobWords: { job: "Job", jobs: "Jobs", worker: "Painter", workers: "Painters", client: "Client", clients: "Clients", proof: "Progress proof" },
+    jobWords: { job: "Job", jobs: "Jobs", worker: "Painter", workers: "Painters", client: "Client", clients: "Clients", proof: "Progress proof", team: "Painters" },
     emptyJob: "Add a painting job with room/area scope, painter, proof and extras notes.",
     flow: ["Quote the work", "Track progress and extras", "Review final invoice"],
+    capabilities: { ...defaultCapabilities, serviceLabel: "Painting type", proofLabel: "Progress proof" },
   },
   "plumbing-electrical-hvac": {
     title: "Plumbing, electrical & HVAC",
@@ -85,9 +108,10 @@ export const INDUSTRIES = {
     intro: "For technical service work, Churvox keeps job details, parts notes, proof, safety notes and owner-controlled customer/accounting handoff clear.",
     examples: ["Urgent callouts", "Parts notes", "Safety notes", "Proof photos", "Owner-controlled handoff"],
     services: ["Callout", "Repair", "Install", "Parts used", "Safety note", "Quote required", "Other"],
-    jobWords: { job: "Callout/job", jobs: "Callouts/jobs", worker: "Technician", workers: "Technicians", client: "Client", clients: "Clients", proof: "Proof/safety note" },
+    jobWords: { job: "Callout/job", jobs: "Callouts/jobs", worker: "Technician", workers: "Technicians", client: "Client", clients: "Clients", proof: "Proof/safety note", team: "Technicians" },
     emptyJob: "Add a callout with site address, technician, parts, proof and safety notes.",
     flow: ["Capture the callout", "Worker records proof and parts", "Owner checks before sending"],
+    capabilities: { ...defaultCapabilities, serviceLabel: "Callout type", proofLabel: "Proof/safety note", workerStatusLabel: "Technician status" },
   },
   "pest-control": {
     title: "Pest control",
@@ -96,9 +120,22 @@ export const INDUSTRIES = {
     intro: "Pest control businesses can use Churvox for scheduled visits, treatment notes, follow-ups, proof and recurring customer reminders.",
     examples: ["Scheduled visits", "Treatment notes", "Follow-ups", "Proof", "Recurring reminders"],
     services: ["Treatment visit", "Inspection", "Follow-up", "Recurring service", "Treatment note", "Quote required", "Other"],
-    jobWords: { job: "Visit", jobs: "Visits", worker: "Technician", workers: "Technicians", client: "Client", clients: "Clients", proof: "Treatment proof" },
+    jobWords: { job: "Visit", jobs: "Visits", worker: "Technician", workers: "Technicians", client: "Client", clients: "Clients", proof: "Treatment proof", team: "Technicians" },
     emptyJob: "Add a pest control visit with treatment notes, follow-up and recurring reminder.",
     flow: ["Schedule the visit", "Record treatment and notes", "Follow up or invoice"],
+    capabilities: { ...defaultCapabilities, serviceLabel: "Treatment type", proofLabel: "Treatment proof", workerStatusLabel: "Technician status" },
+  },
+  "barber-hairdresser": {
+    title: "Barber, hair & beauty",
+    short: "Salon/barber",
+    headline: "Run appointments, clients, staff and follow-ups without field-service clutter.",
+    intro: "Churvox can fit barbers, hairdressers and beauty studios by focusing on appointments, client history, services, staff, reminders and invoices instead of maps and site-work proof.",
+    examples: ["Haircuts and colour", "Barber bookings", "Beauty appointments", "Client notes", "Staff roster", "Follow-up reminders"],
+    services: ["Haircut", "Barber cut", "Beard trim", "Colour", "Blow wave", "Treatment", "Beauty service", "Consultation", "Other"],
+    jobWords: { job: "Appointment", jobs: "Appointments", worker: "Staff member", workers: "Staff", client: "Client", clients: "Clients", proof: "Client notes", team: "Staff" },
+    emptyJob: "Add an appointment with service, client, staff member, time, price and notes.",
+    flow: ["Book the appointment", "Staff complete service and notes", "Owner checks follow-up or payment"],
+    capabilities: { ...defaultCapabilities, usesFieldMap: false, usesProof: false, usesSiteAddress: false, usesQuotes: false, usesTimesheets: false, serviceLabel: "Appointment service", addressLabel: "Salon/location", proofLabel: "Client notes", workerStatusLabel: "Staff status" },
   },
 };
 
@@ -111,6 +148,7 @@ export const INDUSTRY_ORDER = [
   "painting",
   "plumbing-electrical-hvac",
   "pest-control",
+  "barber-hairdresser",
 ];
 
 export function normalizeIndustry(value) {
@@ -123,8 +161,9 @@ export function normalizeIndustry(value) {
   if (/property|maintenance|maint/.test(raw)) return "property-maintenance";
   if (/handy|repair/.test(raw)) return "handyman";
   if (/paint/.test(raw)) return "painting";
-  if (/plumb|electric|hvac|heat|cool|air/.test(raw)) return "plumbing-electrical-hvac";
+  if (/plumb|electric|hvac|heat|cool|air|spark|technician/.test(raw)) return "plumbing-electrical-hvac";
   if (/pest/.test(raw)) return "pest-control";
+  if (/barber|hair|salon|beauty|stylist|dresser|hairdresser/.test(raw)) return "barber-hairdresser";
   return DEFAULT_INDUSTRY;
 }
 
@@ -145,4 +184,12 @@ export function industryFromUser(user = {}, settings = {}) {
 
 export function industryServiceOptions(value) {
   return getIndustry(value).services || INDUSTRIES[DEFAULT_INDUSTRY].services;
+}
+
+export function industryCapabilities(value) {
+  return { ...defaultCapabilities, ...(getIndustry(value).capabilities || {}) };
+}
+
+export function industryWords(value) {
+  return { ...INDUSTRIES[DEFAULT_INDUSTRY].jobWords, ...(getIndustry(value).jobWords || {}) };
 }
