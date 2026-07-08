@@ -71,7 +71,7 @@ export function TradeFlowSection() {
   );
 }
 
-export function BusinessCoverageSection() {
+export function BusinessCoverageSection({ secondaryTo = "/pricing", secondaryLabel = "View pricing" }) {
   return (
     <section className="publicCoverageBand">
       <div>
@@ -82,7 +82,7 @@ export function BusinessCoverageSection() {
         </p>
         <div className="publicActions">
           <Link to="/demo" className="publicPrimary">See the demo</Link>
-          <Link to="/pricing" className="publicSecondary">View pricing</Link>
+          <Link to={secondaryTo} className="publicSecondary">{secondaryLabel}</Link>
         </div>
       </div>
       <div className="publicCoverageGrid">
