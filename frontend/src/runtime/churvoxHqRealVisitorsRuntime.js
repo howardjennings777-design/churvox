@@ -44,13 +44,21 @@ const css = `
     font-weight: 850;
     line-height: 1.45;
   }
+  .aomRealVisitorsNumbers {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(108px, 1fr));
+    gap: 10px;
+  }
   .aomRealVisitorsNumber {
-    min-width: 118px;
+    min-width: 108px;
     border-radius: 22px;
     background: #101513;
     color: white;
     padding: 14px;
     text-align: center;
+  }
+  .aomRealVisitorsNumber.today {
+    background: linear-gradient(135deg, #059669, #064e3b);
   }
   .aomRealVisitorsNumber b {
     display: block;
@@ -73,7 +81,7 @@ const css = `
     background: linear-gradient(135deg, rgba(254,242,242,.96), rgba(255,255,255,.92));
   }
   .aomRealVisitorsCard.error small { background: rgba(220,38,38,.11); color: #b91c1c; }
-  @media(max-width:720px){.aomRealVisitorsCard{grid-template-columns:1fr}.aomRealVisitorsNumber{width:100%}}
+  @media(max-width:720px){.aomRealVisitorsCard{grid-template-columns:1fr}.aomRealVisitorsNumbers{grid-template-columns:1fr}.aomRealVisitorsNumber{width:100%}}
 `;
 
 function isHq() {
@@ -84,11 +92,13 @@ function isHq() {
 
 function ensureStyle() {
   if (typeof document === 'undefined') return;
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = css;
-  document.head.appendChild(style);
+  let style = document.getElementById(STYLE_ID);
+  if (!style) {
+    style = document.createElement('style');
+    style.id = STYLE_ID;
+    document.head.appendChild(style);
+  }
+  if (style.textContent !== css) style.textContent = css;
 }
 
 function token() {
@@ -117,13 +127,15 @@ function upsertCard(body, error = '') {
   const anchor = findAnchor();
   if (!anchor) return;
   const counts = body?.counts || {};
-  const total = Number(counts.unique_total || 0);
-  const today = Number(counts.new_unique_today || 0);
+  const totalUnique = Number(counts.unique_total || 0);
+  const visitsToday = Number(counts.visits_today || 0);
+  const uniqueToday = Number(counts.unique_visits_today || counts.new_unique_today || 0);
   const active7 = Number(counts.unique_active_7d || 0);
   const active30 = Number(counts.unique_active_30d || 0);
-  const pageviews = Number(counts.pageviews_total || 0);
+  const pageviewsTotal = Number(counts.pageviews_total || 0);
   const source = body?.source || 'real endpoint';
-  const signature = error ? `error:${error}` : `${total}|${today}|${active7}|${active30}|${pageviews}|${source}`;
+  const start = body?.periods?.today_start || '';
+  const signature = error ? `error:${error}` : `${visitsToday}|${uniqueToday}|${totalUnique}|${active7}|${active30}|${pageviewsTotal}|${source}|${start}`;
   if (signature === lastSignature && document.querySelector('.aomRealVisitorsCard')) return;
   lastSignature = signature;
   let card = document.querySelector('.aomRealVisitorsCard');
@@ -134,36 +146,40 @@ function upsertCard(body, error = '') {
   }
   card.className = `aomRealVisitorsCard ${error ? 'error' : ''}`;
   card.innerHTML = error ? `
-    <div><small>real visitor tracker</small><h3>Unique visits not connected yet.</h3><p>${escapeHtml(error)}. This means HQ is not showing a real visitor count until backend deploy finishes.</p></div>
-    <div class="aomRealVisitorsNumber"><b>—</b><span>offline</span></div>
+    <div><small>real visitor tracker</small><h3>Visits not connected yet.</h3><p>${escapeHtml(error)}. This means HQ is not showing real visit counts until backend deploy finishes.</p></div>
+    <div class="aomRealVisitorsNumbers"><div class="aomRealVisitorsNumber"><b>—</b><span>offline</span></div></div>
   ` : `
-    <div><small>real visitor tracker · ${escapeHtml(source)}</small><h3>Real public unique visits</h3><p>Counts public marketing-site visitors only. Admin, dashboard, worker app, plans/setup, owner traffic and fake/test records are filtered out. ${today} new today · ${active7} active 7d · ${active30} active 30d · ${pageviews} pageviews.</p></div>
-    <div class="aomRealVisitorsNumber"><b>${total}</b><span>unique</span></div>
+    <div><small>real visitor tracker · ${escapeHtml(source)}</small><h3>Today visits + total unique</h3><p><b>${visitsToday}</b> public visits today. Today resets at midnight UTC. Total unique stays separate and does not reset. ${uniqueToday} unique visitors today · ${active7} active 7d · ${active30} active 30d · ${pageviewsTotal} all-time pageviews.</p></div>
+    <div class="aomRealVisitorsNumbers"><div class="aomRealVisitorsNumber today"><b>${visitsToday}</b><span>visits today</span></div><div class="aomRealVisitorsNumber"><b>${totalUnique}</b><span>total unique</span></div></div>
   `;
   window.__CHURVOX_HQ_REAL_UNIQUE_VISITORS__ = body;
-  syncExistingMetric(total, today, active7, active30);
+  syncExistingMetric(totalUnique, visitsToday, uniqueToday, active7, active30);
 }
 
 function escapeHtml(value) {
-  return String(value || '').replace(/[&<>\"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+  return String(value || '').replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
 }
 
-function syncExistingMetric(total, today, active7, active30) {
+function syncExistingMetric(totalUnique, visitsToday, uniqueToday, active7, active30) {
   const metrics = Array.from(document.querySelectorAll('.aomMetric'));
   metrics.forEach((metric) => {
     const label = (metric.querySelector('small')?.textContent || '').trim().toLowerCase();
-    if (label !== 'unique visits') return;
     const value = metric.querySelector(':scope > b');
     const note = metric.querySelector('p');
-    if (value) value.textContent = String(total);
-    if (note) note.textContent = `${today} new today · ${active7} active 7d · ${active30} active 30d · real public traffic`;
+    if (label === 'unique visits') {
+      if (value) value.textContent = String(totalUnique);
+      if (note) note.textContent = `${visitsToday} visits today · ${uniqueToday} unique today · ${active7} active 7d · real public traffic`;
+    }
+    if (label === 'visits today') {
+      if (value) value.textContent = String(visitsToday);
+      if (note) note.textContent = `Resets daily · ${uniqueToday} unique visitors today`;
+    }
   });
   document.querySelectorAll('.aomPulse div').forEach((row) => {
     const label = (row.querySelector('span')?.textContent || '').trim().toLowerCase();
-    if (label === 'unique visits') {
-      const value = row.querySelector('b');
-      if (value) value.textContent = String(total);
-    }
+    const value = row.querySelector('b');
+    if (label === 'unique visits' && value) value.textContent = String(totalUnique);
+    if (label === 'visits today' && value) value.textContent = String(visitsToday);
   });
 }
 
