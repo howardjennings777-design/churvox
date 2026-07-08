@@ -5,10 +5,12 @@ import { getDefaultRoute } from "@/lib/roles";
 import "./PwaLaunchPage.css";
 import "./PwaLaunchLogoBlend.css";
 
+const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b";
+
 function AppLogo() {
   return (
-    <div className="pwaLaunchLogo" aria-label="Churvox logo">
-      <img src="/churvox-mark.svg?v=transparent-real-mark-20260707" alt="Churvox" />
+    <div className="pwaLaunchLogo cvIntegratedLaunchLogo" aria-label="Churvox logo">
+      <img src={BRAND_ICON} alt="Churvox" />
     </div>
   );
 }
@@ -43,7 +45,7 @@ export default function PwaLaunchPage() {
   }, [hasAppAccess, isPayroll, isWorker, loading, navigate, normalizedRole, user]);
 
   return (
-    <main className="pwaLaunchScreen" data-version="CHURVOX_TRANSPARENT_REAL_LOGO_LAUNCH_20260707">
+    <main className="pwaLaunchScreen" data-version="CHURVOX_INTEGRATED_LOGO_LAUNCH_20260708B">
       <section className="pwaLaunchCard" aria-label="Opening Churvox">
         <AppLogo />
         <h1>Churvox</h1>
