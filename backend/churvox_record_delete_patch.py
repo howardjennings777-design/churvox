@@ -1,0 +1,223 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any, Dict, Iterable, List
+
+INSTALLED = set()
+
+
+def now_utc():
+    return datetime.now(timezone.utc)
+
+
+def text(value: Any) -> str:
+    try:
+        return str(value or "").strip()
+    except Exception:
+        return ""
+
+
+def lower(value: Any) -> str:
+    return text(value).lower()
+
+
+def user_value(user: Dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = (user or {}).get(key)
+        if value not in (None, ""):
+            return text(value)
+    business = (user or {}).get("business") or {}
+    if isinstance(business, dict):
+        for key in keys:
+            value = business.get(key)
+            if value not in (None, ""):
+                return text(value)
+    return ""
+
+
+def safe(value: Any):
+    try:
+        from bson import ObjectId
+        if isinstance(value, ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, list):
+        return [safe(item) for item in value]
+    if isinstance(value, dict):
+        out = {}
+        for key, item in value.items():
+            if any(word in str(key).lower() for word in ["password", "token", "secret", "hash"]):
+                continue
+            out["id" if key == "_id" else key] = safe(item)
+        return out
+    return value
+
+
+def id_variants(record_id: str):
+    values = [text(record_id)]
+    try:
+        from bson import ObjectId
+        if ObjectId.is_valid(text(record_id)):
+            values.append(ObjectId(text(record_id)))
+    except Exception:
+        pass
+    return [value for value in values if value not in (None, "")]
+
+
+def id_query(record_id: str, fields: Iterable[str]) -> Dict[str, Any]:
+    variants = id_variants(record_id)
+    ors = []
+    for value in variants:
+        ors.append({"_id": value})
+        for field in fields:
+            ors.append({field: value})
+    return {"$or": ors} if ors else {"_id": "__missing__"}
+
+
+def ownership_query(user: Dict[str, Any]) -> Dict[str, Any]:
+    business_id = user_value(user, "business_id", "company_id", "tenant_id")
+    email = lower(user_value(user, "email", "user_email", "owner_email"))
+    user_id = user_value(user, "id", "_id", "user_id")
+    ors: List[Dict[str, Any]] = []
+    if business_id:
+        ors += [{"business_id": business_id}, {"company_id": business_id}, {"tenant_id": business_id}, {"business.id": business_id}]
+    if email:
+        ors += [{"user_email": email}, {"owner_email": email}, {"created_by_email": email}, {"email": email}]
+    if user_id:
+        ors += [{"user_id": user_id}, {"owner_id": user_id}, {"created_by": user_id}]
+    # Some early beta records were saved without ownership fields. Allow those by ID only after auth.
+    ors += [
+        {"business_id": {"$exists": False}, "user_email": {"$exists": False}, "owner_email": {"$exists": False}},
+        {"business_id": None, "user_email": None, "owner_email": None},
+    ]
+    return {"$or": ors}
+
+
+def combined_query(record_id: str, id_fields: Iterable[str], user: Dict[str, Any]) -> Dict[str, Any]:
+    return {"$and": [id_query(record_id, id_fields), ownership_query(user)]}
+
+
+TARGETS = {
+    "job": {
+        "paths": ["/api/jobs/{record_id}"],
+        "collections": ["jobs", "job_records", "business_jobs"],
+        "id_fields": ["id", "job_id", "record_id"],
+        "label": "job",
+    },
+    "client": {
+        "paths": ["/api/clients/{record_id}"],
+        "collections": ["clients", "customers", "client_records"],
+        "id_fields": ["id", "client_id", "customer_id", "record_id"],
+        "label": "client",
+    },
+    "quote": {
+        "paths": ["/api/quotes/{record_id}"],
+        "collections": ["quotes", "quote_records"],
+        "id_fields": ["id", "quote_id", "record_id"],
+        "label": "quote",
+    },
+    "invoice": {
+        "paths": ["/api/invoices/{record_id}"],
+        "collections": ["invoices", "invoice_records"],
+        "id_fields": ["id", "invoice_id", "invoice_number", "number", "record_id"],
+        "label": "invoice",
+    },
+    "worker": {
+        "paths": ["/api/team/workers/{record_id}", "/api/team/{record_id}", "/api/workers/{record_id}"],
+        "collections": ["team_workers", "workers", "team", "staff", "users"],
+        "id_fields": ["id", "worker_id", "team_member_id", "user_id", "email", "record_id"],
+        "label": "worker",
+    },
+    "message": {
+        "paths": ["/api/messages/{record_id}", "/api/approved-notifications/{record_id}"],
+        "collections": ["messages", "approved_notifications", "notifications", "worker_messages", "customer_messages"],
+        "id_fields": ["id", "message_id", "notification_id", "source_id", "record_id"],
+        "label": "message",
+    },
+    "approval": {
+        "paths": ["/api/ai/actions/{record_id}", "/api/command/approvals/{record_id}"],
+        "collections": ["ai_actions", "command_approvals", "owner_actions", "approved_notifications"],
+        "id_fields": ["id", "action_id", "approval_id", "record_id", "source_id"],
+        "label": "approval",
+    },
+    "support_ticket": {
+        "paths": ["/api/support/tickets/{record_id}", "/api/admin/owner/support-tickets/{record_id}"],
+        "collections": ["support_tickets"],
+        "id_fields": ["id", "ticket_id", "record_id"],
+        "label": "support ticket",
+    },
+}
+
+
+def install(module):
+    name = getattr(module, "__name__", "")
+    if name in INSTALLED:
+        return
+    app = getattr(module, "app", None)
+    db = getattr(module, "db", None)
+    get_current_user = getattr(module, "get_current_user", None)
+    Request = getattr(module, "Request", None)
+    HTTPException = getattr(module, "HTTPException", None)
+    if not app or db is None or get_current_user is None or Request is None or HTTPException is None:
+        return
+
+    async def current_user(request: Request):
+        try:
+            user = await get_current_user(request)
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        if not user:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        return user
+
+    def remove_route(path: str, method: str):
+        try:
+            app.router.routes = [
+                route for route in app.router.routes
+                if not (getattr(route, "path", "") == path and method.upper() in set(getattr(route, "methods", set()) or set()))
+            ]
+        except Exception:
+            pass
+
+    async def delete_from_target(target: Dict[str, Any], record_id: str, request: Request):
+        user = await current_user(request)
+        query = combined_query(record_id, target["id_fields"], user)
+        deleted = 0
+        matched = None
+        touched = []
+        for collection_name in target["collections"]:
+            try:
+                collection = db[collection_name]
+                found = await collection.find_one(query)
+                if not found:
+                    continue
+                result = await collection.delete_one({"_id": found.get("_id")})
+                if result.deleted_count:
+                    deleted += int(result.deleted_count)
+                    matched = matched or found
+                    touched.append(collection_name)
+            except Exception:
+                continue
+        return {
+            "success": True,
+            "deleted": deleted,
+            "record_id": record_id,
+            "record_type": target["label"],
+            "collections": touched,
+            "record": safe(matched) if matched else None,
+            "message": f"{target['label'].capitalize()} deleted." if deleted else f"No matching {target['label']} found to delete.",
+        }
+
+    for target in TARGETS.values():
+        async def endpoint(record_id: str, request: Request, target=target):
+            return await delete_from_target(target, record_id, request)
+        for path in target["paths"]:
+            remove_route(path, "DELETE")
+            app.add_api_route(path, endpoint, methods=["DELETE"])
+
+    INSTALLED.add(name)
