@@ -6,6 +6,7 @@ import './churvox-product/productTypeScale.css';
 import './styles/public-premium-force.css';
 import './styles/churvoxMobileAppPolish.css';
 import './styles/churvoxUnifiedLogo.css';
+import './styles/churvoxNavBadges.css';
 import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
@@ -45,6 +46,7 @@ const globalHelperImports = [
 ];
 
 const ownerRuntimeImports = [
+  () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
   () => import('./runtime/churvoxCommandBrainRuntime'),
   () => import('./runtime/churvoxPaymentSetupRuntime'),
@@ -73,6 +75,7 @@ const ownerRuntimeImports = [
 const workerRuntimeImports = [
   () => import('./runtime/churvoxNativeTimerRuntime'),
   () => import('./runtime/churvoxWorkerBodyStateRuntime'),
+  () => import('./runtime/churvoxNavBadgesRuntime'),
 ];
 
 const hqRuntimeImports = [
