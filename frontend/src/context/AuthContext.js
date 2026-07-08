@@ -13,7 +13,7 @@ const AUTH_SNAPSHOT_KEY = "churvox_auth_session_snapshot_v1";
 const AUTH_SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 const AUTH_REFRESH_GRACE_MS = 1000 * 60 * 60 * 12;
 const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
-const GOOD_STATUSES = new Set(["active", "paid", "trialing", "trial", "past_due", "tester_free", "worker"]);
+const GOOD_STATUSES = new Set(["active", "paid", "past_due", "tester_free", "worker"]);
 const ACTIVE_PAID_STATUSES = new Set(["active", "paid", "tester_free", "worker"]);
 
 function clearStoredAuth() {
@@ -180,20 +180,24 @@ function explicitBillingLock(user = {}) {
   );
 }
 
-function trialStillOpen(user = {}) {
-  if (!user?.trial_ends_at) return false;
-  try { return new Date(user.trial_ends_at) > new Date(); } catch { return false; }
+function testerAccess(user = {}) {
+  return Boolean(user?.free_tester_access === true || user?.is_tester === true || subscriptionStatus(user) === "tester_free");
+}
+
+function stripeBackedAccess(user = {}) {
+  return Boolean(user?.stripe_subscription_id || user?.stripe_customer_id || user?.stripe_checkout_session_id || user?.checkout_session_id);
 }
 
 function businessAccessFromUser(user = {}) {
   if (!user) return false;
   if (inferredWorker(user) || inferredPayroll(user)) return true;
   if (explicitBillingLock(user)) return false;
+  if (testerAccess(user)) return true;
   const status = subscriptionStatus(user);
   if (ACTIVE_PAID_STATUSES.has(status)) return true;
-  if (["trialing", "trial"].includes(status) && trialStillOpen(user)) return true;
-  if (typeof user.has_app_access === "boolean") return user.has_app_access;
-  if (hasValidPlan(user) && user.stripe_subscription_id) return true;
+  if (["trialing", "trial"].includes(status)) return stripeBackedAccess(user);
+  if (typeof user.has_app_access === "boolean") return user.has_app_access && stripeBackedAccess(user);
+  if (hasValidPlan(user) && stripeBackedAccess(user)) return true;
   if (GOOD_STATUSES.has(status)) return true;
   return false;
 }
@@ -225,7 +229,7 @@ export function AuthProvider({ children }) {
 
     try {
       const me = await fetchMe(token || storedSession?.token || undefined);
-      if (businessAccessFromUser(me) || hasValidPlan(me)) removePlanFlag();
+      if (businessAccessFromUser(me)) removePlanFlag();
       if (me?.token) localStorage.setItem("token", me.token);
       saveStoredAuthSnapshot(me);
       rememberPlatformOwner(me);
@@ -331,7 +335,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem("token");
       }
 
-      if (businessAccessFromUser(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
+      if (businessAccessFromUser(nextUser)) removePlanFlag();
       saveStoredAuthSnapshot(nextUser);
       rememberPlatformOwner(nextUser);
       if (runId === authRunRef.current) setUser(nextUser);
@@ -368,7 +372,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem("token");
       }
 
-      if (businessAccessFromUser(nextUser)) {
+      if (testerAccess(nextUser) || inferredWorker(nextUser) || inferredPayroll(nextUser)) {
         removePlanFlag();
         saveStoredAuthSnapshot(nextUser);
         if (runId === authRunRef.current) setUser(nextUser);
@@ -376,7 +380,7 @@ export function AuthProvider({ children }) {
       }
 
       setPlanFlag();
-      const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_or_start_trial" };
+      const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
       saveStoredAuthSnapshot(locked);
       if (runId === authRunRef.current) setUser(locked);
       return { ...response.data, user: locked, ...locked };
