@@ -92,9 +92,10 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
 ];
 
-// HQ is now a real React app surface (AppOwnerMachine). Do not load old overlay runtimes here,
-// otherwise they inject the previous HQ control cards on top of the new machine.
-const hqRuntimeImports = [];
+// HQ is a real React app surface. Load only the connection check, not the old overlay widgets.
+const hqRuntimeImports = [
+  () => import('./runtime/churvoxHqConnectionRuntime'),
+];
 
 function runImports(imports) {
   imports.forEach((load) => {
