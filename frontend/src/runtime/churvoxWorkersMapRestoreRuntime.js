@@ -26,18 +26,8 @@ const css = `
     position: relative;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), 0 16px 38px rgba(16,21,19,.08);
   }
-  .cv3WorkerMapShell iframe {
-    width: 100%; height: 100%; min-height: 100%; border: 0; display: block;
-    filter: saturate(.98) contrast(1.03); background: #dfe9df;
-  }
-  .cv3WorkerMapEmpty {
-    min-height: 330px;
-    display: grid;
-    place-items: center;
-    text-align: center;
-    padding: 28px;
-    color: #51605a;
-  }
+  .cv3WorkerMapShell iframe { width: 100%; height: 100%; min-height: 100%; border: 0; display: block; filter: saturate(.98) contrast(1.03); background: #dfe9df; }
+  .cv3WorkerMapEmpty { min-height: 330px; display: grid; place-items: center; text-align: center; padding: 28px; color: #51605a; }
   .cv3WorkerMapEmpty b { display:block; color:#101513; font-size:22px; font-weight:1000; letter-spacing:-.04em; }
   .cv3WorkerMapEmpty span { display:block; max-width:620px; margin-top:8px; font-size:13px; font-weight:850; line-height:1.55; }
   .cv3WorkerMapPinBar { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin: 0 14px 12px; }
@@ -148,11 +138,7 @@ function workerPlace(worker) {
   const gpsText = first(worker, ['gps', 'gps_text', 'location_gps', 'last_location_gps']);
   const gpsPair = gpsPairFromText(gpsText);
   if (gpsPair) return gpsPair;
-  const location = first(worker, [
-    'current_location', 'last_location', 'location',
-    'current_job_address', 'job_address', 'site_address', 'address', 'current_address',
-    'suburb', 'area', 'region'
-  ]);
+  const location = first(worker, ['current_location', 'last_location', 'location', 'current_job_address', 'job_address', 'site_address', 'address', 'current_address', 'suburb', 'area', 'region']);
   if (!location) return null;
   return { place: location, label: location, kind: /address|street|road|rd|avenue|ave|lane|drive|dr|terrace|terr/i.test(location) ? 'Address' : 'Location' };
 }
@@ -171,11 +157,22 @@ function pinData(workers) {
   }).filter((pin) => pin.name);
 }
 function pinSignature(pins) { return pins.map((pin) => [pin.id, pin.name, pin.place?.place || '', pin.status, pin.job].join('|')).join('||') || 'no-workers'; }
+function currentPageId() {
+  if (typeof window === 'undefined') return '';
+  const hash = clean((window.location.hash || '').replace(/^#/, '').split('?')[0]).toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (hash) return hash;
+  const title = clean(document.querySelector('.cv3TopCopy h1')?.textContent || document.querySelector('.cv3Hero h2')?.textContent || document.querySelector('h1')?.textContent || '').toLowerCase();
+  if (/^workers\b|know what is happening outside/i.test(title)) return 'workers';
+  if (/^messages\b|messages become next steps/i.test(title)) return 'messages';
+  return '';
+}
 function isWorkersPage() {
-  const hash = (window.location.hash || '').toLowerCase();
-  if (hash.includes('workers')) return true;
-  const title = document.querySelector('.cv3TopCopy h1')?.textContent || document.querySelector('h1')?.textContent || '';
-  return /workers/i.test(title) && document.querySelector('.cv3Product');
+  if (typeof document === 'undefined' || !document.querySelector('.cv3Product')) return false;
+  return currentPageId() === 'workers';
+}
+function removeAllMaps() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('.cv3WorkerMapPanel,[data-churvox-single-worker-map="true"]').forEach((panel) => panel.remove());
 }
 function pinButton(pin, index, active) {
   const hasPlace = Boolean(pin.place?.place);
@@ -265,7 +262,11 @@ function placeMap(page, panel) {
   anchor.insertAdjacentElement('afterend', panel);
 }
 async function restoreMap() {
-  if (typeof document === 'undefined' || restoring || !isWorkersPage()) return;
+  if (typeof document === 'undefined' || restoring) return;
+  if (!isWorkersPage()) {
+    removeAllMaps();
+    return;
+  }
   const page = document.querySelector('.cv3Page');
   if (!page) return;
   ensureStyle();
@@ -280,14 +281,17 @@ async function restoreMap() {
       forceNextRefresh = false;
       return;
     }
-    if (!isWorkersPage()) return;
+    if (!isWorkersPage()) {
+      removeAllMaps();
+      return;
+    }
     const panel = makeMapPanel(pins);
     placeMap(page, panel);
     removeDuplicateMaps(page);
   } finally { restoring = false; }
 }
 function scheduleRestore(delay = 80) { setTimeout(restoreMap, delay); }
-function scheduleBurst() { [80, 300, 900, 1800, 3600].forEach(scheduleRestore); }
+function scheduleBurst() { [40, 120, 300, 900, 1800, 3600].forEach(scheduleRestore); }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_WORKERS_REAL_MAP_RUNTIME__) {
   window.__CHURVOX_WORKERS_REAL_MAP_RUNTIME__ = true;
@@ -296,6 +300,7 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_WORKERS_REAL_MAP_RUNTIME_
   window.addEventListener('hashchange', scheduleBurst);
   window.addEventListener('popstate', scheduleBurst);
   window.addEventListener('churvox:data-refresh', () => { cache = { at: 0, workers: [] }; forceNextRefresh = true; scheduleBurst(); });
+  document.addEventListener('click', () => scheduleRestore(120), true);
 }
 
 export {};
