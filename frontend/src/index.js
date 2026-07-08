@@ -75,6 +75,7 @@ const globalHelperImports = [
 // Keep the owner app native and stable. These are the only app helpers still needed after the rebuild.
 const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
+  () => import('./runtime/churvoxAppIndustryRuntime'),
   () => import('./runtime/churvoxTidyRealSlipRuntime'),
   () => import('./runtime/churvoxWorkersMapRestoreRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
@@ -112,7 +113,7 @@ function currentParams() {
 }
 
 function isPublicFastPath(path) {
-  return path === '/' || path === '/product' || path === '/features' || path === '/demo' || path === '/pricing' || path === '/request' || path === '/contact' || path.startsWith('/public') || path === '/login' || path === '/signup' || path === '/forgot-password' || path === '/reset-password';
+  return path === '/' || path === '/product' || path === '/features' || path === '/demo' || path === '/pricing' || path === '/request' || path === '/contact' || path.startsWith('/public') || path.startsWith('/industries') || path === '/login' || path === '/signup' || path === '/forgot-password' || path === '/reset-password';
 }
 
 function isSetupProfilePath(path) {
