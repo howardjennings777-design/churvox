@@ -62,6 +62,7 @@ for _module in [
     "churvox_industry_mode_patch",
     "churvox_industry_mode_request_fix_patch",
     "churvox_business_profile_required_patch",
+    "churvox_industry_isolation_patch",
     "churvox_hq_unique_visitors_patch",
     "churvox_hq_tester_status_patch",
 ]:
