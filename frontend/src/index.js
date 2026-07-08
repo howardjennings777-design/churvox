@@ -11,6 +11,7 @@ import './styles/churvoxIndustryMode.css';
 import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
+import './runtime/churvoxForbiddenExampleScrubRuntime';
 
 const rootEl = document.getElementById('root');
 const staticPublicPageRendered = Boolean(
