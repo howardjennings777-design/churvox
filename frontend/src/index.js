@@ -61,6 +61,7 @@ const globalHelperImports = [
   () => import('./runtime/authInputVisibilityGuard'),
   () => import('./runtime/churvoxPlainSendGuardRuntime'),
   () => import('./runtime/churvoxLogoutNavRuntime'),
+  () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxPlansCountryRuntime'),
   () => import('./runtime/churvoxPlansBillingNavClickGuard'),
   () => import('./runtime/churvoxStripeCheckoutLiveRuntime'),
@@ -75,6 +76,7 @@ const globalHelperImports = [
 // Keep the owner app native and stable. These are the only app helpers still needed after the rebuild.
 const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
+  () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxAppIndustryRuntime'),
   () => import('./runtime/churvoxInternalSupportRuntime'),
   () => import('./runtime/churvoxTidyRealSlipRuntime'),
@@ -92,10 +94,12 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxNativeTimerRuntime'),
   () => import('./runtime/churvoxWorkerBodyStateRuntime'),
   () => import('./runtime/churvoxNavBadgesRuntime'),
+  () => import('./runtime/churvoxVisibleLogoutRuntime'),
 ];
 
 // HQ is a real React app surface. Load only clean connection/visitor/support checks, not old overlay widgets.
 const hqRuntimeImports = [
+  () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxHqConnectionRuntime'),
   () => import('./runtime/churvoxHqRealVisitorsRuntime'),
   () => import('./runtime/churvoxHqSupportTicketsRuntime'),
