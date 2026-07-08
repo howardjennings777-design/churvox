@@ -29,6 +29,7 @@ const HomePage = React.lazy(() => import("./pages/marketing/ExecutiveHomePage"))
 const PricingPage = React.lazy(() => import("./pages/marketing/ExecutivePricingPage"));
 const FeaturesPage = React.lazy(() => import("./pages/marketing/ExecutiveFeaturesPage"));
 const PublicDemoPage = React.lazy(() => import("./pages/marketing/PublicDemoPage"));
+const IndustryPage = React.lazy(() => import("./pages/marketing/IndustryPage"));
 const ContactPage = React.lazy(() => import("./pages/marketing/ExecutiveContactPage"));
 const PrivacyPage = React.lazy(() => import("./pages/legal/PrivacyPage"));
 const TermsPage = React.lazy(() => import("./pages/legal/TermsPage"));
@@ -168,6 +169,7 @@ function App() {
               <Route path="/app" element={<PwaLaunchPage />} />
               <Route path="/product" element={<FeaturesPage />} />
               <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/industries/:slug" element={<IndustryPage />} />
               <Route path="/demo" element={<PublicDemoPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/request" element={<PublicRequestPage />} />
