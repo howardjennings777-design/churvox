@@ -1,12 +1,8 @@
 import React from 'react'
-import OfficeTeamLabTidy from './OfficeTeamLabTidy'
-import OfficeTeamScrollGuard from './OfficeTeamScrollGuard'
+import OfficeTeamLabSite from './OfficeTeamLabSite'
 
 function OfficeTeamLab() {
-  return React.createElement(React.Fragment, null,
-    React.createElement(OfficeTeamScrollGuard),
-    React.createElement(OfficeTeamLabTidy)
-  )
+  return React.createElement(OfficeTeamLabSite)
 }
 
 export default OfficeTeamLab
