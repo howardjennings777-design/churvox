@@ -97,6 +97,7 @@ for _patch in [
     'churvox_auto_smart_request_signature_fix_patch',
     'churvox_jobs_proof_pack_safe_patch',
     'churvox_jobs_proof_pack_middleware_guard_patch',
+    'churvox_owner_access_safety_patch',
 ]:
     _install_launch_patch(_patch)
 
