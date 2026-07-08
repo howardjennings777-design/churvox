@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 from fastapi import HTTPException
 from starlette.requests import Request
 
-TARGETS = {"server", "backend.server"}
+TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
 OWNER_EMAIL = "hello@churvox.com"
 
@@ -20,7 +20,10 @@ def now():
 
 
 def text(value):
-    return str(value or "").strip()
+    try:
+        return str(value or "").strip()
+    except Exception:
+        return ""
 
 
 def low(value):
@@ -31,8 +34,21 @@ def key(value):
     return "".join(ch for ch in low(value) if ch.isalnum())
 
 
+def read(user: Any, *names: str, default: Any = ""):
+    for name in names:
+        try:
+            if isinstance(user, dict) and user.get(name) not in (None, ""):
+                return user.get(name)
+            value = getattr(user, name, None)
+            if value not in (None, ""):
+                return value
+        except Exception:
+            pass
+    return default
+
+
 def email_of(user):
-    return low((user or {}).get("email") or (user or {}).get("user_email"))
+    return low(read(user, "email", "user_email"))
 
 
 def safe(value: Any):
@@ -57,11 +73,11 @@ def safe(value: Any):
 
 
 def user_id(user):
-    return text((user or {}).get("id") or (user or {}).get("_id") or (user or {}).get("user_id"))
+    return text(read(user, "id", "_id", "user_id"))
 
 
 def business_id(user):
-    return text((user or {}).get("business_id") or (user or {}).get("businessId") or (user or {}).get("owner_business_id") or (user or {}).get("contractor_id") or user_id(user))
+    return text(read(user, "business_id", "businessId", "owner_business_id", "contractor_id", default=user_id(user)))
 
 
 def scope(user, ObjectId):
@@ -137,7 +153,7 @@ def proof_pack_for(industry_key="field_service", mode="field_service"):
     k = key(industry_key)
     m = key(mode)
     base = ["Before photo", "After photo", "Worker completion note", "Customer-visible summary"]
-    if "lawn" in k or "landscape" in k:
+    if "lawn" in k or "landscape" in k or "garden" in k:
         return ["Before lawn/garden photo", "After lawn/garden photo", "Gate/access note", "Green waste or extra work note", "Weather issue note"]
     if "clean" in k or "visit" in m:
         return ["Before condition photo", "After clean photo", "Checklist completed", "Access/key issue note", "Extra time or supplies note"]
@@ -155,9 +171,15 @@ def proof_pack_for(industry_key="field_service", mode="field_service"):
 
 
 def current_industry(user):
-    profile = (user or {}).get("industry_profile") or (user or {}).get("industry_key") or ((user or {}).get("business_profile") or {}).get("industry_key") or "field_service"
-    mode = (user or {}).get("industry_mode") or ((user or {}).get("industry_brain") or {}).get("mode") or "field_service"
-    return text(profile) or "field_service", text(mode) or "field_service"
+    business_profile = read(user, "business_profile", default={}) or {}
+    industry_brain = read(user, "industry_brain", default={}) or {}
+    profile = read(user, "industry_profile", "industry_key")
+    mode = read(user, "industry_mode")
+    if not profile and isinstance(business_profile, dict):
+        profile = business_profile.get("industry_key") or business_profile.get("industry")
+    if not mode and isinstance(industry_brain, dict):
+        mode = industry_brain.get("mode")
+    return text(profile or "field_service") or "field_service", text(mode or "field_service") or "field_service"
 
 
 def autopilot_item(ok, title, detail, action):
@@ -188,7 +210,7 @@ def install(module):
 
     async def require_hq(request: Request):
         user = await get_current_user(request)
-        if email_of(user) != OWNER_EMAIL and not bool((user or {}).get("is_platform_owner") or (user or {}).get("is_admin")):
+        if email_of(user) != OWNER_EMAIL and not bool(read(user, "is_platform_owner") or read(user, "is_admin")):
             raise HTTPException(status_code=403, detail="HQ only")
         return user
 
@@ -207,8 +229,8 @@ def install(module):
         workers = await count(db, "users", {"$and": [q, {"role": {"$in": ["worker", "staff", "employee", "subcontractor"]}}]})
         invoices = await count(db, "invoices", q)
         messages = await count(db, "worker_messages", q) + await count(db, "messages", q)
-        profile_done = bool((user or {}).get("industry_profile") or (user or {}).get("industry_key") or (user or {}).get("business_profile_completed"))
-        stripe = bool((user or {}).get("stripe_subscription_id") or (user or {}).get("stripe_customer_id") or (user or {}).get("free_tester_access") or (user or {}).get("subscription_status") in ["active", "paid", "trialing", "tester_free"])
+        profile_done = bool(read(user, "industry_profile") or read(user, "industry_key") or read(user, "business_profile_completed"))
+        stripe = bool(read(user, "stripe_subscription_id") or read(user, "stripe_customer_id") or read(user, "free_tester_access") or read(user, "subscription_status") in ["active", "paid", "trialing", "tester_free"])
         items = [
             autopilot_item(stripe, "Plan and access", "Plan/Stripe or tester access is connected." if stripe else "Choose a plan through Stripe before normal app access.", "Open Plans"),
             autopilot_item(profile_done, "Industry profile", "Industry-specific labels and proof rules are ready." if profile_done else "Save the business profile so Churvox hides useless tools and adapts forms.", "Open setup"),
@@ -256,12 +278,15 @@ def install(module):
 
     async def proof_pack(request: Request):
         user = await require_user(request)
-        profile, mode = current_industry(user)
-        job_id = text(request.query_params.get("job_id") or request.query_params.get("id"))
-        saved = []
-        if job_id:
-            saved = await rows(db, "job_proof_packs", {"job_id": job_id}, 20)
-        return {"success": True, "source": "churvox_business_system_suite", "industry_key": profile, "mode": mode, "job_id": job_id, "checklist": proof_pack_for(profile, mode), "saved_proof": saved, "updated_at": now().isoformat()}
+        try:
+            profile, mode = current_industry(user)
+            job_id = text(request.query_params.get("job_id") or request.query_params.get("id"))
+            saved = await rows(db, "job_proof_packs", {"job_id": job_id}, 20) if job_id else []
+            checklist = proof_pack_for(profile, mode)
+        except Exception:
+            profile, mode, job_id, saved = "field_service", "field_service", "", []
+            checklist = proof_pack_for(profile, mode)
+        return {"success": True, "source": "churvox_business_system_suite_safe", "industry_key": profile, "mode": mode, "job_id": job_id, "checklist": checklist, "saved_proof": saved, "updated_at": now().isoformat()}
 
     async def save_proof_pack(request: Request):
         user = await require_user(request)
@@ -269,13 +294,18 @@ def install(module):
             body = await request.json()
         except Exception:
             body = {}
-        profile, mode = current_industry(user)
-        row = {"business_id": business_id(user), "owner_email": email_of(user), "job_id": text(body.get("job_id")), "industry_key": profile, "mode": mode, "checklist": body.get("checklist") or proof_pack_for(profile, mode), "notes": text(body.get("notes")), "items": body.get("items") or [], "created_at": now(), "updated_at": now()}
+        if not isinstance(body, dict):
+            body = {}
         try:
-            await db.job_proof_packs.insert_one(row)
+            profile, mode = current_industry(user)
+            row = {"business_id": business_id(user), "owner_email": email_of(user), "job_id": text(body.get("job_id")), "industry_key": profile, "mode": mode, "checklist": body.get("checklist") or proof_pack_for(profile, mode), "notes": text(body.get("notes")), "items": body.get("items") or [], "created_at": now(), "updated_at": now()}
+            try:
+                await db.job_proof_packs.insert_one(row)
+            except Exception:
+                pass
         except Exception:
-            pass
-        return {"success": True, "source": "churvox_business_system_suite", "proof_pack": safe(row)}
+            row = {"business_id": "", "owner_email": email_of(user), "job_id": text(body.get("job_id")), "industry_key": "field_service", "mode": "field_service", "checklist": proof_pack_for(), "notes": text(body.get("notes")), "items": body.get("items") or [], "created_at": now(), "updated_at": now()}
+        return {"success": True, "source": "churvox_business_system_suite_safe", "proof_pack": safe(row)}
 
     async def client_memory(request: Request):
         user = await require_user(request)
