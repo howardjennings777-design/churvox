@@ -67,6 +67,7 @@ const ownerRuntimeImports = [
 const workerRuntimeImports = [
   () => import('./runtime/churvoxNativeTimerRuntime'),
   () => import('./runtime/churvoxWorkerAppCleanRuntime'),
+  () => import('./runtime/churvoxWorkerPaymentBridgeRuntime'),
 ];
 
 const hqRuntimeImports = [
