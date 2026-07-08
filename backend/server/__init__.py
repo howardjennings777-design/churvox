@@ -79,6 +79,7 @@ for _patch in [
     'churvox_records_exact_bypass_patch',
     'churvox_hq_exact_endpoint_bypass_patch',
     'churvox_hq_exact_cors_patch',
+    'churvox_hq_account_delete_patch',
     'churvox_on_site_payments_patch',
     'churvox_on_site_payments_request_signature_fix_patch',
     'churvox_terminal_reader_patch',
