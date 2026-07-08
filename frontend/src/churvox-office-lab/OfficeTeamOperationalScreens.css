@@ -1,0 +1,170 @@
+.cvOpsLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 10px;
+}
+
+.cvOpsTable,
+.cvOpsDetail {
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 13px;
+  background: rgba(255,255,255,.62);
+  padding: 12px;
+}
+
+.cvOpsTableHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(23,18,14,.08);
+}
+
+.cvOpsTableHead strong {
+  font-size: .86rem;
+  letter-spacing: -.02em;
+}
+
+.cvOpsTableHead small,
+.cvOpsTable button span,
+.cvOpsTable button em,
+.cvOpsDetail p,
+.cvOpsDetail dd {
+  color: #655c52;
+  font-size: .72rem;
+  line-height: 1.32;
+  font-weight: 740;
+}
+
+.cvOpsTable {
+  display: grid;
+  gap: 7px;
+}
+
+.cvOpsTable button {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 150px;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 10px;
+  padding: 10px;
+  color: #17120e;
+  background: rgba(255,252,246,.72);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cvOpsTable button.active {
+  border-color: rgba(249,115,22,.38);
+  background: rgba(249,115,22,.12);
+}
+
+.cvOpsTable button strong {
+  font-size: .82rem;
+  letter-spacing: -.02em;
+}
+
+.cvOpsTable button em {
+  justify-self: end;
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: #9a3412;
+  background: rgba(249,115,22,.1);
+  font-style: normal;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.cvOpsDetail {
+  position: sticky;
+  top: 90px;
+  min-height: 360px;
+  align-self: start;
+}
+
+.cvOpsDetail > span {
+  color: #9a3412;
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cvOpsDetail h3 {
+  margin: 8px 0 6px;
+  font-size: clamp(1.2rem, 2vw, 2rem);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+}
+
+.cvOpsDetail dl {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0;
+}
+
+.cvOpsDetail dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 9px;
+  background: rgba(23,18,14,.05);
+}
+
+.cvOpsDetail dt {
+  color: #756c61;
+  font-size: .66rem;
+  font-weight: 850;
+}
+
+.cvOpsDetail dd {
+  margin: 0;
+  font-weight: 950;
+}
+
+.cvOpsDetail > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cvOpsDetail button {
+  border: 1px solid rgba(23,18,14,.12);
+  border-radius: 9px;
+  padding: 7px 9px;
+  color: #17120e;
+  background: rgba(255,255,255,.72);
+  font-size: .7rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cvOpsDetail button.primary {
+  color: #fff7ec;
+  border-color: #17120e;
+  background: linear-gradient(135deg, #17120e, #3b2b1f 55%, #f97316);
+}
+
+@media (max-width: 1100px) {
+  .cvOpsLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .cvOpsDetail {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .cvOpsTable button {
+    grid-template-columns: 1fr;
+  }
+
+  .cvOpsTable button em {
+    justify-self: start;
+  }
+}
