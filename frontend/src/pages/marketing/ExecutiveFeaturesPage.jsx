@@ -1,14 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
+import { BusinessCoverageSection, ProfessionStrip, TradeFlowSection } from "./PublicProfessionSections";
 import "./SimplePublic.css";
 
 const productAreas = [
   ["Today", "The work that needs attention now: jobs, workers, messages and money."],
   ["Command", "The owner desk for approvals, edits and parked work."],
   ["Jobs", "Clear job forms with client, worker, address, time, price and repeat work."],
-  ["Workers", "A simple field flow for directions, updates, notes and photos."],
+  ["Workers", "A simple field flow for directions, updates, notes, location and photos."],
   ["Money", "Quote and invoice drafts built from real job records."],
+  ["Settings", "Business rules, GST, branding, exports and safe account controls."],
 ];
 
 const commandItems = [
@@ -34,7 +36,7 @@ const workerFlow = [
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PRODUCT_COPY_20260706">
+    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PRODUCT_SERVICE_PLATFORM_20260708">
       <Nav />
 
       <section className="publicHero publicHeroCompact slimHero">
@@ -42,7 +44,7 @@ export default function ExecutiveFeaturesPage() {
           <span className="publicKicker">Product</span>
           <h1>The admin layer between the job and the owner.</h1>
           <p>
-            Churvox keeps the record clean, prepares the next step and sends important choices to Command. The owner stays in charge without doing all the admin by hand.
+            Churvox keeps field-service records clean across trades: job detail, client detail, worker updates, proof, quote, invoice and owner decision all stay connected.
           </p>
           <div className="publicActions">
             <Link to="/demo" className="publicPrimary">See the demo</Link>
@@ -52,7 +54,7 @@ export default function ExecutiveFeaturesPage() {
         <aside className="publicFeaturePanel slimPanel">
           <small>Product rule</small>
           <b>Work pages show details. Command holds decisions.</b>
-          <span>That split is what keeps Churvox simple for owners and workers.</span>
+          <span>That split is what keeps Churvox simple for owners, office admins and workers.</span>
         </aside>
       </section>
 
@@ -70,6 +72,9 @@ export default function ExecutiveFeaturesPage() {
           ))}
         </div>
       </section>
+
+      <ProfessionStrip compact />
+      <TradeFlowSection />
 
       <section className="publicBand publicSplit slimBand">
         <div>
@@ -102,6 +107,8 @@ export default function ExecutiveFeaturesPage() {
           ))}
         </div>
       </section>
+
+      <BusinessCoverageSection />
 
       <section className="publicBand slimBand">
         <div className="publicSectionHead compactHead">
