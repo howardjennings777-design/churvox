@@ -72,6 +72,7 @@ for _patch in [
     'churvox_hq_connection_status_patch',
     'churvox_hq_tester_status_patch',
     'churvox_hq_unique_visitors_patch',
+    'churvox_hq_nz_day_visits_patch',
     'churvox_hq_growth_report_patch',
     'churvox_internal_support_patch',
     'churvox_record_delete_patch',
