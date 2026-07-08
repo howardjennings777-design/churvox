@@ -5,6 +5,8 @@ const OWNER_ID = 'churvox-business-system-suite-panel';
 const HQ_ID = 'churvox-hq-tester-friction-panel';
 const STYLE_ID = 'churvox-business-system-suite-style';
 const API_ROOT = `${String(API_BASE || '').replace(/\/$/, '')}/api`;
+let ownerMounting = false;
+let observerStarted = false;
 
 function path() { return window.location.pathname || ''; }
 function isOwnerApp() { const p = path(); return p === '/dashboard' || p.startsWith('/dashboard'); }
@@ -81,23 +83,34 @@ function renderOwner(root, data) {
     </div></section>`;
 }
 
-async function mountOwner() {
+function findOwnerMountTarget() {
+  return document.querySelector('.cvxProduct main') || document.querySelector('.cvxProduct') || document.querySelector('[data-owner-dashboard]') || document.querySelector('main') || document.body;
+}
+
+function placeOwnerRoot(root, target) {
+  const hero = target.querySelector?.('.cvxHero,.cvxPageHeader,.cvxDashboardHero,.cvxOwnerHero');
+  if (hero?.parentNode) hero.parentNode.insertBefore(root, hero.nextSibling);
+  else target.insertBefore(root, target.firstChild || null);
+}
+
+async function mountOwner(force = false) {
   if (!isOwnerApp()) { document.getElementById(OWNER_ID)?.remove(); return; }
+  if (ownerMounting && !force) return;
+  ownerMounting = true;
   installStyle();
-  const rootApp = document.querySelector('.cvxProduct') || document.querySelector('main') || document.getElementById('root');
-  if (!rootApp) return;
+  const target = findOwnerMountTarget();
+  if (!target) { ownerMounting = false; return; }
   let root = document.getElementById(OWNER_ID);
-  if (!root) {
+  if (!root || !document.body.contains(root)) {
     root = document.createElement('section');
     root.id = OWNER_ID;
-    const hero = rootApp.querySelector('.cvxHero,.cvxPageHeader');
-    if (hero?.parentNode) hero.parentNode.insertBefore(root, hero.nextSibling);
-    else rootApp.prepend(root);
-    root.addEventListener('click', (event) => { if (event.target.closest('[data-cvx-biz-refresh]')) mountOwner(); });
+    root.addEventListener('click', (event) => { if (event.target.closest('[data-cvx-biz-refresh]')) mountOwner(true); });
   }
-  root.innerHTML = '<section class="cvxBizSuite"><div class="cvxBizSuiteInner"><div class="cvxBizRow"><b>Loading business system…</b><span>Checking Autopilot, live feed, Command reasons, proof and closeout.</span><em>live</em></div></div></section>';
-  try { renderOwner(root, await loadOwnerData()); }
-  catch (error) { root.innerHTML = `<section class="cvxBizSuite"><div class="cvxBizSuiteInner">${row('Business system not loaded yet', error?.message || 'Backend may need deploy.', 'check')}</div></section>`; }
+  if (!root.parentNode || !document.body.contains(root)) placeOwnerRoot(root, target);
+  if (force || !root.dataset.loaded) root.innerHTML = '<section class="cvxBizSuite"><div class="cvxBizSuiteInner"><div class="cvxBizRow"><b>Loading business system…</b><span>Checking Autopilot, live feed, Command reasons, proof and closeout.</span><em>live</em></div></div></section>';
+  try { renderOwner(root, await loadOwnerData()); root.dataset.loaded = '1'; }
+  catch (error) { root.innerHTML = `<section class="cvxBizSuite"><div class="cvxBizSuiteInner">${row('Churvox business system', error?.message || 'Backend may need deploy.', 'check')}</div></section>`; root.dataset.loaded = '1'; }
+  ownerMounting = false;
 }
 
 async function mountHq() {
@@ -129,12 +142,22 @@ async function mountHq() {
 }
 
 function schedule() {
-  [200, 900, 2600, 6000].forEach((delay) => setTimeout(() => { mountOwner(); mountHq(); }, delay));
+  [200, 900, 2600, 6000, 10000, 18000, 30000, 45000, 65000, 85000].forEach((delay) => setTimeout(() => { mountOwner(); mountHq(); }, delay));
+}
+
+function keepAlive() {
+  if (observerStarted || typeof MutationObserver === 'undefined') return;
+  observerStarted = true;
+  const observer = new MutationObserver(() => {
+    if (isOwnerApp() && !document.getElementById(OWNER_ID)) window.setTimeout(() => mountOwner(), 120);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window[FLAG]) {
   window[FLAG] = true;
   schedule();
+  keepAlive();
   window.addEventListener('load', schedule);
   window.addEventListener('hashchange', schedule);
   window.addEventListener('popstate', schedule);
