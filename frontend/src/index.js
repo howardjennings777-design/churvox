@@ -76,6 +76,7 @@ const globalHelperImports = [
 const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxAppIndustryRuntime'),
+  () => import('./runtime/churvoxInternalSupportRuntime'),
   () => import('./runtime/churvoxTidyRealSlipRuntime'),
   () => import('./runtime/churvoxWorkersMapRestoreRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
@@ -105,22 +106,10 @@ function runImports(imports) {
   });
 }
 
-function currentPath() {
-  return typeof window === 'undefined' ? '' : window.location.pathname || '';
-}
-
-function currentParams() {
-  try { return new URLSearchParams(window.location.search || ''); } catch { return new URLSearchParams(); }
-}
-
-function isPublicFastPath(path) {
-  return path === '/' || path === '/product' || path === '/features' || path === '/demo' || path === '/pricing' || path === '/request' || path === '/contact' || path.startsWith('/public') || path.startsWith('/industries') || path === '/login' || path === '/signup' || path === '/forgot-password' || path === '/reset-password';
-}
-
-function isSetupProfilePath(path) {
-  const q = currentParams();
-  return path === '/setup' || path === '/setup-guide' || path === '/guide' || q.get('business_profile') === '1' || q.get('profile') === '1' || q.get('tester') === '1' || q.get('first_setup') === '1';
-}
+function currentPath() { return typeof window === 'undefined' ? '' : window.location.pathname || ''; }
+function currentParams() { try { return new URLSearchParams(window.location.search || ''); } catch { return new URLSearchParams(); } }
+function isPublicFastPath(path) { return path === '/' || path === '/product' || path === '/features' || path === '/demo' || path === '/pricing' || path === '/request' || path === '/contact' || path.startsWith('/public') || path.startsWith('/industries') || path === '/login' || path === '/signup' || path === '/forgot-password' || path === '/reset-password'; }
+function isSetupProfilePath(path) { const q = currentParams(); return path === '/setup' || path === '/setup-guide' || path === '/guide' || q.get('business_profile') === '1' || q.get('profile') === '1' || q.get('tester') === '1' || q.get('first_setup') === '1'; }
 
 function loadGlobalHelpersAfterPaint() {
   if (globalHelpersLoaded || typeof window === 'undefined') return;
@@ -148,9 +137,7 @@ function loadOwnerRuntimeWhenInsideApp() {
     window.setTimeout(() => runImports(ownerFastRuntimeImports), 500);
   }
   loadSetupRuntimeWhenNeeded();
-  if (ownerHeavyRuntimeImports.length) {
-    window.setTimeout(() => runImports(ownerHeavyRuntimeImports), 4200);
-  }
+  if (ownerHeavyRuntimeImports.length) window.setTimeout(() => runImports(ownerHeavyRuntimeImports), 4200);
 }
 
 function loadWorkerRuntimeWhenInsideWorkerApp() {
