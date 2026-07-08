@@ -1,22 +1,22 @@
 {
   "short_name": "Churvox",
-  "name": "Churvox - Admin OS",
+  "name": "Churvox",
   "description": "Churvox does the admin. The owner checks and approves. Jobs, workers, quotes, invoices, messages and safe accounting handoff for trade and service businesses.",
   "icons": [
     {
-      "src": "churvox-app-icon.svg?v=real-graph-logo-20260707",
+      "src": "churvox-app-icon.svg?v=churvox-field-mark-20260708",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any maskable"
     },
     {
-      "src": "app-icon-192.png?v=real-graph-logo-20260707",
+      "src": "app-icon-192.png?v=churvox-field-mark-20260708",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "app-icon-512.png?v=real-graph-logo-20260707",
+      "src": "app-icon-512.png?v=churvox-field-mark-20260708",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -24,7 +24,7 @@
   ],
   "start_url": "/app",
   "display": "standalone",
-  "theme_color": "#0b100e",
+  "theme_color": "#07100c",
   "background_color": "#050706",
   "scope": "/",
   "categories": ["business", "productivity"]
