@@ -1,6 +1,5 @@
 const { test, expect } = require('@playwright/test');
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com';
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || process.env.CHURVOX_E2E_EMAIL || '';
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX_E2E_PASSWORD || '';
@@ -44,9 +43,6 @@ function apiUrl(endpoint) {
 function stamp() {
   return new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
 }
-function escRegex(text) {
-  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 function tokenFrom(data = {}) {
   return data?.token || data?.access_token || data?.auth_token || data?.jwt || data?.user?.token || data?.user?.access_token || '';
 }
@@ -55,6 +51,9 @@ function userFrom(data = {}) {
 }
 function safeJson(data = {}) {
   return JSON.stringify(data, (key, value) => /password|token|secret|hash/i.test(key) ? '[hidden]' : value).slice(0, 1400);
+}
+function selectorText(candidate) {
+  return String(candidate instanceof RegExp ? candidate.source : candidate).replace(/[^a-z0-9_-]/gi, '').slice(0, 40);
 }
 async function waitHuman(page) {
   await page.waitForLoadState('domcontentloaded').catch(() => null);
@@ -93,10 +92,10 @@ async function assertHumanPage(page, label, options = {}) {
     const controls = [...document.querySelectorAll('button, a[href], input, textarea, select, [role="button"], summary')].filter(visibleToHuman);
     const tiny = controls.map((el) => {
       const rect = el.getBoundingClientRect();
-      const label = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('title') || '').replace(/\s+/g, ' ').trim();
+      const labelText = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.getAttribute('title') || '').replace(/\s+/g, ' ').trim();
       const type = (el.getAttribute('type') || '').toLowerCase();
       const okSmall = el.tagName === 'INPUT' && /checkbox|radio/.test(type);
-      if (!okSmall && (rect.width < 14 || rect.height < 14)) return `${label || el.tagName} ${Math.round(rect.width)}x${Math.round(rect.height)}`;
+      if (!okSmall && (rect.width < 14 || rect.height < 14)) return `${labelText || el.tagName} ${Math.round(rect.width)}x${Math.round(rect.height)}`;
       return null;
     }).filter(Boolean).slice(0, 20);
     const disabledPointer = controls.filter((el) => getComputedStyle(el).pointerEvents === 'none').map((el) => (el.innerText || el.getAttribute('aria-label') || el.tagName || '').replace(/\s+/g, ' ').trim()).slice(0, 20);
@@ -111,10 +110,6 @@ async function assertHumanPage(page, label, options = {}) {
   expect(result.text, `${label} must not show old fake business/example pollution`).not.toMatch(/ECB Property Maintenance|Focus Landscaping|Grassly|sample business|fake business|demo business/i);
   expect(result.text, `${label} should not be stuck loading`).not.toMatch(/loading your run sheet\s*$|loading\s*$|please wait\s*$/i);
 }
-async function clickTrial(page, locator) {
-  await locator.scrollIntoViewIfNeeded().catch(() => null);
-  await locator.click({ trial: true, timeout: 4500 });
-}
 async function assertSafeClickableControls(page, label) {
   const controls = await page.evaluate(() => {
     const visibleToHuman = (el) => {
@@ -126,10 +121,10 @@ async function assertSafeClickableControls(page, label) {
     };
     return [...document.querySelectorAll('button, a[href], [role="button"], summary')].map((el, index) => {
       if (!visibleToHuman(el)) return null;
-      const label = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || '').replace(/\s+/g, ' ').trim();
+      const labelText = (el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || '').replace(/\s+/g, ' ').trim();
       const id = `human-gauntlet-control-${index}`;
       el.setAttribute('data-human-gauntlet-control', id);
-      return { id, label, disabled: Boolean(el.disabled || el.getAttribute('aria-disabled') === 'true') };
+      return { id, label: labelText, disabled: Boolean(el.disabled || el.getAttribute('aria-disabled') === 'true') };
     }).filter(Boolean).slice(0, 65);
   });
   const failures = [];
@@ -138,7 +133,8 @@ async function assertSafeClickableControls(page, label) {
     if (/log out|logout|delete|remove|archive|trash|disconnect|revoke|checkout|stripe|pay now|send invoice|send quote|send email|send sms|confirm|approve|decline/i.test(control.label)) continue;
     const locator = page.locator(`[data-human-gauntlet-control="${control.id}"]`).first();
     if (!(await locator.isVisible().catch(() => false))) continue;
-    await clickTrial(page, locator).catch((error) => failures.push(`${control.label || control.id}: ${error.message.split('\n')[0]}`));
+    await locator.scrollIntoViewIfNeeded().catch(() => null);
+    await locator.click({ trial: true, timeout: 4500 }).catch((error) => failures.push(`${control.label || control.id}: ${error.message.split('\n')[0]}`));
   }
   expect(failures, `${label} visible safe controls should be physically clickable`).toEqual([]);
 }
@@ -159,11 +155,12 @@ async function loginOwner(page) {
 }
 async function fillFirstVisible(page, candidates, value) {
   for (const candidate of candidates) {
+    const cssNeedle = selectorText(candidate);
     const locators = [
       page.getByLabel(candidate, { exact: false }).first(),
       page.getByPlaceholder(candidate, { exact: false }).first(),
-      page.locator(`input[name*="${candidate}" i], textarea[name*="${candidate}" i], input[id*="${candidate}" i], textarea[id*="${candidate}" i]`).first(),
-    ];
+      cssNeedle ? page.locator(`input[name*="${cssNeedle}" i], textarea[name*="${cssNeedle}" i], input[id*="${cssNeedle}" i], textarea[id*="${cssNeedle}" i]`).first() : null,
+    ].filter(Boolean);
     for (const locator of locators) {
       if (!(await locator.isVisible().catch(() => false))) continue;
       await locator.fill(value).catch(async () => {
@@ -229,7 +226,7 @@ test.describe('Churvox full human business gauntlet', () => {
   });
 
   test('normal signup stays on plan/Stripe gate, not free dashboard bypass', async ({ page }) => {
-    if (!MUTATE) throw new Error('Set CHURVOX_E2E_MUTATE=1 to run the signup-to-plan gate test with a safe unique test account.');
+    test.skip(!MUTATE, 'Set CHURVOX_E2E_MUTATE=1 to run the signup-to-plan gate test with a safe unique test account.');
     const errors = [];
     installErrorWatch(page, errors);
     const id = stamp();
@@ -290,19 +287,20 @@ test.describe('Churvox full human business gauntlet', () => {
     expect(errors).toEqual([]);
   });
 
-  test('worker app route loads on desktop and mobile without getting stuck', async ({ page, isMobile }) => {
+  test('worker app route loads on desktop and mobile without getting stuck', async ({ page }, testInfo) => {
     const errors = [];
     installErrorWatch(page, errors);
+    const mobile = /mobile/i.test(testInfo.project.name || '');
     if (WORKER_EMAIL && WORKER_PASSWORD) {
       const response = await page.request.post(apiUrl('/api/worker/auth/login'), { data: { email: WORKER_EMAIL, password: WORKER_PASSWORD }, timeout: 20000 }).catch(() => null);
       const payload = response ? await response.json().catch(() => ({})) : {};
-      const token = tokenFrom(payload);
+      const workerToken = tokenFrom(payload);
       await page.goto('/');
-      await page.evaluate(({ tokenValue }) => { if (tokenValue) window.localStorage.setItem('token', tokenValue); }, { tokenValue: token }).catch(() => null);
+      await page.evaluate(({ tokenValue }) => { if (tokenValue) window.localStorage.setItem('token', tokenValue); }, { tokenValue: workerToken }).catch(() => null);
     }
     await page.goto('/worker');
     await waitHuman(page);
-    await assertHumanPage(page, `worker app ${isMobile ? 'mobile' : 'desktop'}`, { minText: 40, minControls: 1, maxOverflow: isMobile ? 12 : 18 });
+    await assertHumanPage(page, `worker app ${mobile ? 'mobile' : 'desktop'}`, { minText: 40, minControls: 1, maxOverflow: mobile ? 12 : 18 });
     const text = await bodyText(page);
     expect(text, 'worker app should show field/job/messaging UI or login, not hang forever').toMatch(/worker|today|jobs|messages|help|login|email|password|run sheet|field/i);
     expect(errors).toEqual([]);
