@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import API_BASE from './lib/apiBase';
 import './index.css';
 import './churvox-product/productTypeScale.css';
 import './styles/public-premium-force.css';
@@ -13,6 +14,28 @@ import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxForbiddenExampleScrubRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
+
+function preconnectBackend() {
+  if (typeof document === 'undefined' || !API_BASE) return;
+  const href = String(API_BASE).replace(/\/$/, '');
+  if (!href || document.querySelector(`link[data-churvox-api-preconnect="${href}"]`)) return;
+  const preconnect = document.createElement('link');
+  preconnect.rel = 'preconnect';
+  preconnect.href = href;
+  preconnect.crossOrigin = 'anonymous';
+  preconnect.dataset.churvoxApiPreconnect = href;
+  document.head.appendChild(preconnect);
+  try {
+    const url = new URL(href);
+    const dns = document.createElement('link');
+    dns.rel = 'dns-prefetch';
+    dns.href = `//${url.host}`;
+    dns.dataset.churvoxApiPreconnect = href;
+    document.head.appendChild(dns);
+  } catch {}
+}
+
+preconnectBackend();
 
 const rootEl = document.getElementById('root');
 const staticPublicPageRendered = Boolean(
@@ -29,7 +52,6 @@ if (rootEl && !staticPublicPageRendered) {
 }
 
 let ownerRuntimeLoaded = false;
-let ownerHeavyRuntimeLoaded = false;
 let setupRuntimeLoaded = false;
 let workerRuntimeLoaded = false;
 let hqRuntimeLoaded = false;
@@ -50,10 +72,9 @@ const globalHelperImports = [
   () => import('./runtime/churvoxFirstWinGuideEntryRuntime'),
 ];
 
+// Keep the owner app native and stable. These are the only app helpers still needed after the rebuild.
 const ownerFastRuntimeImports = [
-  () => import('./runtime/churvoxBusinessSystemSuiteRuntime'),
   () => import('./runtime/churvoxNavBadgesRuntime'),
-  () => import('./runtime/churvoxCommandSlipPolishRuntime'),
   () => import('./runtime/churvoxTidyRealSlipRuntime'),
   () => import('./runtime/churvoxWorkersMapRestoreRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
@@ -61,27 +82,9 @@ const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxOwnerHeaderLogoRuntime'),
 ];
 
-const ownerHeavyRuntimeImports = [
-  () => import('./runtime/churvoxCommandBrainRuntime'),
-  () => import('./churvox-product/productAdminLedgerLanes.css'),
-  () => import('./runtime/churvoxOwnerAdminLedgerRuntime'),
-  () => import('./runtime/churvoxTrueAdminLedgerFormsRuntime'),
-  () => import('./churvox-product/productPageSmartHeaders.css'),
-  () => import('./runtime/churvoxPageSmartHeadersRuntime'),
-  () => import('./runtime/churvoxPageIdentityRuntime'),
-  () => import('./runtime/churvoxWorkerMapPinRuntime'),
-  () => import('./runtime/churvoxPaidLaunchSurfaceRuntime'),
-  () => import('./runtime/churvoxExactFormLabelsRuntime'),
-  () => import('./runtime/churvoxOwnerGuideAuditMarkerRuntime'),
-  () => import('./runtime/churvoxLiveOwnerSaveBridgeRuntime'),
-  () => import('./churvox-product/productCommandIdentity.css'),
-  () => import('./churvox-product/productJobsIdentity.css'),
-  () => import('./churvox-product/productClientsMessagesIdentity.css'),
-  () => import('./churvox-product/productWorkersTeamIdentity.css'),
-  () => import('./churvox-product/productMoneyIdentity.css'),
-  () => import('./churvox-product/productOpsIdentity.css'),
-  () => import('./runtime/churvoxOwnerPocketCommandRuntime'),
-];
+// Old heavy page overlays were making pages slower and could move cards after first paint.
+// ProductAppV3 owns the page logic, wording, layout and locks now.
+const ownerHeavyRuntimeImports = [];
 
 const workerRuntimeImports = [
   () => import('./runtime/churvoxNativeTimerRuntime'),
@@ -139,12 +142,11 @@ function loadOwnerRuntimeWhenInsideApp() {
   if (!isOwnerApp) return;
   if (!ownerRuntimeLoaded) {
     ownerRuntimeLoaded = true;
-    window.setTimeout(() => runImports(ownerFastRuntimeImports), 650);
+    window.setTimeout(() => runImports(ownerFastRuntimeImports), 500);
   }
   loadSetupRuntimeWhenNeeded();
-  if (!ownerHeavyRuntimeLoaded && !isSetupProfilePath(path)) {
-    ownerHeavyRuntimeLoaded = true;
-    window.setTimeout(() => runImports(ownerHeavyRuntimeImports), 2600);
+  if (ownerHeavyRuntimeImports.length) {
+    window.setTimeout(() => runImports(ownerHeavyRuntimeImports), 4200);
   }
 }
 
@@ -179,5 +181,5 @@ if (typeof window !== 'undefined') {
   window.addEventListener('popstate', checkRuntimeLoads);
   window.addEventListener('hashchange', checkRuntimeLoads);
   window.addEventListener('churvox-owner-app-ready', checkRuntimeLoads);
-  [900, 2600, 7000].forEach((delay) => setTimeout(checkRuntimeLoads, delay));
+  [700, 1800, 5000].forEach((delay) => setTimeout(checkRuntimeLoads, delay));
 }
