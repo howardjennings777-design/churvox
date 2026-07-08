@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "./OfficeTeamOperationalScreens.css";
 
 const workRows = [
   ["Today", "Green waste follow-up", "Needs owner decision", "Invoice extra held"],
