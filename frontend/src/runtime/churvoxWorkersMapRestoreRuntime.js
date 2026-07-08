@@ -108,10 +108,28 @@ function makeMapPanel(query, workerCount) {
   `;
   return section;
 }
+function heroNode(page) {
+  return page.querySelector('.cv3Hero') || Array.from(page.children).find((node) => /Know what is happening outside|Workers/i.test(node.textContent || '')) || null;
+}
+function fieldBoardNode(page) {
+  return Array.from(page.querySelectorAll('.cv3Panel')).find((panelNode) => /Field board/i.test(panelNode.textContent || '')) || null;
+}
+function preferredAnchor(page) {
+  return heroNode(page) || fieldBoardNode(page) || page.firstElementChild || null;
+}
 function removeDuplicateMaps(page) {
   const panels = Array.from(page.querySelectorAll('.cv3WorkerMapPanel,[data-churvox-single-worker-map="true"]'));
   panels.slice(1).forEach((panel) => panel.remove());
   return panels[0] || null;
+}
+function placeMap(page, panel) {
+  const anchor = preferredAnchor(page);
+  if (!anchor) {
+    page.prepend(panel);
+    return;
+  }
+  if (panel.previousElementSibling === anchor) return;
+  anchor.insertAdjacentElement('afterend', panel);
 }
 async function restoreMap() {
   if (typeof document === 'undefined' || restoring || !isWorkersPage()) return;
@@ -119,17 +137,22 @@ async function restoreMap() {
   if (!page) return;
   ensureStyle();
   const existing = removeDuplicateMaps(page);
-  if (existing) return;
+  if (existing) {
+    placeMap(page, existing);
+    return;
+  }
   restoring = true;
   try {
     const workers = await loadWorkers();
     const stillExisting = removeDuplicateMaps(page);
-    if (stillExisting || !isWorkersPage()) return;
+    if (stillExisting) {
+      placeMap(page, stillExisting);
+      return;
+    }
+    if (!isWorkersPage()) return;
     const query = workers.map(workerLocation).filter(Boolean).join(' ') || mapQueryFromDom();
     const panel = makeMapPanel(query || 'Auckland New Zealand', workers.length);
-    const fieldBoard = Array.from(page.querySelectorAll('.cv3Panel')).find((panelNode) => /Field board/i.test(panelNode.textContent || ''));
-    if (fieldBoard) fieldBoard.insertAdjacentElement('afterend', panel);
-    else page.appendChild(panel);
+    placeMap(page, panel);
     removeDuplicateMaps(page);
   } finally {
     restoring = false;
