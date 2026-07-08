@@ -2,6 +2,13 @@
   gap: 10px;
 }
 
+.cvOfficeTidy #command,
+.cvOfficeTidy #team,
+.cvOfficeTidy #playbooks,
+.cvOfficeTidy #build {
+  scroll-margin-top: 96px;
+}
+
 .cvTidyStatus {
   grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(120px, 0.42fr));
 }
