@@ -69,6 +69,7 @@ for _patch in [
     'churvox_tester_signup_access_patch',
     'churvox_hq_owner_access_fix_patch',
     'churvox_hq_extra_owner_email_patch',
+    'churvox_hq_connection_status_patch',
     'churvox_hq_tester_status_patch',
     'churvox_hq_unique_visitors_patch',
     'churvox_hq_growth_report_patch',
