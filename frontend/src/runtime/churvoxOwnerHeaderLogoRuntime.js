@@ -1,3 +1,5 @@
+import './churvoxDecisionSlipRuntime';
+
 // Proper Churvox owner-app logo integration.
 // This replaces the old CV tile with a real inline mark, tight sizing and header fit.
 
