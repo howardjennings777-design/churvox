@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { MAINTENANCE_STARTED_LABEL } from "../lib/maintenanceMode";
 import "./auth/AuthPublicCommand.css";
 import "./auth/RealAppLoginScreen.css";
+import "./auth/RealLogoBlend.css";
 
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-maintenance-20260709";
 
