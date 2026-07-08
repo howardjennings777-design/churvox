@@ -32,8 +32,15 @@ function removeStrayLogout(workerRoot) {
 
 function removeDuplicateSplashes() {
   if (!isWorkerRoute()) return;
-  ['#churvox-worker-pre-react-shell', '#churvox-launch-splash', '.churvoxLaunchSplash', '[data-churvox-splash]', '[data-churvox-worker-pre-react]'].forEach((selector) => {
-    document.querySelectorAll(selector).forEach((node) => node.remove());
+  [
+    '#churvox-worker-pre-react-shell', '#churvox-launch-splash', '#churvox-loading-splash', '#launch-splash',
+    '.churvoxLaunchSplash', '.launchSplash', '.appSplash', '.loadingSplash', '.workerSplash',
+    '[data-churvox-splash]', '[data-churvox-worker-pre-react]', '[data-splash]', '[id*="splash"]', '[class*="Splash"]'
+  ].forEach((selector) => {
+    document.querySelectorAll(selector).forEach((node) => {
+      if (node.closest?.('.simpleWorkerApp')) return;
+      node.remove();
+    });
   });
 }
 
@@ -56,7 +63,7 @@ function removeOwnerOverlays() {
   document.querySelectorAll('section,div,main,aside,form').forEach((node) => {
     if (workerRoot && workerRoot.contains(node)) return;
     const copy = text(node).toLowerCase();
-    if (/new record|add job|job form|working job form|save record|payment not ready|take card payment|admin ledger|command lanes/.test(copy) && copy.length < 1100) node.remove();
+    if (/new record|add job|job form|working job form|save record|payment not ready|take card payment|admin ledger|command lanes|loading your run sheet|opening owner command/.test(copy) && copy.length < 1500) node.remove();
   });
   removeStrayLogout(workerRoot);
 }
@@ -73,6 +80,7 @@ function markWorkerReady() {
 function cleanNow() {
   syncBodyClass();
   if (!isWorkerRoute()) return;
+  removeDuplicateSplashes();
   removeOwnerOverlays();
   markWorkerReady();
 }
@@ -80,7 +88,7 @@ function cleanNow() {
 function schedule() {
   syncBodyClass();
   if (!isWorkerRoute()) return;
-  [0, 40, 90, 160, 360, 800, 1500, 2800, 5000].forEach((delay) => {
+  [0, 1, 10, 25, 40, 90, 160, 360, 800, 1500, 2800, 5000].forEach((delay) => {
     window.setTimeout(cleanNow, delay);
   });
 }
