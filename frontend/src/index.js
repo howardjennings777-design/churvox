@@ -77,6 +77,7 @@ const globalHelperImports = [
 const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
+  () => import('./runtime/churvoxDrawerRecordActionsRuntime'),
   () => import('./runtime/churvoxAppIndustryRuntime'),
   () => import('./runtime/churvoxInternalSupportRuntime'),
   () => import('./runtime/churvoxTidyRealSlipRuntime'),
