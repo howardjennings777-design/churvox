@@ -10,6 +10,7 @@ import "./RealLogoBlend.css";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const LOGIN_TIMEOUT_MS = 28000;
+const ACCESS_REFRESH_TIMEOUT_MS = 9000;
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b";
 
 function ChurvoxAppLogo({ compact = false, wordmark = false }) {
@@ -84,12 +85,21 @@ const getPostLoginPath = (payload = {}) => {
   if (isWorkerRole(role) || isPayrollRole(role)) return getDefaultRoute(role);
 
   const status = String(user?.subscription_status || payload?.subscription_status || "").trim().toLowerCase();
+  const hasFreshAccess =
+    user?.has_app_access === true ||
+    payload?.has_app_access === true ||
+    user?.free_tester_access === true ||
+    payload?.free_tester_access === true ||
+    status === "tester_free" ||
+    status === "active" ||
+    status === "paid";
   const explicitlyLocked =
-    user?.has_app_access === false ||
-    payload?.has_app_access === false ||
-    user?.billing_lock_reason ||
-    payload?.billing_lock_reason ||
-    ["cancelled", "canceled", "incomplete", "incomplete_expired", "locked", "disabled"].includes(status);
+    !hasFreshAccess &&
+    (user?.has_app_access === false ||
+      payload?.has_app_access === false ||
+      user?.billing_lock_reason ||
+      payload?.billing_lock_reason ||
+      ["cancelled", "canceled", "incomplete", "incomplete_expired", "locked", "disabled"].includes(status));
 
   if (explicitlyLocked) return "/plans";
   if (setupPendingLocally()) return "/setup-guide?first_setup=1";
@@ -121,7 +131,7 @@ const loginLooksValid = (result = {}) => {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, checkAuth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -151,7 +161,21 @@ export default function LoginPage() {
         return;
       }
 
-      const finalPath = getPostLoginPath(result);
+      let confirmed = result;
+      try {
+        const freshUser = await withTimeout(checkAuth(), ACCESS_REFRESH_TIMEOUT_MS, "Plan check is taking too long.");
+        if (freshUser) {
+          confirmed = {
+            ...result,
+            ...freshUser,
+            user: { ...(result?.user || {}), ...freshUser },
+          };
+        }
+      } catch {
+        window.dispatchEvent(new Event("churvox-auth-refresh"));
+      }
+
+      const finalPath = getPostLoginPath(confirmed);
       setSubmitting(false);
       navigate(finalPath, { replace: true });
       if (finalPath.startsWith("/dashboard") || finalPath === "/plans") {
