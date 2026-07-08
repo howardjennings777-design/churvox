@@ -9,6 +9,7 @@ import "./AuthPublicCommand.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
+const BUSINESS_REQUIRED_KEY = "churvox_business_profile_required";
 
 function queryParams() {
   try { return new URLSearchParams(window.location.search || ""); } catch { return new URLSearchParams(); }
@@ -121,8 +122,11 @@ export default function SignupPage() {
         const me = await refreshCurrentUser(result.token);
         try { await checkAuth?.(); } catch {}
         if (me?.has_app_access || me?.free_tester_access || me?.subscription_status === "tester_free" || me?.user?.has_app_access || me?.user?.free_tester_access) {
-          try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
-          navigate(`/setup-guide?first_setup=1&tester=1`, { replace: true });
+          try {
+            localStorage.removeItem(PLAN_REQUIRED_KEY);
+            localStorage.setItem(BUSINESS_REQUIRED_KEY, "true");
+          } catch {}
+          navigate(`/setup-guide?first_setup=1&tester=1&business_profile=1&next=dashboard`, { replace: true });
           return;
         }
         try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
@@ -130,7 +134,10 @@ export default function SignupPage() {
         return;
       }
 
-      try { localStorage.setItem(PLAN_REQUIRED_KEY, "true"); } catch {}
+      try {
+        localStorage.setItem(PLAN_REQUIRED_KEY, "true");
+        localStorage.removeItem(BUSINESS_REQUIRED_KEY);
+      } catch {}
       navigate(`/plans?first_setup=1&must_choose_plan=1&country=${encodeURIComponent(billingCountry)}`, { replace: true });
     } catch (err) {
       setError(err?.response?.data?.detail || err?.response?.data?.message || err?.message || "Registration failed. Please try again.");
@@ -147,7 +154,7 @@ export default function SignupPage() {
           <p className="cvPublicAuthKicker">{testerSignup ? "Tester access" : "Start trial"}</p>
           <h1>{testerSignup ? "Create your tester account." : "Create your Churvox account."}</h1>
           <p className="cvPublicAuthIntro">
-            {testerSignup ? "Use the email you were invited with. Churvox will unlock your tester access after signup." : "Create the account, choose Start, Crew, Operator or Command, then Churvox opens the setup path for your business."}
+            {testerSignup ? "Use the email you were invited with. You will fill the business profile after signup, but you will not pick a plan." : "Create the account, choose Start, Crew, Operator or Command, then fill the business profile so Churvox knows the right industry mode."}
           </p>
 
           {error ? <p className="cvPublicAuthError">{error}</p> : null}
@@ -187,21 +194,21 @@ export default function SignupPage() {
 
         <aside className="cvPublicAuthPanel">
           <p>{testerSignup ? "Tester path" : "Trial path"}</p>
-          <h2>{testerSignup ? "Create the login. Churvox unlocks the tester access." : "Start clean. Choose the plan. Then set up the OS."}</h2>
+          <h2>{testerSignup ? "Tester access skips Stripe, not the business profile." : "Choose plan first. Then Churvox adapts setup to the business."}</h2>
           <ul>
             {testerSignup ? (
               <>
                 <li>Use the invited tester email.</li>
                 <li>Create your password.</li>
-                <li>Churvox checks the tester list automatically.</li>
-                <li>No Stripe checkout needed for tester access.</li>
+                <li>No Stripe checkout or plan picking for testers.</li>
+                <li>Fill the business profile so Churvox knows the industry.</li>
               </>
             ) : (
               <>
                 <li>Create the account first.</li>
                 <li>Choose Start, Crew, Operator or Command.</li>
                 <li>Stripe starts the 14-day trial for the selected plan.</li>
-                <li>After checkout, Churvox opens setup and Command.</li>
+                <li>Then fill the business profile and open the app.</li>
               </>
             )}
           </ul>
