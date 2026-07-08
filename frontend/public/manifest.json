@@ -4,25 +4,25 @@
   "description": "Churvox does the admin. The owner checks and approves. Jobs, workers, quotes, invoices, messages and safe accounting handoff for trade and service businesses.",
   "icons": [
     {
-      "src": "churvox-app-icon.svg?v=churvox-field-mark-20260708",
+      "src": "churvox-app-icon.svg?v=churvox-integrated-mark-20260708b",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any maskable"
     },
     {
-      "src": "app-icon-192.png?v=churvox-field-mark-20260708",
+      "src": "app-icon-192.png?v=churvox-integrated-mark-20260708b",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "app-icon-512.png?v=churvox-field-mark-20260708",
+      "src": "app-icon-512.png?v=churvox-integrated-mark-20260708b",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/app",
+  "start_url": "/app?icon=churvox-integrated-mark-20260708b",
   "display": "standalone",
   "theme_color": "#07100c",
   "background_color": "#050706",
