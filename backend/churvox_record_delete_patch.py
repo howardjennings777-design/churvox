@@ -21,6 +21,34 @@ def lower(value: Any) -> str:
     return text(value).lower()
 
 
+def normal_type(value: Any) -> str:
+    raw = lower(value).replace("-", "_").replace(" ", "_")
+    aliases = {
+        "support": "support_ticket",
+        "ticket": "support_ticket",
+        "tickets": "support_ticket",
+        "staff": "worker",
+        "team": "worker",
+        "team_member": "worker",
+        "approval": "approval",
+        "command": "approval",
+        "action": "approval",
+        "notification": "message",
+        "approved_notification": "message",
+        "messages": "message",
+        "clients": "client",
+        "customers": "client",
+        "customer": "client",
+        "jobs": "job",
+        "appointments": "job",
+        "appointment": "job",
+        "quotes": "quote",
+        "invoices": "invoice",
+        "workers": "worker",
+    }
+    return aliases.get(raw, raw)
+
+
 def user_value(user: Dict[str, Any], *keys: str) -> str:
     for key in keys:
         value = (user or {}).get(key)
@@ -259,6 +287,25 @@ def install(module):
             except Exception:
                 pass
         return {"success": True, "reply": safe({**doc, "_id": result.inserted_id}), "message": "Reply saved inside Churvox."}
+
+    async def generic_delete(record_type: str, record_id: str, request: Request):
+        target_key = normal_type(record_type)
+        target = TARGETS.get(target_key)
+        if not target:
+            raise HTTPException(status_code=404, detail=f"Unknown record type: {record_type}")
+        return await delete_from_target(target, record_id, request)
+
+    async def generic_reply(record_type: str, record_id: str, request: Request):
+        target_key = normal_type(record_type)
+        if target_key != "message":
+            raise HTTPException(status_code=400, detail="Replies are only available for message records")
+        return await reply_to_message(record_id, request)
+
+    # Generic routes avoid legacy route validators that were returning 422 before this patch was reached.
+    remove_route("/api/records/{record_type}/{record_id}", "DELETE")
+    app.add_api_route("/api/records/{record_type}/{record_id}", generic_delete, methods=["DELETE"])
+    remove_route("/api/records/{record_type}/{record_id}/reply", "POST")
+    app.add_api_route("/api/records/{record_type}/{record_id}/reply", generic_reply, methods=["POST"])
 
     for target in TARGETS.values():
         async def endpoint(record_id: str, request: Request, target=target):
