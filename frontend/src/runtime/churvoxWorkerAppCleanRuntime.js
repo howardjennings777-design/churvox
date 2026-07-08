@@ -14,7 +14,12 @@ function text(node) {
 
 function syncBodyClass() {
   if (!document?.body) return;
-  document.body.classList.toggle('churvoxWorkerCleanBody', isWorkerRoute());
+  const worker = isWorkerRoute();
+  document.body.classList.toggle('churvoxWorkerCleanBody', worker);
+  if (worker) {
+    document.body.classList.remove('cvxPocketOwnerReady');
+    document.getElementById('cvxPocketOwner')?.remove();
+  }
 }
 
 function removeStrayLogout(workerRoot) {
@@ -48,6 +53,8 @@ function removeOwnerOverlays() {
   if (!isWorkerRoute()) return;
   const workerRoot = document.querySelector('.simpleWorkerApp');
   removeDuplicateSplashes();
+  document.body.classList.remove('cvxPocketOwnerReady');
+  document.getElementById('cvxPocketOwner')?.remove();
   const selectors = [
     '.cvxDrawerLayer', '.cvxDrawer', '.cvxModal', '.cvxSheet', '.cvxPanel', '.cvxRecordDrawer',
     '[data-cvx-drawer]', '[data-cvx-record]', '[data-churvox-command-ledger]', '[data-cvx-command-brain]',
@@ -72,6 +79,8 @@ function markWorkerReady() {
   if (!isWorkerRoute()) return;
   const root = document.querySelector('.simpleWorkerApp');
   if (root) {
+    root.style.removeProperty('display');
+    root.style.removeProperty('visibility');
     root.dataset.workerAppClean = 'true';
     window.dispatchEvent(new Event('churvox-worker-app-ready'));
   }
@@ -101,8 +110,10 @@ if (typeof window !== 'undefined' && !window[FLAG]) {
   window.addEventListener('popstate', schedule);
   window.addEventListener('hashchange', schedule);
   window.addEventListener('churvox:data-refresh', schedule);
+  window.addEventListener('churvox-owner-app-ready', schedule);
+  window.addEventListener('churvox-worker-app-ready', schedule);
   const observer = new MutationObserver(cleanNow);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
 }
 
 export {};
