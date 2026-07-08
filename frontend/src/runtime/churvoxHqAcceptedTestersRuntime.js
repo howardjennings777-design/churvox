@@ -18,12 +18,17 @@ function dateText(value) {
   if (!value) return '—';
   try { return new Date(value).toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return String(value); }
 }
+function lower(value) { return String(value || '').trim().toLowerCase(); }
 
 async function apiGet(path) {
   const headers = { Accept: 'application/json', ...(token() ? { Authorization: `Bearer ${token()}` } : {}) };
   const response = await fetch(`${API_ROOT}${path}`, { credentials: 'include', headers });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body?.success === false || body?.ok === false) throw new Error(body?.detail || body?.message || body?.error || `HTTP ${response.status}`);
+  if (!response.ok || body?.success === false || body?.ok === false) {
+    const error = new Error(body?.detail || body?.message || body?.error || `HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
   return body;
 }
 
@@ -51,6 +56,64 @@ function installStyle() {
   document.head.appendChild(style);
 }
 
+function normalizeTester(user, status = 'accepted') {
+  const email = lower(user.email || user.user_email || user.tester_email || '');
+  const activeAt = user.last_active || user.last_login || user.last_seen || '';
+  const active = Boolean(activeAt);
+  return {
+    email,
+    name: user.business_name || user.company || user.name || user.full_name || email || 'Tester',
+    business_name: user.business_name || user.company || '',
+    status: active ? 'active' : status,
+    accepted: true,
+    active,
+    plan: user.plan || 'operator',
+    subscription_status: user.subscription_status || 'tester_free',
+    free_tester_until: user.free_tester_until || '',
+    invited_at: user.free_tester_granted_at || user.created_at || '',
+    accepted_at: user.created_at || user.free_tester_granted_at || user.updated_at || '',
+    last_active: activeAt,
+    source: 'hq_existing_data',
+    user_id: user.id || user._id || '',
+  };
+}
+
+function fallbackFromExisting(planReport, overview) {
+  const fromPlan = arr(planReport?.free_testers);
+  const fromOverview = arr(overview?.lists?.free_testers);
+  const byEmail = new Map();
+  [...fromPlan, ...fromOverview].forEach((user) => {
+    const email = lower(user.email || user.user_email || user.tester_email || user.id || user._id);
+    if (!email) return;
+    byEmail.set(email, normalizeTester(user));
+  });
+  const testers = Array.from(byEmail.values());
+  const active = testers.filter((tester) => tester.active);
+  return {
+    success: true,
+    source: 'hq_existing_data_fallback',
+    counts: {
+      total: testers.length,
+      accepted: testers.length,
+      active: active.length,
+      invited_not_accepted: 0,
+    },
+    testers,
+    accepted_testers: testers,
+    active_testers: active,
+    invited_testers: [],
+  };
+}
+
+async function loadTesterData() {
+  try {
+    return await apiGet('/api/admin/owner/testers');
+  } catch (firstError) {
+    const [planReport, overview] = await Promise.allSettled([apiGet('/api/admin/owner/plan-report'), apiGet('/api/admin/owner-overview')]);
+    return fallbackFromExisting(planReport.status === 'fulfilled' ? planReport.value : null, overview.status === 'fulfilled' ? overview.value : null);
+  }
+}
+
 function testerRow(tester, invited = false) {
   const name = tester.business_name || tester.name || tester.email || 'Tester';
   const meta = `${tester.email || 'no email'} · ${invited ? 'invited' : tester.status || 'accepted'} · accepted ${dateText(tester.accepted_at)}`;
@@ -63,14 +126,15 @@ function render(root, data, error = '') {
   const accepted = arr(data?.accepted_testers);
   const active = arr(data?.active_testers);
   const invited = arr(data?.invited_testers);
+  const isFallback = data?.source === 'hq_existing_data_fallback';
   root.innerHTML = `
     <section class="hqTesterShell">
       <div class="hqTesterInner">
         <div class="hqTesterTop">
           <div>
-            <small>Tester control</small>
+            <small>Tester control${isFallback ? ' · fallback' : ''}</small>
             <h3>Accepted testers visible.</h3>
-            <p>Shows tester accounts that have actually accepted access or logged in, separate from people who were only invited.</p>
+            <p>${isFallback ? 'Using existing HQ plan report/free tester data until the dedicated tester endpoint is available on the live backend.' : 'Shows tester accounts that have actually accepted access or logged in, separate from people who were only invited.'}</p>
           </div>
           <button type="button" class="hqTesterRefresh" data-hq-testers-refresh>Refresh</button>
         </div>
@@ -83,7 +147,7 @@ function render(root, data, error = '') {
           </div>
           <div class="hqTesterColumns">
             <section class="hqTesterPanel"><h4>Accepted / active testers</h4><div class="hqTesterList">${accepted.slice(0, 35).map((tester) => testerRow(tester, false)).join('') || '<div class="hqTesterRow"><b>No accepted testers yet</b><span>When a tester accepts access, they will appear here.</span><em>empty</em></div>'}</div></section>
-            <section class="hqTesterPanel"><h4>Invited but not accepted</h4><div class="hqTesterList">${invited.slice(0, 35).map((tester) => testerRow(tester, true)).join('') || '<div class="hqTesterRow"><b>No pending invites</b><span>All visible testers have accepted, or no invites are stored yet.</span><em>clear</em></div>'}</div></section>
+            <section class="hqTesterPanel"><h4>Invited but not accepted</h4><div class="hqTesterList">${invited.slice(0, 35).map((tester) => testerRow(tester, true)).join('') || '<div class="hqTesterRow"><b>No pending invites visible</b><span>${isFallback ? 'Fallback mode can show accepted testers, but pending invite records need the dedicated tester endpoint.' : 'All visible testers have accepted, or no invites are stored yet.'}</span><em>clear</em></div>'}</div></section>
           </div>`}
       </div>
     </section>`;
@@ -110,7 +174,7 @@ async function mount() {
   }
   root.innerHTML = '<section class="hqTesterShell"><div class="hqTesterInner"><div class="hqTesterRow"><b>Loading testers…</b><span>Checking accepted and invited tester accounts.</span><em>live</em></div></div></section>';
   try {
-    render(root, await apiGet('/api/admin/owner/testers'));
+    render(root, await loadTesterData());
   } catch (error) {
     render(root, null, error?.message || 'Could not load');
   }
