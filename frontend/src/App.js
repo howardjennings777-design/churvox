@@ -38,6 +38,21 @@ const AccountDeletionPage = React.lazy(() => import("./pages/legal/AccountDeleti
 const BillingReturnPage = React.lazy(() => import("./pages/BillingReturnPage"));
 const FreshApp = React.lazy(() => import("./churvox-fresh/FreshApp"));
 
+const PLATFORM_OWNER_EMAILS = new Set(["hello@churvox.com", "howardjennings77@gmail.com", "howardjennings777@gmail.com"]);
+
+function isPlatformOwnerUser(user = {}) {
+  const email = String(user?.email || "").trim().toLowerCase();
+  const role = String(user?.role || user?.user_role || user?.account_type || user?.type || "").trim().toLowerCase().replace(/[-\s]+/g, "_");
+  return Boolean(
+    PLATFORM_OWNER_EMAILS.has(email) ||
+      ["platform_owner", "platform_admin", "super_admin", "superadmin", "admin"].includes(role) ||
+      user?.is_platform_owner === true ||
+      user?.is_platform_admin === true ||
+      user?.is_super_admin === true ||
+      user?.is_admin === true
+  );
+}
+
 const Spinner = () => (
   <main className="min-h-screen bg-[#f5f2ec] p-6 text-center text-slate-950 grid place-items-center">
     <section>
@@ -54,9 +69,7 @@ function PublicRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return children;
-  const email = (user?.email || "").toLowerCase();
-  const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true;
-  return <Navigate to={isPlatformOwner ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
+  return <Navigate to={isPlatformOwnerUser(user) ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
 }
 
 function FreshBusinessRoute({ children }) {
@@ -103,9 +116,7 @@ function QaAuditorRoute({ children }) {
   const { user, loading, normalizedRole, isPayroll, isWorker } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
-  const email = (user?.email || "").toLowerCase();
-  const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true;
-  const allowed = isPlatformOwner || normalizedRole === "owner";
+  const allowed = isPlatformOwnerUser(user) || normalizedRole === "owner";
   if (!allowed || isWorker || isPayroll) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   return <AppPage>{children}</AppPage>;
 }
@@ -114,9 +125,7 @@ function RoleRedirect() {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
-  const email = (user?.email || "").toLowerCase();
-  const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true;
-  return <Navigate to={isPlatformOwner ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
+  return <Navigate to={isPlatformOwnerUser(user) ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
 }
 
 function BillingReturnBridge({ cancelled = false }) {
@@ -258,14 +267,14 @@ function App() {
               <Route path="/owner-login" element={<AppRedirect to="/login" />} />
               <Route path="/admin/login" element={<AppRedirect to="/login" />} />
               <Route path="/owner" element={<AppRedirect to="/admin" />} />
-              <Route path="/owner/login" element={<AppRedirect to="/login" />} />
-              <Route path="/platform-unlock" element={<PlatformUnlock />} />
+              <Route path="/admin/unlock" element={<PlatformUnlock />} />
+              <Route path="/platform/unlock" element={<PlatformUnlock />} />
 
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-              <Route path="/account-deletion" element={<AccountDeletionPage />} />
+              <Route path="/delete-account" element={<AccountDeletionPage />} />
               <Route path="*" element={<RoleRedirect />} />
             </Routes>
           </React.Suspense>
