@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
+import { BusinessCoverageSection, ProfessionStrip, TradeFlowSection } from "./PublicProfessionSections";
 import "../../runtime/churvoxPublicCopyRuntime";
 import "./SimplePublic.css";
 
@@ -21,7 +22,7 @@ const commandQueue = [
 
 const stack = ["Today", "Command", "Jobs", "Workers", "Money"];
 
-const proof = ["14-day trial", "No card upfront", "Owner approval built in", "Made for service work"];
+const proof = ["14-day trial", "No card upfront", "Owner approval built in", "For service trades and crews"];
 
 const flow = [
   ["01", "Work lands", "Jobs, requests, worker notes and invoice drafts arrive in one place."],
@@ -131,15 +132,15 @@ function CommandScreen() {
 
 export default function ExecutiveHomePage() {
   return (
-    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PUBLIC_COPY_HOME_20260706">
+    <main className="publicSite cv2Site publicPageSlim" data-version="CHURVOX_PUBLIC_SERVICE_PLATFORM_20260708">
       <Nav />
 
       <section className="cv2Hero slimHero">
         <div className="cv2HeroCopy">
-          <span className="publicKicker cv2Kicker">For service businesses drowning in admin</span>
+          <span className="publicKicker cv2Kicker">For field-service businesses drowning in admin</span>
           <h1>Churvox does the admin. You approve.</h1>
           <p>
-            Jobs, workers, quotes, invoices and customer messages stay connected. Churvox prepares the next step, then brings the decision back to Command.
+            Built for lawn care, cleaning, landscaping, property maintenance, handyman work, painting, pest control, plumbing, electrical, HVAC and mobile service crews that need jobs, workers, quotes, invoices and messages connected.
           </p>
           <div className="publicActions cv2HeroActions">
             <Link to="/signup" className="publicPrimary">Start 14-day trial</Link>
@@ -150,6 +151,8 @@ export default function ExecutiveHomePage() {
         <CommandScreen />
       </section>
 
+      <ProfessionStrip />
+
       <section className="cv2Section cv2FlowSection slimBand">
         <div className="cv2SectionHead compactHead">
           <span className="publicKicker">The Churvox loop</span>
@@ -159,6 +162,8 @@ export default function ExecutiveHomePage() {
           {flow.map(([num, title, text]) => <article key={title}><i>{num}</i><b>{title}</b><span>{text}</span></article>)}
         </div>
       </section>
+
+      <TradeFlowSection />
 
       <section className="cv2Section cv2SplitFeature slimBand">
         <div>
@@ -171,6 +176,8 @@ export default function ExecutiveHomePage() {
           {commandCards.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
         </div>
       </section>
+
+      <BusinessCoverageSection />
 
       <section className="cv2Section cv2PricingTeaser slimBand">
         <div className="cv2SectionHead row">
