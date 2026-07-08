@@ -5,6 +5,8 @@ import os
 
 INSTALLED = set()
 OWNER_EMAILS = {"hello@churvox.com", "howardjennings77@gmail.com", "howardjennings777@gmail.com"}
+INTERNAL_MARKERS = ["sample", "fake", "seed", "example.com", "mailinator", "tempmail", "john@churvox", "johnworker", "localhost", "127.0.0.1"]
+INTERNAL_PATH_PREFIXES = ("/admin", "/churvox-hq", "/owner", "/platform-dashboard", "/app-owner", "/dashboard", "/worker", "/plans", "/setup", "/setup-guide", "/guide")
 
 
 def now_utc():
@@ -60,6 +62,24 @@ def safe(value):
             output["id" if key == "_id" else key] = safe(item)
         return output
     return value
+
+
+def public_path(path):
+    p = "/" + text(path).split("?")[0].lstrip("/")
+    if p == "//":
+        p = "/"
+    return not any(p.startswith(prefix) for prefix in INTERNAL_PATH_PREFIXES)
+
+
+def public_visitor(row):
+    row = row or {}
+    path = row.get("path") or row.get("last_path") or row.get("first_path")
+    if not public_path(path):
+        return False
+    if email_of(row) in owner_emails():
+        return False
+    hay = " ".join(str(row.get(k) or "") for k in ["email", "user_email", "business_name", "referrer", "last_referrer", "source", "last_source", "user_agent"]).lower()
+    return not any(marker in hay for marker in INTERNAL_MARKERS)
 
 
 def status_of(user):
@@ -137,7 +157,7 @@ def install(module):
         users = await list_collection("users", 3500)
         testers_raw = await list_collection("app_owner_testers", 2500)
         unique_rows = await list_collection("platform_unique_visitors", 5000)
-        visit_rows = await list_collection("platform_visits", 8000)
+        visit_rows = await list_collection("platform_visits", 12000)
         businesses = await list_collection("businesses", 2500)
 
         if not unique_rows and visit_rows:
@@ -154,13 +174,6 @@ def install(module):
                     item.update({"last_seen": visit.get("last_seen") or visit.get("created_at"), "last_path": visit.get("path"), "last_referrer": visit.get("referrer"), "last_source": visit.get("source"), "user_email": visit.get("user_email"), "business_name": visit.get("business_name")})
                 seen[key] = item
             unique_rows = list(seen.values())
-
-        internal_markers = ["test", "demo", "sample", "fake", "mock", "preview", "seed", "example.com", "mailinator", "tempmail"]
-        def public_visitor(row):
-            hay = " ".join(str((row or {}).get(k) or "") for k in ["email", "user_email", "business_name", "path", "last_path", "referrer", "last_referrer", "source", "last_source", "user_agent"]).lower()
-            if email_of(row) in owner_emails():
-                return False
-            return not any(marker in hay for marker in internal_markers)
 
         visitors = [row for row in unique_rows if public_visitor(row)]
         def seen_at(row, field):
@@ -207,7 +220,9 @@ def install(module):
         unique_total = len(visitors)
         accepted_count = len(accepted_testers)
         signup_count = len(signup_users)
-        pageviews_total = sum(int(row.get("pageview_count") or row.get("visit_count") or 0) for row in visitors) or len(visit_rows)
+        pageviews_total = sum(int(row.get("pageview_count") or row.get("visit_count") or 0) for row in visitors)
+        if not pageviews_total:
+            pageviews_total = len([row for row in visit_rows if public_visitor(row)])
         conversion = {
             "visitor_to_signup_percent": round((signup_count / unique_total) * 100, 1) if unique_total else 0,
             "visitor_to_accepted_tester_percent": round((accepted_count / unique_total) * 100, 1) if unique_total else 0,
@@ -217,6 +232,7 @@ def install(module):
 
         return safe({
             "success": True,
+            "source": "platform_unique_visitors_real_public",
             "generated_at": now,
             "counts": {
                 "unique_total": unique_total,
@@ -224,7 +240,7 @@ def install(module):
                 "unique_active_7d": len(active_7d),
                 "unique_active_30d": len(active_30d),
                 "pageviews_total": pageviews_total,
-                "visits_total": len(visit_rows),
+                "visits_total": len([row for row in visit_rows if public_visitor(row)]),
                 "signups_total": signup_count,
                 "businesses_total": len(businesses),
                 "tester_invites_total": len(tester_emails | user_tester_emails),
