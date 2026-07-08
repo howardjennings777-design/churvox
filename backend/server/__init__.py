@@ -80,6 +80,8 @@ for _patch in [
     'churvox_api_request_422_fix_patch',
     'churvox_tester_email_send_final_patch',
     'churvox_email_provider_status_patch',
+    'churvox_nav_attention_counts_patch',
+    'churvox_nav_attention_counts_status_fix_patch',
     'churvox_industry_mode_patch',
     'churvox_industry_mode_request_fix_patch',
     'churvox_business_profile_required_patch',
