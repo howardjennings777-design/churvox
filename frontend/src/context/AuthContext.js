@@ -31,6 +31,10 @@ function removePlanFlag() {
   try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
 }
 
+function setPlanFlag() {
+  try { localStorage.setItem(PLAN_REQUIRED_KEY, "true"); } catch {}
+}
+
 function cleanPlan(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -176,6 +180,24 @@ function explicitBillingLock(user = {}) {
   );
 }
 
+function trialStillOpen(user = {}) {
+  if (!user?.trial_ends_at) return false;
+  try { return new Date(user.trial_ends_at) > new Date(); } catch { return false; }
+}
+
+function businessAccessFromUser(user = {}) {
+  if (!user) return false;
+  if (inferredWorker(user) || inferredPayroll(user)) return true;
+  if (explicitBillingLock(user)) return false;
+  const status = subscriptionStatus(user);
+  if (ACTIVE_PAID_STATUSES.has(status)) return true;
+  if (["trialing", "trial"].includes(status) && trialStillOpen(user)) return true;
+  if (typeof user.has_app_access === "boolean") return user.has_app_access;
+  if (hasValidPlan(user) && user.stripe_subscription_id) return true;
+  if (GOOD_STATUSES.has(status)) return true;
+  return false;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredAuthSnapshot());
   const [loading, setLoading] = useState(true);
@@ -203,7 +225,7 @@ export function AuthProvider({ children }) {
 
     try {
       const me = await fetchMe(token || storedSession?.token || undefined);
-      if (me?.has_app_access || inferredWorker(me) || inferredPayroll(me) || hasValidPlan(me)) removePlanFlag();
+      if (businessAccessFromUser(me) || hasValidPlan(me)) removePlanFlag();
       if (me?.token) localStorage.setItem("token", me.token);
       saveStoredAuthSnapshot(me);
       rememberPlatformOwner(me);
@@ -309,7 +331,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem("token");
       }
 
-      if (nextUser?.has_app_access || inferredWorker(nextUser) || inferredPayroll(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
+      if (businessAccessFromUser(nextUser) || hasValidPlan(nextUser)) removePlanFlag();
       saveStoredAuthSnapshot(nextUser);
       rememberPlatformOwner(nextUser);
       if (runId === authRunRef.current) setUser(nextUser);
@@ -346,8 +368,15 @@ export function AuthProvider({ children }) {
         localStorage.removeItem("token");
       }
 
-      localStorage.setItem(PLAN_REQUIRED_KEY, "true");
-      const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
+      if (businessAccessFromUser(nextUser)) {
+        removePlanFlag();
+        saveStoredAuthSnapshot(nextUser);
+        if (runId === authRunRef.current) setUser(nextUser);
+        return { ...response.data, user: nextUser, ...nextUser };
+      }
+
+      setPlanFlag();
+      const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_or_start_trial" };
       saveStoredAuthSnapshot(locked);
       if (runId === authRunRef.current) setUser(locked);
       return { ...response.data, user: locked, ...locked };
@@ -412,19 +441,8 @@ export function AuthProvider({ children }) {
 
   const hasAppAccess = (() => {
     if (!user) return false;
-    if (isWorker || isPayroll) return true;
-    if (explicitBillingLock(user)) return false;
     if (isTrialExpired) return false;
-    if (typeof user.has_app_access === "boolean") return user.has_app_access;
-
-    const status = subscriptionStatus(user);
-    const validPlan = hasValidPlan(user);
-    if (ACTIVE_PAID_STATUSES.has(status)) return true;
-    if (["trialing", "trial"].includes(status)) return Boolean(user.trial_ends_at || user.stripe_subscription_id);
-    if (validPlan && user.stripe_subscription_id) return true;
-    if (GOOD_STATUSES.has(status)) return true;
-
-    return false;
+    return businessAccessFromUser(user);
   })();
 
   return (
