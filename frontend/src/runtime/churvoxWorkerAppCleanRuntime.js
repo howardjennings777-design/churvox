@@ -4,6 +4,10 @@ function isWorkerRoute() {
   return /^\/worker(?:\/|$)/i.test(window.location.pathname || '');
 }
 
+function isProfileRoute() {
+  return /^\/worker\/(profile|settings)(?:\/|$)?/i.test(window.location.pathname || '');
+}
+
 function text(node) {
   return String(node?.textContent || '').replace(/\s+/g, ' ').trim();
 }
@@ -13,13 +17,35 @@ function syncBodyClass() {
   document.body.classList.toggle('churvoxWorkerCleanBody', isWorkerRoute());
 }
 
+function removeStrayLogout(workerRoot) {
+  if (!isWorkerRoute() || isProfileRoute()) return;
+  document.querySelectorAll('button,a').forEach((node) => {
+    const copy = text(node).toLowerCase();
+    if (copy === 'log out' || copy === 'logout') node.remove();
+  });
+  if (!workerRoot) return;
+  workerRoot.querySelectorAll('button,a').forEach((node) => {
+    const copy = text(node).toLowerCase();
+    if (copy === 'log out' || copy === 'logout') node.remove();
+  });
+}
+
+function removeDuplicateSplashes() {
+  if (!isWorkerRoute()) return;
+  ['#churvox-worker-pre-react-shell', '#churvox-launch-splash', '.churvoxLaunchSplash', '[data-churvox-splash]', '[data-churvox-worker-pre-react]'].forEach((selector) => {
+    document.querySelectorAll(selector).forEach((node) => node.remove());
+  });
+}
+
 function removeOwnerOverlays() {
   if (!isWorkerRoute()) return;
   const workerRoot = document.querySelector('.simpleWorkerApp');
+  removeDuplicateSplashes();
   const selectors = [
     '.cvxDrawerLayer', '.cvxDrawer', '.cvxModal', '.cvxSheet', '.cvxPanel', '.cvxRecordDrawer',
     '[data-cvx-drawer]', '[data-cvx-record]', '[data-churvox-command-ledger]', '[data-cvx-command-brain]',
-    '.cocPanel', '.cvxPaymentPanel', '#churvox-xero-payments-panel', '.swLedger', '[data-churvox-worker-ledger]', '[data-churvox-worker-problems]'
+    '.cocPanel', '.cvxPaymentPanel', '#churvox-xero-payments-panel', '.swLedger', '[data-churvox-worker-ledger]', '[data-churvox-worker-problems]',
+    '.legacyWorkerShell', '.oldWorkerApp', '.workerAdminLedger', '.workerPremiumPatch'
   ];
   selectors.forEach((selector) => {
     document.querySelectorAll(selector).forEach((node) => {
@@ -27,11 +53,12 @@ function removeOwnerOverlays() {
       node.remove();
     });
   });
-  document.querySelectorAll('section,div,main,aside').forEach((node) => {
+  document.querySelectorAll('section,div,main,aside,form').forEach((node) => {
     if (workerRoot && workerRoot.contains(node)) return;
     const copy = text(node).toLowerCase();
-    if (/new record|job form|working job form|save record|payment not ready|take card payment/.test(copy) && copy.length < 900) node.remove();
+    if (/new record|add job|job form|working job form|save record|payment not ready|take card payment|admin ledger|command lanes/.test(copy) && copy.length < 1100) node.remove();
   });
+  removeStrayLogout(workerRoot);
 }
 
 function markWorkerReady() {
@@ -53,7 +80,7 @@ function cleanNow() {
 function schedule() {
   syncBodyClass();
   if (!isWorkerRoute()) return;
-  [0, 60, 160, 360, 800, 1500, 2800, 5000].forEach((delay) => {
+  [0, 40, 90, 160, 360, 800, 1500, 2800, 5000].forEach((delay) => {
     window.setTimeout(cleanNow, delay);
   });
 }
