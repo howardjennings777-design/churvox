@@ -53,7 +53,7 @@ def scope(user, ObjectId):
         {"account_id": {"$in": final_values}},
     ]
     if email:
-        ors.extend([{"owner_email": email}, {"created_by_email": email}, {"business_email": email}, {"email": email}])
+        ors.extend([{"owner_email": email}, {"created_by_email": email}, {"business_email": email}, {"email": email}, {"user_email": email}])
     return {"$or": ors}
 
 
@@ -79,7 +79,7 @@ def status(row):
 
 
 def is_closed(row):
-    return any(word in status(row) for word in ["complete", "completed", "done", "finished", "paid", "converted", "cancelled", "canceled", "archived", "declined", "parked", "closed", "sent"])
+    return any(word in status(row) for word in ["complete", "completed", "done", "finished", "paid", "converted", "cancelled", "canceled", "archived", "declined", "parked", "closed", "sent", "resolved"])
 
 
 def is_attention_job(row):
@@ -109,6 +109,10 @@ def is_attention_invoice(row):
     if is_closed(row):
         return False
     return any(word in status(row) for word in ["overdue", "unpaid", "failed", "needscheck", "needsapproval", "ownerreview", "paymentissue", "blocked"])
+
+
+def is_open_support(row):
+    return not is_closed(row) and status(row) not in {"done", "resolved", "closed", "archived"}
 
 
 def message_body(row):
@@ -208,6 +212,7 @@ def install(module):
             "messages": await count_rows(db, "worker_messages", base, is_unread_message, 200) + await count_rows(db, "messages", base, is_unread_message, 200) + await count_rows(db, "customer_messages", base, is_unread_message, 100) + await count_rows(db, "client_messages", base, is_unread_message, 100),
             "quotes": await count_rows(db, "quotes", base, is_attention_quote, 200),
             "invoices": await count_rows(db, "invoices", base, is_attention_invoice, 200),
+            "support": await count_rows(db, "support_tickets", base, is_open_support, 200),
         }
         return build_response(owner_counts)
 
@@ -218,7 +223,7 @@ def install(module):
             "jobs": await count_rows(db, "jobs", query, is_attention_job, 200),
             "messages": await count_rows(db, "worker_messages", query, lambda row: office_to_worker(row) and is_unread_message(row), 200),
         }
-        return build_response({"command": 0, "jobs": 0, "workers": 0, "messages": 0, "quotes": 0, "invoices": 0}, worker_counts)
+        return build_response({"command": 0, "jobs": 0, "workers": 0, "messages": 0, "quotes": 0, "invoices": 0, "support": 0}, worker_counts)
 
     for path, endpoint in [
         ("/api/nav/attention-counts", owner_nav_counts),
