@@ -1,6 +1,6 @@
 const ID = 'churvox-worker-pre-react-shell';
 const STYLE = 'churvox-worker-pre-react-shell-style';
-const MARK = '/churvox-mark.svg?v=worker-app-clean-20260708';
+const MARK = '/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b';
 
 function isWorkerRoute() {
   return /^\/worker(?:\/|$)/i.test(window.location.pathname || '');
