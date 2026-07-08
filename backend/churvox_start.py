@@ -24,6 +24,15 @@ import server
 
 app = server.app
 
+try:
+    import churvox_business_system_suite_patch
+    churvox_business_system_suite_patch.install(server)
+except Exception as exc:
+    try:
+        server.logger.warning("[Churvox] Business system suite entrypoint install skipped: %s", exc)
+    except Exception:
+        pass
+
 PLAN_ALIASES = {
     "start": "solo",
     "solo": "solo",
