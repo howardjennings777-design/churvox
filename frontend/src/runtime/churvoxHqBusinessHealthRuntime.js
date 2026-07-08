@@ -1,3 +1,4 @@
+import './churvoxBusinessSystemSuiteRuntime';
 import API_BASE from '../lib/apiBase';
 
 const FLAG = '__CHURVOX_HQ_BUSINESS_HEALTH_RUNTIME__';
