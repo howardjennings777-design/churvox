@@ -47,6 +47,7 @@ const globalHelperImports = [
 
 const ownerRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
+  () => import('./runtime/churvoxCommandSlipPolishRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
   () => import('./runtime/churvoxCommandBrainRuntime'),
   () => import('./runtime/churvoxPaymentSetupRuntime'),
