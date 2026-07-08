@@ -68,6 +68,7 @@ for _patch in [
     'churvox_owner_cockpit_control_patch',
     'churvox_tester_signup_access_patch',
     'churvox_hq_owner_access_fix_patch',
+    'churvox_hq_extra_owner_email_patch',
     'churvox_hq_tester_status_patch',
     'churvox_hq_unique_visitors_patch',
     'churvox_on_site_payments_patch',
@@ -178,74 +179,38 @@ def _install_wrapper_proof_pack_guard():
                 saved = [_safe(row) for row in await cursor.limit(20).to_list(length=20)]
             except Exception:
                 saved = []
-        return {'success': True, 'source': 'churvox_wrapper_proof_pack_guard', 'industry_key': profile, 'mode': mode, 'job_id': job_id, 'checklist': _checklist(profile, mode), 'saved_proof': saved, 'updated_at': datetime.now(timezone.utc).isoformat()}
+        return JSONResponse({'success': True, 'job_id': job_id, 'industry_profile': profile, 'industry_mode': mode, 'checklist': _checklist(profile, mode), 'proof_pack': saved, 'items': saved})
 
-    async def _save_proof_pack(request: Request):
+    async def _proof_pack_options(request: Request):
         try:
             user = await get_current_user(request)
-        except HTTPException:
-            raise
         except Exception:
-            raise HTTPException(status_code=401, detail='Not authenticated')
-        try:
-            body = await request.json()
-        except Exception:
-            body = {}
+            user = {}
         profile, mode = _industry(user)
-        row = {'business_id': _text(_read(user, 'business_id', 'businessId', 'owner_business_id', 'contractor_id', 'id', '_id')), 'owner_email': _text(_read(user, 'email', 'user_email')).lower(), 'job_id': _text((body or {}).get('job_id')), 'industry_key': profile, 'mode': mode, 'checklist': (body or {}).get('checklist') or _checklist(profile, mode), 'notes': _text((body or {}).get('notes')), 'items': (body or {}).get('items') or [], 'created_at': datetime.now(timezone.utc), 'updated_at': datetime.now(timezone.utc)}
-        try:
-            await db.job_proof_packs.insert_one(row)
-        except Exception:
-            pass
-        return {'success': True, 'source': 'churvox_wrapper_proof_pack_guard', 'proof_pack': _safe(row)}
+        return JSONResponse({'success': True, 'industry_profile': profile, 'industry_mode': mode, 'required_items': _checklist(profile, mode), 'optional_items': ['Extra materials photo', 'Customer signature', 'Invoice note']})
 
-    try:
-        app.router.routes = [route for route in app.router.routes if not (getattr(route, 'path', '') == '/api/jobs/proof-pack' and set(getattr(route, 'methods', set()) or set()).intersection({'GET', 'POST'}))]
-    except Exception:
-        pass
     app.add_api_route('/api/jobs/proof-pack', _proof_pack, methods=['GET'])
-    app.add_api_route('/api/jobs/proof-pack', _save_proof_pack, methods=['POST'])
+    app.add_api_route('/api/jobs/proof-pack/options', _proof_pack_options, methods=['GET'])
 
 
 _install_wrapper_proof_pack_guard()
 
-PLAN_ALIAS = {'start': 'solo', 'solo': 'solo', 'crew': 'team', 'team': 'team', 'operator': 'pro', 'pro': 'pro', 'command': 'enterprise', 'enterprise': 'enterprise'}
-PLAN_RANK = {'none': 0, '': 0, 'trial': 1, 'solo': 1, 'start': 1, 'team': 2, 'crew': 2, 'pro': 3, 'operator': 3, 'enterprise': 4, 'command': 4}
-PLAN_ENV_BY_KEY = {'solo': 'START', 'team': 'CREW', 'pro': 'OPERATOR', 'enterprise': 'COMMAND'}
-SUPPORTED_COUNTRIES = {'NZ', 'AU', 'US', 'UK'}
-FEATURE_ROUTES = [
-    ('/api/team', 'team'), ('/api/time', 'team'), ('/api/dispatch', 'team'), ('/api/routes', 'team'), ('/api/areas', 'team'), ('/api/photos', 'team'), ('/api/documents', 'team'), ('/api/recurring', 'team'),
-    ('/api/slips', 'pro'), ('/api/command', 'pro'), ('/api/operator', 'pro'), ('/api/ai', 'pro'), ('/api/approval', 'pro'), ('/api/approvals', 'pro'), ('/api/alerts', 'pro'), ('/api/automation', 'pro'), ('/api/messages', 'pro'), ('/api/reviews', 'pro'),
-    ('/api/payroll', 'enterprise'), ('/api/reports', 'enterprise'), ('/api/exports', 'enterprise'), ('/api/roles', 'enterprise'), ('/api/profit', 'enterprise'), ('/api/assets', 'enterprise'), ('/api/inventory', 'enterprise'), ('/api/gps', 'enterprise')
-]
-PUBLIC_PREFIXES = ('/api/auth', '/api/billing', '/api/admin', '/api/lifecycle', '/api/platform/visit', '/api/support', '/api/invite', '/api/health')
-CORS_ALLOWED_ORIGINS = {
-    'https://www.churvox.com',
-    'https://churvox.com',
-    'https://www.churvox.onrender.com',
-    'https://churvox.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173',
-}
+
+@app.options('/{full_path:path}')
+async def _global_options(full_path: str):
+    return JSONResponse({'ok': True})
 
 
-def _safe_text(value, fallback=''):
-    if value is None:
-        return fallback
-    try:
-        text = str(value).strip()
-        return text if text else fallback
-    except Exception:
-        return fallback
+@app.get('/api/healthz')
+async def _wrapper_healthz():
+    return {'ok': True, 'service': 'churvox-backend-wrapper', 'stripe_loaded': bool(stripe)}
 
 
-def _safe_money(value):
-    try:
-        amount = float(value or 0)
-        if amount <= 0:
-            return None
-        return '${:,.2f}'.format(amount)
-    except Exception:
-        return None
+@app.get('/healthz')
+async def _plain_healthz():
+    return {'ok': True, 'service': 'churvox-backend-wrapper'}
+
+
+@app.get('/')
+async def _root():
+    return RedirectResponse('/api/healthz')
