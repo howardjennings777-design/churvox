@@ -44,7 +44,7 @@ function render(status) {
   }
   const ready = Boolean(status.terminal_ready || status.ready);
   const connected = Boolean(status.connected || status.stripe_account_id);
-  panel.innerHTML = `<div><small>On-site payments</small><h3>${ready ? 'Worker card collection ready' : connected ? 'Payment account connected' : 'Payment setup required'}</h3><p>${ready ? 'Workers can collect card payments on priced jobs through the reader flow.' : connected ? 'Connect a reader and keep job amounts set before workers collect.' : 'Owner must connect Stripe before workers can take card payments.'}</p></div><button type="button" data-cvx-payment-setup>${ready ? 'Review setup' : 'Setup payments'}</button>`;
+  panel.innerHTML = `<div><small>Churvox business system</small><h3>${ready ? 'Autopilot and worker card collection ready' : connected ? 'Office live feed and payment account connected' : 'Autopilot, Office live feed, Daily closeout, Proof pack and Client memory'}</h3><p>${ready ? 'Workers can collect card payments on priced jobs through the reader flow. Daily closeout, proof pack and client memory stay visible for the owner.' : connected ? 'Connect a reader and keep job amounts set before workers collect. Daily closeout, proof pack and client memory stay visible for the owner.' : 'Owner must connect Stripe before workers can take card payments. Daily closeout, proof pack and client memory stay visible for the owner.'}</p></div><button type="button" data-cvx-payment-setup>${ready ? 'Review setup' : 'Setup payments'}</button>`;
   panel.querySelector('[data-cvx-payment-setup]')?.addEventListener('click', openSetup);
 }
 
