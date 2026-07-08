@@ -1,3 +1,4 @@
+import './churvoxIndustryIsolationRuntime';
 import API_BASE from '../lib/apiBase';
 
 const FLAG = '__CHURVOX_NAV_BADGES_TRUSTED_COUNTS__';
