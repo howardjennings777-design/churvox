@@ -132,17 +132,18 @@ function typeFromDrawer(drawer, record = {}) {
   return record.type || 'record';
 }
 
+function genericType(type) {
+  if (type === 'support_ticket') return 'support_ticket';
+  return String(type || 'record').replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+}
+
 function deleteEndpoints(type, id) {
-  const encoded = encodeURIComponent(id);
-  if (type === 'job') return [`/jobs/${encoded}`];
-  if (type === 'client') return [`/clients/${encoded}`];
-  if (type === 'quote') return [`/quotes/${encoded}`];
-  if (type === 'invoice') return [`/invoices/${encoded}`];
-  if (type === 'worker') return [`/team/workers/${encoded}`, `/team/${encoded}`, `/workers/${encoded}`];
-  if (type === 'message') return [`/messages/${encoded}`, `/approved-notifications/${encoded}`];
-  if (type === 'approval') return [`/ai/actions/${encoded}`, `/command/approvals/${encoded}`];
-  if (type === 'support_ticket') return [`/support/tickets/${encoded}`, `/admin/owner/support-tickets/${encoded}`];
-  return [];
+  if (!id) return [];
+  return [`/records/${encodeURIComponent(genericType(type))}/${encodeURIComponent(id)}`];
+}
+
+function replyEndpoint(type, id) {
+  return `/records/${encodeURIComponent(genericType(type))}/${encodeURIComponent(id)}/reply`;
 }
 
 async function apiCall(method, endpoint, body = null) {
@@ -190,7 +191,7 @@ function notify(bundle, title, text, tone = 'good') {
   console.log(`[Churvox] ${title}: ${text}`);
 }
 
-function showReplyBox(container, drawer, bundle, record, id) {
+function showReplyBox(container, drawer, bundle, record, id, type) {
   let box = container.querySelector('.cvxDrawerReplyBox');
   if (box) { box.remove(); return; }
   const to = clean(record.from || record.sender || record.client || record.worker || 'recipient');
@@ -207,7 +208,7 @@ function showReplyBox(container, drawer, bundle, record, id) {
     busy = true;
     status.textContent = 'Sending reply...';
     try {
-      await apiCall('POST', `/messages/${encodeURIComponent(id)}/reply`, { reply, subject: record.subject || record.title, to, channel: record.channel || 'Inside Churvox' });
+      await apiCall('POST', replyEndpoint(type, id), { reply, subject: record.subject || record.title, to, channel: record.channel || 'Inside Churvox' });
       status.textContent = 'Reply saved inside Churvox.';
       textarea.value = '';
       refreshPage(bundle);
@@ -241,7 +242,7 @@ function inject(drawer) {
     reply.type = 'button';
     reply.className = 'cvxReplyRecord';
     reply.textContent = 'Reply';
-    reply.addEventListener('click', () => showReplyBox(extra, drawer, bundle, record, id));
+    reply.addEventListener('click', () => showReplyBox(extra, drawer, bundle, record, id, type));
     extra.appendChild(reply);
   }
   if (canDelete) {
