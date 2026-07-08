@@ -6,21 +6,7 @@ const MARK = 'data-churvox-industry-runtime';
 let running = false;
 
 const css = `
-  .cv3IndustryModePill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    width: fit-content;
-    margin-top: 6px;
-    border-radius: 999px;
-    padding: 6px 9px;
-    background: rgba(243,107,33,.12);
-    color: #a1430a;
-    font-size: 10px;
-    font-weight: 1000;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-  }
+  .cv3IndustryModePill { display: none !important; }
   .cv3IndustryPanel {
     grid-column: 1 / -1 !important;
     border-color: rgba(243,107,33,.2) !important;
@@ -73,7 +59,7 @@ const css = `
     font-weight: 820;
     line-height: 1.45;
   }
-  @media(max-width:760px){.cv3IndustryPanelBody{grid-template-columns:1fr}.cv3IndustryModePill{margin-bottom:4px}}
+  @media(max-width:760px){.cv3IndustryPanelBody{grid-template-columns:1fr}}
 `;
 
 function ensureStyle() {
@@ -84,6 +70,8 @@ function ensureStyle() {
     style.id = STYLE_ID;
     style.textContent = css;
     document.head.appendChild(style);
+  } else if (style.textContent !== css) {
+    style.textContent = css;
   }
 }
 
@@ -123,17 +111,12 @@ function applyRootState() {
   document.documentElement.dataset.churvoxIndustryTitle = industry.title;
 }
 
-function upsertHeaderPill() {
-  const account = document.querySelector('.cv3Account');
-  if (!account) return;
-  const industry = currentIndustry();
-  let pill = account.querySelector('.cv3IndustryModePill');
-  if (!pill) {
-    pill = document.createElement('span');
-    pill.className = 'cv3IndustryModePill';
-    account.appendChild(pill);
+function cleanupGlobalIndustryUi() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('.cv3IndustryModePill').forEach((node) => node.remove());
+  if (!isSettingsPage()) {
+    document.querySelectorAll('.cv3IndustryPanel,[data-churvox-industry-runtime="true"]').forEach((node) => node.remove());
   }
-  pill.textContent = `${industry.short || industry.title} mode`;
 }
 
 function isSettingsPage() {
@@ -162,7 +145,7 @@ function renderIndustryPanel() {
     <div class="cv3IndustryPanelBody">
       <div>
         <label><span>Business type</span><select class="cv3IndustrySelect">${industryOptions(true).map((option) => `<option value="${option.value}" ${option.value === industryKey ? 'selected' : ''}>${option.label}</option>`).join('')}</select></label>
-        <p class="cv3IndustryHint">This controls service options and wording across Churvox. It keeps the app broad without becoming generic.</p>
+        <p class="cv3IndustryHint">This controls service options and wording quietly across Churvox. Change it here when the business type is wrong.</p>
       </div>
       <div><b>${industry.title}</b><p class="cv3IndustryHint">${industry.intro}</p><div class="cv3IndustryServices">${(industry.services || []).map((service) => `<span>${service}</span>`).join('')}</div></div>
     </div>
@@ -185,6 +168,7 @@ function updateServiceSelects() {
   const industry = currentIndustry();
   const services = industry.services || [];
   document.querySelectorAll('.cv3Drawer select, .cv3Preview select, .cv3Panel select').forEach((select) => {
+    if (select.classList.contains('cv3IndustrySelect')) return;
     const label = labelTextForSelect(select);
     if (!/service|preferred service|work type|job type/.test(label)) return;
     const current = select.value;
@@ -210,7 +194,7 @@ function applyAll(force = false) {
   try {
     ensureStyle();
     applyRootState();
-    upsertHeaderPill();
+    cleanupGlobalIndustryUi();
     renderIndustryPanel();
     updateServiceSelects();
     updateEmptyCopy();
@@ -228,8 +212,8 @@ if (typeof window !== 'undefined' && !window.__CHURVOX_APP_INDUSTRY_RUNTIME__) {
   window.__CHURVOX_APP_INDUSTRY_RUNTIME__ = true;
   [100, 600, 1400, 3000].forEach(schedule);
   window.addEventListener('load', () => schedule(200));
-  window.addEventListener('hashchange', () => [100, 400, 900].forEach(schedule));
-  window.addEventListener('popstate', () => [100, 400, 900].forEach(schedule));
+  window.addEventListener('hashchange', () => [60, 180, 500, 1000].forEach(schedule));
+  window.addEventListener('popstate', () => [60, 180, 500, 1000].forEach(schedule));
   window.addEventListener('churvox-business-settings-updated', () => [80, 300].forEach(schedule));
   window.addEventListener('churvox:data-refresh', () => [200, 900].forEach(schedule));
   document.addEventListener('click', () => schedule(120), true);
