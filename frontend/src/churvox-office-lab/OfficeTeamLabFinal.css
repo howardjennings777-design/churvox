@@ -1,0 +1,652 @@
+.cvOfficeFinal {
+  min-height: 100vh;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #17120e;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    linear-gradient(90deg, rgba(23,18,14,.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(23,18,14,.025) 1px, transparent 1px),
+    linear-gradient(135deg, #f4eee4 0%, #ece4d8 100%);
+  background-size: 22px 22px, 22px 22px, auto;
+}
+
+.cvOfficeTopbar,
+.cvOfficeStatus,
+.cvOfficeGrid,
+.cvTeamWorkbench,
+.cvBuildMap {
+  width: min(1380px, 100%);
+  margin: 0 auto;
+}
+
+.cvOfficeTopbar {
+  position: sticky;
+  top: 10px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 14px;
+  background: rgba(255,252,246,.94);
+  box-shadow: 0 10px 24px rgba(37,29,20,.08);
+  backdrop-filter: blur(16px);
+}
+
+.cvOfficeBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cvOfficeBrand img {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+}
+
+.cvOfficeBrand strong,
+.cvOfficeBrand span {
+  display: block;
+}
+
+.cvOfficeBrand strong {
+  font-size: .9rem;
+  letter-spacing: -.02em;
+}
+
+.cvOfficeBrand span {
+  margin-top: 1px;
+  color: #6b6258;
+  font-size: .7rem;
+  font-weight: 720;
+}
+
+.cvOfficeTopbar nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cvOfficeTopbar a {
+  padding: 7px 10px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 10px;
+  color: #17120e;
+  background: rgba(23,18,14,.04);
+  text-decoration: none;
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.cvOfficeStatus {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) repeat(4, minmax(130px, .5fr));
+  gap: 10px;
+}
+
+.cvOfficeStatusLead,
+.cvOfficeStatus article,
+.cvCommandPanel,
+.cvPlaybookCard,
+.cvActivityCard,
+.cvTeamWorkbench,
+.cvBuildMap {
+  border: 1px solid rgba(255,255,255,.72);
+  background: rgba(255,252,246,.92);
+  box-shadow: 0 10px 24px rgba(37,29,20,.08);
+  backdrop-filter: blur(16px);
+}
+
+.cvOfficeStatusLead {
+  padding: 14px 16px;
+  border-radius: 14px;
+}
+
+.cvOfficeStatusLead span,
+.cvPanelHeader span,
+.cvRoleHero span {
+  color: #9a3412;
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cvOfficeStatusLead h1 {
+  max-width: 760px;
+  margin: 6px 0 4px;
+  font-size: clamp(1.22rem, 1.9vw, 2rem);
+  line-height: 1.05;
+  letter-spacing: -.045em;
+}
+
+.cvOfficeStatusLead p,
+.cvPanelHeader p {
+  margin: 0;
+  color: #655c52;
+  font-size: .78rem;
+  line-height: 1.35;
+  font-weight: 720;
+}
+
+.cvOfficeStatus article {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 94px;
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.cvOfficeStatus article strong {
+  font-size: 1.75rem;
+  line-height: 1;
+  letter-spacing: -.06em;
+}
+
+.cvOfficeStatus article span {
+  margin-top: 7px;
+  font-size: .72rem;
+  font-weight: 950;
+}
+
+.cvOfficeStatus article small {
+  margin-top: 3px;
+  color: #756c61;
+  font-size: .66rem;
+  font-weight: 760;
+}
+
+.cvOfficeGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 10px;
+  align-items: start;
+}
+
+.cvCommandPanel,
+.cvPlaybookCard,
+.cvActivityCard,
+.cvTeamWorkbench,
+.cvBuildMap {
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.cvRightRail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cvPanelHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.cvPanelHeader h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.05rem, 1.55vw, 1.55rem);
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+
+.cvPanelHeader p {
+  max-width: 460px;
+  text-align: right;
+}
+
+.cvDepartmentRail {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(90px, 1fr));
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.cvDepartmentRail button,
+.cvPlaybookButtons button,
+.cvRoleList button,
+.cvDecisionActions button {
+  cursor: pointer;
+  font: inherit;
+}
+
+.cvDepartmentRail button {
+  min-height: 70px;
+  padding: 9px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 12px;
+  background: rgba(255,255,255,.58);
+  color: #17120e;
+  text-align: left;
+}
+
+.cvDepartmentRail button.active {
+  color: #fff7ec;
+  border-color: #17120e;
+  background: #17120e;
+}
+
+.cvDepartmentRail strong,
+.cvDepartmentRail span {
+  display: block;
+}
+
+.cvDepartmentRail strong {
+  font-size: 1.3rem;
+  letter-spacing: -.06em;
+}
+
+.cvDepartmentRail span {
+  margin-top: 4px;
+  font-size: .7rem;
+  font-weight: 920;
+}
+
+.cvDecisionBoard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.cvDecisionCard {
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+  padding: 12px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 13px;
+  background: rgba(255,255,255,.6);
+}
+
+.cvDecisionCard:first-child {
+  outline: 2px solid rgba(249,115,22,.38);
+}
+
+.cvDecisionMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cvDecisionMeta span,
+.cvDecisionMeta em,
+.cvPlaybookExamples span {
+  padding: 5px 7px;
+  border-radius: 999px;
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.cvDecisionMeta span {
+  color: #9a3412;
+  background: rgba(249,115,22,.12);
+}
+
+.cvDecisionMeta em {
+  color: #fff7ec;
+  background: #17120e;
+}
+
+.cvDecisionCard h3 {
+  margin: 10px 0 6px;
+  font-size: .98rem;
+  line-height: 1.08;
+  letter-spacing: -.03em;
+}
+
+.cvDecisionCard p,
+.cvDecisionCard dd,
+.cvDecisionCard small {
+  color: #655c52;
+  font-size: .72rem;
+  line-height: 1.32;
+  font-weight: 700;
+}
+
+.cvDecisionCard p,
+.cvDecisionCard dl {
+  margin: 0;
+}
+
+.cvDecisionCard dt {
+  margin-top: 10px;
+  font-size: .58rem;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.cvDecisionCard dd {
+  margin: 4px 0 0;
+}
+
+.cvDecisionCard dd:first-of-type {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cvDecisionCard dd:first-of-type span {
+  padding: 4px 6px;
+  border-radius: 7px;
+  background: rgba(23,18,14,.05);
+  color: #544b42;
+}
+
+.cvDecisionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.cvDecisionActions button {
+  border: 1px solid rgba(23,18,14,.12);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: #17120e;
+  background: rgba(255,255,255,.7);
+  font-size: .68rem;
+  font-weight: 900;
+}
+
+.cvDecisionActions button.primary {
+  color: #fff7ec;
+  border-color: #17120e;
+  background: linear-gradient(135deg, #17120e, #3b2b1f 55%, #f97316);
+}
+
+.cvDecisionCard small {
+  display: block;
+  margin-top: 9px;
+}
+
+.cvPlaybookButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cvPlaybookButtons button {
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 9px;
+  padding: 8px;
+  color: #17120e;
+  background: rgba(255,255,255,.62);
+  font-size: .68rem;
+  font-weight: 900;
+  text-align: left;
+}
+
+.cvPlaybookButtons button.active {
+  color: #fff7ec;
+  background: #17120e;
+}
+
+.cvPlaybookTerms {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.cvPlaybookTerms div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 9px;
+  background: rgba(23,18,14,.05);
+}
+
+.cvPlaybookTerms dt {
+  color: #756c61;
+  font-size: .66rem;
+  font-weight: 850;
+}
+
+.cvPlaybookTerms dd {
+  margin: 0;
+  font-size: .72rem;
+  font-weight: 950;
+}
+
+.cvActivityCard ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cvActivityCard li {
+  padding: 9px;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,.56);
+}
+
+.cvActivityCard strong,
+.cvActivityCard p,
+.cvActivityCard small {
+  display: block;
+}
+
+.cvActivityCard strong {
+  font-size: .74rem;
+}
+
+.cvActivityCard p {
+  margin: 3px 0;
+  color: #655c52;
+  font-size: .7rem;
+  line-height: 1.28;
+  font-weight: 720;
+}
+
+.cvActivityCard small {
+  color: #9a3412;
+  font-size: .62rem;
+  font-weight: 900;
+}
+
+.cvTeamLayout {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.cvRoleList {
+  display: grid;
+  gap: 6px;
+  max-height: 600px;
+  overflow: auto;
+}
+
+.cvRoleList button {
+  padding: 9px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 10px;
+  color: #17120e;
+  background: rgba(255,255,255,.6);
+  text-align: left;
+}
+
+.cvRoleList button.active {
+  border-color: rgba(249,115,22,.38);
+  background: rgba(249,115,22,.12);
+}
+
+.cvRoleList strong,
+.cvRoleList span {
+  display: block;
+}
+
+.cvRoleList strong {
+  font-size: .78rem;
+}
+
+.cvRoleList span {
+  margin-top: 3px;
+  color: #655c52;
+  font-size: .64rem;
+  line-height: 1.24;
+  font-weight: 720;
+}
+
+.cvRoleDetail {
+  min-height: 360px;
+  padding: 16px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 13px;
+  background: rgba(255,255,255,.58);
+}
+
+.cvRoleHero h3 {
+  margin: 5px 0;
+  font-size: clamp(1.25rem, 2vw, 2rem);
+  letter-spacing: -.04em;
+}
+
+.cvRoleHero p {
+  max-width: 720px;
+  margin: 0;
+  color: #655c52;
+  font-size: .82rem;
+  line-height: 1.36;
+  font-weight: 740;
+}
+
+.cvRoleColumns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.cvRoleColumns section {
+  padding: 11px;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 11px;
+  background: rgba(255,252,246,.78);
+}
+
+.cvRoleColumns h4 {
+  margin: 0 0 8px;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.cvRoleColumns ul {
+  margin: 0;
+  padding-left: 17px;
+}
+
+.cvRoleColumns li,
+.cvRoleColumns p,
+.cvBuildMap li {
+  color: #655c52;
+  font-size: .76rem;
+  line-height: 1.34;
+  font-weight: 720;
+}
+
+.cvRoleColumns li + li {
+  margin-top: 4px;
+}
+
+.cvRoleColumns p {
+  margin: 0;
+}
+
+.cvBuildMap ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: build;
+}
+
+.cvBuildMap li {
+  position: relative;
+  padding: 11px 11px 11px 38px;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 11px;
+  background: rgba(255,255,255,.6);
+}
+
+.cvBuildMap li::before {
+  counter-increment: build;
+  content: counter(build);
+  position: absolute;
+  left: 10px;
+  top: 11px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  color: #fff7ec;
+  background: #17120e;
+  font-size: .68rem;
+  font-weight: 950;
+}
+
+@media (max-width: 1180px) {
+  .cvOfficeStatus,
+  .cvOfficeGrid,
+  .cvTeamLayout,
+  .cvRoleColumns,
+  .cvBuildMap ol {
+    grid-template-columns: 1fr;
+  }
+
+  .cvDepartmentRail,
+  .cvDecisionBoard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cvPanelHeader {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .cvPanelHeader p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 720px) {
+  .cvOfficeFinal {
+    padding: 10px;
+  }
+
+  .cvOfficeTopbar {
+    position: static;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cvDepartmentRail,
+  .cvDecisionBoard,
+  .cvPlaybookButtons {
+    grid-template-columns: 1fr;
+  }
+}
