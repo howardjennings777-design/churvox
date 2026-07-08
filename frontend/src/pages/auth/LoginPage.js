@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole, getDefaultRoute, isWorkerRole, isPayrollRole } from "@/lib/roles";
+import { OWNER_MAINTENANCE_MODE, isWorkerMaintenanceAccess } from "@/lib/maintenanceMode";
+import MaintenancePage from "../MaintenancePage";
 import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
 import "./RealAppLoginScreen.css";
@@ -131,14 +133,19 @@ const loginLooksValid = (result = {}) => {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, checkAuth } = useAuth();
+  const { login, checkAuth, logout } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const workerAccess = isWorkerMaintenanceAccess();
   const appMode = typeof window !== "undefined" && new URLSearchParams(window.location.search || "").get("app") === "1";
+
+  if (OWNER_MAINTENANCE_MODE && !workerAccess) {
+    return <MaintenancePage workerAccess />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -173,6 +180,13 @@ export default function LoginPage() {
         }
       } catch {
         window.dispatchEvent(new Event("churvox-auth-refresh"));
+      }
+
+      const confirmedUser = confirmed?.user || confirmed || {};
+      if (OWNER_MAINTENANCE_MODE && workerAccess && !looksWorker(confirmedUser, confirmed) && !looksPayroll(confirmedUser, confirmed)) {
+        try { await logout?.(); } catch {}
+        setError("Owner access is paused while Churvox is being upgraded. Worker job access remains available.");
+        return;
       }
 
       const finalPath = getPostLoginPath(confirmed);
@@ -233,14 +247,14 @@ export default function LoginPage() {
             <ChurvoxAppLogo compact />
             <div>
               <b>Churvox</b>
-              <small>{appMode ? "Worker and owner sign in" : "Owner approval desk"}</small>
+              <small>{workerAccess ? "Worker job access" : appMode ? "Worker and owner sign in" : "Owner approval desk"}</small>
             </div>
           </div>
 
           <p className="cvPublicAuthKicker">Welcome back</p>
-          <h1>{appMode ? "Sign in." : "Open Command."}</h1>
+          <h1>{workerAccess ? "Worker sign in." : appMode ? "Sign in." : "Open Command."}</h1>
           <p className="cvPublicAuthIntro">
-            {appMode ? "Use your Churvox login. Workers open the field app. Owners open the command floor." : "Sign in to check the admin Churvox prepared, approve what is ready, and keep work moving."}
+            {workerAccess ? "Worker access remains online while the owner dashboard is being upgraded." : appMode ? "Use your Churvox login. Workers open the field app. Owners open the command floor." : "Sign in to check the admin Churvox prepared, approve what is ready, and keep work moving."}
           </p>
 
           {error ? <div className="cvPublicAuthError">{error}</div> : null}
@@ -261,9 +275,8 @@ export default function LoginPage() {
           <button className="cvPublicAuthSubmit" type="submit" disabled={submitting}>{submitting ? "Signing in..." : "Sign in"}</button>
 
           <p className="cvPublicAuthBottom">
-            <Link to="/forgot-password">Forgot password?</Link>
-            <span> / </span>
-            <Link to="/signup">Start trial</Link>
+            {workerAccess ? <Link to="/">Back to website</Link> : <Link to="/forgot-password">Forgot password?</Link>}
+            {!workerAccess ? <><span> / </span><Link to="/signup">Start trial</Link></> : null}
           </p>
         </form>
       </section>
