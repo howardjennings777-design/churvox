@@ -124,7 +124,8 @@ export async function recordOfficeTeamDecision(decision, action) {
   return body;
 }
 
-export function makeStatusCards(counts = {}, fallbackTotal = 35) {
+export function makeStatusCards(rawCounts = {}, fallbackTotal = 35) {
+  const counts = rawCounts || {};
   const total = Number(counts.total ?? fallbackTotal) || 0;
   const high = Number(counts.high ?? 6) || 0;
   return [
