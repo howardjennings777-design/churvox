@@ -55,6 +55,7 @@ const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxCommandSlipPolishRuntime'),
   () => import('./runtime/churvoxTidyRealSlipRuntime'),
+  () => import('./runtime/churvoxWorkersMapRestoreRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
   () => import('./runtime/churvoxPaymentSetupRuntime'),
   () => import('./runtime/churvoxOwnerHeaderLogoRuntime'),
