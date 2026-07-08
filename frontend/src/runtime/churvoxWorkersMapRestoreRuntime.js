@@ -3,6 +3,7 @@ import API_BASE from '../lib/apiBase';
 const STYLE_ID = 'churvox-workers-map-restore-style';
 let cache = { at: 0, workers: [] };
 let restoring = false;
+let forceNextRefresh = false;
 
 const css = `
   .cv3WorkerMapPanel {
@@ -154,7 +155,8 @@ async function fetchWorkers(path) {
 }
 async function loadWorkers() {
   const now = Date.now();
-  if (now - cache.at < 15000) return cache.workers;
+  if (!forceNextRefresh && now - cache.at < 15000) return cache.workers;
+  forceNextRefresh = false;
   const paths = ['/team', '/team/workers', '/workers'];
   const seen = new Set();
   const workers = [];
@@ -235,6 +237,9 @@ function pinData(workers) {
     };
   }).filter((pin) => pin.name);
 }
+function pinSignature(pins) {
+  return pins.map((pin) => [pin.id, pin.name, pin.place?.place || '', pin.status, pin.job].join('|')).join('||') || 'no-workers';
+}
 function isWorkersPage() {
   const hash = (window.location.hash || '').toLowerCase();
   if (hash.includes('workers')) return true;
@@ -258,12 +263,14 @@ function makeMapPanel(pins) {
   const section = document.createElement('section');
   section.className = 'cv3Panel cv3WorkerMapPanel span12';
   section.dataset.churvoxSingleWorkerMap = 'true';
+  const sig = pinSignature(pins);
+  section.dataset.workerPinSignature = sig;
   const activeIndex = Math.max(0, pins.findIndex((pin) => pin.place?.place));
   const active = pins[activeIndex]?.place?.place ? pins[activeIndex] : null;
   const startPlace = active?.place?.place || mapQueryFromDom();
   section.innerHTML = `
     <header><div><small>field map</small><h3>Worker map</h3></div></header>
-    <div class="cv3WorkerMapShell"><iframe title="Worker map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${mapUrl(startPlace)}"></iframe></div>
+    <div class="cv3WorkerMapShell"><iframe title="Worker map" loading="eager" referrerpolicy="no-referrer-when-downgrade" src="${mapUrl(startPlace)}"></iframe></div>
     <div class="cv3WorkerMapPinBar">${pins.length ? pins.map((pin, index) => pinButton(pin, index, index === activeIndex && Boolean(active))).join('') : '<button type="button" class="cv3WorkerPin" disabled><b>No workers yet</b><span>Add workers and save GPS/location or current job address.</span><em>No pin</em></button>'}</div>
     ${active ? `<a class="cv3WorkerPinOpen" href="${openUrl(active.place.place)}" target="_blank" rel="noreferrer">Open ${escapeHtml(active.name)} in Maps</a>` : `<a class="cv3WorkerPinOpen" href="${openUrl(startPlace)}" target="_blank" rel="noreferrer">Open map</a>`}
     <div class="cv3WorkerMapNote"><b>${pins.filter((pin) => pin.place?.place).length || 0} pinned</b><span>Uses live lat/lng first, then GPS text, location, job/site address, or current job text.</span></div>
@@ -302,8 +309,14 @@ function wireMapPanel(panel, pins, startIndex = 0) {
   if (firstButton) firstButton.setAttribute('aria-pressed', 'true');
 }
 function updateMapPanel(panel, pins) {
+  const sig = pinSignature(pins);
+  if (!forceNextRefresh && panel.dataset.workerPinSignature === sig && panel.querySelector('iframe')) {
+    wireMapPanel(panel, pins, Math.max(0, pins.findIndex((pin) => pin.place?.place)));
+    return;
+  }
   const fresh = makeMapPanel(pins);
   panel.className = fresh.className;
+  panel.dataset.workerPinSignature = sig;
   panel.innerHTML = fresh.innerHTML;
   wireMapPanel(panel, pins, Math.max(0, pins.findIndex((pin) => pin.place?.place)));
 }
@@ -343,6 +356,7 @@ async function restoreMap() {
     if (existing) {
       updateMapPanel(existing, pins);
       placeMap(page, existing);
+      forceNextRefresh = false;
       return;
     }
     if (!isWorkersPage()) return;
@@ -356,18 +370,17 @@ async function restoreMap() {
 function scheduleRestore(delay = 80) {
   setTimeout(restoreMap, delay);
 }
+function scheduleBurst() {
+  [80, 300, 900, 1800, 3600].forEach(scheduleRestore);
+}
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_WORKERS_MAP_RESTORE_RUNTIME__) {
   window.__CHURVOX_WORKERS_MAP_RESTORE_RUNTIME__ = true;
-  restoreMap();
-  window.addEventListener('load', () => scheduleRestore(120));
-  window.addEventListener('hashchange', () => scheduleRestore(120));
-  window.addEventListener('popstate', () => scheduleRestore(120));
-  window.addEventListener('churvox:data-refresh', () => { cache = { at: 0, workers: [] }; scheduleRestore(160); });
-  document.addEventListener('click', () => scheduleRestore(80), true);
-  const observer = new MutationObserver(() => scheduleRestore(80));
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-  setInterval(restoreMap, 2500);
+  scheduleBurst();
+  window.addEventListener('load', scheduleBurst);
+  window.addEventListener('hashchange', scheduleBurst);
+  window.addEventListener('popstate', scheduleBurst);
+  window.addEventListener('churvox:data-refresh', () => { cache = { at: 0, workers: [] }; forceNextRefresh = true; scheduleBurst(); });
 }
 
 export {};
