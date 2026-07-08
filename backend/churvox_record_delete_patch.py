@@ -133,13 +133,13 @@ TARGETS = {
     },
     "message": {
         "paths": ["/api/messages/{record_id}", "/api/approved-notifications/{record_id}"],
-        "collections": ["messages", "approved_notifications", "notifications", "worker_messages", "customer_messages"],
-        "id_fields": ["id", "message_id", "notification_id", "source_id", "record_id"],
+        "collections": ["messages", "approved_notifications", "notifications", "worker_messages", "customer_messages", "client_messages"],
+        "id_fields": ["id", "message_id", "notification_id", "source_id", "record_id", "thread_id", "conversation_id"],
         "label": "message",
     },
     "approval": {
         "paths": ["/api/ai/actions/{record_id}", "/api/command/approvals/{record_id}"],
-        "collections": ["ai_actions", "command_approvals", "owner_actions", "approved_notifications"],
+        "collections": ["ai_actions", "command_approvals", "owner_actions", "approved_notifications", "ai_approval_actions"],
         "id_fields": ["id", "action_id", "approval_id", "record_id", "source_id"],
         "label": "approval",
     },
@@ -213,11 +213,62 @@ def install(module):
             "message": f"{target['label'].capitalize()} deleted." if deleted else f"No matching {target['label']} found to delete.",
         }
 
+    async def reply_to_message(record_id: str, request: Request):
+        user = await current_user(request)
+        body = await request.json()
+        reply_text = text(body.get("reply") or body.get("message") or body.get("body"))[:6000]
+        if not reply_text:
+            raise HTTPException(status_code=400, detail="Reply message is required")
+        now = now_utc()
+        target = TARGETS["message"]
+        query = combined_query(record_id, target["id_fields"], user)
+        original = None
+        original_collection = ""
+        for collection_name in target["collections"]:
+            try:
+                original = await db[collection_name].find_one(query)
+                if original:
+                    original_collection = collection_name
+                    break
+            except Exception:
+                continue
+        doc = {
+            "created_at": now,
+            "updated_at": now,
+            "message_id": record_id,
+            "thread_id": text(body.get("thread_id") or (original or {}).get("thread_id") or (original or {}).get("conversation_id") or record_id),
+            "conversation_id": text(body.get("conversation_id") or (original or {}).get("conversation_id") or (original or {}).get("thread_id") or record_id),
+            "reply": reply_text,
+            "body": reply_text,
+            "direction": "owner_to_recipient",
+            "channel": text(body.get("channel") or (original or {}).get("channel") or "Inside Churvox"),
+            "status": "sent_inside_churvox",
+            "original_collection": original_collection,
+            "original_subject": text((original or {}).get("subject") or (original or {}).get("title") or body.get("subject")),
+            "to": text(body.get("to") or (original or {}).get("from") or (original or {}).get("sender") or "recipient"),
+            "user_email": lower(user_value(user, "email")),
+            "user_id": user_value(user, "id", "_id", "user_id"),
+            "business_id": user_value(user, "business_id", "company_id", "tenant_id"),
+            "business_name": user_value(user, "business_name", "company_name"),
+            "source": "churvox_record_drawer_reply",
+        }
+        result = await db.message_replies.insert_one(doc)
+        if original and original_collection:
+            try:
+                await db[original_collection].update_one({"_id": original.get("_id")}, {"$set": {"last_reply": reply_text, "last_reply_at": now, "replied": True, "read": True, "is_read": True, "status": "replied"}})
+            except Exception:
+                pass
+        return {"success": True, "reply": safe({**doc, "_id": result.inserted_id}), "message": "Reply saved inside Churvox."}
+
     for target in TARGETS.values():
         async def endpoint(record_id: str, request: Request, target=target):
             return await delete_from_target(target, record_id, request)
         for path in target["paths"]:
             remove_route(path, "DELETE")
             app.add_api_route(path, endpoint, methods=["DELETE"])
+
+    for path in ["/api/messages/{record_id}/reply", "/api/approved-notifications/{record_id}/reply"]:
+        remove_route(path, "POST")
+        app.add_api_route(path, reply_to_message, methods=["POST"])
 
     INSTALLED.add(name)
