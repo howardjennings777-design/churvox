@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Nav, Footer } from "./ExecutiveHomePage";
+import { ProfessionStrip } from "./PublicProfessionSections";
 import {
   CHURVOX_PLANS,
   COUNTRY_OPTIONS,
@@ -34,10 +35,10 @@ function taxInclusive(plan) {
 }
 
 const fitNotes = [
-  ["Start", "For getting jobs, clients, quotes and invoices under control."],
-  ["Crew", "For adding workers, field updates and team messages."],
-  ["Operator", "For owners who want prepared admin waiting in Command."],
-  ["Command", "For businesses that need the full approval desk and deeper controls."],
+  ["Start", "For solo operators getting jobs, clients, quotes and invoices under control."],
+  ["Crew", "For service businesses adding workers, field updates and team messages."],
+  ["Operator", "For busy owners who want prepared admin waiting in Command."],
+  ["Command", "For larger crews that need the full approval desk, payroll review and deeper controls."],
 ];
 
 export default function ExecutivePricingPage() {
@@ -62,7 +63,7 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="publicSite cv2Site publicPageSlim pricingSlim" data-version="CHURVOX_PRICING_COPY_20260706">
+    <main className="publicSite cv2Site publicPageSlim pricingSlim" data-version="CHURVOX_PRICING_SERVICE_PLATFORM_20260708">
       <Nav />
 
       <section className="publicHero publicHeroCompact slimHero">
@@ -113,7 +114,7 @@ export default function ExecutivePricingPage() {
         <div>
           <span className="publicKicker">Best fit</span>
           <h2>Not sure? Pick by pressure point.</h2>
-          <p>No card upfront. Start the trial, see the workflow, then keep the level that fits.</p>
+          <p>No card upfront. Start the trial, see the workflow, then keep the level that fits your trade and workload.</p>
         </div>
         <div className="publicAreaGrid slimGrid">
           {fitNotes.map(([title, text]) => (
@@ -124,6 +125,8 @@ export default function ExecutivePricingPage() {
           ))}
         </div>
       </section>
+
+      <ProfessionStrip compact />
 
       <section className="publicBand slimBand">
         <div className="publicSectionHead compactHead">
