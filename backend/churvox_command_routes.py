@@ -47,6 +47,14 @@ def build_command_router(db, get_current_user, ObjectId):
             raise HTTPException(status_code=403, detail="Only owners/admins can use Command")
         return user
 
+    async def require_command_participant(request: Request):
+        user = await get_current_user(request)
+        role = str(user.get("role") or "").lower()
+        allowed = {"employer", "admin", "owner", "business_owner", "manager", "office_admin", "worker", "staff", "employee", "subcontractor", "payroll"}
+        if role not in allowed and not user.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Only business users can create Command requests")
+        return user
+
     def business_ids(user):
         business_id = str(user.get("business_id") or user.get("id"))
         return business_id, oid(business_id, "business")
@@ -145,6 +153,39 @@ def build_command_router(db, get_current_user, ObjectId):
         doc["_id"] = result.inserted_id
         await command_event(user, "created", doc, "Command slip prepared for owner review only")
         return {"success": True, "slip": doc_out(doc), "safety": SAFE_RESULT}
+
+    @router.post("/command/worker-payment-request")
+    async def create_worker_payment_request(payload: Dict[str, Any], request: Request):
+        user = await require_command_participant(request)
+        job_title = safe_text(payload.get("job_title") or payload.get("title"), "Worker payment request")
+        amount = safe_text(payload.get("amount") or payload.get("amount_due"), "Amount needs owner check")
+        invoice_number = safe_text(payload.get("invoice") or payload.get("invoice_number"), "No invoice linked")
+        customer = safe_text(payload.get("customer") or payload.get("customer_name"), "Customer")
+        doc = normalize_slip({
+            "source_type": "worker_payment",
+            "action_type": "prepare_payment_link",
+            "title": f"Worker payment link request: {job_title}",
+            "found": f"Worker asked to take card payment for {customer}. Amount: {amount}. Invoice: {invoice_number}.",
+            "prepared": "Prepare or attach an approved invoice payment link for the worker. Nothing was sent, synced, charged or changed.",
+            "why": "Owner approval is required before a worker can show a payment link or collect card payment.",
+            "urgency": "Owner review",
+            "payload": {
+                "worker_payment_request": True,
+                "job_title": job_title,
+                "amount": amount,
+                "invoice": invoice_number,
+                "customer": customer,
+                "payment_link": safe_text(payload.get("payment_link"), ""),
+                "prepared_only": True,
+                "owner_review_only": True,
+            },
+        }, user)
+        doc["requested_by_worker"] = True
+        doc["worker_user_id"] = str(user.get("id") or user.get("_id") or "")
+        result = await db.command_slips.insert_one(doc)
+        doc["_id"] = result.inserted_id
+        await command_event(user, "worker_payment_requested", doc, "Worker payment link request prepared for owner review only")
+        return {"success": True, "slip": doc_out(doc), "safety": SAFE_RESULT, "message": "Payment link request sent to Command. No card was charged."}
 
     @router.post("/command/scan")
     async def scan_command_slips(request: Request, payload: Optional[Dict[str, Any]] = None):
