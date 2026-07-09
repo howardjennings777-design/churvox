@@ -14,6 +14,7 @@ import { QuotesScreen, InvoicesScreen, IntegrationsScreen, HelpScreen } from "./
 import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScreens";
 import { ScheduleScreen, AutomationScreen, PayrollScreen, BrandingScreen } from "./OfficeTeamBackOfficeScreens";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
+import { fetchOfficeTeamCommandDrafts } from "./OfficeTeamCommandDrafts";
 
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-office-site-20260709";
 const COMMAND_CARD_LIMIT = 3;
@@ -63,18 +64,24 @@ export default function OfficeTeamLabSite() {
   const [tray, setTray] = useState("command");
   const [activeRole, setActiveRole] = useState("Office Manager");
   const [snapshot, setSnapshot] = useState({ source: "demo", decisions: [] });
+  const [liveDrafts, setLiveDrafts] = useState([]);
   const [notice, setNotice] = useState("Demo preview. Sign in as an owner to load live Admin Brain decisions.");
   const [resolved, setResolved] = useState({});
 
   useEffect(() => {
     let mounted = true;
-    fetchOfficeTeamSnapshot()
-      .then((data) => {
+    Promise.allSettled([fetchOfficeTeamSnapshot(), fetchOfficeTeamCommandDrafts()])
+      .then(([scanResult, draftResult]) => {
         if (!mounted) return;
+        const data = scanResult.status === "fulfilled" ? scanResult.value : { source: "demo", decisions: [] };
+        const drafts = draftResult.status === "fulfilled" && Array.isArray(draftResult.value) ? draftResult.value : [];
         setSnapshot(data || { source: "demo", decisions: [] });
+        setLiveDrafts(drafts);
         setResolved({});
         if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
+        else if (drafts.length) setNotice("Live read-only records prepared into Command preview. Nothing has been sent, synced or changed.");
         else if (data?.source === "clear-live") setNotice("Live scan is clear. Demo cards stay visible for review.");
+        else setNotice("Demo preview. Sign in as an owner to load live Command data.");
       })
       .catch((err) => mounted && setNotice(`Demo preview. Live scan unavailable: ${err.message || "connection issue"}`));
     return () => { mounted = false; };
@@ -86,11 +93,11 @@ export default function OfficeTeamLabSite() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  const decisions = snapshot.decisions?.length ? snapshot.decisions : demoDecisions;
+  const decisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : demoDecisions;
   const pending = useMemo(() => decisions.filter((item) => !resolved[keyOf(item)]), [decisions, resolved]);
   const counts = useMemo(() => countDepartments(pending), [pending]);
   const metrics = makeStatusCards({ total: pending.length, high: pending.filter((item) => item.level === "Top priority").length, parked: Object.keys(resolved).length }, pending.length);
-  const sourceLabel = snapshot.source === "admin-brain" ? "Live Admin Brain" : snapshot.source === "clear-live" ? "Live clear" : "Demo mode";
+  const sourceLabel = snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : snapshot.source === "clear-live" ? "Live clear" : "Demo mode";
 
   function go(next) {
     setScreen(next);
