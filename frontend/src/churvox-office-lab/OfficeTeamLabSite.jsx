@@ -28,6 +28,52 @@ const screens = [
   ["help", "Help"], ["readiness", "Readiness"], ["safety", "Safety"],
 ];
 
+const screenAliases = {
+  "": "today",
+  dashboard: "today",
+  home: "today",
+  hub: "today",
+  "smart-hub": "today",
+  cockpit: "command",
+  command: "command",
+  "command-board": "command",
+  jobs: "work",
+  job: "work",
+  work: "work",
+  recurring: "work",
+  calendar: "schedule",
+  schedule: "schedule",
+  clients: "clients",
+  customers: "clients",
+  messages: "messages",
+  inbox: "messages",
+  workers: "worker",
+  worker: "worker",
+  dispatch: "worker",
+  quotes: "quotes",
+  invoices: "invoices",
+  reports: "invoices",
+  money: "money",
+  accounting: "money",
+  xero: "integrations",
+  team: "staff",
+  staff: "staff",
+  payroll: "payroll",
+  "office-team": "team",
+  playbooks: "playbooks",
+  integrations: "integrations",
+  activity: "activity",
+  automation: "automation",
+  branding: "branding",
+  settings: "settings",
+  plans: "plans",
+  billing: "plans",
+  support: "help",
+  help: "help",
+  readiness: "readiness",
+  safety: "safety",
+};
+
 const departments = [["command", "All"], ["money", "Money"], ["bookings", "Bookings"], ["staff", "Staff"], ["clients", "Clients"], ["quality", "Quality"], ["ops", "Ops"]];
 
 const roles = [
@@ -60,7 +106,8 @@ const playbooks = [
 
 const safetyRules = ["Owner approval comes first", "Prepared-only preview", "No blind sends or syncs", "Failed records return to Command", "Public pages stay untouched"];
 
-export default function OfficeTeamLabSite() {
+export default function OfficeTeamLabSite({ appMode = "lab" }) {
+  const isOwnerApp = appMode === "owner";
   const [screen, setScreen] = useState(() => cleanScreen(window.location.hash));
   const [tray, setTray] = useState("command");
   const [activeRole, setActiveRole] = useState("Office Manager");
@@ -68,7 +115,7 @@ export default function OfficeTeamLabSite() {
   const [liveDrafts, setLiveDrafts] = useState([]);
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
-  const [notice, setNotice] = useState("Demo preview. Sign in as an owner to load live Admin Brain decisions.");
+  const [notice, setNotice] = useState(isOwnerApp ? "New owner app shell. Office team prepares decisions; owner approval is still locked." : "Demo preview. Sign in as an owner to load live Admin Brain decisions.");
   const [resolved, setResolved] = useState({});
 
   useEffect(() => {
@@ -84,11 +131,11 @@ export default function OfficeTeamLabSite() {
         if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
         else if (drafts.length) setNotice("Live read-only records prepared into Command preview. Nothing has been sent, synced or changed.");
         else if (data?.source === "clear-live") setNotice("Live scan is clear. Demo cards stay visible for review.");
-        else setNotice("Demo preview. Sign in as an owner to load live Command data.");
+        else setNotice(isOwnerApp ? "Owner app shell loaded. Live scan unavailable, so safe fallback decisions stay visible." : "Demo preview. Sign in as an owner to load live Command data.");
       })
-      .catch((err) => mounted && setNotice(`Demo preview. Live scan unavailable: ${err.message || "connection issue"}`));
+      .catch((err) => mounted && setNotice(`${isOwnerApp ? "Owner app" : "Demo preview"}. Live scan unavailable: ${err.message || "connection issue"}`));
     return () => { mounted = false; };
-  }, []);
+  }, [isOwnerApp]);
 
   useEffect(() => subscribeOfficeTeamLocalCommand(setLocalQueue), []);
   useEffect(() => subscribeOfficeTeamLocalActivity(setLocalActivity), []);
@@ -96,7 +143,11 @@ export default function OfficeTeamLabSite() {
   useEffect(() => {
     const onPop = () => { setScreen(cleanScreen(window.location.hash)); window.scrollTo({ top: 0 }); };
     window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    window.addEventListener("hashchange", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("hashchange", onPop);
+    };
   }, []);
 
   const baseDecisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : demoDecisions;
@@ -107,8 +158,9 @@ export default function OfficeTeamLabSite() {
   const sourceLabel = localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : snapshot.source === "clear-live" ? "Live clear" : "Demo mode";
 
   function go(next) {
-    setScreen(next);
-    window.history.pushState(null, "", `${window.location.pathname}${window.location.search}#${next}`);
+    const cleanNext = cleanScreen(`#${next}`);
+    setScreen(cleanNext);
+    window.history.pushState(null, "", `${window.location.pathname}${window.location.search}#${cleanNext}`);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   }
 
@@ -133,7 +185,7 @@ export default function OfficeTeamLabSite() {
     }
   }
 
-  return <main className="cvOfficeFinal cvOfficeSite"><Topbar screen={screen} go={go} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localActivity={localActivity} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
+  return <main className="cvOfficeFinal cvOfficeSite"><Topbar screen={screen} go={go} appMode={appMode} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localActivity={localActivity} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
 }
 
 function ScreenRouter(props) {
@@ -164,12 +216,14 @@ function ScreenRouter(props) {
   return <OfficeTeamTodayScreen {...props} />;
 }
 
-function Topbar({ screen, go }) {
-  return <header className="cvSiteTopbar"><div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>Churvox Office Team</strong><span>Hidden internal website · owner approval locked</span></div></div><nav>{screens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav></header>;
+function Topbar({ screen, go, appMode }) {
+  const subline = appMode === "owner" ? "New owner app · office team prepares · owner approves" : "Hidden internal website · owner approval locked";
+  return <header className="cvSiteTopbar"><div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>Churvox Office Team</strong><span>{subline}</span></div></div><nav>{screens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav></header>;
 }
 
-function Status({ metrics, sourceLabel, notice }) {
-  return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>Office running · {sourceLabel}</span><h1>Churvox runs the office. The owner approves the decisions.</h1><p>Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
+function Status({ metrics, sourceLabel, notice, appMode }) {
+  const modeLabel = appMode === "owner" ? "Owner app" : "Office running";
+  return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>{modeLabel} · {sourceLabel}</span><h1>Churvox runs the office. The owner approves the decisions.</h1><p>Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
 }
 
 function Command({ tray, setTray, counts, pending, onAction }) {
@@ -206,4 +260,4 @@ function decision(id, tray, roleName, level, title, happened, checked, prepared,
 function keyOf(item = {}) { return item.id || item.action_id || item.title; }
 function trayKey(tray = "") { const t = String(tray).toLowerCase(); if (t.includes("money")) return "money"; if (t.includes("booking")) return "bookings"; if (t.includes("staff")) return "staff"; if (t.includes("client")) return "clients"; if (t.includes("quality")) return "quality"; if (t.includes("operation")) return "ops"; return "command"; }
 function countDepartments(items = []) { return items.reduce((acc, item) => { acc.command += 1; const key = trayKey(item.tray); acc[key] = (acc[key] || 0) + 1; return acc; }, { command: 0, money: 0, bookings: 0, staff: 0, clients: 0, quality: 0, ops: 0 }); }
-function cleanScreen(hash = "") { const key = String(hash || "").replace(/^#/, ""); return screens.some(([id]) => id === key) ? key : "today"; }
+function cleanScreen(hash = "") { const key = String(hash || "").replace(/^#/, "").trim().toLowerCase(); const mapped = screenAliases[key] || key; return screens.some(([id]) => id === mapped) ? mapped : "today"; }
