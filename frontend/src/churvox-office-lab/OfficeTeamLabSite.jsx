@@ -14,6 +14,7 @@ import { QuotesScreen, InvoicesScreen, IntegrationsScreen, HelpScreen } from "./
 import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScreens";
 import { ScheduleScreen, AutomationScreen, PayrollScreen, BrandingScreen } from "./OfficeTeamBackOfficeScreens";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
+import { fetchBackendCommandDecisions, recordBackendCommandDecision } from "./OfficeTeamCommandApi";
 import { fetchOfficeTeamCommandDrafts } from "./OfficeTeamCommandDrafts";
 import { readOfficeTeamLocalActivityLog, readOfficeTeamLocalCommandQueue, recordOfficeTeamLocalActivity, removeOfficeTeamLocalCommand, subscribeOfficeTeamLocalActivity, subscribeOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 import { readOfficeTeamApprovalTrail, recordOfficeTeamApprovalTrail, subscribeOfficeTeamApprovalTrail } from "./OfficeTeamApprovalTrail";
@@ -112,6 +113,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const [tray, setTray] = useState("command");
   const [activeRole, setActiveRole] = useState("Office Manager");
   const [snapshot, setSnapshot] = useState({ source: "demo", decisions: [] });
+  const [backendCommand, setBackendCommand] = useState({ source: "command-unavailable", decisions: [] });
   const [liveDrafts, setLiveDrafts] = useState([]);
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
@@ -121,15 +123,23 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
 
   useEffect(() => {
     let mounted = true;
-    Promise.allSettled([fetchOfficeTeamSnapshot(), fetchOfficeTeamCommandDrafts()])
-      .then(([scanResult, draftResult]) => {
+    Promise.allSettled([
+      fetchOfficeTeamSnapshot(),
+      fetchOfficeTeamCommandDrafts(),
+      isOwnerApp ? fetchBackendCommandDecisions() : Promise.resolve({ source: "lab-skip", decisions: [] }),
+    ])
+      .then(([scanResult, draftResult, commandResult]) => {
         if (!mounted) return;
         const data = scanResult.status === "fulfilled" ? scanResult.value : { source: "demo", decisions: [] };
         const drafts = draftResult.status === "fulfilled" && Array.isArray(draftResult.value) ? draftResult.value : [];
+        const command = commandResult.status === "fulfilled" ? commandResult.value : { source: "command-unavailable", decisions: [] };
         setSnapshot(data || { source: "demo", decisions: [] });
+        setBackendCommand(command || { source: "command-unavailable", decisions: [] });
         setLiveDrafts(drafts);
         setResolved({});
-        if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
+        if (isOwnerApp && command?.decisions?.length) setNotice("Backend Command slips loaded. Owner approval records safely without sends, syncs, charges or record changes.");
+        else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("Backend Command is clear. No demo decisions are shown in the owner app.");
+        else if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
         else if (drafts.length) setNotice("Live read-only records prepared into Command preview. Nothing has been sent, synced or changed.");
         else if (data?.source === "clear-live") setNotice(isOwnerApp ? "Live scan is clear. Command will stay empty until real work needs owner approval." : "Live scan is clear. Demo cards stay visible for review.");
         else setNotice(isOwnerApp ? "Owner app shell loaded. Live scan unavailable, so no demo decisions are shown." : "Demo preview. Sign in as an owner to load live Command data.");
@@ -153,13 +163,14 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   }, []);
 
   const decisions = useMemo(() => {
-    const baseDecisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : isOwnerApp ? [] : demoDecisions;
+    const backendDecisions = isOwnerApp && backendCommand.decisions?.length ? backendCommand.decisions : [];
+    const baseDecisions = backendDecisions.length ? backendDecisions : snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : isOwnerApp ? [] : demoDecisions;
     return localQueue.length ? [...localQueue, ...baseDecisions] : baseDecisions;
-  }, [snapshot.decisions, liveDrafts, localQueue, isOwnerApp]);
+  }, [backendCommand.decisions, snapshot.decisions, liveDrafts, localQueue, isOwnerApp]);
   const pending = useMemo(() => decisions.filter((item) => !resolved[keyOf(item)]), [decisions, resolved]);
   const counts = useMemo(() => countDepartments(pending), [pending]);
   const metrics = makeStatusCards({ total: pending.length, high: pending.filter((item) => item.level === "Top priority").length, parked: Object.keys(resolved).length }, pending.length);
-  const sourceLabel = localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : snapshot.source === "clear-live" ? "Live clear" : isOwnerApp ? "No demo data" : "Demo mode";
+  const sourceLabel = backendCommand.decisions?.length ? "Backend Command" : localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : backendCommand.source === "backend-command-clear" ? "Backend clear" : snapshot.source === "clear-live" ? "Live clear" : isOwnerApp ? "No demo data" : "Demo mode";
 
   function go(next) {
     const cleanNext = cleanScreen(`#${next}`);
@@ -180,6 +191,20 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
       setLocalActivity(activity);
       setApprovalTrail(trail);
       setNotice(`${action} recorded as the owner decision. Approval trail saved. Nothing was sent, synced, charged or changed.`);
+      return;
+    }
+    if (item?.raw?.source === "backend_command_slip") {
+      try {
+        await recordBackendCommandDecision(item, action);
+        const trail = recordOfficeTeamApprovalTrail(item, action, "Backend Command recorded");
+        setApprovalTrail(trail);
+        setNotice(`${action} recorded in backend Command. Nothing was sent, synced, charged or changed.`);
+      } catch {
+        setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
+        const trail = recordOfficeTeamApprovalTrail(item, action, "Returned to Command");
+        setApprovalTrail(trail);
+        setNotice(`Could not record ${action} in backend Command. The card returned to Command.`);
+      }
       return;
     }
     try {
