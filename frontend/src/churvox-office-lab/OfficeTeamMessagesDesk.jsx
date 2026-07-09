@@ -10,10 +10,12 @@ const fallbackRows = [
   ["Missing proof", "Completed work has no final proof note.", "Ask staff", "Worker prompt is ready."],
 ];
 
-export default function OfficeTeamMessagesDesk() {
-  const live = useOfficeTeamRows("messages", fallbackRows);
+export default function OfficeTeamMessagesDesk({ appMode = "lab" }) {
+  const allowFallback = appMode !== "owner";
+  const live = useOfficeTeamRows("messages", fallbackRows, { allowFallback, emptyMessage: "No live messages found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(fallbackRows[0]);
-  const current = selectedRow(live.rows, selected, fallbackRows);
+  const hasRows = live.rows.length > 0;
+  const current = selectedRow(live.rows, selected, allowFallback ? fallbackRows : []);
   const preparedReply = useMemo(() => buildPreparedReply(current), [current]);
 
   return (
@@ -30,13 +32,13 @@ export default function OfficeTeamMessagesDesk() {
             <strong>Needs owner eyes</strong>
             <small>{live.label}</small>
           </div>
-          {live.rows.map((row) => (
+          {hasRows ? live.rows.map((row) => (
             <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button">
               <span>{row[0]}</span>
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
             </button>
-          ))}
+          )) : <article className="cvSiteEmpty"><strong>No live messages yet</strong><p>No demo messages are shown inside the real owner app.</p></article>}
         </section>
 
         <article className="cvMessagesThreadCard">
@@ -45,17 +47,17 @@ export default function OfficeTeamMessagesDesk() {
           <p>{current[3]}</p>
 
           <div className="cvMessagesFlowLine">
-            <article><b>Input</b><small>{live.isLive ? "Live read-only message" : "Demo message"}</small></article>
+            <article><b>Input</b><small>{live.isLive ? "Live read-only message" : allowFallback ? "Demo message" : "No live message"}</small></article>
             <article><b>Prepared</b><small>Reply / staff ask / Command card</small></article>
             <article><b>Owner</b><small>Approve before send</small></article>
           </div>
 
-          <section className="cvMessagesDraftBox">
+          {hasRows ? <section className="cvMessagesDraftBox">
             <span>Prepared reply draft</span>
             <p>{preparedReply}</p>
-          </section>
+          </section> : <section className="cvMessagesDraftBox"><span>No draft prepared</span><p>Live messages will appear here when there is something real for the owner to review.</p></section>}
 
-          <OfficeTeamSafeControls area="messages" record={current} primary="Prepare reply" secondary="Prepare staff ask" command="Prepare Command card" />
+          {hasRows ? <OfficeTeamSafeControls area="messages" record={current} primary="Prepare reply" secondary="Prepare staff ask" command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>When real messages arrive, Churvox can prepare replies for owner approval.</p></article>}
         </article>
       </div>
     </section>
