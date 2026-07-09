@@ -41,6 +41,7 @@ const AccountDeletionPage = React.lazy(() => import("./pages/legal/AccountDeleti
 const BillingReturnPage = React.lazy(() => import("./pages/BillingReturnPage"));
 const FreshApp = React.lazy(() => import("./churvox-fresh/FreshApp"));
 const OfficeTeamLab = React.lazy(() => import("./churvox-office-lab/OfficeTeamLab"));
+const OfficeTeamWorkerRoute = React.lazy(() => import("./churvox-office-lab/OfficeTeamWorkerRoute"));
 
 const PLATFORM_OWNER_EMAILS = new Set(["hello@churvox.com", "howardjennings77@gmail.com", "howardjennings777@gmail.com"]);
 
@@ -70,6 +71,7 @@ const Spinner = () => (
 const AppPage = ({ children }) => <>{children}</>;
 const OwnerMaintenance = () => <MaintenancePage workerAccess />;
 const OwnerOfficeApp = () => <OfficeTeamLab appMode="owner" />;
+const WorkerOfficeApp = () => <OfficeTeamWorkerRoute />;
 
 function PublicRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
@@ -255,13 +257,15 @@ function App() {
               <Route path="/onboarding" element={<AppRedirect to="/dashboard#help" />} />
 
               <Route path="/worker" element={<AppRedirect to="/worker/today" />} />
-              <Route path="/worker/today" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-              <Route path="/worker/jobs" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-              <Route path="/worker/help" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-              <Route path="/worker/ops" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-              <Route path="/worker/messages" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-              <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-              <Route path="/worker/settings" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
+              <Route path="/worker/today" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
+              <Route path="/worker/jobs" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
+              <Route path="/worker/help" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
+              <Route path="/worker/ops" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
+              <Route path="/worker/messages" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
+              <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
+              <Route path="/worker/settings" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
+              <Route path="/legacy-worker" element={<AppRedirect to="/legacy-worker/today" />} />
+              <Route path="/legacy-worker/today" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
 
               <Route path="/q/auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
               <Route path="/admin" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
