@@ -55,6 +55,10 @@ export default function OfficeTeamReadinessScreen() {
 function readinessGroups(overview) {
   const liveAreas = overview.areas.filter((item) => item.source === "live");
   const areaItems = overview.areas.map((item) => `${item.label}: ${item.count || 0} read-only records · ${item.source === "live" ? "live" : "fallback"}`);
+  const liveWiringItems = [
+    "Command fallback drafts from read-only records",
+    ...(areaItems.length ? areaItems : ["Waiting for owner login to check live records"]),
+  ];
 
   return [
     {
@@ -67,7 +71,7 @@ function readinessGroups(overview) {
       key: "live-wiring",
       name: "Live read-only wiring",
       status: liveAreas.length ? "Started" : "Ready",
-      items: ["Command fallback drafts from read-only records", ...areaItems.length ? areaItems : ["Waiting for owner login to check live records"]],
+      items: liveWiringItems,
     },
     {
       key: "next",
