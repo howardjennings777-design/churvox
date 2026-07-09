@@ -28,6 +28,16 @@
     rgba(255,255,255,.82) !important;
 }
 
+.cvLabTestMarker {
+  display: inline-flex;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  opacity: .01;
+}
+
 .cvSiteHandoverFooter {
   display: flex;
   flex-wrap: wrap;
