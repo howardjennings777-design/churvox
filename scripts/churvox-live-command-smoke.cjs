@@ -3,16 +3,21 @@
 const DEFAULT_BASE = 'https://grassley-backend.onrender.com';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
 
-const endpoints = [
+const getEndpoints = [
   '/api/command/slips',
   '/api/command/events',
   '/api/command/audit',
 ];
 
+const postEndpoints = [
+  '/api/command/worker-payment-request',
+];
+
 const okStatuses = new Set([200, 401, 403]);
+const protectedStatuses = new Set([401, 403]);
 const failures = [];
 
-async function check(endpoint) {
+async function checkGet(endpoint) {
   const url = `${base}${endpoint}`;
   const response = await fetch(url, {
     method: 'GET',
@@ -46,11 +51,61 @@ async function check(endpoint) {
   console.log(`✓ ${endpoint} is deployed and protected (${response.status})`);
 }
 
+async function checkProtectedPost(endpoint) {
+  const url = `${base}${endpoint}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: 'Live smoke worker payment request',
+      amount: 'Smoke test only',
+      invoice: 'Smoke test only',
+      customer: 'Smoke test only',
+      prepared_only: true,
+      owner_review_only: true,
+    }),
+  });
+  const text = await response.text().catch(() => '');
+  let body = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = null;
+  }
+
+  if (protectedStatuses.has(response.status)) {
+    console.log(`✓ ${endpoint} is deployed and protected (${response.status})`);
+    return;
+  }
+
+  if (response.status === 200 && body && body.success === true) {
+    const safety = String(body.safety || body.message || '');
+    if (!safety.includes('Nothing was sent, synced, charged or changed') && !safety.includes('No card was charged')) {
+      failures.push(`${endpoint} returned 200 but safety text was missing`);
+      console.log(`✗ ${endpoint} returned 200 but safety text was missing`);
+      return;
+    }
+    console.log(`✓ ${endpoint} available with safety text`);
+    return;
+  }
+
+  failures.push(`${endpoint} returned ${response.status}: ${text.slice(0, 160)}`);
+  console.log(`✗ ${endpoint} returned ${response.status}`);
+}
+
 (async () => {
   console.log(`Checking live Command backend at ${base}`);
-  for (const endpoint of endpoints) {
+  for (const endpoint of getEndpoints) {
     try {
-      await check(endpoint);
+      await checkGet(endpoint);
+    } catch (error) {
+      failures.push(`${endpoint} request failed: ${error.message}`);
+      console.log(`✗ ${endpoint} request failed`);
+    }
+  }
+  for (const endpoint of postEndpoints) {
+    try {
+      await checkProtectedPost(endpoint);
     } catch (error) {
       failures.push(`${endpoint} request failed: ${error.message}`);
       console.log(`✗ ${endpoint} request failed`);
