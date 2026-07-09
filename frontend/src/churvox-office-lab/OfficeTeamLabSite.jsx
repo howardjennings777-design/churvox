@@ -149,8 +149,10 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     };
   }, []);
 
-  const baseDecisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : demoDecisions;
-  const decisions = localQueue.length ? [...localQueue, ...baseDecisions] : baseDecisions;
+  const decisions = useMemo(() => {
+    const baseDecisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : demoDecisions;
+    return localQueue.length ? [...localQueue, ...baseDecisions] : baseDecisions;
+  }, [snapshot.decisions, liveDrafts, localQueue]);
   const pending = useMemo(() => decisions.filter((item) => !resolved[keyOf(item)]), [decisions, resolved]);
   const counts = useMemo(() => countDepartments(pending), [pending]);
   const metrics = makeStatusCards({ total: pending.length, high: pending.filter((item) => item.level === "Top priority").length, parked: Object.keys(resolved).length }, pending.length);
