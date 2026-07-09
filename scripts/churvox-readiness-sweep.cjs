@@ -37,6 +37,8 @@ const app = read('frontend/src/App.js');
 const labSite = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const commandApi = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
 const safeControls = read('frontend/src/churvox-office-lab/OfficeTeamSafeControls.jsx');
+const workerRoute = read('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx');
+const officeTeamApi = read('frontend/src/churvox-office-lab/officeTeamApi.js');
 const commandRoutes = read('backend/churvox_command_routes.py');
 const usercustomize = read('backend/usercustomize.py');
 const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
@@ -65,6 +67,10 @@ expect('frontend Command API has slips and audit endpoints', includesAll(command
 expect('frontend Command API preserves safety flags', includesAll(commandApi, ['prepared_only: true', 'owner_review_only: true', 'no_auto_send: true', 'no_auto_sync: true', 'no_auto_charge: true', 'no_auto_record_change: true']), 'frontend Command safety flags missing');
 expect('owner safe controls create backend slips', includesAll(safeControls, ['createBackendCommandSlip', 'ownerRoute', 'isOwnerRoute()', 'createOfficeTeamLocalCommand']), 'safe controls do not split owner backend vs lab local behaviour');
 expect('safe controls keep no-send copy', safeControls.includes('no send, no sync, no charge, no record change') && safeControls.includes('Nothing was sent, synced, charged or changed'), 'safe controls safety copy missing');
+
+expect('worker route has safe payment link panel', includesAll(workerRoute, ['Take payment', 'Open pay page', 'Copy link', 'Request link', 'No card is charged inside Worker View']), 'worker payment link panel missing or unsafe');
+expect('worker route cannot create direct card charge', !/(stripe\.checkout|stripe\.payment|payment_intent|terminal|reader|charge card|create charge)/i.test(workerRoute), 'worker route appears to create direct card charges');
+expect('worker rows expose payment metadata safely', includesAll(officeTeamApi, ['payment_link', 'payment_url', 'stripe_payment_url', 'paymentMeta', 'amount_due', 'balance_due']), 'worker payment metadata extraction missing');
 
 expect('backend Command router exposes expected endpoints', includesAll(commandRoutes, ['@router.get("/command/slips")', '@router.post("/command/slips")', '@router.post("/command/scan")', '@router.patch("/command/slips/{slip_id}/edit")', '@router.post("/command/slips/{slip_id}/approve")', '@router.post("/command/slips/{slip_id}/snooze")', '@router.post("/command/slips/{slip_id}/ignore")', '@router.get("/command/events")', '@router.get("/command/audit")']), 'backend Command endpoints missing');
 expect('backend Command approve is record-only', includesAll(commandRoutes, ['"status": "approved_recorded"', '"stored_only": True', 'SAFE_RESULT = "Owner approval recorded. Nothing was sent, synced, charged or changed."']), 'backend approve is not clearly record-only');
