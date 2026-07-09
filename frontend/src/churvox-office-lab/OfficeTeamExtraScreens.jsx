@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./OfficeTeamExtraScreens.css";
+import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const quoteRows = [
@@ -31,19 +32,19 @@ const helpRows = [
 ];
 
 export function QuotesScreen() {
-  return <ExtraScreen area="quotes" eyebrow="Quotes" title="Quote desk" text="Quotes are prepared, followed up and converted only when the owner is ready." rows={quoteRows} primary="Create quote" secondary="Follow up" />;
+  return <ExtraScreen area="quotes" eyebrow="Quotes" title="Quote desk" text="Quotes are prepared, followed up and converted only when the owner is ready." rows={quoteRows} primary="Prepare quote" secondary="Review follow-up" />;
 }
 
 export function InvoicesScreen() {
-  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Invoices are drafted from completed work, checked for extras and held until the owner approves sending or syncing." rows={invoiceRows} primary="Create invoice" secondary="Export pack" />;
+  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Invoices are drafted from completed work, checked for extras and held until the owner approves sending or syncing." rows={invoiceRows} primary="Prepare invoice" secondary="Review export" />;
 }
 
 export function IntegrationsScreen() {
-  return <ExtraScreen area="money" eyebrow="Integrations" title="Accounting, email and future tools" text="Integrations stay safe: prepared data, owner approval, then sync or send." rows={integrationRows} primary="Open Xero" secondary="Export files" />;
+  return <ExtraScreen area="money" eyebrow="Integrations" title="Accounting, email and future tools" text="Integrations stay safe: prepared data, owner approval, then sync or send." rows={integrationRows} primary="Prepare sync check" secondary="Review files" />;
 }
 
 export function HelpScreen() {
-  return <ExtraScreen eyebrow="Help" title="Owner guide" text="Help should explain the Churvox way: staff update work, Churvox prepares admin, owner approves decisions." rows={helpRows} primary="Start guide" secondary="Contact support" />;
+  return <ExtraScreen eyebrow="Help" title="Owner guide" text="Help should explain the Churvox way: staff update work, Churvox prepares admin, owner approves decisions." rows={helpRows} primary="Prepare guide note" secondary="Review support note" />;
 }
 
 function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
@@ -81,11 +82,7 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
             <article><b>Auto-send</b><small>Off</small></article>
             <article><b>Auto-sync</b><small>Off</small></article>
           </div>
-          <footer>
-            <button className="primary">{primary}</button>
-            <button>{secondary}</button>
-            <button>Send to Command</button>
-          </footer>
+          <OfficeTeamSafeControls area={area || eyebrow} record={current} primary={primary} secondary={secondary} command="Prepare Command card" />
         </aside>
       </div>
     </section>
