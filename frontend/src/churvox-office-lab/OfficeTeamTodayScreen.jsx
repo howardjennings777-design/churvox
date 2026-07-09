@@ -2,14 +2,15 @@ import React from "react";
 import "./OfficeTeamTodayScreen.css";
 import { useOfficeTeamOverview } from "./OfficeTeamOverview";
 
-const shortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];
+const labShortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];
+const ownerShortcuts = ["command", "work", "schedule", "clients", "messages", "worker", "quotes", "invoices", "money", "staff", "payroll", "integrations", "activity", "settings", "plans", "help"];
 
 const labels = {
   command: "Command",
-  work: "Work",
+  work: "Jobs",
   schedule: "Schedule",
   messages: "Messages",
-  worker: "Worker View",
+  worker: "Workers",
   quotes: "Quotes",
   invoices: "Invoices",
   money: "Money",
@@ -19,12 +20,17 @@ const labels = {
   automation: "Automation",
   branding: "Branding",
   plans: "Plans",
-  integrations: "Integrations",
+  integrations: "Xero",
   readiness: "Readiness",
+  activity: "Activity",
+  settings: "Settings",
+  help: "Help",
 };
 
 export default function OfficeTeamTodayScreen({ metrics, pending, resolved, approvalTrail = [], localQueue = [], localActivity = [], go, appMode = "lab" }) {
-  const allowFallback = appMode !== "owner" && !isOwnerRoute();
+  const ownerRoute = isOwnerRoute();
+  const allowFallback = appMode !== "owner" && !ownerRoute;
+  const shortcuts = ownerRoute ? ownerShortcuts : labShortcuts;
   const overview = useOfficeTeamOverview({ allowFallback });
   const top = pending.slice(0, 3);
   const preparedWaiting = localQueue.slice(0, 3);
@@ -36,15 +42,15 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
     <section className="cvSiteScreen">
       <header className="cvSiteScreenHeader">
         <span>Today</span>
-        <h2>Your office team has checked the business</h2>
-        <p>Start here. The owner sees what matters, opens Command when a decision is needed, and leaves the rest with the office team.</p>
+        <h2>{ownerRoute ? "Your business, sorted into decisions" : "Your office team has checked the business"}</h2>
+        <p>{ownerRoute ? "Start here. Churvox shows what needs you, what is already prepared, and what can stay off your plate." : "Start here. The owner sees what matters, opens Command when a decision is needed, and leaves the rest with the office team."}</p>
       </header>
 
       <div className="cvSiteTodayGrid">
         <article className="cvSiteBriefing">
           <span>Daily briefing · {overview.label}</span>
           <h2>{pending.length ? `${pending.length} decisions are prepared. ${top.length} are ready first.` : "No urgent decisions waiting right now."}</h2>
-          <p>Today now checks the live business areas in read-only mode where possible. It still never sends, syncs, charges, edits records or changes money without owner approval.</p>
+          <p>{ownerRoute ? "Churvox checks the business in read-only mode, prepares the next admin step, and waits for owner approval before anything moves." : "Today now checks the live business areas in read-only mode where possible. It still never sends, syncs, charges, edits records or changes money without owner approval."}</p>
           <div className="cvSiteBriefingActions">
             {shortcuts.map((key, index) => (
               <button key={key} className={index === 0 ? "primary" : ""} onClick={() => go(key)}>{labels[key] || key}</button>
@@ -54,7 +60,7 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
 
         <div className="cvSiteTodayStack">
           <article className="cvSiteTodayPanel cvSiteHandoverPanel">
-            <span>Office desk handover</span>
+            <span>Command handover</span>
             <strong>{preparedWaiting.length} prepared · {recentApprovals.length} approved</strong>
             <p>Prepared work stays waiting for Command. Owner decisions stay visible in the approval trail.</p>
             <div className="cvSiteMiniList">
@@ -62,10 +68,10 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
                 <article key={item.id || item.title}>
                   <button onClick={() => go("command")}>
                     <b>{item.title}</b>
-                    <small>{item.roleName || "Office Team"} prepared · owner approval required</small>
+                    <small>{item.roleName || "Churvox"} prepared · owner approval required</small>
                   </button>
                 </article>
-              )) : <article><b>No prepared handoffs waiting</b><small>Use any page’s safe controls to prepare a Command card.</small></article>}
+              )) : <article><b>No prepared handoffs waiting</b><small>When work needs a decision, Churvox will bring it to Command.</small></article>}
             </div>
             <div className="cvSiteHandoverFooter">
               <button onClick={() => go("command")}>Open Command</button>
@@ -83,7 +89,7 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
                   <b>{item.title}</b>
                   <small>{item.tray} · {item.roleName}</small>
                 </article>
-              )) : <article><b>Command is clear</b><small>Office team keeps watching safely.</small></article>}
+              )) : <article><b>Command is clear</b><small>Churvox keeps watching safely.</small></article>}
             </div>
           </article>
 
@@ -104,7 +110,7 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
           </article>
 
           <article className="cvSiteTodayPanel">
-            <span>Live office areas</span>
+            <span>Live business areas</span>
             <strong>{overview.areas.reduce((sum, item) => sum + Number(item.count || 0), 0)} read-only records</strong>
             <p>{allowFallback ? "These are safe previews pulled into the hidden lab. Action buttons remain approval paths." : "Only real read-only records appear here. No demo area data is shown in the owner app."}</p>
             <div className="cvSiteMiniList">
@@ -122,8 +128,8 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
           <article className="cvSiteActionPanel">
             <span>Safety lock</span>
             <strong>Approval first</strong>
-            <p>The hidden build stays prepared-only until moved safely into the real app.</p>
-            <button onClick={() => go("safety")}>View safety rules</button>
+            <p>{ownerRoute ? "Nothing sends, syncs, charges or changes a record until you approve it in Command." : "The hidden build stays prepared-only until moved safely into the real app."}</p>
+            <button onClick={() => go(ownerRoute ? "command" : "safety")}>{ownerRoute ? "Open Command" : "View safety rules"}</button>
           </article>
 
           <article className="cvSiteActionPanel">
