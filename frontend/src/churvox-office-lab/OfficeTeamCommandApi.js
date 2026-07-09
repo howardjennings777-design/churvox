@@ -1,0 +1,139 @@
+import API_BASE from "../lib/apiBase";
+
+const SAFE_RESULT = "Owner approval recorded. Nothing was sent, synced, charged or changed.";
+
+function host() {
+  return String(API_BASE || "").replace(/\/$/, "");
+}
+
+function token() {
+  try {
+    return localStorage.getItem("token") || "";
+  } catch {
+    return "";
+  }
+}
+
+function authHeaders({ json = true } = {}) {
+  const t = token();
+  return {
+    Accept: "application/json",
+    ...(json ? { "Content-Type": "application/json" } : {}),
+    ...(t ? { Authorization: `Bearer ${t}` } : {}),
+  };
+}
+
+function clean(value, fallback = "") {
+  const text = String(value || "").trim();
+  return text || fallback;
+}
+
+function trayForSlip(slip = {}) {
+  const text = clean(`${slip.source_type || ""} ${slip.action_type || ""} ${slip.tray || ""}`).toLowerCase();
+  if (/invoice|quote|payment|money|xero|myob/.test(text)) return "Money";
+  if (/job|work|booking|schedule|recurring/.test(text)) return "Bookings";
+  if (/staff|worker|payroll|team/.test(text)) return "Staff";
+  if (/client|customer|message|inbox/.test(text)) return "Clients";
+  if (/quality|proof|photo/.test(text)) return "Quality";
+  if (/operation|automation|branding|setup/.test(text)) return "Operations";
+  return "Command";
+}
+
+function roleForTray(tray) {
+  if (tray === "Money") return "Bookkeeper";
+  if (tray === "Bookings") return "Receptionist";
+  if (tray === "Staff") return "Payroll Clerk";
+  if (tray === "Clients") return "Client Memory";
+  if (tray === "Quality") return "Quality Checker";
+  if (tray === "Operations") return "Operations Manager";
+  return "Office Manager";
+}
+
+function levelForSlip(slip = {}) {
+  const raw = clean(slip.urgency || slip.level || slip.priority || "Owner review").toLowerCase();
+  if (/urgent|top|high/.test(raw)) return "Top priority";
+  if (/low/.test(raw)) return "Low risk";
+  if (/pattern/.test(raw)) return "Pattern";
+  return "Needs check";
+}
+
+export function mapCommandSlipToDecision(slip = {}, index = 0) {
+  const tray = trayForSlip(slip);
+  const id = clean(slip.id || slip._id || `command-slip-${index}`);
+  return {
+    id: `command-slip-${id}`,
+    tray,
+    roleName: clean(slip.roleName || slip.role_name, roleForTray(tray)),
+    level: levelForSlip(slip),
+    title: clean(slip.title, "Command decision"),
+    happened: clean(slip.found || slip.happened || slip.summary, "Churvox found something that may need owner review."),
+    checked: [
+      clean(slip.source_type || slip.sourceType, "backend command slip"),
+      clean(slip.action_type || slip.actionType, "owner review"),
+      "business scoped",
+      "record-only approval",
+    ].filter(Boolean).slice(0, 5),
+    prepared: clean(slip.prepared, "Prepared for owner review. Nothing has been sent, synced, charged or changed."),
+    need: clean(slip.why || slip.need, "Approve record-only, snooze, ignore, or edit before a future real action."),
+    actions: ["Approve record", "Snooze", "Ignore"],
+    raw: {
+      ...slip,
+      source: "backend_command_slip",
+      command_slip_id: id,
+      prepared_only: true,
+      owner_review_only: true,
+      no_auto_send: true,
+      no_auto_sync: true,
+      no_auto_charge: true,
+      no_auto_record_change: true,
+    },
+  };
+}
+
+export async function fetchBackendCommandDecisions() {
+  const base = host();
+  if (!base) return { source: "command-unavailable", decisions: [], message: "No API host" };
+  const response = await fetch(`${base}/api/command/slips`, {
+    credentials: "include",
+    headers: authHeaders({ json: false }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403 || response.status === 404) {
+    return { source: "command-unavailable", decisions: [], message: body?.detail || "Command backend unavailable" };
+  }
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || body?.detail || `Command slips failed ${response.status}`);
+  }
+  const slips = Array.isArray(body?.slips) ? body.slips : [];
+  return {
+    source: slips.length ? "backend-command" : "backend-command-clear",
+    decisions: slips.map(mapCommandSlipToDecision),
+    message: body?.safety || SAFE_RESULT,
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
+export async function recordBackendCommandDecision(decision, action) {
+  const base = host();
+  const slipId = clean(decision?.raw?.command_slip_id || "");
+  if (!base || !slipId) {
+    return { success: true, localOnly: true, message: SAFE_RESULT };
+  }
+  const normalized = clean(action, "Approve record").toLowerCase();
+  const endpoint = normalized.includes("snooze")
+    ? "snooze"
+    : normalized.includes("ignore") || normalized.includes("park")
+      ? "ignore"
+      : "approve";
+  const response = await fetch(`${base}/api/command/slips/${encodeURIComponent(slipId)}/${endpoint}`, {
+    method: "POST",
+    credentials: "include",
+    headers: authHeaders(),
+    body: JSON.stringify({ action, note: SAFE_RESULT, hours: 24 }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || body?.detail || `Command decision failed ${response.status}`);
+  }
+  return body;
+}
