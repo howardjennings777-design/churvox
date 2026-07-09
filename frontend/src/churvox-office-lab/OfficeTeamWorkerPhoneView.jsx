@@ -13,7 +13,8 @@ const fallbackRows = [
 const workerSteps = ["Acknowledge", "Start", "Pause", "Complete"];
 
 export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
-  const allowFallback = appMode !== "owner" && !isOwnerRoute();
+  const ownerRoute = isOwnerRoute();
+  const allowFallback = appMode !== "owner" && !ownerRoute;
   const live = useOfficeTeamRows("worker", fallbackRows, { allowFallback, emptyMessage: "No live worker records found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(fallbackRows[0]);
   const [localStatus, setLocalStatus] = useState("Not started");
@@ -25,8 +26,8 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
   return (
     <section className="cvSiteScreen">
       <header className="cvSiteScreenHeader">
-        <span>Worker View</span>
-        <h2>Simple phone view for staff</h2>
+        <span>{ownerRoute ? "Workers" : "Worker View"}</span>
+        <h2>{ownerRoute ? "Worker updates and simple phone view" : "Simple phone view for staff"}</h2>
         <p>Workers do not need the owner app. They need today’s work, big buttons, notes, photos and a clean boss message loop.</p>
       </header>
 
@@ -64,7 +65,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
           <div className="cvWorkerDataSource">
             <span>Data source</span>
             <strong>{live.label}</strong>
-            <p>Worker actions are local preview only. They do not update jobs, timers, photos or messages yet.</p>
+            <p>{ownerRoute ? "Worker updates are shown safely for owner review. Anything important comes back to Command before records or money change." : "Worker actions are local preview only. They do not update jobs, timers, photos or messages yet."}</p>
           </div>
 
           <section className="cvWorkerQueueList">
