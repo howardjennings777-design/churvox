@@ -16,6 +16,7 @@ import { ScheduleScreen, AutomationScreen, PayrollScreen, BrandingScreen } from 
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
 import { fetchOfficeTeamCommandDrafts } from "./OfficeTeamCommandDrafts";
 import { readOfficeTeamLocalActivityLog, readOfficeTeamLocalCommandQueue, recordOfficeTeamLocalActivity, removeOfficeTeamLocalCommand, subscribeOfficeTeamLocalActivity, subscribeOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
+import { readOfficeTeamApprovalTrail, recordOfficeTeamApprovalTrail, subscribeOfficeTeamApprovalTrail } from "./OfficeTeamApprovalTrail";
 
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-office-site-20260709";
 const COMMAND_CARD_LIMIT = 3;
@@ -114,6 +115,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const [liveDrafts, setLiveDrafts] = useState([]);
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
+  const [approvalTrail, setApprovalTrail] = useState(() => readOfficeTeamApprovalTrail());
   const [notice, setNotice] = useState(isOwnerApp ? "New owner app shell. Office team prepares decisions; owner approval is still locked." : "Demo preview. Sign in as an owner to load live Admin Brain decisions.");
   const [resolved, setResolved] = useState({});
 
@@ -138,6 +140,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
 
   useEffect(() => subscribeOfficeTeamLocalCommand(setLocalQueue), []);
   useEffect(() => subscribeOfficeTeamLocalActivity(setLocalActivity), []);
+  useEffect(() => subscribeOfficeTeamApprovalTrail(setApprovalTrail), []);
 
   useEffect(() => {
     const onPop = () => { setScreen(cleanScreen(window.location.hash)); window.scrollTo({ top: 0 }); };
@@ -171,22 +174,28 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     setNotice(`${action} moved out of Command. The next waiting decision replaces it.`);
     if (String(id || "").startsWith("local-command-")) {
       const activity = recordOfficeTeamLocalActivity("Cleared", item, action);
+      const trail = recordOfficeTeamApprovalTrail(item, action, "Owner reviewed");
       const next = removeOfficeTeamLocalCommand(id);
       setLocalQueue(next);
       setLocalActivity(activity);
-      setNotice(`${action} cleared the local Command card. Nothing was sent or synced.`);
+      setApprovalTrail(trail);
+      setNotice(`${action} cleared the local Command card. Approval trail saved. Nothing was sent or synced.`);
       return;
     }
     try {
       await recordOfficeTeamDecision(item, action);
-      setNotice(`${action} recorded safely. Nothing was sent or synced.`);
+      const trail = recordOfficeTeamApprovalTrail(item, action, "Owner reviewed");
+      setApprovalTrail(trail);
+      setNotice(`${action} recorded safely. Approval trail saved. Nothing was sent or synced.`);
     } catch {
       setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
+      const trail = recordOfficeTeamApprovalTrail(item, action, "Returned to Command");
+      setApprovalTrail(trail);
       setNotice(`Could not record ${action}. The card returned to Command.`);
     }
   }
 
-  return <main className="cvOfficeFinal cvOfficeSite"><Topbar screen={screen} go={go} appMode={appMode} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localActivity={localActivity} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
+  return <main className="cvOfficeFinal cvOfficeSite"><Topbar screen={screen} go={go} appMode={appMode} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localActivity={localActivity} approvalTrail={approvalTrail} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
 }
 
 function ScreenRouter(props) {
@@ -243,9 +252,9 @@ function Playbooks() {
   return <section className="cvSiteScreen"><Header eyebrow="Playbooks" title="Same system, different business wording" text="Churvox should fit the business language instead of forcing every business to sound the same." /><div className="cvSitePlaybookGrid">{playbooks.map(([name, work, staff, customer, examples]) => <article key={name}><span>{name}</span><dl><div><dt>Work</dt><dd>{work}</dd></div><div><dt>Staff</dt><dd>{staff}</dd></div><div><dt>Customer</dt><dd>{customer}</dd></div></dl><small>{examples}</small></article>)}</div></section>;
 }
 
-function Activity({ pending, resolved, localActivity = [] }) {
+function Activity({ pending, resolved, localActivity = [], approvalTrail = [] }) {
   const cleared = Object.entries(resolved);
-  return <section className="cvSiteScreen"><Header eyebrow="Activity" title="Office activity log" text="This becomes the real log of checked, prepared, parked and approved work." /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title} waiting in Command.</p><small>{item.tray}</small></article>)}</section><section><h2>Local office trail</h2>{localActivity.length ? localActivity.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.tray}</strong><p>{item.title}</p><small>{item.note}</small></article>) : <Empty title="No local trail yet" text="Prepare a Command card from any screen and it will appear here." />}</section><section><h2>Cleared this session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Moved out of Command.</p><small>{id}</small></article>) : <Empty title="Nothing cleared yet" text="Action a Command card and it will appear here." />}</section></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow="Activity" title="Office activity and approval trail" text="This becomes the real log of checked, prepared, parked and owner-reviewed work." /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title} waiting in Command.</p><small>{item.tray}</small></article>)}</section><section><h2>Owner approval trail</h2>{approvalTrail.length ? approvalTrail.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.action}</strong><p>{item.title}</p><small>{item.safety}</small></article>) : <Empty title="No owner decisions yet" text="Action a Command card and the approval trail will appear here." />}</section><section><h2>Local office trail</h2>{localActivity.length ? localActivity.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.tray}</strong><p>{item.title}</p><small>{item.note}</small></article>) : <Empty title="No local trail yet" text="Prepare a Command card from any screen and it will appear here." />}</section><section><h2>Cleared this session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Moved out of Command.</p><small>{id}</small></article>) : <Empty title="Nothing cleared yet" text="Action a Command card and it will appear here." />}</section></div></section>;
 }
 
 function Safety() {
