@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import "./OfficeTeamWorkerRoute.css";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
+import { createBackendWorkerPaymentRequest } from "./OfficeTeamCommandApi";
 import { createOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Complete"];
@@ -13,6 +14,7 @@ export default function OfficeTeamWorkerRoute() {
   const [note, setNote] = useState("");
   const [trail, setTrail] = useState([]);
   const [paymentNotice, setPaymentNotice] = useState("");
+  const [paymentBusy, setPaymentBusy] = useState(false);
   const rows = live.rows;
   const hasWork = rows.length > 0;
   const current = selectedRow(rows, selected, []);
@@ -42,7 +44,7 @@ export default function OfficeTeamWorkerRoute() {
 
   async function copyPaymentLink() {
     if (!payment.link) {
-      requestPaymentLink();
+      await requestPaymentLink();
       return;
     }
     try {
@@ -54,9 +56,9 @@ export default function OfficeTeamWorkerRoute() {
     }
   }
 
-  function openPaymentLink() {
+  async function openPaymentLink() {
     if (!payment.link) {
-      requestPaymentLink();
+      await requestPaymentLink();
       return;
     }
     window.open(payment.link, "_blank", "noopener,noreferrer");
@@ -64,11 +66,27 @@ export default function OfficeTeamWorkerRoute() {
     addTrail("Payment page opened for customer card payment.");
   }
 
-  function requestPaymentLink() {
+  async function requestPaymentLink() {
+    if (paymentBusy) return;
+    setPaymentBusy(true);
     const record = ["Payment request", title, payment.amount || "Amount check", "Worker needs an approved invoice payment link before taking card payment."];
-    createOfficeTeamLocalCommand({ area: "worker", record, action: "Prepare payment link" });
-    setPaymentNotice("Payment request prepared for Command. Worker cannot charge a card without an approved link.");
-    addTrail("Payment link request prepared for Command.");
+    try {
+      await createBackendWorkerPaymentRequest({
+        title,
+        amount: payment.amount || current?.[2] || "Amount check",
+        invoice: payment.invoice,
+        customer: payment.customer,
+        paymentLink: payment.link,
+      });
+      setPaymentNotice("Payment request sent to owner Command. Worker cannot charge a card without an approved link.");
+      addTrail("Payment link request sent to backend Command for owner approval.");
+    } catch (error) {
+      createOfficeTeamLocalCommand({ area: "worker", record, action: "Prepare payment link" });
+      setPaymentNotice("Payment request prepared locally because backend Command was not available. No card was charged.");
+      addTrail(`Payment link request prepared locally. ${error?.message || ""}`.trim());
+    } finally {
+      setPaymentBusy(false);
+    }
   }
 
   function addTrail(text) {
@@ -118,8 +136,8 @@ export default function OfficeTeamWorkerRoute() {
             <div><dt>Invoice</dt><dd>{payment.invoice || "Not linked"}</dd></div>
           </dl>
           <div className="cvWorkerPaymentActions">
-            <button type="button" disabled={!hasWork} onClick={openPaymentLink}>{payment.link ? "Open pay page" : "Request link"}</button>
-            <button type="button" disabled={!hasWork} onClick={copyPaymentLink}>{payment.link ? "Copy link" : "Prepare request"}</button>
+            <button type="button" disabled={!hasWork || paymentBusy} onClick={openPaymentLink}>{paymentBusy ? "Preparing…" : payment.link ? "Open pay page" : "Request link"}</button>
+            <button type="button" disabled={!hasWork || paymentBusy} onClick={copyPaymentLink}>{payment.link ? "Copy link" : "Prepare request"}</button>
           </div>
           <small>No card is charged inside Worker View. Payment happens through an approved secure invoice link.</small>
           {paymentNotice ? <p className="cvWorkerPaymentNotice">{paymentNotice}</p> : null}
@@ -174,11 +192,16 @@ function paymentDetails(row = []) {
   const link = meta.paymentLink || linkFromText;
   const amount = meta.amountDue || (payKeywords.some((word) => fromText.toLowerCase().includes(word)) ? row?.[2] : "");
   const invoice = meta.invoiceNumber || (String(row?.[1] || "").match(/inv[-\s#]*\w+/i)?.[0] || "");
+  const customer = meta.customerName || titleFromText(row?.[1]) || "Customer";
   const code = link ? shortCode(link) : "LOCKED";
   const copy = link
     ? "Let the customer tap the secure pay page or copy the link. Churvox waits for provider confirmation before marking anything paid."
     : "No approved payment link is attached yet. Prepare a Command request before the worker takes card payment.";
-  return { link, amount, invoice, code, copy };
+  return { link, amount, invoice, customer, code, copy };
+}
+
+function titleFromText(value = "") {
+  return String(value || "").split("—")[0].trim();
 }
 
 function shortCode(value = "") {
