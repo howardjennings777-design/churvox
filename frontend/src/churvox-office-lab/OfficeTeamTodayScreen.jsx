@@ -1,4 +1,5 @@
 import React from "react";
+import "./OfficeTeamTodayScreen.css";
 import { useOfficeTeamOverview } from "./OfficeTeamOverview";
 
 const shortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];
