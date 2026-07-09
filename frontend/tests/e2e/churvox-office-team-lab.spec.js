@@ -20,7 +20,7 @@ const pages = [
   ['automation', /Prepared rules, not blind automation/i],
   ['branding', /Business settings and mobile polish/i],
   ['settings', /Owner controls before this becomes live/i],
-  ['plans', /Choose the real plan structure|Plans/i],
+  ['plans', /Pricing stays locked while the product is rebuilt/i],
   ['help', /Owner guide/i],
   ['readiness', /Hidden lab is functionally shaped/i],
   ['safety', /Rules before this moves into the real app/i],
