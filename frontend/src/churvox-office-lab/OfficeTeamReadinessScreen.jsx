@@ -58,6 +58,8 @@ function readinessGroups(overview) {
   const liveWiringItems = [
     "Command fallback drafts from read-only records",
     "Screen buttons changed to prepared-only local controls",
+    "Prepare Command card now feeds a local Command queue",
+    "Local Command cards clear locally after owner action",
     ...(areaItems.length ? areaItems : ["Waiting for owner login to check live records"]),
   ];
 
@@ -66,7 +68,7 @@ function readinessGroups(overview) {
       key: "built",
       name: "Ready in hidden shell",
       status: "Built",
-      items: ["Today owner start", "Command queue limit", "Actioned cards leave Command", "Office Team roles", "Playbooks", "Owner safety locks", "Plans pricing screen", "Read-only data fallback layer", "Prepared-only screen controls"],
+      items: ["Today owner start", "Command queue limit", "Actioned cards leave Command", "Office Team roles", "Playbooks", "Owner safety locks", "Plans pricing screen", "Read-only data fallback layer", "Prepared-only screen controls", "Local Command handoff queue"],
     },
     {
       key: "live-wiring",
