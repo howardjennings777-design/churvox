@@ -1,0 +1,240 @@
+.cvWorkerRouteShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(290px, 420px) 1fr;
+  gap: 22px;
+  padding: 22px;
+  color: #17120e;
+  background:
+    radial-gradient(circle at top left, rgba(249,115,22,.2), transparent 34%),
+    linear-gradient(135deg, #f7f1e8, #ede4d8);
+}
+
+.cvWorkerRoutePhone {
+  display: grid;
+  gap: 14px;
+  max-width: 420px;
+  min-height: calc(100vh - 44px);
+  padding: 16px;
+  border: 10px solid #15100c;
+  border-radius: 38px;
+  background: linear-gradient(180deg, #fffaf2, #f4eee5);
+  box-shadow: 0 24px 54px rgba(23,18,14,.22);
+}
+
+.cvWorkerRoutePhone header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 24px;
+  color: #fff8ed;
+  background: linear-gradient(135deg, #17120e, #3b2b1f 58%, #f97316);
+}
+
+.cvWorkerRoutePhone span,
+.cvWorkerRouteJob small,
+.cvWorkerRouteNoteBox span,
+.cvWorkerRouteDesk > span,
+.cvWorkerRouteDesk button span,
+.cvWorkerRouteDesk button small {
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.cvWorkerRoutePhone h1,
+.cvWorkerRoutePhone h2,
+.cvWorkerRouteDesk h2,
+.cvWorkerRouteDesk h3 {
+  margin: 0;
+}
+
+.cvWorkerRoutePhone h1 {
+  font-size: 1.28rem;
+  letter-spacing: -.04em;
+}
+
+.cvWorkerRoutePhone header strong {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #17120e;
+  background: #fff8ed;
+  font-size: .76rem;
+}
+
+.cvWorkerRouteJob,
+.cvWorkerRouteNoteBox,
+.cvWorkerRouteDesk,
+.cvWorkerRouteDesk section {
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 24px;
+  background: rgba(255,255,255,.75);
+}
+
+.cvWorkerRouteJob {
+  display: grid;
+  gap: 9px;
+  padding: 18px;
+}
+
+.cvWorkerRouteJob h2 {
+  font-size: 1.55rem;
+  line-height: 1.05;
+}
+
+.cvWorkerRouteJob p,
+.cvWorkerRouteDesk p {
+  margin: 0;
+  color: #5f564d;
+  line-height: 1.45;
+}
+
+.cvWorkerRouteJob em {
+  justify-self: start;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #9a3412;
+  background: rgba(249,115,22,.12);
+  font-size: .72rem;
+  font-weight: 950;
+  font-style: normal;
+}
+
+.cvWorkerRouteSteps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvWorkerRouteSteps button {
+  min-height: 74px;
+  border: 0;
+  border-radius: 22px;
+  color: #17120e;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(23,18,14,.1);
+  font-size: .92rem;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvWorkerRouteSteps button:first-child {
+  color: #fff8ed;
+  background: linear-gradient(135deg, #17120e, #f97316);
+}
+
+.cvWorkerRouteNoteBox {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.cvWorkerRouteNoteBox textarea {
+  min-height: 96px;
+  resize: vertical;
+  border: 1px solid rgba(23,18,14,.12);
+  border-radius: 18px;
+  padding: 12px;
+  color: #17120e;
+  background: #fffaf2;
+  font: inherit;
+}
+
+.cvWorkerRouteNoteBox button,
+.cvWorkerRouteQuickNotes button,
+.cvWorkerRouteProof button,
+.cvWorkerRouteDesk button {
+  border: 0;
+  border-radius: 16px;
+  padding: 12px;
+  color: #17120e;
+  background: #fff;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cvWorkerRouteNoteBox button {
+  color: #fff8ed;
+  background: #17120e;
+}
+
+.cvWorkerRouteQuickNotes,
+.cvWorkerRouteProof {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cvWorkerRouteQuickNotes button,
+.cvWorkerRouteProof button {
+  border: 1px dashed rgba(23,18,14,.18);
+  background: rgba(255,255,255,.7);
+}
+
+.cvWorkerRouteDesk {
+  align-self: start;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  box-shadow: 0 16px 36px rgba(23,18,14,.08);
+}
+
+.cvWorkerRouteDesk h2 {
+  max-width: 640px;
+  font-size: clamp(1.7rem, 4vw, 3.4rem);
+  line-height: .95;
+  letter-spacing: -.07em;
+}
+
+.cvWorkerRouteDesk > strong {
+  color: #9a3412;
+}
+
+.cvWorkerRouteDesk section {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.cvWorkerRouteDesk button {
+  display: grid;
+  grid-template-columns: 86px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid rgba(23,18,14,.1);
+  text-align: left;
+}
+
+.cvWorkerRouteDesk button.active {
+  border-color: rgba(249,115,22,.5);
+  background: rgba(249,115,22,.1);
+}
+
+.cvWorkerRouteDesk section p {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(249,115,22,.08);
+  color: #7c2d12;
+  font-weight: 850;
+}
+
+@media (max-width: 860px) {
+  .cvWorkerRouteShell {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .cvWorkerRoutePhone {
+    width: 100%;
+    min-height: auto;
+    margin: 0 auto;
+  }
+
+  .cvWorkerRouteDesk button {
+    grid-template-columns: 1fr;
+  }
+}
