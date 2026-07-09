@@ -31,6 +31,8 @@ test.describe('hidden Office Team lab', () => {
     await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => {
       window.localStorage.removeItem('churvox_office_team_approval_trail_v1');
+      window.localStorage.removeItem('churvox_office_lab_command_queue_v1');
+      window.localStorage.removeItem('churvox_office_lab_activity_v1');
       window.sessionStorage.removeItem('churvox_office_lab_command_queue_v1');
       window.sessionStorage.removeItem('churvox_office_lab_activity_v1');
     });
@@ -47,13 +49,17 @@ test.describe('hidden Office Team lab', () => {
     }
   });
 
-  test('prepared Command handoff stays local and appears in Activity', async ({ page }) => {
+  test('prepared Command handoff survives reload then records owner approval', async ({ page }) => {
     await page.goto('/office-team-lab#messages', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Prepared reply draft/i)).toBeVisible();
     await page.getByRole('button', { name: /Prepare Command card/i }).first().click();
     await expect(page.getByText(/prepared-only Command item/i).first()).toBeVisible();
 
     await page.goto('/office-team-lab#command', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
+    await expect(page.getByText(/local prepared-only handoff|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
     await expect(page.getByText(/local prepared-only handoff|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
 
