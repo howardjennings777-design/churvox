@@ -1,29 +1,29 @@
 const { test, expect } = require('@playwright/test');
 
 const pages = [
-  ['today', /Today|Daily briefing|Command/i],
-  ['command', /Owner decision queue|Command/i],
-  ['work', /Jobs, bookings and appointments|Work/i],
-  ['schedule', /Calendar and daily planning|Schedule/i],
-  ['clients', /Client memory and follow-up|Clients/i],
+  ['today', /Your office team has checked the business|Daily briefing/i],
+  ['command', /Owner decision queue/i],
+  ['work', /Jobs, bookings and appointments/i],
+  ['schedule', /Calendar and daily planning/i],
+  ['clients', /Client memory and follow-up/i],
   ['messages', /Inbox, worker updates and customer replies|Prepared reply draft/i],
   ['worker', /Simple phone view for staff|Churvox Worker/i],
-  ['quotes', /Quote desk|Quotes/i],
-  ['invoices', /Invoice desk|Invoices/i],
-  ['money', /Invoices, quotes and payment follow-up|Money/i],
-  ['staff', /Workers, timers and daily run|Staff/i],
-  ['payroll', /Hours review, not tax filing|Payroll/i],
-  ['team', /Roles behind the desk|Office Team/i],
-  ['playbooks', /Same system, different business wording|Playbooks/i],
-  ['integrations', /Accounting, email and future tools|Integrations/i],
-  ['activity', /Office activity log|Activity/i],
-  ['automation', /Prepared rules, not blind automation|Automation/i],
-  ['branding', /Business settings and mobile polish|Branding/i],
-  ['settings', /Settings|Business/i],
-  ['plans', /Plans|Start|Crew|Operator|Command/i],
-  ['help', /Owner guide|Help/i],
-  ['readiness', /Hidden lab is functionally shaped|Readiness/i],
-  ['safety', /Rules before this moves into the real app|Safety/i],
+  ['quotes', /Quote desk/i],
+  ['invoices', /Invoice desk/i],
+  ['money', /Invoices, quotes and payment follow-up/i],
+  ['staff', /Workers, timers and daily run/i],
+  ['payroll', /Hours review, not tax filing/i],
+  ['team', /Roles behind the desk/i],
+  ['playbooks', /Same system, different business wording/i],
+  ['integrations', /Accounting, email and future tools/i],
+  ['activity', /Office activity log/i],
+  ['automation', /Prepared rules, not blind automation/i],
+  ['branding', /Business settings and mobile polish/i],
+  ['settings', /Owner controls before this becomes live/i],
+  ['plans', /Choose the real plan structure|Plans/i],
+  ['help', /Owner guide/i],
+  ['readiness', /Hidden lab is functionally shaped/i],
+  ['safety', /Rules before this moves into the real app/i],
 ];
 
 test.describe('hidden Office Team lab', () => {
@@ -32,8 +32,9 @@ test.describe('hidden Office Team lab', () => {
       await page.goto(`/office-team-lab#${hash}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('.cvOfficeSite')).toBeVisible();
       await expect(page.locator('.cvSiteTopbar')).toBeVisible();
-      await expect(page.getByText(expected).first()).toBeVisible();
-      await expect(page.getByText(/Owner approval locked|owner approves|prepared-only/i).first()).toBeVisible();
+      await expect(page.locator('.cvSiteScreen')).toBeVisible();
+      await expect(page.locator('.cvSiteScreen').getByText(expected).first()).toBeVisible();
+      await expect(page.getByText(/Owner approval locked|owner approves|prepared-only|No auto-send|No auto-sync/i).first()).toBeVisible();
     }
   });
 
@@ -60,7 +61,7 @@ test.describe('hidden Office Team lab', () => {
     await page.goto('/office-team-lab#worker', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Churvox Worker/i)).toBeVisible();
     await page.getByRole('button', { name: 'Start' }).click();
-    await expect(page.getByText(/Start/i).first()).toBeVisible();
+    await expect(page.locator('.cvWorkerPhoneTop').getByText('Start')).toBeVisible();
     await page.getByRole('button', { name: /Prepare Command card/i }).first().click();
     await expect(page.getByText(/prepared-only Command item/i).first()).toBeVisible();
   });
