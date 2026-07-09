@@ -4,6 +4,7 @@ import "./OfficeTeamLabLive.css";
 import "./OfficeTeamLabSite.css";
 import "./OfficeTeamLabSitePlus.css";
 import "./OfficeTeamNavPolish.css";
+import "./OfficeTeamOwnerReady.css";
 import OfficeTeamRoleControls from "./OfficeTeamRoleControls";
 import OfficeTeamSiteSettings from "./OfficeTeamSiteSettings";
 import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
@@ -28,6 +29,13 @@ const screens = [
   ["staff", "Staff"], ["payroll", "Payroll"], ["team", "Office Team"], ["playbooks", "Playbooks"], ["integrations", "Integrations"],
   ["activity", "Activity"], ["automation", "Automation"], ["branding", "Branding"], ["settings", "Settings"], ["plans", "Plans"],
   ["help", "Help"], ["readiness", "Readiness"], ["safety", "Safety"],
+];
+
+const ownerScreens = [
+  ["today", "Today"], ["command", "Command"], ["work", "Jobs"], ["schedule", "Schedule"], ["clients", "Clients"],
+  ["messages", "Messages"], ["worker", "Workers"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["money", "Money"],
+  ["staff", "Staff"], ["payroll", "Payroll"], ["integrations", "Xero"], ["activity", "Activity"], ["settings", "Settings"],
+  ["plans", "Plans"], ["help", "Help"],
 ];
 
 const screenAliases = {
@@ -119,7 +127,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
   const [approvalTrail, setApprovalTrail] = useState(() => readOfficeTeamApprovalTrail());
-  const [notice, setNotice] = useState(isOwnerApp ? "New owner app shell. Office team prepares decisions; owner approval is still locked." : "Demo preview. Sign in as an owner to load live Admin Brain decisions.");
+  const [notice, setNotice] = useState(isOwnerApp ? "Owner app ready. Churvox prepares admin; owner approval stays locked." : "Demo preview. Sign in as an owner to load live Admin Brain decisions.");
   const [resolved, setResolved] = useState({});
 
   useEffect(() => {
@@ -146,7 +154,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         else if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
         else if (drafts.length) setNotice("Live read-only records prepared into Command preview. Nothing has been sent, synced or changed.");
         else if (data?.source === "clear-live") setNotice(isOwnerApp ? "Live scan is clear. Command will stay empty until real work needs owner approval." : "Live scan is clear. Demo cards stay visible for review.");
-        else setNotice(isOwnerApp ? "Owner app shell loaded. Live scan unavailable, so no demo decisions are shown." : "Demo preview. Sign in as an owner to load live Command data.");
+        else setNotice(isOwnerApp ? "Owner app loaded. No demo decisions are shown; real approvals appear when work needs you." : "Demo preview. Sign in as an owner to load live Command data.");
       })
       .catch((err) => mounted && setNotice(`${isOwnerApp ? "Owner app" : "Demo preview"}. Live scan unavailable: ${err.message || "connection issue"}`));
     return () => { mounted = false; };
@@ -244,7 +252,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     }
   }
 
-  return <main className="cvOfficeFinal cvOfficeSite"><Topbar screen={screen} go={go} appMode={appMode} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localQueue={localQueue} localActivity={localActivity} approvalTrail={approvalTrail} backendAudit={backendAudit.audit || []} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
+  return <main className={`cvOfficeFinal cvOfficeSite ${isOwnerApp ? "cvOwnerReady" : "cvLabPreview"}`}><Topbar screen={screen} go={go} appMode={appMode} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localQueue={localQueue} localActivity={localActivity} approvalTrail={approvalTrail} backendAudit={backendAudit.audit || []} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
 }
 
 function ScreenRouter(props) {
@@ -276,13 +284,19 @@ function ScreenRouter(props) {
 }
 
 function Topbar({ screen, go, appMode }) {
-  const subline = appMode === "owner" ? "New owner app · office team prepares · owner approves" : "Hidden internal website · owner approval locked";
-  return <header className="cvSiteTopbar"><div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>Churvox Office Team</strong><span>{subline}</span></div></div><nav>{screens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav></header>;
+  const isOwnerApp = appMode === "owner";
+  const navScreens = isOwnerApp ? ownerScreens : screens;
+  const brand = isOwnerApp ? "Churvox" : "Churvox Office Lab";
+  const subline = isOwnerApp ? "Owner app · prepared admin · approve only" : "Hidden internal website · owner approval locked";
+  return <header className="cvSiteTopbar"><div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>{brand}</strong><span>{subline}</span></div></div><nav>{navScreens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav></header>;
 }
 
 function Status({ metrics, sourceLabel, notice, appMode }) {
-  const modeLabel = appMode === "owner" ? "Owner app" : "Office running";
-  return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>{modeLabel} · {sourceLabel}</span><h1>Churvox runs the office. The owner approves the decisions.</h1><p>Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
+  const isOwnerApp = appMode === "owner";
+  const modeLabel = isOwnerApp ? "Owner app" : "Office running";
+  const title = isOwnerApp ? "Churvox does the admin. You approve." : "Churvox runs the office. The owner approves the decisions.";
+  const text = isOwnerApp ? "Jobs, clients, workers, quotes, invoices and follow-ups come back to Command before anything is sent, synced, charged or changed." : "Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.";
+  return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>{modeLabel} · {sourceLabel}</span><h1>{title}</h1><p>{text}</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
 }
 
 function Command({ tray, setTray, counts, pending, onAction }) {
