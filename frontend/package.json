@@ -64,7 +64,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:office-lab": "playwright test tests/e2e/churvox-office-team-lab.spec.js --project=desktop-chromium",
     "test:office-lab:mobile": "playwright test tests/e2e/churvox-office-team-lab.spec.js --project=mobile-chromium",
-    "test:rebuild:routes": "playwright test tests/e2e/churvox-rebuild-route-safety.spec.js --project=desktop-chromium",
+    "test:rebuild:routes": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-rebuild-route-safety.spec.js --project=desktop-chromium",
     "test:launch": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-big-launch-audit.spec.js",
     "test:launch:local": "playwright test tests/e2e/churvox-big-launch-audit.spec.js",
     "test:business": "playwright test tests/e2e/churvox-real-business-audit.spec.js",
@@ -107,7 +107,7 @@
   },
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "development": ["last 1 chrome version", "last 1 firefox version"]
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
