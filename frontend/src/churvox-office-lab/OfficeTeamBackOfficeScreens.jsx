@@ -1,0 +1,87 @@
+import React, { useState } from "react";
+import "./OfficeTeamBackOfficeScreens.css";
+
+const scheduleRows = [
+  ["Today", "Plan my day", "Prepared", "2 jobs, 1 booking gap, 1 worker check"],
+  ["Tomorrow", "Run sheet", "Ready", "Staff assignments are clean"],
+  ["Recurring", "Next cycle", "Needs review", "One repeat service has no next date"],
+  ["Calendar", "Capacity warning", "Watch", "Friday is close to overloaded"],
+];
+
+const automationRows = [
+  ["Follow-up", "Quote viewed", "Owner approval", "Draft follow-up prepared but not sent"],
+  ["Rebook", "Repeat client", "Prepared", "Suggested date ready"],
+  ["Proof", "Missing photo", "Ask staff", "Worker prompt ready"],
+  ["Invoice", "Completed work", "Prepared", "Draft only, no auto-send"],
+];
+
+const payrollRows = [
+  ["This week", "36.5 hours", "Review", "Gross hours only, no tax filing"],
+  ["Odd timer", "Long shift", "Check", "Ask staff or edit before approval"],
+  ["Export", "Payroll CSV", "Prepared", "No bank file or government submit"],
+  ["Worker rates", "Setup check", "Missing", "Rate review before reports"],
+];
+
+const brandingRows = [
+  ["Business logo", "Upload / preview", "Mobile-safe", "Owner app and documents should match"],
+  ["GST", "15% default", "Check", "Used for NZ invoice preview"],
+  ["Words", "Job / booking / visit", "Playbook", "Business language should match industry"],
+  ["Mobile", "Simplified owner view", "Important", "Phone should not show every desktop control"],
+];
+
+export function ScheduleScreen() {
+  return <BackOfficeScreen eyebrow="Schedule" title="Calendar and daily planning" text="The owner should see the run, gaps, recurring work and overload warnings without thinking too hard." rows={scheduleRows} primary="Plan my day" secondary="Open calendar" />;
+}
+
+export function AutomationScreen() {
+  return <BackOfficeScreen eyebrow="Automation" title="Prepared rules, not blind automation" text="Automation should prepare the next step and send it to Command. It must not silently message, sync, charge or change records." rows={automationRows} primary="Create rule" secondary="Review rules" />;
+}
+
+export function PayrollScreen() {
+  return <BackOfficeScreen eyebrow="Payroll" title="Hours review, not tax filing" text="Payroll stays safe: hours, gross totals and CSV exports only. No tax submission, no bank payout files and no government filing." rows={payrollRows} primary="Review hours" secondary="Export CSV" />;
+}
+
+export function BrandingScreen() {
+  return <BackOfficeScreen eyebrow="Branding" title="Business settings and mobile polish" text="Branding keeps Churvox feeling like the owner’s business while staying simple on mobile." rows={brandingRows} primary="Open branding" secondary="Preview mobile" />;
+}
+
+function BackOfficeScreen({ eyebrow, title, text, rows, primary, secondary }) {
+  const [selected, setSelected] = useState(rows[0]);
+  return (
+    <section className="cvSiteScreen">
+      <header className="cvSiteScreenHeader">
+        <span>{eyebrow}</span>
+        <h2>{title}</h2>
+        <p>{text}</p>
+      </header>
+
+      <div className="cvBackOfficeGrid">
+        <section className="cvBackOfficeList">
+          {rows.map((row) => (
+            <button key={`${row[0]}-${row[1]}`} className={selected === row ? "active" : ""} onClick={() => setSelected(row)}>
+              <span>{row[0]}</span>
+              <strong>{row[1]}</strong>
+              <small>{row[2]}</small>
+            </button>
+          ))}
+        </section>
+
+        <aside className="cvBackOfficeDetail">
+          <span>{selected[2]}</span>
+          <h3>{selected[1]}</h3>
+          <p>{selected[3]}</p>
+          <div className="cvBackOfficeChecks">
+            <article><b>Owner control</b><small>Required before real action</small></article>
+            <article><b>Record safety</b><small>Prepared-only preview</small></article>
+            <article><b>Mobile fit</b><small>Keep the screen simple</small></article>
+          </div>
+          <footer>
+            <button className="primary">{primary}</button>
+            <button>{secondary}</button>
+            <button>Send to Command</button>
+          </footer>
+        </aside>
+      </div>
+    </section>
+  );
+}
