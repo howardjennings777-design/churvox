@@ -1,12 +1,14 @@
 const STORAGE_KEY = "churvox_office_lab_command_queue_v1";
 const ACTIVITY_KEY = "churvox_office_lab_activity_v1";
+const OWNER_STORAGE_KEY = "churvox_office_owner_command_queue_v1";
+const OWNER_ACTIVITY_KEY = "churvox_office_owner_activity_v1";
 const EVENT_NAME = "churvox-office-local-command";
 const ACTIVITY_EVENT = "churvox-office-local-activity";
 
 export function readOfficeTeamLocalCommandQueue() {
   if (typeof window === "undefined") return [];
   try {
-    const raw = storage().getItem(STORAGE_KEY);
+    const raw = storage().getItem(commandKey());
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, 10) : [];
   } catch {
@@ -17,7 +19,7 @@ export function readOfficeTeamLocalCommandQueue() {
 export function readOfficeTeamLocalActivityLog() {
   if (typeof window === "undefined") return [];
   try {
-    const raw = storage().getItem(ACTIVITY_KEY);
+    const raw = storage().getItem(activityKey());
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, 14) : [];
   } catch {
@@ -83,7 +85,7 @@ export function subscribeOfficeTeamLocalActivity(callback) {
 function writeQueue(queue, item) {
   if (typeof window === "undefined") return;
   try {
-    storage().setItem(STORAGE_KEY, JSON.stringify(queue));
+    storage().setItem(commandKey(), JSON.stringify(queue));
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { item, queue } }));
   } catch {
     // Local lab handoff should never break the hidden screen.
@@ -93,7 +95,7 @@ function writeQueue(queue, item) {
 function writeActivity(activity, item) {
   if (typeof window === "undefined") return;
   try {
-    storage().setItem(ACTIVITY_KEY, JSON.stringify(activity));
+    storage().setItem(activityKey(), JSON.stringify(activity));
     window.dispatchEvent(new CustomEvent(ACTIVITY_EVENT, { detail: { item, activity } }));
   } catch {
     // Local activity should never break the hidden screen.
@@ -145,6 +147,18 @@ function mapArea(area = "office") {
     return { label: "Operations", tray: "Operations", roleName: "Operations Manager", level: "Needs check", need: "Review, adjust, park or leave this office item?", actions: ["Review", "Adjust", "Park"] };
   }
   return { label: "Office", tray: "Command", roleName: "Office Manager", level: "Needs check", need: "Review, edit, park or leave this item?", actions: ["Review", "Edit", "Park"] };
+}
+
+function commandKey() {
+  return isOwnerRoute() ? OWNER_STORAGE_KEY : STORAGE_KEY;
+}
+
+function activityKey() {
+  return isOwnerRoute() ? OWNER_ACTIVITY_KEY : ACTIVITY_KEY;
+}
+
+function isOwnerRoute() {
+  return typeof window !== "undefined" && window.location.pathname.includes("dashboard");
 }
 
 function storage() {
