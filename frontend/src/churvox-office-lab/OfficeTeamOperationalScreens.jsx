@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./OfficeTeamOperationalScreens.css";
+import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const workRows = [
@@ -31,19 +32,19 @@ const staffRows = [
 ];
 
 export function WorkScreen() {
-  return <OperationalScreen area="work" eyebrow="Work" title="Jobs, bookings and appointments" text="This is where owner work becomes simple: what is ready, what needs a decision, and what the office team has already prepared." rows={workRows} primary="Create work" secondary="Plan my day" />;
+  return <OperationalScreen area="work" eyebrow="Work" title="Jobs, bookings and appointments" text="This is where owner work becomes simple: what is ready, what needs a decision, and what the office team has already prepared." rows={workRows} primary="Prepare work" secondary="Review day" />;
 }
 
 export function MoneyScreen() {
-  return <OperationalScreen area="money" eyebrow="Money" title="Invoices, quotes and payment follow-up" text="Money stays safe. Churvox prepares drafts, reminders and accounting checks, but Command gets the owner decision before anything moves." rows={moneyRows} primary="Open invoices" secondary="Export pack" />;
+  return <OperationalScreen area="money" eyebrow="Money" title="Invoices, quotes and payment follow-up" text="Money stays safe. Churvox prepares drafts, reminders and accounting checks, but Command gets the owner decision before anything moves." rows={moneyRows} primary="Prepare money item" secondary="Review export" />;
 }
 
 export function ClientsScreen() {
-  return <OperationalScreen area="clients" eyebrow="Clients" title="Client memory and follow-up" text="The office team keeps notes, repeat patterns and missing details tidy so the owner does not have to remember everything." rows={clientRows} primary="Add client" secondary="Import CSV" />;
+  return <OperationalScreen area="clients" eyebrow="Clients" title="Client memory and follow-up" text="The office team keeps notes, repeat patterns and missing details tidy so the owner does not have to remember everything." rows={clientRows} primary="Prepare client note" secondary="Review import" />;
 }
 
 export function StaffScreen() {
-  return <OperationalScreen area="staff" eyebrow="Staff" title="Workers, timers and daily run" text="Staff update the work. Churvox checks timers, setup, assignments and missing details before asking the owner." rows={staffRows} primary="Add worker" secondary="Review hours" />;
+  return <OperationalScreen area="staff" eyebrow="Staff" title="Workers, timers and daily run" text="Staff update the work. Churvox checks timers, setup, assignments and missing details before asking the owner." rows={staffRows} primary="Prepare staff item" secondary="Review hours" />;
 }
 
 function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
@@ -84,11 +85,7 @@ function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondar
             <div><dt>Owner control</dt><dd>Prepared only</dd></div>
             <div><dt>Safety</dt><dd>No send or sync</dd></div>
           </dl>
-          <div>
-            <button className="primary">{primary}</button>
-            <button>{secondary}</button>
-            <button>Send to Command</button>
-          </div>
+          <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" />
         </aside>
       </div>
     </section>
