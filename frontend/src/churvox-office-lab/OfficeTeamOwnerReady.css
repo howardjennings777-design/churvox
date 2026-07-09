@@ -1,0 +1,201 @@
+.cvOwnerReady .cvSiteTopbar::after {
+  display: none;
+}
+
+.cvOwnerReady .cvSiteTopbar .cvOfficeBrand strong {
+  font-size: 1.05rem;
+}
+
+.cvOwnerReady .cvSiteTopbar .cvOfficeBrand span {
+  color: rgba(255, 247, 236, .8);
+}
+
+.cvOwnerReady .cvSiteTopbar nav {
+  max-width: min(1040px, calc(100vw - 340px));
+}
+
+.cvOwnerReady .cvSiteStatusLead h1 {
+  max-width: 560px;
+}
+
+.cvOwnerReady .cvSiteStatusLead p {
+  max-width: 760px;
+}
+
+.cvOwnerReady .cvSiteScreen:has(.cvSiteTrayRail) {
+  overflow: hidden;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(249,115,22,.16), transparent 26%),
+    linear-gradient(180deg, rgba(255,252,246,.98), rgba(243,236,225,.94));
+}
+
+.cvOwnerReady .cvSiteScreen:has(.cvSiteTrayRail)::before {
+  content: "";
+  position: absolute;
+  inset: 74px 14px auto auto;
+  width: 310px;
+  height: 170px;
+  pointer-events: none;
+  opacity: .12;
+  border-radius: 999px;
+  background: repeating-linear-gradient(135deg, #17120e 0 8px, transparent 8px 18px);
+  transform: rotate(-8deg);
+}
+
+.cvOwnerReady .cvSiteScreen:has(.cvSiteTrayRail) .cvSiteScreenHeader {
+  position: relative;
+  z-index: 1;
+  min-height: 108px;
+  align-items: center;
+  margin: -4px -4px 14px;
+  padding: 18px;
+  border: 1px solid rgba(23,18,14,.12);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 16%, rgba(249,115,22,.42), transparent 26%),
+    linear-gradient(135deg, #17120e, #2b2119 58%, #71320e);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 16px 32px rgba(23,18,14,.14);
+}
+
+.cvOwnerReady .cvSiteScreen:has(.cvSiteTrayRail) .cvSiteScreenHeader span,
+.cvOwnerReady .cvSiteScreen:has(.cvSiteTrayRail) .cvSiteScreenHeader h2 {
+  color: #fff7ec;
+}
+
+.cvOwnerReady .cvSiteScreen:has(.cvSiteTrayRail) .cvSiteScreenHeader p {
+  max-width: 480px;
+  justify-self: end;
+  color: rgba(255,247,236,.76);
+}
+
+.cvOwnerReady .cvSiteTrayRail {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px;
+  gap: 8px;
+  border-radius: 17px;
+  background: rgba(23,18,14,.055);
+  scrollbar-width: thin;
+}
+
+.cvOwnerReady .cvSiteTrayRail button {
+  flex: 1 0 140px;
+  min-height: 74px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.74);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.62);
+}
+
+.cvOwnerReady .cvSiteTrayRail button strong {
+  font-size: 1.35rem;
+}
+
+.cvOwnerReady .cvSiteQueueSummary {
+  position: relative;
+  z-index: 1;
+  margin: 12px 0;
+  padding: 11px 12px;
+  border-radius: 15px;
+  background: linear-gradient(90deg, rgba(23,18,14,.055), rgba(249,115,22,.1));
+}
+
+.cvOwnerReady .cvSiteQueueSummary strong,
+.cvOwnerReady .cvSiteQueueSummary span,
+.cvOwnerReady .cvSiteQueueSummary em {
+  font-size: .76rem;
+}
+
+.cvOwnerReady .cvSiteDecisionGrid {
+  position: relative;
+  z-index: 1;
+  align-items: stretch;
+}
+
+.cvOwnerReady .cvSiteDecisionCard {
+  position: relative;
+  overflow: hidden;
+  min-height: 390px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,252,246,.78));
+  box-shadow: 0 16px 34px rgba(37,29,20,.09);
+}
+
+.cvOwnerReady .cvSiteDecisionCard::before {
+  content: "Owner approval";
+  position: absolute;
+  top: 12px;
+  right: -36px;
+  width: 150px;
+  padding: 5px 0;
+  color: rgba(255,247,236,.9);
+  background: #17120e;
+  font-size: .52rem;
+  font-weight: 950;
+  letter-spacing: .09em;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(34deg);
+}
+
+.cvOwnerReady .cvSiteDecisionCard h3 {
+  max-width: 86%;
+  font-size: clamp(1.05rem, 1.3vw, 1.34rem);
+}
+
+.cvOwnerReady .cvSiteDecisionCard dl {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.cvOwnerReady .cvSiteDecisionCard dt {
+  margin-top: 0;
+  color: #17120e;
+}
+
+.cvOwnerReady .cvSiteDecisionCard dd {
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(23,18,14,.045);
+}
+
+.cvOwnerReady .cvSiteDecisionCard footer {
+  padding-top: 12px;
+  border-top: 1px solid rgba(23,18,14,.08);
+}
+
+.cvOwnerReady .cvSiteDecisionCard footer button {
+  min-height: 34px;
+  border-radius: 10px;
+}
+
+.cvOwnerReady .cvSiteDecisionCard > small:last-child {
+  display: block;
+  margin-top: 10px;
+  padding: 8px 9px;
+  border-radius: 10px;
+  color: #655c52;
+  background: rgba(249,115,22,.09);
+  font-weight: 850;
+}
+
+@media (max-width: 1080px) {
+  .cvOwnerReady .cvSiteTopbar nav {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvOwnerReady .cvSiteScreen:has(.cvSiteTrayRail) .cvSiteScreenHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .cvOwnerReady .cvSiteScreen:has(.cvSiteTrayRail) .cvSiteScreenHeader p {
+    justify-self: start;
+  }
+}
