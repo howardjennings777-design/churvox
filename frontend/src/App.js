@@ -69,6 +69,7 @@ const Spinner = () => (
 
 const AppPage = ({ children }) => <>{children}</>;
 const OwnerMaintenance = () => <MaintenancePage workerAccess />;
+const OwnerOfficeApp = () => <OfficeTeamLab appMode="owner" />;
 
 function PublicRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
@@ -200,7 +201,8 @@ function App() {
               <Route path="/reset-password" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PublicRoute><ResetPasswordPage /></PublicRoute>} />
               <Route path="/invite/setup/:token" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <InviteSetupPage />} />
 
-              <Route path="/dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
+              <Route path="/dashboard" element={<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>} />
+              <Route path="/legacy-dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/setup" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
@@ -212,11 +214,11 @@ function App() {
               <Route path="/operator-tools" element={<AppRedirect to="/dashboard#command" />} />
               <Route path="/cockpit" element={<AppRedirect to="/dashboard#command" />} />
 
-              <Route path="/jobs" element={<AppRedirect to="/dashboard#jobs" />} />
-              <Route path="/jobs-board" element={<AppRedirect to="/dashboard#jobs" />} />
-              <Route path="/jobs/new" element={<AppRedirect to="/dashboard#jobs" />} />
-              <Route path="/jobs/:id" element={<AppRedirect to="/dashboard#jobs" />} />
-              <Route path="/jobs/:id/edit" element={<AppRedirect to="/dashboard#jobs" />} />
+              <Route path="/jobs" element={<AppRedirect to="/dashboard#work" />} />
+              <Route path="/jobs-board" element={<AppRedirect to="/dashboard#work" />} />
+              <Route path="/jobs/new" element={<AppRedirect to="/dashboard#work" />} />
+              <Route path="/jobs/:id" element={<AppRedirect to="/dashboard#work" />} />
+              <Route path="/jobs/:id/edit" element={<AppRedirect to="/dashboard#work" />} />
               <Route path="/clients" element={<AppRedirect to="/dashboard#clients" />} />
               <Route path="/clients-board" element={<AppRedirect to="/dashboard#clients" />} />
               <Route path="/clients/new" element={<AppRedirect to="/dashboard#clients" />} />
@@ -235,22 +237,22 @@ function App() {
               <Route path="/invoices/:id/edit" element={<AppRedirect to="/dashboard#invoices" />} />
               <Route path="/reports" element={<AppRedirect to="/dashboard#invoices" />} />
               <Route path="/reports-board" element={<AppRedirect to="/dashboard#invoices" />} />
-              <Route path="/team" element={<AppRedirect to="/dashboard#team" />} />
-              <Route path="/team-board" element={<AppRedirect to="/dashboard#team" />} />
+              <Route path="/team" element={<AppRedirect to="/dashboard#staff" />} />
+              <Route path="/team-board" element={<AppRedirect to="/dashboard#staff" />} />
               <Route path="/payroll" element={<AppRedirect to="/dashboard#payroll" />} />
               <Route path="/payroll-board" element={<AppRedirect to="/dashboard#payroll" />} />
-              <Route path="/dispatch" element={<AppRedirect to="/dashboard#workers" />} />
-              <Route path="/dispatch-board" element={<AppRedirect to="/dashboard#workers" />} />
-              <Route path="/dispatch/map" element={<AppRedirect to="/dashboard#workers" />} />
-              <Route path="/crew-map" element={<AppRedirect to="/dashboard#workers" />} />
-              <Route path="/schedule" element={<AppRedirect to="/dashboard#workers" />} />
-              <Route path="/calendar" element={<AppRedirect to="/dashboard#workers" />} />
+              <Route path="/dispatch" element={<AppRedirect to="/dashboard#worker" />} />
+              <Route path="/dispatch-board" element={<AppRedirect to="/dashboard#worker" />} />
+              <Route path="/dispatch/map" element={<AppRedirect to="/dashboard#worker" />} />
+              <Route path="/crew-map" element={<AppRedirect to="/dashboard#worker" />} />
+              <Route path="/schedule" element={<AppRedirect to="/dashboard#schedule" />} />
+              <Route path="/calendar" element={<AppRedirect to="/dashboard#schedule" />} />
               <Route path="/settings" element={<AppRedirect to="/dashboard#settings" />} />
               <Route path="/settings-board" element={<AppRedirect to="/dashboard#settings" />} />
-              <Route path="/support" element={<AppRedirect to="/dashboard#support" />} />
-              <Route path="/support-board" element={<AppRedirect to="/dashboard#support" />} />
-              <Route path="/offline-sync" element={<AppRedirect to="/dashboard#support" />} />
-              <Route path="/onboarding" element={<AppRedirect to="/dashboard#support" />} />
+              <Route path="/support" element={<AppRedirect to="/dashboard#help" />} />
+              <Route path="/support-board" element={<AppRedirect to="/dashboard#help" />} />
+              <Route path="/offline-sync" element={<AppRedirect to="/dashboard#help" />} />
+              <Route path="/onboarding" element={<AppRedirect to="/dashboard#help" />} />
 
               <Route path="/worker" element={<AppRedirect to="/worker/today" />} />
               <Route path="/worker/today" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
@@ -260,34 +262,22 @@ function App() {
               <Route path="/worker/messages" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
               <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
               <Route path="/worker/settings" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-              <Route path="/worker/profile" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
 
-              <Route path="/public/quote/:token" element={<PublicQuotePage />} />
-              <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
-              <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
-              <Route path="/public/proof/:token" element={<PublicProofPackPage />} />
-              <Route path="/billing" element={<BillingReturnBridge />} />
+              <Route path="/q/auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
+              <Route path="/admin" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
+              <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
+              <Route path="/admin/unlock" element={<PlatformUnlock />} />
+              <Route path="/platform" element={<AppOwnerPage />} />
               <Route path="/billing/success" element={<BillingReturnBridge />} />
-              <Route path="/billing/cancel" element={<BillingReturnBridge cancelled />} />
-
-              <Route path="/admin" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-              <Route path="/churvox-hq" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
-              <Route path="/admin/hq" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
-              <Route path="/owner/dashboard" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-              <Route path="/platform-dashboard" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-              <Route path="/app-owner" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-              <Route path="/admin/usage" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
-              <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
-              <Route path="/owner-login" element={<AppRedirect to="/login" />} />
-              <Route path="/admin/login" element={<AppRedirect to="/login" />} />
-              <Route path="/owner" element={<AppRedirect to="/admin" />} />
-              <Route path="/admin/unlock" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformUnlock />} />
-              <Route path="/platform/unlock" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PlatformUnlock />} />
-
+              <Route path="/billing/cancelled" element={<BillingReturnBridge cancelled />} />
+              <Route path="/quote/:token" element={<PublicQuotePage />} />
+              <Route path="/invoice/:token" element={<PublicInvoicePage />} />
+              <Route path="/client/:token" element={<PublicClientPortalPage />} />
+              <Route path="/proof/:token" element={<PublicProofPackPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+              <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/legal/terms" element={<TermsOfServicePage />} />
               <Route path="/delete-account" element={<AccountDeletionPage />} />
               <Route path="*" element={<RoleRedirect />} />
             </Routes>
