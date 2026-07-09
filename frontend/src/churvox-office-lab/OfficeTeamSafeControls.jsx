@@ -1,16 +1,18 @@
 import React, { useMemo, useState } from "react";
 import "./OfficeTeamSafeControls.css";
+import { createOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 
 export default function OfficeTeamSafeControls({ area = "office", record = [], primary = "Prepare", secondary = "Review", command = "Send to Command" }) {
   const [trail, setTrail] = useState([]);
   const recordTitle = record?.[1] || record?.[0] || "selected record";
   const safeActions = useMemo(() => [
-    { label: primary, tone: "primary", result: `${primary} prepared locally for ${recordTitle}. No live record changed.` },
-    { label: secondary, tone: "", result: `${secondary} opened as a safe review note for ${recordTitle}.` },
-    { label: command, tone: "", result: `${command} created a prepared-only Command item for ${recordTitle}. Owner approval still required.` },
+    { label: primary, tone: "primary", type: "local", result: `${primary} prepared locally for ${recordTitle}. No live record changed.` },
+    { label: secondary, tone: "", type: "local", result: `${secondary} opened as a safe review note for ${recordTitle}.` },
+    { label: command, tone: "", type: "command", result: `${command} created a prepared-only Command item for ${recordTitle}. Owner approval still required.` },
   ], [primary, secondary, command, recordTitle]);
 
   function recordAction(action) {
+    if (action.type === "command") createOfficeTeamLocalCommand({ area, record, action: action.label });
     const entry = {
       id: `${Date.now()}-${action.label}`,
       label: action.label,
