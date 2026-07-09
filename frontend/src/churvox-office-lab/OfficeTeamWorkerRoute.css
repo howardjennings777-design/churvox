@@ -80,6 +80,13 @@
   padding: 18px;
 }
 
+.cvWorkerRouteEmptyJob {
+  border-color: rgba(249,115,22,.26);
+  background:
+    radial-gradient(circle at top right, rgba(249,115,22,.13), transparent 44%),
+    rgba(255,255,255,.78);
+}
+
 .cvWorkerRouteJob h2 {
   font-size: 1.55rem;
   line-height: 1.05;
@@ -124,6 +131,20 @@
 .cvWorkerRouteSteps button:first-child {
   color: #fff8ed;
   background: linear-gradient(135deg, #17120e, #f97316);
+}
+
+.cvWorkerRouteSteps button:disabled,
+.cvWorkerRouteQuickNotes button:disabled,
+.cvWorkerRouteProof button:disabled {
+  color: rgba(23,18,14,.45);
+  background: rgba(255,255,255,.45);
+  box-shadow: inset 0 0 0 1px rgba(23,18,14,.08);
+  cursor: not-allowed;
+}
+
+.cvWorkerRouteSteps button:disabled:first-child {
+  color: rgba(23,18,14,.45);
+  background: rgba(255,255,255,.45);
 }
 
 .cvWorkerRouteNoteBox {
