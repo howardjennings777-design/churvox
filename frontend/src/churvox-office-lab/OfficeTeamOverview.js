@@ -10,7 +10,8 @@ export const OFFICE_OVERVIEW_AREAS = [
   { area: "quotes", label: "Quotes", screen: "quotes", fallback: "Follow-ups and approvals" },
 ];
 
-export function useOfficeTeamOverview() {
+export function useOfficeTeamOverview(options = {}) {
+  const allowFallback = options.allowFallback !== false;
   const [state, setState] = useState({ source: "demo", areas: [] });
 
   useEffect(() => {
@@ -24,19 +25,19 @@ export function useOfficeTeamOverview() {
           return {
             ...item,
             count: rows.length,
-            source: rows.length ? "live" : result?.source || "demo",
-            message: result?.message || "Demo structure · safe preview",
-            top: rows[0]?.[1] || item.fallback,
-            status: rows[0]?.[2] || "Prepared-only",
+            source: rows.length ? "live" : allowFallback ? result?.source || "demo" : "empty",
+            message: rows.length ? result?.message || "Live read-only" : allowFallback ? result?.message || "Demo structure · safe preview" : "No demo data",
+            top: rows[0]?.[1] || (allowFallback ? item.fallback : "No live records"),
+            status: rows[0]?.[2] || (allowFallback ? "Prepared-only" : "Clear"),
           };
         } catch {
           return {
             ...item,
             count: 0,
-            source: "demo",
-            message: "Demo structure · safe preview",
-            top: item.fallback,
-            status: "Prepared-only",
+            source: allowFallback ? "demo" : "empty",
+            message: allowFallback ? "Demo structure · safe preview" : "No demo data",
+            top: allowFallback ? item.fallback : "No live records",
+            status: allowFallback ? "Prepared-only" : "Clear",
           };
         }
       })
@@ -44,7 +45,7 @@ export function useOfficeTeamOverview() {
       if (!mounted) return;
       const liveCount = areas.filter((item) => item.source === "live").length;
       setState({
-        source: liveCount ? "live" : "demo",
+        source: liveCount ? "live" : allowFallback ? "demo" : "empty",
         liveCount,
         areas,
       });
@@ -53,22 +54,22 @@ export function useOfficeTeamOverview() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [allowFallback]);
 
   return useMemo(() => {
     const areas = state.areas.length ? state.areas : OFFICE_OVERVIEW_AREAS.map((item) => ({
       ...item,
       count: 0,
-      source: "demo",
-      message: "Demo structure · safe preview",
-      top: item.fallback,
-      status: "Prepared-only",
+      source: allowFallback ? "demo" : "empty",
+      message: allowFallback ? "Demo structure · safe preview" : "No demo data",
+      top: allowFallback ? item.fallback : "No live records",
+      status: allowFallback ? "Prepared-only" : "Clear",
     }));
 
     return {
       ...state,
       areas,
-      label: state.source === "live" ? `${state.liveCount} live areas loaded read-only` : "Demo structure · safe preview",
+      label: state.source === "live" ? `${state.liveCount} live areas loaded read-only` : allowFallback ? "Demo structure · safe preview" : "No demo data shown",
     };
-  }, [state]);
+  }, [allowFallback, state]);
 }
