@@ -13,7 +13,7 @@ const fallbackRows = [
 const workerSteps = ["Acknowledge", "Start", "Pause", "Complete"];
 
 export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
-  const allowFallback = appMode !== "owner";
+  const allowFallback = appMode !== "owner" && !isOwnerRoute();
   const live = useOfficeTeamRows("worker", fallbackRows, { allowFallback, emptyMessage: "No live worker records found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(fallbackRows[0]);
   const [localStatus, setLocalStatus] = useState("Not started");
@@ -83,4 +83,8 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
       </div>
     </section>
   );
+}
+
+function isOwnerRoute() {
+  return typeof window !== "undefined" && window.location.pathname.includes("dashboard");
 }
