@@ -16,7 +16,7 @@ const pages = [
   ['team', /Roles behind the desk/i],
   ['playbooks', /Same system, different business wording/i],
   ['integrations', /Accounting, email and future tools/i],
-  ['activity', /Office activity log/i],
+  ['activity', /Office activity and approval trail/i],
   ['automation', /Prepared rules, not blind automation/i],
   ['branding', /Business settings and mobile polish/i],
   ['settings', /Owner controls before this becomes live/i],
@@ -49,12 +49,14 @@ test.describe('hidden Office Team lab', () => {
     await expect(page.getByText(/local prepared-only handoff|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
 
     await page.locator('.cvSiteDecisionCard').first().getByRole('button').first().click();
-    await expect(page.getByText(/cleared the local Command card|Nothing was sent or synced/i).first()).toBeVisible();
+    await expect(page.getByText(/cleared the local Command card|Approval trail saved|Nothing was sent or synced/i).first()).toBeVisible();
 
     await page.goto('/office-team-lab#activity', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/Owner approval trail/i)).toBeVisible();
+    await expect(page.getByText(/Owner reviewed/i).first()).toBeVisible();
+    await expect(page.getByText(/Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
     await expect(page.getByText(/Local office trail/i)).toBeVisible();
     await expect(page.getByText(/Prepared|Cleared/i).first()).toBeVisible();
-    await expect(page.getByText(/Nothing was sent, synced, charged or changed|Owner approval still required/i).first()).toBeVisible();
   });
 
   test('worker phone view uses large local-only controls', async ({ page }) => {
