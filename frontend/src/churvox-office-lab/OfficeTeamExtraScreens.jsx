@@ -48,7 +48,8 @@ export function HelpScreen(props) {
 }
 
 function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab", forceFallback = false }) {
-  const allowFallback = forceFallback || (appMode !== "owner" && !isOwnerRoute());
+  const ownerRoute = isOwnerRoute();
+  const allowFallback = forceFallback || (appMode !== "owner" && !ownerRoute);
   const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
@@ -71,7 +72,7 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, app
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
             </button>
-          )) : <article className="cvSiteEmpty"><strong>No live {eyebrow.toLowerCase()} records yet</strong><p>No demo rows are shown inside the real owner app.</p></article>}
+          )) : <article className="cvSiteEmpty"><strong>No {eyebrow.toLowerCase()} records yet</strong><p>{ownerRoute ? "This area is clear. Churvox will bring items here when they need owner review." : "No demo rows are shown inside the real owner app."}</p></article>}
         </section>
 
         <aside className="cvExtraDetail">
@@ -84,7 +85,7 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, app
             <article><b>Auto-send</b><small>Off</small></article>
             <article><b>Auto-sync</b><small>Off</small></article>
           </div>
-          {hasRows ? <OfficeTeamSafeControls area={area || eyebrow} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>Live records will appear here when there is something real for the owner to review.</p></article>}
+          {hasRows ? <OfficeTeamSafeControls area={area || eyebrow} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "Nothing needs owner approval here right now." : "Live records will appear here when there is something real for the owner to review."}</p></article>}
         </aside>
       </div>
     </section>
