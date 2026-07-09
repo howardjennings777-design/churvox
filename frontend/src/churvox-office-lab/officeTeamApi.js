@@ -239,6 +239,19 @@ function normalizeRows(area, body) {
   return objectAsRows(area, body);
 }
 
+function paymentMeta(item = {}) {
+  const paymentLink = first(item, ["payment_link", "payment_url", "stripe_payment_url", "pay_url", "checkout_url", "public_invoice_url", "invoice_url"], "");
+  const amountDue = money(first(item, ["amount_due", "balance_due", "balance", "total", "amount", "price"], ""), "");
+  return {
+    paymentLink,
+    amountDue,
+    invoiceNumber: first(item, ["invoice_number", "invoice_no", "number", "invoice_id"], ""),
+    customerName: first(item, ["customer_name", "client_name", "name", "business_name"], "Customer"),
+    jobId: first(item, ["job_id", "id", "_id"], ""),
+    invoiceId: first(item, ["invoice_id", "invoiceId"], ""),
+  };
+}
+
 function rowFor(area, item = {}, index = 0) {
   if (!item || typeof item !== "object") return null;
   const fallbackTitle = `Live ${area} record`;
@@ -267,11 +280,13 @@ function rowFor(area, item = {}, index = 0) {
     ];
   }
   if (area === "worker" || area === "staff") {
+    const meta = paymentMeta(item);
     return [
       first(item, ["name", "worker_name", "staff_name", "email", "role"], "Worker"),
-      first(item, ["status", "role", "job_title", "today_status"], "Live staff record"),
-      first(item, ["availability", "timer_status", "assigned_count", "phone"], "Check"),
-      first(item, ["notes", "summary", "email", "phone"], "Worker view stays simple and phone-friendly."),
+      first(item, ["status", "role", "job_title", "today_status", "title", "service", "client_name", "customer_name"], "Live staff record"),
+      first(item, ["availability", "timer_status", "assigned_count", "phone", "amount_due", "balance_due"], "Check"),
+      first(item, ["notes", "summary", "email", "phone", "address"], "Worker view stays simple and phone-friendly."),
+      meta,
     ];
   }
   if (area === "quotes") {
