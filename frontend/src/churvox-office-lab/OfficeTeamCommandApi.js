@@ -1,5 +1,6 @@
 import API_BASE from "../lib/apiBase";
 
+export const BACKEND_COMMAND_EVENT = "churvox-backend-command-slip";
 const SAFE_RESULT = "Owner approval recorded. Nothing was sent, synced, charged or changed.";
 
 function host() {
@@ -113,6 +114,45 @@ export async function fetchBackendCommandDecisions() {
   };
 }
 
+export async function createBackendCommandSlip({ area = "office", record = [], action = "Prepare Command card" } = {}) {
+  const base = host();
+  if (!base) throw new Error("Command backend unavailable");
+  const recordTitle = record?.[1] || record?.[0] || "selected record";
+  const status = record?.[2] || "Prepared-only";
+  const detail = record?.[3] || "Prepared for owner review.";
+  const response = await fetch(`${base}/api/command/slips`, {
+    method: "POST",
+    credentials: "include",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      sourceType: area,
+      actionType: action,
+      title: `${labelForArea(area)}: ${recordTitle}`,
+      found: `${status}. ${detail}`,
+      prepared: `${action} prepared this backend Command slip. Nothing was sent, synced, charged or changed.`,
+      why: "Owner approval is required before any real send, sync, charge or record change.",
+      urgency: "Owner review",
+      payload: {
+        area,
+        record,
+        action,
+        prepared_only: true,
+        owner_review_only: true,
+      },
+    }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || body?.detail || `Command slip failed ${response.status}`);
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
+  } catch {
+    // Event refresh should never block Command creation.
+  }
+  return body;
+}
+
 export async function recordBackendCommandDecision(decision, action) {
   const base = host();
   const slipId = clean(decision?.raw?.command_slip_id || "");
@@ -136,4 +176,14 @@ export async function recordBackendCommandDecision(decision, action) {
     throw new Error(body?.message || body?.detail || `Command decision failed ${response.status}`);
   }
   return body;
+}
+
+function labelForArea(area = "office") {
+  const key = String(area || "office").toLowerCase();
+  if (["money", "quotes", "invoices", "integrations"].includes(key)) return "Money";
+  if (["work", "schedule"].includes(key)) return "Work";
+  if (["clients", "messages"].includes(key)) return "Client";
+  if (["staff", "worker", "payroll"].includes(key)) return "Staff";
+  if (["automation", "branding"].includes(key)) return "Operations";
+  return "Office";
 }
