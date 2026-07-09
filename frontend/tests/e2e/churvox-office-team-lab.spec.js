@@ -27,6 +27,15 @@ const pages = [
 ];
 
 test.describe('hidden Office Team lab', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => {
+      window.localStorage.removeItem('churvox_office_team_approval_trail_v1');
+      window.sessionStorage.removeItem('churvox_office_lab_command_queue_v1');
+      window.sessionStorage.removeItem('churvox_office_lab_activity_v1');
+    });
+  });
+
   test('all hidden lab pages load without blank screens', async ({ page }) => {
     for (const [hash, expected] of pages) {
       await page.goto(`/office-team-lab#${hash}`, { waitUntil: 'domcontentloaded' });
@@ -57,6 +66,11 @@ test.describe('hidden Office Team lab', () => {
     await expect(page.getByText(/Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
     await expect(page.getByText(/Local office trail/i)).toBeVisible();
     await expect(page.getByText(/Prepared|Cleared/i).first()).toBeVisible();
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/Owner approval trail/i)).toBeVisible();
+    await expect(page.getByText(/Owner reviewed/i).first()).toBeVisible();
+    await expect(page.getByText(/Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
   });
 
   test('worker phone view uses large local-only controls', async ({ page }) => {
