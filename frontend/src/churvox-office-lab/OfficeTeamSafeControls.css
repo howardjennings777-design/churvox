@@ -1,0 +1,51 @@
+.cvSafeControls {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.cvSafeControlButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.cvSafeControlButtons button {
+  border: 1px solid rgba(23,18,14,.12);
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #17120e;
+  background: rgba(255,255,255,.72);
+  font-size: .72rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cvSafeControlButtons button.primary {
+  color: #fff7ec;
+  border-color: #17120e;
+  background: linear-gradient(135deg, #17120e, #3b2b1f 55%, #f97316);
+}
+
+.cvSafeControls > small {
+  color: #756c61;
+  font-size: .66rem;
+  font-weight: 850;
+}
+
+.cvSafeTrail {
+  display: grid;
+  gap: 5px;
+}
+
+.cvSafeTrail p {
+  margin: 0;
+  padding: 7px 8px;
+  border: 1px solid rgba(249,115,22,.18);
+  border-radius: 9px;
+  color: #7c2d12;
+  background: rgba(249,115,22,.08);
+  font-size: .68rem;
+  line-height: 1.28;
+  font-weight: 820;
+}
