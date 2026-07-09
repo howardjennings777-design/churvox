@@ -56,7 +56,6 @@ const screenAliases = {
   money: "money",
   accounting: "money",
   xero: "integrations",
-  team: "staff",
   staff: "staff",
   payroll: "payroll",
   "office-team": "team",
@@ -260,4 +259,9 @@ function decision(id, tray, roleName, level, title, happened, checked, prepared,
 function keyOf(item = {}) { return item.id || item.action_id || item.title; }
 function trayKey(tray = "") { const t = String(tray).toLowerCase(); if (t.includes("money")) return "money"; if (t.includes("booking")) return "bookings"; if (t.includes("staff")) return "staff"; if (t.includes("client")) return "clients"; if (t.includes("quality")) return "quality"; if (t.includes("operation")) return "ops"; return "command"; }
 function countDepartments(items = []) { return items.reduce((acc, item) => { acc.command += 1; const key = trayKey(item.tray); acc[key] = (acc[key] || 0) + 1; return acc; }, { command: 0, money: 0, bookings: 0, staff: 0, clients: 0, quality: 0, ops: 0 }); }
-function cleanScreen(hash = "") { const key = String(hash || "").replace(/^#/, "").trim().toLowerCase(); const mapped = screenAliases[key] || key; return screens.some(([id]) => id === mapped) ? mapped : "today"; }
+function cleanScreen(hash = "") {
+  const key = String(hash || "").replace(/^#/, "").trim().toLowerCase();
+  if (screens.some(([id]) => id === key)) return key;
+  const mapped = screenAliases[key] || key;
+  return screens.some(([id]) => id === mapped) ? mapped : "today";
+}
