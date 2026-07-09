@@ -1,0 +1,97 @@
+import React from "react";
+import { useOfficeTeamOverview } from "./OfficeTeamOverview";
+
+const shortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];
+
+const labels = {
+  command: "Command",
+  work: "Work",
+  schedule: "Schedule",
+  messages: "Messages",
+  worker: "Worker View",
+  quotes: "Quotes",
+  invoices: "Invoices",
+  money: "Money",
+  clients: "Clients",
+  staff: "Staff",
+  payroll: "Payroll",
+  automation: "Automation",
+  branding: "Branding",
+  plans: "Plans",
+  integrations: "Integrations",
+  readiness: "Readiness",
+};
+
+export default function OfficeTeamTodayScreen({ metrics, pending, resolved, go }) {
+  const overview = useOfficeTeamOverview();
+  const top = pending.slice(0, 3);
+  const cleared = Object.keys(resolved).length;
+
+  return (
+    <section className="cvSiteScreen">
+      <header className="cvSiteScreenHeader">
+        <span>Today</span>
+        <h2>Your office team has checked the business</h2>
+        <p>Start here. The owner sees what matters, opens Command when a decision is needed, and leaves the rest with the office team.</p>
+      </header>
+
+      <div className="cvSiteTodayGrid">
+        <article className="cvSiteBriefing">
+          <span>Daily briefing · {overview.label}</span>
+          <h2>{pending.length ? `${pending.length} decisions are prepared. ${top.length} are ready first.` : "No urgent decisions waiting right now."}</h2>
+          <p>Today now checks the live business areas in read-only mode where possible. It still never sends, syncs, charges, edits records or changes money without owner approval.</p>
+          <div className="cvSiteBriefingActions">
+            {shortcuts.map((key, index) => (
+              <button key={key} className={index === 0 ? "primary" : ""} onClick={() => go(key)}>{labels[key] || key}</button>
+            ))}
+          </div>
+        </article>
+
+        <div className="cvSiteTodayStack">
+          <article className="cvSiteTodayPanel">
+            <span>Next decisions</span>
+            <strong>{metrics[1]?.value || 0} need owner</strong>
+            <p>Command only shows the next few, then replaces each card after action.</p>
+            <div className="cvSiteMiniList">
+              {top.length ? top.map((item) => (
+                <article key={item.id || item.action_id || item.title}>
+                  <b>{item.title}</b>
+                  <small>{item.tray} · {item.roleName}</small>
+                </article>
+              )) : <article><b>Command is clear</b><small>Office team keeps watching safely.</small></article>}
+            </div>
+          </article>
+
+          <article className="cvSiteTodayPanel">
+            <span>Live office areas</span>
+            <strong>{overview.areas.reduce((sum, item) => sum + Number(item.count || 0), 0)} read-only records</strong>
+            <p>These are safe previews pulled into the hidden lab. Action buttons remain approval paths.</p>
+            <div className="cvSiteMiniList">
+              {overview.areas.map((item) => (
+                <article key={item.area}>
+                  <button onClick={() => go(item.screen)}>
+                    <b>{item.label}: {item.count}</b>
+                    <small>{item.status} · {item.top}</small>
+                  </button>
+                </article>
+              ))}
+            </div>
+          </article>
+
+          <article className="cvSiteActionPanel">
+            <span>Safety lock</span>
+            <strong>Approval first</strong>
+            <p>The hidden build stays prepared-only until moved safely into the real app.</p>
+            <button onClick={() => go("safety")}>View safety rules</button>
+          </article>
+
+          <article className="cvSiteActionPanel">
+            <span>Cleared</span>
+            <strong>{cleared} this session</strong>
+            <p>Actioned decisions leave Command and move into activity history.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  );
+}
