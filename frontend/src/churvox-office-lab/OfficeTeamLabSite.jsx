@@ -131,8 +131,8 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         setResolved({});
         if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
         else if (drafts.length) setNotice("Live read-only records prepared into Command preview. Nothing has been sent, synced or changed.");
-        else if (data?.source === "clear-live") setNotice("Live scan is clear. Demo cards stay visible for review.");
-        else setNotice(isOwnerApp ? "Owner app shell loaded. Live scan unavailable, so safe fallback decisions stay visible." : "Demo preview. Sign in as an owner to load live Command data.");
+        else if (data?.source === "clear-live") setNotice(isOwnerApp ? "Live scan is clear. Command will stay empty until real work needs owner approval." : "Live scan is clear. Demo cards stay visible for review.");
+        else setNotice(isOwnerApp ? "Owner app shell loaded. Live scan unavailable, so no demo decisions are shown." : "Demo preview. Sign in as an owner to load live Command data.");
       })
       .catch((err) => mounted && setNotice(`${isOwnerApp ? "Owner app" : "Demo preview"}. Live scan unavailable: ${err.message || "connection issue"}`));
     return () => { mounted = false; };
@@ -153,13 +153,13 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   }, []);
 
   const decisions = useMemo(() => {
-    const baseDecisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : demoDecisions;
+    const baseDecisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : isOwnerApp ? [] : demoDecisions;
     return localQueue.length ? [...localQueue, ...baseDecisions] : baseDecisions;
-  }, [snapshot.decisions, liveDrafts, localQueue]);
+  }, [snapshot.decisions, liveDrafts, localQueue, isOwnerApp]);
   const pending = useMemo(() => decisions.filter((item) => !resolved[keyOf(item)]), [decisions, resolved]);
   const counts = useMemo(() => countDepartments(pending), [pending]);
   const metrics = makeStatusCards({ total: pending.length, high: pending.filter((item) => item.level === "Top priority").length, parked: Object.keys(resolved).length }, pending.length);
-  const sourceLabel = localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : snapshot.source === "clear-live" ? "Live clear" : "Demo mode";
+  const sourceLabel = localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : snapshot.source === "clear-live" ? "Live clear" : isOwnerApp ? "No demo data" : "Demo mode";
 
   function go(next) {
     const cleanNext = cleanScreen(`#${next}`);
