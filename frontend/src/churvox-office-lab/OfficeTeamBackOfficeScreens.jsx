@@ -48,7 +48,7 @@ export function BrandingScreen(props) {
 }
 
 function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab", forceFallback = false }) {
-  const allowFallback = forceFallback || appMode !== "owner";
+  const allowFallback = forceFallback || (appMode !== "owner" && !isOwnerRoute());
   const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
@@ -88,4 +88,8 @@ function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary
       </div>
     </section>
   );
+}
+
+function isOwnerRoute() {
+  return typeof window !== "undefined" && window.location.pathname.includes("dashboard");
 }
