@@ -31,10 +31,15 @@ test.describe('hidden Office Team lab', () => {
     await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => {
       window.localStorage.removeItem('churvox_office_team_approval_trail_v1');
+      window.localStorage.removeItem('churvox_office_owner_approval_trail_v1');
       window.localStorage.removeItem('churvox_office_lab_command_queue_v1');
       window.localStorage.removeItem('churvox_office_lab_activity_v1');
+      window.localStorage.removeItem('churvox_office_owner_command_queue_v1');
+      window.localStorage.removeItem('churvox_office_owner_activity_v1');
       window.sessionStorage.removeItem('churvox_office_lab_command_queue_v1');
       window.sessionStorage.removeItem('churvox_office_lab_activity_v1');
+      window.sessionStorage.removeItem('churvox_office_owner_command_queue_v1');
+      window.sessionStorage.removeItem('churvox_office_owner_activity_v1');
     });
   });
 
