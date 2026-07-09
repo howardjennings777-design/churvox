@@ -20,3 +20,32 @@
   outline-offset: 4px;
   border-radius: 8px;
 }
+
+.cvSiteHandoverPanel {
+  border-color: rgba(249,115,22,.3) !important;
+  background:
+    radial-gradient(circle at top right, rgba(249,115,22,.13), transparent 36%),
+    rgba(255,255,255,.82) !important;
+}
+
+.cvSiteHandoverFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cvSiteHandoverFooter button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 13px;
+  color: #fff8ed;
+  background: #17120e;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cvSiteHandoverFooter button + button {
+  color: #17120e;
+  background: rgba(249,115,22,.14);
+}
