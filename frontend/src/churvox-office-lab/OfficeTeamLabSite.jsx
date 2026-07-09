@@ -14,7 +14,7 @@ import { QuotesScreen, InvoicesScreen, IntegrationsScreen, HelpScreen } from "./
 import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScreens";
 import { ScheduleScreen, AutomationScreen, PayrollScreen, BrandingScreen } from "./OfficeTeamBackOfficeScreens";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
-import { BACKEND_COMMAND_EVENT, fetchBackendCommandDecisions, recordBackendCommandDecision } from "./OfficeTeamCommandApi";
+import { BACKEND_COMMAND_EVENT, fetchBackendCommandAudit, fetchBackendCommandDecisions, recordBackendCommandDecision } from "./OfficeTeamCommandApi";
 import { fetchOfficeTeamCommandDrafts } from "./OfficeTeamCommandDrafts";
 import { readOfficeTeamLocalActivityLog, readOfficeTeamLocalCommandQueue, recordOfficeTeamLocalActivity, removeOfficeTeamLocalCommand, subscribeOfficeTeamLocalActivity, subscribeOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 import { readOfficeTeamApprovalTrail, recordOfficeTeamApprovalTrail, subscribeOfficeTeamApprovalTrail } from "./OfficeTeamApprovalTrail";
@@ -114,6 +114,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const [activeRole, setActiveRole] = useState("Office Manager");
   const [snapshot, setSnapshot] = useState({ source: "demo", decisions: [] });
   const [backendCommand, setBackendCommand] = useState({ source: "command-unavailable", decisions: [] });
+  const [backendAudit, setBackendAudit] = useState({ source: "command-audit-unavailable", audit: [] });
   const [liveDrafts, setLiveDrafts] = useState([]);
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
@@ -127,14 +128,17 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
       fetchOfficeTeamSnapshot(),
       fetchOfficeTeamCommandDrafts(),
       isOwnerApp ? fetchBackendCommandDecisions() : Promise.resolve({ source: "lab-skip", decisions: [] }),
+      isOwnerApp ? fetchBackendCommandAudit() : Promise.resolve({ source: "lab-skip", audit: [] }),
     ])
-      .then(([scanResult, draftResult, commandResult]) => {
+      .then(([scanResult, draftResult, commandResult, auditResult]) => {
         if (!mounted) return;
         const data = scanResult.status === "fulfilled" ? scanResult.value : { source: "demo", decisions: [] };
         const drafts = draftResult.status === "fulfilled" && Array.isArray(draftResult.value) ? draftResult.value : [];
         const command = commandResult.status === "fulfilled" ? commandResult.value : { source: "command-unavailable", decisions: [] };
+        const audit = auditResult.status === "fulfilled" ? auditResult.value : { source: "command-audit-unavailable", audit: [] };
         setSnapshot(data || { source: "demo", decisions: [] });
         setBackendCommand(command || { source: "command-unavailable", decisions: [] });
+        setBackendAudit(audit || { source: "command-audit-unavailable", audit: [] });
         setLiveDrafts(drafts);
         setResolved({});
         if (isOwnerApp && command?.decisions?.length) setNotice("Backend Command slips loaded. Owner approval records safely without sends, syncs, charges or record changes.");
@@ -151,9 +155,12 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   useEffect(() => {
     if (!isOwnerApp) return () => {};
     const refreshBackendCommand = () => {
-      fetchBackendCommandDecisions()
-        .then((command) => {
+      Promise.allSettled([fetchBackendCommandDecisions(), fetchBackendCommandAudit()])
+        .then(([commandResult, auditResult]) => {
+          const command = commandResult.status === "fulfilled" ? commandResult.value : { source: "command-unavailable", decisions: [] };
+          const audit = auditResult.status === "fulfilled" ? auditResult.value : { source: "command-audit-unavailable", audit: [] };
           setBackendCommand(command || { source: "command-unavailable", decisions: [] });
+          setBackendAudit(audit || { source: "command-audit-unavailable", audit: [] });
           setResolved({});
           setNotice(command?.decisions?.length ? "Backend Command refreshed. New prepared slip is waiting for owner approval." : "Backend Command refreshed. No prepared slips are waiting.");
         })
@@ -213,6 +220,8 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         await recordBackendCommandDecision(item, action);
         const trail = recordOfficeTeamApprovalTrail(item, action, "Backend Command recorded");
         setApprovalTrail(trail);
+        const audit = await fetchBackendCommandAudit().catch(() => null);
+        if (audit) setBackendAudit(audit);
         setNotice(`${action} recorded in backend Command. Nothing was sent, synced, charged or changed.`);
       } catch {
         setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
@@ -235,7 +244,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     }
   }
 
-  return <main className="cvOfficeFinal cvOfficeSite"><Topbar screen={screen} go={go} appMode={appMode} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localQueue={localQueue} localActivity={localActivity} approvalTrail={approvalTrail} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
+  return <main className="cvOfficeFinal cvOfficeSite"><Topbar screen={screen} go={go} appMode={appMode} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localQueue={localQueue} localActivity={localActivity} approvalTrail={approvalTrail} backendAudit={backendAudit.audit || []} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
 }
 
 function ScreenRouter(props) {
@@ -292,9 +301,9 @@ function Playbooks() {
   return <section className="cvSiteScreen"><Header eyebrow="Playbooks" title="Same system, different business wording" text="Churvox should fit the business language instead of forcing every business to sound the same." /><div className="cvSitePlaybookGrid">{playbooks.map(([name, work, staff, customer, examples]) => <article key={name}><span>{name}</span><dl><div><dt>Work</dt><dd>{work}</dd></div><div><dt>Staff</dt><dd>{staff}</dd></div><div><dt>Customer</dt><dd>{customer}</dd></div></dl><small>{examples}</small></article>)}</div></section>;
 }
 
-function Activity({ pending, resolved, localActivity = [], approvalTrail = [] }) {
+function Activity({ pending, resolved, localActivity = [], approvalTrail = [], backendAudit = [] }) {
   const cleared = Object.entries(resolved);
-  return <section className="cvSiteScreen"><Header eyebrow="Activity" title="Office activity and approval trail" text="This becomes the real log of checked, prepared, parked and owner-reviewed work." /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title} waiting in Command.</p><small>{item.tray}</small></article>)}</section><section><h2>Owner approval trail</h2>{approvalTrail.length ? approvalTrail.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.action}</strong><p>{item.title}</p><small>{item.safety}</small></article>) : <Empty title="No owner decisions yet" text="Action a Command card and the approval trail will appear here." />}</section><section><h2>Local office trail</h2>{localActivity.length ? localActivity.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.tray}</strong><p>{item.title}</p><small>{item.note}</small></article>) : <Empty title="No local trail yet" text="Prepare a Command card from any screen and it will appear here." />}</section><section><h2>Cleared this session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Moved out of Command.</p><small>{id}</small></article>) : <Empty title="Nothing cleared yet" text="Action a Command card and it will appear here." />}</section></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow="Activity" title="Office activity and approval trail" text="This becomes the real log of checked, prepared, parked and owner-reviewed work." /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title} waiting in Command.</p><small>{item.tray}</small></article>)}</section><section><h2>Backend Command audit</h2>{backendAudit.length ? backendAudit.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status}</strong><p>{item.title}</p><small>{item.safety}</small></article>) : <Empty title="No backend audit yet" text="Backend Command approvals will appear here after deployment and owner action." />}</section><section><h2>Owner approval trail</h2>{approvalTrail.length ? approvalTrail.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.action}</strong><p>{item.title}</p><small>{item.safety}</small></article>) : <Empty title="No owner decisions yet" text="Action a Command card and the approval trail will appear here." />}</section><section><h2>Local office trail</h2>{localActivity.length ? localActivity.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.tray}</strong><p>{item.title}</p><small>{item.note}</small></article>) : <Empty title="No local trail yet" text="Prepare a Command card from any screen and it will appear here." />}</section><section><h2>Cleared this session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Moved out of Command.</p><small>{id}</small></article>) : <Empty title="Nothing cleared yet" text="Action a Command card and it will appear here." />}</section></div></section>;
 }
 
 function Safety() {
