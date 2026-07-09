@@ -57,6 +57,7 @@ function readinessGroups(overview) {
   const areaItems = overview.areas.map((item) => `${item.label}: ${item.count || 0} read-only records · ${item.source === "live" ? "live" : "fallback"}`);
   const liveWiringItems = [
     "Command fallback drafts from read-only records",
+    "Screen buttons changed to prepared-only local controls",
     ...(areaItems.length ? areaItems : ["Waiting for owner login to check live records"]),
   ];
 
@@ -65,7 +66,7 @@ function readinessGroups(overview) {
       key: "built",
       name: "Ready in hidden shell",
       status: "Built",
-      items: ["Today owner start", "Command queue limit", "Actioned cards leave Command", "Office Team roles", "Playbooks", "Owner safety locks", "Plans pricing screen", "Read-only data fallback layer"],
+      items: ["Today owner start", "Command queue limit", "Actioned cards leave Command", "Office Team roles", "Playbooks", "Owner safety locks", "Plans pricing screen", "Read-only data fallback layer", "Prepared-only screen controls"],
     },
     {
       key: "live-wiring",
