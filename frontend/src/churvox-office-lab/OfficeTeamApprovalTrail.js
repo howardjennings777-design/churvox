@@ -4,7 +4,7 @@ const APPROVAL_TRAIL_EVENT = "churvox-office-approval-trail";
 export function readOfficeTeamApprovalTrail() {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.sessionStorage.getItem(APPROVAL_TRAIL_KEY);
+    const raw = storage().getItem(APPROVAL_TRAIL_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, 18) : [];
   } catch {
@@ -47,10 +47,18 @@ export function subscribeOfficeTeamApprovalTrail(callback) {
 function writeApprovalTrail(trail, entry) {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(APPROVAL_TRAIL_KEY, JSON.stringify(trail));
+    storage().setItem(APPROVAL_TRAIL_KEY, JSON.stringify(trail));
     window.dispatchEvent(new CustomEvent(APPROVAL_TRAIL_EVENT, { detail: { entry, trail } }));
   } catch {
     // Approval audit should never break the owner screen.
+  }
+}
+
+function storage() {
+  try {
+    return window.localStorage || window.sessionStorage;
+  } catch {
+    return window.sessionStorage;
   }
 }
 
