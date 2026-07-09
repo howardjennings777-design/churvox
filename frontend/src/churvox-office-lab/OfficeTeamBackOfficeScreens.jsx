@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./OfficeTeamBackOfficeScreens.css";
+import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const scheduleRows = [
@@ -31,19 +32,19 @@ const brandingRows = [
 ];
 
 export function ScheduleScreen() {
-  return <BackOfficeScreen area="schedule" eyebrow="Schedule" title="Calendar and daily planning" text="The owner should see the run, gaps, recurring work and overload warnings without thinking too hard." rows={scheduleRows} primary="Plan my day" secondary="Open calendar" />;
+  return <BackOfficeScreen area="schedule" eyebrow="Schedule" title="Calendar and daily planning" text="The owner should see the run, gaps, recurring work and overload warnings without thinking too hard." rows={scheduleRows} primary="Prepare day plan" secondary="Review calendar" />;
 }
 
 export function AutomationScreen() {
-  return <BackOfficeScreen area="automation" eyebrow="Automation" title="Prepared rules, not blind automation" text="Automation should prepare the next step and send it to Command. It must not silently message, sync, charge or change records." rows={automationRows} primary="Create rule" secondary="Review rules" />;
+  return <BackOfficeScreen area="automation" eyebrow="Automation" title="Prepared rules, not blind automation" text="Automation should prepare the next step and send it to Command. It must not silently message, sync, charge or change records." rows={automationRows} primary="Prepare rule" secondary="Review rule" />;
 }
 
 export function PayrollScreen() {
-  return <BackOfficeScreen area="payroll" eyebrow="Payroll" title="Hours review, not tax filing" text="Payroll stays safe: hours, gross totals and CSV exports only. No tax submission, no bank payout files and no government filing." rows={payrollRows} primary="Review hours" secondary="Export CSV" />;
+  return <BackOfficeScreen area="payroll" eyebrow="Payroll" title="Hours review, not tax filing" text="Payroll stays safe: hours, gross totals and CSV exports only. No tax submission, no bank payout files and no government filing." rows={payrollRows} primary="Prepare hours" secondary="Review CSV" />;
 }
 
 export function BrandingScreen() {
-  return <BackOfficeScreen area="branding" eyebrow="Branding" title="Business settings and mobile polish" text="Branding keeps Churvox feeling like the owner’s business while staying simple on mobile." rows={brandingRows} primary="Open branding" secondary="Preview mobile" />;
+  return <BackOfficeScreen area="branding" eyebrow="Branding" title="Business settings and mobile polish" text="Branding keeps Churvox feeling like the owner’s business while staying simple on mobile." rows={brandingRows} primary="Prepare branding" secondary="Review mobile" />;
 }
 
 function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
@@ -80,11 +81,7 @@ function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary
             <article><b>Data source</b><small>{live.label}</small></article>
             <article><b>Mobile fit</b><small>Keep the screen simple</small></article>
           </div>
-          <footer>
-            <button className="primary">{primary}</button>
-            <button>{secondary}</button>
-            <button>Send to Command</button>
-          </footer>
+          <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" />
         </aside>
       </div>
     </section>
