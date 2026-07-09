@@ -48,7 +48,8 @@ export function StaffScreen(props) {
 }
 
 function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab" }) {
-  const allowFallback = appMode !== "owner" && !isOwnerRoute();
+  const ownerRoute = isOwnerRoute();
+  const allowFallback = appMode !== "owner" && !ownerRoute;
   const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
@@ -66,7 +67,7 @@ function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondar
       <div className="cvOpsLayout">
         <section className="cvOpsTable">
           <div className="cvOpsTableHead">
-            <strong>Office-prepared list</strong>
+            <strong>{ownerRoute ? "Prepared list" : "Office-prepared list"}</strong>
             <small>{live.label}</small>
           </div>
           {hasRows ? displayRows.map((row) => (
@@ -75,7 +76,7 @@ function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondar
               <strong>{row[1]}</strong>
               <em>{row[2]}</em>
             </button>
-          )) : <article className="cvSiteEmpty"><strong>No live {eyebrow.toLowerCase()} records yet</strong><p>No demo rows are shown inside the real owner app.</p></article>}
+          )) : <article className="cvSiteEmpty"><strong>No {eyebrow.toLowerCase()} records yet</strong><p>{ownerRoute ? "When this area needs owner review, Churvox will bring the next step back to Command." : "No demo rows are shown inside the real owner app."}</p></article>}
         </section>
 
         <aside className="cvOpsDetail">
@@ -87,7 +88,7 @@ function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondar
             <div><dt>Owner control</dt><dd>Prepared only</dd></div>
             <div><dt>Safety</dt><dd>No send or sync</dd></div>
           </dl>
-          {hasRows ? <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>Live business records will appear here when the office team has something real to check.</p></article>}
+          {hasRows ? <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "This area is clear. New work will appear here when it needs owner review." : "Live business records will appear here when the office team has something real to check."}</p></article>}
         </aside>
       </div>
     </section>
