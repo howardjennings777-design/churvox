@@ -31,27 +31,29 @@ const staffRows = [
   ["Payroll review", "36.5 hrs", "Prepared", "Gross only"],
 ];
 
-export function WorkScreen() {
-  return <OperationalScreen area="work" eyebrow="Work" title="Jobs, bookings and appointments" text="This is where owner work becomes simple: what is ready, what needs a decision, and what the office team has already prepared." rows={workRows} primary="Prepare work" secondary="Review day" />;
+export function WorkScreen(props) {
+  return <OperationalScreen area="work" eyebrow="Work" title="Jobs, bookings and appointments" text="This is where owner work becomes simple: what is ready, what needs a decision, and what the office team has already prepared." rows={workRows} primary="Prepare work" secondary="Review day" {...props} />;
 }
 
-export function MoneyScreen() {
-  return <OperationalScreen area="money" eyebrow="Money" title="Invoices, quotes and payment follow-up" text="Money stays safe. Churvox prepares drafts, reminders and accounting checks, but Command gets the owner decision before anything moves." rows={moneyRows} primary="Prepare money item" secondary="Review export" />;
+export function MoneyScreen(props) {
+  return <OperationalScreen area="money" eyebrow="Money" title="Invoices, quotes and payment follow-up" text="Money stays safe. Churvox prepares drafts, reminders and accounting checks, but Command gets the owner decision before anything moves." rows={moneyRows} primary="Prepare money item" secondary="Review export" {...props} />;
 }
 
-export function ClientsScreen() {
-  return <OperationalScreen area="clients" eyebrow="Clients" title="Client memory and follow-up" text="The office team keeps notes, repeat patterns and missing details tidy so the owner does not have to remember everything." rows={clientRows} primary="Prepare client note" secondary="Review import" />;
+export function ClientsScreen(props) {
+  return <OperationalScreen area="clients" eyebrow="Clients" title="Client memory and follow-up" text="The office team keeps notes, repeat patterns and missing details tidy so the owner does not have to remember everything." rows={clientRows} primary="Prepare client note" secondary="Review import" {...props} />;
 }
 
-export function StaffScreen() {
-  return <OperationalScreen area="staff" eyebrow="Staff" title="Workers, timers and daily run" text="Staff update the work. Churvox checks timers, setup, assignments and missing details before asking the owner." rows={staffRows} primary="Prepare staff item" secondary="Review hours" />;
+export function StaffScreen(props) {
+  return <OperationalScreen area="staff" eyebrow="Staff" title="Workers, timers and daily run" text="Staff update the work. Churvox checks timers, setup, assignments and missing details before asking the owner." rows={staffRows} primary="Prepare staff item" secondary="Review hours" {...props} />;
 }
 
-function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
-  const live = useOfficeTeamRows(area, rows);
+function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab" }) {
+  const allowFallback = appMode !== "owner";
+  const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
-  const current = selectedRow(displayRows, selected, rows);
+  const hasRows = displayRows.length > 0;
+  const current = selectedRow(displayRows, selected, allowFallback ? rows : []);
 
   return (
     <section className="cvSiteScreen">
@@ -67,13 +69,13 @@ function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondar
             <strong>Office-prepared list</strong>
             <small>{live.label}</small>
           </div>
-          {displayRows.map((row) => (
+          {hasRows ? displayRows.map((row) => (
             <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)}>
               <span>{row[0]}</span>
               <strong>{row[1]}</strong>
               <em>{row[2]}</em>
             </button>
-          ))}
+          )) : <article className="cvSiteEmpty"><strong>No live {eyebrow.toLowerCase()} records yet</strong><p>No demo rows are shown inside the real owner app.</p></article>}
         </section>
 
         <aside className="cvOpsDetail">
@@ -85,7 +87,7 @@ function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondar
             <div><dt>Owner control</dt><dd>Prepared only</dd></div>
             <div><dt>Safety</dt><dd>No send or sync</dd></div>
           </dl>
-          <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" />
+          {hasRows ? <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>Live business records will appear here when the office team has something real to check.</p></article>}
         </aside>
       </div>
     </section>
