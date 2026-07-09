@@ -39,48 +39,15 @@ const ownerScreens = [
 ];
 
 const screenAliases = {
-  "": "today",
-  dashboard: "today",
-  home: "today",
-  hub: "today",
-  "smart-hub": "today",
-  cockpit: "command",
-  command: "command",
-  "command-board": "command",
-  jobs: "work",
-  job: "work",
-  work: "work",
-  recurring: "work",
-  calendar: "schedule",
-  schedule: "schedule",
-  clients: "clients",
-  customers: "clients",
-  messages: "messages",
-  inbox: "messages",
-  workers: "worker",
-  worker: "worker",
-  dispatch: "worker",
-  quotes: "quotes",
-  invoices: "invoices",
-  reports: "invoices",
-  money: "money",
-  accounting: "money",
-  xero: "integrations",
-  staff: "staff",
-  payroll: "payroll",
-  "office-team": "team",
-  playbooks: "playbooks",
-  integrations: "integrations",
-  activity: "activity",
-  automation: "automation",
-  branding: "branding",
-  settings: "settings",
-  plans: "plans",
-  billing: "plans",
-  support: "help",
-  help: "help",
-  readiness: "readiness",
-  safety: "safety",
+  "": "today", dashboard: "today", home: "today", hub: "today", "smart-hub": "today",
+  cockpit: "command", command: "command", "command-board": "command",
+  jobs: "work", job: "work", work: "work", recurring: "work",
+  calendar: "schedule", schedule: "schedule", clients: "clients", customers: "clients",
+  messages: "messages", inbox: "messages", workers: "worker", worker: "worker", dispatch: "worker",
+  quotes: "quotes", invoices: "invoices", reports: "invoices", money: "money", accounting: "money", xero: "integrations",
+  staff: "staff", payroll: "payroll", "office-team": "team", playbooks: "playbooks", integrations: "integrations",
+  activity: "activity", automation: "automation", branding: "branding", settings: "settings", plans: "plans", billing: "plans",
+  support: "help", help: "help", readiness: "readiness", safety: "safety",
 };
 
 const departments = [["command", "All"], ["money", "Money"], ["bookings", "Bookings"], ["staff", "Staff"], ["clients", "Clients"], ["quality", "Quality"], ["ops", "Ops"]];
@@ -149,12 +116,12 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         setBackendAudit(audit || { source: "command-audit-unavailable", audit: [] });
         setLiveDrafts(drafts);
         setResolved({});
-        if (isOwnerApp && command?.decisions?.length) setNotice("Backend Command slips loaded. Owner approval records safely without sends, syncs, charges or record changes.");
-        else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("Backend Command is clear. No demo decisions are shown in the owner app.");
-        else if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
-        else if (drafts.length) setNotice("Live read-only records prepared into Command preview. Nothing has been sent, synced or changed.");
-        else if (data?.source === "clear-live") setNotice(isOwnerApp ? "Live scan is clear. Command will stay empty until real work needs owner approval." : "Live scan is clear. Demo cards stay visible for review.");
-        else setNotice(isOwnerApp ? "Owner app loaded. No demo decisions are shown; real approvals appear when work needs you." : "Demo preview. Sign in as an owner to load live Command data.");
+        if (isOwnerApp && command?.decisions?.length) setNotice("Command cards loaded. Owner approval records safely without sends, syncs, charges or record changes.");
+        else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("Command is clear. New decisions will appear here when work needs owner approval.");
+        else if (data?.source === "admin-brain") setNotice(isOwnerApp ? "Live business check loaded. Owner approval still comes first." : "Live Admin Brain scan loaded. Owner approval still required.");
+        else if (drafts.length) setNotice("Live read-only records are prepared for Command. Nothing has been sent, synced or changed.");
+        else if (data?.source === "clear-live") setNotice(isOwnerApp ? "Live check is clear. Command will stay empty until real work needs owner approval." : "Live scan is clear. Demo cards stay visible for review.");
+        else setNotice(isOwnerApp ? "Owner app loaded. Real approvals appear when work needs you." : "Demo preview. Sign in as an owner to load live Command data.");
       })
       .catch((err) => mounted && setNotice(`${isOwnerApp ? "Owner app" : "Demo preview"}. Live scan unavailable: ${err.message || "connection issue"}`));
     return () => { mounted = false; };
@@ -170,9 +137,9 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
           setBackendCommand(command || { source: "command-unavailable", decisions: [] });
           setBackendAudit(audit || { source: "command-audit-unavailable", audit: [] });
           setResolved({});
-          setNotice(command?.decisions?.length ? "Backend Command refreshed. New prepared slip is waiting for owner approval." : "Backend Command refreshed. No prepared slips are waiting.");
+          setNotice(command?.decisions?.length ? "Command refreshed. A prepared decision is waiting for owner approval." : "Command refreshed. No prepared decisions are waiting.");
         })
-        .catch(() => setNotice("Backend Command refresh failed. Nothing was sent, synced, charged or changed."));
+        .catch(() => setNotice("Command refresh failed. Nothing was sent, synced, charged or changed."));
     };
     window.addEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
     return () => window.removeEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
@@ -200,7 +167,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const pending = useMemo(() => decisions.filter((item) => !resolved[keyOf(item)]), [decisions, resolved]);
   const counts = useMemo(() => countDepartments(pending), [pending]);
   const metrics = makeStatusCards({ total: pending.length, high: pending.filter((item) => item.level === "Top priority").length, parked: Object.keys(resolved).length }, pending.length);
-  const sourceLabel = backendCommand.decisions?.length ? "Backend Command" : localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : backendCommand.source === "backend-command-clear" ? "Backend clear" : snapshot.source === "clear-live" ? "Live clear" : isOwnerApp ? "No demo data" : "Demo mode";
+  const sourceLabel = makeSourceLabel({ isOwnerApp, backendCommand, localQueue, snapshot, liveDrafts });
 
   function go(next) {
     const cleanNext = cleanScreen(`#${next}`);
@@ -226,16 +193,16 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     if (item?.raw?.source === "backend_command_slip") {
       try {
         await recordBackendCommandDecision(item, action);
-        const trail = recordOfficeTeamApprovalTrail(item, action, "Backend Command recorded");
+        const trail = recordOfficeTeamApprovalTrail(item, action, "Command recorded");
         setApprovalTrail(trail);
         const audit = await fetchBackendCommandAudit().catch(() => null);
         if (audit) setBackendAudit(audit);
-        setNotice(`${action} recorded in backend Command. Nothing was sent, synced, charged or changed.`);
+        setNotice(`${action} recorded in Command. Nothing was sent, synced, charged or changed.`);
       } catch {
         setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
         const trail = recordOfficeTeamApprovalTrail(item, action, "Returned to Command");
         setApprovalTrail(trail);
-        setNotice(`Could not record ${action} in backend Command. The card returned to Command.`);
+        setNotice(`Could not record ${action} in Command. The card returned to Command.`);
       }
       return;
     }
@@ -334,6 +301,18 @@ function decision(id, tray, roleName, level, title, happened, checked, prepared,
 function keyOf(item = {}) { return item.id || item.action_id || item.title; }
 function trayKey(tray = "") { const t = String(tray).toLowerCase(); if (t.includes("money")) return "money"; if (t.includes("booking")) return "bookings"; if (t.includes("staff")) return "staff"; if (t.includes("client")) return "clients"; if (t.includes("quality")) return "quality"; if (t.includes("operation")) return "ops"; return "command"; }
 function countDepartments(items = []) { return items.reduce((acc, item) => { acc.command += 1; const key = trayKey(item.tray); acc[key] = (acc[key] || 0) + 1; return acc; }, { command: 0, money: 0, bookings: 0, staff: 0, clients: 0, quality: 0, ops: 0 }); }
+function makeSourceLabel({ isOwnerApp, backendCommand, localQueue, snapshot, liveDrafts }) {
+  if (isOwnerApp) {
+    if (backendCommand.decisions?.length) return "Command";
+    if (localQueue.length) return "Prepared work";
+    if (snapshot.source === "admin-brain") return "Live check";
+    if (liveDrafts.length) return "Prepared records";
+    if (backendCommand.source === "backend-command-clear") return "Command clear";
+    if (snapshot.source === "clear-live") return "Clear";
+    return "Ready";
+  }
+  return backendCommand.decisions?.length ? "Backend Command" : localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : backendCommand.source === "backend-command-clear" ? "Backend clear" : snapshot.source === "clear-live" ? "Live clear" : "Demo mode";
+}
 function isOwnerRoute() { return typeof window !== "undefined" && window.location.pathname.includes("dashboard"); }
 function cleanScreen(hash = "") {
   const key = String(hash || "").replace(/^#/, "").trim().toLowerCase();
