@@ -1,91 +1,91 @@
 # Churvox Full Launch Audit
 
 - Site: https://www.churvox.com
-- Commit: e2cb352c2a0ec49ecabda7de1531efe9e5a8cb45
-- Run: 28989746246
+- Commit: 1a608cc1e41577aaec6b9c79ceecd1b61e2bde7a
+- Run: 28989883984
 - Status code: 0
-- Time: Thu Jul  9 02:28:38 UTC 2026
+- Time: Thu Jul  9 02:32:26 UTC 2026
 
 ## Output
 ```txt
 
 Running 82 tests using 2 workers
 
-  ✓   1 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: / (1.7s)
-  ✓   2 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: / (2.1s)
-  ✓   3 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /features (1.4s)
-  ✓   4 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /features (1.8s)
-  ✓   5 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /pricing (1.4s)
-  ✓   6 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /pricing (1.7s)
-  ✓   7 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /login (1.3s)
-  ✓   9 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /signup (1.4s)
-  ✓   8 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /login (1.5s)
-  ✓  10 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /privacy (1.1s)
-  ✓  11 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /signup (1.6s)
-  ✓  12 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /terms (940ms)
+  ✓   2 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: / (2.1s)
+  ✓   1 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: / (2.7s)
+  ✓   3 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /features (1.6s)
+  ✓   4 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /features (2.0s)
+  ✓   5 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /pricing (1.7s)
+  ✓   6 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /pricing (1.8s)
+  ✓   7 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /login (1.5s)
+  ✓   8 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /login (1.8s)
+  ✓   9 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /signup (1.6s)
+  ✓  11 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /privacy (1.1s)
+  ✓  10 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /signup (1.7s)
+  ✓  12 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /terms (1.4s)
+  ✓  13 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /privacy (1.2s)
   -  14 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: setupassistant
-  -  15 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: command
-  ✓  13 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /privacy (1.0s)
-  -  16 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: aioperator
+  -  16 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: command
+  -  17 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: aioperator
   -  18 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quickcreateai
   -  19 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: planday
+  ✓  15 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /terms (1.1s)
   -  20 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: jobs
-  ✓  17 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:140:5 › Churvox full launch public audit › public page is readable and launch-clean: /terms (955ms)
-  -  21 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: recurring
-  -  22 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: setupassistant
-  -  24 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: command
-  -  23 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: dispatch
+  -  21 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: setupassistant
+  -  22 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: recurring
+  -  23 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: command
+  -  24 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: dispatch
   -  25 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: aioperator
   -  26 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: routes
-  -  28 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: areas
   -  27 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quickcreateai
-  -  29 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: clients
-  -  30 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: planday
-  -  31 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quotes
-  -  32 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: jobs
-  -  33 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quoteai
-  -  34 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: recurring
-  -  35 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: invoices
-  -  36 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: dispatch
-  -  37 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: invoicecheck
-  -  38 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: routes
-  -  39 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: payments
-  -  40 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: areas
-  -  41 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: team
-  -  42 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: clients
-  -  43 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: payroll
-  -  44 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quotes
-  -  45 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: time
-  -  46 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quoteai
-  -  47 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: xero
-  -  48 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: invoices
-  -  49 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: integrations
-  -  50 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: invoicecheck
-  -  51 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: reports
-  -  53 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: profit
-  -  52 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: payments
-  -  54 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: expenses
-  -  55 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: team
-  -  56 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: photos
-  -  57 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: payroll
-  -  58 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: documents
-  -  59 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: time
-  -  60 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: automation
-  -  61 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: xero
-  -  62 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: launchcontrol
-  -  63 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: integrations
-  -  64 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: security
-  -  65 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: reports
-  -  66 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: settings
-  -  67 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: profit
-  -  68 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: support
-  -  69 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: expenses
-  -  70 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:161:3 › Churvox full launch owner audit › sidebar keeps full launch feature navigation
-  -  71 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: photos
-  -  72 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:184:3 › Churvox full launch worker audit › worker jobs page is launch-clean and worker-scoped
-  -  73 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: documents
-  -  74 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:191:3 › Churvox full launch worker audit › worker job detail has real field controls when a job is assigned
-  -  75 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: automation
+  -  28 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: areas
+  -  29 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: planday
+  -  30 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: clients
+  -  31 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: jobs
+  -  32 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quotes
+  -  33 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: recurring
+  -  34 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quoteai
+  -  35 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: dispatch
+  -  36 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: invoices
+  -  37 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: routes
+  -  38 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: invoicecheck
+  -  39 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: areas
+  -  40 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: payments
+  -  41 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: clients
+  -  42 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: team
+  -  43 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quotes
+  -  44 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: payroll
+  -  45 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: quoteai
+  -  46 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: time
+  -  47 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: invoices
+  -  48 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: xero
+  -  49 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: invoicecheck
+  -  50 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: integrations
+  -  51 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: payments
+  -  52 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: reports
+  -  53 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: team
+  -  54 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: profit
+  -  55 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: payroll
+  -  56 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: expenses
+  -  57 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: time
+  -  58 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: photos
+  -  60 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: documents
+  -  59 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: xero
+  -  61 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: automation
+  -  62 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: integrations
+  -  63 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: launchcontrol
+  -  64 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: reports
+  -  65 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: security
+  -  66 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: profit
+  -  68 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: expenses
+  -  67 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: settings
+  -  70 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: support
+  -  69 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: photos
+  -  71 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:161:3 › Churvox full launch owner audit › sidebar keeps full launch feature navigation
+  -  72 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: documents
+  -  73 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:184:3 › Churvox full launch worker audit › worker jobs page is launch-clean and worker-scoped
+  -  74 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: automation
+  -  75 [desktop-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:191:3 › Churvox full launch worker audit › worker job detail has real field controls when a job is assigned
   -  76 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: launchcontrol
   -  77 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: security
   -  78 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:154:5 › Churvox full launch owner audit › owner area opens and is launch-clean: settings
@@ -95,5 +95,5 @@ Running 82 tests using 2 workers
   -  82 [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:191:3 › Churvox full launch worker audit › worker job detail has real field controls when a job is assigned
 
   68 skipped
-  14 passed (21.8s)
+  14 passed (23.4s)
 ```
