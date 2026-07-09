@@ -14,7 +14,7 @@ import { QuotesScreen, InvoicesScreen, IntegrationsScreen, HelpScreen } from "./
 import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScreens";
 import { ScheduleScreen, AutomationScreen, PayrollScreen, BrandingScreen } from "./OfficeTeamBackOfficeScreens";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
-import { fetchBackendCommandDecisions, recordBackendCommandDecision } from "./OfficeTeamCommandApi";
+import { BACKEND_COMMAND_EVENT, fetchBackendCommandDecisions, recordBackendCommandDecision } from "./OfficeTeamCommandApi";
 import { fetchOfficeTeamCommandDrafts } from "./OfficeTeamCommandDrafts";
 import { readOfficeTeamLocalActivityLog, readOfficeTeamLocalCommandQueue, recordOfficeTeamLocalActivity, removeOfficeTeamLocalCommand, subscribeOfficeTeamLocalActivity, subscribeOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 import { readOfficeTeamApprovalTrail, recordOfficeTeamApprovalTrail, subscribeOfficeTeamApprovalTrail } from "./OfficeTeamApprovalTrail";
@@ -146,6 +146,21 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
       })
       .catch((err) => mounted && setNotice(`${isOwnerApp ? "Owner app" : "Demo preview"}. Live scan unavailable: ${err.message || "connection issue"}`));
     return () => { mounted = false; };
+  }, [isOwnerApp]);
+
+  useEffect(() => {
+    if (!isOwnerApp) return () => {};
+    const refreshBackendCommand = () => {
+      fetchBackendCommandDecisions()
+        .then((command) => {
+          setBackendCommand(command || { source: "command-unavailable", decisions: [] });
+          setResolved({});
+          setNotice(command?.decisions?.length ? "Backend Command refreshed. New prepared slip is waiting for owner approval." : "Backend Command refreshed. No prepared slips are waiting.");
+        })
+        .catch(() => setNotice("Backend Command refresh failed. Nothing was sent, synced, charged or changed."));
+    };
+    window.addEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
+    return () => window.removeEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
   }, [isOwnerApp]);
 
   useEffect(() => subscribeOfficeTeamLocalCommand(setLocalQueue), []);
