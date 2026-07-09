@@ -1,8 +1,8 @@
 import React from 'react'
 import OfficeTeamLabSite from './OfficeTeamLabSite'
 
-function OfficeTeamLab() {
-  return React.createElement(OfficeTeamLabSite)
+function OfficeTeamLab(props) {
+  return React.createElement(OfficeTeamLabSite, props)
 }
 
 export default OfficeTeamLab
