@@ -11,7 +11,7 @@ const fallbackRows = [
 ];
 
 export default function OfficeTeamMessagesDesk({ appMode = "lab" }) {
-  const allowFallback = appMode !== "owner";
+  const allowFallback = appMode !== "owner" && !isOwnerRoute();
   const live = useOfficeTeamRows("messages", fallbackRows, { allowFallback, emptyMessage: "No live messages found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(fallbackRows[0]);
   const hasRows = live.rows.length > 0;
@@ -77,4 +77,8 @@ function buildPreparedReply(row = []) {
     return `Reply is drafted for “${title}”. Owner can approve, edit, or park it.`;
   }
   return `Command card is ready for “${title}”. Owner chooses the next step before anything changes.`;
+}
+
+function isOwnerRoute() {
+  return typeof window !== "undefined" && window.location.pathname.includes("dashboard");
 }
