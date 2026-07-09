@@ -31,27 +31,29 @@ const helpRows = [
   ["Money", "Invoices and sync", "Draft first, approve second"],
 ];
 
-export function QuotesScreen() {
-  return <ExtraScreen area="quotes" eyebrow="Quotes" title="Quote desk" text="Quotes are prepared, followed up and converted only when the owner is ready." rows={quoteRows} primary="Prepare quote" secondary="Review follow-up" />;
+export function QuotesScreen(props) {
+  return <ExtraScreen area="quotes" eyebrow="Quotes" title="Quote desk" text="Quotes are prepared, followed up and converted only when the owner is ready." rows={quoteRows} primary="Prepare quote" secondary="Review follow-up" {...props} />;
 }
 
-export function InvoicesScreen() {
-  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Invoices are drafted from completed work, checked for extras and held until the owner approves sending or syncing." rows={invoiceRows} primary="Prepare invoice" secondary="Review export" />;
+export function InvoicesScreen(props) {
+  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Invoices are drafted from completed work, checked for extras and held until the owner approves sending or syncing." rows={invoiceRows} primary="Prepare invoice" secondary="Review export" {...props} />;
 }
 
-export function IntegrationsScreen() {
-  return <ExtraScreen area="money" eyebrow="Integrations" title="Accounting, email and future tools" text="Integrations stay safe: prepared data, owner approval, then sync or send." rows={integrationRows} primary="Prepare sync check" secondary="Review files" />;
+export function IntegrationsScreen(props) {
+  return <ExtraScreen area="money" eyebrow="Integrations" title="Accounting, email and future tools" text="Integrations stay safe: prepared data, owner approval, then sync or send." rows={integrationRows} primary="Prepare sync check" secondary="Review files" {...props} />;
 }
 
-export function HelpScreen() {
-  return <ExtraScreen eyebrow="Help" title="Owner guide" text="Help should explain the Churvox way: staff update work, Churvox prepares admin, owner approves decisions." rows={helpRows} primary="Prepare guide note" secondary="Review support note" />;
+export function HelpScreen(props) {
+  return <ExtraScreen eyebrow="Help" title="Owner guide" text="Help should explain the Churvox way: staff update work, Churvox prepares admin, owner approves decisions." rows={helpRows} primary="Prepare guide note" secondary="Review support note" {...props} forceFallback />;
 }
 
-function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
-  const live = useOfficeTeamRows(area, rows);
+function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab", forceFallback = false }) {
+  const allowFallback = forceFallback || appMode !== "owner";
+  const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
-  const current = selectedRow(displayRows, selected, rows);
+  const hasRows = displayRows.length > 0;
+  const current = selectedRow(displayRows, selected, allowFallback ? rows : []);
 
   return (
     <section className="cvSiteScreen">
@@ -63,13 +65,13 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
 
       <div className="cvExtraLayout">
         <section className="cvExtraCards">
-          {displayRows.map((row) => (
+          {hasRows ? displayRows.map((row) => (
             <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)}>
               <span>{row[0]}</span>
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
             </button>
-          ))}
+          )) : <article className="cvSiteEmpty"><strong>No live {eyebrow.toLowerCase()} records yet</strong><p>No demo rows are shown inside the real owner app.</p></article>}
         </section>
 
         <aside className="cvExtraDetail">
@@ -82,7 +84,7 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
             <article><b>Auto-send</b><small>Off</small></article>
             <article><b>Auto-sync</b><small>Off</small></article>
           </div>
-          <OfficeTeamSafeControls area={area || eyebrow} record={current} primary={primary} secondary={secondary} command="Prepare Command card" />
+          {hasRows ? <OfficeTeamSafeControls area={area || eyebrow} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>Live records will appear here when there is something real for the owner to review.</p></article>}
         </aside>
       </div>
     </section>
