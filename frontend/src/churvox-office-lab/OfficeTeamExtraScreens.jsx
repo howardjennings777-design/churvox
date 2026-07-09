@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./OfficeTeamExtraScreens.css";
+import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const quoteRows = [
   ["Draft", "Garden tidy quote", "$420", "Scope ready, price needs owner check"],
@@ -30,23 +31,27 @@ const helpRows = [
 ];
 
 export function QuotesScreen() {
-  return <ExtraScreen eyebrow="Quotes" title="Quote desk" text="Quotes are prepared, followed up and converted only when the owner is ready." rows={quoteRows} primary="Create quote" secondary="Follow up" />;
+  return <ExtraScreen area="quotes" eyebrow="Quotes" title="Quote desk" text="Quotes are prepared, followed up and converted only when the owner is ready." rows={quoteRows} primary="Create quote" secondary="Follow up" />;
 }
 
 export function InvoicesScreen() {
-  return <ExtraScreen eyebrow="Invoices" title="Invoice desk" text="Invoices are drafted from completed work, checked for extras and held until the owner approves sending or syncing." rows={invoiceRows} primary="Create invoice" secondary="Export pack" />;
+  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Invoices are drafted from completed work, checked for extras and held until the owner approves sending or syncing." rows={invoiceRows} primary="Create invoice" secondary="Export pack" />;
 }
 
 export function IntegrationsScreen() {
-  return <ExtraScreen eyebrow="Integrations" title="Accounting, email and future tools" text="Integrations stay safe: prepared data, owner approval, then sync or send." rows={integrationRows} primary="Open Xero" secondary="Export files" />;
+  return <ExtraScreen area="money" eyebrow="Integrations" title="Accounting, email and future tools" text="Integrations stay safe: prepared data, owner approval, then sync or send." rows={integrationRows} primary="Open Xero" secondary="Export files" />;
 }
 
 export function HelpScreen() {
   return <ExtraScreen eyebrow="Help" title="Owner guide" text="Help should explain the Churvox way: staff update work, Churvox prepares admin, owner approves decisions." rows={helpRows} primary="Start guide" secondary="Contact support" />;
 }
 
-function ExtraScreen({ eyebrow, title, text, rows, primary, secondary }) {
+function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
+  const live = useOfficeTeamRows(area, rows);
   const [selected, setSelected] = useState(rows[0]);
+  const displayRows = live.rows;
+  const current = selectedRow(displayRows, selected, rows);
+
   return (
     <section className="cvSiteScreen">
       <header className="cvSiteScreenHeader">
@@ -57,8 +62,8 @@ function ExtraScreen({ eyebrow, title, text, rows, primary, secondary }) {
 
       <div className="cvExtraLayout">
         <section className="cvExtraCards">
-          {rows.map((row) => (
-            <button key={`${row[0]}-${row[1]}`} className={selected === row ? "active" : ""} onClick={() => setSelected(row)}>
+          {displayRows.map((row) => (
+            <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)}>
               <span>{row[0]}</span>
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
@@ -67,12 +72,12 @@ function ExtraScreen({ eyebrow, title, text, rows, primary, secondary }) {
         </section>
 
         <aside className="cvExtraDetail">
-          <span>{selected[0]}</span>
-          <h3>{selected[1]}</h3>
-          <strong>{selected[2]}</strong>
-          <p>{selected[3]}</p>
+          <span>{current[0]}</span>
+          <h3>{current[1]}</h3>
+          <strong>{current[2]}</strong>
+          <p>{current[3]}</p>
           <div className="cvExtraSafety">
-            <article><b>Owner approval</b><small>Required</small></article>
+            <article><b>Data source</b><small>{live.label}</small></article>
             <article><b>Auto-send</b><small>Off</small></article>
             <article><b>Auto-sync</b><small>Off</small></article>
           </div>
