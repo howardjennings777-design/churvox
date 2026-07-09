@@ -5,7 +5,7 @@ const path = require('path');
 
 const rootPackagePath = path.resolve(__dirname, '..', 'package.json');
 const frontendPackagePath = path.resolve(__dirname, '..', 'frontend', 'package.json');
-const requiredRootScripts = ['build', 'test:office-lab', 'test:rebuild:routes'];
+const requiredRootScripts = ['build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness'];
 
 function readJson(filePath) {
   try {
@@ -27,7 +27,7 @@ if (missing.length) {
   process.exit(1);
 }
 
-for (const name of requiredRootScripts.filter((item) => item !== 'build')) {
+for (const name of ['test:office-lab', 'test:rebuild:routes']) {
   const command = String(rootScripts[name] || '');
   if (!command.includes(`npm --prefix frontend run ${name}`)) {
     console.error(`Root script ${name} must forward to frontend ${name}. Found: ${command}`);
@@ -39,4 +39,9 @@ for (const name of requiredRootScripts.filter((item) => item !== 'build')) {
   }
 }
 
-console.log('Root script sanity passed. Office lab and route tests are available from the repo root.');
+if (rootScripts['test:readiness'] !== 'node scripts/churvox-readiness-sweep.cjs') {
+  console.error(`Root script test:readiness must run scripts/churvox-readiness-sweep.cjs. Found: ${rootScripts['test:readiness']}`);
+  process.exit(1);
+}
+
+console.log('Root script sanity passed. Office lab, route safety and readiness tests are available from the repo root.');
