@@ -31,27 +31,29 @@ const brandingRows = [
   ["Mobile", "Simplified owner view", "Important", "Phone should not show every desktop control"],
 ];
 
-export function ScheduleScreen() {
-  return <BackOfficeScreen area="schedule" eyebrow="Schedule" title="Calendar and daily planning" text="The owner should see the run, gaps, recurring work and overload warnings without thinking too hard." rows={scheduleRows} primary="Prepare day plan" secondary="Review calendar" />;
+export function ScheduleScreen(props) {
+  return <BackOfficeScreen area="schedule" eyebrow="Schedule" title="Calendar and daily planning" text="The owner should see the run, gaps, recurring work and overload warnings without thinking too hard." rows={scheduleRows} primary="Prepare day plan" secondary="Review calendar" {...props} />;
 }
 
-export function AutomationScreen() {
-  return <BackOfficeScreen area="automation" eyebrow="Automation" title="Prepared rules, not blind automation" text="Automation should prepare the next step and send it to Command. It must not silently message, sync, charge or change records." rows={automationRows} primary="Prepare rule" secondary="Review rule" />;
+export function AutomationScreen(props) {
+  return <BackOfficeScreen area="automation" eyebrow="Automation" title="Prepared rules, not blind automation" text="Automation should prepare the next step and send it to Command. It must not silently message, sync, charge or change records." rows={automationRows} primary="Prepare rule" secondary="Review rule" {...props} />;
 }
 
-export function PayrollScreen() {
-  return <BackOfficeScreen area="payroll" eyebrow="Payroll" title="Hours review, not tax filing" text="Payroll stays safe: hours, gross totals and CSV exports only. No tax submission, no bank payout files and no government filing." rows={payrollRows} primary="Prepare hours" secondary="Review CSV" />;
+export function PayrollScreen(props) {
+  return <BackOfficeScreen area="payroll" eyebrow="Payroll" title="Hours review, not tax filing" text="Payroll stays safe: hours, gross totals and CSV exports only. No tax submission, no bank payout files and no government filing." rows={payrollRows} primary="Prepare hours" secondary="Review CSV" {...props} />;
 }
 
-export function BrandingScreen() {
-  return <BackOfficeScreen area="branding" eyebrow="Branding" title="Business settings and mobile polish" text="Branding keeps Churvox feeling like the owner’s business while staying simple on mobile." rows={brandingRows} primary="Prepare branding" secondary="Review mobile" />;
+export function BrandingScreen(props) {
+  return <BackOfficeScreen area="branding" eyebrow="Branding" title="Business settings and mobile polish" text="Branding keeps Churvox feeling like the owner’s business while staying simple on mobile." rows={brandingRows} primary="Prepare branding" secondary="Review mobile" {...props} forceFallback />;
 }
 
-function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
-  const live = useOfficeTeamRows(area, rows);
+function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab", forceFallback = false }) {
+  const allowFallback = forceFallback || appMode !== "owner";
+  const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found. No demo rows are shown in the owner app." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
-  const current = selectedRow(displayRows, selected, rows);
+  const hasRows = displayRows.length > 0;
+  const current = selectedRow(displayRows, selected, allowFallback ? rows : []);
 
   return (
     <section className="cvSiteScreen">
@@ -63,13 +65,13 @@ function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary
 
       <div className="cvBackOfficeGrid">
         <section className="cvBackOfficeList">
-          {displayRows.map((row) => (
+          {hasRows ? displayRows.map((row) => (
             <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)}>
               <span>{row[0]}</span>
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
             </button>
-          ))}
+          )) : <article className="cvSiteEmpty"><strong>No live {eyebrow.toLowerCase()} records yet</strong><p>No demo rows are shown inside the real owner app.</p></article>}
         </section>
 
         <aside className="cvBackOfficeDetail">
@@ -81,7 +83,7 @@ function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary
             <article><b>Data source</b><small>{live.label}</small></article>
             <article><b>Mobile fit</b><small>Keep the screen simple</small></article>
           </div>
-          <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" />
+          {hasRows ? <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>Live records will appear here when there is something real for the owner to review.</p></article>}
         </aside>
       </div>
     </section>
