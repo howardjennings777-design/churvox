@@ -15,6 +15,7 @@ import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScree
 import { ScheduleScreen, AutomationScreen, PayrollScreen, BrandingScreen } from "./OfficeTeamBackOfficeScreens";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
 import { fetchOfficeTeamCommandDrafts } from "./OfficeTeamCommandDrafts";
+import { readOfficeTeamLocalCommandQueue, removeOfficeTeamLocalCommand, subscribeOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-office-site-20260709";
 const COMMAND_CARD_LIMIT = 3;
@@ -65,6 +66,7 @@ export default function OfficeTeamLabSite() {
   const [activeRole, setActiveRole] = useState("Office Manager");
   const [snapshot, setSnapshot] = useState({ source: "demo", decisions: [] });
   const [liveDrafts, setLiveDrafts] = useState([]);
+  const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [notice, setNotice] = useState("Demo preview. Sign in as an owner to load live Admin Brain decisions.");
   const [resolved, setResolved] = useState({});
 
@@ -87,17 +89,20 @@ export default function OfficeTeamLabSite() {
     return () => { mounted = false; };
   }, []);
 
+  useEffect(() => subscribeOfficeTeamLocalCommand(setLocalQueue), []);
+
   useEffect(() => {
     const onPop = () => { setScreen(cleanScreen(window.location.hash)); window.scrollTo({ top: 0 }); };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  const decisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : demoDecisions;
+  const baseDecisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : demoDecisions;
+  const decisions = localQueue.length ? [...localQueue, ...baseDecisions] : baseDecisions;
   const pending = useMemo(() => decisions.filter((item) => !resolved[keyOf(item)]), [decisions, resolved]);
   const counts = useMemo(() => countDepartments(pending), [pending]);
   const metrics = makeStatusCards({ total: pending.length, high: pending.filter((item) => item.level === "Top priority").length, parked: Object.keys(resolved).length }, pending.length);
-  const sourceLabel = snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : snapshot.source === "clear-live" ? "Live clear" : "Demo mode";
+  const sourceLabel = localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : snapshot.source === "clear-live" ? "Live clear" : "Demo mode";
 
   function go(next) {
     setScreen(next);
@@ -109,6 +114,12 @@ export default function OfficeTeamLabSite() {
     const id = keyOf(item);
     setResolved((current) => ({ ...current, [id]: action }));
     setNotice(`${action} moved out of Command. The next waiting decision replaces it.`);
+    if (String(id || "").startsWith("local-command-")) {
+      const next = removeOfficeTeamLocalCommand(id);
+      setLocalQueue(next);
+      setNotice(`${action} cleared the local Command card. Nothing was sent or synced.`);
+      return;
+    }
     try {
       await recordOfficeTeamDecision(item, action);
       setNotice(`${action} recorded safely. Nothing was sent or synced.`);
