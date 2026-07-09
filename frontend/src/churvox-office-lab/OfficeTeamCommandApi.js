@@ -91,6 +91,20 @@ export function mapCommandSlipToDecision(slip = {}, index = 0) {
   };
 }
 
+export function mapBackendCommandAudit(item = {}, index = 0) {
+  return {
+    id: clean(item.id || `${item.slip_id || "audit"}-${item.at || index}`),
+    status: clean(item.action || item.status, "recorded"),
+    action: clean(item.action, "recorded"),
+    title: clean(item.title, "Command slip"),
+    detail: clean(item.note || item.detail, "Backend Command audit record."),
+    safety: clean(item.safety, SAFE_RESULT),
+    at: clean(item.at || item.created_at, ""),
+    slipId: clean(item.slip_id, ""),
+    source: "backend_command_audit",
+  };
+}
+
 export async function fetchBackendCommandDecisions() {
   const base = host();
   if (!base) return { source: "command-unavailable", decisions: [], message: "No API host" };
@@ -109,6 +123,29 @@ export async function fetchBackendCommandDecisions() {
   return {
     source: slips.length ? "backend-command" : "backend-command-clear",
     decisions: slips.map(mapCommandSlipToDecision),
+    message: body?.safety || SAFE_RESULT,
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
+export async function fetchBackendCommandAudit() {
+  const base = host();
+  if (!base) return { source: "command-audit-unavailable", audit: [], message: "No API host" };
+  const response = await fetch(`${base}/api/command/audit`, {
+    credentials: "include",
+    headers: authHeaders({ json: false }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403 || response.status === 404) {
+    return { source: "command-audit-unavailable", audit: [], message: body?.detail || "Command audit unavailable" };
+  }
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || body?.detail || `Command audit failed ${response.status}`);
+  }
+  const audit = Array.isArray(body?.audit) ? body.audit : [];
+  return {
+    source: audit.length ? "backend-command-audit" : "backend-command-audit-clear",
+    audit: audit.map(mapBackendCommandAudit),
     message: body?.safety || SAFE_RESULT,
     fetchedAt: new Date().toISOString(),
   };
