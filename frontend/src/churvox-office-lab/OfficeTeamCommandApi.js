@@ -162,6 +162,8 @@ export async function createBackendCommandSlip({ area = "office", record = [], a
     credentials: "include",
     headers: authHeaders(),
     body: JSON.stringify({
+      source_type: area,
+      action_type: action,
       sourceType: area,
       actionType: action,
       title: `${labelForArea(area)}: ${recordTitle}`,
@@ -186,6 +188,39 @@ export async function createBackendCommandSlip({ area = "office", record = [], a
     window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
   } catch {
     // Event refresh should never block Command creation.
+  }
+  return body;
+}
+
+export async function createBackendWorkerPaymentRequest({ title = "Worker payment request", amount = "", invoice = "", customer = "", paymentLink = "" } = {}) {
+  const base = host();
+  if (!base) throw new Error("Command backend unavailable");
+  const response = await fetch(`${base}/api/command/worker-payment-request`, {
+    method: "POST",
+    credentials: "include",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      title,
+      job_title: title,
+      amount,
+      amount_due: amount,
+      invoice,
+      invoice_number: invoice,
+      customer,
+      customer_name: customer,
+      payment_link: paymentLink,
+      prepared_only: true,
+      owner_review_only: true,
+    }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || body?.detail || `Worker payment request failed ${response.status}`);
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
+  } catch {
+    // Event refresh should never block worker payment requests.
   }
   return body;
 }
