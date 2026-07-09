@@ -147,7 +147,7 @@ def build_command_router(db, get_current_user, ObjectId):
         return {"success": True, "slip": doc_out(doc), "safety": SAFE_RESULT}
 
     @router.post("/command/scan")
-    async def scan_command_slips(payload: Dict[str, Any] | None = None, request: Request = None):
+    async def scan_command_slips(request: Request, payload: Dict[str, Any] | None = None):
         user = await require_owner(request)
         await command_event(user, "scan_requested", None, "Command scan requested. No real records were changed.")
         return {"success": True, "slips": [], "message": "Safe scan recorded. Automatic slip creation is not enabled yet.", "safety": SAFE_RESULT}
@@ -169,7 +169,7 @@ def build_command_router(db, get_current_user, ObjectId):
         return {"success": True, "slip": doc_out(slip), "safety": SAFE_RESULT}
 
     @router.post("/command/slips/{slip_id}/approve")
-    async def approve_command_slip(slip_id: str, payload: Dict[str, Any] | None = None, request: Request = None):
+    async def approve_command_slip(slip_id: str, request: Request, payload: Dict[str, Any] | None = None):
         user = await require_owner(request)
         business_id, _ = business_ids(user)
         slip = await db.command_slips.find_one({"_id": oid(slip_id, "slip"), "business_id": business_id})
@@ -190,7 +190,7 @@ def build_command_router(db, get_current_user, ObjectId):
         return {"success": True, "slip": doc_out(slip), "result": update["result"], "safety": SAFE_RESULT}
 
     @router.post("/command/slips/{slip_id}/snooze")
-    async def snooze_command_slip(slip_id: str, payload: Dict[str, Any] | None = None, request: Request = None):
+    async def snooze_command_slip(slip_id: str, request: Request, payload: Dict[str, Any] | None = None):
         user = await require_owner(request)
         business_id, _ = business_ids(user)
         hours = int((payload or {}).get("hours") or 24)
@@ -203,7 +203,7 @@ def build_command_router(db, get_current_user, ObjectId):
         return {"success": True, "slip": doc_out(slip), "safety": SAFE_RESULT}
 
     @router.post("/command/slips/{slip_id}/ignore")
-    async def ignore_command_slip(slip_id: str, payload: Dict[str, Any] | None = None, request: Request = None):
+    async def ignore_command_slip(slip_id: str, request: Request, payload: Dict[str, Any] | None = None):
         user = await require_owner(request)
         business_id, _ = business_ids(user)
         note = (payload or {}).get("note") or "Owner ignored this Command slip."
