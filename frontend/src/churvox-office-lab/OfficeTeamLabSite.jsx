@@ -8,6 +8,7 @@ import OfficeTeamRoleControls from "./OfficeTeamRoleControls";
 import OfficeTeamSiteSettings from "./OfficeTeamSiteSettings";
 import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
 import OfficeTeamReadinessScreen from "./OfficeTeamReadinessScreen";
+import OfficeTeamTodayScreen from "./OfficeTeamTodayScreen";
 import { WorkScreen, MoneyScreen, ClientsScreen, StaffScreen } from "./OfficeTeamOperationalScreens";
 import { QuotesScreen, InvoicesScreen, IntegrationsScreen, HelpScreen } from "./OfficeTeamExtraScreens";
 import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScreens";
@@ -67,13 +68,15 @@ export default function OfficeTeamLabSite() {
 
   useEffect(() => {
     let mounted = true;
-    fetchOfficeTeamSnapshot().then((data) => {
-      if (!mounted) return;
-      setSnapshot(data || { source: "demo", decisions: [] });
-      setResolved({});
-      if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
-      else if (data?.source === "clear-live") setNotice("Live scan is clear. Demo cards stay visible for review.");
-    }).catch((err) => mounted && setNotice(`Demo preview. Live scan unavailable: ${err.message || "connection issue"}`));
+    fetchOfficeTeamSnapshot()
+      .then((data) => {
+        if (!mounted) return;
+        setSnapshot(data || { source: "demo", decisions: [] });
+        setResolved({});
+        if (data?.source === "admin-brain") setNotice("Live Admin Brain scan loaded. Owner approval still required.");
+        else if (data?.source === "clear-live") setNotice("Live scan is clear. Demo cards stay visible for review.");
+      })
+      .catch((err) => mounted && setNotice(`Demo preview. Live scan unavailable: ${err.message || "connection issue"}`));
     return () => { mounted = false; };
   }, []);
 
@@ -102,7 +105,7 @@ export default function OfficeTeamLabSite() {
     try {
       await recordOfficeTeamDecision(item, action);
       setNotice(`${action} recorded safely. Nothing was sent or synced.`);
-    } catch (err) {
+    } catch {
       setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
       setNotice(`Could not record ${action}. The card returned to Command.`);
     }
@@ -113,7 +116,7 @@ export default function OfficeTeamLabSite() {
 
 function ScreenRouter(props) {
   const { screen } = props;
-  if (screen === "today") return <Today {...props} />;
+  if (screen === "today") return <OfficeTeamTodayScreen {...props} />;
   if (screen === "command") return <Command {...props} />;
   if (screen === "work") return <WorkScreen />;
   if (screen === "schedule") return <ScheduleScreen />;
@@ -136,17 +139,42 @@ function ScreenRouter(props) {
   if (screen === "help") return <HelpScreen />;
   if (screen === "readiness") return <OfficeTeamReadinessScreen />;
   if (screen === "safety") return <Safety />;
-  return <Today {...props} />;
+  return <OfficeTeamTodayScreen {...props} />;
 }
 
-function Topbar({ screen, go }) { return <header className="cvSiteTopbar"><div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>Churvox Office Team</strong><span>Hidden internal website · owner approval locked</span></div></div><nav>{screens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav></header>; }
-function Status({ metrics, sourceLabel, notice }) { return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>Office running · {sourceLabel}</span><h1>Churvox runs the office. The owner approves the decisions.</h1><p>Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>; }
-function Today({ metrics, pending, resolved, go }) { const top = pending.slice(0, 3); const shortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"]; return <section className="cvSiteScreen"><Header eyebrow="Today" title="Your office team has checked the business" text="Start here. The owner sees what matters, opens Command when a decision is needed, and leaves the rest with the office team." /><div className="cvSiteTodayGrid"><article className="cvSiteBriefing"><span>Daily briefing</span><h2>{pending.length ? `${pending.length} decisions are prepared. ${top.length} are ready first.` : "No urgent decisions waiting right now."}</h2><p>Churvox is shaped like an office team: staff update the work, the mimics check records, and Command asks the owner only when a decision is needed.</p><div className="cvSiteBriefingActions">{shortcuts.map((key, index) => <button key={key} className={index === 0 ? "primary" : ""} onClick={() => go(key)}>{labelFor(key)}</button>)}</div></article><div className="cvSiteTodayStack"><article className="cvSiteTodayPanel"><span>Next decisions</span><strong>{metrics[1]?.value || 0} need owner</strong><p>Command only shows the next few, then replaces each card after action.</p><div className="cvSiteMiniList">{top.map((item) => <article key={keyOf(item)}><b>{item.title}</b><small>{item.tray} · {item.roleName}</small></article>)}</div></article><article className="cvSiteActionPanel"><span>Safety lock</span><strong>Approval first</strong><p>The hidden build stays prepared-only until moved safely into the real app.</p><button onClick={() => go("safety")}>View safety rules</button></article><article className="cvSiteActionPanel"><span>Cleared</span><strong>{Object.keys(resolved).length} this session</strong><p>Actioned decisions leave Command and move into activity history.</p></article></div></div></section>; }
-function Command({ tray, setTray, counts, pending, onAction }) { const queue = tray === "command" ? pending : pending.filter((item) => trayKey(item.tray) === tray); const shown = queue.slice(0, COMMAND_CARD_LIMIT); const waiting = Math.max(0, queue.length - shown.length); return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Only the next few decisions show. Once one is actioned, it leaves Command and the next waiting item replaces it." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => setTray(key)}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} onAction={onAction} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div></section>; }
-function Team({ activeRole, setActiveRole }) { const selected = roles.find((item) => item.name === activeRole) || roles[0]; return <section className="cvSiteScreen"><Header eyebrow="Office Team" title="Roles behind the desk" text="Each mimic checks records, prepares admin and sends one clean decision into Command." /><div className="cvSiteTeamLayout"><aside className="cvSiteRoleList">{roles.map((item) => <button key={item.name} className={selected.name === item.name ? "active" : ""} onClick={() => setActiveRole(item.name)}><strong>{item.name}</strong><span>{item.summary}</span></button>)}</aside><article className="cvSiteRoleDetail"><span>{selected.dept}</span><h2>{selected.name}</h2><p>{selected.summary}</p><div className="cvSiteRoleColumns"><Info title="Checks" items={selected.checks} /><Info title="Prepares" items={selected.prepares} /><section><h3>Owner question</h3><p>{selected.ownerAsk}</p></section></div></article><OfficeTeamRoleControls roles={roles} /></div></section>; }
-function Playbooks() { return <section className="cvSiteScreen"><Header eyebrow="Playbooks" title="Same system, different business wording" text="Churvox should fit the business language instead of forcing every business to sound the same." /><div className="cvSitePlaybookGrid">{playbooks.map(([name, work, staff, customer, examples]) => <article key={name}><span>{name}</span><dl><div><dt>Work</dt><dd>{work}</dd></div><div><dt>Staff</dt><dd>{staff}</dd></div><div><dt>Customer</dt><dd>{customer}</dd></div></dl><small>{examples}</small></article>)}</div></section>; }
-function Activity({ pending, resolved }) { const cleared = Object.entries(resolved); return <section className="cvSiteScreen"><Header eyebrow="Activity" title="Office activity log" text="This becomes the real log of checked, prepared, parked and approved work." /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title} waiting in Command.</p><small>{item.tray}</small></article>)}</section><section><h2>Cleared this session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Moved out of Command.</p><small>{id}</small></article>) : <Empty title="Nothing cleared yet" text="Action a Command card and it will appear here." />}</section></div></section>; }
-function Safety() { return <section className="cvSiteScreen"><Header eyebrow="Safety" title="Rules before this moves into the real app" text="Owner approval first. Safe recording second. Public site untouched until ready." /><div className="cvSiteSafetyGrid">{safetyRules.map((rule, index) => <article key={rule}><strong>{index + 1}</strong><p>{rule}</p></article>)}</div><div className="cvSiteBuildSteps"><span>Finish path</span><strong>How this becomes the real owner app</strong><p>This keeps the hidden site moving toward the real product without breaking public pages.</p><ol><li>Use Today as the owner starting screen.</li><li>Move Command queue into the real owner app.</li><li>Connect role modes to real settings.</li><li>Connect playbook wording to business type.</li><li>Replace demo activity with mimic logs.</li><li>Polish public marketing around this story.</li></ol></div></section>; }
+function Topbar({ screen, go }) {
+  return <header className="cvSiteTopbar"><div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>Churvox Office Team</strong><span>Hidden internal website · owner approval locked</span></div></div><nav>{screens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav></header>;
+}
+
+function Status({ metrics, sourceLabel, notice }) {
+  return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>Office running · {sourceLabel}</span><h1>Churvox runs the office. The owner approves the decisions.</h1><p>Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
+}
+
+function Command({ tray, setTray, counts, pending, onAction }) {
+  const queue = tray === "command" ? pending : pending.filter((item) => trayKey(item.tray) === tray);
+  const shown = queue.slice(0, COMMAND_CARD_LIMIT);
+  const waiting = Math.max(0, queue.length - shown.length);
+  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Only the next few decisions show. Once one is actioned, it leaves Command and the next waiting item replaces it." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => setTray(key)}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} onAction={onAction} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div></section>;
+}
+
+function Team({ activeRole, setActiveRole }) {
+  const selected = roles.find((item) => item.name === activeRole) || roles[0];
+  return <section className="cvSiteScreen"><Header eyebrow="Office Team" title="Roles behind the desk" text="Each mimic checks records, prepares admin and sends one clean decision into Command." /><div className="cvSiteTeamLayout"><aside className="cvSiteRoleList">{roles.map((item) => <button key={item.name} className={selected.name === item.name ? "active" : ""} onClick={() => setActiveRole(item.name)}><strong>{item.name}</strong><span>{item.summary}</span></button>)}</aside><article className="cvSiteRoleDetail"><span>{selected.dept}</span><h2>{selected.name}</h2><p>{selected.summary}</p><div className="cvSiteRoleColumns"><Info title="Checks" items={selected.checks} /><Info title="Prepares" items={selected.prepares} /><section><h3>Owner question</h3><p>{selected.ownerAsk}</p></section></div></article><OfficeTeamRoleControls roles={roles} /></div></section>;
+}
+
+function Playbooks() {
+  return <section className="cvSiteScreen"><Header eyebrow="Playbooks" title="Same system, different business wording" text="Churvox should fit the business language instead of forcing every business to sound the same." /><div className="cvSitePlaybookGrid">{playbooks.map(([name, work, staff, customer, examples]) => <article key={name}><span>{name}</span><dl><div><dt>Work</dt><dd>{work}</dd></div><div><dt>Staff</dt><dd>{staff}</dd></div><div><dt>Customer</dt><dd>{customer}</dd></div></dl><small>{examples}</small></article>)}</div></section>;
+}
+
+function Activity({ pending, resolved }) {
+  const cleared = Object.entries(resolved);
+  return <section className="cvSiteScreen"><Header eyebrow="Activity" title="Office activity log" text="This becomes the real log of checked, prepared, parked and approved work." /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title} waiting in Command.</p><small>{item.tray}</small></article>)}</section><section><h2>Cleared this session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Moved out of Command.</p><small>{id}</small></article>) : <Empty title="Nothing cleared yet" text="Action a Command card and it will appear here." />}</section></div></section>;
+}
+
+function Safety() {
+  return <section className="cvSiteScreen"><Header eyebrow="Safety" title="Rules before this moves into the real app" text="Owner approval first. Safe recording second. Public site untouched until ready." /><div className="cvSiteSafetyGrid">{safetyRules.map((rule, index) => <article key={rule}><strong>{index + 1}</strong><p>{rule}</p></article>)}</div><div className="cvSiteBuildSteps"><span>Finish path</span><strong>How this becomes the real owner app</strong><p>This keeps the hidden site moving toward the real product without breaking public pages.</p><ol><li>Use Today as the owner starting screen.</li><li>Move Command queue into the real owner app.</li><li>Connect role modes to real settings.</li><li>Connect playbook wording to business type.</li><li>Replace demo activity with mimic logs.</li><li>Polish public marketing around this story.</li></ol></div></section>;
+}
+
 function Header({ eyebrow, title, text }) { return <header className="cvSiteScreenHeader"><span>{eyebrow}</span><h2>{title}</h2><p>{text}</p></header>; }
 function Decision({ item, onAction }) { return <article className="cvSiteDecisionCard"><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <small key={x}>{x}</small>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><footer>{(item.actions || []).map((action, i) => <button key={action} className={i === 0 ? "primary" : ""} onClick={() => onAction(item, action)}>{action}</button>)}</footer><small>Approval locked · leaves Command after action</small></article>; }
 function Info({ title, items }) { return <section><h3>{title}</h3><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section>; }
@@ -157,4 +185,3 @@ function keyOf(item = {}) { return item.id || item.action_id || item.title; }
 function trayKey(tray = "") { const t = String(tray).toLowerCase(); if (t.includes("money")) return "money"; if (t.includes("booking")) return "bookings"; if (t.includes("staff")) return "staff"; if (t.includes("client")) return "clients"; if (t.includes("quality")) return "quality"; if (t.includes("operation")) return "ops"; return "command"; }
 function countDepartments(items = []) { return items.reduce((acc, item) => { acc.command += 1; const key = trayKey(item.tray); acc[key] = (acc[key] || 0) + 1; return acc; }, { command: 0, money: 0, bookings: 0, staff: 0, clients: 0, quality: 0, ops: 0 }); }
 function cleanScreen(hash = "") { const key = String(hash || "").replace(/^#/, ""); return screens.some(([id]) => id === key) ? key : "today"; }
-function labelFor(key) { return screens.find(([id]) => id === key)?.[1] || key; }
