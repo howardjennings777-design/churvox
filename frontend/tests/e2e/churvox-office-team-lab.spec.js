@@ -55,6 +55,10 @@ test.describe('hidden Office Team lab', () => {
     await page.getByRole('button', { name: /Prepare Command card/i }).first().click();
     await expect(page.getByText(/prepared-only Command item/i).first()).toBeVisible();
 
+    await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/Office desk handover/i)).toBeVisible();
+    await expect(page.getByText(/prepared · owner approval required/i).first()).toBeVisible();
+
     await page.goto('/office-team-lab#command', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
     await expect(page.getByText(/local prepared-only handoff|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
@@ -65,6 +69,10 @@ test.describe('hidden Office Team lab', () => {
 
     await page.locator('.cvSiteDecisionCard').first().getByRole('button').first().click();
     await expect(page.getByText(/cleared the local Command card|Approval trail saved|Nothing was sent or synced/i).first()).toBeVisible();
+
+    await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/Recent owner approvals/i)).toBeVisible();
+    await expect(page.getByText(/Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
 
     await page.goto('/office-team-lab#activity', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner approval trail/i)).toBeVisible();
