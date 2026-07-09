@@ -67,13 +67,13 @@ function readinessGroups(overview) {
       key: "live-wiring",
       name: "Live read-only wiring",
       status: liveAreas.length ? "Started" : "Ready",
-      items: areaItems.length ? areaItems : ["Waiting for owner login to check live records"],
+      items: ["Command fallback drafts from read-only records", ...areaItems.length ? areaItems : ["Waiting for owner login to check live records"]],
     },
     {
       key: "next",
       name: "Next safe wiring",
       status: "Next",
-      items: ["Command cards from real records", "Owner-approved action handoff", "Messages loop", "Worker iPhone view", "Quote and invoice draft review", "Mimic activity logs"],
+      items: ["Owner-approved action handoff", "Messages loop", "Worker iPhone view", "Quote and invoice draft review", "Mimic activity logs", "Remove demo rows after live coverage is reliable"],
     },
     {
       key: "test",
