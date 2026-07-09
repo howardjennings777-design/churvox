@@ -87,12 +87,12 @@ const roles = [
 ];
 
 const demoDecisions = [
-  decision("demo-1", "Money", "Bookkeeper", "Top priority", "Completed service has extra decision", "Staff noted extra green waste after completion.", ["completed", "staff note", "not sent"], "Draft is ready and the extra line is held for review.", "Charge extra, include free or ask staff first?", ["Add charge", "Include free", "Ask staff", "Park"]),
-  decision("demo-2", "Bookings", "Receptionist", "Next", "Regular client has no next booking", "A repeat client usually books every 3 weeks but has no next appointment.", ["last visit", "usual cycle", "space found"], "Rebooking message and suggested date are ready.", "Send rebooking message or create booking now?", ["Send", "Book", "Edit date", "Park"]),
-  decision("demo-3", "Staff", "Payroll Clerk", "Needs check", "Hours review has one odd timer", "One timer is much longer than usual.", ["period", "timers", "manual time"], "Hours review is ready and the odd timer is flagged.", "Approve, edit timer or ask staff?", ["Approve", "Edit", "Ask staff", "Park"]),
-  decision("demo-4", "Clients", "Client Memory", "Low risk", "Service note should become client memory", "A service note includes useful preference details.", ["notes", "service", "duplicates"], "Client memory update is ready.", "Save this to client memory?", ["Save", "Edit", "Ignore"]),
-  decision("demo-5", "Quality", "Quality Checker", "Parkable", "Completed work is missing proof", "A completed work record is missing its final proof note.", ["complete", "proof missing"], "Ask-staff prompt is ready.", "Ask staff for proof or complete anyway?", ["Ask staff", "Complete", "Park"]),
-  decision("demo-6", "Operations", "Operations Manager", "Pattern", "Repeat work may need a rule", "A repeated issue has shown up more than once this month.", ["pattern", "repeat", "gap"], "A process rule suggestion is ready.", "Review the rule or leave it?", ["Review rule", "Leave", "Park"]),
+  decision("demo-1", "Money", "Bookkeeper", "Top priority", "Completed service has extra decision", "Staff noted extra green waste after completion.", ["completed", "staff note", "not sent"], "Draft is ready and the extra line is held for review.", "Approve this draft direction, edit it, ask staff, or park it?", ["Approve draft", "Edit draft", "Ask staff", "Park"]),
+  decision("demo-2", "Bookings", "Receptionist", "Next", "Regular client has no next booking", "A repeat client usually books every 3 weeks but has no next appointment.", ["last visit", "usual cycle", "space found"], "Rebooking message and suggested date are ready.", "Approve the prepared rebooking plan, edit the date, or park it?", ["Approve plan", "Edit date", "Ask client later", "Park"]),
+  decision("demo-3", "Staff", "Payroll Clerk", "Needs check", "Hours review has one odd timer", "One timer is much longer than usual.", ["period", "timers", "manual time"], "Hours review is ready and the odd timer is flagged.", "Approve the review direction, edit timer notes, or ask staff?", ["Approve review", "Edit notes", "Ask staff", "Park"]),
+  decision("demo-4", "Clients", "Client Memory", "Low risk", "Service note should become client memory", "A service note includes useful preference details.", ["notes", "service", "duplicates"], "Client memory update is ready.", "Approve this memory draft, edit it, ignore it, or park it?", ["Approve draft", "Edit draft", "Ignore", "Park"]),
+  decision("demo-5", "Quality", "Quality Checker", "Parkable", "Completed work is missing proof", "A completed work record is missing its final proof note.", ["complete", "proof missing"], "Ask-staff prompt is ready.", "Approve the proof request, review completion, or park it?", ["Approve request", "Review completion", "Park"]),
+  decision("demo-6", "Operations", "Operations Manager", "Pattern", "Repeat work may need a rule", "A repeated issue has shown up more than once this month.", ["pattern", "repeat", "gap"], "A process rule suggestion is ready.", "Approve the rule draft, edit it, or park it?", ["Approve draft", "Edit draft", "Park"]),
 ];
 
 const playbooks = [
@@ -171,7 +171,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   async function actionDecision(item, action) {
     const id = keyOf(item);
     setResolved((current) => ({ ...current, [id]: action }));
-    setNotice(`${action} moved out of Command. The next waiting decision replaces it.`);
+    setNotice(`${action} recorded as the owner decision. The prepared card left Command. Nothing was sent, synced, charged or changed.`);
     if (String(id || "").startsWith("local-command-")) {
       const activity = recordOfficeTeamLocalActivity("Cleared", item, action);
       const trail = recordOfficeTeamApprovalTrail(item, action, "Owner reviewed");
@@ -179,19 +179,19 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
       setLocalQueue(next);
       setLocalActivity(activity);
       setApprovalTrail(trail);
-      setNotice(`${action} cleared the local Command card. Approval trail saved. Nothing was sent or synced.`);
+      setNotice(`${action} recorded as the owner decision. Approval trail saved. Nothing was sent, synced, charged or changed.`);
       return;
     }
     try {
       await recordOfficeTeamDecision(item, action);
       const trail = recordOfficeTeamApprovalTrail(item, action, "Owner reviewed");
       setApprovalTrail(trail);
-      setNotice(`${action} recorded safely. Approval trail saved. Nothing was sent or synced.`);
+      setNotice(`${action} recorded safely for owner approval. Approval trail saved. Nothing was sent, synced, charged or changed.`);
     } catch {
       setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
       const trail = recordOfficeTeamApprovalTrail(item, action, "Returned to Command");
       setApprovalTrail(trail);
-      setNotice(`Could not record ${action}. The card returned to Command.`);
+      setNotice(`Could not record ${action}. The card returned to Command. Nothing was sent, synced, charged or changed.`);
     }
   }
 
@@ -262,7 +262,7 @@ function Safety() {
 }
 
 function Header({ eyebrow, title, text }) { return <header className="cvSiteScreenHeader"><span>{eyebrow}</span><h2>{title}</h2><p>{text}</p></header>; }
-function Decision({ item, onAction }) { return <article className="cvSiteDecisionCard"><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <small key={x}>{x}</small>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><footer>{(item.actions || []).map((action, i) => <button key={action} className={i === 0 ? "primary" : ""} onClick={() => onAction(item, action)}>{action}</button>)}</footer><small>Approval locked · leaves Command after action</small></article>; }
+function Decision({ item, onAction }) { return <article className="cvSiteDecisionCard"><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <small key={x}>{x}</small>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><footer>{(item.actions || []).map((action, i) => <button key={action} className={i === 0 ? "primary" : ""} onClick={() => onAction(item, action)}>{action}</button>)}</footer><small>Approval recorded only · no send, sync, charge or record change</small></article>; }
 function Info({ title, items }) { return <section><h3>{title}</h3><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section>; }
 function Empty({ title, text }) { return <article className="cvSiteEmpty"><strong>{title}</strong><p>{text}</p></article>; }
 function role(name, dept, summary, checks, prepares, ownerAsk) { return { name, dept, summary, checks, prepares, ownerAsk }; }
