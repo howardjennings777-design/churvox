@@ -23,9 +23,12 @@ const labels = {
   readiness: "Readiness",
 };
 
-export default function OfficeTeamTodayScreen({ metrics, pending, resolved, go }) {
+export default function OfficeTeamTodayScreen({ metrics, pending, resolved, approvalTrail = [], localQueue = [], localActivity = [], go }) {
   const overview = useOfficeTeamOverview();
   const top = pending.slice(0, 3);
+  const preparedWaiting = localQueue.slice(0, 3);
+  const recentApprovals = approvalTrail.slice(0, 3);
+  const recentOfficeTrail = localActivity.slice(0, 3);
   const cleared = Object.keys(resolved).length;
 
   return (
@@ -49,6 +52,26 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, go }
         </article>
 
         <div className="cvSiteTodayStack">
+          <article className="cvSiteTodayPanel cvSiteHandoverPanel">
+            <span>Office desk handover</span>
+            <strong>{preparedWaiting.length} prepared · {recentApprovals.length} approved</strong>
+            <p>Prepared work stays waiting for Command. Owner decisions stay visible in the approval trail.</p>
+            <div className="cvSiteMiniList">
+              {preparedWaiting.length ? preparedWaiting.map((item) => (
+                <article key={item.id || item.title}>
+                  <button onClick={() => go("command")}>
+                    <b>{item.title}</b>
+                    <small>{item.roleName || "Office Team"} prepared · owner approval required</small>
+                  </button>
+                </article>
+              )) : <article><b>No prepared handoffs waiting</b><small>Use any page’s safe controls to prepare a Command card.</small></article>}
+            </div>
+            <div className="cvSiteHandoverFooter">
+              <button onClick={() => go("command")}>Open Command</button>
+              <button onClick={() => go("activity")}>View approval trail</button>
+            </div>
+          </article>
+
           <article className="cvSiteTodayPanel">
             <span>Next decisions</span>
             <strong>{metrics[1]?.value || 0} need owner</strong>
@@ -60,6 +83,22 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, go }
                   <small>{item.tray} · {item.roleName}</small>
                 </article>
               )) : <article><b>Command is clear</b><small>Office team keeps watching safely.</small></article>}
+            </div>
+          </article>
+
+          <article className="cvSiteTodayPanel">
+            <span>Recent owner approvals</span>
+            <strong>{recentApprovals.length ? "Trail active" : "No approvals yet"}</strong>
+            <p>Every approval records the safety lock before anything real is allowed later.</p>
+            <div className="cvSiteMiniList">
+              {recentApprovals.length ? recentApprovals.map((item) => (
+                <article key={item.id}>
+                  <button onClick={() => go("activity")}>
+                    <b>{item.action} · {item.title}</b>
+                    <small>{item.safety}</small>
+                  </button>
+                </article>
+              )) : <article><b>Nothing approved yet</b><small>Action a Command card to start the approval trail.</small></article>}
             </div>
           </article>
 
@@ -87,9 +126,9 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, go }
           </article>
 
           <article className="cvSiteActionPanel">
-            <span>Cleared</span>
-            <strong>{cleared} this session</strong>
-            <p>Actioned decisions leave Command and move into activity history.</p>
+            <span>Office trail</span>
+            <strong>{recentOfficeTrail.length || cleared} recent</strong>
+            <p>Prepared and cleared work stays visible so the owner can see what Churvox has done.</p>
           </article>
         </div>
       </div>
