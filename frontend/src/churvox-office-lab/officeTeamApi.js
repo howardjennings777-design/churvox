@@ -29,6 +29,29 @@ function clean(value, fallback = "") {
   return String(value || fallback || "").trim();
 }
 
+function first(item = {}, keys = [], fallback = "") {
+  for (const key of keys) {
+    const value = item?.[key];
+    if (value !== undefined && value !== null && clean(value)) return clean(value);
+  }
+  return fallback;
+}
+
+function money(value, fallback = "") {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "number") return value ? `$${value.toLocaleString()}` : "0";
+  const raw = clean(value, fallback);
+  if (!raw) return fallback;
+  return raw.startsWith("$") || raw.includes("invoice") || raw.includes("quote") ? raw : raw;
+}
+
+function shortWhen(value, fallback = "Live") {
+  const raw = clean(value);
+  if (!raw) return fallback;
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  return raw.length > 22 ? `${raw.slice(0, 22)}…` : raw;
+}
+
 function trayFor(item = {}) {
   const source = clean(item.tray || item.department || item.record_type || item.kind || item.type).toLowerCase();
   if (source.includes("invoice") || source.includes("quote") || source.includes("payment") || source.includes("money")) return "Money";
@@ -122,6 +145,187 @@ export async function recordOfficeTeamDecision(decision, action) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Decision failed ${response.status}`);
   return body;
+}
+
+const READ_ENDPOINTS = {
+  work: ["/api/jobs?limit=12", "/api/jobs", "/api/work"],
+  schedule: ["/api/jobs?limit=12", "/api/schedule", "/api/calendar/events"],
+  clients: ["/api/clients?limit=12", "/api/clients", "/api/customers"],
+  messages: ["/api/messages?limit=12", "/api/messages", "/api/approved-notifications", "/api/ai/actions"],
+  worker: ["/api/worker/jobs", "/api/team/workers", "/api/workers"],
+  quotes: ["/api/quotes?limit=12", "/api/quotes"],
+  invoices: ["/api/invoices?limit=12", "/api/invoices"],
+  money: ["/api/invoices?limit=12", "/api/accounting/health"],
+  staff: ["/api/team/workers", "/api/team", "/api/workers"],
+  payroll: ["/api/payroll/summary", "/api/payroll", "/api/team/workers"],
+  automation: ["/api/ai/actions", "/api/approved-notifications", "/api/admin-brain/scan"],
+  branding: ["/api/business/settings", "/api/settings/business", "/api/auth/me"],
+};
+
+const ARRAY_KEYS = {
+  work: ["jobs", "work", "bookings", "items", "results", "data"],
+  schedule: ["jobs", "events", "schedule", "items", "results", "data"],
+  clients: ["clients", "customers", "items", "results", "data"],
+  messages: ["messages", "threads", "notifications", "actions", "items", "results", "data"],
+  worker: ["jobs", "workers", "team", "items", "results", "data"],
+  quotes: ["quotes", "items", "results", "data"],
+  invoices: ["invoices", "items", "results", "data"],
+  money: ["invoices", "payments", "items", "results", "data"],
+  staff: ["workers", "staff", "team", "items", "results", "data"],
+  payroll: ["workers", "payroll", "periods", "items", "results", "data"],
+  automation: ["actions", "rules", "notifications", "items", "results", "data"],
+  branding: ["settings", "business", "items", "results", "data"],
+};
+
+async function safeRead(path) {
+  const base = host();
+  if (!base) return { ok: false, locked: true, status: 0, body: {}, path };
+  const response = await fetch(`${base}${path}`, {
+    credentials: "include",
+    headers: authHeaders({ json: false }),
+  });
+  const body = await response.json().catch(() => ({}));
+  return {
+    ok: response.ok && body?.success !== false,
+    locked: response.status === 401 || response.status === 403,
+    status: response.status,
+    body,
+    path,
+  };
+}
+
+function extractArray(body, area, depth = 0) {
+  if (depth > 3 || body == null) return [];
+  if (Array.isArray(body)) return body;
+  if (typeof body !== "object") return [];
+  const keys = ARRAY_KEYS[area] || ["items", "results", "data"];
+  for (const key of keys) {
+    const value = body[key];
+    if (Array.isArray(value)) return value;
+    if (value && typeof value === "object") {
+      const nested = extractArray(value, area, depth + 1);
+      if (nested.length) return nested;
+    }
+  }
+  return [];
+}
+
+function objectAsRows(area, body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return [];
+  if (area === "money" && (body.xero_connected !== undefined || body.tenant_name || body.draft_invoice_sync_ready !== undefined)) {
+    return [[
+      body.xero_connected ? "Xero" : "Accounting",
+      body.xero_connected ? "Connected" : "Not connected",
+      body.tenant_name || "Sync locked",
+      body.draft_invoice_sync_ready ? "Draft invoice sync is ready, but owner approval is still required." : "No auto-sync. Owner approval is still required.",
+    ]];
+  }
+  if (area === "branding" || area === "settings") {
+    const business = body.business || body.company || body.user || body;
+    return [[
+      "Business profile",
+      first(business, ["business_name", "company_name", "name", "email"], "Business settings"),
+      first(business, ["gst_rate", "gst", "timezone", "currency"], "Check settings"),
+      "Read-only preview. Changes still belong in Settings with owner control.",
+    ]];
+  }
+  return [];
+}
+
+function normalizeRows(area, body) {
+  const records = extractArray(body, area).slice(0, 12);
+  const rows = records.map((item, index) => rowFor(area, item, index)).filter(Boolean);
+  if (rows.length) return rows;
+  return objectAsRows(area, body);
+}
+
+function rowFor(area, item = {}, index = 0) {
+  if (!item || typeof item !== "object") return null;
+  const fallbackTitle = `Live ${area} record`;
+  if (area === "work" || area === "schedule") {
+    return [
+      shortWhen(first(item, ["scheduled_date", "date", "start", "start_time", "due_date"], index === 0 ? "Today" : "Upcoming")),
+      first(item, ["title", "job_title", "name", "service", "description", "client_name", "customer_name"], fallbackTitle),
+      first(item, ["status", "state", "stage"], "Live record"),
+      first(item, ["summary", "notes", "address", "client_name", "customer_name"], "Read-only live data. Send any change through Command first."),
+    ];
+  }
+  if (area === "clients") {
+    return [
+      first(item, ["name", "client_name", "customer_name", "business_name", "email", "phone"], "Client"),
+      first(item, ["type", "kind", "status"], "Client record"),
+      first(item, ["next_action", "stage", "last_job_status"], "Check details"),
+      first(item, ["notes", "summary", "address", "email", "phone"], "Client memory is read-only until approved."),
+    ];
+  }
+  if (area === "messages") {
+    return [
+      first(item, ["channel", "type", "source", "from_name", "sender"], "Message"),
+      first(item, ["subject", "title", "snippet", "body", "message"], "Live message thread"),
+      first(item, ["status", "state", "priority"], "Review"),
+      first(item, ["summary", "snippet", "body", "message", "detail"], "Reply is prepared-only until owner approval."),
+    ];
+  }
+  if (area === "worker" || area === "staff") {
+    return [
+      first(item, ["name", "worker_name", "staff_name", "email", "role"], "Worker"),
+      first(item, ["status", "role", "job_title", "today_status"], "Live staff record"),
+      first(item, ["availability", "timer_status", "assigned_count", "phone"], "Check"),
+      first(item, ["notes", "summary", "email", "phone"], "Worker view stays simple and phone-friendly."),
+    ];
+  }
+  if (area === "quotes") {
+    return [
+      first(item, ["status", "state", "stage"], "Quote"),
+      first(item, ["title", "quote_title", "client_name", "customer_name", "name"], "Live quote"),
+      money(first(item, ["total", "amount", "price", "value"], ""), "Value check"),
+      first(item, ["summary", "notes", "description"], "Quote changes must go through owner approval."),
+    ];
+  }
+  if (area === "invoices" || area === "money") {
+    return [
+      first(item, ["status", "state", "stage"], area === "money" ? "Money" : "Invoice"),
+      first(item, ["title", "invoice_title", "client_name", "customer_name", "number", "name"], "Live invoice"),
+      money(first(item, ["total", "amount", "balance", "value"], ""), "Value check"),
+      first(item, ["summary", "notes", "description"], "No send or sync until owner approval."),
+    ];
+  }
+  if (area === "payroll") {
+    return [
+      first(item, ["period", "name", "worker_name", "staff_name", "email"], "Payroll review"),
+      first(item, ["hours", "total_hours", "gross_hours", "status"], "Hours check"),
+      first(item, ["status", "timer_status", "role"], "Review"),
+      first(item, ["summary", "notes"], "Gross hours only. No tax filing, no bank file."),
+    ];
+  }
+  if (area === "automation") {
+    return [
+      first(item, ["type", "kind", "source", "role"], "Rule"),
+      first(item, ["title", "problem", "name", "summary"], "Prepared automation"),
+      first(item, ["status", "priority", "level"], "Owner approval"),
+      first(item, ["prepared", "suggestion", "detail", "summary"], "Automation prepares only. Command approves."),
+    ];
+  }
+  return ["Live", first(item, ["title", "name", "summary"], fallbackTitle), first(item, ["status", "state"], "Review"), "Read-only live data."];
+}
+
+export async function fetchOfficeTeamRows(area) {
+  const endpoints = READ_ENDPOINTS[area] || [];
+  if (!host()) return { source: "demo", rows: [], message: "Demo structure · API base unavailable" };
+
+  for (const endpoint of endpoints) {
+    try {
+      const result = await safeRead(endpoint);
+      if (result.locked) return { source: "locked", rows: [], endpoint, message: "Sign in as an owner to load live read-only data" };
+      if (!result.ok) continue;
+      const rows = normalizeRows(area, result.body);
+      if (rows.length) return { source: "live", rows, endpoint, message: `Live read-only · ${rows.length} records` };
+    } catch {
+      // Keep the hidden lab resilient. Missing endpoints should never break the preview.
+    }
+  }
+
+  return { source: "demo", rows: [], message: "Demo structure · safe preview" };
 }
 
 export function makeStatusCards(rawCounts = {}, fallbackTotal = 35) {
