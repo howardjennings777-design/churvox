@@ -40,8 +40,8 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
 
           <article className="cvWorkerJobCard">
             <small>{current[0]}</small>
-            <h3>{hasRows ? current[1] : "No live worker items"}</h3>
-            <p>{hasRows ? current[3] : "No demo worker jobs are shown inside the real owner app."}</p>
+            <h3>{hasRows ? current[1] : "No worker items waiting"}</h3>
+            <p>{hasRows ? current[3] : ownerRoute ? "Worker updates will appear here when staff have assigned work that needs review." : "No demo worker jobs are shown inside the real owner app."}</p>
             <em>{hasRows ? current[2] : "Clear"}</em>
           </article>
 
@@ -57,7 +57,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
 
           <section className="cvWorkerBossLoop">
             <b>Boss message</b>
-            <p>{hasRows ? "Send an update if something changed. Owner checks it in Command." : "Live worker updates will appear here when staff have real assigned work."}</p>
+            <p>{hasRows ? "Send an update if something changed. Owner checks it in Command." : "Worker updates will appear here when staff have real assigned work."}</p>
           </section>
         </section>
 
@@ -76,10 +76,10 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
                 <strong>{row[1]}</strong>
                 <small>{row[2]}</small>
               </button>
-            )) : <article className="cvSiteEmpty"><strong>No live worker items yet</strong><p>No demo worker rows are shown inside the real owner app.</p></article>}
+            )) : <article className="cvSiteEmpty"><strong>No worker items yet</strong><p>{ownerRoute ? "This area is clear. Worker updates will appear when something needs owner review." : "No demo worker rows are shown inside the real owner app."}</p></article>}
           </section>
 
-          {hasRows ? <OfficeTeamSafeControls area="worker" record={current} primary="Prepare worker update" secondary="Prepare boss note" command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>Worker updates will appear here when there is something real for the owner to review.</p></article>}
+          {hasRows ? <OfficeTeamSafeControls area="worker" record={current} primary="Prepare worker update" secondary="Prepare boss note" command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "No worker update needs owner approval right now." : "Worker updates will appear here when there is something real for the owner to review."}</p></article>}
         </aside>
       </div>
     </section>
