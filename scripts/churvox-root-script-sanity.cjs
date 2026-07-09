@@ -5,7 +5,7 @@ const path = require('path');
 
 const rootPackagePath = path.resolve(__dirname, '..', 'package.json');
 const frontendPackagePath = path.resolve(__dirname, '..', 'frontend', 'package.json');
-const requiredRootScripts = ['build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness'];
+const requiredRootScripts = ['build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness', 'test:live-command'];
 
 function readJson(filePath) {
   try {
@@ -44,4 +44,9 @@ if (rootScripts['test:readiness'] !== 'node scripts/churvox-readiness-sweep.cjs'
   process.exit(1);
 }
 
-console.log('Root script sanity passed. Office lab, route safety and readiness tests are available from the repo root.');
+if (rootScripts['test:live-command'] !== 'node scripts/churvox-live-command-smoke.cjs') {
+  console.error(`Root script test:live-command must run scripts/churvox-live-command-smoke.cjs. Found: ${rootScripts['test:live-command']}`);
+  process.exit(1);
+}
+
+console.log('Root script sanity passed. Office lab, route safety, readiness and live Command smoke tests are available from the repo root.');
