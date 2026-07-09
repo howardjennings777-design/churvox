@@ -1,0 +1,195 @@
+.cvWorkerLabGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 390px) 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.cvWorkerPhoneFrame {
+  display: grid;
+  gap: 14px;
+  min-height: 650px;
+  padding: 16px;
+  border: 10px solid #15100c;
+  border-radius: 38px;
+  background: linear-gradient(180deg, #fffaf2, #f4eee5);
+  box-shadow: 0 24px 48px rgba(23,18,14,.22);
+}
+
+.cvWorkerPhoneTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 22px;
+  color: #fff8ed;
+  background: linear-gradient(135deg, #17120e, #3b2b1f 58%, #f97316);
+}
+
+.cvWorkerPhoneTop span,
+.cvWorkerJobCard small,
+.cvWorkerSidePanel span {
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.cvWorkerPhoneTop strong {
+  font-size: .72rem;
+}
+
+.cvWorkerJobCard {
+  display: grid;
+  gap: 9px;
+  padding: 18px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 24px;
+  background: #fff;
+}
+
+.cvWorkerJobCard h3 {
+  margin: 0;
+  color: #17120e;
+  font-size: 1.5rem;
+  line-height: 1.05;
+}
+
+.cvWorkerJobCard p {
+  margin: 0;
+  color: #5f564d;
+  line-height: 1.45;
+}
+
+.cvWorkerJobCard em {
+  justify-self: start;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #9a3412;
+  background: rgba(249,115,22,.12);
+  font-size: .72rem;
+  font-weight: 950;
+  font-style: normal;
+}
+
+.cvWorkerBigButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvWorkerBigButtons button {
+  min-height: 76px;
+  border: 0;
+  border-radius: 22px;
+  color: #17120e;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(23,18,14,.1);
+  font-size: .9rem;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvWorkerBigButtons button:first-child {
+  color: #fff8ed;
+  background: linear-gradient(135deg, #17120e, #f97316);
+}
+
+.cvWorkerProofGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cvWorkerProofGrid button {
+  border: 1px dashed rgba(23,18,14,.22);
+  border-radius: 16px;
+  padding: 13px;
+  color: #4b4036;
+  background: rgba(255,255,255,.62);
+  font-weight: 900;
+}
+
+.cvWorkerBossLoop,
+.cvWorkerDataSource,
+.cvWorkerQueueList {
+  padding: 14px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 20px;
+  background: rgba(255,255,255,.72);
+}
+
+.cvWorkerBossLoop p,
+.cvWorkerDataSource p {
+  margin: 7px 0 0;
+  color: #5f564d;
+  line-height: 1.42;
+}
+
+.cvWorkerSidePanel {
+  display: grid;
+  gap: 12px;
+}
+
+.cvWorkerDataSource strong {
+  display: block;
+  margin-top: 5px;
+  color: #17120e;
+  font-size: 1rem;
+}
+
+.cvWorkerQueueList {
+  display: grid;
+  gap: 8px;
+}
+
+.cvWorkerQueueList h3 {
+  margin: 0 0 5px;
+}
+
+.cvWorkerQueueList button {
+  display: grid;
+  grid-template-columns: 82px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 14px;
+  padding: 10px;
+  color: #17120e;
+  background: rgba(255,255,255,.7);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cvWorkerQueueList button.active {
+  border-color: rgba(249,115,22,.5);
+  background: rgba(249,115,22,.1);
+}
+
+.cvWorkerQueueList button span,
+.cvWorkerQueueList button small {
+  color: #756c61;
+  font-size: .68rem;
+  font-weight: 850;
+}
+
+.cvWorkerQueueList button strong {
+  font-size: .86rem;
+}
+
+@media (max-width: 840px) {
+  .cvWorkerLabGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .cvWorkerPhoneFrame {
+    max-width: 390px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .cvWorkerQueueList button {
+    grid-template-columns: 1fr;
+  }
+}
