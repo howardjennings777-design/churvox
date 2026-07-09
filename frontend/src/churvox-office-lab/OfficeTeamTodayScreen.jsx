@@ -23,8 +23,8 @@ const labels = {
   readiness: "Readiness",
 };
 
-export default function OfficeTeamTodayScreen({ metrics, pending, resolved, approvalTrail = [], localQueue = [], localActivity = [], go }) {
-  const overview = useOfficeTeamOverview();
+export default function OfficeTeamTodayScreen({ metrics, pending, resolved, approvalTrail = [], localQueue = [], localActivity = [], go, appMode = "lab" }) {
+  const overview = useOfficeTeamOverview({ allowFallback: appMode !== "owner" });
   const top = pending.slice(0, 3);
   const preparedWaiting = localQueue.slice(0, 3);
   const recentApprovals = approvalTrail.slice(0, 3);
