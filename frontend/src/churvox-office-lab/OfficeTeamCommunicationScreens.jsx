@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./OfficeTeamCommunicationScreens.css";
+import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const messageThreads = [
   ["Worker update", "Cam added a note about extra green waste.", "Needs owner decision", "Ask staff, charge extra, or include free."],
@@ -16,15 +17,19 @@ const workerCards = [
 ];
 
 export function MessagesScreen() {
-  return <CommunicationScreen eyebrow="Messages" title="Inbox, worker updates and customer replies" text="Messages become decisions, replies and follow-ups. Churvox prepares the admin but the owner stays in control." rows={messageThreads} primary="Reply" secondary="Ask staff" />;
+  return <CommunicationScreen area="messages" eyebrow="Messages" title="Inbox, worker updates and customer replies" text="Messages become decisions, replies and follow-ups. Churvox prepares the admin but the owner stays in control." rows={messageThreads} primary="Reply" secondary="Ask staff" />;
 }
 
 export function WorkerViewScreen() {
-  return <CommunicationScreen eyebrow="Worker View" title="Simple phone view for staff" text="Workers should not see the whole owner app. They need today’s work, simple buttons, notes, photos and boss messages." rows={workerCards} primary="Preview worker view" secondary="Send test update" />;
+  return <CommunicationScreen area="worker" eyebrow="Worker View" title="Simple phone view for staff" text="Workers should not see the whole owner app. They need today’s work, simple buttons, notes, photos and boss messages." rows={workerCards} primary="Preview worker view" secondary="Send test update" />;
 }
 
-function CommunicationScreen({ eyebrow, title, text, rows, primary, secondary }) {
+function CommunicationScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
+  const live = useOfficeTeamRows(area, rows);
   const [selected, setSelected] = useState(rows[0]);
+  const displayRows = live.rows;
+  const current = selectedRow(displayRows, selected, rows);
+
   return (
     <section className="cvSiteScreen">
       <header className="cvSiteScreenHeader">
@@ -35,8 +40,8 @@ function CommunicationScreen({ eyebrow, title, text, rows, primary, secondary })
 
       <div className="cvCommsLayout">
         <section className="cvCommsInbox">
-          {rows.map((row) => (
-            <button key={`${row[0]}-${row[1]}`} className={selected === row ? "active" : ""} onClick={() => setSelected(row)}>
+          {displayRows.map((row) => (
+            <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)}>
               <span>{row[0]}</span>
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
@@ -45,11 +50,11 @@ function CommunicationScreen({ eyebrow, title, text, rows, primary, secondary })
         </section>
 
         <aside className="cvCommsDetail">
-          <span>{selected[2]}</span>
-          <h3>{selected[0]}</h3>
-          <p>{selected[3]}</p>
+          <span>{current[2]}</span>
+          <h3>{current[0]}</h3>
+          <p>{current[3]}</p>
           <div className="cvCommsFlow">
-            <article><strong>Input</strong><small>Worker, customer or owner message</small></article>
+            <article><strong>Input</strong><small>{live.isLive ? "Live read-only record" : "Demo worker, customer or owner message"}</small></article>
             <article><strong>Churvox prepares</strong><small>Draft reply, prompt or Command card</small></article>
             <article><strong>Owner approves</strong><small>Nothing sends until approved</small></article>
           </div>
