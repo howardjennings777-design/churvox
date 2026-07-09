@@ -5,6 +5,7 @@ const approvalLocks = ["Messages", "Invoices", "Accounting sync", "Money changes
 const ownerModes = ["Owner approves every decision", "Owner approves money only", "Review-only beta mode"];
 
 export default function OfficeTeamSiteSettings() {
+  const ownerRoute = isOwnerRoute();
   const [businessType, setBusinessType] = useState("General Service");
   const [ownerMode, setOwnerMode] = useState("Owner approves every decision");
   const [locked, setLocked] = useState(() => approvalLocks.reduce((acc, item) => ({ ...acc, [item]: true }), {}));
@@ -17,8 +18,8 @@ export default function OfficeTeamSiteSettings() {
     <section className="cvSiteScreen">
       <header className="cvSiteScreenHeader">
         <span>Settings</span>
-        <h2>Owner controls before this becomes live</h2>
-        <p>These controls preview how Churvox should be configured per business before mimics touch the real app.</p>
+        <h2>{ownerRoute ? "Owner settings and approval locks" : "Owner controls before this becomes live"}</h2>
+        <p>{ownerRoute ? "Set the language of the business and keep the important approval locks clear before work moves through Command." : "These controls preview how Churvox should be configured per business before mimics touch the real app."}</p>
       </header>
 
       <div className="cvSiteSettingsGrid">
@@ -35,7 +36,7 @@ export default function OfficeTeamSiteSettings() {
         <section className="cvSiteSettingsCard">
           <span>Approval mode</span>
           <h3>How much control the owner keeps</h3>
-          <p>This lab stays review-only. In the real app, owner mode decides how strict Command should be.</p>
+          <p>{ownerRoute ? "Command keeps the owner in control. These options show how strict approvals should be for this business." : "This lab stays review-only. In the real app, owner mode decides how strict Command should be."}</p>
           <div className="cvSiteSettingButtons tall">
             {ownerModes.map((item) => <button key={item} className={ownerMode === item ? "active" : ""} onClick={() => setOwnerMode(item)}>{item}</button>)}
           </div>
@@ -48,13 +49,17 @@ export default function OfficeTeamSiteSettings() {
             {approvalLocks.map((item) => (
               <button key={item} className={locked[item] ? "active" : ""} onClick={() => toggleLock(item)}>
                 <strong>{item}</strong>
-                <small>{locked[item] ? "Locked" : "Unlocked preview"}</small>
+                <small>{locked[item] ? "Locked" : ownerRoute ? "Review before unlocking" : "Unlocked preview"}</small>
               </button>
             ))}
           </div>
-          <p>These are preview controls only. The lab does not send, sync, charge, pay, or change real records.</p>
+          <p>{ownerRoute ? "Churvox can prepare the admin, but these items stay locked until the owner approves the decision." : "These are preview controls only. The lab does not send, sync, charge, pay, or change real records."}</p>
         </section>
       </div>
     </section>
   );
+}
+
+function isOwnerRoute() {
+  return typeof window !== "undefined" && window.location.pathname.includes("dashboard");
 }
