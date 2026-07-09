@@ -1,25 +1,97 @@
 .cvWorkerRouteShell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(290px, 420px) 1fr;
+  grid-template-columns: minmax(290px, 450px) 1fr;
+  grid-template-areas:
+    "hero hero"
+    "phone desk";
   gap: 22px;
   padding: 22px;
   color: #17120e;
   background:
-    radial-gradient(circle at top left, rgba(249,115,22,.2), transparent 34%),
-    linear-gradient(135deg, #f7f1e8, #ede4d8);
+    radial-gradient(circle at 8% 0%, rgba(249,115,22,.28), transparent 32%),
+    radial-gradient(circle at 92% 4%, rgba(23,18,14,.18), transparent 30%),
+    linear-gradient(135deg, #f7f1e8, #ede4d8 48%, #f9efe2);
+}
+
+.cvWorkerHero {
+  grid-area: hero;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 32px;
+  color: #fff8ed;
+  background:
+    linear-gradient(135deg, rgba(23,18,14,.98), rgba(39,29,22,.94) 58%, rgba(249,115,22,.96)),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px);
+  box-shadow: 0 20px 52px rgba(23,18,14,.18);
+}
+
+.cvWorkerHero span,
+.cvWorkerRoutePhone span,
+.cvWorkerRouteJob small,
+.cvWorkerRouteNoteBox span,
+.cvWorkerPaymentPanel span,
+.cvWorkerRouteDesk > span,
+.cvWorkerRouteDesk button span,
+.cvWorkerRouteDesk button small,
+.cvWorkerPaymentPanel dt {
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.cvWorkerHero h1,
+.cvWorkerRoutePhone h2,
+.cvWorkerRoutePhone h3,
+.cvWorkerRouteDesk h2,
+.cvWorkerRouteDesk h3,
+.cvWorkerPaymentPanel h3 {
+  margin: 0;
+}
+
+.cvWorkerHero h1 {
+  max-width: 850px;
+  margin-top: 8px;
+  font-size: clamp(2rem, 5vw, 4.8rem);
+  line-height: .9;
+  letter-spacing: -.08em;
+}
+
+.cvWorkerHero p {
+  max-width: 650px;
+  margin: 12px 0 0;
+  color: rgba(255,248,237,.76);
+  line-height: 1.5;
+}
+
+.cvWorkerHero strong {
+  flex: 0 0 auto;
+  max-width: 260px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  color: #17120e;
+  background: #fff8ed;
+  box-shadow: inset 0 0 0 1px rgba(23,18,14,.08);
 }
 
 .cvWorkerRoutePhone {
+  grid-area: phone;
   display: grid;
   gap: 14px;
-  max-width: 420px;
-  min-height: calc(100vh - 44px);
+  max-width: 450px;
+  min-height: calc(100vh - 170px);
   padding: 16px;
   border: 10px solid #15100c;
   border-radius: 38px;
-  background: linear-gradient(180deg, #fffaf2, #f4eee5);
-  box-shadow: 0 24px 54px rgba(23,18,14,.22);
+  background:
+    linear-gradient(180deg, #fffaf2, #f4eee5),
+    repeating-linear-gradient(135deg, rgba(23,18,14,.04) 0 1px, transparent 1px 10px);
+  box-shadow: 0 26px 62px rgba(23,18,14,.22);
 }
 
 .cvWorkerRoutePhone header {
@@ -30,29 +102,11 @@
   padding: 14px;
   border-radius: 24px;
   color: #fff8ed;
-  background: linear-gradient(135deg, #17120e, #3b2b1f 58%, #f97316);
+  background: linear-gradient(135deg, #17120e, #2d2118 58%, #f97316);
 }
 
-.cvWorkerRoutePhone span,
-.cvWorkerRouteJob small,
-.cvWorkerRouteNoteBox span,
-.cvWorkerRouteDesk > span,
-.cvWorkerRouteDesk button span,
-.cvWorkerRouteDesk button small {
-  font-size: .68rem;
-  font-weight: 950;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.cvWorkerRoutePhone h1,
-.cvWorkerRoutePhone h2,
-.cvWorkerRouteDesk h2,
-.cvWorkerRouteDesk h3 {
-  margin: 0;
-}
-
-.cvWorkerRoutePhone h1 {
+.cvWorkerRoutePhone h2 {
+  margin-top: 4px;
   font-size: 1.28rem;
   letter-spacing: -.04em;
 }
@@ -67,11 +121,13 @@
 
 .cvWorkerRouteJob,
 .cvWorkerRouteNoteBox,
+.cvWorkerPaymentPanel,
 .cvWorkerRouteDesk,
 .cvWorkerRouteDesk section {
   border: 1px solid rgba(23,18,14,.1);
   border-radius: 24px;
-  background: rgba(255,255,255,.75);
+  background: rgba(255,255,255,.78);
+  box-shadow: inset 0 1px rgba(255,255,255,.7);
 }
 
 .cvWorkerRouteJob {
@@ -87,13 +143,15 @@
     rgba(255,255,255,.78);
 }
 
-.cvWorkerRouteJob h2 {
-  font-size: 1.55rem;
-  line-height: 1.05;
+.cvWorkerRouteJob h3 {
+  font-size: 1.62rem;
+  line-height: 1.03;
+  letter-spacing: -.055em;
 }
 
 .cvWorkerRouteJob p,
-.cvWorkerRouteDesk p {
+.cvWorkerRouteDesk p,
+.cvWorkerPaymentPanel p {
   margin: 0;
   color: #5f564d;
   line-height: 1.45;
@@ -122,7 +180,7 @@
   border-radius: 22px;
   color: #17120e;
   background: #fff;
-  box-shadow: inset 0 0 0 1px rgba(23,18,14,.1);
+  box-shadow: inset 0 0 0 1px rgba(23,18,14,.1), 0 10px 20px rgba(23,18,14,.05);
   font-size: .92rem;
   font-weight: 1000;
   cursor: pointer;
@@ -135,7 +193,8 @@
 
 .cvWorkerRouteSteps button:disabled,
 .cvWorkerRouteQuickNotes button:disabled,
-.cvWorkerRouteProof button:disabled {
+.cvWorkerRouteProof button:disabled,
+.cvWorkerPaymentActions button:disabled {
   color: rgba(23,18,14,.45);
   background: rgba(255,255,255,.45);
   box-shadow: inset 0 0 0 1px rgba(23,18,14,.08);
@@ -147,23 +206,93 @@
   background: rgba(255,255,255,.45);
 }
 
+.cvWorkerPaymentPanel,
 .cvWorkerRouteNoteBox {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   padding: 14px;
 }
 
-.cvWorkerRouteNoteBox textarea {
-  min-height: 96px;
-  resize: vertical;
-  border: 1px solid rgba(23,18,14,.12);
-  border-radius: 18px;
-  padding: 12px;
-  color: #17120e;
-  background: #fffaf2;
-  font: inherit;
+.cvWorkerPaymentPanel {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(249,115,22,.14), transparent 36%),
+    rgba(255,255,255,.82);
 }
 
+.cvWorkerPaymentPanel h3 {
+  margin-top: 4px;
+  font-size: 1.12rem;
+  letter-spacing: -.035em;
+}
+
+.cvWorkerPayCode {
+  display: grid;
+  place-items: center;
+  width: 126px;
+  min-height: 126px;
+  border-radius: 24px;
+  justify-self: center;
+  color: #17120e;
+  background:
+    linear-gradient(90deg, rgba(23,18,14,.16) 10px, transparent 10px) 0 0 / 22px 22px,
+    linear-gradient(rgba(23,18,14,.16) 10px, transparent 10px) 0 0 / 22px 22px,
+    #fffaf2;
+  border: 1px solid rgba(23,18,14,.14);
+}
+
+.cvWorkerPayCode.ready {
+  border-color: rgba(249,115,22,.48);
+  box-shadow: 0 12px 26px rgba(249,115,22,.16);
+}
+
+.cvWorkerPayCode.locked {
+  opacity: .72;
+}
+
+.cvWorkerPayCode b {
+  padding: 8px 10px;
+  border-radius: 999px;
+  color: #fff8ed;
+  background: #17120e;
+  font-size: .72rem;
+  letter-spacing: .08em;
+}
+
+.cvWorkerPaymentPanel dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.cvWorkerPaymentPanel dl div {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(23,18,14,.04);
+}
+
+.cvWorkerPaymentPanel dt,
+.cvWorkerPaymentPanel dd {
+  margin: 0;
+}
+
+.cvWorkerPaymentPanel dd {
+  font-weight: 950;
+}
+
+.cvWorkerPaymentActions,
+.cvWorkerRouteQuickNotes,
+.cvWorkerRouteProof {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cvWorkerPaymentActions button,
 .cvWorkerRouteNoteBox button,
 .cvWorkerRouteQuickNotes button,
 .cvWorkerRouteProof button,
@@ -177,16 +306,38 @@
   cursor: pointer;
 }
 
+.cvWorkerPaymentActions button:first-child,
 .cvWorkerRouteNoteBox button {
   color: #fff8ed;
   background: #17120e;
 }
 
-.cvWorkerRouteQuickNotes,
-.cvWorkerRouteProof {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+.cvWorkerPaymentActions button:last-child {
+  border: 1px solid rgba(23,18,14,.12);
+}
+
+.cvWorkerPaymentPanel small {
+  color: #7c2d12;
+  font-weight: 850;
+}
+
+.cvWorkerPaymentNotice {
+  padding: 10px 12px;
+  border-radius: 16px;
+  color: #7c2d12;
+  background: rgba(249,115,22,.1);
+  font-weight: 850;
+}
+
+.cvWorkerRouteNoteBox textarea {
+  min-height: 96px;
+  resize: vertical;
+  border: 1px solid rgba(23,18,14,.12);
+  border-radius: 18px;
+  padding: 12px;
+  color: #17120e;
+  background: #fffaf2;
+  font: inherit;
 }
 
 .cvWorkerRouteQuickNotes button,
@@ -196,18 +347,19 @@
 }
 
 .cvWorkerRouteDesk {
+  grid-area: desk;
   align-self: start;
   display: grid;
   gap: 14px;
-  padding: 18px;
+  padding: 20px;
   box-shadow: 0 16px 36px rgba(23,18,14,.08);
 }
 
 .cvWorkerRouteDesk h2 {
-  max-width: 640px;
-  font-size: clamp(1.7rem, 4vw, 3.4rem);
-  line-height: .95;
-  letter-spacing: -.07em;
+  max-width: 720px;
+  font-size: clamp(1.8rem, 4vw, 4.2rem);
+  line-height: .92;
+  letter-spacing: -.08em;
 }
 
 .cvWorkerRouteDesk > strong {
@@ -243,19 +395,65 @@
   font-weight: 850;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   .cvWorkerRouteShell {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "hero"
+      "phone"
+      "desk";
     padding: 12px;
+  }
+
+  .cvWorkerHero {
+    align-items: start;
+    flex-direction: column;
+    border-radius: 26px;
+    padding: 20px;
+  }
+
+  .cvWorkerHero strong {
+    max-width: none;
+    width: 100%;
   }
 
   .cvWorkerRoutePhone {
     width: 100%;
     min-height: auto;
     margin: 0 auto;
+    border-width: 7px;
+    border-radius: 32px;
   }
 
   .cvWorkerRouteDesk button {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .cvWorkerRouteShell {
+    padding: 0;
+    gap: 10px;
+    background: #f4eee5;
+  }
+
+  .cvWorkerHero,
+  .cvWorkerRouteDesk {
+    margin: 10px;
+  }
+
+  .cvWorkerHero h1 {
+    font-size: 2.28rem;
+  }
+
+  .cvWorkerRoutePhone {
+    max-width: none;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 28px 28px 0 0;
+  }
+
+  .cvWorkerRouteSteps button {
+    min-height: 68px;
   }
 }
