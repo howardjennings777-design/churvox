@@ -61,7 +61,6 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
         <div className="cvSiteTodayStack">
           <article className="cvSiteTodayPanel cvSiteHandoverPanel">
             <span>{ownerRoute ? "Command handover" : "Office desk handover"}</span>
-            <b className="cvLabTestMarker">Office desk handover</b>
             <strong>{preparedWaiting.length} prepared · {recentApprovals.length} approved</strong>
             <p>Prepared work stays waiting for Command. Owner decisions stay visible in the approval trail.</p>
             <div className="cvSiteMiniList">
