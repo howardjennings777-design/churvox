@@ -9,10 +9,10 @@ export default function OfficeTeamSafeControls({ area = "office", record = [], p
   const recordTitle = record?.[1] || record?.[0] || "selected record";
   const ownerRoute = isOwnerRoute();
   const safeActions = useMemo(() => [
-    { label: primary, tone: "primary", type: "local", result: `${primary} prepared locally for ${recordTitle}. No live record changed.` },
-    { label: secondary, tone: "", type: "local", result: `${secondary} opened as a safe review note for ${recordTitle}.` },
-    { label: command, tone: "", type: "command", result: `${command} created a prepared-only Command item for ${recordTitle}. Owner approval still required.` },
-  ], [primary, secondary, command, recordTitle]);
+    { label: primary, tone: "primary", type: "local", result: ownerRoute ? `${primary} prepared for ${recordTitle}. Nothing was sent, synced, charged or changed.` : `${primary} prepared locally for ${recordTitle}. No live record changed.` },
+    { label: secondary, tone: "", type: "local", result: ownerRoute ? `${secondary} opened as a safe review for ${recordTitle}. Nothing was changed.` : `${secondary} opened as a safe review note for ${recordTitle}.` },
+    { label: command, tone: "", type: "command", result: ownerRoute ? `${command} created a prepared Command card for ${recordTitle}. Owner approval is still required.` : `${command} created a prepared-only Command item for ${recordTitle}. Owner approval still required.` },
+  ], [primary, secondary, command, recordTitle, ownerRoute]);
 
   async function recordAction(action) {
     if (busy) return;
@@ -25,13 +25,13 @@ export default function OfficeTeamSafeControls({ area = "office", record = [], p
     try {
       if (ownerRoute) {
         await createBackendCommandSlip({ area, record, action: action.label });
-        addTrail(action.label, `${action.label} created a backend Command slip for ${recordTitle}. Nothing was sent, synced, charged or changed.`);
+        addTrail(action.label, `${action.label} created a prepared Command card for ${recordTitle}. Nothing was sent, synced, charged or changed.`);
       } else {
         createOfficeTeamLocalCommand({ area, record, action: action.label });
         addTrail(action.label, action.result);
       }
     } catch (error) {
-      addTrail(action.label, `Could not create backend Command slip. Nothing was sent, synced, charged or changed. ${error?.message || ""}`.trim());
+      addTrail(action.label, `Could not create the Command card. Nothing was sent, synced, charged or changed. ${error?.message || ""}`.trim());
     } finally {
       setBusy(false);
     }
@@ -55,7 +55,7 @@ export default function OfficeTeamSafeControls({ area = "office", record = [], p
           </button>
         ))}
       </div>
-      <small>{ownerRoute ? "Owner controls · backend Command slip · no send, no sync, no charge, no record change." : "Prepared-only lab controls · no send, no sync, no charge, no record change."}</small>
+      <small>{ownerRoute ? "Owner controls · Command approval required · no send, no sync, no charge, no record change." : "Prepared-only lab controls · no send, no sync, no charge, no record change."}</small>
       {trail.length ? (
         <div className="cvSafeTrail">
           {trail.map((item) => <p key={item.id}>{item.text}</p>)}
