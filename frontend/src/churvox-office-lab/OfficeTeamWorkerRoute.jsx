@@ -4,6 +4,7 @@ import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 import { createOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Complete"];
+const payKeywords = ["payment", "pay", "invoice", "card", "checkout"];
 
 export default function OfficeTeamWorkerRoute() {
   const live = useOfficeTeamRows("worker", []);
@@ -11,6 +12,7 @@ export default function OfficeTeamWorkerRoute() {
   const [status, setStatus] = useState("Ready");
   const [note, setNote] = useState("");
   const [trail, setTrail] = useState([]);
+  const [paymentNotice, setPaymentNotice] = useState("");
   const rows = live.rows;
   const hasWork = rows.length > 0;
   const current = selectedRow(rows, selected, []);
@@ -18,6 +20,7 @@ export default function OfficeTeamWorkerRoute() {
   const detail = hasWork ? current?.[3] || "Check notes before starting." : "When the boss assigns real work, it will appear here. No fake demo jobs are shown in the worker app.";
   const badge = hasWork ? current?.[2] || "Ready" : "Waiting";
   const type = hasWork ? current?.[0] || "Assigned" : "Clear";
+  const payment = paymentDetails(current);
   const quickNotes = useMemo(() => ["Running late", "Need owner check", "Extra work found", "Proof added"], []);
 
   function recordWorkerStep(step) {
@@ -37,24 +40,64 @@ export default function OfficeTeamWorkerRoute() {
     setNote("");
   }
 
+  async function copyPaymentLink() {
+    if (!payment.link) {
+      requestPaymentLink();
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(payment.link);
+      setPaymentNotice("Payment link copied for the customer. No charge was created by Churvox.");
+      addTrail("Customer payment link copied. Payment still completes through the secure invoice page.");
+    } catch {
+      setPaymentNotice(payment.link);
+    }
+  }
+
+  function openPaymentLink() {
+    if (!payment.link) {
+      requestPaymentLink();
+      return;
+    }
+    window.open(payment.link, "_blank", "noopener,noreferrer");
+    setPaymentNotice("Payment page opened. Churvox will only mark paid after the real provider confirms it.");
+    addTrail("Payment page opened for customer card payment.");
+  }
+
+  function requestPaymentLink() {
+    const record = ["Payment request", title, payment.amount || "Amount check", "Worker needs an approved invoice payment link before taking card payment."];
+    createOfficeTeamLocalCommand({ area: "worker", record, action: "Prepare payment link" });
+    setPaymentNotice("Payment request prepared for Command. Worker cannot charge a card without an approved link.");
+    addTrail("Payment link request prepared for Command.");
+  }
+
   function addTrail(text) {
-    setTrail((currentTrail) => [{ id: `${Date.now()}-${text}`, text }, ...currentTrail].slice(0, 4));
+    setTrail((currentTrail) => [{ id: `${Date.now()}-${text}`, text }, ...currentTrail].slice(0, 5));
   }
 
   return (
     <main className="cvWorkerRouteShell">
+      <section className="cvWorkerHero">
+        <div>
+          <span>Churvox Worker</span>
+          <h1>Simple phone work. Office admin stays hidden.</h1>
+          <p>Workers see today’s task, update progress, add proof and show a safe payment link when the invoice is ready.</p>
+        </div>
+        <strong>{hasWork ? live.label : "Waiting for assigned work"}</strong>
+      </section>
+
       <section className="cvWorkerRoutePhone" aria-label="Churvox worker phone app">
         <header>
           <div>
-            <span>Churvox Worker</span>
-            <h1>Today’s work</h1>
+            <span>Today</span>
+            <h2>{hasWork ? "Current job" : "No job yet"}</h2>
           </div>
           <strong>{hasWork ? status : "Waiting"}</strong>
         </header>
 
         <article className={`cvWorkerRouteJob ${hasWork ? "" : "cvWorkerRouteEmptyJob"}`}>
           <small>{type}</small>
-          <h2>{title}</h2>
+          <h3>{title}</h3>
           <p>{detail}</p>
           <em>{badge}</em>
         </article>
@@ -63,10 +106,29 @@ export default function OfficeTeamWorkerRoute() {
           {statusSteps.map((step) => <button key={step} type="button" disabled={!hasWork} onClick={() => recordWorkerStep(step)}>{step}</button>)}
         </div>
 
+        <section className="cvWorkerPaymentPanel" aria-label="Worker payment panel">
+          <div>
+            <span>Take payment</span>
+            <h3>{payment.link ? "Show customer pay link" : "Payment link needed"}</h3>
+            <p>{payment.copy}</p>
+          </div>
+          <div className={`cvWorkerPayCode ${payment.link ? "ready" : "locked"}`} aria-hidden="true"><b>{payment.code}</b></div>
+          <dl>
+            <div><dt>Amount</dt><dd>{payment.amount || "Owner check"}</dd></div>
+            <div><dt>Invoice</dt><dd>{payment.invoice || "Not linked"}</dd></div>
+          </dl>
+          <div className="cvWorkerPaymentActions">
+            <button type="button" disabled={!hasWork} onClick={openPaymentLink}>{payment.link ? "Open pay page" : "Request link"}</button>
+            <button type="button" disabled={!hasWork} onClick={copyPaymentLink}>{payment.link ? "Copy link" : "Prepare request"}</button>
+          </div>
+          <small>No card is charged inside Worker View. Payment happens through an approved secure invoice link.</small>
+          {paymentNotice ? <p className="cvWorkerPaymentNotice">{paymentNotice}</p> : null}
+        </section>
+
         <section className="cvWorkerRouteNoteBox">
           <span>Boss update</span>
-          <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Tell the boss if something changed…" />
-          <button type="button" onClick={() => sendBossUpdate()}>{hasWork ? "Send to office" : "Send general update"}</button>
+          <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Tell the office if something changed…" />
+          <button type="button" onClick={() => sendBossUpdate()}>{hasWork ? "Prepare office update" : "Prepare general update"}</button>
         </section>
 
         <div className="cvWorkerRouteQuickNotes">
@@ -81,8 +143,8 @@ export default function OfficeTeamWorkerRoute() {
 
       <aside className="cvWorkerRouteDesk">
         <span>Worker route</span>
-        <h2>Staff update work. Churvox prepares the office admin.</h2>
-        <p>This is the new worker-side shell. Real assigned work appears here without exposing owner screens or fake demo jobs to staff.</p>
+        <h2>Same Churvox system, stripped down for the phone.</h2>
+        <p>No owner screens, no pricing, no admin tables. Workers only update the work, show approved payment links, and send useful notes back to Command.</p>
         <strong>{hasWork ? live.label : "No live assigned work found"}</strong>
 
         <section>
@@ -103,4 +165,23 @@ export default function OfficeTeamWorkerRoute() {
       </aside>
     </main>
   );
+}
+
+function paymentDetails(row = []) {
+  const meta = row?.[4] && typeof row[4] === "object" ? row[4] : {};
+  const fromText = [row?.[1], row?.[2], row?.[3]].map((part) => String(part || "")).join(" ");
+  const linkFromText = fromText.match(/https?:\/\/\S+/i)?.[0] || "";
+  const link = meta.paymentLink || linkFromText;
+  const amount = meta.amountDue || (payKeywords.some((word) => fromText.toLowerCase().includes(word)) ? row?.[2] : "");
+  const invoice = meta.invoiceNumber || (String(row?.[1] || "").match(/inv[-\s#]*\w+/i)?.[0] || "");
+  const code = link ? shortCode(link) : "LOCKED";
+  const copy = link
+    ? "Let the customer tap the secure pay page or copy the link. Churvox waits for provider confirmation before marking anything paid."
+    : "No approved payment link is attached yet. Prepare a Command request before the worker takes card payment.";
+  return { link, amount, invoice, code, copy };
+}
+
+function shortCode(value = "") {
+  const safe = String(value || "PAY").replace(/[^a-z0-9]/gi, "").toUpperCase();
+  return safe.slice(-6) || "READY";
 }
