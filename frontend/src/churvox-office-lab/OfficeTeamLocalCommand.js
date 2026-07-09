@@ -1,5 +1,7 @@
 const STORAGE_KEY = "churvox_office_lab_command_queue_v1";
+const ACTIVITY_KEY = "churvox_office_lab_activity_v1";
 const EVENT_NAME = "churvox-office-local-command";
+const ACTIVITY_EVENT = "churvox-office-local-activity";
 
 export function readOfficeTeamLocalCommandQueue() {
   if (typeof window === "undefined") return [];
@@ -12,10 +14,22 @@ export function readOfficeTeamLocalCommandQueue() {
   }
 }
 
+export function readOfficeTeamLocalActivityLog() {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.sessionStorage.getItem(ACTIVITY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.slice(0, 14) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function createOfficeTeamLocalCommand({ area = "office", record = [], action = "Prepare Command card" } = {}) {
   const item = localCardFromRecord(area, record, action);
   const next = [item, ...readOfficeTeamLocalCommandQueue().filter((existing) => existing.id !== item.id)].slice(0, 10);
   writeQueue(next, item);
+  recordOfficeTeamLocalActivity("Prepared", item, action);
   return item;
 }
 
@@ -23,6 +37,24 @@ export function removeOfficeTeamLocalCommand(id) {
   if (!id) return readOfficeTeamLocalCommandQueue();
   const next = readOfficeTeamLocalCommandQueue().filter((item) => item.id !== id);
   writeQueue(next, null);
+  return next;
+}
+
+export function recordOfficeTeamLocalActivity(status, item = {}, action = "Updated") {
+  const entry = {
+    id: `${Date.now()}-${slug(status)}-${slug(item.title || item.id)}`,
+    status,
+    action,
+    title: item.title || "Local Command item",
+    tray: item.tray || "Command",
+    roleName: item.roleName || "Office Team",
+    note: status === "Cleared"
+      ? `${action} cleared locally. Nothing was sent, synced, charged or changed.`
+      : `${action} prepared a local Command card. Owner approval still required.`,
+    at: new Date().toISOString(),
+  };
+  const next = [entry, ...readOfficeTeamLocalActivityLog()].slice(0, 14);
+  writeActivity(next, entry);
   return next;
 }
 
@@ -37,6 +69,17 @@ export function subscribeOfficeTeamLocalCommand(callback) {
   };
 }
 
+export function subscribeOfficeTeamLocalActivity(callback) {
+  if (typeof window === "undefined") return () => {};
+  const handler = () => callback(readOfficeTeamLocalActivityLog());
+  window.addEventListener(ACTIVITY_EVENT, handler);
+  window.addEventListener("storage", handler);
+  return () => {
+    window.removeEventListener(ACTIVITY_EVENT, handler);
+    window.removeEventListener("storage", handler);
+  };
+}
+
 function writeQueue(queue, item) {
   if (typeof window === "undefined") return;
   try {
@@ -44,6 +87,16 @@ function writeQueue(queue, item) {
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { item, queue } }));
   } catch {
     // Local lab handoff should never break the hidden screen.
+  }
+}
+
+function writeActivity(activity, item) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity));
+    window.dispatchEvent(new CustomEvent(ACTIVITY_EVENT, { detail: { item, activity } }));
+  } catch {
+    // Local activity should never break the hidden screen.
   }
 }
 
