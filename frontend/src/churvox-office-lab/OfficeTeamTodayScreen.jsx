@@ -24,7 +24,8 @@ const labels = {
 };
 
 export default function OfficeTeamTodayScreen({ metrics, pending, resolved, approvalTrail = [], localQueue = [], localActivity = [], go, appMode = "lab" }) {
-  const overview = useOfficeTeamOverview({ allowFallback: appMode !== "owner" });
+  const allowFallback = appMode !== "owner" && !isOwnerRoute();
+  const overview = useOfficeTeamOverview({ allowFallback });
   const top = pending.slice(0, 3);
   const preparedWaiting = localQueue.slice(0, 3);
   const recentApprovals = approvalTrail.slice(0, 3);
@@ -105,7 +106,7 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
           <article className="cvSiteTodayPanel">
             <span>Live office areas</span>
             <strong>{overview.areas.reduce((sum, item) => sum + Number(item.count || 0), 0)} read-only records</strong>
-            <p>These are safe previews pulled into the hidden lab. Action buttons remain approval paths.</p>
+            <p>{allowFallback ? "These are safe previews pulled into the hidden lab. Action buttons remain approval paths." : "Only real read-only records appear here. No demo area data is shown in the owner app."}</p>
             <div className="cvSiteMiniList">
               {overview.areas.map((item) => (
                 <article key={item.area}>
@@ -134,4 +135,8 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
       </div>
     </section>
   );
+}
+
+function isOwnerRoute() {
+  return typeof window !== "undefined" && window.location.pathname.includes("dashboard");
 }
