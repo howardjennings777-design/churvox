@@ -60,6 +60,7 @@ function readinessGroups(overview) {
     "Screen buttons changed to prepared-only local controls",
     "Prepare Command card now feeds a local Command queue",
     "Local Command cards clear locally after owner action",
+    "Activity now shows local prepared and cleared trail",
     ...(areaItems.length ? areaItems : ["Waiting for owner login to check live records"]),
   ];
 
@@ -68,7 +69,7 @@ function readinessGroups(overview) {
       key: "built",
       name: "Ready in hidden shell",
       status: "Built",
-      items: ["Today owner start", "Command queue limit", "Actioned cards leave Command", "Office Team roles", "Playbooks", "Owner safety locks", "Plans pricing screen", "Read-only data fallback layer", "Prepared-only screen controls", "Local Command handoff queue"],
+      items: ["Today owner start", "Command queue limit", "Actioned cards leave Command", "Office Team roles", "Playbooks", "Owner safety locks", "Plans pricing screen", "Read-only data fallback layer", "Prepared-only screen controls", "Local Command handoff queue", "Local Activity trail"],
     },
     {
       key: "live-wiring",
