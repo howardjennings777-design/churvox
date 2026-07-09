@@ -9,14 +9,15 @@ const plans = [
 ];
 
 export default function OfficeTeamPlansScreen() {
+  const ownerRoute = isOwnerRoute();
   const [selected, setSelected] = useState("Operator");
   const plan = plans.find(([name]) => name === selected) || plans[2];
   return (
     <section className="cvSiteScreen">
       <header className="cvSiteScreenHeader">
         <span>Plans</span>
-        <h2>Pricing stays locked while the product is rebuilt</h2>
-        <p>This screen keeps the owner app honest: no pricing changes hidden inside the rebuild.</p>
+        <h2>{ownerRoute ? "Your Churvox plan options" : "Pricing stays locked while the product is rebuilt"}</h2>
+        <p>{ownerRoute ? "Compare the current plan tiers. Pricing is shown clearly before any billing step." : "This screen keeps the owner app honest: no pricing changes hidden inside the rebuild."}</p>
       </header>
 
       <div className="cvPlansGrid">
@@ -39,4 +40,8 @@ export default function OfficeTeamPlansScreen() {
       </aside>
     </section>
   );
+}
+
+function isOwnerRoute() {
+  return typeof window !== "undefined" && window.location.pathname.includes("dashboard");
 }
