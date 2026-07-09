@@ -1,59 +1,269 @@
 .cvOfficeSite .cvSiteTopbar {
-  align-items: flex-start;
+  top: 8px;
+  align-items: center;
+  min-height: 72px;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(249, 115, 22, .42), transparent 32%),
+    linear-gradient(135deg, rgba(23, 18, 14, .98), rgba(40, 30, 22, .98) 58%, rgba(120, 47, 10, .96));
+  box-shadow: 0 18px 42px rgba(23, 18, 14, .22), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+
+.cvOfficeSite .cvSiteTopbar::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border-radius: 21px;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, .08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, .055) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.12));
+}
+
+.cvOfficeSite .cvSiteTopbar .cvOfficeBrand {
+  position: relative;
+  z-index: 1;
+  min-width: 265px;
+}
+
+.cvOfficeSite .cvSiteTopbar .cvOfficeBrand img {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .28);
+}
+
+.cvOfficeSite .cvSiteTopbar .cvOfficeBrand strong {
+  color: #fff7ec;
+  font-size: .98rem;
+  letter-spacing: -.025em;
+}
+
+.cvOfficeSite .cvSiteTopbar .cvOfficeBrand span {
+  color: rgba(255, 247, 236, .72);
+  font-size: .68rem;
+  font-weight: 820;
 }
 
 .cvOfficeSite .cvSiteTopbar nav {
-  max-width: min(940px, 70vw);
-  max-height: 82px;
-  overflow: auto;
-  padding: 2px;
+  position: relative;
+  z-index: 1;
+  max-width: min(980px, calc(100vw - 360px));
+  max-height: none;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, .11);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .07);
   scrollbar-width: thin;
 }
 
 .cvOfficeSite .cvSiteTopbar nav::-webkit-scrollbar {
-  height: 6px;
-  width: 6px;
+  height: 7px;
+  width: 7px;
 }
 
 .cvOfficeSite .cvSiteTopbar nav::-webkit-scrollbar-thumb {
   border-radius: 99px;
-  background: rgba(23,18,14,.22);
+  background: rgba(255, 247, 236, .36);
 }
 
 .cvOfficeSite .cvSiteTopbar button {
   min-width: max-content;
   white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 12px;
+  color: rgba(255, 247, 236, .86);
+  background: rgba(255, 255, 255, .055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+
+.cvOfficeSite .cvSiteTopbar button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(249, 115, 22, .44);
+  background: rgba(249, 115, 22, .13);
 }
 
 .cvOfficeSite .cvSiteTopbar button.active {
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18), 0 6px 14px rgba(23,18,14,.12);
+  color: #17120e;
+  border-color: rgba(255, 199, 140, .85);
+  background: linear-gradient(135deg, #fff7ec, #f97316);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 10px 24px rgba(249,115,22,.25);
 }
 
 .cvOfficeSite .cvSiteTopbar::after {
-  content: "Hidden build";
+  content: "Hidden owner build";
   position: absolute;
-  right: 12px;
-  bottom: -9px;
-  padding: 3px 6px;
+  right: 18px;
+  bottom: -11px;
+  z-index: 2;
+  padding: 4px 8px;
   border-radius: 999px;
-  color: #9a3412;
-  background: #fff7ec;
-  border: 1px solid rgba(249,115,22,.22);
-  font-size: .55rem;
+  color: #fff7ec;
+  background: #17120e;
+  border: 1px solid rgba(249,115,22,.36);
+  box-shadow: 0 8px 18px rgba(23,18,14,.18);
+  font-size: .56rem;
   font-weight: 950;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
-@media (max-width: 980px) {
+.cvOfficeSite .cvSiteStatusLead {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(23, 18, 14, .14);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(249,115,22,.34), transparent 28%),
+    linear-gradient(135deg, #17120e, #2b2119 58%, #5f2a0d);
+}
+
+.cvOfficeSite .cvSiteStatusLead::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  width: 180px;
+  height: 72px;
+  opacity: .2;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 247, 236, .5);
+  transform: rotate(-14deg);
+}
+
+.cvOfficeSite .cvSiteStatusLead span,
+.cvOfficeSite .cvSiteStatusLead h1 {
+  color: #fff7ec;
+}
+
+.cvOfficeSite .cvSiteStatusLead p,
+.cvOfficeSite .cvSiteStatusLead small {
+  color: rgba(255, 247, 236, .76);
+}
+
+.cvOfficeSite .cvSiteStatusLead small {
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, .08);
+}
+
+.cvOfficeSite .cvSiteStatus article,
+.cvOfficeSite .cvSiteScreen,
+.cvOfficeSite .cvSiteDecisionCard,
+.cvOfficeSite .cvSiteEmpty,
+.cvOfficeSite .cvSiteRoleDetail,
+.cvOfficeSite .cvSitePlaybookGrid article,
+.cvOfficeSite .cvSiteActivityLayout article,
+.cvOfficeSite .cvSiteSafetyGrid article {
+  border-color: rgba(23, 18, 14, .085);
+  box-shadow: 0 14px 30px rgba(37,29,20,.075);
+}
+
+.cvOfficeSite .cvSiteStatus article {
+  background: linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,252,246,.72));
+}
+
+.cvOfficeSite .cvSiteStatus article strong {
+  color: #17120e;
+}
+
+.cvOfficeSite .cvSiteScreen {
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 246, .96), rgba(246, 239, 229, .92));
+}
+
+.cvOfficeSite .cvSiteScreenHeader {
+  padding: 4px 4px 14px;
+}
+
+.cvOfficeSite .cvSiteScreenHeader h2 {
+  color: #17120e;
+}
+
+.cvOfficeSite .cvSiteTrayRail,
+.cvOfficeSite .cvSiteQueueSummary {
+  border-color: rgba(23,18,14,.085);
+  background: rgba(23,18,14,.035);
+}
+
+.cvOfficeSite .cvSiteTrayRail button.active,
+.cvOfficeSite .cvSiteDecisionCard footer button.primary {
+  color: #fff7ec;
+  background: linear-gradient(135deg, #17120e, #3b2b1f 56%, #f97316);
+  box-shadow: 0 12px 24px rgba(23, 18, 14, .14);
+}
+
+.cvOfficeSite .cvSiteDecisionCard {
+  background: rgba(255,255,255,.72);
+}
+
+.cvOfficeSite .cvSiteDecisionCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(37,29,20,.1);
+}
+
+.cvOfficeSite .cvSiteQueueSummary em {
+  color: #17120e;
+  background: rgba(249,115,22,.16);
+}
+
+.cvOfficeSite ::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.cvOfficeSite ::-webkit-scrollbar-track {
+  background: rgba(23,18,14,.06);
+}
+
+.cvOfficeSite ::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: rgba(23,18,14,.24);
+}
+
+@media (max-width: 1080px) {
+  .cvOfficeSite .cvSiteTopbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cvOfficeSite .cvSiteTopbar .cvOfficeBrand {
+    min-width: 0;
+  }
+
   .cvOfficeSite .cvSiteTopbar nav {
     max-width: 100%;
     width: 100%;
-    max-height: none;
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    overflow-y: hidden;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvOfficeSite .cvSiteTopbar {
+    position: sticky;
+    top: 0;
+    border-radius: 0 0 20px 20px;
+    margin-top: -14px;
+  }
+
+  .cvOfficeSite .cvSiteTopbar nav {
+    padding-bottom: 8px;
+  }
+
+  .cvOfficeSite .cvSiteTopbar::after {
+    right: 12px;
+  }
+
+  .cvOfficeSite .cvSiteStatusLead::after {
+    display: none;
   }
 }
