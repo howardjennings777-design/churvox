@@ -6,7 +6,7 @@ const ACTIVITY_EVENT = "churvox-office-local-activity";
 export function readOfficeTeamLocalCommandQueue() {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    const raw = storage().getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, 10) : [];
   } catch {
@@ -17,7 +17,7 @@ export function readOfficeTeamLocalCommandQueue() {
 export function readOfficeTeamLocalActivityLog() {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.sessionStorage.getItem(ACTIVITY_KEY);
+    const raw = storage().getItem(ACTIVITY_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, 14) : [];
   } catch {
@@ -83,7 +83,7 @@ export function subscribeOfficeTeamLocalActivity(callback) {
 function writeQueue(queue, item) {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+    storage().setItem(STORAGE_KEY, JSON.stringify(queue));
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { item, queue } }));
   } catch {
     // Local lab handoff should never break the hidden screen.
@@ -93,7 +93,7 @@ function writeQueue(queue, item) {
 function writeActivity(activity, item) {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity));
+    storage().setItem(ACTIVITY_KEY, JSON.stringify(activity));
     window.dispatchEvent(new CustomEvent(ACTIVITY_EVENT, { detail: { item, activity } }));
   } catch {
     // Local activity should never break the hidden screen.
@@ -145,6 +145,14 @@ function mapArea(area = "office") {
     return { label: "Operations", tray: "Operations", roleName: "Operations Manager", level: "Needs check", need: "Review, adjust, park or leave this office item?", actions: ["Review", "Adjust", "Park"] };
   }
   return { label: "Office", tray: "Command", roleName: "Office Manager", level: "Needs check", need: "Review, edit, park or leave this item?", actions: ["Review", "Edit", "Park"] };
+}
+
+function storage() {
+  try {
+    return window.localStorage || window.sessionStorage;
+  } catch {
+    return window.sessionStorage;
+  }
 }
 
 function slug(value = "") {
