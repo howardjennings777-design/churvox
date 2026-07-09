@@ -9,6 +9,7 @@
     "test:rebuild:routes": "npm --prefix frontend run test:rebuild:routes",
     "test:root-scripts": "node scripts/churvox-root-script-sanity.cjs",
     "test:readiness": "node scripts/churvox-readiness-sweep.cjs",
+    "test:live-command": "node scripts/churvox-live-command-smoke.cjs",
     "test:business": "npm --prefix frontend run test:business",
     "test:business:live": "npm --prefix frontend run test:business:live",
     "test:business:v2": "npm --prefix frontend exec playwright test tests/e2e/churvox-real-business-audit-v2.spec.js",
