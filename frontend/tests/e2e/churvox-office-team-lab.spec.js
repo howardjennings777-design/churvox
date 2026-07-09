@@ -49,6 +49,14 @@ test.describe('hidden Office Team lab', () => {
     }
   });
 
+  test('Command action wording stays approval-safe', async ({ page }) => {
+    await page.goto('/office-team-lab#command', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
+    const visibleLabels = await page.locator('.cvSiteDecisionCard footer button').evaluateAll((buttons) => buttons.map((button) => button.textContent || '').join(' '));
+    expect(visibleLabels).not.toMatch(/\bSend\b|\bBook\b|\bComplete\b|\bAdd charge\b|\bSave\b/);
+    await expect(page.getByText(/Approval recorded only · no send, sync, charge or record change/i).first()).toBeVisible();
+  });
+
   test('prepared Command handoff survives reload then records owner approval', async ({ page }) => {
     await page.goto('/office-team-lab#messages', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Prepared reply draft/i)).toBeVisible();
@@ -68,7 +76,7 @@ test.describe('hidden Office Team lab', () => {
     await expect(page.getByText(/local prepared-only handoff|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
 
     await page.locator('.cvSiteDecisionCard').first().getByRole('button').first().click();
-    await expect(page.getByText(/cleared the local Command card|Approval trail saved|Nothing was sent or synced/i).first()).toBeVisible();
+    await expect(page.getByText(/recorded as the owner decision|Approval trail saved|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
 
     await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Recent owner approvals/i)).toBeVisible();
