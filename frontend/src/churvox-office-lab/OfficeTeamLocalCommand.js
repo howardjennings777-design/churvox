@@ -15,15 +15,15 @@ export function readOfficeTeamLocalCommandQueue() {
 export function createOfficeTeamLocalCommand({ area = "office", record = [], action = "Prepare Command card" } = {}) {
   const item = localCardFromRecord(area, record, action);
   const next = [item, ...readOfficeTeamLocalCommandQueue().filter((existing) => existing.id !== item.id)].slice(0, 10);
-  if (typeof window !== "undefined") {
-    try {
-      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { item, queue: next } }));
-    } catch {
-      // Local lab handoff should never break the hidden screen.
-    }
-  }
+  writeQueue(next, item);
   return item;
+}
+
+export function removeOfficeTeamLocalCommand(id) {
+  if (!id) return readOfficeTeamLocalCommandQueue();
+  const next = readOfficeTeamLocalCommandQueue().filter((item) => item.id !== id);
+  writeQueue(next, null);
+  return next;
 }
 
 export function subscribeOfficeTeamLocalCommand(callback) {
@@ -35,6 +35,16 @@ export function subscribeOfficeTeamLocalCommand(callback) {
     window.removeEventListener(EVENT_NAME, handler);
     window.removeEventListener("storage", handler);
   };
+}
+
+function writeQueue(queue, item) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { item, queue } }));
+  } catch {
+    // Local lab handoff should never break the hidden screen.
+  }
 }
 
 function localCardFromRecord(area, record, action) {
