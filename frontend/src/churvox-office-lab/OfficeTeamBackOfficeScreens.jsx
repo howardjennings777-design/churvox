@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./OfficeTeamBackOfficeScreens.css";
+import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const scheduleRows = [
   ["Today", "Plan my day", "Prepared", "2 jobs, 1 booking gap, 1 worker check"],
@@ -30,23 +31,27 @@ const brandingRows = [
 ];
 
 export function ScheduleScreen() {
-  return <BackOfficeScreen eyebrow="Schedule" title="Calendar and daily planning" text="The owner should see the run, gaps, recurring work and overload warnings without thinking too hard." rows={scheduleRows} primary="Plan my day" secondary="Open calendar" />;
+  return <BackOfficeScreen area="schedule" eyebrow="Schedule" title="Calendar and daily planning" text="The owner should see the run, gaps, recurring work and overload warnings without thinking too hard." rows={scheduleRows} primary="Plan my day" secondary="Open calendar" />;
 }
 
 export function AutomationScreen() {
-  return <BackOfficeScreen eyebrow="Automation" title="Prepared rules, not blind automation" text="Automation should prepare the next step and send it to Command. It must not silently message, sync, charge or change records." rows={automationRows} primary="Create rule" secondary="Review rules" />;
+  return <BackOfficeScreen area="automation" eyebrow="Automation" title="Prepared rules, not blind automation" text="Automation should prepare the next step and send it to Command. It must not silently message, sync, charge or change records." rows={automationRows} primary="Create rule" secondary="Review rules" />;
 }
 
 export function PayrollScreen() {
-  return <BackOfficeScreen eyebrow="Payroll" title="Hours review, not tax filing" text="Payroll stays safe: hours, gross totals and CSV exports only. No tax submission, no bank payout files and no government filing." rows={payrollRows} primary="Review hours" secondary="Export CSV" />;
+  return <BackOfficeScreen area="payroll" eyebrow="Payroll" title="Hours review, not tax filing" text="Payroll stays safe: hours, gross totals and CSV exports only. No tax submission, no bank payout files and no government filing." rows={payrollRows} primary="Review hours" secondary="Export CSV" />;
 }
 
 export function BrandingScreen() {
-  return <BackOfficeScreen eyebrow="Branding" title="Business settings and mobile polish" text="Branding keeps Churvox feeling like the owner’s business while staying simple on mobile." rows={brandingRows} primary="Open branding" secondary="Preview mobile" />;
+  return <BackOfficeScreen area="branding" eyebrow="Branding" title="Business settings and mobile polish" text="Branding keeps Churvox feeling like the owner’s business while staying simple on mobile." rows={brandingRows} primary="Open branding" secondary="Preview mobile" />;
 }
 
-function BackOfficeScreen({ eyebrow, title, text, rows, primary, secondary }) {
+function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
+  const live = useOfficeTeamRows(area, rows);
   const [selected, setSelected] = useState(rows[0]);
+  const displayRows = live.rows;
+  const current = selectedRow(displayRows, selected, rows);
+
   return (
     <section className="cvSiteScreen">
       <header className="cvSiteScreenHeader">
@@ -57,8 +62,8 @@ function BackOfficeScreen({ eyebrow, title, text, rows, primary, secondary }) {
 
       <div className="cvBackOfficeGrid">
         <section className="cvBackOfficeList">
-          {rows.map((row) => (
-            <button key={`${row[0]}-${row[1]}`} className={selected === row ? "active" : ""} onClick={() => setSelected(row)}>
+          {displayRows.map((row) => (
+            <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)}>
               <span>{row[0]}</span>
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
@@ -67,12 +72,12 @@ function BackOfficeScreen({ eyebrow, title, text, rows, primary, secondary }) {
         </section>
 
         <aside className="cvBackOfficeDetail">
-          <span>{selected[2]}</span>
-          <h3>{selected[1]}</h3>
-          <p>{selected[3]}</p>
+          <span>{current[2]}</span>
+          <h3>{current[1]}</h3>
+          <p>{current[3]}</p>
           <div className="cvBackOfficeChecks">
             <article><b>Owner control</b><small>Required before real action</small></article>
-            <article><b>Record safety</b><small>Prepared-only preview</small></article>
+            <article><b>Data source</b><small>{live.label}</small></article>
             <article><b>Mobile fit</b><small>Keep the screen simple</small></article>
           </div>
           <footer>
