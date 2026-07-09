@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./OfficeTeamCommunicationScreens.css";
+import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const messageThreads = [
@@ -17,11 +18,11 @@ const workerCards = [
 ];
 
 export function MessagesScreen() {
-  return <CommunicationScreen area="messages" eyebrow="Messages" title="Inbox, worker updates and customer replies" text="Messages become decisions, replies and follow-ups. Churvox prepares the admin but the owner stays in control." rows={messageThreads} primary="Reply" secondary="Ask staff" />;
+  return <CommunicationScreen area="messages" eyebrow="Messages" title="Inbox, worker updates and customer replies" text="Messages become decisions, replies and follow-ups. Churvox prepares the admin but the owner stays in control." rows={messageThreads} primary="Prepare reply" secondary="Prepare staff ask" />;
 }
 
 export function WorkerViewScreen() {
-  return <CommunicationScreen area="worker" eyebrow="Worker View" title="Simple phone view for staff" text="Workers should not see the whole owner app. They need today’s work, simple buttons, notes, photos and boss messages." rows={workerCards} primary="Preview worker view" secondary="Send test update" />;
+  return <CommunicationScreen area="worker" eyebrow="Worker View" title="Simple phone view for staff" text="Workers should not see the whole owner app. They need today’s work, simple buttons, notes, photos and boss messages." rows={workerCards} primary="Preview worker card" secondary="Prepare test note" />;
 }
 
 function CommunicationScreen({ area, eyebrow, title, text, rows, primary, secondary }) {
@@ -58,11 +59,7 @@ function CommunicationScreen({ area, eyebrow, title, text, rows, primary, second
             <article><strong>Churvox prepares</strong><small>Draft reply, prompt or Command card</small></article>
             <article><strong>Owner approves</strong><small>Nothing sends until approved</small></article>
           </div>
-          <footer>
-            <button className="primary">{primary}</button>
-            <button>{secondary}</button>
-            <button>Send to Command</button>
-          </footer>
+          <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" />
         </aside>
       </div>
     </section>
