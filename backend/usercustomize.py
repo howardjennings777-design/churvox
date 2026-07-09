@@ -50,12 +50,17 @@ def _install_churvox_real_ai_hook():
                     from churvox_ai_operator_routes import build_ai_operator_router
                 except Exception:
                     from backend.churvox_ai_operator_routes import build_ai_operator_router
+                try:
+                    from churvox_command_routes import build_command_router
+                except Exception:
+                    from backend.churvox_command_routes import build_command_router
                 from bson import ObjectId
                 self.state.churvox_real_ai_operator_routes_installed = True
                 original_include_router(self, build_ai_operator_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                original_include_router(self, build_command_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 return result
         except Exception as exc:
-            print(f"Churvox real AI route install skipped: {exc}", file=sys.stderr)
+            print(f"Churvox real AI/Command route install skipped: {exc}", file=sys.stderr)
         return result
 
     FastAPI.include_router = include_router_with_real_ai
