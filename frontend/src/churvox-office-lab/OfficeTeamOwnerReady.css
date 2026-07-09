@@ -1,4 +1,5 @@
-.cvOwnerReady .cvSiteTopbar::after {
+.cvOwnerReady .cvSiteTopbar::after,
+.cvOwnerReady .cvLabTestMarker {
   display: none;
 }
 
