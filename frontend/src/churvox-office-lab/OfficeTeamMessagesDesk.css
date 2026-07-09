@@ -1,0 +1,131 @@
+.cvMessagesDeskGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 420px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.cvMessagesInboxPanel,
+.cvMessagesThreadCard {
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 24px;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 16px 36px rgba(23,18,14,.08);
+}
+
+.cvMessagesInboxPanel {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.cvMessagesPanelHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 6px 10px;
+}
+
+.cvMessagesPanelHead strong {
+  color: #17120e;
+}
+
+.cvMessagesPanelHead small,
+.cvMessagesInboxPanel button span,
+.cvMessagesInboxPanel button small,
+.cvMessagesThreadCard > span,
+.cvMessagesDraftBox span {
+  color: #756c61;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.cvMessagesInboxPanel button {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 16px;
+  padding: 12px;
+  color: #17120e;
+  background: rgba(255,255,255,.7);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cvMessagesInboxPanel button.active {
+  border-color: rgba(249,115,22,.52);
+  background: rgba(249,115,22,.1);
+}
+
+.cvMessagesInboxPanel button strong {
+  font-size: .92rem;
+  line-height: 1.25;
+}
+
+.cvMessagesThreadCard {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.cvMessagesThreadCard h3 {
+  margin: 0;
+  color: #17120e;
+  font-size: 1.55rem;
+  line-height: 1.08;
+}
+
+.cvMessagesThreadCard p {
+  margin: 0;
+  color: #5f564d;
+  line-height: 1.45;
+}
+
+.cvMessagesFlowLine {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvMessagesFlowLine article,
+.cvMessagesDraftBox {
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(255,250,242,.75);
+}
+
+.cvMessagesFlowLine b {
+  display: block;
+  margin-bottom: 4px;
+  color: #17120e;
+}
+
+.cvMessagesFlowLine small {
+  color: #756c61;
+  font-size: .7rem;
+  font-weight: 850;
+}
+
+.cvMessagesDraftBox {
+  display: grid;
+  gap: 7px;
+  border-color: rgba(249,115,22,.22);
+  background: rgba(249,115,22,.08);
+}
+
+.cvMessagesDraftBox p {
+  color: #7c2d12;
+  font-weight: 850;
+}
+
+@media (max-width: 880px) {
+  .cvMessagesDeskGrid,
+  .cvMessagesFlowLine {
+    grid-template-columns: 1fr;
+  }
+}
