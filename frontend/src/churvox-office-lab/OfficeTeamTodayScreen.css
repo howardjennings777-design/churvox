@@ -1,0 +1,22 @@
+.cvSiteMiniList article button {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cvSiteMiniList article button:hover b,
+.cvSiteMiniList article button:focus-visible b {
+  color: #9a3412;
+}
+
+.cvSiteMiniList article button:focus-visible {
+  outline: 2px solid rgba(249,115,22,.42);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
