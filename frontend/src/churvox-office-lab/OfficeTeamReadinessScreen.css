@@ -1,0 +1,132 @@
+.cvReadyGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 10px;
+}
+
+.cvReadyGroups,
+.cvReadyDetail,
+.cvLaunchSteps {
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 13px;
+  background: rgba(255,255,255,.62);
+  padding: 12px;
+}
+
+.cvReadyGroups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cvReadyGroups button {
+  min-height: 130px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  border: 1px solid rgba(23,18,14,.09);
+  border-radius: 12px;
+  padding: 11px;
+  color: #17120e;
+  background: rgba(255,252,246,.72);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cvReadyGroups button.active {
+  border-color: rgba(249,115,22,.38);
+  background: rgba(249,115,22,.12);
+}
+
+.cvReadyGroups span,
+.cvReadyDetail > span,
+.cvLaunchSteps > span {
+  color: #9a3412;
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cvReadyGroups strong {
+  font-size: 1rem;
+  line-height: 1.08;
+  letter-spacing: -.03em;
+}
+
+.cvReadyGroups small,
+.cvReadyDetail li,
+.cvLaunchSteps p {
+  color: #655c52;
+  font-size: .74rem;
+  line-height: 1.36;
+  font-weight: 740;
+}
+
+.cvReadyDetail {
+  position: sticky;
+  top: 90px;
+  align-self: start;
+}
+
+.cvReadyDetail h3,
+.cvLaunchSteps h3 {
+  margin: 8px 0 10px;
+  font-size: clamp(1.25rem, 2vw, 2rem);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+}
+
+.cvReadyDetail ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.cvLaunchSteps {
+  margin-top: 10px;
+}
+
+.cvLaunchSteps > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cvLaunchSteps article {
+  min-height: 130px;
+  border: 1px solid rgba(23,18,14,.09);
+  border-radius: 12px;
+  padding: 11px;
+  background: rgba(255,252,246,.72);
+}
+
+.cvLaunchSteps article strong {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: #fff7ec;
+  background: #17120e;
+  font-size: .72rem;
+}
+
+.cvLaunchSteps article b {
+  display: block;
+  margin-top: 10px;
+  font-size: .82rem;
+}
+
+@media (max-width: 1100px) {
+  .cvReadyGrid,
+  .cvReadyGroups,
+  .cvLaunchSteps > div {
+    grid-template-columns: 1fr;
+  }
+
+  .cvReadyDetail {
+    position: static;
+  }
+}
