@@ -2,6 +2,11 @@ import inspect
 import sys
 
 try:
+    import churvox_command_live_smoke_guard  # noqa: F401
+except Exception:
+    pass
+
+try:
     import churvox_admin_ledger_autoload  # noqa: F401
 except Exception:
     pass
