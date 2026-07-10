@@ -1,6 +1,9 @@
 import json
 
 
+SMOKE_MARKER_PATH = "/api/command/live-smoke-marker"
+SMOKE_MARKER_VERSION = "command-live-smoke-guard-20260710c"
+
 PROTECTED_COMMAND_SMOKE = {
     ("GET", "/api/command/events"),
     ("POST", "/api/command/events"),
@@ -47,9 +50,17 @@ def install_command_live_smoke_guard():
             if scope.get("type") == "http":
                 method = str(scope.get("method") or "").upper()
                 path = str(scope.get("path") or "").rstrip("/") or "/"
+                if method == "GET" and path == SMOKE_MARKER_PATH:
+                    await _send_json(send, 200, {
+                        "success": True,
+                        "marker": SMOKE_MARKER_VERSION,
+                        "safety": "Owner approval recorded. Nothing was sent, synced, charged or changed.",
+                    })
+                    return
                 if (method, path) in PROTECTED_COMMAND_SMOKE and not _has_auth(scope):
                     await _send_json(send, 401, {
                         "detail": "Not authenticated",
+                        "marker": SMOKE_MARKER_VERSION,
                         "safety": "Owner approval recorded. Nothing was sent, synced, charged or changed.",
                     })
                     return
