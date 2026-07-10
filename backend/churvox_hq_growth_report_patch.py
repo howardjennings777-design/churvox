@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 
 INSTALLED = set()
-PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"
+PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 INTERNAL_MARKERS = ["sample", "fake", "seed", "example.com", "mailinator", "tempmail", "john@churvox", "johnworker", "localhost", "127.0.0.1"]
 INTERNAL_PATH_PREFIXES = ("/admin", "/churvox-hq", "/owner", "/platform-dashboard", "/app-owner", "/dashboard", "/worker", "/plans", "/setup", "/setup-guide", "/guide")
 
@@ -116,7 +116,7 @@ def install(module):
     async def require_owner(request: Request):
         user = await get_current_user(request)
         if not is_owner_email(email_of(user)):
-            raise HTTPException(status_code=403, detail="Churvox HQ growth report is locked to howardjennings77@gmail.com")
+            raise HTTPException(status_code=403, detail=f"Churvox HQ growth report is locked to {PLATFORM_OWNER_EMAIL}")
         return user
 
     def remove_route(path, method):
