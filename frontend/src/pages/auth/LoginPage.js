@@ -8,12 +8,26 @@ import { Nav } from "../marketing/ExecutiveHomePage";
 import "./AuthPublicCommand.css";
 import "./RealAppLoginScreen.css";
 import "./RealLogoBlend.css";
+import "./ChurvoxLoginPolish.css";
 
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const LOGIN_TIMEOUT_MS = 28000;
 const ACCESS_REFRESH_TIMEOUT_MS = 9000;
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b";
+const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com";
+
+const loginHighlights = [
+  ["Command", "Owner decisions first", "Prepared admin waits for approval before anything moves."],
+  ["Workers", "Simple phone updates", "Field notes, proof and payment requests come back to Command."],
+  ["Money", "No blind charges", "Invoices, payment links and sync stay owner-controlled."],
+];
+
+const controlStats = [
+  ["0", "auto-sent"],
+  ["0", "auto-charged"],
+  ["Owner", "approves"],
+];
 
 function ChurvoxAppLogo({ compact = false, wordmark = false }) {
   return (
@@ -75,11 +89,7 @@ const getPostLoginPath = (payload = {}) => {
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
   const roleRaw = rawRole(user, payload);
   const role = normalizeRole(roleRaw);
-  const isPlatformOwner =
-    email === "hello@churvox.com" ||
-    email === "howardjennings77@gmail.com" ||
-    user?.is_platform_owner === true ||
-    user?.is_admin === true;
+  const isPlatformOwner = email === PLATFORM_OWNER_EMAIL;
 
   if (isPlatformOwner) return "/admin";
   if (looksWorker(user, payload)) return "/worker/today";
@@ -208,41 +218,34 @@ export default function LoginPage() {
   };
 
   return (
-    <main className={`cvPublicAuth cvRealAppLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_INTEGRATED_LOGO_LOGIN_20260708B">
+    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_LOGIN_CONTROL_20260710">
       {!appMode ? <Nav /> : null}
-      <section className="cvPublicAuthShell cvRealAppShell">
+      <section className="cvChurvoxLoginShell">
         {!appMode ? (
-          <aside className="cvAppScreenStage" aria-label="Churvox mobile app logo screen preview">
-            <div className="cvAppScreenBrandLockup">
+          <aside className="cvLoginControlPanel" aria-label="Churvox control sign in overview">
+            <div className="cvLoginControlBrand">
               <ChurvoxAppLogo />
               <div>
-                <h2>Churvox</h2>
-                <p>Does the admin. <strong>You approve.</strong></p>
+                <span>Churvox control</span>
+                <h2>Admin prepared. Owner approved.</h2>
               </div>
             </div>
 
-            <div className="cvPhoneFrame" aria-hidden="true">
-              <div className="cvPhoneStatus"><span>9:41</span><i /></div>
-              <div className="cvPhoneSplashLogo"><ChurvoxAppLogo /></div>
-              <div className="cvPhoneWordmark">Churvo<span>x</span></div>
-              <p className="cvPhonePromise">Does the admin. <b>You approve.</b></p>
-              <div className="cvPhoneSignals">
-                <span><b>5</b><small>approvals</small></span>
-                <span><b>8</b><small>jobs today</small></span>
-                <span><b>$24k</b><small>waiting</small></span>
-                <span><b>3</b><small>field updates</small></span>
-              </div>
+            <p className="cvLoginControlText">Sign in to the workspace where jobs, workers, invoices, messages and payment requests come back to Command before anything real happens.</p>
+
+            <div className="cvLoginCommandPreview" aria-hidden="true">
+              <div><span>Command</span><b>3 decisions waiting</b><small>Invoice extra · worker update · client follow-up</small></div>
+              <div><span>Money</span><b>Payment link ready</b><small>Owner approval required before customer sees it</small></div>
+              <div><span>Worker</span><b>Proof added</b><small>Returned to Command for owner check</small></div>
             </div>
 
-            <div className="cvAppScreenNotes">
-              <span>Owner command</span>
-              <span>Field flow</span>
-              <span>Proof + messages</span>
+            <div className="cvLoginStats">
+              {controlStats.map(([value, label]) => <span key={label}><b>{value}</b><small>{label}</small></span>)}
             </div>
           </aside>
         ) : null}
 
-        <form className="cvPublicAuthCard cvRealAppAuthCard" onSubmit={handleSubmit}>
+        <form className="cvPublicAuthCard cvRealAppAuthCard cvChurvoxLoginCard" onSubmit={handleSubmit}>
           <div className="cvLoginMiniBrand">
             <ChurvoxAppLogo compact />
             <div>
@@ -254,8 +257,12 @@ export default function LoginPage() {
           <p className="cvPublicAuthKicker">Welcome back</p>
           <h1>{workerAccess ? "Worker sign in." : appMode ? "Sign in." : "Open Command."}</h1>
           <p className="cvPublicAuthIntro">
-            {workerAccess ? "Worker access remains online while the owner dashboard is being upgraded." : appMode ? "Use your Churvox login. Workers open the field app. Owners open the command floor." : "Sign in to check the admin Churvox prepared, approve what is ready, and keep work moving."}
+            {workerAccess ? "Open today’s work, add notes, and send updates back to the owner." : appMode ? "Use your Churvox login. Workers open the field app. Owners open Command." : "Check the admin Churvox prepared, approve what is ready, and keep the business moving."}
           </p>
+
+          <div className="cvLoginMiniFlow">
+            {loginHighlights.map(([title, label, text]) => <article key={title}><span>{title}</span><b>{label}</b><small>{text}</small></article>)}
+          </div>
 
           {error ? <div className="cvPublicAuthError">{error}</div> : null}
 
