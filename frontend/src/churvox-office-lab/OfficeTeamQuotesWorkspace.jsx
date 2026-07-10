@@ -114,7 +114,9 @@ function quoteStage(row) {
 }
 
 function parseMoney(value) {
-  const number = Number(String(value || "").replace(/[^0-9.-]+/g, ""));
+  const raw = String(value || "").trim();
+  if (!raw || (!raw.includes("$") && !/^-?\d[\d,.]*$/.test(raw))) return 0;
+  const number = Number(raw.replace(/[^0-9.-]+/g, ""));
   return Number.isFinite(number) ? number : 0;
 }
 
