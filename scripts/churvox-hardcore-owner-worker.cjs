@@ -79,28 +79,41 @@ function generatedMutationSpec() {
   const sourcePath = path.join(frontend, 'tests', 'e2e', 'churvox-hardcore-owner-worker-mutate.spec.js');
   const generatedPath = path.join(frontend, 'tests', 'e2e', '.churvox-hardcore-owner-worker-mutate.generated.spec.js');
   const original = fs.readFileSync(sourcePath, 'utf8');
-  const oldBlock = `      await expect.poll(async () => {
-         const rows = await corpus(page, ownerToken, ['/api/notifications?limit=160', '/api/messages?limit=160']);
-         const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
-         const unique = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row)));
-         return unique.size;
-       }, { message: 'exactly one completion event reaches owner-facing notification/message collections', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(1);`;
-  const newBlock = `      await expect.poll(async () => {
-         const paths = ['/api/notifications?limit=160', '/api/messages?limit=160', '/api/command/slips'];
-         const counts = {};
-         for (const path of paths) {
-           const result = await json(page, 'get', path + (path.includes('?') ? '&' : '?') + 'ts=' + Date.now(), ownerToken);
-           if (!result.ok) { counts[path] = 0; continue; }
-           const rows = listFrom(result.body);
-           const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
-           counts[path] = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row))).size;
-         }
-         const values = Object.values(counts);
-         return values.some((count) => count === 1) && values.every((count) => count <= 1);
-       }, { message: 'exactly one completion per owner-facing channel; no duplicate completion in Notifications, Messages or Command', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(true);`;
+  const correctedMarker = 'exactly one completion per owner-facing channel';
 
-  const transformed = original.replace(oldBlock, newBlock);
-  if (transformed === original || !transformed.includes('exactly one completion per owner-facing channel')) {
+  if (original.includes(correctedMarker)) {
+    fs.writeFileSync(generatedPath, original);
+    return generatedPath;
+  }
+
+  const oldMessage = 'exactly one completion event reaches owner-facing notification/message collections';
+  const messageIndex = original.indexOf(oldMessage);
+  const blockStart = messageIndex >= 0 ? original.lastIndexOf('await expect.poll(async () => {', messageIndex) : -1;
+  const blockEndMarker = ').toBe(1);';
+  const blockEndIndex = messageIndex >= 0 ? original.indexOf(blockEndMarker, messageIndex) : -1;
+  const blockEnd = blockEndIndex >= 0 ? blockEndIndex + blockEndMarker.length : -1;
+
+  if (blockStart < 0 || blockEnd < 0 || blockEnd <= blockStart) {
+    throw new Error('Could not locate the old completion duplicate check in the mutation spec.');
+  }
+
+  const indentation = original.slice(original.lastIndexOf('\n', blockStart) + 1, blockStart);
+  const newBlock = `${indentation}await expect.poll(async () => {
+${indentation}  const paths = ['/api/notifications?limit=160', '/api/messages?limit=160', '/api/command/slips'];
+${indentation}  const counts = {};
+${indentation}  for (const path of paths) {
+${indentation}    const result = await json(page, 'get', path + (path.includes('?') ? '&' : '?') + 'ts=' + Date.now(), ownerToken);
+${indentation}    if (!result.ok) { counts[path] = 0; continue; }
+${indentation}    const rows = listFrom(result.body);
+${indentation}    const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
+${indentation}    counts[path] = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row))).size;
+${indentation}  }
+${indentation}  const values = Object.values(counts);
+${indentation}  return values.some((count) => count === 1) && values.every((count) => count <= 1);
+${indentation}}, { message: 'exactly one completion per owner-facing channel; no duplicate completion in Notifications, Messages or Command', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(true);`;
+
+  const transformed = `${original.slice(0, blockStart)}${newBlock}${original.slice(blockEnd)}`;
+  if (!transformed.includes(correctedMarker)) {
     throw new Error('Could not build the corrected per-channel completion duplicate check.');
   }
   fs.writeFileSync(generatedPath, transformed);
