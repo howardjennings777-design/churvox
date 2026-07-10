@@ -7,9 +7,13 @@ const files = [
   'backend/churvox_owner_access_safety_patch.py',
   'backend/churvox_command_human_mimic_routes.py',
   'backend/churvox_command_human_mimic_guard_routes.py',
+  'backend/churvox_command_human_mimic_v3_routes.py',
+  'backend/churvox_command_human_mimic_live_routes.py',
   'backend/churvox_command_human_mimic_marker_routes.py',
   'backend/churvox_command_apply_routes.py',
   'backend/usercustomize.py',
+  'scripts/churvox_mimic_full_test.py',
+  'scripts/churvox_mimic_full_test_runner.py',
 ];
 
 const source = [
