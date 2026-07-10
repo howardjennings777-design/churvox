@@ -187,6 +187,38 @@ def build_command_router(db, get_current_user, ObjectId):
         await command_event(user, "worker_payment_requested", doc, "Worker payment link request prepared for owner review only")
         return {"success": True, "slip": doc_out(doc), "safety": SAFE_RESULT, "message": "Payment link request sent to Command. No card was charged."}
 
+    @router.post("/command/worker-update-request")
+    async def create_worker_update_request(payload: Dict[str, Any], request: Request):
+        user = await require_command_participant(request)
+        job_title = safe_text(payload.get("job_title") or payload.get("title"), "Worker update")
+        update_text = safe_text(payload.get("update") or payload.get("note") or payload.get("message"), "Worker sent an update.")
+        update_type = safe_text(payload.get("update_type") or payload.get("type"), "Worker update")
+        status = safe_text(payload.get("status"), "Owner review")
+        doc = normalize_slip({
+            "source_type": "worker_update",
+            "action_type": "review_worker_update",
+            "title": f"Worker update: {job_title}",
+            "found": f"{update_type}: {update_text}",
+            "prepared": "Review the worker update in Command before changing records, messaging the customer, charging, sending, or syncing anything.",
+            "why": "Owner approval is required before any worker update changes a job, invoice, client note, message or payment status.",
+            "urgency": status,
+            "payload": {
+                "worker_update_request": True,
+                "job_title": job_title,
+                "update": update_text,
+                "update_type": update_type,
+                "status": status,
+                "prepared_only": True,
+                "owner_review_only": True,
+            },
+        }, user)
+        doc["requested_by_worker"] = True
+        doc["worker_user_id"] = str(user.get("id") or user.get("_id") or "")
+        result = await db.command_slips.insert_one(doc)
+        doc["_id"] = result.inserted_id
+        await command_event(user, "worker_update_requested", doc, "Worker update prepared for owner review only")
+        return {"success": True, "slip": doc_out(doc), "safety": SAFE_RESULT, "message": "Worker update sent to Command. Nothing was sent, synced, charged or changed."}
+
     @router.post("/command/scan")
     async def scan_command_slips(request: Request, payload: Optional[Dict[str, Any]] = None):
         user = await require_owner(request)
