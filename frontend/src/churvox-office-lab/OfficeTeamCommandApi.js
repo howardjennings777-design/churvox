@@ -31,7 +31,7 @@ function clean(value, fallback = "") {
 
 function trayForSlip(slip = {}) {
   const text = clean(`${slip.source_type || ""} ${slip.action_type || ""} ${slip.tray || ""}`).toLowerCase();
-  if (/account|xero|myob|gst|tax|export/.test(text)) return "Accounting";
+  if (/accounting|account|gst|tax|xero|myob|ledger|export/.test(text)) return "Accounting";
   if (/invoice|quote|payment|money/.test(text)) return "Money";
   if (/job|work|booking|schedule|recurring/.test(text)) return "Bookings";
   if (/staff|worker|payroll|team|timer|hours/.test(text)) return "Staff";
@@ -162,7 +162,7 @@ export async function fetchBackendCommandAudit() {
 
 export async function runBackendOfficeEngineScan() {
   const base = host();
-  if (!base) return { source: "office-engine-unavailable", createdCount: 0, existingCount: 0, message: "No API host" };
+  if (!base) return { source: "backend-office-engine-unavailable", createdCount: 0, existingCount: 0, message: "No API host" };
   const response = await fetch(`${base}/api/command/scan`, {
     method: "POST",
     credentials: "include",
@@ -171,7 +171,7 @@ export async function runBackendOfficeEngineScan() {
   });
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403 || response.status === 404) {
-    return { source: "office-engine-unavailable", createdCount: 0, existingCount: 0, message: body?.detail || "Office engine unavailable" };
+    return { source: "backend-office-engine-unavailable", createdCount: 0, existingCount: 0, message: body?.detail || "Office engine unavailable" };
   }
   if (!response.ok || body?.success === false) {
     throw new Error(body?.message || body?.detail || `Office engine scan failed ${response.status}`);
@@ -182,7 +182,7 @@ export async function runBackendOfficeEngineScan() {
     // Event refresh should never block the owner workspace.
   }
   return {
-    source: "office-engine-scan",
+    source: "backend-office-engine",
     slips: Array.isArray(body?.slips) ? body.slips : [],
     existing: Array.isArray(body?.existing) ? body.existing : [],
     createdCount: Number(body?.created_count || 0),
