@@ -58,7 +58,7 @@ export default function OfficeTeamClientsWorkspace({ appMode = "lab" }) {
           </div>
         </aside>
 
-        <main className="cvClientRelationship">
+        <section className="cvClientRelationship" aria-label="Selected client relationship">
           {rows.length ? (
             <>
               <header className="cvClientIdentity">
@@ -91,7 +91,7 @@ export default function OfficeTeamClientsWorkspace({ appMode = "lab" }) {
               <OfficeTeamSafeControls area="clients" record={current} primary="Prepare client update" secondary="Review client history" command="Prepare memory decision" />
             </>
           ) : <Empty title="No client selected" text="The relationship view will open when a real client exists." />}
-        </main>
+        </section>
       </div>
 
       <section className="cvCoreWorkingDock cvClientIntakeDock">
