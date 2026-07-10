@@ -51,6 +51,10 @@ def _install_churvox_real_ai_hook():
                 except Exception:
                     from backend.churvox_ai_operator_routes import build_ai_operator_router
                 try:
+                    from churvox_command_mimic_intelligence_routes import build_command_mimic_intelligence_router
+                except Exception:
+                    from backend.churvox_command_mimic_intelligence_routes import build_command_mimic_intelligence_router
+                try:
                     from churvox_command_apply_routes import build_command_apply_router
                 except Exception:
                     from backend.churvox_command_apply_routes import build_command_apply_router
@@ -61,6 +65,8 @@ def _install_churvox_real_ai_hook():
                 from bson import ObjectId
                 self.state.churvox_real_ai_operator_routes_installed = True
                 original_include_router(self, build_ai_operator_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Register the real mimic intelligence scanner before the older Command scanner.
+                original_include_router(self, build_command_mimic_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Register the safe approval executor before the older record-only Command routes.
                 original_include_router(self, build_command_apply_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_router(local_db, local_get_current_user, ObjectId), prefix="/api")
