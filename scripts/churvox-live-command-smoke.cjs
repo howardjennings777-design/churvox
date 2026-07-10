@@ -11,6 +11,7 @@ const getEndpoints = [
 
 const postEndpoints = [
   '/api/command/worker-payment-request',
+  '/api/command/worker-update-request',
 ];
 
 const okStatuses = new Set([200, 401, 403]);
@@ -53,14 +54,18 @@ async function checkGet(endpoint) {
 
 async function checkProtectedPost(endpoint) {
   const url = `${base}${endpoint}`;
+  const isPayment = endpoint.includes('payment');
   const response = await fetch(url, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      title: 'Live smoke worker payment request',
+      title: isPayment ? 'Live smoke worker payment request' : 'Live smoke worker update request',
       amount: 'Smoke test only',
       invoice: 'Smoke test only',
       customer: 'Smoke test only',
+      update: 'Smoke test only',
+      note: 'Smoke test only',
+      update_type: 'Smoke test only',
       prepared_only: true,
       owner_review_only: true,
     }),
