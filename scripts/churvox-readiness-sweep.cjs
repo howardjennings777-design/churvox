@@ -50,6 +50,7 @@ const hqOwnerAccessPatch = read('backend/churvox_hq_owner_access_fix_patch.py');
 const hqGrowthPatch = read('backend/churvox_hq_growth_report_patch.py');
 const labSite = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const labPolish = read('frontend/src/churvox-office-lab/OfficeTeamPremiumPolish.css');
+const logicPolish = read('frontend/src/churvox-office-lab/OfficeTeamLogicPolish.css');
 const navPolish = read('frontend/src/churvox-office-lab/OfficeTeamNavPolish.css');
 const todayScreen = read('frontend/src/churvox-office-lab/OfficeTeamTodayScreen.jsx');
 const operationalScreens = read('frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx');
@@ -71,6 +72,7 @@ const loginPolish = read('frontend/src/pages/auth/ChurvoxLoginPolish.css');
 const visibleAppCopy = [
   labSite,
   labPolish,
+  logicPolish,
   navPolish,
   todayScreen,
   operationalScreens,
@@ -139,11 +141,15 @@ expect('plans page shows included and locked features', includesAll(plans, ['Inc
 expect('plans CSS supports logical plan locks and growth pack', includesAll(plansCss, ['.cvPlanCountryCard', '.cvPlanFeatureList.included', '.cvPlanFeatureList.locked', '.cvGrowthPackCard', '.cvPlanPrice']), 'plan lock/growth pack CSS missing');
 
 expect('owner Command reads backend slips', includesAll(labSite, ['fetchBackendCommandDecisions', 'backendCommand']), 'owner Command backend slip wiring missing');
+expect('owner Command runs office engine before loading slips', includesAll(labSite, ['runBackendOfficeEngineScan', 'Office team prepared', 'The office team does the mahi. You approve.']), 'owner app does not run the office engine before Command loads');
 expect('owner Command reads backend audit', includesAll(labSite, ['fetchBackendCommandAudit', 'backendAudit']), 'owner Activity backend audit wiring missing');
 expect('owner app suppresses starter decisions', labSite.includes('isOwnerApp ? [] : starterDecisions'), 'owner app can fall back to starter decisions');
 expect('backend Command event refresh wired', labSite.includes('BACKEND_COMMAND_EVENT') && labSite.includes('window.addEventListener(BACKEND_COMMAND_EVENT'), 'backend Command refresh event missing');
+expect('office team roles have real duties', includesAll(labSite, ['role("Receptionist"', 'role("Bookkeeper"', 'role("Accountant"', 'role("Payroll Clerk"', 'role("Client Memory"', 'role("Quality Checker"', 'role("Operations Manager"', 'Does not file tax', 'Does not pay staff']), 'office team roles are missing real duties or guardrails');
 
 expect('frontend Command API has slips and audit endpoints', includesAll(commandApi, ['/api/command/slips', '/api/command/audit', 'createBackendCommandSlip', 'recordBackendCommandDecision']), 'frontend Command API missing endpoint wiring');
+expect('frontend Command API has office engine scan helper', includesAll(commandApi, ['runBackendOfficeEngineScan', '/api/command/scan', 'backend-office-engine', 'createdCount', 'existingCount']), 'frontend office engine scan helper missing');
+expect('frontend Command API maps Accountant tray', includesAll(commandApi, ['return "Accounting"', 'return "Accountant"', '/accounting|gst|tax|xero|myob|ledger|export/']), 'frontend command mapping does not route accounting slips');
 expect('frontend Command API preserves safety flags', includesAll(commandApi, ['prepared_only: true', 'owner_review_only: true', 'no_auto_send: true', 'no_auto_sync: true', 'no_auto_charge: true', 'no_auto_record_change: true']), 'frontend Command safety flags missing');
 expect('owner safe controls create backend slips', includesAll(safeControls, ['createBackendCommandSlip', 'ownerRoute', 'isOwnerRoute()', 'createOfficeTeamLocalCommand']), 'safe controls do not split owner backend vs lab local behaviour');
 expect('safe controls keep no-send copy', safeControls.includes('no send, no sync, no charge, no record change') && safeControls.includes('Nothing was sent, synced, charged or changed'), 'safe controls safety copy missing');
@@ -157,6 +163,9 @@ expect('frontend worker payment API helper is safe', includesAll(commandApi, ['/
 expect('frontend worker update API helper is safe', includesAll(commandApi, ['/api/command/worker-update-request', 'createBackendWorkerUpdateRequest', 'prepared_only: true', 'owner_review_only: true']), 'worker update backend helper missing');
 
 expect('backend Command router exposes expected endpoints', includesAll(commandRoutes, ['@router.get("/command/slips")', '@router.post("/command/slips")', '@router.post("/command/worker-payment-request")', '@router.post("/command/worker-update-request")', '@router.post("/command/scan")', '@router.patch("/command/slips/{slip_id}/edit")', '@router.post("/command/slips/{slip_id}/approve")', '@router.post("/command/slips/{slip_id}/snooze")', '@router.post("/command/slips/{slip_id}/ignore")', '@router.get("/command/events")', '@router.get("/command/audit")']), 'backend Command endpoints missing');
+expect('backend office engine creates role slips', includesAll(commandRoutes, ['prepare_office_engine_slips', 'create_engine_slip_once', 'Receptionist', 'Bookkeeper', 'Accountant', 'Payroll Clerk', 'Client Memory', 'Quality Checker', 'Operations Manager', 'Office Manager', 'office_engine_prepared']), 'backend office engine role scanning missing');
+expect('backend office engine reads real collections', includesAll(commandRoutes, ['"jobs"', '"invoices"', '"clients"', '"messages"', '"time_entries"', '"business_settings"']), 'backend office engine does not read expected collections');
+expect('backend office engine returns scan counts safely', includesAll(commandRoutes, ['created_count', 'existing_count', 'Office team prepared', 'No real records were changed']), 'backend office engine scan response missing counts/safety');
 expect('backend worker payment request is Command-only', includesAll(commandRoutes, ['worker_payment_request', 'Worker payment link request', 'No card was charged', 'Nothing was sent, synced, charged or changed']), 'backend worker payment request safety missing');
 expect('backend worker update request is Command-only', includesAll(commandRoutes, ['worker_update_request', 'Worker update sent to Command', 'Nothing was sent, synced, charged or changed']), 'backend worker update request safety missing');
 expect('backend Command approve is record-only', includesAll(commandRoutes, ['"status": "approved_recorded"', '"stored_only": True', 'SAFE_RESULT = "Owner approval recorded. Nothing was sent, synced, charged or changed."']), 'backend approve is not clearly record-only');
