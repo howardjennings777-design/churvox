@@ -125,6 +125,15 @@ async function health(page, { mobile = false, publicPage = false } = {}) {
       element.innerText || element.textContent || element.getAttribute('aria-label') || element.getAttribute('title')
       || element.getAttribute('placeholder') || element.getAttribute('name') || element.getAttribute('value') || ''
     ).trim().replace(/\s+/g, ' ');
+    const hasHorizontalScroller = (element) => {
+      let current = element.parentElement;
+      while (current && current !== document.body) {
+        const style = getComputedStyle(current);
+        if (/auto|scroll/.test(style.overflowX) && current.scrollWidth > current.clientWidth + 2) return true;
+        current = current.parentElement;
+      }
+      return false;
+    };
     const issues = [];
     const body = document.body;
     const root = document.documentElement;
@@ -155,7 +164,7 @@ async function health(page, { mobile = false, publicPage = false } = {}) {
         issues.push(`tiny control ${textLabel || tag} ${Math.round(rect.width)}x${Math.round(rect.height)}`);
       }
       if (getComputedStyle(element).pointerEvents === 'none' && !element.disabled) issues.push(`untappable control ${textLabel || tag}`);
-      if (rect.left < -3 || rect.right > root.clientWidth + 3) issues.push(`control outside viewport ${textLabel || tag}`);
+      if ((rect.left < -3 || rect.right > root.clientWidth + 3) && !hasHorizontalScroller(element)) issues.push(`control outside viewport ${textLabel || tag}`);
       if (tag === 'A') {
         const href = String(element.getAttribute('href') || '').trim();
         if (!href || href === '#' || /^javascript:/i.test(href)) issues.push(`dead link ${textLabel || '(unlabelled)'}`);
@@ -207,7 +216,6 @@ async function stateSnapshot(page) {
       text: String(target?.innerText || '').replace(/\s+/g, ' ').trim(),
       storage: JSON.stringify(storage),
       clipboard: JSON.stringify(window.__cvClipboardWrites || []),
-      scrollY: window.scrollY,
       dialogs: document.querySelectorAll('[role="dialog"]:not([hidden]), dialog[open]').length,
     };
   });
@@ -221,7 +229,6 @@ function changed(before, after) {
     || before.text !== after.text
     || before.storage !== after.storage
     || before.clipboard !== after.clipboard
-    || before.scrollY !== after.scrollY
     || before.dialogs !== after.dialogs;
 }
 
@@ -242,13 +249,16 @@ async function clickOutcome(page, screen, descriptor) {
   if (!(await button.isVisible().catch(() => false))) return { skipped: true, reason: 'button no longer visible' };
   if (await button.isDisabled().catch(() => false)) return { skipped: true, reason: 'button disabled' };
 
+  await button.scrollIntoViewIfNeeded();
   const before = await stateSnapshot(page);
   let requests = 0;
   let popup = false;
   let download = false;
   let chooser = false;
   let nativeDialog = false;
-  const requestHandler = () => { requests += 1; };
+  const requestHandler = (request) => {
+    if (['xhr', 'fetch', 'document'].includes(request.resourceType())) requests += 1;
+  };
   const dialogHandler = async (dialog) => { nativeDialog = true; await dialog.dismiss().catch(() => null); };
   page.on('request', requestHandler);
   page.on('dialog', dialogHandler);
@@ -258,7 +268,6 @@ async function clickOutcome(page, screen, descriptor) {
 
   let clickError = '';
   try {
-    await button.scrollIntoViewIfNeeded();
     await button.click({ timeout: 7000 });
   } catch (error) {
     clickError = error.message;
