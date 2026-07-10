@@ -4,6 +4,7 @@ const DEFAULT_BASE = 'https://grassley-backend.onrender.com';
 const EXPECTED_MARKER = 'command-live-smoke-guard-20260710e';
 const EXPECTED_HUMAN_MIMIC = 'human-mimic-intelligence-v2';
 const EXPECTED_GUARD = 'human-mimic-scan-guard-v2';
+const EXPECTED_SETTINGS = 'business-profile-live-v1';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
 
 const getEndpoints = [
@@ -17,6 +18,7 @@ const postEndpoints = [
   '/api/command/worker-payment-request',
   '/api/command/worker-update-request',
   '/api/command/slips/000000000000000000000000/approve',
+  '/api/logic/business-profile',
 ];
 
 const okStatuses = new Set([200, 401, 403]);
@@ -65,6 +67,21 @@ async function checkHumanMimicMarker() {
   return false;
 }
 
+async function checkSettingsMarker() {
+  const endpoint = '/api/settings/live-marker';
+  const response = await fetch(`${base}${endpoint}`, { method: 'GET', headers: { Accept: 'application/json' } });
+  const { text, body } = await readJson(response);
+  const version = body && typeof body === 'object' ? String(body.version || '') : '';
+  const safety = body && typeof body === 'object' ? String(body.safety || '') : '';
+  if (response.status === 200 && version === EXPECTED_SETTINGS && safety.includes('Nothing was sent, synced, charged or changed')) {
+    console.log(`✓ live business-profile route present (${version})`);
+    return true;
+  }
+  failures.push(`${endpoint} missing or stale. Expected ${EXPECTED_SETTINGS}, got status ${response.status}: ${text.slice(0, 200)}`);
+  console.log('✗ live business-profile route missing or stale');
+  return false;
+}
+
 async function checkGet(endpoint) {
   const response = await fetch(`${base}${endpoint}`, { method: 'GET', headers: { Accept: 'application/json' } });
   const { text, body } = await readJson(response);
@@ -90,10 +107,13 @@ async function checkProtectedPost(endpoint) {
   const isPayment = endpoint.includes('payment');
   const isScan = endpoint.includes('/scan');
   const isApproval = endpoint.endsWith('/approve');
+  const isSettings = endpoint.includes('/logic/business-profile');
   const response = await fetch(`${base}${endpoint}`, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: JSON.stringify(isSettings ? {
+      businessName: 'Live smoke protected route only',
+    } : {
       title: isPayment ? 'Live smoke worker payment request' : isScan ? 'Live smoke human office scan' : isApproval ? 'Live smoke Command approval executor' : 'Live smoke worker update request',
       action: isApproval ? 'Approve record' : undefined,
       form_title: isApproval ? 'Live smoke owner approval form' : undefined,
@@ -144,10 +164,15 @@ async function checkProtectedPost(endpoint) {
     console.log('✗ human office marker request failed');
     return false;
   });
+  const settingsOk = await checkSettingsMarker().catch((error) => {
+    failures.push(`/api/settings/live-marker request failed: ${error.message}`);
+    console.log('✗ settings marker request failed');
+    return false;
+  });
 
-  if (!wrapperOk || !mimicOk) {
+  if (!wrapperOk || !mimicOk || !settingsOk) {
     console.error('\nLive Command smoke failed before route checks:');
-    console.error('- Redeploy grassley-backend to the latest main commit, then rerun this test. The wrapper and guarded human-office markers must both pass.');
+    console.error('- Redeploy grassley-backend to the latest main commit, then rerun this test. The wrapper, guarded human-office and business-profile markers must pass.');
     for (const failure of failures) console.error(`- ${failure}`);
     process.exit(1);
   }
@@ -171,5 +196,5 @@ async function checkProtectedPost(endpoint) {
     process.exit(1);
   }
 
-  console.log('\nLive Command smoke passed. The guarded human office engine and protected Command routes are deployed, and no unsafe action was triggered.');
+  console.log('\nLive Command smoke passed. The guarded human office engine, real protected settings route and Command routes are deployed, and no unsafe action was triggered.');
 })();
