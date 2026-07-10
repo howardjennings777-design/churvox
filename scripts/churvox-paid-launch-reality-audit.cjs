@@ -23,6 +23,8 @@ const hqEntry = read('frontend/src/pages/ChurvoxHQPage.jsx');
 const hqCss = read('frontend/src/pages/PaidLaunchHQ.css');
 const adminRoute = read('frontend/src/components/admin/PlatformAdminRoute.jsx');
 const browserTest = read('frontend/tests/e2e/churvox-paid-launch-hq-reality.spec.js');
+const behaviorTest = read('scripts/churvox_hq_paid_launch_behavior_test.py');
+const behaviorRunner = read('scripts/churvox-hq-paid-launch-behavior.cjs');
 const rootPackage = JSON.parse(read('package.json'));
 const frontendPackage = JSON.parse(read('frontend/package.json'));
 const pythonSyntax = read('scripts/churvox-command-python-syntax.cjs');
@@ -150,6 +152,18 @@ expect(
   'The browser proof must actively challenge old fallback counts and cannot be skipped',
 );
 
+expect(
+  'backend behavior test executes verified, unverified, tester, trial and owner-lock cases',
+  behaviorTest.includes('assert report["counts"]["verified_paid_users"] == 1')
+    && behaviorTest.includes('assert report["counts"]["billing_needs_verification"] == 1')
+    && behaviorTest.includes('assert report["counts"]["tester_users"] == 1')
+    && behaviorTest.includes('assert report["counts"]["verified_trial_users"] == 1')
+    && behaviorTest.includes('assert report["counts"]["internal_users_excluded"] == 2')
+    && behaviorTest.includes('assert exc.status_code == 403')
+    && behaviorRunner.includes('scripts/churvox_hq_paid_launch_behavior_test.py'),
+  'The real endpoint logic must be executed against a controlled database, not only scanned as text',
+);
+
 for (const name of ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
   const command = String(frontendPackage.scripts?.[name] || '');
   expect(
@@ -161,17 +175,20 @@ for (const name of ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
 
 const readiness = String(rootPackage.scripts?.['test:readiness'] || '');
 expect(
-  'readiness includes the paid launch reality audit',
+  'readiness includes paid launch source and backend behavior audits',
   readiness.includes('churvox-paid-launch-reality-audit.cjs')
-    && rootPackage.scripts?.['test:paid-launch:reality'] === 'node scripts/churvox-paid-launch-reality-audit.cjs',
-  'Root readiness must run this audit and expose a direct command',
+    && readiness.includes('churvox-hq-paid-launch-behavior.cjs')
+    && rootPackage.scripts?.['test:paid-launch:reality'] === 'node scripts/churvox-paid-launch-reality-audit.cjs'
+    && rootPackage.scripts?.['test:hq:behavior'] === 'node scripts/churvox-hq-paid-launch-behavior.cjs',
+  'Root readiness must run both audits and expose direct commands',
 );
 
 expect(
-  'Python syntax gate includes new HQ backend files',
+  'Python syntax gate includes new HQ backend and behavior files',
   pythonSyntax.includes('backend/churvox_hq_paid_launch_report_patch.py')
-    && pythonSyntax.includes('backend/churvox_hq_connection_status_patch.py'),
-  'The new backend report and installer must be AST parsed before launch',
+    && pythonSyntax.includes('backend/churvox_hq_connection_status_patch.py')
+    && pythonSyntax.includes('scripts/churvox_hq_paid_launch_behavior_test.py'),
+  'The new backend report, installer and behavior test must be AST parsed before launch',
 );
 
 for (const check of checks) console.log(`${check.ok ? '✓' : '✗'} ${check.name}${check.ok ? '' : ` — ${check.detail}`}`);
@@ -180,4 +197,4 @@ if (failures.length) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-console.log(`\nPaid launch reality audit passed: ${checks.length} truth, billing, HQ, control and browser contracts checked.`);
+console.log(`\nPaid launch reality audit passed: ${checks.length} truth, billing, HQ, backend behavior, control and browser contracts checked.`);
