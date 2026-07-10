@@ -38,6 +38,12 @@ function approvalFields(fields = []) {
   }));
 }
 
+function finalActionsForSlip(slip = {}) {
+  const supplied = Array.isArray(slip?.payload?.actions) ? slip.payload.actions : [];
+  const finalActions = supplied.filter((action) => !/\bedit\b/i.test(clean(action)));
+  return finalActions.length ? finalActions : ["Approve record", "Snooze", "Ignore"];
+}
+
 function trayForSlip(slip = {}) {
   const text = clean(`${slip.source_type || ""} ${slip.action_type || ""} ${slip.tray || ""}`).toLowerCase();
   if (/accounting|gst|tax|xero|myob|ledger|export/.test(text) || /account/.test(text)) return "Accounting";
@@ -86,11 +92,11 @@ export function mapCommandSlipToDecision(slip = {}, index = 0) {
       clean(slip.source_type || slip.sourceType, "backend command slip"),
       clean(slip.action_type || slip.actionType, "owner review"),
       "business scoped",
-      "record-only approval",
+      "owner approval controlled",
     ].filter(Boolean).slice(0, 5),
     prepared: clean(slip.prepared, "Prepared for owner review. Nothing has been sent, synced, charged or changed."),
-    need: clean(slip.why || slip.need, "Approve record-only, snooze, ignore, or edit before a future real action."),
-    actions: Array.isArray(slip?.payload?.actions) && slip.payload.actions.length ? slip.payload.actions : ["Approve record", "Snooze", "Ignore"],
+    need: clean(slip.why || slip.need, "Edit the prepared form, approve the direction, ask for follow-up, snooze, or park it."),
+    actions: finalActionsForSlip(slip),
     form,
     willDo,
     raw: {
@@ -325,8 +331,8 @@ export async function recordBackendCommandDecision(decision, action, detail = {}
     ? "snooze"
     : normalized.includes("ignore") || normalized.includes("park")
       ? "ignore"
-      : "approve-fields";
-  const requestBody = endpoint === "approve-fields"
+      : "approve";
+  const requestBody = endpoint === "approve"
     ? {
         action,
         note,
