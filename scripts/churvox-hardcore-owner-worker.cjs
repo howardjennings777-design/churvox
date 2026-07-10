@@ -45,29 +45,59 @@ function run(args, label) {
   if (result.status !== 0) throw new Error(`${label} failed with exit code ${result.status}`);
 }
 
+function generatedVisualSpec() {
+  const sourcePath = path.join(frontend, 'tests', 'e2e', 'churvox-hardcore-owner-worker-visual.spec.js');
+  const generatedPath = path.join(frontend, 'tests', 'e2e', '.churvox-hardcore-owner-worker-visual.generated.spec.js');
+  const original = fs.readFileSync(sourcePath, 'utf8');
+  const oldBlock = [
+    '  await waitForSettledContent(page, path);',
+    "  const text = (await page.locator('body').innerText()).replace(/\\s+/g, ' ').trim();",
+    '  expect(text.length, `${path} is blank or nearly blank`).toBeGreaterThan(90);',
+  ].join('\n');
+  const newBlock = [
+    '  await waitForSettledContent(page, path);',
+    '  await expect.poll(async () => {',
+    "    const currentText = (await page.locator('body').innerText().catch(() => '')).replace(/\\s+/g, ' ').trim();",
+    '    return currentText.length;',
+    '  }, {',
+    '    message: `${path} stayed on an authentication/loading shell instead of rendering the real page`,',
+    '    timeout: 20_000,',
+    '    intervals: [250, 500, 900, 1500, 2500],',
+    '  }).toBeGreaterThan(90);',
+    "  const text = (await page.locator('body').innerText()).replace(/\\s+/g, ' ').trim();",
+  ].join('\n');
+
+  const transformed = original.replace(oldBlock, newBlock);
+  if (transformed === original || !transformed.includes('stayed on an authentication/loading shell')) {
+    throw new Error('Could not strengthen the hardcore authenticated-content wait.');
+  }
+  fs.writeFileSync(generatedPath, transformed);
+  return generatedPath;
+}
+
 function generatedMutationSpec() {
   const sourcePath = path.join(frontend, 'tests', 'e2e', 'churvox-hardcore-owner-worker-mutate.spec.js');
   const generatedPath = path.join(frontend, 'tests', 'e2e', '.churvox-hardcore-owner-worker-mutate.generated.spec.js');
   const original = fs.readFileSync(sourcePath, 'utf8');
   const oldBlock = `      await expect.poll(async () => {
-        const rows = await corpus(page, ownerToken, ['/api/notifications?limit=160', '/api/messages?limit=160']);
-        const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
-        const unique = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row)));
-        return unique.size;
-      }, { message: 'exactly one completion event reaches owner-facing notification/message collections', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(1);`;
+         const rows = await corpus(page, ownerToken, ['/api/notifications?limit=160', '/api/messages?limit=160']);
+         const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
+         const unique = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row)));
+         return unique.size;
+       }, { message: 'exactly one completion event reaches owner-facing notification/message collections', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(1);`;
   const newBlock = `      await expect.poll(async () => {
-        const paths = ['/api/notifications?limit=160', '/api/messages?limit=160', '/api/command/slips'];
-        const counts = {};
-        for (const path of paths) {
-          const result = await json(page, 'get', path + (path.includes('?') ? '&' : '?') + 'ts=' + Date.now(), ownerToken);
-          if (!result.ok) { counts[path] = 0; continue; }
-          const rows = listFrom(result.body);
-          const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
-          counts[path] = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row))).size;
-        }
-        const values = Object.values(counts);
-        return values.some((count) => count === 1) && values.every((count) => count <= 1);
-      }, { message: 'exactly one completion per owner-facing channel; no duplicate completion in Notifications, Messages or Command', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(true);`;
+         const paths = ['/api/notifications?limit=160', '/api/messages?limit=160', '/api/command/slips'];
+         const counts = {};
+         for (const path of paths) {
+           const result = await json(page, 'get', path + (path.includes('?') ? '&' : '?') + 'ts=' + Date.now(), ownerToken);
+           if (!result.ok) { counts[path] = 0; continue; }
+           const rows = listFrom(result.body);
+           const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
+           counts[path] = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row))).size;
+         }
+         const values = Object.values(counts);
+         return values.some((count) => count === 1) && values.every((count) => count <= 1);
+       }, { message: 'exactly one completion per owner-facing channel; no duplicate completion in Notifications, Messages or Command', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(true);`;
 
   const transformed = original.replace(oldBlock, newBlock);
   if (transformed === original || !transformed.includes('exactly one completion per owner-facing channel')) {
@@ -85,15 +115,20 @@ console.log(mutate
   : `Read-only mode. Set CHURVOX_HARDCORE_MUTATE=${consent} only when you intentionally want the live job mutation test.`);
 
 try {
-  run([
-    'test',
-    'tests/e2e/churvox-hardcore-owner-worker-visual.spec.js',
-    '--config=playwright.config.js',
-    '--project=desktop-chromium',
-    '--project=mobile-chromium',
-    '--workers=1',
-    '--reporter=line',
-  ], 'Hardcore read-only owner/worker and visual gauntlet');
+  const generatedVisual = generatedVisualSpec();
+  try {
+    run([
+      'test',
+      path.relative(frontend, generatedVisual).replace(/\\/g, '/'),
+      '--config=playwright.config.js',
+      '--project=desktop-chromium',
+      '--project=mobile-chromium',
+      '--workers=1',
+      '--reporter=line',
+    ], 'Hardcore read-only owner/worker and visual gauntlet');
+  } finally {
+    try { fs.unlinkSync(generatedVisual); } catch {}
+  }
 
   if (mutate) {
     const generated = generatedMutationSpec();
