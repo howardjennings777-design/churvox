@@ -1,0 +1,201 @@
+.cvWorkForms {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.cvBrainIntake,
+.cvDraftForm,
+.cvCsvImport,
+.cvWorkFormTrail {
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 24px;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 18px 42px rgba(23,18,14,.06), inset 0 1px rgba(255,255,255,.75);
+}
+
+.cvBrainIntake {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(249,115,22,.16), transparent 32%),
+    linear-gradient(135deg, rgba(23,18,14,.96), rgba(50,37,27,.94));
+  color: #fff8ed;
+}
+
+.cvBrainIntake > span,
+.cvDraftForm > span,
+.cvCsvImport > span {
+  color: #9a3412;
+  font-size: .68rem;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cvBrainIntake > span {
+  color: #fed7aa;
+}
+
+.cvBrainIntake h3,
+.cvDraftForm h3,
+.cvCsvImport h3 {
+  margin: 0;
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+  letter-spacing: -.05em;
+}
+
+.cvBrainIntake textarea,
+.cvDraftForm input,
+.cvDraftForm textarea,
+.cvCsvImport textarea {
+  width: 100%;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 16px;
+  padding: 12px 13px;
+  color: #17120e;
+  background: rgba(255,252,246,.92);
+  font: inherit;
+  font-weight: 800;
+  outline: none;
+}
+
+.cvBrainIntake textarea {
+  min-height: 86px;
+  color: #fff8ed;
+  border-color: rgba(255,248,237,.18);
+  background: rgba(255,248,237,.08);
+}
+
+.cvBrainIntake textarea::placeholder {
+  color: rgba(255,248,237,.52);
+}
+
+.cvBrainIntake button,
+.cvDraftForm button,
+.cvCsvImport button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  padding: 0 18px;
+  color: #fff8ed;
+  background: #17120e;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvBrainIntake button {
+  color: #17120e;
+  background: #fed7aa;
+}
+
+.cvBrainIntake button:disabled,
+.cvDraftForm button:disabled,
+.cvCsvImport button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.cvBrainGuess {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(255,248,237,.14);
+  border-radius: 18px;
+  background: rgba(255,248,237,.09);
+}
+
+.cvBrainGuess b {
+  color: #fed7aa;
+}
+
+.cvBrainGuess small,
+.cvBrainGuess em {
+  color: rgba(255,248,237,.76);
+  font-style: normal;
+}
+
+.cvFormGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
+  gap: 14px;
+}
+
+.cvDraftForm,
+.cvCsvImport {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.cvFieldsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvFieldsGrid label,
+.cvCsvImport {
+  min-width: 0;
+}
+
+.cvFieldsGrid small,
+.cvCsvImport small,
+.cvDraftForm p,
+.cvCsvImport p {
+  color: rgba(23,18,14,.58);
+  font-weight: 900;
+}
+
+.cvFieldsGrid label {
+  display: grid;
+  gap: 6px;
+}
+
+.cvFieldsGrid textarea,
+.cvCsvImport textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.cvCsvImport textarea {
+  min-height: 188px;
+}
+
+.cvWorkFormTrail {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.cvWorkFormTrail p {
+  margin: 0;
+  color: rgba(23,18,14,.72);
+  font-weight: 850;
+}
+
+.cvWorkFormTrail b {
+  color: #9a3412;
+}
+
+@media (max-width: 860px) {
+  .cvFormGrid,
+  .cvFieldsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .cvWorkForms {
+    gap: 10px;
+  }
+
+  .cvBrainIntake,
+  .cvDraftForm,
+  .cvCsvImport,
+  .cvWorkFormTrail {
+    border-radius: 20px;
+    padding: 14px;
+  }
+}
