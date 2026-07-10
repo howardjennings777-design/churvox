@@ -59,6 +59,8 @@ const commandRoutes = read('backend/churvox_command_routes.py');
 const usercustomize = read('backend/usercustomize.py');
 const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
 const plansCss = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.css');
+const loginPage = read('frontend/src/pages/auth/LoginPage.js');
+const loginPolish = read('frontend/src/pages/auth/ChurvoxLoginPolish.css');
 
 const visibleAppCopy = [
   labSite,
@@ -73,6 +75,8 @@ const visibleAppCopy = [
   backOfficeScreens,
   plans,
   plansCss,
+  loginPage,
+  loginPolish,
 ].join('\n');
 
 const roughVisibleSnippets = [
@@ -109,6 +113,7 @@ expect('frontend route safety script exists', Boolean(frontendScripts['test:rebu
 
 expect('platform owner redirect is one email only', includesAll(app, ['const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'return email === PLATFORM_OWNER_EMAIL']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(app), 'App.js platform owner redirect allows non-email admin access');
 expect('platform admin route is one email only', includesAll(platformAdminRoute, ['const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'return userEmail === PLATFORM_OWNER_EMAIL']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(platformAdminRoute), 'PlatformAdminRoute allows non-email admin access');
+expect('login platform-owner redirect is one email only', includesAll(loginPage, ['const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'const isPlatformOwner = email === PLATFORM_OWNER_EMAIL']) && !/hello@churvox\.com|howardjennings777@gmail\.com|is_platform_owner|is_admin/.test(loginPage), 'LoginPage platform owner redirect allows non-email admin access');
 expect('HQ extra owner patch is one email only', includesAll(hqExtraOwnerPatch, ['PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'return email == PLATFORM_OWNER_EMAIL']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqExtraOwnerPatch), 'extra HQ owner patch allows non-email admin access');
 expect('HQ owner APIs are one email only', includesAll(hqOwnerAccessPatch, ['PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'return {PLATFORM_OWNER_EMAIL}', 'Churvox HQ is locked to']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqOwnerAccessPatch), 'HQ owner APIs allow non-email admin access');
 expect('HQ growth API is one email only', includesAll(hqGrowthPatch, ['PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'Churvox HQ growth report is locked to howardjennings77@gmail.com']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqGrowthPatch), 'HQ growth report allows non-email admin access');
@@ -119,8 +124,10 @@ expect('worker app route remains protected', app.includes('path="/worker/today"'
 expect('public marketing routes still point to marketing pages', includesAll(app, ['path="/" element={<HomePage />}', 'path="/pricing" element={<PricingPage />}', 'path="/contact" element={<ContactPage />}']), 'public route wiring changed unexpectedly');
 
 expect('premium office polish is loaded', labSite.includes('import "./OfficeTeamPremiumPolish.css";'), 'premium polish CSS is not imported');
-expect('visible app copy has no rough build/demo terms', !hasAny(visibleAppCopy, roughVisibleSnippets), 'rough visible copy term found in owner/office/worker screens');
+expect('visible app copy has no rough build/demo terms', !hasAny(visibleAppCopy, roughVisibleSnippets), 'rough visible copy term found in owner/office/worker/login screens');
 expect('shell badge copy is product-ready', labPolish.includes('CHURVOX CONTROL') && navPolish.includes('Churvox control') && labPolish.includes('OWNER WORKSPACE'), 'shell badge copy still uses old wording');
+expect('mobile owner workspace is simplified', includesAll(labPolish, ['@media (max-width: 640px)', '.cvSiteStatus article {', 'display: none;', '.cvSiteTopbar button', 'min-height: 42px', '.cvSiteDecisionCard footer']), 'mobile workspace polish missing');
+expect('public login uses new Churvox control design', includesAll(loginPage, ['cvChurvoxLogin', 'cvLoginControlPanel', 'Admin prepared. Owner approved.', 'ChurvoxLoginPolish.css']) && includesAll(loginPolish, ['.cvChurvoxLoginShell', '.cvLoginControlPanel', '.cvLoginCommandPreview', '@media (max-width: 760px)']), 'new public login polish missing');
 expect('plans page has country pricing controls', includesAll(plans, ['const COUNTRIES', 'Choose billing country', 'GST is shown before checkout', 'Sales tax, if required, is handled at checkout', 'priceParts(meta, item.price)']), 'country pricing controls missing');
 expect('plans page shows included and locked features', includesAll(plans, ['Included in this plan', 'Locked until upgrade', 'FeatureList', 'Command Growth Pack', 'price: 99']), 'included/locked plan structure missing');
 expect('plans CSS supports logical plan locks and growth pack', includesAll(plansCss, ['.cvPlanCountryCard', '.cvPlanFeatureList.included', '.cvPlanFeatureList.locked', '.cvGrowthPackCard', '.cvPlanPrice']), 'plan lock/growth pack CSS missing');
