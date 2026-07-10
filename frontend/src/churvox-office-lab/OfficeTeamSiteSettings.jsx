@@ -173,11 +173,11 @@ export default function OfficeTeamSiteSettings() {
           <h3>Use the right operating language</h3>
           <div className="cvRealIndustryPicker">
             <span>Industry profile</span>
-            <select value={industryKey} onChange={(event) => { setIndustryKey(event.target.value); setNotice("Unsaved industry change."); }}>
+            <select aria-label="Industry profile" value={industryKey} onChange={(event) => { setIndustryKey(event.target.value); setNotice("Unsaved industry change."); }}>
               {profiles.map((item) => <option key={item.key} value={item.key}>{item.name || item.key}</option>)}
             </select>
             <span>Work style</span>
-            <select value={workStyle} onChange={(event) => { setWorkStyle(event.target.value); setNotice("Unsaved work-style change."); }}>
+            <select aria-label="Work style" value={workStyle} onChange={(event) => { setWorkStyle(event.target.value); setNotice("Unsaved work-style change."); }}>
               <option value="auto">Use the profile default</option>
               <option value="onsite">Mostly at customer sites</option>
               <option value="premises">Mostly at my premises</option>
