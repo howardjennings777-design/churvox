@@ -54,10 +54,21 @@ async def run():
     marker_router = build_command_human_mimic_marker_router()
     marker = suite.endpoint(marker_router, "/command/human-mimic-marker", "GET")
     marker_result = await marker()
+    preflight = marker_result.get("preflight") or {}
     suite.check(
         "deployment marker proves linked-invoice post-guard",
         marker_result.get("post_guard") == "linked-invoice-source-recheck-v1"
-        and (marker_result.get("preflight") or {}).get("linked_invoice_postguard") is True,
+        and preflight.get("linked_invoice_postguard") is True,
+    )
+    suite.check(
+        "deployment marker proves role-specific evidence guard",
+        marker_result.get("role_schema_guard") == "role-required-evidence-v1"
+        and preflight.get("role_specific_required_evidence") is True,
+    )
+    suite.check(
+        "deployment marker proves strict manager summaries",
+        marker_result.get("summary_guard") == "strict-surviving-queue-summary-v1"
+        and preflight.get("manager_summaries_use_strict_queue") is True,
     )
 
 
