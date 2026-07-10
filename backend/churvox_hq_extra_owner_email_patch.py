@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"
+PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 
 
 def install(module):
