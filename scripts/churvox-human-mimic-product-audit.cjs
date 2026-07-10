@@ -72,7 +72,7 @@ expect(
   all(strict, [
     'HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v3"',
     'HUMAN_MIMIC_GUARD = "human-mimic-strict-preflight-v3"',
-    'historical extra field only; history is reference, never a charge',
+    'explicit extra field only; history is reference, never a charge',
     'At least three visits required for inferred cycle',
     'exact time never inferred',
     'Invoice total not substituted for balance',
@@ -107,6 +107,21 @@ expect(
 );
 
 expect(
+  'linked invoice post-guard rechecks every job identifier',
+  all(liveView, [
+    'POST_GUARD = "linked-invoice-source-recheck-v1"',
+    'async def source_job',
+    'async def linked_invoice',
+    '(job or {}).get("job_id")',
+    '"source_job_id"',
+    '"related_job_id"',
+    'A live invoice already links to this job',
+    'result["post_guard"] = POST_GUARD',
+  ]),
+  'A duplicate invoice decision must be removed even when legacy and Mongo identifiers differ',
+);
+
+expect(
   'Render boot directly installs the strict live router',
   all(liveInstaller, [
     'from churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router',
@@ -125,16 +140,20 @@ expect(
   all(marker, [
     'HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v3"',
     'HUMAN_MIMIC_GUARD = "human-mimic-strict-preflight-v3"',
+    'HUMAN_MIMIC_POST_GUARD = "linked-invoice-source-recheck-v1"',
     '"source_validation": True',
     '"historical_money_reference_only": True',
     '"required_fields_block_approval": True',
     '"secret_redaction": True',
+    '"linked_invoice_postguard": True',
   ])
     && all(liveSmoke, [
       "EXPECTED_HUMAN_MIMIC = 'human-mimic-intelligence-v3'",
       "EXPECTED_GUARD = 'human-mimic-strict-preflight-v3'",
+      "EXPECTED_POST_GUARD = 'linked-invoice-source-recheck-v1'",
       'preflight.source_validation',
       'preflight.required_fields_block_approval',
+      'preflight.linked_invoice_postguard',
       'roles.length === 8',
     ]),
   'The public marker must prove the actual strict build, not merely route presence',
