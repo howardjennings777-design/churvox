@@ -47,20 +47,20 @@ export default function OfficeTeamRoleControls({ roles = [] }) {
     if (busy) return;
     setBusy(true);
     const rows = shownRoles.map((role) => `${role.name}: ${modes[role.name] || "Review-only"}`);
-    const record = ["Mimic modes", "Office Team role settings", "Owner approval", rows.join(" · ")];
+    const record = ["Office role modes", "Office Team role settings", "Owner approval", rows.join(" · ")];
     try {
       if (isOwnerRoute()) {
         await createBackendCommandSlip({
           area: "operations",
           record,
-          action: "Prepare mimic mode settings",
+          action: "Prepare office role mode settings",
           slip: {
             source_type: "operations",
             action_type: "prepare_mimic_role_modes",
-            source_id: `mimic-modes-${Date.now()}`,
-            title: "Office Team mimic modes need owner approval",
+            source_id: `office-role-modes-${Date.now()}`,
+            title: "Office Team role modes need owner approval",
             found: "The owner changed which office roles should be Active, Review-only or Off.",
-            prepared: "Churvox prepared the role-mode settings as an internal operations draft. No mimic mode changed live yet.",
+            prepared: "Churvox prepared the role-mode settings as an internal operations draft. No office role behaviour changed live yet.",
             why: "Role behaviour should never change silently. Command records exactly which modes the owner approved.",
             urgency: "Owner review",
             payload: {
@@ -77,10 +77,10 @@ export default function OfficeTeamRoleControls({ roles = [] }) {
             },
           },
         });
-        setNotice("Mimic role modes were prepared in Command. No live role behaviour changed yet.");
+        setNotice("Office role modes were prepared in Command. No live role behaviour changed yet.");
       } else {
-        createOfficeTeamLocalCommand({ area: "operations", record, action: "Prepare mimic mode settings" });
-        setNotice("Mimic role modes were prepared in the control queue.");
+        createOfficeTeamLocalCommand({ area: "operations", record, action: "Prepare office role mode settings" });
+        setNotice("Office role modes were prepared in the control queue.");
       }
     } catch (error) {
       setNotice(`Could not prepare role modes. Nothing changed. ${error?.message || ""}`.trim());
@@ -92,7 +92,7 @@ export default function OfficeTeamRoleControls({ roles = [] }) {
   return (
     <section className="cvRoleControls">
       <div className="cvPanelHeader mini">
-        <div><span>Role controls</span><h2>Mimic modes</h2></div>
+        <div><span>Role controls</span><h2>Office role modes</h2></div>
         <button className="cvRoleControlReset" type="button" onClick={reset}>Reset draft</button>
       </div>
       <p>Tap a role to choose Active, Review-only or Off. The selection remains a draft until it is prepared and approved in Command.</p>
