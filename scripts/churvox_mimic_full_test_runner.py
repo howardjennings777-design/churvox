@@ -2,6 +2,101 @@
 from __future__ import annotations
 
 import asyncio
+import re
+import secrets
+import sys
+import types
+
+
+def install_test_runtime_stubs():
+    """Provide only the tiny FastAPI/BSON surface used by this in-memory test.
+
+    Production still uses the real packages. These stubs exist solely so the
+    pre-live behavioural test can run from a normal frontend Codespace without
+    installing the complete backend environment.
+    """
+
+    try:
+        import bson  # noqa: F401
+    except ModuleNotFoundError:
+        bson_module = types.ModuleType("bson")
+
+        class ObjectId(str):
+            def __new__(cls, value=None):
+                raw = secrets.token_hex(12) if value is None else str(value)
+                if not re.fullmatch(r"[0-9a-fA-F]{24}", raw):
+                    raise ValueError(f"Invalid ObjectId: {raw}")
+                return str.__new__(cls, raw.lower())
+
+            @classmethod
+            def is_valid(cls, value):
+                return bool(re.fullmatch(r"[0-9a-fA-F]{24}", str(value or "")))
+
+        bson_module.ObjectId = ObjectId
+        sys.modules["bson"] = bson_module
+
+    try:
+        import fastapi  # noqa: F401
+    except ModuleNotFoundError:
+        fastapi_module = types.ModuleType("fastapi")
+
+        class HTTPException(Exception):
+            def __init__(self, status_code, detail=None, headers=None):
+                self.status_code = int(status_code)
+                self.detail = detail
+                self.headers = headers
+                super().__init__(str(detail or status_code))
+
+        class Request:
+            pass
+
+        class _Route:
+            def __init__(self, path, methods, endpoint):
+                self.path = path
+                self.methods = set(methods)
+                self.endpoint = endpoint
+
+        class APIRouter:
+            def __init__(self, *args, **kwargs):
+                self.routes = []
+
+            def add_api_route(self, path, endpoint, methods=None, **kwargs):
+                self.routes.append(_Route(path, methods or {"GET"}, endpoint))
+                return endpoint
+
+            def _register(self, method, path, **kwargs):
+                def decorator(endpoint):
+                    self.add_api_route(path, endpoint, methods={method})
+                    return endpoint
+
+                return decorator
+
+            def get(self, path, **kwargs):
+                return self._register("GET", path, **kwargs)
+
+            def post(self, path, **kwargs):
+                return self._register("POST", path, **kwargs)
+
+            def put(self, path, **kwargs):
+                return self._register("PUT", path, **kwargs)
+
+            def patch(self, path, **kwargs):
+                return self._register("PATCH", path, **kwargs)
+
+            def delete(self, path, **kwargs):
+                return self._register("DELETE", path, **kwargs)
+
+            def include_router(self, router, prefix="", **kwargs):
+                for route in getattr(router, "routes", []):
+                    self.routes.append(_Route(f"{prefix}{route.path}", route.methods, route.endpoint))
+
+        fastapi_module.APIRouter = APIRouter
+        fastapi_module.HTTPException = HTTPException
+        fastapi_module.Request = Request
+        sys.modules["fastapi"] = fastapi_module
+
+
+install_test_runtime_stubs()
 
 import churvox_mimic_full_test as suite
 from churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router
@@ -41,6 +136,10 @@ suite.build_seed = build_seed_with_true_edge_cases
 
 
 async def run():
+    suite.check(
+        "dependency-free test runtime is active",
+        "fastapi" in sys.modules and "bson" in sys.modules,
+    )
     suite.check(
         "legacy incomplete status is normalized before reasoning",
         _normalize_job({"status": "incomplete"}).get("status") == "open",
