@@ -31,16 +31,18 @@ function clean(value, fallback = "") {
 
 function trayForSlip(slip = {}) {
   const text = clean(`${slip.source_type || ""} ${slip.action_type || ""} ${slip.tray || ""}`).toLowerCase();
-  if (/invoice|quote|payment|money|xero|myob/.test(text)) return "Money";
+  if (/accounting|gst|tax|xero|myob|ledger|export/.test(text)) return "Accounting";
+  if (/invoice|quote|payment|money/.test(text)) return "Money";
   if (/job|work|booking|schedule|recurring/.test(text)) return "Bookings";
-  if (/staff|worker|payroll|team/.test(text)) return "Staff";
-  if (/client|customer|message|inbox/.test(text)) return "Clients";
+  if (/staff|worker|payroll|team|timer|timesheet/.test(text)) return "Staff";
+  if (/client|customer|message|inbox|memory/.test(text)) return "Clients";
   if (/quality|proof|photo/.test(text)) return "Quality";
-  if (/operation|automation|branding|setup/.test(text)) return "Operations";
+  if (/operation|automation|branding|setup|pattern/.test(text)) return "Operations";
   return "Command";
 }
 
 function roleForTray(tray) {
+  if (tray === "Accounting") return "Accountant";
   if (tray === "Money") return "Bookkeeper";
   if (tray === "Bookings") return "Receptionist";
   if (tray === "Staff") return "Payroll Clerk";
@@ -55,23 +57,25 @@ function levelForSlip(slip = {}) {
   if (/urgent|top|high/.test(raw)) return "Top priority";
   if (/low/.test(raw)) return "Low risk";
   if (/pattern/.test(raw)) return "Pattern";
+  if (/accounting/.test(raw)) return "Accounting check";
   return "Needs check";
 }
 
 export function mapCommandSlipToDecision(slip = {}, index = 0) {
   const tray = trayForSlip(slip);
   const id = clean(slip.id || slip._id || `command-slip-${index}`);
+  const payload = slip.payload && typeof slip.payload === "object" ? slip.payload : {};
   return {
     id: `command-slip-${id}`,
     tray,
-    roleName: clean(slip.roleName || slip.role_name, roleForTray(tray)),
+    roleName: clean(slip.roleName || slip.role_name || payload.office_role, roleForTray(tray)),
     level: levelForSlip(slip),
     title: clean(slip.title, "Command decision"),
     happened: clean(slip.found || slip.happened || slip.summary, "Churvox found something that may need owner review."),
     checked: [
-      clean(slip.source_type || slip.sourceType, "backend command slip"),
+      clean(payload.office_role, clean(slip.source_type || slip.sourceType, "backend command slip")),
       clean(slip.action_type || slip.actionType, "owner review"),
-      "business scoped",
+      clean(payload.source_collection, "business scoped"),
       "record-only approval",
     ].filter(Boolean).slice(0, 5),
     prepared: clean(slip.prepared, "Prepared for owner review. Nothing has been sent, synced, charged or changed."),
@@ -102,6 +106,38 @@ export function mapBackendCommandAudit(item = {}, index = 0) {
     at: clean(item.at || item.created_at, ""),
     slipId: clean(item.slip_id, ""),
     source: "backend_command_audit",
+  };
+}
+
+export async function runBackendOfficeEngineScan() {
+  const base = host();
+  if (!base) return { source: "command-scan-unavailable", slips: [], message: "No API host" };
+  const response = await fetch(`${base}/api/command/scan`, {
+    method: "POST",
+    credentials: "include",
+    headers: authHeaders(),
+    body: JSON.stringify({ trigger: "owner_workspace", prepared_only: true, owner_review_only: true }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403 || response.status === 404) {
+    return { source: "command-scan-unavailable", slips: [], message: body?.detail || "Office engine unavailable" };
+  }
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || body?.detail || `Office engine scan failed ${response.status}`);
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
+  } catch {
+    // Event refresh should never block the office engine scan.
+  }
+  return {
+    source: "backend-office-engine",
+    slips: Array.isArray(body?.slips) ? body.slips : [],
+    existing: Array.isArray(body?.existing) ? body.existing : [],
+    createdCount: Number(body?.created_count || 0),
+    existingCount: Number(body?.existing_count || 0),
+    message: body?.message || SAFE_RESULT,
+    safety: body?.safety || SAFE_RESULT,
   };
 }
 
@@ -283,7 +319,7 @@ export async function recordBackendCommandDecision(decision, action) {
 
 function labelForArea(area = "office") {
   const key = String(area || "office").toLowerCase();
-  if (["money", "quotes", "invoices", "integrations"].includes(key)) return "Money";
+  if (["money", "quotes", "invoices", "integrations", "accounting"].includes(key)) return "Money";
   if (["work", "schedule"].includes(key)) return "Work";
   if (["clients", "messages"].includes(key)) return "Client";
   if (["staff", "worker", "payroll"].includes(key)) return "Staff";
