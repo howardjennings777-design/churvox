@@ -4,6 +4,7 @@ import asyncio
 import os
 from types import SimpleNamespace
 
+from backend import churvox_hq_paid_launch_filter_patch as filter_patch
 from backend import churvox_hq_paid_launch_report_patch as patch
 
 
@@ -94,6 +95,7 @@ async def main():
     os.environ.pop("STRIPE_SECRET_KEY", None)
     patch.INSTALLED.clear()
     patch.CACHE.update({"at": None, "signature": "", "value": None})
+    filter_patch.install()
 
     users = [
         {"_id": "owner", "email": "hello@churvox.com", "role": "platform_owner", "business_name": "Churvox"},
@@ -128,6 +130,8 @@ async def main():
     endpoint = endpoint_for(app, "/api/admin/owner/paid-launch-report")
     report = await endpoint(FakeRequest({"email": "hello@churvox.com", "role": "platform_owner"}))
 
+    assert filter_patch.is_internal_record({"email": "tester@customer.nz", "business_name": "Tester Customer"}) is False
+    assert filter_patch.is_internal_record({"email": "test@example.com", "business_name": "Demo Business"}) is True
     assert report["success"] is True
     assert report["source"] == "live_database_and_stripe_v1"
     assert report["truth"]["sample_records_included"] is False
@@ -142,6 +146,7 @@ async def main():
     assert report["billing"]["estimated_mrr_nzd"] == 89
     assert len(report["billing"]["verified_paid_users"]) == 1
     assert report["billing"]["verified_paid_users"][0]["email"] == "paid@customer.nz"
+    assert report["billing"]["tester_users"][0]["email"] == "tester@customer.nz"
     assert report["billing"]["needs_verification"][0]["email"] == "unverified@customer.nz"
     assert all(row["email"] != "sample@example.com" for row in report["billing"]["verified_paid_users"])
     assert report["collections"]["counts"]["jobs"] == 1
@@ -155,7 +160,7 @@ async def main():
     else:
         raise AssertionError("Non-platform owner reached paid launch HQ report")
 
-    print("HQ paid launch behavior passed: verified billing, internal filtering, database counts and owner lock.")
+    print("HQ paid launch behavior passed: verified billing, tester visibility, internal filtering, database counts and owner lock.")
 
 
 if __name__ == "__main__":
