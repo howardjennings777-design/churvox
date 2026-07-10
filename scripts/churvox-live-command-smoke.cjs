@@ -3,6 +3,8 @@
 const DEFAULT_BASE = 'https://grassley-backend.onrender.com';
 const EXPECTED_MARKER = 'command-live-smoke-guard-20260710e';
 const EXPECTED_HUMAN_MIMIC = 'human-mimic-intelligence-v2';
+const EXPECTED_GUARD = 'human-mimic-scan-guard-v2';
+const EXPECTED_OWNER_SHELL = 'owner-vision-shell-v1';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
 
 const getEndpoints = [
@@ -46,14 +48,23 @@ async function checkHumanMimicMarker() {
   const response = await fetch(`${base}${endpoint}`, { method: 'GET', headers: { Accept: 'application/json' } });
   const { text, body } = await readJson(response);
   const version = body && typeof body === 'object' ? String(body.version || '') : '';
+  const guard = body && typeof body === 'object' ? String(body.guard || '') : '';
+  const ownerShell = body && typeof body === 'object' ? String(body.owner_shell || '') : '';
   const roles = body && Array.isArray(body.roles) ? body.roles : [];
   const safety = body && typeof body === 'object' ? String(body.safety || '') : '';
-  if (response.status === 200 && version === EXPECTED_HUMAN_MIMIC && roles.length === 8 && safety.includes('Nothing was sent, synced, charged or changed')) {
-    console.log(`✓ human mimic build present (${version}, ${roles.length} roles)`);
+  if (
+    response.status === 200
+    && version === EXPECTED_HUMAN_MIMIC
+    && guard === EXPECTED_GUARD
+    && ownerShell === EXPECTED_OWNER_SHELL
+    && roles.length === 8
+    && safety.includes('Nothing was sent, synced, charged or changed')
+  ) {
+    console.log(`✓ human mimic build present (${version}, ${guard}, ${ownerShell}, ${roles.length} roles)`);
     return true;
   }
-  failures.push(`${endpoint} missing or stale. Expected ${EXPECTED_HUMAN_MIMIC} with 8 roles, got status ${response.status}: ${text.slice(0, 200)}`);
-  console.log('✗ human mimic build missing or stale');
+  failures.push(`${endpoint} missing or stale. Expected ${EXPECTED_HUMAN_MIMIC}, ${EXPECTED_GUARD}, ${EXPECTED_OWNER_SHELL} and 8 roles; got status ${response.status}: ${text.slice(0, 240)}`);
+  console.log('✗ human mimic/vision build missing or stale');
   return false;
 }
 
@@ -139,7 +150,7 @@ async function checkProtectedPost(endpoint) {
 
   if (!wrapperOk || !mimicOk) {
     console.error('\nLive Command smoke failed before route checks:');
-    console.error('- Redeploy grassley-backend to the latest main commit, then rerun this test. The wrapper and human mimic markers must both pass.');
+    console.error('- Redeploy grassley-backend and the frontend to the latest main commit, then rerun this test. The wrapper, guard and owner-shell markers must pass.');
     for (const failure of failures) console.error(`- ${failure}`);
     process.exit(1);
   }
@@ -163,5 +174,5 @@ async function checkProtectedPost(endpoint) {
     process.exit(1);
   }
 
-  console.log('\nLive Command smoke passed. Human mimic v2 and protected Command routes are deployed, and no unsafe action was triggered.');
+  console.log('\nLive Command smoke passed. The guarded office engine, owner vision shell and protected Command routes are deployed, and no unsafe action was triggered.');
 })();
