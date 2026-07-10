@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./OfficeTeamExtraScreens.css";
 import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import OfficeTeamWorkForms from "./OfficeTeamWorkForms";
+import OfficeTeamXeroScreen from "./OfficeTeamXeroScreen";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const quoteRows = [
@@ -18,39 +19,55 @@ const invoiceRows = [
   ["Xero-ready", "End of week pack", "4 invoices", "Sync locked until owner approval"],
 ];
 
-const integrationRows = [
-  ["Xero", "Connected", "Draft invoice sync ready", "Owner approval required before sync"],
-  ["MYOB", "Export ready", "CSV / bookkeeper pack", "No auto-send"],
-  ["Email", "Prepared only", "Drafts and reminders", "Owner sends"],
-  ["SMS", "Coming soon", "Quick messages", "Disabled until enabled"],
-];
-
-const helpRows = [
-  ["Getting started", "Set up your business words", "Choose jobs, bookings, visits or appointments"],
-  ["Command", "Approve decisions", "Nothing sends until owner approval"],
-  ["Staff", "Worker updates", "Staff update work, owner checks decisions"],
-  ["Money", "Invoices and sync", "Draft first, approve second"],
-];
-
 export function QuotesScreen(props) {
   return <ExtraScreen area="quotes" eyebrow="Quotes" title="Quote desk" text="Create, edit, import and prepare quote drafts. Owner approval comes before sending or converting." rows={quoteRows} primary="Prepare quote" secondary="Review follow-up" {...props} />;
 }
 
 export function InvoicesScreen(props) {
-  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Create invoice drafts from work, review extras, import rows and hold sending/syncing until approval." rows={invoiceRows} primary="Prepare invoice" secondary="Review export" {...props} />;
+  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Create invoice drafts from work, review extras, import rows and hold sending or syncing until approval." rows={invoiceRows} primary="Prepare invoice" secondary="Review overdue follow-up" {...props} />;
 }
 
-export function IntegrationsScreen(props) {
-  return <ExtraScreen area="integrations" eyebrow="Integrations" title="Accounting, email and future tools" text="Prepare Xero/MYOB/export checks. Nothing syncs or sends until owner approval." rows={integrationRows} primary="Prepare sync check" secondary="Review files" {...props} />;
+export function IntegrationsScreen() {
+  return <OfficeTeamXeroScreen />;
 }
 
-export function HelpScreen(props) {
-  return <ExtraScreen eyebrow="Help" title="Owner guide" text="Help explains the Churvox way: staff update work, Churvox prepares admin, owner approves decisions." rows={helpRows} primary="Prepare guide note" secondary="Review support note" {...props} forceFallback hideForms />;
+export function HelpScreen() {
+  const guides = [
+    ["Start here", "Today", "See the live business overview and what needs your attention.", "today"],
+    ["Approve work", "Command", "Open evidence-backed slips, edit the prepared form and approve only what is right.", "command"],
+    ["Set up work", "Jobs and clients", "Add or import records through working forms that prepare Command slips first.", "work"],
+    ["Worker flow", "Workers", "Check worker updates here; workers use their own simple phone route.", "worker"],
+    ["Accounting", "Xero", "Connect Xero, check accounting health and prepare draft-sync approval.", "integrations"],
+    ["Safety trail", "Activity", "See what was prepared, what the owner approved and what remains waiting.", "activity"],
+  ];
+  return (
+    <section className="cvSiteScreen cvOwnerHelp">
+      <header className="cvSiteScreenHeader">
+        <span>Help</span>
+        <h2>Use Churvox without guessing</h2>
+        <p>Every help choice below opens a real owner page. Churvox prepares the admin, Command holds the decision, and the owner stays in control.</p>
+      </header>
+      <div className="cvOwnerHelpGrid">
+        {guides.map(([eyebrow, title, text, screen]) => (
+          <button key={screen} type="button" onClick={() => goToScreen(screen)}>
+            <span>{eyebrow}</span>
+            <strong>{title}</strong>
+            <p>{text}</p>
+            <small>Open {title}</small>
+          </button>
+        ))}
+      </div>
+      <section className="cvOwnerHelpSupport">
+        <div><span>Need a person?</span><h3>Contact Churvox support</h3><p>Tell us what page you were on, what you clicked and what you expected to happen.</p></div>
+        <a href="mailto:hello@churvox.com?subject=Churvox%20support">Email hello@churvox.com</a>
+      </section>
+    </section>
+  );
 }
 
-function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab", forceFallback = false, hideForms = false }) {
+function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab" }) {
   const ownerRoute = isOwnerRoute();
-  const allowFallback = forceFallback || (appMode !== "owner" && !ownerRoute);
+  const allowFallback = appMode !== "owner" && !ownerRoute;
   const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found yet." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
@@ -68,7 +85,7 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, app
       <div className="cvExtraLayout">
         <section className="cvExtraCards">
           {hasRows ? displayRows.map((row) => (
-            <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)}>
+            <button key={rowKey(row)} type="button" className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)}>
               <span>{row[0]}</span>
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
@@ -86,13 +103,20 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, app
             <article><b>Auto-send</b><small>Off</small></article>
             <article><b>Auto-sync</b><small>Off</small></article>
           </div>
-          {hasRows ? <OfficeTeamSafeControls area={area || eyebrow} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "Nothing needs owner approval here right now. Add or import a draft below when needed." : "Live records will appear here when there is something real for the owner to review."}</p></article>}
+          {hasRows ? <OfficeTeamSafeControls area={area} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "Nothing needs owner approval here right now. Add or import a draft below when needed." : "Live records will appear here when there is something real for the owner to review."}</p></article>}
         </aside>
       </div>
 
-      {!hideForms ? <OfficeTeamWorkForms area={area || eyebrow.toLowerCase()} title={eyebrow} selectedRecord={current} /> : null}
+      <OfficeTeamWorkForms area={area} title={eyebrow} selectedRecord={current} />
     </section>
   );
+}
+
+function goToScreen(screen) {
+  const next = String(screen || "today");
+  window.history.pushState(null, "", `${window.location.pathname}${window.location.search}#${next}`);
+  window.dispatchEvent(new HashChangeEvent("hashchange"));
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function isOwnerRoute() {
