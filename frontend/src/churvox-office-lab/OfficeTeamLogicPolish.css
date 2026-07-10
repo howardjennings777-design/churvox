@@ -1,0 +1,249 @@
+.cvSiteTopbar {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.cvSiteLogout {
+  flex: 0 0 auto;
+  min-height: 42px;
+  border: 1px solid rgba(255,248,237,.22) !important;
+  border-radius: 15px !important;
+  padding: 0 14px !important;
+  color: #fff8ed !important;
+  background: rgba(23,18,14,.34) !important;
+  font-size: .72rem !important;
+  font-weight: 1000 !important;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.cvSiteLogout:hover {
+  color: #17120e !important;
+  background: #fff8ed !important;
+}
+
+.cvSiteCommandLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.cvSiteDecisionCard.selected {
+  border-color: rgba(249,115,22,.48) !important;
+  box-shadow: 0 20px 48px rgba(249,115,22,.13), inset 0 1px rgba(255,255,255,.7);
+}
+
+.cvSiteDecisionCard footer .openSlip {
+  color: #17120e;
+  border-color: rgba(23,18,14,.16);
+  background: #fff8ed;
+}
+
+.cvCommandSlip {
+  position: sticky;
+  top: 104px;
+  display: grid;
+  gap: 13px;
+  min-height: 470px;
+  padding: 18px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 26px;
+  color: #17120e;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(249,115,22,.16), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,250,242,.88));
+  box-shadow: 0 20px 52px rgba(23,18,14,.08), inset 0 1px rgba(255,255,255,.74);
+}
+
+.cvCommandSlipTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cvCommandSlipTop span,
+.cvCommandSlip > span {
+  color: #9a3412;
+  font-size: .66rem;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cvCommandSlipTop em {
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #fff8ed;
+  background: #17120e;
+  font-size: .65rem;
+  font-style: normal;
+  font-weight: 1000;
+}
+
+.cvCommandSlip h3 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+  line-height: .95;
+  letter-spacing: -.07em;
+}
+
+.cvCommandSlip p {
+  margin: 0;
+  color: #655c52;
+  font-size: .9rem;
+  font-weight: 760;
+  line-height: 1.46;
+}
+
+.cvCommandSlipMeta {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(23,18,14,.045);
+}
+
+.cvCommandSlipMeta b {
+  letter-spacing: -.03em;
+}
+
+.cvCommandSlipMeta small {
+  padding: 7px 8px;
+  border-radius: 999px;
+  color: #7c2d12;
+  background: rgba(249,115,22,.12);
+  font-size: .68rem;
+  font-weight: 950;
+}
+
+.cvCommandSlip dl {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+
+.cvCommandSlip dt {
+  color: #9a3412;
+  font-size: .68rem;
+  font-weight: 1000;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.cvCommandSlip dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 3px;
+  color: #3c332b;
+  font-weight: 800;
+  line-height: 1.42;
+}
+
+.cvCommandSlip dd small {
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #3c332b;
+  background: rgba(23,18,14,.06);
+  font-size: .7rem;
+  font-weight: 950;
+}
+
+.cvCommandSlipSafety {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(5,150,105,.08);
+}
+
+.cvCommandSlipSafety b {
+  width: 100%;
+  color: #065f46;
+  font-size: .72rem;
+  font-weight: 1000;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.cvCommandSlipSafety span {
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #065f46;
+  background: rgba(255,255,255,.72);
+  font-size: .7rem;
+  font-weight: 1000;
+}
+
+.cvCommandSlip footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: auto;
+}
+
+.cvCommandSlip footer button {
+  min-height: 44px;
+  border: 1px solid rgba(23,18,14,.12);
+  border-radius: 14px;
+  color: #17120e;
+  background: rgba(255,255,255,.75);
+  font-weight: 1000;
+}
+
+.cvCommandSlip footer button.primary {
+  color: #fff8ed;
+  background: #17120e;
+}
+
+.cvSiteRoleColumns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cvSiteRoleColumns section:nth-last-child(-n + 2) {
+  border-color: rgba(249,115,22,.16);
+  background: rgba(249,115,22,.08);
+}
+
+.cvSiteRoleColumns section p {
+  margin: 0;
+  color: #655c52;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+@media (max-width: 1120px) {
+  .cvSiteCommandLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .cvCommandSlip {
+    position: static;
+    min-height: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvSiteTopbar {
+    grid-template-columns: 1fr;
+  }
+
+  .cvSiteLogout {
+    width: 100%;
+    min-height: 42px !important;
+  }
+
+  .cvCommandSlipMeta,
+  .cvCommandSlip footer,
+  .cvSiteRoleColumns {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cvCommandSlip {
+    border-radius: 20px;
+  }
+}
