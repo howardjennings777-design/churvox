@@ -2,17 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchOfficeTeamRows } from "./officeTeamApi";
 
 export const OFFICE_OVERVIEW_AREAS = [
-  { area: "work", label: "Work", screen: "work", fallback: "Jobs and bookings" },
+  { area: "work", label: "Jobs", screen: "work", fallback: "Jobs and bookings" },
   { area: "clients", label: "Clients", screen: "clients", fallback: "Client memory" },
   { area: "messages", label: "Messages", screen: "messages", fallback: "Replies and updates" },
   { area: "invoices", label: "Invoices", screen: "invoices", fallback: "Drafts and payments" },
-  { area: "staff", label: "Staff", screen: "staff", fallback: "Workers and timers" },
+  { area: "staff", label: "Workers", screen: "worker", fallback: "Workers and timers" },
   { area: "quotes", label: "Quotes", screen: "quotes", fallback: "Follow-ups and approvals" },
 ];
 
 export function useOfficeTeamOverview(options = {}) {
   const allowFallback = options.allowFallback !== false;
-  const [state, setState] = useState({ source: "demo", areas: [] });
+  const [state, setState] = useState({ source: "empty", areas: [] });
 
   useEffect(() => {
     let mounted = true;
@@ -25,8 +25,8 @@ export function useOfficeTeamOverview(options = {}) {
           return {
             ...item,
             count: rows.length,
-            source: rows.length ? "live" : allowFallback ? result?.source || "demo" : "empty",
-            message: rows.length ? result?.message || "Live read-only" : allowFallback ? result?.message || "Demo structure · safe preview" : "No demo data",
+            source: rows.length ? "live" : allowFallback ? result?.source || "preview" : "empty",
+            message: rows.length ? result?.message || "Live read-only" : allowFallback ? result?.message || "Control preview" : "No live records",
             top: rows[0]?.[1] || (allowFallback ? item.fallback : "No live records"),
             status: rows[0]?.[2] || (allowFallback ? "Prepared-only" : "Clear"),
           };
@@ -34,8 +34,8 @@ export function useOfficeTeamOverview(options = {}) {
           return {
             ...item,
             count: 0,
-            source: allowFallback ? "demo" : "empty",
-            message: allowFallback ? "Demo structure · safe preview" : "No demo data",
+            source: allowFallback ? "preview" : "empty",
+            message: allowFallback ? "Control preview" : "Live check unavailable",
             top: allowFallback ? item.fallback : "No live records",
             status: allowFallback ? "Prepared-only" : "Clear",
           };
@@ -45,7 +45,7 @@ export function useOfficeTeamOverview(options = {}) {
       if (!mounted) return;
       const liveCount = areas.filter((item) => item.source === "live").length;
       setState({
-        source: liveCount ? "live" : allowFallback ? "demo" : "empty",
+        source: liveCount ? "live" : allowFallback ? "preview" : "empty",
         liveCount,
         areas,
       });
@@ -60,8 +60,8 @@ export function useOfficeTeamOverview(options = {}) {
     const areas = state.areas.length ? state.areas : OFFICE_OVERVIEW_AREAS.map((item) => ({
       ...item,
       count: 0,
-      source: allowFallback ? "demo" : "empty",
-      message: allowFallback ? "Demo structure · safe preview" : "No demo data",
+      source: allowFallback ? "preview" : "empty",
+      message: allowFallback ? "Control preview" : "No live records",
       top: allowFallback ? item.fallback : "No live records",
       status: allowFallback ? "Prepared-only" : "Clear",
     }));
@@ -69,7 +69,7 @@ export function useOfficeTeamOverview(options = {}) {
     return {
       ...state,
       areas,
-      label: state.source === "live" ? `${state.liveCount} live areas loaded read-only` : allowFallback ? "Demo structure · safe preview" : "No demo data shown",
+      label: state.source === "live" ? `${state.liveCount} live areas loaded` : allowFallback ? "Control preview" : "Live areas clear",
     };
   }, [allowFallback, state]);
 }
