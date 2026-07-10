@@ -26,8 +26,11 @@ const contact = read('frontend/src/pages/marketing/ExecutiveContactPage.jsx');
 const demo = read('frontend/src/pages/marketing/PublicDemoPage.jsx');
 const industry = read('frontend/src/pages/marketing/IndustryPage.jsx');
 const request = read('frontend/src/pages/public/PublicRequestPage.js');
+const liveRows = read('frontend/src/churvox-office-lab/OfficeTeamLiveRows.js');
+const overview = read('frontend/src/churvox-office-lab/OfficeTeamOverview.js');
 const frontendPackage = JSON.parse(read('frontend/package.json'));
 const browserTest = read('frontend/tests/e2e/churvox-public-honesty-and-function.spec.js');
+const ownerTruthTest = read('frontend/tests/e2e/churvox-owner-no-fake-data.spec.js');
 
 const publicPages = [
   ['home', home, 'CHURVOX_PUBLIC_ADMIN_ENGINE_20260710'],
@@ -159,6 +162,35 @@ expect(
 );
 
 expect(
+  'sample rows are restricted to explicit preview routes',
+  [
+    'export function isOfficeTeamPreviewRoute()',
+    'path === "/office-team-lab"',
+    'path === "/office-lab"',
+    'path === "/new-command-lab"',
+    'options.allowFallback === true',
+    'isOfficeTeamPreviewRoute()',
+    'const previewFallback = isOfficeTeamPreviewRoute()',
+    '|| ["", "No live record selected", "Clear", "No live records found yet."]',
+    'message: allowFallback ? "Example preview records" : "Live records unavailable"',
+  ].every((value) => liveRows.includes(value))
+    && !liveRows.includes('const allowFallback = options.allowFallback !== false;'),
+  'The authenticated dashboard must never inherit starter rows or selected fallback records',
+);
+
+expect(
+  'overview uses truthful loading, empty and unavailable states',
+  overview.includes('import { isOfficeTeamPreviewRoute } from "./OfficeTeamLiveRows"')
+    && overview.includes('options.allowFallback === true')
+    && overview.includes('isOfficeTeamPreviewRoute()')
+    && overview.includes('"Checking live records"')
+    && overview.includes('"No live records"')
+    && overview.includes('"Live check unavailable"')
+    && !overview.includes('const allowFallback = options.allowFallback !== false;'),
+  'Today/overview must not replace an empty or failed live read with sample business activity',
+);
+
+expect(
   'public CSS contains premium desktop and mobile systems',
   [
     '.cp26Topbar',
@@ -183,17 +215,20 @@ expect(
 );
 
 expect(
-  'full public browser test is wired into desktop and mobile launch gates',
+  'all full UI gates run app, public and live-owner truth tests',
   ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile'].every((name) => {
     const command = String(frontendPackage.scripts?.[name] || '');
     return command.includes('churvox-full-ui-logic-buttons.spec.js')
-      && command.includes('churvox-public-honesty-and-function.spec.js');
+      && command.includes('churvox-public-honesty-and-function.spec.js')
+      && command.includes('churvox-owner-no-fake-data.spec.js');
   }),
-  'Every full UI gate must run both owner-app and complete public-site browser tests',
+  'Every full UI gate must test controls, the complete public site and an empty authenticated business',
 );
 
 let browserSyntaxOk = true;
+let ownerTruthSyntaxOk = true;
 try { new Function(browserTest); } catch { browserSyntaxOk = false; }
+try { new Function(ownerTruthTest); } catch { ownerTruthSyntaxOk = false; }
 expect(
   'public browser test covers routes, links, examples, delayed runtimes and real request submission',
   browserSyntaxOk
@@ -208,14 +243,26 @@ expect(
   'The complete public test must not be skipped, focused or limited to a few landing pages',
 );
 
+expect(
+  'authenticated empty-business test rejects sample and injected data',
+  ownerTruthSyntaxOk
+    && ownerTruthTest.includes("const OWNER_SCREENS = [")
+    && ownerTruthTest.includes("await page.goto(`/dashboard#${screen}`")
+    && ownerTruthTest.includes('FORBIDDEN_SAMPLE_COPY')
+    && ownerTruthTest.includes('OLD_INJECTED_UI')
+    && ownerTruthTest.includes('empty live business never receives preview or fallback records')
+    && !/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(ownerTruthTest),
+  'A mocked active owner with zero records must see truthful empty states on every major dashboard screen',
+);
+
 for (const check of checks) {
   console.log(`${check.ok ? '✓' : '✗'} ${check.name}${check.ok ? '' : ` — ${check.detail}`}`);
   if (!check.ok) failures.push(`${check.name}: ${check.detail}`);
 }
 
 if (failures.length) {
-  console.error(`\nPublic site audit failed: ${failures.length} issue(s).`);
+  console.error(`\nPublic/site truth audit failed: ${failures.length} issue(s).`);
   process.exit(1);
 }
 
-console.log(`\nPublic site audit passed: ${checks.length} checks across routes, pricing, forms, examples, claims and browser coverage.`);
+console.log(`\nPublic/site truth audit passed: ${checks.length} checks across routes, pricing, forms, examples, claims and live owner data.`);
