@@ -273,4 +273,20 @@
   .cvChurvoxLogin .password-row {
     grid-template-columns: 1fr !important;
   }
+
+  .cvChurvoxLogin .cvPublicAuthBottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 2px;
+  }
+
+  .cvChurvoxLogin .cvPublicAuthBottom a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 8px;
+    touch-action: manipulation;
+  }
 }
