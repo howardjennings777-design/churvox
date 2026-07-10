@@ -85,13 +85,24 @@ expect(
 );
 
 expect(
+  'approval executor is idempotent and keeps memory drafts separate',
+  includesAll(applyRoutes, [
+    'slip.get("status") == "approved_applied"',
+    '"idempotent": True',
+    'return "client_memory_reviews", "client_memory_review"',
+  ]),
+  'Repeated approvals must not create duplicate drafts and client memory must not create duplicate clients',
+);
+
+expect(
   'non-approval directions remain record-only',
   includesAll(applyRoutes, [
-    'if any(word in text for word in ["park", "ignore", "snooze", "ask", "edit", "review later", "later"]):',
+    'def should_apply(action):',
+    '"park"', '"ignore"', '"snooze"', '"ask"', '"edit"', '"review later"', '"later"', '"call"', '"handle personally"', '"clear anyway"',
     'return False',
     'execution = {"applied": False, "message": RECORD_ONLY_RESULT}',
   ]),
-  'ask, park, edit and later actions must not create or change business drafts',
+  'ask, park, edit, later, call and owner-handle actions must not create or change business drafts',
 );
 
 expect(
