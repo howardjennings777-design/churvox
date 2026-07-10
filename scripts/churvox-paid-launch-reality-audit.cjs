@@ -110,8 +110,10 @@ check(
     && installer.includes('install_paid_launch_report(module)')
     && installer.includes('install_paid_launch_postguard(module)')
     && installer.indexOf('install_paid_launch_filter(module)') < installer.indexOf('install_paid_launch_report(module)')
-    && installer.indexOf('install_paid_launch_report(module)') < installer.indexOf('install_paid_launch_postguard(module)'),
-  'Render startup must install the full real-data chain in the correct order',
+    && installer.indexOf('install_paid_launch_report(module)') < installer.indexOf('install_paid_launch_postguard(module)')
+    && installer.includes('paid_launch_endpoint.__annotations__["request"] = Request')
+    && installer.includes('app.add_api_route(paid_launch_path, paid_launch_endpoint, methods=["GET"])'),
+  'Render startup must install the full real-data chain in order and preserve FastAPI Request injection so HQ does not return 422',
 );
 
 check(
