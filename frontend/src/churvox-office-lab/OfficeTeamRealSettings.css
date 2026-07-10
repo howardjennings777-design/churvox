@@ -1,0 +1,192 @@
+.cvRealSettingsStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(23,18,14,.09);
+  border-radius: 18px;
+  background: rgba(255,252,246,.84);
+}
+
+.cvRealSettingsStatus div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.cvRealSettingsStatus strong {
+  color: #17120e;
+  font-size: .9rem;
+}
+
+.cvRealSettingsStatus small {
+  color: #655c52;
+  font-size: .76rem;
+  font-weight: 720;
+}
+
+.cvRealSettingsStatus button,
+.cvRealSettingsActions button {
+  min-height: 42px;
+  border: 1px solid rgba(23,18,14,.16);
+  border-radius: 13px;
+  padding: 0 15px;
+  color: #17120e;
+  background: #fff;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cvRealSettingsActions button.primary {
+  color: #fff8ed;
+  border-color: #17120e;
+  background: linear-gradient(135deg, #17120e, #4a3324 62%, #ea580c);
+}
+
+.cvRealSettingsStatus button:disabled,
+.cvRealSettingsActions button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.cvRealSettingsForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.cvRealSettingsForm label {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.cvRealSettingsForm label.wide {
+  grid-column: 1 / -1;
+}
+
+.cvRealSettingsForm label > span,
+.cvRealIndustryPicker > span {
+  color: #9a3412;
+  font-size: .65rem;
+  font-weight: 1000;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.cvRealSettingsForm input,
+.cvRealSettingsForm textarea,
+.cvRealSettingsForm select,
+.cvRealIndustryPicker select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(23,18,14,.17);
+  border-radius: 14px;
+  padding: 11px 13px;
+  color: #17120e;
+  background: rgba(255,255,255,.92);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 780;
+  outline: none;
+}
+
+.cvRealSettingsForm textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.cvRealSettingsForm input:focus,
+.cvRealSettingsForm textarea:focus,
+.cvRealSettingsForm select:focus,
+.cvRealIndustryPicker select:focus {
+  border-color: rgba(234,88,12,.7);
+  box-shadow: 0 0 0 4px rgba(249,115,22,.11);
+}
+
+.cvRealIndustryPicker {
+  display: grid;
+  gap: 9px;
+}
+
+.cvRealIndustrySummary {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 13px;
+  border-radius: 15px;
+  background: rgba(249,115,22,.08);
+}
+
+.cvRealIndustrySummary strong,
+.cvRealIndustrySummary p {
+  margin: 0;
+}
+
+.cvRealIndustrySummary p {
+  color: #655c52;
+  font-size: .79rem;
+  line-height: 1.48;
+  font-weight: 700;
+}
+
+.cvFixedGuardrails {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvFixedGuardrails article {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 13px;
+  border: 1px solid rgba(22,101,52,.15);
+  border-radius: 15px;
+  background: rgba(240,253,244,.72);
+}
+
+.cvFixedGuardrails strong {
+  color: #14532d;
+  font-size: .78rem;
+}
+
+.cvFixedGuardrails small {
+  color: #52665a;
+  font-size: .7rem;
+  font-weight: 720;
+  line-height: 1.4;
+}
+
+.cvRealSettingsActions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+@media (max-width: 760px) {
+  .cvRealSettingsStatus,
+  .cvRealSettingsActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cvRealSettingsForm,
+  .cvFixedGuardrails {
+    grid-template-columns: 1fr;
+  }
+
+  .cvRealSettingsForm label.wide {
+    grid-column: auto;
+  }
+
+  .cvRealSettingsActions button,
+  .cvRealSettingsStatus button {
+    width: 100%;
+  }
+}
