@@ -42,6 +42,7 @@ const guard = read('backend/churvox_command_human_mimic_guard_routes.py');
 const marker = read('backend/churvox_command_human_mimic_marker_routes.py');
 const apply = read('backend/churvox_command_apply_routes.py');
 const autoload = read('backend/usercustomize.py');
+const liveInstaller = read('backend/churvox_owner_access_safety_patch.py');
 const site = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const commandApi = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
 const safeControls = read('frontend/src/churvox-office-lab/OfficeTeamSafeControls.jsx');
@@ -73,12 +74,22 @@ expect(
 );
 
 expect(
-  'guarded scan owns the route before older engines',
+  'guarded scan owns the live route before older engines',
   all(autoload, ['build_command_human_mimic_guard_router', 'build_command_human_mimic_router', 'build_command_mimic_intelligence_router', 'build_command_apply_router'])
     && autoload.indexOf('build_command_human_mimic_guard_router') < autoload.indexOf('build_command_human_mimic_router')
     && autoload.indexOf('build_command_human_mimic_router') < autoload.indexOf('build_command_mimic_intelligence_router')
-    && autoload.indexOf('build_command_mimic_intelligence_router') < autoload.indexOf('build_command_apply_router'),
-  'The protected human scan must run before compatibility scanners and the executor',
+    && autoload.indexOf('build_command_mimic_intelligence_router') < autoload.indexOf('build_command_apply_router')
+    && all(liveInstaller, [
+      'from churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router',
+      'from churvox_command_human_mimic_guard_routes import build_command_human_mimic_guard_router',
+      'remove_route(app, "/api/command/human-mimic-marker", "GET")',
+      'remove_route(app, "/api/command/human-mimic-marker", "POST")',
+      'remove_route(app, "/api/command/scan", "POST")',
+      'app.include_router(build_command_human_mimic_marker_router(), prefix="/api")',
+      'app.include_router(build_command_human_mimic_guard_router(db, get_current_user, ObjectId), prefix="/api")',
+      'churvox_guarded_human_office_routes_installed',
+    ]),
+  'The Render boot path must directly replace stale marker/scan routes; the indirect Xero hook remains compatibility only',
 );
 
 expect(
