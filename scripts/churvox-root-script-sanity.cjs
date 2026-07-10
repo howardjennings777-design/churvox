@@ -11,7 +11,7 @@ const requiredRootScripts = [
   'build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness', 'test:mimic:full', 'test:mimic:chain',
   'test:hq:behavior', 'test:ui:logic', 'test:public', 'test:route-touch', 'test:paid-launch:reality',
   'test:ui:full', 'test:ui:desktop', 'test:ui:mobile', 'test:prelive:full', 'test:paid-launch:full',
-  'test:live-command', 'test:truth:live', 'test:hq:reality:live', 'test:hq:live-real',
+  'test:paid-launch:live', 'test:live-command', 'test:truth:live', 'test:hq:reality:live', 'test:hq:live-real',
 ];
 
 function readJson(filePath) {
@@ -89,6 +89,7 @@ const exactScripts = {
   'test:paid-launch:reality': 'node scripts/churvox-paid-launch-reality-audit.cjs',
   'test:prelive:full': 'npm run test:readiness && npm run test:ui:full',
   'test:paid-launch:full': 'npm run test:prelive:full',
+  'test:paid-launch:live': 'npm run test:truth:live && npm run test:live-command && npm run test:hq:live-real',
   'test:live-command': 'node scripts/churvox-live-command-smoke.cjs',
   'test:truth:live': 'node scripts/churvox-live-truth-test.cjs',
   'test:hq:reality:live': 'npm --prefix frontend run test:hq:reality:live',
@@ -150,4 +151,4 @@ for (const required of [
   }
 }
 
-console.log('Root script sanity passed. Mimic behavior, HQ backend billing behavior, public site, route/touch safety, paid-launch HQ reality, authenticated live HQ data, UI logic, desktop/mobile gauntlets, readiness, live truth and live smoke are available from the repo root.');
+console.log('Root script sanity passed. Mimic behavior, HQ backend billing behavior, public site, route/touch safety, paid-launch HQ reality, authenticated live HQ data, one-command predeploy/deployed gates, UI logic, desktop/mobile gauntlets, readiness, live truth and live smoke are available from the repo root.');
