@@ -136,6 +136,8 @@ def install(module):
         app.add_api_route(path, endpoint, methods=["GET"])
 
     try:
+        from churvox_hq_paid_launch_filter_patch import install as install_paid_launch_filter
+        install_paid_launch_filter(module)
         from churvox_hq_paid_launch_report_patch import install as install_paid_launch_report
         install_paid_launch_report(module)
     except Exception as exc:
