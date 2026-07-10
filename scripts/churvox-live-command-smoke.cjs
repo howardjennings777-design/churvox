@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const DEFAULT_BASE = 'https://grassley-backend.onrender.com';
-const EXPECTED_MARKER = 'command-live-smoke-guard-20260710d';
+const EXPECTED_MARKER = 'command-live-smoke-guard-20260710e';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
 
 const getEndpoints = [
@@ -126,7 +126,7 @@ async function checkProtectedPost(endpoint) {
 
   if (!markerOk) {
     console.error('\nLive Command smoke failed before route checks:');
-    console.error('- The live backend is not running the latest Command smoke entrypoint build. Redeploy grassley-backend to the latest main commit, then rerun this test.');
+    console.error('- The live backend is not running the latest Command smoke wrapper build. Redeploy grassley-backend to the latest main commit, then rerun this test.');
     for (const failure of failures) console.error(`- ${failure}`);
     process.exit(1);
   }
