@@ -122,6 +122,7 @@ def build_command_human_mimic_guard_router(db, get_current_user, ObjectId):
 
     async def retire_stale_briefs(user_business_id):
         retired_ids = set()
+        current_day = now().date().isoformat()
         for action_type in ["daily_owner_brief", "review_repeated_admin_gap"]:
             query = {
                 "business_id": user_business_id,
@@ -133,8 +134,11 @@ def build_command_human_mimic_guard_router(db, get_current_user, ObjectId):
                 rows = await db.command_slips.find(query).sort("updated_at", -1).limit(30).to_list(30)
             except Exception:
                 rows = []
-            for stale in rows[1:]:
-                if await supersede(stale, "A newer human-mimic briefing replaced this older one. " + SAFE_NOTE):
+            keep_latest = bool(rows and current_day in text(rows[0].get("source_id")))
+            stale_rows = rows[1:] if keep_latest else rows
+            for stale in stale_rows:
+                reason = "A newer human-mimic briefing replaced this older one." if keep_latest else "This daily human-mimic briefing is from an earlier day and no longer represents today’s queue."
+                if await supersede(stale, reason + " " + SAFE_NOTE):
                     retired_ids.add(str(stale.get("_id")))
         return retired_ids
 
