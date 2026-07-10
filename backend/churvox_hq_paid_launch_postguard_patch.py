@@ -80,10 +80,11 @@ def install(module):
         counts = report.setdefault("counts", {})
         truth = report.setdefault("truth", {})
         stripe = billing.get("stripe") or {}
+        stripe_subscriptions = list(stripe.get("active_subscriptions") or [])
 
         active_by_id = {
             _text(item.get("subscription_id")): _low(item.get("status"))
-            for item in stripe.get("active_subscriptions") or []
+            for item in stripe_subscriptions
             if _text(item.get("subscription_id"))
         }
         candidate_paid = list(billing.get("verified_paid_users") or [])
@@ -104,11 +105,25 @@ def install(module):
         ]
         needs_verification = _dedupe(existing_unverified + rejected_candidates)
 
+        paid_mrr_by_currency = {}
+        for item in stripe_subscriptions:
+            if _low(item.get("status")) != "active":
+                continue
+            for currency, amount in (item.get("mrr_by_currency") or {}).items():
+                key = _low(currency) or "unknown"
+                try:
+                    paid_mrr_by_currency[key] = paid_mrr_by_currency.get(key, 0.0) + float(amount or 0)
+                except Exception:
+                    continue
+        paid_mrr_by_currency = {key: round(value, 2) for key, value in paid_mrr_by_currency.items()}
+        stripe["paid_mrr_by_currency"] = paid_mrr_by_currency
+
         billing["verified_paid_users"] = confirmed_paid
         billing["verified_trial_users"] = confirmed_trials
         billing["needs_verification"] = needs_verification
         billing["subscription_candidates_checked"] = len(candidate_paid) + len(candidate_trials)
         billing["stripe_confirmed_subscriptions"] = len(confirmed_paid) + len(confirmed_trials)
+        billing["actual_mrr_nzd"] = paid_mrr_by_currency.get("nzd") if stripe.get("available") is True else None
         billing["estimated_mrr_nzd"] = round(sum(
             PLAN_MONTHLY_NZD.get(_low(row.get("plan")), 0)
             for row in confirmed_paid
@@ -126,6 +141,7 @@ def install(module):
         truth.update({
             "paid_definition": "stripe_subscription_status_active",
             "trial_definition": "stripe_subscription_status_trialing",
+            "mrr_definition": "active_stripe_subscription_price_items_only",
             "subscription_id_alone_is_not_paid": True,
             "postguard": "paid_launch_stripe_confirmation_v1",
         })
