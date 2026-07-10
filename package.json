@@ -15,7 +15,7 @@
     "test:public": "node scripts/churvox-public-site-audit.cjs",
     "test:route-touch": "node scripts/churvox-route-touch-regression-audit.cjs",
     "test:paid-launch:reality": "node scripts/churvox-paid-launch-reality-audit.cjs",
-    "test:hardcore:logic": "node scripts/churvox-hardcore-owner-worker-audit.cjs",
+    "test:hardcore:logic": "node scripts/churvox-hardcore-owner-worker-audit-runner.cjs",
     "test:hardcore:live": "node scripts/churvox-hardcore-owner-worker.cjs",
     "test:hardcore:mutate": "CHURVOX_HARDCORE_MUTATE=I_UNDERSTAND_LIVE_DATA_WILL_CHANGE node scripts/churvox-hardcore-owner-worker.cjs",
     "test:hardcore:all": "npm run test:hardcore:logic && npm run test:hardcore:live",
