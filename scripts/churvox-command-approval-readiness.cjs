@@ -33,7 +33,7 @@ expect(
     'commandResult?.result?.execution?.applied',
     'commandResult?.safety',
     'owner-approved internal draft',
-    'Open the full slip to edit and record the owner decision',
+    'Open the full slip to inspect the evidence and prepared form',
   ]),
   'OfficeTeamLabSite must submit the edited form and truthfully distinguish an applied draft from a record-only direction',
 );
