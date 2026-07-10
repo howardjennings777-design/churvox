@@ -5,6 +5,8 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const checks = [];
+const PLATFORM_OWNER_EMAIL = 'hello@churvox.com';
+const OLD_OWNER_EMAILS = /howardjennings77@gmail\.com|howardjennings777@gmail\.com/;
 
 function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
@@ -33,6 +35,10 @@ function includesAll(text, needles) {
 
 function hasAny(text, needles) {
   return needles.some((needle) => text.includes(needle));
+}
+
+function hasOwnerConstant(text) {
+  return text.includes(`PLATFORM_OWNER_EMAIL = "${PLATFORM_OWNER_EMAIL}"`);
 }
 
 const rootPackage = json('package.json');
@@ -111,12 +117,12 @@ expect('root script sanity is exposed', rootScripts['test:root-scripts'] === 'no
 expect('frontend office lab script exists', Boolean(frontendScripts['test:office-lab']), 'frontend test:office-lab missing');
 expect('frontend route safety script exists', Boolean(frontendScripts['test:rebuild:routes']), 'frontend test:rebuild:routes missing');
 
-expect('platform owner redirect is one email only', includesAll(app, ['const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'return email === PLATFORM_OWNER_EMAIL']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(app), 'App.js platform owner redirect allows non-email admin access');
-expect('platform admin route is one email only', includesAll(platformAdminRoute, ['const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'return userEmail === PLATFORM_OWNER_EMAIL']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(platformAdminRoute), 'PlatformAdminRoute allows non-email admin access');
-expect('login platform-owner redirect is one email only', includesAll(loginPage, ['const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'const isPlatformOwner = email === PLATFORM_OWNER_EMAIL']) && !/hello@churvox\.com|howardjennings777@gmail\.com|is_platform_owner|is_admin/.test(loginPage), 'LoginPage platform owner redirect allows non-email admin access');
-expect('HQ extra owner patch is one email only', includesAll(hqExtraOwnerPatch, ['PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'return email == PLATFORM_OWNER_EMAIL']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqExtraOwnerPatch), 'extra HQ owner patch allows non-email admin access');
-expect('HQ owner APIs are one email only', includesAll(hqOwnerAccessPatch, ['PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'return {PLATFORM_OWNER_EMAIL}', 'Churvox HQ is locked to']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqOwnerAccessPatch), 'HQ owner APIs allow non-email admin access');
-expect('HQ growth API is one email only', includesAll(hqGrowthPatch, ['PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"', 'Churvox HQ growth report is locked to howardjennings77@gmail.com']) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqGrowthPatch), 'HQ growth report allows non-email admin access');
+expect('platform owner redirect uses hello email only', hasOwnerConstant(app) && app.includes('return email === PLATFORM_OWNER_EMAIL') && !OLD_OWNER_EMAILS.test(app) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(app), 'App.js platform owner redirect allows wrong owner access');
+expect('platform admin route uses hello email only', hasOwnerConstant(platformAdminRoute) && platformAdminRoute.includes('return userEmail === PLATFORM_OWNER_EMAIL') && !OLD_OWNER_EMAILS.test(platformAdminRoute) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(platformAdminRoute), 'PlatformAdminRoute allows wrong owner access');
+expect('login platform-owner redirect uses hello email only', hasOwnerConstant(loginPage) && loginPage.includes('const isPlatformOwner = email === PLATFORM_OWNER_EMAIL') && !OLD_OWNER_EMAILS.test(loginPage) && !/is_platform_owner|is_admin/.test(loginPage), 'LoginPage platform owner redirect allows wrong owner access');
+expect('HQ extra owner patch uses hello email only', hasOwnerConstant(hqExtraOwnerPatch) && hqExtraOwnerPatch.includes('return email == PLATFORM_OWNER_EMAIL') && !OLD_OWNER_EMAILS.test(hqExtraOwnerPatch) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqExtraOwnerPatch), 'extra HQ owner patch allows wrong owner access');
+expect('HQ owner APIs use hello email only', hasOwnerConstant(hqOwnerAccessPatch) && hqOwnerAccessPatch.includes('return {PLATFORM_OWNER_EMAIL}') && hqOwnerAccessPatch.includes('Churvox HQ is locked to') && !OLD_OWNER_EMAILS.test(hqOwnerAccessPatch) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqOwnerAccessPatch), 'HQ owner APIs allow wrong owner access');
+expect('HQ growth API uses hello email only', hasOwnerConstant(hqGrowthPatch) && hqGrowthPatch.includes('Churvox HQ growth report is locked to') && !OLD_OWNER_EMAILS.test(hqGrowthPatch) && !/platform_admin|super_admin|is_platform_admin|is_super_admin|is_admin/.test(hqGrowthPatch), 'HQ growth report allows wrong owner access');
 
 expect('hidden lab route remains available', app.includes('path="/office-team-lab"') && app.includes('<OfficeTeamLab />'), 'hidden lab route missing');
 expect('owner dashboard uses new office app under auth', app.includes('const OwnerOfficeApp = () => <OfficeTeamLab appMode="owner" />') && app.includes('path="/dashboard"') && app.includes('<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>'), 'dashboard not wired to owner office app under FreshBusinessRoute');
