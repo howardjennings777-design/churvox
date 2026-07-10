@@ -50,7 +50,7 @@ export function BrandingScreen(props) {
 function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab", forceFallback = false }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = forceFallback || (appMode !== "owner" && !ownerRoute);
-  const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found. No demo rows are shown in the owner app." });
+  const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found yet." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
   const hasRows = displayRows.length > 0;
@@ -72,7 +72,7 @@ function BackOfficeScreen({ area, eyebrow, title, text, rows, primary, secondary
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
             </button>
-          )) : <article className="cvSiteEmpty"><strong>No {eyebrow.toLowerCase()} records yet</strong><p>{ownerRoute ? "This area is clear. Churvox will bring items here when they need owner review." : "No demo rows are shown inside the real owner app."}</p></article>}
+          )) : <article className="cvSiteEmpty"><strong>No {eyebrow.toLowerCase()} records yet</strong><p>{ownerRoute ? "This area is clear. Churvox will bring items here when they need owner review." : "This area will fill when there is live work to review."}</p></article>}
         </section>
 
         <aside className="cvBackOfficeDetail">
