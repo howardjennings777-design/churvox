@@ -70,7 +70,7 @@ export default function OfficeTeamInvoicesWorkspace({ appMode = "lab" }) {
                 <span><em className={invoiceBucket(row)}>{row[0]}</em></span>
                 <strong>{row[1]}</strong>
                 <b>{row[2]}</b>
-                <small>{row[3]}</small>
+                <small>{invoiceDetail(row, rows)}</small>
               </button>
             )) : <Empty title={rows.length ? "No invoices in this filter" : "No invoices yet"} text={rows.length ? "Choose another ledger filter." : ownerRoute ? "Create or import the first invoice draft below." : "Live invoices will appear here."} />}
           </div>
@@ -82,7 +82,7 @@ export default function OfficeTeamInvoicesWorkspace({ appMode = "lab" }) {
               <div className="cvInvoiceSelectedTop"><span>Selected invoice</span><em className={invoiceBucket(current)}>{current[0]}</em></div>
               <h3>{current[1]}</h3>
               <strong className="cvInvoiceSelectedValue">{current[2] || "Value not found"}</strong>
-              <p>{current[3] || "No live detail found"}</p>
+              <p>{invoiceDetail(current, rows)}</p>
               <dl>
                 <div><dt>Collection state</dt><dd>{collectionState(current)}</dd></div>
                 <div><dt>Reminder rule</dt><dd>{reminderRule(current)}</dd></div>
@@ -112,6 +112,22 @@ function invoiceBucket(row) {
   if (/overdue|late|past due/.test(status)) return "overdue";
   if (/sent|issued|viewed|due|xero-ready/.test(status)) return "sent";
   return "draft";
+}
+
+function invoiceDetail(row, rows = []) {
+  const detail = String(row?.[3] || "").trim();
+  const title = String(row?.[1] || "This invoice").trim();
+  const normalized = detail.toLowerCase().replace(/\s+/g, " ");
+  const duplicateCount = detail
+    ? rows.filter((candidate) => String(candidate?.[3] || "").trim().toLowerCase().replace(/\s+/g, " ") === normalized).length
+    : 0;
+
+  if (/invoice created from churvox launch audit/i.test(detail)) {
+    return `${title} · Review this imported invoice record.`;
+  }
+  if (detail && duplicateCount < 2) return detail;
+  if (detail) return `${title} · ${detail}`;
+  return `${title} · ${collectionState(row)}`;
 }
 
 function collectionState(row) {
