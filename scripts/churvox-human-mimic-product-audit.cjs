@@ -137,10 +137,19 @@ expect(
 );
 
 expect(
-  'forms preserve real CSV rows and settings remain truthful',
+  'forms preserve real CSV rows and settings save live backend data',
   all(workForms, ['csv_rows: rows', 'sourcePayload', 'The actual parsed rows stay attached'])
-    && all(settings, ['These controls build a settings draft; they do not silently change live behaviour.', 'Current business behaviour remains unchanged.', 'Prepare settings in Command']),
-  'CSV data must survive approval and proposal-only settings must say they are not live',
+    && all(settings, [
+      'api.get("/logic/business-profile"',
+      'api.get("/industry/profiles"',
+      'api.get("/industry/context"',
+      'api.post("/logic/business-profile"',
+      'api.post("/industry/context"',
+      'Save live business settings',
+      'Core safety cannot be weakened here',
+      'Live settings not confirmed',
+    ]),
+  'CSV data must survive approval and Settings must save authenticated backend profile/industry data with truthful fallback states',
 );
 
 const buttonFiles = [
