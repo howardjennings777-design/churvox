@@ -8,7 +8,7 @@ const frontendPackagePath = path.resolve(__dirname, '..', 'frontend', 'package.j
 const liveTruthPath = path.resolve(__dirname, 'churvox-live-truth-test.cjs');
 const requiredRootScripts = [
   'build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness', 'test:mimic:full', 'test:mimic:chain',
-  'test:ui:logic', 'test:public', 'test:route-touch', 'test:paid-launch:reality',
+  'test:hq:behavior', 'test:ui:logic', 'test:public', 'test:route-touch', 'test:paid-launch:reality',
   'test:ui:full', 'test:ui:desktop', 'test:ui:mobile', 'test:prelive:full', 'test:paid-launch:full',
   'test:live-command', 'test:truth:live', 'test:hq:reality:live',
 ];
@@ -59,6 +59,7 @@ const readiness = String(rootScripts['test:readiness'] || '');
 for (const required of [
   'churvox-root-script-sanity.cjs',
   'churvox-command-python-syntax.cjs',
+  'churvox-hq-paid-launch-behavior.cjs',
   'churvox-mimic-full-test.cjs',
   'churvox-mimic-v3-chain-audit.cjs',
   'churvox-ui-logic-audit.cjs',
@@ -79,6 +80,7 @@ for (const required of [
 const exactScripts = {
   'test:mimic:full': 'node scripts/churvox-mimic-full-test.cjs',
   'test:mimic:chain': 'node scripts/churvox-mimic-v3-chain-audit.cjs',
+  'test:hq:behavior': 'node scripts/churvox-hq-paid-launch-behavior.cjs',
   'test:ui:logic': 'node scripts/churvox-ui-logic-audit.cjs',
   'test:public': 'node scripts/churvox-public-site-audit.cjs',
   'test:route-touch': 'node scripts/churvox-route-touch-regression-audit.cjs',
@@ -130,4 +132,4 @@ if (liveTruth.includes('npm --prefix frontend exec')) {
   process.exit(1);
 }
 
-console.log('Root script sanity passed. Mimic behavior, public site, route/touch safety, paid-launch HQ reality, UI logic, desktop/mobile gauntlets, readiness, live truth and live smoke are available from the repo root.');
+console.log('Root script sanity passed. Mimic behavior, HQ backend billing behavior, public site, route/touch safety, paid-launch HQ reality, UI logic, desktop/mobile gauntlets, readiness, live truth and live smoke are available from the repo root.');
