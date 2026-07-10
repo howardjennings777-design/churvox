@@ -4,18 +4,18 @@ import { fetchOfficeTeamRows } from "./officeTeamApi";
 export function useOfficeTeamRows(area, fallbackRows = [], options = {}) {
   const allowFallback = options.allowFallback !== false;
   const emptyMessage = options.emptyMessage || "No live records found yet";
-  const [state, setState] = useState({ source: "demo", rows: [], message: "Demo structure · safe preview" });
+  const [state, setState] = useState({ source: "starter", rows: [], message: "Starter structure · safe review" });
 
   useEffect(() => {
     let mounted = true;
     fetchOfficeTeamRows(area)
       .then((next) => {
         if (!mounted) return;
-        setState(next || { source: "demo", rows: [], message: "Demo structure · safe preview" });
+        setState(next || { source: "starter", rows: [], message: "Starter structure · safe review" });
       })
       .catch(() => {
         if (!mounted) return;
-        setState({ source: "demo", rows: [], message: "Demo structure · safe preview" });
+        setState({ source: "starter", rows: [], message: "Starter structure · safe review" });
       });
     return () => {
       mounted = false;
@@ -28,12 +28,12 @@ export function useOfficeTeamRows(area, fallbackRows = [], options = {}) {
     const label = liveRows.length
       ? state.message || `Live read-only · ${liveRows.length} records`
       : allowFallback
-        ? state.message || "Demo structure · safe preview"
+        ? state.message || "Starter structure · safe review"
         : emptyMessage;
     return {
       rows,
       label,
-      source: liveRows.length ? "live" : allowFallback ? state.source || "demo" : "empty",
+      source: liveRows.length ? "live" : allowFallback ? state.source || "starter" : "empty",
       endpoint: state.endpoint || "",
       isLive: liveRows.length > 0,
       isFallback: !liveRows.length && allowFallback && fallbackRows.length > 0,
