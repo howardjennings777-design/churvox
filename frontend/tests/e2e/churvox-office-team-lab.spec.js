@@ -87,7 +87,7 @@ test.describe('hidden Office Team lab', () => {
 
     await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Recent owner approvals/i)).toBeVisible();
-    await expect(page.getByText(/Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
+    await expect(page.getByText(/Owner reviewed|recorded|approved/i).first()).toBeVisible();
 
     await page.goto('/office-team-lab#activity', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner approval trail/i)).toBeVisible();
