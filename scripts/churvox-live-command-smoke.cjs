@@ -14,7 +14,7 @@ const postEndpoints = [
   '/api/command/scan',
   '/api/command/worker-payment-request',
   '/api/command/worker-update-request',
-  '/api/command/slips/000000000000000000000000/approve-fields',
+  '/api/command/slips/000000000000000000000000/approve',
 ];
 
 const okStatuses = new Set([200, 401, 403]);
@@ -79,12 +79,12 @@ async function checkProtectedPost(endpoint) {
   const url = `${base}${endpoint}`;
   const isPayment = endpoint.includes('payment');
   const isScan = endpoint.includes('/scan');
-  const isApproval = endpoint.includes('/approve-fields');
+  const isApproval = endpoint.endsWith('/approve');
   const response = await fetch(url, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      title: isPayment ? 'Live smoke worker payment request' : isScan ? 'Live smoke office engine scan' : isApproval ? 'Live smoke Command approval recorder' : 'Live smoke worker update request',
+      title: isPayment ? 'Live smoke worker payment request' : isScan ? 'Live smoke office engine scan' : isApproval ? 'Live smoke Command approval executor' : 'Live smoke worker update request',
       action: isApproval ? 'Approve record' : undefined,
       form_title: isApproval ? 'Live smoke owner approval form' : undefined,
       fields: isApproval ? [{ label: 'Smoke test', value: 'Protected route only' }] : undefined,
@@ -112,7 +112,7 @@ async function checkProtectedPost(endpoint) {
 
   if (response.status === 200 && body && body.success === true) {
     const safety = String(body.safety || body.message || '');
-    if (!safety.includes('Nothing was sent, synced, charged or changed') && !safety.includes('No card was charged') && !safety.includes('Owner approval is required')) {
+    if (!safety.includes('Nothing was sent, synced, charged or changed') && !safety.includes('Nothing was sent, synced, charged or filed') && !safety.includes('No card was charged') && !safety.includes('Owner approval is required')) {
       failures.push(`${endpoint} returned 200 but safety text was missing`);
       console.log(`✗ ${endpoint} returned 200 but safety text was missing`);
       return;
