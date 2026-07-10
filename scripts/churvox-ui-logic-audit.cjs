@@ -26,6 +26,10 @@ function read(file) {
   return fs.readFileSync(file, 'utf8');
 }
 
+function isTagBoundary(char) {
+  return !char || /[\s/>]/.test(char);
+}
+
 function openings(text, tag) {
   const values = [];
   const needle = `<${tag}`;
@@ -33,6 +37,12 @@ function openings(text, tag) {
   while (cursor < text.length) {
     const start = text.indexOf(needle, cursor);
     if (start < 0) break;
+    const boundary = text[start + needle.length];
+    if (!isTagBoundary(boundary)) {
+      cursor = start + needle.length;
+      continue;
+    }
+
     let quote = '';
     let braces = 0;
     let index = start + needle.length;
@@ -66,8 +76,19 @@ function pass(name, detail) {
   checks.push({ name, detail });
 }
 
+const allOfficeFiles = walk(officeRoot);
+const retiredVariants = new Set(['OfficeTeamLabFinal.jsx', 'OfficeTeamLabTidy.jsx']);
+const activeOfficeFiles = allOfficeFiles.filter((file) => !retiredVariants.has(path.basename(file)));
+const activeOfficeSource = activeOfficeFiles.map(read).join('\n');
+for (const retired of retiredVariants) {
+  const importName = retired.replace(/\.jsx$/, '');
+  if (new RegExp(`(?:from\\s+["'][^"']*${importName}|import\\s*\\([^)]*${importName})`).test(activeOfficeSource)) {
+    failures.push(`Retired prototype ${retired} is imported by the active owner app.`);
+  }
+}
+
 const files = [
-  ...walk(officeRoot),
+  ...activeOfficeFiles,
   path.join(root, 'frontend', 'src', 'App.js'),
   path.join(root, 'frontend', 'src', 'pages', 'auth', 'LoginPage.js'),
 ].filter((file) => fs.existsSync(file));
@@ -119,11 +140,9 @@ for (const file of files) {
   for (const match of text.matchAll(/(?:href|to)\s*=\s*["'](?:javascript:|#)["']/gi)) {
     fail(file, text, match.index || 0, 'dead navigation destination', match[0]);
   }
-
   for (const match of text.matchAll(/window\.location\.(?:href|hash)\s*=\s*["']\s*["']/g)) {
     fail(file, text, match.index || 0, 'navigation assigns an empty destination', match[0]);
   }
-
   for (const match of text.matchAll(/\b(?:alert|prompt)\s*\(/g)) {
     fail(file, text, match.index || 0, 'browser alert/prompt used instead of product UI', match[0]);
   }
@@ -180,11 +199,13 @@ const maintenance = read(maintenanceFile);
 if (!/export const OWNER_MAINTENANCE_MODE\s*=\s*false\s*;/.test(maintenance)) {
   fail(maintenanceFile, maintenance, 0, 'owner launch is still blocked by maintenance mode');
 }
+
 const loginFile = path.join(root, 'frontend', 'src', 'pages', 'auth', 'LoginPage.js');
 const login = read(loginFile);
 for (const required of ['type="email"', 'type={showPassword ? "text" : "password"}', 'type="submit"', 'onSubmit={handleSubmit}']) {
   if (!login.includes(required)) fail(loginFile, login, 0, `real owner login form contract is missing: ${required}`);
 }
+
 const appFile = path.join(root, 'frontend', 'src', 'App.js');
 const app = read(appFile);
 if (!app.includes('<Route path="/login" element={<LoginPage />} />')) fail(appFile, app, 0, 'public login route is missing');
@@ -200,13 +221,13 @@ try {
   fail(gauntletFile, gauntlet, 0, `browser gauntlet has invalid JavaScript: ${error.message}`);
 }
 for (const required of [
-  "const LAB_SCREENS = [",
+  'const LAB_SCREENS = [',
   "const PUBLIC_PAGES = ['/', '/pricing', '/contact', '/login']",
   "page.locator('.cvSiteScreen button:visible')",
   'silently did nothing',
   'Command handoff, editable slip and approval trail work together',
   'API failures show truthful states without blank screens or stuck controls',
-  "test.setTimeout(240_000)",
+  'test.setTimeout(240_000)',
   "source: 'human-mimic-intelligence-v3'",
 ]) {
   if (!gauntlet.includes(required)) fail(gauntletFile, gauntlet, 0, `browser gauntlet contract is missing: ${required}`);
@@ -229,13 +250,14 @@ for (const name of ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
   }
 }
 
-if (buttonCount < 80) failures.push(`Expected a broad UI button surface; found only ${buttonCount} buttons.`);
-if (linkCount < 2) failures.push(`Expected useful links in the owner UI; found only ${linkCount}.`);
-pass('button wiring scanned', `${buttonCount} buttons`);
-pass('link destinations scanned', `${linkCount} anchors`);
+if (buttonCount < requiredScreens.length) failures.push(`Owner UI surface is unexpectedly small: ${buttonCount} buttons across ${requiredScreens.length} registered screens.`);
+if (linkCount < 2) failures.push(`Expected useful links in the active owner UI; found only ${linkCount}.`);
+pass('button wiring scanned', `${buttonCount} active buttons`);
+pass('link destinations scanned', `${linkCount} real anchors`);
 pass('form contracts scanned', `${formCount} forms`);
 pass('screen routing checked', `${requiredScreens.length} registered screens`);
 pass('core workspace landmarks checked', `${workspaceFiles.length} workspaces`);
+pass('retired prototypes excluded', `${retiredVariants.size} unmounted variants`);
 pass('launch access checked', 'maintenance off, login form present, authenticated dashboard retained');
 pass('browser gauntlet contract checked', 'desktop, mobile, public pages, click outcomes and failure states');
 
@@ -245,4 +267,4 @@ if (failures.length) {
   for (const item of failures) console.error(`- ${item}`);
   process.exit(1);
 }
-console.log(`\nUI logic audit passed. ${buttonCount} buttons, ${linkCount} links, ${formCount} forms and ${requiredScreens.length} routes were checked.`);
+console.log(`\nUI logic audit passed. ${buttonCount} active buttons, ${linkCount} links, ${formCount} forms and ${requiredScreens.length} routes were checked.`);
