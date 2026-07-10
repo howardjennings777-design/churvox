@@ -138,6 +138,8 @@ def install(module):
     try:
         from churvox_hq_paid_launch_filter_patch import install as install_paid_launch_filter
         install_paid_launch_filter(module)
+        from churvox_hq_stripe_snapshot_patch import install as install_stripe_snapshot
+        install_stripe_snapshot(module)
         from churvox_hq_paid_launch_report_patch import install as install_paid_launch_report
         install_paid_launch_report(module)
         from churvox_hq_paid_launch_postguard_patch import install as install_paid_launch_postguard
