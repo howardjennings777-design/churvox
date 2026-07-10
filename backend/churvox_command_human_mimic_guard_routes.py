@@ -87,6 +87,10 @@ def build_command_human_mimic_guard_router(db, get_current_user, ObjectId):
     def status_of(row):
         return lower((row or {}).get("status") or (row or {}).get("job_status") or (row or {}).get("invoice_status") or (row or {}).get("payment_status") or (row or {}).get("state"))
 
+    def status_words(row):
+        normalized = status_of(row).replace("_", " ").replace("-", " ").replace("/", " ")
+        return {word for word in normalized.split() if word}
+
     def amount_of(row):
         for key in ["balance_due", "amount_due", "balance", "outstanding", "total", "amount"]:
             value = (row or {}).get(key)
@@ -236,13 +240,15 @@ def build_command_human_mimic_guard_router(db, get_current_user, ObjectId):
         except Exception:
             rows = []
         retired_ids = set()
+        complete_words = {"complete", "completed", "done", "finished", "closed"}
         for slip in rows:
             job = await source_job(user_business_id, slip.get("source_id"))
             if not job:
                 continue
             status = status_of(job)
-            explicitly_complete = bool((job or {}).get("completed") is True or (job or {}).get("completed_at")) or status in {"complete", "completed", "done", "finished", "closed"}
-            false_complete = "incomplete" in status or status in {"not complete", "not_completed", "pending completion"}
+            words = status_words(job)
+            false_complete = "incomplete" in words or ("not" in words and ("complete" in words or "completed" in words)) or status in {"pending completion", "awaiting completion"}
+            explicitly_complete = bool((job or {}).get("completed") is True or (job or {}).get("completed_at")) or bool(words & complete_words)
             reason = ""
             if false_complete or not explicitly_complete:
                 reason = "The source job is not actually complete, so completion-based invoice or proof work is not ready."
@@ -269,12 +275,15 @@ def build_command_human_mimic_guard_router(db, get_current_user, ObjectId):
             if not invoice:
                 continue
             status = status_of(invoice)
+            words = status_words(invoice)
             due = parse_date((invoice or {}).get("due_date") or (invoice or {}).get("payment_due_date") or (invoice or {}).get("date_due"))
             balance = amount_of(invoice)
+            premature = bool(words & {"draft", "unsent", "void", "cancelled", "canceled", "deleted", "archived"})
+            paid_or_closed = bool(words & {"paid", "settled"}) or status in {"closed", "payment received", "fully paid"}
             reason = ""
-            if any(marker in status for marker in ["draft", "unsent", "void", "cancel", "deleted", "archived"]):
+            if premature:
                 reason = "The invoice is not a sent collectible invoice, so a payment reminder would be premature."
-            elif any(marker in status for marker in ["paid", "settled", "closed"]) or balance <= 0:
+            elif paid_or_closed or balance <= 0:
                 reason = "The invoice has no collectible balance, so no payment reminder is needed."
             elif due is not None and due > now():
                 reason = "The invoice due date is still in the future, so Churvox should not prepare an overdue reminder."
