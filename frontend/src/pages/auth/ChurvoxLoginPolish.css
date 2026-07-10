@@ -1,0 +1,276 @@
+.cvChurvoxLogin {
+  min-height: 100vh;
+  color: #fff8ed;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(249,115,22,.34), transparent 32%),
+    radial-gradient(circle at 94% 6%, rgba(255,180,97,.12), transparent 30%),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(135deg, #070907 0%, #101511 48%, #1d1008 100%) !important;
+  background-size: auto, auto, 34px 34px, 34px 34px, auto;
+}
+
+.cvChurvoxLogin .cvChurvoxLoginShell {
+  width: min(1240px, calc(100% - 36px));
+  min-height: calc(100svh - 86px);
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 54px) 0 max(24px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: minmax(420px, 1.05fr) minmax(360px, .75fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.cvLoginControlPanel,
+.cvChurvoxLoginCard {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.13) !important;
+  border-radius: 38px !important;
+  box-shadow: 0 32px 90px rgba(0,0,0,.32) !important;
+}
+
+.cvLoginControlPanel {
+  min-height: 680px;
+  display: grid;
+  align-content: space-between;
+  gap: 20px;
+  padding: clamp(24px, 4vw, 48px);
+  background:
+    radial-gradient(circle at 78% 6%, rgba(249,115,22,.28), transparent 30%),
+    linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.025)),
+    linear-gradient(135deg, #111713, #060807 62%, #281207) !important;
+}
+
+.cvLoginControlPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 1px, transparent 1px 13px),
+    radial-gradient(circle at 12% 86%, rgba(249,115,22,.18), transparent 28%);
+  opacity: .75;
+}
+
+.cvLoginControlPanel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cvLoginControlBrand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cvLoginControlBrand span,
+.cvLoginCommandPreview span,
+.cvLoginMiniFlow span {
+  display: inline-flex;
+  color: #fed7aa;
+  font-size: .68rem;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cvLoginControlBrand h2 {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: #fff8ed;
+  font-size: clamp(2.6rem, 6vw, 5.8rem);
+  line-height: .86;
+  letter-spacing: -.09em;
+}
+
+.cvLoginControlText {
+  max-width: 720px;
+  margin: 0;
+  color: rgba(255,248,237,.76);
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+.cvLoginCommandPreview {
+  display: grid;
+  gap: 10px;
+}
+
+.cvLoginCommandPreview div {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px;
+  background: rgba(255,255,255,.07);
+  backdrop-filter: blur(12px);
+}
+
+.cvLoginCommandPreview b {
+  color: #fff8ed;
+  font-size: 1.08rem;
+  letter-spacing: -.025em;
+}
+
+.cvLoginCommandPreview small {
+  color: rgba(255,248,237,.66);
+  font-weight: 820;
+  line-height: 1.4;
+}
+
+.cvLoginStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvLoginStats span {
+  display: grid;
+  align-content: center;
+  min-height: 92px;
+  padding: 14px;
+  border: 1px solid rgba(249,115,22,.26);
+  border-radius: 22px;
+  background: rgba(249,115,22,.09);
+}
+
+.cvLoginStats b {
+  color: #fff8ed;
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: .9;
+  letter-spacing: -.06em;
+}
+
+.cvLoginStats small {
+  margin-top: 6px;
+  color: #fed7aa;
+  font-size: .68rem;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvChurvoxLoginCard {
+  align-content: center !important;
+  min-height: 680px !important;
+  padding: clamp(22px, 3.5vw, 38px) !important;
+  color: #17120e !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(249,115,22,.14), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,.97), rgba(255,250,242,.93)) !important;
+}
+
+.cvChurvoxLoginCard::after {
+  content: "";
+  position: absolute;
+  inset: auto 24px 0 24px;
+  height: 5px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, #17120e, #f97316);
+}
+
+.cvChurvoxLoginCard .cvLoginMiniBrand {
+  margin-bottom: 10px !important;
+}
+
+.cvChurvoxLoginCard .cvLoginMiniBrand b {
+  color: #17120e !important;
+}
+
+.cvChurvoxLoginCard h1 {
+  color: #17120e !important;
+  font-size: clamp(3rem, 6vw, 5.3rem) !important;
+  letter-spacing: -.085em !important;
+}
+
+.cvChurvoxLoginCard .cvPublicAuthIntro {
+  color: #5f564d !important;
+  font-size: .98rem !important;
+}
+
+.cvLoginMiniFlow {
+  display: grid;
+  gap: 8px;
+  margin: 2px 0;
+}
+
+.cvLoginMiniFlow article {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 18px;
+  background: rgba(23,18,14,.035);
+}
+
+.cvLoginMiniFlow span {
+  color: #9a3412;
+}
+
+.cvLoginMiniFlow b {
+  color: #17120e;
+  font-size: .92rem;
+}
+
+.cvLoginMiniFlow small {
+  color: #6b6258;
+  font-size: .78rem;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+.cvChurvoxLogin .cvPublicAuthSubmit {
+  color: #fff8ed !important;
+  -webkit-text-fill-color: #fff8ed !important;
+  background: linear-gradient(135deg, #17120e, #3b2b1f 56%, #f97316) !important;
+  box-shadow: 0 18px 44px rgba(249,115,22,.26) !important;
+}
+
+.cvChurvoxLogin .cvPublicAuthGhost {
+  color: #17120e !important;
+  -webkit-text-fill-color: #17120e !important;
+  background: rgba(23,18,14,.055) !important;
+}
+
+@media (max-width: 980px) {
+  .cvChurvoxLogin .cvChurvoxLoginShell {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .cvLoginControlPanel {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvChurvoxLogin .cvChurvoxLoginShell {
+    width: calc(100% - 18px);
+    padding-top: 12px;
+    gap: 10px;
+  }
+
+  .cvLoginControlPanel {
+    display: none;
+  }
+
+  .cvChurvoxLoginCard {
+    min-height: auto !important;
+    border-radius: 28px !important;
+    padding: 18px !important;
+  }
+
+  .cvLoginMiniFlow {
+    grid-template-columns: 1fr;
+  }
+
+  .cvChurvoxLoginCard h1 {
+    font-size: clamp(2.55rem, 13vw, 4rem) !important;
+  }
+
+  .cvChurvoxLogin .password-row {
+    grid-template-columns: 1fr !important;
+  }
+}
