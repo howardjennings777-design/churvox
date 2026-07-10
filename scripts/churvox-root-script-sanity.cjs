@@ -44,6 +44,7 @@ for (const name of ['test:office-lab', 'test:rebuild:routes', 'test:ui:full', 't
 
 const readiness = String(rootScripts['test:readiness'] || '');
 for (const required of [
+  'churvox-root-script-sanity.cjs',
   'churvox-command-python-syntax.cjs',
   'churvox-mimic-full-test.cjs',
   'churvox-mimic-v3-chain-audit.cjs',
