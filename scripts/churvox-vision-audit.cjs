@@ -21,6 +21,7 @@ function includesAll(text, needles) {
 
 const site = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const today = read('frontend/src/churvox-office-lab/OfficeTeamTodayScreen.jsx');
+const todayVision = read('frontend/src/churvox-office-lab/OfficeTeamTodayVision.css');
 const ownerNav = read('frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx');
 const contextStrip = read('frontend/src/churvox-office-lab/OfficeTeamContextStrip.jsx');
 const visionCss = read('frontend/src/churvox-office-lab/OfficeTeamVisionPolish.css');
@@ -50,8 +51,10 @@ expect(
     '<OfficeTeamContextStrip',
     'Churvox handles the admin. You handle the decisions.',
     'Only the decisions that need the owner',
-  ]) && includesAll(contextStrip, ['waiting in Command', 'Open Command']),
-  'Only Today should carry the full briefing; other pages need a compact owner context',
+  ])
+    && includesAll(contextStrip, ['waiting in Command', 'Open Command'])
+    && todayVision.includes('.cvOwnerReady[data-screen="today"] > .cvSiteStatus'),
+  'Today should have one owner briefing; other pages need a compact owner context instead of a repeated hero',
 );
 
 expect(
@@ -69,8 +72,9 @@ expect(
   'Today is a decision screen instead of an app directory',
   today.includes('const ownerShortcuts = ["command", "work", "clients", "worker", "quotes", "invoices"]')
     && includesAll(today, ['preparedWaiting = ownerRoute ? top', 'backendAudit = []', 'Routine admin stays in the background'])
-    && !today.includes('const ownerShortcuts = ["command", "work", "schedule"'),
-  'Today should offer a small core path and use live Command work, not sixteen shortcuts or local queues',
+    && !today.includes('const ownerShortcuts = ["command", "work", "schedule"')
+    && !today.includes('<span>Next decisions</span>'),
+  'Today should offer a small core path and one Command handover, not sixteen shortcuts or duplicate decision panels',
 );
 
 expect(
@@ -111,9 +115,19 @@ expect(
 );
 
 expect(
-  'owner-facing settings remain truthful until live settings exist',
-  includesAll(settings, ['These controls build a settings draft; they do not silently change live behaviour.', 'Current business behaviour remains unchanged.', 'Prepare settings in Command']),
-  'A settings-looking control must say clearly when it only prepares a proposal',
+  'owner settings save real profile and industry context',
+  includesAll(settings, [
+    'api.get("/logic/business-profile"',
+    'api.get("/industry/profiles"',
+    'api.get("/industry/context"',
+    'api.post("/logic/business-profile"',
+    'api.post("/industry/context"',
+    'Save live business settings',
+    'Core safety cannot be weakened here',
+    'Clicking save is the owner’s explicit instruction',
+    'Live settings not confirmed',
+  ]),
+  'Settings must load and save authenticated backend data, label unconfirmed fallback truthfully and keep safety guardrails fixed',
 );
 
 expect(
