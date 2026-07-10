@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from types import SimpleNamespace
 
 from backend import churvox_hq_paid_launch_filter_patch as filter_patch
+from backend import churvox_hq_paid_launch_postguard_patch as postguard_patch
 from backend import churvox_hq_paid_launch_report_patch as patch
 
 
@@ -91,10 +91,27 @@ def endpoint_for(app, path):
     raise AssertionError(f"Missing route {path}")
 
 
+def fake_stripe_snapshot(_subscription_ids):
+    return {
+        "configured": True,
+        "available": True,
+        "source": "stripe_subscription_api",
+        "generated_at": "2026-07-11T00:00:00+00:00",
+        "subscriptions_checked": 2,
+        "mrr_by_currency": {"nzd": 89.0},
+        "active_subscriptions": [
+            {"subscription_id": "sub_paid", "customer_id": "cus_paid", "status": "active", "mrr_by_currency": {"nzd": 89.0}},
+            {"subscription_id": "sub_trial", "customer_id": "cus_trial", "status": "trialing", "mrr_by_currency": {"nzd": 0.0}},
+        ],
+        "errors": [],
+    }
+
+
 async def main():
-    os.environ.pop("STRIPE_SECRET_KEY", None)
     patch.INSTALLED.clear()
+    postguard_patch.INSTALLED.clear()
     patch.CACHE.update({"at": None, "signature": "", "value": None})
+    patch._stripe_snapshot = fake_stripe_snapshot
     filter_patch.install()
 
     users = [
@@ -107,7 +124,13 @@ async def main():
     ]
     db = FakeDB({
         "users": users,
-        "businesses": [{"_id": "biz-paid"}, {"_id": "biz-unverified"}, {"_id": "biz-trial"}, {"_id": "biz-tester"}],
+        "businesses": [
+            {"_id": "biz-paid", "business_name": "Paid Customer"},
+            {"_id": "biz-unverified", "business_name": "Unverified Customer"},
+            {"_id": "biz-trial", "business_name": "Trial Customer"},
+            {"_id": "biz-tester", "business_name": "Tester Customer"},
+            {"_id": "biz-sample", "business_name": "Sample Business", "is_sample": True},
+        ],
         "jobs": [{"_id": "job-1"}],
         "clients": [{"_id": "client-1"}],
         "quotes": [],
@@ -127,28 +150,34 @@ async def main():
     )
 
     patch.install(module)
+    postguard_patch.install(module)
     endpoint = endpoint_for(app, "/api/admin/owner/paid-launch-report")
     report = await endpoint(FakeRequest({"email": "hello@churvox.com", "role": "platform_owner"}))
 
     assert filter_patch.is_internal_record({"email": "tester@customer.nz", "business_name": "Tester Customer"}) is False
     assert filter_patch.is_internal_record({"email": "test@example.com", "business_name": "Demo Business"}) is True
     assert report["success"] is True
-    assert report["source"] == "live_database_and_stripe_v1"
+    assert report["source"] == "live_database_and_stripe_v2"
     assert report["truth"]["sample_records_included"] is False
-    assert report["truth"]["paid_definition"] == "active_or_paid_with_stripe_subscription_id"
+    assert report["truth"]["paid_definition"] == "stripe_subscription_status_active"
+    assert report["truth"]["trial_definition"] == "stripe_subscription_status_trialing"
+    assert report["truth"]["subscription_id_alone_is_not_paid"] is True
     assert report["counts"]["verified_paid_users"] == 1, report["counts"]
     assert report["counts"]["verified_trial_users"] == 1, report["counts"]
     assert report["counts"]["tester_users"] == 1, report["counts"]
     assert report["counts"]["billing_needs_verification"] == 1, report["counts"]
     assert report["counts"]["internal_users_excluded"] == 2, report["counts"]
     assert report["counts"]["businesses_total"] == 4, report["counts"]
-    assert report["billing"]["actual_mrr_nzd"] is None
+    assert report["counts"]["businesses_source"] == "filtered_businesses_collection"
+    assert report["billing"]["actual_mrr_nzd"] == 89.0
     assert report["billing"]["estimated_mrr_nzd"] == 89
+    assert report["billing"]["stripe_confirmed_subscriptions"] == 2
     assert len(report["billing"]["verified_paid_users"]) == 1
     assert report["billing"]["verified_paid_users"][0]["email"] == "paid@customer.nz"
     assert report["billing"]["tester_users"][0]["email"] == "tester@customer.nz"
     assert report["billing"]["needs_verification"][0]["email"] == "unverified@customer.nz"
     assert all(row["email"] != "sample@example.com" for row in report["billing"]["verified_paid_users"])
+    assert report["collections"]["counts"]["businesses"] == 5
     assert report["collections"]["counts"]["jobs"] == 1
     assert report["collections"]["counts"]["clients"] == 1
     assert report["ready_to_take_payments"] is False
@@ -160,7 +189,7 @@ async def main():
     else:
         raise AssertionError("Non-platform owner reached paid launch HQ report")
 
-    print("HQ paid launch behavior passed: verified billing, tester visibility, internal filtering, database counts and owner lock.")
+    print("HQ paid launch behavior passed: live Stripe confirmation, tester visibility, filtered businesses, database counts and owner lock.")
 
 
 if __name__ == "__main__":
