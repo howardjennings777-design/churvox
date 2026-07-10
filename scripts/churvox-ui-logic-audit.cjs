@@ -175,6 +175,23 @@ for (const required of [
   if (!commandApi.includes(required)) fail(commandApiFile, commandApi, 0, `Command API safety contract is missing: ${required}`);
 }
 
+const maintenanceFile = path.join(root, 'frontend', 'src', 'lib', 'maintenanceMode.js');
+const maintenance = read(maintenanceFile);
+if (!/export const OWNER_MAINTENANCE_MODE\s*=\s*false\s*;/.test(maintenance)) {
+  fail(maintenanceFile, maintenance, 0, 'owner launch is still blocked by maintenance mode');
+}
+const loginFile = path.join(root, 'frontend', 'src', 'pages', 'auth', 'LoginPage.js');
+const login = read(loginFile);
+for (const required of ['type="email"', 'type={showPassword ? "text" : "password"}', 'type="submit"', 'onSubmit={handleSubmit}']) {
+  if (!login.includes(required)) fail(loginFile, login, 0, `real owner login form contract is missing: ${required}`);
+}
+const appFile = path.join(root, 'frontend', 'src', 'App.js');
+const app = read(appFile);
+if (!app.includes('<Route path="/login" element={<LoginPage />} />')) fail(appFile, app, 0, 'public login route is missing');
+if (!app.includes('<Route path="/dashboard" element={<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>} />')) {
+  fail(appFile, app, 0, 'owner dashboard is no longer protected by the authenticated business route');
+}
+
 const gauntletFile = path.join(root, 'frontend', 'tests', 'e2e', 'churvox-full-ui-logic-buttons.spec.js');
 const gauntlet = read(gauntletFile);
 try {
@@ -219,6 +236,7 @@ pass('link destinations scanned', `${linkCount} anchors`);
 pass('form contracts scanned', `${formCount} forms`);
 pass('screen routing checked', `${requiredScreens.length} registered screens`);
 pass('core workspace landmarks checked', `${workspaceFiles.length} workspaces`);
+pass('launch access checked', 'maintenance off, login form present, authenticated dashboard retained');
 pass('browser gauntlet contract checked', 'desktop, mobile, public pages, click outcomes and failure states');
 
 for (const check of checks) console.log(`✓ ${check.name} (${check.detail})`);
