@@ -1,0 +1,123 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { ChurvoxLogo } from "../../components/ChurvoxLogo";
+import "./ChurvoxPublic2026.css";
+
+const navItems = [
+  ["/product", "Product"],
+  ["/pricing", "Pricing"],
+  ["/demo", "Demo"],
+  ["/contact", "Contact"],
+];
+
+export function PublicNav({ active = "" }) {
+  return (
+    <header className="cp26Topbar">
+      <Link className="cp26Brand" to="/" aria-label="Churvox home">
+        <span className="cp26BrandMark"><ChurvoxLogo variant="mark" size="lg" /></span>
+        <span className="cp26BrandWords"><b>Churvox</b><small>the admin engine for service businesses</small></span>
+      </Link>
+      <nav className="cp26NavLinks" aria-label="Public navigation">
+        {navItems.map(([to, label]) => (
+          <Link key={to} to={to} aria-current={active === to ? "page" : undefined}>{label}</Link>
+        ))}
+      </nav>
+      <div className="cp26NavActions">
+        <Link className="cp26TextLink" to="/login">Log in</Link>
+        <Link className="cp26Button cp26ButtonSmall" to="/signup">Start free trial</Link>
+      </div>
+    </header>
+  );
+}
+
+export function PublicFooter() {
+  return (
+    <footer className="cp26Footer">
+      <div className="cp26FooterLead">
+        <span className="cp26BrandMark"><ChurvoxLogo variant="mark" size="md" /></span>
+        <div><b>Churvox</b><p>Routine admin happens behind the scenes. The owner approves what matters.</p></div>
+      </div>
+      <nav aria-label="Footer navigation">
+        <Link to="/product">Product</Link>
+        <Link to="/pricing">Pricing</Link>
+        <Link to="/demo">Demo</Link>
+        <Link to="/contact">Contact</Link>
+        <Link to="/privacy-policy">Privacy</Link>
+        <Link to="/terms-of-service">Terms</Link>
+        <Link to="/login">Log in</Link>
+      </nav>
+      <small>© {new Date().getFullYear()} Churvox · hello@churvox.com</small>
+    </footer>
+  );
+}
+
+export function Eyebrow({ children, light = false }) {
+  return <span className={`cp26Eyebrow${light ? " light" : ""}`}>{children}</span>;
+}
+
+export function SectionHeading({ eyebrow, title, text, align = "left" }) {
+  return (
+    <header className={`cp26SectionHeading ${align === "center" ? "center" : ""}`}>
+      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+      <h2>{title}</h2>
+      {text ? <p>{text}</p> : null}
+    </header>
+  );
+}
+
+export function CommandPreview() {
+  const queue = [
+    ["Invoice check", "Belmont Villas", "$340", "Money"],
+    ["Worker update", "Northwood clean", "Photo missing", "Quality"],
+    ["Client reply", "Friday booking", "Time needed", "Bookings"],
+  ];
+  return (
+    <aside className="cp26CommandPreview" aria-label="Sample Churvox Command workspace">
+      <div className="cp26PreviewTop">
+        <div><small>Sample workspace</small><strong>Command</strong></div>
+        <span>3 owner decisions</span>
+      </div>
+      <div className="cp26PreviewNav">
+        <span>Today</span><span className="active">Command</span><span>Jobs</span><span>Clients</span><span>Money</span>
+      </div>
+      <div className="cp26PreviewBody">
+        <section className="cp26PreviewQueue">
+          <small>Prepared for review</small>
+          {queue.map(([title, client, detail, tray], index) => (
+            <article key={title} className={index === 0 ? "selected" : ""}>
+              <div><b>{title}</b><span>{client}</span></div>
+              <em>{tray}</em>
+              <strong>{detail}</strong>
+            </article>
+          ))}
+        </section>
+        <section className="cp26PreviewSlip">
+          <small>Owner decision slip</small>
+          <h3>Invoice check</h3>
+          <dl>
+            <div><dt>Client</dt><dd>Belmont Villas</dd></div>
+            <div><dt>Completed work</dt><dd>Hedge trim</dd></div>
+            <div><dt>Checked</dt><dd>Job, price, proof</dd></div>
+            <div><dt>Still needed</dt><dd>Confirm green-waste amount</dd></div>
+          </dl>
+          <div className="cp26PreviewActions"><span>Approve</span><span>Edit</span><span>Park</span></div>
+          <p>Nothing sends, syncs or charges until the owner approves.</p>
+        </section>
+      </div>
+    </aside>
+  );
+}
+
+export const serviceTypes = [
+  "Lawn care", "Landscaping", "Cleaning", "Property maintenance", "Handyman", "Painting",
+  "Plumbing", "Electrical", "Pest control", "Gardening", "Hair & beauty", "Mobile services",
+];
+
+export const coreAreas = [
+  ["Today", "A short owner briefing instead of another dashboard to manage."],
+  ["Command", "One approval desk for decisions, corrections and exceptions."],
+  ["Jobs", "Schedule, recurring work, proof, notes and job status stay together."],
+  ["Clients", "Useful history and preferences stay attached to the relationship."],
+  ["Workers", "Simple field updates feed the office record without double handling."],
+  ["Quotes & invoices", "Prepared from real client and job information, ready for review."],
+];
