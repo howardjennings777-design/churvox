@@ -31,13 +31,13 @@ function clean(value, fallback = "") {
 
 function trayForSlip(slip = {}) {
   const text = clean(`${slip.source_type || ""} ${slip.action_type || ""} ${slip.tray || ""}`).toLowerCase();
-  if (/accounting|gst|tax|xero|myob|ledger|export/.test(text)) return "Accounting";
+  if (/account|xero|myob|gst|tax|export/.test(text)) return "Accounting";
   if (/invoice|quote|payment|money/.test(text)) return "Money";
   if (/job|work|booking|schedule|recurring/.test(text)) return "Bookings";
-  if (/staff|worker|payroll|team|timer|timesheet/.test(text)) return "Staff";
-  if (/client|customer|message|inbox|memory/.test(text)) return "Clients";
+  if (/staff|worker|payroll|team|timer|hours/.test(text)) return "Staff";
+  if (/client|customer|message|inbox|note|memory/.test(text)) return "Clients";
   if (/quality|proof|photo/.test(text)) return "Quality";
-  if (/operation|automation|branding|setup|pattern/.test(text)) return "Operations";
+  if (/operation|automation|branding|setup/.test(text)) return "Operations";
   return "Command";
 }
 
@@ -56,35 +56,40 @@ function levelForSlip(slip = {}) {
   const raw = clean(slip.urgency || slip.level || slip.priority || "Owner review").toLowerCase();
   if (/urgent|top|high/.test(raw)) return "Top priority";
   if (/low/.test(raw)) return "Low risk";
+  if (/account/.test(raw)) return "Accounting check";
   if (/pattern/.test(raw)) return "Pattern";
-  if (/accounting/.test(raw)) return "Accounting check";
   return "Needs check";
 }
 
 export function mapCommandSlipToDecision(slip = {}, index = 0) {
   const tray = trayForSlip(slip);
   const id = clean(slip.id || slip._id || `command-slip-${index}`);
-  const payload = slip.payload && typeof slip.payload === "object" ? slip.payload : {};
+  const form = slip?.payload?.prepared_form || slip?.payload?.form || null;
+  const willDo = Array.isArray(slip?.payload?.will_do) ? slip.payload.will_do : [];
   return {
     id: `command-slip-${id}`,
     tray,
-    roleName: clean(slip.roleName || slip.role_name || payload.office_role, roleForTray(tray)),
+    roleName: clean(slip.roleName || slip.role_name || slip.office_role || slip?.payload?.office_role, roleForTray(tray)),
     level: levelForSlip(slip),
     title: clean(slip.title, "Command decision"),
     happened: clean(slip.found || slip.happened || slip.summary, "Churvox found something that may need owner review."),
     checked: [
-      clean(payload.office_role, clean(slip.source_type || slip.sourceType, "backend command slip")),
+      clean(slip.source_type || slip.sourceType, "backend command slip"),
       clean(slip.action_type || slip.actionType, "owner review"),
-      clean(payload.source_collection, "business scoped"),
+      "business scoped",
       "record-only approval",
     ].filter(Boolean).slice(0, 5),
     prepared: clean(slip.prepared, "Prepared for owner review. Nothing has been sent, synced, charged or changed."),
     need: clean(slip.why || slip.need, "Approve record-only, snooze, ignore, or edit before a future real action."),
-    actions: ["Approve record", "Snooze", "Ignore"],
+    actions: Array.isArray(slip?.payload?.actions) && slip.payload.actions.length ? slip.payload.actions : ["Approve record", "Snooze", "Ignore"],
+    form,
+    willDo,
     raw: {
       ...slip,
       source: "backend_command_slip",
       command_slip_id: id,
+      prepared_form: form,
+      will_do: willDo,
       prepared_only: true,
       owner_review_only: true,
       no_auto_send: true,
@@ -106,33 +111,6 @@ export function mapBackendCommandAudit(item = {}, index = 0) {
     at: clean(item.at || item.created_at, ""),
     slipId: clean(item.slip_id, ""),
     source: "backend_command_audit",
-  };
-}
-
-export async function runBackendOfficeEngineScan() {
-  const base = host();
-  if (!base) return { source: "command-scan-unavailable", slips: [], message: "No API host" };
-  const response = await fetch(`${base}/api/command/scan`, {
-    method: "POST",
-    credentials: "include",
-    headers: authHeaders(),
-    body: JSON.stringify({ trigger: "owner_workspace", prepared_only: true, owner_review_only: true }),
-  });
-  const body = await response.json().catch(() => ({}));
-  if (response.status === 401 || response.status === 403 || response.status === 404) {
-    return { source: "command-scan-unavailable", slips: [], message: body?.detail || "Office engine unavailable" };
-  }
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.message || body?.detail || `Office engine scan failed ${response.status}`);
-  }
-  return {
-    source: "backend-office-engine",
-    slips: Array.isArray(body?.slips) ? body.slips : [],
-    existing: Array.isArray(body?.existing) ? body.existing : [],
-    createdCount: Number(body?.created_count || 0),
-    existingCount: Number(body?.existing_count || 0),
-    message: body?.message || SAFE_RESULT,
-    safety: body?.safety || SAFE_RESULT,
   };
 }
 
@@ -182,34 +160,72 @@ export async function fetchBackendCommandAudit() {
   };
 }
 
-export async function createBackendCommandSlip({ area = "office", record = [], action = "Prepare Command card" } = {}) {
+export async function runBackendOfficeEngineScan() {
+  const base = host();
+  if (!base) return { source: "office-engine-unavailable", createdCount: 0, existingCount: 0, message: "No API host" };
+  const response = await fetch(`${base}/api/command/scan`, {
+    method: "POST",
+    credentials: "include",
+    headers: authHeaders(),
+    body: JSON.stringify({ source: "owner_workspace_load", prepared_only: true, owner_review_only: true }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403 || response.status === 404) {
+    return { source: "office-engine-unavailable", createdCount: 0, existingCount: 0, message: body?.detail || "Office engine unavailable" };
+  }
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || body?.detail || `Office engine scan failed ${response.status}`);
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
+  } catch {
+    // Event refresh should never block the owner workspace.
+  }
+  return {
+    source: "office-engine-scan",
+    slips: Array.isArray(body?.slips) ? body.slips : [],
+    existing: Array.isArray(body?.existing) ? body.existing : [],
+    createdCount: Number(body?.created_count || 0),
+    existingCount: Number(body?.existing_count || 0),
+    message: body?.message || body?.safety || SAFE_RESULT,
+  };
+}
+
+export async function createBackendCommandSlip({ area = "office", record = [], action = "Prepare Command card", slip = {} } = {}) {
   const base = host();
   if (!base) throw new Error("Command backend unavailable");
   const recordTitle = record?.[1] || record?.[0] || "selected record";
   const status = record?.[2] || "Prepared-only";
   const detail = record?.[3] || "Prepared for owner review.";
+  const payload = {
+    source_type: slip.source_type || area,
+    action_type: slip.action_type || action,
+    sourceType: slip.source_type || area,
+    actionType: slip.action_type || action,
+    source_id: slip.source_id || `manual-${Date.now()}`,
+    title: slip.title || `${labelForArea(area)}: ${recordTitle}`,
+    found: slip.found || `${status}. ${detail}`,
+    prepared: slip.prepared || `${action} prepared this backend Command slip. Nothing was sent, synced, charged or changed.`,
+    why: slip.why || "Owner approval is required before any real send, sync, charge or record change.",
+    urgency: slip.urgency || "Owner review",
+    payload: {
+      area,
+      record,
+      action,
+      prepared_only: true,
+      owner_review_only: true,
+      no_auto_send: true,
+      no_auto_sync: true,
+      no_auto_charge: true,
+      no_auto_record_change: true,
+      ...(slip.payload || {}),
+    },
+  };
   const response = await fetch(`${base}/api/command/slips`, {
     method: "POST",
     credentials: "include",
     headers: authHeaders(),
-    body: JSON.stringify({
-      source_type: area,
-      action_type: action,
-      sourceType: area,
-      actionType: action,
-      title: `${labelForArea(area)}: ${recordTitle}`,
-      found: `${status}. ${detail}`,
-      prepared: `${action} prepared this backend Command slip. Nothing was sent, synced, charged or changed.`,
-      why: "Owner approval is required before any real send, sync, charge or record change.",
-      urgency: "Owner review",
-      payload: {
-        area,
-        record,
-        action,
-        prepared_only: true,
-        owner_review_only: true,
-      },
-    }),
+    body: JSON.stringify(payload),
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.success === false) {
@@ -287,7 +303,7 @@ export async function createBackendWorkerUpdateRequest({ title = "Worker update"
   return body;
 }
 
-export async function recordBackendCommandDecision(decision, action, ownerNote = SAFE_RESULT) {
+export async function recordBackendCommandDecision(decision, action) {
   const base = host();
   const slipId = clean(decision?.raw?.command_slip_id || "");
   if (!base || !slipId) {
@@ -299,12 +315,11 @@ export async function recordBackendCommandDecision(decision, action, ownerNote =
     : normalized.includes("ignore") || normalized.includes("park")
       ? "ignore"
       : "approve";
-  const note = clean(ownerNote, SAFE_RESULT);
   const response = await fetch(`${base}/api/command/slips/${encodeURIComponent(slipId)}/${endpoint}`, {
     method: "POST",
     credentials: "include",
     headers: authHeaders(),
-    body: JSON.stringify({ action, note, owner_note: note, hours: 24 }),
+    body: JSON.stringify({ action, note: SAFE_RESULT, hours: 24 }),
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.success === false) {
@@ -315,9 +330,10 @@ export async function recordBackendCommandDecision(decision, action, ownerNote =
 
 function labelForArea(area = "office") {
   const key = String(area || "office").toLowerCase();
-  if (["money", "quotes", "invoices", "integrations", "accounting"].includes(key)) return "Money";
-  if (["work", "schedule"].includes(key)) return "Work";
-  if (["clients", "messages"].includes(key)) return "Client";
+  if (["accounting", "xero", "myob"].includes(key)) return "Accounting";
+  if (["money", "quotes", "invoices", "integrations"].includes(key)) return "Money";
+  if (["work", "jobs", "schedule", "booking"].includes(key)) return "Work";
+  if (["clients", "messages", "client_memory"].includes(key)) return "Client";
   if (["staff", "worker", "payroll"].includes(key)) return "Staff";
   if (["automation", "branding"].includes(key)) return "Operations";
   return "Office";
