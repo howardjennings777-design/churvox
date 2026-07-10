@@ -31,7 +31,12 @@ const settings = read('frontend/src/churvox-office-lab/OfficeTeamSiteSettings.js
 const liveSmoke = read('scripts/churvox-live-command-smoke.cjs');
 const operational = read('frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx');
 const extra = read('frontend/src/churvox-office-lab/OfficeTeamExtraScreens.jsx');
-const backOffice = read('frontend/src/churvox-office-lab/OfficeTeamBackOfficeScreens.jsx');
+const jobs = read('frontend/src/churvox-office-lab/OfficeTeamJobsWorkspace.jsx');
+const clients = read('frontend/src/churvox-office-lab/OfficeTeamClientsWorkspace.jsx');
+const quotes = read('frontend/src/churvox-office-lab/OfficeTeamQuotesWorkspace.jsx');
+const invoices = read('frontend/src/churvox-office-lab/OfficeTeamInvoicesWorkspace.jsx');
+const workers = read('frontend/src/churvox-office-lab/OfficeTeamWorkerPhoneView.jsx');
+const identityCss = read('frontend/src/churvox-office-lab/OfficeTeamCorePageIdentity.css');
 
 expect(
   'owner queue has one source of truth',
@@ -136,8 +141,8 @@ expect(
       "app.add_api_route('/api/logic/business-profile', _get_profile, methods=['GET'])",
       "app.add_api_route('/api/logic/business-profile', _save_profile, methods=['POST'])",
       "app.add_api_route('/api/settings/live-marker'",
-      "owner = await _owner_doc(user)",
-      "await db.users.update_one(",
+      'owner = await _owner_doc(user)',
+      'await db.users.update_one(',
     ])
     && !liveWrapper.includes('await db.users.update_many(')
     && includesAll(liveSmoke, ['EXPECTED_SETTINGS', '/api/settings/live-marker', '/api/logic/business-profile']),
@@ -145,19 +150,42 @@ expect(
 );
 
 expect(
-  'vision shell has responsive grouped navigation and compact context',
-  includesAll(visionCss, ['.cvOwnerNavigation', '.cvOwnerMoreMenu', '.cvOwnerContextStrip', '.cvOwnerRoleTruth', '@media (max-width: 640px)']),
-  'The reduced owner shell must work on desktop and phone',
+  'core owner pages have separate purpose-built structures',
+  includesAll(operational, [
+    'import OfficeTeamJobsWorkspace',
+    'import OfficeTeamClientsWorkspace',
+    'return <OfficeTeamJobsWorkspace',
+    'return <OfficeTeamClientsWorkspace',
+  ])
+    && includesAll(extra, [
+      'import OfficeTeamQuotesWorkspace',
+      'import OfficeTeamInvoicesWorkspace',
+      'return <OfficeTeamQuotesWorkspace',
+      'return <OfficeTeamInvoicesWorkspace',
+    ])
+    && includesAll(jobs, ['cvJobsRunBoard', 'JobLane', 'cvJobSheet', 'Job intake'])
+    && includesAll(clients, ['cvClientDirectory', 'cvClientMemoryBoard', 'cvClientHistoryPath', 'Client intake'])
+    && includesAll(workers, ['cvFieldRoster', 'cvFieldControlRoom', 'cvFieldFlowMap', 'Open protected worker app'])
+    && includesAll(quotes, ['cvQuotePipeline', 'cvQuoteStage', 'cvQuoteScopeSheet', 'Quote builder'])
+    && includesAll(invoices, ['cvInvoiceAgingStrip', 'cvInvoiceLedger', 'cvInvoiceCollectionDesk', 'Invoice preparation'])
+    && includesAll(identityCss, ['.cvJobsRunBoard', '.cvClientBookLayout', '.cvFieldOpsLayout', '.cvQuotePipeline', '.cvInvoiceLedgerLayout', '@media(max-width:640px)']),
+  'Jobs, Clients, Workers, Quotes and Invoices must each have a different owner workflow and responsive layout rather than one generic template',
 );
 
-const sharedTemplateSignals = [
-  operational.includes('function OperationalScreen('),
-  extra.includes('function ExtraScreen('),
-  backOffice.includes('function BackOfficeScreen('),
-].filter(Boolean).length;
-if (sharedTemplateSignals >= 2) {
-  warnings.push('Page identity is not fully finished: Jobs/Clients/Money/Staff, Quotes/Invoices, and Schedule/Payroll still share broad layout components. They work, but a future visual/product pass should give each major page its own stronger structure instead of only different labels and data.');
-}
+expect(
+  'distinct pages retain truthful owner controls',
+  [jobs, clients, workers, quotes, invoices].every((text) => text.includes('OfficeTeamSafeControls'))
+    && [jobs, clients, quotes, invoices].every((text) => text.includes('OfficeTeamWorkForms'))
+    && [jobs, clients, workers, quotes, invoices].every((text) => text.includes('allowFallback = appMode !== "owner" && !ownerRoute')),
+  'Unique layouts must still use live rows, hide starter data from owners and route changes through Command',
+);
+
+expect(
+  'vision shell and core workspaces are responsive',
+  includesAll(visionCss, ['.cvOwnerNavigation', '.cvOwnerMoreMenu', '.cvOwnerContextStrip', '.cvOwnerRoleTruth', '@media (max-width: 640px)'])
+    && includesAll(identityCss, ['@media(max-width:1200px)', '@media(max-width:900px)', '@media(max-width:640px)']),
+  'The reduced owner shell and all five distinct workspaces must work on desktop and phone',
+);
 
 const failed = checks.filter((check) => !check.ok);
 for (const check of checks) {
