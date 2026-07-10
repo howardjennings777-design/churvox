@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ChurvoxPublic2026.css";
+import "./ChurvoxPublicTouchTargets.css";
 
 const navItems = [
   ["/product", "Product"],
