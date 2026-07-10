@@ -27,7 +27,7 @@ const labels = {
   help: "Help",
 };
 
-export default function OfficeTeamTodayScreen({ metrics, pending, resolved, approvalTrail = [], backendAudit = [], localQueue = [], localActivity = [], go, appMode = "lab" }) {
+export default function OfficeTeamTodayScreen({ pending, resolved, approvalTrail = [], backendAudit = [], localQueue = [], localActivity = [], go, appMode = "lab" }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = appMode !== "owner" && !ownerRoute;
   const shortcuts = ownerRoute ? ownerShortcuts : labShortcuts;
@@ -76,22 +76,6 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
             <div className="cvSiteHandoverFooter">
               <button onClick={() => go("command")}>Open Command</button>
               <button onClick={() => go("activity")}>View activity</button>
-            </div>
-          </article>
-
-          <article className="cvSiteTodayPanel">
-            <span>Next decisions</span>
-            <strong>{metrics[1]?.value || 0} need owner</strong>
-            <p>Only the first few are shown. Command replaces each decision after the owner acts.</p>
-            <div className="cvSiteMiniList">
-              {top.length ? top.map((item) => (
-                <article key={item.id || item.action_id || item.title}>
-                  <button onClick={() => go("command")}>
-                    <b>{item.title}</b>
-                    <small>{item.tray} · {item.roleName}</small>
-                  </button>
-                </article>
-              )) : <article><b>No decisions waiting</b><small>Churvox keeps checking safely.</small></article>}
             </div>
           </article>
 
