@@ -7,8 +7,10 @@ from fastapi import APIRouter, Request
 
 try:
     from churvox_command_human_mimic_v3_routes import build_command_human_mimic_v3_router
+    from churvox_command_human_mimic_source_normalizer import normalize_mimic_source_db
 except Exception:
     from .churvox_command_human_mimic_v3_routes import build_command_human_mimic_v3_router
+    from .churvox_command_human_mimic_source_normalizer import normalize_mimic_source_db
 
 
 OPEN_STATUSES = ["open", "edited", "pending", "ready", "waiting", "snoozed"]
@@ -52,7 +54,8 @@ class _StrictLiveDBView:
 
 
 def build_command_human_mimic_live_router(db, get_current_user, ObjectId):
-    strict_router = build_command_human_mimic_v3_router(_StrictLiveDBView(db), get_current_user, ObjectId)
+    normalized_db = normalize_mimic_source_db(db)
+    strict_router = build_command_human_mimic_v3_router(_StrictLiveDBView(normalized_db), get_current_user, ObjectId)
     strict_scan = None
     for route in getattr(strict_router, "routes", []):
         if getattr(route, "path", "") == "/command/scan":
@@ -182,6 +185,7 @@ def build_command_human_mimic_live_router(db, get_current_user, ObjectId):
         result["existing_count"] = len(result["existing"])
         result["superseded_count"] = int(result.get("superseded_count") or 0) + len(retired_ids)
         result["post_guard"] = POST_GUARD
+        result["source_normalization"] = "legacy-job-status-and-timer-units-v1"
         result["message"] = f"Strict human mimic v3 kept {result['created_count']} new and {result['existing_count']} current decision(s); {result['superseded_count']} weak, stale or duplicate candidate(s) were rejected."
         return result
 
