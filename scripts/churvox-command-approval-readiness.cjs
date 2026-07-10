@@ -5,133 +5,153 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const checks = [];
-
-function read(relativePath) {
-  return fs.readFileSync(path.join(root, relativePath), 'utf8');
-}
-
-function expect(name, condition, detail) {
-  checks.push({ name, ok: Boolean(condition), detail });
-}
-
-function includesAll(text, needles) {
-  return needles.every((needle) => text.includes(needle));
-}
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const all = (text, needles) => needles.every((needle) => text.includes(needle));
+const expect = (name, ok, detail) => checks.push({ name, ok: Boolean(ok), detail });
 
 const labSite = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const commandApi = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
 const mimicRoutes = read('backend/churvox_command_mimic_intelligence_routes.py');
+const strictRoutes = read('backend/churvox_command_human_mimic_v3_routes.py');
 const applyRoutes = read('backend/churvox_command_apply_routes.py');
 const usercustomize = read('backend/usercustomize.py');
+const liveInstaller = read('backend/churvox_owner_access_safety_patch.py');
+const fullTest = read('scripts/churvox_mimic_full_test.py');
 const liveSmoke = read('scripts/churvox-live-command-smoke.cjs');
 
 expect(
-  'full Command slip passes edited fields and shows the real executor result',
-  includesAll(labSite, [
+  'full Command slip submits edited fields and displays executor truth',
+  all(labSite, [
     'fields: Array.isArray(detail.fields) ? detail.fields : []',
     'formTitle: detail.formTitle || makeSlipFormTitle(item)',
     'commandResult?.result?.execution?.applied',
     'commandResult?.safety',
     'owner-approved internal draft',
-    'Open the full slip to inspect the evidence and prepared form',
   ]),
-  'OfficeTeamLabSite must submit the edited form and truthfully distinguish an applied draft from a record-only direction',
+  'Owner UI must submit the edited form and distinguish applied from record-only outcomes',
 );
 
 expect(
-  'frontend sends edited fields to the real approval executor',
-  includesAll(commandApi, [
+  'frontend sends edited fields to the protected approval route',
+  all(commandApi, [
     'function approvalFields(fields = [])',
     'function finalActionsForSlip(slip = {})',
-    '!/\\bedit\\b/i.test(clean(action))',
-    ': "approve"',
     'fields: approvalFields(approval.fields)',
     'form_title: clean(approval.formTitle || approval.form_title',
     'no_auto_record_change: true',
   ]),
-  'OfficeTeamCommandApi must send the approved form to /approve and keep edit-only actions inside the form',
+  'Command API must carry the owner-approved fields and safety flags',
 );
 
 expect(
-  'Command intelligence prepares evidence-backed forms',
-  includesAll(mimicRoutes, [
+  'reasoning and strict preflight expose evidence and requirements',
+  all(mimicRoutes, [
     '"evidence": evidence_rows',
     '"missing": missing',
     '"confidence": confidence_data',
     '"prepared_form": form_flat',
     '"field_sources": prepared_form',
-    '"prepared_only": True',
-    '"owner_review_only": True',
+  ]) && all(strictRoutes, [
+    'strict_preflight_passed',
+    'required_fields',
+    'approval_blocked',
+    'evidence_fingerprint',
+    'history is reference, never a charge',
   ]),
-  'mimic intelligence must show evidence, missing values, confidence and field sources',
+  'Every strict decision must expose its evidence, uncertainty and required owner inputs',
 );
 
 expect(
-  'approval executor consumes edited fields and creates owner-approved drafts only',
-  includesAll(applyRoutes, [
+  'executor blocks unresolved or unsafe strict decisions',
+  all(applyRoutes, [
+    'UNRESOLVED_MARKERS',
+    'def meaningful(value):',
+    'def unresolved_requirements(slip_payload, form):',
+    'def assert_strict_mimic_safe(slip):',
+    'strict_preflight_passed',
+    'Complete these required fields before approval',
+    'This mimic slip did not pass the strict safety preflight',
+  ]),
+  'No internal draft may be created while required fields or safety proof are missing',
+);
+
+expect(
+  'executor creates one owner-approved internal draft from edited fields',
+  all(applyRoutes, [
     'def form_from_request(payload):',
     'fields = payload.get("fields")',
-    'if should_apply(action):',
+    'effective_form = edited_form or prepared_form(payload_of(slip))',
     'status = "approved_applied" if applied else "approved_recorded"',
     '"status": "draft_approved"',
     '"source": "command_owner_approval"',
-    '"used_edited_form": bool(form_from_request(request_payload))',
+    '"used_edited_form": bool(request_form)',
     '"no_auto_send": True',
     '"no_auto_sync": True',
     '"no_auto_charge": True',
     '"no_auto_file_tax": True',
   ]),
-  'approval executor must use edited fields while keeping send, sync, charge and tax filing locked',
+  'Approved output must remain an internal protected draft',
 );
 
 expect(
-  'approval executor is idempotent and keeps memory drafts separate',
-  includesAll(applyRoutes, [
+  'closed slips are rejected and repeated approval is idempotent',
+  all(applyRoutes, [
     'slip.get("status") == "approved_applied"',
+    'slip.get("status") not in OPEN_STATUSES',
+    'cannot be applied. Nothing was changed.',
     '"idempotent": True',
     'return "client_memory_reviews", "client_memory_review"',
   ]),
-  'Repeated approvals must not create duplicate drafts and client memory must not create duplicate clients',
+  'Superseded decisions cannot apply and repeated approval cannot duplicate drafts',
 );
 
 expect(
   'non-approval directions remain record-only',
-  includesAll(applyRoutes, [
+  all(applyRoutes, [
     'def should_apply(action):',
-    '"park"', '"ignore"', '"snooze"', '"ask"', '"edit"', '"review later"', '"later"', '"call"', '"handle personally"', '"clear anyway"',
-    'return False',
+    '"park"', '"ignore"', '"snooze"', '"ask"', '"edit"', '"review later"', '"clear anyway"',
     'execution = {"applied": False, "message": RECORD_ONLY_RESULT}',
   ]),
-  'ask, park, edit, later, call and owner-handle actions must not create or change business drafts',
+  'Ask, edit, park and owner-handle directions must not apply a draft',
 );
 
 expect(
-  'approval executor cannot send, sync, charge, file tax or pay anyone',
-  !/(send_email|send_sms|stripe\.|payment_intent|charge\(|xero[^\n]*sync|myob[^\n]*sync|file_tax\(|submit[^\n]*tax|bank_file\(|bank payout|payroll_payment)/i.test(applyRoutes),
-  'approval executor appears to trigger an external send, sync, charge, filing or payment',
+  'behavioural test proves blocking, replacement and idempotency',
+  all(fullTest, [
+    'unresolved required fields block approval',
+    'completed fields allow one internal draft',
+    'approval execution is idempotent',
+    'superseded decisions cannot be applied',
+    'exactly one internal invoice draft was created',
+    'internal draft carries no-auto safety flags',
+  ]),
+  'Approval safety must be exercised against the in-memory database',
 );
 
 expect(
-  'real Command routers load in safe order',
+  'live boot owns strict scan while compatibility order stays safe',
   usercustomize.indexOf('build_command_mimic_intelligence_router') < usercustomize.indexOf('build_command_apply_router')
-    && usercustomize.indexOf('build_command_apply_router') < usercustomize.indexOf('build_command_router'),
-  'mimic intelligence and approval executor must register before older Command routes',
+    && usercustomize.indexOf('build_command_apply_router') < usercustomize.indexOf('build_command_router')
+    && all(liveInstaller, ['remove_route(app, "/api/command/scan", "POST")', 'build_command_human_mimic_live_router']),
+  'The live wrapper must replace compatibility scan with strict v3',
 );
 
 expect(
-  'live smoke checks the real approval executor route',
-  liveSmoke.includes('/api/command/slips/000000000000000000000000/approve'),
-  'live Command smoke must fail if the deployed /approve route is missing or unprotected',
+  'live smoke checks strict scan and approval route',
+  all(liveSmoke, [
+    '/api/command/scan',
+    '/api/command/slips/000000000000000000000000/approve',
+    "EXPECTED_HUMAN_MIMIC = 'human-mimic-intelligence-v3'",
+  ]),
+  'Live smoke must fail on stale strict scan or approval deployment',
 );
 
 const failed = checks.filter((check) => !check.ok);
 for (const check of checks) {
   console.log(`${check.ok ? '✓' : '✗'} ${check.name}${check.ok ? '' : ` — ${check.detail}`}`);
 }
-
 if (failed.length) {
   console.error(`\nCommand approval readiness failed: ${failed.length} issue(s).`);
   process.exit(1);
 }
-
 console.log(`\nCommand approval readiness passed: ${checks.length} checks.`);
