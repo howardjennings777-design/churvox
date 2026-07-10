@@ -58,7 +58,7 @@ export default function OfficeTeamSafeControls({ area = "office", record = [], p
         addTrail(action.label, `${action.label} created a real Command slip for ${recordTitle}. Open Command to edit or approve it.`);
       } else {
         createOfficeTeamLocalCommand({ area, record, action: action.label });
-        addTrail(action.label, `${action.label} created a prepared Command item for ${recordTitle} in this control workspace.`);
+        addTrail(action.label, `${action.label} created a prepared-only Command item for ${recordTitle} in this control workspace.`);
       }
     } catch (error) {
       addTrail(action.label, `Could not prepare the Command slip. Nothing was sent, synced, charged or changed. ${error?.message || ""}`.trim());
