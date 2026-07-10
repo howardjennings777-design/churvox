@@ -20,6 +20,7 @@ const shell = read('frontend/src/pages/marketing/ChurvoxPublicShell.jsx');
 const pricing = read('frontend/src/pages/marketing/ExecutivePricingPage.jsx');
 const touchCss = read('frontend/src/pages/marketing/ChurvoxPublicTouchTargets.css');
 const loginCss = read('frontend/src/pages/auth/ChurvoxLoginPolish.css');
+const terms = read('frontend/src/pages/legal/TermsPage.js');
 const settings = read('frontend/src/churvox-office-lab/OfficeTeamSiteSettings.jsx');
 const safeControls = read('frontend/src/churvox-office-lab/OfficeTeamSafeControls.jsx');
 const ownerTruth = read('frontend/tests/e2e/churvox-owner-no-fake-data.spec.js');
@@ -73,6 +74,14 @@ requireAll('mobile login recovery and trial targets', loginCss, [
   'touch-action: manipulation',
 ]);
 
+requireAll('Terms legal handoff target', terms, [
+  'to="/terms-of-service"',
+  'aria-label="Open full Terms of Service"',
+  'min-h-[44px]',
+  'minHeight: 44',
+  'touchAction: "manipulation"',
+]);
+
 requireAll('settings selector accessibility', settings, [
   'aria-label="Industry profile"',
   'aria-label="Work style"',
@@ -99,4 +108,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Route/touch regression audit passed. Team routing, labelled settings, prepared-only Command handoff, desktop footer links and 44px mobile public/auth controls are protected.');
+console.log('Route/touch regression audit passed. Team routing, labelled settings, prepared-only Command handoff, legal handoff, desktop footer links and 44px mobile public/auth controls are protected.');
