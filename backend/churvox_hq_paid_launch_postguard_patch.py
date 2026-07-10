@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import os
 
 INSTALLED = set()
 ROUTE = "/api/admin/owner/paid-launch-report"
@@ -138,10 +139,12 @@ def install(module):
             counts["businesses_total"] = businesses
             counts["businesses_source"] = "filtered_businesses_collection"
 
+        actual_mrr_nzd = billing.get("actual_mrr_nzd")
         truth.update({
             "paid_definition": "stripe_subscription_status_active",
             "trial_definition": "stripe_subscription_status_trialing",
             "mrr_definition": "active_stripe_subscription_price_items_only",
+            "mrr_source": "active_stripe_subscription_price_items" if actual_mrr_nzd is not None else "unavailable",
             "subscription_id_alone_is_not_paid": True,
             "postguard": "paid_launch_stripe_confirmation_v1",
         })
@@ -151,6 +154,10 @@ def install(module):
         check_by_key = {item.get("key"): item for item in launch_checks if isinstance(item, dict)}
         stripe_available = stripe.get("available") is True
         stripe_errors = list(stripe.get("errors") or [])
+        webhook_secret = _text(
+            os.environ.get("STRIPE_WEBHOOK_SECRET")
+            or os.environ.get("STRIPE_WEBHOOK_SIGNING_SECRET")
+        )
         check_by_key["stripe"] = {
             "key": "stripe",
             "label": "Stripe",
@@ -169,6 +176,16 @@ def install(module):
                 f"{len(needs_verification)} billing record(s) are not confirmed active/trialing by Stripe"
                 if needs_verification
                 else "Every paid/trial metric is confirmed by live Stripe subscription status"
+            ),
+        }
+        check_by_key["webhooks"] = {
+            "key": "webhooks",
+            "label": "Stripe webhooks",
+            "status": "pass" if webhook_secret else "fail",
+            "detail": (
+                "Stripe webhook signing secret is configured"
+                if webhook_secret
+                else "STRIPE_WEBHOOK_SECRET is not configured"
             ),
         }
         ordered_keys = ["database", "owner_lock", "stripe", "billing_truth", "webhooks", "email"]
