@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OfficeTeamPlansScreen.css";
+import "./OfficeTeamPlansActions.css";
 
 const COUNTRIES = {
   NZ: { label: "New Zealand", currency: "NZD", symbol: "$", taxName: "GST", taxRate: 0.15, note: "GST is shown before checkout." },
@@ -77,13 +78,22 @@ export default function OfficeTeamPlansScreen() {
 
   const countryOptions = useMemo(() => Object.entries(COUNTRIES), []);
 
+  function openBilling() {
+    try {
+      localStorage.setItem(STORAGE_KEY, country);
+      localStorage.setItem("churvox:selected-plan", plan.name.toLowerCase());
+    } catch {}
+    const params = new URLSearchParams({ country, plan: plan.name.toLowerCase() });
+    window.location.assign(`/plans?${params.toString()}`);
+  }
+
   return (
     <section className="cvSiteScreen cvPlansScreen">
       <header className="cvPlansHero">
         <div>
           <span>Plans</span>
           <h2>Choose the level of control Churvox runs for the business.</h2>
-          <p>Each plan shows what is included, what stays locked until upgrade, and the monthly total for the selected billing country.</p>
+          <p>Compare what is included and locked here. Selecting a card does not change billing; the secure billing page opens only when you continue.</p>
         </div>
         <aside className="cvPlanCountryCard">
           <label>
@@ -115,7 +125,7 @@ export default function OfficeTeamPlansScreen() {
 
       <aside className="cvPlanDetail">
         <div>
-          <span>Selected plan</span>
+          <span>Selected for comparison</span>
           <h3>{plan.name}</h3>
           <PriceBlock pricing={selectedPricing} taxName={meta.taxName} compact />
           <p>{plan.bestFor}</p>
@@ -140,6 +150,15 @@ export default function OfficeTeamPlansScreen() {
         <PriceBlock pricing={priceParts(meta, growthPack.price)} taxName={meta.taxName} compact />
         <FeatureList title="Adds" items={growthPack.included} tone="included" />
         <FeatureList title="Locked rules" items={growthPack.locked} tone="locked" />
+      </section>
+
+      <section className="cvPlanBillingAction">
+        <div>
+          <span>Billing handoff</span>
+          <h3>Continue with {plan.name}</h3>
+          <p>Open the real billing page to see current subscription status and start or manage checkout. Nothing is charged from this comparison screen.</p>
+        </div>
+        <button type="button" onClick={openBilling}>Open secure billing</button>
       </section>
     </section>
   );
