@@ -26,14 +26,16 @@ const usercustomize = read('backend/usercustomize.py');
 const liveSmoke = read('scripts/churvox-live-command-smoke.cjs');
 
 expect(
-  'full Command slip passes edited fields and form title',
+  'full Command slip passes edited fields and shows the real executor result',
   includesAll(labSite, [
     'fields: Array.isArray(detail.fields) ? detail.fields : []',
     'formTitle: detail.formTitle || makeSlipFormTitle(item)',
-    'approved form snapshot',
+    'commandResult?.result?.execution?.applied',
+    'commandResult?.safety',
+    'owner-approved internal draft',
     'Open the full slip to edit and record the owner decision',
   ]),
-  'OfficeTeamLabSite must submit the edited full-slip form instead of shortcut approval data',
+  'OfficeTeamLabSite must submit the edited form and truthfully distinguish an applied draft from a record-only direction',
 );
 
 expect(
