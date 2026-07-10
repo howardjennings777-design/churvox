@@ -30,12 +30,12 @@ export default function IndustryPage() {
 
         <aside className="cp26CommandPreview" aria-label={`${industry.title} workflow summary`}>
           <div className="cp26PreviewTop">
-            <div><small>Workflow fit</small><strong>{industry.short}</strong></div>
+            <div><small>Workflow fit · examples only</small><strong>{industry.short}</strong></div>
             <span>{industry.flow.length} clear stages</span>
           </div>
           <div className="cp26PreviewBody">
             <section className="cp26PreviewQueue">
-              <small>Typical records</small>
+              <small>Typical example records</small>
               {industry.examples.slice(0, 5).map((item, index) => (
                 <article key={item} className={index === 0 ? "selected" : ""}>
                   <div><b>{item}</b><span>{industry.title}</span></div>
@@ -59,9 +59,7 @@ export default function IndustryPage() {
           text="These stages describe the product workflow, not a promise that anything is sent or completed automatically."
         />
         <div className="cp26FlowGrid">
-          {industry.flow.map((item, index) => (
-            <article key={item}><strong>{String(index + 1).padStart(2, "0")}</strong><b>{item}</b></article>
-          ))}
+          {industry.flow.map((item) => <article key={item}><b>{item}</b></article>)}
         </div>
       </section>
 
@@ -85,7 +83,7 @@ export default function IndustryPage() {
         <div className="cp26IndustryGrid">
           {professions.map(([title, , industrySlug]) => (
             <Link key={industrySlug} to={`/industries/${industrySlug}`} aria-current={industrySlug === slug ? "page" : undefined}>
-              {title}{industrySlug === slug ? " · Current" : ""}
+              <span>{title}{industrySlug === slug ? " · Current" : ""}</span>
             </Link>
           ))}
         </div>
