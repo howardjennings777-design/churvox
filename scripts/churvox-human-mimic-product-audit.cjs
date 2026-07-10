@@ -81,7 +81,7 @@ expect(
 
 expect(
   'invoice mimic handles inclusive and exclusive tax safely',
-  includesAll(humanMimic, ['normalized_rate', 'tax_inclusive', 'subtotal * rate / (1 + rate)', 'subtotal * rate', 'GST treatment needs owner confirmation']),
+  includesAll(humanMimic, ['normalized_rate', 'tax_inclusive', 'subtotal * rate / (1 + rate)', 'subtotal * rate', 'GST/tax treatment needs owner confirmation']),
   'Tax logic must normalize percentage formats and avoid double-adding inclusive GST',
 );
 
@@ -160,7 +160,7 @@ expect(
 );
 
 expect(
-  'settings and mimic modes are approval-backed drafts',
+  'settings and office role modes are approval-backed drafts',
   includesAll(settings, ['createBackendCommandSlip', 'Prepare settings in Command', 'Current settings remain unchanged'])
     && includesAll(roleControls, ['createBackendCommandSlip', 'Prepare role modes in Command', 'No live role behaviour changed']),
   'Settings-looking controls must not pretend localStorage is a live business setting',
