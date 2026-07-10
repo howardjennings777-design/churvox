@@ -8,11 +8,7 @@ function host() {
 }
 
 function token() {
-  try {
-    return localStorage.getItem("token") || "";
-  } catch {
-    return "";
-  }
+  try { return localStorage.getItem("token") || ""; } catch { return ""; }
 }
 
 function authHeaders({ json = true } = {}) {
@@ -29,6 +25,11 @@ function clean(value, fallback = "") {
   return text || fallback;
 }
 
+function textList(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => clean(typeof item === "object" ? item?.text || item?.detail || item?.value || JSON.stringify(item) : item)).filter(Boolean);
+}
+
 function approvalFields(fields = []) {
   if (!Array.isArray(fields)) return [];
   return fields.slice(0, 24).map((field, index) => ({
@@ -42,6 +43,24 @@ function finalActionsForSlip(slip = {}) {
   const supplied = Array.isArray(slip?.payload?.actions) ? slip.payload.actions : [];
   const finalActions = supplied.filter((action) => !/\bedit\b/i.test(clean(action)));
   return finalActions.length ? finalActions : ["Approve record", "Snooze", "Ignore"];
+}
+
+function reasoningForSlip(slip = {}) {
+  const payload = slip?.payload && typeof slip.payload === "object" ? slip.payload : {};
+  const evidence = textList(payload.evidence || slip.evidence);
+  const missing = textList(payload.missing || slip.missing);
+  const confidence = payload.confidence && typeof payload.confidence === "object" ? payload.confidence : {};
+  const rawScore = Number(confidence.score ?? payload.confidence_score ?? slip.confidence_score);
+  const score = Number.isFinite(rawScore) && rawScore > 0 ? Math.round((rawScore <= 1 ? rawScore * 100 : rawScore)) : 0;
+  const reasons = textList(confidence.why || payload.confidence_reasons);
+  const question = clean(payload.owner_question || slip.owner_question || slip.why || slip.need, "What would you like Churvox to do with this prepared draft?");
+  const parts = [];
+  if (evidence.length) parts.push(`Evidence used: ${evidence.slice(0, 4).join(" · ")}.`);
+  if (score) parts.push(`Confidence: ${score}%.`);
+  if (reasons.length) parts.push(`Why: ${reasons.slice(0, 3).join(" · ")}.`);
+  parts.push(missing.length ? `Owner must check: ${missing.slice(0, 4).join(" · ")}.` : "No critical fact is marked missing, but every field remains editable.");
+  parts.push(`Owner question: ${question}`);
+  return { evidence, missing, score, reasons, question, summary: parts.join(" ") };
 }
 
 function trayForSlip(slip = {}) {
@@ -81,30 +100,34 @@ export function mapCommandSlipToDecision(slip = {}, index = 0) {
   const id = clean(slip.id || slip._id || `command-slip-${index}`);
   const form = slip?.payload?.prepared_form || slip?.payload?.form || null;
   const willDo = Array.isArray(slip?.payload?.will_do) ? slip.payload.will_do : [];
+  const reasoning = reasoningForSlip(slip);
+  const finding = clean(slip.found || slip.happened || slip.summary, "Churvox found something that may need owner review.");
   return {
     id: `command-slip-${id}`,
     tray,
     roleName: clean(slip.roleName || slip.role_name || slip.office_role || slip?.payload?.office_role, roleForTray(tray)),
     level: levelForSlip(slip),
     title: clean(slip.title, "Command decision"),
-    happened: clean(slip.found || slip.happened || slip.summary, "Churvox found something that may need owner review."),
-    checked: [
+    happened: `${finding} ${reasoning.summary}`.trim(),
+    checked: reasoning.evidence.length ? reasoning.evidence.slice(0, 5) : [
       clean(slip.source_type || slip.sourceType, "backend command slip"),
       clean(slip.action_type || slip.actionType, "owner review"),
       "business scoped",
       "owner approval controlled",
     ].filter(Boolean).slice(0, 5),
     prepared: clean(slip.prepared, "Prepared for owner review. Nothing has been sent, synced, charged or changed."),
-    need: clean(slip.why || slip.need, "Edit the prepared form, approve the direction, ask for follow-up, snooze, or park it."),
+    need: reasoning.question,
     actions: finalActionsForSlip(slip),
     form,
     willDo,
+    reasoning,
     raw: {
       ...slip,
       source: "backend_command_slip",
       command_slip_id: id,
       prepared_form: form,
       will_do: willDo,
+      reasoning,
       prepared_only: true,
       owner_review_only: true,
       no_auto_send: true,
@@ -132,47 +155,23 @@ export function mapBackendCommandAudit(item = {}, index = 0) {
 export async function fetchBackendCommandDecisions() {
   const base = host();
   if (!base) return { source: "command-unavailable", decisions: [], message: "No API host" };
-  const response = await fetch(`${base}/api/command/slips`, {
-    credentials: "include",
-    headers: authHeaders({ json: false }),
-  });
+  const response = await fetch(`${base}/api/command/slips`, { credentials: "include", headers: authHeaders({ json: false }) });
   const body = await response.json().catch(() => ({}));
-  if (response.status === 401 || response.status === 403 || response.status === 404) {
-    return { source: "command-unavailable", decisions: [], message: body?.detail || "Command backend unavailable" };
-  }
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.message || body?.detail || `Command slips failed ${response.status}`);
-  }
+  if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "command-unavailable", decisions: [], message: body?.detail || "Command backend unavailable" };
+  if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command slips failed ${response.status}`);
   const slips = Array.isArray(body?.slips) ? body.slips : [];
-  return {
-    source: slips.length ? "backend-command" : "backend-command-clear",
-    decisions: slips.map(mapCommandSlipToDecision),
-    message: body?.safety || SAFE_RESULT,
-    fetchedAt: new Date().toISOString(),
-  };
+  return { source: slips.length ? "backend-command" : "backend-command-clear", decisions: slips.map(mapCommandSlipToDecision), message: body?.safety || SAFE_RESULT, fetchedAt: new Date().toISOString() };
 }
 
 export async function fetchBackendCommandAudit() {
   const base = host();
   if (!base) return { source: "command-audit-unavailable", audit: [], message: "No API host" };
-  const response = await fetch(`${base}/api/command/audit`, {
-    credentials: "include",
-    headers: authHeaders({ json: false }),
-  });
+  const response = await fetch(`${base}/api/command/audit`, { credentials: "include", headers: authHeaders({ json: false }) });
   const body = await response.json().catch(() => ({}));
-  if (response.status === 401 || response.status === 403 || response.status === 404) {
-    return { source: "command-audit-unavailable", audit: [], message: body?.detail || "Command audit unavailable" };
-  }
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.message || body?.detail || `Command audit failed ${response.status}`);
-  }
+  if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "command-audit-unavailable", audit: [], message: body?.detail || "Command audit unavailable" };
+  if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command audit failed ${response.status}`);
   const audit = Array.isArray(body?.audit) ? body.audit : [];
-  return {
-    source: audit.length ? "backend-command-audit" : "backend-command-audit-clear",
-    audit: audit.map(mapBackendCommandAudit),
-    message: body?.safety || SAFE_RESULT,
-    fetchedAt: new Date().toISOString(),
-  };
+  return { source: audit.length ? "backend-command-audit" : "backend-command-audit-clear", audit: audit.map(mapBackendCommandAudit), message: body?.safety || SAFE_RESULT, fetchedAt: new Date().toISOString() };
 }
 
 export async function runBackendOfficeEngineScan() {
@@ -185,23 +184,16 @@ export async function runBackendOfficeEngineScan() {
     body: JSON.stringify({ source: "owner_workspace_load", prepared_only: true, owner_review_only: true }),
   });
   const body = await response.json().catch(() => ({}));
-  if (response.status === 401 || response.status === 403 || response.status === 404) {
-    return { source: "backend-office-engine-unavailable", createdCount: 0, existingCount: 0, message: body?.detail || "Office engine unavailable" };
-  }
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.message || body?.detail || `Office engine scan failed ${response.status}`);
-  }
-  try {
-    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
-  } catch {
-    // Event refresh should never block the owner workspace.
-  }
+  if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "backend-office-engine-unavailable", createdCount: 0, existingCount: 0, message: body?.detail || "Office engine unavailable" };
+  if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Office engine scan failed ${response.status}`);
+  try { window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body })); } catch {}
   return {
-    source: "backend-office-engine",
+    source: body?.source || "backend-office-engine",
     slips: Array.isArray(body?.slips) ? body.slips : [],
     existing: Array.isArray(body?.existing) ? body.existing : [],
     createdCount: Number(body?.created_count || 0),
     existingCount: Number(body?.existing_count || 0),
+    roleCounts: body?.role_counts || {},
     message: body?.message || body?.safety || SAFE_RESULT,
   };
 }
@@ -236,21 +228,10 @@ export async function createBackendCommandSlip({ area = "office", record = [], a
       ...(slip.payload || {}),
     },
   };
-  const response = await fetch(`${base}/api/command/slips`, {
-    method: "POST",
-    credentials: "include",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(`${base}/api/command/slips`, { method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify(payload) });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.message || body?.detail || `Command slip failed ${response.status}`);
-  }
-  try {
-    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
-  } catch {
-    // Event refresh should never block Command creation.
-  }
+  if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command slip failed ${response.status}`);
+  try { window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body })); } catch {}
   return body;
 }
 
@@ -258,32 +239,11 @@ export async function createBackendWorkerPaymentRequest({ title = "Worker paymen
   const base = host();
   if (!base) throw new Error("Command backend unavailable");
   const response = await fetch(`${base}/api/command/worker-payment-request`, {
-    method: "POST",
-    credentials: "include",
-    headers: authHeaders(),
-    body: JSON.stringify({
-      title,
-      job_title: title,
-      amount,
-      amount_due: amount,
-      invoice,
-      invoice_number: invoice,
-      customer,
-      customer_name: customer,
-      payment_link: paymentLink,
-      prepared_only: true,
-      owner_review_only: true,
-    }),
+    method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify({ title, job_title: title, amount, amount_due: amount, invoice, invoice_number: invoice, customer, customer_name: customer, payment_link: paymentLink, prepared_only: true, owner_review_only: true }),
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.message || body?.detail || `Worker payment request failed ${response.status}`);
-  }
-  try {
-    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
-  } catch {
-    // Event refresh should never block worker payment requests.
-  }
+  if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Worker payment request failed ${response.status}`);
+  try { window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body })); } catch {}
   return body;
 }
 
@@ -291,72 +251,38 @@ export async function createBackendWorkerUpdateRequest({ title = "Worker update"
   const base = host();
   if (!base) throw new Error("Command backend unavailable");
   const response = await fetch(`${base}/api/command/worker-update-request`, {
-    method: "POST",
-    credentials: "include",
-    headers: authHeaders(),
-    body: JSON.stringify({
-      title,
-      job_title: title,
-      update,
-      note: update,
-      message: update,
-      update_type: updateType,
-      status,
-      prepared_only: true,
-      owner_review_only: true,
-    }),
+    method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify({ title, job_title: title, update, note: update, message: update, update_type: updateType, status, prepared_only: true, owner_review_only: true }),
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.message || body?.detail || `Worker update request failed ${response.status}`);
-  }
-  try {
-    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
-  } catch {
-    // Event refresh should never block worker update requests.
-  }
+  if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Worker update request failed ${response.status}`);
+  try { window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body })); } catch {}
   return body;
 }
 
 export async function recordBackendCommandDecision(decision, action, detail = {}) {
   const base = host();
   const slipId = clean(decision?.raw?.command_slip_id || "");
-  if (!base || !slipId) {
-    return { success: true, localOnly: true, message: SAFE_RESULT };
-  }
+  if (!base || !slipId) return { success: true, localOnly: true, message: SAFE_RESULT };
   const approval = typeof detail === "string" ? { note: detail } : (detail || {});
   const note = clean(approval.note || approval.ownerNote, SAFE_RESULT);
   const normalized = clean(action, "Approve record").toLowerCase();
-  const endpoint = normalized.includes("snooze")
-    ? "snooze"
-    : normalized.includes("ignore") || normalized.includes("park")
-      ? "ignore"
-      : "approve";
-  const requestBody = endpoint === "approve"
-    ? {
-        action,
-        note,
-        owner_note: note,
-        form_title: clean(approval.formTitle || approval.form_title, "Owner approval form"),
-        fields: approvalFields(approval.fields),
-        prepared_only: true,
-        owner_review_only: true,
-        no_auto_send: true,
-        no_auto_sync: true,
-        no_auto_charge: true,
-        no_auto_record_change: true,
-      }
-    : { action, note, hours: 24 };
-  const response = await fetch(`${base}/api/command/slips/${encodeURIComponent(slipId)}/${endpoint}`, {
-    method: "POST",
-    credentials: "include",
-    headers: authHeaders(),
-    body: JSON.stringify(requestBody),
-  });
+  const endpoint = normalized.includes("snooze") ? "snooze" : normalized.includes("ignore") || normalized.includes("park") ? "ignore" : "approve";
+  const requestBody = endpoint === "approve" ? {
+    action,
+    note,
+    owner_note: note,
+    form_title: clean(approval.formTitle || approval.form_title, "Owner approval form"),
+    fields: approvalFields(approval.fields),
+    prepared_only: true,
+    owner_review_only: true,
+    no_auto_send: true,
+    no_auto_sync: true,
+    no_auto_charge: true,
+    no_auto_record_change: true,
+  } : { action, note, hours: 24 };
+  const response = await fetch(`${base}/api/command/slips/${encodeURIComponent(slipId)}/${endpoint}`, { method: "POST", credentials: "include", headers: authHeaders(), body: JSON.stringify(requestBody) });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body?.success === false) {
-    throw new Error(body?.message || body?.detail || `Command decision failed ${response.status}`);
-  }
+  if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command decision failed ${response.status}`);
   return body;
 }
 
@@ -367,6 +293,6 @@ function labelForArea(area = "office") {
   if (["work", "jobs", "schedule", "booking"].includes(key)) return "Work";
   if (["clients", "messages", "client_memory"].includes(key)) return "Client";
   if (["staff", "worker", "payroll"].includes(key)) return "Staff";
-  if (["automation", "branding"].includes(key)) return "Operations";
+  if (["automation", "branding", "operations", "settings"].includes(key)) return "Operations";
   return "Office";
 }
