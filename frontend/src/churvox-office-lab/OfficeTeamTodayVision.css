@@ -1,0 +1,13 @@
+.cvOwnerReady[data-screen="today"] > .cvSiteStatus {
+  display: none;
+}
+
+.cvOwnerReady[data-screen="today"] .cvSiteScreenDeck {
+  padding-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .cvOwnerReady[data-screen="today"] .cvSiteScreenDeck {
+    padding-top: 10px;
+  }
+}
