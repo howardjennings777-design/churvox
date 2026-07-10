@@ -8,8 +8,9 @@ const frontendPackagePath = path.resolve(__dirname, '..', 'frontend', 'package.j
 const liveTruthPath = path.resolve(__dirname, 'churvox-live-truth-test.cjs');
 const requiredRootScripts = [
   'build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness', 'test:mimic:full', 'test:mimic:chain',
-  'test:ui:logic', 'test:public', 'test:route-touch', 'test:ui:full', 'test:ui:desktop', 'test:ui:mobile',
-  'test:prelive:full', 'test:live-command', 'test:truth:live',
+  'test:ui:logic', 'test:public', 'test:route-touch', 'test:paid-launch:reality',
+  'test:ui:full', 'test:ui:desktop', 'test:ui:mobile', 'test:prelive:full', 'test:paid-launch:full',
+  'test:live-command', 'test:truth:live', 'test:hq:reality:live',
 ];
 
 function readJson(filePath) {
@@ -63,6 +64,7 @@ for (const required of [
   'churvox-ui-logic-audit.cjs',
   'churvox-public-site-audit.cjs',
   'churvox-route-touch-regression-audit.cjs',
+  'churvox-paid-launch-reality-audit.cjs',
   'churvox-readiness-sweep.cjs',
   'churvox-command-approval-readiness.cjs',
   'churvox-human-mimic-product-audit.cjs',
@@ -74,44 +76,48 @@ for (const required of [
   }
 }
 
-if (rootScripts['test:mimic:full'] !== 'node scripts/churvox-mimic-full-test.cjs') {
-  console.error(`Root test:mimic:full must run scripts/churvox-mimic-full-test.cjs. Found: ${rootScripts['test:mimic:full']}`);
-  process.exit(1);
+const exactScripts = {
+  'test:mimic:full': 'node scripts/churvox-mimic-full-test.cjs',
+  'test:mimic:chain': 'node scripts/churvox-mimic-v3-chain-audit.cjs',
+  'test:ui:logic': 'node scripts/churvox-ui-logic-audit.cjs',
+  'test:public': 'node scripts/churvox-public-site-audit.cjs',
+  'test:route-touch': 'node scripts/churvox-route-touch-regression-audit.cjs',
+  'test:paid-launch:reality': 'node scripts/churvox-paid-launch-reality-audit.cjs',
+  'test:prelive:full': 'npm run test:readiness && npm run test:ui:full',
+  'test:paid-launch:full': 'npm run test:prelive:full',
+  'test:live-command': 'node scripts/churvox-live-command-smoke.cjs',
+  'test:truth:live': 'node scripts/churvox-live-truth-test.cjs',
+  'test:hq:reality:live': 'npm --prefix frontend run test:hq:reality:live',
+};
+for (const [name, expected] of Object.entries(exactScripts)) {
+  if (rootScripts[name] !== expected) {
+    console.error(`Root ${name} must be ${expected}. Found: ${rootScripts[name]}`);
+    process.exit(1);
+  }
 }
-if (rootScripts['test:mimic:chain'] !== 'node scripts/churvox-mimic-v3-chain-audit.cjs') {
-  console.error(`Root test:mimic:chain must run scripts/churvox-mimic-v3-chain-audit.cjs. Found: ${rootScripts['test:mimic:chain']}`);
-  process.exit(1);
+
+for (const name of ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
+  const command = String(frontendScripts[name] || '');
+  for (const spec of [
+    'churvox-full-ui-logic-buttons.spec.js',
+    'churvox-public-honesty-and-function.spec.js',
+    'churvox-owner-no-fake-data.spec.js',
+    'churvox-paid-launch-hq-reality.spec.js',
+  ]) {
+    if (!command.includes(spec)) {
+      console.error(`Frontend ${name} is missing ${spec}. Found: ${command}`);
+      process.exit(1);
+    }
+  }
 }
-if (rootScripts['test:ui:logic'] !== 'node scripts/churvox-ui-logic-audit.cjs') {
-  console.error(`Root test:ui:logic must run scripts/churvox-ui-logic-audit.cjs. Found: ${rootScripts['test:ui:logic']}`);
-  process.exit(1);
-}
-if (rootScripts['test:public'] !== 'node scripts/churvox-public-site-audit.cjs') {
-  console.error(`Root test:public must run scripts/churvox-public-site-audit.cjs. Found: ${rootScripts['test:public']}`);
-  process.exit(1);
-}
-if (rootScripts['test:route-touch'] !== 'node scripts/churvox-route-touch-regression-audit.cjs') {
-  console.error(`Root test:route-touch must run scripts/churvox-route-touch-regression-audit.cjs. Found: ${rootScripts['test:route-touch']}`);
-  process.exit(1);
-}
-if (rootScripts['test:prelive:full'] !== 'npm run test:readiness && npm run test:ui:full') {
-  console.error(`Root test:prelive:full must run readiness before the desktop/mobile browser gauntlet. Found: ${rootScripts['test:prelive:full']}`);
-  process.exit(1);
-}
-if (rootScripts['test:live-command'] !== 'node scripts/churvox-live-command-smoke.cjs') {
-  console.error(`Root test:live-command must run scripts/churvox-live-command-smoke.cjs. Found: ${rootScripts['test:live-command']}`);
-  process.exit(1);
-}
-if (rootScripts['test:truth:live'] !== 'node scripts/churvox-live-truth-test.cjs') {
-  console.error(`Root test:truth:live must run scripts/churvox-live-truth-test.cjs. Found: ${rootScripts['test:truth:live']}`);
-  process.exit(1);
-}
+
 for (const required of [
   "path.join(root, 'frontend')",
   "'--config=playwright.config.js'",
   "'https://www.churvox.com'",
   "'tests/e2e/churvox-public-honesty-and-function.spec.js'",
   "'tests/e2e/churvox-owner-no-fake-data.spec.js'",
+  "'tests/e2e/churvox-paid-launch-hq-reality.spec.js'",
   "'--workers=1'",
 ]) {
   if (!liveTruth.includes(required)) {
@@ -124,4 +130,4 @@ if (liveTruth.includes('npm --prefix frontend exec')) {
   process.exit(1);
 }
 
-console.log('Root script sanity passed. Mimic behavior, public site, route/touch safety, UI logic, desktop/mobile button gauntlet, readiness, live truth and live smoke are available from the repo root.');
+console.log('Root script sanity passed. Mimic behavior, public site, route/touch safety, paid-launch HQ reality, UI logic, desktop/mobile gauntlets, readiness, live truth and live smoke are available from the repo root.');
