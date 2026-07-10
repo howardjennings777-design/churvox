@@ -1,0 +1,184 @@
+.cvCommandSlipPlain {
+  gap: 14px;
+}
+
+.cvSlipPlainSummary {
+  margin: -4px 0 0;
+  color: #3f2f26;
+  font-size: .98rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.cvSlipNextStep,
+.cvSlipForm,
+.cvSlipSteps,
+.cvSlipOwnerBox,
+.cvSlipExplain {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(23,18,14,.08);
+  border-radius: 20px;
+  background: rgba(255,255,255,.66);
+  box-shadow: inset 0 1px rgba(255,255,255,.74);
+}
+
+.cvSlipNextStep {
+  border-color: rgba(249,115,22,.22);
+  background: linear-gradient(135deg, rgba(255,237,213,.74), rgba(255,255,255,.72));
+}
+
+.cvSlipNextStep b,
+.cvSlipSteps b,
+.cvSlipOwnerBox span,
+.cvSlipForm span,
+.cvSlipExplain dt {
+  color: #7c2d12;
+  font-size: .68rem;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvSlipNextStep p {
+  margin: 0;
+  color: #17120e;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.42;
+}
+
+.cvSlipForm h4 {
+  margin: 0;
+  color: #17120e;
+  font-size: 1.15rem;
+  letter-spacing: -.045em;
+}
+
+.cvSlipFieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.cvSlipFieldGrid label {
+  display: grid;
+  gap: 5px;
+}
+
+.cvSlipFieldGrid label span {
+  color: #7c2d12;
+  font-size: .62rem;
+}
+
+.cvSlipFieldGrid input,
+.cvSlipOwnerBox textarea {
+  width: 100%;
+  border: 1px solid rgba(23,18,14,.12);
+  border-radius: 14px;
+  color: #17120e;
+  background: rgba(255,252,246,.86);
+  font: inherit;
+  font-weight: 800;
+  outline: none;
+}
+
+.cvSlipFieldGrid input {
+  min-height: 40px;
+  padding: 0 11px;
+}
+
+.cvSlipOwnerBox textarea {
+  min-height: 88px;
+  padding: 12px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.cvSlipOwnerBox textarea:focus {
+  border-color: rgba(249,115,22,.58);
+  box-shadow: 0 0 0 4px rgba(249,115,22,.1);
+}
+
+.cvSlipSteps p {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 9px;
+  align-items: start;
+  margin: 0;
+  color: #2f241d;
+  font-size: .9rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.cvSlipSteps p span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #fff8ed;
+  background: #17120e;
+  font-size: .72rem;
+  font-weight: 1000;
+}
+
+.cvSlipExplain {
+  gap: 7px;
+}
+
+.cvSlipExplain dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 6px;
+  color: #17120e;
+  font-weight: 850;
+}
+
+.cvSlipExplain small {
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #2f241d;
+  background: rgba(23,18,14,.06);
+  font-size: .74rem;
+  font-weight: 900;
+}
+
+.cvSlipDecisionActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvSlipDecisionActions button {
+  min-height: 50px;
+  border-radius: 16px !important;
+  font-weight: 1000;
+}
+
+.cvSlipNote {
+  display: block;
+  color: #5f4b3f;
+  font-size: .78rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .cvSlipFieldGrid,
+  .cvSlipDecisionActions {
+    grid-template-columns: 1fr;
+  }
+
+  .cvSlipNextStep,
+  .cvSlipForm,
+  .cvSlipSteps,
+  .cvSlipOwnerBox,
+  .cvSlipExplain {
+    border-radius: 17px;
+    padding: 12px;
+  }
+}
