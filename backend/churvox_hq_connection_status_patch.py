@@ -140,6 +140,8 @@ def install(module):
         install_paid_launch_filter(module)
         from churvox_hq_paid_launch_report_patch import install as install_paid_launch_report
         install_paid_launch_report(module)
+        from churvox_hq_paid_launch_postguard_patch import install as install_paid_launch_postguard
+        install_paid_launch_postguard(module)
     except Exception as exc:
         print(f"Churvox paid launch HQ report skipped: {exc}")
 
