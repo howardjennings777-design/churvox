@@ -6,11 +6,12 @@ const path = require('path');
 const rootPackagePath = path.resolve(__dirname, '..', 'package.json');
 const frontendPackagePath = path.resolve(__dirname, '..', 'frontend', 'package.json');
 const liveTruthPath = path.resolve(__dirname, 'churvox-live-truth-test.cjs');
+const liveHqPath = path.resolve(__dirname, 'churvox-live-hq-real-data.cjs');
 const requiredRootScripts = [
   'build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness', 'test:mimic:full', 'test:mimic:chain',
   'test:hq:behavior', 'test:ui:logic', 'test:public', 'test:route-touch', 'test:paid-launch:reality',
   'test:ui:full', 'test:ui:desktop', 'test:ui:mobile', 'test:prelive:full', 'test:paid-launch:full',
-  'test:live-command', 'test:truth:live', 'test:hq:reality:live',
+  'test:live-command', 'test:truth:live', 'test:hq:reality:live', 'test:hq:live-real',
 ];
 
 function readJson(filePath) {
@@ -34,6 +35,7 @@ function readText(filePath) {
 const rootPackage = readJson(rootPackagePath);
 const frontendPackage = readJson(frontendPackagePath);
 const liveTruth = readText(liveTruthPath);
+const liveHq = readText(liveHqPath);
 const rootScripts = rootPackage.scripts || {};
 const frontendScripts = frontendPackage.scripts || {};
 const missing = requiredRootScripts.filter((name) => !rootScripts[name]);
@@ -90,6 +92,7 @@ const exactScripts = {
   'test:live-command': 'node scripts/churvox-live-command-smoke.cjs',
   'test:truth:live': 'node scripts/churvox-live-truth-test.cjs',
   'test:hq:reality:live': 'npm --prefix frontend run test:hq:reality:live',
+  'test:hq:live-real': 'node scripts/churvox-live-hq-real-data.cjs',
 };
 for (const [name, expected] of Object.entries(exactScripts)) {
   if (rootScripts[name] !== expected) {
@@ -132,4 +135,19 @@ if (liveTruth.includes('npm --prefix frontend exec')) {
   process.exit(1);
 }
 
-console.log('Root script sanity passed. Mimic behavior, HQ backend billing behavior, public site, route/touch safety, paid-launch HQ reality, UI logic, desktop/mobile gauntlets, readiness, live truth and live smoke are available from the repo root.');
+for (const required of [
+  "'tests/e2e/churvox-hq-live-real-data.spec.js'",
+  "'--config=playwright.config.js'",
+  "'--project=desktop-chromium'",
+  "'https://www.churvox.com'",
+  "'https://grassley-backend.onrender.com'",
+  'CHURVOX_OWNER_EMAIL',
+  'CHURVOX_OWNER_PASSWORD',
+]) {
+  if (!liveHq.includes(required)) {
+    console.error(`Authenticated HQ live launcher is missing ${required}.`);
+    process.exit(1);
+  }
+}
+
+console.log('Root script sanity passed. Mimic behavior, HQ backend billing behavior, public site, route/touch safety, paid-launch HQ reality, authenticated live HQ data, UI logic, desktop/mobile gauntlets, readiness, live truth and live smoke are available from the repo root.');
