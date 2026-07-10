@@ -253,21 +253,19 @@ def install(module):
         remove_route(app, path, method)
         app.add_api_route(path, endpoint, methods=[method])
 
-    # Render imports this patch explicitly on every boot. Install the marker and
-    # strict preflight route directly so Command never depends on an indirect hook.
     try:
         try:
             from churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router
-            from churvox_command_human_mimic_v3_routes import build_command_human_mimic_v3_router
+            from churvox_command_human_mimic_live_routes import build_command_human_mimic_live_router
         except Exception:
             from backend.churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router
-            from backend.churvox_command_human_mimic_v3_routes import build_command_human_mimic_v3_router
+            from backend.churvox_command_human_mimic_live_routes import build_command_human_mimic_live_router
 
         remove_route(app, "/api/command/human-mimic-marker", "GET")
         remove_route(app, "/api/command/human-mimic-marker", "POST")
         remove_route(app, "/api/command/scan", "POST")
         app.include_router(build_command_human_mimic_marker_router(), prefix="/api")
-        app.include_router(build_command_human_mimic_v3_router(db, get_current_user, ObjectId), prefix="/api")
+        app.include_router(build_command_human_mimic_live_router(db, get_current_user, ObjectId), prefix="/api")
         app.state.churvox_guarded_human_office_routes_installed = True
         app.state.churvox_human_mimic_version = "human-mimic-intelligence-v3"
     except Exception as exc:
