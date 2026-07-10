@@ -7,6 +7,7 @@ import "./OfficeTeamNavPolish.css";
 import "./OfficeTeamOwnerReady.css";
 import "./OfficeTeamPremiumPolish.css";
 import "./OfficeTeamLogicPolish.css";
+import "./OfficeTeamSlipForm.css";
 import OfficeTeamRoleControls from "./OfficeTeamRoleControls";
 import OfficeTeamSiteSettings from "./OfficeTeamSiteSettings";
 import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
@@ -24,6 +25,7 @@ import { readOfficeTeamApprovalTrail, recordOfficeTeamApprovalTrail, subscribeOf
 
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-office-site-20260709";
 const COMMAND_CARD_LIMIT = 3;
+const SAFE_APPROVAL_TEXT = "Nothing was sent, synced, charged or changed.";
 
 const screens = [
   ["today", "Today"], ["command", "Command"], ["work", "Work"], ["schedule", "Schedule"], ["clients", "Clients"],
@@ -187,28 +189,30 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   }
 
-  async function actionDecision(item, action) {
+  async function actionDecision(item, action, detail = {}) {
     const id = keyOf(item);
+    const ownerNote = cleanText(detail.ownerNote || "");
+    const trailNote = ownerNote ? `Owner note: ${ownerNote}` : "Owner reviewed";
     setResolved((current) => ({ ...current, [id]: action }));
-    setNotice(`${action} recorded as the owner decision. The prepared slip left Command. Nothing was sent, synced, charged or changed.`);
+    setNotice(`${action} recorded as the owner decision. The prepared slip left Command. ${SAFE_APPROVAL_TEXT}`);
     if (String(id || "").startsWith("local-command-")) {
       const activity = recordOfficeTeamLocalActivity("Cleared", item, action);
-      const trail = recordOfficeTeamApprovalTrail(item, action, "Owner reviewed");
+      const trail = recordOfficeTeamApprovalTrail(item, action, trailNote);
       const next = removeOfficeTeamLocalCommand(id);
       setLocalQueue(next);
       setLocalActivity(activity);
       setApprovalTrail(trail);
-      setNotice(`${action} recorded as the owner decision. Approval trail saved. Nothing was sent, synced, charged or changed.`);
+      setNotice(`${action} recorded as the owner decision. Approval trail saved. ${SAFE_APPROVAL_TEXT}`);
       return;
     }
     if (item?.raw?.source === "backend_command_slip") {
       try {
-        await recordBackendCommandDecision(item, action);
-        const trail = recordOfficeTeamApprovalTrail(item, action, "Command recorded");
+        await recordBackendCommandDecision(item, action, ownerNote || SAFE_APPROVAL_TEXT);
+        const trail = recordOfficeTeamApprovalTrail(item, action, ownerNote ? `Command recorded · ${ownerNote}` : "Command recorded");
         setApprovalTrail(trail);
         const audit = await fetchBackendCommandAudit().catch(() => null);
         if (audit) setBackendAudit(audit);
-        setNotice(`${action} recorded in Command. Nothing was sent, synced, charged or changed.`);
+        setNotice(`${action} recorded in Command. ${SAFE_APPROVAL_TEXT}`);
       } catch {
         setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
         const trail = recordOfficeTeamApprovalTrail(item, action, "Returned to Command");
@@ -219,14 +223,14 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     }
     try {
       await recordOfficeTeamDecision(item, action);
-      const trail = recordOfficeTeamApprovalTrail(item, action, "Owner reviewed");
+      const trail = recordOfficeTeamApprovalTrail(item, action, trailNote);
       setApprovalTrail(trail);
-      setNotice(`${action} recorded safely for owner approval. Approval trail saved. Nothing was sent, synced, charged or changed.`);
+      setNotice(`${action} recorded safely for owner approval. Approval trail saved. ${SAFE_APPROVAL_TEXT}`);
     } catch {
       setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
       const trail = recordOfficeTeamApprovalTrail(item, action, "Returned to Command");
       setApprovalTrail(trail);
-      setNotice(`Could not record ${action}. The slip returned to Command. Nothing was sent, synced, charged or changed.`);
+      setNotice(`Could not record ${action}. The slip returned to Command. ${SAFE_APPROVAL_TEXT}`);
     }
   }
 
@@ -283,18 +287,57 @@ function Command({ tray, setTray, counts, pending, onAction }) {
   const waiting = Math.max(0, queue.length - shown.length);
   const [selectedId, setSelectedId] = useState("");
   const selected = queue.find((item) => keyOf(item) === selectedId) || shown[0] || queue[0] || null;
-  function act(item, action) {
-    onAction(item, action);
+  function act(item, action, detail) {
+    onAction(item, action, detail);
     setSelectedId("");
   }
-  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check what the office team found, then record the owner decision. Nothing is sent, synced, charged or changed from here." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} onAction={act} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check the simple form, add owner instructions if needed, then approve or park it. Nothing sends, syncs, charges or changes records from this screen." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} onAction={act} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
 }
 
 function CommandSlip({ item, onAction }) {
+  const itemKey = keyOf(item || {});
+  const actions = Array.isArray(item?.actions) ? item.actions : [];
+  const [ownerNote, setOwnerNote] = useState("");
+  const [selectedAction, setSelectedAction] = useState(actions[0] || "Approve record");
+  useEffect(() => {
+    setOwnerNote("");
+    setSelectedAction(actions[0] || "Approve record");
+  }, [itemKey]);
+
   if (!item) return <aside className="cvCommandSlip"><span>Command slip</span><h3>No open slip</h3><p>When the office team prepares work for the owner, the full decision slip opens here.</p></aside>;
+
   const checked = Array.isArray(item.checked) ? item.checked : [];
-  const actions = Array.isArray(item.actions) ? item.actions : [];
-  return <aside className="cvCommandSlip" aria-label="Command decision slip"><div className="cvCommandSlipTop"><span>Command slip</span><em>{item.level || "Review"}</em></div><h3>{item.title}</h3><p>{item.happened || item.detail || "Prepared work is waiting for owner review."}</p><div className="cvCommandSlipMeta"><b>{item.roleName || item.tray || "Churvox"}</b><small>{item.tray || "Command"}</small><small>{item.raw?.source === "backend_command_slip" ? "Backend Command" : String(keyOf(item)).startsWith("local-command-") ? "Prepared in this workspace" : "Starter structure"}</small></div><dl><dt>What was checked</dt><dd>{checked.length ? checked.map((x) => <small key={x}>{x}</small>) : <small>Record was checked before being shown.</small>}</dd><dt>What is prepared</dt><dd>{item.prepared || "A safe prepared action is ready for review."}</dd><dt>Owner decision needed</dt><dd>{item.need || "Approve, edit, ask, snooze or park this slip."}</dd></dl><section className="cvCommandSlipSafety"><b>Safety locks</b><span>No auto-send</span><span>No auto-sync</span><span>No auto-charge</span><span>No record change without approval</span></section><footer>{actions.map((action, i) => <button key={action} type="button" className={i === 0 ? "primary" : ""} onClick={() => onAction(item, action)}>{action}</button>)}</footer></aside>;
+  const fields = makeSlipFields(item);
+  const steps = makeSlipSteps(item);
+  const formTitle = makeSlipFormTitle(item);
+  const source = item.raw?.source === "backend_command_slip" ? "Live Command" : String(itemKey).startsWith("local-command-") ? "Prepared in this workspace" : "Starter structure";
+  const finalAction = selectedAction || actions[0] || "Approve record";
+  const submit = (action = finalAction) => onAction(item, action, { ownerNote, fields, formTitle });
+
+  return <aside className="cvCommandSlip cvCommandSlipPlain" aria-label="Command decision slip">
+    <div className="cvCommandSlipTop"><span>Command slip</span><em>{item.level || "Review"}</em></div>
+    <h3>{item.title}</h3>
+    <p className="cvSlipPlainSummary">{plainSlipSummary(item)}</p>
+    <div className="cvCommandSlipMeta"><b>{item.roleName || item.tray || "Churvox"}</b><small>{item.tray || "Command"}</small><small>{source}</small></div>
+
+    <section className="cvSlipNextStep"><b>What needs doing</b><p>{plainNextStep(item)}</p></section>
+
+    <section className="cvSlipForm" aria-label="Prepared approval form">
+      <div><span>Prepared form</span><h4>{formTitle}</h4></div>
+      <div className="cvSlipFieldGrid">{fields.map(([label, value]) => <label key={label}><span>{label}</span><input value={value} readOnly /></label>)}</div>
+    </section>
+
+    <section className="cvSlipSteps"><b>Office team checklist</b>{steps.map((step, index) => <p key={step}><span>{index + 1}</span>{step}</p>)}</section>
+
+    <dl className="cvSlipExplain"><dt>What was checked</dt><dd>{checked.length ? checked.map((x) => <small key={x}>{x}</small>) : <small>Record was checked before being shown.</small>}</dd><dt>What is prepared</dt><dd>{item.prepared || "A safe prepared action is ready for review."}</dd><dt>Owner decision</dt><dd>{item.need || "Approve, edit, ask, snooze or park this slip."}</dd></dl>
+
+    <label className="cvSlipOwnerBox"><span>Owner note / instruction</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Example: approve this, ask staff first, correct the hours to 6.5, move the booking to Friday, or park it for later." /></label>
+
+    <section className="cvCommandSlipSafety"><b>Safety locks</b><span>No auto-send</span><span>No auto-sync</span><span>No auto-charge</span><span>No record change without approval</span></section>
+
+    <footer className="cvSlipDecisionActions">{actions.map((action, i) => <button key={action} type="button" className={i === 0 ? "primary" : ""} onClick={() => { setSelectedAction(action); submit(action); }}>{action}</button>)}</footer>
+    <small className="cvSlipNote">Your click records the owner decision only. The next executor step still must respect Command approval.</small>
+  </aside>;
 }
 
 function Team({ activeRole, setActiveRole }) {
@@ -329,3 +372,61 @@ function cleanScreen(hash) { const key = String(hash || "").replace("#", "").tri
 function makeSourceLabel({ isOwnerApp, backendCommand, snapshot, liveDrafts }) { if (isOwnerApp && backendCommand?.source === "backend-command") return "Command live"; if (isOwnerApp && backendCommand?.source === "backend-command-clear") return "Command clear"; if (snapshot?.source === "admin-brain") return "live check"; if (liveDrafts?.length) return "live rows"; return isOwnerApp ? "owner mode" : "control mode"; }
 function isOwnerRoute() { return typeof window !== "undefined" && window.location.pathname.includes("dashboard"); }
 function logoutOffice() { try { localStorage.removeItem("token"); localStorage.removeItem("owner_portal_session"); localStorage.removeItem("platform_owner_email"); sessionStorage.clear(); } catch {} window.location.href = "/login"; }
+function cleanText(value) { return String(value || "").trim(); }
+function firstValue(...values) { return values.map(cleanText).find(Boolean) || ""; }
+function payloadOf(item = {}) { return item?.raw?.payload && typeof item.raw.payload === "object" ? item.raw.payload : {}; }
+function plainSlipSummary(item = {}) { return firstValue(item.happened, item.detail, item.raw?.found, "The office team found something that needs owner approval."); }
+function makeSlipFormTitle(item = {}) {
+  const text = `${item.tray || ""} ${item.roleName || ""} ${item.raw?.action_type || ""} ${item.title || ""}`.toLowerCase();
+  if (/timer|hours|payroll|staff/.test(text)) return "Hours review form";
+  if (/invoice|payment|money|bookkeeper/.test(text)) return "Invoice / payment review form";
+  if (/account|gst|xero|myob|tax/.test(text)) return "Accounting review form";
+  if (/booking|schedule|recurring|date|rebook/.test(text)) return "Booking review form";
+  if (/client|memory|preference|access/.test(text)) return "Client memory form";
+  if (/quality|proof|photo|complete/.test(text)) return "Quality check form";
+  if (/message|reply/.test(text)) return "Reply approval form";
+  if (/operation|pattern|rule/.test(text)) return "Operations review form";
+  return "Owner approval form";
+}
+function plainNextStep(item = {}) {
+  const text = `${item.tray || ""} ${item.roleName || ""} ${item.raw?.action_type || ""} ${item.title || ""}`.toLowerCase();
+  if (/timer|hours|payroll|staff/.test(text)) return "Check the hours, decide if they are right, add a note if staff need to fix anything, then approve or ask staff.";
+  if (/invoice|payment|money|bookkeeper/.test(text)) return "Check the job, amount, invoice/payment detail, then approve the direction or ask for changes before anything is sent.";
+  if (/account|gst|xero|myob|tax/.test(text)) return "Check GST/accounting/export readiness, then approve, send back to Bookkeeper, export later or park it.";
+  if (/booking|schedule|recurring|date|rebook/.test(text)) return "Check the date, worker and customer context, then approve the booking plan or edit/ask before anything is changed.";
+  if (/client|memory|preference|access/.test(text)) return "Check the note is useful and correct, then approve, edit, ignore or park it before the client record changes.";
+  if (/quality|proof|photo|complete/.test(text)) return "Check what proof is missing, then approve a proof request, review completion or park it.";
+  if (/message|reply/.test(text)) return "Check the prepared reply, add instructions if needed, then approve or edit before any message is sent.";
+  if (/operation|pattern|rule/.test(text)) return "Check the pattern, decide if a rule/process should be made, then approve, edit or park it.";
+  return "Read the slip, add owner instructions if needed, then approve, edit, ask, snooze or park it.";
+}
+function makeSlipSteps(item = {}) {
+  const form = makeSlipFormTitle(item).toLowerCase();
+  if (form.includes("hours")) return ["Confirm the timer or manual hours.", "Decide if staff should be asked for detail.", "Approve only when the hours direction is right."];
+  if (form.includes("invoice") || form.includes("payment")) return ["Check the job and customer context.", "Confirm amount, extras and payment link direction.", "Approve only when invoice/payment admin is ready."];
+  if (form.includes("accounting")) return ["Check GST/tax/export risk.", "Confirm whether Bookkeeper needs changes.", "Approve review or park before any accounting sync."];
+  if (form.includes("booking")) return ["Check date, worker and customer expectation.", "Confirm recurring/next booking details.", "Approve only when the schedule plan is right."];
+  if (form.includes("client")) return ["Check the detail is useful.", "Remove anything that should not be saved.", "Approve only if it should become client memory."];
+  if (form.includes("quality")) return ["Check proof/photos/notes are complete.", "Decide if staff need to add proof.", "Approve only when completion is clear."];
+  if (form.includes("reply")) return ["Read the customer message.", "Check the prepared reply direction.", "Approve only when wording is safe to send later."];
+  return ["Read what was found.", "Check the prepared form.", "Approve, edit, ask or park the slip."];
+}
+function makeSlipFields(item = {}) {
+  const payload = payloadOf(item);
+  const raw = item.raw || {};
+  const fields = [
+    ["Role doing the mahi", firstValue(item.roleName, payload.office_role)],
+    ["Area", firstValue(item.tray, raw.source_type)],
+    ["Record", firstValue(payload.record_title, payload.job_title, raw.title, item.title)],
+    ["Customer", firstValue(payload.customer, payload.customer_name)],
+    ["Invoice", firstValue(payload.invoice, payload.invoice_number)],
+    ["Amount", firstValue(payload.amount, payload.amount_due)],
+    ["Status", firstValue(payload.status, raw.status, item.level)],
+    ["Worker update", firstValue(payload.update, payload.note, payload.message)],
+    ["Source", firstValue(payload.source_collection, raw.source_type)],
+    ["Record ID", firstValue(payload.record_id, raw.source_id, raw.command_slip_id)],
+  ].filter(([, value]) => Boolean(value));
+  if (fields.length) return fields.slice(0, 8);
+  const checked = Array.isArray(item.checked) ? item.checked : [];
+  return checked.slice(0, 4).map((value, index) => [`Checked ${index + 1}`, value]);
+}
