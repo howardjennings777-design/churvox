@@ -1,6 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
+  CHURVOX_PLANS,
+  detectCountryCode,
+  pricePlanForCountry,
+} from "../../config/churvoxPlans";
+import {
   PublicNav,
   PublicFooter,
   Eyebrow,
@@ -37,14 +42,20 @@ const proof = [
   ["14 days", "free trial with no card required upfront"],
 ];
 
-const plans = [
-  ["Start", "$39/month + GST", "Core jobs, clients, quotes and invoices."],
-  ["Crew", "$89/month + GST", "Worker flow, team updates and field records."],
-  ["Operator", "$149/month + GST", "Prepared admin and the owner Command desk.", "Most Popular"],
-  ["Command", "$299/month + GST", "The full approval engine for larger operations."],
-];
+const homePlanCopy = {
+  Start: "Core jobs, clients, quotes and invoices.",
+  Crew: "Worker flow, team updates and field records.",
+  Operator: "Prepared admin and the owner Command desk.",
+  Command: "The full approval engine for larger operations.",
+};
 
 export default function ExecutiveHomePage() {
+  const [country] = React.useState(() => detectCountryCode());
+  const plans = React.useMemo(
+    () => CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, country)),
+    [country],
+  );
+
   return (
     <main className="cp26Site" data-version="CHURVOX_PUBLIC_ADMIN_ENGINE_20260710">
       <PublicNav />
@@ -131,16 +142,17 @@ export default function ExecutiveHomePage() {
         <SectionHeading
           eyebrow="Pricing"
           title="Start where the business is now."
-          text="No hidden pricing change. Move up only when the team, admin load or approval needs grow."
+          text="Prices below come from the same plan configuration used by checkout. Move up only when the team, admin load or approval needs grow."
         />
         <div className="cp26PlanGrid">
-          {plans.map(([name, price, text, badge]) => (
-            <article key={name} className={`cp26PlanCard${badge ? " featured" : ""}`}>
-              {badge ? <span className="cp26PlanBadge">{badge}</span> : null}
-              <h3>{name}</h3>
-              <div className="cp26PlanPrice">{price}</div>
-              <p>{text}</p>
-              <Link className={`cp26Button${badge ? "" : " cp26ButtonGhost"}`} to="/pricing">View plan</Link>
+          {plans.map((plan) => (
+            <article key={plan.key || plan.name} className={`cp26PlanCard${plan.popular ? " featured" : ""}`}>
+              {plan.popular ? <span className="cp26PlanBadge">Most Popular</span> : null}
+              <h3>{plan.name}</h3>
+              <div className="cp26PlanPrice">{plan.priceLabel}</div>
+              {plan.taxInclusiveLabel ? <small>{plan.taxInclusiveLabel}</small> : null}
+              <p>{homePlanCopy[plan.name] || plan.summary}</p>
+              <Link className={`cp26Button${plan.popular ? "" : " cp26ButtonGhost"}`} to="/pricing">View plan</Link>
             </article>
           ))}
         </div>
