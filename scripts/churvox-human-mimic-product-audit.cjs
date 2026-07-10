@@ -141,7 +141,7 @@ expect(
   all(safeControls, ['createBackendCommandSlip', 'safeActions.map', 'Every button prepares a real Command slip'])
     && all(xero, ['/xero/status', '/xero/connect/start', '/xero/disconnect', '/api/accounting/export/pack?system=both'])
     && all(worker, ['/jobs/${encodeURIComponent(jobId)}/${endpoint}', '/worker/field-slip', 'proof_photo_names'])
-    && all(ownerWorker, ['Open protected worker app', 'This owner page shows live worker records'])
+    && all(ownerWorker, ['Open protected worker app', 'This is owner oversight—not a fake worker phone.', 'This owner screen does not simulate or change them.'])
     && all(help, ['mailto:hello@churvox.com', 'goToScreen(screen)'])
     && all(plans, ['Open secure billing', 'Nothing is charged from this comparison screen']),
   'Owner and worker controls must either call a real route, prepare Command work or open a real destination',
@@ -171,6 +171,10 @@ const buttonFiles = [
   'frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamBackOfficeScreens.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamExtraScreens.jsx',
+  'frontend/src/churvox-office-lab/OfficeTeamJobsWorkspace.jsx',
+  'frontend/src/churvox-office-lab/OfficeTeamClientsWorkspace.jsx',
+  'frontend/src/churvox-office-lab/OfficeTeamQuotesWorkspace.jsx',
+  'frontend/src/churvox-office-lab/OfficeTeamInvoicesWorkspace.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamXeroScreen.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamSiteSettings.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx',
