@@ -168,12 +168,12 @@ expect(
     'path === "/office-team-lab"',
     'path === "/office-lab"',
     'path === "/new-command-lab"',
-    'options.allowFallback === true',
-    'isOfficeTeamPreviewRoute()',
+    'const allowFallback = isOfficeTeamPreviewRoute() && options.allowFallback !== false;',
     'const previewFallback = isOfficeTeamPreviewRoute()',
     '|| ["", "No live record selected", "Clear", "No live records found yet."]',
     'message: allowFallback ? "Example preview records" : "Live records unavailable"',
   ].every((value) => liveRows.includes(value))
+    && !liveRows.includes('options.allowFallback === true')
     && !liveRows.includes('const allowFallback = options.allowFallback !== false;'),
   'The authenticated dashboard must never inherit starter rows or selected fallback records',
 );
@@ -181,11 +181,11 @@ expect(
 expect(
   'overview uses truthful loading, empty and unavailable states',
   overview.includes('import { isOfficeTeamPreviewRoute } from "./OfficeTeamLiveRows"')
-    && overview.includes('options.allowFallback === true')
-    && overview.includes('isOfficeTeamPreviewRoute()')
+    && overview.includes('const allowFallback = isOfficeTeamPreviewRoute() && options.allowFallback !== false;')
     && overview.includes('"Checking live records"')
     && overview.includes('"No live records"')
     && overview.includes('"Live check unavailable"')
+    && !overview.includes('options.allowFallback === true')
     && !overview.includes('const allowFallback = options.allowFallback !== false;'),
   'Today/overview must not replace an empty or failed live read with sample business activity',
 );
