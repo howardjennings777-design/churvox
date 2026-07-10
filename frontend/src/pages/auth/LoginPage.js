@@ -15,7 +15,7 @@ const GUIDE_COMPLETE_KEY = "churvox:ai-guide-complete:v1";
 const LOGIN_TIMEOUT_MS = 28000;
 const ACCESS_REFRESH_TIMEOUT_MS = 9000;
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b";
-const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com";
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
 const loginHighlights = [
   ["Command", "Owner decisions first", "Prepared admin waits for approval before anything moves."],
