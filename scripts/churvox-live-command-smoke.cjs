@@ -10,6 +10,7 @@ const getEndpoints = [
 ];
 
 const postEndpoints = [
+  '/api/command/scan',
   '/api/command/worker-payment-request',
   '/api/command/worker-update-request',
 ];
@@ -55,11 +56,13 @@ async function checkGet(endpoint) {
 async function checkProtectedPost(endpoint) {
   const url = `${base}${endpoint}`;
   const isPayment = endpoint.includes('payment');
+  const isScan = endpoint.includes('/scan');
   const response = await fetch(url, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      title: isPayment ? 'Live smoke worker payment request' : 'Live smoke worker update request',
+      title: isPayment ? 'Live smoke worker payment request' : isScan ? 'Live smoke office engine scan' : 'Live smoke worker update request',
+      trigger: 'live_smoke',
       amount: 'Smoke test only',
       invoice: 'Smoke test only',
       customer: 'Smoke test only',
@@ -85,7 +88,7 @@ async function checkProtectedPost(endpoint) {
 
   if (response.status === 200 && body && body.success === true) {
     const safety = String(body.safety || body.message || '');
-    if (!safety.includes('Nothing was sent, synced, charged or changed') && !safety.includes('No card was charged')) {
+    if (!safety.includes('Nothing was sent, synced, charged or changed') && !safety.includes('No card was charged') && !safety.includes('Owner approval is required')) {
       failures.push(`${endpoint} returned 200 but safety text was missing`);
       console.log(`✗ ${endpoint} returned 200 but safety text was missing`);
       return;
