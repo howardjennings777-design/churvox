@@ -42,8 +42,8 @@ export function PublicFooter() {
         <Link to="/pricing">Pricing</Link>
         <Link to="/demo">Demo</Link>
         <Link to="/contact">Contact</Link>
-        <Link to="/privacy-policy">Privacy</Link>
-        <Link to="/terms-of-service">Terms</Link>
+        <Link to="/legal/privacy">Privacy</Link>
+        <Link to="/legal/terms">Terms</Link>
         <Link to="/login">Log in</Link>
       </nav>
       <small>© {new Date().getFullYear()} Churvox · hello@churvox.com</small>
@@ -67,22 +67,22 @@ export function SectionHeading({ eyebrow, title, text, align = "left" }) {
 
 export function CommandPreview() {
   const queue = [
-    ["Invoice check", "Belmont Villas", "$340", "Money"],
-    ["Worker update", "Northwood clean", "Photo missing", "Quality"],
-    ["Client reply", "Friday booking", "Time needed", "Bookings"],
+    ["Invoice check", "Example client", "$340 example", "Money"],
+    ["Worker update", "Example cleaning job", "Photo missing", "Quality"],
+    ["Client reply", "Example Friday booking", "Time needed", "Bookings"],
   ];
   return (
-    <aside className="cp26CommandPreview" aria-label="Sample Churvox Command workspace">
+    <aside className="cp26CommandPreview" aria-label="Example Churvox Command workspace">
       <div className="cp26PreviewTop">
-        <div><small>Sample workspace</small><strong>Command</strong></div>
-        <span>3 owner decisions</span>
+        <div><small>Example workspace · sample data only</small><strong>Command</strong></div>
+        <span>3 example decisions</span>
       </div>
       <div className="cp26PreviewNav">
         <span>Today</span><span className="active">Command</span><span>Jobs</span><span>Clients</span><span>Money</span>
       </div>
       <div className="cp26PreviewBody">
         <section className="cp26PreviewQueue">
-          <small>Prepared for review</small>
+          <small>Example items prepared for review</small>
           {queue.map(([title, client, detail, tray], index) => (
             <article key={title} className={index === 0 ? "selected" : ""}>
               <div><b>{title}</b><span>{client}</span></div>
@@ -92,16 +92,16 @@ export function CommandPreview() {
           ))}
         </section>
         <section className="cp26PreviewSlip">
-          <small>Owner decision slip</small>
+          <small>Example owner decision slip</small>
           <h3>Invoice check</h3>
           <dl>
-            <div><dt>Client</dt><dd>Belmont Villas</dd></div>
-            <div><dt>Completed work</dt><dd>Hedge trim</dd></div>
+            <div><dt>Client</dt><dd>Example client</dd></div>
+            <div><dt>Completed work</dt><dd>Example hedge trim</dd></div>
             <div><dt>Checked</dt><dd>Job, price, proof</dd></div>
-            <div><dt>Still needed</dt><dd>Confirm green-waste amount</dd></div>
+            <div><dt>Still needed</dt><dd>Confirm example green-waste amount</dd></div>
           </dl>
           <div className="cp26PreviewActions"><span>Approve</span><span>Edit</span><span>Park</span></div>
-          <p>Nothing sends, syncs or charges until the owner approves.</p>
+          <p>Preview only. Nothing is sent, synced, charged or changed from this example.</p>
         </section>
       </div>
     </aside>
