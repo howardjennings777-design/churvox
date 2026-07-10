@@ -1,7 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Nav, Footer } from "./ExecutiveHomePage";
-import { ProfessionStrip } from "./PublicProfessionSections";
 import {
   CHURVOX_PLANS,
   COUNTRY_OPTIONS,
@@ -12,33 +10,25 @@ import {
   pricingNotesForCountry,
   normalizeCountry,
 } from "../../config/churvoxPlans";
-import "./SimplePublic.css";
-
-function isOperator(plan) {
-  return String(plan?.name || "").toLowerCase() === "operator";
-}
+import { PublicNav, PublicFooter, Eyebrow, SectionHeading } from "./ChurvoxPublicShell";
 
 function cleanFeature(item) {
   return String(item || "")
-    .replace(/AI Operator Actions/gi, "admin actions")
+    .replace(/AI Operator Actions/gi, "prepared admin actions")
     .replace(/AI Operator/gi, "prepared admin")
-    .replace(/Customer Follow-Up Brain/gi, "Customer follow-up tools");
+    .replace(/Customer Follow-Up Brain/gi, "customer follow-up tools");
 }
 
-function featureList(plan) {
+function featuresFor(plan) {
   const list = plan.features || plan.includes || [];
-  return Array.isArray(list) ? list.slice(0, 5).map(cleanFeature) : [];
-}
-
-function taxInclusive(plan) {
-  return plan.taxInclusiveLabel || "";
+  return Array.isArray(list) ? list.slice(0, 6).map(cleanFeature) : [];
 }
 
 const fitNotes = [
-  ["Start", "For solo operators getting jobs, clients, quotes and invoices under control."],
-  ["Crew", "For service businesses adding workers, field updates and team messages."],
-  ["Operator", "For busy owners who want prepared admin waiting in Command."],
-  ["Command", "For larger crews that need the full approval desk, payroll review and deeper controls."],
+  ["Start", "For solo operators who want jobs, clients, quotes and invoices under control."],
+  ["Crew", "For businesses adding workers, field updates and simple team coordination."],
+  ["Operator", "For busy owners who want prepared admin and the Command approval desk."],
+  ["Command", "For larger operations that need deeper controls, payroll review and more capacity."],
 ];
 
 export default function ExecutivePricingPage() {
@@ -63,104 +53,104 @@ export default function ExecutivePricingPage() {
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="publicSite cv2Site publicPageSlim pricingSlim" data-version="CHURVOX_PRICING_SERVICE_PLATFORM_20260708">
-      <Nav />
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_PRICING_20260710">
+      <PublicNav active="/pricing" />
 
-      <section className="publicHero publicHeroCompact slimHero">
-        <div className="publicHeroCopy">
-          <span className="publicKicker">Pricing</span>
-          <h1>Pay for the level of admin you want Churvox to handle.</h1>
-          <p>Start with the basics, add workers when the team grows, then move into Command when you want prepared admin waiting for owner approval.</p>
-          <label className="publicCountrySelect">
+      <section className="cp26PageHero">
+        <div>
+          <Eyebrow>Simple monthly plans</Eyebrow>
+          <h1>Pay for the level of admin Churvox handles.</h1>
+          <p>Start with the operating basics, add worker flow when the team grows, and move into the full approval engine when the admin load demands it.</p>
+          <label className="cp26CountrySelect">
             <span>Pricing region</span>
             <select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>
-              {COUNTRY_OPTIONS.map((item) => (
-                <option key={item.code} value={item.code}>{item.label} - {item.currency}</option>
-              ))}
+              {COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}
             </select>
           </label>
-          <p className="publicFinePrint">Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes.join(" ")}</p>
+          <p className="cp26FinePrint">Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes.join(" ")}</p>
         </div>
-        <aside className="publicFeaturePanel slimPanel">
-          <small>Best starting point</small>
+        <div className="cp26HeroPanel">
+          <small>Most popular</small>
           <b>Operator</b>
-          <span>For owners who want Churvox preparing admin while they keep the final say.</span>
-        </aside>
-      </section>
-
-      <section className="publicBand slimBand pricingCardsBand">
-        <div className="publicSectionHead compactHead">
-          <span className="publicKicker">Plans</span>
-          <h2>Choose the plan that matches how you run.</h2>
-        </div>
-        <div className="publicPlanGrid slimPlanGrid">
-          {displayPlans.map((plan) => (
-            <article key={plan.name} className={isOperator(plan) ? "featured" : ""}>
-              {isOperator(plan) ? <small>Most Popular</small> : null}
-              <h3>{plan.name}</h3>
-              <div className="publicPlanPrice">{plan.priceLabel}</div>
-              {taxInclusive(plan) ? <div className="publicPlanTax">{taxInclusive(plan)}</div> : null}
-              <p>{cleanFeature(plan.summary)}</p>
-              <ul>
-                {featureList(plan).map((item) => <li key={item}>{item}</li>)}
-              </ul>
-              <Link to={signupTo} className="publicPrimary">Start trial</Link>
-            </article>
-          ))}
+          <span>For owners who want Churvox preparing the admin and bringing genuine decisions back to Command.</span>
         </div>
       </section>
 
-      <section className="publicBand publicSplit slimBand">
-        <div>
-          <span className="publicKicker">Best fit</span>
-          <h2>Not sure? Pick by pressure point.</h2>
-          <p>No card upfront. Start the trial, see the workflow, then keep the level that fits your trade and workload.</p>
-        </div>
-        <div className="publicAreaGrid slimGrid">
-          {fitNotes.map(([title, text]) => (
-            <article key={title}>
-              <b>{title}</b>
-              <span>{text}</span>
-            </article>
-          ))}
+      <section className="cp26Section">
+        <SectionHeading
+          eyebrow="Plans"
+          title="Choose the level that matches the business today."
+          text="Every plan starts with a 14-day trial and no card upfront. Pricing shown below is taken from the live Churvox plan configuration."
+        />
+        <div className="cp26PlanGrid">
+          {displayPlans.map((plan) => {
+            const featured = String(plan?.name || "").toLowerCase() === "operator";
+            return (
+              <article key={plan.name} className={`cp26PlanCard${featured ? " featured" : ""}`}>
+                {featured ? <span className="cp26PlanBadge">Most Popular</span> : null}
+                <h3>{plan.name}</h3>
+                <div className="cp26PlanPrice">{plan.priceLabel}</div>
+                {plan.taxInclusiveLabel ? <div className="cp26PlanTax">{plan.taxInclusiveLabel}</div> : null}
+                <p>{cleanFeature(plan.summary)}</p>
+                <ul>{featuresFor(plan).map((feature) => <li key={feature}>{feature}</li>)}</ul>
+                <Link className={`cp26Button${featured ? "" : " cp26ButtonGhost"}`} to={signupTo}>Start free trial</Link>
+              </article>
+            );
+          })}
         </div>
       </section>
 
-      <ProfessionStrip compact />
-
-      <section className="publicBand slimBand">
-        <div className="publicSectionHead compactHead">
-          <span className="publicKicker">Add-ons</span>
-          <h2>Keep extras separate.</h2>
+      <section className="cp26Section cp26SectionDark">
+        <SectionHeading
+          eyebrow="Best fit"
+          title="Choose by the pressure point, not the feature count."
+          text="The right plan is the one that removes the current admin bottleneck without forcing the business into unnecessary complexity."
+        />
+        <div className="cp26AreaGrid">
+          {fitNotes.map(([name, text]) => <article key={name}><b>{name}</b><span>{text}</span></article>)}
         </div>
-        <div className="publicAddOnGrid slimGrid">
+      </section>
+
+      <section className="cp26Section">
+        <SectionHeading
+          eyebrow="Add-ons"
+          title="Extra capacity stays separate and visible."
+          text="Add-ons do not silently change the base plan price."
+        />
+        <div className="cp26ContactGrid">
           <article>
             <b>Command Growth Pack</b>
-            <strong>{growthPack.priceLabel}</strong>
+            <div className="cp26PlanPrice">{growthPack.priceLabel}</div>
             {growthPack.taxInclusiveLabel ? <span>{growthPack.taxInclusiveLabel}</span> : null}
-            <p>Extra Command capacity for larger teams and heavier admin.</p>
+            <span>Extra active-team capacity and additional Command headroom for larger operations.</span>
           </article>
           <article>
             <b>Accounting Sync Add-on</b>
-            <strong>{accountingAddon.priceLabel}</strong>
+            <div className="cp26PlanPrice">{accountingAddon.priceLabel}</div>
             {accountingAddon.taxInclusiveLabel ? <span>{accountingAddon.taxInclusiveLabel}</span> : null}
-            <p>Optional draft invoice sync for non-Command tiers where available.</p>
+            <span>Optional draft invoice sync where available, with owner-controlled accounting safeguards.</span>
+          </article>
+          <article>
+            <b>Need help choosing?</b>
+            <span>Tell us how many people are active, what admin hurts most and whether you want Command now or later.</span>
+            <a href="mailto:hello@churvox.com">Email hello@churvox.com</a>
           </article>
         </div>
       </section>
 
-      <section className="publicBand publicCta slimCta">
+      <section className="cp26Closing">
         <div>
-          <span className="publicKicker">Trial</span>
-          <h2>Start with the plan you want to test.</h2>
+          <Eyebrow light>Start without pressure</Eyebrow>
+          <h2>Use the trial to see whether Churvox actually removes work.</h2>
+          <p>No card upfront. Keep the plan only when the system earns its place in the business.</p>
         </div>
-        <div className="publicActions">
-          <Link to={signupTo} className="publicPrimary">Start trial</Link>
-          <Link to="/product" className="publicSecondary">See product</Link>
+        <div className="cp26ClosingActions">
+          <Link className="cp26Button" to={signupTo}>Start free trial</Link>
+          <Link className="cp26Button cp26ButtonGhost" to="/demo">Open demo</Link>
         </div>
       </section>
 
-      <Footer />
+      <PublicFooter />
     </main>
   );
 }
