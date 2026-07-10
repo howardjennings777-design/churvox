@@ -98,6 +98,8 @@ OWNER_BILLING_ROLES = {
     "manager",
     "office_admin",
 }
+COMMAND_SAFETY = "Owner approval recorded. Nothing was sent, synced, charged or changed."
+COMMAND_SMOKE_MARKER = "command-live-smoke-guard-20260710d"
 
 
 def _s(value: Any) -> str:
@@ -164,6 +166,116 @@ def _remove_checkout_routes() -> None:
             continue
         kept.append(route)
     app.router.routes = kept
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    try:
+        if isinstance(value, server.ObjectId):
+            return str(value)
+    except Exception:
+        pass
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
+def _doc_out(doc: Any) -> Any:
+    if not isinstance(doc, dict):
+        return doc
+    out = dict(doc)
+    if "_id" in out:
+        out["id"] = str(out.pop("_id"))
+    return _json_safe(out)
+
+
+def _business_ids(user: dict[str, Any]) -> tuple[str, Any]:
+    business_id = _s((user or {}).get("business_id") or (user or {}).get("id") or (user or {}).get("_id"))
+    try:
+        return business_id, server.ObjectId(business_id)
+    except Exception:
+        return business_id, business_id
+
+
+def _safe_text(value: Any, fallback: str = "") -> str:
+    text = " ".join(_s(value).strip().split())
+    return text[:900] or fallback
+
+
+async def _command_user(request: Request) -> dict[str, Any]:
+    return await server.get_current_user(request)
+
+
+async def _request_json(request: Request) -> dict[str, Any]:
+    try:
+        body = await request.json()
+        return body if isinstance(body, dict) else {}
+    except Exception:
+        return {}
+
+
+async def _insert_command_slip(user: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    business_id, business_oid = _business_ids(user)
+    now_value = datetime.now(timezone.utc)
+    doc = {
+        "business_id": business_id,
+        "contractor_id": business_oid,
+        "source_type": _safe_text(payload.get("source_type"), "command_smoke_safe"),
+        "source_id": _safe_text(payload.get("source_id") or payload.get("title"), "command-smoke-safe"),
+        "action_type": _safe_text(payload.get("action_type"), "owner_review"),
+        "title": _safe_text(payload.get("title"), "Command request"),
+        "found": _safe_text(payload.get("found"), "Command request needs owner review."),
+        "prepared": _safe_text(payload.get("prepared"), "Prepared for owner approval."),
+        "why": _safe_text(payload.get("why"), "Owner approval is required before anything changes."),
+        "urgency": _safe_text(payload.get("urgency"), "Owner review"),
+        "status": "open",
+        "payload": {
+            "prepared_only": True,
+            "owner_review_only": True,
+            "no_auto_send": True,
+            "no_auto_sync": True,
+            "no_auto_charge": True,
+            "no_auto_record_change": True,
+            **(payload.get("payload") if isinstance(payload.get("payload"), dict) else {}),
+        },
+        "owner_review_only": True,
+        "prepared_only": True,
+        "no_auto_send": True,
+        "no_auto_sync": True,
+        "no_auto_charge": True,
+        "no_auto_record_change": True,
+        "created_by": _s(user.get("id") or user.get("_id")),
+        "created_at": now_value,
+        "updated_at": now_value,
+        "audit": [{
+            "by": _s(user.get("id") or user.get("_id")),
+            "role": _s(user.get("role") or "owner"),
+            "action": "created",
+            "note": "Command request created safely from production entrypoint",
+            "at": now_value,
+            "safety": COMMAND_SAFETY,
+        }],
+    }
+    result = await server.db.command_slips.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    try:
+        await server.db.command_events.insert_one({
+            "business_id": business_id,
+            "contractor_id": business_oid,
+            "event_type": _safe_text(payload.get("event_type"), "command_request_created"),
+            "title": doc["title"],
+            "detail": doc["prepared"],
+            "slip_id": str(result.inserted_id),
+            "safety": COMMAND_SAFETY,
+            "created_by": doc["created_by"],
+            "created_at": now_value,
+        })
+    except Exception:
+        pass
+    return doc
 
 
 def _billing_allowed(user: dict[str, Any]) -> bool:
@@ -263,6 +375,106 @@ async def _make_checkout(request: Request, payload: dict[str, Any]) -> tuple[Any
 _remove_checkout_routes()
 
 
+@app.get("/api/command/live-smoke-marker")
+async def command_live_smoke_marker():
+    return {"success": True, "marker": COMMAND_SMOKE_MARKER, "safety": COMMAND_SAFETY}
+
+
+@app.api_route("/api/command/events", methods=["GET", "POST"])
+async def command_events_entrypoint(request: Request):
+    user = await _command_user(request)
+    business_id, _ = _business_ids(user)
+    items = await server.db.command_events.find({"business_id": business_id}).sort("created_at", -1).limit(100).to_list(100)
+    return {"success": True, "events": [_doc_out(item) for item in items], "marker": COMMAND_SMOKE_MARKER, "safety": COMMAND_SAFETY}
+
+
+@app.api_route("/api/command/audit", methods=["GET", "POST"])
+async def command_audit_entrypoint(request: Request):
+    user = await _command_user(request)
+    business_id, _ = _business_ids(user)
+    slips = await server.db.command_slips.find({"business_id": business_id}).sort("updated_at", -1).limit(100).to_list(100)
+    audit = []
+    for slip in slips:
+        for entry in slip.get("audit") or []:
+            row = _json_safe(dict(entry))
+            row["slip_id"] = str(slip.get("_id") or "")
+            row["title"] = _safe_text(slip.get("title"), "Command slip")
+            audit.append(row)
+    return {"success": True, "audit": audit[:120], "marker": COMMAND_SMOKE_MARKER, "safety": COMMAND_SAFETY}
+
+
+@app.api_route("/api/command/worker-payment-request", methods=["GET", "POST"])
+async def worker_payment_request_entrypoint(request: Request):
+    user = await _command_user(request)
+    payload = await _request_json(request)
+    job_title = _safe_text(payload.get("job_title") or payload.get("title"), "Worker payment request")
+    amount = _safe_text(payload.get("amount") or payload.get("amount_due"), "Amount needs owner check")
+    invoice_number = _safe_text(payload.get("invoice") or payload.get("invoice_number"), "No invoice linked")
+    customer = _safe_text(payload.get("customer") or payload.get("customer_name"), "Customer")
+    slip = await _insert_command_slip(user, {
+        "source_type": "worker_payment",
+        "action_type": "prepare_payment_link",
+        "event_type": "worker_payment_requested",
+        "title": f"Worker payment link request: {job_title}",
+        "found": f"Worker asked to take card payment for {customer}. Amount: {amount}. Invoice: {invoice_number}.",
+        "prepared": "Prepare or attach an approved invoice payment link for the worker. No card was charged.",
+        "why": "Owner approval is required before a worker can show a payment link or collect card payment.",
+        "payload": {
+            "worker_payment_request": True,
+            "job_title": job_title,
+            "amount": amount,
+            "invoice": invoice_number,
+            "customer": customer,
+            "payment_link": _safe_text(payload.get("payment_link"), ""),
+            "office_role": "Bookkeeper",
+            "actions": ["Approve payment link", "Edit invoice", "Ask worker", "Park"],
+            "will_do": ["Prepare payment-link draft only", "Keep card charge locked", "Record owner approval"],
+            "prepared_form": {
+                "Client": customer,
+                "Job": job_title,
+                "Amount": amount,
+                "Invoice": invoice_number,
+                "Payment link": "Hold until owner approval",
+            },
+        },
+    })
+    return {"success": True, "slip": _doc_out(slip), "marker": COMMAND_SMOKE_MARKER, "safety": COMMAND_SAFETY, "message": "Payment link request sent to Command. No card was charged."}
+
+
+@app.api_route("/api/command/worker-update-request", methods=["GET", "POST"])
+async def worker_update_request_entrypoint(request: Request):
+    user = await _command_user(request)
+    payload = await _request_json(request)
+    job_title = _safe_text(payload.get("job_title") or payload.get("title"), "Worker update")
+    update = _safe_text(payload.get("update") or payload.get("note") or payload.get("message"), "Worker update needs owner review")
+    update_type = _safe_text(payload.get("update_type") or payload.get("type"), "Worker update")
+    slip = await _insert_command_slip(user, {
+        "source_type": "worker_update",
+        "action_type": "worker_update_review",
+        "event_type": "worker_update_requested",
+        "title": f"Worker update sent to Command: {job_title}",
+        "found": f"{update_type}: {update}",
+        "prepared": "Office team prepared this worker update for owner review.",
+        "why": "Owner approval is required before any job, client, invoice or message record changes.",
+        "payload": {
+            "worker_update_request": True,
+            "job_title": job_title,
+            "update": update,
+            "update_type": update_type,
+            "office_role": "Office Manager",
+            "actions": ["Approve update", "Edit note", "Ask worker", "Park"],
+            "will_do": ["Save update draft only", "Keep record changes locked", "Record owner approval"],
+            "prepared_form": {
+                "Job": job_title,
+                "Update type": update_type,
+                "Worker note": update,
+                "Prepared action": "Review before changing any record",
+            },
+        },
+    })
+    return {"success": True, "slip": _doc_out(slip), "marker": COMMAND_SMOKE_MARKER, "safety": COMMAND_SAFETY, "message": "Worker update sent to Command. Nothing was sent, synced, charged or changed."}
+
+
 @app.get("/api/billing/start-checkout")
 async def start_checkout(request: Request, plan: str = "pro", country: str = "NZ"):
     session, _plan, _country, _source = await _make_checkout(request, {"plan": plan, "country": country})
@@ -291,6 +503,6 @@ async def create_checkout_session(request: Request, payload: dict = Body(default
     }
 
 try:
-    server.logger.info("[Churvox] Clean production checkout entrypoint loaded")
+    server.logger.info("[Churvox] Clean production checkout entrypoint loaded with Command smoke routes")
 except Exception:
     pass
