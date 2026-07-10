@@ -25,9 +25,11 @@ const source = [
   '        failed.append(f"{name}: {exc}")',
   '        print(f"✗ Python syntax: {name} — {exc}")',
   'if failed:',
-  '    print(f"\nCommand Python syntax failed: {len(failed)} file(s).", file=sys.stderr)',
+  '    print("", file=sys.stderr)',
+  '    print(f"Command Python syntax failed: {len(failed)} file(s).", file=sys.stderr)',
   '    raise SystemExit(1)',
-  'print(f"\nCommand Python syntax passed: {len(files)} files.")',
+  'print("")',
+  'print(f"Command Python syntax passed: {len(files)} files.")',
 ].join('\n');
 
 let result = null;
