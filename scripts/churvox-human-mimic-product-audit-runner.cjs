@@ -9,7 +9,14 @@ const target = path.resolve(root, process.argv[2] || 'scripts/churvox-human-mimi
 const source = fs.readFileSync(target, 'utf8');
 
 const staleExpression = "fullRunner.includes('only the two past visits are eligible history')";
-const correctedExpression = "fullRunner.replace(/\\s+/g, ' ').includes('only the two past visits are eligible history')";
+const correctedExpression = `all(fullRunner, [
+      'def build_seed_with_true_edge_cases',
+      'str(row.get("_id")) == str(ids["weak_repeat"])',
+      'row["scheduled_date"] = suite.iso(5)',
+      'suite.build_seed = build_seed_with_true_edge_cases',
+      'await suite.main()',
+      'asyncio.run(run())',
+    ])`;
 
 const occurrences = source.split(staleExpression).length - 1;
 if (occurrences !== 1) {
