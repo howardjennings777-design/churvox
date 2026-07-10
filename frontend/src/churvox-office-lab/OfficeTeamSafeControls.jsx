@@ -81,7 +81,7 @@ export default function OfficeTeamSafeControls({ area = "office", record = [], p
           </button>
         ))}
       </div>
-      <small>{ownerRoute ? "Every button prepares a real Command slip · owner approval required · no send, sync or charge." : "Every button prepares a Command item in this control workspace."}</small>
+      <small>{ownerRoute ? "Every button prepares a real Command slip · owner approval required · no send, no sync, no charge, no record change without approval." : "Every button prepares a Command item in this control workspace."}</small>
       {trail.length ? <div className="cvSafeTrail">{trail.map((item) => <p key={item.id}>{item.text}</p>)}</div> : null}
     </section>
   );
