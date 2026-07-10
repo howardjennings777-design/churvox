@@ -66,7 +66,6 @@ for _patch in [
     'churvox_paid_launch_guard_patch',
     'churvox_admin_recovery_patch',
     'churvox_owner_cockpit_control_patch',
-    'churvox_command_approval_fields_patch',
     'churvox_tester_signup_access_patch',
     'churvox_hq_owner_access_fix_patch',
     'churvox_hq_extra_owner_email_patch',
