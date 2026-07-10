@@ -1,4 +1,4 @@
-export const OWNER_MAINTENANCE_MODE = true;
+export const OWNER_MAINTENANCE_MODE = false;
 export const MAINTENANCE_STARTED_LABEL = "July 2026";
 
 export function isMaintenanceMode() {
