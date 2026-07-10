@@ -1,4 +1,13 @@
-/* Mobile public navigation and contact actions must remain comfortably tappable. */
+/* Public navigation and contact actions must remain comfortably clickable and tappable. */
+.cp26Footer nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 6px;
+  touch-action: manipulation;
+}
+
 @media (max-width: 560px) {
   .cp26NavLinks a,
   .cp26NavActions .cp26Button,
