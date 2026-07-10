@@ -72,8 +72,9 @@ expect('public marketing routes still point to marketing pages', includesAll(app
 
 expect('premium office lab polish is loaded last', labSite.includes('import "./OfficeTeamPremiumPolish.css";'), 'premium polish CSS is not imported');
 expect('premium polish improves shell and nav', includesAll(labPolish, ['.cvSiteTopbar', 'HIDDEN OWNER BUILD', 'overflow-x: auto', '.cvSiteStatusLead', 'linear-gradient(135deg, #17120e']), 'premium polish shell styling missing');
-expect('plans page has premium locked-pricing hero', includesAll(plans, ['Pricing is locked. The build is what changes.', 'No hidden price changes', 'Most useful', 'Command Growth Pack remains $99/month + GST']), 'polished plans copy missing');
-expect('plans CSS has premium layout', includesAll(plansCss, ['.cvPlansHero', '.cvPlansGrid button.featured::before', '.cvPlansGrid button.active::after', '.cvPlanDetail']), 'polished plans CSS missing');
+expect('plans page has country pricing controls', includesAll(plans, ['const COUNTRIES', 'Choose billing country', 'GST is shown before checkout', 'Sales tax, if required, is handled at checkout', 'priceParts(meta, item.price)']), 'country pricing controls missing');
+expect('plans page shows included and locked features', includesAll(plans, ['Included in this plan', 'Locked until upgrade', 'FeatureList', 'Command Growth Pack', 'price: 99']), 'included/locked plan structure missing');
+expect('plans CSS supports logical plan locks and growth pack', includesAll(plansCss, ['.cvPlanCountryCard', '.cvPlanFeatureList.included', '.cvPlanFeatureList.locked', '.cvGrowthPackCard', '.cvPlanPrice']), 'plan lock/growth pack CSS missing');
 
 expect('owner Command reads backend slips', includesAll(labSite, ['fetchBackendCommandDecisions', 'backendCommand', 'Backend Command']), 'owner Command backend slip wiring missing');
 expect('owner Command reads backend audit', includesAll(labSite, ['fetchBackendCommandAudit', 'backendAudit', 'Backend Command audit']), 'owner Activity backend audit wiring missing');
@@ -101,7 +102,7 @@ expect('backend Command does not write business records', !/(db\.(jobs|clients|q
 expect('backend Command uses Python-compatible optional typing', commandRoutes.includes('from typing import Any, Dict, Optional') && !commandRoutes.includes('Dict[str, Any] | None'), 'backend Command uses newer union typing');
 expect('backend autoload includes Command router', includesAll(usercustomize, ['from churvox_command_routes import build_command_router', 'build_command_router(local_db, local_get_current_user, ObjectId)']), 'Command router not autoloaded');
 
-expect('pricing is locked in owner rebuild screen', includesAll(plans, ['["Start", "$39"', '["Crew", "$89"', '["Operator", "$149"', '["Command", "$299"', 'Command Growth Pack remains $99/month + GST']), 'locked pricing copy changed');
+expect('base pricing remains unchanged', includesAll(plans, ['price: 39', 'price: 89', 'price: 149', 'price: 299', 'price: 99']), 'base pricing changed');
 
 const failed = checks.filter((check) => !check.ok);
 for (const check of checks) {
