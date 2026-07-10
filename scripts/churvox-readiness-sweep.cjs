@@ -141,9 +141,9 @@ expect('plans page shows included and locked features', includesAll(plans, ['Inc
 expect('plans CSS supports logical plan locks and growth pack', includesAll(plansCss, ['.cvPlanCountryCard', '.cvPlanFeatureList.included', '.cvPlanFeatureList.locked', '.cvGrowthPackCard', '.cvPlanPrice']), 'plan lock/growth pack CSS missing');
 
 expect('owner Command reads backend slips', includesAll(labSite, ['fetchBackendCommandDecisions', 'backendCommand']), 'owner Command backend slip wiring missing');
-expect('owner Command runs office engine before loading slips', includesAll(labSite, ['runBackendOfficeEngineScan', 'Office team prepared', 'Open each slip, check the draft, then approve']), 'owner app does not run the office engine before Command loads');
+expect('owner Command runs office engine before loading slips', includesAll(labSite, ['runBackendOfficeEngineScan', 'Churvox prepared', 'Open the first slip']), 'owner app does not run the office engine before Command loads');
 expect('owner Command reads backend audit', includesAll(labSite, ['fetchBackendCommandAudit', 'backendAudit']), 'owner Activity backend audit wiring missing');
-expect('owner app suppresses starter decisions', labSite.includes('isOwnerApp ? [] : starterDecisions'), 'owner app can fall back to starter decisions');
+expect('owner app suppresses all fallback decisions', includesAll(labSite, ['if (isOwnerApp) return backendDecisions;', 'const snapshotPromise = isOwnerApp ? Promise.resolve({ source: "skip", decisions: [] })', 'const draftPromise = isOwnerApp ? Promise.resolve([])']), 'owner app can fall back to starter, Admin Brain, draft or local decisions');
 expect('backend Command event refresh wired', labSite.includes('BACKEND_COMMAND_EVENT') && labSite.includes('window.addEventListener(BACKEND_COMMAND_EVENT'), 'backend Command refresh event missing');
 expect('office team roles have real duties', includesAll(labSite, ['role("Receptionist"', 'role("Bookkeeper"', 'role("Accountant"', 'role("Payroll Clerk"', 'role("Client Memory"', 'role("Quality Checker"', 'role("Operations Manager"', 'Does not file tax', 'Does not pay staff']), 'office team roles are missing real duties or guardrails');
 
