@@ -55,6 +55,10 @@ def _issue_counts(items):
     return counts
 
 
+def _role_counts(items):
+    return Counter(_role(item) for item in items if _role(item) not in {"Office Manager", "Operations Manager", "Unknown"})
+
+
 def _strong_pattern(counts):
     values = list(counts.values())
     return max(values or [0]) >= 3 or sum(1 for value in values if value >= 2) >= 2
@@ -71,11 +75,17 @@ def _pattern_text(counts):
     return "; ".join(parts) or "No repeated strict issue remains"
 
 
-def _top_area(counts):
-    if not counts or not any(counts.values()):
-        return "No repeated pressure area"
-    key, count = max(counts.items(), key=lambda item: item[1])
-    return f"{key.replace('_', ' ').title()} ({count})"
+def _top_role(role_counts):
+    if not role_counts:
+        return "No single pressure area"
+    role, count = role_counts.most_common(1)[0]
+    return f"{role} ({count} strict decision{'s' if count != 1 else ''})"
+
+
+def _ranked_roles(role_counts):
+    if not role_counts:
+        return "No ranked queue"
+    return "  ".join(f"{index}. {role} ({count})" for index, (role, count) in enumerate(role_counts.most_common(), start=1))
 
 
 async def _supersede(db, ObjectId, item, reason):
@@ -152,6 +162,7 @@ async def finalize_strict_queue(db, user, result, ObjectId):
     all_items = created + existing
     core = [item for item in all_items if _action(item) not in {"review_repeated_admin_gap", "daily_owner_brief"}]
     counts = _issue_counts(core)
+    role_counts = _role_counts(core)
     pattern = _pattern_text(counts)
     core_count = len(core)
     remove_ids = set()
@@ -170,10 +181,12 @@ async def finalize_strict_queue(db, user, result, ObjectId):
                     {
                         "Pattern found": pattern,
                         "Evidence threshold": "At least three repeats in one category, or two categories repeated twice",
+                        "Likely cause": "Cause not proven. Review the repeated strict records before changing a process.",
+                        "Suggested process": "Prepare one editable checklist/process draft only after the owner confirms the repeated cause.",
                         "Scope": "Draft process suggestion only; no rule or automation changed",
                     },
                     [f"{key.replace('_', ' ')}: {value}" for key, value in counts.items() if value],
-                    ["Only strict surviving decisions counted", "One-off false candidates excluded", "No automation changed"],
+                    ["Only strict surviving decisions counted", "One-off false candidates excluded", "Cause left unproven", "No automation changed"],
                 )
         elif action == "daily_owner_brief":
             if core_count < 2:
@@ -186,11 +199,14 @@ async def finalize_strict_queue(db, user, result, ObjectId):
                     item,
                     {
                         "Prepared decisions": str(core_count),
-                        "Top pressure area": _top_area(counts),
-                        "Owner focus": "Review high-risk money and blocked-work decisions first; approve only complete evidence",
+                        "Top pressure area": _top_role(role_counts),
+                        "Suggested order": _ranked_roles(role_counts),
+                        "Owner focus": "Review the highest-count strict role first, but approve only complete evidence and move urgent money/safety issues ahead when appropriate.",
                     },
-                    [f"Strict surviving decisions: {core_count}"] + [f"{key.replace('_', ' ')}: {value}" for key, value in counts.items() if value],
-                    ["Only strict surviving decisions counted", "Filtered duplicates and weak candidates excluded", "No action taken automatically"],
+                    [f"Strict surviving decisions: {core_count}"]
+                    + [f"{role}: {count}" for role, count in role_counts.most_common()]
+                    + [f"{key.replace('_', ' ')}: {value}" for key, value in counts.items() if value],
+                    ["Only strict surviving decisions counted", "Final role counts used", "Filtered duplicates and weak candidates excluded", "No action taken automatically"],
                 )
 
     result["slips"] = [item for item in created if _item_id(item) not in remove_ids]
