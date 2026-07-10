@@ -3,6 +3,7 @@ from fastapi import APIRouter
 
 HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v3"
 HUMAN_MIMIC_GUARD = "human-mimic-strict-preflight-v3"
+HUMAN_MIMIC_POST_GUARD = "linked-invoice-source-recheck-v1"
 HUMAN_MIMIC_SAFETY = "Owner approval required. Nothing was sent, synced, charged or changed."
 
 
@@ -27,6 +28,7 @@ def build_command_human_mimic_marker_router():
             "success": True,
             "version": HUMAN_MIMIC_VERSION,
             "guard": HUMAN_MIMIC_GUARD,
+            "post_guard": HUMAN_MIMIC_POST_GUARD,
             "roles": ROLE_NAMES,
             "preflight": {
                 "source_validation": True,
@@ -35,6 +37,7 @@ def build_command_human_mimic_marker_router():
                 "historical_money_reference_only": True,
                 "required_fields_block_approval": True,
                 "secret_redaction": True,
+                "linked_invoice_postguard": True,
             },
             "safety": HUMAN_MIMIC_SAFETY,
         }
