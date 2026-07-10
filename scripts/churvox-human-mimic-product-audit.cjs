@@ -34,7 +34,7 @@ function buttonOpenings(text) {
         if (char === quote && previous !== '\\') quote = '';
         continue;
       }
-      if (char === '"' || char === "'") { quote = char; continue; }
+      if (char === '"' || char === "'" || char === '`') { quote = char; continue; }
       if (char === '{') { braces += 1; continue; }
       if (char === '}') { braces = Math.max(0, braces - 1); continue; }
       if (char === '>' && braces === 0) break;
@@ -46,6 +46,7 @@ function buttonOpenings(text) {
 }
 
 const humanMimic = read('backend/churvox_command_human_mimic_routes.py');
+const mimicGuard = read('backend/churvox_command_human_mimic_guard_routes.py');
 const mimicMarker = read('backend/churvox_command_human_mimic_marker_routes.py');
 const applyRoutes = read('backend/churvox_command_apply_routes.py');
 const usercustomize = read('backend/usercustomize.py');
@@ -110,12 +111,23 @@ expect(
 );
 
 expect(
-  'human mimic scan and marker are registered before older scanners',
-  includesAll(usercustomize, ['build_command_human_mimic_marker_router', 'build_command_human_mimic_router', 'build_command_mimic_intelligence_router', 'build_command_apply_router'])
-    && usercustomize.indexOf('build_command_human_mimic_marker_router') < usercustomize.indexOf('build_command_human_mimic_router')
+  'guarded human mimic scan is registered before every older scanner',
+  includesAll(usercustomize, ['build_command_human_mimic_marker_router', 'build_command_human_mimic_guard_router', 'build_command_human_mimic_router', 'build_command_mimic_intelligence_router', 'build_command_apply_router'])
+    && usercustomize.indexOf('build_command_human_mimic_marker_router') < usercustomize.indexOf('build_command_human_mimic_guard_router')
+    && usercustomize.indexOf('build_command_human_mimic_guard_router') < usercustomize.indexOf('build_command_human_mimic_router')
     && usercustomize.indexOf('build_command_human_mimic_router') < usercustomize.indexOf('build_command_mimic_intelligence_router')
     && usercustomize.indexOf('build_command_mimic_intelligence_router') < usercustomize.indexOf('build_command_apply_router'),
-  'Human mimic v2 must own /command/scan and expose a deployment marker while older scanners remain fallback only',
+  'The guard must own /command/scan while unguarded v2 and v1 scanners remain compatibility fallbacks only',
+);
+
+expect(
+  'mimic guard retires old false and stale decisions safely',
+  includesAll(mimicGuard, [
+    'retire_old_engine_slips', 'payload.human_mimic_intelligence_v2', 'retire_outbound_reply_false_positives',
+    'Message direction is outbound', 'retire_stale_briefs', 'current_day = now().date().isoformat()',
+    'status": "superseded"', 'human-mimic-scan-guard-v1', 'No business record, message, payment or accounting record changed',
+  ]),
+  'Old scanner cards, outbound reply false positives and yesterday’s briefing must not remain in today’s owner queue',
 );
 
 expect(
@@ -126,13 +138,13 @@ expect(
 );
 
 expect(
-  'mimic scanner never sends syncs charges files tax or pays staff',
-  !/(send_email|send_sms|stripe\.|payment_intent|charge\(|xero[^\n]*sync\(|myob[^\n]*sync\(|file_tax\(|submit[^\n]*tax|bank_file\(|bank payout|payroll_payment)/i.test(humanMimic),
-  'Mimic intelligence may only prepare Command slips and audit events',
+  'mimic scanner and guard never send sync charge file tax or pay staff',
+  !/(send_email|send_sms|stripe\.|payment_intent|charge\(|xero[^\n]*sync\(|myob[^\n]*sync\(|file_tax\(|submit[^\n]*tax|bank_file\(|bank payout|payroll_payment)/i.test(`${humanMimic}\n${mimicGuard}`),
+  'Mimic intelligence may only prepare, filter and audit Command slips',
 );
 
 expect(
-  'approval executor remains draft-only, idempotent and memory-safe',
+  'approval executor remains draft-only idempotent and memory-safe',
   includesAll(applyRoutes, [
     '"status": "draft_approved"', '"no_auto_send": True', '"no_auto_sync": True', '"no_auto_charge": True', '"no_auto_file_tax": True',
     'slip.get("status") == "approved_applied"', '"idempotent": True', 'return "client_memory_reviews", "client_memory_review"',
@@ -193,7 +205,7 @@ expect(
 
 expect(
   'CSV preparation preserves real rows for the approval executor',
-  includesAll(workForms, ['csv_rows: rows', 'sourcePayload', '...(sourcePayload || {})']),
+  includesAll(workForms, ['csv_rows: rows', 'sourcePayload', '...(sourcePayload || {})', 'The actual parsed rows stay attached']),
   'CSV review must carry the parsed row objects, not only a preview sentence',
 );
 
