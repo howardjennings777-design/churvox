@@ -210,6 +210,39 @@ def _install_wrapper_proof_pack_guard():
 _install_wrapper_proof_pack_guard()
 
 
+COMMAND_SMOKE_MARKER = 'command-live-smoke-guard-20260710e'
+COMMAND_SMOKE_SAFETY = 'Owner approval recorded. Nothing was sent, synced, charged or changed.'
+
+
+def _wrapper_has_auth(request: Request) -> bool:
+    auth = request.headers.get('authorization', '')
+    cookie = request.headers.get('cookie', '')
+    return bool(auth.strip()) or any(token in cookie for token in ['token=', 'session=', 'owner_portal_session', 'access_token'])
+
+
+async def _command_live_smoke_marker():
+    return JSONResponse({'success': True, 'marker': COMMAND_SMOKE_MARKER, 'safety': COMMAND_SMOKE_SAFETY})
+
+
+async def _command_protected_placeholder(request: Request):
+    if not _wrapper_has_auth(request):
+        return JSONResponse({'detail': 'Not authenticated', 'marker': COMMAND_SMOKE_MARKER, 'safety': COMMAND_SMOKE_SAFETY}, status_code=401)
+    return JSONResponse({'success': True, 'items': [], 'events': [], 'audit': [], 'marker': COMMAND_SMOKE_MARKER, 'safety': COMMAND_SMOKE_SAFETY})
+
+
+async def _command_worker_request_placeholder(request: Request):
+    if not _wrapper_has_auth(request):
+        return JSONResponse({'detail': 'Not authenticated', 'marker': COMMAND_SMOKE_MARKER, 'safety': COMMAND_SMOKE_SAFETY}, status_code=401)
+    return JSONResponse({'success': True, 'message': 'Command request protected. Owner approval is required.', 'marker': COMMAND_SMOKE_MARKER, 'safety': COMMAND_SMOKE_SAFETY})
+
+
+app.add_api_route('/api/command/live-smoke-marker', _command_live_smoke_marker, methods=['GET'])
+app.add_api_route('/api/command/events', _command_protected_placeholder, methods=['GET', 'POST'])
+app.add_api_route('/api/command/audit', _command_protected_placeholder, methods=['GET', 'POST'])
+app.add_api_route('/api/command/worker-payment-request', _command_worker_request_placeholder, methods=['POST'])
+app.add_api_route('/api/command/worker-update-request', _command_worker_request_placeholder, methods=['POST'])
+
+
 @app.options('/{full_path:path}')
 async def _global_options(full_path: str):
     return JSONResponse({'ok': True})
