@@ -6,8 +6,10 @@ PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 def install(module):
     try:
         import churvox_hq_owner_access_fix_patch as hq_owner_access
-        hq_owner_access.DEFAULT_OWNER_EMAILS.clear()
-        hq_owner_access.DEFAULT_OWNER_EMAILS.add(PLATFORM_OWNER_EMAIL)
+        hq_owner_access.PLATFORM_OWNER_EMAIL = PLATFORM_OWNER_EMAIL
+        if hasattr(hq_owner_access, "DEFAULT_OWNER_EMAILS"):
+            hq_owner_access.DEFAULT_OWNER_EMAILS.clear()
+            hq_owner_access.DEFAULT_OWNER_EMAILS.add(PLATFORM_OWNER_EMAIL)
     except Exception:
         pass
 
