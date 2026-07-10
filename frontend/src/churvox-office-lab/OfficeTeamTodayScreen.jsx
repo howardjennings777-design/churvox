@@ -101,7 +101,12 @@ export default function OfficeTeamTodayScreen({ pending, resolved, approvalTrail
             <strong>{overview.areas.reduce((sum, item) => sum + Number(item.count || 0), 0)} live records loaded</strong>
             <p>{allowFallback ? "These are read-only business checks. Action buttons remain approval paths." : "Only real read-only records appear here. Empty areas stay clear rather than showing examples."}</p>
             <div className="cvSiteMiniList">
-              {overview.areas.map((item) => (
+              {overview.source === "loading" ? (
+                <article>
+                  <b>Checking live business areas</b>
+                  <small>Jobs, clients, messages, invoices, workers and quotes</small>
+                </article>
+              ) : overview.areas.map((item) => (
                 <article key={item.area}>
                   <button onClick={() => go(item.screen)}>
                     <b>{item.label}: {item.count}</b>
