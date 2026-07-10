@@ -16,7 +16,7 @@ const proofSteps = ["Job note", "Timer", "Photos", "Boss update"];
 export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = appMode !== "owner" && !ownerRoute;
-  const live = useOfficeTeamRows("worker", fallbackRows, { allowFallback, emptyMessage: "No live worker records found yet." });
+  const live = useOfficeTeamRows("staff", fallbackRows, { allowFallback, emptyMessage: "No live worker records found yet." });
   const [selected, setSelected] = useState(fallbackRows[0]);
   const rows = live.rows;
   const current = selectedRow(rows, selected, allowFallback ? fallbackRows : []);
@@ -52,7 +52,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
           </div>
         </aside>
 
-        <main className="cvFieldControlRoom">
+        <section className="cvFieldControlRoom" aria-label="Selected worker field record">
           {rows.length ? (
             <>
               <header className="cvFieldSelectedWorker">
@@ -86,7 +86,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
               <OfficeTeamSafeControls area="worker" record={current} primary="Prepare worker review" secondary="Prepare boss follow-up" command="Prepare hours or proof decision" />
             </>
           ) : <Empty title="Nothing needs owner oversight" text="Worker updates will appear when there is real field activity or an exception." />}
-        </main>
+        </section>
       </div>
 
       <section className="cvFieldGuardrail">
