@@ -43,19 +43,11 @@ const FreshApp = React.lazy(() => import("./churvox-fresh/FreshApp"));
 const OfficeTeamLab = React.lazy(() => import("./churvox-office-lab/OfficeTeamLab"));
 const OfficeTeamWorkerRoute = React.lazy(() => import("./churvox-office-lab/OfficeTeamWorkerRoute"));
 
-const PLATFORM_OWNER_EMAILS = new Set(["hello@churvox.com", "howardjennings77@gmail.com", "howardjennings777@gmail.com"]);
+const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com";
 
 function isPlatformOwnerUser(user = {}) {
   const email = String(user?.email || "").trim().toLowerCase();
-  const role = String(user?.role || user?.user_role || user?.account_type || user?.type || "").trim().toLowerCase().replace(/[-\s]+/g, "_");
-  return Boolean(
-    PLATFORM_OWNER_EMAILS.has(email) ||
-      ["platform_owner", "platform_admin", "super_admin", "superadmin", "admin"].includes(role) ||
-      user?.is_platform_owner === true ||
-      user?.is_platform_admin === true ||
-      user?.is_super_admin === true ||
-      user?.is_admin === true
-  );
+  return email === PLATFORM_OWNER_EMAIL;
 }
 
 const Spinner = () => (
