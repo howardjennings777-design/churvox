@@ -125,11 +125,6 @@ export async function runBackendOfficeEngineScan() {
   if (!response.ok || body?.success === false) {
     throw new Error(body?.message || body?.detail || `Office engine scan failed ${response.status}`);
   }
-  try {
-    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
-  } catch {
-    // Event refresh should never block the office engine scan.
-  }
   return {
     source: "backend-office-engine",
     slips: Array.isArray(body?.slips) ? body.slips : [],
