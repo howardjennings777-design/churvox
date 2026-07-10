@@ -156,6 +156,19 @@ expect(
 );
 
 expect(
+  'behavioural test installs dependency-free runtime before backend imports',
+  all(fullRunner, [
+    'def install_test_runtime_stubs():',
+    'sys.modules["bson"] = bson_module',
+    'sys.modules["fastapi"] = fastapi_module',
+    'install_test_runtime_stubs()',
+    'import churvox_mimic_full_test as suite',
+    'dependency-free test runtime is active',
+  ]) && fullRunner.indexOf('install_test_runtime_stubs()') < fullRunner.indexOf('import churvox_mimic_full_test as suite'),
+  'The full test must run in a normal Codespace without globally installed FastAPI or BSON',
+);
+
+expect(
   'strict-chain files contain no external action implementation',
   !/(send_email\s*\(|send_sms\s*\(|payment_intent\s*\(|create_charge\s*\(|file_tax\s*\(|submit_tax\s*\(|create_bank_file\s*\()/i.test(`${normalizer}\n${strict}\n${roleSchema}\n${finalizer}\n${live}\n${apply}`),
   'Strict mimic code must prepare internal work only',
