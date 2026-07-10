@@ -43,12 +43,25 @@ requireAll('pricing contact action', pricing, [
   'Email hello@churvox.com',
 ]);
 
+requireAll('desktop public footer targets', touchCss, [
+  '.cp26Footer nav a {',
+  'min-height: 28px',
+  'padding: 5px 6px',
+]);
+
 requireAll('mobile public touch targets', touchCss, [
   '@media (max-width: 560px)',
   '.cp26NavLinks a',
   '.cp26NavActions .cp26Button',
   '.cp26Footer nav a',
   '.cp26ContactGrid a',
+  'min-height: 44px',
+  'touch-action: manipulation',
+]);
+
+requireAll('mobile signup and shared auth targets', touchCss, [
+  '.cvPublicAuth .cvPublicAuthBottom',
+  '.cvPublicAuth .cvPublicAuthBottom a',
   'min-height: 44px',
   'touch-action: manipulation',
 ]);
@@ -86,4 +99,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Route/touch regression audit passed. Team routing, labelled settings, prepared-only Command handoff and 44px mobile public/login controls are protected.');
+console.log('Route/touch regression audit passed. Team routing, labelled settings, prepared-only Command handoff, desktop footer links and 44px mobile public/auth controls are protected.');
