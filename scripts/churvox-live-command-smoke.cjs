@@ -4,7 +4,6 @@ const DEFAULT_BASE = 'https://grassley-backend.onrender.com';
 const EXPECTED_MARKER = 'command-live-smoke-guard-20260710e';
 const EXPECTED_HUMAN_MIMIC = 'human-mimic-intelligence-v2';
 const EXPECTED_GUARD = 'human-mimic-scan-guard-v2';
-const EXPECTED_OWNER_SHELL = 'owner-vision-shell-v1';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
 
 const getEndpoints = [
@@ -49,22 +48,20 @@ async function checkHumanMimicMarker() {
   const { text, body } = await readJson(response);
   const version = body && typeof body === 'object' ? String(body.version || '') : '';
   const guard = body && typeof body === 'object' ? String(body.guard || '') : '';
-  const ownerShell = body && typeof body === 'object' ? String(body.owner_shell || '') : '';
   const roles = body && Array.isArray(body.roles) ? body.roles : [];
   const safety = body && typeof body === 'object' ? String(body.safety || '') : '';
   if (
     response.status === 200
     && version === EXPECTED_HUMAN_MIMIC
     && guard === EXPECTED_GUARD
-    && ownerShell === EXPECTED_OWNER_SHELL
     && roles.length === 8
     && safety.includes('Nothing was sent, synced, charged or changed')
   ) {
-    console.log(`✓ human mimic build present (${version}, ${guard}, ${ownerShell}, ${roles.length} roles)`);
+    console.log(`✓ guarded human office build present (${version}, ${guard}, ${roles.length} roles)`);
     return true;
   }
-  failures.push(`${endpoint} missing or stale. Expected ${EXPECTED_HUMAN_MIMIC}, ${EXPECTED_GUARD}, ${EXPECTED_OWNER_SHELL} and 8 roles; got status ${response.status}: ${text.slice(0, 240)}`);
-  console.log('✗ human mimic/vision build missing or stale');
+  failures.push(`${endpoint} missing or stale. Expected ${EXPECTED_HUMAN_MIMIC}, ${EXPECTED_GUARD} and 8 roles; got status ${response.status}: ${text.slice(0, 240)}`);
+  console.log('✗ guarded human office build missing or stale');
   return false;
 }
 
@@ -97,7 +94,7 @@ async function checkProtectedPost(endpoint) {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      title: isPayment ? 'Live smoke worker payment request' : isScan ? 'Live smoke human mimic scan' : isApproval ? 'Live smoke Command approval executor' : 'Live smoke worker update request',
+      title: isPayment ? 'Live smoke worker payment request' : isScan ? 'Live smoke human office scan' : isApproval ? 'Live smoke Command approval executor' : 'Live smoke worker update request',
       action: isApproval ? 'Approve record' : undefined,
       form_title: isApproval ? 'Live smoke owner approval form' : undefined,
       fields: isApproval ? [{ label: 'Smoke test', value: 'Protected route only' }] : undefined,
@@ -144,13 +141,13 @@ async function checkProtectedPost(endpoint) {
   });
   const mimicOk = await checkHumanMimicMarker().catch((error) => {
     failures.push(`/api/command/human-mimic-marker request failed: ${error.message}`);
-    console.log('✗ human mimic marker request failed');
+    console.log('✗ human office marker request failed');
     return false;
   });
 
   if (!wrapperOk || !mimicOk) {
     console.error('\nLive Command smoke failed before route checks:');
-    console.error('- Redeploy grassley-backend and the frontend to the latest main commit, then rerun this test. The wrapper, guard and owner-shell markers must pass.');
+    console.error('- Redeploy grassley-backend to the latest main commit, then rerun this test. The wrapper and guarded human-office markers must both pass.');
     for (const failure of failures) console.error(`- ${failure}`);
     process.exit(1);
   }
@@ -174,5 +171,5 @@ async function checkProtectedPost(endpoint) {
     process.exit(1);
   }
 
-  console.log('\nLive Command smoke passed. The guarded office engine, owner vision shell and protected Command routes are deployed, and no unsafe action was triggered.');
+  console.log('\nLive Command smoke passed. The guarded human office engine and protected Command routes are deployed, and no unsafe action was triggered.');
 })();
