@@ -60,7 +60,11 @@ test.describe('hidden Office Team lab', () => {
   test('Command action wording stays approval-safe', async ({ page }) => {
     await page.goto('/office-team-lab#command', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
-    const visibleLabels = await page.locator('.cvSiteDecisionCard footer button').evaluateAll((buttons) => buttons.map((button) => textVisible(button) ? button.textContent || '' : '').join(' '));
+    const visibleLabels = await page.locator('.cvSiteDecisionCard footer button').evaluateAll((buttons) => buttons.map((button) => {
+      const style = window.getComputedStyle(button);
+      const visible = style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+      return visible ? button.textContent || '' : '';
+    }).join(' '));
     expect(visibleLabels).not.toMatch(/\bSend\b|\bBook\b|\bComplete\b|\bAdd charge\b|\bSave\b/);
     await expect(page.getByText(/Approval recorded only · no send, sync, charge or record change/i).first()).toBeVisible();
   });
@@ -116,8 +120,3 @@ test.describe('hidden Office Team lab', () => {
     await expect(page.getByText(/prepared-only Command item/i).first()).toBeVisible();
   });
 });
-
-function textVisible(node) {
-  const style = window.getComputedStyle(node);
-  return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-}
