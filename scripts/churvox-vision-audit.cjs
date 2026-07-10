@@ -136,9 +136,12 @@ expect(
       "app.add_api_route('/api/logic/business-profile', _get_profile, methods=['GET'])",
       "app.add_api_route('/api/logic/business-profile', _save_profile, methods=['POST'])",
       "app.add_api_route('/api/settings/live-marker'",
+      "owner = await _owner_doc(user)",
+      "await db.users.update_one(",
     ])
+    && !liveWrapper.includes('await db.users.update_many(')
     && includesAll(liveSmoke, ['EXPECTED_SETTINGS', '/api/settings/live-marker', '/api/logic/business-profile']),
-  'Settings must load and save authenticated backend data, the live wrapper must replace the old read-only route, and smoke must detect a stale/405 deployment',
+  'Settings must save authenticated backend data, mirror only onto the owner account, replace the old read-only route, and fail smoke on a stale/405 deployment',
 );
 
 expect(
