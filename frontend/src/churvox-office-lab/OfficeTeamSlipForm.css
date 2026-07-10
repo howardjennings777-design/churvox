@@ -167,6 +167,161 @@
   line-height: 1.4;
 }
 
+/* Clearer Command slip v2: less thinking, one approval place. */
+.cvSiteDecisionCard footer button:not(.openSlip) {
+  display: none !important;
+}
+
+.cvSiteDecisionCard dl {
+  display: none !important;
+}
+
+.cvSiteDecisionCard footer {
+  grid-template-columns: 1fr !important;
+}
+
+.cvSiteDecisionCard .openSlip {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 15px !important;
+  font-weight: 1000;
+}
+
+.cvCommandSlipPlain {
+  gap: 12px;
+}
+
+.cvCommandSlipPlain h3 {
+  font-size: clamp(1.9rem, 4.6vw, 3.1rem) !important;
+  line-height: .98 !important;
+  letter-spacing: -.07em !important;
+}
+
+.cvSlipNextStep {
+  display: none !important;
+}
+
+.cvSlipSteps {
+  display: none !important;
+}
+
+.cvSlipExplain {
+  display: none !important;
+}
+
+.cvSlipForm {
+  gap: 13px;
+  padding: 16px;
+  border-color: rgba(23,18,14,.1);
+  background: rgba(255,255,255,.78);
+}
+
+.cvSlipForm > div:first-child span {
+  font-size: 0;
+}
+
+.cvSlipForm > div:first-child span::after {
+  content: "Churvox prepared";
+  color: #7c2d12;
+  font-size: .68rem;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvSlipForm h4 {
+  font-size: 1rem;
+  letter-spacing: -.025em;
+  color: #3f2f26;
+}
+
+.cvSlipFieldGrid {
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cvSlipFieldGrid label {
+  gap: 4px;
+  padding: 11px 12px;
+  border-radius: 15px;
+  border: 1px solid rgba(23,18,14,.08);
+  background: rgba(255,252,246,.78);
+}
+
+.cvSlipFieldGrid label:first-child span {
+  font-size: 0;
+}
+
+.cvSlipFieldGrid label:first-child span::after {
+  content: "Prepared by";
+  color: #7c2d12;
+  font-size: .62rem;
+  font-weight: 1000;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.cvSlipFieldGrid input {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+
+.cvSlipOwnerBox {
+  padding: 12px;
+  border-style: dashed;
+  background: rgba(255,255,255,.52);
+}
+
+.cvSlipOwnerBox span {
+  font-size: 0;
+}
+
+.cvSlipOwnerBox span::after {
+  content: "Need to change something?";
+  color: #7c2d12;
+  font-size: .68rem;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvSlipOwnerBox textarea {
+  min-height: 62px;
+}
+
+.cvCommandSlipSafety {
+  padding: 12px !important;
+}
+
+.cvCommandSlipSafety b {
+  display: none;
+}
+
+.cvSlipDecisionActions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  padding: 10px 0 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(249,246,239,.96) 24%);
+}
+
+.cvSlipNote {
+  font-size: 0;
+}
+
+.cvSlipNote::after {
+  content: "Approve only when the prepared draft looks right. Nothing sends, syncs or charges from this slip.";
+  color: #5f4b3f;
+  font-size: .78rem;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
 @media (max-width: 760px) {
   .cvSlipFieldGrid,
   .cvSlipDecisionActions {
