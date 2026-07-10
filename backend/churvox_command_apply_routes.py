@@ -55,9 +55,6 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         text = " ".join(str(value or "").strip().split())
         return text[:900] or fallback
 
-    def clean_key(value):
-        return safe_text(value, "").lower().replace(" ", "_").replace("-", "_")
-
     def should_apply(action):
         text = safe_text(action, "").lower()
         if any(word in text for word in ["park", "ignore", "snooze", "ask", "edit", "review later", "later"]):
@@ -69,8 +66,34 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         return payload if isinstance(payload, dict) else {}
 
     def prepared_form(payload):
-        form = payload.get("prepared_form") or payload.get("form")
+        form = payload.get("approved_form") or payload.get("edited_form") or payload.get("prepared_form") or payload.get("form")
         return form if isinstance(form, dict) else {}
+
+    def flatten_form(form):
+        out = {}
+        for key, value in (form or {}).items():
+            if isinstance(value, dict) and "value" in value:
+                out[key] = value.get("value")
+            else:
+                out[key] = value
+        return out
+
+    def form_from_request(payload):
+        payload = payload or {}
+        edited = payload.get("edited_form") or payload.get("approved_form") or payload.get("form")
+        if isinstance(edited, dict):
+            return flatten_form(edited)
+        fields = payload.get("fields")
+        if isinstance(fields, list):
+            out = {}
+            for field in fields:
+                if not isinstance(field, dict):
+                    continue
+                label = safe_text(field.get("label"), "")
+                if label:
+                    out[label] = field.get("value")
+            return flatten_form(out)
+        return {}
 
     def collection_for(slip, payload):
         text = safe_text(f"{slip.get('source_type')} {slip.get('action_type')} {payload.get('area')}", "").lower()
@@ -92,24 +115,38 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             return "operations_reviews", "operations_review"
         return "jobs", "job"
 
+    def pick(form, *keys):
+        lower_map = {safe_text(k, "").lower().replace("_", " "): v for k, v in (form or {}).items()}
+        for key in keys:
+            k = safe_text(key, "").lower().replace("_", " ")
+            if k in lower_map:
+                return lower_map[k]
+        for key in keys:
+            k = safe_text(key, "").lower()
+            for existing, value in lower_map.items():
+                if k in existing:
+                    return value
+        return ""
+
     def base_record(user, slip, form, record_type):
         business_id, business_oid = business_ids(user)
-        title = safe_text(form.get("title") or form.get("job") or form.get("name") or form.get("client") or form.get("subject") or slip.get("title"), "Approved Command draft")
+        form = flatten_form(form)
+        title = safe_text(pick(form, "title", "job", "job / shift", "record", "name", "client", "customer", "subject") or slip.get("title"), "Approved Command draft")
         return {
             "business_id": business_id,
             "contractor_id": business_oid,
             "record_type": record_type,
             "title": title,
-            "name": safe_text(form.get("name"), ""),
-            "client": safe_text(form.get("client"), ""),
-            "customer": safe_text(form.get("customer"), ""),
-            "phone": safe_text(form.get("phone"), ""),
-            "email": safe_text(form.get("email"), ""),
-            "address": safe_text(form.get("address"), ""),
-            "worker": safe_text(form.get("worker"), ""),
-            "date": safe_text(form.get("date"), ""),
-            "price": safe_text(form.get("price") or form.get("total") or form.get("amount"), ""),
-            "notes": safe_text(form.get("notes") or form.get("scope") or form.get("line_items") or form.get("message") or form.get("reply"), ""),
+            "name": safe_text(pick(form, "name"), ""),
+            "client": safe_text(pick(form, "client"), ""),
+            "customer": safe_text(pick(form, "customer", "client"), ""),
+            "phone": safe_text(pick(form, "phone", "mobile"), ""),
+            "email": safe_text(pick(form, "email"), ""),
+            "address": safe_text(pick(form, "address", "site address", "service address"), ""),
+            "worker": safe_text(pick(form, "worker"), ""),
+            "date": safe_text(pick(form, "date", "suggested booking date/time", "last visit"), ""),
+            "price": safe_text(pick(form, "price", "total", "amount", "draft total", "draft total / amount"), ""),
+            "notes": safe_text(pick(form, "notes", "scope", "line items", "message", "reply", "invoice note", "recommended action", "memory note"), ""),
             "prepared_form": serial(form),
             "status": "draft_approved",
             "source": "command_owner_approval",
@@ -123,9 +160,10 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             "no_auto_file_tax": True,
         }
 
-    async def insert_prepared_records(user, slip):
+    async def insert_prepared_records(user, slip, request_payload=None):
         payload = payload_of(slip)
-        form = prepared_form(payload)
+        form = form_from_request(request_payload) or prepared_form(payload)
+        form = flatten_form(form)
         collection_name, record_type = collection_for(slip, payload)
         rows = form.get("csv_rows") or form.get("records") or payload.get("csv_rows") or []
         if isinstance(rows, list) and rows:
@@ -137,10 +175,10 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             if not docs:
                 return {"applied": False, "collection": collection_name, "count": 0, "message": "CSV rows could not be read safely."}
             result = await db[collection_name].insert_many(docs)
-            return {"applied": True, "collection": collection_name, "count": len(result.inserted_ids), "record_type": record_type, "ids": [str(item) for item in result.inserted_ids]}
+            return {"applied": True, "collection": collection_name, "count": len(result.inserted_ids), "record_type": record_type, "ids": [str(item) for item in result.inserted_ids], "used_edited_form": bool(form_from_request(request_payload))}
         doc = base_record(user, slip, form, record_type)
         result = await db[collection_name].insert_one(doc)
-        return {"applied": True, "collection": collection_name, "count": 1, "record_type": record_type, "id": str(result.inserted_id)}
+        return {"applied": True, "collection": collection_name, "count": 1, "record_type": record_type, "id": str(result.inserted_id), "used_edited_form": bool(form_from_request(request_payload))}
 
     async def command_event(user, event_type, slip=None, note=""):
         business_id, business_oid = business_ids(user)
@@ -175,10 +213,11 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             raise HTTPException(status_code=404, detail="Command slip not found")
         action = safe_text((payload or {}).get("action"), "approve")
         note = safe_text((payload or {}).get("note") or (payload or {}).get("owner_note"), "Owner approved the prepared direction.")
+        edited_form = form_from_request(payload)
         applied = False
         execution = {"applied": False, "message": RECORD_ONLY_RESULT}
         if should_apply(action):
-            execution = await insert_prepared_records(user, slip)
+            execution = await insert_prepared_records(user, slip, payload)
             applied = bool(execution.get("applied"))
         status = "approved_applied" if applied else "approved_recorded"
         result_message = SAFE_RESULT if applied else RECORD_ONLY_RESULT
@@ -186,7 +225,7 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             "status": status,
             "approved_at": now(),
             "approved_by": str(user.get("id")),
-            "owner_decision": {"action": action, "note": note, "safety": result_message},
+            "owner_decision": {"action": action, "note": note, "edited_form": serial(edited_form), "safety": result_message},
             "result": {"stored_only": not applied, "message": result_message, "execution": serial(execution)},
             "updated_at": now(),
         }
