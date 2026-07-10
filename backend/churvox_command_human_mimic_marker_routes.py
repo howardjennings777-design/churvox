@@ -2,6 +2,8 @@ from fastapi import APIRouter
 
 
 HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v2"
+HUMAN_MIMIC_GUARD = "human-mimic-scan-guard-v2"
+OWNER_SHELL_VERSION = "owner-vision-shell-v1"
 HUMAN_MIMIC_SAFETY = "Owner approval required. Nothing was sent, synced, charged or changed."
 
 
@@ -13,6 +15,8 @@ def build_command_human_mimic_marker_router():
         return {
             "success": True,
             "version": HUMAN_MIMIC_VERSION,
+            "guard": HUMAN_MIMIC_GUARD,
+            "owner_shell": OWNER_SHELL_VERSION,
             "roles": [
                 "Office Manager",
                 "Receptionist",
