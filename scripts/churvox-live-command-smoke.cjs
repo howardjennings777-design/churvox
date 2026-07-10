@@ -14,6 +14,7 @@ const postEndpoints = [
   '/api/command/scan',
   '/api/command/worker-payment-request',
   '/api/command/worker-update-request',
+  '/api/command/slips/000000000000000000000000/approve-fields',
 ];
 
 const okStatuses = new Set([200, 401, 403]);
@@ -78,11 +79,15 @@ async function checkProtectedPost(endpoint) {
   const url = `${base}${endpoint}`;
   const isPayment = endpoint.includes('payment');
   const isScan = endpoint.includes('/scan');
+  const isApproval = endpoint.includes('/approve-fields');
   const response = await fetch(url, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      title: isPayment ? 'Live smoke worker payment request' : isScan ? 'Live smoke office engine scan' : 'Live smoke worker update request',
+      title: isPayment ? 'Live smoke worker payment request' : isScan ? 'Live smoke office engine scan' : isApproval ? 'Live smoke Command approval recorder' : 'Live smoke worker update request',
+      action: isApproval ? 'Approve record' : undefined,
+      form_title: isApproval ? 'Live smoke owner approval form' : undefined,
+      fields: isApproval ? [{ label: 'Smoke test', value: 'Protected route only' }] : undefined,
       trigger: 'live_smoke',
       amount: 'Smoke test only',
       invoice: 'Smoke test only',
@@ -92,6 +97,10 @@ async function checkProtectedPost(endpoint) {
       update_type: 'Smoke test only',
       prepared_only: true,
       owner_review_only: true,
+      no_auto_send: true,
+      no_auto_sync: true,
+      no_auto_charge: true,
+      no_auto_record_change: true,
     }),
   });
   const { text, body } = await readJson(response);
