@@ -4,6 +4,7 @@ const DEFAULT_BASE = 'https://grassley-backend.onrender.com';
 const EXPECTED_MARKER = 'command-live-smoke-guard-20260710e';
 const EXPECTED_HUMAN_MIMIC = 'human-mimic-intelligence-v3';
 const EXPECTED_GUARD = 'human-mimic-strict-preflight-v3';
+const EXPECTED_POST_GUARD = 'linked-invoice-source-recheck-v1';
 const EXPECTED_SETTINGS = 'business-profile-live-v1';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
 
@@ -50,6 +51,7 @@ async function checkHumanMimicMarker() {
   const { text, body } = await readJson(response);
   const version = body && typeof body === 'object' ? String(body.version || '') : '';
   const guard = body && typeof body === 'object' ? String(body.guard || '') : '';
+  const postGuard = body && typeof body === 'object' ? String(body.post_guard || '') : '';
   const roles = body && Array.isArray(body.roles) ? body.roles : [];
   const safety = body && typeof body === 'object' ? String(body.safety || '') : '';
   const preflight = body && typeof body.preflight === 'object' ? body.preflight : {};
@@ -60,19 +62,21 @@ async function checkHumanMimicMarker() {
     preflight.historical_money_reference_only,
     preflight.required_fields_block_approval,
     preflight.secret_redaction,
+    preflight.linked_invoice_postguard,
   ];
   if (
     response.status === 200
     && version === EXPECTED_HUMAN_MIMIC
     && guard === EXPECTED_GUARD
+    && postGuard === EXPECTED_POST_GUARD
     && roles.length === 8
     && strictFlags.every((value) => value === true)
     && safety.includes('Nothing was sent, synced, charged or changed')
   ) {
-    console.log(`✓ strict human office build present (${version}, ${guard}, ${roles.length} roles)`);
+    console.log(`✓ strict human office build present (${version}, ${guard}, ${postGuard}, ${roles.length} roles)`);
     return true;
   }
-  failures.push(`${endpoint} missing or stale. Expected ${EXPECTED_HUMAN_MIMIC}, ${EXPECTED_GUARD}, 8 roles and strict preflight flags; got status ${response.status}: ${text.slice(0, 300)}`);
+  failures.push(`${endpoint} missing or stale. Expected ${EXPECTED_HUMAN_MIMIC}, ${EXPECTED_GUARD}, ${EXPECTED_POST_GUARD}, 8 roles and strict preflight flags; got status ${response.status}: ${text.slice(0, 320)}`);
   console.log('✗ strict human office build missing or stale');
   return false;
 }
@@ -206,5 +210,5 @@ async function checkProtectedPost(endpoint) {
     process.exit(1);
   }
 
-  console.log('\nLive Command smoke passed. Strict human mimic v3, protected settings and Command routes are deployed, and no unsafe action was triggered.');
+  console.log('\nLive Command smoke passed. Strict human mimic v3, linked-invoice post-guard, protected settings and Command routes are deployed, and no unsafe action was triggered.');
 })();
