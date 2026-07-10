@@ -1,6 +1,46 @@
 import inspect
 import sys
 
+try:
+    import churvox_command_live_smoke_guard  # noqa: F401
+except Exception:
+    try:
+        from backend import churvox_command_live_smoke_guard  # noqa: F401
+    except Exception:
+        pass
+
+try:
+    import churvox_admin_ledger_autoload  # noqa: F401
+except Exception:
+    try:
+        from backend import churvox_admin_ledger_autoload  # noqa: F401
+    except Exception:
+        pass
+
+try:
+    import churvox_auth_login_fast_patch  # noqa: F401
+except Exception:
+    try:
+        from backend import churvox_auth_login_fast_patch  # noqa: F401
+    except Exception:
+        pass
+
+try:
+    import churvox_worker_login_bridge_patch  # noqa: F401
+except Exception:
+    try:
+        from backend import churvox_worker_login_bridge_patch  # noqa: F401
+    except Exception:
+        pass
+
+try:
+    import churvox_owner_cockpit_control_patch  # noqa: F401
+except Exception:
+    try:
+        from backend import churvox_owner_cockpit_control_patch  # noqa: F401
+    except Exception:
+        pass
+
 
 def _install_churvox_real_ai_hook():
     try:
@@ -30,12 +70,35 @@ def _install_churvox_real_ai_hook():
                     from churvox_ai_operator_routes import build_ai_operator_router
                 except Exception:
                     from backend.churvox_ai_operator_routes import build_ai_operator_router
+                try:
+                    from churvox_command_compat_routes import build_command_compat_router
+                except Exception:
+                    from backend.churvox_command_compat_routes import build_command_compat_router
+                try:
+                    from churvox_command_mimic_intelligence_routes import build_command_mimic_intelligence_router
+                except Exception:
+                    from backend.churvox_command_mimic_intelligence_routes import build_command_mimic_intelligence_router
+                try:
+                    from churvox_command_apply_routes import build_command_apply_router
+                except Exception:
+                    from backend.churvox_command_apply_routes import build_command_apply_router
+                try:
+                    from churvox_command_routes import build_command_router
+                except Exception:
+                    from backend.churvox_command_routes import build_command_router
                 from bson import ObjectId
                 self.state.churvox_real_ai_operator_routes_installed = True
                 original_include_router(self, build_ai_operator_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Register compatibility endpoints first so live smoke and worker app routes cannot be shadowed.
+                original_include_router(self, build_command_compat_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Register the real mimic intelligence scanner before the older Command scanner.
+                original_include_router(self, build_command_mimic_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Register the safe approval executor before the older record-only Command routes.
+                original_include_router(self, build_command_apply_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                original_include_router(self, build_command_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 return result
         except Exception as exc:
-            print(f"Churvox real AI route install skipped: {exc}", file=sys.stderr)
+            print(f"Churvox real AI/Command route install skipped: {exc}", file=sys.stderr)
         return result
 
     FastAPI.include_router = include_router_with_real_ai
