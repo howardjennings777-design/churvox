@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
-import os
 
 INSTALLED = set()
-OWNER_EMAILS = {"hello@churvox.com", "howardjennings77@gmail.com", "howardjennings777@gmail.com"}
+PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"
 INTERNAL_MARKERS = ["sample", "fake", "seed", "example.com", "mailinator", "tempmail", "john@churvox", "johnworker", "localhost", "127.0.0.1"]
 INTERNAL_PATH_PREFIXES = ("/admin", "/churvox-hq", "/owner", "/platform-dashboard", "/app-owner", "/dashboard", "/worker", "/plans", "/setup", "/setup-guide", "/guide")
 
@@ -21,14 +20,12 @@ def lower(value):
     return text(value).lower()
 
 
-def owner_emails():
-    raw = os.environ.get("PLATFORM_OWNER_EMAILS") or os.environ.get("CHURVOX_PLATFORM_OWNER_EMAILS") or ""
-    configured = {lower(item) for item in raw.replace(";", ",").split(",") if lower(item)}
-    return OWNER_EMAILS | configured
-
-
 def email_of(doc):
     return lower((doc or {}).get("email") or (doc or {}).get("user_email") or (doc or {}).get("owner_email"))
+
+
+def is_owner_email(value):
+    return lower(value) == PLATFORM_OWNER_EMAIL
 
 
 def parse_dt(value):
@@ -76,7 +73,7 @@ def public_visitor(row):
     path = row.get("path") or row.get("last_path") or row.get("first_path")
     if not public_path(path):
         return False
-    if email_of(row) in owner_emails():
+    if is_owner_email(email_of(row)):
         return False
     hay = " ".join(str(row.get(k) or "") for k in ["email", "user_email", "business_name", "referrer", "last_referrer", "source", "last_source", "user_agent"]).lower()
     return not any(marker in hay for marker in INTERNAL_MARKERS)
@@ -118,16 +115,8 @@ def install(module):
 
     async def require_owner(request: Request):
         user = await get_current_user(request)
-        role = lower((user or {}).get("role") or (user or {}).get("user_role") or (user or {}).get("account_type")).replace("-", "_").replace(" ", "_")
-        allowed = email_of(user) in owner_emails() or role in {"platform_owner", "platform_admin", "super_admin", "superadmin", "admin"} or bool((user or {}).get("is_platform_owner") or (user or {}).get("is_platform_admin") or (user or {}).get("is_super_admin") or (user or {}).get("is_admin"))
-        checker = getattr(module, "is_platform_owner", None)
-        if not allowed and checker:
-            try:
-                allowed = bool(checker(user))
-            except Exception:
-                allowed = False
-        if not allowed:
-            raise HTTPException(status_code=403, detail="Churvox HQ growth report is locked to the platform owner")
+        if not is_owner_email(email_of(user)):
+            raise HTTPException(status_code=403, detail="Churvox HQ growth report is locked to howardjennings77@gmail.com")
         return user
 
     def remove_route(path, method):
@@ -176,12 +165,19 @@ def install(module):
             unique_rows = list(seen.values())
 
         visitors = [row for row in unique_rows if public_visitor(row)]
+
         def seen_at(row, field):
             return parse_dt((row or {}).get(field))
 
-        new_unique_today = [row for row in visitors if (seen_at(row, "first_seen") or seen_at(row, "created_at") or seen_at(row, "last_seen")) and (seen_at(row, "first_seen") or seen_at(row, "created_at") or seen_at(row, "last_seen")) >= today]
-        active_7d = [row for row in visitors if (seen_at(row, "last_seen") or seen_at(row, "created_at")) and (seen_at(row, "last_seen") or seen_at(row, "created_at")) >= seven_days]
-        active_30d = [row for row in visitors if (seen_at(row, "last_seen") or seen_at(row, "created_at")) and (seen_at(row, "last_seen") or seen_at(row, "created_at")) >= thirty_days]
+        def first_seen(row):
+            return seen_at(row, "first_seen") or seen_at(row, "created_at") or seen_at(row, "last_seen")
+
+        def last_seen(row):
+            return seen_at(row, "last_seen") or seen_at(row, "created_at") or seen_at(row, "first_seen")
+
+        new_unique_today = [row for row in visitors if first_seen(row) and first_seen(row) >= today]
+        active_7d = [row for row in visitors if last_seen(row) and last_seen(row) >= seven_days]
+        active_30d = [row for row in visitors if last_seen(row) and last_seen(row) >= thirty_days]
 
         users_by_email = {email_of(user): user for user in users if email_of(user)}
         tester_emails = set(email_of(tester) for tester in testers_raw if email_of(tester))
@@ -214,7 +210,7 @@ def install(module):
 
         paid_users = [user for user in users if is_paid(user)]
         trial_users = [user for user in users if status_of(user) == "trialing"]
-        signup_users = [user for user in users if email_of(user) not in owner_emails()]
+        signup_users = [user for user in users if not is_owner_email(email_of(user))]
         active_testers = [item for item in accepted_testers if parse_dt(((item.get("linked_user") or {}).get("last_active") if isinstance(item.get("linked_user"), dict) else None) or ((item.get("linked_user") or {}).get("updated_at") if isinstance(item.get("linked_user"), dict) else None) or item.get("updated_at") or item.get("created_at")) and parse_dt(((item.get("linked_user") or {}).get("last_active") if isinstance(item.get("linked_user"), dict) else None) or ((item.get("linked_user") or {}).get("updated_at") if isinstance(item.get("linked_user"), dict) else None) or item.get("updated_at") or item.get("created_at")) >= thirty_days]
 
         unique_total = len(visitors)
@@ -234,6 +230,7 @@ def install(module):
             "success": True,
             "source": "platform_unique_visitors_real_public",
             "generated_at": now,
+            "owner_only": PLATFORM_OWNER_EMAIL,
             "counts": {
                 "unique_total": unique_total,
                 "new_unique_today": len(new_unique_today),
