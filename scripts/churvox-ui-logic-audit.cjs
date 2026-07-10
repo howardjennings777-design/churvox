@@ -175,6 +175,43 @@ for (const required of [
   if (!commandApi.includes(required)) fail(commandApiFile, commandApi, 0, `Command API safety contract is missing: ${required}`);
 }
 
+const gauntletFile = path.join(root, 'frontend', 'tests', 'e2e', 'churvox-full-ui-logic-buttons.spec.js');
+const gauntlet = read(gauntletFile);
+try {
+  new Function(gauntlet);
+} catch (error) {
+  fail(gauntletFile, gauntlet, 0, `browser gauntlet has invalid JavaScript: ${error.message}`);
+}
+for (const required of [
+  "const LAB_SCREENS = [",
+  "const PUBLIC_PAGES = ['/', '/pricing', '/contact', '/login']",
+  "page.locator('.cvSiteScreen button:visible')",
+  'silently did nothing',
+  'Command handoff, editable slip and approval trail work together',
+  'API failures show truthful states without blank screens or stuck controls',
+  "test.setTimeout(240_000)",
+  "source: 'human-mimic-intelligence-v3'",
+]) {
+  if (!gauntlet.includes(required)) fail(gauntletFile, gauntlet, 0, `browser gauntlet contract is missing: ${required}`);
+}
+if (/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(gauntlet)) fail(gauntletFile, gauntlet, 0, 'browser gauntlet contains skipped or focused tests');
+if (/https:\/\/www\.churvox\.com|CHURVOX_E2E_MUTATE/.test(gauntlet)) fail(gauntletFile, gauntlet, 0, 'local UI gauntlet must not mutate or depend on the live site');
+
+const rootPackageFile = path.join(root, 'package.json');
+const frontendPackageFile = path.join(root, 'frontend', 'package.json');
+const rootPackage = JSON.parse(read(rootPackageFile));
+const frontendPackage = JSON.parse(read(frontendPackageFile));
+const rootScripts = rootPackage.scripts || {};
+const frontendScripts = frontendPackage.scripts || {};
+if (rootScripts['test:ui:logic'] !== 'node scripts/churvox-ui-logic-audit.cjs') fail(rootPackageFile, read(rootPackageFile), 0, 'root UI logic script is not wired correctly');
+if (rootScripts['test:prelive:full'] !== 'npm run test:readiness && npm run test:ui:full') fail(rootPackageFile, read(rootPackageFile), 0, 'full pre-live command must run readiness before the browser gauntlet');
+for (const name of ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
+  const value = String(frontendScripts[name] || '');
+  if (!value.includes('churvox-full-ui-logic-buttons.spec.js') || !value.includes('PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000')) {
+    fail(frontendPackageFile, read(frontendPackageFile), 0, `${name} must run the local full UI gauntlet`);
+  }
+}
+
 if (buttonCount < 80) failures.push(`Expected a broad UI button surface; found only ${buttonCount} buttons.`);
 if (linkCount < 2) failures.push(`Expected useful links in the owner UI; found only ${linkCount}.`);
 pass('button wiring scanned', `${buttonCount} buttons`);
@@ -182,6 +219,7 @@ pass('link destinations scanned', `${linkCount} anchors`);
 pass('form contracts scanned', `${formCount} forms`);
 pass('screen routing checked', `${requiredScreens.length} registered screens`);
 pass('core workspace landmarks checked', `${workspaceFiles.length} workspaces`);
+pass('browser gauntlet contract checked', 'desktop, mobile, public pages, click outcomes and failure states');
 
 for (const check of checks) console.log(`✓ ${check.name} (${check.detail})`);
 if (failures.length) {
