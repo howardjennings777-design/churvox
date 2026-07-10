@@ -2,7 +2,7 @@ import json
 
 
 SMOKE_MARKER_PATH = "/api/command/live-smoke-marker"
-SMOKE_MARKER_VERSION = "command-live-smoke-guard-20260710c"
+SMOKE_MARKER_VERSION = "command-live-smoke-guard-20260710d"
 
 PROTECTED_COMMAND_SMOKE = {
     ("GET", "/api/command/events"),
