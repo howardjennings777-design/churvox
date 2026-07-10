@@ -17,6 +17,7 @@ function requireAll(name, source, values) {
 
 const wrapper = read('frontend/src/churvox-office-lab/OfficeTeamLab.jsx');
 const shell = read('frontend/src/pages/marketing/ChurvoxPublicShell.jsx');
+const pricing = read('frontend/src/pages/marketing/ExecutivePricingPage.jsx');
 const touchCss = read('frontend/src/pages/marketing/ChurvoxPublicTouchTargets.css');
 const ownerTruth = read('frontend/tests/e2e/churvox-owner-no-fake-data.spec.js');
 const publicTruth = read('frontend/tests/e2e/churvox-public-honesty-and-function.spec.js');
@@ -34,11 +35,17 @@ requireAll('public shell touch-target import', shell, [
   'import "./ChurvoxPublicTouchTargets.css";',
 ]);
 
+requireAll('pricing contact action', pricing, [
+  'href="mailto:hello@churvox.com"',
+  'Email hello@churvox.com',
+]);
+
 requireAll('mobile public touch targets', touchCss, [
   '@media (max-width: 560px)',
   '.cp26NavLinks a',
   '.cp26NavActions .cp26Button',
   '.cp26Footer nav a',
+  '.cp26ContactGrid a',
   'min-height: 44px',
   'touch-action: manipulation',
 ]);
@@ -59,4 +66,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Route/touch regression audit passed. Team routing and 44px mobile public controls are protected.');
+console.log('Route/touch regression audit passed. Team routing and 44px mobile navigation, footer and pricing contact controls are protected.');
