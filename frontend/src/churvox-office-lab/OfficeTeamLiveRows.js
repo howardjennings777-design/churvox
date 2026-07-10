@@ -25,11 +25,12 @@ export function useOfficeTeamRows(area, fallbackRows = [], options = {}) {
   return useMemo(() => {
     const liveRows = Array.isArray(state.rows) ? state.rows : [];
     const rows = liveRows.length ? liveRows : allowFallback ? fallbackRows : [];
-    const label = liveRows.length
+    const rawLabel = liveRows.length
       ? state.message || `Live read-only · ${liveRows.length} records`
       : allowFallback
         ? state.message || "Starter structure · safe review"
         : emptyMessage;
+    const label = cleanLabel(rawLabel);
     return {
       rows,
       label,
@@ -50,4 +51,12 @@ export function selectedRow(displayRows, selected, fallbackRows = []) {
 
 export function rowKey(row = []) {
   return Array.isArray(row) ? row.map((part) => String(part || "")).join("|") : String(row || "");
+}
+
+function cleanLabel(value = "") {
+  return String(value || "")
+    .replace(/Demo structure/gi, "Starter structure")
+    .replace(/safe preview/gi, "safe review")
+    .replace(/lab preview/gi, "control review")
+    .replace(/hidden lab/gi, "owner workspace");
 }
