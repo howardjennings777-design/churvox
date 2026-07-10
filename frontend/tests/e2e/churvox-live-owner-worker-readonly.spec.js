@@ -11,7 +11,13 @@ function apiUrl(path) {
 }
 
 function tokenFrom(data = {}) {
-  return data?.token || data?.access_token || data?.auth_token || data?.user?.token || data?.user?.access_token || '';
+  return data?.token || data?.access_token || data?.auth_token || data?.jwt || data?.accessToken
+    || data?.user?.token || data?.user?.access_token || data?.user?.accessToken
+    || data?.data?.token || data?.data?.access_token || data?.data?.user?.token || '';
+}
+
+function accountEmail(data = {}) {
+  return String(data?.email || data?.user?.email || data?.data?.email || data?.data?.user?.email || '').trim().toLowerCase();
 }
 
 function listFrom(payload, keys = []) {
@@ -26,20 +32,28 @@ function listFrom(payload, keys = []) {
 
 async function login(page, email, password, label) {
   if (!email || !password) throw new Error(`Missing ${label} credentials. This launch smoke must fail rather than skip.`);
-  const response = await page.request.post(apiUrl('/api/auth/login'), {
-    data: { email, password },
-    timeout: 30_000,
-  });
-  const contentType = response.headers()['content-type'] || '';
-  const body = await response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
-  expect(contentType, `${label} login returned non-JSON content`).toContain('application/json');
-  expect(response.ok(), `${label} login failed ${response.status()} ${JSON.stringify(body).slice(0, 300)}`).toBeTruthy();
-  expect(body?.success, `${label} login explicitly failed`).not.toBe(false);
-  const token = tokenFrom(body);
-  expect(token, `${label} login did not return a token`).not.toBe('');
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.evaluate((value) => localStorage.setItem('token', value), token);
-  return token;
+  const paths = label === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
+  const attempts = [];
+  for (const path of paths) {
+    const response = await page.request.post(apiUrl(path), {
+      data: { email, password },
+      timeout: 30_000,
+    });
+    const contentType = response.headers()['content-type'] || '';
+    const body = await response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
+    attempts.push({ path, status: response.status(), body: JSON.stringify(body).slice(0, 180) });
+    if (!response.ok() || body?.success === false || !contentType.includes('application/json')) continue;
+    const token = tokenFrom(body);
+    if (!token) continue;
+    const returnedEmail = accountEmail(body);
+    if (returnedEmail && returnedEmail !== email.toLowerCase()) {
+      throw new Error(`${label} login returned a different account.`);
+    }
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.evaluate((value) => localStorage.setItem('token', value), token);
+    return token;
+  }
+  throw new Error(`${label} login failed on all supported endpoints: ${JSON.stringify(attempts)}`);
 }
 
 async function getJson(page, path, token) {
@@ -98,7 +112,7 @@ test.describe('Live read-only owner and worker operations', () => {
 
     const me = await getJson(page, '/api/auth/me', token);
     assertSafeJson(me, 'owner auth/me');
-    expect(String(me.body?.email || me.body?.user?.email || '').toLowerCase()).toBe(OWNER_EMAIL.toLowerCase());
+    expect(accountEmail(me.body)).toBe(OWNER_EMAIL.toLowerCase());
 
     const billing = await firstWorkingJson(page, [
       '/api/billing/subscription-status',
@@ -142,7 +156,7 @@ test.describe('Live read-only owner and worker operations', () => {
 
     const me = await getJson(page, '/api/auth/me', token);
     assertSafeJson(me, 'worker auth/me');
-    expect(String(me.body?.email || me.body?.user?.email || '').toLowerCase()).toBe(WORKER_EMAIL.toLowerCase());
+    expect(accountEmail(me.body)).toBe(WORKER_EMAIL.toLowerCase());
 
     const jobs = await firstWorkingJson(page, [
       `/api/jobs?ts=${Date.now()}`,
