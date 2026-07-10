@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
-const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com";
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
 function isPlatformOwnerUser(user = {}) {
   const userEmail = String(user?.email || "").trim().toLowerCase();
