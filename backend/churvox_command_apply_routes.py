@@ -57,7 +57,7 @@ def build_command_apply_router(db, get_current_user, ObjectId):
 
     def should_apply(action):
         text = safe_text(action, "").lower()
-        if any(word in text for word in ["park", "ignore", "snooze", "ask", "edit", "review later", "later"]):
+        if any(word in text for word in ["park", "ignore", "snooze", "ask", "edit", "review later", "later", "call", "handle personally", "clear anyway"]):
             return False
         return any(word in text for word in ["approve", "save", "create", "import", "apply"])
 
@@ -97,34 +97,36 @@ def build_command_apply_router(db, get_current_user, ObjectId):
 
     def collection_for(slip, payload):
         text = safe_text(f"{slip.get('source_type')} {slip.get('action_type')} {payload.get('area')}", "").lower()
-        if any(word in text for word in ["client", "customer"]):
-            return "clients", "client"
-        if any(word in text for word in ["quote", "estimate"]):
-            return "quotes", "quote"
-        if any(word in text for word in ["invoice", "payment", "money"]):
-            return "invoices", "invoice"
-        if any(word in text for word in ["payroll", "timer", "hours", "staff", "worker"]):
-            return "payroll_reviews", "payroll_review"
-        if any(word in text for word in ["message", "reply", "email", "sms"]):
+        if any(word in text for word in ["client_memory", "memory", "preference", "access_note"]):
+            return "client_memory_reviews", "client_memory_review"
+        if any(word in text for word in ["message", "reply", "email", "sms", "followup", "follow_up"]):
             return "message_drafts", "message_draft"
         if any(word in text for word in ["account", "xero", "myob", "gst", "tax", "export"]):
             return "accounting_reviews", "accounting_review"
         if any(word in text for word in ["quality", "proof", "photo"]):
             return "quality_reviews", "quality_review"
-        if any(word in text for word in ["operation", "rule", "pattern"]):
+        if any(word in text for word in ["operation", "rule", "pattern", "branding", "setting", "mimic_mode"]):
             return "operations_reviews", "operations_review"
+        if any(word in text for word in ["payroll", "timer", "hours", "staff", "worker"]):
+            return "payroll_reviews", "payroll_review"
+        if any(word in text for word in ["quote", "estimate"]):
+            return "quotes", "quote"
+        if any(word in text for word in ["invoice", "payment", "money"]):
+            return "invoices", "invoice"
+        if any(word in text for word in ["client", "customer"]):
+            return "clients", "client"
         return "jobs", "job"
 
     def pick(form, *keys):
         lower_map = {safe_text(k, "").lower().replace("_", " "): v for k, v in (form or {}).items()}
         for key in keys:
-            k = safe_text(key, "").lower().replace("_", " ")
-            if k in lower_map:
-                return lower_map[k]
+            normalized = safe_text(key, "").lower().replace("_", " ")
+            if normalized in lower_map:
+                return lower_map[normalized]
         for key in keys:
-            k = safe_text(key, "").lower()
+            normalized = safe_text(key, "").lower()
             for existing, value in lower_map.items():
-                if k in existing:
+                if normalized in existing:
                     return value
         return ""
 
@@ -146,10 +148,13 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             "worker": safe_text(pick(form, "worker"), ""),
             "date": safe_text(pick(form, "date", "suggested booking date/time", "last visit"), ""),
             "price": safe_text(pick(form, "price", "total", "amount", "draft total", "draft total / amount"), ""),
-            "notes": safe_text(pick(form, "notes", "scope", "line items", "message", "reply", "invoice note", "recommended action", "memory note"), ""),
+            "notes": safe_text(pick(form, "notes", "scope", "line items", "message", "reply", "prepared reminder", "invoice note", "recommended action", "memory note", "detail to save"), ""),
             "prepared_form": serial(form),
             "status": "draft_approved",
             "source": "command_owner_approval",
+            "source_type": safe_text(slip.get("source_type"), "office"),
+            "action_type": safe_text(slip.get("action_type"), "owner_review"),
+            "source_record_id": safe_text(slip.get("source_id"), ""),
             "command_slip_id": str(slip.get("_id")),
             "created_by": str(user.get("id")),
             "created_at": now(),
@@ -169,9 +174,8 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         if isinstance(rows, list) and rows:
             docs = []
             for row in rows[:100]:
-                if not isinstance(row, dict):
-                    continue
-                docs.append(base_record(user, slip, row, record_type))
+                if isinstance(row, dict):
+                    docs.append(base_record(user, slip, row, record_type))
             if not docs:
                 return {"applied": False, "collection": collection_name, "count": 0, "message": "CSV rows could not be read safely."}
             result = await db[collection_name].insert_many(docs)
@@ -211,6 +215,10 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         slip = await db.command_slips.find_one({"_id": oid(slip_id, "slip"), "business_id": business_id})
         if not slip:
             raise HTTPException(status_code=404, detail="Command slip not found")
+        previous_result = slip.get("result") if isinstance(slip.get("result"), dict) else {}
+        previous_execution = previous_result.get("execution") if isinstance(previous_result.get("execution"), dict) else {}
+        if slip.get("status") == "approved_applied" and previous_execution.get("applied"):
+            return {"success": True, "slip": doc_out(slip), "result": serial(previous_result), "safety": previous_result.get("message") or SAFE_RESULT, "idempotent": True}
         action = safe_text((payload or {}).get("action"), "approve")
         note = safe_text((payload or {}).get("note") or (payload or {}).get("owner_note"), "Owner approved the prepared direction.")
         edited_form = form_from_request(payload)
