@@ -1,7 +1,0 @@
-.cvOfficeFinal.cvOfficeSite .cvSiteTopbar::after {
-  content: "CHURVOX CONTROL";
-}
-
-.cvOfficeFinal.cvOfficeSite.cvOwnerReady .cvSiteTopbar::after {
-  content: "OWNER WORKSPACE";
-}
