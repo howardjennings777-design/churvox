@@ -61,26 +61,29 @@ const workerOwner = read('frontend/src/churvox-office-lab/OfficeTeamWorkerPhoneV
 const backOffice = read('frontend/src/churvox-office-lab/OfficeTeamBackOfficeScreens.jsx');
 const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
 const workForms = read('frontend/src/churvox-office-lab/OfficeTeamWorkForms.jsx');
+const ownerSite = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
+const ownerNav = read('frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx');
+const contextStrip = read('frontend/src/churvox-office-lab/OfficeTeamContextStrip.jsx');
 const liveSmoke = read('scripts/churvox-live-command-smoke.cjs');
 
 expect(
-  'all eight office mimics have human-like builders',
+  'all eight office roles have human-like builders',
   includesAll(humanMimic, [
     '"Office Manager"', '"Receptionist"', '"Bookkeeper"', '"Accountant"', '"Payroll Clerk"', '"Client Memory"', '"Quality Checker"', '"Operations Manager"',
     'build_invoice_slip', 'build_booking_slip', 'build_payment_followup_slip', 'build_reply_slip', 'build_hours_slip', 'build_quality_slip', 'build_client_memory_slip', 'build_accounting_slip', 'build_operations_slip', 'build_office_manager_brief',
   ]),
-  'Every mimic must have a specific evidence-backed reasoning path, including Operations and Office Manager',
+  'Every role must have a specific evidence-backed reasoning path, including Operations and Office Manager',
 );
 
 expect(
-  'booking mimic uses real rules and history instead of a fixed cycle',
+  'booking role uses real rules and history instead of a fixed cycle',
   includesAll(humanMimic, ['explicit_cycle_days', 'inferred_cycle_days', 'median(gaps)', 'roll_forward', 'It did not assume a three-week cycle'])
     && !humanMimic.includes('Every 3 weeks'),
   'Recurring booking intelligence must not hard-code a three-week pattern',
 );
 
 expect(
-  'invoice mimic handles inclusive and exclusive tax safely',
+  'invoice role handles inclusive and exclusive tax safely',
   includesAll(humanMimic, ['normalized_rate', 'tax_inclusive', 'subtotal * rate / (1 + rate)', 'subtotal * rate', 'GST/tax treatment needs owner confirmation']),
   'Tax logic must normalize percentage formats and avoid double-adding inclusive GST',
 );
@@ -92,7 +95,7 @@ expect(
 );
 
 expect(
-  'payroll mimic compares workers with their own history',
+  'payroll role compares workers with their own history',
   includesAll(humanMimic, ['worker_baseline', 'median(values[-12:])', 'baseline * 1.75', 'Normal worker baseline']),
   'Odd-hours checks must use worker-specific history and missing clock-off evidence',
 );
@@ -104,43 +107,49 @@ expect(
 );
 
 expect(
-  'mimic slips expose evidence confidence missing facts and owner question',
+  'office slips expose evidence confidence missing facts and owner question',
   includesAll(humanMimic, ['"evidence": evidence_rows', '"missing": missing', '"confidence": confidence_data', '"field_sources": prepared_form', '"owner_question": owner_question'])
     && includesAll(commandApi, ['function reasoningForSlip', 'Evidence used:', 'Confidence:', 'Owner must check:', 'Owner question:', 'reasoning.summary']),
-  'The owner must be able to see why each mimic made its judgement',
+  'The owner must be able to see why each role made its judgement',
 );
 
 expect(
-  'guarded human mimic scan is registered before every older scanner',
+  'guarded office scan is registered before every older scanner',
   includesAll(usercustomize, ['build_command_human_mimic_marker_router', 'build_command_human_mimic_guard_router', 'build_command_human_mimic_router', 'build_command_mimic_intelligence_router', 'build_command_apply_router'])
     && usercustomize.indexOf('build_command_human_mimic_marker_router') < usercustomize.indexOf('build_command_human_mimic_guard_router')
     && usercustomize.indexOf('build_command_human_mimic_guard_router') < usercustomize.indexOf('build_command_human_mimic_router')
     && usercustomize.indexOf('build_command_human_mimic_router') < usercustomize.indexOf('build_command_mimic_intelligence_router')
     && usercustomize.indexOf('build_command_mimic_intelligence_router') < usercustomize.indexOf('build_command_apply_router'),
-  'The guard must own /command/scan while unguarded v2 and v1 scanners remain compatibility fallbacks only',
+  'The guarded scan must own /command/scan while unguarded v2 and v1 scanners remain compatibility fallbacks only',
 );
 
 expect(
-  'mimic guard retires old false and stale decisions safely',
+  'office guard retires stale false and premature decisions safely',
   includesAll(mimicGuard, [
     'retire_old_engine_slips', 'payload.human_mimic_intelligence_v2', 'retire_outbound_reply_false_positives',
-    'Message direction is outbound', 'retire_stale_briefs', 'current_day = now().date().isoformat()',
-    'status": "superseded"', 'human-mimic-scan-guard-v1', 'No business record, message, payment or accounting record changed',
-  ]),
-  'Old scanner cards, outbound reply false positives and yesterday’s briefing must not remain in today’s owner queue',
+    'Message direction is outbound', 'retire_false_completion_slips', 'linked_invoice_exists',
+    'retire_early_or_invalid_payment_followups', 'status_words', 'paid_or_closed = bool(words & {"paid", "settled"})',
+    'retire_stale_briefs', 'current_day = now().date().isoformat()', 'status": "superseded"',
+    'human-mimic-scan-guard-v2', 'No business record, message, payment or accounting record changed',
+  ]) && !mimicGuard.includes('any(marker in status for marker in ["paid"'),
+  'Old cards, outbound messages, false completion, duplicate invoices, early reminders and stale briefings must leave the owner queue',
 );
 
 expect(
-  'live deployment marker proves all eight mimic roles',
-  includesAll(mimicMarker, ['HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v2"', '"Office Manager"', '"Receptionist"', '"Bookkeeper"', '"Accountant"', '"Payroll Clerk"', '"Client Memory"', '"Quality Checker"', '"Operations Manager"'])
-    && includesAll(liveSmoke, ['/api/command/human-mimic-marker', 'EXPECTED_HUMAN_MIMIC', 'roles.length === 8']),
-  'Live smoke must prove that human mimic v2, not only the old wrapper, reached Render',
+  'live deployment marker proves roles guard and owner shell',
+  includesAll(mimicMarker, [
+    'HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v2"',
+    'HUMAN_MIMIC_GUARD = "human-mimic-scan-guard-v2"',
+    'OWNER_SHELL_VERSION = "owner-vision-shell-v1"',
+    '"Office Manager"', '"Receptionist"', '"Bookkeeper"', '"Accountant"', '"Payroll Clerk"', '"Client Memory"', '"Quality Checker"', '"Operations Manager"',
+  ]) && includesAll(liveSmoke, ['/api/command/human-mimic-marker', 'EXPECTED_HUMAN_MIMIC', 'EXPECTED_GUARD', 'EXPECTED_OWNER_SHELL', 'roles.length === 8']),
+  'Live smoke must prove the guarded office build and owner vision shell reached Render',
 );
 
 expect(
-  'mimic scanner and guard never send sync charge file tax or pay staff',
+  'scanner and guard never send sync charge file tax or pay staff',
   !/(send_email|send_sms|stripe\.|payment_intent|charge\(|xero[^\n]*sync\(|myob[^\n]*sync\(|file_tax\(|submit[^\n]*tax|bank_file\(|bank payout|payroll_payment)/i.test(`${humanMimic}\n${mimicGuard}`),
-  'Mimic intelligence may only prepare, filter and audit Command slips',
+  'Office intelligence may only prepare, filter and audit Command slips',
 );
 
 expect(
@@ -150,6 +159,32 @@ expect(
     'slip.get("status") == "approved_applied"', '"idempotent": True', 'return "client_memory_reviews", "client_memory_review"',
   ]),
   'Owner approval may create one internal draft only; repeated clicks and client memory must not create duplicates',
+);
+
+expect(
+  'owner workspace uses only confirmed backend Command decisions',
+  includesAll(ownerSite, [
+    'if (isOwnerApp) return backendDecisions;',
+    'Command could not be confirmed. No fallback or browser-only decisions are being shown.',
+    'item?.raw?.source !== "backend_command_slip"',
+    'That item is not a confirmed live Command slip',
+  ]),
+  'Owner approvals must never fall back to starter cards, Admin Brain, old drafts or local browser queues',
+);
+
+expect(
+  'owner shell reduces thinking and hides routine machinery',
+  includesAll(ownerSite, ['OfficeTeamOwnerNavigation', 'OfficeTeamContextStrip', 'Churvox handles the admin. You handle the decisions.', 'Only the decisions that need the owner'])
+    && includesAll(ownerNav, ['Office and oversight', 'cvOwnerNavCount'])
+    && includesAll(contextStrip, ['waiting in Command', 'Open Command']),
+  'The owner should see a compact core path while secondary office oversight remains available',
+);
+
+expect(
+  'Command fallback fields never invent business facts',
+  ownerSite.includes('const MISSING_VALUE = "Not found — owner must enter"')
+    && !/Every 3 weeks|Base service \+ extra green waste|Long timer flagged|Xero \/ MYOB"\)/.test(ownerSite),
+  'Missing cycles, amounts, workers and accounting systems must remain visibly unresolved',
 );
 
 expect(
@@ -211,6 +246,8 @@ expect(
 
 const buttonFiles = [
   'frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx',
+  'frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx',
+  'frontend/src/churvox-office-lab/OfficeTeamContextStrip.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamSafeControls.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamBackOfficeScreens.jsx',
@@ -244,8 +281,8 @@ for (const check of checks) {
 }
 
 if (failed.length) {
-  console.error(`\nHuman mimic product audit failed: ${failed.length} issue(s).`);
+  console.error(`\nHuman office product audit failed: ${failed.length} issue(s).`);
   process.exit(1);
 }
 
-console.log(`\nHuman mimic product audit passed: ${checks.length} checks.`);
+console.log(`\nHuman office product audit passed: ${checks.length} checks.`);
