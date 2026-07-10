@@ -253,6 +253,26 @@ def install(module):
         remove_route(app, path, method)
         app.add_api_route(path, endpoint, methods=[method])
 
+    # The live Render wrapper imports this patch explicitly on every boot.
+    # Install the public build marker and the guarded human-office scan here so
+    # they do not depend on the indirect usercustomize/Xero include-router hook.
+    try:
+        try:
+            from churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router
+            from churvox_command_human_mimic_guard_routes import build_command_human_mimic_guard_router
+        except Exception:
+            from backend.churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router
+            from backend.churvox_command_human_mimic_guard_routes import build_command_human_mimic_guard_router
+
+        remove_route(app, "/api/command/human-mimic-marker", "GET")
+        remove_route(app, "/api/command/human-mimic-marker", "POST")
+        remove_route(app, "/api/command/scan", "POST")
+        app.include_router(build_command_human_mimic_marker_router(), prefix="/api")
+        app.include_router(build_command_human_mimic_guard_router(db, get_current_user, ObjectId), prefix="/api")
+        app.state.churvox_guarded_human_office_routes_installed = True
+    except Exception as exc:
+        print(f"Churvox guarded human-office route install skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
