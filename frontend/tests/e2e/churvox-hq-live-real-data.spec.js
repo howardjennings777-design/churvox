@@ -56,11 +56,20 @@ function assertBillingTruth(report) {
   expect(report.collections?.connected).toBe(true);
   expect(Array.isArray(report.collections?.names)).toBe(true);
   expect(Array.isArray(report.launch_checks)).toBe(true);
-  expect(report.launch_checks.length).toBeGreaterThan(2);
+  expect(report.launch_checks.length).toBeGreaterThan(5);
 
   const generatedAt = new Date(report.generated_at).getTime();
   expect(Number.isFinite(generatedAt)).toBe(true);
   expect(Date.now() - generatedAt, 'HQ report must be freshly generated').toBeLessThan(10 * 60 * 1000);
+
+  const checks = new Map(report.launch_checks.map((item) => [item.key, item]));
+  for (const key of ['database', 'owner_lock', 'stripe', 'prices', 'billing_truth', 'webhooks', 'email']) {
+    expect(checks.has(key), `paid-launch report is missing ${key} check`).toBe(true);
+    expect(['pass', 'warn', 'fail']).toContain(checks.get(key).status);
+  }
+  const hardFailures = ['database', 'owner_lock', 'stripe', 'prices', 'billing_truth', 'webhooks']
+    .filter((key) => checks.get(key)?.status === 'fail');
+  expect(report.ready_to_take_payments).toBe(hardFailures.length === 0);
 
   const stripeStatuses = new Map((report.billing?.stripe?.active_subscriptions || []).map((item) => [
     String(item.subscription_id || '').trim(),
@@ -127,6 +136,13 @@ test.describe('Live authenticated paid-launch HQ', () => {
 
     const mrrMetric = page.locator('.plhqMetric').filter({ hasText: 'Actual Stripe MRR' }).first();
     await expect(mrrMetric.locator('strong')).toHaveText(expectedMoney(report.billing.actual_mrr_nzd));
+
+    const stateMetric = page.locator('.plhqMetric').filter({ hasText: 'Launch state' }).first();
+    await expect(stateMetric.locator('strong')).toHaveText(report.ready_to_take_payments ? 'Confirmed' : 'Check required');
+
+    for (const check of report.launch_checks) {
+      await expect(page.getByText(check.label, { exact: true }).first()).toBeVisible();
+    }
 
     const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ');
     expect(body).not.toMatch(/Belmont Villas|Example client|Sample workspace|Starter structure/i);
