@@ -12,8 +12,7 @@ export const OFFICE_OVERVIEW_AREAS = [
 ];
 
 export function useOfficeTeamOverview(options = {}) {
-  const allowFallback = options.allowFallback === true
-    || (options.allowFallback !== false && isOfficeTeamPreviewRoute());
+  const allowFallback = isOfficeTeamPreviewRoute() && options.allowFallback !== false;
   const [state, setState] = useState({ source: "loading", areas: [] });
 
   useEffect(() => {
