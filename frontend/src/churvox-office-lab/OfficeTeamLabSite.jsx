@@ -127,7 +127,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         setResolved({});
         const createdCount = Number(command?.scan?.createdCount || 0);
         const existingCount = Number(command?.scan?.existingCount || 0);
-        if (isOwnerApp && createdCount) setNotice(`Office team prepared ${createdCount} new Command slip${createdCount === 1 ? "" : "s"}. Open each slip, check the mahi, then approve.`);
+        if (isOwnerApp && createdCount) setNotice(`Office team prepared ${createdCount} new Command slip${createdCount === 1 ? "" : "s"}. Open each slip, check the draft, then approve.`);
         else if (isOwnerApp && existingCount) setNotice(`Office team checked live records. ${existingCount} open slip${existingCount === 1 ? "" : "s"} are still waiting for owner approval.`);
         else if (isOwnerApp && command?.decisions?.length) setNotice("Command slips loaded. Open a slip, review it, then approve, edit, ask, snooze or park it.");
         else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("The office team checked live records. Command is clear for now.");
@@ -276,7 +276,7 @@ function Topbar({ screen, go, appMode }) {
 function Status({ metrics, sourceLabel, notice, appMode }) {
   const isOwnerApp = appMode === "owner";
   const modeLabel = isOwnerApp ? "Owner workspace" : "Office running";
-  const title = isOwnerApp ? "The office team does the mahi. You approve." : "Churvox runs the office. The owner approves the decisions.";
+  const title = isOwnerApp ? "The office team prepares it. You approve." : "Churvox runs the office. The owner approves the decisions.";
   const text = isOwnerApp ? "Jobs, clients, workers, quotes, invoices, payroll checks, accounting checks and follow-ups come back to Command before anything is sent, synced, charged or changed." : "Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.";
   return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>{modeLabel} · {sourceLabel}</span><h1>{title}</h1><p>{text}</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
 }
@@ -291,28 +291,30 @@ function Command({ tray, setTray, counts, pending, onAction }) {
     onAction(item, action, detail);
     setSelectedId("");
   }
-  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check the simple form, add owner instructions if needed, then approve or park it. Nothing sends, syncs, charges or changes records from this screen." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} onAction={act} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check the editable draft form, change anything needed, then approve or park it. Nothing sends, syncs, charges or changes records from this screen." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} onAction={act} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
 }
 
 function CommandSlip({ item, onAction }) {
   const itemKey = keyOf(item || {});
   const actions = Array.isArray(item?.actions) ? item.actions : [];
+  const actionKey = actions.join("|");
   const [ownerNote, setOwnerNote] = useState("");
   const [selectedAction, setSelectedAction] = useState(actions[0] || "Approve record");
+  const [draftFields, setDraftFields] = useState(() => makeSlipFields(item));
   useEffect(() => {
     setOwnerNote("");
     setSelectedAction(actions[0] || "Approve record");
-  }, [itemKey]);
+    setDraftFields(makeSlipFields(item));
+  }, [itemKey, actionKey]);
 
   if (!item) return <aside className="cvCommandSlip"><span>Command slip</span><h3>No open slip</h3><p>When the office team prepares work for the owner, the full decision slip opens here.</p></aside>;
 
-  const checked = Array.isArray(item.checked) ? item.checked : [];
-  const fields = makeSlipFields(item);
-  const steps = makeSlipSteps(item);
   const formTitle = makeSlipFormTitle(item);
   const source = item.raw?.source === "backend_command_slip" ? "Live Command" : String(itemKey).startsWith("local-command-") ? "Prepared in this workspace" : "Starter structure";
   const finalAction = selectedAction || actions[0] || "Approve record";
-  const submit = (action = finalAction) => onAction(item, action, { ownerNote, fields, formTitle });
+  const effects = makeApprovalEffects(item, draftFields);
+  const submit = (action = finalAction) => onAction(item, action, { ownerNote, fields: draftFields, formTitle });
+  const changeField = (index, value) => setDraftFields((current) => current.map((field, i) => i === index ? { ...field, value } : field));
 
   return <aside className="cvCommandSlip cvCommandSlipPlain" aria-label="Command decision slip">
     <div className="cvCommandSlipTop"><span>Command slip</span><em>{item.level || "Review"}</em></div>
@@ -320,18 +322,14 @@ function CommandSlip({ item, onAction }) {
     <p className="cvSlipPlainSummary">{plainSlipSummary(item)}</p>
     <div className="cvCommandSlipMeta"><b>{item.roleName || item.tray || "Churvox"}</b><small>{item.tray || "Command"}</small><small>{source}</small></div>
 
-    <section className="cvSlipNextStep"><b>What needs doing</b><p>{plainNextStep(item)}</p></section>
-
-    <section className="cvSlipForm" aria-label="Prepared approval form">
-      <div><span>Prepared form</span><h4>{formTitle}</h4></div>
-      <div className="cvSlipFieldGrid">{fields.map(([label, value]) => <label key={label}><span>{label}</span><input value={value} readOnly /></label>)}</div>
+    <section className="cvSlipForm" aria-label="Editable prepared approval form">
+      <div><span>Prepared form</span><h4>{formTitle}</h4><p>Edit the draft below, then approve only when it looks right.</p></div>
+      <div className="cvSlipFieldGrid cvSlipEditableGrid">{draftFields.map((field, index) => <label key={`${field.label}-${index}`}><span>{field.label}</span>{field.long ? <textarea value={field.value || ""} onChange={(event) => changeField(index, event.target.value)} /> : <input value={field.value || ""} onChange={(event) => changeField(index, event.target.value)} />}</label>)}</div>
     </section>
 
-    <section className="cvSlipSteps"><b>Office team checklist</b>{steps.map((step, index) => <p key={step}><span>{index + 1}</span>{step}</p>)}</section>
+    <section className="cvSlipWillDo"><b>If you approve this</b>{effects.map((effect) => <p key={effect}>{effect}</p>)}</section>
 
-    <dl className="cvSlipExplain"><dt>What was checked</dt><dd>{checked.length ? checked.map((x) => <small key={x}>{x}</small>) : <small>Record was checked before being shown.</small>}</dd><dt>What is prepared</dt><dd>{item.prepared || "A safe prepared action is ready for review."}</dd><dt>Owner decision</dt><dd>{item.need || "Approve, edit, ask, snooze or park this slip."}</dd></dl>
-
-    <label className="cvSlipOwnerBox"><span>Owner note / instruction</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Example: approve this, ask staff first, correct the hours to 6.5, move the booking to Friday, or park it for later." /></label>
+    <label className="cvSlipOwnerBox"><span>Owner note / instruction</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Add an instruction if needed. Example: move the booking to Friday, change total to 150, ask staff first, or park it." /></label>
 
     <section className="cvCommandSlipSafety"><b>Safety locks</b><span>No auto-send</span><span>No auto-sync</span><span>No auto-charge</span><span>No record change without approval</span></section>
 
@@ -388,45 +386,59 @@ function makeSlipFormTitle(item = {}) {
   if (/operation|pattern|rule/.test(text)) return "Operations review form";
   return "Owner approval form";
 }
-function plainNextStep(item = {}) {
-  const text = `${item.tray || ""} ${item.roleName || ""} ${item.raw?.action_type || ""} ${item.title || ""}`.toLowerCase();
-  if (/timer|hours|payroll|staff/.test(text)) return "Check the hours, decide if they are right, add a note if staff need to fix anything, then approve or ask staff.";
-  if (/invoice|payment|money|bookkeeper/.test(text)) return "Check the job, amount, invoice/payment detail, then approve the direction or ask for changes before anything is sent.";
-  if (/account|gst|xero|myob|tax/.test(text)) return "Check GST/accounting/export readiness, then approve, send back to Bookkeeper, export later or park it.";
-  if (/booking|schedule|recurring|date|rebook/.test(text)) return "Check the date, worker and customer context, then approve the booking plan or edit/ask before anything is changed.";
-  if (/client|memory|preference|access/.test(text)) return "Check the note is useful and correct, then approve, edit, ignore or park it before the client record changes.";
-  if (/quality|proof|photo|complete/.test(text)) return "Check what proof is missing, then approve a proof request, review completion or park it.";
-  if (/message|reply/.test(text)) return "Check the prepared reply, add instructions if needed, then approve or edit before any message is sent.";
-  if (/operation|pattern|rule/.test(text)) return "Check the pattern, decide if a rule/process should be made, then approve, edit or park it.";
-  return "Read the slip, add owner instructions if needed, then approve, edit, ask, snooze or park it.";
-}
-function makeSlipSteps(item = {}) {
-  const form = makeSlipFormTitle(item).toLowerCase();
-  if (form.includes("hours")) return ["Confirm the timer or manual hours.", "Decide if staff should be asked for detail.", "Approve only when the hours direction is right."];
-  if (form.includes("invoice") || form.includes("payment")) return ["Check the job and customer context.", "Confirm amount, extras and payment link direction.", "Approve only when invoice/payment admin is ready."];
-  if (form.includes("accounting")) return ["Check GST/tax/export risk.", "Confirm whether Bookkeeper needs changes.", "Approve review or park before any accounting sync."];
-  if (form.includes("booking")) return ["Check date, worker and customer expectation.", "Confirm recurring/next booking details.", "Approve only when the schedule plan is right."];
-  if (form.includes("client")) return ["Check the detail is useful.", "Remove anything that should not be saved.", "Approve only if it should become client memory."];
-  if (form.includes("quality")) return ["Check proof/photos/notes are complete.", "Decide if staff need to add proof.", "Approve only when completion is clear."];
-  if (form.includes("reply")) return ["Read the customer message.", "Check the prepared reply direction.", "Approve only when wording is safe to send later."];
-  return ["Read what was found.", "Check the prepared form.", "Approve, edit, ask or park the slip."];
-}
 function makeSlipFields(item = {}) {
+  if (!item) return [];
   const payload = payloadOf(item);
   const raw = item.raw || {};
-  const fields = [
-    ["Role doing the mahi", firstValue(item.roleName, payload.office_role)],
-    ["Area", firstValue(item.tray, raw.source_type)],
-    ["Record", firstValue(payload.record_title, payload.job_title, raw.title, item.title)],
-    ["Customer", firstValue(payload.customer, payload.customer_name)],
-    ["Invoice", firstValue(payload.invoice, payload.invoice_number)],
-    ["Amount", firstValue(payload.amount, payload.amount_due)],
-    ["Status", firstValue(payload.status, raw.status, item.level)],
-    ["Worker update", firstValue(payload.update, payload.note, payload.message)],
-    ["Source", firstValue(payload.source_collection, raw.source_type)],
-    ["Record ID", firstValue(payload.record_id, raw.source_id, raw.command_slip_id)],
-  ].filter(([, value]) => Boolean(value));
-  if (fields.length) return fields.slice(0, 8);
-  const checked = Array.isArray(item.checked) ? item.checked : [];
-  return checked.slice(0, 4).map((value, index) => [`Checked ${index + 1}`, value]);
+  const preparedForm = item.form || payload.prepared_form || payload.form || raw.prepared_form;
+  if (preparedForm && typeof preparedForm === "object" && !Array.isArray(preparedForm)) {
+    return objectFormFields(item, preparedForm);
+  }
+  const form = makeSlipFormTitle(item).toLowerCase();
+  const role = firstValue(item.roleName, payload.office_role, item.tray, "Churvox");
+  const record = firstValue(payload.record_title, payload.job_title, raw.title, item.title, "Selected record");
+  if (form.includes("booking")) return [
+    field("Prepared by", role), field("Client", firstValue(payload.customer, "Repeat client")), field("Usual cycle", "Every 3 weeks"), field("Last visit", "Needs date check"), field("Suggested next booking", "Choose date and time"), field("Worker", firstValue(payload.worker, "Choose worker")), field("Prepared message", "We can book your next visit once the owner approves the date.", true), field("Internal note", plainSlipSummary(item), true),
+  ];
+  if (form.includes("invoice") || form.includes("payment")) return [
+    field("Prepared by", role), field("Client", firstValue(payload.customer, "Customer to confirm")), field("Job", record), field("Line items", firstValue(payload.line_items, "Base service + extra green waste"), true), field("Draft total", firstValue(payload.amount, payload.amount_due, "Needs amount")), field("Payment link", firstValue(payload.payment_link, "Prepare only")), field("Invoice note", firstValue(item.prepared, "Draft invoice is ready for owner review."), true),
+  ];
+  if (form.includes("hours")) return [
+    field("Prepared by", role), field("Worker", firstValue(payload.worker, payload.staff, "Worker to confirm")), field("Job / shift", record), field("Timer", firstValue(payload.hours, "Long timer flagged")), field("Expected time", "Normal time needs check"), field("Issue", plainSlipSummary(item), true), field("Prepared action", firstValue(item.prepared, "Approve hours, edit notes, or ask staff."), true),
+  ];
+  if (form.includes("client")) return [
+    field("Prepared by", role), field("Client", firstValue(payload.customer, payload.name, record)), field("Detail to save", firstValue(payload.note, payload.notes, item.prepared, "Client memory detail"), true), field("Source", firstValue(raw.source_type, item.tray, "Service note")), field("Use for", "Future jobs, messages and access notes"),
+  ];
+  if (form.includes("quality")) return [
+    field("Prepared by", role), field("Job", record), field("Missing", "Final proof / completion note"), field("Staff request", firstValue(item.prepared, "Ask staff to add final proof."), true), field("Hold invoice?", "Owner decides"),
+  ];
+  if (form.includes("accounting")) return [
+    field("Prepared by", role), field("System", firstValue(payload.system, "Xero / MYOB")), field("Record", record), field("GST / code", firstValue(payload.gst, "Needs check")), field("Export status", firstValue(payload.status, "Do not sync yet")), field("Accounting note", firstValue(item.prepared, "Accounting review is ready for owner approval."), true),
+  ];
+  if (form.includes("reply")) return [
+    field("Prepared by", role), field("Client", firstValue(payload.customer, "Client")), field("Original message", firstValue(payload.message, plainSlipSummary(item)), true), field("Prepared reply", firstValue(payload.reply, item.prepared, "Reply needs owner approval."), true), field("Send status", "Do not send yet"),
+  ];
+  return [field("Prepared by", role), field("Area", firstValue(item.tray, raw.source_type)), field("Record", record), field("Status", firstValue(payload.status, raw.status, item.level)), field("Prepared action", firstValue(item.prepared, plainSlipSummary(item)), true)];
 }
+function objectFormFields(item, form = {}) {
+  const base = [field("Prepared by", firstValue(item.roleName, payloadOf(item).office_role, item.tray, "Churvox"))];
+  const rows = Object.entries(form).filter(([, value]) => value !== undefined && value !== null && value !== "").slice(0, 10).map(([key, value]) => field(labelize(key), displayValue(value), shouldUseLongField(key, value)));
+  return [...base, ...rows];
+}
+function makeApprovalEffects(item = {}, fields = []) {
+  const payload = payloadOf(item);
+  const fromPayload = item.willDo || payload.will_do || item.raw?.will_do;
+  if (Array.isArray(fromPayload) && fromPayload.length) return fromPayload.map(displayValue);
+  const form = makeSlipFormTitle(item).toLowerCase();
+  if (form.includes("booking")) return ["Save the booking/rebooking draft", "Keep customer messages unsent until you choose to send", "Record the owner approval trail"];
+  if (form.includes("invoice") || form.includes("payment")) return ["Save the invoice/payment draft", "Keep invoice send, sync and charge locked", "Use the edited fields above as the approved draft"];
+  if (form.includes("hours")) return ["Save the hours review draft", "No payroll payment, tax filing or bank file is created", "Use your edited notes for the staff follow-up"];
+  if (form.includes("client")) return ["Prepare the client memory update", "Do not overwrite the client record without owner approval", "Keep an audit note of what was approved"];
+  if (form.includes("quality")) return ["Prepare the staff proof request", "Hold completion/invoice decisions until proof is checked", "Record what the owner approved"];
+  if (form.includes("accounting")) return ["Save accounting review notes", "Do not sync Xero/MYOB or file tax", "Send changes back to Bookkeeper if needed"];
+  return fields.length ? ["Use the edited form as the approved draft", "Record the owner decision", "Keep send, sync and charge locked"] : ["Record the owner decision", "Nothing is sent, synced or charged"];
+}
+function field(label, value, long = false) { return { label, value: displayValue(value), long: long || shouldUseLongField(label, value) }; }
+function displayValue(value) { if (Array.isArray(value)) return value.map(displayValue).join(" · "); if (value && typeof value === "object") return Object.entries(value).map(([k, v]) => `${labelize(k)}: ${displayValue(v)}`).join(" · "); return cleanText(value); }
+function shouldUseLongField(label, value) { return /note|message|reply|line|scope|action|request|detail|issue/i.test(String(label || "")) || displayValue(value).length > 48; }
+function labelize(key) { return String(key || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()); }
