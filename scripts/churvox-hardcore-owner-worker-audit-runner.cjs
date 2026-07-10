@@ -18,6 +18,11 @@ source = source.replace(
 );
 
 source = source.replace(
+  "\"'/api/worker/jobs?ts='\"",
+  "'/api/worker/jobs?ts='",
+);
+
+source = source.replace(
   "    'mobile-chromium',",
   "    'testInfo.project.name',",
 );
@@ -29,8 +34,9 @@ source = source.replace(
 
 if (!source.includes("OfficeTeamWorkerHardcore.css")
   || !source.includes("all(worker, ['useAuth', 'if (!user || !isWorker)', '<Navigate'])")
+  || !source.includes("'/api/worker/jobs?ts='")
   || !source.includes("'testInfo.project.name'")) {
-  console.error('Hardcore audit runner could not apply the active worker guard, mobile CSS or project-aware checks.');
+  console.error('Hardcore audit runner could not apply the active worker guard, endpoint, mobile CSS or project-aware checks.');
   process.exit(1);
 }
 
