@@ -210,6 +210,203 @@ def _install_wrapper_proof_pack_guard():
 _install_wrapper_proof_pack_guard()
 
 
+BUSINESS_PROFILE_ROUTE_VERSION = 'business-profile-live-v1'
+BUSINESS_PROFILE_SAFETY = 'Business profile only. Nothing was sent, synced, charged or changed outside the approved settings fields.'
+
+
+def _install_wrapper_business_profile_routes():
+    db = getattr(legacy, 'db', None)
+    get_current_user = getattr(legacy, 'get_current_user', None)
+    if db is None or get_current_user is None:
+        return
+
+    allowed_fields = {
+        'businessName', 'tradingName', 'ownerEmail', 'phone', 'website',
+        'businessAddress', 'gstNumber', 'nzbn', 'bankName', 'bankNumber',
+        'invoicePrefix', 'quotePrefix', 'workingHours', 'customerMessage',
+        'documentFooter', 'brandTone', 'logoStatus',
+    }
+    owner_roles = {'employer', 'admin', 'owner', 'business_owner', 'manager', 'office_admin'}
+
+    def _text(value, limit=4000):
+        try:
+            return str(value or '').strip()[:limit]
+        except Exception:
+            return ''
+
+    def _read(user, *keys):
+        for key in keys:
+            if isinstance(user, dict) and user.get(key) not in (None, ''):
+                return user.get(key)
+            try:
+                value = getattr(user, key, None)
+                if value not in (None, ''):
+                    return value
+            except Exception:
+                pass
+        return ''
+
+    def _business_id(user):
+        return _text(_read(user, 'business_id', 'businessId', 'owner_business_id', 'id', '_id'), 180)
+
+    def _maybe_oid(value):
+        try:
+            return ObjectId(str(value))
+        except Exception:
+            return None
+
+    def _safe(value):
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, ObjectId):
+            return str(value)
+        if isinstance(value, list):
+            return [_safe(item) for item in value]
+        if isinstance(value, dict):
+            return {'id' if key == '_id' else key: _safe(item) for key, item in value.items() if key not in {'password', 'password_hash', 'hashed_password', 'token', 'access_token', 'refresh_token'}}
+        return value
+
+    async def _require_owner(request):
+        try:
+            user = await get_current_user(request)
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=401, detail='Not authenticated')
+        role = _text(_read(user, 'role'), 80).lower()
+        is_admin = bool(_read(user, 'is_admin', 'is_platform_owner'))
+        if role not in owner_roles and not is_admin:
+            raise HTTPException(status_code=403, detail='Only an owner or admin can change business settings')
+        if not _business_id(user):
+            raise HTTPException(status_code=400, detail='Business id is missing')
+        return user
+
+    async def _owner_doc(user):
+        business_id = _business_id(user)
+        oid = _maybe_oid(business_id)
+        queries = []
+        if oid is not None:
+            queries.extend([{'_id': oid}, {'business_id': oid}])
+        queries.extend([{'_id': business_id}, {'business_id': business_id}])
+        user_id = _text(_read(user, 'id', '_id'), 180)
+        user_oid = _maybe_oid(user_id)
+        if user_oid is not None:
+            queries.append({'_id': user_oid})
+        if user_id:
+            queries.append({'_id': user_id})
+        for query in queries:
+            try:
+                found = await db.users.find_one(query)
+                if found:
+                    return found
+            except Exception:
+                continue
+        return {}
+
+    def _profile_from(owner, saved, business_id):
+        owner = owner or {}
+        saved = saved or {}
+        return {
+            'business_id': business_id,
+            'businessName': saved.get('businessName') or owner.get('business_name') or owner.get('company_name') or '',
+            'tradingName': saved.get('tradingName') or owner.get('trading_name') or '',
+            'ownerEmail': saved.get('ownerEmail') or owner.get('support_email') or owner.get('email') or '',
+            'phone': saved.get('phone') or owner.get('phone') or owner.get('phone_number') or '',
+            'website': saved.get('website') or owner.get('website') or '',
+            'businessAddress': saved.get('businessAddress') or owner.get('business_address') or '',
+            'gstNumber': saved.get('gstNumber') or owner.get('gst_number') or '',
+            'nzbn': saved.get('nzbn') or owner.get('nzbn') or '',
+            'bankName': saved.get('bankName') or owner.get('bank_account_name') or '',
+            'bankNumber': saved.get('bankNumber') or owner.get('bank_account_number') or '',
+            'invoicePrefix': saved.get('invoicePrefix') or owner.get('invoice_prefix') or 'INV',
+            'quotePrefix': saved.get('quotePrefix') or owner.get('quote_prefix') or 'QUO',
+            'workingHours': saved.get('workingHours') or owner.get('working_hours') or '',
+            'customerMessage': saved.get('customerMessage') or owner.get('customer_message') or '',
+            'documentFooter': saved.get('documentFooter') or owner.get('document_footer') or '',
+            'brandTone': saved.get('brandTone') or owner.get('brand_tone') or 'Friendly, clear and professional',
+            'logoStatus': saved.get('logoStatus') or owner.get('logo_status') or '',
+            'updated_at': saved.get('updated_at'),
+        }
+
+    async def _get_profile(request: Request):
+        user = await _require_owner(request)
+        business_id = _business_id(user)
+        owner = await _owner_doc(user)
+        saved = await db.business_profiles.find_one({'business_id': business_id}) or {}
+        profile = _profile_from(owner, saved, business_id)
+        return JSONResponse({'success': True, 'profile': _safe(profile), 'data': {'profile': _safe(profile)}, 'version': BUSINESS_PROFILE_ROUTE_VERSION, 'safety': BUSINESS_PROFILE_SAFETY})
+
+    async def _save_profile(request: Request):
+        user = await _require_owner(request)
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {}
+        if not isinstance(payload, dict):
+            raise HTTPException(status_code=400, detail='Settings payload must be an object')
+        business_id = _business_id(user)
+        clean = {key: _text(payload.get(key)) for key in allowed_fields if key in payload}
+        now = datetime.now(timezone.utc)
+        clean.update({'business_id': business_id, 'updated_at': now, 'updated_by': _text(_read(user, 'id', '_id'), 180)})
+        await db.business_profiles.update_one(
+            {'business_id': business_id},
+            {'$set': clean, '$setOnInsert': {'created_at': now}},
+            upsert=True,
+        )
+
+        user_updates = {}
+        mapping = {
+            'businessName': 'business_name',
+            'tradingName': 'trading_name',
+            'ownerEmail': 'support_email',
+            'phone': 'phone',
+            'website': 'website',
+            'businessAddress': 'business_address',
+            'gstNumber': 'gst_number',
+            'nzbn': 'nzbn',
+            'bankName': 'bank_account_name',
+            'bankNumber': 'bank_account_number',
+            'invoicePrefix': 'invoice_prefix',
+            'quotePrefix': 'quote_prefix',
+            'workingHours': 'working_hours',
+            'customerMessage': 'customer_message',
+            'documentFooter': 'document_footer',
+            'brandTone': 'brand_tone',
+            'logoStatus': 'logo_status',
+        }
+        for source_key, target_key in mapping.items():
+            if source_key in clean:
+                user_updates[target_key] = clean[source_key]
+        if user_updates:
+            oid = _maybe_oid(business_id)
+            business_values = [business_id]
+            if oid is not None:
+                business_values.append(oid)
+            await db.users.update_many(
+                {'$or': [{'_id': {'$in': business_values}}, {'business_id': {'$in': business_values}}]},
+                {'$set': {**user_updates, 'updated_at': now}},
+            )
+
+        saved = await db.business_profiles.find_one({'business_id': business_id}) or clean
+        owner = await _owner_doc(user)
+        profile = _profile_from(owner, saved, business_id)
+        return JSONResponse({'success': True, 'message': 'Business profile saved', 'profile': _safe(profile), 'data': {'profile': _safe(profile)}, 'version': BUSINESS_PROFILE_ROUTE_VERSION, 'safety': BUSINESS_PROFILE_SAFETY})
+
+    def _remove(path, method):
+        app.router.routes = [
+            route for route in app.router.routes
+            if not (getattr(route, 'path', '') == path and method in set(getattr(route, 'methods', set()) or set()))
+        ]
+
+    _remove('/api/logic/business-profile', 'GET')
+    _remove('/api/logic/business-profile', 'POST')
+    app.add_api_route('/api/logic/business-profile', _get_profile, methods=['GET'])
+    app.add_api_route('/api/logic/business-profile', _save_profile, methods=['POST'])
+
+
+_install_wrapper_business_profile_routes()
+
+
 COMMAND_SMOKE_MARKER = 'command-live-smoke-guard-20260710e'
 COMMAND_SMOKE_SAFETY = 'Owner approval recorded. Nothing was sent, synced, charged or changed.'
 
@@ -222,6 +419,10 @@ def _wrapper_has_auth(request: Request) -> bool:
 
 async def _command_live_smoke_marker():
     return JSONResponse({'success': True, 'marker': COMMAND_SMOKE_MARKER, 'safety': COMMAND_SMOKE_SAFETY})
+
+
+async def _business_profile_live_marker():
+    return JSONResponse({'success': True, 'version': BUSINESS_PROFILE_ROUTE_VERSION, 'safety': BUSINESS_PROFILE_SAFETY})
 
 
 async def _command_protected_placeholder(request: Request):
@@ -237,6 +438,7 @@ async def _command_worker_request_placeholder(request: Request):
 
 
 app.add_api_route('/api/command/live-smoke-marker', _command_live_smoke_marker, methods=['GET'])
+app.add_api_route('/api/settings/live-marker', _business_profile_live_marker, methods=['GET'])
 app.add_api_route('/api/command/events', _command_protected_placeholder, methods=['GET', 'POST'])
 app.add_api_route('/api/command/audit', _command_protected_placeholder, methods=['GET', 'POST'])
 app.add_api_route('/api/command/worker-payment-request', _command_worker_request_placeholder, methods=['POST'])
@@ -250,7 +452,7 @@ async def _global_options(full_path: str):
 
 @app.get('/api/healthz')
 async def _wrapper_healthz():
-    return {'ok': True, 'service': 'churvox-backend-wrapper', 'stripe_loaded': bool(stripe)}
+    return {'ok': True, 'service': 'churvox-backend-wrapper', 'stripe_loaded': bool(stripe), 'business_profile_version': BUSINESS_PROFILE_ROUTE_VERSION}
 
 
 @app.get('/healthz')
