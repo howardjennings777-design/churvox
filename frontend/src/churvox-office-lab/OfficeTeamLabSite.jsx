@@ -8,11 +8,14 @@ import "./OfficeTeamOwnerReady.css";
 import "./OfficeTeamPremiumPolish.css";
 import "./OfficeTeamLogicPolish.css";
 import "./OfficeTeamSlipForm.css";
+import "./OfficeTeamVisionPolish.css";
 import OfficeTeamRoleControls from "./OfficeTeamRoleControls";
 import OfficeTeamSiteSettings from "./OfficeTeamSiteSettings";
 import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
 import OfficeTeamReadinessScreen from "./OfficeTeamReadinessScreen";
 import OfficeTeamTodayScreen from "./OfficeTeamTodayScreen";
+import OfficeTeamOwnerNavigation from "./OfficeTeamOwnerNavigation";
+import OfficeTeamContextStrip from "./OfficeTeamContextStrip";
 import { WorkScreen, MoneyScreen, ClientsScreen, StaffScreen } from "./OfficeTeamOperationalScreens";
 import { QuotesScreen, InvoicesScreen, IntegrationsScreen, HelpScreen } from "./OfficeTeamExtraScreens";
 import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScreens";
@@ -27,6 +30,7 @@ const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-office-site-20260709";
 const COMMAND_CARD_LIMIT = 3;
 const SAFE_APPROVAL_TEXT = "Nothing was sent, synced, charged or filed.";
 const RECORD_ONLY_TEXT = "Nothing was sent, synced, charged or changed.";
+const MISSING_VALUE = "Not found — owner must enter";
 
 const screens = [
   ["today", "Today"], ["command", "Command"], ["work", "Work"], ["schedule", "Schedule"], ["clients", "Clients"],
@@ -34,13 +38,6 @@ const screens = [
   ["staff", "Staff"], ["payroll", "Payroll"], ["team", "Office Team"], ["playbooks", "Playbooks"], ["integrations", "Integrations"],
   ["activity", "Activity"], ["automation", "Automation"], ["branding", "Branding"], ["settings", "Settings"], ["plans", "Plans"],
   ["help", "Help"], ["readiness", "Readiness"], ["safety", "Safety"],
-];
-
-const ownerScreens = [
-  ["today", "Today"], ["command", "Command"], ["work", "Jobs"], ["schedule", "Schedule"], ["clients", "Clients"],
-  ["messages", "Messages"], ["worker", "Workers"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["money", "Money"],
-  ["staff", "Staff"], ["payroll", "Payroll"], ["team", "Office Team"], ["integrations", "Xero"], ["activity", "Activity"], ["settings", "Settings"],
-  ["plans", "Plans"], ["help", "Help"],
 ];
 
 const screenAliases = {
@@ -69,13 +66,13 @@ const roles = [
 ];
 
 const starterDecisions = [
-  decision("starter-1", "Money", "Bookkeeper", "Top priority", "Completed service has extra decision", "Staff noted extra green waste after completion.", ["completed", "staff note", "not sent"], "Draft is ready and the extra line is held for review.", "Approve this draft direction, edit it, ask staff, or park it?", ["Approve draft", "Edit draft", "Ask staff", "Park"]),
-  decision("starter-2", "Bookings", "Receptionist", "Next", "Regular client has no next booking", "A repeat client usually books every 3 weeks but has no next appointment.", ["last visit", "usual cycle", "space found"], "Rebooking message and suggested date are ready.", "Approve the prepared rebooking plan, edit the date, or park it?", ["Approve plan", "Edit date", "Ask client later", "Park"]),
-  decision("starter-3", "Staff", "Payroll Clerk", "Needs check", "Hours review has one odd timer", "One timer is much longer than usual.", ["period", "timers", "manual time"], "Hours review is ready and the odd timer is flagged.", "Approve the review direction, edit timer notes, or ask staff?", ["Approve review", "Edit notes", "Ask staff", "Park"]),
-  decision("starter-4", "Clients", "Client Memory", "Low risk", "Service note should become client memory", "A service note includes useful preference details.", ["notes", "service", "duplicates"], "Client memory update is ready.", "Approve this memory draft, edit it, ignore it, or park it?", ["Approve draft", "Edit draft", "Ignore", "Park"]),
-  decision("starter-5", "Quality", "Quality Checker", "Parkable", "Completed work is missing proof", "A completed work record is missing its final proof note.", ["complete", "proof missing"], "Ask-staff prompt is ready.", "Approve the proof request, review completion, or park it?", ["Approve request", "Review completion", "Park"]),
-  decision("starter-6", "Accounting", "Accountant", "Accounting check", "GST and Xero review needs approval", "A completed invoice is ready, but GST/accounting export should be checked before any sync.", ["GST rate", "invoice total", "export status", "no sync"], "Accounting review slip is ready for owner approval.", "Approve the accounting review, send it back to Bookkeeper, export, or park it?", ["Approve review", "Send to Bookkeeper", "Export later", "Park"]),
-  decision("starter-7", "Operations", "Operations Manager", "Pattern", "Repeat work may need a rule", "A repeated issue has shown up more than once this month.", ["pattern", "repeat", "gap"], "A process rule suggestion is ready.", "Approve the rule draft, edit it, or park it?", ["Approve draft", "Edit draft", "Park"]),
+  decision("starter-1", "Money", "Bookkeeper", "Top priority", "Completed service has an extra-work decision", "A completion note mentions extra work but the amount needs confirmation.", ["completion status", "staff note", "invoice not sent"], "A cautious invoice draft is ready with the uncertain amount left for review.", "Approve this draft direction, enter the missing amount, ask staff, or park it?", ["Approve draft", "Ask staff", "Park"]),
+  decision("starter-2", "Bookings", "Receptionist", "Next", "Regular client has no next booking", "A repeat client has no future appointment and the usual cycle needs confirmation.", ["last visit", "recurring rule", "future booking check"], "A rebooking plan is ready with the date left editable.", "Approve the prepared booking plan, choose the date, ask the client, or park it?", ["Approve plan", "Ask client later", "Park"]),
+  decision("starter-3", "Staff", "Payroll Clerk", "Needs check", "Hours review has one unusual timer", "One timer differs from the worker’s normal pattern.", ["period", "worker history", "timer note"], "An hours review is ready and the unusual timer is flagged.", "Approve the review direction, ask staff, or park it?", ["Approve review", "Ask staff", "Park"]),
+  decision("starter-4", "Clients", "Client Memory", "Low risk", "Service note may help future work", "A service note contains a potentially useful client preference.", ["source note", "sensitivity", "duplicate check"], "A client-memory draft is ready.", "Save this memory, ignore it, or park it?", ["Save client memory", "Ignore", "Park"]),
+  decision("starter-5", "Quality", "Quality Checker", "Parkable", "Completed work is missing proof", "A completed work record is missing final evidence.", ["completion status", "proof fields"], "A specific staff request is ready.", "Approve the proof request, clear it personally, or park it?", ["Approve proof request", "Clear personally", "Park"]),
+  decision("starter-6", "Accounting", "Accountant", "Accounting check", "GST and accounting review needs approval", "A completed invoice is ready, but tax treatment and export readiness need checking.", ["GST rate", "tax treatment", "export status", "sync locked"], "An accounting review slip is ready for owner approval.", "Approve the accounting review, return it to Bookkeeper, export later, or park it?", ["Approve review", "Send to Bookkeeper", "Export later", "Park"]),
+  decision("starter-7", "Operations", "Operations Manager", "Pattern", "Repeat work may need a rule", "The same missing admin step has appeared more than once.", ["pattern count", "affected areas", "current process"], "A process-rule suggestion is ready.", "Approve the process draft, review it later, or park it?", ["Approve process draft", "Review later", "Park"]),
 ];
 
 const playbooks = [
@@ -101,17 +98,19 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
   const [approvalTrail, setApprovalTrail] = useState(() => readOfficeTeamApprovalTrail());
-  const [notice, setNotice] = useState(isOwnerApp ? "Owner workspace ready. The office team checks the work, prepares slips, and waits for your approval." : "Churvox control centre ready. Sign in as an owner to load live decisions.");
+  const [notice, setNotice] = useState(isOwnerApp ? "Owner workspace ready. Churvox is checking the business and preparing only the decisions that need you." : "Churvox control centre ready. Sign in as an owner to load live decisions.");
   const [resolved, setResolved] = useState({});
 
   useEffect(() => {
     let mounted = true;
+    const snapshotPromise = isOwnerApp ? Promise.resolve({ source: "skip", decisions: [] }) : fetchOfficeTeamSnapshot();
+    const draftPromise = isOwnerApp ? Promise.resolve([]) : fetchOfficeTeamCommandDrafts();
     const commandPromise = isOwnerApp
       ? runBackendOfficeEngineScan().catch(() => null).then((scan) => fetchBackendCommandDecisions().then((command) => ({ ...command, scan })))
       : Promise.resolve({ source: "skip", decisions: [] });
     Promise.allSettled([
-      fetchOfficeTeamSnapshot(),
-      fetchOfficeTeamCommandDrafts(),
+      snapshotPromise,
+      draftPromise,
       commandPromise,
       isOwnerApp ? fetchBackendCommandAudit() : Promise.resolve({ source: "skip", audit: [] }),
     ])
@@ -128,14 +127,15 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         setResolved({});
         const createdCount = Number(command?.scan?.createdCount || 0);
         const existingCount = Number(command?.scan?.existingCount || 0);
-        if (isOwnerApp && createdCount) setNotice(`Office team prepared ${createdCount} new Command slip${createdCount === 1 ? "" : "s"}. Open each slip, check the draft, then approve.`);
-        else if (isOwnerApp && existingCount) setNotice(`Office team checked live records. ${existingCount} open slip${existingCount === 1 ? "" : "s"} are still waiting for owner approval.`);
-        else if (isOwnerApp && command?.decisions?.length) setNotice("Command slips loaded. Open a slip, review it, then approve, ask, snooze or park it.");
-        else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("The office team checked live records. Command is clear for now.");
-        else if (data?.source === "admin-brain") setNotice(isOwnerApp ? "Live business check loaded. Owner approval still comes first." : "Live office check loaded. Owner approval still comes first.");
+        if (isOwnerApp && createdCount) setNotice(`Churvox prepared ${createdCount} new Command decision${createdCount === 1 ? "" : "s"}. Open the first slip and correct anything that is not right.`);
+        else if (isOwnerApp && existingCount) setNotice(`${existingCount} Command decision${existingCount === 1 ? " is" : "s are"} still waiting for you.`);
+        else if (isOwnerApp && command?.decisions?.length) setNotice("Command is ready. Open the first slip, check the evidence and approve only what is right.");
+        else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("Churvox checked the live records. Nothing needs your decision right now.");
+        else if (isOwnerApp) setNotice("Command could not be confirmed. No fallback or browser-only decisions are being shown.");
+        else if (data?.source === "admin-brain") setNotice("Live office check loaded. Owner approval still comes first.");
         else if (drafts.length) setNotice("Live read-only records are prepared for Command. Nothing has been sent, synced or changed.");
-        else if (data?.source === "clear-live") setNotice(isOwnerApp ? "Live check is clear. Command will stay empty until real work needs owner approval." : "Live check is clear. Command stays ready for the next decision.");
-        else setNotice(isOwnerApp ? "Owner workspace loaded. Real approvals appear when work needs you." : "Churvox control centre loaded. Live decisions appear when work needs owner approval.");
+        else if (data?.source === "clear-live") setNotice("Live check is clear. Command stays ready for the next decision.");
+        else setNotice("Churvox control centre loaded. Live decisions appear when work needs owner approval.");
       })
       .catch((err) => mounted && setNotice(`${isOwnerApp ? "Owner workspace" : "Churvox control centre"}. Live check unavailable: ${err.message || "connection issue"}`));
     return () => { mounted = false; };
@@ -151,16 +151,16 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
           setBackendCommand(command || { source: "command-unavailable", decisions: [] });
           setBackendAudit(audit || { source: "command-audit-unavailable", audit: [] });
           setResolved({});
-          setNotice(command?.decisions?.length ? "Command refreshed. A prepared slip is waiting for owner approval." : "Command refreshed. No prepared decisions are waiting.");
+          setNotice(command?.decisions?.length ? "Command refreshed. A prepared decision is waiting for you." : "Command refreshed. Nothing needs your decision right now.");
         })
-        .catch(() => setNotice("Command refresh failed. Nothing was sent, synced, charged or changed."));
+        .catch(() => setNotice("Command refresh failed. No fallback decisions were shown and nothing changed."));
     };
     window.addEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
     return () => window.removeEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
   }, [isOwnerApp]);
 
-  useEffect(() => subscribeOfficeTeamLocalCommand(setLocalQueue), []);
-  useEffect(() => subscribeOfficeTeamLocalActivity(setLocalActivity), []);
+  useEffect(() => isOwnerApp ? () => {} : subscribeOfficeTeamLocalCommand(setLocalQueue), [isOwnerApp]);
+  useEffect(() => isOwnerApp ? () => {} : subscribeOfficeTeamLocalActivity(setLocalActivity), [isOwnerApp]);
   useEffect(() => subscribeOfficeTeamApprovalTrail(setApprovalTrail), []);
 
   useEffect(() => {
@@ -174,8 +174,9 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   }, []);
 
   const decisions = useMemo(() => {
-    const backendDecisions = isOwnerApp && backendCommand.decisions?.length ? backendCommand.decisions : [];
-    const baseDecisions = backendDecisions.length ? backendDecisions : snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : isOwnerApp ? [] : starterDecisions;
+    const backendDecisions = Array.isArray(backendCommand.decisions) ? backendCommand.decisions : [];
+    if (isOwnerApp) return backendDecisions;
+    const baseDecisions = snapshot.decisions?.length ? snapshot.decisions : liveDrafts.length ? liveDrafts : starterDecisions;
     return localQueue.length ? [...localQueue, ...baseDecisions] : baseDecisions;
   }, [backendCommand.decisions, snapshot.decisions, liveDrafts, localQueue, isOwnerApp]);
   const pending = useMemo(() => decisions.filter((item) => !resolved[keyOf(item)]), [decisions, resolved]);
@@ -196,6 +197,13 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     const trailNote = ownerNote ? `Owner note: ${ownerNote}` : "Owner reviewed";
     setResolved((current) => ({ ...current, [id]: action }));
     setNotice(`${action} is being recorded as the owner decision.`);
+
+    if (isOwnerApp && item?.raw?.source !== "backend_command_slip") {
+      setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
+      setNotice("That item is not a confirmed live Command slip, so Churvox did not record or apply the decision.");
+      return;
+    }
+
     if (String(id || "").startsWith("local-command-")) {
       const activity = recordOfficeTeamLocalActivity("Cleared", item, action);
       const trail = recordOfficeTeamApprovalTrail(item, action, trailNote);
@@ -203,9 +211,10 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
       setLocalQueue(next);
       setLocalActivity(activity);
       setApprovalTrail(trail);
-      setNotice(`${action} recorded as the owner decision. Approval trail saved. ${RECORD_ONLY_TEXT}`);
+      setNotice(`${action} recorded in the control preview. ${RECORD_ONLY_TEXT}`);
       return;
     }
+
     if (item?.raw?.source === "backend_command_slip") {
       try {
         const commandResult = await recordBackendCommandDecision(item, action, {
@@ -218,8 +227,12 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         const safety = cleanText(commandResult?.safety || (applied ? SAFE_APPROVAL_TEXT : RECORD_ONLY_TEXT));
         const trail = recordOfficeTeamApprovalTrail(item, action, ownerNote ? `Command recorded · ${ownerNote}` : applied ? "Approved draft applied" : "Command recorded");
         setApprovalTrail(trail);
-        const audit = await fetchBackendCommandAudit().catch(() => null);
+        const [audit, command] = await Promise.all([
+          fetchBackendCommandAudit().catch(() => null),
+          fetchBackendCommandDecisions().catch(() => null),
+        ]);
         if (audit) setBackendAudit(audit);
+        if (command) setBackendCommand(command);
         setNotice(applied
           ? `${action} approved. Churvox created the owner-approved internal draft from the edited form. ${safety}`
           : `${action} recorded in Command with the edited form. ${safety}`);
@@ -231,42 +244,53 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
       }
       return;
     }
+
     try {
       await recordOfficeTeamDecision(item, action);
       const trail = recordOfficeTeamApprovalTrail(item, action, trailNote);
       setApprovalTrail(trail);
-      setNotice(`${action} recorded safely for owner approval. Approval trail saved. ${RECORD_ONLY_TEXT}`);
+      setNotice(`${action} recorded safely for the control preview. ${RECORD_ONLY_TEXT}`);
     } catch {
       setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
       const trail = recordOfficeTeamApprovalTrail(item, action, "Returned to Command");
       setApprovalTrail(trail);
-      setNotice(`Could not record ${action}. The slip returned to Command. ${RECORD_ONLY_TEXT}`);
+      setNotice(`Could not record ${action}. The item returned to Command. ${RECORD_ONLY_TEXT}`);
     }
   }
 
-  return <main className={`cvOfficeFinal cvOfficeSite ${isOwnerApp ? "cvOwnerReady" : "cvLabPreview"}`}><Topbar screen={screen} go={go} appMode={appMode} /><Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} /><div className="cvSiteScreenDeck"><ScreenRouter screen={screen} metrics={metrics} pending={pending} resolved={resolved} localQueue={localQueue} localActivity={localActivity} approvalTrail={approvalTrail} backendAudit={backendAudit.audit || []} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} /></div></main>;
+  return (
+    <main className={`cvOfficeFinal cvOfficeSite ${isOwnerApp ? "cvOwnerReady" : "cvLabPreview"}`} data-screen={screen}>
+      <Topbar screen={screen} go={go} appMode={appMode} pendingCount={pending.length} />
+      {screen === "today"
+        ? <Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} />
+        : <OfficeTeamContextStrip screen={screen} pendingCount={pending.length} notice={notice} go={go} />}
+      <div className="cvSiteScreenDeck">
+        <ScreenRouter screen={screen} appMode={appMode} metrics={metrics} pending={pending} resolved={resolved} localQueue={isOwnerApp ? [] : localQueue} localActivity={isOwnerApp ? [] : localActivity} approvalTrail={approvalTrail} backendAudit={backendAudit.audit || []} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} />
+      </div>
+    </main>
+  );
 }
 
 function ScreenRouter(props) {
-  const { screen } = props;
+  const { screen, appMode } = props;
   if (screen === "today") return <OfficeTeamTodayScreen {...props} />;
   if (screen === "command") return <Command {...props} />;
-  if (screen === "work") return <WorkScreen />;
-  if (screen === "schedule") return <ScheduleScreen />;
-  if (screen === "clients") return <ClientsScreen />;
-  if (screen === "messages") return <MessagesScreen />;
-  if (screen === "worker") return <WorkerViewScreen />;
-  if (screen === "quotes") return <QuotesScreen />;
-  if (screen === "invoices") return <InvoicesScreen />;
-  if (screen === "money") return <MoneyScreen />;
-  if (screen === "staff") return <StaffScreen />;
-  if (screen === "payroll") return <PayrollScreen />;
+  if (screen === "work") return <WorkScreen appMode={appMode} />;
+  if (screen === "schedule") return <ScheduleScreen appMode={appMode} />;
+  if (screen === "clients") return <ClientsScreen appMode={appMode} />;
+  if (screen === "messages") return <MessagesScreen appMode={appMode} />;
+  if (screen === "worker") return <WorkerViewScreen appMode={appMode} />;
+  if (screen === "quotes") return <QuotesScreen appMode={appMode} />;
+  if (screen === "invoices") return <InvoicesScreen appMode={appMode} />;
+  if (screen === "money") return <MoneyScreen appMode={appMode} />;
+  if (screen === "staff") return <StaffScreen appMode={appMode} />;
+  if (screen === "payroll") return <PayrollScreen appMode={appMode} />;
   if (screen === "team") return <Team {...props} />;
   if (screen === "playbooks") return <Playbooks />;
-  if (screen === "integrations") return <IntegrationsScreen />;
+  if (screen === "integrations") return <IntegrationsScreen appMode={appMode} />;
   if (screen === "activity") return <Activity {...props} />;
-  if (screen === "automation") return <AutomationScreen />;
-  if (screen === "branding") return <BrandingScreen />;
+  if (screen === "automation") return <AutomationScreen appMode={appMode} />;
+  if (screen === "branding") return <BrandingScreen appMode={appMode} />;
   if (screen === "settings") return <OfficeTeamSiteSettings />;
   if (screen === "plans") return <OfficeTeamPlansScreen />;
   if (screen === "help") return <HelpScreen />;
@@ -275,19 +299,26 @@ function ScreenRouter(props) {
   return <OfficeTeamTodayScreen {...props} />;
 }
 
-function Topbar({ screen, go, appMode }) {
+function Topbar({ screen, go, appMode, pendingCount }) {
   const isOwnerApp = appMode === "owner";
-  const navScreens = isOwnerApp ? ownerScreens : screens;
   const brand = "Churvox";
-  const subline = isOwnerApp ? "Owner workspace · office team prepares · you approve" : "Command-centred owner control";
-  return <header className="cvSiteTopbar"><div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>{brand}</strong><span>{subline}</span></div></div><nav>{navScreens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav><button type="button" className="cvSiteLogout" onClick={logoutOffice}>Log out</button></header>;
+  const subline = isOwnerApp ? "Routine admin stays behind the scenes · you approve exceptions" : "Command-centred owner control";
+  return (
+    <header className="cvSiteTopbar">
+      <div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>{brand}</strong><span>{subline}</span></div></div>
+      {isOwnerApp
+        ? <OfficeTeamOwnerNavigation screen={screen} go={go} pendingCount={pendingCount} />
+        : <nav>{screens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav>}
+      <button type="button" className="cvSiteLogout" onClick={logoutOffice}>Log out</button>
+    </header>
+  );
 }
 
 function Status({ metrics, sourceLabel, notice, appMode }) {
   const isOwnerApp = appMode === "owner";
-  const modeLabel = isOwnerApp ? "Owner workspace" : "Office running";
-  const title = isOwnerApp ? "The office team prepares it. You approve." : "Churvox runs the office. The owner approves the decisions.";
-  const text = isOwnerApp ? "Jobs, clients, workers, quotes, invoices, payroll checks, accounting checks and follow-ups come back to Command before anything is sent, synced, charged or changed." : "Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.";
+  const modeLabel = isOwnerApp ? "Today" : "Office running";
+  const title = isOwnerApp ? "Churvox handles the admin. You handle the decisions." : "Churvox runs the office. The owner approves the decisions.";
+  const text = isOwnerApp ? "Jobs, clients, workers, quotes, invoices and follow-ups are checked in the background. Only exceptions and approvals come back to you." : "Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.";
   return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>{modeLabel} · {sourceLabel}</span><h1>{title}</h1><p>{text}</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
 }
 
@@ -301,7 +332,7 @@ function Command({ tray, setTray, counts, pending, onAction }) {
     onAction(item, action, detail);
     setSelectedId("");
   }
-  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check the evidence-backed form and edit anything needed. Approval may create an internal Churvox draft; sending, syncing, charging, tax filing and payments remain locked." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Only the decisions that need the owner" text="Open the slip, check the evidence and correct anything wrong. Approval may create an internal Churvox draft; sending, syncing, charging, tax filing and payments stay locked." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} />) : <Empty title="No decisions in this tray" text="Routine work stays out of Command. A slip appears only when the owner is genuinely needed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
 }
 
 function CommandSlip({ item, onAction }) {
@@ -317,10 +348,10 @@ function CommandSlip({ item, onAction }) {
     setDraftFields(makeSlipFields(item));
   }, [item]);
 
-  if (!item) return <aside className="cvCommandSlip"><span>Command slip</span><h3>No open slip</h3><p>When the office team prepares work for the owner, the full decision slip opens here.</p></aside>;
+  if (!item) return <aside className="cvCommandSlip"><span>Command slip</span><h3>No owner decision waiting</h3><p>Routine admin remains behind the scenes. A full decision slip opens here only when Churvox needs the owner.</p></aside>;
 
   const formTitle = makeSlipFormTitle(item);
-  const source = item.raw?.source === "backend_command_slip" ? "Live Command" : String(itemKey).startsWith("local-command-") ? "Prepared in this workspace" : "Starter structure";
+  const source = item.raw?.source === "backend_command_slip" ? "Live Command" : String(itemKey).startsWith("local-command-") ? "Control preview" : "Imported prepared item";
   const finalAction = selectedAction || actions[0] || "Approve record";
   const effects = makeApprovalEffects(item, draftFields);
   const submit = (action = finalAction) => onAction(item, action, { ownerNote, fields: draftFields, formTitle });
@@ -333,24 +364,25 @@ function CommandSlip({ item, onAction }) {
     <div className="cvCommandSlipMeta"><b>{item.roleName || item.tray || "Churvox"}</b><small>{item.tray || "Command"}</small><small>{source}</small></div>
 
     <section className="cvSlipForm" aria-label="Editable prepared approval form">
-      <div><span>Prepared form</span><h4>{formTitle}</h4><p>Edit the draft below, then approve only when it looks right.</p></div>
+      <div><span>Prepared form</span><h4>{formTitle}</h4><p>Every value must come from the record or stay visibly unresolved. Edit the draft, then approve only when it is right.</p></div>
       <div className="cvSlipFieldGrid cvSlipEditableGrid">{draftFields.map((field, index) => <label key={`${field.label}-${index}`}><span>{field.label}</span>{field.long ? <textarea value={field.value || ""} onChange={(event) => changeField(index, event.target.value)} /> : <input value={field.value || ""} onChange={(event) => changeField(index, event.target.value)} />}</label>)}</div>
     </section>
 
     <section className="cvSlipWillDo"><b>If you approve this</b>{effects.map((effect) => <p key={effect}>{effect}</p>)}</section>
 
-    <label className="cvSlipOwnerBox"><span>Owner note / instruction</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Add an instruction if needed. Example: move the booking to Friday, change total to 150, ask staff first, or park it." /></label>
+    <label className="cvSlipOwnerBox"><span>Owner note / instruction</span><textarea value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} placeholder="Add only the correction or direction Churvox still needs." /></label>
 
     <section className="cvCommandSlipSafety"><b>Safety locks</b><span>No auto-send</span><span>No auto-sync</span><span>No auto-charge</span><span>No record change without approval</span></section>
 
     <footer className="cvSlipDecisionActions">{actions.map((action, i) => <button key={action} type="button" className={i === 0 ? "primary" : ""} onClick={() => { setSelectedAction(action); submit(action); }}>{action}</button>)}</footer>
-    <small className="cvSlipNote">Approval sends this edited form to the owner-approved draft executor. It may create an internal Churvox draft only; sending, syncing, charging, tax filing and payments remain locked.</small>
+    <small className="cvSlipNote">Approval sends the edited form to the owner-approved draft executor. External sends, syncs, charges, tax filing and payments remain locked.</small>
   </aside>;
 }
 
-function Team({ activeRole, setActiveRole }) {
+function Team({ activeRole, setActiveRole, appMode }) {
+  const ownerMode = appMode === "owner" || isOwnerRoute();
   const selected = roles.find((item) => item.name === activeRole) || roles[0];
-  return <section className="cvSiteScreen"><Header eyebrow="Office Team" title="Office roles with clear jobs" text="Each role has one job: check records, prepare the right slip, and bring the owner a clear decision." /><div className="cvSiteTeamLayout"><aside className="cvSiteRoleList">{roles.map((item) => <button key={item.name} className={selected.name === item.name ? "active" : ""} onClick={() => setActiveRole(item.name)}><strong>{item.name}</strong><span>{item.summary}</span></button>)}</aside><article className="cvSiteRoleDetail"><span>{selected.dept}</span><h2>{selected.name}</h2><p>{selected.summary}</p><div className="cvSiteRoleColumns"><Info title="Checks" items={selected.checks} /><Info title="Prepares" items={selected.prepares} /><section><h3>Owner question</h3><p>{selected.ownerAsk}</p></section><section><h3>Sends to</h3><p>{selected.feeds}</p></section><section><h3>Guardrail</h3><p>{selected.guard}</p></section></div></article><OfficeTeamRoleControls roles={roles} /></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow={ownerMode ? "How Churvox works" : "Office Team"} title="Eight clear roles, one owner decision desk" text={ownerMode ? "These roles are the hidden admin engine. The owner does not manage pretend staff or switch experimental modes; Churvox checks records, prepares the work and sends genuine exceptions to Command." : "Each role has one job: check records, prepare the right slip, and bring the owner a clear decision."} /><div className="cvSiteTeamLayout"><aside className="cvSiteRoleList">{roles.map((item) => <button key={item.name} className={selected.name === item.name ? "active" : ""} onClick={() => setActiveRole(item.name)}><strong>{item.name}</strong><span>{item.summary}</span></button>)}</aside><article className="cvSiteRoleDetail"><span>{selected.dept}</span><h2>{selected.name}</h2><p>{selected.summary}</p><div className="cvSiteRoleColumns"><Info title="Checks" items={selected.checks} /><Info title="Prepares" items={selected.prepares} /><section><h3>Owner question</h3><p>{selected.ownerAsk}</p></section><section><h3>Sends to</h3><p>{selected.feeds}</p></section><section><h3>Guardrail</h3><p>{selected.guard}</p></section></div></article>{ownerMode ? <section className="cvOwnerRoleTruth"><span>Owner experience</span><h3>You should not have to operate the office team</h3><p>Churvox decides which role should inspect a record. The owner sees the evidence-backed result in Command, corrects anything wrong and approves only when needed.</p><p>Role behaviour is not changed from this explanation page. Any future control will be added only when it genuinely changes the live engine.</p></section> : <OfficeTeamRoleControls roles={roles} />}</div></section>;
 }
 
 function Playbooks() {
@@ -360,7 +392,10 @@ function Playbooks() {
 function Activity({ pending, resolved, localActivity = [], approvalTrail = [], backendAudit = [] }) {
   const ownerRoute = isOwnerRoute();
   const cleared = Object.entries(resolved);
-  return <section className="cvSiteScreen"><Header eyebrow="Activity" title={ownerRoute ? "Activity and approval trail" : "Office activity and approval trail"} text={ownerRoute ? "A clear record of what Churvox prepared, what is waiting, and what the owner has approved." : "A clear log of checked, prepared, parked and owner-reviewed work."} /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title} waiting in Command.</p><small>{item.tray}</small></article>)}</section><section><h2>Command record</h2>{backendAudit.length ? backendAudit.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status}</strong><p>{item.title}</p><small>{item.safety}</small></article>) : <Empty title="No Command records yet" text="Command approvals will appear here after the owner reviews prepared work." />}</section><section><h2>Owner approval trail</h2>{approvalTrail.length ? approvalTrail.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.action}</strong><p>{item.title}</p><small>{item.safety}</small></article>) : <Empty title="No owner decisions yet" text="Action a Command card and the approval trail will appear here." />}</section><section><h2>Prepared work trail</h2>{localActivity.length ? localActivity.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.tray}</strong><p>{item.title}</p><small>{item.note}</small></article>) : <Empty title="No prepared work trail yet" text="Prepared work will appear here as Churvox brings items back to Command." />}</section><section><h2>Cleared this session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Moved out of Command.</p><small>{id}</small></article>) : <Empty title="Nothing cleared yet" text="Action a Command card and it will appear here." />}</section></div></section>;
+  if (ownerRoute) {
+    return <section className="cvSiteScreen"><Header eyebrow="Activity" title="A truthful record of what Churvox did" text="This page shows the live Command trail and current owner queue. Browser-only preview activity and raw record IDs are not shown in the owner workspace." /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.length ? pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title}</p><small>Waiting in {item.tray || "Command"}</small></article>) : <Empty title="Nothing waiting" text="Command is clear." />}</section><section><h2>Command history</h2>{backendAudit.length ? backendAudit.slice(0, 12).map((item, index) => <article key={item.id || `${item.title}-${index}`}><strong>{item.status || item.action || "Recorded"}</strong><p>{item.title || "Command decision"}</p><small>{item.safety || item.detail || "Recorded safely"}</small></article>) : <Empty title="No Command history yet" text="Live approvals, parked decisions and superseded slips will appear here." />}</section><section><h2>This session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Decision removed from the current queue.</p><small>Command refresh confirms the lasting result.</small></article>) : <Empty title="No decisions cleared this session" text="Open Command when a real decision needs you." />}</section></div></section>;
+  }
+  return <section className="cvSiteScreen"><Header eyebrow="Activity" title="Office activity and approval trail" text="A clear log of checked, prepared, parked and owner-reviewed work." /><div className="cvSiteActivityLayout"><section><h2>Waiting now</h2>{pending.slice(0, 8).map((item) => <article key={keyOf(item)}><strong>{item.roleName || item.tray}</strong><p>{item.title} waiting in Command.</p><small>{item.tray}</small></article>)}</section><section><h2>Command record</h2>{backendAudit.length ? backendAudit.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status}</strong><p>{item.title}</p><small>{item.safety}</small></article>) : <Empty title="No Command records yet" text="Command approvals will appear here after the owner reviews prepared work." />}</section><section><h2>Owner approval trail</h2>{approvalTrail.length ? approvalTrail.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.action}</strong><p>{item.title}</p><small>{item.safety}</small></article>) : <Empty title="No owner decisions yet" text="Action a Command card and the approval trail will appear here." />}</section><section><h2>Prepared work trail</h2>{localActivity.length ? localActivity.slice(0, 8).map((item) => <article key={item.id}><strong>{item.status} · {item.tray}</strong><p>{item.title}</p><small>{item.note}</small></article>) : <Empty title="No prepared work trail yet" text="Prepared work will appear here as Churvox brings items back to Command." />}</section><section><h2>Cleared this session</h2>{cleared.length ? cleared.map(([id, action]) => <article key={id}><strong>{action}</strong><p>Moved out of Command.</p></article>) : <Empty title="Nothing cleared yet" text="Action a Command card and it will appear here." />}</section></div></section>;
 }
 
 function Safety() {
@@ -368,7 +403,7 @@ function Safety() {
 }
 
 function Header({ eyebrow, title, text }) { return <header className="cvSiteScreenHeader"><span>{eyebrow}</span><h2>{title}</h2><p>{text}</p></header>; }
-function Decision({ item, onOpen, selected }) { return <article className={`cvSiteDecisionCard ${selected ? "selected" : ""}`}><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <small key={x}>{x}</small>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><footer><button type="button" className="openSlip" onClick={onOpen}>Open slip</button></footer><small>Open the full slip to edit and record the owner decision</small></article>; }
+function Decision({ item, onOpen, selected }) { return <article className={`cvSiteDecisionCard ${selected ? "selected" : ""}`}><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <small key={x}>{x}</small>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><footer><button type="button" className="openSlip" onClick={onOpen}>Open slip</button></footer><small>Open the full slip to inspect the evidence and prepared form</small></article>; }
 function Info({ title, items }) { return <section><h3>{title}</h3><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section>; }
 function Empty({ title, text }) { return <article className="cvSiteEmpty"><strong>{title}</strong><p>{text}</p></article>; }
 function role(name, dept, summary, checks, prepares, ownerAsk, feeds, guard) { return { name, dept, summary, checks, prepares, ownerAsk, feeds, guard }; }
@@ -377,13 +412,13 @@ function keyOf(item = {}) { return item.id || item.action_id || item.title; }
 function trayKey(tray = "") { const t = String(tray).toLowerCase(); if (t.includes("account")) return "accounting"; if (t.includes("xero")) return "accounting"; if (t.includes("money")) return "money"; if (t.includes("booking")) return "bookings"; if (t.includes("staff")) return "staff"; if (t.includes("client")) return "clients"; if (t.includes("quality")) return "quality"; if (t.includes("operation")) return "ops"; return "command"; }
 function countDepartments(items = []) { return items.reduce((acc, item) => { acc.command += 1; acc[trayKey(item.tray)] = (acc[trayKey(item.tray)] || 0) + 1; return acc; }, { command: 0, money: 0, accounting: 0, bookings: 0, staff: 0, clients: 0, quality: 0, ops: 0 }); }
 function cleanScreen(hash) { const key = String(hash || "").replace("#", "").trim().toLowerCase(); return screenAliases[key] || "today"; }
-function makeSourceLabel({ isOwnerApp, backendCommand, snapshot, liveDrafts }) { if (isOwnerApp && backendCommand?.source === "backend-command") return "Command live"; if (isOwnerApp && backendCommand?.source === "backend-command-clear") return "Command clear"; if (snapshot?.source === "admin-brain") return "live check"; if (liveDrafts?.length) return "live rows"; return isOwnerApp ? "owner mode" : "control mode"; }
+function makeSourceLabel({ isOwnerApp, backendCommand, snapshot, liveDrafts }) { if (isOwnerApp && backendCommand?.source === "backend-command") return "Command live"; if (isOwnerApp && backendCommand?.source === "backend-command-clear") return "Command clear"; if (isOwnerApp) return "Command unavailable"; if (snapshot?.source === "admin-brain") return "live check"; if (liveDrafts?.length) return "live rows"; return "control mode"; }
 function isOwnerRoute() { return typeof window !== "undefined" && window.location.pathname.includes("dashboard"); }
 function logoutOffice() { try { localStorage.removeItem("token"); localStorage.removeItem("owner_portal_session"); localStorage.removeItem("platform_owner_email"); sessionStorage.clear(); } catch {} window.location.href = "/login"; }
 function cleanText(value) { return String(value || "").trim(); }
 function firstValue(...values) { return values.map(cleanText).find(Boolean) || ""; }
 function payloadOf(item = {}) { return item?.raw?.payload && typeof item.raw.payload === "object" ? item.raw.payload : {}; }
-function plainSlipSummary(item = {}) { return firstValue(item.happened, item.detail, item.raw?.found, "The office team found something that needs owner approval."); }
+function plainSlipSummary(item = {}) { return firstValue(item.happened, item.detail, item.raw?.found, "Churvox found something that needs an owner decision."); }
 function makeSlipFormTitle(item = {}) {
   const text = `${item.tray || ""} ${item.roleName || ""} ${item.raw?.action_type || ""} ${item.title || ""}`.toLowerCase();
   if (/timer|hours|payroll|staff/.test(text)) return "Hours review form";
@@ -408,31 +443,31 @@ function makeSlipFields(item = {}) {
   const roleName = firstValue(item.roleName, payload.office_role, item.tray, "Churvox");
   const record = firstValue(payload.record_title, payload.job_title, raw.title, item.title, "Selected record");
   if (form.includes("booking")) return [
-    field("Prepared by", roleName), field("Client", firstValue(payload.customer, "Repeat client")), field("Usual cycle", "Every 3 weeks"), field("Last visit", "Needs date check"), field("Suggested next booking", "Choose date and time"), field("Worker", firstValue(payload.worker, "Choose worker")), field("Prepared message", "We can book your next visit once the owner approves the date.", true), field("Internal note", plainSlipSummary(item), true),
+    field("Prepared by", roleName), field("Client", firstValue(payload.customer, payload.client, payload.name, MISSING_VALUE)), field("Usual cycle", firstValue(payload.cycle, payload.frequency, payload.recurrence, MISSING_VALUE)), field("Last visit", firstValue(payload.last_visit, payload.last_date, MISSING_VALUE)), field("Suggested next booking", firstValue(payload.next_date, payload.suggested_date, MISSING_VALUE)), field("Worker", firstValue(payload.worker, payload.worker_name, MISSING_VALUE)), field("Prepared message", firstValue(payload.message, payload.prepared_message, MISSING_VALUE), true), field("Evidence note", plainSlipSummary(item), true),
   ];
   if (form.includes("invoice") || form.includes("payment")) return [
-    field("Prepared by", roleName), field("Client", firstValue(payload.customer, "Customer to confirm")), field("Job", record), field("Line items", firstValue(payload.line_items, "Base service + extra green waste"), true), field("Draft total", firstValue(payload.amount, payload.amount_due, "Needs amount")), field("Payment link", firstValue(payload.payment_link, "Prepare only")), field("Invoice note", firstValue(item.prepared, "Draft invoice is ready for owner review."), true),
+    field("Prepared by", roleName), field("Client", firstValue(payload.customer, payload.client, payload.customer_name, MISSING_VALUE)), field("Job", record), field("Line items", firstValue(payload.line_items, payload.items, MISSING_VALUE), true), field("Draft total", firstValue(payload.amount, payload.amount_due, payload.total, MISSING_VALUE)), field("Payment link", firstValue(payload.payment_link, "Locked until a separate owner action")), field("Invoice note", firstValue(payload.invoice_note, payload.note, MISSING_VALUE), true),
   ];
   if (form.includes("hours")) return [
-    field("Prepared by", roleName), field("Worker", firstValue(payload.worker, payload.staff, "Worker to confirm")), field("Job / shift", record), field("Timer", firstValue(payload.hours, "Long timer flagged")), field("Expected time", "Normal time needs check"), field("Issue", plainSlipSummary(item), true), field("Prepared action", firstValue(item.prepared, "Approve hours, edit notes, or ask staff."), true),
+    field("Prepared by", roleName), field("Worker", firstValue(payload.worker, payload.worker_name, payload.staff, MISSING_VALUE)), field("Job / shift", record), field("Recorded time", firstValue(payload.hours, payload.duration, MISSING_VALUE)), field("Expected time", firstValue(payload.expected_hours, payload.baseline, MISSING_VALUE)), field("Issue", plainSlipSummary(item), true), field("Staff note", firstValue(payload.note, payload.worker_note, MISSING_VALUE), true),
   ];
   if (form.includes("client")) return [
-    field("Prepared by", roleName), field("Client", firstValue(payload.customer, payload.name, record)), field("Detail to save", firstValue(payload.note, payload.notes, item.prepared, "Client memory detail"), true), field("Source", firstValue(raw.source_type, item.tray, "Service note")), field("Use for", "Future jobs, messages and access notes"),
+    field("Prepared by", roleName), field("Client", firstValue(payload.customer, payload.client, payload.name, record)), field("Detail to save", firstValue(payload.note, payload.notes, payload.memory, MISSING_VALUE), true), field("Source", firstValue(raw.source_type, item.tray, MISSING_VALUE)), field("Use for", firstValue(payload.use_for, "Future work only where relevant")),
   ];
   if (form.includes("quality")) return [
-    field("Prepared by", roleName), field("Job", record), field("Missing", "Final proof / completion note"), field("Staff request", firstValue(item.prepared, "Ask staff to add final proof."), true), field("Hold invoice?", "Owner decides"),
+    field("Prepared by", roleName), field("Job", record), field("Missing evidence", firstValue(payload.missing, payload.missing_evidence, plainSlipSummary(item)), true), field("Staff request", firstValue(payload.staff_request, payload.request, MISSING_VALUE), true), field("Invoice hold", firstValue(payload.invoice_hold, "Owner decides after reviewing the evidence")),
   ];
   if (form.includes("accounting")) return [
-    field("Prepared by", roleName), field("System", firstValue(payload.system, "Xero / MYOB")), field("Record", record), field("GST / code", firstValue(payload.gst, "Needs check")), field("Export status", firstValue(payload.status, "Do not sync yet")), field("Accounting note", firstValue(item.prepared, "Accounting review is ready for owner approval."), true),
+    field("Prepared by", roleName), field("System", firstValue(payload.system, MISSING_VALUE)), field("Record", record), field("GST / code", firstValue(payload.gst, payload.tax, payload.code, MISSING_VALUE)), field("Export status", firstValue(payload.status, payload.export_status, MISSING_VALUE)), field("Accounting note", firstValue(payload.note, payload.accounting_note, MISSING_VALUE), true),
   ];
   if (form.includes("reply")) return [
-    field("Prepared by", roleName), field("Client", firstValue(payload.customer, "Client")), field("Original message", firstValue(payload.message, plainSlipSummary(item)), true), field("Prepared reply", firstValue(payload.reply, item.prepared, "Reply needs owner approval."), true), field("Send status", "Do not send yet"),
+    field("Prepared by", roleName), field("Client", firstValue(payload.customer, payload.client, MISSING_VALUE)), field("Original message", firstValue(payload.message, payload.original_message, plainSlipSummary(item)), true), field("Prepared reply", firstValue(payload.reply, payload.prepared_reply, MISSING_VALUE), true), field("Send status", "Locked until a separate owner-approved send action"),
   ];
-  return [field("Prepared by", roleName), field("Area", firstValue(item.tray, raw.source_type)), field("Record", record), field("Status", firstValue(payload.status, raw.status, item.level)), field("Prepared action", firstValue(item.prepared, plainSlipSummary(item)), true)];
+  return [field("Prepared by", roleName), field("Area", firstValue(item.tray, raw.source_type, MISSING_VALUE)), field("Record", record), field("Status", firstValue(payload.status, raw.status, item.level, MISSING_VALUE)), field("Prepared action", firstValue(payload.prepared_action, item.prepared, MISSING_VALUE), true)];
 }
 function objectFormFields(item, form = {}) {
   const base = [field("Prepared by", firstValue(item.roleName, payloadOf(item).office_role, item.tray, "Churvox"))];
-  const rows = Object.entries(form).filter(([, value]) => value !== undefined && value !== null && value !== "").slice(0, 10).map(([key, value]) => field(labelize(key), displayValue(value), shouldUseLongField(key, value)));
+  const rows = Object.entries(form).filter(([, value]) => value !== undefined && value !== null && value !== "").slice(0, 30).map(([key, value]) => field(labelize(key), displayValue(value), shouldUseLongField(key, value)));
   return [...base, ...rows];
 }
 function makeApprovalEffects(item = {}, fields = []) {
@@ -440,15 +475,15 @@ function makeApprovalEffects(item = {}, fields = []) {
   const fromPayload = item.willDo || payload.will_do || item.raw?.will_do;
   if (Array.isArray(fromPayload) && fromPayload.length) return fromPayload.map(displayValue);
   const form = makeSlipFormTitle(item).toLowerCase();
-  if (form.includes("booking")) return ["Save the booking/rebooking draft", "Keep customer messages unsent until you choose to send", "Record the owner approval trail"];
+  if (form.includes("booking")) return ["Save the booking/rebooking draft", "Keep customer messages unsent until a separate owner action", "Record the owner approval trail"];
   if (form.includes("invoice") || form.includes("payment")) return ["Save the invoice/payment draft", "Keep invoice send, sync and charge locked", "Use the edited fields above as the approved draft"];
-  if (form.includes("hours")) return ["Save the hours review draft", "No payroll payment, tax filing or bank file is created", "Use your edited notes for the staff follow-up"];
-  if (form.includes("client")) return ["Prepare the client memory update", "Do not overwrite the client record without owner approval", "Keep an audit note of what was approved"];
+  if (form.includes("hours")) return ["Save the hours review draft", "No payroll payment, tax filing or bank file is created", "Use the edited notes for staff follow-up"];
+  if (form.includes("client")) return ["Prepare the client memory update", "Do not overwrite the live client record blindly", "Keep an audit note of what was approved"];
   if (form.includes("quality")) return ["Prepare the staff proof request", "Hold completion/invoice decisions until proof is checked", "Record what the owner approved"];
-  if (form.includes("accounting")) return ["Save accounting review notes", "Do not sync Xero/MYOB or file tax", "Send changes back to Bookkeeper if needed"];
-  return fields.length ? ["Use the edited form as the approved draft", "Record the owner decision", "Keep send, sync and charge locked"] : ["Record the owner decision", "Nothing is sent, synced or charged"];
+  if (form.includes("accounting")) return ["Save accounting review notes", "Do not sync Xero/MYOB or file tax", "Return corrections to Bookkeeper if needed"];
+  return fields.length ? ["Use the edited form as the approved internal draft", "Record the owner decision", "Keep send, sync and charge locked"] : ["Record the owner decision", "Nothing is sent, synced or charged"];
 }
 function field(label, value, long = false) { return { label, value: displayValue(value), long: long || shouldUseLongField(label, value) }; }
 function displayValue(value) { if (Array.isArray(value)) return value.map(displayValue).join(" · "); if (value && typeof value === "object") return Object.entries(value).map(([k, v]) => `${labelize(k)}: ${displayValue(v)}`).join(" · "); return cleanText(value); }
-function shouldUseLongField(label, value) { return /note|message|reply|line|scope|action|request|detail|issue/i.test(String(label || "")) || displayValue(value).length > 48; }
+function shouldUseLongField(label, value) { return /note|message|reply|line|scope|action|request|detail|issue|evidence/i.test(String(label || "")) || displayValue(value).length > 48; }
 function labelize(key) { return String(key || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()); }
