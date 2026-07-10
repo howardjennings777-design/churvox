@@ -47,7 +47,7 @@
     "recharts": "^3.6.0",
     "serve": "^14.2.4",
     "sonner": "^2.0.3",
-    "tailwind-merge": "^3.0.1",
+    "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
     "zod": "^3.24.4"
@@ -77,6 +77,56 @@
     "test:human:business": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-human-business-gauntlet.spec.js --project=desktop-chromium --workers=1",
     "test:human:business:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-human-business-gauntlet.spec.js --project=mobile-chromium --workers=1",
     "test:human:business:all": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-human-business-gauntlet.spec.js --workers=1",
-    "test:human:business:mutate": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-human-business-gauntlet.spec.js --project=desktop-chromium --workers=1"
+    "test:human:business:mutate": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-human-business-gauntlet.spec.js --project=desktop-chromium --workers=1",
+    "test:human:business:ask": "node scripts/churvox-human-business-gauntlet-prompt.cjs",
+    "test:human:business:ask:mobile": "node scripts/churvox-human-business-gauntlet-prompt.cjs --mobile",
+    "test:human:business:ask:mutate": "node scripts/churvox-human-business-gauntlet-prompt.cjs --mutate",
+    "test:paid-launch": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-full-audit.spec.js",
+    "test:paid-launch:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-full-audit.spec.js --project=desktop-chromium",
+    "test:paid-launch:mutate": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-full-audit.spec.js --project=desktop-chromium",
+    "test:paid-launch:own-it": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js",
+    "test:paid-launch:own-it:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js --project=desktop-chromium",
+    "test:paid-launch:own-it:mutate": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js --project=desktop-chromium",
+    "test:paid-launch:full-all": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js tests/e2e/churvox-worker-message-flow.spec.js --project=desktop-chromium --workers=1",
+    "test:everything": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js tests/e2e/churvox-worker-message-flow.spec.js tests/e2e/churvox-real-deal-paid-launch-audit.spec.js tests/e2e/churvox-deep-human-logic-audit.spec.js tests/e2e/churvox-owner-logical-wiring-contract.spec.js tests/e2e/churvox-sidebar-tier-contract.spec.js tests/e2e/churvox-human-business-gauntlet.spec.js --project=desktop-chromium --workers=1",
+    "test:everything:all-projects": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e/churvox-paid-launch-own-it-audit.spec.js tests/e2e/churvox-worker-message-flow.spec.js tests/e2e/churvox-real-deal-paid-launch-audit.spec.js tests/e2e/churvox-deep-human-logic-audit.spec.js tests/e2e/churvox-owner-logical-wiring-contract.spec.js tests/e2e/churvox-sidebar-tier-contract.spec.js tests/e2e/churvox-human-business-gauntlet.spec.js --workers=1",
+    "test:everything:raw": "PLAYWRIGHT_BASE_URL=https://www.churvox.com PLAYWRIGHT_API_BASE=https://grassley-backend.onrender.com playwright test tests/e2e --project=desktop-chromium --workers=1",
+    "test:logic:deep": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js",
+    "test:logic:deep:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js --project=desktop-chromium",
+    "test:logic:deep:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-deep-human-logic-audit.spec.js --project=mobile-chromium",
+    "test:logic:wiring": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-owner-logical-wiring-contract.spec.js --project=desktop-chromium",
+    "test:real-deal": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-deal-paid-launch-audit.spec.js",
+    "test:real-deal:desktop": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-deal-paid-launch-audit.spec.js --project=desktop-chromium",
+    "test:real-deal:mobile": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-deal-paid-launch-audit.spec.js --project=mobile-chromium",
+    "test:real-deal:mutate": "CHURVOX_E2E_MUTATE=1 PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-deal-paid-launch-audit.spec.js --project=desktop-chromium",
+    "test:ai": "playwright test tests/e2e/churvox-real-ai-loop.spec.js",
+    "test:ai:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-real-ai-loop.spec.js --project=desktop-chromium",
+    "test:plans": "playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g \"Plans page loads billing JSON\"",
+    "test:cleanup": "playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g \"cleanup live Playwright test records\"",
+    "test:signup:live": "playwright test tests/e2e/churvox-signup-to-stripe.spec.js --project=desktop-chromium",
+    "test:worker-messages": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-worker-message-flow.spec.js --project=desktop-chromium",
+    "test:sidebar:tier": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-sidebar-tier-contract.spec.js --project=desktop-chromium",
+    "test:tester:ready": "node scripts/churvox-tester-ready-gate.cjs"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@craco/craco": "^7.1.0",
+    "@eslint/js": "9.23.0",
+    "@playwright/test": "^1.60.0",
+    "eslint": "9.23.0",
+    "eslint-plugin-import": "2.31.0",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react": "7.37.4",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "globals": "15.15.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
+  },
+  "optionalDependencies": {
+    "@playwright/test": "^1.54.2"
   }
 }
