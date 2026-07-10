@@ -287,7 +287,7 @@ export async function createBackendWorkerUpdateRequest({ title = "Worker update"
   return body;
 }
 
-export async function recordBackendCommandDecision(decision, action) {
+export async function recordBackendCommandDecision(decision, action, ownerNote = SAFE_RESULT) {
   const base = host();
   const slipId = clean(decision?.raw?.command_slip_id || "");
   if (!base || !slipId) {
@@ -299,11 +299,12 @@ export async function recordBackendCommandDecision(decision, action) {
     : normalized.includes("ignore") || normalized.includes("park")
       ? "ignore"
       : "approve";
+  const note = clean(ownerNote, SAFE_RESULT);
   const response = await fetch(`${base}/api/command/slips/${encodeURIComponent(slipId)}/${endpoint}`, {
     method: "POST",
     credentials: "include",
     headers: authHeaders(),
-    body: JSON.stringify({ action, note: SAFE_RESULT, hours: 24 }),
+    body: JSON.stringify({ action, note, owner_note: note, hours: 24 }),
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.success === false) {
