@@ -26,7 +26,9 @@ const ownerNav = read('frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation
 const contextStrip = read('frontend/src/churvox-office-lab/OfficeTeamContextStrip.jsx');
 const visionCss = read('frontend/src/churvox-office-lab/OfficeTeamVisionPolish.css');
 const guard = read('backend/churvox_command_human_mimic_guard_routes.py');
+const liveWrapper = read('backend/server/__init__.py');
 const settings = read('frontend/src/churvox-office-lab/OfficeTeamSiteSettings.jsx');
+const liveSmoke = read('scripts/churvox-live-command-smoke.cjs');
 const operational = read('frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx');
 const extra = read('frontend/src/churvox-office-lab/OfficeTeamExtraScreens.jsx');
 const backOffice = read('frontend/src/churvox-office-lab/OfficeTeamBackOfficeScreens.jsx');
@@ -126,8 +128,17 @@ expect(
     'Core safety cannot be weakened here',
     'Clicking save is the owner’s explicit instruction',
     'Live settings not confirmed',
-  ]),
-  'Settings must load and save authenticated backend data, label unconfirmed fallback truthfully and keep safety guardrails fixed',
+  ])
+    && includesAll(liveWrapper, [
+      "BUSINESS_PROFILE_ROUTE_VERSION = 'business-profile-live-v1'",
+      "_remove('/api/logic/business-profile', 'GET')",
+      "_remove('/api/logic/business-profile', 'POST')",
+      "app.add_api_route('/api/logic/business-profile', _get_profile, methods=['GET'])",
+      "app.add_api_route('/api/logic/business-profile', _save_profile, methods=['POST'])",
+      "app.add_api_route('/api/settings/live-marker'",
+    ])
+    && includesAll(liveSmoke, ['EXPECTED_SETTINGS', '/api/settings/live-marker', '/api/logic/business-profile']),
+  'Settings must load and save authenticated backend data, the live wrapper must replace the old read-only route, and smoke must detect a stale/405 deployment',
 );
 
 expect(
