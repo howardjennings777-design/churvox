@@ -5,6 +5,7 @@ import "./OfficeTeamLabSite.css";
 import "./OfficeTeamLabSitePlus.css";
 import "./OfficeTeamNavPolish.css";
 import "./OfficeTeamOwnerReady.css";
+import "./OfficeTeamPremiumPolish.css";
 import OfficeTeamRoleControls from "./OfficeTeamRoleControls";
 import OfficeTeamSiteSettings from "./OfficeTeamSiteSettings";
 import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
@@ -167,7 +168,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const pending = useMemo(() => decisions.filter((item) => !resolved[keyOf(item)]), [decisions, resolved]);
   const counts = useMemo(() => countDepartments(pending), [pending]);
   const metrics = makeStatusCards({ total: pending.length, high: pending.filter((item) => item.level === "Top priority").length, parked: Object.keys(resolved).length }, pending.length);
-  const sourceLabel = makeSourceLabel({ isOwnerApp, backendCommand, localQueue, snapshot, liveDrafts });
+  const sourceLabel = makeSourceLabel({ isOwnerApp, backendCommand, snapshot, liveDrafts });
 
   function go(next) {
     const cleanNext = cleanScreen(`#${next}`);
@@ -300,23 +301,7 @@ function role(name, dept, summary, checks, prepares, ownerAsk) { return { name, 
 function decision(id, tray, roleName, level, title, happened, checked, prepared, need, actions) { return { id, tray, roleName, level, title, happened, checked, prepared, need, actions }; }
 function keyOf(item = {}) { return item.id || item.action_id || item.title; }
 function trayKey(tray = "") { const t = String(tray).toLowerCase(); if (t.includes("money")) return "money"; if (t.includes("booking")) return "bookings"; if (t.includes("staff")) return "staff"; if (t.includes("client")) return "clients"; if (t.includes("quality")) return "quality"; if (t.includes("operation")) return "ops"; return "command"; }
-function countDepartments(items = []) { return items.reduce((acc, item) => { acc.command += 1; const key = trayKey(item.tray); acc[key] = (acc[key] || 0) + 1; return acc; }, { command: 0, money: 0, bookings: 0, staff: 0, clients: 0, quality: 0, ops: 0 }); }
-function makeSourceLabel({ isOwnerApp, backendCommand, localQueue, snapshot, liveDrafts }) {
-  if (isOwnerApp) {
-    if (backendCommand.decisions?.length) return "Command";
-    if (localQueue.length) return "Prepared work";
-    if (snapshot.source === "admin-brain") return "Live check";
-    if (liveDrafts.length) return "Prepared records";
-    if (backendCommand.source === "backend-command-clear") return "Command clear";
-    if (snapshot.source === "clear-live") return "Clear";
-    return "Ready";
-  }
-  return backendCommand.decisions?.length ? "Backend Command" : localQueue.length ? "Local Command" : snapshot.source === "admin-brain" ? "Live Admin Brain" : liveDrafts.length ? "Live prepared" : backendCommand.source === "backend-command-clear" ? "Backend clear" : snapshot.source === "clear-live" ? "Live clear" : "Demo mode";
-}
+function countDepartments(items = []) { return items.reduce((acc, item) => { acc.command += 1; acc[trayKey(item.tray)] = (acc[trayKey(item.tray)] || 0) + 1; return acc; }, { command: 0, money: 0, bookings: 0, staff: 0, clients: 0, quality: 0, ops: 0 }); }
+function cleanScreen(hash) { const key = String(hash || "").replace("#", "").trim().toLowerCase(); return screenAliases[key] || "today"; }
+function makeSourceLabel({ isOwnerApp, backendCommand, snapshot, liveDrafts }) { if (isOwnerApp && backendCommand?.source === "backend-command") return "backend Command"; if (isOwnerApp && backendCommand?.source === "backend-command-clear") return "backend clear"; if (snapshot?.source === "admin-brain") return "live check"; if (liveDrafts?.length) return "live rows"; return isOwnerApp ? "owner mode" : "demo mode"; }
 function isOwnerRoute() { return typeof window !== "undefined" && window.location.pathname.includes("dashboard"); }
-function cleanScreen(hash = "") {
-  const key = String(hash || "").replace(/^#/, "").trim().toLowerCase();
-  if (screens.some(([id]) => id === key)) return key;
-  const mapped = screenAliases[key] || key;
-  return screens.some(([id]) => id === mapped) ? mapped : "today";
-}
