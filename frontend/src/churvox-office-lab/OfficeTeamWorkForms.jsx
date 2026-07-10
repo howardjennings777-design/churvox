@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./OfficeTeamWorkForms.css";
 import { createBackendCommandSlip } from "./OfficeTeamCommandApi";
 import { createOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
@@ -105,7 +105,7 @@ const DEFAULTS = {
       ["client", "Client", "Sarah"],
       ["subject", "Subject", "Rebook request"],
       ["message", "Customer message", "Can we book next Friday?"],
-      ["reply", "Prepared reply", "Yes, Friday 10am is available."],
+      ["reply", "Prepared reply", "I’ll check the best available time and come back to you."],
       ["notes", "Notes", "Owner approval before send"],
     ],
     importHint: "client,subject,message,reply,notes",
@@ -129,17 +129,26 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
   const config = DEFAULTS[area] || DEFAULTS.work;
   const [values, setValues] = useState(() => initialValues(config, selectedRecord));
   const [csvText, setCsvText] = useState("");
-  const [brainText, setBrainText] = useState("");
+  const [intakeText, setIntakeText] = useState("");
   const [trail, setTrail] = useState([]);
   const [busy, setBusy] = useState(false);
   const ownerRoute = isOwnerRoute();
-  const parsed = useMemo(() => brainText ? parseBrainText(brainText) : null, [brainText]);
+  const parsed = useMemo(() => intakeText ? parseIntakeText(intakeText) : null, [intakeText]);
+
+  useEffect(() => {
+    setValues(initialValues(config, selectedRecord));
+  }, [config, selectedRecord]);
 
   function setField(key, value) {
     setValues((current) => ({ ...current, [key]: value }));
   }
 
   async function prepareForm() {
+    const missing = requiredMissing(values, config);
+    if (missing.length) {
+      addTrail(config.action, `Check ${missing.join(", ")} before preparing the slip.`);
+      return;
+    }
     await prepareSlip({
       area,
       kind: config.label,
@@ -154,24 +163,34 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
     });
   }
 
-  async function prepareBrain() {
+  async function prepareIntake() {
     if (!parsed) return;
     await prepareSlip({
       area: parsed.area,
       kind: parsed.kind,
       action: parsed.action,
       form: parsed.form,
-      source: "brain_intake",
+      source: "quick_intake",
       title: parsed.title,
-      found: `You typed: ${brainText}`,
-      prepared: `Churvox read the instruction and prepared it as a ${parsed.kind.toLowerCase()} slip for Command.`,
+      found: `Owner typed: ${intakeText}`,
+      prepared: `Churvox recognised the likely record type and prepared a ${parsed.kind.toLowerCase()} slip for owner review. Every field remains editable.`,
       why: parsed.why,
       actions: approvalActions(parsed.area),
+      sourcePayload: {
+        intake_text: intakeText,
+        intake_confidence: parsed.confidence,
+        intake_rule: parsed.rule,
+      },
     });
   }
 
   async function importCsv() {
-    const rows = parseCsv(csvText);
+    const parsedCsv = parseCsv(csvText);
+    if (parsedCsv.error) {
+      addTrail("CSV import", parsedCsv.error);
+      return;
+    }
+    const rows = parsedCsv.rows.slice(0, 100);
     if (!rows.length) {
       addTrail("CSV import", "Paste a CSV header row and at least one record first.");
       return;
@@ -180,20 +199,31 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
       area,
       kind: `${config.label} CSV import`,
       action: `Prepare ${config.label.toLowerCase()} CSV import`,
-      form: { rows: `${rows.length} row(s)`, preview: rows.slice(0, 3).map((row) => Object.values(row).join(" · ")).join(" | ") },
+      form: {
+        rows: `${rows.length} row(s)`,
+        columns: parsedCsv.headers.join(", "),
+        preview: rows.slice(0, 3).map((row) => Object.values(row).join(" · ")).join(" | "),
+        owner_check: parsedCsv.rows.length > 100 ? `Only the first 100 of ${parsedCsv.rows.length} rows are included in this draft.` : "Check the preview and approve only when the columns are correct.",
+      },
       source: "csv_import",
-      title: `${config.label} CSV import: ${rows.length} row(s)` ,
-      found: `CSV import pasted with ${rows.length} row(s).`,
-      prepared: `Churvox prepared a CSV import review. The data is not imported until the owner approves the slip.`,
-      why: `Owner approval is required before imported ${config.label.toLowerCase()} records are added or changed.`,
-      actions: [`Approve ${config.label.toLowerCase()} import`, "Review rows", "Park"],
+      title: `${config.label} CSV import: ${rows.length} row(s)`,
+      found: `CSV import pasted with ${parsedCsv.rows.length} parsed row(s) and ${parsedCsv.headers.length} column(s).`,
+      prepared: `Churvox preserved the actual parsed row objects in the Command slip. The data is not imported until the owner approves the review.`,
+      why: `Owner approval is required before imported ${config.label.toLowerCase()} records are added.`,
+      actions: [`Approve ${config.label.toLowerCase()} import`, "Review later", "Park"],
+      sourcePayload: {
+        csv_rows: rows,
+        csv_headers: parsedCsv.headers,
+        csv_row_count: rows.length,
+        csv_truncated: parsedCsv.rows.length > rows.length,
+      },
     });
   }
 
-  async function prepareSlip({ area: targetArea, kind, action, form, source, title, found, prepared, why, actions }) {
+  async function prepareSlip({ area: targetArea, kind, action, form, source, title: slipTitle, found, prepared, why, actions, sourcePayload = {} }) {
     if (busy) return;
     setBusy(true);
-    const record = [kind, mainTitle(form, kind), "Prepared form", Object.entries(form || {}).map(([k, v]) => `${labelize(k)}: ${v}`).join(" · ")];
+    const record = [kind, mainTitle(form, kind), "Prepared form", Object.entries(form || {}).map(([key, value]) => `${labelize(key)}: ${displayValue(value)}`).join(" · ")];
     try {
       if (ownerRoute) {
         await createBackendCommandSlip({
@@ -204,7 +234,7 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
             source_type: targetArea,
             action_type: action,
             source_id: `${source}-${Date.now()}`,
-            title,
+            title: slipTitle,
             found,
             prepared,
             why,
@@ -217,6 +247,11 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
               source,
               prepared_only: true,
               owner_review_only: true,
+              no_auto_send: true,
+              no_auto_sync: true,
+              no_auto_charge: true,
+              no_auto_record_change: true,
+              ...(sourcePayload || {}),
             },
           },
         });
@@ -234,11 +269,12 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
   return (
     <section className="cvWorkForms" aria-label={`${title} working forms`}>
       <div className="cvBrainIntake">
-        <span>Tell Churvox what to do</span>
-        <h3>Type it normally. Churvox sorts the slip.</h3>
-        <textarea value={brainText} onChange={(event) => setBrainText(event.target.value)} placeholder="Example: create invoice for Smith lawn job 120 plus green waste 30" />
-        {parsed ? <div className="cvBrainGuess"><b>{parsed.kind}</b><small>{parsed.title}</small><em>{parsed.why}</em></div> : null}
-        <button type="button" onClick={prepareBrain} disabled={busy || !parsed}>{busy ? "Preparing…" : "Prepare from words"}</button>
+        <span>Quick intake</span>
+        <h3>Type the request normally. Churvox recognises the likely record type.</h3>
+        <textarea value={intakeText} onChange={(event) => setIntakeText(event.target.value)} placeholder="Example: create invoice for Smith lawn job 120 plus green waste 30" />
+        {parsed ? <div className="cvBrainGuess"><b>{parsed.kind}</b><small>{parsed.title}</small><em>{parsed.why} · {Math.round(parsed.confidence * 100)}% intake confidence</em></div> : null}
+        <button type="button" onClick={prepareIntake} disabled={busy || !parsed}>{busy ? "Preparing…" : "Prepare from words"}</button>
+        <p>This is a quick classifier, not a final decision. Check every prepared field in Command.</p>
       </div>
 
       <div className="cvFormGrid">
@@ -249,7 +285,7 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
             {config.fields.map(([key, label, placeholder]) => (
               <label key={key}>
                 <small>{label}</small>
-                {key === "notes" || key === "line_items" || key === "scope" || key === "reply" || key === "message" ? (
+                {longField(key) ? (
                   <textarea value={values[key] || ""} onChange={(event) => setField(key, event.target.value)} placeholder={placeholder} />
                 ) : (
                   <input value={values[key] || ""} onChange={(event) => setField(key, event.target.value)} placeholder={placeholder} />
@@ -267,7 +303,7 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
           <small>Header example: {config.importHint}</small>
           <textarea value={csvText} onChange={(event) => setCsvText(event.target.value)} placeholder={`${config.importHint}\nSmith,021...,smith@example.com,12 King St,Prefers text`} />
           <button type="button" onClick={importCsv} disabled={busy}>{busy ? "Preparing…" : "Prepare CSV import"}</button>
-          <p>CSV import is reviewed in Command before anything is added.</p>
+          <p>The actual parsed rows stay attached to the Command review. Nothing is imported before approval.</p>
         </article>
       </div>
 
@@ -283,58 +319,60 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
 function initialValues(config, selectedRecord) {
   const base = Object.fromEntries(config.fields.map(([key]) => [key, ""]));
   if (Array.isArray(selectedRecord)) {
-    base.title = base.title || selectedRecord[1] || selectedRecord[0] || "";
-    base.notes = base.notes || selectedRecord[3] || selectedRecord[2] || "";
-    base.client = base.client || selectedRecord[0] || "";
+    if ("title" in base) base.title = selectedRecord[1] || "";
+    if ("job" in base) base.job = selectedRecord[1] || "";
+    if ("notes" in base) base.notes = selectedRecord[3] || "";
+    if ("status" in base) base.status = selectedRecord[2] || "";
   }
   return base;
 }
 
-function parseBrainText(text) {
+function requiredMissing(values, config) {
+  const keys = config.label === "Client" ? ["name"] : config.label === "Payroll review" || config.label === "Staff item" ? ["worker"] : config.label === "Accounting check" ? ["system", "record"] : ["client"];
+  return keys.filter((key) => key in values && !String(values[key] || "").trim()).map(labelize);
+}
+
+function parseIntakeText(text) {
   const raw = String(text || "").trim();
   if (raw.length < 4) return null;
   const lower = raw.toLowerCase();
   const amount = raw.match(/\$?\b\d+(?:\.\d{1,2})?\b/g)?.slice(-1)?.[0] || "";
   const words = raw.replace(/\$?\b\d+(?:\.\d{1,2})?\b/g, "").split(/\s+/).filter(Boolean);
   const name = titleCase(words.slice(-3).join(" ")) || "New record";
-  if (/invoice|bill|charge|payment/.test(lower)) {
-    return makeParsed("invoices", "Invoice", "Prepare invoice", `Invoice draft: ${name}`, "Owner approves invoice draft before send/sync/charge.", { client: name, line_items: raw, total: amount, notes: "Prepared from typed instruction" });
-  }
-  if (/quote|estimate|price/.test(lower)) {
-    return makeParsed("quotes", "Quote", "Prepare quote", `Quote draft: ${name}`, "Owner approves quote before it is sent or converted.", { client: name, scope: raw, price: amount, notes: "Prepared from typed instruction" });
-  }
-  if (/client|customer|contact|address|phone|email/.test(lower)) {
-    return makeParsed("clients", "Client", "Prepare client record", `Client record: ${name}`, "Owner approves before client records change.", { name, notes: raw });
-  }
-  if (/message|reply|text|email|sms|follow up|follow-up/.test(lower)) {
-    return makeParsed("messages", "Message", "Prepare reply", `Message draft: ${name}`, "Owner approves before anything is sent.", { client: name, message: raw, reply: "Prepared reply needs owner check" });
-  }
-  if (/worker|staff|timer|hours|payroll|clock/.test(lower)) {
-    return makeParsed("staff", "Staff item", "Prepare staff review", `Staff review: ${name}`, "Owner approves before staff/job/hour records change.", { worker: name, issue: raw, hours: amount, notes: "Prepared from typed instruction" });
-  }
-  return makeParsed("work", "Job", "Prepare job", `Job draft: ${name}`, "Owner approves before job records, schedule or worker assignment changes.", { client: name, title: raw, price: amount, notes: "Prepared from typed instruction" });
+  if (/invoice|bill|charge|payment/.test(lower)) return makeParsed("invoices", "Invoice", "Prepare invoice", `Invoice draft: ${name}`, "Owner checks the client, line items and tax treatment before approval.", { client: name, line_items: raw, total: amount, notes: "Prepared from quick intake" }, 0.82, "invoice/payment keywords");
+  if (/quote|estimate|price/.test(lower)) return makeParsed("quotes", "Quote", "Prepare quote", `Quote draft: ${name}`, "Owner checks the scope and price before approval.", { client: name, scope: raw, price: amount, notes: "Prepared from quick intake" }, 0.8, "quote/price keywords");
+  if (/client|customer|contact|address|phone|email/.test(lower)) return makeParsed("clients", "Client", "Prepare client record", `Client record: ${name}`, "Owner checks identity and contact details before the record draft is created.", { name, notes: raw }, 0.74, "client/contact keywords");
+  if (/message|reply|text|email|sms|follow up|follow-up/.test(lower)) return makeParsed("messages", "Message", "Prepare reply", `Message draft: ${name}`, "Owner checks wording before any internal reply draft is created; nothing sends.", { client: name, message: raw, reply: "Owner to check the prepared reply" }, 0.76, "message/follow-up keywords");
+  if (/worker|staff|timer|hours|payroll|clock/.test(lower)) return makeParsed("staff", "Staff item", "Prepare staff review", `Staff review: ${name}`, "Owner checks worker, time and context before an internal review draft is created.", { worker: name, issue: raw, hours: amount, notes: "Prepared from quick intake" }, 0.78, "staff/time keywords");
+  return makeParsed("work", "Job", "Prepare job", `Job draft: ${name}`, "Owner checks client, job details, schedule and assignment before approval.", { client: name, title: raw, price: amount, notes: "Prepared from quick intake" }, 0.55, "general work fallback");
 }
 
-function makeParsed(area, kind, action, title, why, form) {
-  return { area, kind, action, title, why, form };
+function makeParsed(area, kind, action, title, why, form, confidence, rule) {
+  return { area, kind, action, title, why, form, confidence, rule };
 }
 
 function parseCsv(text) {
-  const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  if (lines.length < 2) return [];
-  const headers = splitCsvLine(lines[0]).map((header) => header.trim() || "field");
-  return lines.slice(1).map((line) => {
+  const lines = String(text || "").split(/\r?\n/).filter((line) => line.trim());
+  if (lines.length < 2) return { rows: [], headers: [], error: "Paste a header row and at least one data row." };
+  const headers = splitCsvLine(lines[0]).map((header, index) => String(header || "").trim() || `field_${index + 1}`);
+  if (new Set(headers.map((header) => header.toLowerCase())).size !== headers.length) return { rows: [], headers, error: "CSV headers must be unique." };
+  const rows = lines.slice(1).map((line) => {
     const cells = splitCsvLine(line);
     return Object.fromEntries(headers.map((header, index) => [header, cells[index] || ""]));
   });
+  return { rows, headers, error: "" };
 }
 
 function splitCsvLine(line) {
   const result = [];
   let current = "";
   let quoted = false;
-  for (const char of String(line || "")) {
-    if (char === '"') quoted = !quoted;
+  const text = String(line || "");
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === '"' && quoted && next === '"') { current += '"'; index += 1; }
+    else if (char === '"') quoted = !quoted;
     else if (char === "," && !quoted) { result.push(current.trim()); current = ""; }
     else current += char;
   }
@@ -346,24 +384,34 @@ function mainTitle(form = {}, fallback = "record") {
   return form.title || form.job || form.client || form.name || form.worker || form.record || form.subject || fallback;
 }
 
+function displayValue(value) {
+  if (Array.isArray(value)) return value.map(displayValue).join(" · ");
+  if (value && typeof value === "object") return Object.entries(value).map(([key, item]) => `${labelize(key)}: ${displayValue(item)}`).join(" · ");
+  return String(value ?? "");
+}
+
+function longField(key) {
+  return ["notes", "line_items", "scope", "reply", "message"].includes(key);
+}
+
 function willDoFor(area, form = {}) {
   const key = String(area || "").toLowerCase();
-  if (key.includes("invoice") || key.includes("money")) return ["Save invoice/payment draft", "Hold send/sync until owner chooses the next action", `Amount/detail: ${form.total || form.amount || form.line_items || "needs check"}`];
-  if (key.includes("quote")) return ["Save quote draft", "Hold customer send until approved", `Scope: ${form.scope || form.notes || "needs check"}`];
-  if (key.includes("client")) return ["Prepare client record update", "Hold record change until approved", `Client detail: ${form.name || form.client || "needs check"}`];
-  if (key.includes("staff") || key.includes("payroll")) return ["Prepare staff/hour review", "No payroll file or payment is created", `Worker: ${form.worker || "needs check"}`];
-  if (key.includes("message")) return ["Prepare reply draft", "No message is sent until approved", `Client: ${form.client || "needs check"}`];
-  return ["Prepare job/booking draft", "No schedule or worker assignment changes until approved", `Client/job: ${form.client || form.title || "needs check"}`];
+  if (key.includes("invoice") || key.includes("money")) return ["Save an internal invoice/payment draft", "Hold send and sync until a later owner decision", `Amount/detail: ${form.total || form.amount || form.line_items || "needs check"}`];
+  if (key.includes("quote")) return ["Save an internal quote draft", "Hold customer send until a later owner decision", `Scope: ${form.scope || form.notes || "needs check"}`];
+  if (key.includes("client")) return ["Create an internal client record/update draft", "Do not overwrite the live client automatically", `Client detail: ${form.name || form.client || "needs check"}`];
+  if (key.includes("staff") || key.includes("payroll")) return ["Create an internal staff/hour review draft", "No payroll file or payment is created", `Worker: ${form.worker || "needs check"}`];
+  if (key.includes("message")) return ["Create an internal reply draft", "No message is sent", `Client: ${form.client || "needs check"}`];
+  return ["Create an internal job/booking draft", "Do not change the live schedule or assignment automatically", `Client/job: ${form.client || form.title || "needs check"}`];
 }
 
 function approvalActions(area) {
   const key = String(area || "").toLowerCase();
-  if (key.includes("invoice")) return ["Approve invoice draft", "Edit invoice", "Ask staff", "Park"];
-  if (key.includes("quote")) return ["Approve quote draft", "Edit quote", "Follow up later", "Park"];
-  if (key.includes("client")) return ["Save client update", "Edit client", "Ignore", "Park"];
-  if (key.includes("staff") || key.includes("payroll")) return ["Approve hours", "Edit notes", "Ask staff", "Park"];
-  if (key.includes("message")) return ["Approve reply", "Edit reply", "Ask owner later", "Park"];
-  return ["Approve job draft", "Edit job", "Ask client", "Park"];
+  if (key.includes("invoice")) return ["Approve invoice draft", "Ask staff", "Park"];
+  if (key.includes("quote")) return ["Approve quote draft", "Follow up later", "Park"];
+  if (key.includes("client")) return ["Save client update", "Ignore", "Park"];
+  if (key.includes("staff") || key.includes("payroll")) return ["Approve hours", "Ask staff", "Park"];
+  if (key.includes("message")) return ["Approve reply", "Handle personally", "Park"];
+  return ["Approve job draft", "Ask client", "Park"];
 }
 
 function urgencyFor(area) {
@@ -383,11 +431,11 @@ function roleForArea(area) {
 }
 
 function labelize(key) {
-  return String(key || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return String(key || "").replace(/_/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function titleCase(text) {
-  return String(text || "").trim().replace(/\b\w/g, (c) => c.toUpperCase());
+  return String(text || "").trim().replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function isOwnerRoute() {
