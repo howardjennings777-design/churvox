@@ -50,10 +50,22 @@ async function getJson(page, path, token) {
   return { response, text, body, contentType: response.headers()['content-type'] || '' };
 }
 
+async function waitForSettledContent(page, path) {
+  await expect.poll(async () => {
+    const text = await page.locator('body').innerText().catch(() => '');
+    return (text.match(/checking\s*(?:·|-)?\s*checking live records|checking live records/gi) || []).length;
+  }, {
+    message: `${path} never settled past repeated live-record loading placeholders`,
+    timeout: 15_000,
+    intervals: [250, 500, 900, 1500, 2500],
+  }).toBeLessThanOrEqual(1);
+}
+
 async function openHealthy(page, path) {
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('networkidle', { timeout: 3500 }).catch(() => null);
   await expect(page.locator('body')).toBeVisible();
+  await waitForSettledContent(page, path);
   const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').trim();
   expect(text.length, `${path} is blank or nearly blank`).toBeGreaterThan(90);
   expect(text, `${path} rendered a fatal/error boundary`).not.toMatch(/something went wrong|application error|cannot read properties|failed to render|unexpected error/i);
@@ -187,9 +199,15 @@ test.describe('Hardcore owner-worker visual, permission and sense check', () => 
     const page = await context.newPage();
     const token = await loginApi(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
 
+    await page.goto('/worker/today', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-worker-view="today"]'), 'Live frontend is missing the current strict Worker View build. Deploy latest main before judging role redirects.').toBeVisible({ timeout: 12_000 });
+
     await page.goto('/dashboard#today', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(900);
-    expect(page.url(), 'Worker was allowed to remain in the owner dashboard').toMatch(/\/worker\//);
+    await expect.poll(() => page.url(), {
+      message: 'Worker remained in the owner dashboard. The current strict frontend may not be deployed or worker role normalization is broken.',
+      timeout: 10_000,
+      intervals: [200, 400, 800, 1500],
+    }).toMatch(/\/worker\//);
 
     const ownerOnly = await getJson(page, '/api/admin/owner/paid-launch-report', token);
     expect([401, 403], `Worker reached owner-only HQ: ${ownerOnly.response.status()} ${ownerOnly.text.slice(0, 200)}`).toContain(ownerOnly.response.status());
@@ -218,8 +236,11 @@ test.describe('Hardcore owner-worker visual, permission and sense check', () => 
     const page = await context.newPage();
     await loginApi(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
     await page.goto('/worker/today', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(900);
-    expect(page.url(), 'Owner account was incorrectly admitted to the protected worker interface').not.toMatch(/\/worker\/today(?:$|[?#])/);
+    await expect.poll(() => page.url(), {
+      message: 'Owner remained in Worker View. Deploy the current strict worker frontend or fix the role guard.',
+      timeout: 10_000,
+      intervals: [200, 400, 800, 1500],
+    }).not.toMatch(/\/worker\/today(?:$|[?#])/);
     await context.close();
   });
 });
