@@ -2,27 +2,15 @@ import React, { useState } from "react";
 import "./OfficeTeamOperationalScreens.css";
 import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import OfficeTeamWorkForms from "./OfficeTeamWorkForms";
+import OfficeTeamJobsWorkspace from "./OfficeTeamJobsWorkspace";
+import OfficeTeamClientsWorkspace from "./OfficeTeamClientsWorkspace";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
-
-const workRows = [
-  ["Today", "Green waste follow-up", "Needs owner decision", "Invoice extra held"],
-  ["Tomorrow", "Regular cleaning visit", "Ready", "Staff assigned"],
-  ["Friday", "Hair appointment rebook", "Prepared", "Message drafted"],
-  ["Next week", "Repeat maintenance", "Review price", "Took longer twice"],
-];
 
 const moneyRows = [
   ["Draft invoice", "$185", "Extra charge held", "Owner decision"],
   ["Quote follow-up", "$420", "Viewed, no reply", "Follow-up ready"],
   ["Payment reminder", "$89", "Due soon", "Reminder prepared"],
   ["Accounting sync", "0", "Locked", "No auto-sync"],
-];
-
-const clientRows = [
-  ["Sarah", "Preference memory", "Save note", "Colour and sensitivity detail"],
-  ["Jay", "Rebook cycle", "No next booking", "Usually every 3 weeks"],
-  ["Stuart", "Invoice question", "Extra green waste", "Owner decision needed"],
-  ["New lead", "Missing details", "Ask for address", "Message prepared"],
 ];
 
 const staffRows = [
@@ -33,15 +21,15 @@ const staffRows = [
 ];
 
 export function WorkScreen(props) {
-  return <OperationalScreen area="work" eyebrow="Work" title="Jobs, bookings and appointments" text="Add jobs, edit prepared work, import rows, or type a normal instruction and let Churvox prepare the right Command slip." rows={workRows} primary="Prepare work" secondary="Review day" {...props} />;
+  return <OfficeTeamJobsWorkspace {...props} />;
+}
+
+export function ClientsScreen(props) {
+  return <OfficeTeamClientsWorkspace {...props} />;
 }
 
 export function MoneyScreen(props) {
   return <OperationalScreen area="money" eyebrow="Money" title="Invoices, quotes and payment follow-up" text="Prepare invoice/payment work and keep it safe. Command gets the owner decision before anything sends, syncs or charges." rows={moneyRows} primary="Prepare money item" secondary="Review export" {...props} />;
-}
-
-export function ClientsScreen(props) {
-  return <OperationalScreen area="clients" eyebrow="Clients" title="Client memory and follow-up" text="Add clients, edit details, import CSV rows and prepare client-memory updates before records change." rows={clientRows} primary="Prepare client note" secondary="Review import" {...props} />;
 }
 
 export function StaffScreen(props) {
