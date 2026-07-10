@@ -17,14 +17,18 @@ function expect(name, ok, detail) {
 }
 
 const backend = read('backend/churvox_hq_paid_launch_report_patch.py');
+const filter = read('backend/churvox_hq_paid_launch_filter_patch.py');
+const postguard = read('backend/churvox_hq_paid_launch_postguard_patch.py');
 const connection = read('backend/churvox_hq_connection_status_patch.py');
 const hq = read('frontend/src/pages/PaidLaunchHQ.jsx');
 const hqEntry = read('frontend/src/pages/ChurvoxHQPage.jsx');
 const hqCss = read('frontend/src/pages/PaidLaunchHQ.css');
 const adminRoute = read('frontend/src/components/admin/PlatformAdminRoute.jsx');
 const browserTest = read('frontend/tests/e2e/churvox-paid-launch-hq-reality.spec.js');
+const liveHqTest = read('frontend/tests/e2e/churvox-hq-live-real-data.spec.js');
 const behaviorTest = read('scripts/churvox_hq_paid_launch_behavior_test.py');
 const behaviorRunner = read('scripts/churvox-hq-paid-launch-behavior.cjs');
+const liveHqRunner = read('scripts/churvox-live-hq-real-data.cjs');
 const rootPackage = JSON.parse(read('package.json'));
 const frontendPackage = JSON.parse(read('frontend/package.json'));
 const pythonSyntax = read('scripts/churvox-command-python-syntax.cjs');
@@ -36,46 +40,75 @@ expect(
     && backend.includes('raise HTTPException(status_code=403')
     && backend.includes('"source": "live_database_and_stripe_v1"')
     && backend.includes('"sample_records_included": False'),
-  'The report must be owner-only, live-sourced and explicitly exclude sample records',
+  'The base report must be owner-only, live-sourced and explicitly exclude sample records',
 );
 
 expect(
-  'paid users require Stripe subscription proof',
+  'candidate billing rows require a stored Stripe subscription ID',
   backend.includes('def _verified_paid')
     && backend.includes('_status(doc) in {"active", "paid"}')
     && backend.includes('bool(_subscription_id(doc))')
     && backend.includes('def _billing_needs_verification')
     && backend.includes('and not _subscription_id(doc)'),
-  'Active status alone must never be counted as verified paid',
+  'Active status alone must never enter the Stripe-confirmation candidate set',
 );
 
 expect(
-  'Stripe MRR is calculated from recurring subscription price items',
+  'precise internal filtering keeps legitimate testers visible',
+  filter.includes('def is_internal_record')
+    && filter.includes('SYNTHETIC_LOCALS')
+    && filter.includes('SYNTHETIC_DOMAINS')
+    && filter.includes('real tester accounts must stay visible')
+    && !filter.includes('"test", "demo", "sample"'),
+  'The production filter must use exact synthetic patterns, not a broad test substring',
+);
+
+expect(
+  'postguard requires live Stripe active/trialing status',
+  postguard.includes('"paid_definition": "stripe_subscription_status_active"')
+    && postguard.includes('"trial_definition": "stripe_subscription_status_trialing"')
+    && postguard.includes('"subscription_id_alone_is_not_paid": True')
+    && postguard.includes('active_by_id.get(_text(row.get("stripe_subscription_id"))) == "active"')
+    && postguard.includes('active_by_id.get(_text(row.get("stripe_subscription_id"))) == "trialing"')
+    && postguard.includes('report["source"] = "live_database_and_stripe_v2"'),
+  'A stored subscription ID must not be displayed as verified paid without live Stripe status',
+);
+
+expect(
+  'actual MRR includes active Stripe subscriptions only',
   backend.includes('stripe.Subscription.retrieve(subscription_id)')
     && backend.includes('def _monthly_amount')
-    && backend.includes('"mrr_by_currency"')
-    && backend.includes('"actual_mrr_nzd": actual_mrr_nzd')
-    && backend.includes('"estimated_mrr_nzd": estimated_mrr_nzd')
+    && postguard.includes('if _low(item.get("status")) != "active"')
+    && postguard.includes('stripe["paid_mrr_by_currency"] = paid_mrr_by_currency')
+    && postguard.includes('billing["actual_mrr_nzd"] = paid_mrr_by_currency.get("nzd")')
+    && postguard.includes('"mrr_definition": "active_stripe_subscription_price_items_only"')
     && backend.includes('"estimate_is_separate": True'),
-  'Actual Stripe MRR and the plan-price estimate must remain separate fields',
+  'Trials and plan-price estimates must never inflate actual paid MRR',
 );
 
 expect(
-  'HQ collection counts and freshness come from the database',
+  'filtered business metrics and raw collection counts stay distinct',
   backend.includes('count_documents({})')
     && backend.includes('"collections": {')
-    && backend.includes('"latest": {')
+    && postguard.includes('async def filtered_business_count')
+    && postguard.includes('counts["businesses_source"] = "filtered_businesses_collection"')
     && backend.includes('"stripe_webhook": await latest("stripe_webhook_events")')
     && backend.includes('"support_message": await latest("support_messages")'),
-  'HQ must expose real collection counts and latest backend records',
+  'HQ must expose raw database counts while filtering the customer/business headline metric',
 );
 
 expect(
-  'connection patch installs and advertises the paid launch report',
-  connection.includes('from churvox_hq_paid_launch_report_patch import install as install_paid_launch_report')
+  'connection patch installs filter, report and postguard in order',
+  connection.includes('from churvox_hq_paid_launch_filter_patch import install as install_paid_launch_filter')
+    && connection.includes('install_paid_launch_filter(module)')
+    && connection.includes('from churvox_hq_paid_launch_report_patch import install as install_paid_launch_report')
     && connection.includes('install_paid_launch_report(module)')
+    && connection.includes('from churvox_hq_paid_launch_postguard_patch import install as install_paid_launch_postguard')
+    && connection.includes('install_paid_launch_postguard(module)')
+    && connection.indexOf('install_paid_launch_filter(module)') < connection.indexOf('install_paid_launch_report(module)')
+    && connection.indexOf('install_paid_launch_report(module)') < connection.indexOf('install_paid_launch_postguard(module)')
     && connection.includes('"paid_launch_report": "/api/admin/owner/paid-launch-report"'),
-  'The backend wrapper must install the route during normal Render startup',
+  'Normal Render startup must install the precise filter and Stripe-confirmation guard around the report',
 );
 
 expect(
@@ -139,7 +172,9 @@ expect(
 );
 
 let browserSyntaxOk = true;
+let liveHqSyntaxOk = true;
 try { new Function(browserTest); } catch { browserSyntaxOk = false; }
+try { new Function(liveHqTest); } catch { liveHqSyntaxOk = false; }
 expect(
   'paid launch browser test proves authoritative counts, controls, failures and mobile',
   browserSyntaxOk
@@ -153,15 +188,32 @@ expect(
 );
 
 expect(
-  'backend behavior test executes verified, unverified, tester, trial and owner-lock cases',
-  behaviorTest.includes('assert report["counts"]["verified_paid_users"] == 1')
+  'authenticated live HQ smoke requires report v2 and Stripe-confirmed rows',
+  liveHqSyntaxOk
+    && liveHqTest.includes("expect(report.source).toBe('live_database_and_stripe_v2')")
+    && liveHqTest.includes("expect(report.truth?.paid_definition).toBe('stripe_subscription_status_active')")
+    && liveHqTest.includes("expect(report.truth?.mrr_definition).toBe('active_stripe_subscription_price_items_only')")
+    && liveHqTest.includes('Stripe did not confirm active status')
+    && liveHqTest.includes("page.goto('/admin'")
+    && liveHqRunner.includes('tests/e2e/churvox-hq-live-real-data.spec.js')
+    && liveHqRunner.includes('CHURVOX_OWNER_EMAIL')
+    && !/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(liveHqTest),
+  'After deployment the real backend and rendered /admin values must be compared under authenticated owner access',
+);
+
+expect(
+  'backend behavior test executes Stripe confirmation, unverified, tester, trial, filtering and owner-lock cases',
+  behaviorTest.includes('assert report["source"] == "live_database_and_stripe_v2"')
+    && behaviorTest.includes('assert report["truth"]["paid_definition"] == "stripe_subscription_status_active"')
+    && behaviorTest.includes('assert report["counts"]["verified_paid_users"] == 1')
     && behaviorTest.includes('assert report["counts"]["billing_needs_verification"] == 1')
     && behaviorTest.includes('assert report["counts"]["tester_users"] == 1')
     && behaviorTest.includes('assert report["counts"]["verified_trial_users"] == 1')
     && behaviorTest.includes('assert report["counts"]["internal_users_excluded"] == 2')
+    && behaviorTest.includes('assert report["counts"]["businesses_source"] == "filtered_businesses_collection"')
     && behaviorTest.includes('assert exc.status_code == 403')
     && behaviorRunner.includes('scripts/churvox_hq_paid_launch_behavior_test.py'),
-  'The real endpoint logic must be executed against a controlled database, not only scanned as text',
+  'The real endpoint and postguard logic must be executed against a controlled database and Stripe response',
 );
 
 for (const name of ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
@@ -179,16 +231,19 @@ expect(
   readiness.includes('churvox-paid-launch-reality-audit.cjs')
     && readiness.includes('churvox-hq-paid-launch-behavior.cjs')
     && rootPackage.scripts?.['test:paid-launch:reality'] === 'node scripts/churvox-paid-launch-reality-audit.cjs'
-    && rootPackage.scripts?.['test:hq:behavior'] === 'node scripts/churvox-hq-paid-launch-behavior.cjs',
-  'Root readiness must run both audits and expose direct commands',
+    && rootPackage.scripts?.['test:hq:behavior'] === 'node scripts/churvox-hq-paid-launch-behavior.cjs'
+    && rootPackage.scripts?.['test:hq:live-real'] === 'node scripts/churvox-live-hq-real-data.cjs',
+  'Root readiness and live tooling must expose the source, behavior and authenticated HQ checks',
 );
 
 expect(
-  'Python syntax gate includes new HQ backend and behavior files',
-  pythonSyntax.includes('backend/churvox_hq_paid_launch_report_patch.py')
+  'Python syntax gate includes all new HQ backend and behavior files',
+  pythonSyntax.includes('backend/churvox_hq_paid_launch_filter_patch.py')
+    && pythonSyntax.includes('backend/churvox_hq_paid_launch_report_patch.py')
+    && pythonSyntax.includes('backend/churvox_hq_paid_launch_postguard_patch.py')
     && pythonSyntax.includes('backend/churvox_hq_connection_status_patch.py')
     && pythonSyntax.includes('scripts/churvox_hq_paid_launch_behavior_test.py'),
-  'The new backend report, installer and behavior test must be AST parsed before launch',
+  'The filter, report, postguard, installer and behavior test must be AST parsed before launch',
 );
 
 for (const check of checks) console.log(`${check.ok ? '✓' : '✗'} ${check.name}${check.ok ? '' : ` — ${check.detail}`}`);
@@ -197,4 +252,4 @@ if (failures.length) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-console.log(`\nPaid launch reality audit passed: ${checks.length} truth, billing, HQ, backend behavior, control and browser contracts checked.`);
+console.log(`\nPaid launch reality audit passed: ${checks.length} Stripe-confirmed billing, HQ, backend behavior, control and live-auth contracts checked.`);
