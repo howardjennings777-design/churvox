@@ -24,6 +24,7 @@
     "test:live-command": "node scripts/churvox-live-command-smoke.cjs",
     "test:truth:live": "node scripts/churvox-live-truth-test.cjs",
     "test:hq:reality:live": "npm --prefix frontend run test:hq:reality:live",
+    "test:hq:live-real": "node scripts/churvox-live-hq-real-data.cjs",
     "test:business": "npm --prefix frontend run test:business",
     "test:business:live": "npm --prefix frontend run test:business:live",
     "test:business:v2": "npm --prefix frontend exec playwright test tests/e2e/churvox-real-business-audit-v2.spec.js",
