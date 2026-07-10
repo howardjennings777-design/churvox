@@ -39,6 +39,7 @@ const hqExtraOwnerPatch = read('backend/churvox_hq_extra_owner_email_patch.py');
 const hqOwnerAccessPatch = read('backend/churvox_hq_owner_access_fix_patch.py');
 const hqGrowthPatch = read('backend/churvox_hq_growth_report_patch.py');
 const labSite = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
+const labPolish = read('frontend/src/churvox-office-lab/OfficeTeamPremiumPolish.css');
 const commandApi = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
 const safeControls = read('frontend/src/churvox-office-lab/OfficeTeamSafeControls.jsx');
 const workerRoute = read('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx');
@@ -46,6 +47,7 @@ const officeTeamApi = read('frontend/src/churvox-office-lab/officeTeamApi.js');
 const commandRoutes = read('backend/churvox_command_routes.py');
 const usercustomize = read('backend/usercustomize.py');
 const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
+const plansCss = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.css');
 
 const rootScripts = rootPackage.scripts || {};
 const frontendScripts = frontendPackage.scripts || {};
@@ -67,6 +69,11 @@ expect('hidden lab route remains available', app.includes('path="/office-team-la
 expect('owner dashboard uses new office app under auth', app.includes('const OwnerOfficeApp = () => <OfficeTeamLab appMode="owner" />') && app.includes('path="/dashboard"') && app.includes('<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>'), 'dashboard not wired to owner office app under FreshBusinessRoute');
 expect('worker app route remains protected', app.includes('path="/worker/today"') && app.includes('<WorkerRoute><WorkerOfficeApp /></WorkerRoute>'), 'worker route protection missing');
 expect('public marketing routes still point to marketing pages', includesAll(app, ['path="/" element={<HomePage />}', 'path="/pricing" element={<PricingPage />}', 'path="/contact" element={<ContactPage />}']), 'public route wiring changed unexpectedly');
+
+expect('premium office lab polish is loaded last', labSite.includes('import "./OfficeTeamPremiumPolish.css";'), 'premium polish CSS is not imported');
+expect('premium polish improves shell and nav', includesAll(labPolish, ['.cvSiteTopbar', 'HIDDEN OWNER BUILD', 'overflow-x: auto', '.cvSiteStatusLead', 'linear-gradient(135deg, #17120e']), 'premium polish shell styling missing');
+expect('plans page has premium locked-pricing hero', includesAll(plans, ['Pricing is locked. The build is what changes.', 'No hidden price changes', 'Most useful', 'Command Growth Pack remains $99/month + GST']), 'polished plans copy missing');
+expect('plans CSS has premium layout', includesAll(plansCss, ['.cvPlansHero', '.cvPlansGrid button.featured::before', '.cvPlansGrid button.active::after', '.cvPlanDetail']), 'polished plans CSS missing');
 
 expect('owner Command reads backend slips', includesAll(labSite, ['fetchBackendCommandDecisions', 'backendCommand', 'Backend Command']), 'owner Command backend slip wiring missing');
 expect('owner Command reads backend audit', includesAll(labSite, ['fetchBackendCommandAudit', 'backendAudit', 'Backend Command audit']), 'owner Activity backend audit wiring missing');
