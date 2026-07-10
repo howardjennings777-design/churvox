@@ -41,11 +41,40 @@ function run(args, label) {
       PLAYWRIGHT_API_BASE: apiBase,
     },
   });
-  if (result.error) {
-    console.error(`${label} could not start: ${result.error.message}`);
-    process.exit(1);
+  if (result.error) throw new Error(`${label} could not start: ${result.error.message}`);
+  if (result.status !== 0) throw new Error(`${label} failed with exit code ${result.status}`);
+}
+
+function generatedMutationSpec() {
+  const sourcePath = path.join(frontend, 'tests', 'e2e', 'churvox-hardcore-owner-worker-mutate.spec.js');
+  const generatedPath = path.join(frontend, 'tests', 'e2e', '.churvox-hardcore-owner-worker-mutate.generated.spec.js');
+  const original = fs.readFileSync(sourcePath, 'utf8');
+  const oldBlock = `      await expect.poll(async () => {
+        const rows = await corpus(page, ownerToken, ['/api/notifications?limit=160', '/api/messages?limit=160']);
+        const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
+        const unique = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row)));
+        return unique.size;
+      }, { message: 'exactly one completion event reaches owner-facing notification/message collections', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(1);`;
+  const newBlock = `      await expect.poll(async () => {
+        const paths = ['/api/notifications?limit=160', '/api/messages?limit=160', '/api/command/slips'];
+        const counts = {};
+        for (const path of paths) {
+          const result = await json(page, 'get', path + (path.includes('?') ? '&' : '?') + 'ts=' + Date.now(), ownerToken);
+          if (!result.ok) { counts[path] = 0; continue; }
+          const rows = listFrom(result.body);
+          const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
+          counts[path] = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row))).size;
+        }
+        const values = Object.values(counts);
+        return values.some((count) => count === 1) && values.every((count) => count <= 1);
+      }, { message: 'exactly one completion per owner-facing channel; no duplicate completion in Notifications, Messages or Command', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(true);`;
+
+  const transformed = original.replace(oldBlock, newBlock);
+  if (transformed === original || !transformed.includes('exactly one completion per owner-facing channel')) {
+    throw new Error('Could not build the corrected per-channel completion duplicate check.');
   }
-  if (result.status !== 0) process.exit(typeof result.status === 'number' ? result.status : 1);
+  fs.writeFileSync(generatedPath, transformed);
+  return generatedPath;
 }
 
 console.log(`Hardcore owner/worker target: ${baseURL}`);
@@ -55,25 +84,35 @@ console.log(mutate
   ? 'LIVE MUTATION ENABLED: a uniquely named job will be created, exercised through the complete field loop, and cleanup must pass.'
   : `Read-only mode. Set CHURVOX_HARDCORE_MUTATE=${consent} only when you intentionally want the live job mutation test.`);
 
-run([
-  'test',
-  'tests/e2e/churvox-hardcore-owner-worker-visual.spec.js',
-  '--config=playwright.config.js',
-  '--project=desktop-chromium',
-  '--project=mobile-chromium',
-  '--workers=1',
-  '--reporter=line',
-], 'Hardcore read-only owner/worker and visual gauntlet');
-
-if (mutate) {
+try {
   run([
     'test',
-    'tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js',
+    'tests/e2e/churvox-hardcore-owner-worker-visual.spec.js',
     '--config=playwright.config.js',
     '--project=desktop-chromium',
+    '--project=mobile-chromium',
     '--workers=1',
     '--reporter=line',
-  ], 'Hardcore live boss-worker mutation loop');
+  ], 'Hardcore read-only owner/worker and visual gauntlet');
+
+  if (mutate) {
+    const generated = generatedMutationSpec();
+    try {
+      run([
+        'test',
+        path.relative(frontend, generated).replace(/\\/g, '/'),
+        '--config=playwright.config.js',
+        '--project=desktop-chromium',
+        '--workers=1',
+        '--reporter=line',
+      ], 'Hardcore live boss-worker mutation loop');
+    } finally {
+      try { fs.unlinkSync(generated); } catch {}
+    }
+  }
+} catch (error) {
+  console.error(error.message || error);
+  process.exit(1);
 }
 
 console.log('\nHardcore owner/worker gauntlet passed.');
