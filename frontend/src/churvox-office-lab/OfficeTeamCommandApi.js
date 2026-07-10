@@ -31,7 +31,7 @@ function clean(value, fallback = "") {
 
 function trayForSlip(slip = {}) {
   const text = clean(`${slip.source_type || ""} ${slip.action_type || ""} ${slip.tray || ""}`).toLowerCase();
-  if (/accounting|account|gst|tax|xero|myob|ledger|export/.test(text)) return "Accounting";
+  if (/accounting|gst|tax|xero|myob|ledger|export/.test(text) || /account/.test(text)) return "Accounting";
   if (/invoice|quote|payment|money/.test(text)) return "Money";
   if (/job|work|booking|schedule|recurring/.test(text)) return "Bookings";
   if (/staff|worker|payroll|team|timer|hours/.test(text)) return "Staff";
@@ -303,7 +303,7 @@ export async function createBackendWorkerUpdateRequest({ title = "Worker update"
   return body;
 }
 
-export async function recordBackendCommandDecision(decision, action) {
+export async function recordBackendCommandDecision(decision, action, note = SAFE_RESULT) {
   const base = host();
   const slipId = clean(decision?.raw?.command_slip_id || "");
   if (!base || !slipId) {
@@ -319,7 +319,7 @@ export async function recordBackendCommandDecision(decision, action) {
     method: "POST",
     credentials: "include",
     headers: authHeaders(),
-    body: JSON.stringify({ action, note: SAFE_RESULT, hours: 24 }),
+    body: JSON.stringify({ action, note, hours: 24 }),
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.success === false) {
