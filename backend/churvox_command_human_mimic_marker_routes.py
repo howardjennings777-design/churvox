@@ -5,6 +5,7 @@ HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v3"
 HUMAN_MIMIC_GUARD = "human-mimic-strict-preflight-v3"
 HUMAN_MIMIC_POST_GUARD = "linked-invoice-source-recheck-v1"
 HUMAN_MIMIC_SOURCE_NORMALIZATION = "legacy-job-status-and-timer-units-v1"
+HUMAN_MIMIC_ROLE_SCHEMA_GUARD = "role-required-evidence-v1"
 HUMAN_MIMIC_SUMMARY_GUARD = "strict-surviving-queue-summary-v1"
 HUMAN_MIMIC_SAFETY = "Owner approval required. Nothing was sent, synced, charged or changed."
 
@@ -32,6 +33,7 @@ def build_command_human_mimic_marker_router():
             "guard": HUMAN_MIMIC_GUARD,
             "post_guard": HUMAN_MIMIC_POST_GUARD,
             "source_normalization": HUMAN_MIMIC_SOURCE_NORMALIZATION,
+            "role_schema_guard": HUMAN_MIMIC_ROLE_SCHEMA_GUARD,
             "summary_guard": HUMAN_MIMIC_SUMMARY_GUARD,
             "roles": ROLE_NAMES,
             "preflight": {
@@ -41,6 +43,7 @@ def build_command_human_mimic_marker_router():
                 "weak_candidate_rejection": True,
                 "historical_money_reference_only": True,
                 "required_fields_block_approval": True,
+                "role_specific_required_evidence": True,
                 "secret_redaction": True,
                 "linked_invoice_postguard": True,
                 "manager_summaries_use_strict_queue": True,
