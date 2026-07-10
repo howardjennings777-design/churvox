@@ -43,7 +43,7 @@ const FreshApp = React.lazy(() => import("./churvox-fresh/FreshApp"));
 const OfficeTeamLab = React.lazy(() => import("./churvox-office-lab/OfficeTeamLab"));
 const OfficeTeamWorkerRoute = React.lazy(() => import("./churvox-office-lab/OfficeTeamWorkerRoute"));
 
-const PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com";
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
 function isPlatformOwnerUser(user = {}) {
   const email = String(user?.email || "").trim().toLowerCase();
