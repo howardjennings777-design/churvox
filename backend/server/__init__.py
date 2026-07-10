@@ -66,6 +66,7 @@ for _patch in [
     'churvox_paid_launch_guard_patch',
     'churvox_admin_recovery_patch',
     'churvox_owner_cockpit_control_patch',
+    'churvox_command_approval_fields_patch',
     'churvox_tester_signup_access_patch',
     'churvox_hq_owner_access_fix_patch',
     'churvox_hq_extra_owner_email_patch',
@@ -256,8 +257,3 @@ async def _wrapper_healthz():
 @app.get('/healthz')
 async def _plain_healthz():
     return {'ok': True, 'service': 'churvox-backend-wrapper'}
-
-
-@app.get('/')
-async def _root():
-    return RedirectResponse('/api/healthz')
