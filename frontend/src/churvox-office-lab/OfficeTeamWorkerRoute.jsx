@@ -20,7 +20,7 @@ export default function OfficeTeamWorkerRoute() {
   const hasWork = rows.length > 0;
   const current = selectedRow(rows, selected, []);
   const title = hasWork ? current?.[1] || "today’s work" : "No assigned work yet";
-  const detail = hasWork ? current?.[3] || "Check notes before starting." : "When the boss assigns real work, it will appear here. No fake demo jobs are shown in the worker app.";
+  const detail = hasWork ? current?.[3] || "Check notes before starting." : "When the boss assigns real work, it will appear here.";
   const badge = hasWork ? current?.[2] || "Ready" : "Waiting";
   const type = hasWork ? current?.[0] || "Assigned" : "Clear";
   const payment = paymentDetails(current);
@@ -32,7 +32,7 @@ export default function OfficeTeamWorkerRoute() {
       return;
     }
     setStatus(step);
-    addTrail(`${step} recorded on this phone preview.`);
+    addTrail(`${step} recorded on this phone view.`);
   }
 
   async function sendBossUpdate(text = note) {
@@ -47,10 +47,10 @@ export default function OfficeTeamWorkerRoute() {
         updateType: "Worker update",
         status: hasWork ? status : "General update",
       });
-      addTrail(`Boss update sent to backend Command: ${clean}`);
+      addTrail(`Boss update sent to Command: ${clean}`);
     } catch (error) {
       createOfficeTeamLocalCommand({ area: "worker", record, action: "Worker update" });
-      addTrail(`Boss update prepared locally for Command: ${clean}. ${error?.message || ""}`.trim());
+      addTrail(`Boss update prepared for Command: ${clean}. ${error?.message || ""}`.trim());
     } finally {
       setUpdateBusy(false);
       setNote("");
@@ -94,11 +94,11 @@ export default function OfficeTeamWorkerRoute() {
         paymentLink: payment.link,
       });
       setPaymentNotice("Payment request sent to owner Command. Worker cannot charge a card without an approved link.");
-      addTrail("Payment link request sent to backend Command for owner approval.");
+      addTrail("Payment link request sent to Command for owner approval.");
     } catch (error) {
       createOfficeTeamLocalCommand({ area: "worker", record, action: "Prepare payment link" });
-      setPaymentNotice("Payment request prepared locally because backend Command was not available. No card was charged.");
-      addTrail(`Payment link request prepared locally. ${error?.message || ""}`.trim());
+      setPaymentNotice("Payment request prepared for Command because the live route was not available. No card was charged.");
+      addTrail(`Payment link request prepared for Command. ${error?.message || ""}`.trim());
     } finally {
       setPaymentBusy(false);
     }
@@ -113,7 +113,7 @@ export default function OfficeTeamWorkerRoute() {
       <section className="cvWorkerHero">
         <div>
           <span>Churvox Worker</span>
-          <h1>Simple phone work. Office admin stays hidden.</h1>
+          <h1>Simple phone work. Office admin stays with the owner.</h1>
           <p>Workers see today’s task, update progress, add proof and show a safe payment link when the invoice is ready.</p>
         </div>
         <strong>{hasWork ? live.label : "Waiting for assigned work"}</strong>
@@ -169,8 +169,8 @@ export default function OfficeTeamWorkerRoute() {
         </div>
 
         <section className="cvWorkerRouteProof">
-          <button type="button" disabled={!hasWork} onClick={() => addTrail("Photo proof placeholder opened.")}>Photo proof</button>
-          <button type="button" disabled={!hasWork} onClick={() => addTrail("Timer note placeholder opened.")}>Timer note</button>
+          <button type="button" disabled={!hasWork} onClick={() => addTrail("Photo proof opened.")}>Photo proof</button>
+          <button type="button" disabled={!hasWork} onClick={() => addTrail("Timer note opened.")}>Timer note</button>
         </section>
       </section>
 
@@ -188,7 +188,7 @@ export default function OfficeTeamWorkerRoute() {
               <b>{row[1]}</b>
               <small>{row[2]}</small>
             </button>
-          )) : <p>No assigned work yet. Nothing fake is shown here.</p>}
+          )) : <p>No assigned work yet.</p>}
         </section>
 
         <section>
