@@ -4,7 +4,7 @@ import { createOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 
 const businessTypes = ["General Service", "Hair / Beauty", "Barber", "Nails", "Cleaning", "Trades"];
 const approvalLocks = ["Messages", "Invoices", "Accounting sync", "Money changes", "Client record changes", "Staff hours"];
-const ownerModes = ["Owner approves every decision", "Owner approves money and record changes", "Review-only beta mode"];
+const ownerModes = ["Owner approves every decision", "Owner approves money and record changes", "Review-only cautious mode"];
 
 export default function OfficeTeamSiteSettings() {
   const ownerRoute = isOwnerRoute();
@@ -37,7 +37,7 @@ export default function OfficeTeamSiteSettings() {
             title: "Owner settings change needs approval",
             found: "Business language, approval mode or safety-lock selections were changed in the Settings draft.",
             prepared: "Churvox prepared the settings as an internal operations draft. Current business behaviour remains unchanged.",
-            why: "Changing how mimics speak or which actions need approval can affect every workflow, so the exact draft must be reviewed in Command.",
+            why: "Changing how the office team speaks or which actions need approval can affect every workflow, so the exact draft must be reviewed in Command.",
             urgency: "Owner review",
             payload: {
               office_role: "Operations Manager",
