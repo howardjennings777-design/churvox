@@ -5,7 +5,7 @@ OWNER_EMAILS = {
     "howardjennings77@gmail.com",
     "howardjennings777@gmail.com",
 }
-SYNTHETIC_LOCALS = {"test", "demo", "sample", "fake", "mock", "preview", "seed"}
+SYNTHETIC_LOCALS = {"demo", "sample", "fake", "mock", "preview", "seed", "test"}
 SYNTHETIC_DOMAINS = {
     "example.com",
     "example.org",
