@@ -83,7 +83,9 @@ test.describe('hidden Office Team lab', () => {
     await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
     await expect(page.getByText(/prepared-only handoff|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
 
-    await page.locator('.cvSiteDecisionCard').first().getByRole('button').first().click();
+    await page.locator('.cvSiteDecisionCard').first().getByRole('button', { name: /Open slip/i }).click();
+    await expect(page.locator('.cvCommandSlip').getByText(/Command slip/i).first()).toBeVisible();
+    await page.locator('.cvCommandSlip footer button.primary').first().click();
     await expect(page.getByText(/recorded as the owner decision|Approval trail saved|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
 
     await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
