@@ -147,17 +147,20 @@ expect(
   'Request page must validate required facts, POST them and show success only after an OK response',
 );
 
+const forbiddenMutationRuntimes = [
+  'churvoxForbiddenExampleScrubRuntime',
+  'churvoxKiwiCopyGuard',
+  'churvoxSetupCoachKillRuntime',
+  'churvoxPaidLaunchSurfaceRuntime',
+  'churvoxExactFormLabelsRuntime',
+  'churvoxSiteCopyPolishRuntime',
+];
+const reactOwnsVisibleUiContract = /Visible\s*\n?\s*\/\/\s*page copy, forms and records must come from React components and live APIs\./.test(index)
+  || /Visible\s+page copy, forms and records must come from React components and live APIs\./.test(index.replace(/\/\/\s*/g, ' ').replace(/\s+/g, ' '));
 expect(
   'visible pages are not altered by hidden copy or fallback UI runtimes',
-  [
-    'churvoxForbiddenExampleScrubRuntime',
-    'churvoxKiwiCopyGuard',
-    'churvoxSetupCoachKillRuntime',
-    'churvoxPaidLaunchSurfaceRuntime',
-    'churvoxExactFormLabelsRuntime',
-    'churvoxSiteCopyPolishRuntime',
-  ].every((value) => !index.includes(value))
-    && index.includes('Visible page copy, forms and records must come from React components and live APIs.'),
+  forbiddenMutationRuntimes.every((value) => !index.includes(value))
+    && reactOwnsVisibleUiContract,
   'Public and owner UI must not be rewritten or fabricated by delayed DOM mutation scripts',
 );
 
