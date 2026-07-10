@@ -8,8 +8,7 @@ export function isOfficeTeamPreviewRoute() {
 }
 
 export function useOfficeTeamRows(area, fallbackRows = [], options = {}) {
-  const allowFallback = options.allowFallback === true
-    || (options.allowFallback !== false && isOfficeTeamPreviewRoute());
+  const allowFallback = isOfficeTeamPreviewRoute() && options.allowFallback !== false;
   const emptyMessage = options.emptyMessage || "No live records found yet";
   const [state, setState] = useState({ source: "loading", rows: [], message: "Checking live records" });
 
