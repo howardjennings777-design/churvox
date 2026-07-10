@@ -6,6 +6,20 @@ from fastapi import APIRouter, HTTPException, Request
 
 SAFE_RESULT = "Owner approval applied safely. Nothing was sent, synced, charged or filed."
 RECORD_ONLY_RESULT = "Owner decision recorded. Nothing was sent, synced, charged or changed."
+OPEN_STATUSES = {"open", "edited", "pending", "ready", "waiting", "snoozed"}
+UNRESOLVED_MARKERS = (
+    "owner to",
+    "owner must",
+    "not found",
+    "missing",
+    "confirm",
+    "choose",
+    "enter ",
+    "to enter",
+    "unresolved",
+    "[redacted",
+    "calculated after",
+)
 
 
 def build_command_apply_router(db, get_current_user, ObjectId):
@@ -39,6 +53,12 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         except Exception:
             raise HTTPException(status_code=400, detail=f"Invalid {label} id")
 
+    def maybe_oid(value):
+        try:
+            return ObjectId(str(value))
+        except Exception:
+            return None
+
     async def require_owner(request: Request):
         user = await get_current_user(request)
         role = str(user.get("role") or "").lower()
@@ -48,8 +68,10 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         return user
 
     def business_ids(user):
-        business_id = str(user.get("business_id") or user.get("id"))
-        return business_id, oid(business_id, "business")
+        business_id = str(user.get("business_id") or user.get("id") or "").strip()
+        if not business_id:
+            raise HTTPException(status_code=400, detail="Business id is missing")
+        return business_id, maybe_oid(business_id)
 
     def safe_text(value, fallback=""):
         text = " ".join(str(value or "").strip().split())
@@ -117,8 +139,11 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             return "clients", "client"
         return "jobs", "job"
 
+    def normalized_form(form):
+        return {safe_text(key, "").lower().replace("_", " "): value for key, value in flatten_form(form).items()}
+
     def pick(form, *keys):
-        lower_map = {safe_text(k, "").lower().replace("_", " "): v for k, v in (form or {}).items()}
+        lower_map = normalized_form(form)
         for key in keys:
             normalized = safe_text(key, "").lower().replace("_", " ")
             if normalized in lower_map:
@@ -130,13 +155,64 @@ def build_command_apply_router(db, get_current_user, ObjectId):
                     return value
         return ""
 
+    def meaningful(value):
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return True
+        if isinstance(value, (list, tuple, dict)):
+            return bool(value)
+        text = safe_text(value, "").lower()
+        if not text:
+            return False
+        return not any(marker in text for marker in UNRESOLVED_MARKERS)
+
+    def unresolved_requirements(slip_payload, form):
+        required = slip_payload.get("required_fields")
+        required = required if isinstance(required, list) else []
+        unresolved = []
+        for label in required:
+            label_text = safe_text(label, "")
+            if not label_text:
+                continue
+            value = pick(form, label_text)
+            if not meaningful(value):
+                unresolved.append(label_text)
+        if slip_payload.get("approval_blocked") and not required:
+            unresolved.append("Owner-required information")
+        return list(dict.fromkeys(unresolved))
+
+    def assert_strict_mimic_safe(slip):
+        payload = payload_of(slip)
+        if not payload.get("human_mimic_intelligence_v3"):
+            return
+        required_true = [
+            payload.get("strict_preflight_passed"),
+            payload.get("prepared_only"),
+            payload.get("owner_review_only"),
+            payload.get("no_auto_send"),
+            payload.get("no_auto_sync"),
+            payload.get("no_auto_charge"),
+            payload.get("no_auto_record_change"),
+            slip.get("prepared_only"),
+            slip.get("owner_review_only"),
+            slip.get("no_auto_send"),
+            slip.get("no_auto_sync"),
+            slip.get("no_auto_charge"),
+            slip.get("no_auto_record_change"),
+        ]
+        if not all(value is True for value in required_true):
+            raise HTTPException(status_code=409, detail="This mimic slip did not pass the strict safety preflight. Nothing was applied.")
+
     def base_record(user, slip, form, record_type):
         business_id, business_oid = business_ids(user)
         form = flatten_form(form)
         title = safe_text(pick(form, "title", "job", "job / shift", "record", "name", "client", "customer", "subject") or slip.get("title"), "Approved Command draft")
         return {
             "business_id": business_id,
-            "contractor_id": business_oid,
+            "contractor_id": business_oid or business_id,
             "record_type": record_type,
             "title": title,
             "name": safe_text(pick(form, "name"), ""),
@@ -146,7 +222,7 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             "email": safe_text(pick(form, "email"), ""),
             "address": safe_text(pick(form, "address", "site address", "service address"), ""),
             "worker": safe_text(pick(form, "worker"), ""),
-            "date": safe_text(pick(form, "date", "suggested booking date/time", "last visit"), ""),
+            "date": safe_text(pick(form, "date", "suggested booking date/time", "suggested booking date", "last visit"), ""),
             "price": safe_text(pick(form, "price", "total", "amount", "draft total", "draft total / amount"), ""),
             "notes": safe_text(pick(form, "notes", "scope", "line items", "message", "reply", "prepared reminder", "invoice note", "recommended action", "memory note", "detail to save"), ""),
             "prepared_form": serial(form),
@@ -167,7 +243,8 @@ def build_command_apply_router(db, get_current_user, ObjectId):
 
     async def insert_prepared_records(user, slip, request_payload=None):
         payload = payload_of(slip)
-        form = form_from_request(request_payload) or prepared_form(payload)
+        request_form = form_from_request(request_payload)
+        form = request_form or prepared_form(payload)
         form = flatten_form(form)
         collection_name, record_type = collection_for(slip, payload)
         rows = form.get("csv_rows") or form.get("records") or payload.get("csv_rows") or []
@@ -179,16 +256,16 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             if not docs:
                 return {"applied": False, "collection": collection_name, "count": 0, "message": "CSV rows could not be read safely."}
             result = await db[collection_name].insert_many(docs)
-            return {"applied": True, "collection": collection_name, "count": len(result.inserted_ids), "record_type": record_type, "ids": [str(item) for item in result.inserted_ids], "used_edited_form": bool(form_from_request(request_payload))}
+            return {"applied": True, "collection": collection_name, "count": len(result.inserted_ids), "record_type": record_type, "ids": [str(item) for item in result.inserted_ids], "used_edited_form": bool(request_form)}
         doc = base_record(user, slip, form, record_type)
         result = await db[collection_name].insert_one(doc)
-        return {"applied": True, "collection": collection_name, "count": 1, "record_type": record_type, "id": str(result.inserted_id), "used_edited_form": bool(form_from_request(request_payload))}
+        return {"applied": True, "collection": collection_name, "count": 1, "record_type": record_type, "id": str(result.inserted_id), "used_edited_form": bool(request_form)}
 
     async def command_event(user, event_type, slip=None, note=""):
         business_id, business_oid = business_ids(user)
         await db.command_events.insert_one({
             "business_id": business_id,
-            "contractor_id": business_oid,
+            "contractor_id": business_oid or business_id,
             "event_type": event_type,
             "title": safe_text((slip or {}).get("title"), "Command approval"),
             "detail": safe_text(note, SAFE_RESULT),
@@ -219,12 +296,20 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         previous_execution = previous_result.get("execution") if isinstance(previous_result.get("execution"), dict) else {}
         if slip.get("status") == "approved_applied" and previous_execution.get("applied"):
             return {"success": True, "slip": doc_out(slip), "result": serial(previous_result), "safety": previous_result.get("message") or SAFE_RESULT, "idempotent": True}
+        if slip.get("status") not in OPEN_STATUSES:
+            raise HTTPException(status_code=409, detail=f"This Command slip is {slip.get('status') or 'closed'} and cannot be applied. Nothing was changed.")
+
         action = safe_text((payload or {}).get("action"), "approve")
         note = safe_text((payload or {}).get("note") or (payload or {}).get("owner_note"), "Owner approved the prepared direction.")
         edited_form = form_from_request(payload)
         applied = False
         execution = {"applied": False, "message": RECORD_ONLY_RESULT}
         if should_apply(action):
+            assert_strict_mimic_safe(slip)
+            effective_form = edited_form or prepared_form(payload_of(slip))
+            unresolved = unresolved_requirements(payload_of(slip), effective_form)
+            if unresolved:
+                raise HTTPException(status_code=409, detail=f"Complete these required fields before approval: {', '.join(unresolved)}. Nothing was applied.")
             execution = await insert_prepared_records(user, slip, payload)
             applied = bool(execution.get("applied"))
         status = "approved_applied" if applied else "approved_recorded"
