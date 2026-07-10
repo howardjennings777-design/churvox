@@ -53,7 +53,7 @@ export default function OfficeTeamQuotesWorkspace({ appMode = "lab" }) {
                   <span>{row[0]}</span>
                   <strong>{row[1]}</strong>
                   <em>{row[2]}</em>
-                  <small>{row[3]}</small>
+                  <small>{quoteDetail(row)}</small>
                 </button>
               )) : <p>Nothing here</p>}
             </div>
@@ -69,7 +69,7 @@ export default function OfficeTeamQuotesWorkspace({ appMode = "lab" }) {
               <div className="cvQuoteScopeGrid">
                 <article><small>Pipeline stage</small><strong>{current[0] || "Not found"}</strong></article>
                 <article><small>Price / value</small><strong>{current[2] || "Not found"}</strong></article>
-                <article className="wide"><small>Scope or latest note</small><strong>{current[3] || "No scope detail found"}</strong></article>
+                <article className="wide"><small>Scope or latest note</small><strong>{quoteDetail(current)}</strong></article>
               </div>
               <section className="cvQuoteOwnerCheck">
                 <span>Before this moves</span>
@@ -111,6 +111,13 @@ function quoteStage(row) {
   if (/viewed|waiting|follow|expired|no reply/.test(status)) return "followup";
   if (/sent|issued|delivered/.test(status)) return "sent";
   return "draft";
+}
+
+function quoteDetail(row) {
+  const detail = String(row?.[3] || "").trim();
+  if (detail && !/^quote changes must go through owner approval\.?$/i.test(detail)) return detail;
+  const title = String(row?.[1] || "This quote").trim();
+  return `${title} is ready for owner review.`;
 }
 
 function parseMoney(value) {
