@@ -25,10 +25,12 @@ const todayVision = read('frontend/src/churvox-office-lab/OfficeTeamTodayVision.
 const ownerNav = read('frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx');
 const contextStrip = read('frontend/src/churvox-office-lab/OfficeTeamContextStrip.jsx');
 const visionCss = read('frontend/src/churvox-office-lab/OfficeTeamVisionPolish.css');
-const guard = read('backend/churvox_command_human_mimic_guard_routes.py');
+const strict = read('backend/churvox_command_human_mimic_v3_routes.py');
+const liveInstaller = read('backend/churvox_owner_access_safety_patch.py');
 const liveWrapper = read('backend/server/__init__.py');
 const settings = read('frontend/src/churvox-office-lab/OfficeTeamSiteSettings.jsx');
 const liveSmoke = read('scripts/churvox-live-command-smoke.cjs');
+const fullTest = read('scripts/churvox_mimic_full_test.py');
 const operational = read('frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx');
 const extra = read('frontend/src/churvox-office-lab/OfficeTeamExtraScreens.jsx');
 const jobs = read('frontend/src/churvox-office-lab/OfficeTeamJobsWorkspace.jsx');
@@ -48,11 +50,11 @@ expect(
     'item?.raw?.source !== "backend_command_slip"',
     'That item is not a confirmed live Command slip',
   ]),
-  'The owner app must never merge Admin Brain, starter cards, old drafts or local browser queues into live Command',
+  'The owner app must never merge starter, Admin Brain, old drafts or browser queues into live Command',
 );
 
 expect(
-  'routine admin is visually behind the owner decision flow',
+  'routine admin stays behind the owner decision flow',
   includesAll(site, [
     'screen === "today"',
     '<OfficeTeamContextStrip',
@@ -61,7 +63,7 @@ expect(
   ])
     && includesAll(contextStrip, ['waiting in Command', 'Open Command'])
     && todayVision.includes('.cvOwnerReady[data-screen="today"] > .cvSiteStatus'),
-  'Today should have one owner briefing; other pages need a compact owner context instead of a repeated hero',
+  'Today should be one briefing while other pages use compact context',
 );
 
 expect(
@@ -72,7 +74,7 @@ expect(
     '["settings", "Settings"]', '["plans", "Plans"]', '["help", "Help"]',
     'Office and oversight', 'cvOwnerNavCount',
   ]) && !ownerNav.includes('["money", "Money"]') && !ownerNav.includes('["staff", "Staff"]'),
-  'The top bar should expose core owner work and group secondary oversight instead of showing every engine area',
+  'The top bar should expose core work and group secondary oversight',
 );
 
 expect(
@@ -81,44 +83,57 @@ expect(
     && includesAll(today, ['preparedWaiting = ownerRoute ? top', 'backendAudit = []', 'Routine admin stays in the background'])
     && !today.includes('const ownerShortcuts = ["command", "work", "schedule"')
     && !today.includes('<span>Next decisions</span>'),
-  'Today should offer a small core path and one Command handover, not sixteen shortcuts or duplicate decision panels',
+  'Today should offer a small core path and one Command handover',
 );
 
 expect(
   'Command never invents business facts',
   includesAll(site, ['const MISSING_VALUE = "Not found — owner must enter"', 'Every value must come from the record or stay visibly unresolved'])
+    && includesAll(strict, [
+      'history is reference, never a charge',
+      'At least three visits required for inferred cycle',
+      'exact time never inferred',
+      'Invoice total not substituted for balance',
+      'generic GST amounts are never treated as rates',
+      'likely access codes redacted',
+    ])
     && !/Every 3 weeks|Base service \+ extra green waste|Long timer flagged|Repeat client"\)|Xero \/ MYOB"\)/.test(site),
-  'Missing dates, cycles, amounts, workers, tax systems and notes must remain unresolved instead of being guessed',
+  'Missing dates, amounts, times, tax treatment and sensitive values must remain unresolved or redacted',
 );
 
 expect(
   'owner does not operate pretend office-role switches',
   includesAll(site, ['ownerMode ? <section className="cvOwnerRoleTruth"', 'You should not have to operate the office team', 'Role behaviour is not changed from this explanation page'])
     && site.includes(': <OfficeTeamRoleControls roles={roles} />'),
-  'Role-mode controls may remain in the lab but must not look like live engine controls in the owner workspace',
+  'Role controls may remain in the lab but not in the real owner workflow',
 );
 
 expect(
   'Activity is grounded in Command rather than browser-only trails',
   includesAll(site, ['A truthful record of what Churvox did', 'backendAudit.length', 'Browser-only preview activity and raw record IDs are not shown'])
     && !site.includes('<small>{id}</small>'),
-  'The owner activity page must show live Command truth and avoid raw internal IDs or local-only history',
+  'Activity must show backend Command truth without raw internal IDs',
 );
 
 expect(
-  'human judgement guard covers false completion duplicate invoices and premature reminders',
-  includesAll(guard, [
+  'strict human judgement covers false positives and stale evidence before write',
+  includesAll(strict, [
     'def status_words(row):',
-    'retire_false_completion_slips',
-    'linked_invoice_exists',
-    'The source job is not actually complete',
-    'A separate invoice already links to this job',
-    'retire_early_or_invalid_payment_followups',
-    'The invoice due date is still in the future',
-    'paid_or_closed = bool(words & {"paid", "settled"})',
-    'human-mimic-scan-guard-v2',
-  ]) && !guard.includes('any(marker in status for marker in ["paid"'),
-  'The scanner must understand whole status words and retire false decisions without treating unpaid as paid',
+    'def explicitly_complete(row):',
+    'await linked_invoice_exists',
+    'due > now()',
+    'message_requires_reply',
+    'duplicate_memory',
+    'timer_hours',
+    'strong_pattern',
+    'class _CaptureDB',
+    'evidence_fingerprint',
+    'The live source evidence changed',
+    'human-mimic-strict-preflight-v3',
+  ])
+    && includesAll(liveInstaller, ['build_command_human_mimic_live_router', 'remove_route(app, "/api/command/scan", "POST")'])
+    && includesAll(fullTest, ['incomplete status is not treated as complete', 'future-due invoice does not create follow-up', 'changed source evidence replaces stale decision']),
+  'False completion, duplicate invoices, premature reminders and changed evidence must be handled before owner review',
 );
 
 expect(
@@ -146,7 +161,7 @@ expect(
     ])
     && !liveWrapper.includes('await db.users.update_many(')
     && includesAll(liveSmoke, ['EXPECTED_SETTINGS', '/api/settings/live-marker', '/api/logic/business-profile']),
-  'Settings must save authenticated backend data, mirror only onto the owner account, replace the old read-only route, and fail smoke on a stale/405 deployment',
+  'Settings must save authenticated data, mirror only to the owner and fail smoke on stale deployment',
 );
 
 expect(
@@ -169,7 +184,7 @@ expect(
     && includesAll(quotes, ['cvQuotePipeline', 'cvQuoteStage', 'cvQuoteScopeSheet', 'Quote builder'])
     && includesAll(invoices, ['cvInvoiceAgingStrip', 'cvInvoiceLedger', 'cvInvoiceCollectionDesk', 'Invoice preparation'])
     && includesAll(identityCss, ['.cvJobsRunBoard', '.cvClientBookLayout', '.cvFieldOpsLayout', '.cvQuotePipeline', '.cvInvoiceLedgerLayout', '@media(max-width:640px)']),
-  'Jobs, Clients, Workers, Quotes and Invoices must each have a different owner workflow and responsive layout rather than one generic template',
+  'Jobs, Clients, Workers, Quotes and Invoices must have different workflows',
 );
 
 expect(
@@ -177,27 +192,23 @@ expect(
   [jobs, clients, workers, quotes, invoices].every((text) => text.includes('OfficeTeamSafeControls'))
     && [jobs, clients, quotes, invoices].every((text) => text.includes('OfficeTeamWorkForms'))
     && [jobs, clients, workers, quotes, invoices].every((text) => text.includes('allowFallback = appMode !== "owner" && !ownerRoute')),
-  'Unique layouts must still use live rows, hide starter data from owners and route changes through Command',
+  'Unique layouts must keep live rows, hide owner starter data and route changes through Command',
 );
 
 expect(
   'vision shell and core workspaces are responsive',
   includesAll(visionCss, ['.cvOwnerNavigation', '.cvOwnerMoreMenu', '.cvOwnerContextStrip', '.cvOwnerRoleTruth', '@media (max-width: 640px)'])
     && includesAll(identityCss, ['@media(max-width:1200px)', '@media(max-width:900px)', '@media(max-width:640px)']),
-  'The reduced owner shell and all five distinct workspaces must work on desktop and phone',
+  'The reduced owner shell and five core workspaces must work on desktop and phone',
 );
 
 const failed = checks.filter((check) => !check.ok);
 for (const check of checks) {
   console.log(`${check.ok ? '✓' : '✗'} ${check.name}${check.ok ? '' : ` — ${check.detail}`}`);
 }
-for (const warning of warnings) {
-  console.warn(`⚠ ${warning}`);
-}
-
+for (const warning of warnings) console.warn(`⚠ ${warning}`);
 if (failed.length) {
   console.error(`\nChurvox vision audit failed: ${failed.length} core issue(s).`);
   process.exit(1);
 }
-
 console.log(`\nChurvox vision audit passed: ${checks.length} core checks, ${warnings.length} design warning(s).`);
