@@ -5,6 +5,12 @@ import os
 
 INSTALLED = set()
 ROUTE = "/api/admin/owner/paid-launch-report"
+PRICE_ENV_KEYS = (
+    "STRIPE_PRICE_SOLO",
+    "STRIPE_PRICE_TEAM",
+    "STRIPE_PRICE_PRO",
+    "STRIPE_PRICE_ENTERPRISE",
+)
 
 
 def _text(value):
@@ -158,6 +164,7 @@ def install(module):
             os.environ.get("STRIPE_WEBHOOK_SECRET")
             or os.environ.get("STRIPE_WEBHOOK_SIGNING_SECRET")
         )
+        missing_prices = [key for key in PRICE_ENV_KEYS if not _text(os.environ.get(key))]
         check_by_key["stripe"] = {
             "key": "stripe",
             "label": "Stripe",
@@ -166,6 +173,16 @@ def install(module):
                 f"{stripe.get('subscriptions_checked', 0)} subscriptions checked against live Stripe status"
                 if stripe_available and not stripe_errors
                 else "; ".join(stripe_errors or ["Stripe subscription status could not be confirmed"])
+            ),
+        }
+        check_by_key["prices"] = {
+            "key": "prices",
+            "label": "Stripe plan prices",
+            "status": "fail" if missing_prices else "pass",
+            "detail": (
+                f"Missing: {', '.join(missing_prices)}"
+                if missing_prices
+                else "Start, Crew, Operator and Command live price IDs are configured"
             ),
         }
         check_by_key["billing_truth"] = {
@@ -188,7 +205,7 @@ def install(module):
                 else "STRIPE_WEBHOOK_SECRET is not configured"
             ),
         }
-        ordered_keys = ["database", "owner_lock", "stripe", "billing_truth", "webhooks", "email"]
+        ordered_keys = ["database", "owner_lock", "stripe", "prices", "billing_truth", "webhooks", "email"]
         report["launch_checks"] = [check_by_key[key] for key in ordered_keys if key in check_by_key]
         report["ready_to_take_payments"] = all(item.get("status") != "fail" for item in report["launch_checks"])
         return report
