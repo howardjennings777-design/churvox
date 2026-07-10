@@ -13,7 +13,6 @@ import './styles/churvoxIndustryMode.css';
 import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
-import './runtime/churvoxForbiddenExampleScrubRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 
 function preconnectBackend() {
@@ -58,6 +57,8 @@ let workerRuntimeLoaded = false;
 let hqRuntimeLoaded = false;
 let globalHelpersLoaded = false;
 
+// These helpers support authentication, logout, billing and onboarding. Visible
+// page copy, forms and records must come from React components and live APIs.
 const globalHelperImports = [
   () => import('./runtime/authInputVisibilityGuard'),
   () => import('./runtime/churvoxPlainSendGuardRuntime'),
@@ -66,11 +67,6 @@ const globalHelperImports = [
   () => import('./runtime/churvoxPlansCountryRuntime'),
   () => import('./runtime/churvoxPlansBillingNavClickGuard'),
   () => import('./runtime/churvoxStripeCheckoutLiveRuntime'),
-  () => import('./runtime/churvoxKiwiCopyGuard'),
-  () => import('./runtime/churvoxSetupCoachKillRuntime'),
-  () => import('./runtime/churvoxPaidLaunchSurfaceRuntime'),
-  () => import('./runtime/churvoxExactFormLabelsRuntime'),
-  () => import('./runtime/churvoxSiteCopyPolishRuntime'),
   () => import('./runtime/churvoxFirstWinGuideEntryRuntime'),
 ];
 
