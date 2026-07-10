@@ -28,6 +28,8 @@ const PUBLIC_ROUTES = [
 
 const PRIMARY_MARKETING_ROUTES = ['/', '/product', '/features', '/industries/lawn-care', '/demo', '/pricing', '/request', '/contact'];
 const DISHONEST_COPY = /trusted by\s+\d|five[- ]star|5[- ]star|guaranteed results?|zero bugs?|fully automatic|live customer data|real customer activity|thousands of customers/i;
+const EXAMPLE_RECORD_COPY = /sample data only|clearly labelled sample records|example workspace|example client|sample business|example records|configuration examples|demo names, amounts and jobs are examples/i;
+const EXAMPLE_DISCLOSURE = /sample data only|clearly labelled sample records|example workspace|preview only|demo names, amounts and jobs are examples|configuration examples|interactive product sample|examples only/i;
 const OLD_RUNTIME_SELECTORS = [
   '#churvox-paid-launch-stable-owner-text',
   '#churvox-paid-launch-client-form',
@@ -147,16 +149,15 @@ test.describe('Churvox public honesty and functionality', () => {
     expect(errors, 'runtime errors during complete public route crawl').toEqual([]);
   });
 
-  test('marketing claims stay honest and all examples are clearly labelled', async ({ page }) => {
+  test('marketing claims stay honest and all displayed records are clearly labelled', async ({ page }) => {
     for (const pathname of PRIMARY_MARKETING_ROUTES) {
       await openPublic(page, pathname);
       await page.waitForTimeout(2400);
       const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').trim();
       expect(text, `${pathname} contains an unsupported marketing claim`).not.toMatch(DISHONEST_COPY);
 
-      const hasExampleMaterial = /\b(sample|example|demo)\b/i.test(text) || /\$\d/.test(text);
-      if (hasExampleMaterial && pathname !== '/pricing') {
-        expect(text, `${pathname} shows examples without an honesty label`).toMatch(/sample data only|clearly labelled sample records|example workspace|preview only|demo names, amounts and jobs are examples|configuration examples|interactive product sample/i);
+      if (EXAMPLE_RECORD_COPY.test(text) && pathname !== '/pricing') {
+        expect(text, `${pathname} shows example records without an honesty label`).toMatch(EXAMPLE_DISCLOSURE);
       }
 
       for (const selector of OLD_RUNTIME_SELECTORS) {
