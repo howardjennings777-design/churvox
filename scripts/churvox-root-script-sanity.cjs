@@ -5,9 +5,11 @@ const path = require('path');
 
 const rootPackagePath = path.resolve(__dirname, '..', 'package.json');
 const frontendPackagePath = path.resolve(__dirname, '..', 'frontend', 'package.json');
+const liveTruthPath = path.resolve(__dirname, 'churvox-live-truth-test.cjs');
 const requiredRootScripts = [
   'build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness', 'test:mimic:full', 'test:mimic:chain',
   'test:ui:logic', 'test:public', 'test:ui:full', 'test:ui:desktop', 'test:ui:mobile', 'test:prelive:full', 'test:live-command',
+  'test:truth:live',
 ];
 
 function readJson(filePath) {
@@ -19,8 +21,18 @@ function readJson(filePath) {
   }
 }
 
+function readText(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    console.error(`Could not read ${filePath}: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 const rootPackage = readJson(rootPackagePath);
 const frontendPackage = readJson(frontendPackagePath);
+const liveTruth = readText(liveTruthPath);
 const rootScripts = rootPackage.scripts || {};
 const frontendScripts = frontendPackage.scripts || {};
 const missing = requiredRootScripts.filter((name) => !rootScripts[name]);
@@ -85,5 +97,26 @@ if (rootScripts['test:live-command'] !== 'node scripts/churvox-live-command-smok
   console.error(`Root test:live-command must run scripts/churvox-live-command-smoke.cjs. Found: ${rootScripts['test:live-command']}`);
   process.exit(1);
 }
+if (rootScripts['test:truth:live'] !== 'node scripts/churvox-live-truth-test.cjs') {
+  console.error(`Root test:truth:live must run scripts/churvox-live-truth-test.cjs. Found: ${rootScripts['test:truth:live']}`);
+  process.exit(1);
+}
+for (const required of [
+  "path.join(root, 'frontend')",
+  "'playwright.config.js'",
+  "'https://www.churvox.com'",
+  "'tests/e2e/churvox-public-honesty-and-function.spec.js'",
+  "'tests/e2e/churvox-owner-no-fake-data.spec.js'",
+  "'--workers=1'",
+]) {
+  if (!liveTruth.includes(required)) {
+    console.error(`Live truth launcher is missing ${required}.`);
+    process.exit(1);
+  }
+}
+if (liveTruth.includes('npm --prefix frontend exec')) {
+  console.error('Live truth launcher must not use npm exec from the repo root because Playwright would miss the frontend config.');
+  process.exit(1);
+}
 
-console.log('Root script sanity passed. Mimic behavior, public site, UI logic, desktop/mobile button gauntlet, readiness and live smoke are available from the repo root.');
+console.log('Root script sanity passed. Mimic behavior, public site, UI logic, desktop/mobile button gauntlet, readiness, live truth and live smoke are available from the repo root.');
