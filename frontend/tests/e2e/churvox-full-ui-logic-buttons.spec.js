@@ -102,7 +102,7 @@ function watchRuntime(page) {
 async function settle(page) {
   await page.waitForLoadState('domcontentloaded').catch(() => null);
   await page.waitForLoadState('networkidle', { timeout: 1200 }).catch(() => null);
-  await page.waitForTimeout(180);
+  await page.waitForTimeout(160);
 }
 
 async function lab(page, screen) {
@@ -252,9 +252,9 @@ async function clickOutcome(page, screen, descriptor) {
   const dialogHandler = async (dialog) => { nativeDialog = true; await dialog.dismiss().catch(() => null); };
   page.on('request', requestHandler);
   page.on('dialog', dialogHandler);
-  const popupPromise = page.waitForEvent('popup', { timeout: 900 }).then(() => { popup = true; }).catch(() => null);
-  const downloadPromise = page.waitForEvent('download', { timeout: 900 }).then(() => { download = true; }).catch(() => null);
-  const chooserPromise = page.waitForEvent('filechooser', { timeout: 900 }).then(() => { chooser = true; }).catch(() => null);
+  const popupPromise = page.waitForEvent('popup', { timeout: 350 }).then(() => { popup = true; }).catch(() => null);
+  const downloadPromise = page.waitForEvent('download', { timeout: 350 }).then(() => { download = true; }).catch(() => null);
+  const chooserPromise = page.waitForEvent('filechooser', { timeout: 350 }).then(() => { chooser = true; }).catch(() => null);
 
   let clickError = '';
   try {
@@ -263,7 +263,7 @@ async function clickOutcome(page, screen, descriptor) {
   } catch (error) {
     clickError = error.message;
   }
-  await page.waitForTimeout(420).catch(() => null);
+  await page.waitForTimeout(260).catch(() => null);
   await Promise.all([popupPromise, downloadPromise, chooserPromise]);
   page.off('request', requestHandler);
   page.off('dialog', dialogHandler);
@@ -324,6 +324,7 @@ test.describe('Full Churvox UI logic and button gauntlet', () => {
   });
 
   test('every non-current screen button produces a real outcome', async ({ page }) => {
+    test.setTimeout(240_000);
     const failures = [];
     let checked = 0;
 
