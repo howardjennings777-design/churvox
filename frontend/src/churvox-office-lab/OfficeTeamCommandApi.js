@@ -225,6 +225,37 @@ export async function createBackendWorkerPaymentRequest({ title = "Worker paymen
   return body;
 }
 
+export async function createBackendWorkerUpdateRequest({ title = "Worker update", update = "", updateType = "Worker update", status = "Owner review" } = {}) {
+  const base = host();
+  if (!base) throw new Error("Command backend unavailable");
+  const response = await fetch(`${base}/api/command/worker-update-request`, {
+    method: "POST",
+    credentials: "include",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      title,
+      job_title: title,
+      update,
+      note: update,
+      message: update,
+      update_type: updateType,
+      status,
+      prepared_only: true,
+      owner_review_only: true,
+    }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || body?.detail || `Worker update request failed ${response.status}`);
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(BACKEND_COMMAND_EVENT, { detail: body }));
+  } catch {
+    // Event refresh should never block worker update requests.
+  }
+  return body;
+}
+
 export async function recordBackendCommandDecision(decision, action) {
   const base = host();
   const slipId = clean(decision?.raw?.command_slip_id || "");
