@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import "./OfficeTeamWorkerRoute.css";
+import "./OfficeTeamWorkerHardcore.css";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 import { useApi } from "../hooks/useApi";
+import { useAuth } from "../context/AuthContext";
 import { createBackendWorkerPaymentRequest, createBackendWorkerUpdateRequest } from "./OfficeTeamCommandApi";
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Resume", "Complete"];
@@ -17,8 +19,7 @@ const workerViews = {
 
 export default function OfficeTeamWorkerRoute() {
   const { pathname } = useLocation();
-  const viewKey = workerView(pathname);
-  const view = workerViews[viewKey];
+  const { user, loading: authLoading, isWorker } = useAuth();
   const { post } = useApi();
   const live = useOfficeTeamRows("worker", []);
   const [selected, setSelected] = useState(null);
@@ -31,6 +32,9 @@ export default function OfficeTeamWorkerRoute() {
   const [stepBusy, setStepBusy] = useState("");
   const [proofFiles, setProofFiles] = useState(null);
   const [proofBusy, setProofBusy] = useState(false);
+
+  const viewKey = workerView(pathname);
+  const view = workerViews[viewKey];
   const rows = live.rows;
   const hasWork = rows.length > 0;
   const current = selectedRow(rows, selected, []);
@@ -173,6 +177,9 @@ export default function OfficeTeamWorkerRoute() {
     setTrail((currentTrail) => [{ id: `${Date.now()}-${text}`, text }, ...currentTrail].slice(0, 6));
   }
 
+  if (authLoading) return <main className="cvWorkerRouteShell"><section className="cvWorkerHero"><div><span>Churvox Worker</span><h1>Loading field access</h1></div></section></main>;
+  if (!user || !isWorker) return <Navigate to={user ? "/dashboard" : "/login?worker=1"} replace />;
+
   return (
     <main className="cvWorkerRouteShell" data-worker-view={viewKey}>
       <section className="cvWorkerHero">
@@ -190,46 +197,24 @@ export default function OfficeTeamWorkerRoute() {
         {showWork ? <>
           <article className={`cvWorkerRouteJob ${hasWork ? "" : "cvWorkerRouteEmptyJob"}`}><small>{type}</small><h3>{title}</h3><p>{detail}</p><em>{badge}</em></article>
           {viewKey === "jobs" ? <section className="cvWorkerRouteQueue" aria-label="Assigned worker jobs"><h3>Job queue</h3>{hasWork ? rows.map((row) => <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button"><span>{row[0]}</span><b>{row[1]}</b><small>{row[2]}</small></button>) : <p>No assigned jobs.</p>}</section> : null}
-          <div className="cvWorkerRouteSteps">
-            {statusSteps.map((step) => <button key={step} type="button" disabled={!hasWork || Boolean(stepBusy)} onClick={() => recordWorkerStep(step)}>{stepBusy === step ? "Saving…" : step}</button>)}
-          </div>
+          <div className="cvWorkerRouteSteps">{statusSteps.map((step) => <button key={step} type="button" disabled={!hasWork || Boolean(stepBusy)} onClick={() => recordWorkerStep(step)}>{stepBusy === step ? "Saving…" : step}</button>)}</div>
           <section className="cvWorkerPaymentPanel" aria-label="Worker payment panel">
             <div><span>Payment</span><h3>{payment.link ? "Customer pay link" : "Link needed"}</h3><p>{payment.copy}</p></div>
             <div className={`cvWorkerPayCode ${payment.link ? "ready" : "locked"}`} aria-hidden="true"><b>{payment.code}</b></div>
             <dl><div><dt>Amount</dt><dd>{payment.amount || "Owner check"}</dd></div><div><dt>Invoice</dt><dd>{payment.invoice || "Not linked"}</dd></div></dl>
-            <div className="cvWorkerPaymentActions">
-              <button type="button" disabled={!hasWork || paymentBusy} onClick={openPaymentLink}>{paymentBusy ? "Preparing…" : payment.link ? "Open pay page" : "Request link"}</button>
-              <button type="button" disabled={!hasWork || paymentBusy} onClick={copyPaymentLink}>{payment.link ? "Copy link" : "Prepare request"}</button>
-            </div>
+            <div className="cvWorkerPaymentActions"><button type="button" disabled={!hasWork || paymentBusy} onClick={openPaymentLink}>{paymentBusy ? "Preparing…" : payment.link ? "Open pay page" : "Request link"}</button><button type="button" disabled={!hasWork || paymentBusy} onClick={copyPaymentLink}>{payment.link ? "Copy link" : "Prepare request"}</button></div>
             <small>No card is charged inside Worker View. Payment happens through an approved secure invoice link.</small>
             {paymentNotice ? <p className="cvWorkerPaymentNotice">{paymentNotice}</p> : null}
           </section>
-          <section className="cvWorkerRouteProof">
-            <label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label>
-            <button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : proofNames.length ? `Send ${proofNames.length} proof item${proofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button>
-            <button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button>
-          </section>
+          <section className="cvWorkerRouteProof"><label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label><button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : proofNames.length ? `Send ${proofNames.length} proof item${proofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button><button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button></section>
         </> : null}
 
-        {showMessages ? <>
-          <section className="cvWorkerRouteNoteBox">
-            <span>Boss update</span><h3>Send one clear update</h3>
-            <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed?" />
-            <button type="button" disabled={updateBusy} onClick={() => sendBossUpdate()}>{updateBusy ? "Sending…" : "Send to Command"}</button>
-          </section>
-          <div className="cvWorkerRouteQuickNotes">{quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}</div>
-          <section className="cvWorkerRouteTrail"><h3>This phone</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No updates sent this session.</p>}</section>
-        </> : null}
-
+        {showMessages ? <><section className="cvWorkerRouteNoteBox"><span>Boss update</span><h3>Send one clear update</h3><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed?" /><button type="button" disabled={updateBusy} onClick={() => sendBossUpdate()}>{updateBusy ? "Sending…" : "Send to Command"}</button></section><div className="cvWorkerRouteQuickNotes">{quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}</div><section className="cvWorkerRouteTrail"><h3>This phone</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No updates sent this session.</p>}</section></> : null}
         {showHelp ? <section className="cvWorkerRouteHelp"><h3>Four field rules</h3><ol><li>Open the assigned job.</li><li>Update the status when it changes.</li><li>Send proof or a short issue note.</li><li>Complete only when the work is ready for owner review.</li></ol></section> : null}
         {showMe ? <section className="cvWorkerRouteProfile"><h3>Worker access only</h3><p>No owner settings, pricing, billing or admin controls are available here.</p><Link to="/worker/help">Open field help</Link></section> : null}
       </section>
 
-      <aside className="cvWorkerRouteDesk">
-        <span>Office link</span><h2>{view.title}</h2><p>{view.copy}</p><strong>{hasWork ? live.label : "No live assigned work found"}</strong>
-        <section><h3>Worker queue</h3>{hasWork ? rows.map((row) => <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button"><span>{row[0]}</span><b>{row[1]}</b><small>{row[2]}</small></button>) : <p>No assigned work yet.</p>}</section>
-        <section><h3>Phone trail</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No worker actions yet.</p>}</section>
-      </aside>
+      <aside className="cvWorkerRouteDesk"><span>Office link</span><h2>{view.title}</h2><p>{view.copy}</p><strong>{hasWork ? live.label : "No live assigned work found"}</strong><section><h3>Worker queue</h3>{hasWork ? rows.map((row) => <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button"><span>{row[0]}</span><b>{row[1]}</b><small>{row[2]}</small></button>) : <p>No assigned work yet.</p>}</section><section><h3>Phone trail</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No worker actions yet.</p>}</section></aside>
     </main>
   );
 }
@@ -271,11 +256,5 @@ function paymentDetails(row = []) {
   return { link, amount, invoice, customer, code, copy };
 }
 
-function titleFromText(value = "") {
-  return String(value || "").split("—")[0].trim();
-}
-
-function shortCode(value = "") {
-  const safe = String(value || "PAY").replace(/[^a-z0-9]/gi, "").toUpperCase();
-  return safe.slice(-6) || "READY";
-}
+function titleFromText(value = "") { return String(value || "").split("—")[0].trim(); }
+function shortCode(value = "") { const safe = String(value || "PAY").replace(/[^a-z0-9]/gi, "").toUpperCase(); return safe.slice(-6) || "READY"; }
