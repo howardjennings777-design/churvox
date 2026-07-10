@@ -141,7 +141,7 @@ expect('plans page shows included and locked features', includesAll(plans, ['Inc
 expect('plans CSS supports logical plan locks and growth pack', includesAll(plansCss, ['.cvPlanCountryCard', '.cvPlanFeatureList.included', '.cvPlanFeatureList.locked', '.cvGrowthPackCard', '.cvPlanPrice']), 'plan lock/growth pack CSS missing');
 
 expect('owner Command reads backend slips', includesAll(labSite, ['fetchBackendCommandDecisions', 'backendCommand']), 'owner Command backend slip wiring missing');
-expect('owner Command runs office engine before loading slips', includesAll(labSite, ['runBackendOfficeEngineScan', 'Office team prepared', 'The office team does the mahi. You approve.']), 'owner app does not run the office engine before Command loads');
+expect('owner Command runs office engine before loading slips', includesAll(labSite, ['runBackendOfficeEngineScan', 'Office team prepared', 'Open each slip, check the draft, then approve']), 'owner app does not run the office engine before Command loads');
 expect('owner Command reads backend audit', includesAll(labSite, ['fetchBackendCommandAudit', 'backendAudit']), 'owner Activity backend audit wiring missing');
 expect('owner app suppresses starter decisions', labSite.includes('isOwnerApp ? [] : starterDecisions'), 'owner app can fall back to starter decisions');
 expect('backend Command event refresh wired', labSite.includes('BACKEND_COMMAND_EVENT') && labSite.includes('window.addEventListener(BACKEND_COMMAND_EVENT'), 'backend Command refresh event missing');
