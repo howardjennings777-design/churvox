@@ -5,7 +5,10 @@ const path = require('path');
 
 const rootPackagePath = path.resolve(__dirname, '..', 'package.json');
 const frontendPackagePath = path.resolve(__dirname, '..', 'frontend', 'package.json');
-const requiredRootScripts = ['build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness', 'test:mimic:full', 'test:mimic:chain', 'test:live-command'];
+const requiredRootScripts = [
+  'build', 'test:office-lab', 'test:rebuild:routes', 'test:readiness', 'test:mimic:full', 'test:mimic:chain',
+  'test:ui:logic', 'test:ui:full', 'test:ui:desktop', 'test:ui:mobile', 'test:prelive:full', 'test:live-command',
+];
 
 function readJson(filePath) {
   try {
@@ -27,7 +30,7 @@ if (missing.length) {
   process.exit(1);
 }
 
-for (const name of ['test:office-lab', 'test:rebuild:routes']) {
+for (const name of ['test:office-lab', 'test:rebuild:routes', 'test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
   const command = String(rootScripts[name] || '');
   if (!command.includes(`npm --prefix frontend run ${name}`)) {
     console.error(`Root script ${name} must forward to frontend ${name}. Found: ${command}`);
@@ -44,6 +47,7 @@ for (const required of [
   'churvox-command-python-syntax.cjs',
   'churvox-mimic-full-test.cjs',
   'churvox-mimic-v3-chain-audit.cjs',
+  'churvox-ui-logic-audit.cjs',
   'churvox-readiness-sweep.cjs',
   'churvox-command-approval-readiness.cjs',
   'churvox-human-mimic-product-audit.cjs',
@@ -59,15 +63,21 @@ if (rootScripts['test:mimic:full'] !== 'node scripts/churvox-mimic-full-test.cjs
   console.error(`Root test:mimic:full must run scripts/churvox-mimic-full-test.cjs. Found: ${rootScripts['test:mimic:full']}`);
   process.exit(1);
 }
-
 if (rootScripts['test:mimic:chain'] !== 'node scripts/churvox-mimic-v3-chain-audit.cjs') {
   console.error(`Root test:mimic:chain must run scripts/churvox-mimic-v3-chain-audit.cjs. Found: ${rootScripts['test:mimic:chain']}`);
   process.exit(1);
 }
-
+if (rootScripts['test:ui:logic'] !== 'node scripts/churvox-ui-logic-audit.cjs') {
+  console.error(`Root test:ui:logic must run scripts/churvox-ui-logic-audit.cjs. Found: ${rootScripts['test:ui:logic']}`);
+  process.exit(1);
+}
+if (rootScripts['test:prelive:full'] !== 'npm run test:readiness && npm run test:ui:full') {
+  console.error(`Root test:prelive:full must run readiness before the desktop/mobile browser gauntlet. Found: ${rootScripts['test:prelive:full']}`);
+  process.exit(1);
+}
 if (rootScripts['test:live-command'] !== 'node scripts/churvox-live-command-smoke.cjs') {
   console.error(`Root test:live-command must run scripts/churvox-live-command-smoke.cjs. Found: ${rootScripts['test:live-command']}`);
   process.exit(1);
 }
 
-console.log('Root script sanity passed. Full mimic behavior, strict-chain audit, readiness, route safety and live smoke are available from the repo root.');
+console.log('Root script sanity passed. Mimic behavior, UI logic, desktop/mobile button gauntlet, readiness and live smoke are available from the repo root.');
