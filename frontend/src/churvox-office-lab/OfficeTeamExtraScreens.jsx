@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./OfficeTeamExtraScreens.css";
 import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
+import OfficeTeamWorkForms from "./OfficeTeamWorkForms";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const quoteRows = [
@@ -32,22 +33,22 @@ const helpRows = [
 ];
 
 export function QuotesScreen(props) {
-  return <ExtraScreen area="quotes" eyebrow="Quotes" title="Quote desk" text="Quotes are prepared, followed up and converted only when the owner is ready." rows={quoteRows} primary="Prepare quote" secondary="Review follow-up" {...props} />;
+  return <ExtraScreen area="quotes" eyebrow="Quotes" title="Quote desk" text="Create, edit, import and prepare quote drafts. Owner approval comes before sending or converting." rows={quoteRows} primary="Prepare quote" secondary="Review follow-up" {...props} />;
 }
 
 export function InvoicesScreen(props) {
-  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Invoices are drafted from completed work, checked for extras and held until the owner approves sending or syncing." rows={invoiceRows} primary="Prepare invoice" secondary="Review export" {...props} />;
+  return <ExtraScreen area="invoices" eyebrow="Invoices" title="Invoice desk" text="Create invoice drafts from work, review extras, import rows and hold sending/syncing until approval." rows={invoiceRows} primary="Prepare invoice" secondary="Review export" {...props} />;
 }
 
 export function IntegrationsScreen(props) {
-  return <ExtraScreen area="money" eyebrow="Integrations" title="Accounting, email and future tools" text="Integrations stay safe: prepared data, owner approval, then sync or send." rows={integrationRows} primary="Prepare sync check" secondary="Review files" {...props} />;
+  return <ExtraScreen area="integrations" eyebrow="Integrations" title="Accounting, email and future tools" text="Prepare Xero/MYOB/export checks. Nothing syncs or sends until owner approval." rows={integrationRows} primary="Prepare sync check" secondary="Review files" {...props} />;
 }
 
 export function HelpScreen(props) {
-  return <ExtraScreen eyebrow="Help" title="Owner guide" text="Help explains the Churvox way: staff update work, Churvox prepares admin, owner approves decisions." rows={helpRows} primary="Prepare guide note" secondary="Review support note" {...props} forceFallback />;
+  return <ExtraScreen eyebrow="Help" title="Owner guide" text="Help explains the Churvox way: staff update work, Churvox prepares admin, owner approves decisions." rows={helpRows} primary="Prepare guide note" secondary="Review support note" {...props} forceFallback hideForms />;
 }
 
-function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab", forceFallback = false }) {
+function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab", forceFallback = false, hideForms = false }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = forceFallback || (appMode !== "owner" && !ownerRoute);
   const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found yet." });
@@ -72,7 +73,7 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, app
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
             </button>
-          )) : <article className="cvSiteEmpty"><strong>No {eyebrow.toLowerCase()} records yet</strong><p>{ownerRoute ? "This area is clear. Churvox will bring items here when they need owner review." : "This area will fill when there is live work to review."}</p></article>}
+          )) : <article className="cvSiteEmpty"><strong>No {eyebrow.toLowerCase()} records yet</strong><p>{ownerRoute ? "Use the working form below to prepare a draft or import rows for Command review." : "This area will fill when there is live work to review."}</p></article>}
         </section>
 
         <aside className="cvExtraDetail">
@@ -85,9 +86,11 @@ function ExtraScreen({ area, eyebrow, title, text, rows, primary, secondary, app
             <article><b>Auto-send</b><small>Off</small></article>
             <article><b>Auto-sync</b><small>Off</small></article>
           </div>
-          {hasRows ? <OfficeTeamSafeControls area={area || eyebrow} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "Nothing needs owner approval here right now." : "Live records will appear here when there is something real for the owner to review."}</p></article>}
+          {hasRows ? <OfficeTeamSafeControls area={area || eyebrow} record={current} primary={primary} secondary={secondary} command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "Nothing needs owner approval here right now. Add or import a draft below when needed." : "Live records will appear here when there is something real for the owner to review."}</p></article>}
         </aside>
       </div>
+
+      {!hideForms ? <OfficeTeamWorkForms area={area || eyebrow.toLowerCase()} title={eyebrow} selectedRecord={current} /> : null}
     </section>
   );
 }
