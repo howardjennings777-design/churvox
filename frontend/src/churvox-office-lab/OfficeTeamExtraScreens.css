@@ -123,13 +123,111 @@
   background: linear-gradient(135deg, #17120e, #3b2b1f 55%, #f97316);
 }
 
+.cvOwnerHelpGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.cvOwnerHelpGrid button {
+  min-height: 190px;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 22px;
+  padding: 18px;
+  color: #17120e;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(249,115,22,.13), transparent 38%),
+    rgba(255,255,255,.8);
+  text-align: left;
+  box-shadow: 0 15px 36px rgba(23,18,14,.055);
+  cursor: pointer;
+}
+
+.cvOwnerHelpGrid button:hover {
+  border-color: rgba(249,115,22,.42);
+  transform: translateY(-2px);
+}
+
+.cvOwnerHelpGrid span,
+.cvOwnerHelpSupport span {
+  color: #9a3412;
+  font-size: .65rem;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvOwnerHelpGrid strong {
+  font-size: 1.35rem;
+  letter-spacing: -.045em;
+}
+
+.cvOwnerHelpGrid p,
+.cvOwnerHelpSupport p {
+  margin: 0;
+  color: #655c52;
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+.cvOwnerHelpGrid small {
+  align-self: end;
+  color: #7c2d12;
+  font-weight: 950;
+}
+
+.cvOwnerHelpSupport {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 20px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(23,18,14,.96), rgba(70,45,29,.94), rgba(249,115,22,.9));
+  color: #fff8ed;
+}
+
+.cvOwnerHelpSupport h3 {
+  margin: 5px 0;
+  font-size: 1.5rem;
+}
+
+.cvOwnerHelpSupport p {
+  color: rgba(255,248,237,.77);
+}
+
+.cvOwnerHelpSupport a {
+  flex: 0 0 auto;
+  padding: 12px 15px;
+  border-radius: 14px;
+  color: #17120e;
+  background: #fff8ed;
+  font-weight: 1000;
+  text-decoration: none;
+}
+
 @media (max-width: 1100px) {
   .cvExtraLayout,
-  .cvExtraCards {
+  .cvExtraCards,
+  .cvOwnerHelpGrid {
     grid-template-columns: 1fr;
   }
 
   .cvExtraDetail {
     position: static;
+  }
+
+  .cvOwnerHelpSupport {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cvOwnerHelpSupport a {
+    text-align: center;
   }
 }
