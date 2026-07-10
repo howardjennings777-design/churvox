@@ -42,9 +42,12 @@ async function getReport(page, token) {
 }
 
 function assertBillingTruth(report) {
-  expect(report.source).toBe('live_database_and_stripe_v1');
+  expect(report.source).toBe('live_database_and_stripe_v2');
   expect(report.truth?.sample_records_included).toBe(false);
-  expect(report.truth?.paid_definition).toBe('active_or_paid_with_stripe_subscription_id');
+  expect(report.truth?.paid_definition).toBe('stripe_subscription_status_active');
+  expect(report.truth?.trial_definition).toBe('stripe_subscription_status_trialing');
+  expect(report.truth?.mrr_definition).toBe('active_stripe_subscription_price_items_only');
+  expect(report.truth?.subscription_id_alone_is_not_paid).toBe(true);
   expect(report.truth?.estimate_is_separate).toBe(true);
   expect(typeof report.counts?.verified_paid_users).toBe('number');
   expect(typeof report.counts?.verified_trial_users).toBe('number');
@@ -59,25 +62,45 @@ function assertBillingTruth(report) {
   expect(Number.isFinite(generatedAt)).toBe(true);
   expect(Date.now() - generatedAt, 'HQ report must be freshly generated').toBeLessThan(10 * 60 * 1000);
 
+  const stripeStatuses = new Map((report.billing?.stripe?.active_subscriptions || []).map((item) => [
+    String(item.subscription_id || '').trim(),
+    String(item.status || '').toLowerCase(),
+  ]));
+  const verifiedKeys = new Set();
+
   for (const row of report.billing?.verified_paid_users || []) {
+    const subscriptionId = String(row.stripe_subscription_id || '').trim();
     expect(['active', 'paid']).toContain(String(row.subscription_status || '').toLowerCase());
-    expect(String(row.stripe_subscription_id || '').trim(), `verified paid row lacks Stripe proof: ${row.email}`).not.toBe('');
+    expect(subscriptionId, `verified paid row lacks Stripe proof: ${row.email}`).not.toBe('');
+    expect(stripeStatuses.get(subscriptionId), `Stripe did not confirm active status for ${row.email}`).toBe('active');
     expect(String(row.email || '').toLowerCase()).not.toMatch(/example\.com|mailinator|tempmail/);
+    verifiedKeys.add(subscriptionId || String(row.email || '').toLowerCase());
   }
   for (const row of report.billing?.verified_trial_users || []) {
+    const subscriptionId = String(row.stripe_subscription_id || '').trim();
     expect(['trial', 'trialing']).toContain(String(row.subscription_status || '').toLowerCase());
-    expect(String(row.stripe_subscription_id || '').trim(), `verified trial row lacks Stripe proof: ${row.email}`).not.toBe('');
+    expect(subscriptionId, `verified trial row lacks Stripe proof: ${row.email}`).not.toBe('');
+    expect(stripeStatuses.get(subscriptionId), `Stripe did not confirm trialing status for ${row.email}`).toBe('trialing');
+    verifiedKeys.add(subscriptionId || String(row.email || '').toLowerCase());
   }
   for (const row of report.billing?.needs_verification || []) {
-    expect(String(row.stripe_subscription_id || '').trim(), `unverified row unexpectedly has Stripe proof: ${row.email}`).toBe('');
+    const key = String(row.stripe_subscription_id || '').trim() || String(row.email || '').toLowerCase();
+    expect(verifiedKeys.has(key), `unverified row is also counted as verified: ${row.email}`).toBe(false);
   }
   for (const row of report.billing?.tester_users || []) {
     expect(String(row.email || '').toLowerCase()).not.toMatch(/example\.com|mailinator|tempmail/);
   }
 
+  expect(report.counts.verified_paid_users).toBe((report.billing?.verified_paid_users || []).length);
+  expect(report.counts.verified_trial_users).toBe((report.billing?.verified_trial_users || []).length);
+  expect(report.counts.billing_needs_verification).toBe((report.billing?.needs_verification || []).length);
+
   const actualMrr = report.billing?.actual_mrr_nzd;
   expect(actualMrr === null || typeof actualMrr === 'number').toBe(true);
   expect(typeof report.billing?.estimated_mrr_nzd).toBe('number');
+  if (actualMrr !== null) {
+    expect(actualMrr).toBe(report.billing?.stripe?.paid_mrr_by_currency?.nzd || 0);
+  }
 }
 
 function expectedMoney(value) {
@@ -95,8 +118,8 @@ test.describe('Live authenticated paid-launch HQ', () => {
 
     await page.goto('/admin', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-version="CHURVOX_REAL_PAID_LAUNCH_HQ_20260711"]')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText('live_database_and_stripe_v1')).toBeVisible();
-    await expect(page.getByText('active_or_paid_with_stripe_subscription_id')).toBeVisible();
+    await expect(page.getByText('live_database_and_stripe_v2')).toBeVisible();
+    await expect(page.getByText('stripe_subscription_status_active')).toBeVisible();
     await expect(page.getByText('Excluded', { exact: true })).toBeVisible();
 
     const paidMetric = page.locator('.plhqMetric').filter({ hasText: 'Verified paid' }).first();
