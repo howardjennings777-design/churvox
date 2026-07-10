@@ -104,6 +104,8 @@ def install(module):
             "plan_report": "/api/admin/owner/plan-report",
             "control_log": "/api/admin/owner/control-log",
             "retention_status": "/api/admin/owner/retention-email-status",
+            "growth_report": "/api/admin/owner/growth-report",
+            "paid_launch_report": "/api/admin/owner/paid-launch-report",
             "tester_intake": "/api/admin/owner/tester-intake",
             "control_access": "/api/admin/owner/control-access",
         }
@@ -132,5 +134,11 @@ def install(module):
     ]:
         _remove_route(app, path, "GET")
         app.add_api_route(path, endpoint, methods=["GET"])
+
+    try:
+        from churvox_hq_paid_launch_report_patch import install as install_paid_launch_report
+        install_paid_launch_report(module)
+    except Exception as exc:
+        print(f"Churvox paid launch HQ report skipped: {exc}")
 
     INSTALLED.add(name)
