@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from urllib.parse import urlencode
 
 INSTALLED = set()
-PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"
+PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 PLAN_ALIAS = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 PLAN_VALUE = {"solo": 39, "team": 89, "pro": 149, "enterprise": 299}
 PLAN_LABELS = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command", "none": "No plan", "": "No plan"}
