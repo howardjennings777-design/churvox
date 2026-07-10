@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from types import SimpleNamespace
 
 from backend import churvox_hq_paid_launch_filter_patch as filter_patch
@@ -61,6 +62,11 @@ class FakeDB:
     def __getitem__(self, name):
         return self.collections.setdefault(name, FakeCollection())
 
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        return self[name]
+
     async def list_collection_names(self):
         return list(self.collections.keys())
 
@@ -101,13 +107,22 @@ def fake_stripe_snapshot(_subscription_ids):
         "mrr_by_currency": {"nzd": 89.0},
         "active_subscriptions": [
             {"subscription_id": "sub_paid", "customer_id": "cus_paid", "status": "active", "mrr_by_currency": {"nzd": 89.0}},
-            {"subscription_id": "sub_trial", "customer_id": "cus_trial", "status": "trialing", "mrr_by_currency": {"nzd": 0.0}},
+            {"subscription_id": "sub_trial", "customer_id": "cus_trial", "status": "trialing", "mrr_by_currency": {"nzd": 149.0}},
         ],
         "errors": [],
     }
 
 
 async def main():
+    for key in (
+        "STRIPE_WEBHOOK_SECRET",
+        "STRIPE_PRICE_SOLO",
+        "STRIPE_PRICE_TEAM",
+        "STRIPE_PRICE_PRO",
+        "STRIPE_PRICE_ENTERPRISE",
+    ):
+        os.environ[key] = f"configured_{key.lower()}"
+
     patch.INSTALLED.clear()
     postguard_patch.INSTALLED.clear()
     patch.CACHE.update({"at": None, "signature": "", "value": None})
@@ -161,6 +176,7 @@ async def main():
     assert report["truth"]["sample_records_included"] is False
     assert report["truth"]["paid_definition"] == "stripe_subscription_status_active"
     assert report["truth"]["trial_definition"] == "stripe_subscription_status_trialing"
+    assert report["truth"]["mrr_definition"] == "active_stripe_subscription_price_items_only"
     assert report["truth"]["subscription_id_alone_is_not_paid"] is True
     assert report["counts"]["verified_paid_users"] == 1, report["counts"]
     assert report["counts"]["verified_trial_users"] == 1, report["counts"]
@@ -171,6 +187,7 @@ async def main():
     assert report["counts"]["businesses_source"] == "filtered_businesses_collection"
     assert report["billing"]["actual_mrr_nzd"] == 89.0
     assert report["billing"]["estimated_mrr_nzd"] == 89
+    assert report["billing"]["stripe"]["paid_mrr_by_currency"]["nzd"] == 89.0
     assert report["billing"]["stripe_confirmed_subscriptions"] == 2
     assert len(report["billing"]["verified_paid_users"]) == 1
     assert report["billing"]["verified_paid_users"][0]["email"] == "paid@customer.nz"
@@ -180,6 +197,12 @@ async def main():
     assert report["collections"]["counts"]["businesses"] == 5
     assert report["collections"]["counts"]["jobs"] == 1
     assert report["collections"]["counts"]["clients"] == 1
+
+    check_by_key = {item["key"]: item for item in report["launch_checks"]}
+    assert check_by_key["stripe"]["status"] == "pass"
+    assert check_by_key["prices"]["status"] == "pass"
+    assert check_by_key["webhooks"]["status"] == "pass"
+    assert check_by_key["billing_truth"]["status"] == "fail"
     assert report["ready_to_take_payments"] is False
 
     try:
@@ -189,7 +212,7 @@ async def main():
     else:
         raise AssertionError("Non-platform owner reached paid launch HQ report")
 
-    print("HQ paid launch behavior passed: live Stripe confirmation, tester visibility, filtered businesses, database counts and owner lock.")
+    print("HQ paid launch behavior passed: live Stripe status, active-only MRR, price/webhook gates, tester visibility, filtered businesses and owner lock.")
 
 
 if __name__ == "__main__":
