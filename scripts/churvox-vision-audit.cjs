@@ -61,9 +61,10 @@ expect(
     'Churvox handles the admin. You handle the decisions.',
     'Only the decisions that need the owner',
   ])
-    && includesAll(contextStrip, ['waiting in Command', 'Open Command'])
+    && includesAll(contextStrip, ['export default function OfficeTeamContextStrip()', 'return null;'])
+    && !/cvOwnerContextStrip|waiting in Command|Open Command/.test(contextStrip)
     && todayVision.includes('.cvOwnerReady[data-screen="today"] > .cvSiteStatus'),
-  'Today should be one briefing while other pages use compact context',
+  'Today should keep one briefing while every other owner page renders without a repeated context/status strip',
 );
 
 expect(
@@ -197,9 +198,10 @@ expect(
 
 expect(
   'vision shell and core workspaces are responsive',
-  includesAll(visionCss, ['.cvOwnerNavigation', '.cvOwnerMoreMenu', '.cvOwnerContextStrip', '.cvOwnerRoleTruth', '@media (max-width: 640px)'])
+  includesAll(visionCss, ['.cvOwnerNavigation', '.cvOwnerMoreMenu', '.cvOwnerRoleTruth', '@media (max-width: 640px)'])
+    && !/cvOwnerContextStrip|waiting in Command|Open Command/.test(contextStrip)
     && includesAll(identityCss, ['@media(max-width:1200px)', '@media(max-width:900px)', '@media(max-width:640px)']),
-  'The reduced owner shell and five core workspaces must work on desktop and phone',
+  'The reduced owner shell without a repeated context strip and the five core workspaces must work on desktop and phone',
 );
 
 const failed = checks.filter((check) => !check.ok);
