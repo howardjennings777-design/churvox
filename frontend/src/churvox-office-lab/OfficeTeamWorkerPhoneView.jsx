@@ -15,7 +15,7 @@ const workerSteps = ["Acknowledge", "Start", "Pause", "Complete"];
 export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = appMode !== "owner" && !ownerRoute;
-  const live = useOfficeTeamRows("worker", fallbackRows, { allowFallback, emptyMessage: "No live worker records found. No demo rows are shown in the owner app." });
+  const live = useOfficeTeamRows("worker", fallbackRows, { allowFallback, emptyMessage: "No live worker records found yet." });
   const [selected, setSelected] = useState(fallbackRows[0]);
   const [localStatus, setLocalStatus] = useState("Not started");
   const displayRows = live.rows;
@@ -32,7 +32,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
       </header>
 
       <div className="cvWorkerLabGrid">
-        <section className="cvWorkerPhoneFrame" aria-label="Worker phone preview">
+        <section className="cvWorkerPhoneFrame" aria-label="Worker phone view">
           <div className="cvWorkerPhoneTop">
             <span>Churvox Worker</span>
             <strong>{hasRows ? localStatus : "Waiting"}</strong>
@@ -41,7 +41,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
           <article className="cvWorkerJobCard">
             <small>{current[0]}</small>
             <h3>{hasRows ? current[1] : "No worker items waiting"}</h3>
-            <p>{hasRows ? current[3] : ownerRoute ? "Worker updates will appear here when staff have assigned work that needs review." : "No demo worker jobs are shown inside the real owner app."}</p>
+            <p>{hasRows ? current[3] : ownerRoute ? "Worker updates will appear here when staff have assigned work that needs review." : "Worker items will appear when staff have assigned work."}</p>
             <em>{hasRows ? current[2] : "Clear"}</em>
           </article>
 
@@ -65,7 +65,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
           <div className="cvWorkerDataSource">
             <span>Data source</span>
             <strong>{live.label}</strong>
-            <p>{ownerRoute ? "Worker updates are shown safely for owner review. Anything important comes back to Command before records or money change." : "Worker actions are local preview only. They do not update jobs, timers, photos or messages yet."}</p>
+            <p>{ownerRoute ? "Worker updates are shown safely for owner review. Anything important comes back to Command before records or money change." : "Worker actions stay prepared-only here. Jobs, timers, photos and messages change only through approved owner flows."}</p>
           </div>
 
           <section className="cvWorkerQueueList">
@@ -76,7 +76,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
                 <strong>{row[1]}</strong>
                 <small>{row[2]}</small>
               </button>
-            )) : <article className="cvSiteEmpty"><strong>No worker items yet</strong><p>{ownerRoute ? "This area is clear. Worker updates will appear when something needs owner review." : "No demo worker rows are shown inside the real owner app."}</p></article>}
+            )) : <article className="cvSiteEmpty"><strong>No worker items yet</strong><p>{ownerRoute ? "This area is clear. Worker updates will appear when something needs owner review." : "Worker items will appear when there is real work to review."}</p></article>}
           </section>
 
           {hasRows ? <OfficeTeamSafeControls area="worker" record={current} primary="Prepare worker update" secondary="Prepare boss note" command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "No worker update needs owner approval right now." : "Worker updates will appear here when there is something real for the owner to review."}</p></article>}
