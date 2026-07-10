@@ -29,6 +29,15 @@ function clean(value, fallback = "") {
   return text || fallback;
 }
 
+function approvalFields(fields = []) {
+  if (!Array.isArray(fields)) return [];
+  return fields.slice(0, 24).map((field, index) => ({
+    label: clean(field?.label || field?.name || field?.key, `Field ${index + 1}`).slice(0, 120),
+    value: clean(field?.value, "").slice(0, 2400),
+    long: Boolean(field?.long),
+  }));
+}
+
 function trayForSlip(slip = {}) {
   const text = clean(`${slip.source_type || ""} ${slip.action_type || ""} ${slip.tray || ""}`).toLowerCase();
   if (/accounting|gst|tax|xero|myob|ledger|export/.test(text) || /account/.test(text)) return "Accounting";
@@ -303,23 +312,40 @@ export async function createBackendWorkerUpdateRequest({ title = "Worker update"
   return body;
 }
 
-export async function recordBackendCommandDecision(decision, action, note = SAFE_RESULT) {
+export async function recordBackendCommandDecision(decision, action, detail = {}) {
   const base = host();
   const slipId = clean(decision?.raw?.command_slip_id || "");
   if (!base || !slipId) {
     return { success: true, localOnly: true, message: SAFE_RESULT };
   }
+  const approval = typeof detail === "string" ? { note: detail } : (detail || {});
+  const note = clean(approval.note || approval.ownerNote, SAFE_RESULT);
   const normalized = clean(action, "Approve record").toLowerCase();
   const endpoint = normalized.includes("snooze")
     ? "snooze"
     : normalized.includes("ignore") || normalized.includes("park")
       ? "ignore"
-      : "approve";
+      : "approve-fields";
+  const requestBody = endpoint === "approve-fields"
+    ? {
+        action,
+        note,
+        owner_note: note,
+        form_title: clean(approval.formTitle || approval.form_title, "Owner approval form"),
+        fields: approvalFields(approval.fields),
+        prepared_only: true,
+        owner_review_only: true,
+        no_auto_send: true,
+        no_auto_sync: true,
+        no_auto_charge: true,
+        no_auto_record_change: true,
+      }
+    : { action, note, hours: 24 };
   const response = await fetch(`${base}/api/command/slips/${encodeURIComponent(slipId)}/${endpoint}`, {
     method: "POST",
     credentials: "include",
     headers: authHeaders(),
-    body: JSON.stringify({ action, note, hours: 24 }),
+    body: JSON.stringify(requestBody),
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok || body?.success === false) {
