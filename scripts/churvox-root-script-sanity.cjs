@@ -173,6 +173,8 @@ for (const required of [
   }
 }
 for (const required of [
+  "'/api/auth/login'",
+  "'/api/worker/auth/login'",
   "'/api/billing/subscription-status'",
   "'/api/jobs'",
   "'/api/clients'",
@@ -188,9 +190,16 @@ for (const required of [
     process.exit(1);
   }
 }
-if (/request\.(?:post|patch|put|delete)\((?!apiUrl\('\/api\/auth\/login)/.test(liveOwnerWorkerSpec)) {
-  console.error('Read-only owner/worker spec contains a non-login mutating API request.');
+const loginPosts = liveOwnerWorkerSpec.match(/request\.post\(/g) || [];
+if (loginPosts.length !== 1 || /request\.(?:patch|put|delete)\(/.test(liveOwnerWorkerSpec) || /method\s*:\s*["'](?:POST|PATCH|PUT|DELETE)["']/i.test(liveOwnerWorkerSpec)) {
+  console.error('Read-only owner/worker spec may contain business-data mutations; only one shared login POST call is permitted.');
   process.exit(1);
+}
+for (const forbidden of ['/api/jobs/create', '/api/messages/send', '/api/worker/messages', '/complete', '/send-back']) {
+  if (liveOwnerWorkerSpec.includes(forbidden)) {
+    console.error(`Read-only owner/worker spec contains forbidden mutation route text: ${forbidden}`);
+    process.exit(1);
+  }
 }
 
 console.log('Root script sanity passed. Mimic behavior, HQ backend billing behavior, public site, route/touch safety, paid-launch HQ reality, authenticated live HQ data, read-only owner/worker operations, one-command predeploy/deployed gates, UI logic, desktop/mobile gauntlets, readiness, live truth and live smoke are available from the repo root.');
