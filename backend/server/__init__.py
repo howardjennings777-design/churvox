@@ -246,6 +246,11 @@ def _install_wrapper_business_profile_routes():
                 pass
         return ''
 
+    def _truthy(value):
+        if isinstance(value, bool):
+            return value
+        return _text(value, 20).lower() in {'1', 'true', 'yes', 'on', 'admin', 'owner'}
+
     def _business_id(user):
         return _text(_read(user, 'business_id', 'businessId', 'owner_business_id', 'id', '_id'), 180)
 
@@ -274,7 +279,7 @@ def _install_wrapper_business_profile_routes():
         except Exception:
             raise HTTPException(status_code=401, detail='Not authenticated')
         role = _text(_read(user, 'role'), 80).lower()
-        is_admin = bool(_read(user, 'is_admin', 'is_platform_owner'))
+        is_admin = _truthy(_read(user, 'is_admin', 'is_platform_owner'))
         if role not in owner_roles and not is_admin:
             raise HTTPException(status_code=403, detail='Only an owner or admin can change business settings')
         if not _business_id(user):
@@ -286,8 +291,8 @@ def _install_wrapper_business_profile_routes():
         oid = _maybe_oid(business_id)
         queries = []
         if oid is not None:
-            queries.extend([{'_id': oid}, {'business_id': oid}])
-        queries.extend([{'_id': business_id}, {'business_id': business_id}])
+            queries.extend([{'_id': oid}, {'business_id': oid, 'role': {'$in': list(owner_roles)}}])
+        queries.extend([{'_id': business_id}, {'business_id': business_id, 'role': {'$in': list(owner_roles)}}])
         user_id = _text(_read(user, 'id', '_id'), 180)
         user_oid = _maybe_oid(user_id)
         if user_oid is not None:
@@ -354,6 +359,7 @@ def _install_wrapper_business_profile_routes():
             upsert=True,
         )
 
+        owner = await _owner_doc(user)
         user_updates = {}
         mapping = {
             'businessName': 'business_name',
@@ -377,19 +383,15 @@ def _install_wrapper_business_profile_routes():
         for source_key, target_key in mapping.items():
             if source_key in clean:
                 user_updates[target_key] = clean[source_key]
-        if user_updates:
-            oid = _maybe_oid(business_id)
-            business_values = [business_id]
-            if oid is not None:
-                business_values.append(oid)
-            await db.users.update_many(
-                {'$or': [{'_id': {'$in': business_values}}, {'business_id': {'$in': business_values}}]},
+        if user_updates and owner.get('_id') is not None:
+            await db.users.update_one(
+                {'_id': owner['_id']},
                 {'$set': {**user_updates, 'updated_at': now}},
             )
 
         saved = await db.business_profiles.find_one({'business_id': business_id}) or clean
-        owner = await _owner_doc(user)
-        profile = _profile_from(owner, saved, business_id)
+        refreshed_owner = await _owner_doc(user)
+        profile = _profile_from(refreshed_owner, saved, business_id)
         return JSONResponse({'success': True, 'message': 'Business profile saved', 'profile': _safe(profile), 'data': {'profile': _safe(profile)}, 'version': BUSINESS_PROFILE_ROUTE_VERSION, 'safety': BUSINESS_PROFILE_SAFETY})
 
     def _remove(path, method):
