@@ -60,6 +60,10 @@ def _install_churvox_real_ai_hook():
                 except Exception:
                     from backend.churvox_command_compat_routes import build_command_compat_router
                 try:
+                    from churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router
+                except Exception:
+                    from backend.churvox_command_human_mimic_marker_routes import build_command_human_mimic_marker_router
+                try:
                     from churvox_command_human_mimic_routes import build_command_human_mimic_router
                 except Exception:
                     from backend.churvox_command_human_mimic_routes import build_command_human_mimic_router
@@ -80,6 +84,8 @@ def _install_churvox_real_ai_hook():
                 original_include_router(self, build_ai_operator_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Register compatibility endpoints first so live smoke and worker app routes cannot be shadowed.
                 original_include_router(self, build_command_compat_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Public marker proves that the human mimic build reached the live backend.
+                original_include_router(self, build_command_human_mimic_marker_router(), prefix="/api")
                 # Human mimic v2 owns /command/scan. The older scanner remains behind it as a compatibility fallback.
                 original_include_router(self, build_command_human_mimic_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_mimic_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
