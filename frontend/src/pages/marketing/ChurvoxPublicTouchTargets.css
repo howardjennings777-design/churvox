@@ -1,0 +1,21 @@
+/* Mobile public navigation must remain comfortably tappable. */
+@media (max-width: 560px) {
+  .cp26NavLinks a,
+  .cp26NavActions .cp26Button,
+  .cp26Footer nav a {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .cp26NavLinks a,
+  .cp26Footer nav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .cp26Footer nav {
+    gap: 4px 8px;
+  }
+}
