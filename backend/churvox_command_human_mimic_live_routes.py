@@ -8,10 +8,12 @@ from fastapi import APIRouter, Request
 try:
     from churvox_command_human_mimic_v3_routes import build_command_human_mimic_v3_router
     from churvox_command_human_mimic_source_normalizer import normalize_mimic_source_db
+    from churvox_command_human_mimic_role_schema_guard import enforce_role_schema
     from churvox_command_human_mimic_queue_finalizer import finalize_strict_queue
 except Exception:
     from .churvox_command_human_mimic_v3_routes import build_command_human_mimic_v3_router
     from .churvox_command_human_mimic_source_normalizer import normalize_mimic_source_db
+    from .churvox_command_human_mimic_role_schema_guard import enforce_role_schema
     from .churvox_command_human_mimic_queue_finalizer import finalize_strict_queue
 
 
@@ -188,6 +190,7 @@ def build_command_human_mimic_live_router(db, get_current_user, ObjectId):
         result["superseded_count"] = int(result.get("superseded_count") or 0) + len(retired_ids)
         result["post_guard"] = POST_GUARD
         result["source_normalization"] = "legacy-job-status-and-timer-units-v1"
+        result = await enforce_role_schema(db, result, ObjectId)
         result = await finalize_strict_queue(db, user, result, ObjectId)
         result["message"] = f"Strict human mimic v3 kept {result['created_count']} new and {result['existing_count']} current decision(s); {result['superseded_count']} weak, stale or duplicate candidate(s) were rejected."
         return result
