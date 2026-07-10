@@ -22,12 +22,13 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com';
 const specs = [
   'tests/e2e/churvox-public-honesty-and-function.spec.js',
   'tests/e2e/churvox-owner-no-fake-data.spec.js',
+  'tests/e2e/churvox-paid-launch-hq-reality.spec.js',
 ];
 const forwarded = process.argv.slice(2);
 const hasWorkers = forwarded.some((value) => /^--workers(?:=|$)/.test(value));
 
 console.log(`Running Churvox live truth tests against ${baseURL}`);
-console.log('Using frontend/playwright.config.js with safe mocked business APIs.');
+console.log('Using frontend/playwright.config.js with safe mocked business and HQ APIs.');
 
 const result = spawnSync(
   playwrightBin,
