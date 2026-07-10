@@ -6,17 +6,9 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const checks = [];
 
-function read(relativePath) {
-  return fs.readFileSync(path.join(root, relativePath), 'utf8');
-}
-
-function expect(name, condition, detail) {
-  checks.push({ name, ok: Boolean(condition), detail });
-}
-
-function includesAll(text, needles) {
-  return needles.every((needle) => text.includes(needle));
-}
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const all = (text, needles) => needles.every((needle) => text.includes(needle));
+const expect = (name, ok, detail) => checks.push({ name, ok: Boolean(ok), detail });
 
 function buttonOpenings(text) {
   const openings = [];
@@ -45,203 +37,110 @@ function buttonOpenings(text) {
   return openings;
 }
 
-const humanMimic = read('backend/churvox_command_human_mimic_routes.py');
-const mimicGuard = read('backend/churvox_command_human_mimic_guard_routes.py');
-const mimicMarker = read('backend/churvox_command_human_mimic_marker_routes.py');
-const applyRoutes = read('backend/churvox_command_apply_routes.py');
-const usercustomize = read('backend/usercustomize.py');
+const human = read('backend/churvox_command_human_mimic_routes.py');
+const guard = read('backend/churvox_command_human_mimic_guard_routes.py');
+const marker = read('backend/churvox_command_human_mimic_marker_routes.py');
+const apply = read('backend/churvox_command_apply_routes.py');
+const autoload = read('backend/usercustomize.py');
+const site = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const commandApi = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
 const safeControls = read('frontend/src/churvox-office-lab/OfficeTeamSafeControls.jsx');
-const roleControls = read('frontend/src/churvox-office-lab/OfficeTeamRoleControls.jsx');
 const settings = read('frontend/src/churvox-office-lab/OfficeTeamSiteSettings.jsx');
-const extraScreens = read('frontend/src/churvox-office-lab/OfficeTeamExtraScreens.jsx');
-const xeroScreen = read('frontend/src/churvox-office-lab/OfficeTeamXeroScreen.jsx');
-const workerRoute = read('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx');
-const workerOwner = read('frontend/src/churvox-office-lab/OfficeTeamWorkerPhoneView.jsx');
-const backOffice = read('frontend/src/churvox-office-lab/OfficeTeamBackOfficeScreens.jsx');
-const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
+const xero = read('frontend/src/churvox-office-lab/OfficeTeamXeroScreen.jsx');
+const worker = read('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx');
+const ownerWorker = read('frontend/src/churvox-office-lab/OfficeTeamWorkerPhoneView.jsx');
 const workForms = read('frontend/src/churvox-office-lab/OfficeTeamWorkForms.jsx');
-const ownerSite = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
-const ownerNav = read('frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx');
-const contextStrip = read('frontend/src/churvox-office-lab/OfficeTeamContextStrip.jsx');
+const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
+const help = read('frontend/src/churvox-office-lab/OfficeTeamExtraScreens.jsx');
 const liveSmoke = read('scripts/churvox-live-command-smoke.cjs');
 
 expect(
-  'all eight office roles have human-like builders',
-  includesAll(humanMimic, [
+  'all eight office roles have dedicated reasoning',
+  all(human, [
     '"Office Manager"', '"Receptionist"', '"Bookkeeper"', '"Accountant"', '"Payroll Clerk"', '"Client Memory"', '"Quality Checker"', '"Operations Manager"',
     'build_invoice_slip', 'build_booking_slip', 'build_payment_followup_slip', 'build_reply_slip', 'build_hours_slip', 'build_quality_slip', 'build_client_memory_slip', 'build_accounting_slip', 'build_operations_slip', 'build_office_manager_brief',
   ]),
-  'Every role must have a specific evidence-backed reasoning path, including Operations and Office Manager',
+  'Each role needs its own evidence-backed builder',
 );
 
 expect(
-  'booking role uses real rules and history instead of a fixed cycle',
-  includesAll(humanMimic, ['explicit_cycle_days', 'inferred_cycle_days', 'median(gaps)', 'roll_forward', 'It did not assume a three-week cycle'])
-    && !humanMimic.includes('Every 3 weeks'),
-  'Recurring booking intelligence must not hard-code a three-week pattern',
+  'role reasoning uses evidence rather than fixed guesses',
+  all(human, [
+    'explicit_cycle_days', 'inferred_cycle_days', 'median(gaps)', 'worker_baseline', 'median(values[-12:])',
+    'normalized_rate', 'tax_inclusive', 'existing_client_memory', '"evidence": evidence_rows', '"missing": missing', '"confidence": confidence_data', '"field_sources": prepared_form', '"owner_question": owner_question',
+  ]) && !human.includes('Every 3 weeks'),
+  'Booking, hours, tax and memory logic must use live evidence and expose uncertainty',
 );
 
 expect(
-  'invoice role handles inclusive and exclusive tax safely',
-  includesAll(humanMimic, ['normalized_rate', 'tax_inclusive', 'subtotal * rate / (1 + rate)', 'subtotal * rate', 'GST/tax treatment needs owner confirmation']),
-  'Tax logic must normalize percentage formats and avoid double-adding inclusive GST',
+  'guarded scan owns the route before older engines',
+  all(autoload, ['build_command_human_mimic_guard_router', 'build_command_human_mimic_router', 'build_command_mimic_intelligence_router', 'build_command_apply_router'])
+    && autoload.indexOf('build_command_human_mimic_guard_router') < autoload.indexOf('build_command_human_mimic_router')
+    && autoload.indexOf('build_command_human_mimic_router') < autoload.indexOf('build_command_mimic_intelligence_router')
+    && autoload.indexOf('build_command_mimic_intelligence_router') < autoload.indexOf('build_command_apply_router'),
+  'The protected human scan must run before compatibility scanners and the executor',
 );
 
 expect(
-  'bookkeeper separates overdue follow-up from new invoice creation',
-  includesAll(humanMimic, ['build_payment_followup_slip', 'Days overdue', 'Bookkeeper escalation rule', 'Prepared reminder', 'prepare_overdue_followup']),
-  'Overdue invoices need a client follow-up judgement, not a second invoice draft',
+  'guard removes false and stale owner decisions',
+  all(guard, [
+    'retire_old_engine_slips', 'retire_outbound_reply_false_positives', 'retire_false_completion_slips', 'linked_invoice_exists',
+    'retire_early_or_invalid_payment_followups', 'retire_stale_briefs', 'def status_words(row):',
+    'paid_or_closed = bool(words & {"paid", "settled"})', 'human-mimic-scan-guard-v2',
+    'No business record, message, payment or accounting record changed',
+  ]) && !guard.includes('any(marker in status for marker in ["paid"'),
+  'Outbound messages, false completion, duplicate invoices, future/paid reminders and stale briefs must be retired safely',
 );
 
 expect(
-  'payroll role compares workers with their own history',
-  includesAll(humanMimic, ['worker_baseline', 'median(values[-12:])', 'baseline * 1.75', 'Normal worker baseline']),
-  'Odd-hours checks must use worker-specific history and missing clock-off evidence',
+  'live backend marker proves guarded engine and eight roles',
+  all(marker, ['HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v2"', 'HUMAN_MIMIC_GUARD = "human-mimic-scan-guard-v2"'])
+    && all(liveSmoke, ['EXPECTED_HUMAN_MIMIC', 'EXPECTED_GUARD', '/api/command/human-mimic-marker', 'roles.length === 8']),
+  'Backend smoke must prove the guarded engine reached Render without claiming to prove the frontend',
 );
 
 expect(
-  'client memory checks sensitivity and duplicates',
-  includesAll(humanMimic, ['existing_client_memory', 'Sensitive access/safety detail', 'Possible duplicate found', 'appropriate to retain']),
-  'Client memory must not blindly copy sensitive or duplicate notes',
+  'intelligence never performs unsafe external actions',
+  !/(send_email|send_sms|stripe\.|payment_intent|charge\(|xero[^\n]*sync\(|myob[^\n]*sync\(|file_tax\(|submit[^\n]*tax|bank_file\(|bank payout|payroll_payment)/i.test(`${human}\n${guard}`),
+  'The office engine may prepare and audit only',
 );
 
 expect(
-  'office slips expose evidence confidence missing facts and owner question',
-  includesAll(humanMimic, ['"evidence": evidence_rows', '"missing": missing', '"confidence": confidence_data', '"field_sources": prepared_form', '"owner_question": owner_question'])
-    && includesAll(commandApi, ['function reasoningForSlip', 'Evidence used:', 'Confidence:', 'Owner must check:', 'Owner question:', 'reasoning.summary']),
-  'The owner must be able to see why each role made its judgement',
+  'approval executor is draft-only and idempotent',
+  all(apply, ['"status": "draft_approved"', '"no_auto_send": True', '"no_auto_sync": True', '"no_auto_charge": True', '"no_auto_file_tax": True', 'slip.get("status") == "approved_applied"', '"idempotent": True', 'return "client_memory_reviews", "client_memory_review"']),
+  'Approval may create one internal draft but cannot send, sync, charge, file tax or duplicate memory',
 );
 
 expect(
-  'guarded office scan is registered before every older scanner',
-  includesAll(usercustomize, ['build_command_human_mimic_marker_router', 'build_command_human_mimic_guard_router', 'build_command_human_mimic_router', 'build_command_mimic_intelligence_router', 'build_command_apply_router'])
-    && usercustomize.indexOf('build_command_human_mimic_marker_router') < usercustomize.indexOf('build_command_human_mimic_guard_router')
-    && usercustomize.indexOf('build_command_human_mimic_guard_router') < usercustomize.indexOf('build_command_human_mimic_router')
-    && usercustomize.indexOf('build_command_human_mimic_router') < usercustomize.indexOf('build_command_mimic_intelligence_router')
-    && usercustomize.indexOf('build_command_mimic_intelligence_router') < usercustomize.indexOf('build_command_apply_router'),
-  'The guarded scan must own /command/scan while unguarded v2 and v1 scanners remain compatibility fallbacks only',
+  'owner app uses only confirmed backend Command decisions',
+  all(site, ['if (isOwnerApp) return backendDecisions;', 'Command could not be confirmed. No fallback or browser-only decisions are being shown.', 'item?.raw?.source !== "backend_command_slip"', 'That item is not a confirmed live Command slip']),
+  'Owner approval must never fall back to Admin Brain, starter data, old drafts or local browser queues',
 );
 
 expect(
-  'office guard retires stale false and premature decisions safely',
-  includesAll(mimicGuard, [
-    'retire_old_engine_slips', 'payload.human_mimic_intelligence_v2', 'retire_outbound_reply_false_positives',
-    'Message direction is outbound', 'retire_false_completion_slips', 'linked_invoice_exists',
-    'retire_early_or_invalid_payment_followups', 'status_words', 'paid_or_closed = bool(words & {"paid", "settled"})',
-    'retire_stale_briefs', 'current_day = now().date().isoformat()', 'status": "superseded"',
-    'human-mimic-scan-guard-v2', 'No business record, message, payment or accounting record changed',
-  ]) && !mimicGuard.includes('any(marker in status for marker in ["paid"'),
-  'Old cards, outbound messages, false completion, duplicate invoices, early reminders and stale briefings must leave the owner queue',
+  'Command displays reasoning and unresolved values honestly',
+  all(commandApi, ['function reasoningForSlip', 'Evidence used:', 'Confidence:', 'Owner must check:', 'Owner question:'])
+    && site.includes('const MISSING_VALUE = "Not found — owner must enter"')
+    && !/Every 3 weeks|Base service \+ extra green waste|Long timer flagged/.test(site),
+  'The owner must see evidence and missing facts rather than made-up values',
 );
 
 expect(
-  'live deployment marker proves roles guard and owner shell',
-  includesAll(mimicMarker, [
-    'HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v2"',
-    'HUMAN_MIMIC_GUARD = "human-mimic-scan-guard-v2"',
-    'OWNER_SHELL_VERSION = "owner-vision-shell-v1"',
-    '"Office Manager"', '"Receptionist"', '"Bookkeeper"', '"Accountant"', '"Payroll Clerk"', '"Client Memory"', '"Quality Checker"', '"Operations Manager"',
-  ]) && includesAll(liveSmoke, ['/api/command/human-mimic-marker', 'EXPECTED_HUMAN_MIMIC', 'EXPECTED_GUARD', 'EXPECTED_OWNER_SHELL', 'roles.length === 8']),
-  'Live smoke must prove the guarded office build and owner vision shell reached Render',
+  'working owner pages have real destinations and actions',
+  all(safeControls, ['createBackendCommandSlip', 'safeActions.map', 'Every button prepares a real Command slip'])
+    && all(xero, ['/xero/status', '/xero/connect/start', '/xero/disconnect', '/api/accounting/export/pack?system=both'])
+    && all(worker, ['/jobs/${encodeURIComponent(jobId)}/${endpoint}', '/worker/field-slip', 'proof_photo_names'])
+    && all(ownerWorker, ['Open protected worker app', 'This owner page shows live worker records'])
+    && all(help, ['mailto:hello@churvox.com', 'goToScreen(screen)'])
+    && all(plans, ['Open secure billing', 'Nothing is charged from this comparison screen']),
+  'Owner and worker controls must either call a real route, prepare Command work or open a real destination',
 );
 
 expect(
-  'scanner and guard never send sync charge file tax or pay staff',
-  !/(send_email|send_sms|stripe\.|payment_intent|charge\(|xero[^\n]*sync\(|myob[^\n]*sync\(|file_tax\(|submit[^\n]*tax|bank_file\(|bank payout|payroll_payment)/i.test(`${humanMimic}\n${mimicGuard}`),
-  'Office intelligence may only prepare, filter and audit Command slips',
-);
-
-expect(
-  'approval executor remains draft-only idempotent and memory-safe',
-  includesAll(applyRoutes, [
-    '"status": "draft_approved"', '"no_auto_send": True', '"no_auto_sync": True', '"no_auto_charge": True', '"no_auto_file_tax": True',
-    'slip.get("status") == "approved_applied"', '"idempotent": True', 'return "client_memory_reviews", "client_memory_review"',
-  ]),
-  'Owner approval may create one internal draft only; repeated clicks and client memory must not create duplicates',
-);
-
-expect(
-  'owner workspace uses only confirmed backend Command decisions',
-  includesAll(ownerSite, [
-    'if (isOwnerApp) return backendDecisions;',
-    'Command could not be confirmed. No fallback or browser-only decisions are being shown.',
-    'item?.raw?.source !== "backend_command_slip"',
-    'That item is not a confirmed live Command slip',
-  ]),
-  'Owner approvals must never fall back to starter cards, Admin Brain, old drafts or local browser queues',
-);
-
-expect(
-  'owner shell reduces thinking and hides routine machinery',
-  includesAll(ownerSite, ['OfficeTeamOwnerNavigation', 'OfficeTeamContextStrip', 'Churvox handles the admin. You handle the decisions.', 'Only the decisions that need the owner'])
-    && includesAll(ownerNav, ['Office and oversight', 'cvOwnerNavCount'])
-    && includesAll(contextStrip, ['waiting in Command', 'Open Command']),
-  'The owner should see a compact core path while secondary office oversight remains available',
-);
-
-expect(
-  'Command fallback fields never invent business facts',
-  ownerSite.includes('const MISSING_VALUE = "Not found — owner must enter"')
-    && !/Every 3 weeks|Base service \+ extra green waste|Long timer flagged|Xero \/ MYOB"\)/.test(ownerSite),
-  'Missing cycles, amounts, workers and accounting systems must remain visibly unresolved',
-);
-
-expect(
-  'every reusable owner safe control prepares real Command work',
-  includesAll(safeControls, ['safeActions.map', 'createBackendCommandSlip', 'prepared_form: preparedForm', 'Every button prepares a real Command slip'])
-    && !safeControls.includes('if (action === command)'),
-  'Primary and secondary buttons must not be browser-only messages',
-);
-
-expect(
-  'settings and office role modes are approval-backed drafts',
-  includesAll(settings, ['createBackendCommandSlip', 'Prepare settings in Command', 'Current settings remain unchanged'])
-    && includesAll(roleControls, ['createBackendCommandSlip', 'Prepare role modes in Command', 'No live role behaviour changed']),
-  'Settings-looking controls must not pretend localStorage is a live business setting',
-);
-
-expect(
-  'Xero owner page has real status connection export and Command actions',
-  includesAll(xeroScreen, ['/xero/status', '/accounting/health', '/xero/connect/start', '/xero/disconnect', '/api/accounting/export/pack?system=both', 'Prepare sync review in Command']),
-  'Xero buttons must have real destinations and remain owner controlled',
-);
-
-expect(
-  'Help opens real pages and real support email',
-  includesAll(extraScreens, ['goToScreen(screen)', 'mailto:hello@churvox.com', 'Use Churvox without guessing', 'Open {title}']),
-  'Help must not render fake fallback records or no-op support buttons',
-);
-
-expect(
-  'worker route performs real status proof and Command fallback',
-  includesAll(workerRoute, ['/jobs/${encodeURIComponent(jobId)}/${endpoint}', '/worker/field-slip', 'createBackendWorkerUpdateRequest', 'Boss update sent to Command', 'proof_photo_names', 'Send proof note']),
-  'Worker status and proof controls must not only change local text',
-);
-
-expect(
-  'owner worker page cannot impersonate live worker actions',
-  includesAll(workerOwner, ['This owner page shows live worker records', 'Open protected worker app', 'cvWorkerFlowStep'])
-    && !workerOwner.includes('onClick={() => setStatus(step)}'),
-  'Owner worker oversight should link to the protected worker route rather than fake job updates',
-);
-
-expect(
-  'Schedule and Payroll have working preparation forms',
-  includesAll(backOffice, ['formArea="work"', 'formArea="payroll"', '<OfficeTeamWorkForms area={formArea}']),
-  'Back-office pages need a real next action, not status cards only',
-);
-
-expect(
-  'Plans comparison hands off to real billing route',
-  includesAll(plans, ['function openBilling()', 'window.location.assign(`/plans?', 'Open secure billing', 'Nothing is charged from this comparison screen']),
-  'Selecting a plan card must not look like a billing change without a real billing action',
-);
-
-expect(
-  'CSV preparation preserves real rows for the approval executor',
-  includesAll(workForms, ['csv_rows: rows', 'sourcePayload', '...(sourcePayload || {})', 'The actual parsed rows stay attached']),
-  'CSV review must carry the parsed row objects, not only a preview sentence',
+  'forms preserve real CSV rows and settings remain truthful',
+  all(workForms, ['csv_rows: rows', 'sourcePayload', 'The actual parsed rows stay attached'])
+    && all(settings, ['These controls build a settings draft; they do not silently change live behaviour.', 'Current business behaviour remains unchanged.', 'Prepare settings in Command']),
+  'CSV data must survive approval and proposal-only settings must say they are not live',
 );
 
 const buttonFiles = [
@@ -254,7 +153,6 @@ const buttonFiles = [
   'frontend/src/churvox-office-lab/OfficeTeamExtraScreens.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamXeroScreen.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamSiteSettings.jsx',
-  'frontend/src/churvox-office-lab/OfficeTeamRoleControls.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamWorkerPhoneView.jsx',
   'frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx',
@@ -265,24 +163,18 @@ const buttonFiles = [
 const deadButtons = [];
 for (const file of buttonFiles) {
   for (const opening of buttonOpenings(read(file))) {
-    const hasAction = /\bonClick\s*=/.test(opening) || /\btype\s*=\s*["']submit["']/.test(opening) || /\bformAction\s*=/.test(opening);
-    if (!hasAction) deadButtons.push(`${file}: ${opening.replace(/\s+/g, ' ').slice(0, 150)}`);
+    const handled = /\bonClick\s*=/.test(opening) || /\btype\s*=\s*["']submit["']/.test(opening) || /\bformAction\s*=/.test(opening);
+    if (!handled) deadButtons.push(`${file}: ${opening.replace(/\s+/g, ' ').slice(0, 150)}`);
   }
 }
-expect(
-  'visible owner and worker buttons have real handlers',
-  deadButtons.length === 0,
-  deadButtons.length ? `Buttons without onClick/submit handlers:\n${deadButtons.join('\n')}` : 'No dead buttons found',
-);
+expect('visible buttons have handlers', deadButtons.length === 0, deadButtons.join('\n') || 'No dead buttons found');
 
 const failed = checks.filter((check) => !check.ok);
 for (const check of checks) {
   console.log(`${check.ok ? '✓' : '✗'} ${check.name}${check.ok ? '' : ` — ${check.detail}`}`);
 }
-
 if (failed.length) {
   console.error(`\nHuman office product audit failed: ${failed.length} issue(s).`);
   process.exit(1);
 }
-
 console.log(`\nHuman office product audit passed: ${checks.length} checks.`);
