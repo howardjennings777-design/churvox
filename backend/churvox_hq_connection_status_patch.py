@@ -144,6 +144,20 @@ def install(module):
         install_paid_launch_report(module)
         from churvox_hq_paid_launch_postguard_patch import install as install_paid_launch_postguard
         install_paid_launch_postguard(module)
+
+        # The postguard wrapper is intentionally dependency-light, so restore the
+        # concrete Request annotation before FastAPI builds the final dependency
+        # model. Without this, FastAPI treats "request" as a required query field
+        # and the live HQ endpoint returns 422 before owner authentication runs.
+        paid_launch_path = "/api/admin/owner/paid-launch-report"
+        paid_launch_endpoint = None
+        for route in list(getattr(app.router, "routes", []) or []):
+            if _route_matches(route, paid_launch_path, "GET"):
+                paid_launch_endpoint = getattr(route, "endpoint", None)
+        if paid_launch_endpoint is not None:
+            paid_launch_endpoint.__annotations__["request"] = Request
+            _remove_route(app, paid_launch_path, "GET")
+            app.add_api_route(paid_launch_path, paid_launch_endpoint, methods=["GET"])
     except Exception as exc:
         print(f"Churvox paid launch HQ report skipped: {exc}")
 
