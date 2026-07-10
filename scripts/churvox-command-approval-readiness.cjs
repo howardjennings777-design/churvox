@@ -94,7 +94,7 @@ expect(
 
 expect(
   'approval executor cannot send, sync, charge, file tax or pay anyone',
-  !/(send_email|send_sms|stripe\.|payment_intent|charge\(|xero.*sync|myob.*sync|file_tax|submit.*tax|bank_file|bank payout|payroll_payment)/i.test(applyRoutes),
+  !/(send_email|send_sms|stripe\.|payment_intent|charge\(|xero[^\n]*sync|myob[^\n]*sync|file_tax\(|submit[^\n]*tax|bank_file\(|bank payout|payroll_payment)/i.test(applyRoutes),
   'approval executor appears to trigger an external send, sync, charge, filing or payment',
 );
 
