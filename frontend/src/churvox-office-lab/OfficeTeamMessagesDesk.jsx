@@ -13,7 +13,7 @@ const fallbackRows = [
 export default function OfficeTeamMessagesDesk({ appMode = "lab" }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = appMode !== "owner" && !ownerRoute;
-  const live = useOfficeTeamRows("messages", fallbackRows, { allowFallback, emptyMessage: "No live messages found. No demo rows are shown in the owner app." });
+  const live = useOfficeTeamRows("messages", fallbackRows, { allowFallback, emptyMessage: "No live messages found yet." });
   const [selected, setSelected] = useState(fallbackRows[0]);
   const hasRows = live.rows.length > 0;
   const current = selectedRow(live.rows, selected, allowFallback ? fallbackRows : []);
@@ -39,7 +39,7 @@ export default function OfficeTeamMessagesDesk({ appMode = "lab" }) {
               <strong>{row[1]}</strong>
               <small>{row[2]}</small>
             </button>
-          )) : <article className="cvSiteEmpty"><strong>No messages need review yet</strong><p>{ownerRoute ? "When a customer or worker message needs owner approval, Churvox will bring it back to Command." : "No demo messages are shown inside the real owner app."}</p></article>}
+          )) : <article className="cvSiteEmpty"><strong>No messages need review yet</strong><p>{ownerRoute ? "When a customer or worker message needs owner approval, Churvox will bring it back to Command." : "Messages will appear here when something needs owner review."}</p></article>}
         </section>
 
         <article className="cvMessagesThreadCard">
@@ -48,7 +48,7 @@ export default function OfficeTeamMessagesDesk({ appMode = "lab" }) {
           <p>{current[3]}</p>
 
           <div className="cvMessagesFlowLine">
-            <article><b>Input</b><small>{live.isLive ? "Live read-only message" : allowFallback ? "Demo message" : "No live message"}</small></article>
+            <article><b>Input</b><small>{live.isLive ? "Live read-only message" : allowFallback ? "Example message" : "No live message"}</small></article>
             <article><b>Prepared</b><small>Reply / staff ask / Command card</small></article>
             <article><b>Owner</b><small>Approve before send</small></article>
           </div>
@@ -56,7 +56,7 @@ export default function OfficeTeamMessagesDesk({ appMode = "lab" }) {
           {hasRows ? <section className="cvMessagesDraftBox">
             <span>Prepared reply draft</span>
             <p>{preparedReply}</p>
-          </section> : <section className="cvMessagesDraftBox"><span>No draft prepared</span><p>{ownerRoute ? "This inbox is clear. Drafts will appear when a message needs owner review." : "Live messages will appear here when there is something real for the owner to review."}</p></section>}
+          </section> : <section className="cvMessagesDraftBox"><span>No draft prepared</span><p>{ownerRoute ? "This inbox is clear. Drafts will appear when a message needs owner review." : "Messages will appear here when there is something real for the owner to review."}</p></section>}
 
           {hasRows ? <OfficeTeamSafeControls area="messages" record={current} primary="Prepare reply" secondary="Prepare staff ask" command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "No message needs owner approval right now." : "When real messages arrive, Churvox can prepare replies for owner approval."}</p></article>}
         </article>
