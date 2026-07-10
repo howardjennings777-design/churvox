@@ -50,7 +50,7 @@ export function StaffScreen(props) {
 function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondary, appMode = "lab" }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = appMode !== "owner" && !ownerRoute;
-  const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found. No demo rows are shown in the owner app." });
+  const live = useOfficeTeamRows(area, rows, { allowFallback, emptyMessage: "No live records found yet." });
   const [selected, setSelected] = useState(rows[0]);
   const displayRows = live.rows;
   const hasRows = displayRows.length > 0;
@@ -76,7 +76,7 @@ function OperationalScreen({ area, eyebrow, title, text, rows, primary, secondar
               <strong>{row[1]}</strong>
               <em>{row[2]}</em>
             </button>
-          )) : <article className="cvSiteEmpty"><strong>No {eyebrow.toLowerCase()} records yet</strong><p>{ownerRoute ? "When this area needs owner review, Churvox will bring the next step back to Command." : "No demo rows are shown inside the real owner app."}</p></article>}
+          )) : <article className="cvSiteEmpty"><strong>No {eyebrow.toLowerCase()} records yet</strong><p>{ownerRoute ? "When this area needs owner review, Churvox will bring the next step back to Command." : "This area will fill when there is live work to review."}</p></article>}
         </section>
 
         <aside className="cvOpsDetail">
