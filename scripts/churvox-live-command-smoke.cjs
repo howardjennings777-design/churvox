@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const DEFAULT_BASE = 'https://grassley-backend.onrender.com';
+const EXPECTED_MARKER = 'command-live-smoke-guard-20260710c';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
 
 const getEndpoints = [
@@ -19,19 +20,39 @@ const okStatuses = new Set([200, 401, 403]);
 const protectedStatuses = new Set([401, 403]);
 const failures = [];
 
+async function readJson(response) {
+  const text = await response.text().catch(() => '');
+  try {
+    return { text, body: text ? JSON.parse(text) : null };
+  } catch {
+    return { text, body: null };
+  }
+}
+
+async function checkLiveMarker() {
+  const endpoint = '/api/command/live-smoke-marker';
+  const response = await fetch(`${base}${endpoint}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+  const { text, body } = await readJson(response);
+  const marker = body && typeof body === 'object' ? String(body.marker || '') : '';
+  if (response.status === 200 && marker === EXPECTED_MARKER) {
+    console.log(`✓ backend live marker present (${marker})`);
+    return true;
+  }
+  failures.push(`${endpoint} marker missing or stale. Expected ${EXPECTED_MARKER}, got status ${response.status}: ${text.slice(0, 160)}`);
+  console.log('✗ backend live marker missing or stale');
+  return false;
+}
+
 async function checkGet(endpoint) {
   const url = `${base}${endpoint}`;
   const response = await fetch(url, {
     method: 'GET',
     headers: { Accept: 'application/json' },
   });
-  const text = await response.text().catch(() => '');
-  let body = null;
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = null;
-  }
+  const { text, body } = await readJson(response);
 
   if (!okStatuses.has(response.status)) {
     failures.push(`${endpoint} returned ${response.status}: ${text.slice(0, 160)}`);
@@ -73,13 +94,7 @@ async function checkProtectedPost(endpoint) {
       owner_review_only: true,
     }),
   });
-  const text = await response.text().catch(() => '');
-  let body = null;
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = null;
-  }
+  const { text, body } = await readJson(response);
 
   if (protectedStatuses.has(response.status)) {
     console.log(`✓ ${endpoint} is deployed and protected (${response.status})`);
@@ -103,6 +118,19 @@ async function checkProtectedPost(endpoint) {
 
 (async () => {
   console.log(`Checking live Command backend at ${base}`);
+  const markerOk = await checkLiveMarker().catch((error) => {
+    failures.push(`/api/command/live-smoke-marker request failed: ${error.message}`);
+    console.log('✗ backend live marker request failed');
+    return false;
+  });
+
+  if (!markerOk) {
+    console.error('\nLive Command smoke failed before route checks:');
+    console.error('- The live backend is not running the latest Command smoke guard build. Redeploy grassley-backend to the latest main commit, then rerun this test.');
+    for (const failure of failures) console.error(`- ${failure}`);
+    process.exit(1);
+  }
+
   for (const endpoint of getEndpoints) {
     try {
       await checkGet(endpoint);
