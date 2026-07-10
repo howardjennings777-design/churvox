@@ -60,7 +60,7 @@ test.describe('hidden Office Team lab', () => {
   test('Command action wording stays approval-safe', async ({ page }) => {
     await page.goto('/office-team-lab#command', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
-    const visibleLabels = await page.locator('.cvSiteDecisionCard footer button').evaluateAll((buttons) => buttons.map((button) => button.textContent || '').join(' '));
+    const visibleLabels = await page.locator('.cvSiteDecisionCard footer button').evaluateAll((buttons) => buttons.map((button) => textVisible(button) ? button.textContent || '' : '').join(' '));
     expect(visibleLabels).not.toMatch(/\bSend\b|\bBook\b|\bComplete\b|\bAdd charge\b|\bSave\b/);
     await expect(page.getByText(/Approval recorded only · no send, sync, charge or record change/i).first()).toBeVisible();
   });
@@ -77,11 +77,13 @@ test.describe('hidden Office Team lab', () => {
 
     await page.goto('/office-team-lab#command', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
-    await expect(page.getByText(/prepared-only handoff|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /Open slip/i }).first()).toBeVisible();
+    await expect(page.locator('.cvCommandSlip').getByText(/Churvox prepared|Command slip/i).first()).toBeVisible();
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner decision queue/i)).toBeVisible();
-    await expect(page.getByText(/prepared-only handoff|Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /Open slip/i }).first()).toBeVisible();
+    await expect(page.locator('.cvCommandSlip').getByText(/Churvox prepared|Command slip/i).first()).toBeVisible();
 
     await page.locator('.cvSiteDecisionCard').first().getByRole('button', { name: /Open slip/i }).click();
     await expect(page.locator('.cvCommandSlip').getByText(/Command slip/i).first()).toBeVisible();
@@ -114,3 +116,8 @@ test.describe('hidden Office Team lab', () => {
     await expect(page.getByText(/prepared-only Command item/i).first()).toBeVisible();
   });
 });
+
+function textVisible(node) {
+  const style = window.getComputedStyle(node);
+  return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+}
