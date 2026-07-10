@@ -14,10 +14,10 @@ async function expectWorkerAppNotExposed(page, path) {
 }
 
 test.describe('new Churvox rebuild route safety', () => {
-  test('public hidden lab remains reachable for safe audit', async ({ page }) => {
+  test('public control route remains reachable for safe audit', async ({ page }) => {
     await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.cvOfficeSite')).toBeVisible();
-    await expect(page.getByText(/Hidden internal website|owner approval locked/i).first()).toBeVisible();
+    await expect(page.getByText(/Churvox control centre|Command-centred owner control|owner approves/i).first()).toBeVisible();
   });
 
   test('owner app routes do not expose owner UI when signed out', async ({ page }) => {
