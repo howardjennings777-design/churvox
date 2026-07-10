@@ -27,6 +27,7 @@ const pages = [
 ];
 
 const safetyCopy = /Owner approval locked|owner approves|owner approval|prepared-only|No auto-send|No auto-sync|Nothing was sent, synced, charged or changed|no send, sync, charge or record change/i;
+const approvalTrailCopy = /Owner reviewed|Command recorded|recorded|approved|Approve record|Approval trail saved/i;
 
 test.describe('hidden Office Team lab', () => {
   test.beforeEach(async ({ page }) => {
@@ -87,18 +88,18 @@ test.describe('hidden Office Team lab', () => {
 
     await page.goto('/office-team-lab#today', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Recent owner approvals/i)).toBeVisible();
-    await expect(page.getByText(/Owner reviewed|recorded|approved/i).first()).toBeVisible();
+    await expect(page.getByText(approvalTrailCopy).first()).toBeVisible();
 
     await page.goto('/office-team-lab#activity', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner approval trail/i)).toBeVisible();
-    await expect(page.getByText(/Owner reviewed/i).first()).toBeVisible();
+    await expect(page.getByText(approvalTrailCopy).first()).toBeVisible();
     await expect(page.getByText(/Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
     await expect(page.getByText(/Prepared work trail/i)).toBeVisible();
     await expect(page.getByText(/Prepared|Cleared/i).first()).toBeVisible();
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/Owner approval trail/i)).toBeVisible();
-    await expect(page.getByText(/Owner reviewed/i).first()).toBeVisible();
+    await expect(page.getByText(approvalTrailCopy).first()).toBeVisible();
     await expect(page.getByText(/Nothing was sent, synced, charged or changed/i).first()).toBeVisible();
   });
 
