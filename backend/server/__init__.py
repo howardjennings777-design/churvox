@@ -256,3 +256,8 @@ async def _wrapper_healthz():
 @app.get('/healthz')
 async def _plain_healthz():
     return {'ok': True, 'service': 'churvox-backend-wrapper'}
+
+
+@app.get('/')
+async def _root():
+    return RedirectResponse('/api/healthz')
