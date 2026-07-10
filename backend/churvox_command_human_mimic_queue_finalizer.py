@@ -104,13 +104,25 @@ async def _supersede(db, ObjectId, item, reason):
 async def _update_summary(db, ObjectId, item, prepared_fields, evidence, confidence_reasons):
     item_oid = _oid(ObjectId, _item_id(item))
     if item_oid is None:
-        return
+        return False
     payload = item.get("payload") if isinstance(item.get("payload"), dict) else {}
-    prepared = payload.get("prepared_form") if isinstance(payload.get("prepared_form"), dict) else {}
+    current_prepared = payload.get("prepared_form") if isinstance(payload.get("prepared_form"), dict) else {}
+    prepared = dict(current_prepared)
     prepared.update(prepared_fields)
+    next_evidence = list(evidence)
+    next_confidence = {"score": 0.96, "why": list(confidence_reasons)}
+    unchanged = (
+        payload.get("summary_guard") == SUMMARY_GUARD
+        and current_prepared == prepared
+        and payload.get("evidence") == next_evidence
+        and payload.get("confidence") == next_confidence
+    )
+    if unchanged:
+        return False
+
     payload["prepared_form"] = prepared
-    payload["evidence"] = list(evidence)
-    payload["confidence"] = {"score": 0.96, "why": list(confidence_reasons)}
+    payload["evidence"] = next_evidence
+    payload["confidence"] = next_confidence
     payload["summary_guard"] = SUMMARY_GUARD
     item["payload"] = payload
     item["updated_at"] = _now().isoformat()
@@ -118,8 +130,8 @@ async def _update_summary(db, ObjectId, item, prepared_fields, evidence, confide
         {"_id": item_oid, "status": {"$in": OPEN_STATUSES}},
         {"$set": {
             "payload.prepared_form": prepared,
-            "payload.evidence": list(evidence),
-            "payload.confidence": payload["confidence"],
+            "payload.evidence": next_evidence,
+            "payload.confidence": next_confidence,
             "payload.summary_guard": SUMMARY_GUARD,
             "updated_at": _now(),
         }, "$push": {"audit": {
@@ -131,6 +143,7 @@ async def _update_summary(db, ObjectId, item, prepared_fields, evidence, confide
             "safety": SAFE_NOTE,
         }}},
     )
+    return True
 
 
 async def finalize_strict_queue(db, user, result, ObjectId):
