@@ -1,8 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Nav, Footer } from "./ExecutiveHomePage";
 import { getIndustry, industryOptions, normalizeIndustry } from "../../config/churvoxIndustrySystem";
-import "./SimplePublic.css";
+import { PublicNav, PublicFooter, Eyebrow } from "./ChurvoxPublicShell";
 import "./PublicDemoPage.css";
 
 function queryIndustry() {
@@ -42,8 +41,8 @@ function rowsFor(industry) {
   };
 }
 
-function Panel({ title, eyebrow, children, className = "" }) {
-  return <section className={`demoPanel ${className}`}><header>{eyebrow ? <small>{eyebrow}</small> : null}<h3>{title}</h3></header>{children}</section>;
+function Panel({ title, eyebrow, children, className = "", id }) {
+  return <section id={id} className={`demoPanel ${className}`}><header>{eyebrow ? <small>{eyebrow}</small> : null}<h3>{title}</h3></header>{children}</section>;
 }
 
 export default function PublicDemoPage() {
@@ -60,35 +59,35 @@ export default function PublicDemoPage() {
   }, [industryKey]);
 
   return (
-    <main className="publicSite publicDemoSite cv2Site publicPageSlim" data-version="CHURVOX_DEMO_INDUSTRY_FLOW_20260708">
-      <Nav />
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_DEMO_20260710">
+      <PublicNav active="/demo" />
 
-      <section className="publicHero publicDemoHero slimHero">
-        <div className="publicHeroCopy">
-          <span className="publicKicker">Demo</span>
-          <h1>See the Churvox workflow for {industry.short.toLowerCase()}.</h1>
-          <p>This demo uses fake records, but the flow is real: {industry.flow.join(" → ")}. Jobs, workers and owner approvals sit together before anything important moves.</p>
-          <label className="publicCountrySelect demoIndustrySelect">
+      <section className="cp26PageHero">
+        <div>
+          <Eyebrow>Interactive product sample</Eyebrow>
+          <h1>See the Churvox flow for {industry.short.toLowerCase()}.</h1>
+          <p>This page uses clearly labelled sample records. The workflow is the point: {industry.flow.join(" → ")}. Work pages hold the facts and Command holds the owner decisions.</p>
+          <label className="cp26CountrySelect">
             <span>Demo business type</span>
             <select value={industryKey} onChange={(event) => setIndustryKey(normalizeIndustry(event.target.value))}>
               {industryOptions(true).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </label>
-          <div className="publicActions">
-            <a href="#command-demo" className="publicPrimary">Jump to Command</a>
-            <Link to={`/signup?industry=${encodeURIComponent(industryKey)}`} className="publicSecondary">Start trial</Link>
+          <div className="cp26HeroActions">
+            <a href="#command-demo" className="cp26Button">Jump to Command</a>
+            <Link to={`/signup?industry=${encodeURIComponent(industryKey)}`} className="cp26Button cp26ButtonGhost">Start free trial</Link>
           </div>
         </div>
-        <aside className="publicFeaturePanel publicDemoHeroCard slimPanel">
+        <div className="cp26HeroPanel">
           <small>{industry.title}</small>
-          <b>The app wording follows the business type.</b>
+          <b>The wording follows the business type.</b>
           <span>{industry.intro}</span>
-        </aside>
+        </div>
       </section>
 
       <section className="demoAppShell slimDemoShell" aria-label="Churvox public demo app preview">
         <header className="demoTopBar">
-          <div><small>Demo business</small><h2>{industry.short} Command preview</h2></div>
+          <div><small>Sample business</small><h2>{industry.short} Command preview</h2></div>
           <nav aria-label="Demo sections"><a href="#today-demo">Today</a><a href="#command-demo">Command</a><a href="#jobs-demo">Jobs</a><a href="#workers-demo">Workers</a></nav>
         </header>
 
@@ -116,12 +115,19 @@ export default function PublicDemoPage() {
         </section>
       </section>
 
-      <section className="publicBand publicCta publicDemoCta slimCta">
-        <div><span className="publicKicker">Your turn</span><h2>Try it with your own jobs and workers.</h2></div>
-        <div className="publicActions"><Link to={`/signup?industry=${encodeURIComponent(industryKey)}`} className="publicPrimary">Start trial</Link><Link to="/pricing" className="publicSecondary">View pricing</Link></div>
+      <section className="cp26Closing">
+        <div>
+          <Eyebrow light>Your own records next</Eyebrow>
+          <h2>Try the flow with your jobs, workers and clients.</h2>
+          <p>The trial starts empty and uses your real business records. Nothing from this sample is copied into the account.</p>
+        </div>
+        <div className="cp26ClosingActions">
+          <Link to={`/signup?industry=${encodeURIComponent(industryKey)}`} className="cp26Button">Start free trial</Link>
+          <Link to="/pricing" className="cp26Button cp26ButtonGhost">View pricing</Link>
+        </div>
       </section>
 
-      <Footer />
+      <PublicFooter />
     </main>
   );
 }
