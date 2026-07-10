@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import "./OfficeTeamWorkerRoute.css";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
-import { createBackendWorkerPaymentRequest } from "./OfficeTeamCommandApi";
+import { createBackendWorkerPaymentRequest, createBackendWorkerUpdateRequest } from "./OfficeTeamCommandApi";
 import { createOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Complete"];
@@ -15,6 +15,7 @@ export default function OfficeTeamWorkerRoute() {
   const [trail, setTrail] = useState([]);
   const [paymentNotice, setPaymentNotice] = useState("");
   const [paymentBusy, setPaymentBusy] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
   const rows = live.rows;
   const hasWork = rows.length > 0;
   const current = selectedRow(rows, selected, []);
@@ -34,12 +35,26 @@ export default function OfficeTeamWorkerRoute() {
     addTrail(`${step} recorded on this phone preview.`);
   }
 
-  function sendBossUpdate(text = note) {
+  async function sendBossUpdate(text = note) {
+    if (updateBusy) return;
     const clean = String(text || "Worker update from phone view").trim();
     const record = ["Worker update", title, "Owner review", clean];
-    createOfficeTeamLocalCommand({ area: "worker", record, action: "Worker update" });
-    addTrail(`Boss update prepared for Command: ${clean}`);
-    setNote("");
+    setUpdateBusy(true);
+    try {
+      await createBackendWorkerUpdateRequest({
+        title,
+        update: clean,
+        updateType: "Worker update",
+        status: hasWork ? status : "General update",
+      });
+      addTrail(`Boss update sent to backend Command: ${clean}`);
+    } catch (error) {
+      createOfficeTeamLocalCommand({ area: "worker", record, action: "Worker update" });
+      addTrail(`Boss update prepared locally for Command: ${clean}. ${error?.message || ""}`.trim());
+    } finally {
+      setUpdateBusy(false);
+      setNote("");
+    }
   }
 
   async function copyPaymentLink() {
@@ -146,11 +161,11 @@ export default function OfficeTeamWorkerRoute() {
         <section className="cvWorkerRouteNoteBox">
           <span>Boss update</span>
           <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Tell the office if something changed…" />
-          <button type="button" onClick={() => sendBossUpdate()}>{hasWork ? "Prepare office update" : "Prepare general update"}</button>
+          <button type="button" disabled={updateBusy} onClick={() => sendBossUpdate()}>{updateBusy ? "Preparing…" : hasWork ? "Prepare office update" : "Prepare general update"}</button>
         </section>
 
         <div className="cvWorkerRouteQuickNotes">
-          {quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork} onClick={() => sendBossUpdate(item)}>{item}</button>)}
+          {quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}
         </div>
 
         <section className="cvWorkerRouteProof">
