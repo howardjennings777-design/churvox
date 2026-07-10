@@ -11,6 +11,7 @@ const expect = (name, ok, detail) => checks.push({ name, ok: Boolean(ok), detail
 
 const normalizer = read('backend/churvox_command_human_mimic_source_normalizer.py');
 const strict = read('backend/churvox_command_human_mimic_v3_routes.py');
+const roleSchema = read('backend/churvox_command_human_mimic_role_schema_guard.py');
 const finalizer = read('backend/churvox_command_human_mimic_queue_finalizer.py');
 const live = read('backend/churvox_command_human_mimic_live_routes.py');
 const marker = read('backend/churvox_command_human_mimic_marker_routes.py');
@@ -51,6 +52,26 @@ expect(
 );
 
 expect(
+  'every operational mimic has a required evidence schema',
+  all(roleSchema, [
+    'ROLE_SCHEMA_GUARD = "role-required-evidence-v1"',
+    'if action == "prepare_invoice"',
+    'elif action == "prepare_recurring_next_date"',
+    'elif action == "complete_job_setup"',
+    'elif action == "prepare_overdue_followup"',
+    'elif action == "prepare_customer_reply"',
+    'elif action == "review_odd_hours"',
+    'elif action == "request_completion_proof"',
+    'elif action == "prepare_client_memory"',
+    'elif action == "review_accounting_export"',
+    'payload["required_fields"] = required',
+    'payload["approval_blocked"] = blocked',
+    'payload["role_schema_guard"] = ROLE_SCHEMA_GUARD',
+  ]),
+  'Each mimic must require the client, amount, date, message, worker, proof or tax evidence appropriate to its role',
+);
+
+expect(
   'manager mimics use only the surviving strict queue',
   all(finalizer, [
     'SUMMARY_GUARD = "strict-surviving-queue-summary-v1"',
@@ -74,23 +95,28 @@ expect(
     'A live invoice already links to this job',
     'result["post_guard"] = POST_GUARD',
     'result["source_normalization"] = "legacy-job-status-and-timer-units-v1"',
+    'result = await enforce_role_schema(db, result, ObjectId)',
     'result = await finalize_strict_queue(db, user, result, ObjectId)',
   ]),
-  'Source normalisation, strict validation, duplicate invoice recheck and summary finalisation must all execute',
+  'Source normalisation, strict validation, duplicate recheck, role schemas and manager finalisation must all execute',
 );
 
 expect(
   'marker and smoke require the same complete chain',
   all(marker, [
     'HUMAN_MIMIC_SOURCE_NORMALIZATION = "legacy-job-status-and-timer-units-v1"',
+    'HUMAN_MIMIC_ROLE_SCHEMA_GUARD = "role-required-evidence-v1"',
     'HUMAN_MIMIC_SUMMARY_GUARD = "strict-surviving-queue-summary-v1"',
     '"source_normalization": True',
+    '"role_specific_required_evidence": True',
     '"linked_invoice_postguard": True',
     '"manager_summaries_use_strict_queue": True',
   ]) && all(liveSmoke, [
     "EXPECTED_SOURCE_NORMALIZATION = 'legacy-job-status-and-timer-units-v1'",
+    "EXPECTED_ROLE_SCHEMA_GUARD = 'role-required-evidence-v1'",
     "EXPECTED_SUMMARY_GUARD = 'strict-surviving-queue-summary-v1'",
     'preflight.source_normalization',
+    'preflight.role_specific_required_evidence',
     'preflight.manager_summaries_use_strict_queue',
   ]),
   'Live smoke must fail when any strict-chain layer is stale or missing',
@@ -131,7 +157,7 @@ expect(
 
 expect(
   'strict-chain files contain no external action implementation',
-  !/(send_email\s*\(|send_sms\s*\(|payment_intent\s*\(|create_charge\s*\(|file_tax\s*\(|submit_tax\s*\(|create_bank_file\s*\()/i.test(`${normalizer}\n${strict}\n${finalizer}\n${live}\n${apply}`),
+  !/(send_email\s*\(|send_sms\s*\(|payment_intent\s*\(|create_charge\s*\(|file_tax\s*\(|submit_tax\s*\(|create_bank_file\s*\()/i.test(`${normalizer}\n${strict}\n${roleSchema}\n${finalizer}\n${live}\n${apply}`),
   'Strict mimic code must prepare internal work only',
 );
 
