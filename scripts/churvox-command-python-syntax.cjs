@@ -14,6 +14,8 @@ const files = [
   'backend/churvox_command_human_mimic_live_routes.py',
   'backend/churvox_command_human_mimic_marker_routes.py',
   'backend/churvox_command_apply_routes.py',
+  'backend/churvox_hq_connection_status_patch.py',
+  'backend/churvox_hq_paid_launch_report_patch.py',
   'backend/usercustomize.py',
   'scripts/churvox_mimic_full_test.py',
   'scripts/churvox_mimic_full_test_runner.py',
