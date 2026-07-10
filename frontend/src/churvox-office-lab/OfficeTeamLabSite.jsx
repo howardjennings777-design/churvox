@@ -207,12 +207,17 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     }
     if (item?.raw?.source === "backend_command_slip") {
       try {
-        await recordBackendCommandDecision(item, action, ownerNote || SAFE_APPROVAL_TEXT);
+        await recordBackendCommandDecision(item, action, {
+          note: ownerNote || SAFE_APPROVAL_TEXT,
+          ownerNote,
+          fields: Array.isArray(detail.fields) ? detail.fields : [],
+          formTitle: detail.formTitle || makeSlipFormTitle(item),
+        });
         const trail = recordOfficeTeamApprovalTrail(item, action, ownerNote ? `Command recorded · ${ownerNote}` : "Command recorded");
         setApprovalTrail(trail);
         const audit = await fetchBackendCommandAudit().catch(() => null);
         if (audit) setBackendAudit(audit);
-        setNotice(`${action} recorded in Command. ${SAFE_APPROVAL_TEXT}`);
+        setNotice(`${action} recorded in Command with the approved form snapshot. ${SAFE_APPROVAL_TEXT}`);
       } catch {
         setResolved((current) => { const copy = { ...current }; delete copy[id]; return copy; });
         const trail = recordOfficeTeamApprovalTrail(item, action, "Returned to Command");
@@ -291,21 +296,21 @@ function Command({ tray, setTray, counts, pending, onAction }) {
     onAction(item, action, detail);
     setSelectedId("");
   }
-  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check the editable draft form, change anything needed, then approve or park it. Nothing sends, syncs, charges or changes records from this screen." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} onAction={act} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check the editable draft form, change anything needed, then approve or park it. Nothing sends, syncs, charges or changes records from this screen." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
 }
 
 function CommandSlip({ item, onAction }) {
   const itemKey = keyOf(item || {});
   const actions = Array.isArray(item?.actions) ? item.actions : [];
-  const actionKey = actions.join("|");
   const [ownerNote, setOwnerNote] = useState("");
   const [selectedAction, setSelectedAction] = useState(actions[0] || "Approve record");
   const [draftFields, setDraftFields] = useState(() => makeSlipFields(item));
   useEffect(() => {
+    const nextActions = Array.isArray(item?.actions) ? item.actions : [];
     setOwnerNote("");
-    setSelectedAction(actions[0] || "Approve record");
+    setSelectedAction(nextActions[0] || "Approve record");
     setDraftFields(makeSlipFields(item));
-  }, [itemKey, actionKey]);
+  }, [item]);
 
   if (!item) return <aside className="cvCommandSlip"><span>Command slip</span><h3>No open slip</h3><p>When the office team prepares work for the owner, the full decision slip opens here.</p></aside>;
 
@@ -334,7 +339,7 @@ function CommandSlip({ item, onAction }) {
     <section className="cvCommandSlipSafety"><b>Safety locks</b><span>No auto-send</span><span>No auto-sync</span><span>No auto-charge</span><span>No record change without approval</span></section>
 
     <footer className="cvSlipDecisionActions">{actions.map((action, i) => <button key={action} type="button" className={i === 0 ? "primary" : ""} onClick={() => { setSelectedAction(action); submit(action); }}>{action}</button>)}</footer>
-    <small className="cvSlipNote">Your click records the owner decision only. The next executor step still must respect Command approval.</small>
+    <small className="cvSlipNote">Your click records the owner decision and approved form snapshot only. The next executor step still must respect Command approval.</small>
   </aside>;
 }
 
@@ -358,7 +363,7 @@ function Safety() {
 }
 
 function Header({ eyebrow, title, text }) { return <header className="cvSiteScreenHeader"><span>{eyebrow}</span><h2>{title}</h2><p>{text}</p></header>; }
-function Decision({ item, onAction, onOpen, selected }) { return <article className={`cvSiteDecisionCard ${selected ? "selected" : ""}`}><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <small key={x}>{x}</small>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><footer><button type="button" className="openSlip" onClick={onOpen}>Open slip</button>{(item.actions || []).map((action, i) => <button key={action} className={i === 0 ? "primary" : ""} onClick={() => onAction(item, action)}>{action}</button>)}</footer><small>Approval recorded only · no send, sync, charge or record change</small></article>; }
+function Decision({ item, onOpen, selected }) { return <article className={`cvSiteDecisionCard ${selected ? "selected" : ""}`}><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <small key={x}>{x}</small>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><footer><button type="button" className="openSlip" onClick={onOpen}>Open slip</button></footer><small>Open the full slip to edit and record the owner decision</small></article>; }
 function Info({ title, items }) { return <section><h3>{title}</h3><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section>; }
 function Empty({ title, text }) { return <article className="cvSiteEmpty"><strong>{title}</strong><p>{text}</p></article>; }
 function role(name, dept, summary, checks, prepares, ownerAsk, feeds, guard) { return { name, dept, summary, checks, prepares, ownerAsk, feeds, guard }; }
