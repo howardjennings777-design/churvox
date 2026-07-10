@@ -25,7 +25,7 @@
 }
 
 .cvSiteTopbar::after {
-  content: "HIDDEN OWNER BUILD";
+  content: "CHURVOX CONTROL";
   position: absolute;
   right: 16px;
   bottom: -13px;
@@ -40,7 +40,7 @@
 }
 
 .cvOwnerReady .cvSiteTopbar::after {
-  content: "OWNER APP";
+  content: "OWNER WORKSPACE";
 }
 
 .cvOfficeBrand {
