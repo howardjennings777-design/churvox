@@ -46,6 +46,7 @@ function buttonOpenings(text) {
 }
 
 const humanMimic = read('backend/churvox_command_human_mimic_routes.py');
+const mimicMarker = read('backend/churvox_command_human_mimic_marker_routes.py');
 const applyRoutes = read('backend/churvox_command_apply_routes.py');
 const usercustomize = read('backend/usercustomize.py');
 const commandApi = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
@@ -58,6 +59,8 @@ const workerRoute = read('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.
 const workerOwner = read('frontend/src/churvox-office-lab/OfficeTeamWorkerPhoneView.jsx');
 const backOffice = read('frontend/src/churvox-office-lab/OfficeTeamBackOfficeScreens.jsx');
 const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
+const workForms = read('frontend/src/churvox-office-lab/OfficeTeamWorkForms.jsx');
+const liveSmoke = read('scripts/churvox-live-command-smoke.cjs');
 
 expect(
   'all eight office mimics have human-like builders',
@@ -107,11 +110,19 @@ expect(
 );
 
 expect(
-  'human mimic scan is registered before older scanners',
-  includesAll(usercustomize, ['build_command_human_mimic_router', 'build_command_mimic_intelligence_router', 'build_command_apply_router'])
+  'human mimic scan and marker are registered before older scanners',
+  includesAll(usercustomize, ['build_command_human_mimic_marker_router', 'build_command_human_mimic_router', 'build_command_mimic_intelligence_router', 'build_command_apply_router'])
+    && usercustomize.indexOf('build_command_human_mimic_marker_router') < usercustomize.indexOf('build_command_human_mimic_router')
     && usercustomize.indexOf('build_command_human_mimic_router') < usercustomize.indexOf('build_command_mimic_intelligence_router')
     && usercustomize.indexOf('build_command_mimic_intelligence_router') < usercustomize.indexOf('build_command_apply_router'),
-  'Human mimic v2 must own /command/scan while older scanners remain fallback only',
+  'Human mimic v2 must own /command/scan and expose a deployment marker while older scanners remain fallback only',
+);
+
+expect(
+  'live deployment marker proves all eight mimic roles',
+  includesAll(mimicMarker, ['HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v2"', '"Office Manager"', '"Receptionist"', '"Bookkeeper"', '"Accountant"', '"Payroll Clerk"', '"Client Memory"', '"Quality Checker"', '"Operations Manager"'])
+    && includesAll(liveSmoke, ['/api/command/human-mimic-marker', 'EXPECTED_HUMAN_MIMIC', 'roles.length === 8']),
+  'Live smoke must prove that human mimic v2, not only the old wrapper, reached Render',
 );
 
 expect(
@@ -121,9 +132,12 @@ expect(
 );
 
 expect(
-  'approval executor remains draft-only for external actions',
-  includesAll(applyRoutes, ['"status": "draft_approved"', '"no_auto_send": True', '"no_auto_sync": True', '"no_auto_charge": True', '"no_auto_file_tax": True']),
-  'Owner approval may create an internal draft but must not trigger external actions',
+  'approval executor remains draft-only, idempotent and memory-safe',
+  includesAll(applyRoutes, [
+    '"status": "draft_approved"', '"no_auto_send": True', '"no_auto_sync": True', '"no_auto_charge": True', '"no_auto_file_tax": True',
+    'slip.get("status") == "approved_applied"', '"idempotent": True', 'return "client_memory_reviews", "client_memory_review"',
+  ]),
+  'Owner approval may create one internal draft only; repeated clicks and client memory must not create duplicates',
 );
 
 expect(
@@ -148,8 +162,7 @@ expect(
 
 expect(
   'Help opens real pages and real support email',
-  includesAll(extraScreens, ['goToScreen(screen)', 'mailto:hello@churvox.com', 'Open protected worker app']) === false
-    && includesAll(extraScreens, ['goToScreen(screen)', 'mailto:hello@churvox.com', 'Use Churvox without guessing']),
+  includesAll(extraScreens, ['goToScreen(screen)', 'mailto:hello@churvox.com', 'Use Churvox without guessing', 'Open {title}']),
   'Help must not render fake fallback records or no-op support buttons',
 );
 
@@ -176,6 +189,12 @@ expect(
   'Plans comparison hands off to real billing route',
   includesAll(plans, ['function openBilling()', 'window.location.assign(`/plans?', 'Open secure billing', 'Nothing is charged from this comparison screen']),
   'Selecting a plan card must not look like a billing change without a real billing action',
+);
+
+expect(
+  'CSV preparation preserves real rows for the approval executor',
+  includesAll(workForms, ['csv_rows: rows', 'sourcePayload', '...(sourcePayload || {})']),
+  'CSV review must carry the parsed row objects, not only a preview sentence',
 );
 
 const buttonFiles = [
