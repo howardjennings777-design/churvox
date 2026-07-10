@@ -6,6 +6,7 @@ const EXPECTED_HUMAN_MIMIC = 'human-mimic-intelligence-v3';
 const EXPECTED_GUARD = 'human-mimic-strict-preflight-v3';
 const EXPECTED_POST_GUARD = 'linked-invoice-source-recheck-v1';
 const EXPECTED_SOURCE_NORMALIZATION = 'legacy-job-status-and-timer-units-v1';
+const EXPECTED_ROLE_SCHEMA_GUARD = 'role-required-evidence-v1';
 const EXPECTED_SUMMARY_GUARD = 'strict-surviving-queue-summary-v1';
 const EXPECTED_SETTINGS = 'business-profile-live-v1';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
@@ -55,6 +56,7 @@ async function checkHumanMimicMarker() {
   const guard = body && typeof body === 'object' ? String(body.guard || '') : '';
   const postGuard = body && typeof body === 'object' ? String(body.post_guard || '') : '';
   const sourceNormalization = body && typeof body === 'object' ? String(body.source_normalization || '') : '';
+  const roleSchemaGuard = body && typeof body === 'object' ? String(body.role_schema_guard || '') : '';
   const summaryGuard = body && typeof body === 'object' ? String(body.summary_guard || '') : '';
   const roles = body && Array.isArray(body.roles) ? body.roles : [];
   const safety = body && typeof body === 'object' ? String(body.safety || '') : '';
@@ -66,6 +68,7 @@ async function checkHumanMimicMarker() {
     preflight.weak_candidate_rejection,
     preflight.historical_money_reference_only,
     preflight.required_fields_block_approval,
+    preflight.role_specific_required_evidence,
     preflight.secret_redaction,
     preflight.linked_invoice_postguard,
     preflight.manager_summaries_use_strict_queue,
@@ -76,15 +79,16 @@ async function checkHumanMimicMarker() {
     && guard === EXPECTED_GUARD
     && postGuard === EXPECTED_POST_GUARD
     && sourceNormalization === EXPECTED_SOURCE_NORMALIZATION
+    && roleSchemaGuard === EXPECTED_ROLE_SCHEMA_GUARD
     && summaryGuard === EXPECTED_SUMMARY_GUARD
     && roles.length === 8
     && strictFlags.every((value) => value === true)
     && safety.includes('Nothing was sent, synced, charged or changed')
   ) {
-    console.log(`✓ complete strict human office chain present (${version}, ${guard}, ${postGuard}, ${sourceNormalization}, ${summaryGuard}, ${roles.length} roles)`);
+    console.log(`✓ complete strict human office chain present (${version}, ${guard}, ${postGuard}, ${sourceNormalization}, ${roleSchemaGuard}, ${summaryGuard}, ${roles.length} roles)`);
     return true;
   }
-  failures.push(`${endpoint} missing or stale. Expected complete strict v3 chain and 8 roles; got status ${response.status}: ${text.slice(0, 380)}`);
+  failures.push(`${endpoint} missing or stale. Expected complete strict v3 chain and 8 roles; got status ${response.status}: ${text.slice(0, 420)}`);
   console.log('✗ complete strict human office chain missing or stale');
   return false;
 }
