@@ -69,6 +69,7 @@ const visibleAppCopy = [
   extraScreens,
   messagesDesk,
   workerPhone,
+  workerRoute,
   backOfficeScreens,
   plans,
   plansCss,
@@ -81,13 +82,16 @@ const roughVisibleSnippets = [
   'Demo preview',
   'Demo mode',
   'demo mode',
+  'fake demo',
   'No demo rows',
   'No demo messages',
   'No demo worker',
   'local preview',
+  'phone preview',
   'safe preview',
   'hidden build',
   'hidden site',
+  'Office admin stays hidden',
   'Pricing is locked. The build is what changes.',
   'This screen keeps the rebuild honest',
   'How this becomes the real owner app',
@@ -115,7 +119,7 @@ expect('worker app route remains protected', app.includes('path="/worker/today"'
 expect('public marketing routes still point to marketing pages', includesAll(app, ['path="/" element={<HomePage />}', 'path="/pricing" element={<PricingPage />}', 'path="/contact" element={<ContactPage />}']), 'public route wiring changed unexpectedly');
 
 expect('premium office polish is loaded', labSite.includes('import "./OfficeTeamPremiumPolish.css";'), 'premium polish CSS is not imported');
-expect('visible app copy has no rough build/demo terms', !hasAny(visibleAppCopy, roughVisibleSnippets), 'rough visible copy term found in owner/office screens');
+expect('visible app copy has no rough build/demo terms', !hasAny(visibleAppCopy, roughVisibleSnippets), 'rough visible copy term found in owner/office/worker screens');
 expect('shell badge copy is product-ready', labPolish.includes('CHURVOX CONTROL') && navPolish.includes('Churvox control') && labPolish.includes('OWNER WORKSPACE'), 'shell badge copy still uses old wording');
 expect('plans page has country pricing controls', includesAll(plans, ['const COUNTRIES', 'Choose billing country', 'GST is shown before checkout', 'Sales tax, if required, is handled at checkout', 'priceParts(meta, item.price)']), 'country pricing controls missing');
 expect('plans page shows included and locked features', includesAll(plans, ['Included in this plan', 'Locked until upgrade', 'FeatureList', 'Command Growth Pack', 'price: 99']), 'included/locked plan structure missing');
@@ -132,8 +136,8 @@ expect('owner safe controls create backend slips', includesAll(safeControls, ['c
 expect('safe controls keep no-send copy', safeControls.includes('no send, no sync, no charge, no record change') && safeControls.includes('Nothing was sent, synced, charged or changed'), 'safe controls safety copy missing');
 
 expect('worker route has safe payment link panel', includesAll(workerRoute, ['Take payment', 'Open pay page', 'Copy link', 'Request link', 'No card is charged inside Worker View']), 'worker payment link panel missing or unsafe');
-expect('worker route sends payment requests to backend Command first', includesAll(workerRoute, ['createBackendWorkerPaymentRequest', 'Payment link request sent to backend Command', 'createOfficeTeamLocalCommand']), 'worker payment request does not use backend Command with local fallback');
-expect('worker route sends normal updates to backend Command first', includesAll(workerRoute, ['createBackendWorkerUpdateRequest', 'Boss update sent to backend Command', 'createOfficeTeamLocalCommand']), 'worker update request does not use backend Command with local fallback');
+expect('worker route sends payment requests to backend Command first', includesAll(workerRoute, ['createBackendWorkerPaymentRequest', 'Payment link request sent to Command', 'createOfficeTeamLocalCommand']), 'worker payment request does not use backend Command with local fallback');
+expect('worker route sends normal updates to backend Command first', includesAll(workerRoute, ['createBackendWorkerUpdateRequest', 'Boss update sent to Command', 'createOfficeTeamLocalCommand']), 'worker update request does not use backend Command with local fallback');
 expect('worker route cannot create direct card charge', !/(stripe\.checkout|stripe\.payment|payment_intent|terminal|reader|charge card|create charge)/i.test(workerRoute), 'worker route appears to create direct card charges');
 expect('worker rows expose payment metadata safely', includesAll(officeTeamApi, ['payment_link', 'payment_url', 'stripe_payment_url', 'paymentMeta', 'amount_due', 'balance_due']), 'worker payment metadata extraction missing');
 expect('frontend worker payment API helper is safe', includesAll(commandApi, ['/api/command/worker-payment-request', 'createBackendWorkerPaymentRequest', 'prepared_only: true', 'owner_review_only: true']), 'worker payment backend helper missing');
