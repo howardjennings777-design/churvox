@@ -18,12 +18,19 @@ source = source.replace(
 );
 
 source = source.replace(
+  "    'mobile-chromium',",
+  "    'testInfo.project.name',",
+);
+
+source = source.replace(
   "scripts['test:hardcore:logic'] === 'node scripts/churvox-hardcore-owner-worker-audit.cjs'",
   "scripts['test:hardcore:logic'] === 'node scripts/churvox-hardcore-owner-worker-audit-runner.cjs'",
 );
 
-if (!source.includes("OfficeTeamWorkerHardcore.css") || !source.includes("all(worker, ['useAuth', 'if (!user || !isWorker)', '<Navigate'])")) {
-  console.error('Hardcore audit runner could not apply the active worker guard/CSS compatibility checks.');
+if (!source.includes("OfficeTeamWorkerHardcore.css")
+  || !source.includes("all(worker, ['useAuth', 'if (!user || !isWorker)', '<Navigate'])")
+  || !source.includes("'testInfo.project.name'")) {
+  console.error('Hardcore audit runner could not apply the active worker guard, mobile CSS or project-aware checks.');
   process.exit(1);
 }
 
