@@ -1,0 +1,58 @@
+.cvPlanBillingAction {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 24px;
+  color: #fff8ed;
+  background: linear-gradient(135deg, #17120e, #453023 58%, #f97316);
+  box-shadow: 0 18px 42px rgba(23,18,14,.13);
+}
+
+.cvPlanBillingAction span {
+  color: #fed7aa;
+  font-size: .66rem;
+  font-weight: 1000;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cvPlanBillingAction h3 {
+  margin: 6px 0;
+  font-size: 1.55rem;
+  letter-spacing: -.045em;
+}
+
+.cvPlanBillingAction p {
+  max-width: 700px;
+  margin: 0;
+  color: rgba(255,248,237,.76);
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+.cvPlanBillingAction button {
+  flex: 0 0 auto;
+  min-height: 48px;
+  border: 0;
+  border-radius: 15px;
+  padding: 0 17px;
+  color: #17120e;
+  background: #fff8ed;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .cvPlanBillingAction {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cvPlanBillingAction button {
+    width: 100%;
+  }
+}
