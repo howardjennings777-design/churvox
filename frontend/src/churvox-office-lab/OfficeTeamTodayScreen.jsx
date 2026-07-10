@@ -50,7 +50,7 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
         <article className="cvSiteBriefing">
           <span>Daily briefing · {overview.label}</span>
           <h2>{pending.length ? `${pending.length} decisions are prepared. ${top.length} are ready first.` : "No urgent decisions waiting right now."}</h2>
-          <p>{ownerRoute ? "Churvox checks the business in read-only mode, prepares the next admin step, and waits for owner approval before anything moves." : "Today now checks the live business areas in read-only mode where possible. It still never sends, syncs, charges, edits records or changes money without owner approval."}</p>
+          <p>{ownerRoute ? "Churvox checks the business in read-only mode, prepares the next admin step, and waits for owner approval before anything moves." : "Today checks business areas in read-only mode where possible. It never sends, syncs, charges, edits records or changes money without owner approval."}</p>
           <div className="cvSiteBriefingActions">
             {shortcuts.map((key, index) => (
               <button key={key} className={index === 0 ? "primary" : ""} onClick={() => go(key)}>{labels[key] || key}</button>
@@ -112,7 +112,7 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
           <article className="cvSiteTodayPanel">
             <span>Live business areas</span>
             <strong>{overview.areas.reduce((sum, item) => sum + Number(item.count || 0), 0)} read-only records</strong>
-            <p>{allowFallback ? "These are safe previews pulled into the hidden lab. Action buttons remain approval paths." : "Only real read-only records appear here. No demo area data is shown in the owner app."}</p>
+            <p>{allowFallback ? "These are read-only business checks. Action buttons remain approval paths." : "Only real read-only records appear here. No example area data is shown in the owner workspace."}</p>
             <div className="cvSiteMiniList">
               {overview.areas.map((item) => (
                 <article key={item.area}>
@@ -128,7 +128,7 @@ export default function OfficeTeamTodayScreen({ metrics, pending, resolved, appr
           <article className="cvSiteActionPanel">
             <span>Safety lock</span>
             <strong>Approval first</strong>
-            <p>{ownerRoute ? "Nothing sends, syncs, charges or changes a record until you approve it in Command." : "The hidden build stays prepared-only until moved safely into the real app."}</p>
+            <p>{ownerRoute ? "Nothing sends, syncs, charges or changes a record until you approve it in Command." : "Every action stays prepared-only until the owner approves the next step."}</p>
             <button onClick={() => go(ownerRoute ? "command" : "safety")}>{ownerRoute ? "Open Command" : "View safety rules"}</button>
           </article>
 
