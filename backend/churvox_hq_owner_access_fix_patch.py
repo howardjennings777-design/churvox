@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
-import os
 from urllib.parse import urlencode
 
 INSTALLED = set()
+PLATFORM_OWNER_EMAIL = "howardjennings77@gmail.com"
 PLAN_ALIAS = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 PLAN_VALUE = {"solo": 39, "team": 89, "pro": 149, "enterprise": 299}
 PLAN_LABELS = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command", "none": "No plan", "": "No plan"}
 PACK_LABELS = {"full_access": "Full tester access", "operator_pack": "Operator free pack", "command_pack": "Command free pack", "command_growth_pack": "Command Growth Pack", "accounting_sync": "Accounting Sync Add-on"}
-DEFAULT_OWNER_EMAILS = {"hello@churvox.com", "howardjennings77@gmail.com"}
 
 
 def now_utc():
@@ -25,9 +24,7 @@ def lower(value):
 
 
 def owner_emails():
-    raw = os.environ.get("PLATFORM_OWNER_EMAILS") or os.environ.get("CHURVOX_PLATFORM_OWNER_EMAILS") or ""
-    configured = {lower(item) for item in raw.replace(";", ",").split(",") if lower(item)}
-    return DEFAULT_OWNER_EMAILS | configured
+    return {PLATFORM_OWNER_EMAIL}
 
 
 def plan_key(value, default="pro"):
@@ -78,6 +75,10 @@ def email_of(doc):
     return lower((doc or {}).get("email") or (doc or {}).get("user_email") or (doc or {}).get("owner_email"))
 
 
+def is_owner_email(value):
+    return lower(value) == PLATFORM_OWNER_EMAIL
+
+
 def is_free_tester(user):
     if not (user or {}).get("free_tester_access"):
         return False
@@ -110,12 +111,13 @@ def safe_doc(doc):
     item["is_free_tester"] = is_free_tester(item)
     item["is_paid_plan"] = is_paid(item)
     item["is_trialing"] = is_trial(item)
-    item["hq_record_type"] = "internal" if email_of(item) in owner_emails() else "customer"
-    item["hq_can_remove"] = email_of(item) not in owner_emails()
+    item["hq_record_type"] = "internal" if is_owner_email(email_of(item)) else "customer"
+    item["hq_can_remove"] = not is_owner_email(email_of(item))
     return item
 
 
-def front_url():
+def front_url(module=None):
+    import os
     return clean(os.environ.get("FRONTEND_URL") or os.environ.get("CHURVOX_FRONTEND_URL") or "https://www.churvox.com").rstrip("/")
 
 
@@ -135,16 +137,8 @@ def install(module):
 
     async def require_owner(request: Request):
         user = await get_current_user(request)
-        email = email_of(user)
-        allowed = email in owner_emails() or bool(user.get("is_platform_owner") or user.get("is_admin")) or lower(user.get("role")) in {"platform_owner", "superadmin"}
-        checker = getattr(module, "is_platform_owner", None)
-        if not allowed and checker:
-            try:
-                allowed = bool(checker(user))
-            except Exception:
-                allowed = False
-        if not allowed:
-            raise HTTPException(status_code=403, detail="Churvox HQ is locked to the platform owner account")
+        if not is_owner_email(email_of(user)):
+            raise HTTPException(status_code=403, detail=f"Churvox HQ is locked to {PLATFORM_OWNER_EMAIL}")
         return user
 
     def oid(value):
@@ -197,7 +191,7 @@ def install(module):
         paid = [u for u in users if is_paid(u)]
         testers = [u for u in users if is_free_tester(u)]
         revenue = sum(PLAN_VALUE.get(user_plan(user), 0) for user in paid)
-        return safe({"success": True, "generated_at": now_utc(), "metrics": {"total_users": len(users), "customer_users": len([u for u in users if u.get("hq_record_type") != "internal"]), "internal_users": len([u for u in users if u.get("hq_record_type") == "internal"]), "paid_users": len(paid), "free_tester_users": len(testers), "active_now": len(active_now), "active_today": len(active_today), "total_businesses": len(businesses), "total_jobs": len(jobs), "total_clients": len(clients), "monthly_revenue_estimate": revenue}, "lists": {"all_users": users, "users": [u for u in users if u.get("hq_record_type") != "internal"], "free_testers": testers, "paid_users": paid, "active_now": active_now, "businesses": businesses, "jobs": jobs, "clients": clients, "events": events, "activity": events}, "collections_seen": ["users", "businesses", "jobs", "clients", "platform_visits"]})
+        return safe({"success": True, "generated_at": now_utc(), "owner_only": PLATFORM_OWNER_EMAIL, "metrics": {"total_users": len(users), "customer_users": len([u for u in users if u.get("hq_record_type") != "internal"]), "internal_users": len([u for u in users if u.get("hq_record_type") == "internal"]), "paid_users": len(paid), "free_tester_users": len(testers), "active_now": len(active_now), "active_today": len(active_today), "total_businesses": len(businesses), "total_jobs": len(jobs), "total_clients": len(clients), "monthly_revenue_estimate": revenue}, "lists": {"all_users": users, "users": [u for u in users if u.get("hq_record_type") != "internal"], "free_testers": testers, "paid_users": paid, "active_now": active_now, "businesses": businesses, "jobs": jobs, "clients": clients, "events": events, "activity": events}, "collections_seen": ["users", "businesses", "jobs", "clients", "platform_visits"]})
 
     async def plan_report(request: Request):
         await require_owner(request)
@@ -209,18 +203,18 @@ def install(module):
         for user in users:
             key = user_plan(user)
             counts[key] = counts.get(key, 0) + 1
-        return safe({"success": True, "generated_at": now_utc(), "plan_counts": counts, "paid_users": paid, "trial_users": trials, "free_testers": testers, "monthly_revenue_estimate": sum(PLAN_VALUE.get(user_plan(user), 0) for user in paid)})
+        return safe({"success": True, "generated_at": now_utc(), "owner_only": PLATFORM_OWNER_EMAIL, "plan_counts": counts, "paid_users": paid, "trial_users": trials, "free_testers": testers, "monthly_revenue_estimate": sum(PLAN_VALUE.get(user_plan(user), 0) for user in paid)})
 
     async def control_log(request: Request):
         await require_owner(request)
         items = [safe_doc(item) for item in await list_collection("app_owner_control_log", 300)]
-        return {"success": True, "items": items, "count": len(items)}
+        return {"success": True, "owner_only": PLATFORM_OWNER_EMAIL, "items": items, "count": len(items)}
 
     async def retention_status(request: Request):
         await require_owner(request)
         logs = [safe_doc(item) for item in await list_collection("lifecycle_email_log", 120)]
         failures = [item for item in logs if item and (item.get("error") or item.get("success") is False or item.get("email_sent") is False)]
-        return {"success": True, "enabled": True, "items": logs, "failures": failures[:20], "last_result": {"success": True, "checked": len(logs), "sent": len([x for x in logs if x and x.get("email_sent")]), "failures": failures[:20]}, "message": "Retention status loaded"}
+        return {"success": True, "owner_only": PLATFORM_OWNER_EMAIL, "enabled": True, "items": logs, "failures": failures[:20], "last_result": {"success": True, "checked": len(logs), "sent": len([x for x in logs if x and x.get("email_sent")]), "failures": failures[:20]}, "message": "Retention status loaded"}
 
     async def tester_intake(request: Request, payload: dict = Body(default={})):
         owner = await require_owner(request)
@@ -248,15 +242,15 @@ def install(module):
         access_link = f"{front_url()}{path}?{urlencode(query)}"
         result = {"tester": tester_doc, "signup_link": None if existing else access_link, "login_link": access_link if existing else None}
         await log(owner, "tester_intake", payload, existing, result)
-        return safe({"success": True, "message": "Tester access granted" if existing else "Tester saved; send them the signup link", "tester": tester_doc, "user": existing, "signup_link": None if existing else access_link, "login_link": access_link if existing else None})
+        return safe({"success": True, "owner_only": PLATFORM_OWNER_EMAIL, "message": "Tester access granted" if existing else "Tester saved; send them the signup link", "tester": tester_doc, "user": existing, "signup_link": None if existing else access_link, "login_link": access_link if existing else None})
 
     async def control_access(request: Request, payload: dict = Body(default={})):
         owner = await require_owner(request)
         user = await find_user(payload.get("identifier") or payload.get("email") or payload.get("user_id"))
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        if email_of(user) in owner_emails():
-            raise HTTPException(status_code=403, detail="Cannot change a platform owner account")
+        if is_owner_email(email_of(user)):
+            raise HTTPException(status_code=403, detail="Cannot change the platform owner account")
         action = lower(payload.get("action") or "grant")
         if action in {"revoke", "remove", "disable"}:
             update = {"free_tester_access": False, "has_app_access": False, "subscription_status": "access_revoked", "billing_lock_reason": "revoked_by_hq", "updated_at": now_utc()}
@@ -270,7 +264,7 @@ def install(module):
         await db.users.update_one({"_id": user["_id"]}, {"$set": update})
         user.update(update)
         await log(owner, "control_access", payload, user, {"message": message})
-        return safe({"success": True, "message": message, "user": user})
+        return safe({"success": True, "owner_only": PLATFORM_OWNER_EMAIL, "message": message, "user": user})
 
     for path, method, endpoint in [
         ("/api/admin/owner-overview", "GET", overview),
