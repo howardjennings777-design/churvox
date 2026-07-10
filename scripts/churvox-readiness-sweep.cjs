@@ -31,6 +31,10 @@ function includesAll(text, needles) {
   return needles.every((needle) => text.includes(needle));
 }
 
+function hasAny(text, needles) {
+  return needles.some((needle) => text.includes(needle));
+}
+
 const rootPackage = json('package.json');
 const frontendPackage = json('frontend/package.json');
 const app = read('frontend/src/App.js');
@@ -40,6 +44,13 @@ const hqOwnerAccessPatch = read('backend/churvox_hq_owner_access_fix_patch.py');
 const hqGrowthPatch = read('backend/churvox_hq_growth_report_patch.py');
 const labSite = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const labPolish = read('frontend/src/churvox-office-lab/OfficeTeamPremiumPolish.css');
+const navPolish = read('frontend/src/churvox-office-lab/OfficeTeamNavPolish.css');
+const todayScreen = read('frontend/src/churvox-office-lab/OfficeTeamTodayScreen.jsx');
+const operationalScreens = read('frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx');
+const extraScreens = read('frontend/src/churvox-office-lab/OfficeTeamExtraScreens.jsx');
+const messagesDesk = read('frontend/src/churvox-office-lab/OfficeTeamMessagesDesk.jsx');
+const workerPhone = read('frontend/src/churvox-office-lab/OfficeTeamWorkerPhoneView.jsx');
+const backOfficeScreens = read('frontend/src/churvox-office-lab/OfficeTeamBackOfficeScreens.jsx');
 const commandApi = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
 const safeControls = read('frontend/src/churvox-office-lab/OfficeTeamSafeControls.jsx');
 const workerRoute = read('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx');
@@ -48,6 +59,39 @@ const commandRoutes = read('backend/churvox_command_routes.py');
 const usercustomize = read('backend/usercustomize.py');
 const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
 const plansCss = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.css');
+
+const visibleAppCopy = [
+  labSite,
+  labPolish,
+  navPolish,
+  todayScreen,
+  operationalScreens,
+  extraScreens,
+  messagesDesk,
+  workerPhone,
+  backOfficeScreens,
+  plans,
+  plansCss,
+].join('\n');
+
+const roughVisibleSnippets = [
+  'Hidden internal website',
+  'Hidden owner build',
+  'HIDDEN OWNER BUILD',
+  'Demo preview',
+  'Demo mode',
+  'demo mode',
+  'No demo rows',
+  'No demo messages',
+  'No demo worker',
+  'local preview',
+  'safe preview',
+  'hidden build',
+  'hidden site',
+  'Pricing is locked. The build is what changes.',
+  'This screen keeps the rebuild honest',
+  'How this becomes the real owner app',
+];
 
 const rootScripts = rootPackage.scripts || {};
 const frontendScripts = frontendPackage.scripts || {};
@@ -70,15 +114,16 @@ expect('owner dashboard uses new office app under auth', app.includes('const Own
 expect('worker app route remains protected', app.includes('path="/worker/today"') && app.includes('<WorkerRoute><WorkerOfficeApp /></WorkerRoute>'), 'worker route protection missing');
 expect('public marketing routes still point to marketing pages', includesAll(app, ['path="/" element={<HomePage />}', 'path="/pricing" element={<PricingPage />}', 'path="/contact" element={<ContactPage />}']), 'public route wiring changed unexpectedly');
 
-expect('premium office lab polish is loaded last', labSite.includes('import "./OfficeTeamPremiumPolish.css";'), 'premium polish CSS is not imported');
-expect('premium polish improves shell and nav', includesAll(labPolish, ['.cvSiteTopbar', 'HIDDEN OWNER BUILD', 'overflow-x: auto', '.cvSiteStatusLead', 'linear-gradient(135deg, #17120e']), 'premium polish shell styling missing');
+expect('premium office polish is loaded', labSite.includes('import "./OfficeTeamPremiumPolish.css";'), 'premium polish CSS is not imported');
+expect('visible app copy has no rough build/demo terms', !hasAny(visibleAppCopy, roughVisibleSnippets), 'rough visible copy term found in owner/office screens');
+expect('shell badge copy is product-ready', labPolish.includes('CHURVOX CONTROL') && navPolish.includes('Churvox control') && labPolish.includes('OWNER WORKSPACE'), 'shell badge copy still uses old wording');
 expect('plans page has country pricing controls', includesAll(plans, ['const COUNTRIES', 'Choose billing country', 'GST is shown before checkout', 'Sales tax, if required, is handled at checkout', 'priceParts(meta, item.price)']), 'country pricing controls missing');
 expect('plans page shows included and locked features', includesAll(plans, ['Included in this plan', 'Locked until upgrade', 'FeatureList', 'Command Growth Pack', 'price: 99']), 'included/locked plan structure missing');
 expect('plans CSS supports logical plan locks and growth pack', includesAll(plansCss, ['.cvPlanCountryCard', '.cvPlanFeatureList.included', '.cvPlanFeatureList.locked', '.cvGrowthPackCard', '.cvPlanPrice']), 'plan lock/growth pack CSS missing');
 
-expect('owner Command reads backend slips', includesAll(labSite, ['fetchBackendCommandDecisions', 'backendCommand', 'Backend Command']), 'owner Command backend slip wiring missing');
-expect('owner Command reads backend audit', includesAll(labSite, ['fetchBackendCommandAudit', 'backendAudit', 'Backend Command audit']), 'owner Activity backend audit wiring missing');
-expect('owner app suppresses demo decisions', labSite.includes('isOwnerApp ? [] : demoDecisions'), 'owner app can fall back to demo decisions');
+expect('owner Command reads backend slips', includesAll(labSite, ['fetchBackendCommandDecisions', 'backendCommand']), 'owner Command backend slip wiring missing');
+expect('owner Command reads backend audit', includesAll(labSite, ['fetchBackendCommandAudit', 'backendAudit']), 'owner Activity backend audit wiring missing');
+expect('owner app suppresses starter decisions', labSite.includes('isOwnerApp ? [] : starterDecisions'), 'owner app can fall back to starter decisions');
 expect('backend Command event refresh wired', labSite.includes('BACKEND_COMMAND_EVENT') && labSite.includes('window.addEventListener(BACKEND_COMMAND_EVENT'), 'backend Command refresh event missing');
 
 expect('frontend Command API has slips and audit endpoints', includesAll(commandApi, ['/api/command/slips', '/api/command/audit', 'createBackendCommandSlip', 'recordBackendCommandDecision']), 'frontend Command API missing endpoint wiring');
