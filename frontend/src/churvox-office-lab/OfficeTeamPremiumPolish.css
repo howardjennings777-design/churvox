@@ -1,0 +1,315 @@
+.cvOfficeFinal.cvOfficeSite {
+  padding: 16px 18px 28px;
+  gap: 16px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(249,115,22,.26), transparent 30%),
+    radial-gradient(circle at 94% 2%, rgba(23,18,14,.22), transparent 34%),
+    linear-gradient(90deg, rgba(23,18,14,.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(23,18,14,.03) 1px, transparent 1px),
+    linear-gradient(135deg, #f5efe6 0%, #ebe2d6 48%, #f8efe2 100%);
+  background-size: auto, auto, 28px 28px, 28px 28px, auto;
+}
+
+.cvSiteTopbar {
+  top: 12px;
+  width: min(1440px, 100%);
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 26px;
+  color: #fff8ed;
+  background:
+    linear-gradient(135deg, rgba(23,18,14,.98), rgba(43,31,24,.96) 58%, rgba(249,115,22,.92)),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 1px, transparent 1px 13px);
+  box-shadow: 0 22px 58px rgba(23,18,14,.24);
+  backdrop-filter: blur(18px);
+}
+
+.cvSiteTopbar::after {
+  content: "HIDDEN OWNER BUILD";
+  position: absolute;
+  right: 16px;
+  bottom: -13px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #fff8ed;
+  background: #17120e;
+  font-size: .58rem;
+  font-weight: 1000;
+  letter-spacing: .1em;
+  box-shadow: 0 8px 18px rgba(23,18,14,.18);
+}
+
+.cvOwnerReady .cvSiteTopbar::after {
+  content: "OWNER APP";
+}
+
+.cvOfficeBrand {
+  min-width: 250px;
+}
+
+.cvOfficeBrand img {
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  box-shadow: 0 12px 22px rgba(0,0,0,.24);
+}
+
+.cvOfficeBrand strong {
+  color: #fff8ed;
+  font-size: 1rem;
+  letter-spacing: -.035em;
+}
+
+.cvOfficeBrand span {
+  color: rgba(255,248,237,.7);
+  font-size: .68rem;
+}
+
+.cvSiteTopbar nav {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 6px;
+  overflow-x: auto;
+  max-width: calc(100vw - 360px);
+  padding: 4px 0 5px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,248,237,.38) transparent;
+}
+
+.cvSiteTopbar nav::-webkit-scrollbar {
+  height: 6px;
+}
+
+.cvSiteTopbar nav::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255,248,237,.38);
+}
+
+.cvSiteTopbar button {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,248,237,.12);
+  border-radius: 15px;
+  padding: 10px 13px;
+  color: rgba(255,248,237,.76);
+  background: rgba(255,248,237,.08);
+  font-size: .74rem;
+  font-weight: 1000;
+  transition: transform .16s ease, background .16s ease, color .16s ease;
+}
+
+.cvSiteTopbar button:hover {
+  transform: translateY(-1px);
+  color: #fff8ed;
+  background: rgba(255,248,237,.14);
+}
+
+.cvSiteTopbar button.active {
+  color: #17120e;
+  border-color: rgba(255,248,237,.78);
+  background: #fff8ed;
+  box-shadow: 0 12px 22px rgba(0,0,0,.18);
+}
+
+.cvSiteStatus,
+.cvSiteScreen {
+  width: min(1440px, 100%);
+}
+
+.cvSiteStatus {
+  grid-template-columns: minmax(420px, 1.45fr) repeat(4, minmax(150px, .45fr));
+  gap: 12px;
+}
+
+.cvSiteStatusLead,
+.cvSiteStatus article,
+.cvSiteScreen {
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,.58);
+  background: rgba(255,252,246,.78);
+  box-shadow: 0 20px 52px rgba(23,18,14,.09);
+}
+
+.cvSiteStatusLead {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 22px;
+  color: #fff8ed;
+  background:
+    radial-gradient(circle at 90% 5%, rgba(249,115,22,.26), transparent 32%),
+    linear-gradient(135deg, #17120e, #35271d 72%, #7c2d12);
+}
+
+.cvSiteStatusLead::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 1px, transparent 1px 14px);
+  opacity: .7;
+  pointer-events: none;
+}
+
+.cvSiteStatusLead > * {
+  position: relative;
+}
+
+.cvSiteStatusLead span {
+  color: #fed7aa;
+}
+
+.cvSiteStatusLead h1 {
+  max-width: 760px;
+  margin: 9px 0 7px;
+  font-size: clamp(1.7rem, 3vw, 3.35rem);
+  line-height: .92;
+  letter-spacing: -.075em;
+}
+
+.cvSiteStatusLead p,
+.cvSiteStatusLead small {
+  color: rgba(255,248,237,.78);
+}
+
+.cvSiteStatusLead small {
+  border: 1px solid rgba(255,248,237,.14);
+  border-radius: 999px;
+  background: rgba(255,248,237,.1);
+}
+
+.cvSiteStatus article {
+  min-height: 140px;
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,250,242,.78));
+}
+
+.cvSiteStatus article strong {
+  font-size: 2.35rem;
+}
+
+.cvSiteStatus article span {
+  font-size: .78rem;
+}
+
+.cvSiteScreen {
+  min-height: 650px;
+  padding: 20px;
+}
+
+.cvSiteScreenHeader {
+  gap: 8px 20px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+}
+
+.cvSiteScreenHeader h2 {
+  font-size: clamp(1.65rem, 3vw, 3.4rem);
+  line-height: .92;
+  letter-spacing: -.075em;
+}
+
+.cvSiteScreenHeader p {
+  max-width: 520px;
+  justify-self: end;
+  font-size: .9rem;
+  line-height: 1.48;
+}
+
+.cvSiteDecisionCard,
+.cvSiteEmpty,
+.cvSiteRoleDetail,
+.cvSitePlaybookGrid article,
+.cvSiteActivityLayout article,
+.cvSiteSafetyGrid article,
+.cvSiteTrayRail,
+.cvSiteQueueSummary,
+.cvSiteRoleList,
+.cvSiteBuildSteps {
+  border-radius: 24px;
+  border-color: rgba(23,18,14,.08);
+  background: rgba(255,255,255,.76);
+  box-shadow: inset 0 1px rgba(255,255,255,.7);
+}
+
+.cvSiteTrayRail {
+  padding: 10px;
+  gap: 9px;
+}
+
+.cvSiteTrayRail button {
+  border-radius: 18px;
+  min-height: 78px;
+  background: rgba(255,255,255,.82);
+}
+
+.cvSiteDecisionCard {
+  min-height: 390px;
+  padding: 18px;
+  box-shadow: 0 16px 38px rgba(23,18,14,.06);
+}
+
+.cvSiteDecisionCard h3 {
+  font-size: 1.22rem;
+  letter-spacing: -.045em;
+}
+
+.cvSiteDecisionCard footer button {
+  border-radius: 13px;
+  padding: 8px 10px;
+}
+
+.cvSiteTodayGrid,
+.cvSiteActivityLayout,
+.cvSiteTeamLayout {
+  gap: 14px;
+}
+
+@media (max-width: 1120px) {
+  .cvSiteTopbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cvSiteTopbar nav {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .cvSiteStatus {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cvSiteStatusLead {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvOfficeFinal.cvOfficeSite {
+    padding: 10px;
+  }
+
+  .cvOfficeBrand {
+    min-width: 0;
+  }
+
+  .cvSiteStatus,
+  .cvSiteDecisionGrid,
+  .cvSiteTrayRail,
+  .cvSiteTeamLayout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cvSiteScreenHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .cvSiteScreenHeader p {
+    justify-self: start;
+    text-align: left;
+  }
+
+  .cvSiteTopbar::after {
+    display: none;
+  }
+}
