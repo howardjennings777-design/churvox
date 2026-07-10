@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from bson import ObjectId
 from fastapi import HTTPException, Request
 
 
@@ -12,8 +13,7 @@ def install(legacy):
     app = getattr(legacy, "app", None)
     db = getattr(legacy, "db", None)
     get_current_user = getattr(legacy, "get_current_user", None)
-    ObjectId = getattr(legacy, "ObjectId", None)
-    if app is None or db is None or get_current_user is None or ObjectId is None:
+    if app is None or db is None or get_current_user is None:
         return
 
     def now():
