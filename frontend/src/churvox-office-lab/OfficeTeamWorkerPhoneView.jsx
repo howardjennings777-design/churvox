@@ -17,7 +17,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
   const allowFallback = appMode !== "owner" && !ownerRoute;
   const live = useOfficeTeamRows("worker", fallbackRows, { allowFallback, emptyMessage: "No live worker records found yet." });
   const [selected, setSelected] = useState(fallbackRows[0]);
-  const [localStatus, setLocalStatus] = useState("Not started");
+  const [labStatus, setLabStatus] = useState("Not started");
   const displayRows = live.rows;
   const hasRows = displayRows.length > 0;
   const current = selectedRow(displayRows, selected, allowFallback ? fallbackRows : []);
@@ -27,37 +27,38 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
     <section className="cvSiteScreen">
       <header className="cvSiteScreenHeader">
         <span>{ownerRoute ? "Workers" : "Worker View"}</span>
-        <h2>{ownerRoute ? "Worker updates and simple phone view" : "Simple phone view for staff"}</h2>
-        <p>Workers do not need the owner app. They need today’s work, big buttons, notes, photos and a clean boss message loop.</p>
+        <h2>{ownerRoute ? "Worker updates and field-app oversight" : "Simple phone view for staff"}</h2>
+        <p>{ownerRoute ? "This owner page shows live worker records and prepares decisions. It does not pretend to perform worker phone actions." : "This control view demonstrates the worker flow. The real protected worker route performs live job updates."}</p>
       </header>
 
       <div className="cvWorkerLabGrid">
-        <section className="cvWorkerPhoneFrame" aria-label="Worker phone view">
+        <section className="cvWorkerPhoneFrame" aria-label={ownerRoute ? "Worker flow summary" : "Worker phone control preview"}>
           <div className="cvWorkerPhoneTop">
-            <span>Churvox Worker</span>
-            <strong>{hasRows ? localStatus : "Waiting"}</strong>
+            <span>{ownerRoute ? "Worker flow" : "Churvox Worker"}</span>
+            <strong>{hasRows ? ownerRoute ? current[2] || "Live" : labStatus : "Waiting"}</strong>
           </div>
 
           <article className="cvWorkerJobCard">
             <small>{current[0]}</small>
             <h3>{hasRows ? current[1] : "No worker items waiting"}</h3>
-            <p>{hasRows ? current[3] : ownerRoute ? "Worker updates will appear here when staff have assigned work that needs review." : "Worker items will appear when staff have assigned work."}</p>
+            <p>{hasRows ? current[3] : ownerRoute ? "Worker records will appear here when staff have assigned work or updates." : "Worker items will appear when staff have assigned work."}</p>
             <em>{hasRows ? current[2] : "Clear"}</em>
           </article>
 
           <div className="cvWorkerBigButtons">
-            {workerSteps.map((step) => (
-              <button key={step} type="button" disabled={!hasRows} onClick={() => setLocalStatus(step)}>{step}</button>
-            ))}
+            {workerSteps.map((step) => ownerRoute
+              ? <span key={step} className="cvWorkerFlowStep">{step}</span>
+              : <button key={step} type="button" disabled={!hasRows} onClick={() => setLabStatus(step)}>{step}</button>)}
           </div>
 
           <div className="cvWorkerProofGrid">
-            {proofItems.map((item) => <button key={item} type="button" disabled={!hasRows}>{item}</button>)}
+            {proofItems.map((item) => <span key={item} className="cvWorkerFlowStep">{item}</span>)}
           </div>
 
           <section className="cvWorkerBossLoop">
             <b>Boss message</b>
-            <p>{hasRows ? "Send an update if something changed. Owner checks it in Command." : "Worker updates will appear here when staff have real assigned work."}</p>
+            <p>{hasRows ? "Worker updates return to Command when the owner needs to decide something." : "Worker updates will appear here when staff have real assigned work."}</p>
+            {ownerRoute ? <button type="button" onClick={() => window.open("/worker/today", "_blank", "noopener,noreferrer")}>Open protected worker app</button> : null}
           </section>
         </section>
 
@@ -65,7 +66,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
           <div className="cvWorkerDataSource">
             <span>Data source</span>
             <strong>{live.label}</strong>
-            <p>{ownerRoute ? "Worker updates are shown safely for owner review. Anything important comes back to Command before records or money change." : "Worker actions stay prepared-only here. Jobs, timers, photos and messages change only through approved owner flows."}</p>
+            <p>{ownerRoute ? "This page is owner oversight. Workers use the separate protected field route for real status, proof and boss updates." : "The lab shows structure only. Real worker actions belong on the protected worker route."}</p>
           </div>
 
           <section className="cvWorkerQueueList">
@@ -79,7 +80,7 @@ export default function OfficeTeamWorkerPhoneView({ appMode = "lab" }) {
             )) : <article className="cvSiteEmpty"><strong>No worker items yet</strong><p>{ownerRoute ? "This area is clear. Worker updates will appear when something needs owner review." : "Worker items will appear when there is real work to review."}</p></article>}
           </section>
 
-          {hasRows ? <OfficeTeamSafeControls area="worker" record={current} primary="Prepare worker update" secondary="Prepare boss note" command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "No worker update needs owner approval right now." : "Worker updates will appear here when there is something real for the owner to review."}</p></article>}
+          {hasRows ? <OfficeTeamSafeControls area="worker" record={current} primary="Prepare worker review" secondary="Prepare boss follow-up" command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "No worker update needs owner approval right now." : "Worker updates will appear here when there is something real for the owner to review."}</p></article>}
         </aside>
       </div>
     </section>
