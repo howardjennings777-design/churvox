@@ -1,0 +1,154 @@
+.cvOfficeXeroStatus {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.cvOfficeXeroStatus article,
+.cvOfficeXeroMain,
+.cvOfficeXeroChecks article {
+  border: 1px solid rgba(23,18,14,.1);
+  border-radius: 20px;
+  background: rgba(255,255,255,.76);
+  box-shadow: 0 14px 34px rgba(23,18,14,.06);
+}
+
+.cvOfficeXeroStatus article {
+  display: grid;
+  gap: 7px;
+  min-height: 110px;
+  align-content: center;
+  padding: 14px;
+}
+
+.cvOfficeXeroStatus article.ok {
+  border-color: rgba(22,101,52,.22);
+  background: linear-gradient(135deg, rgba(236,253,245,.88), rgba(255,255,255,.82));
+}
+
+.cvOfficeXeroStatus article.need {
+  border-color: rgba(194,65,12,.18);
+  background: linear-gradient(135deg, rgba(255,247,237,.9), rgba(255,255,255,.8));
+}
+
+.cvOfficeXeroStatus span,
+.cvOfficeXeroMain > span,
+.cvOfficeXeroChecks span {
+  color: #9a3412;
+  font-size: .66rem;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvOfficeXeroStatus strong {
+  color: #17120e;
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.cvOfficeXeroLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, .7fr);
+  gap: 12px;
+}
+
+.cvOfficeXeroMain {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(249,115,22,.15), transparent 34%),
+    rgba(255,255,255,.8);
+}
+
+.cvOfficeXeroMain h3 {
+  margin: 0;
+  color: #17120e;
+  font-size: clamp(1.7rem, 4vw, 3.4rem);
+  line-height: .96;
+  letter-spacing: -.065em;
+}
+
+.cvOfficeXeroMain p,
+.cvOfficeXeroChecks p {
+  margin: 0;
+  color: #655c52;
+  font-weight: 780;
+  line-height: 1.45;
+}
+
+.cvOfficeXeroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.cvOfficeXeroActions button {
+  min-height: 44px;
+  border: 1px solid rgba(23,18,14,.14);
+  border-radius: 14px;
+  padding: 0 14px;
+  color: #17120e;
+  background: rgba(255,255,255,.9);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cvOfficeXeroActions button.primary {
+  color: #fff8ed;
+  border-color: #17120e;
+  background: linear-gradient(135deg, #17120e, #4a3324 58%, #f97316);
+}
+
+.cvOfficeXeroActions button:disabled {
+  opacity: .48;
+  cursor: wait;
+}
+
+.cvOfficeXeroChecks {
+  display: grid;
+  gap: 10px;
+}
+
+.cvOfficeXeroChecks article {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 16px;
+}
+
+.cvOfficeXeroChecks strong {
+  color: #17120e;
+  font-size: 1.2rem;
+  letter-spacing: -.035em;
+}
+
+@media (max-width: 980px) {
+  .cvOfficeXeroStatus,
+  .cvOfficeXeroLayout {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cvOfficeXeroMain {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .cvOfficeXeroStatus,
+  .cvOfficeXeroLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .cvOfficeXeroActions {
+    display: grid;
+  }
+
+  .cvOfficeXeroActions button {
+    width: 100%;
+  }
+}
