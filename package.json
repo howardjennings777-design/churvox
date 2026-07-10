@@ -8,7 +8,7 @@
     "test:office-lab": "npm --prefix frontend run test:office-lab",
     "test:rebuild:routes": "npm --prefix frontend run test:rebuild:routes",
     "test:root-scripts": "node scripts/churvox-root-script-sanity.cjs",
-    "test:readiness": "node scripts/churvox-readiness-sweep.cjs && node scripts/churvox-command-approval-readiness.cjs && node scripts/churvox-human-mimic-product-audit.cjs",
+    "test:readiness": "node scripts/churvox-command-python-syntax.cjs && node scripts/churvox-readiness-sweep.cjs && node scripts/churvox-command-approval-readiness.cjs && node scripts/churvox-human-mimic-product-audit.cjs",
     "test:live-command": "node scripts/churvox-live-command-smoke.cjs",
     "test:business": "npm --prefix frontend run test:business",
     "test:business:live": "npm --prefix frontend run test:business:live",
