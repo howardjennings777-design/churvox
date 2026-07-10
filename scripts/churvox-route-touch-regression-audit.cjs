@@ -19,6 +19,9 @@ const wrapper = read('frontend/src/churvox-office-lab/OfficeTeamLab.jsx');
 const shell = read('frontend/src/pages/marketing/ChurvoxPublicShell.jsx');
 const pricing = read('frontend/src/pages/marketing/ExecutivePricingPage.jsx');
 const touchCss = read('frontend/src/pages/marketing/ChurvoxPublicTouchTargets.css');
+const loginCss = read('frontend/src/pages/auth/ChurvoxLoginPolish.css');
+const settings = read('frontend/src/churvox-office-lab/OfficeTeamSiteSettings.jsx');
+const safeControls = read('frontend/src/churvox-office-lab/OfficeTeamSafeControls.jsx');
 const ownerTruth = read('frontend/tests/e2e/churvox-owner-no-fake-data.spec.js');
 const publicTruth = read('frontend/tests/e2e/churvox-public-honesty-and-function.spec.js');
 
@@ -50,6 +53,23 @@ requireAll('mobile public touch targets', touchCss, [
   'touch-action: manipulation',
 ]);
 
+requireAll('mobile login recovery and trial targets', loginCss, [
+  '@media (max-width: 760px)',
+  '.cvChurvoxLogin .cvPublicAuthBottom a',
+  'min-height: 44px',
+  'touch-action: manipulation',
+]);
+
+requireAll('settings selector accessibility', settings, [
+  'aria-label="Industry profile"',
+  'aria-label="Work style"',
+]);
+
+requireAll('prepared-only Command handoff confirmation', safeControls, [
+  'created a prepared-only Command item',
+  'createOfficeTeamLocalCommand',
+]);
+
 if (!/OWNER_SCREENS\s*=\s*\[[^\]]*['"]team['"]/s.test(ownerTruth)) {
   failures.push('owner truth browser test no longer covers the team screen');
 }
@@ -66,4 +86,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Route/touch regression audit passed. Team routing and 44px mobile navigation, footer and pricing contact controls are protected.');
+console.log('Route/touch regression audit passed. Team routing, labelled settings, prepared-only Command handoff and 44px mobile public/login controls are protected.');
