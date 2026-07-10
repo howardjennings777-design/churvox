@@ -17,7 +17,7 @@ import { QuotesScreen, InvoicesScreen, IntegrationsScreen, HelpScreen } from "./
 import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScreens";
 import { ScheduleScreen, AutomationScreen, PayrollScreen, BrandingScreen } from "./OfficeTeamBackOfficeScreens";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
-import { BACKEND_COMMAND_EVENT, fetchBackendCommandAudit, fetchBackendCommandDecisions, recordBackendCommandDecision } from "./OfficeTeamCommandApi";
+import { BACKEND_COMMAND_EVENT, fetchBackendCommandAudit, fetchBackendCommandDecisions, recordBackendCommandDecision, runBackendOfficeEngineScan } from "./OfficeTeamCommandApi";
 import { fetchOfficeTeamCommandDrafts } from "./OfficeTeamCommandDrafts";
 import { readOfficeTeamLocalActivityLog, readOfficeTeamLocalCommandQueue, recordOfficeTeamLocalActivity, removeOfficeTeamLocalCommand, subscribeOfficeTeamLocalActivity, subscribeOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 import { readOfficeTeamApprovalTrail, recordOfficeTeamApprovalTrail, subscribeOfficeTeamApprovalTrail } from "./OfficeTeamApprovalTrail";
@@ -36,7 +36,7 @@ const screens = [
 const ownerScreens = [
   ["today", "Today"], ["command", "Command"], ["work", "Jobs"], ["schedule", "Schedule"], ["clients", "Clients"],
   ["messages", "Messages"], ["worker", "Workers"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["money", "Money"],
-  ["staff", "Staff"], ["payroll", "Payroll"], ["integrations", "Xero"], ["activity", "Activity"], ["settings", "Settings"],
+  ["staff", "Staff"], ["payroll", "Payroll"], ["team", "Office Team"], ["integrations", "Xero"], ["activity", "Activity"], ["settings", "Settings"],
   ["plans", "Plans"], ["help", "Help"],
 ];
 
@@ -98,15 +98,18 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
   const [approvalTrail, setApprovalTrail] = useState(() => readOfficeTeamApprovalTrail());
-  const [notice, setNotice] = useState(isOwnerApp ? "Owner workspace ready. Churvox prepares admin; owner approval stays locked." : "Churvox control centre ready. Sign in as an owner to load live decisions.");
+  const [notice, setNotice] = useState(isOwnerApp ? "Owner workspace ready. The office team checks the work, prepares slips, and waits for your approval." : "Churvox control centre ready. Sign in as an owner to load live decisions.");
   const [resolved, setResolved] = useState({});
 
   useEffect(() => {
     let mounted = true;
+    const commandPromise = isOwnerApp
+      ? runBackendOfficeEngineScan().catch(() => null).then((scan) => fetchBackendCommandDecisions().then((command) => ({ ...command, scan })))
+      : Promise.resolve({ source: "skip", decisions: [] });
     Promise.allSettled([
       fetchOfficeTeamSnapshot(),
       fetchOfficeTeamCommandDrafts(),
-      isOwnerApp ? fetchBackendCommandDecisions() : Promise.resolve({ source: "skip", decisions: [] }),
+      commandPromise,
       isOwnerApp ? fetchBackendCommandAudit() : Promise.resolve({ source: "skip", audit: [] }),
     ])
       .then(([scanResult, draftResult, commandResult, auditResult]) => {
@@ -120,8 +123,12 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         setBackendAudit(audit || { source: "command-audit-unavailable", audit: [] });
         setLiveDrafts(drafts);
         setResolved({});
-        if (isOwnerApp && command?.decisions?.length) setNotice("Command slips loaded. Open a slip, review it, then approve, edit, ask, snooze or park it.");
-        else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("Command is clear. New decisions will appear here when work needs owner approval.");
+        const createdCount = Number(command?.scan?.createdCount || 0);
+        const existingCount = Number(command?.scan?.existingCount || 0);
+        if (isOwnerApp && createdCount) setNotice(`Office team prepared ${createdCount} new Command slip${createdCount === 1 ? "" : "s"}. Open each slip, check the mahi, then approve.`);
+        else if (isOwnerApp && existingCount) setNotice(`Office team checked live records. ${existingCount} open slip${existingCount === 1 ? "" : "s"} are still waiting for owner approval.`);
+        else if (isOwnerApp && command?.decisions?.length) setNotice("Command slips loaded. Open a slip, review it, then approve, edit, ask, snooze or park it.");
+        else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("The office team checked live records. Command is clear for now.");
         else if (data?.source === "admin-brain") setNotice(isOwnerApp ? "Live business check loaded. Owner approval still comes first." : "Live office check loaded. Owner approval still comes first.");
         else if (drafts.length) setNotice("Live read-only records are prepared for Command. Nothing has been sent, synced or changed.");
         else if (data?.source === "clear-live") setNotice(isOwnerApp ? "Live check is clear. Command will stay empty until real work needs owner approval." : "Live check is clear. Command stays ready for the next decision.");
@@ -258,15 +265,15 @@ function Topbar({ screen, go, appMode }) {
   const isOwnerApp = appMode === "owner";
   const navScreens = isOwnerApp ? ownerScreens : screens;
   const brand = "Churvox";
-  const subline = isOwnerApp ? "Owner workspace · prepared admin · approve only" : "Command-centred owner control";
+  const subline = isOwnerApp ? "Owner workspace · office team prepares · you approve" : "Command-centred owner control";
   return <header className="cvSiteTopbar"><div className="cvOfficeBrand"><img src={BRAND_ICON} alt="Churvox" /><div><strong>{brand}</strong><span>{subline}</span></div></div><nav>{navScreens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav><button type="button" className="cvSiteLogout" onClick={logoutOffice}>Log out</button></header>;
 }
 
 function Status({ metrics, sourceLabel, notice, appMode }) {
   const isOwnerApp = appMode === "owner";
   const modeLabel = isOwnerApp ? "Owner workspace" : "Office running";
-  const title = isOwnerApp ? "Churvox does the admin. You approve." : "Churvox runs the office. The owner approves the decisions.";
-  const text = isOwnerApp ? "Jobs, clients, workers, quotes, invoices and follow-ups come back to Command before anything is sent, synced, charged or changed." : "Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.";
+  const title = isOwnerApp ? "The office team does the mahi. You approve." : "Churvox runs the office. The owner approves the decisions.";
+  const text = isOwnerApp ? "Jobs, clients, workers, quotes, invoices, payroll checks, accounting checks and follow-ups come back to Command before anything is sent, synced, charged or changed." : "Staff update the work. The office team checks what is missing, prepares the admin and brings decisions back to Command.";
   return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>{modeLabel} · {sourceLabel}</span><h1>{title}</h1><p>{text}</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
 }
 
@@ -280,14 +287,14 @@ function Command({ tray, setTray, counts, pending, onAction }) {
     onAction(item, action);
     setSelectedId("");
   }
-  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check what Churvox found, then record the owner decision. Nothing is sent, synced, charged or changed from here." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} onAction={act} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Owner decision queue" text="Open the slip, check what the office team found, then record the owner decision. Nothing is sent, synced, charged or changed from here." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} onAction={act} />) : <Empty title="No decisions in this tray" text="Anything important will appear here before anything is sent, synced or changed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
 }
 
 function CommandSlip({ item, onAction }) {
-  if (!item) return <aside className="cvCommandSlip"><span>Command slip</span><h3>No open slip</h3><p>When Churvox prepares work for the owner, the full decision slip opens here.</p></aside>;
+  if (!item) return <aside className="cvCommandSlip"><span>Command slip</span><h3>No open slip</h3><p>When the office team prepares work for the owner, the full decision slip opens here.</p></aside>;
   const checked = Array.isArray(item.checked) ? item.checked : [];
   const actions = Array.isArray(item.actions) ? item.actions : [];
-  return <aside className="cvCommandSlip" aria-label="Command decision slip"><div className="cvCommandSlipTop"><span>Command slip</span><em>{item.level || "Review"}</em></div><h3>{item.title}</h3><p>{item.happened || item.detail || "Prepared work is waiting for owner review."}</p><div className="cvCommandSlipMeta"><b>{item.roleName || item.tray || "Churvox"}</b><small>{item.tray || "Command"}</small><small>{item.raw?.source === "backend_command_slip" ? "Backend Command" : String(keyOf(item)).startsWith("local-command-") ? "Prepared in this workspace" : "Starter structure"}</small></div><dl><dt>What Churvox checked</dt><dd>{checked.length ? checked.map((x) => <small key={x}>{x}</small>) : <small>Record was checked before being shown.</small>}</dd><dt>What is prepared</dt><dd>{item.prepared || "A safe prepared action is ready for review."}</dd><dt>Owner decision needed</dt><dd>{item.need || "Approve, edit, ask, snooze or park this slip."}</dd></dl><section className="cvCommandSlipSafety"><b>Safety locks</b><span>No auto-send</span><span>No auto-sync</span><span>No auto-charge</span><span>No record change without approval</span></section><footer>{actions.map((action, i) => <button key={action} type="button" className={i === 0 ? "primary" : ""} onClick={() => onAction(item, action)}>{action}</button>)}</footer></aside>;
+  return <aside className="cvCommandSlip" aria-label="Command decision slip"><div className="cvCommandSlipTop"><span>Command slip</span><em>{item.level || "Review"}</em></div><h3>{item.title}</h3><p>{item.happened || item.detail || "Prepared work is waiting for owner review."}</p><div className="cvCommandSlipMeta"><b>{item.roleName || item.tray || "Churvox"}</b><small>{item.tray || "Command"}</small><small>{item.raw?.source === "backend_command_slip" ? "Backend Command" : String(keyOf(item)).startsWith("local-command-") ? "Prepared in this workspace" : "Starter structure"}</small></div><dl><dt>What was checked</dt><dd>{checked.length ? checked.map((x) => <small key={x}>{x}</small>) : <small>Record was checked before being shown.</small>}</dd><dt>What is prepared</dt><dd>{item.prepared || "A safe prepared action is ready for review."}</dd><dt>Owner decision needed</dt><dd>{item.need || "Approve, edit, ask, snooze or park this slip."}</dd></dl><section className="cvCommandSlipSafety"><b>Safety locks</b><span>No auto-send</span><span>No auto-sync</span><span>No auto-charge</span><span>No record change without approval</span></section><footer>{actions.map((action, i) => <button key={action} type="button" className={i === 0 ? "primary" : ""} onClick={() => onAction(item, action)}>{action}</button>)}</footer></aside>;
 }
 
 function Team({ activeRole, setActiveRole }) {
