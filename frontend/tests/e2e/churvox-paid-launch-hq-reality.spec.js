@@ -46,10 +46,46 @@ function launchPayload(overrides = {}) {
     billing: {
       actual_mrr_nzd: 188,
       estimated_mrr_nzd: 238,
-      verified_paid_users: [{ id: 'paid-1', email: 'paid@real.test', business_name: 'Real Paid Business', plan: 'team', subscription_status: 'active', stripe_customer_id: 'cus_paid', stripe_subscription_id: 'sub_paid', last_active: '2026-07-11T00:50:00+00:00' }],
-      verified_trial_users: [{ id: 'trial-1', email: 'trial@real.test', business_name: 'Real Trial Business', plan: 'pro', subscription_status: 'trialing', stripe_customer_id: 'cus_trial', stripe_subscription_id: 'sub_trial', last_active: '2026-07-10T22:00:00+00:00' }],
-      tester_users: [{ id: 'tester-1', email: 'tester@real.test', business_name: 'Real Tester Business', plan: 'pro', subscription_status: 'tester_free', stripe_customer_id: '', stripe_subscription_id: '', last_active: '2026-07-10T20:00:00+00:00' }],
-      needs_verification: [{ id: 'verify-1', email: 'verify@real.test', business_name: 'Needs Verification Ltd', plan: 'solo', subscription_status: 'active', stripe_customer_id: 'cus_verify', stripe_subscription_id: '', last_active: '2026-07-10T19:00:00+00:00' }],
+      verified_paid_users: [{
+        id: 'paid-1',
+        email: 'paid@real.test',
+        business_name: 'Real Paid Business',
+        plan: 'team',
+        subscription_status: 'active',
+        stripe_customer_id: 'cus_paid',
+        stripe_subscription_id: 'sub_paid',
+        last_active: '2026-07-11T00:50:00+00:00',
+      }],
+      verified_trial_users: [{
+        id: 'trial-1',
+        email: 'trial@real.test',
+        business_name: 'Real Trial Business',
+        plan: 'pro',
+        subscription_status: 'trialing',
+        stripe_customer_id: 'cus_trial',
+        stripe_subscription_id: 'sub_trial',
+        last_active: '2026-07-10T22:00:00+00:00',
+      }],
+      tester_users: [{
+        id: 'tester-1',
+        email: 'tester@real.test',
+        business_name: 'Real Tester Business',
+        plan: 'pro',
+        subscription_status: 'tester_free',
+        stripe_customer_id: '',
+        stripe_subscription_id: '',
+        last_active: '2026-07-10T20:00:00+00:00',
+      }],
+      needs_verification: [{
+        id: 'verify-1',
+        email: 'verify@real.test',
+        business_name: 'Needs Verification Ltd',
+        plan: 'solo',
+        subscription_status: 'active',
+        stripe_customer_id: 'cus_verify',
+        stripe_subscription_id: '',
+        last_active: '2026-07-10T19:00:00+00:00',
+      }],
       stripe: {
         configured: true,
         available: true,
@@ -57,14 +93,35 @@ function launchPayload(overrides = {}) {
         generated_at: '2026-07-11T01:00:00+00:00',
         subscriptions_checked: 2,
         mrr_by_currency: { nzd: 188 },
-        active_subscriptions: [{ subscription_id: 'sub_paid', customer_id: 'cus_paid', status: 'active', mrr_by_currency: { nzd: 188 } }],
+        active_subscriptions: [{
+          subscription_id: 'sub_paid',
+          customer_id: 'cus_paid',
+          status: 'active',
+          mrr_by_currency: { nzd: 188 },
+        }],
         errors: [],
       },
     },
     collections: {
       connected: true,
       names: ['users', 'businesses', 'jobs', 'clients', 'quotes', 'invoices', 'stripe_webhook_events'],
-      counts: { users: 7, businesses: 3, jobs: 11, clients: 8, quotes: 4, invoices: 6, team_members: 2, workers: 2, platform_visits: 40, platform_unique_visitors: 12, support_messages: 1, stripe_webhook_events: 5, lifecycle_emails: 9, command_slips: 0, command_audit: 3 },
+      counts: {
+        users: 7,
+        businesses: 3,
+        jobs: 11,
+        clients: 8,
+        quotes: 4,
+        invoices: 6,
+        team_members: 2,
+        workers: 2,
+        platform_visits: 40,
+        platform_unique_visitors: 12,
+        support_messages: 1,
+        stripe_webhook_events: 5,
+        lifecycle_emails: 9,
+        command_slips: 0,
+        command_audit: 3,
+      },
       latest: {
         stripe_webhook: { created_at: '2026-07-11T00:40:00+00:00', event: 'invoice.paid' },
         support_message: { created_at: '2026-07-10T21:00:00+00:00' },
@@ -80,6 +137,7 @@ function launchPayload(overrides = {}) {
       { key: 'email', label: 'Lifecycle email', status: 'pass', detail: 'Postmark configuration is present' },
     ],
   };
+
   return {
     ...base,
     ...overrides,
@@ -93,6 +151,7 @@ function launchPayload(overrides = {}) {
 async function installHqApi(page, options = {}) {
   const actions = [];
   const launch = options.launch || launchPayload();
+
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const pathname = new URL(request.url()).pathname;
@@ -164,6 +223,7 @@ async function installHqApi(page, options = {}) {
     }
     await route.fulfill(json({ success: true, items: [], rows: [], data: [] }));
   });
+
   return actions;
 }
 
@@ -197,7 +257,13 @@ test.describe('Real paid-launch HQ', () => {
       launch: launchPayload({
         ready_to_take_payments: false,
         counts: { verified_paid_users: 0, billing_needs_verification: 0 },
-        billing: { actual_mrr_nzd: null, estimated_mrr_nzd: 0, verified_paid_users: [], needs_verification: [], stripe: { configured: false, available: false, subscriptions_checked: 0, errors: ['STRIPE_SECRET_KEY is not configured'] } },
+        billing: {
+          actual_mrr_nzd: null,
+          estimated_mrr_nzd: 0,
+          verified_paid_users: [],
+          needs_verification: [],
+          stripe: { configured: false, available: false, subscriptions_checked: 0, errors: ['STRIPE_SECRET_KEY is not configured'] },
+        },
         launch_checks: [{ key: 'stripe', label: 'Stripe', status: 'fail', detail: 'STRIPE_SECRET_KEY is not configured' }],
       }),
     });
@@ -225,9 +291,9 @@ test.describe('Real paid-launch HQ', () => {
     await expect(page.getByText('Access updated from safe test')).toBeVisible();
 
     await page.getByRole('button', { name: 'Testers' }).click();
-    await page.getByLabel('Email').fill('newtester@real.test');
-    await page.getByLabel('Name').fill('Real Tester');
-    await page.getByLabel('Business').fill('Real Tester Business');
+    await page.getByRole('textbox', { name: 'Email', exact: true }).fill('newtester@real.test');
+    await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Real Tester');
+    await page.getByRole('textbox', { name: 'Business', exact: true }).fill('Real Tester Business');
     await page.getByRole('button', { name: 'Grant tester access' }).click();
     await expect(page.getByText('Tester saved from safe test')).toBeVisible();
 
