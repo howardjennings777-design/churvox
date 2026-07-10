@@ -1,5 +1,6 @@
 import React from "react";
 import "./OfficeTeamTodayScreen.css";
+import "./OfficeTeamTodayVision.css";
 import { useOfficeTeamOverview } from "./OfficeTeamOverview";
 
 const labShortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];
