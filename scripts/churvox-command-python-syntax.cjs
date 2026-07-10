@@ -9,6 +9,7 @@ const files = [
   'backend/churvox_command_human_mimic_guard_routes.py',
   'backend/churvox_command_human_mimic_v3_routes.py',
   'backend/churvox_command_human_mimic_source_normalizer.py',
+  'backend/churvox_command_human_mimic_role_schema_guard.py',
   'backend/churvox_command_human_mimic_queue_finalizer.py',
   'backend/churvox_command_human_mimic_live_routes.py',
   'backend/churvox_command_human_mimic_marker_routes.py',
