@@ -18,16 +18,16 @@ function walk(dir) {
   return out;
 }
 
-function relative(file) {
-  return path.relative(root, file).replace(/\\/g, '/');
+const read = (file) => fs.readFileSync(file, 'utf8');
+const relative = (file) => path.relative(root, file).replace(/\\/g, '/');
+const lineAt = (text, index) => text.slice(0, index).split('\n').length;
+
+function fail(file, text, index, message, snippet = '') {
+  failures.push(`${relative(file)}:${lineAt(text, index)} ${message}${snippet ? ` — ${snippet.replace(/\s+/g, ' ').slice(0, 180)}` : ''}`);
 }
 
-function read(file) {
-  return fs.readFileSync(file, 'utf8');
-}
-
-function isTagBoundary(char) {
-  return !char || /[\s/>]/.test(char);
+function pass(name, detail) {
+  checks.push({ name, detail });
 }
 
 function openings(text, tag) {
@@ -38,11 +38,10 @@ function openings(text, tag) {
     const start = text.indexOf(needle, cursor);
     if (start < 0) break;
     const boundary = text[start + needle.length];
-    if (!isTagBoundary(boundary)) {
+    if (boundary && !/[\s/>]/.test(boundary)) {
       cursor = start + needle.length;
       continue;
     }
-
     let quote = '';
     let braces = 0;
     let index = start + needle.length;
@@ -58,22 +57,10 @@ function openings(text, tag) {
       if (char === '}') { braces = Math.max(0, braces - 1); continue; }
       if (char === '>' && braces === 0) break;
     }
-    values.push({ start, end: Math.min(index + 1, text.length), text: text.slice(start, Math.min(index + 1, text.length)) });
+    values.push({ start, text: text.slice(start, Math.min(index + 1, text.length)) });
     cursor = Math.max(index + 1, start + needle.length);
   }
   return values;
-}
-
-function lineAt(text, index) {
-  return text.slice(0, index).split('\n').length;
-}
-
-function fail(file, text, index, message, snippet = '') {
-  failures.push(`${relative(file)}:${lineAt(text, index)} ${message}${snippet ? ` — ${snippet.replace(/\s+/g, ' ').slice(0, 180)}` : ''}`);
-}
-
-function pass(name, detail) {
-  checks.push({ name, detail });
 }
 
 const allOfficeFiles = walk(officeRoot);
@@ -91,7 +78,7 @@ const files = [
   ...activeOfficeFiles,
   path.join(root, 'frontend', 'src', 'App.js'),
   path.join(root, 'frontend', 'src', 'pages', 'auth', 'LoginPage.js'),
-].filter((file) => fs.existsSync(file));
+].filter(fs.existsSync);
 
 let buttonCount = 0;
 let linkCount = 0;
@@ -125,6 +112,19 @@ for (const file of files) {
     }
   }
 
+  for (const component of ['Link', 'NavLink']) {
+    for (const opening of openings(text, component)) {
+      linkCount += 1;
+      const tag = opening.text;
+      const toMatch = tag.match(/\bto\s*=\s*(?:["']([^"']*)["']|\{\s*["']([^"']*)["']\s*\})/);
+      const destination = toMatch ? (toMatch[1] ?? toMatch[2] ?? '') : null;
+      if (!/\bto\s*=/.test(tag)) fail(file, text, opening.start, `${component} has no to destination`, tag);
+      if (destination !== null && (!destination.trim() || destination.trim() === '#' || /^javascript:/i.test(destination.trim()))) {
+        fail(file, text, opening.start, `${component} has an invalid or dead destination`, tag);
+      }
+    }
+  }
+
   for (const opening of openings(text, 'form')) {
     formCount += 1;
     if (!/\bonSubmit\s*=|\baction\s*=/.test(opening.text)) fail(file, text, opening.start, 'form has no submit handler or action', opening.text);
@@ -136,16 +136,9 @@ for (const file of files) {
     if (ids.has(id)) fail(file, text, match.index || 0, `duplicate static id "${id}"`, match[0]);
     ids.set(id, match.index || 0);
   }
-
-  for (const match of text.matchAll(/(?:href|to)\s*=\s*["'](?:javascript:|#)["']/gi)) {
-    fail(file, text, match.index || 0, 'dead navigation destination', match[0]);
-  }
-  for (const match of text.matchAll(/window\.location\.(?:href|hash)\s*=\s*["']\s*["']/g)) {
-    fail(file, text, match.index || 0, 'navigation assigns an empty destination', match[0]);
-  }
-  for (const match of text.matchAll(/\b(?:alert|prompt)\s*\(/g)) {
-    fail(file, text, match.index || 0, 'browser alert/prompt used instead of product UI', match[0]);
-  }
+  for (const match of text.matchAll(/(?:href|to)\s*=\s*["'](?:javascript:|#)["']/gi)) fail(file, text, match.index || 0, 'dead navigation destination', match[0]);
+  for (const match of text.matchAll(/window\.location\.(?:href|hash)\s*=\s*["']\s*["']/g)) fail(file, text, match.index || 0, 'navigation assigns an empty destination', match[0]);
+  for (const match of text.matchAll(/\b(?:alert|prompt)\s*\(/g)) fail(file, text, match.index || 0, 'browser alert/prompt used instead of product UI', match[0]);
 }
 
 const siteFile = path.join(officeRoot, 'OfficeTeamLabSite.jsx');
@@ -167,13 +160,7 @@ for (const match of site.matchAll(/:\s*["']([a-z-]+)["']/g)) {
   }
 }
 
-const workspaceFiles = [
-  'OfficeTeamJobsWorkspace.jsx',
-  'OfficeTeamClientsWorkspace.jsx',
-  'OfficeTeamWorkerPhoneView.jsx',
-  'OfficeTeamQuotesWorkspace.jsx',
-  'OfficeTeamInvoicesWorkspace.jsx',
-];
+const workspaceFiles = ['OfficeTeamJobsWorkspace.jsx', 'OfficeTeamClientsWorkspace.jsx', 'OfficeTeamWorkerPhoneView.jsx', 'OfficeTeamQuotesWorkspace.jsx', 'OfficeTeamInvoicesWorkspace.jsx'];
 for (const name of workspaceFiles) {
   const file = path.join(officeRoot, name);
   const text = read(file);
@@ -183,22 +170,13 @@ for (const name of workspaceFiles) {
 
 const commandApiFile = path.join(officeRoot, 'OfficeTeamCommandApi.js');
 const commandApi = read(commandApiFile);
-for (const required of [
-  'if (!response.ok || body?.success === false)',
-  'credentials: "include"',
-  'no_auto_send: true',
-  'no_auto_sync: true',
-  'no_auto_charge: true',
-  'no_auto_record_change: true',
-]) {
+for (const required of ['if (!response.ok || body?.success === false)', 'credentials: "include"', 'no_auto_send: true', 'no_auto_sync: true', 'no_auto_charge: true', 'no_auto_record_change: true']) {
   if (!commandApi.includes(required)) fail(commandApiFile, commandApi, 0, `Command API safety contract is missing: ${required}`);
 }
 
 const maintenanceFile = path.join(root, 'frontend', 'src', 'lib', 'maintenanceMode.js');
 const maintenance = read(maintenanceFile);
-if (!/export const OWNER_MAINTENANCE_MODE\s*=\s*false\s*;/.test(maintenance)) {
-  fail(maintenanceFile, maintenance, 0, 'owner launch is still blocked by maintenance mode');
-}
+if (!/export const OWNER_MAINTENANCE_MODE\s*=\s*false\s*;/.test(maintenance)) fail(maintenanceFile, maintenance, 0, 'owner launch is still blocked by maintenance mode');
 
 const loginFile = path.join(root, 'frontend', 'src', 'pages', 'auth', 'LoginPage.js');
 const login = read(loginFile);
@@ -209,17 +187,11 @@ for (const required of ['type="email"', 'type={showPassword ? "text" : "password
 const appFile = path.join(root, 'frontend', 'src', 'App.js');
 const app = read(appFile);
 if (!app.includes('<Route path="/login" element={<LoginPage />} />')) fail(appFile, app, 0, 'public login route is missing');
-if (!app.includes('<Route path="/dashboard" element={<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>} />')) {
-  fail(appFile, app, 0, 'owner dashboard is no longer protected by the authenticated business route');
-}
+if (!app.includes('<Route path="/dashboard" element={<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>} />')) fail(appFile, app, 0, 'owner dashboard is no longer protected by the authenticated business route');
 
 const gauntletFile = path.join(root, 'frontend', 'tests', 'e2e', 'churvox-full-ui-logic-buttons.spec.js');
 const gauntlet = read(gauntletFile);
-try {
-  new Function(gauntlet);
-} catch (error) {
-  fail(gauntletFile, gauntlet, 0, `browser gauntlet has invalid JavaScript: ${error.message}`);
-}
+try { new Function(gauntlet); } catch (error) { fail(gauntletFile, gauntlet, 0, `browser gauntlet has invalid JavaScript: ${error.message}`); }
 for (const required of [
   'const LAB_SCREENS = [',
   "const PUBLIC_PAGES = ['/', '/pricing', '/contact', '/login']",
@@ -229,9 +201,7 @@ for (const required of [
   'API failures show truthful states without blank screens or stuck controls',
   'test.setTimeout(240_000)',
   "source: 'human-mimic-intelligence-v3'",
-]) {
-  if (!gauntlet.includes(required)) fail(gauntletFile, gauntlet, 0, `browser gauntlet contract is missing: ${required}`);
-}
+]) if (!gauntlet.includes(required)) fail(gauntletFile, gauntlet, 0, `browser gauntlet contract is missing: ${required}`);
 if (/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(gauntlet)) fail(gauntletFile, gauntlet, 0, 'browser gauntlet contains skipped or focused tests');
 if (/https:\/\/www\.churvox\.com|CHURVOX_E2E_MUTATE/.test(gauntlet)) fail(gauntletFile, gauntlet, 0, 'local UI gauntlet must not mutate or depend on the live site');
 
@@ -239,21 +209,17 @@ const rootPackageFile = path.join(root, 'package.json');
 const frontendPackageFile = path.join(root, 'frontend', 'package.json');
 const rootPackage = JSON.parse(read(rootPackageFile));
 const frontendPackage = JSON.parse(read(frontendPackageFile));
-const rootScripts = rootPackage.scripts || {};
-const frontendScripts = frontendPackage.scripts || {};
-if (rootScripts['test:ui:logic'] !== 'node scripts/churvox-ui-logic-audit.cjs') fail(rootPackageFile, read(rootPackageFile), 0, 'root UI logic script is not wired correctly');
-if (rootScripts['test:prelive:full'] !== 'npm run test:readiness && npm run test:ui:full') fail(rootPackageFile, read(rootPackageFile), 0, 'full pre-live command must run readiness before the browser gauntlet');
+if (rootPackage.scripts?.['test:ui:logic'] !== 'node scripts/churvox-ui-logic-audit.cjs') fail(rootPackageFile, read(rootPackageFile), 0, 'root UI logic script is not wired correctly');
+if (rootPackage.scripts?.['test:prelive:full'] !== 'npm run test:readiness && npm run test:ui:full') fail(rootPackageFile, read(rootPackageFile), 0, 'full pre-live command must run readiness before the browser gauntlet');
 for (const name of ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
-  const value = String(frontendScripts[name] || '');
-  if (!value.includes('churvox-full-ui-logic-buttons.spec.js') || !value.includes('PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000')) {
-    fail(frontendPackageFile, read(frontendPackageFile), 0, `${name} must run the local full UI gauntlet`);
-  }
+  const value = String(frontendPackage.scripts?.[name] || '');
+  if (!value.includes('churvox-full-ui-logic-buttons.spec.js') || !value.includes('PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000')) fail(frontendPackageFile, read(frontendPackageFile), 0, `${name} must run the local full UI gauntlet`);
 }
 
 if (buttonCount < requiredScreens.length) failures.push(`Owner UI surface is unexpectedly small: ${buttonCount} buttons across ${requiredScreens.length} registered screens.`);
-if (linkCount < 2) failures.push(`Expected useful links in the active owner UI; found only ${linkCount}.`);
+if (linkCount < 2) failures.push(`Expected useful navigation links in the active owner/login UI; found only ${linkCount}.`);
 pass('button wiring scanned', `${buttonCount} active buttons`);
-pass('link destinations scanned', `${linkCount} real anchors`);
+pass('link destinations scanned', `${linkCount} anchors and Router links`);
 pass('form contracts scanned', `${formCount} forms`);
 pass('screen routing checked', `${requiredScreens.length} registered screens`);
 pass('core workspace landmarks checked', `${workspaceFiles.length} workspaces`);
@@ -264,7 +230,7 @@ pass('browser gauntlet contract checked', 'desktop, mobile, public pages, click 
 for (const check of checks) console.log(`✓ ${check.name} (${check.detail})`);
 if (failures.length) {
   console.error(`\nUI logic audit failed: ${failures.length} issue(s).`);
-  for (const item of failures) console.error(`- ${item}`);
+  failures.forEach((item) => console.error(`- ${item}`));
   process.exit(1);
 }
 console.log(`\nUI logic audit passed. ${buttonCount} active buttons, ${linkCount} links, ${formCount} forms and ${requiredScreens.length} routes were checked.`);
