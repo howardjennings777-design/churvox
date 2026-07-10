@@ -5,6 +5,8 @@ const EXPECTED_MARKER = 'command-live-smoke-guard-20260710e';
 const EXPECTED_HUMAN_MIMIC = 'human-mimic-intelligence-v3';
 const EXPECTED_GUARD = 'human-mimic-strict-preflight-v3';
 const EXPECTED_POST_GUARD = 'linked-invoice-source-recheck-v1';
+const EXPECTED_SOURCE_NORMALIZATION = 'legacy-job-status-and-timer-units-v1';
+const EXPECTED_SUMMARY_GUARD = 'strict-surviving-queue-summary-v1';
 const EXPECTED_SETTINGS = 'business-profile-live-v1';
 const base = String(process.env.PLAYWRIGHT_API_BASE || process.env.CHURVOX_API_BASE || DEFAULT_BASE).replace(/\/$/, '');
 
@@ -52,32 +54,38 @@ async function checkHumanMimicMarker() {
   const version = body && typeof body === 'object' ? String(body.version || '') : '';
   const guard = body && typeof body === 'object' ? String(body.guard || '') : '';
   const postGuard = body && typeof body === 'object' ? String(body.post_guard || '') : '';
+  const sourceNormalization = body && typeof body === 'object' ? String(body.source_normalization || '') : '';
+  const summaryGuard = body && typeof body === 'object' ? String(body.summary_guard || '') : '';
   const roles = body && Array.isArray(body.roles) ? body.roles : [];
   const safety = body && typeof body === 'object' ? String(body.safety || '') : '';
   const preflight = body && typeof body.preflight === 'object' ? body.preflight : {};
   const strictFlags = [
     preflight.source_validation,
+    preflight.source_normalization,
     preflight.business_isolation,
     preflight.weak_candidate_rejection,
     preflight.historical_money_reference_only,
     preflight.required_fields_block_approval,
     preflight.secret_redaction,
     preflight.linked_invoice_postguard,
+    preflight.manager_summaries_use_strict_queue,
   ];
   if (
     response.status === 200
     && version === EXPECTED_HUMAN_MIMIC
     && guard === EXPECTED_GUARD
     && postGuard === EXPECTED_POST_GUARD
+    && sourceNormalization === EXPECTED_SOURCE_NORMALIZATION
+    && summaryGuard === EXPECTED_SUMMARY_GUARD
     && roles.length === 8
     && strictFlags.every((value) => value === true)
     && safety.includes('Nothing was sent, synced, charged or changed')
   ) {
-    console.log(`✓ strict human office build present (${version}, ${guard}, ${postGuard}, ${roles.length} roles)`);
+    console.log(`✓ complete strict human office chain present (${version}, ${guard}, ${postGuard}, ${sourceNormalization}, ${summaryGuard}, ${roles.length} roles)`);
     return true;
   }
-  failures.push(`${endpoint} missing or stale. Expected ${EXPECTED_HUMAN_MIMIC}, ${EXPECTED_GUARD}, ${EXPECTED_POST_GUARD}, 8 roles and strict preflight flags; got status ${response.status}: ${text.slice(0, 320)}`);
-  console.log('✗ strict human office build missing or stale');
+  failures.push(`${endpoint} missing or stale. Expected complete strict v3 chain and 8 roles; got status ${response.status}: ${text.slice(0, 380)}`);
+  console.log('✗ complete strict human office chain missing or stale');
   return false;
 }
 
@@ -186,7 +194,7 @@ async function checkProtectedPost(endpoint) {
 
   if (!wrapperOk || !mimicOk || !settingsOk) {
     console.error('\nLive Command smoke failed before route checks:');
-    console.error('- Redeploy grassley-backend to the latest main commit, then rerun this test. The wrapper, strict human-office and business-profile markers must pass.');
+    console.error('- Redeploy grassley-backend to the latest main commit, then rerun this test. The wrapper, complete strict human-office chain and business-profile markers must pass.');
     for (const failure of failures) console.error(`- ${failure}`);
     process.exit(1);
   }
@@ -210,5 +218,5 @@ async function checkProtectedPost(endpoint) {
     process.exit(1);
   }
 
-  console.log('\nLive Command smoke passed. Strict human mimic v3, linked-invoice post-guard, protected settings and Command routes are deployed, and no unsafe action was triggered.');
+  console.log('\nLive Command smoke passed. The complete strict human mimic chain, protected settings and Command routes are deployed, and no unsafe action was triggered.');
 })();
