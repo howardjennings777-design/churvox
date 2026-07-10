@@ -4,6 +4,8 @@ from fastapi import APIRouter
 HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v3"
 HUMAN_MIMIC_GUARD = "human-mimic-strict-preflight-v3"
 HUMAN_MIMIC_POST_GUARD = "linked-invoice-source-recheck-v1"
+HUMAN_MIMIC_SOURCE_NORMALIZATION = "legacy-job-status-and-timer-units-v1"
+HUMAN_MIMIC_SUMMARY_GUARD = "strict-surviving-queue-summary-v1"
 HUMAN_MIMIC_SAFETY = "Owner approval required. Nothing was sent, synced, charged or changed."
 
 
@@ -29,15 +31,19 @@ def build_command_human_mimic_marker_router():
             "version": HUMAN_MIMIC_VERSION,
             "guard": HUMAN_MIMIC_GUARD,
             "post_guard": HUMAN_MIMIC_POST_GUARD,
+            "source_normalization": HUMAN_MIMIC_SOURCE_NORMALIZATION,
+            "summary_guard": HUMAN_MIMIC_SUMMARY_GUARD,
             "roles": ROLE_NAMES,
             "preflight": {
                 "source_validation": True,
+                "source_normalization": True,
                 "business_isolation": True,
                 "weak_candidate_rejection": True,
                 "historical_money_reference_only": True,
                 "required_fields_block_approval": True,
                 "secret_redaction": True,
                 "linked_invoice_postguard": True,
+                "manager_summaries_use_strict_queue": True,
             },
             "safety": HUMAN_MIMIC_SAFETY,
         }
