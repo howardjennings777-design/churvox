@@ -4,6 +4,7 @@ const { spawnSync } = require('child_process');
 
 const files = [
   'backend/server/__init__.py',
+  'backend/churvox_owner_access_safety_patch.py',
   'backend/churvox_command_human_mimic_routes.py',
   'backend/churvox_command_human_mimic_guard_routes.py',
   'backend/churvox_command_human_mimic_marker_routes.py',
