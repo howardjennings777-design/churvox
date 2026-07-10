@@ -313,3 +313,229 @@
     display: none;
   }
 }
+
+@media (max-width: 640px) {
+  .cvOfficeFinal.cvOfficeSite {
+    min-height: 100svh;
+    padding: 0 0 max(18px, env(safe-area-inset-bottom));
+    gap: 10px;
+    background:
+      radial-gradient(circle at 0% 0%, rgba(249,115,22,.22), transparent 34%),
+      linear-gradient(180deg, #efe5d8, #f7efe4 48%, #eee3d6);
+  }
+
+  .cvSiteTopbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    width: 100%;
+    min-height: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    padding: max(10px, env(safe-area-inset-top)) 10px 10px;
+    border-radius: 0 0 22px 22px;
+    box-shadow: 0 14px 32px rgba(23,18,14,.24);
+  }
+
+  .cvOfficeBrand {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 10px;
+  }
+
+  .cvOfficeBrand img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .cvOfficeBrand strong {
+    font-size: 1.05rem;
+  }
+
+  .cvOfficeBrand span {
+    display: block;
+    max-width: 230px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cvSiteTopbar nav {
+    width: 100%;
+    max-width: 100%;
+    gap: 7px;
+    padding: 2px 0 5px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .cvSiteTopbar button {
+    min-height: 42px;
+    padding: 0 13px;
+    border-radius: 999px;
+    font-size: .72rem;
+    scroll-snap-align: start;
+  }
+
+  .cvSiteStatus {
+    width: calc(100% - 16px);
+    display: grid;
+    grid-template-columns: 1fr !important;
+    margin: 0 auto;
+    gap: 8px;
+  }
+
+  .cvSiteStatus article {
+    display: none;
+  }
+
+  .cvSiteStatus article:first-of-type,
+  .cvSiteStatus article:nth-of-type(2) {
+    display: grid;
+    min-height: 88px;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 10px;
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .cvSiteStatus article strong {
+    font-size: 1.85rem;
+  }
+
+  .cvSiteStatusLead {
+    padding: 17px;
+    border-radius: 24px;
+  }
+
+  .cvSiteStatusLead h1 {
+    font-size: clamp(1.85rem, 9vw, 2.7rem);
+  }
+
+  .cvSiteStatusLead p {
+    font-size: .88rem;
+    line-height: 1.42;
+  }
+
+  .cvSiteStatusLead small {
+    display: block;
+    width: 100%;
+    border-radius: 16px;
+    padding: 9px 10px;
+    line-height: 1.35;
+  }
+
+  .cvSiteScreenDeck {
+    width: 100%;
+  }
+
+  .cvSiteScreen {
+    width: calc(100% - 16px);
+    min-height: auto;
+    margin: 0 auto;
+    padding: 14px;
+    border-radius: 24px;
+  }
+
+  .cvSiteScreenHeader {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 0 0 12px;
+  }
+
+  .cvSiteScreenHeader h2 {
+    font-size: clamp(1.7rem, 9vw, 2.55rem);
+  }
+
+  .cvSiteScreenHeader p {
+    max-width: none;
+    font-size: .86rem;
+  }
+
+  .cvSiteTodayGrid,
+  .cvOpsLayout,
+  .cvExtraLayout,
+  .cvBackOfficeGrid,
+  .cvMessagesDeskGrid,
+  .cvWorkerLabGrid,
+  .cvSiteActivityLayout,
+  .cvSiteTeamLayout,
+  .cvPlanDetail,
+  .cvGrowthPackCard {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .cvSiteDecisionGrid,
+  .cvSiteTrayRail,
+  .cvPlansGrid,
+  .cvWorkerRouteShell {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cvSiteDecisionCard,
+  .cvSiteTodayPanel,
+  .cvSiteActionPanel,
+  .cvOpsTable,
+  .cvOpsDetail,
+  .cvExtraDetail,
+  .cvBackOfficeDetail,
+  .cvMessagesThreadCard,
+  .cvWorkerSidePanel,
+  .cvPlanDetail,
+  .cvGrowthPackCard {
+    border-radius: 20px !important;
+  }
+
+  .cvSiteDecisionCard {
+    min-height: auto;
+  }
+
+  .cvSiteDecisionCard footer,
+  .cvSiteBriefingActions,
+  .cvWorkerBigButtons,
+  .cvWorkerProofGrid,
+  .cvWorkerPaymentActions,
+  .cvWorkerRouteSteps,
+  .cvWorkerRouteQuickNotes,
+  .cvWorkerRouteProof {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cvSiteDecisionCard footer button,
+  .cvSiteBriefingActions button,
+  .cvWorkerBigButtons button,
+  .cvWorkerRouteSteps button,
+  .cvPublicAuthSubmit {
+    min-height: 48px;
+  }
+
+  .cvOpsTable button,
+  .cvExtraCards button,
+  .cvBackOfficeList button,
+  .cvMessagesInboxPanel button,
+  .cvWorkerQueueList button,
+  .cvSiteMiniList button,
+  .cvWorkerRouteDesk button {
+    min-height: 64px;
+    border-radius: 16px !important;
+  }
+
+  .cvPlansHero,
+  .cvPlanCountryCard {
+    border-radius: 22px !important;
+  }
+
+  .cvPlansHero h2 {
+    font-size: clamp(2rem, 10vw, 2.75rem) !important;
+  }
+
+  .cvPlansGrid button {
+    min-height: auto !important;
+  }
+}
