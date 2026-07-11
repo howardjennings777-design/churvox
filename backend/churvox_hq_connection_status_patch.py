@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 INSTALLED = set()
+PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 
 
 def _text(value):
@@ -56,23 +57,8 @@ def install(module):
 
     async def require_hq_owner(request: Request):
         user = await get_current_user(request)
-        email = _email(user)
-        allowed_emails = {"hello@churvox.com", "howardjennings77@gmail.com", "howardjennings777@gmail.com"}
-        try:
-            import churvox_hq_owner_access_fix_patch as owner_access
-            allowed_emails |= set(owner_access.owner_emails())
-        except Exception:
-            pass
-        role = _text((user or {}).get("role") or (user or {}).get("user_role") or (user or {}).get("account_type")).lower().replace("-", "_").replace(" ", "_")
-        allowed = email in allowed_emails or role in {"platform_owner", "platform_admin", "super_admin", "superadmin", "admin"} or bool((user or {}).get("is_platform_owner") or (user or {}).get("is_platform_admin") or (user or {}).get("is_super_admin") or (user or {}).get("is_admin"))
-        checker = getattr(module, "is_platform_owner", None)
-        if not allowed and checker:
-            try:
-                allowed = bool(checker(user))
-            except Exception:
-                allowed = False
-        if not allowed:
-            raise HTTPException(status_code=403, detail="Churvox HQ is locked to the platform owner account")
+        if _email(user) != PLATFORM_OWNER_EMAIL:
+            raise HTTPException(status_code=403, detail=f"Churvox HQ is locked to {PLATFORM_OWNER_EMAIL}")
         return user
 
     async def count_collection(name):
