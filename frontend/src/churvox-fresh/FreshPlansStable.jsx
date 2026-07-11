@@ -2,7 +2,9 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const TRACE = "checkout-js-trace-20260615-stable-billing-v1";
+const TRACE = "checkout-js-trace-20260712-paid-launch-plan-path";
+const BILLING_PLAN_KEY = "churvox:billing-plan";
+const BILLING_COUNTRY_KEY = "churvox:billing-country";
 
 const PLANS = [
   { id: "start", api: "solo", name: "Start", price: 39, tag: "Starter", desc: "Jobs, clients, quotes and invoices." },
@@ -39,10 +41,41 @@ function checkoutUrl(result) {
   return body.url || body.checkout_url || body.checkoutUrl || body.session_url || body.data?.url || body.data?.checkout_url || "";
 }
 
+function queryParams() {
+  try { return new URLSearchParams(window.location.search || ""); } catch { return new URLSearchParams(); }
+}
+
+function initialChoice() {
+  const params = queryParams();
+  try {
+    return planFromBackend(params.get("plan") || params.get("selected_plan") || window.localStorage.getItem(BILLING_PLAN_KEY) || "operator");
+  } catch {
+    return planFromBackend(params.get("plan") || params.get("selected_plan") || "operator");
+  }
+}
+
+function checkoutCountry() {
+  const params = queryParams();
+  try {
+    return String(params.get("country") || window.localStorage.getItem(BILLING_COUNTRY_KEY) || "NZ").trim().toUpperCase() || "NZ";
+  } catch {
+    return String(params.get("country") || "NZ").trim().toUpperCase() || "NZ";
+  }
+}
+
+function hasExplicitPlanChoice() {
+  const params = queryParams();
+  try {
+    return Boolean(params.get("plan") || params.get("selected_plan") || window.localStorage.getItem(BILLING_PLAN_KEY));
+  } catch {
+    return Boolean(params.get("plan") || params.get("selected_plan"));
+  }
+}
+
 export default function FreshPlansStable({ onNavigate }) {
   const { get, post } = useApi();
-  const [current, setCurrent] = React.useState("operator");
-  const [choice, setChoice] = React.useState("operator");
+  const [current, setCurrent] = React.useState(initialChoice);
+  const [choice, setChoice] = React.useState(initialChoice);
   const [notice, setNotice] = React.useState("Loading plan");
   const [error, setError] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -55,7 +88,7 @@ export default function FreshPlansStable({ onNavigate }) {
       const status = unwrap(await get("/billing/subscription-status"));
       const next = planFromBackend(status.plan);
       setCurrent(next);
-      setChoice(next);
+      if (!hasExplicitPlanChoice()) setChoice(next);
       setNotice(status.subscription_status === "trialing" ? "Trial active" : "Plan loaded");
     } catch (err) {
       setNotice("Plan needs attention");
@@ -66,6 +99,10 @@ export default function FreshPlansStable({ onNavigate }) {
   React.useEffect(() => {
     loadPlan();
   }, [loadPlan]);
+
+  React.useEffect(() => {
+    try { localStorage.setItem(BILLING_PLAN_KEY, choice); } catch {}
+  }, [choice]);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search || "");
@@ -86,7 +123,7 @@ export default function FreshPlansStable({ onNavigate }) {
           const result = await post("/billing/confirm-checkout", {
             session_id: sessionId,
             plan: params.get("plan") || plan.api,
-            country: params.get("country") || "NZ",
+            country: params.get("country") || checkoutCountry(),
           });
           const body = unwrap(result);
           if (body.success === false) throw new Error(body.error || body.detail || "Stripe checkout could not be confirmed.");
@@ -114,11 +151,17 @@ export default function FreshPlansStable({ onNavigate }) {
     setError("");
     setNotice("Opening Stripe checkout");
     try {
+      const country = checkoutCountry();
+      try {
+        localStorage.setItem(BILLING_PLAN_KEY, choice);
+        localStorage.setItem(BILLING_COUNTRY_KEY, country);
+      } catch {}
       const result = await post("/billing/create-checkout-session", {
         plan: plan.api,
         plan_type: plan.api,
-        country: "NZ",
-        billing_country: "NZ",
+        selected_plan: choice,
+        country,
+        billing_country: country,
       });
       const body = unwrap(result);
       if (body.success === false) throw new Error(body.error || body.detail || "Stripe checkout could not be opened.");
