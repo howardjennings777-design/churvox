@@ -24,6 +24,14 @@ function featuresFor(plan) {
   return Array.isArray(list) ? list.slice(0, 6).map(cleanFeature) : [];
 }
 
+function signupPath(country, plan) {
+  const params = new URLSearchParams({
+    country,
+    plan: String(plan?.code || plan?.key || plan?.name || "").toLowerCase(),
+  });
+  return `/signup?${params.toString()}`;
+}
+
 const fitNotes = [
   ["Start", "For solo operators who want jobs, clients, quotes and invoices under control."],
   ["Crew", "For businesses adding workers, field updates and simple team coordination."],
@@ -49,11 +57,10 @@ export default function ExecutivePricingPage() {
   const displayPlans = React.useMemo(() => CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, country)), [country]);
   const accountingAddon = addonPriceForCountry("accounting_sync", country);
   const growthPack = addonPriceForCountry("growth_pack", country);
-  const signupTo = `/signup?country=${encodeURIComponent(country)}`;
   const notes = pricingNotesForCountry(country);
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_PRICING_20260710">
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_PRICING_20260712_PAID_LAUNCH_PLAN_PATH">
       <PublicNav active="/pricing" />
 
       <section className="cp26PageHero">
@@ -85,15 +92,16 @@ export default function ExecutivePricingPage() {
         <div className="cp26PlanGrid">
           {displayPlans.map((plan) => {
             const featured = String(plan?.name || "").toLowerCase() === "operator";
+            const planSignupTo = signupPath(country, plan);
             return (
-              <article key={plan.name} className={`cp26PlanCard${featured ? " featured" : ""}`}>
+              <article key={plan.name} className={`cp26PlanCard${featured ? " featured" : ""}`} data-plan-card data-plan-name={plan.name}>
                 {featured ? <span className="cp26PlanBadge">Most Popular</span> : null}
                 <h3>{plan.name}</h3>
                 <div className="cp26PlanPrice">{plan.priceLabel}</div>
                 {plan.taxInclusiveLabel ? <div className="cp26PlanTax">{plan.taxInclusiveLabel}</div> : null}
                 <p>{cleanFeature(plan.summary)}</p>
                 <ul>{featuresFor(plan).map((feature) => <li key={feature}>{feature}</li>)}</ul>
-                <Link className={`cp26Button${featured ? "" : " cp26ButtonGhost"}`} to={signupTo}>Start free trial</Link>
+                <Link className={`cp26Button${featured ? "" : " cp26ButtonGhost"}`} to={planSignupTo} onClick={() => { try { window.localStorage.setItem("churvox:billing-plan", String(plan?.code || plan?.key || plan?.name || "operator").toLowerCase()); } catch {} }}>Start free trial</Link>
               </article>
             );
           })}
@@ -118,13 +126,13 @@ export default function ExecutivePricingPage() {
           text="Add-ons do not silently change the base plan price."
         />
         <div className="cp26ContactGrid">
-          <article>
+          <article data-plan-card data-plan-name="Command Growth Pack">
             <b>Command Growth Pack</b>
             <div className="cp26PlanPrice">{growthPack.priceLabel}</div>
             {growthPack.taxInclusiveLabel ? <span>{growthPack.taxInclusiveLabel}</span> : null}
             <span>Extra active-team capacity and additional Command headroom for larger operations.</span>
           </article>
-          <article>
+          <article data-plan-card data-plan-name="Accounting Sync Add-on">
             <b>Accounting Sync Add-on</b>
             <div className="cp26PlanPrice">{accountingAddon.priceLabel}</div>
             {accountingAddon.taxInclusiveLabel ? <span>{accountingAddon.taxInclusiveLabel}</span> : null}
@@ -145,7 +153,7 @@ export default function ExecutivePricingPage() {
           <p>No card upfront. Keep the plan only when the system earns its place in the business.</p>
         </div>
         <div className="cp26ClosingActions">
-          <Link className="cp26Button" to={signupTo}>Start free trial</Link>
+          <Link className="cp26Button" to={signupPath(country, { code: "operator" })} onClick={() => { try { window.localStorage.setItem("churvox:billing-plan", "operator"); } catch {} }}>Start free trial</Link>
           <Link className="cp26Button cp26ButtonGhost" to="/demo">Open demo</Link>
         </div>
       </section>
