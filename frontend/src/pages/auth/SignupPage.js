@@ -11,6 +11,18 @@ import "./AuthPublicCommand.css";
 const FIRST_SETUP_KEY = "churvox_first_setup_pending";
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
 const BUSINESS_REQUIRED_KEY = "churvox_business_profile_required";
+const BILLING_PLAN_KEY = "churvox:billing-plan";
+
+const PLAN_ALIASES = {
+  start: "start",
+  solo: "start",
+  crew: "crew",
+  team: "crew",
+  operator: "operator",
+  pro: "operator",
+  command: "command",
+  enterprise: "command",
+};
 
 function queryParams() {
   try { return new URLSearchParams(window.location.search || ""); } catch { return new URLSearchParams(); }
@@ -28,6 +40,19 @@ function queryEmail() {
 function queryIndustry() {
   const params = queryParams();
   return normalizeIndustry(params.get("industry") || params.get("business_type") || params.get("trade") || "");
+}
+
+function normalizePlanChoice(value) {
+  return PLAN_ALIASES[String(value || "").trim().toLowerCase()] || "operator";
+}
+
+function initialPlanChoice() {
+  const params = queryParams();
+  try {
+    return normalizePlanChoice(params.get("plan") || params.get("selected_plan") || window.localStorage.getItem(BILLING_PLAN_KEY) || "operator");
+  } catch {
+    return normalizePlanChoice(params.get("plan") || params.get("selected_plan") || "operator");
+  }
 }
 
 function lockInputText(el) {
@@ -86,6 +111,7 @@ export default function SignupPage() {
     }
   });
   const [industry, setIndustry] = useState(queryIndustry);
+  const [selectedPlan] = useState(initialPlanChoice);
 
   const selectedIndustry = getIndustry(industry);
   const attachInput = (el) => lockInputText(el);
@@ -104,6 +130,7 @@ export default function SignupPage() {
     const billingCountry = normalizeCountry(data.get("country") || country);
     const industryMode = normalizeIndustry(data.get("industry") || industry);
     const industryProfile = getIndustry(industryMode);
+    const planChoice = normalizePlanChoice(selectedPlan);
 
     if (!name) return setError("Enter your full name.");
     if (!email) return setError("Enter your email.");
@@ -123,6 +150,8 @@ export default function SignupPage() {
         trade_industry_type: industryMode,
         industry_mode: industryMode,
         business_type: industryProfile.title,
+        selected_plan: planChoice,
+        plan_choice: planChoice,
       });
       if (!result?.token) return setError("Registration failed. Please try again.");
 
@@ -133,6 +162,7 @@ export default function SignupPage() {
         localStorage.removeItem("churvox:fresh-command-inbox:v1");
         localStorage.removeItem("churvox:fresh-jobs:v1");
         localStorage.setItem("churvox:billing-country", billingCountry);
+        localStorage.setItem(BILLING_PLAN_KEY, planChoice);
         localStorage.setItem("churvox:industry-mode", industryMode);
         saveBusinessSettings({
           business_name: businessName || "",
@@ -166,7 +196,7 @@ export default function SignupPage() {
         localStorage.setItem(PLAN_REQUIRED_KEY, "true");
         localStorage.removeItem(BUSINESS_REQUIRED_KEY);
       } catch {}
-      navigate(`/plans?first_setup=1&must_choose_plan=1&country=${encodeURIComponent(billingCountry)}&industry=${encodeURIComponent(industryMode)}`, { replace: true });
+      navigate(`/plans?first_setup=1&must_choose_plan=1&country=${encodeURIComponent(billingCountry)}&industry=${encodeURIComponent(industryMode)}&plan=${encodeURIComponent(planChoice)}`, { replace: true });
     } catch (err) {
       setError(err?.response?.data?.detail || err?.response?.data?.message || err?.message || "Registration failed. Please try again.");
     } finally {
@@ -175,7 +205,7 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_SIGNUP_INDUSTRY_SYSTEM_20260708">
+    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_SIGNUP_INDUSTRY_PLAN_PATH_20260712">
       <Nav />
       <section className="cvPublicAuthShell cvPublicSignupShell">
         <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
@@ -223,6 +253,7 @@ export default function SignupPage() {
           </div>
 
           <p className="cvPublicAuthIntro"><b>{selectedIndustry.title}</b>: {selectedIndustry.intro}</p>
+          {!testerSignup ? <p className="cvPublicAuthIntro"><b>Selected plan:</b> {selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}. You can still change it on the plans screen before Stripe checkout.</p> : null}
           <button className="cvPublicAuthSubmit" type="submit" disabled={loading}>{loading ? "Creating account..." : testerSignup ? "Create tester account" : "Create account and choose plan"}</button>
           <p className="cvPublicAuthBottom">Already have an account? <Link to="/login">Sign in</Link></p>
         </form>
