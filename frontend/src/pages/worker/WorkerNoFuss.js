@@ -37,6 +37,7 @@ const openJobs = (jobs) => jobs.filter((job) => !isDone(job));
 const messageText = (row) => clean(row?.message || row?.body || row?.detail || row?.text || row?.summary || row?.subject || row?.title || "Office update");
 const messageWhen = (row) => clean(row?.created_at || row?.updated_at || row?.time || "recent");
 const messageFrom = (row) => clean(row?.from || row?.sender || row?.worker_name || row?.source || (row?.direction === "worker_to_office" ? "You" : "Office"));
+const proofFileList = (files) => Array.from(files || []).filter(Boolean);
 
 const PROBLEMS = [
   ["late", "Running late", "Worker is running late and the schedule may need office review."],
@@ -51,9 +52,9 @@ const PROBLEMS = [
 
 async function tryPost(post, calls) {
   let last = "";
-  for (const [endpoint, body] of calls) {
+  for (const [endpoint, body, options] of calls) {
     try {
-      const result = await post(endpoint, body);
+      const result = await post(endpoint, body, options);
       if (result?.success !== false) return result;
       last = result?.error || result?.data?.detail || last;
     } catch (error) {
@@ -61,6 +62,11 @@ async function tryPost(post, calls) {
     }
   }
   throw new Error(last || "Could not save");
+}
+
+function proofResponseFiles(result) {
+  const data = apiBody(result);
+  return data?.files || data?.proof_files || data?.data?.files || [];
 }
 
 function loadStripeTerminalSdk() {
@@ -209,7 +215,7 @@ function JobCard({ job, action = "Open job", featured = false }) {
 }
 
 function ProofCard({ files, setFiles, note, setNote, saving, sendProof }) {
-  const names = Array.from(files || []).map((file) => file.name);
+  const names = proofFileList(files).map((file) => file.name);
   return (
     <section className="swCard fieldProofCard">
       <span>Proof</span>
@@ -217,7 +223,7 @@ function ProofCard({ files, setFiles, note, setNote, saving, sendProof }) {
       <label className="swPhotoPick"><Camera size={18} />Add photos<input type="file" accept="image/*" capture="environment" multiple onChange={(event) => setFiles(event.target.files)} /></label>
       {names.length ? <div className="fieldPhotoList">{names.slice(0, 5).map((name) => <small key={name}>{name}</small>)}</div> : <p>No photos selected yet.</p>}
       <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Short note for office. Example: job done, gate locked, extra work found..." />
-      <button className="swLight" type="button" disabled={saving} onClick={sendProof}>{saving ? "Sending" : "Send proof to office"}</button>
+      <button className="swLight" type="button" disabled={saving} onClick={sendProof}>{saving ? "Uploading" : "Upload proof to office"}</button>
     </section>
   );
 }
@@ -401,6 +407,28 @@ export function NoFussJob() {
   }
 
   const slipBase = () => ({ job_id: jobId(job), job_title: jobTitle(job), client_name: customer(job), source: "churvox-field", note, text: clean(note) });
+
+  function buildProofForm(kind, message) {
+    const form = new FormData();
+    const base = slipBase();
+    Object.entries(base).forEach(([key, value]) => form.append(key, value || ""));
+    form.set("type", kind);
+    form.set("kind", kind);
+    form.set("note", message);
+    form.set("text", message);
+    form.set("summary", message);
+    proofFileList(proofFiles).forEach((file) => form.append("files", file, file.name));
+    return form;
+  }
+
+  async function uploadProof(kind, fallbackMessage) {
+    const files = proofFileList(proofFiles);
+    const message = clean(note) || fallbackMessage || (files.length ? "Worker uploaded proof photos." : "Worker proof update.");
+    const result = await post("/worker/proof-upload", buildProofForm(kind, message), { timeout: 60000 });
+    if (result?.success === false) throw new Error(result.error || result?.data?.detail || "Could not upload proof");
+    return proofResponseFiles(result);
+  }
+
   const acknowledgeJob = () => action("acknowledge", [[`/jobs/${jobId(job)}/acknowledge`, { source: "churvox-field", worker_notes: clean(note) || "Worker acknowledged the job." }], ["/worker/field-slip", { ...slipBase(), type: "job_acknowledged", kind: "job_acknowledged" }]], "Office notified");
   const startJob = () => action("start job", [[`/jobs/${jobId(job)}/start`, { worker_notes: clean(note) || "Worker started the job.", source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_started", kind: "job_started" }]], "Started and office notified");
   const pauseJob = () => action("pause job", [[`/jobs/${jobId(job)}/pause`, { worker_notes: clean(note) || "Worker paused the job.", source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_paused", kind: "job_paused" }]], "Paused and office notified");
@@ -419,21 +447,42 @@ export function NoFussJob() {
 
   async function sendProof() {
     if (!job) return;
-    const names = Array.from(proofFiles || []).map((file) => file.name);
-    const message = clean(note) || (names.length ? "Proof photos selected by worker." : "Worker proof update.");
+    const files = proofFileList(proofFiles);
+    if (!files.length && !clean(note)) { toast.error("Add a photo or note first"); return; }
     setSaving(true);
     try {
-      await post("/worker/field-slip", { ...slipBase(), type: "job_proof", kind: "job_proof", text: message, note: message, photo_names: names, photo_count: names.length });
-      toast.success("Proof sent to office");
-    } catch (err) { toast.error(err?.response?.data?.detail || err?.message || "Could not send proof"); }
+      const uploaded = await uploadProof("job_proof", files.length ? "Worker uploaded proof photos." : "Worker proof update.");
+      setProofFiles(null);
+      toast.success(uploaded.length ? `${uploaded.length} proof photo${uploaded.length === 1 ? "" : "s"} uploaded to office` : "Proof note sent to office");
+      await refresh();
+    } catch (err) { toast.error(err?.response?.data?.detail || err?.message || "Could not upload proof"); }
     finally { setSaving(false); }
   }
 
   async function finishJob() {
     if (!job) return;
-    const names = Array.from(proofFiles || []).map((file) => file.name);
-    await action("finish job", [[`/jobs/${jobId(job)}/complete`, { worker_notes: clean(note) || "Worker finished the job.", proof_photo_names: names, proof_photo_count: names.length, source: "churvox-field" }], ["/worker/field-slip", { ...slipBase(), type: "job_completed", kind: "job_completed", photo_names: names, photo_count: names.length }]], "Finished and sent to office");
-    window.setTimeout(() => window.location.assign("/worker/jobs"), 450);
+    const selectedFiles = proofFileList(proofFiles);
+    const hasProofUpdate = selectedFiles.length > 0 || Boolean(clean(note));
+    setSaving(true);
+    try {
+      const uploaded = hasProofUpdate ? await uploadProof("job_completed", clean(note) || "Worker finished the job.") : [];
+      const names = uploaded.length ? uploaded.map((file) => file.filename) : selectedFiles.map((file) => file.name);
+      const result = await post(`/jobs/${jobId(job)}/complete`, {
+        worker_notes: clean(note) || "Worker finished the job.",
+        proof_photo_names: names,
+        proof_photo_count: names.length,
+        proof_file_ids: uploaded.map((file) => file.id),
+        proof_files: uploaded,
+        skip_field_slip: hasProofUpdate,
+        source: "churvox-field",
+      }, { timeout: 45000 });
+      if (result?.success === false) throw new Error(result.error || result?.data?.detail || "Could not finish job");
+      setProofFiles(null);
+      toast.success("Finished and sent to office");
+      await refresh();
+      window.setTimeout(() => window.location.assign("/worker/jobs"), 450);
+    } catch (err) { toast.error(err?.response?.data?.detail || err?.message || "Could not finish job"); }
+    finally { setSaving(false); }
   }
 
   if (loading) return <Shell tab="Jobs" title="Job" subtitle="Loading the job card."><LoadingCard text="Loading job" /></Shell>;
