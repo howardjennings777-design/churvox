@@ -100,12 +100,13 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
 ];
 
-// HQ is a real React app surface. Load only clean connection/visitor/support checks, not old overlay widgets.
+// HQ is a real React app surface. Load only clean connection/visitor/support/tester checks, not old overlay widgets.
 const hqRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxHqConnectionRuntime'),
   () => import('./runtime/churvoxHqRealVisitorsRuntime'),
   () => import('./runtime/churvoxHqSupportTicketsRuntime'),
+  () => import('./runtime/churvoxHqInvitedTestersRuntime'),
 ];
 
 function runImports(imports) {
@@ -159,7 +160,7 @@ function loadWorkerRuntimeWhenInsideWorkerApp() {
 function loadHqRuntimeWhenInsideHq() {
   if (hqRuntimeLoaded || typeof window === 'undefined') return;
   const path = currentPath();
-  const isHq = path === '/admin' || path === '/churvox-hq' || path === '/admin/hq' || path === '/owner/dashboard' || path === '/platform-dashboard' || path === '/app-owner' || path === '/admin/usage' || path === '/admin/qa-auditor';
+  const isHq = path === '/admin' || path === '/churvox-hq' || path === '/admin/hq' || path === '/owner/dashboard' || path === '/platform-dashboard' || path === '/app-owner' || path === '/admin/usage' || path === '/admin/qa-auditor' || path === '/platform';
   if (!isHq) return;
   hqRuntimeLoaded = true;
   runImports(hqRuntimeImports);
