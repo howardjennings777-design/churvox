@@ -68,6 +68,7 @@ PATCH_MODULES = [
     "churvox_industry_isolation_patch",
     "churvox_hq_router_mount_patch",
     "churvox_owner_cockpit_control_patch",
+    "churvox_tester_email_send_final_patch",
     "churvox_hq_growth_report_patch",
     "churvox_hq_connection_status_patch",
     "churvox_hq_unique_visitors_patch",
