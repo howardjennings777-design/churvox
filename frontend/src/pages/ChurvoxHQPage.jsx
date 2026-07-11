@@ -1,1 +1,1 @@
-export { default } from "./PaidLaunchHQ";
+export { default } from "./PaidLaunchHQSystem";
