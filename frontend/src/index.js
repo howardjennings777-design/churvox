@@ -57,8 +57,6 @@ let workerRuntimeLoaded = false;
 let hqRuntimeLoaded = false;
 let globalHelpersLoaded = false;
 
-// These helpers support authentication, logout, billing and onboarding. Visible
-// page copy, forms and records must come from React components and live APIs.
 const globalHelperImports = [
   () => import('./runtime/authInputVisibilityGuard'),
   () => import('./runtime/churvoxPlainSendGuardRuntime'),
@@ -70,7 +68,6 @@ const globalHelperImports = [
   () => import('./runtime/churvoxFirstWinGuideEntryRuntime'),
 ];
 
-// Keep the owner app native and stable. These are the only app helpers still needed after the rebuild.
 const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxNavBadgesRuntime'),
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
@@ -89,8 +86,6 @@ const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxOwnerHeaderLogoRuntime'),
 ];
 
-// Old heavy page overlays were making pages slower and could move cards after first paint.
-// ProductAppV3 owns the page logic, wording, layout and locks now.
 const ownerHeavyRuntimeImports = [];
 
 const workerRuntimeImports = [
@@ -100,13 +95,10 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
 ];
 
-// HQ is a real React app surface. Load only clean connection/visitor/support/tester checks, not old overlay widgets.
+// HQ is now owned by the React PaidLaunchHQSystem component. Do not load old
+// overlay runtimes here, because they can show stale tester/visitor panels.
 const hqRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
-  () => import('./runtime/churvoxHqConnectionRuntime'),
-  () => import('./runtime/churvoxHqRealVisitorsRuntime'),
-  () => import('./runtime/churvoxHqSupportTicketsRuntime'),
-  () => import('./runtime/churvoxHqInvitedTestersRuntime'),
 ];
 
 function runImports(imports) {
