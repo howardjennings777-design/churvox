@@ -1,5 +1,5 @@
-// CHURVOX_STRIPE_CHECKOUT_LIVE_RUNTIME_20260712_PAID_LAUNCH
-// Wires public and OS plan buttons to backend Stripe Checkout.
+// CHURVOX_STRIPE_CHECKOUT_LIVE_RUNTIME_20260712_PAID_LAUNCH_SAFE
+// Public pricing must go Signup -> Plans -> Stripe. Logged-in plan surfaces can open Stripe Checkout.
 
 import API_BASE from '../lib/apiBase';
 
@@ -8,60 +8,16 @@ const MODAL_ID = 'churvox-stripe-live-modal';
 const TOAST_ID = 'churvox-stripe-live-toast';
 const COUNTRY_STORE = 'churvox:billing-country';
 const EMAIL_STORE = 'churvox:billing-email';
+const PLAN_STORE = 'churvox:billing-plan';
 const GST_RATE = 1.15;
 
 const PLANS = {
-  Start: {
-    displayKey: 'start',
-    stripeKey: 'solo',
-    price: 39,
-    type: 'plan',
-    actionLabel: 'Start trial',
-    includes: ['Jobs, clients, quotes and invoices', 'Today view', 'Client and job records', 'Basic quote and invoice records'],
-  },
-  Crew: {
-    displayKey: 'crew',
-    stripeKey: 'team',
-    price: 89,
-    type: 'plan',
-    actionLabel: 'Start trial',
-    includes: ['Everything in Start', 'Worker app records', 'Team and timesheet review', 'Proof and message capture'],
-  },
-  Operator: {
-    displayKey: 'operator',
-    stripeKey: 'pro',
-    price: 149,
-    type: 'plan',
-    actionLabel: 'Start Operator trial',
-    popular: true,
-    includes: ['Everything in Crew', 'Churvox prepares admin', 'Drafted quotes, invoices and replies', 'Command review queue'],
-  },
-  Command: {
-    displayKey: 'command',
-    stripeKey: 'enterprise',
-    price: 299,
-    type: 'plan',
-    actionLabel: 'Start Command',
-    includes: ['Full approval OS', 'Command approval desk', 'Owner approve, edit or park flow', 'Accounting sync option'],
-  },
-  'Command Growth Pack': {
-    displayKey: 'command_growth_pack',
-    stripeKey: 'enterprise',
-    addonKey: 'command_growth_pack',
-    price: 99,
-    type: 'addon',
-    actionLabel: 'Add growth pack',
-    includes: ['Adds 50 active team members', 'Extra operating capacity', 'Uses Command approval flow'],
-  },
-  'Accounting Sync Add-on': {
-    displayKey: 'accounting_sync_addon',
-    stripeKey: 'team',
-    addonKey: 'xero_addon',
-    price: 39,
-    type: 'addon',
-    actionLabel: 'Add accounting sync',
-    includes: ['For non-Command tiers', 'Draft sync only', 'Owner-approved sync decisions'],
-  },
+  Start: { displayKey: 'start', stripeKey: 'solo', price: 39, type: 'plan', actionLabel: 'Start trial', includes: ['Jobs, clients, quotes and invoices', 'Today view', 'Client and job records'] },
+  Crew: { displayKey: 'crew', stripeKey: 'team', price: 89, type: 'plan', actionLabel: 'Start trial', includes: ['Everything in Start', 'Worker app records', 'Team and timesheet review'] },
+  Operator: { displayKey: 'operator', stripeKey: 'pro', price: 149, type: 'plan', actionLabel: 'Start Operator trial', includes: ['Everything in Crew', 'Churvox prepares admin', 'Command review queue'] },
+  Command: { displayKey: 'command', stripeKey: 'enterprise', price: 299, type: 'plan', actionLabel: 'Start Command', includes: ['Full approval OS', 'Command approval desk', 'Accounting sync option'] },
+  'Command Growth Pack': { displayKey: 'command_growth_pack', stripeKey: 'enterprise', addonKey: 'command_growth_pack', price: 99, type: 'addon', actionLabel: 'Add growth pack', includes: ['Adds 50 active team members', 'Extra operating capacity'] },
+  'Accounting Sync Add-on': { displayKey: 'accounting_sync_addon', stripeKey: 'team', addonKey: 'xero_addon', price: 39, type: 'addon', actionLabel: 'Add accounting sync', includes: ['For non-Command tiers', 'Draft sync only'] },
 };
 
 const COUNTRIES = {
@@ -71,58 +27,24 @@ const COUNTRIES = {
   UK: { label: 'United Kingdom', currency: 'GBP', symbol: 'GBP ', tax: '+ VAT' },
 };
 
-const CARD_SELECTORS = [
-  '.cp26PlanGrid article',
-  '.cp26ContactGrid article[data-plan-card]',
-  '.publicPlanGrid article',
-  '.publicAddOnGrid article',
-  '#option-f-plans-pricing-desk .ofPlanCard',
-  '#option-f-plans-pricing-desk .ofAddonCard',
-  '.planList > div',
-  '.plan-card',
-  '[data-plan-card]',
-];
+const PUBLIC_PLAN_SELECTORS = ['.cp26PlanGrid article', '.publicPlanGrid article'];
+const APP_PLAN_SELECTORS = ['#option-f-plans-pricing-desk .ofPlanCard', '#option-f-plans-pricing-desk .ofAddonCard', '.planList > div', '.plan-card', '[data-plan-card]:not(.cp26PlanCard)'];
 
-function clean(value) {
-  return String(value || '').replace(/\s+/g, ' ').trim();
-}
-
-function lower(value) {
-  return clean(value).toLowerCase();
-}
-
-function esc(value) {
-  return String(value ?? '').replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
-}
-
-function money(value) {
-  return `$${Number(value || 0).toFixed(2).replace(/\.00$/, '')}`;
-}
-
-function incGst(value) {
-  return money(Number(value || 0) * GST_RATE);
-}
+function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
+function lower(value) { return clean(value).toLowerCase(); }
+function esc(value) { return String(value ?? '').replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char])); }
+function money(value) { return `$${Number(value || 0).toFixed(2).replace(/\.00$/, '')}`; }
+function incGst(value) { return money(Number(value || 0) * GST_RATE); }
 
 function normalizeCountry(value) {
   const raw = clean(value).toUpperCase();
-  const aliases = {
-    NZ: 'NZ', NZL: 'NZ', 'NEW ZEALAND': 'NZ',
-    AU: 'AU', AUS: 'AU', AUSTRALIA: 'AU',
-    US: 'US', USA: 'US', 'UNITED STATES': 'US',
-    UK: 'UK', GB: 'UK', GBR: 'UK', 'UNITED KINGDOM': 'UK',
-  };
+  const aliases = { NZ: 'NZ', NZL: 'NZ', 'NEW ZEALAND': 'NZ', AU: 'AU', AUS: 'AU', AUSTRALIA: 'AU', US: 'US', USA: 'US', 'UNITED STATES': 'US', UK: 'UK', GB: 'UK', GBR: 'UK', 'UNITED KINGDOM': 'UK' };
   return aliases[raw] || 'NZ';
 }
 
 function detectCountry() {
-  try {
-    const param = new URLSearchParams(window.location.search).get('country');
-    if (param) return normalizeCountry(param);
-  } catch (_) {}
-  try {
-    const saved = localStorage.getItem(COUNTRY_STORE);
-    if (saved) return normalizeCountry(saved);
-  } catch (_) {}
+  try { const param = new URLSearchParams(window.location.search).get('country'); if (param) return normalizeCountry(param); } catch (_) {}
+  try { const saved = localStorage.getItem(COUNTRY_STORE); if (saved) return normalizeCountry(saved); } catch (_) {}
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
     if (/auckland|chatham/i.test(tz)) return 'NZ';
@@ -144,6 +66,15 @@ function apiUrl(path) {
   return `${base}/api${path}`;
 }
 
+function currentPath() { return window.location.pathname || ''; }
+function isPublicMarketingPath() {
+  const path = currentPath();
+  return path === '/' || path === '/pricing' || path === '/product' || path === '/features' || path === '/demo' || path === '/signup' || path === '/contact' || path.startsWith('/industries');
+}
+function isLoggedIn() {
+  try { return Boolean(localStorage.getItem('token') || localStorage.getItem('authToken')); } catch (_) { return false; }
+}
+
 function ensureStyle() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
@@ -159,11 +90,7 @@ function ensureStyle() {
 function toast(title, detail = '') {
   ensureStyle();
   let node = document.getElementById(TOAST_ID);
-  if (!node) {
-    node = document.createElement('div');
-    node.id = TOAST_ID;
-    document.body.appendChild(node);
-  }
+  if (!node) { node = document.createElement('div'); node.id = TOAST_ID; document.body.appendChild(node); }
   node.innerHTML = `<b>${esc(title)}</b>${detail ? `<small>${esc(detail)}</small>` : ''}`;
   node.classList.add('show');
   clearTimeout(node._timer);
@@ -178,22 +105,14 @@ function modal() {
     node.id = MODAL_ID;
     node.hidden = true;
     document.body.appendChild(node);
-    node.addEventListener('click', (event) => {
-      if (event.target.id === MODAL_ID || event.target.closest('[data-stripe-close]')) closeModal();
-    });
+    node.addEventListener('click', (event) => { if (event.target.id === MODAL_ID || event.target.closest('[data-stripe-close]')) closeModal(); });
     node.addEventListener('submit', submitCheckout);
   }
   return node;
 }
 
-function closeModal() {
-  const node = document.getElementById(MODAL_ID);
-  if (node) node.hidden = true;
-}
-
-function planByName(planName) {
-  return PLANS[clean(planName)] || null;
-}
+function closeModal() { const node = document.getElementById(MODAL_ID); if (node) node.hidden = true; }
+function planByName(planName) { return PLANS[clean(planName)] || null; }
 
 function findPlanNameFromCard(card) {
   const datasetName = clean(card?.dataset?.planName || card?.getAttribute?.('data-plan-name') || '');
@@ -202,24 +121,38 @@ function findPlanNameFromCard(card) {
   return Object.keys(PLANS).find((name) => lower(text).includes(lower(name))) || '';
 }
 
+function signupUrl(planName) {
+  const plan = planByName(planName);
+  const country = detectCountry();
+  if (!plan) return `/signup?country=${encodeURIComponent(country)}`;
+  return `/signup?country=${encodeURIComponent(country)}&plan=${encodeURIComponent(plan.displayKey)}`;
+}
+
+function rememberPlan(planName) {
+  const plan = planByName(planName);
+  if (!plan) return;
+  try {
+    localStorage.setItem(PLAN_STORE, plan.displayKey);
+    localStorage.setItem(COUNTRY_STORE, detectCountry());
+  } catch (_) {}
+}
+
 function openCheckout(planName, action = 'start_trial') {
   const plan = planByName(planName);
   if (!plan) return;
+  if (!isLoggedIn()) {
+    rememberPlan(planName);
+    window.location.assign(signupUrl(planName));
+    return;
+  }
   const country = detectCountry();
   const countryMeta = COUNTRIES[country] || COUNTRIES.NZ;
   const node = modal();
   node.innerHTML = `
     <section class="stripeLiveModal" role="dialog" aria-modal="true" aria-label="${esc(planName)} Stripe checkout">
-      <header>
-        <div><h2>${esc(planName)} checkout</h2><p>Churvox will send you to Stripe checkout. Price is locked at the published monthly price.</p></div>
-        <button type="button" data-stripe-close>Close</button>
-      </header>
+      <header><div><h2>${esc(planName)} checkout</h2><p>Churvox will send you to Stripe checkout. Price is locked at the published monthly price.</p></div><button type="button" data-stripe-close>Close</button></header>
       <form data-plan-name="${esc(planName)}" data-checkout-action="${esc(action)}">
-        <div class="checkoutSummary">
-          <b>${esc(countryMeta.symbol)}${esc(plan.price)}/month ${esc(countryMeta.tax)}</b>
-          <span>New Zealand GST-inclusive cost: ${esc(incGst(plan.price))}/month inc GST.</span>
-          <ul>${plan.includes.map((item) => `<li>${esc(item)}</li>`).join('')}</ul>
-        </div>
+        <div class="checkoutSummary"><b>${esc(countryMeta.symbol)}${esc(plan.price)}/month ${esc(countryMeta.tax)}</b><span>New Zealand GST-inclusive cost: ${esc(incGst(plan.price))}/month inc GST.</span><ul>${plan.includes.map((item) => `<li>${esc(item)}</li>`).join('')}</ul></div>
         <label><span>Billing country</span><select name="country">${Object.entries(COUNTRIES).map(([code, item]) => `<option value="${code}" ${code === country ? 'selected' : ''}>${esc(item.label)} - ${esc(item.currency)}</option>`).join('')}</select></label>
         <label><span>Owner email</span><input name="email" type="email" autocomplete="email" placeholder="owner email" value="${esc(localStorage.getItem(EMAIL_STORE) || '')}" /></label>
         <div class="checkoutActions"><button type="button" class="quiet" data-stripe-close>Cancel</button><button type="submit" class="primary">Continue to Stripe</button></div>
@@ -246,38 +179,12 @@ function buildPayload(planName, action, countryValue, email) {
   const meta = COUNTRIES[country] || COUNTRIES.NZ;
   const isAddon = plan.type === 'addon';
   const displayKey = plan.displayKey;
-  return {
-    plan: plan.stripeKey,
-    plan_key: displayKey,
-    selected_plan: displayKey,
-    tier: plan.stripeKey,
-    addon: isAddon ? plan.addonKey : undefined,
-    addon_key: isAddon ? plan.addonKey : undefined,
-    item_type: plan.type,
-    plan_name: planName,
-    action,
-    email: clean(email),
-    country,
-    billing_country: country,
-    currency: meta.currency,
-    billing_interval: 'monthly',
-    interval: 'month',
-    success_url: `${window.location.origin}/dashboard#plans?checkout=success&plan=${encodeURIComponent(displayKey)}`,
-    cancel_url: `${window.location.origin}/plans?checkout=cancelled&plan=${encodeURIComponent(displayKey)}`,
-    metadata: {
-      display_plan: displayKey,
-      stripe_plan: plan.stripeKey,
-      addon: isAddon ? plan.addonKey : '',
-      source: 'churvox_plans_page',
-    },
-  };
+  return { plan: plan.stripeKey, plan_key: displayKey, selected_plan: displayKey, tier: plan.stripeKey, addon: isAddon ? plan.addonKey : undefined, addon_key: isAddon ? plan.addonKey : undefined, item_type: plan.type, plan_name: planName, action, email: clean(email), country, billing_country: country, currency: meta.currency, billing_interval: 'monthly', interval: 'month', success_url: `${window.location.origin}/billing/success?plan=${encodeURIComponent(displayKey)}&country=${encodeURIComponent(country)}`, cancel_url: `${window.location.origin}/plans?checkout=cancelled&plan=${encodeURIComponent(displayKey)}`, metadata: { display_plan: displayKey, stripe_plan: plan.stripeKey, addon: isAddon ? plan.addonKey : '', source: 'churvox_plans_page' } };
 }
 
 function checkoutEndpoints(plan) {
-  if (plan.type === 'addon') {
-    return ['/billing/addon/checkout', '/stripe/addon/checkout', '/billing/create-checkout-session', '/stripe/create-checkout-session', '/billing/checkout', '/stripe/checkout', '/checkout/session', '/create-checkout-session'];
-  }
-  return ['/billing/create-checkout-session', '/stripe/create-checkout-session', '/billing/checkout', '/stripe/checkout', '/subscriptions/checkout', '/checkout/session', '/create-checkout-session'];
+  if (plan.type === 'addon') return ['/billing/addon/checkout', '/stripe/addon/checkout', '/billing/create-checkout-session', '/stripe/create-checkout-session'];
+  return ['/billing/create-checkout-session', '/stripe/create-checkout-session', '/billing/checkout', '/stripe/checkout'];
 }
 
 async function callCheckout(payload, plan) {
@@ -285,25 +192,13 @@ async function callCheckout(payload, plan) {
   for (const endpoint of checkoutEndpoints(plan)) {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('authToken') || '';
-      const response = await fetch(apiUrl(endpoint), {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(apiUrl(endpoint), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload) });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok || body?.success === false) {
-        throw new Error(body?.detail || body?.error || body?.message || `HTTP ${response.status}`);
-      }
+      if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.error || body?.message || `HTTP ${response.status}`);
       const url = body?.url || body?.checkout_url || body?.session_url || body?.checkoutSession?.url || body?.data?.url;
       if (!url) throw new Error('Stripe checkout URL missing');
       return url;
-    } catch (error) {
-      lastError = error;
-    }
+    } catch (error) { lastError = error; }
   }
   throw lastError || new Error('Stripe checkout route not configured');
 }
@@ -311,52 +206,62 @@ async function callCheckout(payload, plan) {
 async function startCheckout(planName, action, country, email) {
   const plan = planByName(planName);
   if (!plan) return;
+  if (!isLoggedIn()) {
+    rememberPlan(planName);
+    window.location.assign(signupUrl(planName));
+    return;
+  }
   const payload = buildPayload(planName, action, country, email);
   markStatus(planName, 'Opening Stripe checkout...', 'ready');
   toast('Opening Stripe checkout', `${planName} ${money(plan.price)}/month + GST.`);
-  try {
-    const url = await callCheckout(payload, plan);
-    window.location.assign(url);
-  } catch (error) {
-    const message = error?.message || 'Stripe checkout is not configured yet';
-    markStatus(planName, message, 'error');
-    showCheckoutError(planName, plan, message);
-  }
+  try { window.location.assign(await callCheckout(payload, plan)); }
+  catch (error) { const message = error?.message || 'Stripe checkout is not configured yet'; markStatus(planName, message, 'error'); showCheckoutError(planName, plan, message); }
 }
 
 function showCheckoutError(planName, plan, message) {
   const node = modal();
-  node.innerHTML = `
-    <section class="stripeLiveModal" role="dialog" aria-modal="true" aria-label="Stripe checkout configuration needed">
-      <header><div><h2>Stripe checkout needs config</h2><p>The page is wired. The backend did not return a Stripe checkout URL.</p></div><button type="button" data-stripe-close>Close</button></header>
-      <form><div class="checkoutSummary"><b>${esc(planName)} ${esc(money(plan.price))}/month + GST</b><span>${esc(message)}</span><span>Check Stripe price env vars and checkout route on the backend.</span></div><div class="checkoutActions"><button type="button" class="primary" data-stripe-close>Done</button></div></form>
-    </section>`;
+  node.innerHTML = `<section class="stripeLiveModal" role="dialog" aria-modal="true" aria-label="Stripe checkout configuration needed"><header><div><h2>Stripe checkout needs config</h2><p>The page is wired. The backend did not return a Stripe checkout URL.</p></div><button type="button" data-stripe-close>Close</button></header><form><div class="checkoutSummary"><b>${esc(planName)} ${esc(money(plan.price))}/month + GST</b><span>${esc(message)}</span><span>Check Stripe route and Render env vars on the backend.</span></div><div class="checkoutActions"><button type="button" class="primary" data-stripe-close>Done</button></div></form></section>`;
   node.hidden = false;
   toast('Stripe checkout blocked', message);
+}
+
+function findCards(planName) {
+  return [...PUBLIC_PLAN_SELECTORS, ...APP_PLAN_SELECTORS].flatMap((selector) => Array.from(document.querySelectorAll(selector))).filter((card) => lower(card.textContent).includes(lower(planName)) || lower(card.dataset?.planName).includes(lower(planName)));
 }
 
 function markStatus(planName, message, tone = '') {
   findCards(planName).forEach((card) => {
     let status = card.querySelector('.churvoxStripeLiveStatus');
-    if (!status) {
-      status = document.createElement('div');
-      status.className = 'churvoxStripeLiveStatus';
-      card.appendChild(status);
-    }
+    if (!status) { status = document.createElement('div'); status.className = 'churvoxStripeLiveStatus'; card.appendChild(status); }
     status.className = `churvoxStripeLiveStatus ${tone}`.trim();
     status.textContent = message;
   });
 }
 
-function findCards(planName) {
-  return CARD_SELECTORS.flatMap((selector) => Array.from(document.querySelectorAll(selector))).filter((card) => lower(card.textContent).includes(lower(planName)) || lower(card.dataset?.planName).includes(lower(planName)));
+function wirePublicCard(card, planName) {
+  const plan = planByName(planName);
+  if (!plan || card.dataset.signupReady === '1') return;
+  card.dataset.signupReady = '1';
+  const url = signupUrl(planName);
+  const existing = Array.from(card.querySelectorAll('a,button')).find((node) => /trial|start|choose|plan/i.test(node.textContent || ''));
+  if (existing) {
+    existing.setAttribute('data-churvox-signup-plan', planName);
+    existing.setAttribute('href', url);
+    existing.textContent = plan.actionLabel;
+    return;
+  }
+  const anchor = document.createElement('a');
+  anchor.className = 'churvoxStripeLiveButton';
+  anchor.href = url;
+  anchor.dataset.churvoxSignupPlan = planName;
+  anchor.textContent = plan.actionLabel;
+  card.appendChild(anchor);
 }
 
-function addButton(card, planName) {
+function wireCheckoutCard(card, planName) {
   const plan = planByName(planName);
   if (!plan || card.dataset.stripeLiveReady === '1') return;
   card.dataset.stripeLiveReady = '1';
-  card.dataset.stripePlan = planName;
   const existing = Array.from(card.querySelectorAll('a,button')).find((node) => /trial|start|choose|add|upgrade|checkout|plan/i.test(node.textContent || ''));
   if (existing) {
     existing.classList.add('churvoxStripeLiveButton');
@@ -375,32 +280,24 @@ function addButton(card, planName) {
   card.appendChild(button);
 }
 
-function showGstAndIncludes(card, planName) {
-  const plan = planByName(planName);
-  if (!plan || card.dataset.stripeLiveDetails === '1') return;
-  card.dataset.stripeLiveDetails = '1';
-  const detail = document.createElement('div');
-  detail.className = 'churvoxStripeLiveDetails';
-  detail.innerHTML = `<small>${esc(incGst(plan.price))}/month inc GST in NZ.</small><ul>${plan.includes.map((item) => `<li>${esc(item)}</li>`).join('')}</ul>`;
-  detail.style.cssText = 'display:grid;gap:5px;margin-top:8px;color:#52605a;font-size:12px;font-weight:850;line-height:1.35';
-  const ul = detail.querySelector('ul');
-  if (ul) ul.style.cssText = 'margin:0;padding-left:17px';
-  card.appendChild(detail);
-}
-
 function enhance() {
   ensureStyle();
-  CARD_SELECTORS.forEach((selector) => {
-    document.querySelectorAll(selector).forEach((card) => {
-      const planName = findPlanNameFromCard(card);
-      if (!planName) return;
-      addButton(card, planName);
-      showGstAndIncludes(card, planName);
-    });
-  });
+  if (isPublicMarketingPath() && !isLoggedIn()) {
+    PUBLIC_PLAN_SELECTORS.forEach((selector) => document.querySelectorAll(selector).forEach((card) => { const planName = findPlanNameFromCard(card); if (planName) wirePublicCard(card, planName); }));
+    return;
+  }
+  APP_PLAN_SELECTORS.forEach((selector) => document.querySelectorAll(selector).forEach((card) => { const planName = findPlanNameFromCard(card); if (planName) wireCheckoutCard(card, planName); }));
 }
 
 function clickHandler(event) {
+  const signup = event.target.closest('[data-churvox-signup-plan]');
+  if (signup) {
+    const planName = signup.dataset.churvoxSignupPlan;
+    if (planByName(planName)) {
+      rememberPlan(planName);
+      return;
+    }
+  }
   const button = event.target.closest('[data-stripe-live-plan],[data-stripe-plan]');
   if (!button) return;
   const planName = button.dataset.stripeLivePlan || button.dataset.stripePlan;
@@ -411,13 +308,7 @@ function clickHandler(event) {
 }
 
 function successNotice() {
-  try {
-    const search = new URLSearchParams(window.location.search || '');
-    const hash = new URLSearchParams(String(window.location.hash || '').split('?')[1] || '');
-    const state = search.get('checkout') || hash.get('checkout');
-    if (state === 'success') toast('Checkout complete', 'Stripe returned successfully.');
-    if (state === 'cancelled') toast('Checkout cancelled', 'No plan was changed.');
-  } catch (_) {}
+  try { const search = new URLSearchParams(window.location.search || ''); const state = search.get('checkout'); if (state === 'success') toast('Checkout complete', 'Stripe returned successfully.'); if (state === 'cancelled') toast('Checkout cancelled', 'No plan was changed.'); } catch (_) {}
 }
 
 if (typeof window !== 'undefined' && !window.__CHURVOX_STRIPE_CHECKOUT_LIVE_RUNTIME__) {
