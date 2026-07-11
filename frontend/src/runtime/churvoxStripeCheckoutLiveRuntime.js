@@ -1,4 +1,4 @@
-// CHURVOX_STRIPE_CHECKOUT_LIVE_RUNTIME_20260629
+// CHURVOX_STRIPE_CHECKOUT_LIVE_RUNTIME_20260712_PAID_LAUNCH
 // Wires public and OS plan buttons to backend Stripe Checkout.
 
 import API_BASE from '../lib/apiBase';
@@ -70,6 +70,18 @@ const COUNTRIES = {
   US: { label: 'United States', currency: 'USD', symbol: 'US$', tax: '' },
   UK: { label: 'United Kingdom', currency: 'GBP', symbol: 'GBP ', tax: '+ VAT' },
 };
+
+const CARD_SELECTORS = [
+  '.cp26PlanGrid article',
+  '.cp26ContactGrid article[data-plan-card]',
+  '.publicPlanGrid article',
+  '.publicAddOnGrid article',
+  '#option-f-plans-pricing-desk .ofPlanCard',
+  '#option-f-plans-pricing-desk .ofAddonCard',
+  '.planList > div',
+  '.plan-card',
+  '[data-plan-card]',
+];
 
 function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
@@ -184,6 +196,8 @@ function planByName(planName) {
 }
 
 function findPlanNameFromCard(card) {
+  const datasetName = clean(card?.dataset?.planName || card?.getAttribute?.('data-plan-name') || '');
+  if (PLANS[datasetName]) return datasetName;
   const text = clean(card?.querySelector('h2,h3,b,strong')?.textContent || card?.textContent || '');
   return Object.keys(PLANS).find((name) => lower(text).includes(lower(name))) || '';
 }
@@ -261,9 +275,9 @@ function buildPayload(planName, action, countryValue, email) {
 
 function checkoutEndpoints(plan) {
   if (plan.type === 'addon') {
-    return ['/billing/addon/checkout', '/stripe/addon/checkout', '/billing/checkout', '/stripe/checkout', '/checkout/session', '/create-checkout-session'];
+    return ['/billing/addon/checkout', '/stripe/addon/checkout', '/billing/create-checkout-session', '/stripe/create-checkout-session', '/billing/checkout', '/stripe/checkout', '/checkout/session', '/create-checkout-session'];
   }
-  return ['/billing/checkout', '/stripe/checkout', '/subscriptions/checkout', '/checkout/session', '/create-checkout-session'];
+  return ['/billing/create-checkout-session', '/stripe/create-checkout-session', '/billing/checkout', '/stripe/checkout', '/subscriptions/checkout', '/checkout/session', '/create-checkout-session'];
 }
 
 async function callCheckout(payload, plan) {
@@ -335,16 +349,7 @@ function markStatus(planName, message, tone = '') {
 }
 
 function findCards(planName) {
-  const selectors = [
-    '.publicPlanGrid article',
-    '.publicAddOnGrid article',
-    '#option-f-plans-pricing-desk .ofPlanCard',
-    '#option-f-plans-pricing-desk .ofAddonCard',
-    '.planList > div',
-    '.plan-card',
-    '[data-plan-card]',
-  ];
-  return selectors.flatMap((selector) => Array.from(document.querySelectorAll(selector))).filter((card) => lower(card.textContent).includes(lower(planName)));
+  return CARD_SELECTORS.flatMap((selector) => Array.from(document.querySelectorAll(selector))).filter((card) => lower(card.textContent).includes(lower(planName)) || lower(card.dataset?.planName).includes(lower(planName)));
 }
 
 function addButton(card, planName) {
@@ -385,8 +390,7 @@ function showGstAndIncludes(card, planName) {
 
 function enhance() {
   ensureStyle();
-  const selectors = ['.publicPlanGrid article', '.publicAddOnGrid article', '#option-f-plans-pricing-desk .ofPlanCard', '#option-f-plans-pricing-desk .ofAddonCard', '.planList > div', '.plan-card', '[data-plan-card]'];
-  selectors.forEach((selector) => {
+  CARD_SELECTORS.forEach((selector) => {
     document.querySelectorAll(selector).forEach((card) => {
       const planName = findPlanNameFromCard(card);
       if (!planName) return;
