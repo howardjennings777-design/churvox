@@ -49,6 +49,11 @@ except Exception:
     pass
 
 try:
+    import backend.churvox_startup_patch_loader  # noqa: F401
+except Exception:
+    pass
+
+try:
     import backend.churvox_plan_usage_routes  # noqa: F401
 except Exception:
     pass
