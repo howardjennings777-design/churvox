@@ -29,6 +29,26 @@ except Exception:
     pass
 
 try:
+    import backend.churvox_hq_router_mount_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
+    import backend.churvox_owner_cockpit_control_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
+    import backend.churvox_hq_growth_report_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
+    import backend.churvox_hq_connection_status_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import backend.churvox_plan_usage_routes  # noqa: F401
 except Exception:
     pass
