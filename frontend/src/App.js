@@ -263,7 +263,7 @@ function App() {
               <Route path="/admin" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
               <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
               <Route path="/admin/unlock" element={<PlatformUnlock />} />
-              <Route path="/platform" element={<AppOwnerPage />} />
+              <Route path="/platform" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
               <Route path="/billing/success" element={<BillingReturnBridge />} />
               <Route path="/billing/cancelled" element={<BillingReturnBridge cancelled />} />
               <Route path="/quote/:token" element={<PublicQuotePage />} />
