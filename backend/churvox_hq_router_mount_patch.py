@@ -13,7 +13,7 @@ def install(module):
     if name in INSTALLED:
         return
 
-    api_router = getattr(module, "api_router", None)
+    app = getattr(module, "app", None)
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
     is_platform_owner = getattr(module, "is_platform_owner", None)
@@ -21,18 +21,22 @@ def install(module):
     build_platform_owner_router = getattr(module, "build_platform_owner_router", None)
     logger = getattr(module, "logger", None)
 
-    if api_router is None or db is None or get_current_user is None or is_platform_owner is None or ObjectId is None or build_platform_owner_router is None:
+    if app is None or db is None or get_current_user is None or is_platform_owner is None or ObjectId is None or build_platform_owner_router is None:
         return
 
     try:
-        # Avoid mounting twice when sitecustomize/root hooks both load this patch.
-        if getattr(api_router, "churvox_hq_router_mounted", False):
+        # FastAPI copies router routes when include_router runs. This patch executes
+        # after server.py has already included api_router, so mount the HQ router
+        # directly on the app with the /api prefix.
+        state = getattr(app, "state", None)
+        if state is not None and getattr(state, "churvox_hq_router_mounted", False):
             INSTALLED.add(name)
             return
-        api_router.include_router(build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectId))
-        setattr(api_router, "churvox_hq_router_mounted", True)
+        app.include_router(build_platform_owner_router(db, get_current_user, is_platform_owner, ObjectId), prefix="/api")
+        if state is not None:
+            state.churvox_hq_router_mounted = True
         if logger:
-            logger.info("Churvox HQ owner router mounted")
+            logger.info("Churvox HQ owner router mounted on app")
     except Exception as exc:
         if logger:
             logger.warning("Churvox HQ owner router mount skipped: %s", exc)
