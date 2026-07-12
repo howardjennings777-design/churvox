@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from urllib.parse import parse_qs
 
-VERSION = "churvox-checkout-token-session-guard-20260712b"
+VERSION = "churvox-checkout-token-session-guard-20260712c"
 CHECKOUT_PATHS = {
     "/api/billing/create-checkout-session",
     "/api/billing/start-checkout",
@@ -81,15 +81,23 @@ class CheckoutBodyTokenGuard:
                 recovery = __import__("backend.churvox_password_recovery_paid_launch_patch", fromlist=["*"])
             except Exception:
                 recovery = None
+        try:
+            revocation = __import__("churvox_token_revocation_paid_launch_patch")
+        except Exception:
+            try:
+                revocation = __import__("backend.churvox_token_revocation_paid_launch_patch", fromlist=["*"])
+            except Exception:
+                revocation = None
 
         try:
             payload = jwt.decode(token, secret, algorithms=[algorithm])
             if payload.get("type") != "access":
                 raise ValueError("Invalid token type")
             user = await db.users.find_one({"_id": ObjectId(str(payload.get("sub") or ""))})
-            revoked = bool(recovery and recovery.session_is_revoked(user, payload))
+            password_revoked = bool(recovery and recovery.session_is_revoked(user, payload))
             disabled = bool(recovery and recovery.account_disabled(user))
-            if not user or revoked or disabled:
+            logged_out = bool(revocation and await revocation.token_is_revoked(db, payload, token))
+            if not user or password_revoked or disabled or logged_out:
                 raise ValueError("Session revoked")
         except Exception:
             response = JSONResponse(
