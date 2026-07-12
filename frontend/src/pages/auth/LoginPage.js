@@ -45,6 +45,20 @@ function setupPendingLocally() {
   }
 }
 
+function requestedNextPath() {
+  try {
+    const value = new URLSearchParams(window.location.search || "").get("next") || "";
+    if (!value.startsWith("/") || value.startsWith("//")) return "";
+    if (/^\/(?:login|signin|sign-in|signup|register|admin|platform|worker)(?:\/|\?|#|$)/i.test(value)) return "";
+    if (/^\/plans(?:\?|#|$)/i.test(value)) return value;
+    if (/^\/delete-account(?:\?|#|$)/i.test(value)) return value;
+    if (/^\/(?:support|refunds-cancellations|security|contact)(?:\?|#|$)/i.test(value)) return value;
+    return "";
+  } catch {
+    return "";
+  }
+}
+
 function withTimeout(promise, ms, message) {
   let timer;
   const timeout = new Promise((_, reject) => {
@@ -114,6 +128,8 @@ const getPostLoginPath = (payload = {}) => {
       ["cancelled", "canceled", "incomplete", "incomplete_expired", "locked", "disabled"].includes(status));
 
   if (explicitlyLocked) return "/plans";
+  const requested = requestedNextPath();
+  if (requested) return requested;
   if (setupPendingLocally()) return "/setup-guide?first_setup=1";
   return getDefaultRoute(role) || "/dashboard";
 };
@@ -218,11 +234,11 @@ export default function LoginPage() {
   };
 
   return (
-    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_LOGIN_CONTROL_20260710">
+    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_LOGIN_PAID_LAUNCH_RETURN_20260712">
       {!appMode ? <Nav /> : null}
       <section className="cvChurvoxLoginShell">
         {!appMode ? (
-          <aside className="cvLoginControlPanel" aria-label="Churvox control sign in overview">
+          <aside className="cvLoginControlPanel" aria-label="Churvox example control sign in overview">
             <div className="cvLoginControlBrand">
               <ChurvoxAppLogo />
               <div>
@@ -233,10 +249,10 @@ export default function LoginPage() {
 
             <p className="cvLoginControlText">Sign in to the workspace where jobs, workers, invoices, messages and payment requests come back to Command before anything real happens.</p>
 
-            <div className="cvLoginCommandPreview" aria-hidden="true">
-              <div><span>Command</span><b>3 decisions waiting</b><small>Invoice extra · worker update · client follow-up</small></div>
-              <div><span>Money</span><b>Payment link ready</b><small>Owner approval required before customer sees it</small></div>
-              <div><span>Worker</span><b>Proof added</b><small>Returned to Command for owner check</small></div>
+            <div className="cvLoginCommandPreview" aria-label="Example Command preview">
+              <div><span>Example Command queue</span><b>Owner decisions stay together</b><small>Invoice extra · worker update · client follow-up</small></div>
+              <div><span>Example money check</span><b>Payment request prepared</b><small>Owner approval required before a customer sees it</small></div>
+              <div><span>Example worker update</span><b>Proof returned</b><small>Sent back to Command for owner review</small></div>
             </div>
 
             <div className="cvLoginStats">
@@ -261,7 +277,7 @@ export default function LoginPage() {
           </p>
 
           <div className="cvLoginMiniFlow">
-            {loginHighlights.map(([title, label, text]) => <article key={title}><span>{title}</span><b>{label}</b><small>{text}</small></article>)}
+            {loginHighlights.map(([title, label, itemText]) => <article key={title}><span>{title}</span><b>{label}</b><small>{itemText}</small></article>)}
           </div>
 
           {error ? <div className="cvPublicAuthError">{error}</div> : null}
@@ -275,7 +291,7 @@ export default function LoginPage() {
             Password
             <div className="password-row">
               <input className="cvPublicNativeInput" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" autoComplete="current-password" />
-              <button className="cvPublicAuthGhost" type="button" onClick={() => setShowPassword((v) => !v)}>{showPassword ? "Hide" : "Show"}</button>
+              <button className="cvPublicAuthGhost" type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? "Hide" : "Show"}</button>
             </div>
           </label>
 
@@ -283,7 +299,7 @@ export default function LoginPage() {
 
           <p className="cvPublicAuthBottom">
             {workerAccess ? <Link to="/">Back to website</Link> : <Link to="/forgot-password">Forgot password?</Link>}
-            {!workerAccess ? <><span> / </span><Link to="/signup">Start trial</Link></> : null}
+            {!workerAccess ? <><span> / </span><Link to="/signup?plan=operator">Start trial</Link></> : null}
           </p>
         </form>
       </section>
