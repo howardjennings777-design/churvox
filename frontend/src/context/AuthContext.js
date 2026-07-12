@@ -12,6 +12,7 @@ const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
 const AUTH_SNAPSHOT_KEY = "churvox_auth_session_snapshot_v1";
 const AUTH_SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 const WORKER_OFFLINE_GRACE_MS = 1000 * 60 * 60 * 2;
+const BUSINESS_OFFLINE_GRACE_MS = 1000 * 60 * 15;
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
 const LOCKED_STATUSES = new Set(["cancelled", "canceled", "unpaid", "incomplete", "incomplete_expired", "locked", "disabled", "expired", "revoked"]);
@@ -250,14 +251,19 @@ function businessAccessFromUser(user = {}) {
   const status = subscriptionStatus(user);
   const trialEnd = parseDate(user.trial_ends_at);
   if (["trial", "trialing"].includes(status) && trialEnd && trialEnd <= new Date()) return false;
+  // /api/auth/me is the authoritative billing gate and may omit private Stripe identifiers.
+  if (user.has_app_access === true) return true;
   if (PAID_STATUSES.has(status)) return stripeBackedAccess(user);
-  if (typeof user.has_app_access === "boolean") return user.has_app_access && stripeBackedAccess(user);
   if (hasValidPlan(user)) return stripeBackedAccess(user);
   return false;
 }
 
 function offlineWorkerSnapshot(user = {}) {
   return inferredWorker(user) && !explicitBillingLock(user) && !isPlatformOwner(user);
+}
+
+function offlineBusinessSnapshot(user = {}) {
+  return !inferredWorker(user) && !inferredPayroll(user) && businessAccessFromUser(user);
 }
 
 export function AuthProvider({ children }) {
@@ -283,9 +289,11 @@ export function AuthProvider({ children }) {
     let token = "";
     try { token = localStorage.getItem("token") || ""; } catch {}
     const workerSession = readStoredAuthSnapshot(WORKER_OFFLINE_GRACE_MS);
+    const businessSession = readStoredAuthSnapshot(BUSINESS_OFFLINE_GRACE_MS);
+    const fallbackSession = workerSession || businessSession;
 
     try {
-      const me = await fetchMe(token || workerSession?.token || undefined);
+      const me = await fetchMe(token || fallbackSession?.token || undefined);
       if (businessAccessFromUser(me)) removePlanFlag();
       if (me?.token) localStorage.setItem("token", me.token);
       saveStoredAuthSnapshot(me);
@@ -294,11 +302,16 @@ export function AuthProvider({ children }) {
       return me;
     } catch (error) {
       const status = error?.response?.status;
-      if (!status && workerSession && offlineWorkerSnapshot(workerSession)) {
+      const transient = !status || status === 408 || status === 429 || status >= 500;
+      if (transient && workerSession && offlineWorkerSnapshot(workerSession)) {
         if (runId === authRunRef.current) setUser(workerSession);
         return workerSession;
       }
-      clearStoredAuth({ clearPlanState: status === 401 || status === 403 });
+      if (transient && businessSession && offlineBusinessSnapshot(businessSession)) {
+        if (runId === authRunRef.current) setUser(businessSession);
+        return businessSession;
+      }
+      if (status === 401 || status === 403) clearStoredAuth({ clearPlanState: true });
       if (runId === authRunRef.current) setUser(null);
       throw error;
     } finally {
