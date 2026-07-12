@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import HTTPException, Request
 
-VERSION = "churvox-billing-portal-paid-launch-20260712"
+VERSION = "churvox-billing-portal-paid-launch-20260712b"
 TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 OWNER_ROLES = {"owner", "business_owner", "employer", "admin", "manager", "office_admin", "superadmin"}
 ROUTE_PATHS = {"/api/billing/create-portal-session", "/billing/create-portal-session"}
@@ -21,6 +21,18 @@ def _text(value: Any) -> str:
 
 def _role(user: dict[str, Any]) -> str:
     return _text(user.get("role") or user.get("user_role") or user.get("account_type") or "owner").lower().replace("-", "_").replace(" ", "_")
+
+
+def _route_present(app, path: str, method: str = "POST") -> bool:
+    return any(
+        getattr(route, "path", "") == path
+        and method in set(getattr(route, "methods", set()) or set())
+        for route in list(getattr(app.router, "routes", []) or [])
+    )
+
+
+def _routes_ready(app) -> bool:
+    return all(_route_present(app, path, "POST") for path in ROUTE_PATHS)
 
 
 def _remove_routes(app) -> None:
@@ -36,13 +48,14 @@ def _remove_routes(app) -> None:
 
 def install(module) -> None:
     name = getattr(module, "__name__", "")
-    if name in INSTALLED:
-        return
     app = getattr(module, "app", None)
     get_current_user = getattr(module, "get_current_user", None)
     stripe_module = getattr(module, "stripe", None)
     if app is None or not callable(get_current_user) or stripe_module is None:
         return
+    if name in INSTALLED and _routes_ready(app):
+        return
+    INSTALLED.discard(name)
 
     _remove_routes(app)
 
@@ -78,7 +91,8 @@ def install(module) -> None:
 
     app.add_api_route("/api/billing/create-portal-session", create_portal_session, methods=["POST"])
     app.add_api_route("/billing/create-portal-session", create_portal_session, methods=["POST"])
-    INSTALLED.add(name)
+    if _routes_ready(app):
+        INSTALLED.add(name)
 
 
 class _Loader(importlib.abc.Loader):
