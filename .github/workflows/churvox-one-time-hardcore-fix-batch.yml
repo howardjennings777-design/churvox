@@ -1,0 +1,314 @@
+name: Churvox One-Time Hardcore Audit Repair Batch
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-hardcore-fix-batch]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply strict targeted repairs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              if new in text:
+                  print(f'already patched: {path}')
+                  return
+              if text.count(old) != 1:
+                  raise SystemExit(f'Expected exactly one match in {path}, found {text.count(old)}')
+              file.write_text(text.replace(old, new, 1))
+              print(f'patched: {path}')
+
+          # Worker browser reads only worker-safe endpoints. Owner roster stays on the staff area.
+          replace_once(
+              'frontend/src/churvox-office-lab/officeTeamApi.js',
+              '  worker: ["/api/worker/jobs", "/api/team/workers", "/api/workers"],',
+              '  worker: ["/api/worker/jobs"],'
+          )
+          replace_once(
+              'frontend/src/churvox-office-lab/officeTeamApi.js',
+              '''  if (area === "worker" || area === "staff") {
+              const meta = paymentMeta(item);
+              return [
+                first(item, ["name", "worker_name", "staff_name", "email", "role"], "Worker"),
+                first(item, ["status", "role", "job_title", "today_status", "title", "service", "client_name", "customer_name"], "Live staff record"),
+                first(item, ["availability", "timer_status", "assigned_count", "phone", "amount_due", "balance_due"], "Check"),
+                first(item, ["notes", "summary", "email", "phone", "address"], "Worker view stays simple and phone-friendly."),
+                meta,
+              ];
+            }''',
+              '''  if (area === "worker") {
+              const meta = paymentMeta(item);
+              return [
+                shortWhen(first(item, ["scheduled_date", "date", "start", "start_time", "due_date"], index === 0 ? "Today" : "Assigned")),
+                first(item, ["title", "job_title", "job_name", "name", "service", "description", "client_name", "customer_name"], "Assigned job"),
+                first(item, ["status", "job_status", "workflow_status", "state", "stage"], "Ready"),
+                first(item, ["worker_notes", "notes", "summary", "address", "client_name", "customer_name"], "Check the job notes before starting."),
+                meta,
+              ];
+            }
+            if (area === "staff") {
+              const meta = paymentMeta(item);
+              return [
+                first(item, ["name", "worker_name", "staff_name", "email", "role"], "Worker"),
+                first(item, ["status", "role", "job_title", "today_status", "title", "service", "client_name", "customer_name"], "Live staff record"),
+                first(item, ["availability", "timer_status", "assigned_count", "phone", "amount_due", "balance_due"], "Check"),
+                first(item, ["notes", "summary", "email", "phone", "address"], "Worker view stays simple and phone-friendly."),
+                meta,
+              ];
+            }'''
+          )
+
+          # Worker UI: reliable role-safe logout and field updates that route by judgement need.
+          replace_once(
+              'frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx',
+              'import { Link, Navigate, useLocation } from "react-router-dom";',
+              'import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";'
+          )
+          replace_once(
+              'frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx',
+              '''  const { pathname } = useLocation();
+              const { user, loading: authLoading, isWorker } = useAuth();''',
+              '''  const { pathname } = useLocation();
+              const navigate = useNavigate();
+              const { user, loading: authLoading, isWorker, logout } = useAuth();'''
+          )
+          replace_once(
+              'frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx',
+              '''    try {
+                    await createBackendWorkerUpdateRequest({ title, update: clean, updateType: "Worker update", status: hasWork ? status : "General update" });
+                    addTrail(`Boss update sent to Command: ${clean}`);
+                    sent = true;
+                  } catch (error) {''',
+              '''    try {
+                    const needsDecision = /owner check|extra work|issue|problem|decision|blocked|cannot|help/i.test(clean);
+                    if (hasWork && jobId) {
+                      await sendFieldSlip(needsDecision ? "worker_problem" : "worker_message", clean);
+                      addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
+                    } else {
+                      await createBackendWorkerUpdateRequest({ title, update: clean, updateType: needsDecision ? "Worker problem" : "Worker update", status: needsDecision ? "Owner review" : "General update" });
+                      addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
+                    }
+                    sent = true;
+                  } catch (error) {'''
+          )
+          replace_once(
+              'frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx',
+              '''  function addTrail(text) {
+                setTrail((currentTrail) => [{ id: `${Date.now()}-${text}`, text }, ...currentTrail].slice(0, 6));
+              }''',
+              '''  async function handleLogout() {
+                await logout();
+                navigate("/login?worker=1", { replace: true });
+              }
+
+              function addTrail(text) {
+                setTrail((currentTrail) => [{ id: `${Date.now()}-${text}`, text }, ...currentTrail].slice(0, 6));
+              }'''
+          )
+          replace_once(
+              'frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx',
+              '''        {[['Today', '/worker/today'], ['Jobs', '/worker/jobs'], ['Messages', '/worker/messages'], ['Help', '/worker/help'], ['Me', '/worker/settings']].map(([label, href]) => <Link key={href} className={view.label === label ? "active" : ""} to={href}>{label}</Link>)}'''.replace("'", '"'),
+              '''        {[["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/messages"], ["Help", "/worker/help"], ["Me", "/worker/settings"]].map(([label, href]) => <Link key={href} className={view.label === label ? "active" : ""} to={href}>{label}</Link>)}
+                    <button className="cvWorkerLogout" type="button" onClick={handleLogout}>Log out</button>'''
+          )
+
+          css = Path('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css')
+          css_text = css.read_text()
+          marker = '.cvWorkerRouteNav .cvWorkerLogout'
+          if marker not in css_text:
+              css.write_text(css_text + '''
+
+          .cvWorkerRouteNav .cvWorkerLogout {
+            min-height: 44px;
+            border: 1px solid rgba(127, 29, 29, .24);
+            border-radius: 12px;
+            padding: 0 14px;
+            color: #7f1d1d;
+            background: rgba(254, 242, 242, .92);
+            font: inherit;
+            font-weight: 900;
+            cursor: pointer;
+          }
+
+          .cvWorkerRouteNav .cvWorkerLogout:hover,
+          .cvWorkerRouteNav .cvWorkerLogout:focus-visible {
+            border-color: rgba(185, 28, 28, .55);
+            background: #fee2e2;
+          }
+          ''')
+
+          # Old standalone routes now return to the new owner OS.
+          replace_once(
+              'frontend/src/App.js',
+              '<Route path="/legacy-dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />',
+              '<Route path="/legacy-dashboard" element={<FreshBusinessRoute><AppRedirect to="/dashboard" /></FreshBusinessRoute>} />'
+          )
+          replace_once(
+              'frontend/src/App.js',
+              '<Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />',
+              '<Route path="/plans" element={<FreshBusinessRoute><AppRedirect to="/dashboard#plans" /></FreshBusinessRoute>} />'
+          )
+
+          # Install the worker-to-Command visibility bridge last so it owns the final GET route.
+          replace_once(
+              'backend/churvox_startup_patch_loader.py',
+              '    "churvox_hq_hello_only_guard_patch",\n]',
+              '    "churvox_hq_hello_only_guard_patch",\n    "churvox_worker_command_visibility_patch",\n]'
+          )
+
+          # Static audit must demand role-safe endpoint separation, not the old unsafe fallback.
+          replace_once(
+              'scripts/churvox-hardcore-owner-worker-audit.cjs',
+              '''    && officeApi.includes('worker: ["/api/worker/jobs", "/api/team/workers", "/api/workers"]'),''',
+              '''    && officeApi.includes('worker: ["/api/worker/jobs"]')
+                  && officeApi.includes('staff: ["/api/team/workers", "/api/team", "/api/workers"]'),'''
+          )
+
+          # Strong live audit: own the More state and poll role redirects like a real browser.
+          audit = Path('frontend/tests/e2e/churvox-live-hardcore-human-everything.spec.js')
+          audit_text = audit.read_text()
+          helper_anchor = '''async function safeControlSweep(page, routeLabel, limit = 18) {'''
+          helper = '''async function ensureMoreOpen(page) {
+            const trigger = page.getByRole('button', { name: 'More', exact: true }).first();
+            await expect(trigger).toBeVisible({ timeout: 12_000 });
+            if (await trigger.getAttribute('aria-expanded') !== 'true') await trigger.click();
+            const menu = page.getByRole('menu', { name: /More tools/i });
+            await expect(menu).toBeVisible({ timeout: 10_000 });
+            return menu;
+          }
+
+          async function closeMore(page) {
+            const trigger = page.getByRole('button', { name: 'More', exact: true }).first();
+            if (!(await trigger.count()) || await trigger.getAttribute('aria-expanded') !== 'true') return;
+            const close = page.getByRole('button', { name: 'Close More menu' }).last();
+            if (await close.count() && await close.isVisible().catch(() => false)) await close.click();
+            else await page.keyboard.press('Escape');
+            await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+          }
+
+          async function safeControlSweep(page, routeLabel, limit = 18) {'''
+          if 'async function ensureMoreOpen(page)' not in audit_text:
+              if audit_text.count(helper_anchor) != 1:
+                  raise SystemExit('Could not insert More helpers')
+              audit_text = audit_text.replace(helper_anchor, helper, 1)
+
+          old_more = '''    await openOwnerHash(page, 'today', /today|churvox/i);
+              await clickVisibleNavigation(page, 'More');
+              const moreMenu = page.getByRole('menu', { name: /More tools/i });
+              await expect(moreMenu).toBeVisible({ timeout: 10_000 });
+              const box = await moreMenu.boundingBox();
+              expect(box, 'More menu has no visible box').toBeTruthy();
+              expect(box.x).toBeGreaterThanOrEqual(0);
+              expect(box.y).toBeGreaterThanOrEqual(0);
+              expect(box.x + box.width).toBeLessThanOrEqual((await page.viewportSize()).width + 1);
+              for (const item of await moreMenu.getByRole('menuitem').allTextContents()) {
+                await openOwnerHash(page, 'today', /today|churvox/i);
+                await clickVisibleNavigation(page, 'More');
+                const menuItem = page.getByRole('menuitem', { name: clean(item), exact: true });
+                await expect(menuItem).toBeVisible();
+                await menuItem.click();
+                await page.waitForTimeout(400);
+                await assertNoLegacy(page, `More → ${clean(item)}`);
+              }'''
+          new_more = '''    await openOwnerHash(page, 'today', /today|churvox/i);
+              const moreMenu = await ensureMoreOpen(page);
+              const box = await moreMenu.boundingBox();
+              expect(box, 'More menu has no visible box').toBeTruthy();
+              expect(box.x).toBeGreaterThanOrEqual(0);
+              expect(box.y).toBeGreaterThanOrEqual(0);
+              expect(box.x + box.width).toBeLessThanOrEqual((await page.viewportSize()).width + 1);
+              const moreItems = (await moreMenu.getByRole('menuitem').allTextContents()).map(clean).filter(Boolean);
+              await closeMore(page);
+              for (const item of moreItems) {
+                await openOwnerHash(page, 'today', /today|churvox/i);
+                const reopened = await ensureMoreOpen(page);
+                const menuItem = reopened.getByRole('menuitem', { name: item, exact: true });
+                await expect(menuItem).toBeVisible();
+                await menuItem.click();
+                await page.waitForTimeout(400);
+                await assertNoLegacy(page, `More → ${item}`);
+              }'''
+          if new_more not in audit_text:
+              if audit_text.count(old_more) != 1:
+                  raise SystemExit(f'Could not replace More block: {audit_text.count(old_more)}')
+              audit_text = audit_text.replace(old_more, new_more, 1)
+
+          old_wait = '''      await workerPage.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
+                await pageSleep(500);
+                expect(workerPage.url(), `worker reached forbidden owner route ${path}`).toMatch(/\\/worker\\/|\\/login/);'''
+          new_wait = '''      await workerPage.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
+                await expect.poll(() => workerPage.url(), {
+                  message: `worker reached forbidden owner route ${path}`,
+                  timeout: 15_000,
+                  intervals: [250, 500, 900, 1500, 2500],
+                }).toMatch(/\\/worker\\/|\\/login/);'''
+          if new_wait not in audit_text:
+              if audit_text.count(old_wait) != 1:
+                  raise SystemExit(f'Could not replace role wait: {audit_text.count(old_wait)}')
+              audit_text = audit_text.replace(old_wait, new_wait, 1)
+          audit.write_text(audit_text)
+          PY
+
+      - name: Verify patched source
+        run: |
+          python -m py_compile backend/churvox_worker_command_visibility_patch.py backend/churvox_startup_patch_loader.py
+          node --check frontend/src/churvox-office-lab/officeTeamApi.js
+          node --check frontend/tests/e2e/churvox-live-hardcore-human-everything.spec.js
+          node --check scripts/churvox-hardcore-owner-worker-audit.cjs
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+          npm --prefix frontend run build
+
+      - name: Commit repairs to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/officeTeamApi.js \
+                  frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+                  frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css \
+                  frontend/src/App.js \
+                  frontend/tests/e2e/churvox-live-hardcore-human-everything.spec.js \
+                  backend/churvox_startup_patch_loader.py \
+                  backend/churvox_worker_command_visibility_patch.py \
+                  scripts/churvox-hardcore-owner-worker-audit.cjs
+          if git diff --cached --quiet; then
+            echo "No changes needed."
+          else
+            git commit -m "Fix worker boundaries and live Command delivery"
+            git push origin HEAD:main
+          fi
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '${{ job.status }}' === 'success'
+                ? 'Repair batch committed: worker-safe reads, correct job mapping, worker logout, field update routing, new-OS redirects, Command visibility bridge and stronger audit timing/menu checks.'
+                : 'Repair batch failed. Check the Actions job before rerunning the human audit.'
+            });
