@@ -1,0 +1,177 @@
+name: Churvox Live Auth Public Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-live-auth-public-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-auth-public-contract:
+    name: Live auth public contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Probe deployed login and paid-launch contracts
+        env:
+          EXPECTED_LOGIN_ROUTE: churvox-login-emergency-final-20260712f
+          API_BASE: https://grassley-backend.onrender.com
+          FRONTEND_BASE: https://www.churvox.com
+        run: |
+          mkdir -p /tmp/churvox-live-auth-probe
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          api = os.environ['API_BASE'].rstrip('/')
+          frontend = os.environ['FRONTEND_BASE'].rstrip('/')
+          expected = os.environ['EXPECTED_LOGIN_ROUTE']
+          run_id = os.environ.get('GITHUB_RUN_ID', 'local')
+          report_path = Path('/tmp/churvox-live-auth-probe/report.json')
+          report = {'expected_login_route': expected, 'checks': {}, 'failures': []}
+
+          def request(name, url, *, method='GET', body=None, headers=None, timeout=30):
+              payload = None if body is None else (body if isinstance(body, bytes) else json.dumps(body).encode('utf-8'))
+              req_headers = {'Accept': 'application/json', **(headers or {})}
+              if body is not None and 'Content-Type' not in req_headers:
+                  req_headers['Content-Type'] = 'application/json'
+              req = urllib.request.Request(url, data=payload, headers=req_headers, method=method)
+              try:
+                  with urllib.request.urlopen(req, timeout=timeout) as response:
+                      raw = response.read().decode('utf-8', 'replace')
+                      status = response.status
+                      response_headers = dict(response.headers.items())
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode('utf-8', 'replace')
+                  status = exc.code
+                  response_headers = dict(exc.headers.items())
+              except Exception as exc:
+                  result = {'status': 0, 'error': f'{exc.__class__.__name__}: {exc}'}
+                  report['checks'][name] = result
+                  return result
+              try:
+                  parsed = json.loads(raw) if raw else None
+              except Exception:
+                  parsed = None
+              result = {
+                  'status': status,
+                  'json': parsed,
+                  'body_preview': raw[:500] if parsed is None else None,
+                  'headers': {
+                      key.lower(): value for key, value in response_headers.items()
+                      if key.lower().startswith('x-churvox-') or key.lower().startswith('access-control-')
+                  },
+              }
+              report['checks'][name] = result
+              return result
+
+          health = None
+          for attempt in range(1, 31):
+              health = request('login_health', f'{api}/api/auth/login-health')
+              data = health.get('json') or {}
+              if health.get('status') == 200 and data.get('login_route') == expected:
+                  report['deployment_attempts'] = attempt
+                  break
+              if attempt < 30:
+                  time.sleep(20)
+          else:
+              report['failures'].append('Latest login route did not deploy within the probe window.')
+
+          health_data = (health or {}).get('json') or {}
+          required_health = {
+              'status_200': (health or {}).get('status') == 200,
+              'ready': health_data.get('ready') is True,
+              'database_ready': health_data.get('database_ready') is True,
+              'jwt_ready': health_data.get('jwt_ready') is True,
+              'jwt_persistent': health_data.get('jwt_persistent') is True,
+              'login_route': health_data.get('login_route') == expected,
+              'login_route_count': health_data.get('login_route_count') == 1,
+              'logout_route_count': health_data.get('logout_route_count') == 1,
+              'worker_login_route_count': health_data.get('worker_login_route_count') == 2,
+          }
+          report['health_contract'] = required_health
+          report['failures'].extend([f'login-health failed: {key}' for key, ok in required_health.items() if not ok])
+
+          signed_out = request('signed_out_me', f'{api}/api/auth/me')
+          if signed_out.get('status') != 401:
+              report['failures'].append(f"Signed-out /api/auth/me returned {signed_out.get('status')} instead of 401.")
+
+          invalid_json = request(
+              'invalid_json_login', f'{api}/api/auth/login', method='POST', body=b'{',
+              headers={'Content-Type': 'application/json'},
+          )
+          invalid_json_headers = invalid_json.get('headers') or {}
+          if invalid_json.get('status') != 400:
+              report['failures'].append(f"Invalid JSON login returned {invalid_json.get('status')} instead of 400.")
+          if invalid_json_headers.get('x-churvox-login-route') != expected:
+              report['failures'].append('Invalid JSON login did not expose the expected route marker.')
+          if invalid_json_headers.get('x-churvox-login-stage') != 'invalid-json':
+              report['failures'].append('Invalid JSON login did not expose stage invalid-json.')
+
+          fake_email = f'live-auth-probe-{run_id}@churvox.invalid'
+          wrong_login = request(
+              'wrong_credentials', f'{api}/api/auth/login', method='POST',
+              body={'email': fake_email, 'password': 'NotARealPassword9!'},
+          )
+          wrong_headers = wrong_login.get('headers') or {}
+          if wrong_login.get('status') != 401:
+              report['failures'].append(f"Wrong-credential login returned {wrong_login.get('status')} instead of 401.")
+          if wrong_headers.get('x-churvox-login-route') != expected:
+              report['failures'].append('Wrong-credential login did not expose the expected route marker.')
+          if wrong_headers.get('x-churvox-login-stage') != 'invalid-credentials':
+              report['failures'].append('Wrong-credential login did not expose stage invalid-credentials.')
+
+          cors = request(
+              'cors_preflight', f'{api}/api/auth/login', method='OPTIONS',
+              headers={
+                  'Origin': frontend,
+                  'Access-Control-Request-Method': 'POST',
+                  'Access-Control-Request-Headers': 'content-type',
+              },
+          )
+          cors_headers = cors.get('headers') or {}
+          if cors.get('status') not in {200, 204}:
+              report['failures'].append(f"Login CORS preflight returned {cors.get('status')}.")
+          if cors_headers.get('access-control-allow-origin') != frontend:
+              report['failures'].append('Login CORS preflight did not allow the production frontend origin.')
+          if cors_headers.get('access-control-allow-credentials', '').lower() != 'true':
+              report['failures'].append('Login CORS preflight did not allow credentials.')
+
+          login_page = request('login_page', f'{frontend}/login', headers={'Accept': 'text/html'})
+          if login_page.get('status') != 200:
+              report['failures'].append(f"Production login page returned {login_page.get('status')} instead of 200.")
+
+          launch = request('launch_status', f'{api}/api/security/launch-status')
+          launch_data = launch.get('json') or {}
+          if launch.get('status') != 200:
+              report['failures'].append(f"Paid-launch status returned {launch.get('status')} instead of 200.")
+          elif launch_data.get('ready_for_paid_launch') is not True:
+              failures = launch_data.get('critical_failures') or []
+              report['failures'].append(f'Paid-launch status is not ready: {failures}')
+
+          report['success'] = not report['failures']
+          report_path.write_text(json.dumps(report, indent=2, default=str) + '\n')
+          print(report_path.read_text())
+          if report['failures']:
+              raise SystemExit(1)
+          PY
+
+      - name: Upload live auth probe report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-auth-public-probe
+          path: /tmp/churvox-live-auth-probe/report.json
+          if-no-files-found: error
+          retention-days: 14
