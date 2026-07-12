@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-VERSION = "churvox-auth-launch-status-20260712c"
+VERSION = "churvox-auth-launch-status-20260712d"
 REQUIRED_STATE = {
     "auth_hardening": "churvox_auth_paid_launch_hardening",
     "password_recovery": "churvox_password_recovery_paid_launch",
     "session_precision": "churvox_session_token_precision",
+    "token_revocation": "churvox_token_revocation_paid_launch",
     "registration_verification": "churvox_registration_verification_paid_launch",
     "registration_claim": "churvox_registration_claim_guard",
     "login_final": "churvox_login_paid_launch_final",
@@ -45,6 +46,7 @@ def install(module) -> None:
             "resend_verification": _route_exists(app, "/api/auth/resend-verification", "POST"),
             "login": _route_exists(app, "/api/auth/login", "POST"),
             "worker_login": _route_exists(app, "/api/worker/auth/login", "POST"),
+            "logout": _route_exists(app, "/api/auth/logout", "POST"),
             "forgot_password": _route_exists(app, "/api/auth/forgot-password", "POST"),
             "reset_password": _route_exists(app, "/api/auth/reset-password", "POST"),
             "refresh": _route_exists(app, "/api/auth/refresh", "POST"),
