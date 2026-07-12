@@ -1,70 +1,112 @@
-// CHURVOX_PUBLIC_CLIENT_PORTAL_POLISH_20260611
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
+import API_BASE from "../../lib/apiBase";
 import "./PublicDocumentTemplate.css";
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+function hasValue(value) {
+  return value !== null && value !== undefined && String(value).trim() !== "";
+}
 
 function first(...values) {
-  return values.find((value) => String(value ?? "").trim()) || "";
+  return values.find((value) => hasValue(value)) ?? "";
 }
 
 function niceDate(value) {
   if (!value) return "Not set";
-  try {
-    return new Date(value).toLocaleDateString("en-NZ");
-  } catch {
-    return String(value);
-  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleDateString("en-NZ");
 }
 
 function statusLabel(value) {
-  const raw = String(value || "waiting").replace(/_/g, " ");
-  return raw.charAt(0).toUpperCase() + raw.slice(1);
+  const raw = String(value || "waiting").replace(/_/g, " ").trim();
+  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "Waiting";
+}
+
+function safeImageUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("data:image/")) return raw;
+  try {
+    const parsed = new URL(raw, window.location.origin);
+    return ["https:", "http:", "blob:"].includes(parsed.protocol) ? parsed.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function Unavailable({ message }) {
+  return (
+    <main className="cpd-shell">
+      <article className="cpd-document">
+        <section className="cpd-body">
+          <small>Churvox client portal</small>
+          <h1>Client portal unavailable</h1>
+          <p>{message}</p>
+          <p>Ask the business to resend the portal link, or <a href="mailto:hello@churvox.com?subject=Churvox%20client%20portal">contact Churvox support</a>.</p>
+        </section>
+      </article>
+    </main>
+  );
 }
 
 export default function PublicClientPortalPage() {
   const { token } = useParams();
   const [portal, setPortal] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
 
-  const loadPortal = async () => {
+  const loadPortal = useCallback(async () => {
     setLoading(true);
+    setError("");
+    if (!token) {
+      setError("This client portal link is missing its secure token.");
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await fetch(`${API_BASE}/api/public/client-portal/${token}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.detail || data?.error || "Unable to load client portal");
-      setPortal(data?.portal || data?.data || data);
-    } catch (err) {
-      toast.error(err?.message || "Unable to load client portal");
+      const response = await fetch(`${API_BASE}/api/public/client-portal/${encodeURIComponent(token)}`, { headers: { Accept: "application/json" } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success === false) throw new Error(data?.detail || data?.message || data?.error || "Unable to load client portal");
+      const record = data?.portal || data?.data?.portal || data?.data || data;
+      if (!record || typeof record !== "object") throw new Error("The client portal record was not returned.");
+      setPortal(record);
+    } catch (requestError) {
+      const message = requestError?.message || "Unable to load client portal";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadPortal();
   }, [token]);
 
+  useEffect(() => { loadPortal(); }, [loadPortal]);
+
+  const approvalStatus = String(portal?.approval_status || portal?.customer_approval_status || portal?.status || "").trim().toLowerCase();
+  const approved = approvalStatus.includes("approved") || approvalStatus === "accepted";
+  const completed = ["completed", "complete", "ready_for_approval", "awaiting_customer_approval", "approved", "accepted"].includes(String(portal?.work_status || portal?.job_status || portal?.status || "").trim().toLowerCase());
+
   const approve = async () => {
+    if (saving || approved || !completed || !token) return;
     setSaving(true);
+    setNotice("");
     try {
-      const res = await fetch(`${API_BASE}/api/public/client-portal/${token}/approve-work`, {
+      const response = await fetch(`${API_BASE}/api/public/client-portal/${encodeURIComponent(token)}/approve-work`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ approved: true, confirmation: "customer_approved_completed_work" }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || data?.success === false) {
-        throw new Error(data?.detail || data?.error || "Could not approve completed work");
-      }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success === false) throw new Error(data?.detail || data?.message || data?.error || "Could not approve completed work");
+      setNotice("Completed work approved. The business has been notified.");
       toast.success("Completed work approved");
-      setNotice("Completed work approved.");
       await loadPortal();
-    } catch (err) {
-      toast.error(err?.message || "Could not approve completed work");
+    } catch (requestError) {
+      const message = requestError?.message || "Could not approve completed work";
+      setNotice(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -75,47 +117,49 @@ export default function PublicClientPortalPage() {
       await navigator.clipboard.writeText(window.location.href);
       setNotice("Portal link copied.");
     } catch {
-      setNotice(window.location.href);
+      setNotice("Copy the current browser address to share this portal.");
     }
   }
 
   const photos = useMemo(() => {
     const raw = portal?.photos || portal?.proof_photos || portal?.images || [];
-    return Array.isArray(raw) ? raw : [];
+    return (Array.isArray(raw) ? raw : []).map((photo) => {
+      const value = typeof photo === "string" ? photo : photo?.url || photo?.src || photo?.data_url || photo?.photo_url;
+      return safeImageUrl(value);
+    }).filter(Boolean);
   }, [portal]);
 
-  if (loading) {
-    return <div className="cpd-shell"><div className="cpd-document"><div className="cpd-body">Loading client portal...</div></div></div>;
-  }
-
-  if (!portal) {
-    return <div className="cpd-shell"><div className="cpd-document"><div className="cpd-body">Client portal not found.</div></div></div>;
-  }
+  if (loading) return <main className="cpd-shell"><article className="cpd-document"><section className="cpd-body">Loading client portal…</section></article></main>;
+  if (error || !portal) return <Unavailable message={error || "The client portal was not found or is no longer available."} />;
 
   const customer = first(portal.customer_name, portal.client_name, portal.name, "Customer");
   const business = portal.business_snapshot || portal.business || {};
-  const businessName = first(business.business_name, portal.business_name, "Churvox");
-  const status = statusLabel(portal.status || portal.work_status || portal.approval_status);
-  const summary = first(
-    portal.ai_summary,
-    portal.summary,
+  const businessName = first(business.business_name, portal.business_name, "The business");
+  const workStatus = portal.work_status || portal.job_status || portal.status || "waiting";
+  const status = approved ? "Approved" : statusLabel(workStatus);
+  const approvedSummary = first(
+    portal.customer_summary,
+    portal.public_summary,
+    portal.owner_summary,
     portal.work_summary,
+    portal.summary,
     portal.description,
+    portal.summary_approved === true ? portal.ai_summary : "",
     "The completed work summary will appear here when the business shares it."
   );
   const jobTitle = first(portal.job_title, portal.title, portal.service_title, "Completed work");
   const address = first(portal.address, portal.service_address, portal.site_address, "Service address saved by the business.");
   const completedAt = first(portal.completed_at, portal.completed_date, portal.updated_at, portal.created_at);
+  const canApprove = completed && !approved;
 
   return (
-    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_CLIENT_PORTAL_POLISH_20260611">
+    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_CLIENT_PORTAL_PAID_LAUNCH_20260712">
       <section className="cpd-actions">
         <b>{businessName} client portal</b>
         <button type="button" onClick={() => window.print()}>Print / PDF</button>
         <button type="button" onClick={copyLink}>Copy link</button>
-        <button type="button" disabled={saving || String(portal.status || "").toLowerCase().includes("approved")} onClick={approve}>
-          {saving ? "Approving..." : "Approve completed work"}
-        </button>
+        {canApprove ? <button type="button" disabled={saving} onClick={approve}>{saving ? "Approving…" : "Approve completed work"}</button> : null}
+        {approved ? <span>Approved</span> : null}
         {notice ? <span>{notice}</span> : null}
       </section>
 
@@ -134,7 +178,7 @@ export default function PublicClientPortalPage() {
             <div className="cpd-card">
               <small>Status</small>
               <h2>{status}</h2>
-              <p>{completedAt ? `Updated ${niceDate(completedAt)}` : "Waiting for business update."}</p>
+              <p>{completedAt ? `Updated ${niceDate(completedAt)}` : "Waiting for a business update."}</p>
             </div>
             <div className="cpd-card">
               <small>Site</small>
@@ -144,37 +188,26 @@ export default function PublicClientPortalPage() {
           </div>
 
           <div className="cpd-card" style={{ marginBottom: 18 }}>
-            <small>Work completed summary</small>
+            <small>Business-approved work summary</small>
             <h2>What was done</h2>
-            <p>{summary}</p>
+            <p>{approvedSummary}</p>
           </div>
 
           <div className="cpd-card" style={{ marginBottom: 18 }}>
             <small>Photo proof</small>
-            <h2>{photos.length ? `${photos.length} photo${photos.length === 1 ? "" : "s"} attached` : "No photos attached yet"}</h2>
-            {photos.length ? (
-              <div className="cpd-photo-grid">
-                {photos.map((photo, index) => {
-                  const src = typeof photo === "string" ? photo : photo?.url || photo?.src || photo?.data_url || "";
-                  return src ? <img key={`${src}-${index}`} src={src} alt={`Proof ${index + 1}`} /> : null;
-                })}
-              </div>
-            ) : (
-              <p>Photos will appear here when the worker or business adds them.</p>
-            )}
+            <h2>{photos.length ? `${photos.length} photo${photos.length === 1 ? "" : "s"} attached` : "No photos attached"}</h2>
+            {photos.length ? <div className="cpd-photo-grid">{photos.map((src, index) => <img key={`${src}-${index}`} src={src} alt={`Work proof ${index + 1}`} loading="lazy" />)}</div> : <p>The business has not attached customer-visible photos to this portal.</p>}
           </div>
 
           <div className="cpd-total-card">
-            <small>Approval</small>
-            <h2>{status}</h2>
-            <p>Approve completed work when the summary and proof look right. The business stays in control of invoices and follow-up.</p>
-            <button className="cpd-primary-action" type="button" disabled={saving || String(portal.status || "").toLowerCase().includes("approved")} onClick={approve}>
-              {saving ? "Approving..." : "Approve completed work"}
-            </button>
+            <small>Customer approval</small>
+            <h2>{approved ? "Approved" : completed ? "Ready for your review" : "Not ready for approval"}</h2>
+            <p>{approved ? "Your approval has been recorded. Contact the business directly if anything needs to be corrected." : completed ? "Approve only when the work summary and customer-visible proof look right. This does not charge you or automatically send an invoice." : "The business has not marked this work ready for approval yet."}</p>
+            {canApprove ? <button className="cpd-primary-action" type="button" disabled={saving} onClick={approve}>{saving ? "Approving…" : "Approve completed work"}</button> : null}
           </div>
         </section>
 
-        <footer className="cpd-footer"><b>Churvox</b><span>Work completed. Proof shared. Customer approves.</span></footer>
+        <footer className="cpd-footer"><b>Churvox</b><span>Business-approved summary and proof shared for customer review.</span></footer>
       </article>
     </main>
   );
