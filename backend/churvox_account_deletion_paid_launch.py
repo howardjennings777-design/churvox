@@ -9,7 +9,7 @@ from typing import Any
 
 from fastapi import HTTPException, Request
 
-VERSION = "churvox-account-deletion-paid-launch-20260712"
+VERSION = "churvox-account-deletion-paid-launch-20260712b"
 TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 ROUTES = {
     ("/api/account/self-delete", "DELETE"),
@@ -48,6 +48,18 @@ INSTALLED = set()
 
 def _text(value: Any) -> str:
     return str(value or "").strip()
+
+
+def _route_present(app, path: str, method: str) -> bool:
+    return any(
+        getattr(route, "path", "") == path
+        and method in set(getattr(route, "methods", set()) or set())
+        for route in list(getattr(app.router, "routes", []) or [])
+    )
+
+
+def _routes_ready(app) -> bool:
+    return all(_route_present(app, path, method) for path, method in ROUTES)
 
 
 def _remove_routes(app) -> None:
@@ -124,13 +136,14 @@ async def _payload(request: Request) -> dict[str, Any]:
 
 def install(module) -> None:
     name = getattr(module, "__name__", "")
-    if name in INSTALLED:
-        return
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
     if app is None or db is None or not callable(get_current_user):
         return
+    if name in INSTALLED and _routes_ready(app):
+        return
+    INSTALLED.discard(name)
 
     _remove_routes(app)
 
@@ -203,7 +216,8 @@ def install(module) -> None:
 
     for path, method in sorted(ROUTES):
         app.add_api_route(path, delete_account, methods=[method])
-    INSTALLED.add(name)
+    if _routes_ready(app):
+        INSTALLED.add(name)
 
 
 class _Loader(importlib.abc.Loader):
