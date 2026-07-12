@@ -107,6 +107,7 @@ jobs:
             backend.test_churvox_token_revocation_paid_launch_patch \
             backend.test_churvox_runtime_jwt_secret_patch \
             backend.test_churvox_paid_launch_route_mounts \
+            backend.test_churvox_jwt_health_fingerprint_patch \
             scripts.test_worker_static_bypass_absent
 
       - name: Install Chromium
