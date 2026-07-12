@@ -1,0 +1,76 @@
+name: Churvox Owner Visual Repair V4
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-owner-visual-repair-v4]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply owner visual repair
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/churvox_owner_visual_repair_apply.py 2>&1 | tee /tmp/churvox-owner-visual-apply-v4.txt
+
+      - name: Validate owner visual repair
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-owner-visual-repair-contract.cjs 2>&1 | tee /tmp/churvox-owner-visual-contract-v4.txt
+          python -m py_compile backend/churvox_plan_usage_routes.py backend/churvox_plan_usage_guard_patch.py 2>&1 | tee /tmp/churvox-owner-visual-python-v4.txt
+          npm --prefix frontend install --legacy-peer-deps 2>&1 | tee /tmp/churvox-owner-visual-install-v4.txt
+          CI=false npm --prefix frontend run build 2>&1 | tee /tmp/churvox-owner-visual-build-v4.txt
+
+      - name: Commit verified repair
+        id: commit
+        shell: bash
+        run: |
+          set -o pipefail
+          git restore frontend/package-lock.json 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/App.js frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx frontend/src/churvox-office-lab/OfficeTeamVisualRepair.css frontend/src/runtime/churvoxVisibleLogoutRuntime.js backend/churvox_plan_usage_routes.py backend/churvox_plan_usage_guard_patch.py scripts/churvox-owner-visual-repair-contract.cjs
+          git diff --cached --check 2>&1 | tee /tmp/churvox-owner-visual-diff-v4.txt
+          git commit -m 'Fix owner visual shell and plan usage loading' 2>&1 | tee /tmp/churvox-owner-visual-git-v4.txt
+          git pull --rebase origin main 2>&1 | tee -a /tmp/churvox-owner-visual-git-v4.txt
+          git push origin HEAD:main 2>&1 | tee -a /tmp/churvox-owner-visual-git-v4.txt
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git show --stat --oneline --summary HEAD 2>&1 | tee /tmp/churvox-owner-visual-commit-v4.txt
+
+      - name: Post full result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const paths = [
+              '/tmp/churvox-owner-visual-apply-v4.txt',
+              '/tmp/churvox-owner-visual-contract-v4.txt',
+              '/tmp/churvox-owner-visual-python-v4.txt',
+              '/tmp/churvox-owner-visual-install-v4.txt',
+              '/tmp/churvox-owner-visual-build-v4.txt',
+              '/tmp/churvox-owner-visual-diff-v4.txt',
+              '/tmp/churvox-owner-visual-git-v4.txt',
+              '/tmp/churvox-owner-visual-commit-v4.txt'
+            ];
+            const sections = paths.map((path) => `### ${path}\n\`\`\`text\n${fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-4500) : 'No output.'}\n\`\`\``).join('\n\n');
+            const title = '${{ job.status }}' === 'success' ? '## Owner visual repair committed' : '## Owner visual repair V4 failed';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `${title}\n\nCommit: \`${{ steps.commit.outputs.sha }}\`\n\n${sections}` });
