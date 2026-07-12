@@ -99,20 +99,20 @@ def patch_stripe_checkout_returns(module):
     session_api.create = safe_create
 
 
-def install_stripe_webhook(module):
+def install_patch_module(module, direct_name, backend_name, label):
     patch = None
     try:
-        patch = importlib.import_module("churvox_stripe_webhook_paid_launch_patch")
+        patch = importlib.import_module(direct_name)
     except Exception:
         try:
-            patch = importlib.import_module("backend.churvox_stripe_webhook_paid_launch_patch")
+            patch = importlib.import_module(backend_name)
         except Exception as exc:
-            print(f"Churvox Stripe webhook patch import skipped: {exc}", file=sys.stderr)
+            print(f"Churvox {label} patch import skipped: {exc}", file=sys.stderr)
             return
     try:
         patch.install(module)
     except Exception as exc:
-        print(f"Churvox Stripe webhook patch install skipped: {exc}", file=sys.stderr)
+        print(f"Churvox {label} patch install skipped: {exc}", file=sys.stderr)
 
 
 def command_item_from_slip(slip):
@@ -190,7 +190,18 @@ async def create_general_slip(db, user, payload):
 def install(module):
     name = getattr(module, "__name__", "")
     patch_stripe_checkout_returns(module)
-    install_stripe_webhook(module)
+    install_patch_module(
+        module,
+        "churvox_stripe_webhook_paid_launch_patch",
+        "backend.churvox_stripe_webhook_paid_launch_patch",
+        "Stripe webhook",
+    )
+    install_patch_module(
+        module,
+        "churvox_public_documents_paid_launch_guard",
+        "backend.churvox_public_documents_paid_launch_guard",
+        "public documents",
+    )
     if name in INSTALLED:
         return
     app = getattr(module, "app", None)
