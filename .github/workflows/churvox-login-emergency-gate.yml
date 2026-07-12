@@ -4,12 +4,15 @@ on:
   push:
     branches: [main]
     paths:
+      - 'backend/sitecustomize.py'
+      - 'backend/churvox_auth_me_401_patch.py'
       - 'backend/churvox_login_emergency_final.py'
       - 'backend/churvox_login_route_finalizer.py'
       - 'backend/churvox_outer_cors_error_shield.py'
       - 'backend/churvox_auth_paid_launch_hardening.py'
       - 'backend/churvox_production_launch_security.py'
       - 'backend/churvox_runtime_jwt_secret_patch.py'
+      - 'backend/test_churvox_auth_me_401_patch.py'
       - 'backend/test_churvox_login_emergency_final.py'
       - 'backend/test_churvox_runtime_jwt_secret_patch.py'
       - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
@@ -20,12 +23,15 @@ on:
       - '.github/workflows/churvox-login-emergency-gate.yml'
   pull_request:
     paths:
+      - 'backend/sitecustomize.py'
+      - 'backend/churvox_auth_me_401_patch.py'
       - 'backend/churvox_login_emergency_final.py'
       - 'backend/churvox_login_route_finalizer.py'
       - 'backend/churvox_outer_cors_error_shield.py'
       - 'backend/churvox_auth_paid_launch_hardening.py'
       - 'backend/churvox_production_launch_security.py'
       - 'backend/churvox_runtime_jwt_secret_patch.py'
+      - 'backend/test_churvox_auth_me_401_patch.py'
       - 'backend/test_churvox_login_emergency_final.py'
       - 'backend/test_churvox_runtime_jwt_secret_patch.py'
       - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
@@ -56,27 +62,33 @@ jobs:
       - name: Compile login stack
         run: |
           python -m py_compile \
+            backend/sitecustomize.py \
+            backend/churvox_auth_me_401_patch.py \
             backend/churvox_login_emergency_final.py \
             backend/churvox_login_route_finalizer.py \
             backend/churvox_outer_cors_error_shield.py \
             backend/churvox_auth_paid_launch_hardening.py \
             backend/churvox_production_launch_security.py \
             backend/churvox_runtime_jwt_secret_patch.py \
+            backend/test_churvox_auth_me_401_patch.py \
             backend/test_churvox_login_emergency_final.py \
             backend/test_churvox_runtime_jwt_secret_patch.py \
             scripts/test_platform_owner_frontend_lock.py
 
       - name: Run final login access contracts
         run: |
+          python -m unittest backend.test_churvox_auth_me_401_patch
           python -m unittest backend.test_churvox_login_emergency_final
           python -m unittest backend.test_churvox_runtime_jwt_secret_patch
           python -m unittest scripts.test_platform_owner_frontend_lock
 
       - name: Verify final route markers
         run: |
+          grep -F 'VERSION = "churvox-auth-me-401-20260712"' backend/churvox_auth_me_401_patch.py
           grep -F 'VERSION = "churvox-login-emergency-final-20260712f"' backend/churvox_login_emergency_final.py
           grep -F 'VERSION = "churvox-production-launch-security-20260712f"' backend/churvox_production_launch_security.py
           grep -F 'VERSION = "churvox-runtime-jwt-secret-20260712b"' backend/churvox_runtime_jwt_secret_patch.py
+          grep -F 'app.add_api_route("/api/auth/me", strict_auth_me, methods=["GET"])' backend/churvox_auth_me_401_patch.py
           grep -F 'app.add_api_route("/api/auth/login", emergency_login, methods=["POST"])' backend/churvox_login_emergency_final.py
           grep -F 'app.add_api_route("/api/auth/logout", emergency_logout, methods=["POST"])' backend/churvox_login_emergency_final.py
           grep -F 'app.add_api_route(worker_path, emergency_login, methods=["POST"])' backend/churvox_login_emergency_final.py
