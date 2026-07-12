@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx"
 API = ROOT / "frontend/src/churvox-office-lab/OfficeTeamCommandApi.js"
+DRAWER = ROOT / "frontend/src/runtime/churvoxDrawerRecordActionsRuntime.js"
 LIVE = ROOT / "backend/churvox_paid_launch_live_patch.py"
 MIMIC = ROOT / "backend/churvox_command_human_mimic_routes.py"
 GUARD = ROOT / "backend/churvox_command_human_mimic_guard_routes.py"
@@ -21,6 +21,12 @@ def once(text: str, old: str, new: str, label: str) -> str:
 
 # Frontend: open the saved/current queue first; audit and full brain scan stay background work.
 site = SITE.read_text(encoding="utf-8")
+site = once(
+    site,
+    'const MISSING_VALUE = "Not found — owner must enter";\n',
+    'const MISSING_VALUE = "Not found — owner must enter";\nconst COMMAND_FAST_LOAD_BUILD = "churvox-command-fast-load-build-20260713c";\nif (typeof window !== "undefined") window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ = COMMAND_FAST_LOAD_BUILD;\n',
+    "Command build marker",
+)
 site = once(
     site,
     '  const [backendAudit, setBackendAudit] = useState({ source: "command-audit-unavailable", audit: [] });\n',
@@ -41,17 +47,30 @@ new_effect = '''  useEffect(() => {
     let mounted = true;
     let scanTimer = null;
 
+    if (typeof window !== "undefined") {
+      window.__CHURVOX_COMMAND_LOAD_STATE__ = {
+        build: COMMAND_FAST_LOAD_BUILD,
+        appMode,
+        ownerPath,
+        isOwnerApp,
+        branch: isOwnerApp ? "owner-queue" : "lab-preview",
+        mountedAt: Date.now(),
+      };
+    }
+
     if (isOwnerApp) {
       setCommandLoading(true);
       setNotice("Opening the current Command queue. The full business check will continue behind it.");
 
       const loadCurrentQueue = async ({ afterScan = false, scan = null } = {}) => {
         try {
+          if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueRequestedAt: Date.now() };
           const command = await fetchBackendCommandDecisions();
           if (!mounted) return null;
           const nextCommand = scan ? { ...command, scan } : command;
           setBackendCommand(nextCommand || { source: "command-unavailable", decisions: [] });
           setResolved({});
+          if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueResolvedAt: Date.now(), queueSource: command?.source || "unknown", queueCount: command?.decisions?.length || 0 };
           if (!afterScan) {
             if (command?.decisions?.length) setNotice("Command is open. The latest saved owner decisions are ready while Churvox checks for anything new.");
             else if (command?.source === "backend-command-clear") setNotice("The current Command queue is clear. Churvox is checking the live records for anything new.");
@@ -59,6 +78,7 @@ new_effect = '''  useEffect(() => {
           }
           return command;
         } catch (error) {
+          if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueError: error?.message || "connection issue" };
           if (mounted && !afterScan) setNotice(`Command queue could not load: ${error?.message || "connection issue"}. Nothing was changed.`);
           return null;
         } finally {
@@ -116,7 +136,7 @@ new_effect = '''  useEffect(() => {
       .catch((error) => mounted && setNotice(`Churvox control centre. Live check unavailable: ${error?.message || "connection issue"}`));
 
     return () => { mounted = false; };
-  }, [isOwnerApp]);'''
+  }, [isOwnerApp, appMode, ownerPath]);'''
 site = site[:start] + new_effect + site[end:]
 
 old_refresh = '''    const refreshBackendCommand = () => {
@@ -224,6 +244,13 @@ api = once(
     "scan timeout",
 )
 API.write_text(api, encoding="utf-8")
+
+# The React Command queue is the owner source of truth. The old injected Admin
+# Brain surface polled repeatedly and made Command appear slow even when the
+# real queue was ready.
+drawer = DRAWER.read_text(encoding="utf-8")
+drawer = once(drawer, "import './churvoxAdminBrainSurfaceRuntime';\n", "", "remove legacy Admin Brain surface import")
+DRAWER.write_text(drawer, encoding="utf-8")
 
 # Backend: route patch must be re-installable after the legacy server has finished registering routes.
 live = LIVE.read_text(encoding="utf-8")
@@ -444,4 +471,4 @@ PLAN_ALIASES = {'''
 start_text = once(start_text, anchor, replacement, "guaranteed final live patch install")
 START.write_text(start_text, encoding="utf-8")
 
-print("Applied Command queue-first and backend fast-load repair.")
+print("Applied Command queue-first, single-source runtime, and backend fast-load repair.")
