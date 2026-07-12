@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-VERSION = "churvox-login-route-finalizer-20260712"
+VERSION = "churvox-login-route-finalizer-20260712b"
 DB_WARM_TIMEOUT_SECONDS = 25
 DB_QUERY_TIMEOUT_SECONDS = 20
 LOCKOUT_FAILURES = 5
@@ -77,6 +77,24 @@ def _disabled(user: dict | None) -> bool:
     )
 
 
+def _safe(value: Any):
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if value.__class__.__name__ == "ObjectId":
+        return str(value)
+    if isinstance(value, list):
+        return [_safe(item) for item in value]
+    if isinstance(value, dict):
+        output = {}
+        for key, item in value.items():
+            lowered = str(key).lower()
+            if any(word in lowered for word in ("password", "hash", "secret", "refresh_token")):
+                continue
+            output["id" if key == "_id" else key] = _safe(item)
+        return output
+    return value
+
+
 def install(module) -> None:
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
@@ -91,6 +109,9 @@ def install(module) -> None:
     check_password = getattr(module, "_auth_check_password", None)
     user_response = getattr(module, "_auth_user_response", None)
     bcrypt = getattr(module, "bcrypt", None)
+    jwt = getattr(module, "jwt", None)
+    algorithm = getattr(module, "JWT_ALGORITHM", "HS256")
+    secrets_module = getattr(module, "secrets", None)
 
     required = (
         app, db, UserLogin, Response, Request, clear_auth_cookies, set_auth_cookies,
@@ -163,8 +184,112 @@ def install(module) -> None:
         response.headers["X-Churvox-Login-Stage"] = stage
         response.headers["Cache-Control"] = "no-store"
 
+    def _service_error(response, stage: str, detail: str, exc: Exception | None = None):
+        error_type = exc.__class__.__name__ if exc is not None else "Unavailable"
+        _headers(response, stage)
+        response.headers["Retry-After"] = "5"
+        response.status_code = 503
+        return {
+            "success": False,
+            "detail": detail,
+            "stage": stage,
+            "error_type": error_type,
+            "version": VERSION,
+        }
+
+    def _fallback_access_token(user_id: str, email: str) -> str:
+        if jwt is None:
+            raise RuntimeError("JWT library unavailable")
+        secret = _text(getattr(module, "JWT_SECRET", ""))
+        if len(secret) < 32:
+            raise RuntimeError("JWT signing secret unavailable")
+        now = _now()
+        payload = {
+            "sub": str(user_id),
+            "email": _lower(email),
+            "iat": now.timestamp(),
+            "exp": now + timedelta(hours=24),
+            "type": "access",
+            "session_version": 3,
+        }
+        if secrets_module is not None:
+            payload["jti"] = secrets_module.token_urlsafe(18)
+        return jwt.encode(payload, secret, algorithm=algorithm)
+
+    def _fallback_refresh_token(user_id: str) -> str:
+        if jwt is None:
+            raise RuntimeError("JWT library unavailable")
+        secret = _text(getattr(module, "JWT_SECRET", ""))
+        if len(secret) < 32:
+            raise RuntimeError("JWT signing secret unavailable")
+        now = _now()
+        payload = {
+            "sub": str(user_id),
+            "iat": now.timestamp(),
+            "exp": now + timedelta(days=7),
+            "type": "refresh",
+            "session_version": 3,
+        }
+        if secrets_module is not None:
+            payload["jti"] = secrets_module.token_urlsafe(18)
+        return jwt.encode(payload, secret, algorithm=algorithm)
+
+    def _tokens(user_id: str, email: str):
+        try:
+            access = create_access_token(user_id, email)
+        except Exception:
+            access = _fallback_access_token(user_id, email)
+        try:
+            refresh = create_refresh_token(user_id)
+        except Exception:
+            refresh = _fallback_refresh_token(user_id)
+        if not _text(access) or not _text(refresh):
+            raise RuntimeError("Token creation returned an empty value")
+        return access, refresh
+
+    def _write_cookies(response, access: str, refresh: str) -> None:
+        try:
+            set_auth_cookies(response, access, refresh)
+            return
+        except Exception:
+            pass
+        response.set_cookie(
+            key="access_token", value=access, httponly=True, secure=True,
+            samesite="none", max_age=86400, path="/",
+        )
+        response.set_cookie(
+            key="refresh_token", value=refresh, httponly=True, secure=True,
+            samesite="none", max_age=604800, path="/",
+        )
+
+    def _fallback_user_response(user: dict, access: str) -> dict:
+        user_id = _text(user.get("_id") or user.get("id"))
+        business_id = _text(user.get("business_id") or user_id)
+        safe_user = {
+            "id": user_id,
+            "email": _lower(user.get("email")),
+            "name": user.get("name") or user.get("business_name") or "Churvox user",
+            "business_name": user.get("business_name"),
+            "role": user.get("role") or "employer",
+            "plan": user.get("plan") or "none",
+            "subscription_status": user.get("subscription_status") or "none",
+            "trial_ends_at": _safe(user.get("trial_ends_at")),
+            "email_verified": user.get("email_verified", True),
+            "business_id": business_id,
+            "gst_rate": user.get("gst_rate", 15),
+            "trade_type": user.get("trade_type", "other"),
+            "billing_country": user.get("billing_country") or user.get("country") or "NZ",
+            "country": user.get("country") or user.get("billing_country") or "NZ",
+            "has_app_access": bool(user.get("has_app_access")),
+            "token": access,
+        }
+        return {"success": True, **safe_user, "user": dict(safe_user), "version": VERSION, "login_route": VERSION}
+
     async def definitive_login(user_data: UserLogin, response: Response, request: Request):
-        clear_auth_cookies(response)
+        try:
+            clear_auth_cookies(response)
+        except Exception:
+            pass
         _headers(response, "input")
         email = normal_email(getattr(user_data, "email", ""))
         password = _text(getattr(user_data, "password", ""))
@@ -182,41 +307,17 @@ def install(module) -> None:
 
         ready, db_stage, elapsed_ms = await _warm_database()
         if not ready:
-            _headers(response, db_stage)
-            response.headers["Retry-After"] = "5"
-            response.status_code = 503
-            return {
-                "success": False,
-                "detail": "Login database is unavailable. Please try again shortly.",
-                "stage": db_stage,
-                "elapsed_ms": elapsed_ms,
-                "version": VERSION,
-            }
+            result = _service_error(response, db_stage, "Login database is unavailable. Please try again shortly.")
+            result["elapsed_ms"] = elapsed_ms
+            return result
 
         try:
             _headers(response, "user-lookup")
             user = await _find_user(email)
-        except asyncio.TimeoutError:
-            _headers(response, "mongo-user-lookup-timeout")
-            response.headers["Retry-After"] = "5"
-            response.status_code = 503
-            return {
-                "success": False,
-                "detail": "Login database lookup timed out. Please try again shortly.",
-                "stage": "mongo-user-lookup-timeout",
-                "version": VERSION,
-            }
+        except asyncio.TimeoutError as exc:
+            return _service_error(response, "mongo-user-lookup-timeout", "Login database lookup timed out. Please try again shortly.", exc)
         except Exception as exc:
-            stage = f"mongo-user-lookup-{exc.__class__.__name__}"
-            _headers(response, stage)
-            response.headers["Retry-After"] = "5"
-            response.status_code = 503
-            return {
-                "success": False,
-                "detail": "Login database lookup is unavailable. Please try again shortly.",
-                "stage": stage,
-                "version": VERSION,
-            }
+            return _service_error(response, f"mongo-user-lookup-{exc.__class__.__name__}", "Login database lookup is unavailable. Please try again shortly.", exc)
 
         valid = False
         matched_field = None
@@ -233,14 +334,20 @@ def install(module) -> None:
 
         if not user or not valid:
             await _record_failure(key, attempt)
-            clear_auth_cookies(response)
+            try:
+                clear_auth_cookies(response)
+            except Exception:
+                pass
             _headers(response, "invalid-credentials")
             response.status_code = 401
             return {"success": False, "detail": "Invalid email or password.", "version": VERSION}
 
         status = _lower(user.get("status") or user.get("subscription_status"))
         if status == "invited":
-            clear_auth_cookies(response)
+            try:
+                clear_auth_cookies(response)
+            except Exception:
+                pass
             _headers(response, "invite-required")
             response.status_code = 403
             return {
@@ -249,19 +356,30 @@ def install(module) -> None:
                 "version": VERSION,
             }
         if _disabled(user):
-            clear_auth_cookies(response)
+            try:
+                clear_auth_cookies(response)
+            except Exception:
+                pass
             _headers(response, "account-disabled")
             response.status_code = 403
             return {"success": False, "detail": "Account access is disabled. Contact Churvox support.", "version": VERSION}
 
         await _clear_failure(key)
-        user_id = str(user["_id"])
-        access = create_access_token(user_id, email)
-        refresh = create_refresh_token(user_id)
-        set_auth_cookies(response, access, refresh)
+        user_id = _text(user.get("_id"))
+        try:
+            _headers(response, "token-create")
+            access, refresh = _tokens(user_id, email)
+        except Exception as exc:
+            return _service_error(response, f"token-create-{exc.__class__.__name__}", "Secure login token creation failed. Please try again shortly.", exc)
+
+        try:
+            _headers(response, "cookie-write")
+            _write_cookies(response, access, refresh)
+        except Exception as exc:
+            return _service_error(response, f"cookie-write-{exc.__class__.__name__}", "Secure login cookie creation failed. Please try again shortly.", exc)
+
         now = _now()
         updates = {"last_login_at": now, "updated_at": now}
-
         owner_business_id = user.get("business_id") or user.get("_id")
         if str(owner_business_id) == str(user.get("_id")) and _lower(user.get("role")) in {"worker", "payroll", "payroll_user"}:
             updates.update({
@@ -291,10 +409,16 @@ def install(module) -> None:
         except Exception:
             pass
         user.update(updates)
-        result = user_response(user, access)
-        if isinstance(result, dict):
-            result["version"] = VERSION
-            result["login_route"] = VERSION
+
+        try:
+            _headers(response, "response-build")
+            result = user_response(user, access)
+            if not isinstance(result, dict):
+                result = _fallback_user_response(user, access)
+        except Exception:
+            result = _fallback_user_response(user, access)
+        result["version"] = VERSION
+        result["login_route"] = VERSION
         _headers(response, "complete")
         return result
 
@@ -304,11 +428,45 @@ def install(module) -> None:
             1 for route in list(getattr(app.router, "routes", []) or [])
             if _route_matches(route, "/api/auth/login", "POST")
         )
+        token_ready = False
+        cookie_ready = False
+        response_ready = False
+        token_stage = "not-tested"
+        try:
+            probe_user_id = "000000000000000000000001"
+            probe_access, probe_refresh = _tokens(probe_user_id, "login-health@churvox.invalid")
+            token_ready = bool(probe_access and probe_refresh)
+            token_stage = "ready"
+            probe_response = Response()
+            _write_cookies(probe_response, probe_access, probe_refresh)
+            cookie_ready = len(getattr(probe_response, "raw_headers", []) or []) > 0
+            synthetic = {
+                "_id": probe_user_id,
+                "business_id": probe_user_id,
+                "email": "login-health@churvox.invalid",
+                "name": "Login health",
+                "role": "employer",
+                "plan": "none",
+                "subscription_status": "none",
+                "email_verified": True,
+            }
+            try:
+                built = user_response(synthetic, probe_access)
+            except Exception:
+                built = _fallback_user_response(synthetic, probe_access)
+            response_ready = isinstance(built, dict) and built.get("success") is True
+        except Exception as exc:
+            token_stage = f"{exc.__class__.__name__}"
         return {
             "success": True,
-            "ready": ready,
+            "ready": bool(ready and token_ready and cookie_ready and response_ready),
+            "database_ready": ready,
             "database_stage": stage,
             "elapsed_ms": elapsed_ms,
+            "token_ready": token_ready,
+            "cookie_ready": cookie_ready,
+            "response_ready": response_ready,
+            "token_stage": token_stage,
             "login_route": VERSION,
             "login_route_count": route_count,
             "jwt_source": _text(getattr(module, "CHURVOX_JWT_SECRET_SOURCE", "unknown")),
