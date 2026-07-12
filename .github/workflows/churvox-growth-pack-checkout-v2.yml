@@ -1,0 +1,80 @@
+name: Churvox Growth Pack Checkout V2
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  publish:
+    if: startsWith(github.event.issue.title, '[churvox-growth-pack-checkout-v2]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply Growth Pack purchase UI
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m py_compile scripts/churvox_growth_pack_checkout_apply.py scripts/churvox_growth_pack_checkout_apply_v2.py 2>&1 | tee /tmp/churvox-growth-pack-compile-v2.txt
+          python scripts/churvox_growth_pack_checkout_apply_v2.py 2>&1 | tee /tmp/churvox-growth-pack-apply-v2.txt
+
+      - name: Validate Growth Pack checkout and build
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-growth-pack-checkout-contract.cjs 2>&1 | tee /tmp/churvox-growth-pack-contract-v2.txt
+          grep -q 'create-addon-checkout-session' backend/billing_addon_routes.py
+          grep -q 'STRIPE_PRICE_COMMAND_GROWTH_PACK' backend/billing_addon_routes.py
+          npm --prefix frontend install --legacy-peer-deps 2>&1 | tee /tmp/churvox-growth-pack-install-v2.txt
+          CI=false npm --prefix frontend run build 2>&1 | tee /tmp/churvox-growth-pack-build-v2.txt
+
+      - name: Commit and publish Growth Pack checkout
+        id: commit
+        shell: bash
+        run: |
+          set -o pipefail
+          git restore frontend/package-lock.json 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx frontend/src/churvox-office-lab/OfficeTeamPlansActions.css scripts/churvox-growth-pack-checkout-contract.cjs
+          git diff --cached --check 2>&1 | tee /tmp/churvox-growth-pack-diff-v2.txt
+          git commit -m 'Add visible Command Growth Pack checkout' 2>&1 | tee /tmp/churvox-growth-pack-git-v2.txt
+          git reset --hard HEAD
+          git clean -fd frontend/build frontend/public/generated 2>/dev/null || true
+          git pull --rebase origin main 2>&1 | tee -a /tmp/churvox-growth-pack-git-v2.txt
+          git push origin HEAD:main 2>&1 | tee -a /tmp/churvox-growth-pack-git-v2.txt
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git show --stat --oneline --summary HEAD | tee /tmp/churvox-growth-pack-commit-v2.txt
+
+      - name: Post full result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const paths = [
+              '/tmp/churvox-growth-pack-compile-v2.txt',
+              '/tmp/churvox-growth-pack-apply-v2.txt',
+              '/tmp/churvox-growth-pack-contract-v2.txt',
+              '/tmp/churvox-growth-pack-install-v2.txt',
+              '/tmp/churvox-growth-pack-build-v2.txt',
+              '/tmp/churvox-growth-pack-diff-v2.txt',
+              '/tmp/churvox-growth-pack-git-v2.txt',
+              '/tmp/churvox-growth-pack-commit-v2.txt'
+            ];
+            const sections = paths.map((path) => `### ${path}\n\`\`\`text\n${fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-4500) : 'No output.'}\n\`\`\``).join('\n\n');
+            const title = '${{ job.status }}' === 'success' ? '## Growth Pack checkout committed' : '## Growth Pack checkout V2 failed';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `${title}\n\nCommit: \`${{ steps.commit.outputs.sha }}\`\n\n${sections}` });
