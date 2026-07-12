@@ -14,6 +14,45 @@ const AUTH_SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 const WORKER_OFFLINE_GRACE_MS = 1000 * 60 * 60 * 2;
 const BUSINESS_OFFLINE_GRACE_MS = 1000 * 60 * 15;
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
+const AUTH_PUBLIC_PATHS = [
+  "/api/auth/login",
+  "/api/worker/auth/login",
+  "/api/auth/register",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/auth/verify-email",
+  "/api/auth/me",
+  "/api/auth/logout",
+];
+
+function setAxiosAuthToken(token = "") {
+  const cleanToken = String(token || "").trim();
+  if (cleanToken) axios.defaults.headers.common.Authorization = `Bearer ${cleanToken}`;
+  else delete axios.defaults.headers.common.Authorization;
+}
+
+function requestPath(value = "") {
+  try { return new URL(String(value || ""), window.location.origin).pathname; }
+  catch { return String(value || ""); }
+}
+
+function isPublicAuthRequest(value = "") {
+  const path = requestPath(value);
+  return AUTH_PUBLIC_PATHS.some((allowed) => path === allowed || path.startsWith(`${allowed}/`));
+}
+
+function publishAuthState(status, nextUser = null) {
+  if (typeof window === "undefined") return;
+  const detail = Object.freeze({
+    status,
+    authenticated: status === "authenticated",
+    role: String(nextUser?.role || nextUser?.user_role || ""),
+    email: String(nextUser?.email || "").trim().toLowerCase(),
+    at: Date.now(),
+  });
+  window.__CHURVOX_AUTH_STATE__ = detail;
+  window.dispatchEvent(new CustomEvent("churvox-auth-state", { detail }));
+}
 const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
 const LOCKED_STATUSES = new Set(["cancelled", "canceled", "unpaid", "incomplete", "incomplete_expired", "locked", "disabled", "expired", "revoked"]);
 const PAID_STATUSES = new Set(["active", "paid", "past_due", "trialing", "trial"]);
@@ -42,6 +81,7 @@ function clearStoredAuth({ clearPlanState = false } = {}) {
     "platform_owner_email",
     AUTH_SNAPSHOT_KEY,
   ].forEach(safeStorageRemove);
+  setAxiosAuthToken("");
   if (clearPlanState) clearAccountPlanState();
 }
 
@@ -267,7 +307,8 @@ function offlineBusinessSnapshot(user = {}) {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => readStoredAuthSnapshot());
+  // Cached account data is fallback evidence only; it must never render a protected app before /api/auth/me succeeds.
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const authRunRef = useRef(0);
 
@@ -286,32 +327,42 @@ export function AuthProvider({ children }) {
 
   const checkAuth = useCallback(async () => {
     const runId = ++authRunRef.current;
+    publishAuthState("checking");
     let token = "";
     try { token = localStorage.getItem("token") || ""; } catch {}
     const workerSession = readStoredAuthSnapshot(WORKER_OFFLINE_GRACE_MS);
     const businessSession = readStoredAuthSnapshot(BUSINESS_OFFLINE_GRACE_MS);
     const fallbackSession = workerSession || businessSession;
+    const requestToken = token || fallbackSession?.token || "";
+    setAxiosAuthToken(requestToken);
 
     try {
-      const me = await fetchMe(token || fallbackSession?.token || undefined);
+      const me = await fetchMe(requestToken || undefined);
       if (businessAccessFromUser(me)) removePlanFlag();
       if (me?.token) localStorage.setItem("token", me.token);
+      setAxiosAuthToken(me?.token || requestToken);
       saveStoredAuthSnapshot(me);
       rememberPlatformOwner(me);
+      publishAuthState("authenticated", me);
       if (runId === authRunRef.current) setUser(me);
       return me;
     } catch (error) {
       const status = error?.response?.status;
       const transient = !status || status === 408 || status === 429 || status >= 500;
       if (transient && workerSession && offlineWorkerSnapshot(workerSession)) {
+        setAxiosAuthToken(workerSession.token || requestToken);
+        publishAuthState("authenticated", workerSession);
         if (runId === authRunRef.current) setUser(workerSession);
         return workerSession;
       }
       if (transient && businessSession && offlineBusinessSnapshot(businessSession)) {
+        setAxiosAuthToken(businessSession.token || requestToken);
+        publishAuthState("authenticated", businessSession);
         if (runId === authRunRef.current) setUser(businessSession);
         return businessSession;
       }
       if (status === 401 || status === 403) clearStoredAuth({ clearPlanState: true });
+      publishAuthState("anonymous");
       if (runId === authRunRef.current) setUser(null);
       throw error;
     } finally {
@@ -335,6 +386,33 @@ export function AuthProvider({ children }) {
     };
   }, [checkAuth]);
 
+
+  useEffect(() => {
+    const expireSession = () => {
+      ++authRunRef.current;
+      clearStoredAuth({ clearPlanState: true });
+      setUser(null);
+      setLoading(false);
+      publishAuthState("anonymous");
+    };
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const status = error?.response?.status;
+        const url = error?.config?.url || "";
+        if (status === 401 && !isPublicAuthRequest(url)) {
+          window.dispatchEvent(new Event("churvox-auth-expired"));
+        }
+        return Promise.reject(error);
+      }
+    );
+    window.addEventListener("churvox-auth-expired", expireSession);
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+      window.removeEventListener("churvox-auth-expired", expireSession);
+    };
+  }, []);
+
   async function workerLoginBridge(cleanEmail, password, originalError) {
     try {
       const response = await axios.post(
@@ -355,6 +433,7 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const runId = ++authRunRef.current;
+    publishAuthState("checking");
     setLoading(true);
     clearStoredAuth({ clearPlanState: true });
     setUser(null);
@@ -393,16 +472,19 @@ export function AuthProvider({ children }) {
       } else {
         safeStorageRemove("token");
       }
+      setAxiosAuthToken(token);
 
       if (businessAccessFromUser(nextUser)) removePlanFlag();
       saveStoredAuthSnapshot(nextUser);
       rememberPlatformOwner(nextUser);
+      publishAuthState("authenticated", nextUser);
       if (runId === authRunRef.current) setUser(nextUser);
       return { ...response.data, user: nextUser, ...nextUser };
     } catch (error) {
       if (runId === authRunRef.current) {
         clearStoredAuth({ clearPlanState: true });
         setUser(null);
+        publishAuthState("anonymous");
       }
       throw error;
     } finally {
@@ -412,6 +494,7 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (userData) => {
     const runId = ++authRunRef.current;
+    publishAuthState("checking");
     setLoading(true);
     clearStoredAuth({ clearPlanState: true });
     setUser(null);
@@ -429,10 +512,12 @@ export function AuthProvider({ children }) {
       } else {
         safeStorageRemove("token");
       }
+      setAxiosAuthToken(token);
 
       if (testerAccess(nextUser) || inferredWorker(nextUser) || inferredPayroll(nextUser)) {
         removePlanFlag();
         saveStoredAuthSnapshot(nextUser);
+        publishAuthState("authenticated", nextUser);
         if (runId === authRunRef.current) setUser(nextUser);
         return { ...response.data, user: nextUser, ...nextUser };
       }
@@ -440,6 +525,7 @@ export function AuthProvider({ children }) {
       setPlanFlag();
       const locked = { ...nextUser, plan: nextUser.plan || "none", has_app_access: false, billing_lock_reason: "choose_plan_in_stripe" };
       saveStoredAuthSnapshot(locked);
+      publishAuthState("authenticated", locked);
       if (runId === authRunRef.current) setUser(locked);
       return { ...response.data, user: locked, ...locked };
     } finally {
@@ -455,6 +541,7 @@ export function AuthProvider({ children }) {
     } catch {}
     clearStoredAuth({ clearPlanState: true });
     safeStorageRemove(PLAN_REQUIRED_KEY);
+    publishAuthState("anonymous");
     if (runId === authRunRef.current) {
       setUser(null);
       setLoading(false);

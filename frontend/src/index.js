@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './runtime/churvoxDateInputIsoGuardRuntime';
 import './runtime/churvoxPublicHelpRouteGuardRuntime';
 import './runtime/churvoxExplicitLogoutGuardRuntime';
+import './runtime/churvoxProtectedFetchAuthGuardRuntime';
 import App from './App';
 import API_BASE from './lib/apiBase';
 import './index.css';
@@ -115,6 +116,7 @@ function runImports(imports) {
 }
 
 function currentPath() { return typeof window === 'undefined' ? '' : window.location.pathname || ''; }
+function protectedAuthReady() { return typeof window !== 'undefined' && window.__CHURVOX_AUTH_STATE__?.status === 'authenticated'; }
 function currentParams() { try { return new URLSearchParams(window.location.search || ''); } catch { return new URLSearchParams(); } }
 function isPublicFastPath(path) { return path === '/' || path === '/product' || path === '/features' || path === '/demo' || path === '/pricing' || path === '/request' || path === '/contact' || path === '/security' || path === '/support' || path.startsWith('/public') || path.startsWith('/industries') || path === '/login' || path === '/signup' || path === '/forgot-password' || path === '/reset-password'; }
 function isSetupProfilePath(path) { const q = currentParams(); return path === '/setup' || path === '/setup-guide' || path === '/guide' || q.get('business_profile') === '1' || q.get('profile') === '1' || q.get('tester') === '1' || q.get('first_setup') === '1'; }
@@ -139,7 +141,7 @@ function loadOwnerRuntimeWhenInsideApp() {
   if (typeof window === 'undefined') return;
   const path = currentPath();
   const isOwnerApp = path === '/dashboard' || path === '/plans' || path === '/guide' || path === '/setup' || path === '/setup-guide' || path.startsWith('/dashboard');
-  if (!isOwnerApp) return;
+  if (!isOwnerApp || !protectedAuthReady()) return;
   if (!ownerRuntimeLoaded) {
     ownerRuntimeLoaded = true;
     window.setTimeout(() => runImports(ownerFastRuntimeImports), 500);
@@ -151,7 +153,7 @@ function loadOwnerRuntimeWhenInsideApp() {
 function loadWorkerRuntimeWhenInsideWorkerApp() {
   if (workerRuntimeLoaded || typeof window === 'undefined') return;
   const path = currentPath();
-  if (!path.startsWith('/worker')) return;
+  if (!path.startsWith('/worker') || !protectedAuthReady()) return;
   workerRuntimeLoaded = true;
   runImports(workerRuntimeImports);
 }
@@ -177,4 +179,7 @@ if (typeof window !== 'undefined') {
   else checkRuntimeLoads();
   window.addEventListener('popstate', checkRuntimeLoads);
   window.addEventListener('hashchange', checkRuntimeLoads);
+  window.addEventListener('churvox-auth-state', checkRuntimeLoads);
+  window.addEventListener('churvox-owner-app-ready', checkRuntimeLoads);
+  window.addEventListener('churvox-worker-app-ready', checkRuntimeLoads);
 }

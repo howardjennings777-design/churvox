@@ -54,7 +54,7 @@ const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 // to appear in main.js without this explicit, harmless build marker.
 if (typeof window !== "undefined") {
   window.__CHURVOX_LIVE_BUILD__ = Object.freeze({
-    version: "churvox-paid-launch-readiness-20260713a",
+    version: "churvox-auth-401-storm-repair-20260713b",
     ownerNavigation: "cvOwnerMainNavigation",
     secureCheckout: "Continue to secure checkout",
     workerLogout: "cvWorkerLogout",
@@ -97,7 +97,7 @@ function PublicRoute({ children }) {
 
 function FreshBusinessRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
-  if (loading && !user) return <Spinner />;
+  if (loading) return <Spinner />;
 
   const currentPath = typeof window === "undefined" ? "" : window.location.pathname;
   const currentSearch = typeof window === "undefined" ? "" : window.location.search || "";
@@ -125,7 +125,7 @@ function FreshBusinessRoute({ children }) {
 
 function WorkerRoute({ children }) {
   const { user, loading, isWorker, normalizedRole } = useAuth();
-  if (loading && !user) return <Spinner />;
+  if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login?worker=1" replace />;
   if (!isWorker) return <Navigate to={isPlatformOwnerUser(user) ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
   return <AppPage>{children}</AppPage>;
