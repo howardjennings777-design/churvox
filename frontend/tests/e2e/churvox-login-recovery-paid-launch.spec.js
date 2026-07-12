@@ -131,6 +131,18 @@ test.describe('Paid-launch login and recovery', () => {
     await expect.poll(() => page.url()).toMatch(/\/worker\/today/);
   });
 
+  test('owner login service outage never calls worker login', async ({ page }) => {
+    const api = await installLoginApi(page, {
+      loginStatus: 503,
+      loginBody: { detail: 'Churvox protected API access is paused because the production JWT secret is not safely configured.' },
+    });
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await signIn(page);
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByRole('alert')).toContainText(/restarting|temporarily unavailable|try again/i);
+    expect(api.calls.filter((call) => call.path === '/api/worker/auth/login')).toHaveLength(0);
+  });
+
   test('unverified owner is sent to verification pending and resend is confirmed', async ({ page }) => {
     await installLoginApi(page, { loginUser: owner({ email_verified: false, has_app_access: false }) });
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
