@@ -56,7 +56,7 @@ export default function AccountDeletionPage() {
             method: attempt.method,
             credentials: "include",
             headers: authHeaders(),
-            body: attempt.method === "POST" ? JSON.stringify({ confirmation: "DELETE" }) : undefined,
+            body: JSON.stringify({ confirmation: "DELETE" }),
           });
           const data = await response.json().catch(() => ({}));
 
