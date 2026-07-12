@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-VERSION = "churvox-feature-tier-paid-launch-20260712c"
+VERSION = "churvox-feature-tier-paid-launch-20260712d"
 PLAN_ORDER = ("start", "crew", "operator", "command")
 PLAN_ALIASES = {
     "solo": "start",
@@ -61,8 +61,8 @@ FEATURE_PREFIXES = (
     (FeatureAccess("payroll", "Payroll", "operator"), (
         "/payroll", "/hours-review", "/admin-debt", "/followups", "/automation",
     )),
-    (FeatureAccess("team", "Team and worker tools", "crew"), (
-        "/logic/team-members", "/workers", "/team",
+    (FeatureAccess("team", "Team, worker and messaging tools", "crew"), (
+        "/messages", "/logic/team-members", "/workers", "/team",
     )),
     (FeatureAccess("proof", "Worker proof and customer proof packs", "crew"), (
         "/proof-packs", "/job-proof-packs", "/client-portal/proof-job", "/field-activity",
