@@ -123,6 +123,7 @@ async function main() {
     playwright('Live configuration, security, webhook and route mount', ['tests/e2e/churvox-infrastructure-paid-launch.spec.js']),
     playwright('Live plan limits and real usage counts', ['tests/e2e/churvox-plan-usage-live.spec.js']),
     playwright('Authentication, consent, return paths and role boundaries', ['tests/e2e/churvox-auth-paid-launch-contract.spec.js']),
+    playwright('Plans shows verified usage and never assumes zero', ['tests/e2e/churvox-plans-usage-truth.spec.js']),
     playwright('Billing portal, cancellation and deletion lifecycle', ['tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js']),
     playwright('Customer quote, invoice, client portal and proof safety', ['tests/e2e/churvox-public-documents-paid-launch.spec.js']),
     playwright('Public customer request owner-review contract', ['tests/e2e/churvox-public-request-paid-launch.spec.js']),
