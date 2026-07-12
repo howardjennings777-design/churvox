@@ -1,5 +1,6 @@
 import React from 'react'
 import OfficeTeamLabSite from './OfficeTeamLabSite'
+import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
 
 const HASH_ALIASES = new Map([
   ['team', 'office-team'],
@@ -36,7 +37,11 @@ function OfficeTeamLab(props) {
     }
   }, [])
 
-  return React.createElement(OfficeTeamLabSite, { ...props, key: routeVersion })
+  return (
+    <OfficeTeamOwnerScreenGuard appMode={props.appMode}>
+      <OfficeTeamLabSite {...props} key={routeVersion} />
+    </OfficeTeamOwnerScreenGuard>
+  )
 }
 
 export default OfficeTeamLab
