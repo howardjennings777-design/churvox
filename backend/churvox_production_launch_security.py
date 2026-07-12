@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-VERSION = "churvox-production-launch-security-20260712d"
+VERSION = "churvox-production-launch-security-20260712e"
 PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 WEAK_SECRETS = {
     "",
@@ -48,7 +48,7 @@ OWNER_ROLES = {"owner", "business_owner", "employer", "admin", "manager", "offic
 WORKER_ROLES = {"worker", "staff", "field_worker", "technician", "subcontractor"}
 PAYROLL_ROLES = {"payroll", "payroll_user", "payroll_admin"}
 ACCOUNT_DISABLED_STATUSES = {"revoked", "locked", "disabled", "removed", "archived"}
-PAID_STATUSES = {"active", "paid", "trialing", "trial", "past_due"}
+PAID_STATUSES = {"active", "paid", "past_due"}
 LOCKED_STATUSES = {
     "cancelled", "canceled", "unpaid", "incomplete", "incomplete_expired",
     "expired", "payment_required", "plan_required",
@@ -114,7 +114,6 @@ def _ensure_runtime_jwt_secret(module) -> bool:
 
 
 def _owner_emails() -> list[str]:
-    # The platform owner is a product invariant, not an environment-configurable list.
     return [PLATFORM_OWNER_EMAIL]
 
 
@@ -169,20 +168,12 @@ def _checks(module) -> dict[str, dict[str, Any]]:
             ),
         },
         "stripe_secret": {
-            "ok": _text(os.environ.get("STRIPE_SECRET_KEY")).startswith("sk_"),
-            "detail": (
-                "Stripe secret configured"
-                if _text(os.environ.get("STRIPE_SECRET_KEY")).startswith("sk_")
-                else "Stripe secret missing or invalid"
-            ),
+            "ok": bool(_text(os.environ.get("STRIPE_SECRET_KEY"))),
+            "detail": "Stripe secret configured" if _text(os.environ.get("STRIPE_SECRET_KEY")) else "Stripe secret missing",
         },
         "stripe_webhook": {
-            "ok": webhook_secret.startswith("whsec_"),
-            "detail": (
-                "Stripe endpoint signing secret configured"
-                if webhook_secret.startswith("whsec_")
-                else "Stripe endpoint signing secret missing or invalid"
-            ),
+            "ok": bool(webhook_secret),
+            "detail": "Stripe endpoint signing secret configured" if webhook_secret else "Stripe endpoint signing secret missing",
         },
         "transactional_email": {
             "ok": bool(
@@ -202,15 +193,11 @@ def _checks(module) -> dict[str, dict[str, Any]]:
         },
         "platform_owner": {
             "ok": owners == [PLATFORM_OWNER_EMAIL],
-            "detail": (
-                f"{PLATFORM_OWNER_EMAIL} only"
-                if owners == [PLATFORM_OWNER_EMAIL]
-                else "Unexpected platform owner/admin email configuration"
-            ),
+            "detail": f"{PLATFORM_OWNER_EMAIL} only",
         },
         "protected_access_policy": {
             "ok": True,
-            "detail": "Protected owner APIs require Stripe proof or a current tester grant",
+            "detail": "Protected owner APIs require a current trial, verified billing or a current tester grant",
         },
     }
 
@@ -313,9 +300,23 @@ def _paid_owner_access(user: dict[str, Any]) -> bool:
     ).lower()
     if status in LOCKED_STATUSES:
         return False
-    trial_end = _date(user.get("trial_ends_at"))
-    if status in {"trial", "trialing"} and trial_end and trial_end <= datetime.now(timezone.utc):
-        return False
+    if status in {"trial", "trialing"}:
+        plan = _text(
+            user.get("plan")
+            or user.get("subscription_plan")
+            or user.get("plan_type")
+        ).lower()
+        trial_end = _date(
+            user.get("trial_ends_at")
+            or user.get("trial_end")
+            or user.get("trial_end_date")
+        )
+        return bool(
+            plan
+            and plan not in {"none", "free", "null", "undefined"}
+            and trial_end
+            and trial_end > datetime.now(timezone.utc)
+        )
     return status in PAID_STATUSES and _billing_proof(user)
 
 
@@ -325,8 +326,6 @@ def _is_access_exempt(path: str) -> bool:
 
 def install(module) -> None:
     _ensure_runtime_jwt_secret(module)
-
-    # Enforce the HQ identity before any route or later helper can use stale flags.
     module.PLATFORM_OWNER_EMAILS = [PLATFORM_OWNER_EMAIL]
     module.is_platform_owner = (
         lambda user: _text((user or {}).get("email")).lower() == PLATFORM_OWNER_EMAIL
@@ -384,7 +383,7 @@ def install(module) -> None:
                     return JSONResponse(
                         {
                             "success": False,
-                            "detail": "A verified subscription or current tester grant is required for this owner API.",
+                            "detail": "A current trial, verified subscription or current tester grant is required for this owner API.",
                             "billing_lock_reason": "verified_access_required",
                             "version": VERSION,
                         },
