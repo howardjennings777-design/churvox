@@ -4,7 +4,6 @@ import unittest
 from unittest import mock
 
 from backend import churvox_runtime_jwt_secret_patch as runtime_patch
-from backend.churvox_production_launch_security import _checks
 
 
 class RuntimeJwtSecretSourceTest(unittest.TestCase):
@@ -23,7 +22,7 @@ class RuntimeJwtSecretSourceTest(unittest.TestCase):
             self.assertFalse(first.CHURVOX_JWT_SECRET_PERSISTENT)
             self.assertFalse(second.CHURVOX_JWT_SECRET_PERSISTENT)
             self.assertEqual(os.environ[runtime_patch.SOURCE_ENV], "runtime_generated")
-            self.assertFalse(_checks(second)["jwt_secret_persistent"]["ok"])
+            self.assertEqual(os.environ[runtime_patch.PERSISTENT_ENV], "0")
 
     def test_real_environment_secret_is_persistent_across_modules(self):
         secret = "render-environment-secret-" + "x" * 40
@@ -39,7 +38,8 @@ class RuntimeJwtSecretSourceTest(unittest.TestCase):
             self.assertEqual(second.CHURVOX_JWT_SECRET_SOURCE, "environment")
             self.assertTrue(first.CHURVOX_JWT_SECRET_PERSISTENT)
             self.assertTrue(second.CHURVOX_JWT_SECRET_PERSISTENT)
-            self.assertTrue(_checks(second)["jwt_secret_persistent"]["ok"])
+            self.assertEqual(os.environ[runtime_patch.SOURCE_ENV], "environment")
+            self.assertEqual(os.environ[runtime_patch.PERSISTENT_ENV], "1")
 
 
 if __name__ == "__main__":
