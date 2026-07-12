@@ -5,6 +5,7 @@ const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX
 const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || process.env.CHURVOX_E2E_WORKER_EMAIL || '';
 const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURVOX_E2E_WORKER_PASSWORD || '';
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
+const TOKEN_CACHE = new Map();
 
 function apiUrl(path) {
   return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
@@ -20,8 +21,28 @@ function accountEmail(data = {}) {
   return String(data?.email || data?.user?.email || data?.data?.email || data?.data?.user?.email || '').trim().toLowerCase();
 }
 
+async function seedAuth(page, token, email, label) {
+  const role = label === 'worker' ? 'worker' : 'owner';
+  await page.context().addInitScript(({ tokenValue, emailValue, roleValue }) => {
+    localStorage.setItem('token', tokenValue);
+    localStorage.setItem('authToken', tokenValue);
+    localStorage.setItem('access_token', tokenValue);
+    localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+      at: Date.now(),
+      token: tokenValue,
+      user: { email: emailValue, role: roleValue, has_app_access: true, email_verified: true },
+    }));
+  }, { tokenValue: token, emailValue: email, roleValue: role });
+}
+
 async function loginApi(page, email, password, label) {
   if (!email || !password) throw new Error(`Missing ${label} credentials. Hardcore tests fail rather than skip.`);
+  const cacheKey = `${label}:${String(email).toLowerCase()}`;
+  if (TOKEN_CACHE.has(cacheKey)) {
+    const cached = TOKEN_CACHE.get(cacheKey);
+    await seedAuth(page, cached, email, label);
+    return cached;
+  }
   const paths = label === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
   const attempts = [];
   for (const path of paths) {
@@ -33,7 +54,8 @@ async function loginApi(page, email, password, label) {
     if (!token) continue;
     const returnedEmail = accountEmail(body);
     if (returnedEmail && returnedEmail !== email.toLowerCase()) throw new Error(`${label} login returned a different account.`);
-    await page.context().addInitScript((value) => localStorage.setItem('token', value), token);
+    TOKEN_CACHE.set(cacheKey, token);
+    await seedAuth(page, token, email, label);
     return token;
   }
   throw new Error(`${label} login failed: ${JSON.stringify(attempts)}`);

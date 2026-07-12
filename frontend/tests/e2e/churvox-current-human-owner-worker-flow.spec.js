@@ -85,6 +85,24 @@ async function uiLogin(page, email, password, role) {
   return token;
 }
 
+async function seedVerifiedSession(page, token, email, role) {
+  await page.context().addInitScript(({ tokenValue, emailValue, roleValue }) => {
+    localStorage.setItem('token', tokenValue);
+    localStorage.setItem('authToken', tokenValue);
+    localStorage.setItem('access_token', tokenValue);
+    localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+      at: Date.now(),
+      token: tokenValue,
+      user: { email: emailValue, role: roleValue, has_app_access: true, email_verified: true },
+    }));
+  }, { tokenValue: token, emailValue: email, roleValue: role });
+  await page.goto(`${BASE_URL}${role === 'worker' ? '/worker/today' : '/dashboard#today'}`, { waitUntil: 'domcontentloaded' });
+  const me = await page.request.get(apiUrl('/api/auth/me'), { headers: { Authorization: `Bearer ${token}` }, timeout: 30_000 });
+  const body = await bodyOf(me);
+  expect(me.status(), `${role} seeded /api/auth/me failed: ${JSON.stringify(body).slice(0, 600)}`).toBe(200);
+  expect(emailFrom(body), `${role} seeded /api/auth/me returned wrong account`).toBe(email);
+}
+
 async function findWorker(request, ownerToken) {
   for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
     const { response, body } = await api(request, 'get', endpoint, ownerToken);
@@ -224,7 +242,7 @@ test.describe('Current Churvox human owner-worker flow', () => {
 
     try {
       await test.step('Owner logs in and prepares a real current client Command slip', async () => {
-        await uiLogin(ownerPage, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
+        await seedVerifiedSession(ownerPage, ownerToken, OWNER_EMAIL, 'owner');
         preparedSlipId = await fillCurrentClientForm(ownerPage, preparedToken);
         await ownerPage.goto(`${BASE_URL}/dashboard#command`, { waitUntil: 'domcontentloaded' });
         await expect.poll(async () => (await ownerPage.locator('body').innerText()).includes(preparedToken), {
@@ -238,7 +256,7 @@ test.describe('Current Churvox human owner-worker flow', () => {
       jobId = job.jobId;
 
       await test.step('Worker logs in and sees the real assigned job in Worker View', async () => {
-        await uiLogin(workerPage, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
+        await seedVerifiedSession(workerPage, workerToken, WORKER_EMAIL, 'worker');
         await workerPage.goto(`${BASE_URL}/worker/jobs`, { waitUntil: 'domcontentloaded' });
         await expect(workerPage.getByText(job.title).first(), 'Worker did not see assigned live job').toBeVisible({ timeout: 25_000 });
         const jobButton = workerPage.locator('.cvWorkerRouteQueue button').filter({ hasText: job.title }).first();

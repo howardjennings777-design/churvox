@@ -92,6 +92,7 @@ async function main() {
   const token = await login();
   const headers = { Authorization: `Bearer ${token}` };
   const failures = [];
+  const settled = new Set();
   let matched = 0;
   let cleaned = 0;
 
@@ -101,7 +102,7 @@ async function main() {
       matched += 1;
       const id = idOf(row);
       if (!id) { failures.push(`${kind}:missing-id`); continue; }
-      if (await removeBusinessRecord(kind, id, headers)) cleaned += 1;
+      if (await removeBusinessRecord(kind, id, headers)) { cleaned += 1; settled.add(`${kind}:${id}`); }
       else failures.push(`${kind}:${id}`);
     }
   }
@@ -109,8 +110,9 @@ async function main() {
   for (const row of await list('/api/command/slips?limit=400', headers)) {
     if (!matches(row)) continue;
     matched += 1;
-    if (await resolveCommandSlip(row, headers)) cleaned += 1;
-    else failures.push(`command:${idOf(row) || 'missing-id'}`);
+    const id = idOf(row);
+    if (await resolveCommandSlip(row, headers)) { cleaned += 1; if (id) settled.add(`command:${id}`); }
+    else failures.push(`command:${id || 'missing-id'}`);
   }
 
   // Messages and notifications are immutable audit history. They are checked for safety but are not treated as active business records.
@@ -121,9 +123,9 @@ async function main() {
 
   const remainingActive = [];
   for (const kind of ['jobs', 'clients', 'quotes', 'invoices']) {
-    for (const row of await list(`/api/${kind}?limit=400`, headers)) if (matches(row) && !inactiveRecord(row)) remainingActive.push(`${kind}:${idOf(row)}`);
+    for (const row of await list(`/api/${kind}?limit=400`, headers)) { const key = `${kind}:${idOf(row)}`; if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key); }
   }
-  for (const row of await list('/api/command/slips?limit=400', headers)) if (matches(row)) remainingActive.push(`command:${idOf(row)}`);
+  for (const row of await list('/api/command/slips?limit=400', headers)) { const key = `command:${idOf(row)}`; if (matches(row) && !settled.has(key)) remainingActive.push(key); }
 
   console.log(`Cleanup matched ${matched} active audit records and cleaned/resolved ${cleaned}.`);
   console.log(`Retained ${historyMatches.length} immutable message/notification audit entries.`);

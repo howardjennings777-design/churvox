@@ -30,7 +30,7 @@ export default function OfficeTeamClientsWorkspace({ appMode = "lab" }) {
     <section className="cvSiteScreen cvClientsWorkspace">
       <header className="cvCorePageHero cvClientsHero">
         <div>
-          <span>Client book</span>
+          <span>Clients</span>
           <h2>Remember the person, not just the last job.</h2>
           <p>Client records are organised around relationship context, useful memory and the next sensible step. Sensitive or uncertain details still return to Command before a record changes.</p>
         </div>

@@ -15,7 +15,7 @@ let observer = null;
 
 function plansRoot() {
   if (window.location.pathname !== "/plans" && !(window.location.pathname === "/dashboard" && window.location.hash === "#plans")) return null;
-  return document.querySelector(".cv3Product, .freshPricingPage, .cvPlansPage, [data-churvox-page='plans']");
+  return document.querySelector(".cv3Product, .freshPricingPage, .cvPlansPage, .cvPlansScreen, [data-churvox-page='plans']");
 }
 
 function isPlansPage() {
@@ -179,7 +179,7 @@ function ensurePanel() {
   markStaticCards();
   let panel = document.getElementById(PANEL_ID);
   if (panel) return panel;
-  const anchor = root.querySelector(".cv3Hero.page-plans, .cvPlanPanel, .freshPricingHero, .freshPlanNotice, .freshPricingCards") || root.firstElementChild;
+  const anchor = root.querySelector(".cvPlansHero, .cv3Hero.page-plans, .cvPlanPanel, .freshPricingHero, .freshPlanNotice, .freshPricingCards") || root.firstElementChild;
   if (!anchor) return null;
   panel = document.createElement("section");
   panel.id = PANEL_ID;

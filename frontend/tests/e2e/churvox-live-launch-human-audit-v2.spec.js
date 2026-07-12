@@ -88,6 +88,37 @@ async function uiLogin(page, email, password, role) {
   return token;
 }
 
+async function apiSession(page, email, password, role) {
+  const response = await page.request.post(apiUrl('/api/auth/login'), {
+    data: { email, password },
+    timeout: 30_000,
+  });
+  const body = await responseBody(response);
+  expect(response.ok(), `${role} API session login failed ${response.status()}: ${JSON.stringify(body).slice(0, 700)}`).toBeTruthy();
+  const token = tokenFrom(body);
+  expect(token, `${role} API session login returned no token`).toBeTruthy();
+  if (accountEmail(body)) expect(accountEmail(body), `${role} API session returned the wrong account`).toBe(email);
+  await page.context().addInitScript(({ tokenValue, emailValue, roleValue }) => {
+    localStorage.setItem('token', tokenValue);
+    localStorage.setItem('authToken', tokenValue);
+    localStorage.setItem('access_token', tokenValue);
+    localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+      at: Date.now(),
+      token: tokenValue,
+      user: { email: emailValue, role: roleValue, has_app_access: true, email_verified: true },
+    }));
+  }, { tokenValue: token, emailValue: email, roleValue: role });
+  await page.goto(`${BASE_URL}${role === 'worker' ? '/worker/today' : '/dashboard#today'}`, { waitUntil: 'domcontentloaded' });
+  const me = await page.request.get(apiUrl('/api/auth/me'), {
+    headers: { Authorization: `Bearer ${token}` },
+    timeout: 30_000,
+  });
+  const meBody = await responseBody(me);
+  expect(me.status(), `${role} API session /api/auth/me failed: ${JSON.stringify(meBody).slice(0, 700)}`).toBe(200);
+  expect(accountEmail(meBody), `${role} API session /api/auth/me returned the wrong account`).toBe(email);
+  return token;
+}
+
 async function settle(page, label) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForLoadState('networkidle', { timeout: 3500 }).catch(() => null);
@@ -204,9 +235,9 @@ test.describe('Churvox live launch human audit v2', () => {
     const mobile = /mobile/i.test(testInfo.project.name);
     const context = await newCleanContext(browser, mobile ? { width: 390, height: 844 } : { width: 1440, height: 960 });
     const page = await context.newPage();
+    if (mobile) await apiSession(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
+    else await uiLogin(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
     const failures = watchApiFailures(page, 'owner');
-
-    await uiLogin(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
     for (const [hash, marker] of OWNER_PAGES) {
       await openOwnerHash(page, hash, marker);
       await auditVisibleControls(page, `owner ${hash}`);
@@ -244,9 +275,9 @@ test.describe('Churvox live launch human audit v2', () => {
     const mobile = /mobile/i.test(testInfo.project.name);
     const context = await newCleanContext(browser, mobile ? { width: 390, height: 844 } : { width: 1440, height: 960 });
     const page = await context.newPage();
+    if (mobile) await apiSession(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
+    else await uiLogin(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
     const failures = watchApiFailures(page, 'worker');
-
-    await uiLogin(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
     for (const [path, marker] of WORKER_PATHS) {
       await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
       await expect.poll(() => page.url(), { timeout: 15_000 }).toMatch(new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[?#]|$)`));

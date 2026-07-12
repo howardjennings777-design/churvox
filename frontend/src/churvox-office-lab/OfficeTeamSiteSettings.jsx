@@ -161,8 +161,8 @@ export default function OfficeTeamSiteSettings() {
               <label key={key} className={type === "textarea" ? "wide" : ""}>
                 <span>{label}</span>
                 {type === "textarea"
-                  ? <textarea value={profile[key] || ""} onChange={(event) => setField(key, event.target.value)} />
-                  : <input type={type} value={profile[key] || ""} onChange={(event) => setField(key, event.target.value)} />}
+                  ? <textarea aria-label={label} name={key} value={profile[key] || ""} onChange={(event) => setField(key, event.target.value)} />
+                  : <input aria-label={label} name={key} type={type} value={profile[key] || ""} onChange={(event) => setField(key, event.target.value)} />}
               </label>
             ))}
           </div>

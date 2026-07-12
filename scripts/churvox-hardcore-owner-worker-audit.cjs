@@ -253,7 +253,8 @@ check(
   'live read-only proof checks the actual linked worker',
   all(currentHumanFlow, [
     "const worker = await findWorker(request, ownerToken);",
-    "await uiLogin(workerPage, WORKER_EMAIL, WORKER_PASSWORD, 'worker');",
+    "await seedVerifiedSession(ownerPage, ownerToken, OWNER_EMAIL, 'owner');",
+    "await seedVerifiedSession(workerPage, workerToken, WORKER_EMAIL, 'worker');",
     "['/api/team/workers', '/api/team', '/api/workers']",
     "expect(emailFrom(body), `${role} /api/auth/me returned wrong account`).toBe(email);",
   ])

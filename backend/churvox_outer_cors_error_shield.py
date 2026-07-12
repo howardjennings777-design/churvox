@@ -152,6 +152,11 @@ def install(module) -> None:
     )
     _install_patch(
         module,
+        ("churvox_command_slip_decision_patch", "backend.churvox_command_slip_decision_patch"),
+        "final Command slip decision routes",
+    )
+    _install_patch(
+        module,
         ("churvox_worker_field_slip_decision_patch", "backend.churvox_worker_field_slip_decision_patch"),
         "worker field-slip owner decision route",
     )
