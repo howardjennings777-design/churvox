@@ -1,0 +1,431 @@
+name: Churvox Live Human Launch Audit V2
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  live-human-launch-audit-v2:
+    if: startsWith(github.event.issue.title, '[churvox-launch-human-audit-v2]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CHURVOX_E2E_MUTATE: '1'
+
+    steps:
+      - name: Mark audit started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Live launch audit V2 started: current owner OS, Worker View, desktop, phone, real login, every page, role boundaries, field actions, Command delivery, old-route traps and cleanup.'
+            });
+
+      - name: Check out current main
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify private owner credential
+        id: credential
+        continue-on-error: true
+        run: |
+          test -n "$CHURVOX_OWNER_PASSWORD"
+          echo 'Owner password secret is present and remains masked.'
+
+      - name: Install frontend dependencies
+        id: install
+        continue-on-error: true
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Compile all current audit code and production frontend
+        id: build
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+            node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+            node --check scripts/churvox-hardcore-human-cleanup.cjs
+            node --check scripts/churvox-hardcore-owner-worker-audit.cjs
+            python -m py_compile backend/churvox_worker_command_visibility_patch.py backend/churvox_worker_field_slip_decision_patch.py backend/churvox_startup_patch_loader.py
+            npm --prefix frontend run build
+          } 2>&1 | tee /tmp/churvox-v2-build.txt
+
+      - name: Install Chromium
+        id: chromium
+        continue-on-error: true
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Discover linked active worker using masked shared password
+        id: worker
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-v2-worker.txt
+          const fs = require('fs');
+          const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
+          const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
+          const password = process.env.CHURVOX_OWNER_PASSWORD;
+
+          function tokenFrom(body = {}) {
+            return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+              || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+          }
+          function rowsFrom(payload) {
+            const data = payload?.data?.data ?? payload?.data ?? payload;
+            if (Array.isArray(data)) return data;
+            for (const key of ['workers', 'team', 'members', 'items', 'records', 'results', 'data']) if (Array.isArray(data?.[key])) return data[key];
+            return [];
+          }
+          function emailOf(row = {}) {
+            return String(row.email || row.worker_email || row.user_email || row.login_email || '').trim().toLowerCase();
+          }
+          function active(row = {}) {
+            const status = String(row.status || row.worker_status || '').toLowerCase();
+            return row.active !== false && row.is_active !== false && !/inactive|deleted|archived|disabled/.test(status);
+          }
+          async function call(path, options = {}) {
+            const response = await fetch(`${api}${path}`, {
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
+              ...options,
+            });
+            const text = await response.text();
+            let body = {};
+            try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
+            return { response, body };
+          }
+          async function login(path, email) {
+            const result = await call(path, { method: 'POST', body: JSON.stringify({ email, password }) });
+            return { ...result, token: tokenFrom(result.body) };
+          }
+          async function main() {
+            const owner = await login('/api/auth/login', ownerEmail);
+            if (!owner.response.ok || !owner.token) throw new Error(`Owner login failed with HTTP ${owner.response.status}.`);
+            const candidates = [];
+            for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
+              const result = await call(`${endpoint}?ts=${Date.now()}`, { headers: { Authorization: `Bearer ${owner.token}` } });
+              if (!result.response.ok) continue;
+              for (const row of rowsFrom(result.body)) {
+                const email = emailOf(row);
+                if (!email || email === ownerEmail.toLowerCase() || !active(row)) continue;
+                if (!candidates.includes(email)) candidates.push(email);
+              }
+            }
+            if (!candidates.length) throw new Error('No active linked worker email was found.');
+            const attempts = [];
+            let selected = '';
+            for (const email of candidates.slice(0, 8)) {
+              let result = await login('/api/auth/login', email);
+              if (!result.response.ok || !result.token) result = await login('/api/worker/auth/login', email);
+              attempts.push(`${result.response.status}`);
+              if (result.response.ok && result.token) { selected = email; break; }
+            }
+            if (!selected) throw new Error(`No linked worker accepted the shared password. HTTP attempts: ${attempts.join(', ')}`);
+            console.log(`::add-mask::${selected}`);
+            fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${selected}\n`);
+            console.log('Linked active worker discovered, login proven and email masked.');
+          }
+          main().catch((error) => { console.error(error.message || error); process.exit(1); });
+          NODE
+
+      - name: Wait for current frontend and backend repairs to be live
+        id: deploy
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-v2-deploy.txt
+          const site = 'https://www.churvox.com';
+          const api = 'https://grassley-backend.onrender.com';
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          async function frontendReady() {
+            const manifest = await (await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' })).json();
+            const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((item) => /main\..*\.js$/.test(item));
+            if (!mainPath) return { ok: false, detail: 'main.js missing' };
+            const js = await (await fetch(new URL(mainPath, site), { cache: 'no-store' })).text();
+            const markers = ['cvWorkerLogout', 'Continue to secure checkout', 'cvOwnerMainNavigation'];
+            const missing = markers.filter((marker) => !js.includes(marker));
+            return { ok: missing.length === 0, detail: missing.length ? `frontend missing ${missing.join(', ')}` : 'frontend markers live' };
+          }
+          async function backendReady() {
+            const login = await fetch(`${api}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: process.env.CHURVOX_OWNER_EMAIL, password: process.env.CHURVOX_OWNER_PASSWORD }),
+            });
+            const body = await login.json().catch(() => ({}));
+            const token = body.token || body.access_token || body.user?.token || body.data?.token || body.data?.user?.token || '';
+            if (!login.ok || !token) return { ok: false, detail: `backend owner login ${login.status}` };
+            const response = await fetch(`${api}/api/command/slips?ts=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` } });
+            const text = await response.text();
+            if (!response.ok) return { ok: false, detail: `Command slips ${response.status}: ${text.slice(0, 120)}` };
+            let parsed = {};
+            try { parsed = JSON.parse(text); } catch {}
+            const shape = Array.isArray(parsed.slips) && Object.prototype.hasOwnProperty.call(parsed, 'worker_field_slip_count');
+            return { ok: shape, detail: shape ? 'backend worker Command bridge live' : 'backend old Command response shape' };
+          }
+          async function main() {
+            let last = '';
+            for (let attempt = 1; attempt <= 45; attempt += 1) {
+              try {
+                const [front, back] = await Promise.all([frontendReady(), backendReady()]);
+                console.log(`Attempt ${attempt}: ${front.detail}; ${back.detail}`);
+                if (front.ok && back.ok) return;
+                last = `${front.detail}; ${back.detail}`;
+              } catch (error) {
+                last = error.message || String(error);
+                console.log(`Attempt ${attempt}: ${last}`);
+              }
+              if (attempt < 45) await sleep(20_000);
+            }
+            throw new Error(`Current repairs did not deploy during the probe window: ${last}`);
+          }
+          main().catch((error) => { console.error(error.message || error); process.exit(1); });
+          NODE
+
+      - name: Scan active source for old-site handoffs
+        id: source
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-v2-source.txt
+          const fs = require('fs');
+          const files = [
+            'frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx',
+            'frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx',
+            'frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx',
+            'frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx',
+            'frontend/src/App.js',
+          ];
+          const forbidden = [
+            /window\.location\.(?:assign|replace)\([^)]*["'`]\/plans/i,
+            /href\s*=\s*["'`]\/(?:legacy-dashboard|fresh|office-team-lab|office-lab|new-command-lab)/i,
+            /window\.open\([^)]*["'`]\/(?:legacy-dashboard|fresh|office-team-lab|office-lab|new-command-lab)/i,
+          ];
+          const failures = [];
+          for (const file of files) {
+            const text = fs.readFileSync(file, 'utf8');
+            for (const rule of forbidden) if (rule.test(text)) failures.push(`${file}: ${rule}`);
+          }
+          if (failures.length) throw new Error(`Old-site handoffs remain:\n${failures.join('\n')}`);
+          console.log('No active owner/worker control contains an old-site handoff.');
+          NODE
+
+      - name: Run static owner-worker wiring contract
+        id: static
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-owner-worker-audit.cjs 2>&1 | tee /tmp/churvox-v2-static.txt
+
+      - name: Start built frontend for isolated current UI contracts
+        id: server
+        continue-on-error: true
+        working-directory: frontend
+        run: |
+          npm start > /tmp/churvox-v2-local-server.txt 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/churvox-v2-local-server.txt
+          exit 1
+
+      - name: Run current safe UI contracts on desktop and phone
+        id: local_ui
+        continue-on-error: true
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test \
+            tests/e2e/churvox-more-menu-paid-launch.spec.js \
+            tests/e2e/churvox-plans-usage-truth.spec.js \
+            tests/e2e/churvox-owner-no-fake-data.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-v2-local-ui.txt
+
+      - name: Run live every-page role and no-old-site audit on desktop and phone
+        id: live_pages
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-v2-live-pages.txt
+
+      - name: Run current real owner-worker UI mutation flow
+        id: human_flow
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-v2-human-flow.txt
+
+      - name: Run hardcore visual and complete live field lifecycle
+        id: hardcore
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-owner-worker.cjs 2>&1 | tee /tmp/churvox-v2-hardcore.txt
+
+      - name: Clean active live audit records
+        id: cleanup
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/churvox-v2-cleanup.txt
+
+      - name: Build blunt pass-fail report
+        id: report
+        if: always()
+        env:
+          CREDENTIAL: ${{ steps.credential.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+          WORKER: ${{ steps.worker.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          SOURCE: ${{ steps.source.outcome }}
+          STATIC: ${{ steps.static.outcome }}
+          SERVER: ${{ steps.server.outcome }}
+          LOCAL_UI: ${{ steps.local_ui.outcome }}
+          LIVE_PAGES: ${{ steps.live_pages.outcome }}
+          HUMAN_FLOW: ${{ steps.human_flow.outcome }}
+          HARDCORE: ${{ steps.hardcore.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const checks = {
+            'Private owner credential': process.env.CREDENTIAL,
+            'Dependency install': process.env.INSTALL,
+            'Audit syntax and production build': process.env.BUILD,
+            'Chromium install': process.env.CHROMIUM,
+            'Linked worker discovery and login': process.env.WORKER,
+            'Current frontend/backend deployed': process.env.DEPLOY,
+            'Active source old-site scan': process.env.SOURCE,
+            'Static owner-worker wiring contract': process.env.STATIC,
+            'Local built app server': process.env.SERVER,
+            'Current safe UI desktop/mobile': process.env.LOCAL_UI,
+            'Live every-page role and legacy audit': process.env.LIVE_PAGES,
+            'Real owner-worker UI mutation flow': process.env.HUMAN_FLOW,
+            'Hardcore visual and full field lifecycle': process.env.HARDCORE,
+            'Active test-record cleanup': process.env.CLEANUP,
+          };
+          const failures = Object.entries(checks).filter(([, value]) => value !== 'success').map(([name]) => name);
+          const lines = [
+            '# Churvox live human launch audit V2',
+            '',
+            ...Object.entries(checks).map(([name, value]) => `- ${value === 'success' ? 'PASS' : 'FAIL'} — ${name}`),
+            '',
+            failures.length
+              ? `**Result: FAILED — ${failures.length} area(s) still need repair.**`
+              : '**Result: PASSED — current owner OS, Worker View, desktop, phone, real role security, live field lifecycle, Command delivery, no-old-site checks and cleanup all passed.**',
+          ];
+          fs.writeFileSync('/tmp/churvox-v2-summary.md', `${lines.join('\n')}\n`);
+          fs.writeFileSync('/tmp/churvox-v2-report.json', JSON.stringify({ success: failures.length === 0, checks, failures }, null, 2));
+          console.log(lines.join('\n'));
+          NODE
+
+      - name: Upload full audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-human-launch-audit-v2
+          path: |
+            /tmp/churvox-v2-summary.md
+            /tmp/churvox-v2-report.json
+            /tmp/churvox-v2-build.txt
+            /tmp/churvox-v2-worker.txt
+            /tmp/churvox-v2-deploy.txt
+            /tmp/churvox-v2-source.txt
+            /tmp/churvox-v2-static.txt
+            /tmp/churvox-v2-local-server.txt
+            /tmp/churvox-v2-local-ui.txt
+            /tmp/churvox-v2-live-pages.txt
+            /tmp/churvox-v2-human-flow.txt
+            /tmp/churvox-v2-hardcore.txt
+            /tmp/churvox-v2-cleanup.txt
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Post complete result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.existsSync('/tmp/churvox-v2-summary.md')
+              ? fs.readFileSync('/tmp/churvox-v2-summary.md', 'utf8')
+              : 'Audit failed before its report was created.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: summary,
+            });
+
+      - name: Fail when any audit area failed
+        if: always()
+        env:
+          CREDENTIAL: ${{ steps.credential.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+          WORKER: ${{ steps.worker.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          SOURCE: ${{ steps.source.outcome }}
+          STATIC: ${{ steps.static.outcome }}
+          SERVER: ${{ steps.server.outcome }}
+          LOCAL_UI: ${{ steps.local_ui.outcome }}
+          LIVE_PAGES: ${{ steps.live_pages.outcome }}
+          HUMAN_FLOW: ${{ steps.human_flow.outcome }}
+          HARDCORE: ${{ steps.hardcore.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: |
+          for value in "$CREDENTIAL" "$INSTALL" "$BUILD" "$CHROMIUM" "$WORKER" "$DEPLOY" "$SOURCE" "$STATIC" "$SERVER" "$LOCAL_UI" "$LIVE_PAGES" "$HUMAN_FLOW" "$HARDCORE" "$CLEANUP"; do
+            test "$value" = success || exit 1
+          done
