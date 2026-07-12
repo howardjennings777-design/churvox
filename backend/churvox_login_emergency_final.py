@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import importlib
+import os
 import re
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -183,11 +184,7 @@ def paid_app_access(user: dict[str, Any] | None, now: datetime | None = None) ->
         or user.get("billing_status")
         or user.get("stripe_status")
     )
-    if (
-        status in BILLING_LOCKED_STATUSES
-        or user.get("billing_lock_reason")
-        or user.get("has_app_access") is False
-    ):
+    if status in BILLING_LOCKED_STATUSES:
         return False
     trial_end = _aware(user.get("trial_ends_at"))
     if status in {"trial", "trialing"} and trial_end and trial_end <= (now or _now()):
@@ -260,8 +257,18 @@ def _json(status: int, stage: str, body: dict[str, Any]):
 
 
 def _clear_cookies(response) -> None:
-    response.delete_cookie("access_token", path="/", secure=True, httponly=True, samesite="none")
-    response.delete_cookie("refresh_token", path="/", secure=True, httponly=True, samesite="none")
+    try:
+        response.delete_cookie("access_token", path="/", secure=True, httponly=True, samesite="none")
+        response.delete_cookie("refresh_token", path="/", secure=True, httponly=True, samesite="none")
+    except Exception:
+        response.raw_headers.append((
+            b"set-cookie",
+            b"access_token=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=None",
+        ))
+        response.raw_headers.append((
+            b"set-cookie",
+            b"refresh_token=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=None",
+        ))
 
 
 def _set_cookies(response, access: str, refresh: str) -> None:
@@ -295,6 +302,9 @@ def _patch_worker_lockout_helpers() -> None:
             continue
         try:
             patch.next_failure_state = next_failure_state
+            patch._attempt_key = lambda request, email, kind="login": _attempt_key(
+                request, email, "paid-login"
+            )
             patch.LOCKOUT_FAILURES = LOCKOUT_FAILURES
             patch.LOCKOUT_MINUTES = LOCKOUT_MINUTES
         except Exception:
@@ -352,15 +362,20 @@ def install(module) -> None:
         async def lookup(collection_name: str):
             try:
                 document = await db[collection_name].find_one(query)
-                return collection_name, document
-            except Exception:
-                return collection_name, None
+                return collection_name, document, None
+            except Exception as exc:
+                return collection_name, None, exc
 
         tasks = [lookup(name) for name in WORKER_COLLECTIONS]
         results = await _wait(asyncio.gather(*tasks), LOOKUP_TIMEOUT_SECONDS)
-        for collection_name, document in results:
+        errors = []
+        for collection_name, document, error in results:
             if document:
                 return collection_name, document
+            if error is not None:
+                errors.append(error)
+        if len(errors) == len(WORKER_COLLECTIONS):
+            raise errors[0]
         return None, None
 
     async def _read_attempt(key: str) -> dict[str, Any]:
@@ -570,13 +585,14 @@ def install(module) -> None:
                 return _error(400, "invalid-json-object", "Login request must be a JSON object.")
 
             email = _lower(payload.get("email"))
-            password = _text(payload.get("password"))
+            raw_password = payload.get("password")
+            password = str(raw_password) if raw_password is not None else ""
             if not email or not password:
                 return _error(400, "input", "Enter your email and password.")
             if len(email) > 320 or len(password) > 128:
                 return _error(400, "input-size", "Invalid email or password.")
 
-            key = _attempt_key(request, email, "owner-login")
+            key = _attempt_key(request, email, "paid-login")
             attempt = await _read_attempt(key)
             if lockout_active(attempt):
                 return _error(429, "lockout", "Too many failed attempts. Try again in 15 minutes.")
@@ -812,7 +828,7 @@ def install(module) -> None:
             getattr(
                 module,
                 "CHURVOX_JWT_SECRET_SOURCE",
-                "environment" if _text(getattr(module, "os", None) and module.os.environ.get("JWT_SECRET")) else "unknown",
+                "environment" if _text(os.environ.get("JWT_SECRET")) else "unknown",
             )
         )
         return {
