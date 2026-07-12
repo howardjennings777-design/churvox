@@ -41,6 +41,17 @@ function safeEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "";
 }
 
+function hasSafeSubscription(user = {}) {
+  const status = String(user?.subscription_status || user?.billing_status || user?.stripe_status || "").trim().toLowerCase();
+  const proof = Boolean(
+    user?.stripe_subscription_id ||
+    user?.stripe_customer_id ||
+    user?.stripe_checkout_session_id ||
+    user?.checkout_session_id
+  );
+  return proof && ["trial", "trialing", "active", "paid", "past_due"].includes(status);
+}
+
 export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -93,7 +104,11 @@ export default function VerifyEmailPage() {
           }
           setPendingMode(true);
           setDone(true);
-          setStatus("Check your inbox and open the verification link from Churvox. You can safely request another email below.");
+          setStatus(
+            hasSafeSubscription(currentUser)
+              ? "Your subscription is safe. Verify your email to open Churvox. You can request another verification email below."
+              : "Check your inbox and open the verification link from Churvox. You can safely request another email below."
+          );
           return;
         }
         setStatus("This verification link is missing its token. Request a new verification email or contact support.");
@@ -165,7 +180,7 @@ export default function VerifyEmailPage() {
   const badge = ok ? "Verified" : pendingMode ? "Action needed" : "Email verification";
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_EMAIL_VERIFICATION_LOGIN_FLOW_20260712B">
+    <main className="cp26Site" data-version="CHURVOX_EMAIL_VERIFICATION_LOGIN_FLOW_20260712C">
       <PublicNav />
       <section className="min-h-[68vh] bg-[#f7f3ea] p-4 text-slate-950 md:p-8">
         <div className="mx-auto grid min-h-[64vh] max-w-3xl place-items-center">
