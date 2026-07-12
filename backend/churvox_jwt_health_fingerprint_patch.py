@@ -35,6 +35,15 @@ def _matches(route) -> bool:
     )
 
 
+def _route_count(app, path: str, method: str) -> int:
+    return sum(
+        1
+        for route in list(getattr(app.router, "routes", []) or [])
+        if getattr(route, "path", "") == path
+        and method in set(getattr(route, "methods", set()) or set())
+    )
+
+
 def install(module) -> None:
     app = getattr(module, "app", None)
     if app is None:
@@ -74,6 +83,9 @@ def install(module) -> None:
             "restart_persistence_ready": persistent and bool(key_id),
             "jwt_key_id": key_id,
             "jwt_health_version": VERSION,
+            "billing_portal_post_route_count": _route_count(app, "/api/billing/create-portal-session", "POST"),
+            "account_delete_post_route_count": _route_count(app, "/api/account/self-delete", "POST"),
+            "account_delete_delete_route_count": _route_count(app, "/api/account/self-delete", "DELETE"),
         })
         return output
 
