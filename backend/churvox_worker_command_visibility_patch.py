@@ -44,6 +44,22 @@ def safe(value):
     return value
 
 
+def promote_route(app, path, method):
+    try:
+        method = method.upper()
+        preferred = [
+            route for route in app.router.routes
+            if getattr(route, "path", "") == path
+            and method in set(getattr(route, "methods", set()) or set())
+        ]
+        if not preferred:
+            return
+        remaining = [route for route in app.router.routes if route not in preferred]
+        app.router.routes = preferred + remaining
+    except Exception:
+        pass
+
+
 def remove_route(app, path, method):
     try:
         app.router.routes = [
@@ -283,6 +299,7 @@ def install(module):
 
     remove_route(app, "/api/command/slips", "GET")
     app.add_api_route("/api/command/slips", command_slips_get, methods=["GET"])
+    promote_route(app, "/api/command/slips", "GET")
     INSTALLED.add(name)
 
 
