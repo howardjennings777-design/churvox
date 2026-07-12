@@ -3,10 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from fastapi import Request
-from fastapi.responses import JSONResponse
-
-VERSION = "churvox-feature-tier-paid-launch-20260712b"
+VERSION = "churvox-feature-tier-paid-launch-20260712c"
 PLAN_ORDER = ("start", "crew", "operator", "command")
 PLAN_ALIASES = {
     "solo": "start",
@@ -180,9 +177,13 @@ def install(module) -> None:
         return
     if getattr(app.state, "churvox_feature_tier_paid_launch", False):
         return
+    try:
+        from fastapi.responses import JSONResponse
+    except Exception:
+        return
 
     @app.middleware("http")
-    async def paid_launch_feature_tier_guard(request: Request, call_next):
+    async def paid_launch_feature_tier_guard(request, call_next):
         if request.method.upper() == "OPTIONS":
             return await call_next(request)
         access = required_access(request.url.path)
