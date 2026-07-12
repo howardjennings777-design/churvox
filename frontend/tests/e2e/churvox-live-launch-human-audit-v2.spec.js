@@ -19,7 +19,7 @@ const OWNER_PAGES = [
   ['messages', /messages/i],
   ['payroll', /payroll|hours/i],
   ['integrations', /xero|accounting/i],
-  ['team', /how churvox works|team/i],
+  ['office-team', /how churvox works|team/i],
   ['activity', /activity/i],
   ['settings', /settings/i],
   ['plans', /plans|pricing/i],
@@ -266,6 +266,8 @@ test.describe('Churvox live launch human audit v2', () => {
       }).toMatch(/\/worker\/|\/login/);
     }
 
+    expect(unexpectedApiFailures(failures, 'worker'), `Worker pages produced auth/server failures: ${JSON.stringify(failures)}`).toEqual([]);
+
     await page.goto(`${BASE_URL}/worker/settings`, { waitUntil: 'domcontentloaded' });
     const logout = page.getByRole('button', { name: 'Log out', exact: true });
     await expect(logout, 'Worker has no real logout button').toBeVisible({ timeout: 15_000 });
@@ -273,7 +275,6 @@ test.describe('Churvox live launch human audit v2', () => {
     await expect.poll(() => page.url(), { timeout: 15_000 }).toMatch(/\/login/);
     expect(await page.evaluate(() => localStorage.getItem('token') || localStorage.getItem('authToken') || '')).toBe('');
 
-    expect(unexpectedApiFailures(failures, 'worker'), `Worker pages produced auth/server failures: ${JSON.stringify(failures)}`).toEqual([]);
     await context.close();
   });
 });

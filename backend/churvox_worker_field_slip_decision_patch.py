@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from starlette.requests import Request as StarletteRequest
 import importlib
 import importlib.abc
 import importlib.machinery
@@ -84,12 +85,11 @@ def install(module):
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
     ObjectId = getattr(module, "ObjectId", None)
-    Request = getattr(module, "Request", None)
     HTTPException = getattr(module, "HTTPException", None)
-    if not app or db is None or not get_current_user or ObjectId is None or Request is None or HTTPException is None:
+    if not app or db is None or not get_current_user or ObjectId is None or HTTPException is None:
         return
 
-    async def decide(slip_id: str, decision: str, request: Request):
+    async def decide(slip_id: str, decision: str, request: StarletteRequest):
         user = await get_current_user(request)
         role = lower((user or {}).get("role") or (user or {}).get("user_role") or (user or {}).get("account_type"))
         if role not in OWNER_ROLES and not (user or {}).get("is_admin"):

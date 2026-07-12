@@ -155,7 +155,7 @@ async function fillCurrentClientForm(ownerPage, token) {
   await ownerPage.getByLabel('Phone', { exact: true }).fill('021 555 0101');
   await ownerPage.getByLabel('Email', { exact: true }).fill(`human-current-${Date.now()}@example.com`);
   await ownerPage.getByLabel('Address', { exact: true }).fill('1 Human Audit Street, Wellington');
-  await ownerPage.getByLabel('Notes / memory', { exact: true }).fill(`Prepared-only human audit memory ${token}`);
+  await ownerPage.locator('.cvDraftForm label').filter({ hasText: 'Notes / memory' }).locator('textarea').fill(`Prepared-only human audit memory ${token}`);
 
   const responsePromise = ownerPage.waitForResponse(
     (response) => /\/api\/command\/slips$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST',

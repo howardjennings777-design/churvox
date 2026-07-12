@@ -33,8 +33,9 @@ async function bootPlans(page, usageResponse) {
     return route.fulfill(json({ success: true, items: [], data: [] }));
   });
 
-  await page.goto('/plans', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('.cv3Product, .cvPlansPage, .freshPricingPage').first()).toBeVisible();
+  await page.goto('/dashboard#plans', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.cvOwnerReady')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Choose the level of control Churvox runs for the business.' })).toBeVisible();
 }
 
 async function bootNewOwnerPlans(page) {

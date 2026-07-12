@@ -36,6 +36,9 @@ const messageLoop = read('frontend/tests/e2e/churvox-worker-message-flow.spec.js
 const hardcoreVisual = read('frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js');
 const hardcoreMutate = read('frontend/tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js');
 const runner = read('scripts/churvox-hardcore-owner-worker.cjs');
+const liveLaunchV2 = read('frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js');
+const currentHumanFlow = read('frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js');
+const launchV2Workflow = read('.github/workflows/churvox-live-human-launch-audit-v2.yml');
 const rootPackage = JSON.parse(read('package.json'));
 
 check(
@@ -248,15 +251,14 @@ check(
 
 check(
   'live read-only proof checks the actual linked worker',
-  all(liveReadonly, [
-    'Team does not contain configured worker',
-    'expect(accountEmail(me.body)).toBe(WORKER_EMAIL.toLowerCase())',
-    "'/api/worker/jobs?ts='",
-    "'/worker/today'",
-    "'/worker/jobs'",
-    "'/worker/help'",
-  ]),
-  'A generic worker page load does not prove the configured boss and worker belong to the same business',
+  all(currentHumanFlow, [
+    "const worker = await findWorker(request, ownerToken);",
+    "await uiLogin(workerPage, WORKER_EMAIL, WORKER_PASSWORD, 'worker');",
+    "['/api/team/workers', '/api/team', '/api/workers']",
+    "expect(emailFrom(body), `${role} /api/auth/me returned wrong account`).toBe(email);",
+  ])
+    && launchV2Workflow.includes('Discover linked active worker using masked shared password'),
+  'The current live flow must prove the configured owner and worker are linked and authenticated',
 );
 
 check(
@@ -314,17 +316,17 @@ check(
 
 check(
   'hardcore visual audit covers owner and worker on desktop and phone',
-  all(hardcoreVisual, [
-    "'/dashboard#today'",
-    "'/dashboard#command'",
-    "'/dashboard#work'",
-    "'/worker/today'",
-    "'/worker/jobs'",
-    "'/worker/messages'",
-    "'/worker/help'",
-    'mobile-chromium',
-  ]),
-  'The product must be judged in both roles and both form factors',
+  all(liveLaunchV2, [
+    "['today', /today|owner command floor|churvox/i]",
+    "['command', /command|approval|owner/i]",
+    "['work', /jobs|work/i]",
+    "['/worker/today'",
+    "['/worker/jobs'",
+    "['/worker/messages'",
+    "['/worker/help'",
+  ])
+    && all(launchV2Workflow, ['--project=desktop-chromium', '--project=mobile-chromium']),
+  'The current live audit must judge both roles in both form factors',
 );
 
 check(
@@ -358,7 +360,7 @@ check(
 const scripts = rootPackage.scripts || {};
 check(
   'root exposes one-command hardcore gates',
-  scripts['test:hardcore:logic'] === 'node scripts/churvox-hardcore-owner-worker-audit.cjs'
+  scripts['test:hardcore:logic'] === 'node scripts/churvox-hardcore-owner-worker-audit-runner.cjs'
     && scripts['test:hardcore:live'] === 'node scripts/churvox-hardcore-owner-worker.cjs'
     && scripts['test:hardcore:mutate'] === 'CHURVOX_HARDCORE_MUTATE=I_UNDERSTAND_LIVE_DATA_WILL_CHANGE node scripts/churvox-hardcore-owner-worker.cjs'
     && scripts['test:hardcore:all'] === 'npm run test:hardcore:logic && npm run test:hardcore:live',

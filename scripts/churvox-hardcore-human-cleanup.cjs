@@ -28,6 +28,12 @@ function matches(row) {
   return MARKERS.test(JSON.stringify(row || {}));
 }
 
+function inactiveRecord(row = {}) {
+  if (row.archived === true || row.is_archived === true || row.deleted === true || row.is_deleted === true) return true;
+  if (row.archived_at || row.deleted_at) return true;
+  return /archived|deleted|dismissed|rejected/i.test(String(row.status || row.state || ''));
+}
+
 async function call(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
@@ -115,7 +121,7 @@ async function main() {
 
   const remainingActive = [];
   for (const kind of ['jobs', 'clients', 'quotes', 'invoices']) {
-    for (const row of await list(`/api/${kind}?limit=400`, headers)) if (matches(row) && !/archived|deleted|dismissed|rejected/i.test(String(row.status || ''))) remainingActive.push(`${kind}:${idOf(row)}`);
+    for (const row of await list(`/api/${kind}?limit=400`, headers)) if (matches(row) && !inactiveRecord(row)) remainingActive.push(`${kind}:${idOf(row)}`);
   }
   for (const row of await list('/api/command/slips?limit=400', headers)) if (matches(row)) remainingActive.push(`command:${idOf(row)}`);
 

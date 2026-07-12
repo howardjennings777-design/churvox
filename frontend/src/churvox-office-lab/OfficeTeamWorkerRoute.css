@@ -400,8 +400,7 @@
     grid-template-columns: 1fr;
     grid-template-areas:
       "hero"
-      "phone"
-      "desk";
+      "phone";
     padding: 12px;
   }
 
@@ -425,8 +424,8 @@
     border-radius: 32px;
   }
 
-  .cvWorkerRouteDesk button {
-    grid-template-columns: 1fr;
+  .cvWorkerRouteDesk {
+    display: none;
   }
 }
 
@@ -437,9 +436,12 @@
     background: #f4eee5;
   }
 
-  .cvWorkerHero,
-  .cvWorkerRouteDesk {
-    margin: 10px;
+  .cvWorkerHero {
+    display: none;
+  }
+
+  .cvWorkerRouteShell {
+    grid-template-areas: "phone";
   }
 
   .cvWorkerHero h1 {
