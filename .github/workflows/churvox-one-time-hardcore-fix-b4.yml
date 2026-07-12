@@ -1,0 +1,141 @@
+name: Churvox One-Time Hardcore Repair B4
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair-b4:
+    if: startsWith(github.event.issue.title, '[churvox-hardcore-fix-b4]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Patch worker UI and startup decision route
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee /tmp/churvox-fix-b4-patch.txt
+          from pathlib import Path
+
+          worker_path = Path('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx')
+          worker = worker_path.read_text()
+          if 'useLocation, useNavigate' not in worker:
+              worker = worker.replace('import { Link, Navigate, useLocation } from "react-router-dom";', 'import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";', 1)
+          if 'const navigate = useNavigate();' not in worker:
+              worker = worker.replace('  const { pathname } = useLocation();\n  const { user, loading: authLoading, isWorker } = useAuth();', '  const { pathname } = useLocation();\n  const navigate = useNavigate();\n  const { user, loading: authLoading, isWorker, logout } = useAuth();', 1)
+
+          start = worker.index('  async function sendBossUpdate(text = note) {')
+          end = worker.index('\n\n  async function sendFieldSlip', start)
+          worker = worker[:start] + '''  async function sendBossUpdate(text = note) {
+            if (updateBusy) return;
+            const clean = String(text || "Worker update from phone view").trim();
+            setUpdateBusy(true);
+            let sent = false;
+            try {
+              const needsDecision = /owner check|extra work|issue|problem|decision|blocked|cannot|help/i.test(clean);
+              if (hasWork && jobId) {
+                await sendFieldSlip(needsDecision ? "worker_problem" : "worker_message", clean);
+                addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
+              } else {
+                await createBackendWorkerUpdateRequest({ title, update: clean, updateType: needsDecision ? "Worker problem" : "Worker update", status: needsDecision ? "Owner review" : "General update" });
+                addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
+              }
+              sent = true;
+            } catch (error) {
+              addTrail(`Update was not sent to the boss. Check the connection and retry. ${error?.message || ""}`.trim());
+            } finally {
+              setUpdateBusy(false);
+              if (sent) setNote("");
+            }
+          }''' + worker[end:]
+
+          if 'async function handleLogout()' not in worker:
+              index = worker.index('  function addTrail(text) {')
+              worker = worker[:index] + '''  async function handleLogout() {
+            await logout();
+            navigate("/login?worker=1", { replace: true });
+          }
+
+          ''' + worker[index:]
+
+          nav = '        {[["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/messages"], ["Help", "/worker/help"], ["Me", "/worker/settings"]].map(([label, href]) => <Link key={href} className={view.label === label ? "active" : ""} to={href}>{label}</Link>)}'
+          if 'className="cvWorkerLogout"' not in worker:
+              if worker.count(nav) != 1: raise SystemExit(f'worker nav mismatch: {worker.count(nav)}')
+              worker = worker.replace(nav, nav + '\n        <button className="cvWorkerLogout" type="button" onClick={handleLogout}>Log out</button>', 1)
+          worker_path.write_text(worker)
+          print('worker route patched')
+
+          css = Path('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css')
+          value = css.read_text()
+          if '.cvWorkerRouteNav .cvWorkerLogout' not in value:
+              css.write_text(value + '''
+
+          .cvWorkerRouteNav .cvWorkerLogout {
+            min-height: 44px;
+            border: 1px solid rgba(127, 29, 29, .24);
+            border-radius: 12px;
+            padding: 0 14px;
+            color: #7f1d1d;
+            background: rgba(254, 242, 242, .92);
+            font: inherit;
+            font-weight: 900;
+            cursor: pointer;
+          }
+          .cvWorkerRouteNav .cvWorkerLogout:hover,
+          .cvWorkerRouteNav .cvWorkerLogout:focus-visible {
+            border-color: rgba(185, 28, 28, .55);
+            background: #fee2e2;
+          }
+          ''')
+          print('worker logout CSS patched')
+
+          loader = Path('backend/churvox_startup_patch_loader.py')
+          value = loader.read_text()
+          if '"churvox_worker_field_slip_decision_patch"' not in value:
+              old = '    "churvox_worker_command_visibility_patch",\n]'
+              new = '    "churvox_worker_command_visibility_patch",\n    "churvox_worker_field_slip_decision_patch",\n]'
+              if value.count(old) != 1: raise SystemExit(f'loader decision anchor mismatch: {value.count(old)}')
+              loader.write_text(value.replace(old, new, 1))
+          print('decision patch installed in startup loader')
+          PY
+
+      - name: Verify backend and production build
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            python -m py_compile backend/churvox_worker_field_slip_decision_patch.py backend/churvox_worker_command_visibility_patch.py backend/churvox_startup_patch_loader.py
+            npm --prefix frontend install --include=dev --legacy-peer-deps
+            npm --prefix frontend run build
+          } 2>&1 | tee /tmp/churvox-fix-b4-verify.txt
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css backend/churvox_startup_patch_loader.py backend/churvox_worker_field_slip_decision_patch.py
+          git commit -m "Fix worker UI actions logout and field slip decisions"
+          git push origin HEAD:main
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const parts = ['/tmp/churvox-fix-b4-patch.txt', '/tmp/churvox-fix-b4-verify.txt'].map((p) => fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '').join('\n').slice(-18000);
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Repair B4 ${{ job.status }}\n\n\`\`\`text\n${parts}\n\`\`\`` });
