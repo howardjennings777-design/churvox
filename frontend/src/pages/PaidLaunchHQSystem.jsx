@@ -108,6 +108,10 @@ function emailOf(item) {
 function idOf(item, index = 0) { return text(item?.id || item?._id || item?.stripe_subscription_id || emailOf(item) || item?.visitor_key || item?.created_at, `row-${index}`); }
 function nameOf(item) { return text(item?.business_name || item?.company || item?.name || item?.full_name || displayEmailOf(item) || item?.title || item?.path, "Unnamed record"); }
 function statusOf(item) { return text(item?.status || item?.subscription_status || item?.billing_status || item?.stripe_status || item?.tester_status, "Unknown"); }
+function isRevoked(item) { return /revoked|revoke/.test(low(statusOf(item))) || Boolean(item?.revoked_at || item?.free_tester_revoked_at); }
+function isLocked(item) { return /locked|disabled|disable/.test(low(statusOf(item))) || Boolean(item?.locked_at || item?.locked_by_app_owner); }
+function isTerminalTester(item) { return isRevoked(item) || isLocked(item); }
+function terminalRank(item) { return isRevoked(item) ? 3 : isLocked(item) ? 2 : 0; }
 function planOf(item) {
   const value = low(item?.plan_name || item?.plan || item?.subscription_plan || item?.tier || "pro");
   return PLAN_LABELS[value] || (value ? value.charAt(0).toUpperCase() + value.slice(1) : "Operator");
@@ -158,6 +162,7 @@ function normaliseTester(row, source = "tester") {
   if (!email || email === PLATFORM_OWNER_EMAIL || /example\.com|sample|fake|demo/i.test(JSON.stringify(base))) return null;
   const status = text(base.status || base.subscription_status || (base.accepted ? "accepted" : "invited"), "invited");
   const plan = base.plan || base.plan_name || base.tier || "pro";
+  const terminal = /revoked|locked|disabled|disable/.test(low(status)) || base.revoked_at || base.free_tester_revoked_at || base.locked_at || base.locked_by_app_owner;
   return {
     ...base,
     email,
@@ -170,8 +175,8 @@ function normaliseTester(row, source = "tester") {
     status,
     subscription_status: base.subscription_status || status,
     source: sourceText(base.source || source),
-    accepted: base.accepted === true || ["accepted", "access_granted", "active", "signed_up", "signup_complete", "tester_free"].includes(low(status)),
-    active: base.active === true || low(status) === "active",
+    accepted: terminal ? false : base.accepted === true || ["accepted", "access_granted", "active", "signed_up", "signup_complete", "tester_free"].includes(low(status)),
+    active: terminal ? false : base.active === true || low(status) === "active",
     invited_at: base.invited_at || base.created_at || base.updated_at || row?.created_at || row?.updated_at,
     free_tester_until: base.free_tester_until || base.free_until || base.until,
     last_active: base.last_active || base.last_login || base.last_seen,
@@ -188,30 +193,45 @@ function mergeTesterData({ testerEndpoint, control, billing, optimistic }) {
     if (!tester) return;
     const key = tester.email;
     const current = map.get(key) || {};
+    const currentTerminal = terminalRank(current);
+    const testerTerminal = terminalRank(tester);
+    const terminalWinner = currentTerminal >= testerTerminal && currentTerminal > 0 ? current : testerTerminal > 0 ? tester : null;
     const currentDisplay = displayEmailOf(current);
     const nextDisplay = displayEmailOf(tester);
-    map.set(key, {
+    const merged = {
       ...current,
       ...tester,
       plan: tester.plan || current.plan || "pro",
       display_email: currentDisplay && current.source === "saved this session" ? currentDisplay : nextDisplay || currentDisplay || key,
       original_email: current.original_email || tester.original_email || nextDisplay || key,
       source: mergeSources(current.source, tester.source || source),
-    });
+    };
+    if (terminalWinner) {
+      merged.status = statusOf(terminalWinner);
+      merged.subscription_status = terminalWinner.subscription_status || statusOf(terminalWinner);
+      merged.accepted = false;
+      merged.active = false;
+      merged.revoked_at = terminalWinner.revoked_at || current.revoked_at || tester.revoked_at;
+      merged.free_tester_revoked_at = terminalWinner.free_tester_revoked_at || current.free_tester_revoked_at || tester.free_tester_revoked_at;
+      merged.locked_at = terminalWinner.locked_at || current.locked_at || tester.locked_at;
+      merged.locked_by_app_owner = terminalWinner.locked_by_app_owner || current.locked_by_app_owner || tester.locked_by_app_owner;
+    }
+    map.set(key, merged);
   };
+  arr(control?.items).filter((row) => low(row?.action) === "tester_intake").forEach((row) => add(row, "control log"));
+  arr(control?.testers).forEach((row) => add(row, "control tester list"));
+  arr(billing?.tester_users).forEach((row) => add(row, "billing report"));
   arr(testerEndpoint?.testers).forEach((row) => add(row, row?.source || "tester endpoint"));
   arr(testerEndpoint?.invited_testers).forEach((row) => add({ status: "invited", ...row }, row?.source || "tester endpoint"));
   arr(testerEndpoint?.accepted_testers).forEach((row) => add({ status: row?.status || "accepted", accepted: true, ...row }, row?.source || "tester endpoint"));
   arr(testerEndpoint?.active_testers).forEach((row) => add({ status: "active", accepted: true, active: true, ...row }, row?.source || "tester endpoint"));
-  arr(control?.testers).forEach((row) => add(row, "control tester list"));
-  arr(control?.items).filter((row) => low(row?.action) === "tester_intake").forEach((row) => add(row, "control log"));
-  arr(billing?.tester_users).forEach((row) => add(row, "billing report"));
   arr(optimistic).forEach((row) => add(row, "saved this session"));
-  const testers = Array.from(map.values()).sort((a, b) => new Date(b.invited_at || b.updated_at || 0) - new Date(a.invited_at || a.updated_at || 0));
-  const accepted = testers.filter((row) => row.accepted);
-  const active = testers.filter((row) => row.active);
-  const invited = testers.filter((row) => !row.accepted);
-  return { success: true, source: "merged_hq_tester_sources", counts: { total: testers.length, accepted: accepted.length, active: active.length, invited_not_accepted: invited.length }, testers, accepted_testers: accepted, active_testers: active, invited_testers: invited };
+  const testers = Array.from(map.values()).sort((a, b) => new Date(b.revoked_at || b.locked_at || b.invited_at || b.updated_at || 0) - new Date(a.revoked_at || a.locked_at || a.invited_at || a.updated_at || 0));
+  const revoked = testers.filter((row) => isTerminalTester(row));
+  const accepted = testers.filter((row) => row.accepted && !isTerminalTester(row));
+  const active = testers.filter((row) => row.active && !isTerminalTester(row));
+  const invited = testers.filter((row) => !row.accepted && !isTerminalTester(row));
+  return { success: true, source: "merged_hq_tester_sources", counts: { total: testers.length, accepted: accepted.length, active: active.length, invited_not_accepted: invited.length, revoked: revoked.length }, testers, accepted_testers: accepted, active_testers: active, invited_testers: invited, revoked_testers: revoked };
 }
 
 function Metric({ label, value, note, icon: Icon, state = "neutral" }) {
@@ -239,9 +259,10 @@ function TesterRoster({ data, query, onOpen, onControl, endpointError }) {
   const invited = arr(data?.invited_testers);
   const accepted = arr(data?.accepted_testers);
   const active = arr(data?.active_testers);
+  const revoked = arr(data?.revoked_testers);
   const counts = data?.counts || {};
   const filter = (rows) => arr(rows).filter((row) => !query || JSON.stringify(row).toLowerCase().includes(query));
-  return <div className="hq2Stack"><section className="hq2Metrics tight"><Metric label="Total testers" value={numberText(counts.total ?? testers.length)} note="Merged from tester endpoint, control log and billing" icon={Gift} /><Metric label="Invited" value={numberText(counts.invited_not_accepted ?? invited.length)} note="Not accepted yet" icon={UserPlus} state="warn" /><Metric label="Accepted" value={numberText(counts.accepted ?? accepted.length)} note="Tester access created" icon={CheckCircle2} state="good" /><Metric label="Active" value={numberText(counts.active ?? active.length)} note="Seen using the app" icon={Activity} state="good" /></section>{endpointError ? <div className="hq2Notice warn"><AlertTriangle size={18} />Tester endpoint had an issue, so HQ is showing fallback tester records from the control log and billing data.</div> : null}<section className="hq2Card"><header className="hq2CardHead"><div><UserPlus size={18} /><strong>Invited, not accepted yet</strong></div><span className="hq2Pill warn">{invited.length}</span></header><RecordTable rows={filter(invited)} onOpen={onOpen} onControl={onControl} title="invited testers" control /></section><section className="hq2Card"><header className="hq2CardHead"><div><Gift size={18} /><strong>Accepted / current testers</strong></div><span className="hq2Pill good">{accepted.length}</span></header><RecordTable rows={filter(accepted)} onOpen={onOpen} onControl={onControl} title="accepted testers" control /></section><section className="hq2Card"><header className="hq2CardHead"><div><Database size={18} /><strong>All tester source records</strong></div><span className="hq2Pill">{testers.length}</span></header><RecordTable rows={filter(testers)} onOpen={onOpen} onControl={onControl} title="tester source records" /></section></div>;
+  return <div className="hq2Stack"><section className="hq2Metrics tight"><Metric label="Total testers" value={numberText(counts.total ?? testers.length)} note="Merged from tester endpoint, control log and billing" icon={Gift} /><Metric label="Invited" value={numberText(counts.invited_not_accepted ?? invited.length)} note="Not accepted yet" icon={UserPlus} state="warn" /><Metric label="Accepted" value={numberText(counts.accepted ?? accepted.length)} note="Tester access created" icon={CheckCircle2} state="good" /><Metric label="Revoked" value={numberText(counts.revoked ?? revoked.length)} note="Access removed" icon={XCircle} state="bad" /></section>{endpointError ? <div className="hq2Notice warn"><AlertTriangle size={18} />Tester endpoint had an issue, so HQ is showing fallback tester records from the control log and billing data.</div> : null}<section className="hq2Card"><header className="hq2CardHead"><div><UserPlus size={18} /><strong>Invited, not accepted yet</strong></div><span className="hq2Pill warn">{invited.length}</span></header><RecordTable rows={filter(invited)} onOpen={onOpen} onControl={onControl} title="invited testers" control /></section><section className="hq2Card"><header className="hq2CardHead"><div><Gift size={18} /><strong>Accepted / current testers</strong></div><span className="hq2Pill good">{accepted.length}</span></header><RecordTable rows={filter(accepted)} onOpen={onOpen} onControl={onControl} title="accepted testers" control /></section><section className="hq2Card"><header className="hq2CardHead"><div><XCircle size={18} /><strong>Revoked / locked testers</strong></div><span className="hq2Pill bad">{revoked.length}</span></header><RecordTable rows={filter(revoked)} onOpen={onOpen} onControl={onControl} title="revoked testers" /></section><section className="hq2Card"><header className="hq2CardHead"><div><Database size={18} /><strong>All tester source records</strong></div><span className="hq2Pill">{testers.length}</span></header><RecordTable rows={filter(testers)} onOpen={onOpen} onControl={onControl} title="tester source records" /></section></div>;
 }
 function TesterForm({ onSaved }) {
   const [form, setForm] = React.useState({ email: "", name: "", business_name: "", plan: "pro", pack: "full_access", days: 90, note: "", send_email: true });
@@ -328,6 +349,10 @@ export default function PaidLaunchHQSystem() {
     const email = emailOf(user);
     if (OWNER_EMAILS.has(email)) { setNotice("Platform owner accounts are protected and cannot be changed from HQ."); return; }
     setNotice(action === "revoke" ? "Revoking access…" : "Granting access…");
+    if (action === "revoke") {
+      const revokedRow = { ...user, status: "revoked", subscription_status: "revoked", accepted: false, active: false, revoked_at: new Date().toISOString(), source: mergeSources(user?.source, "saved this session") };
+      setOptimisticTesters((current) => [revokedRow, ...current.filter((item) => emailOf(item) !== email)]);
+    }
     try {
       const result = await apiPost("/api/admin/owner/control-access", { identifier: email || idOf(user), display_email: displayEmailOf(user), action, plan: action === "revoke" ? user?.plan : "pro", pack: "full_access", days: 90, note: `${action === "revoke" ? "Revoked" : "Granted"} from paid-launch HQ` });
       setNotice(result.message || "Access updated.");
@@ -341,7 +366,7 @@ export default function PaidLaunchHQSystem() {
     load(true);
   }
 
-  return <main className="hq2" data-version="CHURVOX_HQ_SYSTEM_TESTER_ROSTER_CLEAN_20260712"><DetailModal item={selected} onClose={() => setSelected(null)} /><aside className="hq2Side"><section className="hq2Brand"><div><ShieldCheck size={26} /></div><small>Platform owner only</small><h1>Churvox HQ</h1><p>Paid launch control centre for real users, billing proof, testers, live collections and platform data controls.</p><button type="button" onClick={logout}><LogOut size={16} />Log out</button></section><nav>{TABS.map((item) => <button type="button" className={tab === item ? "active" : ""} onClick={() => setTab(item)} key={item}>{item}{item === "Launch" && launchReady === false ? <em>!</em> : null}</button>)}</nav><section className="hq2Pulse"><small>Live source</small><div><span>Database</span><strong>{connection?.database_connected === true ? "Connected" : connection?.database_connected === false ? "Unavailable" : "Checking"}</strong></div><div><span>Stripe</span><strong>{billing?.stripe?.available === true ? "Confirmed" : billing?.stripe?.available === false ? "Check" : "Checking"}</strong></div><div><span>Refresh</span><strong>30 sec</strong></div></section></aside><section className="hq2Main"><header className="hq2Hero"><div><span><ShieldCheck size={15} /> Real launch control</span><h2>{tab}</h2><p>{tab === "Command" ? "A high-contrast owner console showing what is safe to sell, what needs attention, and what data is live." : "Live backend responses, truthful empty states, and no demo number substitution."}</p></div><div className="hq2HeroActions"><button type="button" onClick={() => { if (!downloadCsv(`churvox-${tab.toLowerCase().replaceAll(" ", "-")}.csv`, exportRows)) setNotice("No loaded rows are available to export from this tab."); }}><Download size={16} />Export</button><button type="button" className="primary" onClick={() => load(false)}><RefreshCw size={16} className={loading ? "spin" : ""} />Refresh</button></div></header>{notice ? <div className={`hq2Notice ${tone(notice)}`}>{notice}</div> : null}{errors.length ? <div className="hq2Notice bad"><AlertTriangle size={18} />{errors.length} HQ endpoint{errors.length === 1 ? "" : "s"} failed. Check System for exact errors.</div> : null}{!["Command", "Launch", "System", "Data"].includes(tab) ? <label className="hq2Search"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search loaded live records…" /></label> : null}
+  return <main className="hq2" data-version="CHURVOX_HQ_SYSTEM_TESTER_REVOKE_FIXED_20260712"><DetailModal item={selected} onClose={() => setSelected(null)} /><aside className="hq2Side"><section className="hq2Brand"><div><ShieldCheck size={26} /></div><small>Platform owner only</small><h1>Churvox HQ</h1><p>Paid launch control centre for real users, billing proof, testers, live collections and platform data controls.</p><button type="button" onClick={logout}><LogOut size={16} />Log out</button></section><nav>{TABS.map((item) => <button type="button" className={tab === item ? "active" : ""} onClick={() => setTab(item)} key={item}>{item}{item === "Launch" && launchReady === false ? <em>!</em> : null}</button>)}</nav><section className="hq2Pulse"><small>Live source</small><div><span>Database</span><strong>{connection?.database_connected === true ? "Connected" : connection?.database_connected === false ? "Unavailable" : "Checking"}</strong></div><div><span>Stripe</span><strong>{billing?.stripe?.available === true ? "Confirmed" : billing?.stripe?.available === false ? "Check" : "Checking"}</strong></div><div><span>Refresh</span><strong>30 sec</strong></div></section></aside><section className="hq2Main"><header className="hq2Hero"><div><span><ShieldCheck size={15} /> Real launch control</span><h2>{tab}</h2><p>{tab === "Command" ? "A high-contrast owner console showing what is safe to sell, what needs attention, and what data is live." : "Live backend responses, truthful empty states, and no demo number substitution."}</p></div><div className="hq2HeroActions"><button type="button" onClick={() => { if (!downloadCsv(`churvox-${tab.toLowerCase().replaceAll(" ", "-")}.csv`, exportRows)) setNotice("No loaded rows are available to export from this tab."); }}><Download size={16} />Export</button><button type="button" className="primary" onClick={() => load(false)}><RefreshCw size={16} className={loading ? "spin" : ""} />Refresh</button></div></header>{notice ? <div className={`hq2Notice ${tone(notice)}`}>{notice}</div> : null}{errors.length ? <div className="hq2Notice bad"><AlertTriangle size={18} />{errors.length} HQ endpoint{errors.length === 1 ? "" : "s"} failed. Check System for exact errors.</div> : null}{!["Command", "Launch", "System", "Data"].includes(tab) ? <label className="hq2Search"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search loaded live records…" /></label> : null}
     {tab === "Command" ? <div className="hq2Stack"><section className="hq2Metrics"><Metric label="Launch state" value={launchReady === true ? "Confirmed" : launchReady === false ? "Check" : "Unknown"} note="Database, Stripe and billing truth gates" icon={ShieldCheck} state={launchReady === true ? "good" : "bad"} /><Metric label="Verified paid" value={numberText(launchCounts.verified_paid_users)} note="Stripe subscription proof required" icon={CreditCard} state="good" /><Metric label="Stripe MRR" value={money(actualMrr)} note="Actual recurring price items only" icon={CreditCard} state={hasValue(actualMrr) ? "good" : "warn"} /><Metric label="Needs check" value={numberText(launchCounts.billing_needs_verification)} note="Never counted as paid" icon={AlertTriangle} state={Number(launchCounts.billing_needs_verification || 0) ? "warn" : "good"} /><Metric label="Users" value={numberText(launchCounts.users_total)} note={`${numberText(launchCounts.internal_users_excluded)} internal excluded`} icon={Users} /><Metric label="Businesses" value={numberText(launchCounts.businesses_total)} note={text(launchCounts.businesses_source, "Source unavailable")} icon={Building2} /><Metric label="Testers" value={numberText(testers?.counts?.total ?? launchCounts.tester_users)} note={`${numberText(testers?.counts?.invited_not_accepted)} invited not accepted`} icon={Gift} /><Metric label="Visits" value={numberText(growthCounts.unique_total)} note={`${numberText(growthCounts.new_unique_today)} new today`} icon={Activity} /></section><section className="hq2Card"><header className="hq2CardHead"><div><ShieldCheck size={18} /><strong>Launch gate</strong></div><span className={`hq2Pill ${launchReady === true ? "good" : "bad"}`}>{launchReady === true ? "confirmed" : "check"}</span></header><LaunchChecks checks={launch?.launch_checks} /></section></div> : null}
     {tab === "Launch" ? <div className="hq2Stack"><section className="hq2Metrics tight"><Metric label="Verified paid" value={numberText(launchCounts.verified_paid_users)} note="Active/paid with Stripe proof" icon={CreditCard} state="good" /><Metric label="Verified trials" value={numberText(launchCounts.verified_trial_users)} note="Trialing with Stripe proof" icon={Activity} /><Metric label="Actual MRR" value={money(actualMrr)} note="Not replaced by estimates" icon={CreditCard} state={hasValue(actualMrr) ? "good" : "warn"} /><Metric label="Estimated MRR" value={money(estimatedMrr)} note="Separated from confirmed MRR" icon={Database} /></section><section className="hq2Card"><header className="hq2CardHead"><div><ShieldCheck size={18} /><strong>Paid-launch checks</strong></div></header><LaunchChecks checks={launch?.launch_checks} /></section><section className="hq2Card"><header className="hq2CardHead"><div><CreditCard size={18} /><strong>Verified paid subscriptions</strong></div><span className="hq2Pill good">Stripe proof required</span></header><RecordTable rows={filterRows(billing?.verified_paid_users)} onOpen={setSelected} onControl={controlUser} title="paid subscriptions" /></section><section className="hq2Card"><header className="hq2CardHead"><div><AlertTriangle size={18} /><strong>Billing records needing verification</strong></div><span className="hq2Pill warn">not counted as paid</span></header><RecordTable rows={filterRows(billing?.needs_verification)} onOpen={setSelected} onControl={controlUser} title="unverified billing" /></section></div> : null}
     {tab === "Users" ? <section className="hq2Card hq2Stack"><header className="hq2CardHead"><div><Users size={18} /><strong>All loaded user records</strong></div><span className="hq2Pill">{users.length}</span></header><RecordTable rows={filterRows(users)} onOpen={setSelected} onControl={controlUser} title="users" control /></section> : null}
