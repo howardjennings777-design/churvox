@@ -102,3 +102,9 @@
     scroll-snap-align: start;
   }
 }
+
+.cvOwnerReady .cvOwnerPrimaryNav button,
+.cvOwnerReady .cvOwnerMore > button,
+.cvOwnerReady .cvOwnerUtilityNav button {
+  min-height: 44px;
+}

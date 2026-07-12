@@ -17,11 +17,11 @@ function dispatchHashChange() {
 export default function OfficeTeamOwnerScreenGuard({ appMode = "lab", children }) {
   const { user, loading } = useAuth();
   const active = appMode === "owner";
-  const [ready, setReady] = React.useState(!active);
+  const [ready, setReady] = React.useState(() => !active || Boolean(user));
   const [blocked, setBlocked] = React.useState(null);
 
   React.useLayoutEffect(() => {
-    if (!active || loading || !user) {
+    if (!active || !user) {
       if (!active) setReady(true);
       return undefined;
     }
@@ -94,7 +94,7 @@ export default function OfficeTeamOwnerScreenGuard({ appMode = "lab", children }
     };
   }, [active, loading, user]);
 
-  if (active && (loading || !ready)) {
+  if (active && (!user || !ready)) {
     return <main className="cvOwnerScreenGuardLoading"><strong>Checking plan access…</strong><span>Churvox is opening the correct owner workspace.</span></main>;
   }
 

@@ -175,7 +175,7 @@ function run() {
   ensureStyle();
   const button = removeDuplicates();
   const nativeLogout = document.querySelector('.cvSiteLogout, .cvWorkerLogout, .cvWorkerRouteLogout, [data-churvox-native-logout="true"]');
-  const authenticating = document.querySelector('.cvAuthLoading');
+  const authenticating = document.querySelector('.cvAuthLoading, .cvOwnerScreenGuardLoading');
   if (nativeLogout || authenticating) {
     button?.remove();
     return;

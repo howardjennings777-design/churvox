@@ -58,7 +58,7 @@ if (typeof window !== "undefined") {
     ownerNavigation: "cvOwnerMainNavigation",
     secureCheckout: "Continue to secure checkout",
     workerLogout: "cvWorkerLogout",
-    visualRepair: "churvox-owner-visual-repair-20260713e",
+    visualRepair: "churvox-owner-visual-repair-20260713f",
   });
 }
 
