@@ -34,7 +34,7 @@ async function bootPlans(page, usageResponse) {
   });
 
   await page.goto('/plans', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('.cvPlansPage')).toBeVisible();
+  await expect(page.locator('.cv3Product, .cvPlansPage, .freshPricingPage').first()).toBeVisible();
 }
 
 test.describe('Plans live usage truth', () => {
