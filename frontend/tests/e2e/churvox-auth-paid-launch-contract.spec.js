@@ -50,6 +50,10 @@ async function fillSignup(page, password) {
   await passwords.nth(1).fill(password);
 }
 
+function createAccountButton(page) {
+  return page.getByRole('button', { name: /^Create account(?: and choose plan)?$/i });
+}
+
 test.describe('Paid-launch auth contract', () => {
   test('signup blocks short passwords and missing policy consent', async ({ page }) => {
     await installAuthApi(page);
@@ -57,13 +61,13 @@ test.describe('Paid-launch auth contract', () => {
 
     await fillSignup(page, 'short7');
     await page.locator('input[name="termsAccepted"]').check();
-    await page.getByRole('button', { name: 'Create account and choose plan' }).click();
+    await createAccountButton(page).click();
     await expect(page.getByText('Password must be at least 8 characters.')).toBeVisible();
 
     await page.locator('input[type="password"]').nth(0).fill('LongEnough8');
     await page.locator('input[type="password"]').nth(1).fill('LongEnough8');
     await page.locator('input[name="termsAccepted"]').uncheck();
-    await page.getByRole('button', { name: 'Create account and choose plan' }).click();
+    await createAccountButton(page).click();
     await expect(page.getByText(/Agree to the Terms of Service and Privacy Policy/i)).toBeVisible();
   });
 
@@ -72,7 +76,7 @@ test.describe('Paid-launch auth contract', () => {
     await page.goto('/signup?plan=operator&country=NZ', { waitUntil: 'domcontentloaded' });
     await fillSignup(page, 'LongEnough8');
     await page.locator('input[name="termsAccepted"]').check();
-    await page.getByRole('button', { name: 'Create account and choose plan' }).click();
+    await createAccountButton(page).click();
     await page.waitForURL(/\/plans/i);
 
     const registration = api.requests.find((item) => item.pathname === '/api/auth/register');
