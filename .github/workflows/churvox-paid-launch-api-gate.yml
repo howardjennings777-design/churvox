@@ -1,0 +1,69 @@
+name: Churvox Paid Launch API Gate
+
+on:
+  issues:
+    types:
+      - opened
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  gate:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-api-gate]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+    steps:
+      - name: Mark started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`Paid launch API gate started. Run ${context.runId}.`});
+      - name: Probe owner, worker, payroll, plans and brain
+        shell: bash
+        run: |
+          node <<'NODE' | tee /tmp/api-gate.txt
+          const api=process.env.API_BASE.replace(/\/+$/,'');
+          const email=process.env.OWNER_EMAIL;
+          const password=process.env.OWNER_PASSWORD;
+          const tokenFrom=(b={})=>b.token||b.access_token||b.auth_token||b.jwt||b.accessToken||b.user?.token||b.user?.access_token||b.data?.token||b.data?.access_token||b.data?.user?.token||'';
+          const rowsFrom=(p={})=>{const d=p?.data?.data??p?.data??p;if(Array.isArray(d))return d;for(const k of ['items','records','results','workers','team','members','slips','actions','data'])if(Array.isArray(d?.[k]))return d[k];return[]};
+          async function call(path,opt={}){const r=await fetch(api+path,{headers:{Accept:'application/json','Content-Type':'application/json',...(opt.headers||{})},...opt});const t=await r.text();let b={};try{b=JSON.parse(t)}catch{b={text:t.slice(0,300)}}return{r,b}}
+          function pass(name,ok,detail=''){console.log(`${ok?'PASS':'FAIL'} — ${name}${detail?`: ${detail}`:''}`);if(!ok)failures.push(`${name}: ${detail}`)}
+          const failures=[];
+          (async()=>{
+            const login=await call('/api/auth/login',{method:'POST',body:JSON.stringify({email,password})});const token=tokenFrom(login.b);pass('owner login',login.r.ok&&!!token,`HTTP ${login.r.status}`);if(!token)throw Error('owner token missing');const auth={Authorization:`Bearer ${token}`};
+            const me=await call('/api/auth/me',{headers:auth});pass('owner identity',me.r.ok&&String(me.b?.email||me.b?.user?.email||me.b?.data?.email||'').toLowerCase()===email.toLowerCase(),`HTTP ${me.r.status}`);
+            let workerEmail='';
+            for(const p of ['/api/team/workers','/api/team','/api/workers']){const x=await call(p,{headers:auth});if(!x.r.ok)continue;const row=rowsFrom(x.b).find(r=>{const e=String(r.email||r.worker_email||r.user_email||'').trim().toLowerCase();return e&&e!==email.toLowerCase()&&r.active!==false&&r.is_active!==false&&!/inactive|archived|deleted|disabled/.test(String(r.status||'').toLowerCase())});if(row){workerEmail=String(row.email||row.worker_email||row.user_email||'').trim().toLowerCase();break}}
+            pass('linked worker discovery',!!workerEmail,workerEmail?'worker found':'none');
+            if(workerEmail){let w=await call('/api/auth/login',{method:'POST',body:JSON.stringify({email:workerEmail,password})});if(!w.r.ok||!tokenFrom(w.b))w=await call('/api/worker/auth/login',{method:'POST',body:JSON.stringify({email:workerEmail,password})});pass('linked worker login',w.r.ok&&!!tokenFrom(w.b),`HTTP ${w.r.status}`)}
+            for(const p of ['/api/payroll','/api/payroll/summary']){const x=await call(p,{headers:auth});pass(p,x.r.ok,`HTTP ${x.r.status}`);if(x.r.ok){pass(`${p} safety`,x.b?.owner_approval_required===true&&x.b?.no_payment===true&&x.b?.no_tax_filing===true,`scan_complete=${x.b?.scan_complete}`);pass(`${p} scan completeness`,x.b?.scan_complete!==false,Array.isArray(x.b?.scan_errors)?x.b.scan_errors.join(', '):'')}}
+            for(const p of ['/api/plan/usage','/api/billing/addons']){const x=await call(p,{headers:auth});pass(p,x.r.ok,`HTTP ${x.r.status}`)}
+            const scan=await call('/api/command/scan',{method:'POST',headers:auth,body:JSON.stringify({source:'paid_launch_api_gate',prepared_only:true,owner_review_only:true})});pass('Command scan',scan.r.ok&&scan.b?.success!==false,`HTTP ${scan.r.status}; source=${scan.b?.source||'missing'}; guard=${scan.b?.guard||'none'}`);
+            const scanSlips=[...(Array.isArray(scan.b?.slips)?scan.b.slips:[]),...(Array.isArray(scan.b?.existing)?scan.b.existing:[])];
+            pass('Command guarded scanner',scan.b?.guard==='human-mimic-scan-guard-v2'||String(scan.b?.source||'').includes('human-mimic'),`guard=${scan.b?.guard||'none'}`);
+            const list=await call('/api/command/slips',{headers:auth});pass('Command slips read',list.r.ok&&list.b?.success!==false,`HTTP ${list.r.status}`);const slips=rowsFrom(list.b);
+            const checked=(slips.length?slips:scanSlips).slice(0,100);
+            const unsafe=checked.filter(s=>!(s.prepared_only===true&&s.owner_review_only===true&&s.no_auto_send===true&&s.no_auto_sync===true&&s.no_auto_charge===true&&s.no_auto_record_change===true));
+            pass('Command slip safety flags',unsafe.length===0,`checked=${checked.length}; unsafe=${unsafe.length}`);
+            const evidenceMissing=checked.filter(s=>{const p=s.payload||{};return !Array.isArray(p.evidence)||!p.evidence.length||!p.prepared_form||typeof p.prepared_form!=='object'});
+            pass('Mimic evidence and forms',evidenceMissing.length===0,`checked=${checked.length}; incomplete=${evidenceMissing.length}`);
+            const roles=[...new Set(checked.map(s=>s.office_role||s.payload?.office_role).filter(Boolean))];
+            console.log(`INFO — active mimic roles: ${roles.join(', ')||'none currently waiting'}`);
+            const admin=await call('/api/admin-brain/scan',{method:'POST',headers:auth,body:'{}'});if(admin.r.status===405){const alt=await call('/api/admin-brain/scan',{headers:auth});Object.assign(admin,alt)}pass('Admin Brain scan',admin.r.ok&&admin.b?.success!==false,`HTTP ${admin.r.status}`);const errors=Array.isArray(admin.b?.errors)?admin.b.errors:[];pass('Admin Brain scan errors',errors.length===0,errors.join(', '));
+            if(failures.length){console.error('\nFAILURES\n'+failures.join('\n'));process.exit(1)}
+            console.log('\nPAID_LAUNCH_API_GATE_PASS');
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');const text=fs.existsSync('/tmp/api-gate.txt')?fs.readFileSync('/tmp/api-gate.txt','utf8').slice(-30000):'No output.';const ok=text.includes('PAID_LAUNCH_API_GATE_PASS');await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`# Paid launch API gate ${ok?'PASSED':'FAILED'}\n\n\`\`\`text\n${text}\n\`\`\``});
