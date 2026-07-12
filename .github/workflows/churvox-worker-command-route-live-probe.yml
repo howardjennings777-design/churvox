@@ -30,7 +30,7 @@ jobs:
             const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((item) => /main\..*\.js$/.test(item));
             if (!mainPath) return { ok: false, detail: 'main bundle missing' };
             const text = await (await fetch(new URL(mainPath, site), { cache: 'no-store' })).text();
-            const fingerprint = text.includes('churvox-worker-command-routes-20260713c');
+            const fingerprint = text.includes('churvox-auth-session-authority-20260713d');
             return { ok: fingerprint, detail: `${mainPath} repaired-fingerprint=${fingerprint ? 'LIVE' : 'MISSING'}` };
           }
 
