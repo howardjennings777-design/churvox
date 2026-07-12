@@ -109,6 +109,7 @@ jobs:
           npx playwright test \
             tests/e2e/churvox-auth-paid-launch-contract.spec.js \
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
+            tests/e2e/churvox-plans-usage-truth.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
             tests/e2e/churvox-public-documents-paid-launch.spec.js \
             tests/e2e/churvox-public-request-paid-launch.spec.js \
