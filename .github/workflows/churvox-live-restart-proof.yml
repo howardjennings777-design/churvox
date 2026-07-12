@@ -1,0 +1,196 @@
+name: Churvox Live Restart Proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-live-restart-proof.yml'
+      - '.github/churvox-expected-jwt-key-id.txt'
+      - 'backend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-restart-proof:
+    name: Live auth persistence and protected routes
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe the deployed backend without credentials
+        env:
+          API_BASE: https://grassley-backend.onrender.com
+          FRONTEND_BASE: https://www.churvox.com
+          EXPECTED_LOGIN_ROUTE: churvox-login-emergency-final-20260712f
+          EXPECTED_HEALTH_VERSION: churvox-jwt-health-fingerprint-20260712
+          EXPECTED_LAUNCH_VERSION: churvox-production-launch-security-20260712g
+        run: |
+          mkdir -p /tmp/churvox-live-restart-proof
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          api = os.environ['API_BASE'].rstrip('/')
+          frontend = os.environ['FRONTEND_BASE'].rstrip('/')
+          expected_login = os.environ['EXPECTED_LOGIN_ROUTE']
+          expected_health = os.environ['EXPECTED_HEALTH_VERSION']
+          expected_launch = os.environ['EXPECTED_LAUNCH_VERSION']
+          expected_file = Path('.github/churvox-expected-jwt-key-id.txt')
+          expected_key_id = expected_file.read_text().strip() if expected_file.exists() else ''
+          report = {
+              'expected_login_route': expected_login,
+              'expected_health_version': expected_health,
+              'expected_launch_version': expected_launch,
+              'expected_jwt_key_id': expected_key_id,
+              'checks': {},
+              'failures': [],
+          }
+
+          def request(name, url, *, method='GET', body=None, headers=None, timeout=30):
+              payload = None if body is None else json.dumps(body).encode()
+              request_headers = {'Accept': 'application/json', **(headers or {})}
+              if body is not None:
+                  request_headers.setdefault('Content-Type', 'application/json')
+              req = urllib.request.Request(url, data=payload, headers=request_headers, method=method)
+              try:
+                  with urllib.request.urlopen(req, timeout=timeout) as response:
+                      raw = response.read().decode('utf-8', 'replace')
+                      status = response.status
+                      response_headers = dict(response.headers.items())
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode('utf-8', 'replace')
+                  status = exc.code
+                  response_headers = dict(exc.headers.items())
+              except Exception as exc:
+                  result = {'status': 0, 'error': f'{exc.__class__.__name__}: {exc}'}
+                  report['checks'][name] = result
+                  return result
+              try:
+                  parsed = json.loads(raw) if raw else None
+              except Exception:
+                  parsed = None
+              result = {
+                  'status': status,
+                  'json': parsed,
+                  'headers': {
+                      key.lower(): value
+                      for key, value in response_headers.items()
+                      if key.lower().startswith('x-churvox-') or key.lower().startswith('access-control-')
+                  },
+                  'body_preview': raw[:300] if parsed is None else None,
+              }
+              report['checks'][name] = result
+              return result
+
+          health = None
+          launch = None
+          for attempt in range(1, 46):
+              health = request('login_health', f'{api}/api/auth/login-health')
+              health_data = health.get('json') or {}
+              launch = request('launch_status', f'{api}/api/security/launch-status')
+              launch_data = launch.get('json') or {}
+              portal = request('billing_portal_signed_out', f'{api}/api/billing/create-portal-session', method='POST', body={})
+              deletion = request('account_delete_signed_out', f'{api}/api/account/self-delete', method='DELETE', body={'confirmation': 'DELETE MY ACCOUNT'})
+              signed_out = request('signed_out_me', f'{api}/api/auth/me')
+
+              key_id = str(health_data.get('jwt_key_id') or '')
+              deployed = all([
+                  health.get('status') == 200,
+                  health_data.get('login_route') == expected_login,
+                  health_data.get('jwt_health_version') == expected_health,
+                  health_data.get('jwt_source') in {'environment', 'database'},
+                  health_data.get('jwt_persistent') is True,
+                  health_data.get('restart_persistence_ready') is True,
+                  len(key_id) == 16,
+                  launch.get('status') == 200,
+                  launch_data.get('version') == expected_launch,
+                  launch_data.get('ready_for_paid_launch') is True,
+                  portal.get('status') in {401, 403},
+                  deletion.get('status') in {401, 403},
+                  signed_out.get('status') == 401,
+              ])
+              if deployed:
+                  report['deployment_attempts'] = attempt
+                  break
+              if attempt < 45:
+                  time.sleep(20)
+          else:
+              report['failures'].append('The fixed backend did not become fully ready during the deployment probe window.')
+
+          health_data = (health or {}).get('json') or {}
+          launch_data = (launch or {}).get('json') or {}
+          key_id = str(health_data.get('jwt_key_id') or '')
+          report['jwt_key_id'] = key_id
+          report['jwt_source'] = health_data.get('jwt_source')
+
+          required_health = {
+              'status_200': (health or {}).get('status') == 200,
+              'login_route': health_data.get('login_route') == expected_login,
+              'health_version': health_data.get('jwt_health_version') == expected_health,
+              'database_ready': health_data.get('database_ready') is True,
+              'jwt_ready': health_data.get('jwt_ready') is True,
+              'persistent_source': health_data.get('jwt_source') in {'environment', 'database'},
+              'jwt_persistent': health_data.get('jwt_persistent') is True,
+              'restart_ready': health_data.get('restart_persistence_ready') is True,
+              'safe_key_id': len(key_id) == 16 and all(char in '0123456789abcdef' for char in key_id),
+              'one_login_route': health_data.get('login_route_count') == 1,
+              'one_logout_route': health_data.get('logout_route_count') == 1,
+              'two_worker_login_routes': health_data.get('worker_login_route_count') == 2,
+          }
+          report['health_contract'] = required_health
+          report['failures'].extend([f'Login health failed: {name}' for name, passed in required_health.items() if not passed])
+
+          if expected_key_id and key_id != expected_key_id:
+              report['failures'].append(f'JWT key changed across restart: expected {expected_key_id}, received {key_id}.')
+
+          portal = report['checks'].get('billing_portal_signed_out') or {}
+          deletion = report['checks'].get('account_delete_signed_out') or {}
+          signed_out = report['checks'].get('signed_out_me') or {}
+          if portal.get('status') not in {401, 403}:
+              report['failures'].append(f'Billing portal route returned {portal.get("status")} instead of signed-out protection.')
+          if deletion.get('status') not in {401, 403}:
+              report['failures'].append(f'Account deletion route returned {deletion.get("status")} instead of signed-out protection.')
+          if signed_out.get('status') != 401:
+              report['failures'].append(f'Signed-out /api/auth/me returned {signed_out.get("status")} instead of 401.')
+          if launch_data.get('version') != expected_launch or launch_data.get('ready_for_paid_launch') is not True:
+              report['failures'].append(f'Launch readiness failed: {launch_data.get("critical_failures") or launch_data.get("version")}')
+
+          cors = request(
+              'cors_preflight',
+              f'{api}/api/auth/login',
+              method='OPTIONS',
+              headers={
+                  'Origin': frontend,
+                  'Access-Control-Request-Method': 'POST',
+                  'Access-Control-Request-Headers': 'content-type',
+              },
+          )
+          cors_headers = cors.get('headers') or {}
+          if cors.get('status') not in {200, 204}:
+              report['failures'].append(f'CORS preflight returned {cors.get("status")}')
+          if cors_headers.get('access-control-allow-origin') != frontend or cors_headers.get('access-control-allow-credentials', '').lower() != 'true':
+              report['failures'].append('CORS credential headers are incorrect.')
+
+          report['success'] = not report['failures']
+          output = Path('/tmp/churvox-live-restart-proof/report.json')
+          output.write_text(json.dumps(report, indent=2, default=str) + '\n')
+          print(output.read_text())
+          if report['failures']:
+              raise SystemExit(1)
+          PY
+
+      - name: Upload restart proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-restart-proof
+          path: /tmp/churvox-live-restart-proof/report.json
+          if-no-files-found: error
+          retention-days: 14
