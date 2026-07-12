@@ -37,7 +37,7 @@ jobs:
   code-gate:
     name: Build, syntax and safe browser contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: frontend
@@ -77,14 +77,21 @@ jobs:
             backend/churvox_production_launch_security.py \
             backend/churvox_email_links_paid_launch_patch.py \
             backend/churvox_auth_paid_launch_hardening.py \
+            backend/churvox_password_recovery_paid_launch_patch.py \
+            backend/churvox_checkout_token_session_guard.py \
+            backend/churvox_login_paid_launch_final_patch.py \
             backend/churvox_feature_tier_paid_launch_guard.py \
             backend/churvox_plan_usage_guard_patch.py \
             backend/churvox_billing_portal_paid_launch.py \
             backend/churvox_account_deletion_paid_launch.py
 
-      - name: Run backend feature tier contract
+      - name: Run backend paid-launch contracts
         working-directory: .
-        run: python -m unittest backend.test_churvox_feature_tier_paid_launch_guard
+        run: |
+          python -m unittest \
+            backend.test_churvox_feature_tier_paid_launch_guard \
+            backend.test_churvox_login_paid_launch_final_patch \
+            backend.test_churvox_password_recovery_paid_launch_patch
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -108,6 +115,7 @@ jobs:
         run: |
           npx playwright test \
             tests/e2e/churvox-auth-paid-launch-contract.spec.js \
+            tests/e2e/churvox-login-recovery-paid-launch.spec.js \
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-plans-usage-truth.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
@@ -118,11 +126,12 @@ jobs:
             --workers=1 \
             --reporter=line
 
-      - name: Run mobile More and billing contracts
+      - name: Run mobile login, More and billing contracts
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: |
           npx playwright test \
+            tests/e2e/churvox-login-recovery-paid-launch.spec.js \
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
             --project=mobile-chromium \
