@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './runtime/churvoxDateInputIsoGuardRuntime';
+import './runtime/churvoxPublicHelpRouteGuardRuntime';
 import App from './App';
 import API_BASE from './lib/apiBase';
 import './index.css';
@@ -110,7 +111,7 @@ function runImports(imports) {
 
 function currentPath() { return typeof window === 'undefined' ? '' : window.location.pathname || ''; }
 function currentParams() { try { return new URLSearchParams(window.location.search || ''); } catch { return new URLSearchParams(); } }
-function isPublicFastPath(path) { return path === '/' || path === '/product' || path === '/features' || path === '/demo' || path === '/pricing' || path === '/request' || path === '/contact' || path.startsWith('/public') || path.startsWith('/industries') || path === '/login' || path === '/signup' || path === '/forgot-password' || path === '/reset-password'; }
+function isPublicFastPath(path) { return path === '/' || path === '/product' || path === '/features' || path === '/demo' || path === '/pricing' || path === '/request' || path === '/contact' || path === '/security' || path === '/support' || path.startsWith('/public') || path.startsWith('/industries') || path === '/login' || path === '/signup' || path === '/forgot-password' || path === '/reset-password'; }
 function isSetupProfilePath(path) { const q = currentParams(); return path === '/setup' || path === '/setup-guide' || path === '/guide' || q.get('business_profile') === '1' || q.get('profile') === '1' || q.get('tester') === '1' || q.get('first_setup') === '1'; }
 
 function loadGlobalHelpersAfterPaint() {
