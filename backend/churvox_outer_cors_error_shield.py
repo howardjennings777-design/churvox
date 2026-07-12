@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
-import sys
 from typing import Any
 
-VERSION = "churvox-outer-cors-error-shield-20260712b"
+VERSION = "churvox-outer-cors-error-shield-20260712c"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
@@ -32,7 +31,7 @@ def origin_allowed(origin: str) -> bool:
 def cors_headers(origin: str, request_headers: str = "") -> list[tuple[bytes, bytes]]:
     if not origin_allowed(origin):
         return []
-    headers = [
+    return [
         (b"access-control-allow-origin", _text(origin).encode("latin1")),
         (b"access-control-allow-credentials", b"true"),
         (b"access-control-allow-methods", b"GET,POST,PUT,PATCH,DELETE,OPTIONS"),
@@ -41,14 +40,12 @@ def cors_headers(origin: str, request_headers: str = "") -> list[tuple[bytes, by
         (b"vary", b"Origin"),
         (b"x-churvox-cors-shield", VERSION.encode("latin1")),
     ]
-    return headers
 
 
 class OuterCorsErrorShield:
-    def __init__(self, app, module):
+    def __init__(self, app, module=None):
         self.app = app
         self.module = module
-        self.state = getattr(app, "state", None)
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") != "http":
@@ -87,7 +84,7 @@ class OuterCorsErrorShield:
             logging.exception("Unhandled Churvox request error outside normal middleware")
             if response_started:
                 raise
-            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"version":"churvox-outer-cors-error-shield-20260712b"}'
+            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"version":"churvox-outer-cors-error-shield-20260712c"}'
             headers = [
                 (b"content-type", b"application/json"),
                 (b"content-length", str(len(body)).encode("ascii")),
@@ -99,35 +96,21 @@ class OuterCorsErrorShield:
             await send({"type": "http.response.body", "body": body})
 
 
-def _attach_to_exported_wrappers(module, app) -> None:
-    wrapped = OuterCorsErrorShield(app, module)
-    for module_name in ("server", "backend.server"):
-        wrapper = sys.modules.get(module_name)
-        if wrapper is None or wrapper is module:
-            continue
-        wrapper_app = getattr(wrapper, "app", None)
-        wrapper_legacy = getattr(wrapper, "legacy", None)
-        if wrapper_app is app or wrapper_legacy is module:
-            setattr(wrapper, "app", wrapped)
-            setattr(wrapper, "CHURVOX_OUTER_CORS_VERSION", VERSION)
-
-
 def install(module) -> None:
     app = getattr(module, "app", None)
     if app is None:
         return
 
     state = getattr(app, "state", None)
-    already_installed = bool(state and getattr(state, "churvox_outer_cors_error_shield", False))
-    if not already_installed:
-        try:
-            app.add_middleware(OuterCorsErrorShield, module=module)
-            if state is not None:
-                state.churvox_outer_cors_error_shield = VERSION
-        except Exception as exc:
-            try:
-                getattr(module, "logger", logging.getLogger(__name__)).warning("[Churvox] Outer CORS middleware install skipped: %s", exc)
-            except Exception:
-                pass
+    if state is not None and getattr(state, "churvox_outer_cors_error_shield", False):
+        return
 
-    _attach_to_exported_wrappers(module, app)
+    try:
+        app.add_middleware(OuterCorsErrorShield, module=module)
+        if state is not None:
+            state.churvox_outer_cors_error_shield = VERSION
+    except Exception as exc:
+        try:
+            getattr(module, "logger", logging.getLogger(__name__)).warning("[Churvox] Outer CORS middleware install skipped: %s", exc)
+        except Exception:
+            pass
