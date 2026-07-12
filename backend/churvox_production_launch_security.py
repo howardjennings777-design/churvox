@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-VERSION = "churvox-production-launch-security-20260712"
+VERSION = "churvox-production-launch-security-20260712b"
 WEAK_SECRETS = {
     "",
     "default_secret_change_me",
@@ -30,10 +31,47 @@ PUBLIC_WHEN_AUTH_UNSAFE = (
     "/api/platform/visit",
     "/api/command/live-smoke-marker",
 )
+ACCESS_EXEMPT_PREFIXES = (
+    "/api/auth/",
+    "/api/worker/",
+    "/api/billing/",
+    "/api/admin/",
+    "/api/platform/",
+    "/api/invite/",
+    "/api/public/",
+    "/api/security/",
+    "/api/health",
+)
+OWNER_ROLES = {"owner", "business_owner", "employer", "admin", "manager", "office_admin", "superadmin"}
+WORKER_ROLES = {"worker", "staff", "field_worker", "technician", "subcontractor"}
+PAYROLL_ROLES = {"payroll", "payroll_user", "payroll_admin"}
+PAID_STATUSES = {"active", "paid", "trialing", "trial", "past_due"}
+LOCKED_STATUSES = {"cancelled", "canceled", "unpaid", "incomplete_expired", "locked", "disabled", "expired", "payment_required"}
 
 
 def _text(value: Any) -> str:
     return str(value or "").strip()
+
+
+def _truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value > 0
+    return _text(value).lower() in {"1", "true", "yes", "on", "active", "enabled", "verified", "granted"}
+
+
+def _date(value: Any):
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    raw = _text(value)
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    except Exception:
+        return None
 
 
 def _secret_is_strong(value: Any) -> bool:
@@ -92,6 +130,10 @@ def _checks(module) -> dict[str, dict[str, Any]]:
             "ok": owners == ["hello@churvox.com"],
             "detail": "hello@churvox.com only" if owners == ["hello@churvox.com"] else "Unexpected platform owner/admin email configuration",
         },
+        "protected_access_policy": {
+            "ok": True,
+            "detail": "Protected owner APIs require Stripe proof or a current tester grant",
+        },
     }
 
 
@@ -102,8 +144,70 @@ def _remove_status_route(app) -> None:
     ]
 
 
+def _role(user: dict[str, Any]) -> str:
+    business = user.get("business") if isinstance(user.get("business"), dict) else {}
+    return _text(
+        user.get("role")
+        or user.get("user_role")
+        or user.get("account_type")
+        or user.get("worker_role")
+        or business.get("role")
+    ).lower().replace("-", "_").replace(" ", "_")
+
+
+def _tester_access(user: dict[str, Any]) -> bool:
+    status = _text(user.get("subscription_status") or user.get("billing_status")).lower()
+    if status in {"revoked", "locked", "disabled", "expired"}:
+        return False
+    if user.get("free_tester_revoked_at") or user.get("revoked_at"):
+        return False
+    tester = _truthy(user.get("free_tester_access")) or _truthy(user.get("is_tester")) or status == "tester_free"
+    if not tester:
+        return False
+    until = _date(user.get("free_tester_until") or user.get("free_until"))
+    return until is None or until > datetime.now(timezone.utc)
+
+
+def _billing_proof(user: dict[str, Any]) -> bool:
+    return bool(
+        _text(user.get("stripe_subscription_id"))
+        or _text(user.get("stripe_checkout_session_id"))
+        or _text(user.get("checkout_session_id"))
+        or _truthy(user.get("checkout_verified_by_stripe"))
+        or _truthy(user.get("billing_verified"))
+        or _truthy(user.get("subscription_verified"))
+        or _truthy(user.get("manual_access_granted_by_app_owner"))
+        or _truthy(user.get("access_granted_by_app_owner"))
+    )
+
+
+def _paid_owner_access(user: dict[str, Any]) -> bool:
+    email = _text(user.get("email")).lower()
+    if email == "hello@churvox.com":
+        return True
+    role = _role(user)
+    if role in WORKER_ROLES or role in PAYROLL_ROLES:
+        return True
+    if _tester_access(user):
+        return True
+    if role and role not in OWNER_ROLES:
+        return False
+    status = _text(user.get("subscription_status") or user.get("plan_status") or user.get("billing_status") or user.get("stripe_status")).lower()
+    if status in LOCKED_STATUSES or user.get("billing_lock_reason") or user.get("account_locked") is True or user.get("has_app_access") is False:
+        return False
+    trial_end = _date(user.get("trial_ends_at"))
+    if status in {"trial", "trialing"} and trial_end and trial_end <= datetime.now(timezone.utc):
+        return False
+    return status in PAID_STATUSES and _billing_proof(user)
+
+
+def _is_access_exempt(path: str) -> bool:
+    return any(path == prefix.rstrip("/") or path.startswith(prefix) for prefix in ACCESS_EXEMPT_PREFIXES)
+
+
 def install(module) -> None:
     app = getattr(module, "app", None)
+    get_current_user = getattr(module, "get_current_user", None)
     if app is None or getattr(app.state, "churvox_production_launch_security", False):
         return
 
@@ -111,8 +215,11 @@ def install(module) -> None:
     jwt_safe = checks["jwt_secret"]["ok"]
 
     @app.middleware("http")
-    async def fail_closed_when_auth_secret_is_unsafe(request: Request, call_next):
+    async def paid_launch_security_middleware(request: Request, call_next):
         path = request.url.path
+        if request.method.upper() == "OPTIONS":
+            return await call_next(request)
+
         if not jwt_safe and path.startswith("/api/") and not any(path == allowed or path.startswith(allowed) for allowed in PUBLIC_WHEN_AUTH_UNSAFE):
             return JSONResponse(
                 {
@@ -122,6 +229,27 @@ def install(module) -> None:
                 },
                 status_code=503,
             )
+
+        if jwt_safe and callable(get_current_user) and path.startswith("/api/") and not _is_access_exempt(path):
+            try:
+                user = await get_current_user(request)
+            except Exception:
+                user = None
+            if isinstance(user, dict):
+                role = _role(user)
+                if role in WORKER_ROLES:
+                    return JSONResponse({"success": False, "detail": "Worker accounts cannot open owner API routes.", "version": VERSION}, status_code=403)
+                if not _paid_owner_access(user):
+                    return JSONResponse(
+                        {
+                            "success": False,
+                            "detail": "A verified subscription or current tester grant is required for this owner API.",
+                            "billing_lock_reason": "verified_access_required",
+                            "version": VERSION,
+                        },
+                        status_code=402,
+                    )
+
         return await call_next(request)
 
     _remove_status_route(app)
