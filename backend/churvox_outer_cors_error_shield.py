@@ -4,7 +4,7 @@ import importlib
 import logging
 from typing import Any
 
-VERSION = "churvox-outer-cors-error-shield-20260712f"
+VERSION = "churvox-outer-cors-error-shield-20260712g"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
@@ -88,7 +88,7 @@ class OuterCorsErrorShield:
             logging.exception("Unhandled Churvox request error outside normal middleware")
             if response_started:
                 raise
-            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"stage":"outer-shield","version":"churvox-outer-cors-error-shield-20260712f"}'
+            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"stage":"outer-shield","version":"churvox-outer-cors-error-shield-20260712g"}'
             headers = [
                 (b"content-type", b"application/json"),
                 (b"content-length", str(len(body)).encode("ascii")),
@@ -129,6 +129,18 @@ def install(module) -> None:
         module,
         ("churvox_login_emergency_final", "backend.churvox_login_emergency_final"),
         "isolated emergency login route",
+    )
+    # Re-assert protected customer routes after legacy route registration. Their
+    # installers verify the methods still exist instead of trusting stale markers.
+    _install_patch(
+        module,
+        ("churvox_billing_portal_paid_launch", "backend.churvox_billing_portal_paid_launch"),
+        "secure billing portal route",
+    )
+    _install_patch(
+        module,
+        ("churvox_account_deletion_paid_launch", "backend.churvox_account_deletion_paid_launch"),
+        "secure account deletion route",
     )
     # This must run after the emergency route so startup order cannot overwrite
     # the persistent-source fields or the safe restart fingerprint.
