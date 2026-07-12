@@ -30,6 +30,17 @@ test.describe('Paid-launch live infrastructure', () => {
     }
   });
 
+  test('final login, verification and recovery stack is mounted live', async ({ request }) => {
+    const response = await request.get(`${API_BASE}/api/auth/launch-status`, { timeout: 30000 });
+    const payload = await read(response);
+    expect(response.status(), `Auth launch marker failed: ${payload.text}`).toBe(200);
+    expect(payload.body?.success).toBeTruthy();
+    expect(payload.body?.ready_for_paid_login, `Auth stack is incomplete: ${JSON.stringify({ checks: payload.body?.checks, routes: payload.body?.routes, versions: payload.body?.versions })}`).toBe(true);
+    expect(String(payload.body?.version || '')).toMatch(/auth-launch-status/i);
+    for (const [name, mounted] of Object.entries(payload.body?.checks || {})) expect(mounted, `Missing auth patch: ${name}`).toBe(true);
+    for (const [name, mounted] of Object.entries(payload.body?.routes || {})) expect(mounted, `Missing auth route: ${name}`).toBe(true);
+  });
+
   test('signed Stripe webhook route is mounted and configured', async ({ request }) => {
     const status = await request.get(`${API_BASE}/api/billing/webhook-status`, { timeout: 30000 });
     const payload = await read(status);
