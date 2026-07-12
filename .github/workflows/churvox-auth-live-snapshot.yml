@@ -14,11 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Inspect all current live frontend chunks
+      - name: Inspect current frontend chunks and backend boot
         shell: bash
         run: |
           node <<'NODE' > /tmp/churvox-auth-live-snapshot.txt 2>&1
           const site = 'https://www.churvox.com';
+          const backend = 'https://grassley-backend.onrender.com';
           const authMarker = 'churvox-auth-401-storm-repair-20260713b';
           const commandMarker = 'churvox-command-fast-load-build-20260713c';
           (async () => {
@@ -63,6 +64,19 @@ jobs:
             console.log(`command_endpoint=${endpointFound} file=${endpointFile || 'none'}`);
             console.log(`legacy_admin_brain_surface=${legacyFound} file=${legacyFile || 'none'}`);
             console.log(`total_js_bytes=${bytes}`);
+
+            const bootResponse = await fetch(`${backend}/api/command-fast-load/boot?ts=${Date.now()}`, { cache: 'no-store' });
+            const bootText = await bootResponse.text();
+            let boot = {};
+            try { boot = JSON.parse(bootText); } catch { boot = { raw: bootText.slice(0, 500) }; }
+            console.log(`backend_boot_http=${bootResponse.status}`);
+            console.log(`backend_boot_version=${boot.version || 'missing'}`);
+            console.log(`backend_boot_ready=${boot.boot_ready}`);
+            console.log(`backend_patch_installed=${boot.patch_installed}`);
+            console.log(`backend_patch_stage=${boot.patch_stage || 'missing'}`);
+            console.log(`backend_patch_error_type=${boot.patch_error_type || 'none'}`);
+            console.log(`backend_patch_error_fingerprint=${boot.patch_error_fingerprint || 'none'}`);
+            console.log(`backend_route_owners=${JSON.stringify(boot.route_owners || {})}`);
           })().catch((error) => { console.error(error.stack || error); process.exit(1); });
           NODE
 
@@ -73,7 +87,7 @@ jobs:
           script: |
             const fs = require('fs');
             const text = fs.existsSync('/tmp/churvox-auth-live-snapshot.txt') ? fs.readFileSync('/tmp/churvox-auth-live-snapshot.txt', 'utf8') : 'No snapshot output.';
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Current frontend chunk snapshot\n\n\`\`\`text\n${text}\n\`\`\`` });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Current frontend and backend boot snapshot\n\n\`\`\`text\n${text}\n\`\`\`` });
 
   command_boot_repair:
     if: startsWith(github.event.issue.title, '[churvox-command-boot-repair]')
