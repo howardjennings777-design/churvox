@@ -16,9 +16,17 @@ function json(route, body, status = 200) {
 }
 
 function pause(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+function deferred() {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+}
 
 test('Command shows its saved queue before the background brain scan and audit finish', async ({ page }) => {
   const calls = [];
+  const auditGate = deferred();
+  const scanGate = deferred();
+  let slipsFulfilledAt = 0;
 
   await page.addInitScript(({ user }) => {
     localStorage.setItem('token', 'command-fast-load-token');
@@ -29,75 +37,93 @@ test('Command shows its saved queue before the background brain scan and audit f
     }));
   }, { user: USER });
 
-  // Generic safe response first; specific handlers registered later take precedence.
-  await page.route('**/api/**', (route) => json(route, { success: true, items: [], data: [], counts: {} }));
+  // One API router avoids overlapping Playwright mocks and makes request order explicit.
+  await page.route('**/api/**', async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
 
-  await page.route('**/api/auth/me', (route) => json(route, { success: true, user: USER }));
+    if (path === '/api/auth/me') {
+      calls.push({ name: 'auth-me', at: Date.now() });
+      return json(route, { success: true, user: USER });
+    }
 
-  await page.route('**/api/command/slips', async (route) => {
-    if (route.request().method() !== 'GET') return route.fallback();
-    calls.push({ name: 'slips', at: Date.now() });
-    await pause(120);
-    return json(route, {
-      success: true,
-      source: 'paid-launch-fast-command-v2',
-      slips: [{
-        id: 'fast-load-slip-1',
-        business_id: USER.business_id,
-        source_type: 'jobs',
-        action_type: 'owner_review',
-        title: 'Fast queue decision',
-        found: 'A saved owner decision is already waiting.',
-        prepared: 'Prepared for owner review.',
-        why: 'The owner must decide.',
-        urgency: 'Owner review',
-        status: 'open',
-        payload: {
-          office_role: 'Office Manager',
-          prepared_form: { Decision: 'Review this saved item' },
-          actions: ['Approve record', 'Snooze', 'Ignore'],
-          owner_review_only: true,
-          prepared_only: true,
-        },
-      }],
-      safety: 'Owner approval required. Nothing was sent, synced, charged, filed or paid.',
-    });
+    if (path === '/api/command/slips' && request.method() === 'GET') {
+      calls.push({ name: 'slips', at: Date.now() });
+      await pause(120);
+      slipsFulfilledAt = Date.now();
+      return json(route, {
+        success: true,
+        source: 'paid-launch-fast-command-v2',
+        slips: [{
+          id: 'fast-load-slip-1',
+          business_id: USER.business_id,
+          source_type: 'jobs',
+          action_type: 'owner_review',
+          title: 'Fast queue decision',
+          found: 'A saved owner decision is already waiting.',
+          prepared: 'Prepared for owner review.',
+          why: 'The owner must decide.',
+          urgency: 'Owner review',
+          status: 'open',
+          payload: {
+            office_role: 'Office Manager',
+            prepared_form: { Decision: 'Review this saved item' },
+            actions: ['Approve record', 'Snooze', 'Ignore'],
+            owner_review_only: true,
+            prepared_only: true,
+          },
+        }],
+        safety: 'Owner approval required. Nothing was sent, synced, charged, filed or paid.',
+      });
+    }
+
+    if (path === '/api/command/audit') {
+      calls.push({ name: 'audit', at: Date.now() });
+      await auditGate.promise;
+      return json(route, { success: true, audit: [] });
+    }
+
+    if (path === '/api/command/scan') {
+      calls.push({ name: 'scan', at: Date.now() });
+      await scanGate.promise;
+      return json(route, {
+        success: true,
+        source: 'human-mimic-intelligence-v2',
+        guard: 'human-mimic-scan-guard-v2',
+        slips: [],
+        existing: [],
+        created_count: 0,
+        existing_count: 1,
+        scan_complete: true,
+        scan_errors: [],
+      });
+    }
+
+    return json(route, { success: true, items: [], data: [], counts: {} });
   });
 
-  await page.route('**/api/command/audit', async (route) => {
-    calls.push({ name: 'audit', at: Date.now() });
-    await pause(4000);
-    return json(route, { success: true, audit: [] });
-  });
-
-  await page.route('**/api/command/scan', async (route) => {
-    calls.push({ name: 'scan', at: Date.now() });
-    await pause(4000);
-    return json(route, {
-      success: true,
-      source: 'human-mimic-intelligence-v2',
-      guard: 'human-mimic-scan-guard-v2',
-      slips: [],
-      existing: [],
-      created_count: 0,
-      existing_count: 1,
-      scan_complete: true,
-      scan_errors: [],
-    });
-  });
-
-  const started = Date.now();
   await page.goto('/dashboard#command', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByText('Fast queue decision', { exact: true })).toBeVisible({ timeout: 2500 });
-  const visibleAfter = Date.now() - started;
-  expect(visibleAfter).toBeLessThan(2500);
 
-  await expect.poll(() => calls.some((call) => call.name === 'scan'), { timeout: 2500 }).toBe(true);
-  const slipsIndex = calls.findIndex((call) => call.name === 'slips');
-  const scanIndex = calls.findIndex((call) => call.name === 'scan');
-  expect(slipsIndex).toBeGreaterThanOrEqual(0);
-  expect(scanIndex).toBeGreaterThan(slipsIndex);
+  // Dev-mode lazy compilation is not part of Command API latency. Measure from the
+  // completed queue response to visible owner information instead.
+  await expect.poll(() => calls.some((call) => call.name === 'slips'), { timeout: 12000 }).toBe(true);
+  await expect.poll(() => slipsFulfilledAt > 0, { timeout: 3000 }).toBe(true);
+  const responseAt = slipsFulfilledAt;
 
-  // The delayed audit and scan are still pending, proving neither blocks the visible queue.
+  await expect(page.getByText('Fast queue decision', { exact: true }).first()).toBeVisible({ timeout: 2000 });
+  expect(Date.now() - responseAt).toBeLessThan(2000);
+
+  // The scan begins only after the current queue request, and both scan and audit
+  // are still deliberately unresolved when the saved decision is already visible.
+  await expect.poll(() => calls.some((call) => call.name === 'scan'), { timeout: 3000 }).toBe(true);
+  const slipsCall = calls.find((call) => call.name === 'slips');
+  const scanCall = calls.find((call) => call.name === 'scan');
+  expect(slipsCall).toBeTruthy();
+  expect(scanCall).toBeTruthy();
+  expect(scanCall.at).toBeGreaterThanOrEqual(slipsFulfilledAt);
   expect(calls.some((call) => call.name === 'audit')).toBe(true);
+
+  auditGate.resolve();
+  scanGate.resolve();
+  await pause(100);
 });
