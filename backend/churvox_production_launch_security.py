@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-VERSION = "churvox-production-launch-security-20260712e"
+VERSION = "churvox-production-launch-security-20260712f"
 PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 WEAK_SECRETS = {
     "",
@@ -91,6 +91,16 @@ def _secret_is_strong(value: Any) -> bool:
     )
 
 
+def _stripe_secret_ready(value: Any) -> bool:
+    raw = _text(value)
+    return raw.startswith("sk" + "_") and len(raw) > 10
+
+
+def _stripe_webhook_ready(value: Any) -> bool:
+    raw = _text(value)
+    return raw.startswith("whsec" + "_") and len(raw) > 10
+
+
 def _current_jwt_secret(module) -> str:
     return _text(os.environ.get("JWT_SECRET") or getattr(module, "JWT_SECRET", ""))
 
@@ -114,6 +124,7 @@ def _ensure_runtime_jwt_secret(module) -> bool:
 
 
 def _owner_emails() -> list[str]:
+    # The platform owner is a product invariant, not an environment-configurable list.
     return [PLATFORM_OWNER_EMAIL]
 
 
@@ -168,12 +179,20 @@ def _checks(module) -> dict[str, dict[str, Any]]:
             ),
         },
         "stripe_secret": {
-            "ok": bool(_text(os.environ.get("STRIPE_SECRET_KEY"))),
-            "detail": "Stripe secret configured" if _text(os.environ.get("STRIPE_SECRET_KEY")) else "Stripe secret missing",
+            "ok": _stripe_secret_ready(os.environ.get("STRIPE_SECRET_KEY")),
+            "detail": (
+                "Stripe secret configured"
+                if _stripe_secret_ready(os.environ.get("STRIPE_SECRET_KEY"))
+                else "Stripe secret missing or invalid"
+            ),
         },
         "stripe_webhook": {
-            "ok": bool(webhook_secret),
-            "detail": "Stripe endpoint signing secret configured" if webhook_secret else "Stripe endpoint signing secret missing",
+            "ok": _stripe_webhook_ready(webhook_secret),
+            "detail": (
+                "Stripe endpoint signing secret configured"
+                if _stripe_webhook_ready(webhook_secret)
+                else "Stripe endpoint signing secret missing or invalid"
+            ),
         },
         "transactional_email": {
             "ok": bool(
@@ -193,7 +212,11 @@ def _checks(module) -> dict[str, dict[str, Any]]:
         },
         "platform_owner": {
             "ok": owners == [PLATFORM_OWNER_EMAIL],
-            "detail": f"{PLATFORM_OWNER_EMAIL} only",
+            "detail": (
+                f"{PLATFORM_OWNER_EMAIL} only"
+                if owners == [PLATFORM_OWNER_EMAIL]
+                else "Unexpected platform owner/admin email configuration"
+            ),
         },
         "protected_access_policy": {
             "ok": True,
@@ -326,6 +349,8 @@ def _is_access_exempt(path: str) -> bool:
 
 def install(module) -> None:
     _ensure_runtime_jwt_secret(module)
+
+    # Enforce the HQ identity before any route or later helper can use stale flags.
     module.PLATFORM_OWNER_EMAILS = [PLATFORM_OWNER_EMAIL]
     module.is_platform_owner = (
         lambda user: _text((user or {}).get("email")).lower() == PLATFORM_OWNER_EMAIL
