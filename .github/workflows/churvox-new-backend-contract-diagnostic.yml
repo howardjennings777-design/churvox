@@ -1,0 +1,27 @@
+name: Churvox New Backend Contract Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-new-backend-contract-diagnostic.yml'
+      - 'backend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  new-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Mongo-backed JWT contract
+        run: python -m unittest -v backend.test_churvox_runtime_jwt_secret_patch
+      - name: Billing and deletion route mount contract
+        run: python -m unittest -v backend.test_churvox_paid_launch_route_mounts
+      - name: Safe JWT fingerprint contract
+        run: python -m unittest -v backend.test_churvox_jwt_health_fingerprint_patch
