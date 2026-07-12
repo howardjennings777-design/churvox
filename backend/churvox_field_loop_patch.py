@@ -499,6 +499,11 @@ def install(module):
         ("/api/jobs/{job_id}/pause", "POST", pause),
         ("/api/jobs/{job_id}/resume", "POST", resume),
         ("/api/jobs/{job_id}/complete", "POST", complete),
+        ("/api/worker/jobs/{job_id}/acknowledge", "POST", ack),
+        ("/api/worker/jobs/{job_id}/start", "POST", start),
+        ("/api/worker/jobs/{job_id}/pause", "POST", pause),
+        ("/api/worker/jobs/{job_id}/resume", "POST", resume),
+        ("/api/worker/jobs/{job_id}/complete", "POST", complete),
     ]:
         remove(app, path, method); app.add_api_route(path, endpoint, methods=[method])
     INSTALLED.add(name)

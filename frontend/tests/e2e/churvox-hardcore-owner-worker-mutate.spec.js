@@ -212,7 +212,7 @@ test.describe('Hardcore live boss-worker mutation loop', () => {
 
       for (const [label, endpoint, expected] of steps) {
         const note = `${label} ${run}`;
-        const result = await json(page, 'post', `/api/jobs/${encodeURIComponent(jobId)}/${endpoint}`, workerToken, { worker_notes: note, note, source: 'hardcore-owner-worker-test' });
+        const result = await json(page, 'post', `/api/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}`, workerToken, { worker_notes: note, note, source: 'hardcore-owner-worker-test' });
         expect(result.ok, `${label} button endpoint failed: ${result.status} ${result.text.slice(0, 500)}`).toBeTruthy();
         const ownerJob = await waitForJob(page, ownerToken, jobId, titleToken, (job) => expected.test(`${statusOf(job)} ${job.worker_last_action || ''}`), `owner sees ${label}`);
         expect(`${statusOf(ownerJob)} ${ownerJob.worker_last_action || ''}`, `owner sees ${label}`).toMatch(expected);
@@ -240,7 +240,7 @@ test.describe('Hardcore live boss-worker mutation loop', () => {
       }, { message: 'owner sees worker issue in Command/notifications/messages', timeout: 25_000, intervals: [700, 1200, 2200] }).toBe(true);
 
       const completeNote = `Complete ${run} with proof`;
-      const completed = await json(page, 'post', `/api/jobs/${encodeURIComponent(jobId)}/complete`, workerToken, {
+      const completed = await json(page, 'post', `/api/worker/jobs/${encodeURIComponent(jobId)}/complete`, workerToken, {
         worker_notes: completeNote,
         note: completeNote,
         proof_photo_names: [`hardcore-${run}.jpg`],

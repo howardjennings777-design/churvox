@@ -62,7 +62,7 @@ export default function OfficeTeamWorkerRoute() {
     const updateText = workerActionText(step, title);
     try {
       if (!jobId || !endpoint) throw new Error("Live job id is not available for a direct status update.");
-      const result = await post(`/jobs/${encodeURIComponent(jobId)}/${endpoint}`, {
+      const result = await post(`/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}`, {
         source: "churvox-worker",
         worker_notes: String(note || updateText).trim(),
         proof_photo_names: step === "Complete" ? proofNames : undefined,

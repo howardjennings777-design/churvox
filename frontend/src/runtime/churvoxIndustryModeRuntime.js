@@ -10,7 +10,9 @@ let state = { profiles: [], context: null, busy: false };
 
 function path() { return window.location.pathname || ''; }
 function params() { try { return new URLSearchParams(window.location.search || ''); } catch { return new URLSearchParams(); } }
-function isOwnerApp() { const p = path(); return OWNER_PATHS.includes(p) || p.startsWith('/dashboard'); }
+function storedAuthUser() { try { return JSON.parse(localStorage.getItem('churvox_auth_session_snapshot_v1') || '{}')?.user || {}; } catch { return {}; } }
+function isWorkerSession() { const user = storedAuthUser(); const role = clean(user.role || user.user_role || user.account_type).toLowerCase().replace(/[ -]/g, '_'); return new Set(["worker", "staff", "employee", "subcontractor", "contractor", "technician", "field_worker"]).has(role) || user.is_worker === true || user.worker_id; }
+function isOwnerApp() { const p = path(); return !isWorkerSession() && (OWNER_PATHS.includes(p) || p.startsWith('/dashboard')); }
 function isSetupPath() { return ['/setup-guide', '/setup', '/guide'].includes(path()); }
 function isPlansPath() { return path() === '/plans'; }
 function token() { try { return localStorage.getItem('token') || ''; } catch { return ''; } }
@@ -260,6 +262,7 @@ async function saveIndustry(payloadToSave) {
 }
 
 async function loadIndustry() {
+  if (!isOwnerApp()) return;
   const cached = readCache();
   if (cached) state.context = cached;
   const [profilesPayload, contextPayload] = await Promise.all([fetchJson('/industry/profiles'), fetchJson('/industry/context')]);

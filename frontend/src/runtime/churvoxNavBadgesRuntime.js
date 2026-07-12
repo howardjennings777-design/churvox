@@ -10,7 +10,9 @@ let lastFetch = 0;
 let cached = { owner: {}, worker: {} };
 
 function path() { return window.location.pathname || ''; }
-function isOwnerApp() { const current = path(); return current === '/dashboard' || current.startsWith('/dashboard') || current === '/plans' || current === '/guide' || current === '/setup' || current === '/setup-guide'; }
+function storedAuthUser() { try { return JSON.parse(localStorage.getItem('churvox_auth_session_snapshot_v1') || '{}')?.user || {}; } catch { return {}; } }
+function isWorkerSession() { const user = storedAuthUser(); const role = clean(user.role || user.user_role || user.account_type).toLowerCase().replace(/[ -]/g, '_'); return new Set(["worker", "staff", "employee", "subcontractor", "contractor", "technician", "field_worker"]).has(role) || user.is_worker === true || Boolean(user.worker_id); }
+function isOwnerApp() { const current = path(); return !isWorkerSession() && (current === '/dashboard' || current.startsWith('/dashboard') || current === '/plans' || current === '/guide' || current === '/setup' || current === '/setup-guide'); }
 function isWorkerApp() { return /^\/worker(?:\/|$)/i.test(path()); }
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim(); }
 function key(value) { return clean(value).toLowerCase().replace(/[^a-z0-9]/g, ''); }

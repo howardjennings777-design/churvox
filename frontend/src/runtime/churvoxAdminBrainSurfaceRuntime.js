@@ -50,10 +50,13 @@ const css = `
   @media(max-width: 620px) { .cvxAdminBrainHead, .cvxAdminBrainGrid { grid-template-columns: 1fr; } .cvxAdminBrainMeta { justify-content: flex-start; } }
 `;
 
+function storedAuthUser() { try { return JSON.parse(localStorage.getItem('churvox_auth_session_snapshot_v1') || '{}')?.user || {}; } catch { return {}; } }
+function isWorkerSession() { const user = storedAuthUser(); const role = String(user.role || user.user_role || user.account_type || '').trim().toLowerCase().replace(/[ -]/g, '_'); return new Set(["worker", "staff", "employee", "subcontractor", "contractor", "technician", "field_worker"]).has(role) || user.is_worker === true || Boolean(user.worker_id); }
 function isOwnerApp() {
   const path = window.location.pathname || '';
-  return path === '/dashboard' || path.startsWith('/dashboard') || path === '/plans' || path === '/guide' || path === '/setup' || path === '/setup-guide';
+  return !isWorkerSession() && (path === '/dashboard' || path.startsWith('/dashboard') || path === '/plans' || path === '/guide' || path === '/setup' || path === '/setup-guide');
 }
+
 function pageId() {
   const hash = String(window.location.hash || '').replace(/^#/, '').split('?')[0].toLowerCase();
   if (!hash && window.location.pathname === '/dashboard') return 'today';

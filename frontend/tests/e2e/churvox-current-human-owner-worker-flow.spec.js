@@ -188,7 +188,7 @@ async function fillCurrentClientForm(ownerPage, token) {
 
 async function clickWorkerStep(workerPage, request, workerToken, jobId, title, label, expected) {
   const responsePromise = workerPage.waitForResponse(
-    (response) => response.request().method() === 'POST' && new RegExp(`/api/jobs/${jobId}/${label.toLowerCase() === 'acknowledge' ? 'acknowledge' : label.toLowerCase()}`).test(response.url()),
+    (response) => response.request().method() === 'POST' && new RegExp(`/api/worker/jobs/${jobId}/${label.toLowerCase() === 'acknowledge' ? 'acknowledge' : label.toLowerCase()}`).test(response.url()),
     { timeout: 25_000 },
   );
   await workerPage.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }).click();

@@ -98,17 +98,7 @@ async function apiSession(page, email, password, role) {
   const token = tokenFrom(body);
   expect(token, `${role} API session login returned no token`).toBeTruthy();
   if (accountEmail(body)) expect(accountEmail(body), `${role} API session returned the wrong account`).toBe(email);
-  await page.context().addInitScript(({ tokenValue, emailValue, roleValue }) => {
-    localStorage.setItem('token', tokenValue);
-    localStorage.setItem('authToken', tokenValue);
-    localStorage.setItem('access_token', tokenValue);
-    localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
-      at: Date.now(),
-      token: tokenValue,
-      user: { email: emailValue, role: roleValue, has_app_access: true, email_verified: true },
-    }));
-  }, { tokenValue: token, emailValue: email, roleValue: role });
-  await page.goto(`${BASE_URL}${role === 'worker' ? '/worker/today' : '/dashboard#today'}`, { waitUntil: 'domcontentloaded' });
+
   const me = await page.request.get(apiUrl('/api/auth/me'), {
     headers: { Authorization: `Bearer ${token}` },
     timeout: 30_000,
@@ -116,6 +106,19 @@ async function apiSession(page, email, password, role) {
   const meBody = await responseBody(me);
   expect(me.status(), `${role} API session /api/auth/me failed: ${JSON.stringify(meBody).slice(0, 700)}`).toBe(200);
   expect(accountEmail(meBody), `${role} API session /api/auth/me returned the wrong account`).toBe(email);
+  const verifiedUser = meBody?.user || meBody?.data?.user || meBody?.data || meBody || {};
+
+  await page.context().addInitScript(({ tokenValue, userValue, emailValue, roleValue }) => {
+    localStorage.setItem('token', tokenValue);
+    localStorage.setItem('authToken', tokenValue);
+    localStorage.setItem('access_token', tokenValue);
+    localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+      at: Date.now(),
+      token: tokenValue,
+      user: { ...userValue, email: emailValue, role: userValue?.role || userValue?.user_role || roleValue },
+    }));
+  }, { tokenValue: token, userValue: verifiedUser, emailValue: email, roleValue: role });
+  await page.goto(`${BASE_URL}${role === 'worker' ? '/worker/today' : '/dashboard#today'}`, { waitUntil: 'domcontentloaded' });
   return token;
 }
 

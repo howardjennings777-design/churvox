@@ -89,7 +89,7 @@ check(
 check(
   'direct worker status writes use the real job endpoint',
   all(worker, [
-    'post(`/jobs/${encodeURIComponent(jobId)}/${endpoint}`',
+    'post(`/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}`',
     'worker_notes:',
     'proof_photo_names:',
     'proof_photo_count:',
