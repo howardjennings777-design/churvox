@@ -1,0 +1,212 @@
+name: Churvox Live Visual Capture
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  capture:
+    if: startsWith(github.event.issue.title, '[churvox-visual-capture]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      BASE_URL: https://www.churvox.com
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install browser tooling
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npx playwright install --with-deps chromium
+
+      - name: Capture live owner and worker screens
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/churvox-visual
+          cat > /tmp/churvox-visual-capture.cjs <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { chromium } = require(process.cwd() + '/frontend/node_modules/playwright');
+
+          const base = process.env.BASE_URL.replace(/\/+$/, '');
+          const apiBase = process.env.API_BASE.replace(/\/+$/, '');
+          const ownerEmail = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
+          const ownerPassword = process.env.OWNER_PASSWORD || '';
+          const workerPassword = process.env.WORKER_PASSWORD || ownerPassword;
+          const out = '/tmp/churvox-visual';
+          const results = [];
+          const runtimeErrors = [];
+
+          function tokenFrom(body = {}) {
+            return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+              || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+          }
+
+          function rowsFrom(payload) {
+            const data = payload?.data?.data ?? payload?.data ?? payload;
+            if (Array.isArray(data)) return data;
+            for (const key of ['workers', 'team', 'members', 'items', 'records', 'results', 'data']) if (Array.isArray(data?.[key])) return data[key];
+            return [];
+          }
+
+          async function callApi(pathname, options = {}) {
+            const response = await fetch(`${apiBase}${pathname}`, {
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
+              ...options,
+            });
+            const text = await response.text();
+            let body = {};
+            try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
+            return { response, body };
+          }
+
+          async function discoverWorker() {
+            const login = await callApi('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: ownerEmail, password: ownerPassword }) });
+            const token = tokenFrom(login.body);
+            if (!login.response.ok || !token) throw new Error(`Owner API login failed ${login.response.status}`);
+            for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
+              const result = await callApi(`${endpoint}?ts=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` } });
+              if (!result.response.ok) continue;
+              for (const row of rowsFrom(result.body)) {
+                const email = String(row.email || row.worker_email || row.user_email || row.login_email || '').trim().toLowerCase();
+                const status = String(row.status || row.worker_status || '').toLowerCase();
+                if (email && email !== ownerEmail && row.active !== false && row.is_active !== false && !/inactive|deleted|archived|disabled/.test(status)) return email;
+              }
+            }
+            throw new Error('No active linked worker found.');
+          }
+
+          async function login(page, email, password, worker = false) {
+            await page.goto(`${base}/login${worker ? '?worker=1' : ''}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await page.getByLabel(/email/i).first().fill(email);
+            await page.getByLabel(/password/i).first().fill(password);
+            await page.getByRole('button', { name: /sign in|log in/i }).first().click();
+            await page.waitForFunction(() => !location.pathname.includes('/login'), null, { timeout: 30000 });
+            await page.waitForTimeout(900);
+          }
+
+          async function inspect(page, label, target, filename) {
+            await page.goto(target, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await page.waitForTimeout(1200);
+            const metrics = await page.evaluate(() => {
+              const visible = (el) => {
+                if (!(el instanceof HTMLElement)) return false;
+                const style = getComputedStyle(el);
+                const rect = el.getBoundingClientRect();
+                return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0 && rect.width > 1 && rect.height > 1;
+              };
+              const controls = [...document.querySelectorAll('button, a[href], input:not([type="hidden"]), textarea, select')].filter(visible);
+              const tinyControls = controls.map((el) => {
+                const rect = el.getBoundingClientRect();
+                return { text: String(el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || '').replace(/\s+/g, ' ').trim().slice(0, 80), width: Math.round(rect.width), height: Math.round(rect.height) };
+              }).filter((item) => item.height < 40 || item.width < 32).slice(0, 20);
+              return {
+                url: location.href,
+                title: document.title,
+                bodyTextLength: String(document.body.innerText || '').trim().length,
+                scrollWidth: document.documentElement.scrollWidth,
+                clientWidth: document.documentElement.clientWidth,
+                horizontalOverflow: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+                tinyControls,
+                headings: [...document.querySelectorAll('h1,h2,h3')].filter(visible).map((el) => String(el.innerText || '').replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 12),
+                buttons: [...document.querySelectorAll('button')].filter(visible).map((el) => String(el.innerText || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 25),
+              };
+            });
+            await page.screenshot({ path: path.join(out, filename), fullPage: true });
+            results.push({ label, filename, ...metrics });
+          }
+
+          async function captureSet(browser, role, viewport, pages, email, password) {
+            const context = await browser.newContext({ viewport, serviceWorkers: 'block' });
+            const page = await context.newPage();
+            page.on('pageerror', (error) => runtimeErrors.push(`${role} ${viewport.width}: pageerror ${error.message}`));
+            page.on('console', (message) => {
+              if (message.type() !== 'error') return;
+              const text = message.text();
+              if (!/favicon|manifest|ResizeObserver|ERR_ABORTED/i.test(text)) runtimeErrors.push(`${role} ${viewport.width}: console ${text}`);
+            });
+            await login(page, email, password, role === 'worker');
+            for (const item of pages) await inspect(page, `${role}-${viewport.width}-${item.name}`, `${base}${item.path}`, `${role}-${viewport.width}-${item.name}.png`);
+            await context.close();
+          }
+
+          (async () => {
+            if (!ownerPassword) throw new Error('OWNER_PASSWORD secret missing.');
+            const workerEmail = await discoverWorker();
+            console.log('::add-mask::' + workerEmail);
+            const browser = await chromium.launch({ headless: true });
+            const ownerPages = [
+              ['today', '/dashboard#today'], ['command', '/dashboard#command'], ['work', '/dashboard#work'], ['clients', '/dashboard#clients'],
+              ['worker', '/dashboard#worker'], ['quotes', '/dashboard#quotes'], ['invoices', '/dashboard#invoices'], ['schedule', '/dashboard#schedule'],
+              ['messages', '/dashboard#messages'], ['payroll', '/dashboard#payroll'], ['integrations', '/dashboard#integrations'], ['team', '/dashboard#team'],
+              ['settings', '/dashboard#settings'], ['plans', '/dashboard#plans'], ['help', '/dashboard#help']
+            ].map(([name, path]) => ({ name, path }));
+            const ownerMobile = ownerPages.filter((item) => ['today','command','work','clients','worker','plans','help'].includes(item.name));
+            const workerPages = [['today','/worker/today'],['jobs','/worker/jobs'],['messages','/worker/messages'],['help','/worker/help']].map(([name, path]) => ({ name, path }));
+            await captureSet(browser, 'owner', { width: 1440, height: 1000 }, ownerPages, ownerEmail, ownerPassword);
+            await captureSet(browser, 'owner', { width: 390, height: 844 }, ownerMobile, ownerEmail, ownerPassword);
+            await captureSet(browser, 'worker', { width: 1280, height: 900 }, workerPages, workerEmail, workerPassword);
+            await captureSet(browser, 'worker', { width: 390, height: 844 }, workerPages, workerEmail, workerPassword);
+            await browser.close();
+
+            fs.writeFileSync(path.join(out, 'metrics.json'), JSON.stringify({ results, runtimeErrors }, null, 2));
+            const overflow = results.filter((item) => item.horizontalOverflow > 2);
+            const tiny = results.filter((item) => item.tinyControls.length);
+            const blank = results.filter((item) => item.bodyTextLength < 90);
+            const lines = [
+              '# Churvox live visual capture', '',
+              `- Screens captured: ${results.length}`,
+              `- Horizontal overflow pages: ${overflow.length}`,
+              `- Pages with controls under 40px high: ${tiny.length}`,
+              `- Blank/nearly blank pages: ${blank.length}`,
+              `- Runtime errors: ${runtimeErrors.length}`,
+              '',
+              overflow.length ? `Overflow: ${overflow.map((item) => item.label).join(', ')}` : 'No horizontal overflow detected.',
+              tiny.length ? `Small controls: ${tiny.map((item) => item.label).join(', ')}` : 'No undersized controls detected.',
+              runtimeErrors.length ? `Runtime errors:\n${runtimeErrors.slice(0, 12).map((item) => `- ${item}`).join('\n')}` : 'No material runtime errors detected.',
+            ];
+            fs.writeFileSync(path.join(out, 'summary.md'), lines.join('\n') + '\n');
+            console.log(lines.join('\n'));
+          })().catch((error) => { console.error(error.stack || error.message || error); process.exit(1); });
+          NODE
+          node /tmp/churvox-visual-capture.cjs
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-visual-capture
+          path: /tmp/churvox-visual
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Post capture result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.existsSync('/tmp/churvox-visual/summary.md') ? fs.readFileSync('/tmp/churvox-visual/summary.md', 'utf8') : 'Visual capture failed before summary creation.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${summary}\n\nWorkflow run: \`${context.runId}\`\nArtifact: \`churvox-live-visual-capture\``
+            });
