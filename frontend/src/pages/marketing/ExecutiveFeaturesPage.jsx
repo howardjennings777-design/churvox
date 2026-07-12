@@ -10,6 +10,8 @@ import {
   serviceTypes,
 } from "./ChurvoxPublicShell";
 
+const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
+
 const productPrinciples = [
   ["Facts live with the record", "Jobs, client history, worker updates, proof and money stay connected instead of being copied between pages."],
   ["Routine work stays quiet", "Churvox handles repeatable checks behind the scenes and does not turn every normal event into an owner alert."],
@@ -32,7 +34,7 @@ const commandRules = [
 
 export default function ExecutiveFeaturesPage() {
   return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_PRODUCT_20260710">
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_PRODUCT_20260712_PAID_LAUNCH_CTAS">
       <PublicNav active="/product" />
 
       <section className="cp26PageHero">
@@ -42,7 +44,7 @@ export default function ExecutiveFeaturesPage() {
           <p>Churvox keeps the facts on purpose-built work pages, prepares the routine admin behind the scenes and puts only genuine decisions into Command.</p>
           <div className="cp26HeroActions">
             <Link className="cp26Button" to="/demo">Open product demo</Link>
-            <Link className="cp26Button cp26ButtonGhost" to="/signup">Start free trial</Link>
+            <Link className="cp26Button cp26ButtonGhost" to={DEFAULT_TRIAL_PATH}>Start free trial</Link>
           </div>
         </div>
         <div className="cp26HeroPanel">
