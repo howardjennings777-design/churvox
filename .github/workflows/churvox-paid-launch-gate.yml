@@ -37,7 +37,7 @@ jobs:
   code-gate:
     name: Build, syntax and safe browser contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: frontend
@@ -102,10 +102,23 @@ jobs:
         run: |
           npx playwright test \
             tests/e2e/churvox-auth-paid-launch-contract.spec.js \
+            tests/e2e/churvox-more-menu-paid-launch.spec.js \
+            tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
             tests/e2e/churvox-public-documents-paid-launch.spec.js \
             tests/e2e/churvox-public-request-paid-launch.spec.js \
             tests/e2e/churvox-billing-email-verification-gate.spec.js \
             --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Run mobile More and billing contracts
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-more-menu-paid-launch.spec.js \
+            tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
+            --project=mobile-chromium \
             --workers=1 \
             --reporter=line
 
