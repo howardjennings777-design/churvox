@@ -1,9 +1,18 @@
-// The main usage runtime now recognises the current ProductApp plans layout.
-// This small bridge only requests a fresh scan after client-side navigation;
-// it must never add legacy layout classes to the current product screen.
+// The main usage runtime recognises the current ProductApp plans layout.
+// This bridge requests scans after client-side navigation and owns only the
+// small grid compatibility rule needed for DOM-injected plan sections.
 
+const STYLE_ID = "churvox-product-plans-usage-grid-style";
 let observer = null;
 let scanning = false;
+
+function ensureGridStyle() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `#churvox-plan-live-usage{grid-column:1/-1;width:100%;min-width:0;box-sizing:border-box}`;
+  document.head.appendChild(style);
+}
 
 function isProductPlansPage() {
   const path = window.location.pathname || "";
@@ -14,6 +23,7 @@ function isProductPlansPage() {
 async function bridge() {
   if (!isProductPlansPage() || scanning) return;
   if (!document.querySelector(".cv3Product, .freshPricingPage, .cvPlansPage, [data-churvox-page='plans']")) return;
+  ensureGridStyle();
   scanning = true;
   try {
     const runtime = await import("./churvoxPlansUsageTruthRuntime");
