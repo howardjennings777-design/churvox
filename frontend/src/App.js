@@ -90,8 +90,10 @@ function FreshBusinessRoute({ children }) {
 
   if (user && isWorker) return <Navigate to="/worker/today" replace />;
   if (OWNER_MAINTENANCE_MODE) return <OwnerMaintenance />;
-  if (!user && (isPlans || isCheckoutReturn)) return <AppPage>{children}</AppPage>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    const next = encodeURIComponent(`${currentPath}${currentSearch}${currentHash}` || "/dashboard");
+    return <Navigate to={`/login?next=${next}`} replace />;
+  }
   if (isPayroll) return <Navigate to="/dashboard#payroll" replace />;
 
   const testerAccess = user?.free_tester_access === true || user?.is_tester === true || String(user?.subscription_status || "").toLowerCase() === "tester_free";
@@ -111,9 +113,10 @@ function FreshBusinessRoute({ children }) {
 }
 
 function WorkerRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isWorker, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login?worker=1" replace />;
+  if (!isWorker) return <Navigate to={isPlatformOwnerUser(user) ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
   return <AppPage>{children}</AppPage>;
 }
 
@@ -172,9 +175,9 @@ function App() {
           <Toaster position="top-right" richColors />
           <React.Suspense fallback={<Spinner />}>
             <Routes>
-              <Route path="/office-team-lab" element={<OfficeTeamLab />} />
-              <Route path="/office-lab" element={<OfficeTeamLab />} />
-              <Route path="/new-command-lab" element={<OfficeTeamLab />} />
+              <Route path="/office-team-lab" element={<PlatformAdminRoute><OfficeTeamLab /></PlatformAdminRoute>} />
+              <Route path="/office-lab" element={<PlatformAdminRoute><OfficeTeamLab /></PlatformAdminRoute>} />
+              <Route path="/new-command-lab" element={<PlatformAdminRoute><OfficeTeamLab /></PlatformAdminRoute>} />
 
               <Route path="/" element={<HomePage />} />
               <Route path="/app" element={<PwaLaunchPage />} />
