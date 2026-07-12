@@ -3,7 +3,7 @@ const live = fs.readFileSync('backend/churvox_paid_launch_live_patch.py', 'utf8'
 const boot = fs.readFileSync('backend/churvox_boot.py', 'utf8');
 
 const checks = [
-  ['parallel exact-status queue reads', live.includes('asyncio.gather(*(read_queue_status(bid, status) for status in OPEN_STATUSES))'],
+  ['parallel exact-status queue reads', live.includes(`asyncio.gather(*(read_queue_status(bid, status) for status in OPEN_STATUSES))`)],
   ['exact compound index hint', live.includes('cursor.hint([("business_id", 1), ("status", 1), ("updated_at", -1)])')],
   ['sub-second Mongo deadline', live.includes('cursor.max_time_ms(900)')],
   ['bounded foreground query', live.includes('QUEUE_QUERY_TIMEOUT_SECONDS = 2.2')],
