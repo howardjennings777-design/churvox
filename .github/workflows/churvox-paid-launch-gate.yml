@@ -70,38 +70,26 @@ jobs:
       - name: Build production frontend
         run: npm run build
 
-      - name: Compile paid-launch backend guards
+      - name: Compile all backend Python
         working-directory: .
         run: |
-          python -m py_compile \
-            backend/sitecustomize.py \
-            backend/usercustomize.py \
-            backend/churvox_start.py \
-            backend/churvox_boot_safe.py \
-            backend/churvox_paid_launch_guard_patch.py \
-            backend/churvox_runtime_jwt_secret_patch.py \
-            backend/churvox_outer_cors_error_shield.py \
-            backend/churvox_stripe_webhook_paid_launch_patch.py \
-            backend/churvox_public_documents_paid_launch_guard.py \
-            backend/churvox_public_invoice_balance_fix.py \
-            backend/churvox_public_customer_request_paid_launch.py \
-            backend/churvox_production_launch_security.py \
-            backend/churvox_email_links_paid_launch_patch.py \
-            backend/churvox_auth_paid_launch_hardening.py \
-            backend/churvox_password_recovery_paid_launch_patch.py \
-            backend/churvox_session_token_precision_patch.py \
-            backend/churvox_token_revocation_paid_launch_patch.py \
-            backend/churvox_registration_verification_paid_launch_patch.py \
-            backend/churvox_registration_claim_guard.py \
-            backend/churvox_checkout_token_session_guard.py \
-            backend/churvox_login_paid_launch_final_patch.py \
-            backend/churvox_worker_login_role_guard.py \
-            backend/churvox_invite_security_paid_launch_patch.py \
-            backend/churvox_auth_launch_status_patch.py \
-            backend/churvox_feature_tier_paid_launch_guard.py \
-            backend/churvox_plan_usage_guard_patch.py \
-            backend/churvox_billing_portal_paid_launch.py \
-            backend/churvox_account_deletion_paid_launch.py
+          python - <<'PY'
+          from pathlib import Path
+          import py_compile
+          import sys
+
+          failures = []
+          for path in sorted(Path('backend').rglob('*.py')):
+              try:
+                  py_compile.compile(str(path), doraise=True)
+              except py_compile.PyCompileError as exc:
+                  failures.append((str(path), exc.msg))
+          if failures:
+              for path, error in failures:
+                  print(f'--- {path} ---\n{error}')
+              sys.exit(1)
+          print('All backend Python files compiled successfully.')
+          PY
 
       - name: Run backend paid-launch contracts
         working-directory: .
