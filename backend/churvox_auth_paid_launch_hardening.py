@@ -7,7 +7,7 @@ from typing import Any
 
 from starlette.responses import JSONResponse
 
-VERSION = "churvox-auth-paid-launch-hardening-20260712c"
+VERSION = "churvox-auth-paid-launch-hardening-20260712d"
 PASSWORD_PATH_FIELDS = {
     ("/api/auth/register", "POST"): "password",
     ("/api/auth/reset-password", "POST"): "new_password",
@@ -146,6 +146,41 @@ class AuthPaidLaunchMiddleware:
 
         return body, replay
 
+    async def _strict_auth_me(self, scope, receive, send):
+        messages = []
+
+        async def capture(message):
+            messages.append(message)
+
+        await self.app(scope, receive, capture)
+        start = next((message for message in messages if message.get("type") == "http.response.start"), None)
+        body = b"".join(
+            message.get("body", b"")
+            for message in messages
+            if message.get("type") == "http.response.body"
+        )
+        signed_out = False
+        if start and int(start.get("status") or 0) == 200:
+            try:
+                payload = json.loads(body.decode("utf-8")) if body else {}
+                signed_out = isinstance(payload, dict) and payload.get("authenticated") is False
+            except Exception:
+                signed_out = False
+        if signed_out and start:
+            start["status"] = 401
+            headers = [
+                (key, value)
+                for key, value in list(start.get("headers", []) or [])
+                if key.lower() not in {b"cache-control", b"x-churvox-auth-gate"}
+            ]
+            headers.extend([
+                (b"cache-control", b"no-store"),
+                (b"x-churvox-auth-gate", b"signed-out"),
+            ])
+            start["headers"] = headers
+        for message in messages:
+            await send(message)
+
     async def _rate_limited(self, kind: str, key: str, limit: int, minutes: int) -> bool:
         db = getattr(self.module, "db", None)
         if db is None:
@@ -164,6 +199,12 @@ class AuthPaidLaunchMiddleware:
 
         path = scope.get("path", "")
         method = scope.get("method", "GET").upper()
+
+        # Route patches may replace /api/auth/me late in startup. Enforce the
+        # signed-out HTTP contract at middleware level so route order cannot
+        # turn an unauthenticated result into a successful response.
+        if path == "/api/auth/me" and method == "GET":
+            return await self._strict_auth_me(scope, receive, send)
 
         # The final owner login route has its own bounded JSON parsing, lockout,
         # account status checks and diagnostics. Do not read/replay this body in
