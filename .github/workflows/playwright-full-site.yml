@@ -14,7 +14,7 @@ on:
 
 jobs:
   playwright:
-    name: Playwright live smoke + deep launch audit
+    name: Playwright public site and authenticated launch audit
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -51,8 +51,30 @@ jobs:
         if: github.event_name == 'push'
         run: sleep 90
 
-      - name: Run Playwright full-site and deep launch checks
-        run: npx playwright test tests/e2e/full-site.spec.js tests/e2e/deep-launch-audit.spec.js
+      - name: Run public desktop and mobile site contracts
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-public-honesty-and-function.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Run authenticated desktop and mobile launch contracts
+        if: env.E2E_EMAIL != '' && env.E2E_PASSWORD != ''
+        run: |
+          npx playwright test \
+            tests/e2e/deep-launch-audit.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Report missing authenticated test credentials
+        if: env.E2E_EMAIL == '' || env.E2E_PASSWORD == ''
+        run: |
+          echo "Authenticated full-site coverage was not run because CHURVOX_E2E_EMAIL and CHURVOX_E2E_PASSWORD are not configured."
+          echo "Public desktop and mobile contracts still ran and must pass."
 
       - name: Upload Playwright report
         if: always()
