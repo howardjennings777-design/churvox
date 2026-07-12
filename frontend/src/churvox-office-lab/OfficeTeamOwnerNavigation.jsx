@@ -113,13 +113,15 @@ export default function OfficeTeamOwnerNavigation({ screen, go, pendingCount = 0
 
   return (
     <div className="cvOwnerNavigation" aria-label="Owner navigation" data-plan={plan}>
-      <nav className="cvOwnerPrimaryNav" aria-label="Main owner pages">
-        {visiblePrimary.map(([key, label]) => (
-          <button key={key} type="button" className={screen === key ? "active" : ""} onClick={() => navigate(key)}>
-            {label}
-            {key === "command" && pendingCount > 0 ? <span className="cvOwnerNavCount">{pendingCount}</span> : null}
-          </button>
-        ))}
+      <div className="cvOwnerMainNavigation">
+        <nav className="cvOwnerPrimaryNav" aria-label="Main owner pages">
+          {visiblePrimary.map(([key, label]) => (
+            <button key={key} type="button" className={screen === key ? "active" : ""} onClick={() => navigate(key)}>
+              {label}
+              {key === "command" && pendingCount > 0 ? <span className="cvOwnerNavCount">{pendingCount}</span> : null}
+            </button>
+          ))}
+        </nav>
         {visibleOffice.length ? (
           <div className="cvOwnerMore" ref={menuRef}>
             <button
@@ -153,7 +155,7 @@ export default function OfficeTeamOwnerNavigation({ screen, go, pendingCount = 0
             ) : null}
           </div>
         ) : null}
-      </nav>
+      </div>
       <nav className="cvOwnerUtilityNav" aria-label="Account and help pages">
         {visibleUtility.map(([key, label]) => (
           <button key={key} type="button" className={screen === key ? "active" : ""} onClick={() => navigate(key)}>{label}</button>
