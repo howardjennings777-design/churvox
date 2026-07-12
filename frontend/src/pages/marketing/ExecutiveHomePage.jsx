@@ -18,6 +18,8 @@ import {
 export const Nav = PublicNav;
 export const Footer = PublicFooter;
 
+const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
+
 const roles = [
   ["Office Manager", "Ranks what matters and keeps routine work out of the owner’s way."],
   ["Receptionist", "Prepares booking, rebooking and client follow-up decisions."],
@@ -57,7 +59,7 @@ export default function ExecutiveHomePage() {
   );
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_ADMIN_ENGINE_20260710">
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_ADMIN_ENGINE_20260712_PAID_LAUNCH_CTAS">
       <PublicNav />
 
       <section className="cp26Hero">
@@ -68,7 +70,7 @@ export default function ExecutiveHomePage() {
             Churvox connects jobs, clients, workers, messages, quotes and invoices, handles the routine admin behind the scenes, and brings only real decisions back to the owner in Command.
           </p>
           <div className="cp26HeroActions">
-            <Link className="cp26Button" to="/signup">Start 14-day trial</Link>
+            <Link className="cp26Button" to={DEFAULT_TRIAL_PATH}>Start 14-day trial</Link>
             <Link className="cp26Button cp26ButtonGhost" to="/demo">Open product demo</Link>
           </div>
           <div className="cp26TrustRail">
@@ -85,7 +87,7 @@ export default function ExecutiveHomePage() {
         <SectionHeading
           eyebrow="The hidden office"
           title="Eight strong roles. One simple owner experience."
-          text="You do not manage pretend staff or switch experimental modes. Churvox chooses the right office role, checks the record and sends the evidence-backed result to Command only when needed."
+          text="Churvox picks the right office role, checks the record and sends the evidence-backed result to Command only when needed."
         />
         <div className="cp26RoleStrip">
           {roles.map(([name, text]) => <article key={name}><strong>{name}</strong><span>{text}</span></article>)}
@@ -162,11 +164,11 @@ export default function ExecutiveHomePage() {
         <div>
           <Eyebrow light>Ready to see the full flow?</Eyebrow>
           <h2>Open the demo, then decide whether Churvox fits your business.</h2>
-          <p>No sales theatre. See how the owner workspace works, then start a trial when you are ready.</p>
+          <p>See how the owner workspace works, then start a trial when you are ready.</p>
         </div>
         <div className="cp26ClosingActions">
           <Link className="cp26Button" to="/demo">Open demo</Link>
-          <Link className="cp26Button cp26ButtonGhost" to="/signup">Start free trial</Link>
+          <Link className="cp26Button cp26ButtonGhost" to={DEFAULT_TRIAL_PATH}>Start free trial</Link>
         </div>
       </section>
 
