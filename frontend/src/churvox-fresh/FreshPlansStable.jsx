@@ -2,15 +2,14 @@ import React from "react";
 import { useApi } from "../hooks/useApi";
 import "./freshPlans.css";
 
-const TRACE = "checkout-js-trace-20260712-paid-launch-plan-path";
 const BILLING_PLAN_KEY = "churvox:billing-plan";
 const BILLING_COUNTRY_KEY = "churvox:billing-country";
 
 const PLANS = [
   { id: "start", api: "solo", name: "Start", price: 39, tag: "Starter", desc: "Jobs, clients, quotes and invoices." },
   { id: "crew", api: "team", name: "Crew", price: 89, tag: "Growing team", desc: "Workers, team access and dispatch." },
-  { id: "operator", api: "pro", name: "Operator", price: 149, tag: "Most Popular", desc: "AI Operator Actions and owner approval." },
-  { id: "command", api: "enterprise", name: "Command", price: 299, tag: "Full control", desc: "Accounting sync, payroll workspace and scale." },
+  { id: "operator", api: "pro", name: "Operator", price: 149, tag: "Most Popular", desc: "Prepared admin actions and owner approval." },
+  { id: "command", api: "enterprise", name: "Command", price: 299, tag: "Full control", desc: "Accounting sync, payroll review and scale." },
 ];
 
 const UI_PLAN = {
@@ -110,7 +109,7 @@ export default function FreshPlansStable({ onNavigate }) {
     const checkout = params.get("checkout");
 
     if (checkout === "cancelled") {
-      setNotice("Stripe checkout cancelled");
+      setNotice("Checkout cancelled");
       window.history.replaceState(null, "", "/plans");
       return;
     }
@@ -119,24 +118,24 @@ export default function FreshPlansStable({ onNavigate }) {
       let stopped = false;
       (async () => {
         try {
-          setNotice("Confirming Stripe checkout");
+          setNotice("Confirming checkout");
           const result = await post("/billing/confirm-checkout", {
             session_id: sessionId,
             plan: params.get("plan") || plan.api,
             country: params.get("country") || checkoutCountry(),
           });
           const body = unwrap(result);
-          if (body.success === false) throw new Error(body.error || body.detail || "Stripe checkout could not be confirmed.");
+          if (body.success === false) throw new Error(body.error || body.detail || "Checkout could not be confirmed.");
           if (!stopped) {
             window.history.replaceState(null, "", "/plans");
             window.dispatchEvent(new Event("churvox-auth-refresh"));
-            setNotice("Stripe checkout confirmed");
+            setNotice("Checkout confirmed");
             loadPlan();
           }
         } catch (err) {
           if (!stopped) {
             setNotice("Checkout needs attention");
-            setError(err?.message || "Stripe checkout could not be confirmed.");
+            setError(err?.message || "Checkout could not be confirmed.");
           }
         }
       })();
@@ -149,7 +148,7 @@ export default function FreshPlansStable({ onNavigate }) {
   async function startCheckout() {
     setBusy(true);
     setError("");
-    setNotice("Opening Stripe checkout");
+    setNotice("Opening checkout");
     try {
       const country = checkoutCountry();
       try {
@@ -164,27 +163,23 @@ export default function FreshPlansStable({ onNavigate }) {
         billing_country: country,
       });
       const body = unwrap(result);
-      if (body.success === false) throw new Error(body.error || body.detail || "Stripe checkout could not be opened.");
+      if (body.success === false) throw new Error(body.error || body.detail || "Checkout could not be opened.");
       const url = checkoutUrl(body);
-      if (!url) throw new Error("Stripe checkout did not return a checkout URL.");
+      if (!url) throw new Error("Checkout did not return a secure checkout URL.");
       window.location.href = url;
     } catch (err) {
       setBusy(false);
       setNotice("Checkout needs attention");
-      setError(err?.message || "Stripe checkout could not be opened.");
+      setError(err?.message || "Checkout could not be opened.");
     }
   }
 
   return (
-    <section className="freshPricingPage" data-checkout-trace={TRACE}>
-      <section className="freshCard freshNotice" style={{ marginBottom: 12 }}>
-        <b>Checkout trace</b><span>{TRACE}</span>
-      </section>
-
+    <section className="freshPricingPage" data-checkout-trace="paid-launch-checkout-ready">
       <header className="freshPricingHero">
         <div>
           <span>Churvox pricing</span>
-          <h1>Start with Stripe trial checkout.</h1>
+          <h1>Start with a 14-day trial.</h1>
           <p>Simple monthly pricing + GST. Churvox does the admin. You approve.</p>
         </div>
         <aside>
@@ -195,7 +190,7 @@ export default function FreshPlansStable({ onNavigate }) {
       </header>
 
       <section className="freshPlanNotice proper">
-        <b>14-day Stripe trial</b>
+        <b>14-day trial</b>
         <span>Start $39 · Crew $89 · Operator $149 · Command $299.</span>
       </section>
 
@@ -221,10 +216,10 @@ export default function FreshPlansStable({ onNavigate }) {
           </div>
         </section>
         <aside className="freshCard freshCheckoutCard">
-          <h2>Stripe checkout</h2>
-          <p>Uses Churvox same-site API and confirms the plan when Stripe returns.</p>
+          <h2>Secure checkout</h2>
+          <p>Starts the 14-day trial for the selected plan and returns to Churvox setup when complete.</p>
           <div className="freshActions">
-            <button className="freshDark" type="button" onClick={startCheckout} disabled={busy}>{busy ? "Opening Stripe..." : "Start Stripe checkout"}</button>
+            <button className="freshDark" type="button" onClick={startCheckout} disabled={busy}>{busy ? "Opening checkout..." : "Start free trial"}</button>
             <button className="freshGhost" type="button" onClick={loadPlan}>Reload plan</button>
             <button className="freshGhost" type="button" onClick={() => onNavigate?.("support")}>Support</button>
           </div>
