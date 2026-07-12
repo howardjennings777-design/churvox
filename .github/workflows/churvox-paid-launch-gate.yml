@@ -77,8 +77,14 @@ jobs:
             backend/churvox_production_launch_security.py \
             backend/churvox_email_links_paid_launch_patch.py \
             backend/churvox_auth_paid_launch_hardening.py \
+            backend/churvox_feature_tier_paid_launch_guard.py \
+            backend/churvox_plan_usage_guard_patch.py \
             backend/churvox_billing_portal_paid_launch.py \
             backend/churvox_account_deletion_paid_launch.py
+
+      - name: Run backend feature tier contract
+        working-directory: .
+        run: python -m unittest backend.test_churvox_feature_tier_paid_launch_guard
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
