@@ -70,6 +70,7 @@ test.describe('Paid customer billing lifecycle', () => {
   });
 
   test('live billing and deletion routes are mounted but protected', async ({ request }) => {
+    test.skip(process.env.CHURVOX_RUN_LIVE_ROUTE_CHECKS !== '1', 'Deployment checks run in the credential-free live audit after Render deploys the current main head.');
     const apiBase = String(process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/$/, '');
 
     const portal = await request.post(`${apiBase}/api/billing/create-portal-session`, { data: {}, timeout: 30000 });
