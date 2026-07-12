@@ -2,7 +2,7 @@ from pathlib import Path
 import unittest
 
 
-# Final2 rerun: includes the full-width Plans billing and verified-usage grid fix.
+# Final2 completion run: includes full-width Plans controls and usage retry cooldown.
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_WORKER = ROOT / "frontend/public/worker"
 APP = ROOT / "frontend/src/App.js"
