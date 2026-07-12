@@ -43,9 +43,14 @@ export function PublicFooter() {
         <Link to="/product">Product</Link>
         <Link to="/pricing">Pricing</Link>
         <Link to="/demo">Demo</Link>
+        <Link to="/about">About</Link>
+        <Link to="/security">Security</Link>
+        <Link to="/support">Support</Link>
+        <Link to="/refunds-cancellations">Billing &amp; cancellations</Link>
         <Link to="/contact">Contact</Link>
         <Link to="/legal/privacy">Privacy</Link>
         <Link to="/legal/terms">Terms</Link>
+        <Link to="/delete-account">Delete account</Link>
         <Link to="/login">Log in</Link>
       </nav>
       <small>© {new Date().getFullYear()} Churvox · hello@churvox.com</small>
