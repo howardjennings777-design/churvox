@@ -4,6 +4,7 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ChurvoxPublic2026.css";
 import "./ChurvoxPublicTouchTargets.css";
 
+const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
 const navItems = [
   ["/product", "Product"],
   ["/pricing", "Pricing"],
@@ -25,7 +26,7 @@ export function PublicNav({ active = "" }) {
       </nav>
       <div className="cp26NavActions">
         <Link className="cp26TextLink" to="/login">Log in</Link>
-        <Link className="cp26Button cp26ButtonSmall" to="/signup">Start free trial</Link>
+        <Link className="cp26Button cp26ButtonSmall" to={DEFAULT_TRIAL_PATH}>Start free trial</Link>
       </div>
     </header>
   );
