@@ -75,3 +75,132 @@
     width: 100%;
   }
 }
+
+.cvGrowthPackBuy {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, .42fr) minmax(250px, .58fr);
+  gap: 14px;
+  align-items: center;
+  padding: 17px;
+  border: 1px solid rgba(255,248,237,.18);
+  border-radius: 22px;
+  color: #fff8ed;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(249,115,22,.38), transparent 34%),
+    linear-gradient(135deg, #17120e, #33251c 58%, #7c2d12);
+  box-shadow: 0 16px 38px rgba(23,18,14,.14);
+}
+
+.cvGrowthPackBuy > div:first-child,
+.cvGrowthPackBuy label,
+.cvGrowthPackBuyAction {
+  min-width: 0;
+}
+
+.cvGrowthPackBuy > div:first-child > span,
+.cvGrowthPackBuy label > span {
+  display: block;
+  color: #fed7aa;
+  font-size: .65rem;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvGrowthPackBuy h4 {
+  margin: 6px 0;
+  color: #fff8ed;
+  font-size: 1.35rem;
+  letter-spacing: -.04em;
+}
+
+.cvGrowthPackBuy p {
+  margin: 0;
+  color: rgba(255,248,237,.78);
+  font-size: .82rem;
+  font-weight: 780;
+  line-height: 1.45;
+}
+
+.cvGrowthPackBuy label {
+  display: grid;
+  gap: 8px;
+}
+
+.cvGrowthPackBuy select {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(255,248,237,.28);
+  border-radius: 14px;
+  padding: 0 12px;
+  color: #17120e;
+  background: #fff8ed;
+  font: inherit;
+  font-weight: 950;
+}
+
+.cvGrowthPackBuyAction {
+  display: grid;
+  gap: 8px;
+}
+
+.cvGrowthPackBuyAction > strong {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: #fff8ed;
+  font-size: 1.55rem;
+  letter-spacing: -.045em;
+}
+
+.cvGrowthPackBuyAction > strong small,
+.cvGrowthPackBuyAction > small {
+  color: rgba(255,248,237,.7);
+  font-size: .7rem;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.cvGrowthPackBuyAction button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 15px;
+  padding: 0 17px;
+  color: #17120e;
+  background: linear-gradient(135deg, #fed7aa, #fb923c);
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.cvGrowthPackBuyAction button:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.cvGrowthPackNotice,
+.cvGrowthPackError {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border-radius: 13px;
+}
+
+.cvGrowthPackNotice {
+  border: 1px solid rgba(251,191,36,.35);
+  background: rgba(120,53,15,.42);
+}
+
+.cvGrowthPackError {
+  border: 1px solid rgba(254,202,202,.35);
+  background: rgba(127,29,29,.5);
+}
+
+@media (max-width: 900px) {
+  .cvGrowthPackBuy {
+    grid-template-columns: 1fr;
+  }
+
+  .cvGrowthPackBuyAction button {
+    width: 100%;
+  }
+}
