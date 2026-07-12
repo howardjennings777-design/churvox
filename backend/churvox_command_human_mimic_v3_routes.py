@@ -172,7 +172,7 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
             {"ownerId": {"$in": values}},
         ]}
 
-    async def scoped_rows(user_business_id, names, limit=240):
+    async def scoped_rows(user_business_id, names, limit=240, errors=None):
         rows = []
         query = business_clause(user_business_id)
         for name in names:
@@ -184,8 +184,9 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
                     cursor = cursor.sort("_id", -1)
                 found = await cursor.limit(limit).to_list(limit)
                 rows.extend([{**dict(item), "_collection": name} for item in found])
-            except Exception:
-                continue
+            except Exception as exc:
+                if errors is not None:
+                    errors.append(f"{name}: {exc.__class__.__name__}")
         return rows[:limit]
 
     def row_ids(row):
@@ -1035,15 +1036,17 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
             raise HTTPException(status_code=500, detail="Human mimic reasoning engine is unavailable")
         base_result = await base_scan(payload=payload, request=request)
         captured = capture_db.capture.get("command_slips", [])
+        scan_errors = list(base_result.get("scan_errors") or [])
 
         context = {
-            "jobs": await scoped_rows(user_business_id, ["jobs", "job_records", "appointments", "bookings"], 260),
-            "invoices": await scoped_rows(user_business_id, ["invoices", "invoice_records"], 220),
-            "clients": await scoped_rows(user_business_id, ["clients", "customers"], 180),
-            "messages": await scoped_rows(user_business_id, ["messages", "client_messages", "inbox_messages"], 180),
-            "timers": await scoped_rows(user_business_id, ["time_entries", "timers", "worker_time_entries", "timesheets"], 180),
-            "settings": await scoped_rows(user_business_id, ["businesses", "business_settings", "settings"], 60),
+            "jobs": await scoped_rows(user_business_id, ["jobs", "job_records", "appointments", "bookings"], 260, scan_errors),
+            "invoices": await scoped_rows(user_business_id, ["invoices", "invoice_records"], 220, scan_errors),
+            "clients": await scoped_rows(user_business_id, ["clients", "customers"], 180, scan_errors),
+            "messages": await scoped_rows(user_business_id, ["messages", "client_messages", "inbox_messages"], 180, scan_errors),
+            "timers": await scoped_rows(user_business_id, ["time_entries", "timers", "worker_time_entries", "timesheets"], 180, scan_errors),
+            "settings": await scoped_rows(user_business_id, ["businesses", "business_settings", "settings"], 60, scan_errors),
         }
+        scan_errors = list(dict.fromkeys(scan_errors))
         context["business_rate"], context["business_inclusive"], context["business_tax_source"] = business_tax_context(context["settings"])
         linked_jobs = {}
         for job in context["jobs"]:
@@ -1109,7 +1112,13 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
             "roles_checked": ROLE_NAMES,
             "slips": created,
             "existing": existing,
-            "message": f"Strict human mimic v3 prepared {len(created)} new decision(s), kept {len(existing)} current decision(s), and rejected or superseded {retired} weak/stale candidate(s).",
+            "scan_complete": not scan_errors,
+            "scan_errors": scan_errors,
+            "message": (
+                f"Strict human mimic v3 prepared {len(created)} new decision(s), kept {len(existing)} current decision(s), and rejected or superseded {retired} weak/stale candidate(s)."
+                if not scan_errors
+                else f"Strict human mimic v3 prepared {len(created)} new decision(s), but part of the live source scan failed. Do not treat an empty queue as all clear."
+            ),
             "safety": SAFE_RESULT,
         }
 
