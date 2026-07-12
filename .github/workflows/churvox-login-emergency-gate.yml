@@ -59,11 +59,12 @@ jobs:
 
       - name: Verify final route markers
         run: |
-          grep -F 'VERSION = "churvox-login-emergency-final-20260712e"' backend/churvox_login_emergency_final.py
+          grep -F 'VERSION = "churvox-login-emergency-final-20260712f"' backend/churvox_login_emergency_final.py
           grep -F 'VERSION = "churvox-production-launch-security-20260712f"' backend/churvox_production_launch_security.py
           grep -F 'app.add_api_route("/api/auth/login", emergency_login, methods=["POST"])' backend/churvox_login_emergency_final.py
           grep -F 'app.add_api_route("/api/auth/logout", emergency_logout, methods=["POST"])' backend/churvox_login_emergency_final.py
           grep -F 'app.add_api_route(worker_path, emergency_login, methods=["POST"])' backend/churvox_login_emergency_final.py
+          grep -F 'if not valid and worker_fallback_allowed(user):' backend/churvox_login_emergency_final.py
           grep -F '"lockout-check-error"' backend/churvox_login_emergency_final.py
           grep -F '"lockout-record-error"' backend/churvox_login_emergency_final.py
           grep -F 'critical_repair = bool(' backend/churvox_login_emergency_final.py
