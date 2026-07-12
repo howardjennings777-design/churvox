@@ -214,6 +214,12 @@ def install(module):
         "backend.churvox_public_customer_request_paid_launch",
         "public customer request",
     )
+    install_patch_module(
+        module,
+        "churvox_production_launch_security",
+        "backend.churvox_production_launch_security",
+        "production launch security",
+    )
     if name in INSTALLED:
         return
     app = getattr(module, "app", None)
