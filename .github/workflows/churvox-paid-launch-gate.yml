@@ -69,7 +69,11 @@ jobs:
           python -m py_compile \
             backend/sitecustomize.py \
             backend/usercustomize.py \
+            backend/churvox_start.py \
+            backend/churvox_boot_safe.py \
             backend/churvox_paid_launch_guard_patch.py \
+            backend/churvox_runtime_jwt_secret_patch.py \
+            backend/churvox_outer_cors_error_shield.py \
             backend/churvox_stripe_webhook_paid_launch_patch.py \
             backend/churvox_public_documents_paid_launch_guard.py \
             backend/churvox_public_invoice_balance_fix.py \
