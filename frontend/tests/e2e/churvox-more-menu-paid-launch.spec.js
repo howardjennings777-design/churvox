@@ -140,6 +140,32 @@ test.describe('Paid-launch dashboard More navigation', () => {
     await expect(trigger).toBeFocused();
   });
 
+  test('desktop More menu is inside the viewport and its links open', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await bootOwner(page, 'command');
+
+    const trigger = moreTrigger(page);
+    await trigger.click();
+    const menu = page.getByRole('menu', { name: 'More tools for command' });
+    const schedule = menu.getByRole('menuitem', { name: 'Schedule' });
+    await expect(menu).toBeVisible();
+    await expect(schedule).toBeVisible();
+
+    const triggerBox = await trigger.boundingBox();
+    const menuBox = await menu.boundingBox();
+    const scheduleBox = await schedule.boundingBox();
+    expect(triggerBox).not.toBeNull();
+    expect(menuBox).not.toBeNull();
+    expect(scheduleBox).not.toBeNull();
+    expect(menuBox.y).toBeGreaterThan(triggerBox.y);
+    expect(menuBox.y + menuBox.height).toBeLessThanOrEqual(960);
+    expect(scheduleBox.y).toBeGreaterThanOrEqual(menuBox.y);
+
+    await schedule.click();
+    await expect(page.locator('.cvOwnerReady')).toHaveAttribute('data-screen', 'schedule');
+    await expect.poll(() => page.url()).toMatch(/#schedule$/);
+  });
+
   test('mobile More has a backdrop and reliable close controls', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await bootOwner(page, 'command');
