@@ -122,6 +122,7 @@ class RuntimeJwtSecretSourceTest(unittest.TestCase):
             runtime_patch.install(first)
             runtime_patch.install(second)
             checks = launch_security._checks(second)
+            persistent_marker = os.environ.get(runtime_patch.PERSISTENT_ENV)
 
         self.assertEqual(first.JWT_SECRET, secret)
         self.assertEqual(second.JWT_SECRET, secret)
@@ -131,7 +132,7 @@ class RuntimeJwtSecretSourceTest(unittest.TestCase):
         self.assertTrue(second.CHURVOX_JWT_SECRET_PERSISTENT)
         self.assertTrue(checks["jwt_secret_persistent"]["ok"])
         self.assertIn("Mongo-backed", checks["jwt_secret_persistent"]["detail"])
-        self.assertEqual(os.environ[runtime_patch.PERSISTENT_ENV], "1")
+        self.assertEqual(persistent_marker, "1")
 
 
 if __name__ == "__main__":
