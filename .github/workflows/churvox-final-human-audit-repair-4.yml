@@ -1,0 +1,495 @@
+name: Churvox Final Human Audit Repair 4
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-final-human-audit-repair-4]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply corrected evidence repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          source_path = Path('.github/workflows/churvox-final-human-audit-repair.yml')
+          lines = source_path.read_text().splitlines()
+          start = next(i for i, line in enumerate(lines) if line.strip() == "python - <<'PY'") + 1
+          end = next(i for i in range(start, len(lines)) if lines[i].strip() == 'PY')
+          script = textwrap.dedent('\n'.join(lines[start:end])) + '\n'
+
+          section_start = script.find("wrapper_path = Path('backend/churvox_outer_cors_error_shield.py')")
+          if section_start < 0:
+              raise SystemExit('Original wrapper patch section was not found')
+          end_marker = "wrapper_path.write_text(wrapper)\n"
+          section_end = script.find(end_marker, section_start)
+          if section_end < 0:
+              raise SystemExit('Original wrapper patch section end was not found')
+          section_end += len(end_marker)
+
+          corrected = r'''wrapper_path = Path('backend/churvox_outer_cors_error_shield.py')
+          wrapper = wrapper_path.read_text()
+          worker_decision_marker = '("churvox_worker_field_slip_decision_patch", "backend.churvox_worker_field_slip_decision_patch"),'
+          marker_index = wrapper.find(worker_decision_marker)
+          if marker_index < 0:
+              raise SystemExit('worker field-slip decision installer marker not found')
+          block_start = wrapper.rfind('    _install_patch(', 0, marker_index)
+          block_end = wrapper.find('\n    )', marker_index)
+          if block_start < 0 or block_end < 0:
+              raise SystemExit('worker field-slip decision installer block boundaries not found')
+          block_end += len('\n    )')
+          worker_block = wrapper[block_start:block_end]
+          command_block = (
+              '    _install_patch(\n'
+              '        module,\n'
+              '        ("churvox_command_slip_decision_patch", "backend.churvox_command_slip_decision_patch"),\n'
+              '        "final Command slip decision routes",\n'
+              '    )'
+          )
+          if 'churvox_command_slip_decision_patch' not in wrapper:
+              wrapper = wrapper[:block_start] + command_block + '\n' + worker_block + wrapper[block_end:]
+          wrapper_path.write_text(wrapper)
+          print('patched: final startup wrapper owns Command decisions')
+          '''.replace('\n          ', '\n')
+
+          script = script[:section_start] + corrected + script[section_end:]
+          compile(script, '/tmp/churvox-final-repair-4.py', 'exec')
+          exec(compile(script, '/tmp/churvox-final-repair-4.py', 'exec'), {'__name__': '__main__'})
+          PY
+
+      - name: Write clean final Command decision module
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > backend/churvox_command_slip_decision_patch.py <<'PYMODULE'
+          from __future__ import annotations
+
+          from datetime import datetime, timezone
+          import importlib
+          import importlib.abc
+          import importlib.machinery
+          import sys
+
+          from starlette.requests import Request as StarletteRequest
+
+          VERSION = "churvox-command-slip-decisions-20260713a"
+          TARGETS = {"server", "backend.server"}
+          OWNER_ROLES = {"employer", "owner", "admin", "manager", "office_admin", "business_owner"}
+          DECISIONS = {
+              "ignore": "dismissed",
+              "dismiss": "dismissed",
+              "reject": "rejected",
+              "park": "parked",
+              "snooze": "snoozed",
+          }
+
+
+          def text(value):
+              return str(value or "").strip()
+
+
+          def lower(value):
+              return text(value).lower()
+
+
+          def promote_route(app, path, method):
+              method = method.upper()
+              preferred = [
+                  route
+                  for route in app.router.routes
+                  if getattr(route, "path", "") == path
+                  and method in set(getattr(route, "methods", set()) or set())
+              ]
+              if preferred:
+                  app.router.routes = preferred + [route for route in app.router.routes if route not in preferred]
+
+
+          def remove_route(app, path, method):
+              method = method.upper()
+              app.router.routes = [
+                  route
+                  for route in app.router.routes
+                  if not (
+                      getattr(route, "path", "") == path
+                      and method in set(getattr(route, "methods", set()) or set())
+                  )
+              ]
+
+
+          def values(raw, ObjectId):
+              output = []
+              value = text(raw)
+              if value:
+                  output.append(value)
+                  try:
+                      output.append(ObjectId(value))
+                  except Exception:
+                      pass
+              return output
+
+
+          def business_id(user):
+              return text(
+                  (user or {}).get("business_id")
+                  or (user or {}).get("businessId")
+                  or (user or {}).get("owner_business_id")
+                  or (user or {}).get("id")
+                  or (user or {}).get("_id")
+              )
+
+
+          def business_query(user, ObjectId):
+              ids = values(business_id(user), ObjectId)
+              return {
+                  "$or": [
+                      {"business_id": {"$in": ids}},
+                      {"businessId": {"$in": ids}},
+                      {"contractor_id": {"$in": ids}},
+                      {"owner_business_id": {"$in": ids}},
+                      {"owner_id": {"$in": ids}},
+                  ]
+              }
+
+
+          def install(module):
+              app = getattr(module, "app", None)
+              db = getattr(module, "db", None)
+              get_current_user = getattr(module, "get_current_user", None)
+              ObjectId = getattr(module, "ObjectId", None)
+              HTTPException = getattr(module, "HTTPException", None)
+              if not app or db is None or not get_current_user or ObjectId is None or HTTPException is None:
+                  return
+
+              async def require_owner(request):
+                  user = await get_current_user(request)
+                  role = lower(
+                      (user or {}).get("role")
+                      or (user or {}).get("user_role")
+                      or (user or {}).get("account_type")
+                  )
+                  if role not in OWNER_ROLES and not (user or {}).get("is_admin"):
+                      raise HTTPException(status_code=403, detail="Owner access required")
+                  if not business_id(user):
+                      raise HTTPException(status_code=400, detail="Business id is missing")
+                  return user
+
+              async def health(request: StarletteRequest):
+                  await require_owner(request)
+                  return {
+                      "success": True,
+                      "version": VERSION,
+                      "safety": "Owner-only route health. Nothing changed.",
+                  }
+
+              health_path = "/api/command/decision-route-health"
+              remove_route(app, health_path, "GET")
+              app.add_api_route(health_path, health, methods=["GET"])
+              promote_route(app, health_path, "GET")
+
+              def endpoint_for(decision):
+                  async def endpoint(slip_id: str, request: StarletteRequest):
+                      user = await require_owner(request)
+                      try:
+                          payload = await request.json()
+                      except Exception:
+                          payload = {}
+
+                      mapped = DECISIONS[decision]
+                      slip_values = values(slip_id, ObjectId)
+                      query = {
+                          "$and": [
+                              business_query(user, ObjectId),
+                              {
+                                  "$or": [
+                                      {"_id": {"$in": slip_values}},
+                                      {"id": slip_id},
+                                      {"action_id": slip_id},
+                                      {"source_id": slip_id},
+                                  ]
+                              },
+                          ]
+                      }
+                      now = datetime.now(timezone.utc)
+                      note = text(
+                          payload.get("note")
+                          or payload.get("owner_note")
+                          or payload.get("reason")
+                          or f"Owner chose {decision}."
+                      )
+                      update = {
+                          "status": mapped,
+                          "owner_decision": mapped,
+                          "decision": mapped,
+                          "decision_note": note,
+                          "decided_by": text(
+                              (user or {}).get("id")
+                              or (user or {}).get("_id")
+                              or (user or {}).get("email")
+                          ),
+                          "decided_at": now,
+                          "updated_at": now,
+                      }
+
+                      matched = 0
+                      collections = []
+                      for collection_name in (
+                          "command_slips",
+                          "ai_approval_actions",
+                          "worker_field_slips",
+                      ):
+                          try:
+                              result = await db[collection_name].update_many(query, {"$set": update})
+                              count = int(getattr(result, "matched_count", 0) or 0)
+                              if count:
+                                  matched += count
+                                  collections.append(collection_name)
+                          except Exception:
+                              continue
+
+                      if matched == 0:
+                          raise HTTPException(status_code=404, detail="Command slip not found")
+
+                      try:
+                          await db.command_decisions.insert_one(
+                              {
+                                  "business_id": business_id(user),
+                                  "action_id": slip_id,
+                                  "decision": mapped,
+                                  "status": mapped,
+                                  "source": "final_command_slip_decision",
+                                  "note": note,
+                                  "route_version": VERSION,
+                                  "created_at": now,
+                                  "updated_at": now,
+                              }
+                          )
+                      except Exception:
+                          pass
+
+                      return {
+                          "success": True,
+                          "id": slip_id,
+                          "decision": mapped,
+                          "matched": matched,
+                          "collections": collections,
+                          "route_version": VERSION,
+                          "safety": "Owner decision recorded. Nothing was sent, synced, charged or changed.",
+                      }
+
+                  endpoint.__name__ = f"command_slip_{decision}_final"
+                  return endpoint
+
+              for decision in DECISIONS:
+                  path = f"/api/command/slips/{{slip_id}}/{decision}"
+                  remove_route(app, path, "POST")
+                  app.add_api_route(path, endpoint_for(decision), methods=["POST"])
+                  promote_route(app, path, "POST")
+
+
+          class Loader(importlib.abc.Loader):
+              def __init__(self, original_loader):
+                  self.original_loader = original_loader
+
+              def create_module(self, spec):
+                  if hasattr(self.original_loader, "create_module"):
+                      return self.original_loader.create_module(spec)
+                  return None
+
+              def exec_module(self, module):
+                  self.original_loader.exec_module(module)
+                  install(module)
+
+
+          class Finder(importlib.abc.MetaPathFinder):
+              def find_spec(self, fullname, path=None, target=None):
+                  if fullname not in TARGETS:
+                      return None
+                  spec = importlib.machinery.PathFinder.find_spec(fullname, path)
+                  if spec and spec.loader and not isinstance(spec.loader, Loader):
+                      spec.loader = Loader(spec.loader)
+                  return spec
+
+
+          if not any(isinstance(finder, Finder) for finder in sys.meta_path):
+              sys.meta_path.insert(0, Finder())
+
+          for module_name in list(TARGETS):
+              loaded = sys.modules.get(module_name)
+              if loaded:
+                  install(loaded)
+          PYMODULE
+
+          cat > backend/test_churvox_command_slip_decision_patch.py <<'PYTEST'
+          from __future__ import annotations
+
+          import sys
+          import types
+          import unittest
+          from pathlib import Path
+
+          from fastapi import FastAPI, HTTPException
+
+          sys.path.insert(0, str(Path(__file__).resolve().parent))
+          import churvox_command_slip_decision_patch as patch
+
+
+          class DummyResult:
+              matched_count = 0
+
+
+          class DummyCollection:
+              async def update_many(self, query, update):
+                  return DummyResult()
+
+              async def insert_one(self, row):
+                  return None
+
+
+          class DummyDB:
+              def __getattr__(self, name):
+                  return DummyCollection()
+
+              def __getitem__(self, name):
+                  return DummyCollection()
+
+
+          class FakeObjectId:
+              def __init__(self, value):
+                  self.value = value
+
+
+          async def current_user(request):
+              return {
+                  "id": "business-1",
+                  "business_id": "business-1",
+                  "email": "owner@example.com",
+                  "role": "owner",
+              }
+
+
+          class RouteTests(unittest.TestCase):
+              def test_final_routes_do_not_treat_request_as_query_input(self):
+                  module = types.SimpleNamespace(
+                      app=FastAPI(),
+                      db=DummyDB(),
+                      get_current_user=current_user,
+                      ObjectId=FakeObjectId,
+                      HTTPException=HTTPException,
+                  )
+                  patch.install(module)
+                  expected = {"/api/command/decision-route-health"}
+                  expected.update(
+                      {
+                          f"/api/command/slips/{{slip_id}}/{decision}"
+                          for decision in patch.DECISIONS
+                      }
+                  )
+                  found = {
+                      route.path
+                      for route in module.app.router.routes
+                      if route.path in expected
+                  }
+                  self.assertEqual(found, expected)
+                  for route in module.app.router.routes:
+                      if route.path not in expected:
+                          continue
+                      query_names = {item.name for item in route.dependant.query_params}
+                      self.assertNotIn("request", query_names)
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          PYTEST
+
+      - name: Install verification dependencies
+        run: |
+          python -m pip install --quiet fastapi pymongo httpx
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+
+      - name: Verify backend and permanent contracts
+        run: |
+          python -m py_compile \
+            backend/churvox_command_slip_decision_patch.py \
+            backend/churvox_worker_command_visibility_patch.py \
+            backend/churvox_worker_field_slip_decision_patch.py \
+            backend/churvox_outer_cors_error_shield.py
+          python -m unittest backend/test_churvox_command_slip_decision_patch.py backend/test_churvox_worker_command_route_request_injection.py
+          node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+          node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          node --check frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js
+          node --check scripts/churvox-hardcore-human-cleanup.cjs
+          node scripts/churvox-hardcore-owner-worker-audit.cjs
+          ruby -e "require 'yaml'; YAML.load_file('.github/workflows/churvox-live-human-launch-audit-v2.yml'); puts 'V2 workflow YAML valid'"
+
+      - name: Build production frontend
+        run: npm --prefix frontend run build
+
+      - name: Run targeted Plans browser truth tests
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npm start > /tmp/churvox-final-repair-4-server.txt 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then break; fi
+            sleep 2
+          done
+          PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npx playwright test tests/e2e/churvox-plans-usage-truth.spec.js --project=desktop-chromium --project=mobile-chromium --workers=1 --reporter=line
+
+      - name: Commit verified repairs
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            frontend/src/runtime/churvoxPlansUsageTruthRuntime.js \
+            frontend/src/churvox-office-lab/OfficeTeamSiteSettings.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamClientsWorkspace.jsx \
+            frontend/src/App.js \
+            frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
+            frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
+            frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js \
+            scripts/churvox-hardcore-human-cleanup.cjs \
+            scripts/churvox-hardcore-owner-worker-audit.cjs \
+            backend/churvox_command_slip_decision_patch.py \
+            backend/test_churvox_command_slip_decision_patch.py \
+            backend/churvox_outer_cors_error_shield.py \
+            .github/workflows/churvox-live-human-launch-audit-v2.yml
+          git commit -m 'Fix final owner worker human audit failures'
+          git push origin HEAD:main
+
+      - name: Post success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: 'Final repair 4 passed backend regressions, permanent owner/worker contracts, Plans desktop/mobile browser tests, workflow validation, and the production build. Verified changes were committed to main.' });
+
+      - name: Post failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: 'Final repair 4 stopped before commit because a guarded verification failed. No partial product repair was pushed.' });
