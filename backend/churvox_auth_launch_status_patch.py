@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-VERSION = "churvox-auth-launch-status-20260712b"
+VERSION = "churvox-auth-launch-status-20260712c"
 REQUIRED_STATE = {
     "auth_hardening": "churvox_auth_paid_launch_hardening",
     "password_recovery": "churvox_password_recovery_paid_launch",
     "session_precision": "churvox_session_token_precision",
+    "registration_verification": "churvox_registration_verification_paid_launch",
+    "registration_claim": "churvox_registration_claim_guard",
     "login_final": "churvox_login_paid_launch_final",
     "worker_role_guard": "churvox_worker_login_role_guard",
     "invite_security": "churvox_invite_security_paid_launch",
@@ -38,12 +40,14 @@ def install(module) -> None:
             checks[label] = bool(value)
             versions[label] = str(value or "missing")
         routes = {
+            "register": _route_exists(app, "/api/auth/register", "POST"),
+            "verify_email": _route_exists(app, "/api/auth/verify-email/{token}", "GET"),
+            "resend_verification": _route_exists(app, "/api/auth/resend-verification", "POST"),
             "login": _route_exists(app, "/api/auth/login", "POST"),
             "worker_login": _route_exists(app, "/api/worker/auth/login", "POST"),
             "forgot_password": _route_exists(app, "/api/auth/forgot-password", "POST"),
             "reset_password": _route_exists(app, "/api/auth/reset-password", "POST"),
             "refresh": _route_exists(app, "/api/auth/refresh", "POST"),
-            "resend_verification": _route_exists(app, "/api/auth/resend-verification", "POST"),
             "invite_verify": _route_exists(app, "/api/invite/verify/{token}", "GET"),
             "invite_accept": _route_exists(app, "/api/invite/accept", "POST"),
             "invite_resend": _route_exists(app, "/api/team/resend-invite/{worker_id}", "POST"),
