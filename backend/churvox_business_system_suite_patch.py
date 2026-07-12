@@ -205,6 +205,18 @@ def install(module):
     if not app or db is None or get_current_user is None or ObjectId is None:
         return
 
+    try:
+        try:
+            import churvox_paid_launch_live_patch
+        except Exception:
+            from backend import churvox_paid_launch_live_patch
+        churvox_paid_launch_live_patch.install(module)
+    except Exception as exc:
+        try:
+            print(f"Churvox paid-launch live patch install skipped: {exc}", file=sys.stderr)
+        except Exception:
+            pass
+
     async def require_user(request: Request):
         return await get_current_user(request)
 
