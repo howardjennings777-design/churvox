@@ -113,13 +113,15 @@ async function main() {
     playwright('Billing portal, cancellation and deletion lifecycle', ['tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js']),
     playwright('Customer quote, invoice, client portal and proof safety', ['tests/e2e/churvox-public-documents-paid-launch.spec.js']),
     playwright('Public customer request owner-review contract', ['tests/e2e/churvox-public-request-paid-launch.spec.js']),
+    playwright('Dashboard More menu, tier visibility and locked hashes', ['tests/e2e/churvox-more-menu-paid-launch.spec.js']),
     playwright('Public trust, billing return and tester route audit', ['tests/e2e/churvox-paid-launch-full-audit.spec.js']),
     playwright('Owner paid-launch product contract', ['tests/e2e/churvox-paid-launch-own-it-audit.spec.js']),
     playwright('HQ, tester invite and revoke reality', ['tests/e2e/churvox-paid-launch-hq-reality.spec.js']),
     playwright('Public honesty and functional routes', ['tests/e2e/churvox-public-honesty-and-function.spec.js']),
     playwright('Owner wiring and tier boundaries', ['tests/e2e/churvox-owner-logical-wiring-contract.spec.js', 'tests/e2e/churvox-sidebar-tier-contract.spec.js']),
-    playwright('Mobile auth, public and billing lifecycle', [
+    playwright('Mobile auth, More menu, public and billing lifecycle', [
       'tests/e2e/churvox-auth-paid-launch-contract.spec.js',
+      'tests/e2e/churvox-more-menu-paid-launch.spec.js',
       'tests/e2e/churvox-public-documents-paid-launch.spec.js',
       'tests/e2e/churvox-public-request-paid-launch.spec.js',
       'tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js',
