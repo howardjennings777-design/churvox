@@ -61,8 +61,9 @@ def business_query(user, ObjectId):
 
 def install(module):
     name = getattr(module, "__name__", "")
-    if name in INSTALLED:
-        return
+    # These paths can be overwritten by legacy routers later in startup.
+    # Re-running install is intentional: remove the competing route and reassert
+    # the final business-scoped handler every time the final wrapper calls us.
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
