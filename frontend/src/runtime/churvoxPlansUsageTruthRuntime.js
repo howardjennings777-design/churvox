@@ -1,6 +1,6 @@
 import API_BASE from "../lib/apiBase";
 
-const VERSION = "CHURVOX_PLANS_USAGE_TRUTH_20260712";
+const VERSION = "CHURVOX_PLANS_USAGE_TRUTH_20260712B";
 const PANEL_ID = "churvox-plan-live-usage";
 const LABELS = [
   ["active_team_members", "active_team_members", "Active team members"],
@@ -13,8 +13,13 @@ let loading = false;
 let lastLoadedAt = 0;
 let observer = null;
 
+function plansRoot() {
+  if (window.location.pathname !== "/plans") return null;
+  return document.querySelector(".freshPricingPage, .cvPlansPage, [data-churvox-page='plans']");
+}
+
 function isPlansPage() {
-  return window.location.pathname === "/plans" && Boolean(document.querySelector(".cvPlansPage"));
+  return Boolean(plansRoot());
 }
 
 function apiUrl(path) {
@@ -162,13 +167,14 @@ function markStaticCards() {
 }
 
 function ensurePanel() {
-  if (!isPlansPage()) return null;
+  const root = plansRoot();
+  if (!root) return null;
   ensureStyles();
   markStaticCards();
   let panel = document.getElementById(PANEL_ID);
   if (panel) return panel;
-  const planPanel = document.querySelector(".cvPlanPanel");
-  if (!planPanel) return null;
+  const anchor = root.querySelector(".cvPlanPanel, .freshPricingHero, .freshPlanNotice, .freshPricingCards") || root.firstElementChild;
+  if (!anchor) return null;
   panel = document.createElement("section");
   panel.id = PANEL_ID;
   panel.dataset.version = VERSION;
@@ -186,7 +192,7 @@ function ensurePanel() {
     <div class="cvUsageGrid" aria-live="polite"></div>
   `;
   panel.querySelector(".cvUsageRefresh")?.addEventListener("click", () => loadUsage(true));
-  planPanel.insertAdjacentElement("afterend", panel);
+  anchor.insertAdjacentElement("afterend", panel);
   return panel;
 }
 
