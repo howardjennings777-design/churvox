@@ -8,6 +8,20 @@ on:
       - 'backend/churvox_login_route_finalizer.py'
       - 'backend/churvox_outer_cors_error_shield.py'
       - 'backend/churvox_auth_paid_launch_hardening.py'
+      - 'backend/churvox_production_launch_security.py'
+      - 'backend/churvox_runtime_jwt_secret_patch.py'
+      - 'backend/test_churvox_login_emergency_final.py'
+      - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
+      - '.github/workflows/churvox-login-emergency-gate.yml'
+  pull_request:
+    paths:
+      - 'backend/churvox_login_emergency_final.py'
+      - 'backend/churvox_login_route_finalizer.py'
+      - 'backend/churvox_outer_cors_error_shield.py'
+      - 'backend/churvox_auth_paid_launch_hardening.py'
+      - 'backend/churvox_production_launch_security.py'
+      - 'backend/churvox_runtime_jwt_secret_patch.py'
+      - 'backend/test_churvox_login_emergency_final.py'
       - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
       - '.github/workflows/churvox-login-emergency-gate.yml'
   workflow_dispatch:
@@ -17,7 +31,7 @@ permissions:
 
 jobs:
   login-code-gate:
-    name: Compile final login stack
+    name: Compile and test final login stack
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -35,10 +49,20 @@ jobs:
             backend/churvox_login_emergency_final.py \
             backend/churvox_login_route_finalizer.py \
             backend/churvox_outer_cors_error_shield.py \
-            backend/churvox_auth_paid_launch_hardening.py
+            backend/churvox_auth_paid_launch_hardening.py \
+            backend/churvox_production_launch_security.py \
+            backend/churvox_runtime_jwt_secret_patch.py \
+            backend/test_churvox_login_emergency_final.py
+
+      - name: Run final login access contracts
+        run: python -m unittest backend.test_churvox_login_emergency_final
 
       - name: Verify final route markers
         run: |
-          grep -q 'churvox-login-emergency-final-20260712' backend/churvox_login_emergency_final.py
-          grep -q 'isolated emergency login route' backend/churvox_outer_cors_error_shield.py
-          grep -q 'if path == "/api/auth/login"' backend/churvox_auth_paid_launch_hardening.py
+          grep -F 'VERSION = "churvox-login-emergency-final-20260712b"' backend/churvox_login_emergency_final.py
+          grep -F 'app.add_api_route("/api/auth/login", emergency_login, methods=["POST"])' backend/churvox_login_emergency_final.py
+          grep -F 'app.add_api_route("/api/auth/logout", emergency_logout, methods=["POST"])' backend/churvox_login_emergency_final.py
+          grep -F '"jwt_persistent": jwt_source == "environment"' backend/churvox_login_emergency_final.py
+          grep -F 'module.PLATFORM_OWNER_EMAILS = [PLATFORM_OWNER_EMAIL]' backend/churvox_production_launch_security.py
+          grep -F 'isolated emergency login route' backend/churvox_outer_cors_error_shield.py
+          grep -F 'if path == "/api/auth/login"' backend/churvox_auth_paid_launch_hardening.py
