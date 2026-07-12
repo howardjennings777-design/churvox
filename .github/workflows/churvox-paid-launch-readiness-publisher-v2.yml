@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python scripts/churvox_paid_launch_readiness_apply_v3.py 2>&1 | tee /tmp/churvox-paid-launch-v2-apply.txt
+          python scripts/churvox_paid_launch_readiness_apply_v4.py 2>&1 | tee /tmp/churvox-paid-launch-v2-apply.txt
 
       - name: Compile all changed backend and repair code
         id: compile
@@ -64,6 +64,7 @@ jobs:
             backend/churvox_worker_login_bridge_patch.py \
             backend/churvox_command_human_mimic_routes.py \
             backend/churvox_command_human_mimic_v3_routes.py \
+            backend/churvox_command_human_mimic_live_routes.py \
             backend/churvox_command_human_mimic_guard_routes.py \
             backend/churvox_command_apply_routes.py \
             backend/usercustomize.py \
@@ -71,6 +72,7 @@ jobs:
             scripts/churvox_paid_launch_readiness_apply.py \
             scripts/churvox_paid_launch_readiness_apply_v2.py \
             scripts/churvox_paid_launch_readiness_apply_v3.py \
+            scripts/churvox_paid_launch_readiness_apply_v4.py \
             scripts/churvox_paid_launch_backend_contract.py 2>&1 | tee /tmp/churvox-paid-launch-v2-compile.txt
           node --check scripts/churvox-paid-launch-readiness-contract.cjs 2>&1 | tee -a /tmp/churvox-paid-launch-v2-compile.txt
 
@@ -119,6 +121,7 @@ jobs:
             backend/churvox_worker_login_bridge_patch.py \
             backend/churvox_command_human_mimic_routes.py \
             backend/churvox_command_human_mimic_v3_routes.py \
+            backend/churvox_command_human_mimic_live_routes.py \
             backend/usercustomize.py \
             usercustomize.py \
             frontend/src/App.js \
@@ -128,6 +131,7 @@ jobs:
             scripts/churvox_paid_launch_readiness_apply.py \
             scripts/churvox_paid_launch_readiness_apply_v2.py \
             scripts/churvox_paid_launch_readiness_apply_v3.py \
+            scripts/churvox_paid_launch_readiness_apply_v4.py \
             scripts/churvox_paid_launch_backend_contract.py \
             scripts/churvox-paid-launch-readiness-contract.cjs
           if ! git diff --cached --quiet; then git commit -m 'Harden Churvox for paid launch readiness'; fi
