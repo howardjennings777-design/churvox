@@ -13,6 +13,10 @@ function queryIndustry() {
   }
 }
 
+function trialPath(industryKey) {
+  return `/signup?plan=operator&industry=${encodeURIComponent(industryKey)}`;
+}
+
 function rowsFor(industry) {
   const title = industry.title;
   if (/clean/i.test(title)) return {
@@ -59,7 +63,7 @@ export default function PublicDemoPage() {
   }, [industryKey]);
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_DEMO_20260710">
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_DEMO_20260712_PAID_LAUNCH_PLAN_PATH">
       <PublicNav active="/demo" />
 
       <section className="cp26PageHero">
@@ -75,7 +79,7 @@ export default function PublicDemoPage() {
           </label>
           <div className="cp26HeroActions">
             <a href="#command-demo" className="cp26Button">Jump to Command</a>
-            <Link to={`/signup?industry=${encodeURIComponent(industryKey)}`} className="cp26Button cp26ButtonGhost">Start free trial</Link>
+            <Link to={trialPath(industryKey)} className="cp26Button cp26ButtonGhost">Start free trial</Link>
           </div>
         </div>
         <div className="cp26HeroPanel">
@@ -122,7 +126,7 @@ export default function PublicDemoPage() {
           <p>The trial starts empty and uses your real business records. Nothing from this sample is copied into the account.</p>
         </div>
         <div className="cp26ClosingActions">
-          <Link to={`/signup?industry=${encodeURIComponent(industryKey)}`} className="cp26Button">Start free trial</Link>
+          <Link to={trialPath(industryKey)} className="cp26Button">Start free trial</Link>
           <Link to="/pricing" className="cp26Button cp26ButtonGhost">View pricing</Link>
         </div>
       </section>
