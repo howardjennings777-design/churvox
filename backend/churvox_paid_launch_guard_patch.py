@@ -220,6 +220,12 @@ def install(module):
         "backend.churvox_production_launch_security",
         "production launch security",
     )
+    install_patch_module(
+        module,
+        "churvox_email_links_paid_launch_patch",
+        "backend.churvox_email_links_paid_launch_patch",
+        "lifecycle email links",
+    )
     if name in INSTALLED:
         return
     app = getattr(module, "app", None)
