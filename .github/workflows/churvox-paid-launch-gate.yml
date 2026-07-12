@@ -78,8 +78,11 @@ jobs:
             backend/churvox_email_links_paid_launch_patch.py \
             backend/churvox_auth_paid_launch_hardening.py \
             backend/churvox_password_recovery_paid_launch_patch.py \
+            backend/churvox_session_token_precision_patch.py \
             backend/churvox_checkout_token_session_guard.py \
             backend/churvox_login_paid_launch_final_patch.py \
+            backend/churvox_worker_login_role_guard.py \
+            backend/churvox_auth_launch_status_patch.py \
             backend/churvox_feature_tier_paid_launch_guard.py \
             backend/churvox_plan_usage_guard_patch.py \
             backend/churvox_billing_portal_paid_launch.py \
@@ -91,7 +94,9 @@ jobs:
           python -m unittest \
             backend.test_churvox_feature_tier_paid_launch_guard \
             backend.test_churvox_login_paid_launch_final_patch \
-            backend.test_churvox_password_recovery_paid_launch_patch
+            backend.test_churvox_password_recovery_paid_launch_patch \
+            backend.test_churvox_checkout_token_session_guard \
+            backend.test_churvox_worker_login_role_guard
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
