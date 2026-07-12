@@ -1,0 +1,60 @@
+name: Churvox Live Deployment Marker Probe
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  probe:
+    if: startsWith(github.event.issue.title, '[churvox-live-deploy-probe]')
+    runs-on: ubuntu-latest
+    env:
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+    steps:
+      - name: Probe live markers without exposing credentials
+        id: probe
+        continue-on-error: true
+        run: |
+          node <<'NODE' > /tmp/churvox-live-deploy-probe.txt 2>&1
+          const site = 'https://www.churvox.com';
+          const api = 'https://grassley-backend.onrender.com';
+          async function main() {
+            const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
+            const manifest = await manifestResponse.json();
+            const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((item) => /main\..*\.js$/.test(item));
+            const js = mainPath ? await (await fetch(new URL(mainPath, site), { cache: 'no-store' })).text() : '';
+            const frontMarkers = ['cvWorkerLogout', 'Continue to secure checkout', 'cvOwnerMainNavigation'];
+            console.log('Frontend main:', mainPath || 'missing');
+            for (const marker of frontMarkers) console.log(`Frontend ${marker}: ${js.includes(marker) ? 'LIVE' : 'MISSING'}`);
+
+            const login = await fetch(`${api}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: process.env.CHURVOX_OWNER_EMAIL, password: process.env.CHURVOX_OWNER_PASSWORD }),
+            });
+            const loginBody = await login.json().catch(() => ({}));
+            const token = loginBody.token || loginBody.access_token || loginBody.user?.token || loginBody.data?.token || loginBody.data?.user?.token || '';
+            console.log(`Backend owner login: ${login.status} ${token ? 'TOKEN_OK' : 'NO_TOKEN'}`);
+            if (!token) return;
+            const response = await fetch(`${api}/api/command/slips?ts=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` } });
+            const text = await response.text();
+            let body = {};
+            try { body = JSON.parse(text); } catch {}
+            console.log(`Backend Command slips: ${response.status}`);
+            console.log(`Backend worker_field_slip_count field: ${Object.prototype.hasOwnProperty.call(body, 'worker_field_slip_count') ? 'LIVE' : 'MISSING'}`);
+            console.log(`Backend slips array: ${Array.isArray(body.slips) ? 'YES' : 'NO'}`);
+          }
+          main().catch((error) => { console.error(error.message || error); process.exit(1); });
+          NODE
+      - name: Post probe result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.existsSync('/tmp/churvox-live-deploy-probe.txt') ? fs.readFileSync('/tmp/churvox-live-deploy-probe.txt', 'utf8') : 'No probe output.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Live deployment probe\n\n\`\`\`text\n${log.slice(-12000)}\n\`\`\`` });
