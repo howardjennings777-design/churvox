@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-VERSION = "churvox-session-token-precision-20260712"
+VERSION = "churvox-session-token-precision-20260712b"
 
 
 def _text(value):
@@ -33,7 +33,8 @@ def install(module) -> None:
     set_auth_cookies = getattr(module, "set_auth_cookies", None)
     clear_auth_cookies = getattr(module, "clear_auth_cookies", None)
     responder = getattr(module, "_auth_user_response", None)
-    if any(item is None for item in (app, db, jwt, secret, ObjectId, HTTPException, Request, Response, set_auth_cookies, clear_auth_cookies)):
+    secrets = getattr(module, "secrets", None)
+    if any(item is None for item in (app, db, jwt, secret, ObjectId, HTTPException, Request, Response, set_auth_cookies, clear_auth_cookies, secrets)):
         return
 
     try:
@@ -55,7 +56,8 @@ def install(module) -> None:
                 "iat": now.timestamp(),
                 "exp": now + timedelta(hours=24),
                 "type": "access",
-                "session_version": 2,
+                "jti": secrets.token_urlsafe(18),
+                "session_version": 3,
             },
             secret,
             algorithm=algorithm,
@@ -69,7 +71,8 @@ def install(module) -> None:
                 "iat": now.timestamp(),
                 "exp": now + timedelta(days=7),
                 "type": "refresh",
-                "session_version": 2,
+                "jti": secrets.token_urlsafe(18),
+                "session_version": 3,
             },
             secret,
             algorithm=algorithm,
@@ -86,6 +89,15 @@ def install(module) -> None:
             payload = jwt.decode(token, secret, algorithms=[algorithm])
             if payload.get("type") != "refresh":
                 raise HTTPException(status_code=401, detail="Invalid token type")
+            try:
+                revocation = __import__("churvox_token_revocation_paid_launch_patch")
+            except Exception:
+                try:
+                    revocation = __import__("backend.churvox_token_revocation_paid_launch_patch", fromlist=["*"])
+                except Exception:
+                    revocation = None
+            if revocation and await revocation.token_is_revoked(db, payload, token):
+                raise HTTPException(status_code=401, detail="Session has been signed out. Sign in again.")
             user = await db.users.find_one({"_id": ObjectId(str(payload.get("sub") or ""))})
             if not user or recovery.account_disabled(user) or recovery.session_is_revoked(user, payload):
                 raise HTTPException(status_code=401, detail="Session expired. Sign in again.")
