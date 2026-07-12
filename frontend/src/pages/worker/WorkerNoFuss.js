@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, Briefcase, Camera, CheckCircle2, Clock3, CreditCard, HelpCircle, LogOut, MapPin, MessageCircle, Navigation, Pause, Play, RefreshCw, Send, TimerReset, UserRound } from "lucide-react";
 import { toast } from "sonner";
@@ -94,7 +94,7 @@ function useWorkerJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -109,8 +109,8 @@ function useWorkerJobs() {
     } finally {
       setLoading(false);
     }
-  }
-  useEffect(() => { refresh(); }, []);
+  }, [get]);
+  useEffect(() => { refresh(); }, [refresh]);
   return { jobs, loading, error, refresh };
 }
 
@@ -119,7 +119,7 @@ function useWorkerMessages() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -134,8 +134,8 @@ function useWorkerMessages() {
     } finally {
       setLoading(false);
     }
-  }
-  useEffect(() => { refresh(); }, []);
+  }, [get]);
+  useEffect(() => { refresh(); }, [refresh]);
   return { messages, loading, error, refresh };
 }
 

@@ -38,9 +38,9 @@ export default function OfficeTeamOwnerNavigation({ screen, go, pendingCount = 0
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const triggerRef = useRef(null);
-  const visiblePrimary = useMemo(() => filterOwnerItems(primary, user), [user, plan]);
-  const visibleOffice = useMemo(() => filterOwnerItems(office, user), [user, plan]);
-  const visibleUtility = useMemo(() => filterOwnerItems(utility, user), [user, plan]);
+  const visiblePrimary = useMemo(() => filterOwnerItems(primary, user), [user]);
+  const visibleOffice = useMemo(() => filterOwnerItems(office, user), [user]);
+  const visibleUtility = useMemo(() => filterOwnerItems(utility, user), [user]);
   const officeActive = visibleOffice.some(([key]) => key === screen);
   const menuId = "churvox-owner-more-menu";
 

@@ -72,21 +72,21 @@ export default function BillingReturnPage({ cancelled = false }) {
   const ranOnce = React.useRef(false);
   const redirectTimer = React.useRef(null);
 
-  function openSetupSoon() {
+  const openSetupSoon = React.useCallback(() => {
     window.clearTimeout(redirectTimer.current);
     redirectTimer.current = window.setTimeout(() => {
       navigate("/setup-guide?first_setup=1", { replace: true });
     }, 1800);
-  }
+  }, [navigate]);
 
-  function refreshAuthUser() {
+  const refreshAuthUser = React.useCallback(() => {
     try {
       window.dispatchEvent(new Event("churvox-auth-refresh"));
     } catch {}
     checkAuth?.().catch(() => {});
-  }
+  }, [checkAuth]);
 
-  async function refreshBilling({ goToSetup = false } = {}) {
+  const refreshBilling = React.useCallback(async ({ goToSetup = false } = {}) => {
     const sub = await get("/billing/subscription-status", { timeout: 12000 });
     if (sub?.success) {
       const data = unwrap(sub);
@@ -114,7 +114,7 @@ export default function BillingReturnPage({ cancelled = false }) {
       setStatus("Could not refresh your plan yet. Open Plans or Contact if this does not update shortly.");
     }
     setCheckedAt(new Date().toLocaleString("en-NZ"));
-  }
+  }, [get, openSetupSoon, refreshAuthUser, updateUser]);
 
   React.useEffect(() => () => window.clearTimeout(redirectTimer.current), []);
 
@@ -188,7 +188,7 @@ export default function BillingReturnPage({ cancelled = false }) {
     }
     run();
     return () => { alive = false; };
-  }, []);
+  }, [cancelled, location.search, post, refreshAuthUser, refreshBilling, updateUser]);
 
   const title = cancelled ? "Checkout cancelled" : confirmed ? "Plan active" : "Checking your plan";
   return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Plan setup</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{title}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Status: {subscriptionText(details)}</div>{details.trial_ends_at ? <div>Trial ends: {new Date(details.trial_ends_at).toLocaleString("en-NZ")}</div> : null}{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={() => refreshBilling({ goToSetup: true })} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh plan status</button>{confirmed ? <button type="button" onClick={() => navigate("/setup-guide?first_setup=1", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Open setup now</button> : null}<button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900">Back to Plans</button><Link to="/contact" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div></article></section></main>;
