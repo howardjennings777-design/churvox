@@ -1,0 +1,179 @@
+name: Churvox Paid Launch Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_real_signup:
+        description: 'Create real test owners and prove Stripe/verification/no-card trial'
+        required: true
+        default: false
+        type: boolean
+      run_real_mutation:
+        description: 'Create real production jobs/clients/public portal records'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-paid-launch-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Paid-launch release decision
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install frontend dependencies
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Production build
+        run: npm run build
+
+      - name: Compile every paid-launch backend guard
+        working-directory: .
+        run: |
+          python -m py_compile \
+            backend/sitecustomize.py \
+            backend/usercustomize.py \
+            backend/churvox_paid_launch_guard_patch.py \
+            backend/churvox_stripe_webhook_paid_launch_patch.py \
+            backend/churvox_public_documents_paid_launch_guard.py \
+            backend/churvox_public_invoice_balance_fix.py \
+            backend/churvox_public_customer_request_paid_launch.py \
+            backend/churvox_production_launch_security.py \
+            backend/churvox_email_links_paid_launch_patch.py \
+            backend/churvox_auth_paid_launch_hardening.py \
+            backend/churvox_billing_portal_paid_launch.py \
+            backend/churvox_account_deletion_paid_launch.py
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run safe desktop contracts against latest deployed site
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-infrastructure-paid-launch.spec.js \
+            tests/e2e/churvox-auth-paid-launch-contract-v2.spec.js \
+            tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
+            tests/e2e/churvox-billing-email-verification-gate.spec.js \
+            tests/e2e/churvox-public-documents-paid-launch.spec.js \
+            tests/e2e/churvox-public-request-paid-launch.spec.js \
+            tests/e2e/churvox-indexing-security-paid-launch.spec.js \
+            tests/e2e/churvox-paid-launch-full-audit.spec.js \
+            tests/e2e/churvox-paid-launch-own-it-audit.spec.js \
+            tests/e2e/churvox-paid-launch-hq-reality.spec.js \
+            tests/e2e/churvox-public-honesty-and-function.spec.js \
+            tests/e2e/churvox-owner-logical-wiring-contract.spec.js \
+            tests/e2e/churvox-sidebar-tier-contract.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Run mobile public/auth/billing contracts
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-auth-paid-launch-contract-v2.spec.js \
+            tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
+            tests/e2e/churvox-billing-email-verification-gate.spec.js \
+            tests/e2e/churvox-public-documents-paid-launch.spec.js \
+            tests/e2e/churvox-public-request-paid-launch.spec.js \
+            tests/e2e/churvox-indexing-security-paid-launch.spec.js \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Run authenticated owner and worker contracts
+        if: ${{ secrets.CHURVOX_OWNER_EMAIL != '' && secrets.CHURVOX_OWNER_PASSWORD != '' }}
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+          CHURVOX_E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
+          CHURVOX_E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
+          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+          CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+          CHURVOX_E2E_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+          CHURVOX_E2E_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-human-business-gauntlet.spec.js \
+            tests/e2e/churvox-worker-message-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Real signup, verification and no-card Stripe proof
+        if: ${{ inputs.run_real_signup }}
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+          CHURVOX_E2E_SIGNUP: '1'
+          CHURVOX_E2E_SIGNUP_BASE_EMAIL: ${{ secrets.CHURVOX_E2E_SIGNUP_BASE_EMAIL }}
+          CHURVOX_E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
+          CHURVOX_E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-real-signup-paid-launch-v2.spec.js \
+            tests/e2e/churvox-email-verification-paid-launch-v2.spec.js \
+            tests/e2e/churvox-no-card-trial-paid-launch.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Real production record mutation proof
+        if: ${{ inputs.run_real_mutation }}
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+          CHURVOX_E2E_MUTATE: '1'
+          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+          CHURVOX_E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
+          CHURVOX_E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-real-deal-paid-launch-audit.spec.js \
+            tests/e2e/churvox-public-client-portal-proof.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-paid-launch-release-evidence
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 30
