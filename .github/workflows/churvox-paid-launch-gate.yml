@@ -8,6 +8,13 @@ on:
       - 'backend/**'
       - 'package.json'
       - '.github/workflows/churvox-paid-launch-gate.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'package.json'
+      - '.github/workflows/churvox-paid-launch-gate.yml'
   workflow_dispatch:
     inputs:
       run_live_gate:
