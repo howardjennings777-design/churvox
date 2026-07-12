@@ -28,34 +28,45 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Wait for exact Command instant-load bundle
+      - name: Wait for exact Command frontend and backend speed deployment
         shell: bash
         run: |
           set -euo pipefail
           node <<'NODE'
           const site = 'https://www.churvox.com';
-          const marker = 'churvox-command-instant-load-20260713d';
+          const api = 'https://grassley-backend.onrender.com';
+          const frontendMarker = 'churvox-command-instant-load-20260713d';
+          const backendVersion = 'churvox-command-queue-speed-boot-20260713e';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           async function inspect() {
             const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
             if (!manifestResponse.ok) throw new Error(`manifest ${manifestResponse.status}`);
             const manifest = await manifestResponse.json();
             const assets = [...new Set(Object.values(manifest.files || {}).filter((value) => typeof value === 'string' && /\.js(?:$|\?)/.test(value)))];
+            let frontendAsset = '';
             for (const asset of assets) {
               const response = await fetch(new URL(asset, site), { cache: 'no-store' });
               if (!response.ok) continue;
               const text = await response.text();
-              if (text.includes(marker)) return { asset, count: assets.length };
+              if (text.includes(frontendMarker)) { frontendAsset = asset; break; }
             }
-            throw new Error(`marker missing across ${assets.length} JS assets`);
+            if (!frontendAsset) throw new Error(`frontend marker missing across ${assets.length} JS assets`);
+
+            const bootResponse = await fetch(`${api}/api/command-fast-load/boot?ts=${Date.now()}`, { cache: 'no-store' });
+            if (!bootResponse.ok) throw new Error(`backend boot ${bootResponse.status}`);
+            const boot = await bootResponse.json();
+            if (boot.version !== backendVersion || boot.patch_installed !== true || boot.patch_stage !== 'ready') {
+              throw new Error(`backend not exact: version=${boot.version} installed=${boot.patch_installed} stage=${boot.patch_stage}`);
+            }
+            return { frontendAsset, assetCount: assets.length, backendVersion: boot.version };
           }
           (async () => {
             let last = '';
             for (let attempt = 1; attempt <= 90; attempt += 1) {
               try {
                 const result = await inspect();
-                console.log(`Attempt ${attempt}: ${result.asset} contains exact marker; inspected ${result.count} assets.`);
-                console.log('COMMAND_INSTANT_LOAD_BUNDLE_LIVE');
+                console.log(`Attempt ${attempt}: ${result.frontendAsset} contains the frontend marker; backend=${result.backendVersion}.`);
+                console.log('COMMAND_INSTANT_LOAD_FRONTEND_BACKEND_LIVE');
                 return;
               } catch (error) {
                 last = error.message || String(error);
@@ -63,7 +74,7 @@ jobs:
               }
               if (attempt < 90) await sleep(10_000);
             }
-            throw new Error(`Exact Command instant-load bundle did not deploy: ${last}`);
+            throw new Error(`Exact Command speed deployment did not become live: ${last}`);
           })().catch((error) => { console.error(error.stack || error.message || error); process.exit(1); });
           NODE
 
@@ -97,6 +108,6 @@ jobs:
               ? fs.readFileSync('/tmp/churvox-command-speed-live.txt', 'utf8').slice(-7000)
               : 'No browser timing output was produced.';
             const body = ok
-              ? `## Live Command speed proof passed\n\nThe exact instant-load bundle is deployed. The foreground queue and cached SPA repeat-open both met their speed budgets, with no protected/server errors.\n\n\`\`\`text\n${output}\n\`\`\``
-              : `## Live Command speed proof failed\n\nThe exact bundle is deployed, but the browser timing or safety assertion failed.\n\n\`\`\`text\n${output}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+              ? `## Live Command speed proof passed\n\nThe exact frontend and backend speed repairs are deployed. The foreground queue and cached SPA repeat-open both met their speed budgets, with no protected/server errors.\n\n\`\`\`text\n${output}\n\`\`\``
+              : `## Live Command speed proof failed\n\nThe exact deployment or browser timing/safety assertion failed.\n\n\`\`\`text\n${output}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
