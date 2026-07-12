@@ -14,7 +14,7 @@ try:
 except Exception:  # Unit tests for pure helpers do not need FastAPI installed.
     JSONResponse = None
 
-VERSION = "churvox-login-emergency-final-20260712d"
+VERSION = "churvox-login-emergency-final-20260712e"
 LOCKOUT_FAILURES = 5
 LOCKOUT_MINUTES = 15
 LOOKUP_TIMEOUT_SECONDS = 6
@@ -93,9 +93,10 @@ def _role(user: dict[str, Any] | None) -> str:
 def self_owned_legacy_owner(user: dict[str, Any] | None) -> bool:
     user = user or {}
     user_id = _text(user.get("_id") or user.get("id"))
-    business_id = _text(user.get("business_id") or user_id)
+    business_id = _text(user.get("business_id"))
     return bool(
         user_id
+        and business_id
         and business_id == user_id
         and _role(user) in WORKER_ROLES | PAYROLL_ROLES
         and not user.get("owner_id")
@@ -404,10 +405,7 @@ def install(module) -> None:
         return None, None
 
     async def _read_attempt(key: str) -> dict[str, Any]:
-        try:
-            attempt = await _wait(db.login_attempts.find_one({"identifier": key}), 3) or {}
-        except Exception:
-            return {}
+        attempt = await _wait(db.login_attempts.find_one({"identifier": key}), 3) or {}
         if attempt and not lockout_active(attempt):
             locked_until = _aware(attempt.get("locked_until"))
             if int(attempt.get("count") or 0) >= LOCKOUT_FAILURES and locked_until and locked_until <= _now():
@@ -420,17 +418,14 @@ def install(module) -> None:
 
     async def _record_failure(key: str, previous: dict[str, Any]) -> dict[str, Any]:
         state = next_failure_state(previous)
-        try:
-            await _wait(
-                db.login_attempts.update_one(
-                    {"identifier": key},
-                    {"$set": {"identifier": key, **state}},
-                    upsert=True,
-                ),
-                3,
-            )
-        except Exception:
-            pass
+        await _wait(
+            db.login_attempts.update_one(
+                {"identifier": key},
+                {"$set": {"identifier": key, **state}},
+                upsert=True,
+            ),
+            3,
+        )
         return state
 
     async def _clear_failure(key: str) -> None:
@@ -618,7 +613,21 @@ def install(module) -> None:
                 return _error(400, "input-size", "Invalid email or password.")
 
             key = _attempt_key(request, email, "paid-login")
-            attempt = await _read_attempt(key)
+            try:
+                attempt = await _read_attempt(key)
+            except asyncio.TimeoutError:
+                return _error(
+                    503, "lockout-check-timeout",
+                    "Login protection check timed out. Please try again shortly.",
+                    retryable=True,
+                )
+            except Exception as exc:
+                return _error(
+                    503, "lockout-check-error",
+                    "Login protection is unavailable. Please try again shortly.",
+                    error_type=exc.__class__.__name__,
+                    retryable=True,
+                )
             if lockout_active(attempt):
                 return _error(429, "lockout", "Too many failed attempts. Try again in 15 minutes.")
 
@@ -692,7 +701,21 @@ def install(module) -> None:
                         bcrypt.checkpw(password.encode("utf-8"), dummy_hash)
                     except Exception:
                         pass
-                state = await _record_failure(key, attempt)
+                try:
+                    state = await _record_failure(key, attempt)
+                except asyncio.TimeoutError:
+                    return _error(
+                        503, "lockout-record-timeout",
+                        "Login protection update timed out. Please try again shortly.",
+                        retryable=True,
+                    )
+                except Exception as exc:
+                    return _error(
+                        503, "lockout-record-error",
+                        "Login protection could not record this attempt. Please try again shortly.",
+                        error_type=exc.__class__.__name__,
+                        retryable=True,
+                    )
                 if lockout_active(state):
                     return _error(429, "lockout", "Too many failed attempts. Try again in 15 minutes.")
                 return _error(401, "invalid-credentials", "Invalid email or password.")
@@ -877,6 +900,12 @@ def install(module) -> None:
             1 for route in list(getattr(app.router, "routes", []) or [])
             if _route_matches(route, "/api/auth/logout", "POST")
         )
+        worker_login_route_count = sum(
+            1
+            for route in list(getattr(app.router, "routes", []) or [])
+            for path in ("/api/auth/worker-login", "/api/worker/auth/login")
+            if _route_matches(route, path, "POST")
+        )
         try:
             await _wait(db.command("ping"), 5)
             database_ready = True
@@ -894,7 +923,13 @@ def install(module) -> None:
         )
         return {
             "success": True,
-            "ready": bool(database_ready and secret_ready and route_count == 1 and logout_route_count == 1),
+            "ready": bool(
+                database_ready
+                and secret_ready
+                and route_count == 1
+                and logout_route_count == 1
+                and worker_login_route_count == 2
+            ),
             "database_ready": database_ready,
             "database_stage": database_stage,
             "jwt_ready": secret_ready,
@@ -904,6 +939,7 @@ def install(module) -> None:
             "login_route": VERSION,
             "login_route_count": route_count,
             "logout_route_count": logout_route_count,
+            "worker_login_route_count": worker_login_route_count,
             "version": VERSION,
         }
 
@@ -915,4 +951,7 @@ def install(module) -> None:
     app.add_api_route("/api/auth/login", emergency_login, methods=["POST"])
     app.add_api_route("/api/auth/logout", emergency_logout, methods=["POST"])
     app.add_api_route("/api/auth/login-health", emergency_health, methods=["GET"])
+    for worker_path in ("/api/auth/worker-login", "/api/worker/auth/login"):
+        _remove_route(app, worker_path, "POST")
+        app.add_api_route(worker_path, emergency_login, methods=["POST"])
     app.state.churvox_login_emergency_final = VERSION
