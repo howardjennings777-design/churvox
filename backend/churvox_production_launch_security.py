@@ -8,7 +8,8 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-VERSION = "churvox-production-launch-security-20260712c"
+VERSION = "churvox-production-launch-security-20260712d"
+PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 WEAK_SECRETS = {
     "",
     "default_secret_change_me",
@@ -46,8 +47,12 @@ ACCESS_EXEMPT_PREFIXES = (
 OWNER_ROLES = {"owner", "business_owner", "employer", "admin", "manager", "office_admin", "superadmin"}
 WORKER_ROLES = {"worker", "staff", "field_worker", "technician", "subcontractor"}
 PAYROLL_ROLES = {"payroll", "payroll_user", "payroll_admin"}
+ACCOUNT_DISABLED_STATUSES = {"revoked", "locked", "disabled", "removed", "archived"}
 PAID_STATUSES = {"active", "paid", "trialing", "trial", "past_due"}
-LOCKED_STATUSES = {"cancelled", "canceled", "unpaid", "incomplete_expired", "locked", "disabled", "expired", "payment_required"}
+LOCKED_STATUSES = {
+    "cancelled", "canceled", "unpaid", "incomplete", "incomplete_expired",
+    "expired", "payment_required", "plan_required",
+}
 
 
 def _text(value: Any) -> str:
@@ -78,7 +83,12 @@ def _date(value: Any):
 def _secret_is_strong(value: Any) -> bool:
     secret = _text(value)
     lowered = secret.lower()
-    return len(secret) >= 32 and lowered not in WEAK_SECRETS and "change" not in lowered and "default" not in lowered
+    return (
+        len(secret) >= 32
+        and lowered not in WEAK_SECRETS
+        and "change" not in lowered
+        and "default" not in lowered
+    )
 
 
 def _current_jwt_secret(module) -> str:
@@ -104,59 +114,99 @@ def _ensure_runtime_jwt_secret(module) -> bool:
 
 
 def _owner_emails() -> list[str]:
-    values = []
-    for key in ("PLATFORM_OWNER_EMAIL", "PLATFORM_OWNER_EMAILS", "PLATFORM_ADMIN_EMAILS"):
-        for item in _text(os.environ.get(key)).split(","):
-            email = item.strip().lower()
-            if email and email not in values:
-                values.append(email)
-    return values or ["hello@churvox.com"]
+    # The platform owner is a product invariant, not an environment-configurable list.
+    return [PLATFORM_OWNER_EMAIL]
 
 
 def _checks(module) -> dict[str, dict[str, Any]]:
     jwt_value = _current_jwt_secret(module)
-    jwt_source = _text(getattr(module, "CHURVOX_JWT_SECRET_SOURCE", "environment" if os.environ.get("JWT_SECRET") else "missing"))
+    jwt_source = _text(
+        getattr(
+            module,
+            "CHURVOX_JWT_SECRET_SOURCE",
+            "environment" if os.environ.get("JWT_SECRET") else "missing",
+        )
+    )
     frontend = _text(os.environ.get("FRONTEND_URL") or "https://www.churvox.com").rstrip("/")
-    webhook_secret = next((_text(os.environ.get(key)) for key in (
-        "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_BILLING_WEBHOOK_SECRET",
-        "STRIPE_SIGNING_SECRET",
-        "STRIPE_ENDPOINT_SECRET",
-    ) if _text(os.environ.get(key))), "")
+    webhook_secret = next(
+        (
+            _text(os.environ.get(key))
+            for key in (
+                "STRIPE_WEBHOOK_SECRET",
+                "STRIPE_BILLING_WEBHOOK_SECRET",
+                "STRIPE_SIGNING_SECRET",
+                "STRIPE_ENDPOINT_SECRET",
+            )
+            if _text(os.environ.get(key))
+        ),
+        "",
+    )
     owners = _owner_emails()
 
     return {
         "jwt_secret": {
             "ok": _secret_is_strong(jwt_value),
-            "detail": f"Strong signing secret active ({jwt_source})" if _secret_is_strong(jwt_value) else "Missing, weak or using a known default",
+            "detail": (
+                f"Strong signing secret active ({jwt_source})"
+                if _secret_is_strong(jwt_value)
+                else "Missing, weak or using a known default"
+            ),
         },
         "jwt_secret_persistent": {
             "ok": jwt_source == "environment",
-            "detail": "Permanent Render JWT_SECRET configured" if jwt_source == "environment" else "A secure runtime secret is active, but set a permanent JWT_SECRET in Render so sessions survive restarts",
+            "detail": (
+                "Permanent Render JWT_SECRET configured"
+                if jwt_source == "environment"
+                else "A secure runtime secret is active, but set a permanent JWT_SECRET in Render so sessions survive restarts"
+            ),
         },
         "database": {
             "ok": bool(_text(os.environ.get("MONGO_URL")) and _text(os.environ.get("DB_NAME"))),
-            "detail": "Mongo URL and database name configured" if _text(os.environ.get("MONGO_URL")) and _text(os.environ.get("DB_NAME")) else "Mongo URL or database name missing",
+            "detail": (
+                "Mongo URL and database name configured"
+                if _text(os.environ.get("MONGO_URL")) and _text(os.environ.get("DB_NAME"))
+                else "Mongo URL or database name missing"
+            ),
         },
         "stripe_secret": {
             "ok": _text(os.environ.get("STRIPE_SECRET_KEY")).startswith("sk_"),
-            "detail": "Stripe secret configured" if _text(os.environ.get("STRIPE_SECRET_KEY")).startswith("sk_") else "Stripe secret missing or invalid",
+            "detail": (
+                "Stripe secret configured"
+                if _text(os.environ.get("STRIPE_SECRET_KEY")).startswith("sk_")
+                else "Stripe secret missing or invalid"
+            ),
         },
         "stripe_webhook": {
             "ok": webhook_secret.startswith("whsec_"),
-            "detail": "Stripe endpoint signing secret configured" if webhook_secret.startswith("whsec_") else "Stripe endpoint signing secret missing or invalid",
+            "detail": (
+                "Stripe endpoint signing secret configured"
+                if webhook_secret.startswith("whsec_")
+                else "Stripe endpoint signing secret missing or invalid"
+            ),
         },
         "transactional_email": {
-            "ok": bool(_text(os.environ.get("POSTMARK_SERVER_TOKEN")) and _text(os.environ.get("POSTMARK_FROM_EMAIL"))),
-            "detail": "Postmark token and sender configured" if _text(os.environ.get("POSTMARK_SERVER_TOKEN")) and _text(os.environ.get("POSTMARK_FROM_EMAIL")) else "Postmark token or sender missing",
+            "ok": bool(
+                _text(os.environ.get("POSTMARK_SERVER_TOKEN"))
+                and _text(os.environ.get("POSTMARK_FROM_EMAIL"))
+            ),
+            "detail": (
+                "Postmark token and sender configured"
+                if _text(os.environ.get("POSTMARK_SERVER_TOKEN"))
+                and _text(os.environ.get("POSTMARK_FROM_EMAIL"))
+                else "Postmark token or sender missing"
+            ),
         },
         "frontend_url": {
             "ok": frontend in {"https://www.churvox.com", "https://churvox.com"},
             "detail": frontend or "Missing",
         },
         "platform_owner": {
-            "ok": owners == ["hello@churvox.com"],
-            "detail": "hello@churvox.com only" if owners == ["hello@churvox.com"] else "Unexpected platform owner/admin email configuration",
+            "ok": owners == [PLATFORM_OWNER_EMAIL],
+            "detail": (
+                f"{PLATFORM_OWNER_EMAIL} only"
+                if owners == [PLATFORM_OWNER_EMAIL]
+                else "Unexpected platform owner/admin email configuration"
+            ),
         },
         "protected_access_policy": {
             "ok": True,
@@ -167,8 +217,12 @@ def _checks(module) -> dict[str, dict[str, Any]]:
 
 def _remove_status_route(app) -> None:
     app.router.routes = [
-        route for route in list(getattr(app.router, "routes", []) or [])
-        if not (getattr(route, "path", "") == "/api/security/launch-status" and "GET" in set(getattr(route, "methods", set()) or set()))
+        route
+        for route in list(getattr(app.router, "routes", []) or [])
+        if not (
+            getattr(route, "path", "") == "/api/security/launch-status"
+            and "GET" in set(getattr(route, "methods", set()) or set())
+        )
     ]
 
 
@@ -183,13 +237,41 @@ def _role(user: dict[str, Any]) -> str:
     ).lower().replace("-", "_").replace(" ", "_")
 
 
+def _identity_disabled(user: dict[str, Any]) -> bool:
+    status = _text(
+        user.get("account_status")
+        or user.get("login_status")
+        or user.get("access_status")
+        or user.get("status")
+    ).lower()
+    return bool(
+        status in ACCOUNT_DISABLED_STATUSES
+        or user.get("account_locked") is True
+        or user.get("revoked_at")
+        or user.get("disabled_at")
+        or user.get("removed_at")
+        or user.get("active") is False
+        or user.get("is_active") is False
+    )
+
+
 def _tester_access(user: dict[str, Any]) -> bool:
-    status = _text(user.get("subscription_status") or user.get("billing_status")).lower()
-    if status in {"revoked", "locked", "disabled", "expired"}:
+    if (
+        _identity_disabled(user)
+        or user.get("free_tester_revoked_at")
+        or user.get("tester_revoked_at")
+    ):
         return False
-    if user.get("free_tester_revoked_at") or user.get("revoked_at"):
-        return False
-    tester = _truthy(user.get("free_tester_access")) or _truthy(user.get("is_tester")) or status == "tester_free"
+    billing_status = _text(
+        user.get("subscription_status")
+        or user.get("billing_status")
+        or user.get("plan_status")
+    ).lower()
+    tester = (
+        _truthy(user.get("free_tester_access"))
+        or _truthy(user.get("is_tester"))
+        or billing_status == "tester_free"
+    )
     if not tester:
         return False
     until = _date(user.get("free_tester_until") or user.get("free_until"))
@@ -211,17 +293,29 @@ def _billing_proof(user: dict[str, Any]) -> bool:
 
 def _paid_owner_access(user: dict[str, Any]) -> bool:
     email = _text(user.get("email")).lower()
-    if email == "hello@churvox.com":
+    if email == PLATFORM_OWNER_EMAIL:
         return True
     role = _role(user)
     if role in WORKER_ROLES or role in PAYROLL_ROLES:
-        return True
+        return not _identity_disabled(user)
     if _tester_access(user):
         return True
     if role and role not in OWNER_ROLES:
         return False
-    status = _text(user.get("subscription_status") or user.get("plan_status") or user.get("billing_status") or user.get("stripe_status")).lower()
-    if status in LOCKED_STATUSES or user.get("billing_lock_reason") or user.get("account_locked") is True or user.get("has_app_access") is False:
+    if _identity_disabled(user) or user.get("email_verified") is False:
+        return False
+
+    status = _text(
+        user.get("subscription_status")
+        or user.get("plan_status")
+        or user.get("billing_status")
+        or user.get("stripe_status")
+    ).lower()
+    if (
+        status in LOCKED_STATUSES
+        or user.get("billing_lock_reason")
+        or user.get("has_app_access") is False
+    ):
         return False
     trial_end = _date(user.get("trial_ends_at"))
     if status in {"trial", "trialing"} and trial_end and trial_end <= datetime.now(timezone.utc):
@@ -235,6 +329,13 @@ def _is_access_exempt(path: str) -> bool:
 
 def install(module) -> None:
     _ensure_runtime_jwt_secret(module)
+
+    # Enforce the HQ identity before any route or later helper can use stale flags.
+    module.PLATFORM_OWNER_EMAILS = [PLATFORM_OWNER_EMAIL]
+    module.is_platform_owner = (
+        lambda user: _text((user or {}).get("email")).lower() == PLATFORM_OWNER_EMAIL
+    )
+
     app = getattr(module, "app", None)
     get_current_user = getattr(module, "get_current_user", None)
     if app is None or getattr(app.state, "churvox_production_launch_security", False):
@@ -247,7 +348,11 @@ def install(module) -> None:
             return await call_next(request)
 
         jwt_safe = _ensure_runtime_jwt_secret(module)
-        if not jwt_safe and path.startswith("/api/") and not any(path == allowed or path.startswith(allowed) for allowed in PUBLIC_WHEN_AUTH_UNSAFE):
+        if (
+            not jwt_safe
+            and path.startswith("/api/")
+            and not any(path == allowed or path.startswith(allowed) for allowed in PUBLIC_WHEN_AUTH_UNSAFE)
+        ):
             return JSONResponse(
                 {
                     "success": False,
@@ -258,7 +363,12 @@ def install(module) -> None:
                 headers={"X-Churvox-Auth-Gate": "jwt-secret-unsafe"},
             )
 
-        if jwt_safe and callable(get_current_user) and path.startswith("/api/") and not _is_access_exempt(path):
+        if (
+            jwt_safe
+            and callable(get_current_user)
+            and path.startswith("/api/")
+            and not _is_access_exempt(path)
+        ):
             try:
                 user = await get_current_user(request)
             except Exception:
@@ -266,7 +376,14 @@ def install(module) -> None:
             if isinstance(user, dict):
                 role = _role(user)
                 if role in WORKER_ROLES:
-                    return JSONResponse({"success": False, "detail": "Worker accounts cannot open owner API routes.", "version": VERSION}, status_code=403)
+                    return JSONResponse(
+                        {
+                            "success": False,
+                            "detail": "Worker accounts cannot open owner API routes.",
+                            "version": VERSION,
+                        },
+                        status_code=403,
+                    )
                 if not _paid_owner_access(user):
                     return JSONResponse(
                         {
@@ -291,7 +408,9 @@ def install(module) -> None:
             "version": VERSION,
             "ready_for_paid_launch": ready,
             "checks": current,
-            "critical_failures": [key for key, item in current.items() if item.get("ok") is not True],
+            "critical_failures": [
+                key for key, item in current.items() if item.get("ok") is not True
+            ],
         }
 
     app.add_api_route("/api/security/launch-status", launch_security_status, methods=["GET"])
