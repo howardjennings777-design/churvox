@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import API_BASE from "@/lib/apiBase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,38 +10,62 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail, Lock, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
+
+function clearOwnerStorage() {
+  for (const key of ["owner_portal_session", "platform_owner_email"]) {
+    try { localStorage.removeItem(key); } catch {}
+  }
+}
+
 export default function AdminLoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState("hello@churvox.com");
+  const [email, setEmail] = useState(PLATFORM_OWNER_EMAIL);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (loading) return;
 
     setError("");
     setLoading(true);
+    clearOwnerStorage();
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail !== PLATFORM_OWNER_EMAIL) {
+      setError("This login is restricted to the Churvox platform owner account.");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const result = await login(email, password);
+      const result = await login(normalizedEmail, password);
+      const token = result?.token || result?.access_token || result?.user?.token || "";
+      const meResponse = await axios.get(`${API_BASE}/api/auth/me`, {
+        withCredentials: true,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const verifiedEmail = String(meResponse?.data?.email || "").trim().toLowerCase();
 
-      localStorage.setItem("owner_portal_session", "true");
-      localStorage.setItem("platform_owner_email", email);
-
-      if (result?.token) {
-        localStorage.setItem("token", result.token);
+      if (verifiedEmail !== PLATFORM_OWNER_EMAIL) {
+        await axios.post(`${API_BASE}/api/auth/logout`, {}, {
+          withCredentials: true,
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }).catch(() => {});
+        throw new Error("Could not verify the Churvox platform owner account.");
       }
 
+      try {
+        localStorage.setItem("owner_portal_session", "verified");
+        localStorage.setItem("platform_owner_email", PLATFORM_OWNER_EMAIL);
+      } catch {}
+
       navigate("/admin", { replace: true });
-      setTimeout(() => {
-        window.location.href = "/admin";
-      }, 150);
     } catch (err) {
-      localStorage.removeItem("owner_portal_session");
-      localStorage.removeItem("platform_owner_email");
+      clearOwnerStorage();
       setError(
         err?.response?.data?.detail ||
         err?.message ||
@@ -68,7 +94,7 @@ export default function AdminLoginPage() {
         <Card className="bg-card border-border">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl font-heading">Sign in</CardTitle>
-            <CardDescription>Enter your admin credentials</CardDescription>
+            <CardDescription>Enter the platform owner credentials</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -86,9 +112,9 @@ export default function AdminLoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="hello@churvox.com"
+                    placeholder={PLATFORM_OWNER_EMAIL}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(event) => setEmail(event.target.value)}
                     className="pl-10 bg-secondary border-border"
                     required
                     data-testid="admin-login-email-input"
@@ -105,7 +131,7 @@ export default function AdminLoginPage() {
                     type="password"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(event) => setPassword(event.target.value)}
                     className="pl-10 bg-secondary border-border"
                     required
                     data-testid="admin-login-password-input"
