@@ -24,6 +24,13 @@ const PLAN_ALIASES = {
   enterprise: "command",
 };
 
+const PLAN_LABELS = {
+  start: "Start",
+  crew: "Crew",
+  operator: "Operator",
+  command: "Command",
+};
+
 function queryParams() {
   try { return new URLSearchParams(window.location.search || ""); } catch { return new URLSearchParams(); }
 }
@@ -79,7 +86,7 @@ async function sendWelcomeEmail(token) {
       headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     });
   } catch {
-    // Never block signup because of email.
+    // Account creation must not fail because a welcome email is delayed.
   }
 }
 
@@ -115,13 +122,13 @@ export default function SignupPage() {
 
   const selectedIndustry = getIndustry(industry);
   const attachInput = (el) => lockInputText(el);
-  const handleInput = (e) => lockInputText(e.currentTarget);
+  const handleInput = (event) => lockInputText(event.currentTarget);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
 
-    const data = new FormData(e.currentTarget);
+    const data = new FormData(event.currentTarget);
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim().toLowerCase();
     const businessName = String(data.get("business_name") || "").trim();
@@ -131,12 +138,15 @@ export default function SignupPage() {
     const industryMode = normalizeIndustry(data.get("industry") || industry);
     const industryProfile = getIndustry(industryMode);
     const planChoice = normalizePlanChoice(selectedPlan);
+    const acceptedTerms = data.get("termsAccepted") === "yes";
 
     if (!name) return setError("Enter your full name.");
     if (!email) return setError("Enter your email.");
     if (testerSignup && testerEmail && email !== testerEmail) return setError(`Use the tester email ${testerEmail} so Churvox can unlock the tester access.`);
     if (password !== confirmPassword) return setError("Passwords do not match.");
-    if (password.length < 6) return setError("Password must be at least 6 characters.");
+    if (password.length < 8) return setError("Password must be at least 8 characters.");
+    if (password.length > 128) return setError("Password must be no more than 128 characters.");
+    if (!acceptedTerms) return setError("Agree to the Terms of Service and Privacy Policy to create the account.");
 
     setLoading(true);
     try {
@@ -152,6 +162,11 @@ export default function SignupPage() {
         business_type: industryProfile.title,
         selected_plan: planChoice,
         plan_choice: planChoice,
+        terms_accepted: true,
+        terms_version: "2026-07-12",
+        privacy_accepted: true,
+        privacy_version: "2026-07-12",
+        consent_recorded_at: new Date().toISOString(),
       });
       if (!result?.token) return setError("Registration failed. Please try again.");
 
@@ -188,7 +203,7 @@ export default function SignupPage() {
           return;
         }
         try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
-        navigate(`/contact?tester_signup=1&industry=${encodeURIComponent(industryMode)}`, { replace: true });
+        navigate(`/support?tester_signup=1&industry=${encodeURIComponent(industryMode)}`, { replace: true });
         return;
       }
 
@@ -205,14 +220,14 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_SIGNUP_INDUSTRY_PLAN_PATH_20260712">
+    <main className="cvPublicAuth" data-version="CHURVOX_PUBLIC_SIGNUP_PAID_LAUNCH_CONSENT_20260712">
       <Nav />
       <section className="cvPublicAuthShell cvPublicSignupShell">
         <form className="cvPublicAuthCard" onSubmit={handleSubmit}>
           <p className="cvPublicAuthKicker">{testerSignup ? "Tester access" : "Start trial"}</p>
           <h1>{testerSignup ? "Create your tester account." : "Create your Churvox account."}</h1>
           <p className="cvPublicAuthIntro">
-            {testerSignup ? "Use the email you were invited with. Pick the business type so Churvox opens with the right wording and setup." : "Create the account, choose Start, Crew, Operator or Command, then Churvox adapts setup and app wording to the business type."}
+            {testerSignup ? "Use the email you were invited with. Pick the business type so Churvox opens with the right wording and setup." : "Create the account, confirm your email, choose Start, Crew, Operator or Command, then complete the secure trial checkout."}
           </p>
 
           {error ? <p className="cvPublicAuthError">{error}</p> : null}
@@ -224,7 +239,7 @@ export default function SignupPage() {
             </label>
             <label>
               Email
-              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" autoComplete="email" placeholder="you@business.co.nz" defaultValue={testerEmail} readOnly={Boolean(testerSignup && testerEmail)} required />
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="email" type="email" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck="false" autoComplete="email" placeholder="you@business.co.nz" defaultValue={testerEmail} readOnly={Boolean(testerSignup && testerEmail)} required />
             </label>
             <label>
               Business name
@@ -244,16 +259,22 @@ export default function SignupPage() {
             </label>
             <label>
               Password
-              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="password" type="password" autoComplete="new-password" placeholder="Password" required />
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="password" type="password" autoComplete="new-password" placeholder="At least 8 characters" minLength={8} maxLength={128} required />
             </label>
             <label>
               Confirm password
-              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Confirm password" required />
+              <input ref={attachInput} onInput={handleInput} onFocus={handleInput} className="cvPublicNativeInput" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Repeat password" minLength={8} maxLength={128} required />
             </label>
           </div>
 
           <p className="cvPublicAuthIntro"><b>{selectedIndustry.title}</b>: {selectedIndustry.intro}</p>
-          {!testerSignup ? <p className="cvPublicAuthIntro"><b>Selected plan:</b> {selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}. You can still change it on the plans screen before Stripe checkout.</p> : null}
+          {!testerSignup ? <p className="cvPublicAuthIntro"><b>Selected plan:</b> {PLAN_LABELS[selectedPlan] || "Operator"}. You can still change it on the plans screen before checkout.</p> : null}
+
+          <label className="cvPublicAuthIntro" style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <input type="checkbox" name="termsAccepted" value="yes" required style={{ marginTop: 4, width: 18, height: 18, flex: "0 0 auto" }} />
+            <span>I agree to the <Link to="/legal/terms" target="_blank" rel="noopener noreferrer">Terms of Service</Link> and acknowledge the <Link to="/legal/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.</span>
+          </label>
+
           <button className="cvPublicAuthSubmit" type="submit" disabled={loading}>{loading ? "Creating account..." : testerSignup ? "Create tester account" : "Create account and choose plan"}</button>
           <p className="cvPublicAuthBottom">Already have an account? <Link to="/login">Sign in</Link></p>
         </form>
@@ -271,7 +292,7 @@ export default function SignupPage() {
               </>
             ) : (
               <>
-                <li>Create the account first.</li>
+                <li>Create the account and confirm your email.</li>
                 <li>Choose Start, Crew, Operator or Command.</li>
                 <li>Stripe starts the 14-day trial for the selected plan.</li>
                 <li>Then Churvox opens with matching service options and wording.</li>
