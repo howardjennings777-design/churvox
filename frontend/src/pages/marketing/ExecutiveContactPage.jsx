@@ -2,6 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { PublicNav, PublicFooter, Eyebrow, SectionHeading } from "./ChurvoxPublicShell";
 
+const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
+
 const contactOptions = [
   ["Product and trial help", "Tell us what kind of business you run, what admin is slowing you down and what you want to test.", "mailto:hello@churvox.com?subject=Churvox%20trial%20help", "Email trial support"],
   ["Tester access", "Existing invited testers can ask about setup, trial access or getting the right business profile loaded.", "mailto:hello@churvox.com?subject=Churvox%20tester%20access", "Email tester support"],
@@ -11,13 +13,13 @@ const contactOptions = [
 const usefulRoutes = [
   ["Product demo", "/demo", "View the public product flow without signing in."],
   ["Pricing", "/pricing", "Compare the current Churvox plans and regional prices."],
-  ["Start trial", "/signup", "Create an owner account and begin the free trial."],
+  ["Start trial", DEFAULT_TRIAL_PATH, "Create an owner account and begin the free trial."],
   ["Log in", "/login", "Open the owner or worker sign-in screen."],
 ];
 
 export default function ExecutiveContactPage() {
   return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_CONTACT_20260710">
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_CONTACT_20260712_PAID_LAUNCH_CTAS">
       <PublicNav active="/contact" />
 
       <section className="cp26PageHero">
