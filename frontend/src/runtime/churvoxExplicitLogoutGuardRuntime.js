@@ -1,4 +1,5 @@
 import axios from "axios";
+import "./churvoxBackendWakeRetryRuntime";
 
 const MARKER = "churvox:logged-out";
 const RESTORE_PATHS = ["/api/auth/me", "/api/auth/check", "/api/auth/session"];
