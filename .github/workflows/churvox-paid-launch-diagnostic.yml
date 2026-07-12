@@ -1,0 +1,122 @@
+name: Churvox Paid Launch Diagnostic
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-diagnostic]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CHURVOX_E2E_MUTATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+      - name: Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Discover linked worker
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
+          const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
+          const password = process.env.CHURVOX_OWNER_PASSWORD;
+          const tokenFrom = (b={}) => b.token || b.access_token || b.auth_token || b.jwt || b.accessToken || b.user?.token || b.user?.access_token || b.data?.token || b.data?.access_token || b.data?.user?.token || '';
+          const rowsFrom = (p={}) => { const d=p?.data?.data ?? p?.data ?? p; if(Array.isArray(d)) return d; for(const k of ['workers','team','members','items','records','results','data']) if(Array.isArray(d?.[k])) return d[k]; return []; };
+          async function call(path, options={}) { const r=await fetch(`${api}${path}`,{headers:{Accept:'application/json','Content-Type':'application/json',...(options.headers||{})},...options}); const t=await r.text(); let b={}; try{b=JSON.parse(t)}catch{b={text:t.slice(0,400)}} return {r,b}; }
+          async function login(path,email){ const x=await call(path,{method:'POST',body:JSON.stringify({email,password})}); return {...x,token:tokenFrom(x.b)}; }
+          (async()=>{
+            const owner=await login('/api/auth/login',ownerEmail); if(!owner.r.ok||!owner.token) throw new Error(`owner login ${owner.r.status}`);
+            const candidates=[];
+            for(const endpoint of ['/api/team/workers','/api/team','/api/workers']) { const x=await call(endpoint,{headers:{Authorization:`Bearer ${owner.token}`}}); if(!x.r.ok) continue; for(const row of rowsFrom(x.b)){ const email=String(row.email||row.worker_email||row.user_email||'').trim().toLowerCase(); const s=String(row.status||'').toLowerCase(); if(email&&email!==ownerEmail.toLowerCase()&&row.active!==false&&row.is_active!==false&&!/inactive|deleted|archived|disabled/.test(s)&&!candidates.includes(email)) candidates.push(email); } }
+            for(const email of candidates.slice(0,10)){ let x=await login('/api/auth/login',email); if(!x.r.ok||!x.token) x=await login('/api/worker/auth/login',email); if(x.r.ok&&x.token){ console.log(`::add-mask::${email}`); fs.appendFileSync(process.env.GITHUB_ENV,`CHURVOX_WORKER_EMAIL=${email}\n`); console.log('worker login proven'); return; } }
+            throw new Error('No linked worker could authenticate');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - name: Real owner worker UI flow
+        id: human
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-current-human-owner-worker-flow.spec.js --project=desktop-chromium --workers=1 --reporter=line 2>&1 | tee /tmp/human.txt
+      - name: Hardcore full lifecycle
+        id: hardcore
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-owner-worker.cjs 2>&1 | tee /tmp/hardcore.txt
+      - name: Cleanup
+        id: cleanup
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/cleanup.txt
+      - name: Post exact diagnostics
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          HUMAN: ${{ steps.human.outcome }}
+          HARDCORE: ${{ steps.hardcore.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        with:
+          script: |
+            const fs=require('fs');
+            const tail=(p,n=12000)=>fs.existsSync(p)?fs.readFileSync(p,'utf8').slice(-n):'No output.';
+            const body=[
+              '# Paid launch blocker diagnostics',
+              `Run: ${context.runId}`,
+              `Job: ${process.env.GITHUB_JOB}`,
+              `- Real owner-worker flow: ${process.env.HUMAN}`,
+              `- Hardcore lifecycle: ${process.env.HARDCORE}`,
+              `- Cleanup: ${process.env.CLEANUP}`,
+              '', '## Owner-worker flow', '```text', tail('/tmp/human.txt'), '```',
+              '', '## Hardcore lifecycle', '```text', tail('/tmp/hardcore.txt'), '```',
+              '', '## Cleanup', '```text', tail('/tmp/cleanup.txt'), '```',
+            ].join('\n');
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:body.slice(0,64000)});
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-paid-launch-diagnostic
+          path: |
+            /tmp/human.txt
+            /tmp/hardcore.txt
+            /tmp/cleanup.txt
+            frontend/test-results
+            frontend/playwright-report
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Fail if blockers remain
+        if: always()
+        env:
+          HUMAN: ${{ steps.human.outcome }}
+          HARDCORE: ${{ steps.hardcore.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: test "$HUMAN" = success -a "$HARDCORE" = success -a "$CLEANUP" = success
