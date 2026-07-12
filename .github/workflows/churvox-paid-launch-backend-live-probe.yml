@@ -1,0 +1,35 @@
+name: Churvox Paid Launch Backend Live Probe
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-backend-live]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+    steps:
+      - name: Wait for exact live marker
+        shell: bash
+        run: |
+          node <<'NODE' 2>&1 | tee /tmp/backend-live.txt
+          const api=process.env.API_BASE.replace(/\/+$/,'');const email=process.env.OWNER_EMAIL;const password=process.env.OWNER_PASSWORD;const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const tokenFrom=(b={})=>b.token||b.access_token||b.user?.token||b.data?.token||b.data?.user?.token||'';
+          async function call(path,opt={},timeout=30000){const c=new AbortController();const t=setTimeout(()=>c.abort(),timeout);try{const r=await fetch(api+path,{headers:{Accept:'application/json','Content-Type':'application/json',...(opt.headers||{})},...opt,signal:c.signal});const text=await r.text();let b={};try{b=JSON.parse(text)}catch{b={text:text.slice(0,200)}}return{r,b}}finally{clearTimeout(t)}}
+          (async()=>{for(let attempt=1;attempt<=80;attempt++){try{const l=await call('/api/auth/login',{method:'POST',body:JSON.stringify({email,password})});const token=tokenFrom(l.b);if(!token){console.log(`Attempt ${attempt}: login ${l.r.status}`)}else{const x=await call('/api/paid-launch/backend-readiness',{headers:{Authorization:'Bearer '+token}});const marker=x.b?.marker||'';console.log(`Attempt ${attempt}: readiness ${x.r.status} marker=${marker}`);if(x.r.ok&&marker==='churvox-paid-launch-live-backend-20260713a'&&x.b?.indexes_ready===true){console.log('PAID_LAUNCH_BACKEND_LIVE');return}}}catch(e){console.log(`Attempt ${attempt}: ${e.name}:${e.message}`)}if(attempt<80)await sleep(10000)}throw Error('paid launch backend marker did not become live')})().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');const text=fs.existsSync('/tmp/backend-live.txt')?fs.readFileSync('/tmp/backend-live.txt','utf8').slice(-20000):'No output';const ok=text.includes('PAID_LAUNCH_BACKEND_LIVE');await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`# Paid launch backend ${ok?'LIVE':'NOT LIVE'}\n\n\`\`\`text\n${text}\n\`\`\``})
