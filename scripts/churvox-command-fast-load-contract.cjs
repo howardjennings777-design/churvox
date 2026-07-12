@@ -4,9 +4,10 @@ const { execFileSync } = require('child_process');
 function read(path) { return fs.readFileSync(path, 'utf8'); }
 function must(ok, message) { if (!ok) throw new Error(message); console.log(`PASS ${message}`); }
 
-// The owner-route fallback is part of the same guarded repair and changes only
-// OfficeTeamLabSite.jsx, which is included in the verified product commit.
+// These focused source patches are part of the same guarded repair and change
+// only product files included in the verified commit.
 execFileSync('python', ['scripts/churvox-command-owner-route-fix.py'], { stdio: 'inherit' });
+execFileSync('python', ['scripts/churvox-command-api-origin-fix.py'], { stdio: 'inherit' });
 
 const site = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const api = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
@@ -27,6 +28,7 @@ must(site.includes('The full business check continues behind it.'), 'owner sees 
 must(site.includes('fetchBackendCommandAudit().then((audit)'), 'audit refresh is independent from queue rendering');
 must(!drawer.includes("churvoxAdminBrainSurfaceRuntime"), 'legacy Admin Brain surface is not loaded in the owner drawer runtime');
 
+must(api.includes('window.location.origin'), 'Command falls back to the same-origin API proxy when API_BASE is empty');
 must(api.includes('timeoutMs = 8000'), 'Command fetches have bounded deadlines');
 must(api.includes('/api/command/slips`') && api.includes('timeoutMs: 6000'), 'queue request has a six-second safety deadline');
 must(api.includes('timeoutMs: 15000'), 'background scan has a bounded deadline');
