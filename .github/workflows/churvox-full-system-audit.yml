@@ -45,6 +45,53 @@ jobs:
           python -m unittest backend.test_churvox_runtime_jwt_secret_patch
           python -m unittest scripts.test_platform_owner_frontend_lock
 
+  live-authenticated-readonly:
+    name: Live owner and worker read-only proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+      CHURVOX_E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
+      CHURVOX_E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
+      CHURVOX_E2E_WORKER_EMAIL: ${{ secrets.CHURVOX_E2E_WORKER_EMAIL }}
+      CHURVOX_E2E_WORKER_PASSWORD: ${{ secrets.CHURVOX_E2E_WORKER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm install --include=dev --legacy-peer-deps
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Prove real owner and worker sessions without mutations
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-live-owner-worker-readonly.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+      - name: Upload live read-only report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-owner-worker-readonly
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
   live-public-contract:
     name: Live public auth and launch contract
     runs-on: ubuntu-latest
