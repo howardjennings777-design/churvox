@@ -1,8 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "build": "npm --prefix frontend install --legacy-peer-deps && npm --prefix frontend run build",
-    "render-build": "npm --prefix frontend install --legacy-peer-deps && npm --prefix frontend run build",
+    "build": "npm --prefix frontend run render-build",
+    "render-build": "npm --prefix frontend run render-build",
     "start": "npm --prefix frontend start",
     "test:e2e": "npm --prefix frontend run test:e2e",
     "test:office-lab": "npm --prefix frontend run test:office-lab",
