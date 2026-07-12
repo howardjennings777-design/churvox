@@ -457,3 +457,21 @@
     min-height: 68px;
   }
 }
+
+
+.cvWorkerRouteNav .cvWorkerLogout {
+  min-height: 44px;
+  border: 1px solid rgba(127, 29, 29, .24);
+  border-radius: 12px;
+  padding: 0 14px;
+  color: #7f1d1d;
+  background: rgba(254, 242, 242, .92);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+.cvWorkerRouteNav .cvWorkerLogout:hover,
+.cvWorkerRouteNav .cvWorkerLogout:focus-visible {
+  border-color: rgba(185, 28, 28, .55);
+  background: #fee2e2;
+}

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Link, Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import "./OfficeTeamWorkerRoute.css";
 import "./OfficeTeamWorkerHardcore.css";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
@@ -19,7 +19,8 @@ const workerViews = {
 
 export default function OfficeTeamWorkerRoute() {
   const { pathname } = useLocation();
-  const { user, loading: authLoading, isWorker } = useAuth();
+  const navigate = useNavigate();
+  const { user, loading: authLoading, isWorker, logout } = useAuth();
   const { post } = useApi();
   const live = useOfficeTeamRows("worker", []);
   const [selected, setSelected] = useState(null);
@@ -89,21 +90,27 @@ export default function OfficeTeamWorkerRoute() {
   }
 
   async function sendBossUpdate(text = note) {
-    if (updateBusy) return;
-    const clean = String(text || "Worker update from phone view").trim();
-    setUpdateBusy(true);
-    let sent = false;
-    try {
-      await createBackendWorkerUpdateRequest({ title, update: clean, updateType: "Worker update", status: hasWork ? status : "General update" });
-      addTrail(`Boss update sent to Command: ${clean}`);
-      sent = true;
-    } catch (error) {
-      addTrail(`Update was not sent to the boss. Check the connection and retry. ${error?.message || ""}`.trim());
-    } finally {
-      setUpdateBusy(false);
-      if (sent) setNote("");
+  if (updateBusy) return;
+  const clean = String(text || "Worker update from phone view").trim();
+  setUpdateBusy(true);
+  let sent = false;
+  try {
+    const needsDecision = /owner check|extra work|issue|problem|decision|blocked|cannot|help/i.test(clean);
+    if (hasWork && jobId) {
+      await sendFieldSlip(needsDecision ? "worker_problem" : "worker_message", clean);
+      addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
+    } else {
+      await createBackendWorkerUpdateRequest({ title, update: clean, updateType: needsDecision ? "Worker problem" : "Worker update", status: needsDecision ? "Owner review" : "General update" });
+      addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
     }
+    sent = true;
+  } catch (error) {
+    addTrail(`Update was not sent to the boss. Check the connection and retry. ${error?.message || ""}`.trim());
+  } finally {
+    setUpdateBusy(false);
+    if (sent) setNote("");
   }
+}
 
   async function sendFieldSlip(kind, text, photoNames = []) {
     if (!jobId) throw new Error("Live job id is missing.");
@@ -173,6 +180,11 @@ export default function OfficeTeamWorkerRoute() {
     }
   }
 
+  async function handleLogout() {
+  await logout();
+  navigate("/login?worker=1", { replace: true });
+}
+
   function addTrail(text) {
     setTrail((currentTrail) => [{ id: `${Date.now()}-${text}`, text }, ...currentTrail].slice(0, 6));
   }
@@ -189,6 +201,7 @@ export default function OfficeTeamWorkerRoute() {
 
       <nav className="cvWorkerRouteNav" aria-label="Worker pages">
         {[["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/messages"], ["Help", "/worker/help"], ["Me", "/worker/settings"]].map(([label, href]) => <Link key={href} className={view.label === label ? "active" : ""} to={href}>{label}</Link>)}
+        <button className="cvWorkerLogout" type="button" onClick={handleLogout}>Log out</button>
       </nav>
 
       <section className="cvWorkerRoutePhone" aria-label="Churvox worker phone app">
