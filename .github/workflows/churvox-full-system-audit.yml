@@ -1,0 +1,253 @@
+name: Churvox Full System Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-full-system-audit.yml'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'scripts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-auth-contracts:
+    name: Focused auth, HQ and worker isolation contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile focused auth stack
+        run: |
+          python -m py_compile \
+            backend/sitecustomize.py \
+            backend/churvox_auth_me_401_patch.py \
+            backend/churvox_login_emergency_final.py \
+            backend/churvox_login_route_finalizer.py \
+            backend/churvox_outer_cors_error_shield.py \
+            backend/churvox_auth_paid_launch_hardening.py \
+            backend/churvox_production_launch_security.py \
+            backend/churvox_runtime_jwt_secret_patch.py \
+            backend/test_churvox_auth_me_401_patch.py \
+            backend/test_churvox_login_emergency_final.py \
+            backend/test_churvox_runtime_jwt_secret_patch.py \
+            scripts/test_platform_owner_frontend_lock.py \
+            scripts/test_worker_static_bypass_absent.py
+      - name: Run focused contracts
+        run: |
+          python -m unittest backend.test_churvox_auth_me_401_patch
+          python -m unittest backend.test_churvox_login_emergency_final
+          python -m unittest backend.test_churvox_runtime_jwt_secret_patch
+          python -m unittest scripts.test_platform_owner_frontend_lock
+          python -m unittest scripts.test_worker_static_bypass_absent
+
+  live-authenticated-readonly:
+    name: Live owner and worker read-only proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+      CHURVOX_E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
+      CHURVOX_E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
+      CHURVOX_E2E_WORKER_EMAIL: ${{ secrets.CHURVOX_E2E_WORKER_EMAIL }}
+      CHURVOX_E2E_WORKER_PASSWORD: ${{ secrets.CHURVOX_E2E_WORKER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm install --include=dev --legacy-peer-deps
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Prove real owner and worker sessions without mutations
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-live-owner-worker-readonly.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+      - name: Upload live read-only report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-owner-worker-readonly
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+  live-public-contract:
+    name: Live public auth, billing and launch contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe production without credentials
+        env:
+          API_BASE: https://grassley-backend.onrender.com
+          FRONTEND_BASE: https://www.churvox.com
+          EXPECTED_LOGIN_ROUTE: churvox-login-emergency-final-20260712f
+        run: |
+          mkdir -p /tmp/churvox-full-system-audit
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          api = os.environ['API_BASE'].rstrip('/')
+          frontend = os.environ['FRONTEND_BASE'].rstrip('/')
+          expected = os.environ['EXPECTED_LOGIN_ROUTE']
+          report = {'expected_login_route': expected, 'checks': {}, 'failures': []}
+
+          def request(name, url, *, method='GET', body=None, headers=None, timeout=30):
+              payload = None if body is None else (body if isinstance(body, bytes) else json.dumps(body).encode())
+              req_headers = {'Accept': 'application/json', **(headers or {})}
+              if body is not None and 'Content-Type' not in req_headers:
+                  req_headers['Content-Type'] = 'application/json'
+              req = urllib.request.Request(url, data=payload, headers=req_headers, method=method)
+              try:
+                  with urllib.request.urlopen(req, timeout=timeout) as response:
+                      raw = response.read().decode('utf-8', 'replace')
+                      status = response.status
+                      response_headers = dict(response.headers.items())
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode('utf-8', 'replace')
+                  status = exc.code
+                  response_headers = dict(exc.headers.items())
+              except Exception as exc:
+                  result = {'status': 0, 'error': f'{exc.__class__.__name__}: {exc}'}
+                  report['checks'][name] = result
+                  return result
+              try:
+                  parsed = json.loads(raw) if raw else None
+              except Exception:
+                  parsed = None
+              result = {
+                  'status': status,
+                  'json': parsed,
+                  'body_preview': raw[:400] if parsed is None else None,
+                  'headers': {k.lower(): v for k, v in response_headers.items() if k.lower().startswith('x-churvox-') or k.lower().startswith('access-control-')},
+              }
+              report['checks'][name] = result
+              return result
+
+          health = None
+          for attempt in range(1, 31):
+              health = request('login_health', f'{api}/api/auth/login-health')
+              data = health.get('json') or {}
+              signed = request('signed_out_me', f'{api}/api/auth/me')
+              portal = request('signed_out_billing_portal', f'{api}/api/billing/create-portal-session', method='POST', body={})
+              deletion = request('signed_out_account_deletion', f'{api}/api/account', method='DELETE')
+              launch = request('launch_status', f'{api}/api/security/launch-status')
+              launch_data = launch.get('json') or {}
+              protected_routes_ready = portal.get('status') in {401, 403} and deletion.get('status') in {401, 403}
+              if (
+                  health.get('status') == 200
+                  and data.get('login_route') == expected
+                  and data.get('jwt_persistent') is True
+                  and signed.get('status') == 401
+                  and protected_routes_ready
+                  and launch.get('status') == 200
+                  and launch_data.get('ready_for_paid_launch') is True
+              ):
+                  report['deployment_attempts'] = attempt
+                  break
+              if attempt < 30:
+                  time.sleep(20)
+          else:
+              report['failures'].append('Latest production auth and billing contract did not become ready in the probe window.')
+
+          health_data = (health or {}).get('json') or {}
+          required_health = {
+              'status_200': (health or {}).get('status') == 200,
+              'ready': health_data.get('ready') is True,
+              'database_ready': health_data.get('database_ready') is True,
+              'jwt_ready': health_data.get('jwt_ready') is True,
+              'jwt_persistent': health_data.get('jwt_persistent') is True,
+              'login_route': health_data.get('login_route') == expected,
+              'login_route_count': health_data.get('login_route_count') == 1,
+              'logout_route_count': health_data.get('logout_route_count') == 1,
+              'worker_login_route_count': health_data.get('worker_login_route_count') == 2,
+          }
+          report['health_contract'] = required_health
+          report['failures'].extend([f'login-health failed: {key}' for key, ok in required_health.items() if not ok])
+
+          signed = report['checks'].get('signed_out_me') or request('signed_out_me', f'{api}/api/auth/me')
+          if signed.get('status') != 401:
+              report['failures'].append(f"Signed-out /api/auth/me returned {signed.get('status')} instead of 401.")
+
+          portal = report['checks'].get('signed_out_billing_portal') or request('signed_out_billing_portal', f'{api}/api/billing/create-portal-session', method='POST', body={})
+          if portal.get('status') not in {401, 403}:
+              report['failures'].append(f"Signed-out billing portal returned {portal.get('status')} instead of 401/403.")
+
+          deletion = report['checks'].get('signed_out_account_deletion') or request('signed_out_account_deletion', f'{api}/api/account', method='DELETE')
+          if deletion.get('status') not in {401, 403}:
+              report['failures'].append(f"Signed-out account deletion returned {deletion.get('status')} instead of 401/403.")
+
+          invalid_json = request('invalid_json_login', f'{api}/api/auth/login', method='POST', body=b'{', headers={'Content-Type': 'application/json'})
+          invalid_headers = invalid_json.get('headers') or {}
+          if invalid_json.get('status') != 400:
+              report['failures'].append(f"Invalid JSON login returned {invalid_json.get('status')} instead of 400.")
+          if invalid_headers.get('x-churvox-login-route') != expected or invalid_headers.get('x-churvox-login-stage') != 'invalid-json':
+              report['failures'].append('Invalid JSON login diagnostics are incorrect.')
+
+          wrong = request('wrong_credentials', f'{api}/api/auth/login', method='POST', body={'email': 'full-system-audit@churvox.invalid', 'password': 'NotARealPassword9!'})
+          wrong_headers = wrong.get('headers') or {}
+          if wrong.get('status') != 401:
+              report['failures'].append(f"Wrong credential login returned {wrong.get('status')} instead of 401.")
+          if wrong_headers.get('x-churvox-login-route') != expected or wrong_headers.get('x-churvox-login-stage') != 'invalid-credentials':
+              report['failures'].append('Wrong credential diagnostics are incorrect.')
+
+          cors = request('cors_preflight', f'{api}/api/auth/login', method='OPTIONS', headers={'Origin': frontend, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type'})
+          cors_headers = cors.get('headers') or {}
+          if cors.get('status') not in {200, 204}:
+              report['failures'].append(f"Login CORS preflight returned {cors.get('status')}.")
+          if cors_headers.get('access-control-allow-origin') != frontend or cors_headers.get('access-control-allow-credentials', '').lower() != 'true':
+              report['failures'].append('Production CORS credentials contract failed.')
+
+          for page_path in ('/login', '/admin/login', '/owner/login', '/plans', '/worker/today'):
+              page = request(f'page_{page_path}', f'{frontend}{page_path}', headers={'Accept': 'text/html'})
+              if page.get('status') != 200:
+                  report['failures'].append(f'{page_path} returned {page.get("status")} instead of 200.')
+
+          launch = report['checks'].get('launch_status') or request('launch_status', f'{api}/api/security/launch-status')
+          launch_data = launch.get('json') or {}
+          if launch.get('status') != 200 or launch_data.get('ready_for_paid_launch') is not True:
+              report['failures'].append(f"Paid launch is not ready: {launch_data.get('critical_failures') or launch.get('status')}")
+
+          report['success'] = not report['failures']
+          path = Path('/tmp/churvox-full-system-audit/report.json')
+          path.write_text(json.dumps(report, indent=2, default=str) + '\n')
+          print(path.read_text())
+          if report['failures']:
+              raise SystemExit(1)
+          PY
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-full-system-audit
+          path: /tmp/churvox-full-system-audit/report.json
+          if-no-files-found: error
+          retention-days: 14
