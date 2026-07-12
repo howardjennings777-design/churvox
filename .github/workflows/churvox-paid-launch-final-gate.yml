@@ -1,0 +1,456 @@
+name: Churvox Paid Launch Final Gate
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  final-gate:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-final-gate]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CHURVOX_E2E_MUTATE: '1'
+
+    steps:
+      - name: Mark paid launch gate started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Paid-launch final gate started: exact deployed build, Payroll, strict Command brain, billing, owner/worker roles, every page, three real field lifecycles, visual/hardcore flow and cleanup.'
+            });
+
+      - name: Check out current main
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify private credential
+        id: credential
+        continue-on-error: true
+        run: |
+          test -n "$CHURVOX_OWNER_PASSWORD"
+          echo 'Owner credential is present and remains masked.'
+
+      - name: Install backend test dependencies
+        id: backend_install
+        continue-on-error: true
+        run: python -m pip install --disable-pip-version-check fastapi==0.110.1 pymongo==4.5.0
+
+      - name: Install frontend dependencies
+        id: install
+        continue-on-error: true
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Compile, contract and production build gate
+        id: build
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            python -m py_compile \
+              backend/churvox_paid_launch_readiness_routes.py \
+              backend/churvox_worker_login_bridge_patch.py \
+              backend/churvox_command_human_mimic_routes.py \
+              backend/churvox_command_human_mimic_v3_routes.py \
+              backend/churvox_command_human_mimic_live_routes.py \
+              backend/churvox_command_apply_routes.py \
+              backend/usercustomize.py \
+              usercustomize.py
+            python scripts/churvox_paid_launch_backend_contract.py
+            python scripts/churvox_mimic_full_test.py
+            node scripts/churvox-command-approval-readiness.cjs
+            node scripts/churvox-paid-launch-readiness-contract.cjs
+            node scripts/churvox-hardcore-owner-worker-audit.cjs
+            npm --prefix frontend run build
+          } 2>&1 | tee /tmp/churvox-final-build.txt
+
+      - name: Install Chromium
+        id: chromium
+        continue-on-error: true
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait for exact live build and run authenticated platform smoke
+        id: live_smoke
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-final-live-smoke.txt
+          const fs = require('fs');
+          const site = process.env.PLAYWRIGHT_BASE_URL.replace(/\/+$/, '');
+          const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
+          const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
+          const password = process.env.CHURVOX_OWNER_PASSWORD;
+          const marker = 'churvox-paid-launch-readiness-20260713a';
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          function tokenFrom(body = {}) {
+            return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+              || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+          }
+          function rowsFrom(payload) {
+            const body = payload?.data?.data ?? payload?.data ?? payload;
+            if (Array.isArray(body)) return body;
+            for (const key of ['workers', 'team', 'members', 'items', 'records', 'results', 'data']) if (Array.isArray(body?.[key])) return body[key];
+            return [];
+          }
+          function emailOf(row = {}) {
+            return String(row.email || row.worker_email || row.user_email || row.login_email || '').trim().toLowerCase();
+          }
+          function active(row = {}) {
+            const status = String(row.status || row.worker_status || '').toLowerCase();
+            return row.active !== false && row.is_active !== false && !/inactive|deleted|archived|disabled/.test(status);
+          }
+          async function call(path, options = {}, attempts = 3) {
+            let last;
+            for (let attempt = 1; attempt <= attempts; attempt += 1) {
+              try {
+                const response = await fetch(`${api}${path}`, {
+                  headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) },
+                  ...options,
+                });
+                const text = await response.text();
+                let body = {};
+                try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 500) }; }
+                last = { response, body };
+                const transient = response.status === 408 || response.status === 429 || response.status >= 500;
+                if (!transient || attempt === attempts) return last;
+              } catch (error) {
+                last = { error };
+                if (attempt === attempts) throw error;
+              }
+              await sleep(500 * attempt);
+            }
+            return last;
+          }
+          async function login(path, email) {
+            const result = await call(path, { method: 'POST', body: JSON.stringify({ email, password }) }, 4);
+            return { ...result, token: tokenFrom(result.body) };
+          }
+          async function ownerLogin() {
+            const result = await login('/api/auth/login', ownerEmail);
+            if (!result.response?.ok || !result.token) throw new Error(`owner login ${result.response?.status || 'network'}`);
+            return result.token;
+          }
+          async function exactFrontendReady() {
+            const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
+            if (!manifestResponse.ok) throw new Error(`manifest ${manifestResponse.status}`);
+            const manifest = await manifestResponse.json();
+            const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((item) => /main\..*\.js$/.test(item));
+            if (!mainPath) throw new Error('main bundle missing');
+            const bundle = await (await fetch(new URL(mainPath, site), { cache: 'no-store' })).text();
+            if (!bundle.includes(marker)) throw new Error(`frontend marker missing from ${mainPath}`);
+            if (!bundle.includes('Buy Growth Packs') || !bundle.includes('create-addon-checkout-session')) throw new Error('Growth Pack purchase bundle missing');
+            return mainPath;
+          }
+          function assert(condition, message) {
+            if (!condition) throw new Error(message);
+          }
+          async function protectedChecks(ownerToken) {
+            const auth = { Authorization: `Bearer ${ownerToken}` };
+            const payroll = await call('/api/payroll?ts=' + Date.now(), { headers: auth });
+            assert(payroll.response?.status === 200 && payroll.body?.success !== false, `payroll ${payroll.response?.status}`);
+            assert(payroll.body?.read_only === true && payroll.body?.owner_approval_required === true, 'payroll is not owner-review only');
+            assert(payroll.body?.no_tax_filing === true && payroll.body?.no_government_submission === true && payroll.body?.no_bank_file === true && payroll.body?.no_payment === true, 'payroll safety flags missing');
+            const summary = await call('/api/payroll/summary?ts=' + Date.now(), { headers: auth });
+            assert(summary.response?.status === 200 && summary.body?.success !== false, `payroll summary ${summary.response?.status}`);
+
+            const scan = await call('/api/command/scan', { method: 'POST', headers: auth, body: JSON.stringify({ source: 'paid_launch_final_gate', prepared_only: true, owner_review_only: true }) }, 4);
+            assert(scan.response?.status === 200 && scan.body?.success === true, `Command scan ${scan.response?.status}: ${scan.body?.detail || scan.body?.message || ''}`);
+            assert(scan.body?.source === 'human-mimic-intelligence-v3', `wrong brain source ${scan.body?.source}`);
+            assert(scan.body?.guard === 'human-mimic-strict-preflight-v3', `wrong brain guard ${scan.body?.guard}`);
+            assert(scan.body?.scan_complete === true, `brain scan incomplete: ${JSON.stringify(scan.body?.scan_errors || [])}`);
+            assert(Array.isArray(scan.body?.roles_checked) && scan.body.roles_checked.length === 8, 'all eight mimic roles were not checked');
+            for (const slip of [...(scan.body?.slips || []), ...(scan.body?.existing || [])]) {
+              const payload = slip?.payload || {};
+              assert(slip.prepared_only === true && slip.owner_review_only === true, 'unsafe Command slip top-level flags');
+              assert(payload.no_auto_send === true && payload.no_auto_sync === true && payload.no_auto_charge === true && payload.no_auto_record_change === true, 'unsafe Command slip payload flags');
+            }
+            return { payroll, scan };
+          }
+          async function discoverWorker(ownerToken) {
+            const auth = { Authorization: `Bearer ${ownerToken}` };
+            const candidates = [];
+            for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
+              const result = await call(`${endpoint}?ts=${Date.now()}`, { headers: auth });
+              if (!result.response?.ok) continue;
+              for (const row of rowsFrom(result.body)) {
+                const email = emailOf(row);
+                if (!email || email === ownerEmail.toLowerCase() || !active(row)) continue;
+                if (!candidates.includes(email)) candidates.push(email);
+              }
+            }
+            if (!candidates.length) throw new Error('no linked active worker found');
+            for (const email of candidates.slice(0, 10)) {
+              let result = await login('/api/auth/login', email);
+              if (!result.response?.ok || !result.token) result = await login('/api/worker/auth/login', email);
+              if (result.response?.ok && result.token) return { email, token: result.token };
+            }
+            throw new Error('no linked worker could authenticate');
+          }
+          async function billingChecks(ownerToken) {
+            const auth = { Authorization: `Bearer ${ownerToken}` };
+            const returnBase = `${site}/dashboard`;
+            const payload = {
+              plan: 'solo', plan_key: 'start', selected_plan: 'start', tier: 'solo', plan_name: 'Start', action: 'start_trial',
+              country: 'NZ', billing_country: 'NZ', currency: 'NZD', email: ownerEmail,
+              billing_interval: 'monthly', interval: 'month',
+              success_url: `${returnBase}?checkout=success&plan=start#plans`,
+              cancel_url: `${returnBase}?checkout=cancelled&plan=start#plans`,
+              metadata: { source: 'paid_launch_final_gate' },
+            };
+            let planSession = null;
+            const failures = [];
+            for (const endpoint of ['/api/billing/create-checkout-session', '/api/stripe/create-checkout-session', '/api/billing/checkout', '/api/stripe/checkout']) {
+              const result = await call(endpoint, { method: 'POST', headers: auth, body: JSON.stringify(payload) });
+              const url = result.body?.url || result.body?.checkout_url || result.body?.session_url || result.body?.data?.url;
+              if (result.response?.ok && /^https:\/\//.test(String(url || ''))) { planSession = endpoint; break; }
+              failures.push(`${endpoint}:${result.response?.status}`);
+            }
+            assert(planSession, `no secure plan checkout session: ${failures.join(', ')}`);
+
+            const addon = await call('/api/billing/create-addon-checkout-session', {
+              method: 'POST', headers: auth,
+              body: JSON.stringify({ addon: 'command_growth_pack', addon_key: 'command_growth_pack', country: 'NZ', quantity: 1, growth_packs: 1, packs: 1, source: 'paid_launch_final_gate' }),
+            });
+            const addonUrl = addon.body?.url || addon.body?.checkout_url || addon.body?.session_url || addon.body?.data?.url;
+            const commandRequired = /command/i.test(String(addon.body?.detail || addon.body?.error || addon.body?.message || '')) && [400, 403, 409].includes(addon.response?.status);
+            assert((addon.response?.ok && /^https:\/\//.test(String(addonUrl || ''))) || commandRequired, `Growth Pack checkout invalid ${addon.response?.status}: ${JSON.stringify(addon.body).slice(0, 300)}`);
+            assert(![404, 405, 422].includes(addon.response?.status) && !(addon.response?.status >= 500), `Growth Pack route unhealthy ${addon.response?.status}`);
+            return { planSession, addonStatus: addon.response.status, addonMode: addon.response.ok ? 'secure_checkout' : 'command_required' };
+          }
+
+          async function main() {
+            let last = '';
+            let ready = null;
+            for (let attempt = 1; attempt <= 75; attempt += 1) {
+              try {
+                const bundle = await exactFrontendReady();
+                const ownerToken = await ownerLogin();
+                const protectedResult = await protectedChecks(ownerToken);
+                ready = { bundle, ownerToken, protectedResult };
+                console.log(`Deployment attempt ${attempt}: exact frontend, Payroll and strict brain are live.`);
+                break;
+              } catch (error) {
+                last = error.message || String(error);
+                console.log(`Deployment attempt ${attempt}: ${last}`);
+                if (attempt < 75) await sleep(12_000);
+              }
+            }
+            if (!ready) throw new Error(`exact paid-launch deployment did not become healthy: ${last}`);
+            const worker = await discoverWorker(ready.ownerToken);
+            console.log(`::add-mask::${worker.email}`);
+            fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${worker.email}\n`);
+            const workerPayroll = await call('/api/payroll', { headers: { Authorization: `Bearer ${worker.token}` } });
+            assert(workerPayroll.response?.status === 403, `worker payroll boundary ${workerPayroll.response?.status}`);
+            const billing = await billingChecks(ready.ownerToken);
+            console.log(JSON.stringify({ bundle: ready.bundle, payroll: 'owner 200 / worker 403', brain: 'strict v3 complete', roles: 8, billing }, null, 2));
+          }
+          main().catch((error) => { console.error(error.stack || error.message || error); process.exit(1); });
+          NODE
+
+      - name: Start local owner build for isolated UI contracts
+        id: server
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          npm start > /tmp/churvox-final-local-server.txt 2>&1 &
+          for i in {1..75}; do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/churvox-final-local-server.txt
+          exit 1
+
+      - name: Run local paid UI truth contracts desktop and phone
+        id: local_ui
+        continue-on-error: true
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test \
+            tests/e2e/churvox-more-menu-paid-launch.spec.js \
+            tests/e2e/churvox-plans-usage-truth.spec.js \
+            tests/e2e/churvox-owner-no-fake-data.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-final-local-ui.txt
+
+      - name: Run live every-page owner and worker audit desktop and phone
+        id: live_pages
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-final-live-pages.txt
+
+      - name: Run real owner-worker lifecycle three consecutive times
+        id: human_flow
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --repeat-each=3 \
+            --retries=0 \
+            --reporter=line 2>&1 | tee /tmp/churvox-final-human-flow.txt
+
+      - name: Run hardcore visual and full field lifecycle
+        id: hardcore
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-owner-worker.cjs 2>&1 | tee /tmp/churvox-final-hardcore.txt
+
+      - name: Clean every active audit record
+        id: cleanup
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/churvox-final-cleanup.txt
+
+      - name: Build paid launch verdict
+        id: report
+        if: always()
+        env:
+          CREDENTIAL: ${{ steps.credential.outcome }}
+          BACKEND_INSTALL: ${{ steps.backend_install.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+          LIVE_SMOKE: ${{ steps.live_smoke.outcome }}
+          SERVER: ${{ steps.server.outcome }}
+          LOCAL_UI: ${{ steps.local_ui.outcome }}
+          LIVE_PAGES: ${{ steps.live_pages.outcome }}
+          HUMAN_FLOW: ${{ steps.human_flow.outcome }}
+          HARDCORE: ${{ steps.hardcore.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const checks = {
+            'Private launch credential': process.env.CREDENTIAL,
+            'Backend test dependencies': process.env.BACKEND_INSTALL,
+            'Frontend dependency install': process.env.INSTALL,
+            'Compile, behavioural contracts and production build': process.env.BUILD,
+            'Chromium installation': process.env.CHROMIUM,
+            'Exact live build, Payroll, brain, billing and role smoke': process.env.LIVE_SMOKE,
+            'Local owner build server': process.env.SERVER,
+            'Local paid UI truth desktop/mobile': process.env.LOCAL_UI,
+            'Live every-page owner/worker desktop/mobile': process.env.LIVE_PAGES,
+            'Three consecutive real owner-worker lifecycles': process.env.HUMAN_FLOW,
+            'Hardcore visual and full field lifecycle': process.env.HARDCORE,
+            'Complete active audit-record cleanup': process.env.CLEANUP,
+          };
+          const failures = Object.entries(checks).filter(([, value]) => value !== 'success').map(([name]) => name);
+          const lines = [
+            '# Churvox paid-launch final gate',
+            '',
+            ...Object.entries(checks).map(([name, value]) => `- ${value === 'success' ? 'PASS' : 'FAIL'} — ${name}`),
+            '',
+            failures.length
+              ? `**PAID LAUNCH BLOCKED — ${failures.length} gate area(s) failed.**`
+              : '**PAID LAUNCH GATE PASSED — exact live build, strict brain, Payroll, billing, owner/worker roles, desktop, phone, three real lifecycles, hardcore field flow and cleanup all passed.**',
+          ];
+          fs.writeFileSync('/tmp/churvox-final-summary.md', `${lines.join('\n')}\n`);
+          fs.writeFileSync('/tmp/churvox-final-report.json', JSON.stringify({ success: failures.length === 0, checks, failures }, null, 2));
+          console.log(lines.join('\n'));
+          NODE
+
+      - name: Upload complete paid launch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-paid-launch-final-gate
+          path: |
+            /tmp/churvox-final-*.txt
+            /tmp/churvox-final-summary.md
+            /tmp/churvox-final-report.json
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Post final gate result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.existsSync('/tmp/churvox-final-summary.md')
+              ? fs.readFileSync('/tmp/churvox-final-summary.md', 'utf8')
+              : 'Paid-launch gate failed before the verdict was created.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: summary });
+
+      - name: Fail unless every paid launch gate passed
+        if: always()
+        env:
+          CREDENTIAL: ${{ steps.credential.outcome }}
+          BACKEND_INSTALL: ${{ steps.backend_install.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+          LIVE_SMOKE: ${{ steps.live_smoke.outcome }}
+          SERVER: ${{ steps.server.outcome }}
+          LOCAL_UI: ${{ steps.local_ui.outcome }}
+          LIVE_PAGES: ${{ steps.live_pages.outcome }}
+          HUMAN_FLOW: ${{ steps.human_flow.outcome }}
+          HARDCORE: ${{ steps.hardcore.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: |
+          test "$CREDENTIAL" = success
+          test "$BACKEND_INSTALL" = success
+          test "$INSTALL" = success
+          test "$BUILD" = success
+          test "$CHROMIUM" = success
+          test "$LIVE_SMOKE" = success
+          test "$SERVER" = success
+          test "$LOCAL_UI" = success
+          test "$LIVE_PAGES" = success
+          test "$HUMAN_FLOW" = success
+          test "$HARDCORE" = success
+          test "$CLEANUP" = success
