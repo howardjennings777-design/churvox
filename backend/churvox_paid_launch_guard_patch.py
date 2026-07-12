@@ -216,6 +216,12 @@ def install(module):
     )
     install_patch_module(
         module,
+        "churvox_runtime_jwt_secret_patch",
+        "backend.churvox_runtime_jwt_secret_patch",
+        "runtime JWT secret",
+    )
+    install_patch_module(
+        module,
         "churvox_production_launch_security",
         "backend.churvox_production_launch_security",
         "production launch security",
