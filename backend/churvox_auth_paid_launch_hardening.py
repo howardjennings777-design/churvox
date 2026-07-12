@@ -7,7 +7,7 @@ from typing import Any
 
 from starlette.responses import JSONResponse
 
-VERSION = "churvox-auth-paid-launch-hardening-20260712b"
+VERSION = "churvox-auth-paid-launch-hardening-20260712c"
 PASSWORD_PATH_FIELDS = {
     ("/api/auth/register", "POST"): "password",
     ("/api/auth/reset-password", "POST"): "new_password",
@@ -164,6 +164,13 @@ class AuthPaidLaunchMiddleware:
 
         path = scope.get("path", "")
         method = scope.get("method", "GET").upper()
+
+        # The final owner login route has its own bounded JSON parsing, lockout,
+        # account status checks and diagnostics. Do not read/replay this body in
+        # an older middleware before the definitive route receives it.
+        if path == "/api/auth/login":
+            return await self.app(scope, receive, send)
+
         needs_body = (path, method) in PASSWORD_PATH_FIELDS or path in LOGIN_PATHS or path in FORGOT_PATHS or (path == "/api/auth/register" and method == "POST")
         if not needs_body:
             return await self.app(scope, receive, send)
