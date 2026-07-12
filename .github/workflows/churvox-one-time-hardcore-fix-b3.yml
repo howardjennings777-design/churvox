@@ -1,0 +1,178 @@
+name: Churvox One-Time Hardcore Repair B3
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair-b3:
+    if: startsWith(github.event.issue.title, '[churvox-hardcore-fix-b3]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply worker UI and field-slip repairs by stable boundaries
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee /tmp/churvox-fix-b3.txt
+          from pathlib import Path
+
+          worker_path = Path('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx')
+          worker = worker_path.read_text()
+
+          old_import = 'import { Link, Navigate, useLocation } from "react-router-dom";'
+          new_import = 'import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";'
+          if new_import not in worker:
+              if worker.count(old_import) != 1: raise SystemExit('router import mismatch')
+              worker = worker.replace(old_import, new_import, 1)
+
+          old_auth = '  const { pathname } = useLocation();\n  const { user, loading: authLoading, isWorker } = useAuth();'
+          new_auth = '  const { pathname } = useLocation();\n  const navigate = useNavigate();\n  const { user, loading: authLoading, isWorker, logout } = useAuth();'
+          if new_auth not in worker:
+              if worker.count(old_auth) != 1: raise SystemExit('worker auth block mismatch')
+              worker = worker.replace(old_auth, new_auth, 1)
+
+          function_start = worker.index('  async function sendBossUpdate(text = note) {')
+          function_end = worker.index('\n\n  async function sendFieldSlip', function_start)
+          replacement_function = '''  async function sendBossUpdate(text = note) {
+            if (updateBusy) return;
+            const clean = String(text || "Worker update from phone view").trim();
+            setUpdateBusy(true);
+            let sent = false;
+            try {
+              const needsDecision = /owner check|extra work|issue|problem|decision|blocked|cannot|help/i.test(clean);
+              if (hasWork && jobId) {
+                await sendFieldSlip(needsDecision ? "worker_problem" : "worker_message", clean);
+                addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
+              } else {
+                await createBackendWorkerUpdateRequest({ title, update: clean, updateType: needsDecision ? "Worker problem" : "Worker update", status: needsDecision ? "Owner review" : "General update" });
+                addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
+              }
+              sent = true;
+            } catch (error) {
+              addTrail(`Update was not sent to the boss. Check the connection and retry. ${error?.message || ""}`.trim());
+            } finally {
+              setUpdateBusy(false);
+              if (sent) setNote("");
+            }
+          }'''
+          worker = worker[:function_start] + replacement_function + worker[function_end:]
+
+          if 'async function handleLogout()' not in worker:
+              add_index = worker.index('  function addTrail(text) {')
+              logout_code = '''  async function handleLogout() {
+            await logout();
+            navigate("/login?worker=1", { replace: true });
+          }
+
+          '''
+              worker = worker[:add_index] + logout_code + worker[add_index:]
+
+          nav_line = '        {[["Today", "/worker/today"], ["Jobs", "/worker/jobs"], ["Messages", "/worker/messages"], ["Help", "/worker/help"], ["Me", "/worker/settings"]].map(([label, href]) => <Link key={href} className={view.label === label ? "active" : ""} to={href}>{label}</Link>)}'
+          if 'className="cvWorkerLogout"' not in worker:
+              if worker.count(nav_line) != 1: raise SystemExit(f'worker nav mismatch: {worker.count(nav_line)}')
+              worker = worker.replace(nav_line, nav_line + '\n        <button className="cvWorkerLogout" type="button" onClick={handleLogout}>Log out</button>', 1)
+          worker_path.write_text(worker)
+          print('patched worker route')
+
+          css = Path('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css')
+          css_text = css.read_text()
+          if '.cvWorkerRouteNav .cvWorkerLogout' not in css_text:
+              css.write_text(css_text + '''
+
+          .cvWorkerRouteNav .cvWorkerLogout {
+            min-height: 44px;
+            border: 1px solid rgba(127, 29, 29, .24);
+            border-radius: 12px;
+            padding: 0 14px;
+            color: #7f1d1d;
+            background: rgba(254, 242, 242, .92);
+            font: inherit;
+            font-weight: 900;
+            cursor: pointer;
+          }
+          .cvWorkerRouteNav .cvWorkerLogout:hover,
+          .cvWorkerRouteNav .cvWorkerLogout:focus-visible {
+            border-color: rgba(185, 28, 28, .55);
+            background: #fee2e2;
+          }
+          ''')
+          print('patched worker CSS')
+
+          field = Path('backend/churvox_field_loop_patch.py')
+          field_text = field.read_text()
+          old = '    doc = {\n        **payload,\n        "business_id": bid(user),'
+          new = '    doc = {\n        **payload,\n        "id": txt(payload.get("id")) or f"field-slip-{int(now().timestamp() * 1000)}-{uid(user)}",\n        "business_id": bid(user),'
+          if new not in field_text:
+              if field_text.count(old) != 1: raise SystemExit(f'field slip id anchor mismatch: {field_text.count(old)}')
+              field.write_text(field_text.replace(old, new, 1))
+          print('patched field slip id')
+
+          bridge = Path('backend/churvox_worker_command_visibility_patch.py')
+          bridge_text = bridge.read_text()
+          anchor_start = bridge_text.index('    remove_route(app, "/api/command/slips", "GET")')
+          anchor_end = bridge_text.index('\n    INSTALLED.add(name)', anchor_start) + len('\n    INSTALLED.add(name)')
+          if 'async def command_field_slip_decide' not in bridge_text:
+              route_code = '''    async def command_field_slip_decide(slip_id: str, decision: str, request: Request):
+              user = await get_current_user(request)
+              role = lower((user or {}).get("role") or (user or {}).get("user_role") or (user or {}).get("account_type"))
+              if role not in OWNER_ROLES and not (user or {}).get("is_admin"):
+                  raise HTTPException(status_code=403, detail="Owner access required")
+              mapped = {"approve": "approved", "approved": "approved", "edit": "needs_owner_edit", "park": "parked", "parked": "parked", "reject": "rejected", "rejected": "rejected", "dismiss": "dismissed", "dismissed": "dismissed", "ignore": "dismissed"}.get(lower(decision), "parked")
+              values = id_values(slip_id, ObjectId)
+              query = {"$and": [business_query(user, ObjectId), {"$or": [{"id": slip_id}, {"_id": {"$in": values}}]}]}
+              try: payload = await request.json()
+              except Exception: payload = {}
+              now_value = datetime.now(timezone.utc)
+              result = await db.worker_field_slips.update_one(query, {"$set": {"status": mapped, "owner_decision": mapped, "decision_note": text(payload.get("note") or payload.get("owner_note")), "decided_by": text((user or {}).get("id") or (user or {}).get("_id") or (user or {}).get("email")), "decided_at": now_value, "updated_at": now_value}})
+              if getattr(result, "matched_count", 0) == 0:
+                  raise HTTPException(status_code=404, detail="Worker field slip not found")
+              try: await db.command_decisions.insert_one({"business_id": identifier(user), "action_id": slip_id, "decision": mapped, "status": mapped, "source": "worker_command_visibility_bridge", "note": text(payload.get("note") or payload.get("owner_note") or "Owner decision recorded."), "created_at": now_value, "updated_at": now_value})
+              except Exception: pass
+              return {"success": True, "id": slip_id, "decision": mapped, "safety": "Nothing was sent, synced, charged or changed."}
+
+            remove_route(app, "/api/command/slips", "GET")
+            app.add_api_route("/api/command/slips", command_slips_get, methods=["GET"])
+            remove_route(app, "/api/command/field-slips/{slip_id}/{decision}", "POST")
+            app.add_api_route("/api/command/field-slips/{slip_id}/{decision}", command_field_slip_decide, methods=["POST"])
+            INSTALLED.add(name)'''
+              bridge.write_text(bridge_text[:anchor_start] + route_code + bridge_text[anchor_end:])
+          print('patched field slip decision route')
+          PY
+
+      - name: Verify and build
+        run: |
+          python -m py_compile backend/churvox_field_loop_patch.py backend/churvox_worker_command_visibility_patch.py
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+          npm --prefix frontend run build
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css backend/churvox_field_loop_patch.py backend/churvox_worker_command_visibility_patch.py
+          git commit -m "Fix worker UI actions logout and field slip lifecycle"
+          git push origin HEAD:main
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.existsSync('/tmp/churvox-fix-b3.txt') ? fs.readFileSync('/tmp/churvox-fix-b3.txt', 'utf8').slice(-12000) : 'No patch log.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Repair B3 ${{ job.status }}\n\n\`\`\`text\n${log}\n\`\`\`` });
