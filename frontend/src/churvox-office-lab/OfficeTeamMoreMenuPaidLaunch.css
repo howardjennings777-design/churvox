@@ -1,0 +1,86 @@
+.cvOwnerMoreBackdrop {
+  display: none;
+}
+
+.cvOwnerMoreHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 4px 6px;
+}
+
+.cvOwnerMoreHeader > span {
+  padding: 0;
+  color: rgba(255, 248, 237, .68);
+  font-size: .62rem;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cvOwnerMoreHeader > button {
+  width: auto !important;
+  min-width: 66px;
+  min-height: 36px;
+  justify-content: center !important;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 999px;
+  color: #fff8ed;
+  background: rgba(255, 255, 255, .08);
+  font-size: .7rem;
+  font-weight: 950;
+}
+
+.cvOwnerMoreMenu > small {
+  display: block;
+  padding: 7px 8px 4px;
+  color: rgba(255, 248, 237, .58);
+  font-size: .68rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.cvOwnerMore > button[aria-expanded="true"] {
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, .18);
+}
+
+.cvOwnerMoreMenu [role="menuitem"]:focus-visible,
+.cvOwnerMore > button:focus-visible,
+.cvOwnerMoreHeader > button:focus-visible {
+  outline: 3px solid rgba(251, 146, 60, .72);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  body:has(.cvOwnerMoreMenu) {
+    overflow: hidden;
+  }
+
+  .cvOwnerMoreBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 98;
+    display: block;
+    border: 0;
+    background: rgba(2, 6, 23, .56);
+    backdrop-filter: blur(3px);
+  }
+
+  .cvOwnerMoreMenu {
+    z-index: 100;
+    top: max(86px, calc(env(safe-area-inset-top) + 74px));
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-height: calc(100dvh - 110px - env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    padding: 12px;
+    border-radius: 24px;
+  }
+
+  .cvOwnerMoreMenu [role="menuitem"] {
+    min-height: 48px;
+    border-radius: 14px;
+  }
+}
