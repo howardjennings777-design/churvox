@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-VERSION = "churvox-production-launch-security-20260712f"
+VERSION = "churvox-production-launch-security-20260712g"
 PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 WEAK_SECRETS = {
     "",
@@ -137,6 +137,11 @@ def _checks(module) -> dict[str, dict[str, Any]]:
             "environment" if os.environ.get("JWT_SECRET") else "missing",
         )
     )
+    jwt_persistent = bool(
+        getattr(module, "CHURVOX_JWT_SECRET_PERSISTENT", False)
+        or _truthy(os.environ.get("CHURVOX_JWT_SECRET_PERSISTENT"))
+        or jwt_source in {"environment", "database"}
+    )
     frontend = _text(os.environ.get("FRONTEND_URL") or "https://www.churvox.com").rstrip("/")
     webhook_secret = next(
         (
@@ -153,6 +158,13 @@ def _checks(module) -> dict[str, dict[str, Any]]:
     )
     owners = _owner_emails()
 
+    if jwt_source == "environment":
+        persistent_detail = "Permanent Render JWT_SECRET configured"
+    elif jwt_source == "database":
+        persistent_detail = "Persistent Mongo-backed JWT signing key active"
+    else:
+        persistent_detail = "A secure runtime secret is active, but it is not restart-persistent"
+
     return {
         "jwt_secret": {
             "ok": _secret_is_strong(jwt_value),
@@ -163,12 +175,8 @@ def _checks(module) -> dict[str, dict[str, Any]]:
             ),
         },
         "jwt_secret_persistent": {
-            "ok": jwt_source == "environment",
-            "detail": (
-                "Permanent Render JWT_SECRET configured"
-                if jwt_source == "environment"
-                else "A secure runtime secret is active, but set a permanent JWT_SECRET in Render so sessions survive restarts"
-            ),
+            "ok": jwt_persistent,
+            "detail": persistent_detail,
         },
         "database": {
             "ok": bool(_text(os.environ.get("MONGO_URL")) and _text(os.environ.get("DB_NAME"))),
@@ -258,180 +266,163 @@ def _identity_disabled(user: dict[str, Any]) -> bool:
         status in ACCOUNT_DISABLED_STATUSES
         or user.get("account_locked") is True
         or user.get("revoked_at")
-        or user.get("disabled_at")
         or user.get("removed_at")
+        or user.get("disabled_at")
         or user.get("active") is False
         or user.get("is_active") is False
     )
 
 
-def _tester_access(user: dict[str, Any]) -> bool:
-    if (
-        _identity_disabled(user)
-        or user.get("free_tester_revoked_at")
-        or user.get("tester_revoked_at")
-    ):
-        return False
-    billing_status = _text(
+def _billing_status(user: dict[str, Any]) -> str:
+    return _text(
         user.get("subscription_status")
-        or user.get("billing_status")
         or user.get("plan_status")
+        or user.get("billing_status")
+        or user.get("stripe_status")
+        or user.get("status")
     ).lower()
-    tester = (
-        _truthy(user.get("free_tester_access"))
-        or _truthy(user.get("is_tester"))
-        or billing_status == "tester_free"
-    )
-    if not tester:
-        return False
-    until = _date(user.get("free_tester_until") or user.get("free_until"))
-    return until is None or until > datetime.now(timezone.utc)
+
+
+def _plan(user: dict[str, Any]) -> str:
+    business = user.get("business") if isinstance(user.get("business"), dict) else {}
+    return _text(
+        user.get("plan")
+        or user.get("ui_plan")
+        or user.get("current_plan")
+        or user.get("subscription_plan")
+        or user.get("billing_plan")
+        or user.get("tier")
+        or business.get("plan")
+        or business.get("subscription_plan")
+    ).lower()
 
 
 def _billing_proof(user: dict[str, Any]) -> bool:
     return bool(
-        _text(user.get("stripe_subscription_id"))
-        or _text(user.get("stripe_checkout_session_id"))
-        or _text(user.get("checkout_session_id"))
-        or _truthy(user.get("checkout_verified_by_stripe"))
+        user.get("stripe_subscription_id")
+        or user.get("stripe_customer_id")
+        or user.get("stripe_checkout_session_id")
+        or user.get("checkout_session_id")
         or _truthy(user.get("billing_verified"))
         or _truthy(user.get("subscription_verified"))
+        or _truthy(user.get("checkout_verified_by_stripe"))
         or _truthy(user.get("manual_access_granted_by_app_owner"))
         or _truthy(user.get("access_granted_by_app_owner"))
     )
 
 
-def _paid_owner_access(user: dict[str, Any]) -> bool:
+def _tester_access(user: dict[str, Any]) -> bool:
+    if _identity_disabled(user):
+        return False
+    tester = bool(
+        user.get("free_tester_access") is True
+        or user.get("is_tester") is True
+        or _billing_status(user) == "tester_free"
+    )
+    if not tester:
+        return False
+    expires = _date(user.get("free_tester_until") or user.get("free_until"))
+    return expires is None or expires > datetime.now(timezone.utc)
+
+
+def _paid_owner_access(user: dict[str, Any]) -> tuple[bool, str]:
     email = _text(user.get("email")).lower()
-    if email == PLATFORM_OWNER_EMAIL:
-        return True
     role = _role(user)
+    billing = _billing_status(user)
+    plan = _plan(user)
+
+    if email == PLATFORM_OWNER_EMAIL:
+        return True, "platform-owner"
     if role in WORKER_ROLES or role in PAYROLL_ROLES:
-        return not _identity_disabled(user)
+        return (not _identity_disabled(user), "worker-or-payroll")
+    if role not in OWNER_ROLES:
+        return False, "owner-role-required"
+    if user.get("email_verified") is False:
+        return False, "email-verification-required"
+    if _identity_disabled(user):
+        return False, "account-disabled"
     if _tester_access(user):
-        return True
-    if role and role not in OWNER_ROLES:
-        return False
-    if _identity_disabled(user) or user.get("email_verified") is False:
-        return False
-
-    status = _text(
-        user.get("subscription_status")
-        or user.get("plan_status")
-        or user.get("billing_status")
-        or user.get("stripe_status")
-    ).lower()
-    if status in LOCKED_STATUSES:
-        return False
-    if status in {"trial", "trialing"}:
-        plan = _text(
-            user.get("plan")
-            or user.get("subscription_plan")
-            or user.get("plan_type")
-        ).lower()
-        trial_end = _date(
-            user.get("trial_ends_at")
-            or user.get("trial_end")
-            or user.get("trial_end_date")
-        )
-        return bool(
-            plan
-            and plan not in {"none", "free", "null", "undefined"}
-            and trial_end
-            and trial_end > datetime.now(timezone.utc)
-        )
-    return status in PAID_STATUSES and _billing_proof(user)
-
-
-def _is_access_exempt(path: str) -> bool:
-    return any(path == prefix.rstrip("/") or path.startswith(prefix) for prefix in ACCESS_EXEMPT_PREFIXES)
+        return True, "tester-access"
+    if billing in LOCKED_STATUSES:
+        return False, "payment-required"
+    if billing in {"trial", "trialing"}:
+        trial_end = _date(user.get("trial_ends_at"))
+        if not plan or plan in {"none", "free", "worker", "null", "undefined"}:
+            return False, "plan-required"
+        if trial_end is None or trial_end <= datetime.now(timezone.utc):
+            return False, "trial-expired"
+        return True, "current-trial"
+    if billing in PAID_STATUSES and _billing_proof(user):
+        return True, "verified-paid-state"
+    return False, "verified-billing-required"
 
 
 def install(module) -> None:
-    _ensure_runtime_jwt_secret(module)
-
-    # Enforce the HQ identity before any route or later helper can use stale flags.
-    module.PLATFORM_OWNER_EMAILS = [PLATFORM_OWNER_EMAIL]
-    module.is_platform_owner = (
-        lambda user: _text((user or {}).get("email")).lower() == PLATFORM_OWNER_EMAIL
-    )
-
     app = getattr(module, "app", None)
     get_current_user = getattr(module, "get_current_user", None)
-    if app is None or getattr(app.state, "churvox_production_launch_security", False):
+    if app is None:
+        return
+
+    _ensure_runtime_jwt_secret(module)
+    module.PLATFORM_OWNER_EMAILS = [PLATFORM_OWNER_EMAIL]
+    module.is_platform_owner = lambda user: _text((user or {}).get("email")).lower() == PLATFORM_OWNER_EMAIL
+
+    _remove_status_route(app)
+
+    async def launch_status():
+        checks = _checks(module)
+        failures = [name for name, result in checks.items() if not result.get("ok")]
+        return {
+            "success": True,
+            "version": VERSION,
+            "ready_for_paid_launch": not failures,
+            "checks": checks,
+            "critical_failures": failures,
+        }
+
+    app.add_api_route("/api/security/launch-status", launch_status, methods=["GET"])
+
+    if not callable(get_current_user) or getattr(app.state, "churvox_production_launch_security_installed", False):
         return
 
     @app.middleware("http")
-    async def paid_launch_security_middleware(request: Request, call_next):
+    async def production_launch_security(request: Request, call_next):
         path = request.url.path
-        if request.method.upper() == "OPTIONS":
-            return await call_next(request)
-
-        jwt_safe = _ensure_runtime_jwt_secret(module)
-        if (
-            not jwt_safe
-            and path.startswith("/api/")
-            and not any(path == allowed or path.startswith(allowed) for allowed in PUBLIC_WHEN_AUTH_UNSAFE)
-        ):
+        if not _secret_is_strong(_current_jwt_secret(module)):
+            if any(path == item or path.startswith(item) for item in PUBLIC_WHEN_AUTH_UNSAFE):
+                return await call_next(request)
             return JSONResponse(
-                {
+                status_code=503,
+                content={
                     "success": False,
                     "detail": "Churvox protected API access is paused because the production JWT secret is not safely configured.",
                     "version": VERSION,
                 },
-                status_code=503,
-                headers={"X-Churvox-Auth-Gate": "jwt-secret-unsafe"},
             )
 
-        if (
-            jwt_safe
-            and callable(get_current_user)
-            and path.startswith("/api/")
-            and not _is_access_exempt(path)
-        ):
-            try:
-                user = await get_current_user(request)
-            except Exception:
-                user = None
-            if isinstance(user, dict):
-                role = _role(user)
-                if role in WORKER_ROLES:
-                    return JSONResponse(
-                        {
-                            "success": False,
-                            "detail": "Worker accounts cannot open owner API routes.",
-                            "version": VERSION,
-                        },
-                        status_code=403,
-                    )
-                if not _paid_owner_access(user):
-                    return JSONResponse(
-                        {
-                            "success": False,
-                            "detail": "A current trial, verified subscription or current tester grant is required for this owner API.",
-                            "billing_lock_reason": "verified_access_required",
-                            "version": VERSION,
-                        },
-                        status_code=402,
-                    )
+        if request.method == "OPTIONS" or any(path.startswith(prefix) for prefix in ACCESS_EXEMPT_PREFIXES):
+            return await call_next(request)
 
+        try:
+            user = await get_current_user(request)
+        except Exception:
+            return await call_next(request)
+        if not isinstance(user, dict):
+            return await call_next(request)
+
+        allowed, reason = _paid_owner_access(user)
+        if not allowed:
+            return JSONResponse(
+                status_code=402,
+                content={
+                    "success": False,
+                    "detail": "A current Churvox plan, trial or tester access is required.",
+                    "billing_lock_reason": reason,
+                    "plan_required": True,
+                    "redirect": "/plans",
+                    "version": VERSION,
+                },
+            )
         return await call_next(request)
 
-    _remove_status_route(app)
-
-    async def launch_security_status():
-        _ensure_runtime_jwt_secret(module)
-        current = _checks(module)
-        ready = all(item.get("ok") is True for item in current.values())
-        return {
-            "success": True,
-            "version": VERSION,
-            "ready_for_paid_launch": ready,
-            "checks": current,
-            "critical_failures": [
-                key for key, item in current.items() if item.get("ok") is not True
-            ],
-        }
-
-    app.add_api_route("/api/security/launch-status", launch_security_status, methods=["GET"])
-    app.state.churvox_production_launch_security = True
+    app.state.churvox_production_launch_security_installed = True
