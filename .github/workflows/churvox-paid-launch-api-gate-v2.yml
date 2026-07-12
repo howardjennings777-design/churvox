@@ -1,0 +1,44 @@
+name: Churvox Paid Launch API Gate V2
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  gate:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-api-gate-v2]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+    steps:
+      - name: Mark started
+        uses: actions/github-script@v7
+        with:
+          script: await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`Timed API gate started. Run ${context.runId}.`})
+      - name: Probe timed endpoints
+        shell: bash
+        run: |
+          node <<'NODE' 2>&1 | tee /tmp/timed-api.txt
+          const api=process.env.API_BASE.replace(/\/+$/,'');const email=process.env.OWNER_EMAIL;const password=process.env.OWNER_PASSWORD;const failures=[];
+          const tokenFrom=(b={})=>b.token||b.access_token||b.user?.token||b.data?.token||b.data?.user?.token||'';
+          async function call(path,opt={},timeout=20000){console.log(`START ${opt.method||'GET'} ${path}`);const c=new AbortController();const timer=setTimeout(()=>c.abort(),timeout);const started=Date.now();try{const r=await fetch(api+path,{headers:{Accept:'application/json','Content-Type':'application/json',...(opt.headers||{})},...opt,signal:c.signal});const text=await r.text();let b={};try{b=JSON.parse(text)}catch{b={text:text.slice(0,300)}}console.log(`END ${opt.method||'GET'} ${path} HTTP ${r.status} ${Date.now()-started}ms`);return{r,b}}catch(e){console.log(`TIMEOUT/ERROR ${opt.method||'GET'} ${path} ${Date.now()-started}ms ${e.name}:${e.message}`);return{r:{ok:false,status:0},b:{error:e.message}}}finally{clearTimeout(timer)}}
+          function check(name,ok,detail=''){console.log(`${ok?'PASS':'FAIL'} ${name} ${detail}`);if(!ok)failures.push(`${name} ${detail}`)}
+          (async()=>{const login=await call('/api/auth/login',{method:'POST',body:JSON.stringify({email,password})});const token=tokenFrom(login.b);check('owner-login',login.r.ok&&!!token,`HTTP ${login.r.status}`);if(!token)throw Error('no token');const h={Authorization:`Bearer ${token}`};
+          for(const path of ['/api/auth/me','/api/payroll','/api/payroll/summary','/api/plan/usage','/api/billing/addons','/api/command/slips','/api/command/audit']){const x=await call(path,{headers:h});check(path,x.r.ok,`HTTP ${x.r.status}`);if(path.startsWith('/api/payroll')&&x.r.ok){check(path+'-safe',x.b.owner_approval_required===true&&x.b.no_payment===true&&x.b.no_tax_filing===true,`scan_complete=${x.b.scan_complete}`);check(path+'-complete',x.b.scan_complete!==false,JSON.stringify(x.b.scan_errors||[]))}}
+          const scan=await call('/api/command/scan',{method:'POST',headers:h,body:JSON.stringify({source:'timed_paid_launch_gate',prepared_only:true,owner_review_only:true})},30000);check('command-scan',scan.r.ok&&scan.b?.success!==false,`HTTP ${scan.r.status} source=${scan.b?.source||''} guard=${scan.b?.guard||''}`);
+          const adminPost=await call('/api/admin-brain/scan',{method:'POST',headers:h,body:'{}'},20000);let admin=adminPost;if(adminPost.r.status===405)admin=await call('/api/admin-brain/scan',{headers:h},20000);check('admin-brain',admin.r.ok&&admin.b?.success!==false,`HTTP ${admin.r.status}`);check('admin-brain-errors',!Array.isArray(admin.b?.errors)||admin.b.errors.length===0,JSON.stringify(admin.b?.errors||[]));
+          if(failures.length){console.error('GATE FAILURES\n'+failures.join('\n'));process.exit(1)}console.log('TIMED_API_GATE_PASS')})().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');const text=fs.existsSync('/tmp/timed-api.txt')?fs.readFileSync('/tmp/timed-api.txt','utf8').slice(-40000):'No output';const ok=text.includes('TIMED_API_GATE_PASS');await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`# Timed API gate ${ok?'PASSED':'FAILED'}\n\n\`\`\`text\n${text}\n\`\`\``})
