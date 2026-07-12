@@ -271,6 +271,15 @@ def install(module):
     except Exception as exc:
         print(f"Churvox strict human-office route install skipped: {exc}", file=sys.stderr)
 
+    try:
+        try:
+            import churvox_outer_cors_error_shield as cors_shield
+        except Exception:
+            from backend import churvox_outer_cors_error_shield as cors_shield
+        cors_shield.install(module)
+    except Exception as exc:
+        print(f"Churvox outer CORS shield install skipped: {exc}", file=sys.stderr)
+
     INSTALLED.add(name)
 
 
