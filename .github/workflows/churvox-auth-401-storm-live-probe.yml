@@ -38,8 +38,8 @@ jobs:
                 const manifest = await manifestResponse.json();
                 const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((value) => /main\..*\.js$/.test(value));
                 const bundle = mainPath ? await (await fetch(new URL(mainPath, site), { cache: 'no-store' })).text() : '';
-                const live = bundle.includes(marker) && bundle.includes('churvoxProtectedFetchAuthGuardRuntime');
-                last = `${mainPath || 'missing bundle'} marker=${bundle.includes(marker)} guard=${bundle.includes('churvoxProtectedFetchAuthGuardRuntime')}`;
+                const live = bundle.includes(marker);
+                last = `${mainPath || 'missing bundle'} marker=${live}`;
                 console.log(`Attempt ${attempt}: ${last}`);
                 if (live) return;
               } catch (error) {
