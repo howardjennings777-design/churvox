@@ -15,10 +15,11 @@ function truthy(value) {
 function verifiedDestination(user = {}) {
   const email = String(user?.email || "").trim().toLowerCase();
   const role = String(user?.role || user?.user_role || user?.account_type || user?.worker_role || "").trim().toLowerCase();
-  const status = String(user?.subscription_status || user?.billing_status || "").trim().toLowerCase();
+  const status = String(user?.subscription_status || user?.billing_status || user?.stripe_status || "").trim().toLowerCase();
   const worker = /worker|staff|field_worker|technician|subcontractor/.test(role) || truthy(user?.is_worker) || truthy(user?.worker_account) || user?.worker_id;
   const tester = truthy(user?.free_tester_access) || truthy(user?.is_tester) || status === "tester_free";
-  const active = truthy(user?.has_app_access) || tester || ["active", "paid", "trialing", "trial"].includes(status);
+  const stripeProof = Boolean(user?.stripe_subscription_id || user?.stripe_customer_id || user?.stripe_checkout_session_id || user?.checkout_session_id);
+  const active = user?.has_app_access === true || tester || (stripeProof && ["active", "paid", "trialing", "trial", "past_due"].includes(status));
 
   if (email === PLATFORM_OWNER_EMAIL) return "/admin";
   if (worker) return "/worker/today";
@@ -69,7 +70,7 @@ export default function VerifyEmailPage() {
         const next = currentUser ? verifiedDestination(currentUser) : "/login?verified=1";
         setDestination(next);
         setOk(true);
-        setStatus(currentUser ? "Email verified. Opening the right Churvox workspace now." : "Email verified. Sign in to continue.");
+        setStatus(currentUser ? (next === "/plans" ? "Email verified. Choose and confirm a plan to continue." : "Email verified. Opening the right Churvox workspace now.") : "Email verified. Sign in to continue.");
         redirectTimer.current = window.setTimeout(() => navigate(next, { replace: true }), 1400);
       } catch (error) {
         if (!alive) return;
