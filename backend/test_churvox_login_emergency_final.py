@@ -89,6 +89,31 @@ class EmergencyLoginRulesTest(unittest.TestCase):
         self.assertFalse(tester_access(user, self.now))
         self.assertFalse(paid_app_access(user, self.now))
 
+    def test_current_no_card_trial_has_access_without_stripe_proof(self):
+        user = {
+            "email": "trial@example.test",
+            "role": "employer",
+            "plan": "solo",
+            "subscription_status": "trialing",
+            "trial_ends_at": self.now + timedelta(days=14),
+            "email_verified": True,
+        }
+        self.assertTrue(paid_app_access(user, self.now))
+
+    def test_expired_or_undated_trial_is_locked(self):
+        base = {
+            "email": "trial@example.test",
+            "role": "employer",
+            "plan": "solo",
+            "subscription_status": "trialing",
+            "email_verified": True,
+        }
+        self.assertFalse(paid_app_access({
+            **base,
+            "trial_ends_at": self.now - timedelta(seconds=1),
+        }, self.now))
+        self.assertFalse(paid_app_access(base, self.now))
+
     def test_verified_paid_status_overrides_stale_cached_access_flags(self):
         user = {
             "email": "paid@example.test",
