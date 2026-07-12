@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 
-VERSION = "churvox-email-links-paid-launch-20260712j"
+VERSION = "churvox-email-links-paid-launch-20260712k"
 REPLACEMENTS = {
     "/dashboard#jobs": "/dashboard#work",
     "/dashboard#support": "/support",
@@ -76,3 +76,4 @@ def install(module) -> None:
     _install_patch(module, "churvox_feature_tier_paid_launch_guard", "backend.churvox_feature_tier_paid_launch_guard")
     _install_patch(module, "churvox_plan_usage_guard_patch", "backend.churvox_plan_usage_guard_patch")
     _install_patch(module, "churvox_auth_launch_status_patch", "backend.churvox_auth_launch_status_patch")
+    _install_patch(module, "churvox_outer_cors_error_shield", "backend.churvox_outer_cors_error_shield")
