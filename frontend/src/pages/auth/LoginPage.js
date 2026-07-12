@@ -16,6 +16,18 @@ const LOGIN_TIMEOUT_MS = 28000;
 const ACCESS_REFRESH_TIMEOUT_MS = 9000;
 const BRAND_ICON = "/churvox-app-icon.svg?v=churvox-integrated-mark-20260708b";
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
+const SAFE_RETURN_PATHS = new Set([
+  "/dashboard",
+  "/plans",
+  "/guide",
+  "/setup",
+  "/setup-guide",
+  "/delete-account",
+  "/support",
+  "/refunds-cancellations",
+  "/security",
+  "/contact",
+]);
 
 const loginHighlights = [
   ["Command", "Owner decisions first", "Prepared admin waits for approval before anything moves."],
@@ -48,12 +60,11 @@ function setupPendingLocally() {
 function requestedNextPath() {
   try {
     const value = new URLSearchParams(window.location.search || "").get("next") || "";
-    if (!value.startsWith("/") || value.startsWith("//")) return "";
-    if (/^\/(?:login|signin|sign-in|signup|register|admin|platform|worker)(?:\/|\?|#|$)/i.test(value)) return "";
-    if (/^\/plans(?:\?|#|$)/i.test(value)) return value;
-    if (/^\/delete-account(?:\?|#|$)/i.test(value)) return value;
-    if (/^\/(?:support|refunds-cancellations|security|contact)(?:\?|#|$)/i.test(value)) return value;
-    return "";
+    if (!value || /[\\\u0000-\u001f]/.test(value) || value.startsWith("//")) return "";
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.origin !== window.location.origin) return "";
+    if (!SAFE_RETURN_PATHS.has(parsed.pathname)) return "";
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return "";
   }
@@ -98,6 +109,12 @@ function looksPayroll(user = {}, payload = {}) {
   return Boolean(isPayrollRole(role) || truthy(user.is_payroll) || truthy(payload.is_payroll) || truthy(user.payroll_user) || user.payroll_id);
 }
 
+function verificationPath(email) {
+  const params = new URLSearchParams({ pending: "1" });
+  if (email) params.set("email", email);
+  return `/verify-email?${params.toString()}`;
+}
+
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
@@ -109,6 +126,7 @@ const getPostLoginPath = (payload = {}) => {
   if (looksWorker(user, payload)) return "/worker/today";
   if (looksPayroll(user, payload)) return "/payroll-board";
   if (isWorkerRole(role) || isPayrollRole(role)) return getDefaultRoute(role);
+  if (user?.email_verified === false || payload?.email_verified === false) return verificationPath(email);
 
   const status = String(user?.subscription_status || payload?.subscription_status || "").trim().toLowerCase();
   const hasFreshAccess =
@@ -118,14 +136,17 @@ const getPostLoginPath = (payload = {}) => {
     payload?.free_tester_access === true ||
     status === "tester_free" ||
     status === "active" ||
-    status === "paid";
+    status === "paid" ||
+    status === "trial" ||
+    status === "trialing" ||
+    status === "past_due";
   const explicitlyLocked =
     !hasFreshAccess &&
     (user?.has_app_access === false ||
       payload?.has_app_access === false ||
       user?.billing_lock_reason ||
       payload?.billing_lock_reason ||
-      ["cancelled", "canceled", "incomplete", "incomplete_expired", "locked", "disabled"].includes(status));
+      ["cancelled", "canceled", "unpaid", "incomplete", "incomplete_expired", "locked", "disabled", "expired"].includes(status));
 
   if (explicitlyLocked) return "/plans";
   const requested = requestedNextPath();
@@ -136,26 +157,24 @@ const getPostLoginPath = (payload = {}) => {
 
 const loginLooksValid = (result = {}) => {
   const user = result?.user || result || {};
-  return Boolean(
-    result?.success !== false &&
-      (result?.token ||
-        result?.access_token ||
-        result?.auth_token ||
-        result?.accessToken ||
-        result?.jwt ||
-        result?.cookieSession ||
-        result?.user?.token ||
-        result?.user?.access_token ||
-        result?.user?.accessToken ||
-        user?.email ||
-        user?.id ||
-        user?._id ||
-        user?.role ||
-        user?.user_role ||
-        user?.account_type ||
-        user?.worker_id)
+  const identity = Boolean(user?.email || user?.id || user?._id || user?.role || user?.user_role || user?.account_type || user?.worker_id);
+  const authProof = Boolean(
+    result?.token || result?.access_token || result?.auth_token || result?.accessToken || result?.jwt || result?.cookieSession ||
+    result?.user?.token || result?.user?.access_token || result?.user?.accessToken || identity
   );
+  return result?.success !== false && identity && authProof;
 };
+
+function friendlyLoginError(error) {
+  const status = error?.response?.status;
+  const detail = String(error?.response?.data?.detail || error?.response?.data?.message || error?.message || "").trim();
+  if (status === 429 || /too many failed attempts/i.test(detail)) return "Too many failed attempts. Try again in 15 minutes.";
+  if (status === 503 || status === 504 || /service is unavailable|taking too long|did not respond/i.test(detail)) return "Churvox could not reach the login service. Please try again shortly.";
+  if (status === 403 && /invite link/i.test(detail)) return detail;
+  if (status === 403 && /disabled|revoked|locked/i.test(detail)) return "Account access is disabled. Contact Churvox support.";
+  if (/different account|session could not be confirmed/i.test(detail)) return detail;
+  return "Invalid email or password.";
+}
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -167,17 +186,19 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const workerAccess = isWorkerMaintenanceAccess();
-  const appMode = typeof window !== "undefined" && new URLSearchParams(window.location.search || "").get("app") === "1";
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search || "") : new URLSearchParams();
+  const appMode = params.get("app") === "1";
+  const verifiedNotice = params.get("verified") === "1";
 
   if (OWNER_MAINTENANCE_MODE && !workerAccess) {
     return <MaintenancePage workerAccess />;
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (submitting) return;
 
     const cleanEmail = email.trim().toLowerCase();
-
     if (!cleanEmail || !password) {
       setError("Enter your email and password.");
       return;
@@ -187,54 +208,47 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const result = await withTimeout(login(cleanEmail, password), LOGIN_TIMEOUT_MS, "Login is taking too long. Try again in a fresh tab.");
-
-      if (!loginLooksValid(result)) {
-        setError("Invalid email or password.");
-        return;
-      }
+      const result = await withTimeout(login(cleanEmail, password), LOGIN_TIMEOUT_MS, "Login service did not respond in time.");
+      if (!loginLooksValid(result)) throw new Error("Invalid email or password.");
 
       let confirmed = result;
       try {
-        const freshUser = await withTimeout(checkAuth(), ACCESS_REFRESH_TIMEOUT_MS, "Plan check is taking too long.");
-        if (freshUser) {
-          confirmed = {
-            ...result,
-            ...freshUser,
-            user: { ...(result?.user || {}), ...freshUser },
-          };
+        const freshUser = await withTimeout(checkAuth(), ACCESS_REFRESH_TIMEOUT_MS, "Session confirmation is taking too long.");
+        if (!freshUser) throw new Error("Your session could not be confirmed. Please sign in again.");
+        confirmed = {
+          ...result,
+          ...freshUser,
+          user: { ...(result?.user || {}), ...(freshUser?.user || freshUser) },
+        };
+      } catch (refreshError) {
+        const status = refreshError?.response?.status;
+        if (status === 401 || status === 403 || /could not be confirmed/i.test(refreshError?.message || "")) {
+          try { await logout?.(); } catch {}
+          throw new Error("Your session could not be confirmed. Please sign in again.");
         }
-      } catch {
         window.dispatchEvent(new Event("churvox-auth-refresh"));
       }
 
       const confirmedUser = confirmed?.user || confirmed || {};
       if (OWNER_MAINTENANCE_MODE && workerAccess && !looksWorker(confirmedUser, confirmed) && !looksPayroll(confirmedUser, confirmed)) {
         try { await logout?.(); } catch {}
-        setError("Owner access is paused while Churvox is being upgraded. Worker job access remains available.");
-        return;
+        throw new Error("Owner access is paused while Churvox is being upgraded. Worker job access remains available.");
       }
 
       const finalPath = getPostLoginPath(confirmed);
-      setSubmitting(false);
       navigate(finalPath, { replace: true });
       if (finalPath.startsWith("/dashboard") || finalPath === "/plans") {
         window.setTimeout(() => window.dispatchEvent(new Event("churvox-owner-app-ready")), 120);
       }
-    } catch (err) {
-      setError(
-        err?.response?.data?.detail ||
-          err?.response?.data?.message ||
-          err?.message ||
-          "Invalid email or password."
-      );
+    } catch (loginError) {
+      setError(friendlyLoginError(loginError));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_LOGIN_PAID_LAUNCH_RETURN_20260712">
+    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_LOGIN_PAID_LAUNCH_FINAL_20260712">
       {!appMode ? <Nav /> : null}
       <section className="cvChurvoxLoginShell">
         {!appMode ? (
@@ -261,7 +275,7 @@ export default function LoginPage() {
           </aside>
         ) : null}
 
-        <form className="cvPublicAuthCard cvRealAppAuthCard cvChurvoxLoginCard" onSubmit={handleSubmit}>
+        <form className="cvPublicAuthCard cvRealAppAuthCard cvChurvoxLoginCard" onSubmit={handleSubmit} noValidate>
           <div className="cvLoginMiniBrand">
             <ChurvoxAppLogo compact />
             <div>
@@ -280,18 +294,39 @@ export default function LoginPage() {
             {loginHighlights.map(([title, label, itemText]) => <article key={title}><span>{title}</span><b>{label}</b><small>{itemText}</small></article>)}
           </div>
 
-          {error ? <div className="cvPublicAuthError">{error}</div> : null}
+          {verifiedNotice && !error ? <div className="cvPublicAuthSuccess" role="status">Email verified. Sign in to continue.</div> : null}
+          {error ? <div className="cvPublicAuthError" role="alert" aria-live="assertive">{error}</div> : null}
 
           <label>
             Email
-            <input className="cvPublicNativeInput" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@business.co.nz" autoComplete="email" />
+            <input
+              className="cvPublicNativeInput"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@business.co.nz"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck="false"
+              inputMode="email"
+              autoFocus
+              disabled={submitting}
+            />
           </label>
 
           <label>
             Password
             <div className="password-row">
-              <input className="cvPublicNativeInput" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" autoComplete="current-password" />
-              <button className="cvPublicAuthGhost" type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? "Hide" : "Show"}</button>
+              <input
+                className="cvPublicNativeInput"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Your password"
+                autoComplete="current-password"
+                disabled={submitting}
+              />
+              <button className="cvPublicAuthGhost" type="button" aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)} disabled={submitting}>{showPassword ? "Hide" : "Show"}</button>
             </div>
           </label>
 
