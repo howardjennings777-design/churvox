@@ -208,7 +208,7 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: https://www.churvox.com
           PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
-          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+          CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
           CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
           CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
           CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD || secrets.CHURVOX_OWNER_PASSWORD }}
