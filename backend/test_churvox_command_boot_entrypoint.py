@@ -51,7 +51,7 @@ def test_procfile_boot_force_installs_and_exposes_safe_marker(monkeypatch):
     assert calls == [(server, True)]
     assert namespace["PATCH_INSTALLED"] is True
     assert namespace["PATCH_STAGE"] == "ready"
-    assert namespace["VERSION"] == "churvox-command-fast-load-boot-20260713d"
+    assert namespace["VERSION"] == "churvox-command-queue-speed-boot-20260713e"
 
     app = namespace["app"]
     sent = []
