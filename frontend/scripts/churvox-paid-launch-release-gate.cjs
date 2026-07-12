@@ -32,6 +32,8 @@ const pythonFiles = [
   'backend/churvox_production_launch_security.py',
   'backend/churvox_email_links_paid_launch_patch.py',
   'backend/churvox_auth_paid_launch_hardening.py',
+  'backend/churvox_feature_tier_paid_launch_guard.py',
+  'backend/churvox_plan_usage_guard_patch.py',
   'backend/churvox_billing_portal_paid_launch.py',
   'backend/churvox_account_deletion_paid_launch.py',
 ];
@@ -93,6 +95,15 @@ function pythonSyntax() {
   return { name: 'Backend paid-launch syntax', command: process.env.PYTHON || 'python', args: ['-c', code], cwd: repoRoot };
 }
 
+function featureTierContract() {
+  return {
+    name: 'Backend feature tier contract',
+    command: process.env.PYTHON || 'python',
+    args: ['-m', 'unittest', 'backend.test_churvox_feature_tier_paid_launch_guard'],
+    cwd: repoRoot,
+  };
+}
+
 async function main() {
   const ownerAvailable = credentials('CHURVOX_OWNER') || credentials('CHURVOX_E2E');
   const workerAvailable = credentials('CHURVOX_WORKER') || credentials('CHURVOX_E2E_WORKER');
@@ -108,7 +119,9 @@ async function main() {
   const steps = [
     { name: 'Frontend production build', command: 'npm', args: ['run', 'build'] },
     pythonSyntax(),
+    featureTierContract(),
     playwright('Live configuration, security, webhook and route mount', ['tests/e2e/churvox-infrastructure-paid-launch.spec.js']),
+    playwright('Live plan limits and real usage counts', ['tests/e2e/churvox-plan-usage-live.spec.js']),
     playwright('Authentication, consent, return paths and role boundaries', ['tests/e2e/churvox-auth-paid-launch-contract.spec.js']),
     playwright('Billing portal, cancellation and deletion lifecycle', ['tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js']),
     playwright('Customer quote, invoice, client portal and proof safety', ['tests/e2e/churvox-public-documents-paid-launch.spec.js']),
@@ -156,7 +169,7 @@ async function main() {
   for (const step of steps) {
     const result = await run(step);
     results.push(result);
-    if (result.code !== 0 && ['Frontend production build', 'Backend paid-launch syntax'].includes(step.name)) break;
+    if (result.code !== 0 && ['Frontend production build', 'Backend paid-launch syntax', 'Backend feature tier contract'].includes(step.name)) break;
   }
 
   log('');
