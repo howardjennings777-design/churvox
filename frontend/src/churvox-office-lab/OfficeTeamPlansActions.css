@@ -46,6 +46,25 @@
   cursor: pointer;
 }
 
+.cvPlanBillingAction button:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
+.cvPlanBillingError {
+  display: block;
+  max-width: 700px;
+  margin-top: 10px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 12px;
+  padding: 9px 11px;
+  color: #fff;
+  background: rgba(127,29,29,.42);
+  font-size: .78rem;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
 @media (max-width: 760px) {
   .cvPlanBillingAction {
     align-items: stretch;
