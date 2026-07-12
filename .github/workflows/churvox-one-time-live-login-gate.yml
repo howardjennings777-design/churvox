@@ -1,16 +1,16 @@
 name: Churvox One-Time Live Login Gate
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/churvox-one-time-live-login-gate.yml'
+  issues:
+    types: [opened]
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   live-login-gate:
+    if: startsWith(github.event.issue.title, '[churvox-live-login-gate]')
     name: Live owner and worker login proof
     runs-on: ubuntu-latest
     timeout-minutes: 70
@@ -18,6 +18,17 @@ jobs:
       run:
         working-directory: frontend
     steps:
+      - name: Mark test as started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Live Churvox owner/worker login gate is running. Credentials remain masked as GitHub Actions secrets.'
+            })
+
       - name: Check out repository
         uses: actions/checkout@v4
 
@@ -44,6 +55,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run complete live login gate
+        id: gate
+        continue-on-error: true
         env:
           PLAYWRIGHT_BASE_URL: https://www.churvox.com
           PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
@@ -66,3 +79,29 @@ jobs:
             frontend/test-results
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Post test result
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          GATE_OUTCOME: ${{ steps.gate.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '/tmp/churvox-paid-launch-release/churvox-paid-launch-release-report.txt';
+            let report = 'The release report was not created.';
+            if (fs.existsSync(path)) {
+              const text = fs.readFileSync(path, 'utf8');
+              report = text.slice(-24000);
+            }
+            const outcome = process.env.GATE_OUTCOME === 'success' ? 'PASSED' : 'FAILED';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## Live login gate ${outcome}\n\n\`\`\`text\n${report}\n\`\`\``
+            });
+
+      - name: Fail workflow when gate failed
+        if: steps.gate.outcome != 'success'
+        run: exit 1
