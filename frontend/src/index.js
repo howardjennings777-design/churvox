@@ -89,6 +89,7 @@ const ownerFastRuntimeImports = [
   () => import('./runtime/churvoxOwnerHeaderLogoRuntime'),
   () => import('./runtime/churvoxMoreMenuPaidLaunchRuntime'),
   () => import('./runtime/churvoxPlansUsageTruthRuntime'),
+  () => import('./runtime/churvoxBillingPortalRuntime'),
 ];
 
 const ownerHeavyRuntimeImports = [];
