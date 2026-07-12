@@ -1,0 +1,139 @@
+name: Churvox One-Time Hardcore Repair A
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair-a:
+    if: startsWith(github.event.issue.title, '[churvox-hardcore-fix-a]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply worker data, route and startup repairs
+        id: patch
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee /tmp/churvox-fix-a.txt
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              if new in text:
+                  print(f'already patched: {path}')
+                  return
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected one match in {path}; found {count}: {old[:100]!r}')
+              file.write_text(text.replace(old, new, 1))
+              print(f'patched: {path}')
+
+          replace_once(
+              'frontend/src/churvox-office-lab/officeTeamApi.js',
+              '  worker: ["/api/worker/jobs", "/api/team/workers", "/api/workers"],',
+              '  worker: ["/api/worker/jobs"],'
+          )
+
+          path = Path('frontend/src/churvox-office-lab/officeTeamApi.js')
+          text = path.read_text()
+          old = '''  if (area === "worker" || area === "staff") {
+              const meta = paymentMeta(item);
+              return [
+                first(item, ["name", "worker_name", "staff_name", "email", "role"], "Worker"),
+                first(item, ["status", "role", "job_title", "today_status", "title", "service", "client_name", "customer_name"], "Live staff record"),
+                first(item, ["availability", "timer_status", "assigned_count", "phone", "amount_due", "balance_due"], "Check"),
+                first(item, ["notes", "summary", "email", "phone", "address"], "Worker view stays simple and phone-friendly."),
+                meta,
+              ];
+            }'''
+          new = '''  if (area === "worker") {
+              const meta = paymentMeta(item);
+              return [
+                shortWhen(first(item, ["scheduled_date", "date", "start", "start_time", "due_date"], index === 0 ? "Today" : "Assigned")),
+                first(item, ["title", "job_title", "job_name", "name", "service", "description", "client_name", "customer_name"], "Assigned job"),
+                first(item, ["status", "job_status", "workflow_status", "state", "stage"], "Ready"),
+                first(item, ["worker_notes", "notes", "summary", "address", "client_name", "customer_name"], "Check the job notes before starting."),
+                meta,
+              ];
+            }
+            if (area === "staff") {
+              const meta = paymentMeta(item);
+              return [
+                first(item, ["name", "worker_name", "staff_name", "email", "role"], "Worker"),
+                first(item, ["status", "role", "job_title", "today_status", "title", "service", "client_name", "customer_name"], "Live staff record"),
+                first(item, ["availability", "timer_status", "assigned_count", "phone", "amount_due", "balance_due"], "Check"),
+                first(item, ["notes", "summary", "email", "phone", "address"], "Worker view stays simple and phone-friendly."),
+                meta,
+              ];
+            }'''
+          if new not in text:
+              if text.count(old) != 1:
+                  raise SystemExit(f'Worker row block mismatch; found {text.count(old)}')
+              path.write_text(text.replace(old, new, 1))
+              print('patched worker job mapping')
+          else:
+              print('worker job mapping already patched')
+
+          replace_once(
+              'frontend/src/App.js',
+              '<Route path="/legacy-dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />',
+              '<Route path="/legacy-dashboard" element={<FreshBusinessRoute><AppRedirect to="/dashboard" /></FreshBusinessRoute>} />'
+          )
+          replace_once(
+              'frontend/src/App.js',
+              '<Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />',
+              '<Route path="/plans" element={<FreshBusinessRoute><AppRedirect to="/dashboard#plans" /></FreshBusinessRoute>} />'
+          )
+          replace_once(
+              'backend/churvox_startup_patch_loader.py',
+              '    "churvox_hq_hello_only_guard_patch",\n]',
+              '    "churvox_hq_hello_only_guard_patch",\n    "churvox_worker_command_visibility_patch",\n]'
+          )
+          replace_once(
+              'scripts/churvox-hardcore-owner-worker-audit.cjs',
+              '    && officeApi.includes(\'worker: ["/api/worker/jobs", "/api/team/workers", "/api/workers"]\'),',
+              '    && officeApi.includes(\'worker: ["/api/worker/jobs"]\')\n    && officeApi.includes(\'staff: ["/api/team/workers", "/api/team", "/api/workers"]\'),'
+          )
+          PY
+
+      - name: Verify source
+        run: |
+          python -m py_compile backend/churvox_worker_command_visibility_patch.py backend/churvox_startup_patch_loader.py
+          node --check frontend/src/churvox-office-lab/officeTeamApi.js
+          node --check scripts/churvox-hardcore-owner-worker-audit.cjs
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/officeTeamApi.js frontend/src/App.js backend/churvox_startup_patch_loader.py backend/churvox_worker_command_visibility_patch.py scripts/churvox-hardcore-owner-worker-audit.cjs
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+          else
+            git commit -m "Fix worker data boundary and Command visibility"
+            git push origin HEAD:main
+          fi
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.existsSync('/tmp/churvox-fix-a.txt') ? fs.readFileSync('/tmp/churvox-fix-a.txt', 'utf8').slice(-12000) : 'No patch log.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## Repair A ${{ job.status }}\n\n\`\`\`text\n${log}\n\`\`\``
+            });
