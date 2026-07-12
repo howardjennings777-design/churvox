@@ -1,0 +1,175 @@
+name: Churvox Final Worker Route Repair 3
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-final-worker-route-repair-3]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Extract verified repair steps
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          lines = Path('.github/workflows/churvox-final-worker-route-repair.yml').read_text().splitlines()
+
+          def extract(step_name, output):
+              step = next(i for i, line in enumerate(lines) if line.strip() == f'- name: {step_name}')
+              run = next(i for i in range(step + 1, len(lines)) if lines[i].strip() == 'run: |')
+              end = next((i for i in range(run + 1, len(lines)) if lines[i].startswith('      - name: ')), len(lines))
+              Path(output).write_text(textwrap.dedent('\n'.join(lines[run + 1:end])) + '\n')
+
+          extract('Apply evidence-grounded route repairs', '/tmp/apply-worker-route-repair.sh')
+          extract('Write final owner Command create route', '/tmp/write-command-create.sh')
+          extract('Write backend route regression tests', '/tmp/write-worker-route-tests.sh')
+          PY
+          bash -n /tmp/apply-worker-route-repair.sh
+          bash -n /tmp/write-command-create.sh
+          bash -n /tmp/write-worker-route-tests.sh
+
+      - name: Apply evidence-grounded route repairs
+        run: bash /tmp/apply-worker-route-repair.sh
+
+      - name: Correct JavaScript worker-role sets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          bad = '{"worker", "staff", "employee", "subcontractor", "contractor", "technician", "field_worker"}.has(role)'
+          good = 'new Set(["worker", "staff", "employee", "subcontractor", "contractor", "technician", "field_worker"]).has(role)'
+          for name in [
+              'frontend/src/runtime/churvoxIndustryModeRuntime.js',
+              'frontend/src/runtime/churvoxAdminBrainSurfaceRuntime.js',
+              'frontend/src/runtime/churvoxNavBadgesRuntime.js',
+          ]:
+              path = Path(name)
+              text = path.read_text()
+              count = text.count(bad)
+              if count != 1:
+                  raise SystemExit(f'{name}: expected one invalid role set, found {count}')
+              path.write_text(text.replace(bad, good, 1))
+              print(f'corrected JavaScript role set: {name}')
+          PY
+
+      - name: Write owner Command create route
+        run: bash /tmp/write-command-create.sh
+
+      - name: Structurally install Command create route at startup
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('backend/churvox_outer_cors_error_shield.py')
+          text = path.read_text()
+          decision_marker = '("churvox_command_slip_decision_patch", "backend.churvox_command_slip_decision_patch"),'
+          marker_index = text.find(decision_marker)
+          if marker_index < 0:
+              raise SystemExit('Command decision installer marker not found')
+          block_start = text.rfind('    _install_patch(', 0, marker_index)
+          if block_start < 0:
+              raise SystemExit('Command decision installer start not found')
+          create_block = (
+              '    _install_patch(\n'
+              '        module,\n'
+              '        ("churvox_command_slip_create_patch", "backend.churvox_command_slip_create_patch"),\n'
+              '        "final owner Command slip create route",\n'
+              '    )\n'
+          )
+          if 'churvox_command_slip_create_patch' not in text:
+              text = text[:block_start] + create_block + text[block_start:]
+          path.write_text(text)
+          print('patched: final wrapper owns Command POST create route')
+          PY
+
+      - name: Write backend route regression tests
+        run: bash /tmp/write-worker-route-tests.sh
+
+      - name: Install verification dependencies
+        run: |
+          python -m pip install --quiet fastapi pymongo python-multipart
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+
+      - name: Verify repaired routes and permanent contracts
+        run: |
+          python -m py_compile \
+            backend/churvox_command_slip_create_patch.py \
+            backend/churvox_field_loop_patch.py \
+            backend/churvox_outer_cors_error_shield.py
+          python -m unittest \
+            backend/test_churvox_final_worker_and_command_routes.py \
+            backend/test_churvox_command_slip_decision_patch.py \
+            backend/test_churvox_worker_command_route_request_injection.py
+          node --check frontend/src/runtime/churvoxIndustryModeRuntime.js
+          node --check frontend/src/runtime/churvoxAdminBrainSurfaceRuntime.js
+          node --check frontend/src/runtime/churvoxNavBadgesRuntime.js
+          node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+          node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          node --check frontend/tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js
+          node scripts/churvox-hardcore-owner-worker-audit.cjs
+
+      - name: Build production frontend
+        run: npm --prefix frontend run build
+
+      - name: Commit verified product and audit repairs
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            frontend/src/runtime/churvoxIndustryModeRuntime.js \
+            frontend/src/runtime/churvoxAdminBrainSurfaceRuntime.js \
+            frontend/src/runtime/churvoxNavBadgesRuntime.js \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+            frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
+            frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
+            frontend/tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js \
+            frontend/src/App.js \
+            scripts/churvox-hardcore-owner-worker-audit.cjs \
+            backend/churvox_field_loop_patch.py \
+            backend/churvox_command_slip_create_patch.py \
+            backend/test_churvox_final_worker_and_command_routes.py \
+            backend/churvox_outer_cors_error_shield.py
+          git commit -m 'Fix worker action and owner Command create routes'
+          git push origin HEAD:main
+
+      - name: Post success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: 'JavaScript-corrected worker-route and Command-create repair passed backend regressions, permanent owner/worker contracts, JavaScript checks, and the production build. Verified changes were committed to main.' });
+
+      - name: Post failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: 'JavaScript-corrected worker-route repair stopped before commit because a guarded verification failed. No partial product repair was pushed.' });
