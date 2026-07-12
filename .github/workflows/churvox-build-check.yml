@@ -22,12 +22,45 @@ jobs:
 
       - name: Backend compile checks
         run: |
-          python3 -m py_compile backend/server.py
-          python3 -m compileall -q backend
+          python3 - <<'PY'
+          from pathlib import Path
+          import py_compile
+          import sys
+
+          failures = []
+          for path in sorted(Path("backend").rglob("*.py")):
+              try:
+                  py_compile.compile(str(path), doraise=True)
+              except py_compile.PyCompileError as exc:
+                  failures.append((path, exc.msg))
+
+          report = Path("/tmp/backend-compile-errors.txt")
+          if failures:
+              lines = [f"Backend compile failures: {len(failures)}"]
+              for path, message in failures:
+                  lines.extend(["", f"--- {path} ---", message])
+              report.write_text("\n".join(lines) + "\n")
+              print(report.read_text())
+              sys.exit(1)
+
+          report.write_text("All backend Python files compiled successfully.\n")
+          print(report.read_text())
+          PY
+
+      - name: Upload backend compile diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-compile-diagnostics
+          path: /tmp/backend-compile-errors.txt
+          if-no-files-found: error
+          retention-days: 3
 
   frontend-build:
     name: Frontend install and build
     runs-on: ubuntu-latest
+    env:
+      CI: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,4 +87,16 @@ jobs:
           npm --prefix frontend list @craco/craco
 
       - name: Build frontend
-        run: npm --prefix frontend run build
+        shell: bash
+        run: |
+          set -o pipefail
+          npm --prefix frontend run build 2>&1 | tee /tmp/frontend-build.log
+
+      - name: Upload frontend build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-diagnostics
+          path: /tmp/frontend-build.log
+          if-no-files-found: error
+          retention-days: 3

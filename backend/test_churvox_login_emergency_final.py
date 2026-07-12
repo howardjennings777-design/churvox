@@ -4,6 +4,7 @@ import types
 import unittest
 from unittest import mock
 
+import backend.churvox_login_emergency_final as emergency_module
 from backend.churvox_login_emergency_final import (
     LOCKOUT_FAILURES,
     LOCKOUT_MINUTES,
@@ -277,6 +278,86 @@ class EmergencyLoginRulesTest(unittest.TestCase):
             fake._attempt_key(request, "worker@example.test", "worker-login"),
             fake._attempt_key(request, "worker@example.test", "owner-login"),
         )
+
+    def test_install_replaces_auth_routes_once_and_locks_hq_email(self):
+        class Route:
+            def __init__(self, path, methods, endpoint=None):
+                self.path = path
+                self.methods = set(methods)
+                self.endpoint = endpoint
+
+        class App:
+            def __init__(self):
+                self.router = types.SimpleNamespace(routes=[])
+                self.state = types.SimpleNamespace()
+
+            def add_api_route(self, path, endpoint, methods):
+                self.router.routes.append(Route(path, methods, endpoint))
+
+        class Bcrypt:
+            @staticmethod
+            def gensalt():
+                return b"salt"
+
+            @staticmethod
+            def hashpw(value, salt):
+                return b"dummy-hash"
+
+        app = App()
+        expected = {
+            ("/api/auth/login", "POST"),
+            ("/api/auth/logout", "POST"),
+            ("/api/auth/worker-login", "POST"),
+            ("/api/worker/auth/login", "POST"),
+            ("/api/auth/login-health", "GET"),
+        }
+        for path, method in expected:
+            app.router.routes.extend([
+                Route(path, {method}, object()),
+                Route(path, {method}, object()),
+            ])
+
+        target = types.SimpleNamespace(
+            app=app,
+            db=types.SimpleNamespace(),
+            Request=type("Request", (), {}),
+            bcrypt=Bcrypt(),
+            jwt=types.SimpleNamespace(),
+            ObjectId=lambda value: value,
+            JWT_ALGORITHM="HS256",
+            JWT_SECRET="x" * 64,
+        )
+
+        original_json_response = emergency_module.JSONResponse
+        try:
+            emergency_module.JSONResponse = object()
+            with mock.patch.object(emergency_module, "_patch_worker_lockout_helpers", return_value=None):
+                emergency_module.install(target)
+        finally:
+            emergency_module.JSONResponse = original_json_response
+
+        for path, method in expected:
+            matches = [
+                route for route in app.router.routes
+                if route.path == path and method in route.methods
+            ]
+            self.assertEqual(len(matches), 1, f"expected one {method} {path}")
+
+        login_endpoint = next(
+            route.endpoint for route in app.router.routes
+            if route.path == "/api/auth/login" and "POST" in route.methods
+        )
+        for worker_path in ("/api/auth/worker-login", "/api/worker/auth/login"):
+            worker_endpoint = next(
+                route.endpoint for route in app.router.routes
+                if route.path == worker_path and "POST" in route.methods
+            )
+            self.assertIs(worker_endpoint, login_endpoint)
+
+        self.assertEqual(target.PLATFORM_OWNER_EMAILS, [PLATFORM_OWNER_EMAIL])
+        self.assertTrue(target.is_platform_owner({"email": PLATFORM_OWNER_EMAIL.upper()}))
+        self.assertFalse(target.is_platform_owner({"email": "other@example.test", "is_platform_owner": True}))
+        self.assertEqual(app.state.churvox_login_emergency_final, emergency_module.VERSION)
 
 
 if __name__ == "__main__":

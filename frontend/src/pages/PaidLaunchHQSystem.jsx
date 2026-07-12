@@ -333,7 +333,7 @@ export default function PaidLaunchHQSystem() {
   const businesses = arr(overview?.lists?.businesses);
   const events = [...arr(overview?.lists?.events), ...arr(control?.items)];
   const launchCounts = launch?.counts || {};
-  const billing = launch?.billing || {};
+  const billing = React.useMemo(() => launch?.billing || {}, [launch?.billing]);
   const testers = React.useMemo(() => mergeTesterData({ testerEndpoint: state.testers?.data, control, billing, optimistic: optimisticTesters }), [state.testers?.data, control, billing, optimisticTesters]);
   const collectionCounts = launch?.collections?.counts || {};
   const growthCounts = growth?.counts || {};

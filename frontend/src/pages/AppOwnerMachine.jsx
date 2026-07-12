@@ -220,7 +220,7 @@ export default function AppOwnerMachine() {
   React.useEffect(() => { load(false); }, [load]);
   React.useEffect(() => { const timer = window.setInterval(() => load(true), 20000); return () => window.clearInterval(timer); }, [load]);
 
-  const lists = data?.lists || {};
+  const lists = React.useMemo(() => data?.lists || {}, [data?.lists]);
   const metrics = data?.metrics || {};
   const counts = growth?.counts || {};
   const conversion = growth?.conversion || {};

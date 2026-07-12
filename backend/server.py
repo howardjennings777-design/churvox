@@ -6032,7 +6032,7 @@ async def ensure_owner_account():
 # from command_hub_routes import register_command_hub_routes
 register_command_hub_routes(api_router, db, get_current_user, get_user_business_id)
 
-app.include_router(api_router) moved to bottom after all routes
+# app.include_router(api_router) moved to bottom after all routes
 
 # CORS
 # Startup event
