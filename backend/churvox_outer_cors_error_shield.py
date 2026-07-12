@@ -4,7 +4,7 @@ import importlib
 import logging
 from typing import Any
 
-VERSION = "churvox-outer-cors-error-shield-20260712d"
+VERSION = "churvox-outer-cors-error-shield-20260712e"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
@@ -88,7 +88,7 @@ class OuterCorsErrorShield:
             logging.exception("Unhandled Churvox request error outside normal middleware")
             if response_started:
                 raise
-            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"version":"churvox-outer-cors-error-shield-20260712d"}'
+            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"stage":"outer-shield","version":"churvox-outer-cors-error-shield-20260712e"}'
             headers = [
                 (b"content-type", b"application/json"),
                 (b"content-length", str(len(body)).encode("ascii")),
@@ -100,30 +100,36 @@ class OuterCorsErrorShield:
             await send({"type": "http.response.body", "body": body})
 
 
-def _install_definitive_login(module) -> None:
+def _install_patch(module, names: tuple[str, ...], label: str) -> None:
     patch = None
-    for name in (
-        "churvox_login_route_finalizer",
-        "backend.churvox_login_route_finalizer",
-    ):
+    for name in names:
         try:
             patch = importlib.import_module(name)
             break
         except Exception:
             continue
     if patch is None:
-        logging.getLogger(__name__).warning("[Churvox] Definitive login route module could not be imported")
+        logging.getLogger(__name__).warning("[Churvox] %s module could not be imported", label)
         return
     try:
         patch.install(module)
     except Exception as exc:
-        logging.getLogger(__name__).warning("[Churvox] Definitive login route install skipped: %s", exc)
+        logging.getLogger(__name__).warning("[Churvox] %s install skipped: %s", label, exc)
 
 
 def install(module) -> None:
-    # This hook is called from the final wrapper patch. Install the definitive
-    # login route even when the CORS middleware itself was installed earlier.
-    _install_definitive_login(module)
+    # Re-install the definitive route, then replace it with the isolated emergency
+    # handler. This hook runs from the final wrapper patch, after legacy auth routes.
+    _install_patch(
+        module,
+        ("churvox_login_route_finalizer", "backend.churvox_login_route_finalizer"),
+        "definitive login route",
+    )
+    _install_patch(
+        module,
+        ("churvox_login_emergency_final", "backend.churvox_login_emergency_final"),
+        "isolated emergency login route",
+    )
 
     app = getattr(module, "app", None)
     if app is None:
