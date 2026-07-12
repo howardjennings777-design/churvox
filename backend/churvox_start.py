@@ -33,6 +33,20 @@ except Exception as exc:
     except Exception:
         pass
 
+try:
+    try:
+        import churvox_paid_launch_live_patch
+    except Exception:
+        from backend import churvox_paid_launch_live_patch
+    # server.py has now finished registering legacy routes, so this final forced
+    # install owns Command scan/slips/Admin Brain precedence in production.
+    churvox_paid_launch_live_patch.install(server, force=True)
+except Exception as exc:
+    try:
+        server.logger.warning("[Churvox] Final Command fast-load install skipped: %s", exc)
+    except Exception:
+        pass
+
 PLAN_ALIASES = {
     "start": "solo",
     "solo": "solo",

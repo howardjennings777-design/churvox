@@ -4,7 +4,11 @@ export const BACKEND_COMMAND_EVENT = "churvox-backend-command-slip";
 const SAFE_RESULT = "Owner approval recorded. Nothing was sent, synced, charged or changed.";
 
 function host() {
-  return String(API_BASE || "").replace(/\/$/, "");
+  const configured = String(API_BASE || "").replace(/\/$/, "");
+  if (configured) return configured;
+  // Local, preview and proxied deployments use the frontend /api bridge.
+  // An empty build-time API_BASE must never make Command silently unavailable.
+  return typeof window !== "undefined" ? String(window.location.origin || "").replace(/\/$/, "") : "";
 }
 
 function token() {
@@ -24,18 +28,23 @@ function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-async function fetchWithRetry(url, options = {}, attempts = 3) {
+async function fetchWithRetry(url, options = {}, attempts = 2) {
   let lastError = null;
+  const { timeoutMs = 8000, ...requestOptions } = options || {};
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : null;
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url, { ...requestOptions, signal: controller?.signal });
       const transient = response.status === 408 || response.status === 429 || response.status >= 500;
       if (!transient || attempt === attempts) return response;
-      await wait(350 * attempt);
+      await wait(250 * attempt);
     } catch (error) {
       lastError = error;
       if (attempt === attempts) throw error;
-      await wait(350 * attempt);
+      await wait(250 * attempt);
+    } finally {
+      if (timer) window.clearTimeout(timer);
     }
   }
   throw lastError || new Error("Live Churvox request failed.");
@@ -176,7 +185,7 @@ export function mapBackendCommandAudit(item = {}, index = 0) {
 export async function fetchBackendCommandDecisions() {
   const base = host();
   if (!base) return { source: "command-unavailable", decisions: [], message: "No API host" };
-  const response = await fetchWithRetry(`${base}/api/command/slips`, { credentials: "include", headers: authHeaders({ json: false }) });
+  const response = await fetchWithRetry(`${base}/api/command/slips`, { credentials: "include", headers: authHeaders({ json: false }), timeoutMs: 6000 }, 2);
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "command-unavailable", decisions: [], message: body?.detail || "Command backend unavailable" };
   if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command slips failed ${response.status}`);
@@ -187,7 +196,7 @@ export async function fetchBackendCommandDecisions() {
 export async function fetchBackendCommandAudit() {
   const base = host();
   if (!base) return { source: "command-audit-unavailable", audit: [], message: "No API host" };
-  const response = await fetchWithRetry(`${base}/api/command/audit`, { credentials: "include", headers: authHeaders({ json: false }) });
+  const response = await fetchWithRetry(`${base}/api/command/audit`, { credentials: "include", headers: authHeaders({ json: false }), timeoutMs: 5000 }, 1);
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "command-audit-unavailable", audit: [], message: body?.detail || "Command audit unavailable" };
   if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command audit failed ${response.status}`);
@@ -203,7 +212,8 @@ export async function runBackendOfficeEngineScan() {
     credentials: "include",
     headers: authHeaders(),
     body: JSON.stringify({ source: "owner_workspace_load", prepared_only: true, owner_review_only: true }),
-  });
+    timeoutMs: 15000,
+  }, 1);
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "backend-office-engine-unavailable", createdCount: 0, existingCount: 0, message: body?.detail || "Office engine unavailable" };
   if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Office engine scan failed ${response.status}`);

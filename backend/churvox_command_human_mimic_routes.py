@@ -1,3 +1,4 @@
+import asyncio
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 from statistics import median
@@ -97,19 +98,25 @@ def build_command_human_mimic_router(db, get_current_user, ObjectId):
 
     async def scoped_rows(user, collection_names, limit=120, errors=None):
         _, _, query = business_scope(user)
-        rows = []
-        for name in collection_names:
+
+        async def load_collection(name):
             try:
                 cursor = db[name].find(query)
                 try:
                     cursor = cursor.sort("updated_at", -1)
                 except Exception:
                     cursor = cursor.sort("_id", -1)
-                found = await cursor.limit(limit).to_list(limit)
-                rows.extend([{**dict(item), "_collection": name} for item in found])
+                found = await asyncio.wait_for(cursor.limit(limit).to_list(limit), timeout=5)
+                return [{**dict(item), "_collection": name} for item in found]
             except Exception as exc:
                 if errors is not None:
                     errors.append(f"{name}: {exc.__class__.__name__}")
+                return []
+
+        batches = await asyncio.gather(*(load_collection(name) for name in collection_names))
+        rows = []
+        for batch in batches:
+            rows.extend(batch)
         return rows[:limit]
 
     def rec_id(row, fallback="record"):
@@ -745,12 +752,14 @@ def build_command_human_mimic_router(db, get_current_user, ObjectId):
     async def run_human_mimic_scan(payload: Optional[Dict[str, Any]] = None, request: Request = None):
         user = await require_owner(request)
         scan_errors = []
-        jobs = await scoped_rows(user, ["jobs", "job_records", "appointments", "bookings"], 180, scan_errors)
-        invoices = await scoped_rows(user, ["invoices", "invoice_records"], 140, scan_errors)
-        clients = await scoped_rows(user, ["clients", "customers"], 100, scan_errors)
-        messages = await scoped_rows(user, ["messages", "client_messages", "inbox_messages"], 100, scan_errors)
-        timers = await scoped_rows(user, ["time_entries", "timers", "worker_time_entries", "timesheets"], 100, scan_errors)
-        settings = await scoped_rows(user, ["businesses", "business_settings", "settings"], 30, scan_errors)
+        jobs, invoices, clients, messages, timers, settings = await asyncio.gather(
+            scoped_rows(user, ["jobs", "job_records", "appointments", "bookings"], 180, scan_errors),
+            scoped_rows(user, ["invoices", "invoice_records"], 140, scan_errors),
+            scoped_rows(user, ["clients", "customers"], 100, scan_errors),
+            scoped_rows(user, ["messages", "client_messages", "inbox_messages"], 100, scan_errors),
+            scoped_rows(user, ["time_entries", "timers", "worker_time_entries", "timesheets"], 100, scan_errors),
+            scoped_rows(user, ["businesses", "business_settings", "settings"], 30, scan_errors),
+        )
 
         candidates = []
         counts = {
@@ -838,12 +847,22 @@ def build_command_human_mimic_router(db, get_current_user, ObjectId):
         created = []
         existing = []
         seen = set()
+        unique_docs = []
         for doc in candidates[:100]:
             key = (doc["source_type"], doc["action_type"], doc["source_id"])
             if key in seen:
                 continue
             seen.add(key)
-            item, old = await insert_once(user, doc)
+            unique_docs.append(doc)
+
+        semaphore = asyncio.Semaphore(8)
+
+        async def store(doc):
+            async with semaphore:
+                return await insert_once(user, doc)
+
+        stored = await asyncio.gather(*(store(doc) for doc in unique_docs))
+        for item, old in stored:
             if item:
                 created.append(item)
             elif old:

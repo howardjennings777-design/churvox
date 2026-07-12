@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
@@ -318,11 +319,14 @@ def build_command_human_mimic_guard_router(db, get_current_user, ObjectId):
         result = await base_scan(payload=payload, request=request)
         user = await get_current_user(request)
         user_business_id = business_id(user)
-        retired_old = await retire_old_engine_slips(user_business_id)
-        retired_ids = await retire_outbound_reply_false_positives(user_business_id)
-        retired_ids.update(await retire_false_completion_slips(user_business_id))
-        retired_ids.update(await retire_early_or_invalid_payment_followups(user_business_id))
-        retired_ids.update(await retire_stale_briefs(user_business_id))
+        retired_old, outbound_ids, completion_ids, payment_ids, stale_ids = await asyncio.gather(
+            retire_old_engine_slips(user_business_id),
+            retire_outbound_reply_false_positives(user_business_id),
+            retire_false_completion_slips(user_business_id),
+            retire_early_or_invalid_payment_followups(user_business_id),
+            retire_stale_briefs(user_business_id),
+        )
+        retired_ids = set().union(outbound_ids, completion_ids, payment_ids, stale_ids)
 
         created = [item for item in (result.get("slips") or []) if str(item.get("id") or item.get("_id") or "") not in retired_ids]
         existing = [item for item in (result.get("existing") or []) if str(item.get("id") or item.get("_id") or "") not in retired_ids]

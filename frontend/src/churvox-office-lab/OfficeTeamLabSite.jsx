@@ -32,6 +32,8 @@ const COMMAND_CARD_LIMIT = 3;
 const SAFE_APPROVAL_TEXT = "Nothing was sent, synced, charged or filed.";
 const RECORD_ONLY_TEXT = "Nothing was sent, synced, charged or changed.";
 const MISSING_VALUE = "Not found — owner must enter";
+const COMMAND_FAST_LOAD_BUILD = "churvox-command-fast-load-build-20260713c";
+if (typeof window !== "undefined") window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ = COMMAND_FAST_LOAD_BUILD;
 
 const screens = [
   ["today", "Today"], ["command", "Command"], ["work", "Work"], ["schedule", "Schedule"], ["clients", "Clients"],
@@ -88,13 +90,15 @@ const playbooks = [
 const safetyRules = ["Owner approval comes first", "Prepared-only approvals", "No blind sends or syncs", "Failed records return to Command", "Every change stays owner-controlled"];
 
 export default function OfficeTeamLabSite({ appMode = "lab" }) {
-  const isOwnerApp = appMode === "owner";
+  const ownerPath = typeof window !== "undefined" ? String(window.location.pathname || "") : "";
+  const isOwnerApp = appMode === "owner" || ownerPath === "/dashboard" || ownerPath.startsWith("/dashboard/");
   const [screen, setScreen] = useState(() => cleanScreen(window.location.hash));
   const [tray, setTray] = useState("command");
   const [activeRole, setActiveRole] = useState("Office Manager");
   const [snapshot, setSnapshot] = useState({ source: "starter", decisions: [] });
   const [backendCommand, setBackendCommand] = useState({ source: "command-unavailable", decisions: [] });
   const [backendAudit, setBackendAudit] = useState({ source: "command-audit-unavailable", audit: [] });
+  const [commandLoading, setCommandLoading] = useState(isOwnerApp);
   const [liveDrafts, setLiveDrafts] = useState([]);
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
@@ -104,59 +108,110 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
 
   useEffect(() => {
     let mounted = true;
-    const snapshotPromise = isOwnerApp ? Promise.resolve({ source: "skip", decisions: [] }) : fetchOfficeTeamSnapshot();
-    const draftPromise = isOwnerApp ? Promise.resolve([]) : fetchOfficeTeamCommandDrafts();
-    const commandPromise = isOwnerApp
-      ? runBackendOfficeEngineScan().catch(() => null).then((scan) => fetchBackendCommandDecisions().then((command) => ({ ...command, scan })))
-      : Promise.resolve({ source: "skip", decisions: [] });
-    Promise.allSettled([
-      snapshotPromise,
-      draftPromise,
-      commandPromise,
-      isOwnerApp ? fetchBackendCommandAudit() : Promise.resolve({ source: "skip", audit: [] }),
-    ])
-      .then(([scanResult, draftResult, commandResult, auditResult]) => {
+    let scanTimer = null;
+
+    if (typeof window !== "undefined") {
+      window.__CHURVOX_COMMAND_LOAD_STATE__ = {
+        build: COMMAND_FAST_LOAD_BUILD,
+        appMode,
+        ownerPath,
+        isOwnerApp,
+        branch: isOwnerApp ? "owner-queue" : "lab-preview",
+        mountedAt: Date.now(),
+      };
+    }
+
+    if (isOwnerApp) {
+      setCommandLoading(true);
+      setNotice("Opening the current Command queue. The full business check will continue behind it.");
+
+      const loadCurrentQueue = async ({ afterScan = false, scan = null } = {}) => {
+        try {
+          if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueRequestedAt: Date.now() };
+          const command = await fetchBackendCommandDecisions();
+          if (!mounted) return null;
+          const nextCommand = scan ? { ...command, scan } : command;
+          setBackendCommand(nextCommand || { source: "command-unavailable", decisions: [] });
+          setResolved({});
+          if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueResolvedAt: Date.now(), queueSource: command?.source || "unknown", queueCount: command?.decisions?.length || 0 };
+          if (!afterScan) {
+            if (command?.decisions?.length) setNotice("Command is open. The latest saved owner decisions are ready while Churvox checks for anything new.");
+            else if (command?.source === "backend-command-clear") setNotice("The current Command queue is clear. Churvox is checking the live records for anything new.");
+            else setNotice("The current Command queue could not be confirmed. Churvox is retrying the live check behind the screen.");
+          }
+          return command;
+        } catch (error) {
+          if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueError: error?.message || "connection issue" };
+          if (mounted && !afterScan) setNotice(`Command queue could not load: ${error?.message || "connection issue"}. Nothing was changed.`);
+          return null;
+        } finally {
+          if (mounted && !afterScan) setCommandLoading(false);
+        }
+      };
+
+      const queuePromise = loadCurrentQueue();
+
+      fetchBackendCommandAudit()
+        .then((audit) => { if (mounted && audit) setBackendAudit(audit); })
+        .catch(() => {});
+
+      queuePromise.finally(() => {
         if (!mounted) return;
-        const data = scanResult.status === "fulfilled" ? scanResult.value : { source: "starter", decisions: [] };
+        scanTimer = window.setTimeout(async () => {
+          try {
+            const scan = await runBackendOfficeEngineScan();
+            if (!mounted) return;
+            const command = await loadCurrentQueue({ afterScan: true, scan });
+            if (!mounted) return;
+            const createdCount = Number(scan?.createdCount || 0);
+            const existingCount = Number(scan?.existingCount || 0);
+            const scanErrors = Array.isArray(scan?.scanErrors) ? scan.scanErrors : [];
+            if (scanErrors.length) setNotice(`Current queue is open, but ${scanErrors.length} live data source${scanErrors.length === 1 ? "" : "s"} could not be checked. Do not treat an empty queue as all clear.`);
+            else if (createdCount) setNotice(`Churvox prepared ${createdCount} new Command decision${createdCount === 1 ? "" : "s"}. Open the first slip and correct anything that is not right.`);
+            else if (existingCount || command?.decisions?.length) setNotice(`${command?.decisions?.length || existingCount} Command decision${(command?.decisions?.length || existingCount) === 1 ? " is" : "s are"} waiting for you.`);
+            else setNotice("Churvox checked the live records. Nothing needs your decision right now.");
+          } catch (error) {
+            if (mounted) setNotice(`The current queue is open. The background business check could not finish: ${error?.message || "connection issue"}. Nothing was changed.`);
+          }
+        }, 180);
+      });
+
+      return () => {
+        mounted = false;
+        if (scanTimer) window.clearTimeout(scanTimer);
+      };
+    }
+
+    setCommandLoading(false);
+    Promise.allSettled([fetchOfficeTeamSnapshot(), fetchOfficeTeamCommandDrafts()])
+      .then(([snapshotResult, draftResult]) => {
+        if (!mounted) return;
+        const data = snapshotResult.status === "fulfilled" ? snapshotResult.value : { source: "starter", decisions: [] };
         const drafts = draftResult.status === "fulfilled" && Array.isArray(draftResult.value) ? draftResult.value : [];
-        const command = commandResult.status === "fulfilled" ? commandResult.value : { source: "command-unavailable", decisions: [] };
-        const audit = auditResult.status === "fulfilled" ? auditResult.value : { source: "command-audit-unavailable", audit: [] };
         setSnapshot(data || { source: "starter", decisions: [] });
-        setBackendCommand(command || { source: "command-unavailable", decisions: [] });
-        setBackendAudit(audit || { source: "command-audit-unavailable", audit: [] });
         setLiveDrafts(drafts);
         setResolved({});
-        const createdCount = Number(command?.scan?.createdCount || 0);
-        const existingCount = Number(command?.scan?.existingCount || 0);
-        const scanErrors = Array.isArray(command?.scan?.scanErrors) ? command.scan.scanErrors : [];
-        if (isOwnerApp && scanErrors.length) setNotice(`Command check incomplete. ${scanErrors.length} live data source${scanErrors.length === 1 ? "" : "s"} could not be read, so do not treat an empty queue as all clear.`);
-        else if (isOwnerApp && createdCount) setNotice(`Churvox prepared ${createdCount} new Command decision${createdCount === 1 ? "" : "s"}. Open the first slip and correct anything that is not right.`);
-        else if (isOwnerApp && existingCount) setNotice(`${existingCount} Command decision${existingCount === 1 ? " is" : "s are"} still waiting for you.`);
-        else if (isOwnerApp && command?.decisions?.length) setNotice("Command is ready. Open the first slip, check the evidence and approve only what is right.");
-        else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("Churvox checked the live records. Nothing needs your decision right now.");
-        else if (isOwnerApp) setNotice("Command could not be confirmed. No fallback or browser-only decisions are being shown.");
-        else if (data?.source === "admin-brain") setNotice("Live office check loaded. Owner approval still comes first.");
+        if (data?.source === "admin-brain") setNotice("Live office check loaded. Owner approval still comes first.");
         else if (drafts.length) setNotice("Live read-only records are prepared for Command. Nothing has been sent, synced or changed.");
         else if (data?.source === "clear-live") setNotice("Live check is clear. Command stays ready for the next decision.");
         else setNotice("Churvox control centre loaded. Live decisions appear when work needs owner approval.");
       })
-      .catch((err) => mounted && setNotice(`${isOwnerApp ? "Owner workspace" : "Churvox control centre"}. Live check unavailable: ${err.message || "connection issue"}`));
+      .catch((error) => mounted && setNotice(`Churvox control centre. Live check unavailable: ${error?.message || "connection issue"}`));
+
     return () => { mounted = false; };
-  }, [isOwnerApp]);
+  }, [isOwnerApp, appMode, ownerPath]);
 
   useEffect(() => {
     if (!isOwnerApp) return () => {};
     const refreshBackendCommand = () => {
-      Promise.allSettled([fetchBackendCommandDecisions(), fetchBackendCommandAudit()])
-        .then(([commandResult, auditResult]) => {
-          const command = commandResult.status === "fulfilled" ? commandResult.value : { source: "command-unavailable", decisions: [] };
-          const audit = auditResult.status === "fulfilled" ? auditResult.value : { source: "command-audit-unavailable", audit: [] };
+      fetchBackendCommandDecisions()
+        .then((command) => {
           setBackendCommand(command || { source: "command-unavailable", decisions: [] });
-          setBackendAudit(audit || { source: "command-audit-unavailable", audit: [] });
           setResolved({});
           setNotice(command?.decisions?.length ? "Command refreshed. A prepared decision is waiting for you." : "Command refreshed. Nothing needs your decision right now.");
         })
         .catch(() => setNotice("Command refresh failed. No fallback decisions were shown and nothing changed."));
+      fetchBackendCommandAudit().then((audit) => { if (audit) setBackendAudit(audit); }).catch(() => {});
     };
     window.addEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
     return () => window.removeEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
@@ -268,7 +323,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         ? <Status metrics={metrics} sourceLabel={sourceLabel} notice={notice} appMode={appMode} />
         : <OfficeTeamContextStrip screen={screen} pendingCount={pending.length} notice={notice} go={go} />}
       <div className="cvSiteScreenDeck">
-        <ScreenRouter screen={screen} appMode={appMode} metrics={metrics} pending={pending} resolved={resolved} localQueue={isOwnerApp ? [] : localQueue} localActivity={isOwnerApp ? [] : localActivity} approvalTrail={approvalTrail} backendAudit={backendAudit.audit || []} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} />
+        <ScreenRouter screen={screen} appMode={appMode} metrics={metrics} pending={pending} resolved={resolved} localQueue={isOwnerApp ? [] : localQueue} localActivity={isOwnerApp ? [] : localActivity} approvalTrail={approvalTrail} backendAudit={backendAudit.audit || []} commandLoading={commandLoading} go={go} tray={tray} setTray={setTray} counts={counts} onAction={actionDecision} activeRole={activeRole} setActiveRole={setActiveRole} />
       </div>
     </main>
   );
@@ -325,7 +380,7 @@ function Status({ metrics, sourceLabel, notice, appMode }) {
   return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>{modeLabel} · {sourceLabel}</span><h1>{title}</h1><p>{text}</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
 }
 
-function Command({ tray, setTray, counts, pending, onAction }) {
+function Command({ tray, setTray, counts, pending, onAction, commandLoading }) {
   const queue = tray === "command" ? pending : pending.filter((item) => trayKey(item.tray) === tray);
   const shown = queue.slice(0, COMMAND_CARD_LIMIT);
   const waiting = Math.max(0, queue.length - shown.length);
@@ -335,7 +390,7 @@ function Command({ tray, setTray, counts, pending, onAction }) {
     onAction(item, action, detail);
     setSelectedId("");
   }
-  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Only the decisions that need the owner" text="Open the slip, check the evidence and correct anything wrong. Approval may create an internal Churvox draft; sending, syncing, charging, tax filing and payments stay locked." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} />) : <Empty title="No decisions in this tray" text="Routine work stays out of Command. A slip appears only when the owner is genuinely needed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
+  return <section className="cvSiteScreen"><Header eyebrow="Command" title="Only the decisions that need the owner" text="Open the slip, check the evidence and correct anything wrong. Approval may create an internal Churvox draft; sending, syncing, charging, tax filing and payments stay locked." /><div className="cvSiteTrayRail">{departments.map(([key, label]) => <button key={key} className={tray === key ? "active" : ""} onClick={() => { setTray(key); setSelectedId(""); }}><strong>{counts[key] || 0}</strong><span>{label}</span></button>)}</div><div className="cvSiteQueueSummary"><strong>{shown.length} showing</strong><span>{queue.length} waiting</span><em>{waiting ? `${waiting} behind this set` : "queue clear after this set"}</em></div><div className="cvSiteCommandLayout"><div className="cvSiteDecisionGrid">{shown.length ? shown.map((item) => <Decision key={keyOf(item)} item={item} selected={keyOf(item) === keyOf(selected)} onOpen={() => setSelectedId(keyOf(item))} />) : commandLoading ? <Empty title="Opening current decisions" text="Churvox is loading the saved owner queue first. The full business check continues behind it." /> : <Empty title="No decisions in this tray" text="Routine work stays out of Command. A slip appears only when the owner is genuinely needed." />}</div><CommandSlip item={selected} onAction={act} /></div></section>;
 }
 
 function CommandSlip({ item, onAction }) {

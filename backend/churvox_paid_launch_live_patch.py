@@ -30,9 +30,9 @@ def _safe(value: Any, ObjectId):
     return value
 
 
-def install(module):
+def install(module, force=False):
     name = getattr(module, "__name__", "")
-    if name in INSTALLED:
+    if name in INSTALLED and not force:
         return
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
@@ -122,23 +122,23 @@ def install(module):
 
     async def fast_slips(request: Request):
         user = await require_owner(request)
-        await ensure_indexes()
         bid = business_id(user)
+        if not index_ready:
+            try:
+                asyncio.create_task(ensure_indexes())
+            except Exception:
+                pass
         query = {"business_id": bid, "status": {"$in": OPEN_STATUSES}}
-        cursor = db.command_slips.find(query).sort("updated_at", -1).limit(100)
-        rows = await bounded(cursor.to_list(length=100), 12, "Command queue")
+        cursor = db.command_slips.find(query, {"audit": 0}).sort("updated_at", -1).limit(50)
         try:
-            worker_count = await asyncio.wait_for(
-                db.worker_field_slips.count_documents({"business_id": bid, "status": {"$nin": ["dismissed", "resolved", "closed", "archived"]}}),
-                timeout=5,
-            )
+            cursor = cursor.max_time_ms(2500)
         except Exception:
-            worker_count = 0
+            pass
+        rows = await bounded(cursor.to_list(length=50), 5, "Command queue")
         return {
             "success": True,
-            "source": "paid-launch-fast-command",
+            "source": "paid-launch-fast-command-v2",
             "slips": [_safe(row, ObjectId) for row in rows],
-            "worker_field_slip_count": int(worker_count),
             "scan_complete": True,
             "scan_errors": [],
             "safety": SAFETY,
@@ -158,10 +158,14 @@ def install(module):
 
     async def fast_scan(request: Request, payload: Dict[str, Any] = Body(default_factory=dict)):
         await require_owner(request)
-        await ensure_indexes()
+        if not index_ready:
+            try:
+                asyncio.create_task(ensure_indexes())
+            except Exception:
+                pass
         if guarded_scan is None:
             raise HTTPException(status_code=503, detail="Guarded Command scanner is unavailable")
-        result = await bounded(guarded_scan(request=request, payload=payload or {}), 25, "Command brain scan")
+        result = await bounded(guarded_scan(request=request, payload=payload or {}), 18, "Command brain scan")
         result = dict(result or {})
         result.setdefault("success", True)
         result.setdefault("source", "human-mimic-intelligence-v2")
@@ -193,7 +197,7 @@ def install(module):
         await ensure_indexes()
         return {
             "success": True,
-            "marker": "churvox-paid-launch-live-backend-20260713a",
+            "marker": "churvox-command-fast-load-backend-20260713b",
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,
