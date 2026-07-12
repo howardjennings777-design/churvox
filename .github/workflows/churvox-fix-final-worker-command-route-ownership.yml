@@ -1,0 +1,79 @@
+name: Churvox Fix Final Worker Command Route Ownership
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-final-command-route-ownership]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove stale one-shot install guards
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          paths = [
+              Path('backend/churvox_worker_command_visibility_patch.py'),
+              Path('backend/churvox_worker_field_slip_decision_patch.py'),
+          ]
+          old = '''    if name in INSTALLED:
+                  return
+          '''
+          new = '''    # These paths can be overwritten by legacy routers later in startup.
+              # Re-running install is intentional: remove the competing route and reassert
+              # the final business-scoped handler every time the final wrapper calls us.
+          '''
+          for path in paths:
+              text = path.read_text()
+              if new in text:
+                  print(f'already self-healing: {path}')
+                  continue
+              if text.count(old) != 1:
+                  raise SystemExit(f'Install guard mismatch in {path}: {text.count(old)}')
+              path.write_text(text.replace(old, new, 1))
+              print(f'patched {path}')
+          PY
+
+      - name: Compile and verify final wrapper calls both installers
+        run: |
+          python -m py_compile \
+            backend/churvox_worker_command_visibility_patch.py \
+            backend/churvox_worker_field_slip_decision_patch.py \
+            backend/churvox_outer_cors_error_shield.py \
+            backend/churvox_startup_patch_loader.py
+          grep -q 'churvox_worker_command_visibility_patch' backend/churvox_outer_cors_error_shield.py
+          grep -q 'churvox_worker_field_slip_decision_patch' backend/churvox_outer_cors_error_shield.py
+
+      - name: Commit and push final route ownership repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/churvox_worker_command_visibility_patch.py backend/churvox_worker_field_slip_decision_patch.py
+          if git diff --cached --quiet; then
+            echo 'Final route installers were already self-healing.'
+          else
+            git commit -m "Make final worker Command routes self-healing"
+            git push origin HEAD:main
+          fi
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Final worker Command route ownership repair: **${{ job.status }}**.`,
+            });
