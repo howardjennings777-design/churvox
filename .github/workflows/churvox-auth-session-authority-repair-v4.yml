@@ -1,4 +1,4 @@
-name: Churvox Auth Session Authority Repair V4
+name: Churvox Auth Session Authority Repair V5
 
 on:
   issues:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   repair:
-    if: startsWith(github.event.issue.title, '[churvox-auth-session-authority-repair-v4]')
+    if: startsWith(github.event.issue.title, '[churvox-auth-session-authority-repair-v5]')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY' 2>&1 | tee /tmp/churvox-auth-repair-v4.txt
+          python - <<'PY' 2>&1 | tee /tmp/churvox-auth-repair-v5.txt
           from pathlib import Path
 
           def replace_once(path, old, new, label):
@@ -78,9 +78,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/churvox-auth-session-authority-contract.cjs | tee /tmp/churvox-auth-contract-v4.txt
+          node scripts/churvox-auth-session-authority-contract.cjs | tee /tmp/churvox-auth-contract-v5.txt
           npm --prefix frontend install --legacy-peer-deps
-          CI=false npm --prefix frontend run build 2>&1 | tee /tmp/churvox-auth-build-v4.txt
+          CI=false npm --prefix frontend run build 2>&1 | tee /tmp/churvox-auth-build-v5.txt
 
       - name: Commit product-only verified repair
         id: commit
@@ -89,12 +89,14 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git restore frontend/package-lock.json frontend/package.json 2>/dev/null || true
+          git clean -fd frontend/build >/dev/null 2>&1 || true
           git add frontend/src/context/AuthContext.js frontend/src/App.js scripts/churvox-auth-session-authority-contract.cjs
+          git status --short | tee /tmp/churvox-auth-status-v5.txt
           git commit -m 'Fix authoritative owner access and transient auth recovery'
-          git pull --rebase origin main
           git push origin HEAD:main
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          git show --stat --oneline --summary HEAD | tee /tmp/churvox-auth-commit-v4.txt
+          git show --stat --oneline --summary HEAD | tee /tmp/churvox-auth-commit-v5.txt
 
       - name: Post success
         if: success()
@@ -103,7 +105,7 @@ jobs:
           script: |
             const fs = require('fs');
             const read = (path) => fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-6000) : 'No output.';
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Product auth repair committed\n\nCommit: \`${{ steps.commit.outputs.sha }}\`\n\n### Contract\n\`\`\`text\n${read('/tmp/churvox-auth-contract-v4.txt')}\n\`\`\`\n\n### Commit\n\`\`\`text\n${read('/tmp/churvox-auth-commit-v4.txt')}\n\`\`\`` });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Product auth repair committed\n\nCommit: \`${{ steps.commit.outputs.sha }}\`\n\n### Contract\n\`\`\`text\n${read('/tmp/churvox-auth-contract-v5.txt')}\n\`\`\`\n\n### Commit\n\`\`\`text\n${read('/tmp/churvox-auth-commit-v5.txt')}\n\`\`\`` });
 
       - name: Post failure
         if: failure()
@@ -111,6 +113,6 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const paths = ['/tmp/churvox-auth-repair-v4.txt', '/tmp/churvox-auth-contract-v4.txt', '/tmp/churvox-auth-build-v4.txt', '/tmp/churvox-auth-commit-v4.txt'];
+            const paths = ['/tmp/churvox-auth-repair-v5.txt', '/tmp/churvox-auth-contract-v5.txt', '/tmp/churvox-auth-build-v5.txt', '/tmp/churvox-auth-status-v5.txt', '/tmp/churvox-auth-commit-v5.txt'];
             const body = paths.map((path) => `### ${path}\n\`\`\`text\n${fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-5000) : 'No output.'}\n\`\`\``).join('\n\n');
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Product auth repair V4 failed\n\n${body}` });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Product auth repair V5 failed\n\n${body}` });
