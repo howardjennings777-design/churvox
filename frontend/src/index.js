@@ -65,6 +65,7 @@ const globalHelperImports = [
   () => import('./runtime/churvoxPlansCountryRuntime'),
   () => import('./runtime/churvoxPlansBillingNavClickGuard'),
   () => import('./runtime/churvoxStripeCheckoutLiveRuntime'),
+  () => import('./runtime/churvoxPublicPricingLinkGuardRuntime'),
   () => import('./runtime/churvoxFirstWinGuideEntryRuntime'),
 ];
 
@@ -168,9 +169,6 @@ function checkRuntimeLoads() {
 if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', checkRuntimeLoads, { once: true });
   else checkRuntimeLoads();
-  window.addEventListener('load', checkRuntimeLoads);
   window.addEventListener('popstate', checkRuntimeLoads);
   window.addEventListener('hashchange', checkRuntimeLoads);
-  window.addEventListener('churvox-owner-app-ready', checkRuntimeLoads);
-  [700, 1800, 5000].forEach((delay) => setTimeout(checkRuntimeLoads, delay));
 }
