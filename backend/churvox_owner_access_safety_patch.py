@@ -4,7 +4,6 @@ from datetime import datetime, timezone, timedelta
 import importlib
 import importlib.abc
 import importlib.machinery
-import os
 import sys
 from typing import Any
 
@@ -13,11 +12,7 @@ from starlette.requests import Request
 
 TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
-DEFAULT_OWNER_EMAILS = {
-    "hello@churvox.com",
-    "howardjennings777@gmail.com",
-    "howardjennings77@gmail.com",
-}
+PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 PLAN_ALIAS = {
     "start": "solo",
     "solo": "solo",
@@ -79,21 +74,11 @@ def parse_dt(value):
 
 
 def owner_emails():
-    raw = os.environ.get("CHURVOX_OWNER_ACCESS_EMAILS") or os.environ.get("CHURVOX_OWNER_EMAILS") or ""
-    emails = {lower(item) for item in raw.replace(";", ",").split(",") if lower(item)}
-    return DEFAULT_OWNER_EMAILS | emails
+    return {PLATFORM_OWNER_EMAIL}
 
 
 def plan_key(value: Any, default: str = "pro") -> str:
     return PLAN_ALIAS.get(lower(value), default)
-
-
-def is_truthy(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return value > 0
-    return lower(value) in {"1", "true", "yes", "active", "enabled"}
 
 
 def route_matches(route, path: str, method: str) -> bool:
@@ -115,6 +100,7 @@ def user_payload(user_doc: dict):
     status = user_doc.get("subscription_status") or "none"
     payload = {
         "success": True,
+        "authenticated": True,
         "id": uid,
         "email": email,
         "name": user_doc.get("name") or user_doc.get("business_name") or "Churvox user",
@@ -134,6 +120,17 @@ def user_payload(user_doc: dict):
     }
     payload["user"] = dict(payload)
     return safe(payload)
+
+
+def signed_out_payload(detail="Not authenticated"):
+    return {
+        "success": True,
+        "authenticated": False,
+        "user": None,
+        "has_app_access": False,
+        "detail": detail,
+        "source": "churvox_owner_access_safety_patch",
+    }
 
 
 def access_update(plan="pro", days=90, source="owner_access_safety"):
@@ -203,8 +200,10 @@ def install(module):
         except Exception:
             tester = None
         if tester:
+            tester_status = lower(tester.get("status"))
+            revoked = tester_status in {"revoked", "locked", "disabled", "expired"} or tester.get("revoked_at") or tester.get("locked_at")
             until = parse_dt(tester.get("free_until")) or parse_dt(tester.get("free_tester_until"))
-            if not until or until >= now_utc():
+            if not revoked and (not until or until >= now_utc()):
                 should_unlock = True
         if not should_unlock:
             return user_doc
@@ -221,7 +220,12 @@ def install(module):
         return user_doc
 
     async def patched_me(request: Request):
-        user_doc = await current_user_doc(request)
+        try:
+            user_doc = await current_user_doc(request)
+        except HTTPException as exc:
+            if exc.status_code in {401, 403}:
+                return signed_out_payload(text(exc.detail) or "Not authenticated")
+            raise
         user_doc = await maybe_unlock(user_doc)
         return user_payload(user_doc)
 
