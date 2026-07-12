@@ -15,7 +15,7 @@ class LiveRestartWorkflowContractTest(unittest.TestCase):
             "/api/billing/create-portal-session",
             "/api/account/self-delete",
             "/api/auth/me",
-            "EXPECTED_JWT_KEY_ID",
+            ".github/churvox-expected-jwt-key-id.txt",
         ):
             self.assertIn(marker, text)
         self.assertNotIn("CHURVOX_OWNER_PASSWORD", text)
