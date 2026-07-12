@@ -47,14 +47,17 @@ jobs:
       - name: Run read-only owner and worker login smoke
         id: smoke
         continue-on-error: true
+        shell: bash
         env:
           PLAYWRIGHT_BASE_URL: https://www.churvox.com
           PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
           CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL || 'howardjennings77@gmail.com' }}
           CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
-          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL || secrets.CHURVOX_OWNER_EMAIL || 'howardjennings77@gmail.com' }}
           CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD || secrets.CHURVOX_OWNER_PASSWORD }}
-        run: node scripts/churvox-live-owner-worker-readonly.cjs --reporter=line 2>&1 | tee /tmp/churvox-login-smoke.txt
+        run: |
+          set -o pipefail
+          node scripts/churvox-live-owner-worker-readonly.cjs --reporter=line 2>&1 | tee /tmp/churvox-login-smoke.txt
 
       - name: Post smoke result
         if: always()
