@@ -1,0 +1,552 @@
+name: Churvox Final Worker Route Repair
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-final-worker-route-repair]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply evidence-grounded route repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_one(path, old, new, label):
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              file.write_text(text.replace(old, new, 1))
+              print(f'patched: {label}')
+
+          worker_roles = '{"worker", "staff", "employee", "subcontractor", "contractor", "technician", "field_worker"}'
+
+          # Industry runtime must not call owner-only context APIs from Worker View or a worker-typed owner URL.
+          replace_one(
+              'frontend/src/runtime/churvoxIndustryModeRuntime.js',
+              "function isOwnerApp() { const p = path(); return OWNER_PATHS.includes(p) || p.startsWith('/dashboard'); }",
+              "function storedAuthUser() { try { return JSON.parse(localStorage.getItem('churvox_auth_session_snapshot_v1') || '{}')?.user || {}; } catch { return {}; } }\nfunction isWorkerSession() { const user = storedAuthUser(); const role = clean(user.role || user.user_role || user.account_type).toLowerCase().replace(/[ -]/g, '_'); return " + worker_roles + ".has(role) || user.is_worker === true || user.worker_id; }\nfunction isOwnerApp() { const p = path(); return !isWorkerSession() && (OWNER_PATHS.includes(p) || p.startsWith('/dashboard')); }",
+              'industry runtime respects worker role before owner API calls',
+          )
+          replace_one(
+              'frontend/src/runtime/churvoxIndustryModeRuntime.js',
+              "async function loadIndustry() {\n  const cached = readCache();",
+              "async function loadIndustry() {\n  if (!isOwnerApp()) return;\n  const cached = readCache();",
+              'industry loading is owner-only',
+          )
+
+          # Admin Brain must not fire while a worker is being redirected away from an owner URL.
+          replace_one(
+              'frontend/src/runtime/churvoxAdminBrainSurfaceRuntime.js',
+              "function isOwnerApp() {\n  const path = window.location.pathname || '';\n  return path === '/dashboard' || path.startsWith('/dashboard') || path === '/plans' || path === '/guide' || path === '/setup' || path === '/setup-guide';\n}",
+              "function storedAuthUser() { try { return JSON.parse(localStorage.getItem('churvox_auth_session_snapshot_v1') || '{}')?.user || {}; } catch { return {}; } }\nfunction isWorkerSession() { const user = storedAuthUser(); const role = String(user.role || user.user_role || user.account_type || '').trim().toLowerCase().replace(/[ -]/g, '_'); return " + worker_roles + ".has(role) || user.is_worker === true || Boolean(user.worker_id); }\nfunction isOwnerApp() {\n  const path = window.location.pathname || '';\n  return !isWorkerSession() && (path === '/dashboard' || path.startsWith('/dashboard') || path === '/plans' || path === '/guide' || path === '/setup' || path === '/setup-guide');\n}\n",
+              'Admin Brain respects worker role before owner API calls',
+          )
+
+          # Navigation counts must use worker counts even during a forbidden owner URL redirect.
+          replace_one(
+              'frontend/src/runtime/churvoxNavBadgesRuntime.js',
+              "function isOwnerApp() { const current = path(); return current === '/dashboard' || current.startsWith('/dashboard') || current === '/plans' || current === '/guide' || current === '/setup' || current === '/setup-guide'; }",
+              "function storedAuthUser() { try { return JSON.parse(localStorage.getItem('churvox_auth_session_snapshot_v1') || '{}')?.user || {}; } catch { return {}; } }\nfunction isWorkerSession() { const user = storedAuthUser(); const role = clean(user.role || user.user_role || user.account_type).toLowerCase().replace(/[ -]/g, '_'); return " + worker_roles + ".has(role) || user.is_worker === true || Boolean(user.worker_id); }\nfunction isOwnerApp() { const current = path(); return !isWorkerSession() && (current === '/dashboard' || current.startsWith('/dashboard') || current === '/plans' || current === '/guide' || current === '/setup' || current === '/setup-guide'); }",
+              'navigation badges do not request owner counts for workers',
+          )
+
+          # Worker buttons use a worker namespace. Owner /api/jobs remains protected.
+          replace_one(
+              'frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx',
+              'const result = await post(`/jobs/${encodeURIComponent(jobId)}/${endpoint}`, {',
+              'const result = await post(`/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}`, {',
+              'Worker View uses worker-safe job action routes',
+          )
+
+          field_path = Path('backend/churvox_field_loop_patch.py')
+          field = field_path.read_text()
+          old_routes = '''        ("/api/jobs/{job_id}/acknowledge", "POST", ack),
+                  ("/api/jobs/{job_id}/start", "POST", start),
+                  ("/api/jobs/{job_id}/pause", "POST", pause),
+                  ("/api/jobs/{job_id}/resume", "POST", resume),
+                  ("/api/jobs/{job_id}/complete", "POST", complete),'''.replace('\n          ', '\n')
+          new_routes = old_routes + '''
+                  ("/api/worker/jobs/{job_id}/acknowledge", "POST", ack),
+                  ("/api/worker/jobs/{job_id}/start", "POST", start),
+                  ("/api/worker/jobs/{job_id}/pause", "POST", pause),
+                  ("/api/worker/jobs/{job_id}/resume", "POST", resume),
+                  ("/api/worker/jobs/{job_id}/complete", "POST", complete),'''.replace('\n          ', '\n')
+          if field.count(old_routes) != 1:
+              raise SystemExit(f'worker job alias route anchor mismatch: {field.count(old_routes)}')
+          field_path.write_text(field.replace(old_routes, new_routes, 1))
+          print('patched: worker-safe job action aliases')
+
+          replace_one(
+              'frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js',
+              "new RegExp(`/api/jobs/${jobId}/${label.toLowerCase() === 'acknowledge' ? 'acknowledge' : label.toLowerCase()}`).test(response.url())",
+              "new RegExp(`/api/worker/jobs/${jobId}/${label.toLowerCase() === 'acknowledge' ? 'acknowledge' : label.toLowerCase()}`).test(response.url())",
+              'current human flow waits for worker-safe action route',
+          )
+          replace_one(
+              'frontend/tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js',
+              "`/api/jobs/${encodeURIComponent(jobId)}/${endpoint}`",
+              "`/api/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}`",
+              'hardcore status steps use worker-safe route',
+          )
+          replace_one(
+              'frontend/tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js',
+              "`/api/jobs/${encodeURIComponent(jobId)}/complete`",
+              "`/api/worker/jobs/${encodeURIComponent(jobId)}/complete`",
+              'hardcore completion uses worker-safe route',
+          )
+          replace_one(
+              'scripts/churvox-hardcore-owner-worker-audit.cjs',
+              "'post(`/jobs/${encodeURIComponent(jobId)}/${endpoint}`'",
+              "'post(`/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}`'",
+              'permanent audit requires worker-safe status writes',
+          )
+
+          # Phone audit stores the full verified user profile, not a partial owner snapshot.
+          live_path = Path('frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js')
+          live = live_path.read_text()
+          start = live.index('async function apiSession(page, email, password, role) {')
+          end = live.index('\nasync function settle(page, label) {', start)
+          replacement = '''async function apiSession(page, email, password, role) {
+            const response = await page.request.post(apiUrl('/api/auth/login'), {
+              data: { email, password },
+              timeout: 30_000,
+            });
+            const body = await responseBody(response);
+            expect(response.ok(), `${role} API session login failed ${response.status()}: ${JSON.stringify(body).slice(0, 700)}`).toBeTruthy();
+            const token = tokenFrom(body);
+            expect(token, `${role} API session login returned no token`).toBeTruthy();
+            if (accountEmail(body)) expect(accountEmail(body), `${role} API session returned the wrong account`).toBe(email);
+
+            const me = await page.request.get(apiUrl('/api/auth/me'), {
+              headers: { Authorization: `Bearer ${token}` },
+              timeout: 30_000,
+            });
+            const meBody = await responseBody(me);
+            expect(me.status(), `${role} API session /api/auth/me failed: ${JSON.stringify(meBody).slice(0, 700)}`).toBe(200);
+            expect(accountEmail(meBody), `${role} API session /api/auth/me returned the wrong account`).toBe(email);
+            const verifiedUser = meBody?.user || meBody?.data?.user || meBody?.data || meBody || {};
+
+            await page.context().addInitScript(({ tokenValue, userValue, emailValue, roleValue }) => {
+              localStorage.setItem('token', tokenValue);
+              localStorage.setItem('authToken', tokenValue);
+              localStorage.setItem('access_token', tokenValue);
+              localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+                at: Date.now(),
+                token: tokenValue,
+                user: { ...userValue, email: emailValue, role: userValue?.role || userValue?.user_role || roleValue },
+              }));
+            }, { tokenValue: token, userValue: verifiedUser, emailValue: email, roleValue: role });
+            await page.goto(`${BASE_URL}${role === 'worker' ? '/worker/today' : '/dashboard#today'}`, { waitUntil: 'domcontentloaded' });
+            return token;
+          }
+          '''.replace('\n          ', '\n')
+          live_path.write_text(live[:start] + replacement + live[end:])
+          print('patched: phone audit seeds the full verified account profile')
+
+          replace_one(
+              'frontend/src/App.js',
+              'version: "churvox-final-human-audit-20260713b",',
+              'version: "churvox-worker-command-routes-20260713c",',
+              'worker and Command route deployment fingerprint',
+          )
+          PY
+
+      - name: Write final owner Command create route
+        shell: bash
+        run: |
+          cat > backend/churvox_command_slip_create_patch.py <<'PYMODULE'
+          from __future__ import annotations
+
+          from datetime import datetime, timezone
+          import importlib
+          import importlib.abc
+          import importlib.machinery
+          import sys
+
+          from starlette.requests import Request as StarletteRequest
+
+          VERSION = "churvox-command-slip-create-20260713a"
+          TARGETS = {"server", "backend.server"}
+          OWNER_ROLES = {"employer", "owner", "admin", "manager", "office_admin", "business_owner"}
+
+
+          def text(value):
+              return str(value or "").strip()
+
+
+          def lower(value):
+              return text(value).lower()
+
+
+          def safe(value):
+              if isinstance(value, datetime):
+                  return value.isoformat()
+              try:
+                  from bson import ObjectId
+                  if isinstance(value, ObjectId):
+                      return str(value)
+              except Exception:
+                  pass
+              if isinstance(value, list):
+                  return [safe(item) for item in value]
+              if isinstance(value, dict):
+                  output = {}
+                  for key, item in value.items():
+                      if key in {"password", "password_hash", "hashed_password", "token", "access_token", "refresh_token"}:
+                          continue
+                      output["id" if key == "_id" else key] = safe(item)
+                  return output
+              return value
+
+
+          def business_id(user):
+              return text(
+                  (user or {}).get("business_id")
+                  or (user or {}).get("businessId")
+                  or (user or {}).get("owner_business_id")
+                  or (user or {}).get("id")
+                  or (user or {}).get("_id")
+              )
+
+
+          def remove_route(app, path, method):
+              method = method.upper()
+              app.router.routes = [
+                  route
+                  for route in app.router.routes
+                  if not (
+                      getattr(route, "path", "") == path
+                      and method in set(getattr(route, "methods", set()) or set())
+                  )
+              ]
+
+
+          def promote_route(app, path, method):
+              method = method.upper()
+              preferred = [
+                  route
+                  for route in app.router.routes
+                  if getattr(route, "path", "") == path
+                  and method in set(getattr(route, "methods", set()) or set())
+              ]
+              if preferred:
+                  app.router.routes = preferred + [route for route in app.router.routes if route not in preferred]
+
+
+          def install(module):
+              app = getattr(module, "app", None)
+              db = getattr(module, "db", None)
+              get_current_user = getattr(module, "get_current_user", None)
+              HTTPException = getattr(module, "HTTPException", None)
+              if not app or db is None or not get_current_user or HTTPException is None:
+                  return
+
+              async def require_owner(request):
+                  user = await get_current_user(request)
+                  role = lower(
+                      (user or {}).get("role")
+                      or (user or {}).get("user_role")
+                      or (user or {}).get("account_type")
+                  )
+                  if role not in OWNER_ROLES and not (user or {}).get("is_admin"):
+                      raise HTTPException(status_code=403, detail="Owner access required")
+                  if not business_id(user):
+                      raise HTTPException(status_code=400, detail="Business id is missing")
+                  return user
+
+              async def health(request: StarletteRequest):
+                  await require_owner(request)
+                  return {"success": True, "version": VERSION, "safety": "Owner-only Command create route. Nothing changed."}
+
+              async def create(request: StarletteRequest):
+                  user = await require_owner(request)
+                  try:
+                      payload = await request.json()
+                  except Exception:
+                      raise HTTPException(status_code=400, detail="A JSON Command slip is required")
+                  if not isinstance(payload, dict):
+                      raise HTTPException(status_code=400, detail="Command slip must be an object")
+                  title = text(payload.get("title"))
+                  if not title:
+                      raise HTTPException(status_code=400, detail="Command slip title is required")
+
+                  now = datetime.now(timezone.utc)
+                  prepared_payload = payload.get("payload") if isinstance(payload.get("payload"), dict) else {}
+                  row = {
+                      **payload,
+                      "business_id": business_id(user),
+                      "owner_id": text((user or {}).get("id") or (user or {}).get("_id")),
+                      "created_by": text((user or {}).get("id") or (user or {}).get("_id") or (user or {}).get("email")),
+                      "created_by_email": text((user or {}).get("email")),
+                      "source_type": text(payload.get("source_type") or payload.get("sourceType") or "owner_workspace"),
+                      "action_type": text(payload.get("action_type") or payload.get("actionType") or "owner_prepared_review"),
+                      "source_id": text(payload.get("source_id") or f"owner-prepared-{int(now.timestamp() * 1000)}"),
+                      "title": title,
+                      "found": text(payload.get("found") or "The owner prepared a draft for Command review."),
+                      "prepared": text(payload.get("prepared") or "Prepared for owner review. Nothing was sent, synced, charged or changed."),
+                      "why": text(payload.get("why") or "Owner approval is required before a real record changes."),
+                      "urgency": text(payload.get("urgency") or "Owner review"),
+                      "status": "pending",
+                      "payload": {
+                          **prepared_payload,
+                          "prepared_only": True,
+                          "owner_review_only": True,
+                          "no_auto_send": True,
+                          "no_auto_sync": True,
+                          "no_auto_charge": True,
+                          "no_auto_record_change": True,
+                      },
+                      "prepared_only": True,
+                      "owner_review_only": True,
+                      "no_auto_send": True,
+                      "no_auto_sync": True,
+                      "no_auto_charge": True,
+                      "no_auto_record_change": True,
+                      "created_at": now,
+                      "updated_at": now,
+                      "route_version": VERSION,
+                  }
+                  result = await db.command_slips.insert_one(row)
+                  row["_id"] = result.inserted_id
+                  output = safe(row)
+                  return {
+                      "success": True,
+                      "slip": output,
+                      "data": {"slip": output},
+                      "route_version": VERSION,
+                      "safety": "Prepared for owner review. Nothing was sent, synced, charged or changed.",
+                  }
+
+              for path, method, endpoint in [
+                  ("/api/command/create-route-health", "GET", health),
+                  ("/api/command/slips", "POST", create),
+              ]:
+                  remove_route(app, path, method)
+                  app.add_api_route(path, endpoint, methods=[method])
+                  promote_route(app, path, method)
+
+
+          class Loader(importlib.abc.Loader):
+              def __init__(self, original_loader):
+                  self.original_loader = original_loader
+
+              def create_module(self, spec):
+                  if hasattr(self.original_loader, "create_module"):
+                      return self.original_loader.create_module(spec)
+                  return None
+
+              def exec_module(self, module):
+                  self.original_loader.exec_module(module)
+                  install(module)
+
+
+          class Finder(importlib.abc.MetaPathFinder):
+              def find_spec(self, fullname, path=None, target=None):
+                  if fullname not in TARGETS:
+                      return None
+                  spec = importlib.machinery.PathFinder.find_spec(fullname, path)
+                  if spec and spec.loader and not isinstance(spec.loader, Loader):
+                      spec.loader = Loader(spec.loader)
+                  return spec
+
+
+          if not any(isinstance(finder, Finder) for finder in sys.meta_path):
+              sys.meta_path.insert(0, Finder())
+
+          for module_name in list(TARGETS):
+              loaded = sys.modules.get(module_name)
+              if loaded:
+                  install(loaded)
+          PYMODULE
+
+      - name: Install final Command create route at startup
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('backend/churvox_outer_cors_error_shield.py')
+          text = path.read_text()
+          marker = '''    _install_patch(
+              module,
+              ("churvox_command_slip_decision_patch", "backend.churvox_command_slip_decision_patch"),
+              "final Command slip decision routes",
+          )'''.replace('\n          ', '\n')
+          insert = '''    _install_patch(
+              module,
+              ("churvox_command_slip_create_patch", "backend.churvox_command_slip_create_patch"),
+              "final owner Command slip create route",
+          )
+              _install_patch(
+              module,
+              ("churvox_command_slip_decision_patch", "backend.churvox_command_slip_decision_patch"),
+              "final Command slip decision routes",
+          )'''.replace('\n          ', '\n')
+          if text.count(marker) != 1:
+              raise SystemExit(f'outer wrapper Command decision anchor mismatch: {text.count(marker)}')
+          path.write_text(text.replace(marker, insert, 1))
+          print('patched: final wrapper owns Command POST create route')
+          PY
+
+      - name: Write backend route regression tests
+        shell: bash
+        run: |
+          cat > backend/test_churvox_final_worker_and_command_routes.py <<'PYTEST'
+          from __future__ import annotations
+
+          import sys
+          import types
+          import unittest
+          from pathlib import Path
+
+          from fastapi import FastAPI, HTTPException, Request
+
+          sys.path.insert(0, str(Path(__file__).resolve().parent))
+          import churvox_command_slip_create_patch as command_create
+          import churvox_field_loop_patch as field_loop
+
+
+          class DummyInsert:
+              inserted_id = "created-slip-id"
+
+
+          class DummyCollection:
+              async def insert_one(self, row):
+                  return DummyInsert()
+
+
+          class DummyDB:
+              def __getattr__(self, name):
+                  return DummyCollection()
+
+              def __getitem__(self, name):
+                  return DummyCollection()
+
+
+          class FakeObjectId:
+              def __init__(self, value):
+                  self.value = value
+
+
+          async def current_user(request):
+              return {"id": "business-1", "business_id": "business-1", "email": "owner@example.com", "role": "owner"}
+
+
+          class RouteTests(unittest.TestCase):
+              def test_command_create_request_is_not_a_query_parameter(self):
+                  module = types.SimpleNamespace(app=FastAPI(), db=DummyDB(), get_current_user=current_user, HTTPException=HTTPException)
+                  command_create.install(module)
+                  routes = [route for route in module.app.router.routes if route.path in {"/api/command/slips", "/api/command/create-route-health"}]
+                  self.assertEqual({route.path for route in routes}, {"/api/command/slips", "/api/command/create-route-health"})
+                  for route in routes:
+                      self.assertNotIn("request", {item.name for item in route.dependant.query_params})
+
+              def test_field_loop_registers_worker_job_action_aliases(self):
+                  field_loop.INSTALLED.clear()
+                  module = types.SimpleNamespace(
+                      __name__="test_field_loop_module",
+                      app=FastAPI(),
+                      db=DummyDB(),
+                      get_current_user=current_user,
+                      ObjectId=FakeObjectId,
+                      Request=Request,
+                      HTTPException=HTTPException,
+                  )
+                  field_loop.install(module)
+                  expected = {f"/api/worker/jobs/{{job_id}}/{action}" for action in ("acknowledge", "start", "pause", "resume", "complete")}
+                  found = {route.path for route in module.app.router.routes if route.path in expected}
+                  self.assertEqual(found, expected)
+                  for route in module.app.router.routes:
+                      if route.path in expected:
+                          self.assertNotIn("request", {item.name for item in route.dependant.query_params})
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          PYTEST
+
+      - name: Install verification dependencies
+        run: |
+          python -m pip install --quiet fastapi pymongo python-multipart
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+
+      - name: Verify repaired routes and permanent contracts
+        run: |
+          python -m py_compile \
+            backend/churvox_command_slip_create_patch.py \
+            backend/churvox_field_loop_patch.py \
+            backend/churvox_outer_cors_error_shield.py
+          python -m unittest \
+            backend/test_churvox_final_worker_and_command_routes.py \
+            backend/test_churvox_command_slip_decision_patch.py \
+            backend/test_churvox_worker_command_route_request_injection.py
+          node --check frontend/src/runtime/churvoxIndustryModeRuntime.js
+          node --check frontend/src/runtime/churvoxAdminBrainSurfaceRuntime.js
+          node --check frontend/src/runtime/churvoxNavBadgesRuntime.js
+          node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+          node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          node --check frontend/tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js
+          node scripts/churvox-hardcore-owner-worker-audit.cjs
+
+      - name: Build production frontend
+        run: npm --prefix frontend run build
+
+      - name: Commit verified product and audit repairs
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            frontend/src/runtime/churvoxIndustryModeRuntime.js \
+            frontend/src/runtime/churvoxAdminBrainSurfaceRuntime.js \
+            frontend/src/runtime/churvoxNavBadgesRuntime.js \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+            frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
+            frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
+            frontend/tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js \
+            frontend/src/App.js \
+            scripts/churvox-hardcore-owner-worker-audit.cjs \
+            backend/churvox_field_loop_patch.py \
+            backend/churvox_command_slip_create_patch.py \
+            backend/test_churvox_final_worker_and_command_routes.py \
+            backend/churvox_outer_cors_error_shield.py
+          git commit -m 'Fix worker action and owner Command create routes'
+          git push origin HEAD:main
+
+      - name: Post success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: 'Worker-route and Command-create repair passed backend route regressions, permanent owner/worker contracts, JavaScript checks, and the production build. Verified changes were committed to main.' });
+
+      - name: Post failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: 'Worker-route and Command-create repair stopped before commit because a guarded verification failed. No partial product repair was pushed.' });
