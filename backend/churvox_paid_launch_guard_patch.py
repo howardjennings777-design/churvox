@@ -202,6 +202,12 @@ def install(module):
         "backend.churvox_public_documents_paid_launch_guard",
         "public documents",
     )
+    install_patch_module(
+        module,
+        "churvox_public_invoice_balance_fix",
+        "backend.churvox_public_invoice_balance_fix",
+        "public invoice balance",
+    )
     if name in INSTALLED:
         return
     app = getattr(module, "app", None)
