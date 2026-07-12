@@ -1,3 +1,22 @@
+.cvOwnerMainNavigation {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: visible;
+}
+
+.cvOfficeSite .cvSiteTopbar .cvOwnerPrimaryNav {
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: none;
+}
+
+.cvOwnerMore {
+  overflow: visible;
+}
+
 .cvOwnerMoreBackdrop {
   display: none;
 }
@@ -52,9 +71,19 @@
   outline-offset: 2px;
 }
 
+@media (max-width: 1120px) {
+  .cvOwnerMainNavigation {
+    width: 100%;
+  }
+}
+
 @media (max-width: 640px) {
   body:has(.cvOwnerMoreMenu) {
     overflow: hidden;
+  }
+
+  .cvOwnerMainNavigation {
+    width: 100%;
   }
 
   .cvOwnerMoreBackdrop {
