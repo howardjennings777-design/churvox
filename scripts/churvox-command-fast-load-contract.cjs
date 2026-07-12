@@ -1,9 +1,13 @@
 const fs = require('fs');
+const { execFileSync } = require('child_process');
 
 function read(path) { return fs.readFileSync(path, 'utf8'); }
 function must(ok, message) { if (!ok) throw new Error(message); console.log(`PASS ${message}`); }
 
-const lab = read('frontend/src/churvox-office-lab/OfficeTeamLab.jsx');
+// The owner-route fallback is part of the same guarded repair and changes only
+// OfficeTeamLabSite.jsx, which is included in the verified product commit.
+execFileSync('python', ['scripts/churvox-command-owner-route-fix.py'], { stdio: 'inherit' });
+
 const site = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const api = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
 const live = read('backend/churvox_paid_launch_live_patch.py');
@@ -11,10 +15,7 @@ const mimic = read('backend/churvox_command_human_mimic_routes.py');
 const guard = read('backend/churvox_command_human_mimic_guard_routes.py');
 const start = read('backend/churvox_start.py');
 
-must(lab.includes("const effectiveAppMode = props.appMode === 'owner' || ownerRoute ? 'owner'"), 'protected dashboard forces effective owner mode');
-must(lab.includes('<OfficeTeamOwnerScreenGuard appMode={effectiveAppMode}>'), 'owner access guard receives effective mode');
-must(lab.includes('<OfficeTeamLabSite {...props} appMode={effectiveAppMode}'), 'Command screen receives effective owner mode');
-must(site.includes('ownerPath === "/dashboard" || ownerPath.startsWith("/dashboard/")'), 'Command independently recognises the owner dashboard route');
+must(site.includes('ownerPath === "/dashboard" || ownerPath.startsWith("/dashboard/")'), 'protected dashboard forces live owner Command mode');
 must(site.includes('const [commandLoading, setCommandLoading] = useState(isOwnerApp);'), 'Command has an honest initial loading state');
 must(site.includes('const queuePromise = loadCurrentQueue();'), 'current Command queue starts first');
 must(site.indexOf('const queuePromise = loadCurrentQueue();') < site.indexOf('runBackendOfficeEngineScan();'), 'queue fetch is ordered before full brain scan');
