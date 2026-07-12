@@ -18,6 +18,21 @@ def _fix_value(value):
     return output
 
 
+def _install_auth_hardening(module) -> None:
+    patch = None
+    for name in (
+        "churvox_auth_paid_launch_hardening",
+        "backend.churvox_auth_paid_launch_hardening",
+    ):
+        try:
+            patch = importlib.import_module(name)
+            break
+        except Exception:
+            continue
+    if patch is not None:
+        patch.install(module)
+
+
 def install(module) -> None:
     providers = []
     for name in ("email_provider", "backend.email_provider"):
@@ -49,3 +64,5 @@ def install(module) -> None:
         for target in (module,):
             if getattr(target, "build_lifecycle_email", None) is original:
                 target.build_lifecycle_email = fixed_build_lifecycle_email
+
+    _install_auth_hardening(module)
