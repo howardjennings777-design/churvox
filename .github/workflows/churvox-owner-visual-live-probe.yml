@@ -1,0 +1,66 @@
+name: Churvox Owner Visual Repair Live Probe
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  probe:
+    if: startsWith(github.event.issue.title, '[churvox-owner-visual-live-probe]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Wait for exact visual repair deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/churvox-owner-visual-live-probe.txt 2>&1
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const site = 'https://www.churvox.com';
+          const api = 'https://grassley-backend.onrender.com';
+          async function check() {
+            const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
+            if (!manifestResponse.ok) return { ok: false, detail: `manifest=${manifestResponse.status}` };
+            const manifest = await manifestResponse.json();
+            const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((item) => /main\..*\.js$/.test(item));
+            if (!mainPath) return { ok: false, detail: 'main bundle missing' };
+            const bundle = await (await fetch(new URL(mainPath, site), { cache: 'no-store' })).text();
+            const fingerprint = bundle.includes('churvox-owner-visual-repair-20260713e');
+            const usage = await fetch(`${api}/api/plan/usage?ts=${Date.now()}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
+            const usageProtected = usage.status === 401 || usage.status === 403;
+            return { ok: fingerprint && usageProtected, detail: `${mainPath} fingerprint=${fingerprint ? 'LIVE' : 'MISSING'}; plan-usage=${usage.status}` };
+          }
+          (async () => {
+            let last = '';
+            for (let attempt = 1; attempt <= 90; attempt += 1) {
+              try {
+                const result = await check();
+                last = result.detail;
+                console.log(`Attempt ${attempt}: ${last}`);
+                if (result.ok) {
+                  console.log('OWNER_VISUAL_REPAIR_LIVE');
+                  return;
+                }
+              } catch (error) {
+                last = error.message || String(error);
+                console.log(`Attempt ${attempt}: ${last}`);
+              }
+              if (attempt < 90) await sleep(10_000);
+            }
+            throw new Error(`Visual repair did not deploy: ${last}`);
+          })().catch((error) => { console.error(error.message || error); process.exit(1); });
+          NODE
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const text = fs.existsSync('/tmp/churvox-owner-visual-live-probe.txt') ? fs.readFileSync('/tmp/churvox-owner-visual-live-probe.txt', 'utf8').slice(-9000) : 'No probe output.';
+            const title = '${{ job.status }}' === 'success' ? '## Owner visual repair is live' : '## Owner visual repair deployment probe failed';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `${title}\n\n\`\`\`text\n${text}\n\`\`\`` });
