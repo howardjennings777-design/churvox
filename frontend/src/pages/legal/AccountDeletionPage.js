@@ -1,30 +1,43 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import API_BASE from "../../lib/apiBase";
+import { useAuth } from "../../context/AuthContext";
 import { confirmDialog } from "../../lib/confirmDialog";
+import { PublicNav, PublicFooter, Eyebrow, SectionHeading } from "../marketing/ChurvoxPublicShell";
+
+function authHeaders() {
+  let token = "";
+  try { token = localStorage.getItem("token") || localStorage.getItem("authToken") || ""; } catch {}
+  return {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 export default function AccountDeletionPage() {
-
+  const { user, loading, logout } = useAuth();
+  const [confirmation, setConfirmation] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   const handlePermanentDelete = async () => {
+    if (confirmation.trim().toUpperCase() !== "DELETE") {
+      setDeleteError('Type DELETE in the confirmation box first.');
+      return;
+    }
+
     const confirmed = await confirmDialog({
-      title: "Permanently delete your account?",
-      message: "This cannot be undone. All your business data will be removed.",
+      title: "Permanently delete your Churvox account?",
+      message: "This cannot be undone. Account access and business records connected to this workspace will be removed subject to required legal and billing retention.",
       danger: true,
-      confirmLabel: "Delete account",
+      confirmLabel: "Permanently delete",
     });
     if (!confirmed) return;
 
     setDeleteLoading(true);
     setDeleteError("");
-
-    const backendBase =
-      (typeof import.meta !== "undefined" &&
-      process.env &&
-      process.env.VITE_BACKEND_URL
-        ? process.env.VITE_BACKEND_URL
-        : "").replace(/\/$/, "");
 
     const tries = [
       { url: "/api/auth/delete-account", method: "DELETE" },
@@ -35,113 +48,136 @@ export default function AccountDeletionPage() {
 
     try {
       let success = false;
-      let lastMessage = "Delete account failed";
+      let lastMessage = "Account deletion failed.";
 
       for (const attempt of tries) {
         try {
-          const res = await fetch(`${backendBase}${attempt.url}`, {
+          const response = await fetch(`${API_BASE}${attempt.url}`, {
             method: attempt.method,
             credentials: "include",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders(),
+            body: attempt.method === "POST" ? JSON.stringify({ confirmation: "DELETE" }) : undefined,
           });
+          const data = await response.json().catch(() => ({}));
 
-          const data = await res.json().catch(() => ({}));
-
-          if (res.ok && data?.success !== false) {
+          if (response.ok && data?.success !== false) {
             success = true;
             break;
           }
 
+          if (response.status === 401 || response.status === 403) {
+            throw new Error("Your session is no longer authorised. Sign in again before deleting the account.");
+          }
           lastMessage = data?.detail || data?.message || `${attempt.method} ${attempt.url} failed`;
-        } catch (err) {
-          lastMessage = err?.message || `${attempt.method} ${attempt.url} failed`;
+        } catch (error) {
+          lastMessage = error?.message || `${attempt.method} ${attempt.url} failed`;
+          if (/session is no longer authorised/i.test(lastMessage)) break;
         }
       }
 
       if (!success) throw new Error(lastMessage);
 
-      try { localStorage.clear(); } catch (_) {}
-      try { sessionStorage.clear(); } catch (_) {}
-
       setDeleteSuccess(true);
-      setTimeout(() => { window.location.href = "/login"; }, 1200);
-    } catch (err) {
-      setDeleteError(err?.message || "Could not delete account");
+      setConfirmation("");
+      try { await logout?.(); } catch {
+        try { localStorage.clear(); } catch {}
+        try { sessionStorage.clear(); } catch {}
+      }
+      window.setTimeout(() => { window.location.href = "/"; }, 1500);
+    } catch (error) {
+      setDeleteError(error?.message || "Could not delete the account.");
     } finally {
       setDeleteLoading(false);
     }
   };
 
-
   return (
-    <div className="min-h-screen bg-churvox-dark text-slate-900 p-4 pb-24">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <main className="cp26Site" data-version="CHURVOX_ACCOUNT_DELETION_PAID_LAUNCH_20260712">
+      <PublicNav />
+      <section className="cp26PageHero">
         <div>
-          <h1 className="text-3xl font-bold">Account Deletion</h1>
-          <p className="text-slate-500 mt-2">Last updated: April 2026</p>
+          <Eyebrow>Account and data control</Eyebrow>
+          <h1>Delete a Churvox account deliberately.</h1>
+          <p>Account deletion is permanent. Export any records you need first and check outstanding billing, tax or dispute records before continuing.</p>
         </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-6 text-sm leading-7 text-slate-500">
-          <p>
-            Deleting your Churvox account is permanent. Once completed, your account and associated
-            business data may no longer be recoverable.
-          </p>
-
-          <div className="border-t border-slate-200 pt-6">
-            <h2 className="text-slate-900 text-xl font-semibold mb-3">What May Be Deleted</h2>
-            <p>
-              Account deletion may remove your account access, business profile, team members,
-              clients, jobs, quotes, invoices, schedules, notes, and other related records connected
-              to your workspace.
-            </p>
-          </div>
-
-          <div className="border-t border-slate-200 pt-6">
-            <h2 className="text-slate-900 text-xl font-semibold mb-3">What May Be Retained</h2>
-            <p>
-              Some information may still be retained where required for legal, tax, fraud-prevention,
-              billing, dispute resolution, or legitimate business and operational purposes.
-            </p>
-          </div>
-
-          <div className="border-t border-slate-200 pt-6">
-            <h2 className="text-slate-900 text-xl font-semibold mb-3">Before You Delete</h2>
-            <p>
-              Before deleting your account, make sure you export or save any important business
-              records you may need later. This action cannot be undone.
-            </p>
-          </div>
-
-          <div className="border-t border-slate-200 pt-6">
-            <h2 className="text-slate-900 text-xl font-semibold mb-3">Need Help First?</h2>
-            <p>
-              If you need help before deleting your account, contact hello@churvox.com.
-            </p>
-          </div>
+        <div className="cp26HeroPanel">
+          <small>Before deleting</small>
+          <b>This action cannot be undone.</b>
+          <span>Some information may still be retained where required for billing, fraud prevention, disputes, tax records or applicable law.</span>
         </div>
-      
+      </section>
 
-          {deleteError ? (
-            <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              {deleteError}
-            </div>
-          ) : null}
-
-          {deleteSuccess ? (
-            <div className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-700">
-              Your account has been deleted. Redirecting to login…
-            </div>
-          ) : null}
-
-          <button
-            onClick={handlePermanentDelete}
-            disabled={deleteLoading}
-            className="mt-6 w-full rounded-xl bg-red-600 px-4 py-3 font-semibold text-slate-900 hover:bg-red-500 disabled:opacity-60"
-          >
-            {deleteLoading ? "Deleting Account..." : "Permanently Delete My Account"}
-          </button>
-
+      <section className="cp26Section">
+        <SectionHeading eyebrow="Deletion scope" title="Understand what will be affected." text="Deletion targets the authenticated account and its connected workspace. It is not a substitute for exporting records that must be kept." />
+        <div className="cp26AreaGrid">
+          <article><b>Account access</b><span>The owner account and access to the connected workspace may be removed.</span></article>
+          <article><b>Business records</b><span>Clients, jobs, workers, quotes, invoices, notes, schedules and related workspace records may be deleted.</span></article>
+          <article><b>Required retention</b><span>Billing, security, fraud-prevention, dispute or legally required records may be retained for the necessary period.</span></article>
+          <article><b>Need help first?</b><span>Email hello@churvox.com from the account email before deleting if anything is unclear.</span></article>
         </div>
-      </div>
+      </section>
+
+      <section className="cp26Section">
+        <div className="cp26ContactGrid">
+          <article>
+            <b>Export before deletion</b>
+            <span>Open the owner app and export any client, job, quote, invoice, payroll-review or accounting records you need to retain.</span>
+            <Link to="/dashboard#settings">Open settings</Link>
+          </article>
+          <article>
+            <b>Billing questions</b>
+            <span>Check trial, cancellation and refund information before deleting an account with an active Stripe subscription.</span>
+            <Link to="/refunds-cancellations">Billing and cancellations</Link>
+          </article>
+          <article>
+            <b>Contact support</b>
+            <span>Never email your password or complete card details. Include the account email and business name.</span>
+            <a href="mailto:hello@churvox.com?subject=Churvox%20account%20deletion">Email Churvox</a>
+          </article>
+        </div>
+      </section>
+
+      <section className="cp26Section cp26SectionDark">
+        <SectionHeading eyebrow="Permanent action" title="Confirm the account from an authenticated session." text="Type DELETE, review the final confirmation, and only continue when you are certain." />
+        {loading ? <p>Checking your account session…</p> : !user ? (
+          <div className="cp26ContactGrid">
+            <article>
+              <b>Sign in required</b>
+              <span>The permanent deletion control is only available after signing into the account being deleted.</span>
+              <Link className="cp26Button" to="/login?next=%2Fdelete-account">Sign in to continue</Link>
+            </article>
+          </div>
+        ) : (
+          <div className="cp26ContactGrid">
+            <article>
+              <b>Authenticated account</b>
+              <span>{user.email || "Current signed-in account"}</span>
+              <label style={{ display: "grid", gap: 8, marginTop: 14 }}>
+                <span>Type DELETE to confirm</span>
+                <input
+                  type="text"
+                  value={confirmation}
+                  onChange={(event) => setConfirmation(event.target.value)}
+                  autoComplete="off"
+                  spellCheck="false"
+                  style={{ minHeight: 46, borderRadius: 12, border: "1px solid rgba(255,255,255,.25)", padding: "10px 12px", background: "#fff", color: "#111" }}
+                />
+              </label>
+              {deleteError ? <p style={{ color: "#fecaca", fontWeight: 800 }}>{deleteError}</p> : null}
+              {deleteSuccess ? <p style={{ color: "#bbf7d0", fontWeight: 800 }}>Account deleted. Returning to the Churvox home page…</p> : null}
+              <button
+                type="button"
+                onClick={handlePermanentDelete}
+                disabled={deleteLoading || confirmation.trim().toUpperCase() !== "DELETE" || deleteSuccess}
+                style={{ marginTop: 14, minHeight: 46, border: 0, borderRadius: 999, padding: "11px 18px", background: "#b91c1c", color: "#fff", fontWeight: 900, cursor: "pointer", opacity: deleteLoading || confirmation.trim().toUpperCase() !== "DELETE" ? .55 : 1 }}
+              >
+                {deleteLoading ? "Deleting account…" : "Permanently delete my account"}
+              </button>
+            </article>
+          </div>
+        )}
+      </section>
+      <PublicFooter />
+    </main>
   );
 }
