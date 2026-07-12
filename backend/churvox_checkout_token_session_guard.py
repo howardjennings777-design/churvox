@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from urllib.parse import parse_qs
 
-VERSION = "churvox-checkout-token-session-guard-20260712"
+VERSION = "churvox-checkout-token-session-guard-20260712b"
 CHECKOUT_PATHS = {
     "/api/billing/create-checkout-session",
     "/api/billing/start-checkout",
@@ -71,7 +71,7 @@ class CheckoutBodyTokenGuard:
         ObjectId = getattr(self.module, "ObjectId", None)
         clear_auth_cookies = getattr(self.module, "clear_auth_cookies", None)
         JSONResponse = getattr(self.module, "JSONResponse", None)
-        if None in (jwt, secret, db, ObjectId, JSONResponse):
+        if any(item is None for item in (jwt, secret, db, ObjectId, JSONResponse)):
             return await self.app(scope, replay, send)
 
         try:
