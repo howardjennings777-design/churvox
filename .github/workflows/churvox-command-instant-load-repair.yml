@@ -1,0 +1,72 @@
+name: Churvox Command Instant Load Repair
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-command-instant-load]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply focused Command load repair
+        run: python scripts/churvox-command-instant-load-repair.py
+
+      - name: Run permanent contract
+        run: node scripts/churvox-command-instant-load-contract.cjs
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Production build
+        working-directory: frontend
+        env:
+          CI: 'false'
+        run: npm run build
+
+      - name: Commit verified repair
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- frontend/package.json frontend/package-lock.json 2>/dev/null || true
+          rm -rf frontend/build frontend/test-results frontend/playwright-report
+          git add frontend/src/churvox-office-lab/OfficeTeamCommandApi.js frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
+          if git diff --cached --quiet; then
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Open Command instantly while live scan refreshes'
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ job.status }}' === 'success';
+            const sha = '${{ steps.publish.outputs.sha }}' || 'not published';
+            const body = ok
+              ? `## Command instant-load repair passed\n\n- Last confirmed queue opens immediately.\n- Foreground live refresh is capped at about three seconds.\n- Deep business scan runs behind the open screen.\n- No starter or fake owner decisions are shown.\n- Production build passed.\n- Commit: \`${sha}\``
+              : `## Command instant-load repair failed safely\n\nNo unverified product commit was published. Workflow run: \`${context.runId}\`.`;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
