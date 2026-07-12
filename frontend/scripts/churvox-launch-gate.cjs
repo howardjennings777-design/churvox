@@ -70,8 +70,10 @@ async function main() {
   const steps = [
     { name: 'Production build', command: 'npm', args: ['run', 'build'] },
     playwright('Live backend, webhook and route security gate', ['tests/e2e/churvox-infrastructure-paid-launch.spec.js']),
+    playwright('Hardened signup, login and role contract', ['tests/e2e/churvox-auth-paid-launch-contract.spec.js']),
     playwright('Public customer document safety and payment state', ['tests/e2e/churvox-public-documents-paid-launch.spec.js']),
     playwright('Public customer request owner-review flow', ['tests/e2e/churvox-public-request-paid-launch.spec.js']),
+    playwright('Desktop and mobile More navigation', ['tests/e2e/churvox-more-menu-paid-launch.spec.js']),
     playwright('Public trust, auth, billing return and tester route audit', ['tests/e2e/churvox-paid-launch-full-audit.spec.js']),
     playwright('Paid-launch owner contract audit', ['tests/e2e/churvox-paid-launch-own-it-audit.spec.js']),
     playwright('Rebuilt HQ reality audit', ['tests/e2e/churvox-paid-launch-hq-reality.spec.js']),
@@ -86,7 +88,7 @@ async function main() {
   }
 
   if (enabled(env.CHURVOX_E2E_SIGNUP)) {
-    steps.push(playwright('Real signup, Stripe and verification-email audit', ['tests/e2e/churvox-signup-to-stripe.spec.js', 'tests/e2e/churvox-email-verification-proof.spec.js']));
+    steps.push(playwright('Real signup, Stripe and verification-email audit', ['tests/e2e/churvox-real-signup-paid-launch-v2.spec.js', 'tests/e2e/churvox-email-verification-paid-launch-v2.spec.js']));
   } else {
     log('SKIP - Real signup creation: set CHURVOX_E2E_SIGNUP=1 when you deliberately want a new production test account.');
   }
