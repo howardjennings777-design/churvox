@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Inspect current live frontend bundle
+      - name: Inspect all current live frontend chunks
         shell: bash
         run: |
           node <<'NODE' > /tmp/churvox-auth-live-snapshot.txt 2>&1
@@ -27,15 +27,42 @@ jobs:
             const manifest = await manifestResponse.json();
             const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((value) => /main\..*\.js$/.test(value));
             console.log(`main=${mainPath || 'missing'}`);
-            if (!mainPath) process.exit(1);
-            const bundleResponse = await fetch(new URL(mainPath, site), { cache: 'no-store' });
-            const bundle = await bundleResponse.text();
-            console.log(`bundle=${bundleResponse.status}`);
-            console.log(`auth_marker=${bundle.includes(authMarker)}`);
-            console.log(`command_marker=${bundle.includes(commandMarker)}`);
-            console.log(`command_endpoint=${bundle.includes('/api/command/slips')}`);
-            console.log(`legacy_admin_brain_surface=${bundle.includes('churvox-admin-brain-surface-style')}`);
-            console.log(`size=${bundle.length}`);
+
+            const paths = new Set();
+            for (const value of Object.values(manifest.files || {})) {
+              if (typeof value === 'string' && /\.js(?:\?|$)/.test(value) && !/\.map(?:\?|$)/.test(value)) paths.add(value);
+            }
+            for (const value of manifest.entrypoints || []) {
+              if (typeof value === 'string' && /\.js(?:\?|$)/.test(value) && !/\.map(?:\?|$)/.test(value)) paths.add(value);
+            }
+            console.log(`js_chunks=${paths.size}`);
+            if (!paths.size) process.exit(1);
+
+            let authFound = false;
+            let commandFound = false;
+            let endpointFound = false;
+            let legacyFound = false;
+            let authFile = '';
+            let commandFile = '';
+            let endpointFile = '';
+            let legacyFile = '';
+            let bytes = 0;
+
+            for (const path of paths) {
+              const response = await fetch(new URL(path, site), { cache: 'no-store' });
+              const bundle = await response.text();
+              bytes += bundle.length;
+              if (!authFound && bundle.includes(authMarker)) { authFound = true; authFile = path; }
+              if (!commandFound && bundle.includes(commandMarker)) { commandFound = true; commandFile = path; }
+              if (!endpointFound && bundle.includes('/api/command/slips')) { endpointFound = true; endpointFile = path; }
+              if (!legacyFound && bundle.includes('churvox-admin-brain-surface-style')) { legacyFound = true; legacyFile = path; }
+            }
+
+            console.log(`auth_marker=${authFound} file=${authFile || 'none'}`);
+            console.log(`command_marker=${commandFound} file=${commandFile || 'none'}`);
+            console.log(`command_endpoint=${endpointFound} file=${endpointFile || 'none'}`);
+            console.log(`legacy_admin_brain_surface=${legacyFound} file=${legacyFile || 'none'}`);
+            console.log(`total_js_bytes=${bytes}`);
           })().catch((error) => { console.error(error.stack || error); process.exit(1); });
           NODE
 
@@ -46,4 +73,4 @@ jobs:
           script: |
             const fs = require('fs');
             const text = fs.existsSync('/tmp/churvox-auth-live-snapshot.txt') ? fs.readFileSync('/tmp/churvox-auth-live-snapshot.txt', 'utf8') : 'No snapshot output.';
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Current frontend bundle snapshot\n\n\`\`\`text\n${text}\n\`\`\`` });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Current frontend chunk snapshot\n\n\`\`\`text\n${text}\n\`\`\`` });
