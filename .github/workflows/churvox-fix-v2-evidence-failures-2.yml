@@ -1,0 +1,383 @@
+name: Churvox Fix V2 Evidence Failures 2
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-fix-v2-evidence-2]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply evidence-grounded repairs with stable anchors
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee /tmp/churvox-fix-v2-evidence-2-patch.txt
+          from pathlib import Path
+          import re
+
+          def replace_exact(path, old, new, label):
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              file.write_text(text.replace(old, new, 1))
+              print(f'patched: {label}')
+
+          # Fix FastAPI request injection on both final Command routes.
+          for path, old_signature, new_signature in [
+              ('backend/churvox_worker_command_visibility_patch.py', 'async def command_slips_get(request: Request):', 'async def command_slips_get(request: StarletteRequest):'),
+              ('backend/churvox_worker_field_slip_decision_patch.py', 'async def decide(slip_id: str, decision: str, request: Request):', 'async def decide(slip_id: str, decision: str, request: StarletteRequest):'),
+          ]:
+              file = Path(path)
+              text = file.read_text()
+              if 'from starlette.requests import Request as StarletteRequest' not in text:
+                  text = text.replace('from datetime import datetime, timezone\n', 'from datetime import datetime, timezone\nfrom starlette.requests import Request as StarletteRequest\n', 1)
+              text = text.replace('    Request = getattr(module, "Request", None)\n', '', 1)
+              text = text.replace(' or Request is None', '', 1)
+              if old_signature not in text:
+                  raise SystemExit(f'{path}: request signature not found')
+              text = text.replace(old_signature, new_signature, 1)
+              file.write_text(text)
+              print(f'patched FastAPI request injection: {path}')
+
+          replace_exact(
+              'frontend/tests/e2e/churvox-plans-usage-truth.spec.js',
+              "  await page.goto('/plans', { waitUntil: 'domcontentloaded' });\n  await expect(page.locator('.cv3Product, .cvPlansPage, .freshPricingPage').first()).toBeVisible();",
+              "  await page.goto('/dashboard#plans', { waitUntil: 'domcontentloaded' });\n  await expect(page.locator('.cvOwnerReady')).toBeVisible({ timeout: 10000 });\n  await expect(page.getByRole('heading', { name: 'Choose the level of control Churvox runs for the business.' })).toBeVisible();",
+              'Plans test uses current owner OS',
+          )
+
+          live_path = Path('frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js')
+          live = live_path.read_text()
+          if live.count("  ['team', /how churvox works|team/i],") != 1:
+              raise SystemExit('owner team canonical hash anchor mismatch')
+          live = live.replace("  ['team', /how churvox works|team/i],", "  ['office-team', /how churvox works|team/i],", 1)
+          before_logout = "    await page.goto(`${BASE_URL}/worker/settings`, { waitUntil: 'domcontentloaded' });\n    const logout = page.getByRole('button', { name: 'Log out', exact: true });"
+          with_health = "    expect(unexpectedApiFailures(failures, 'worker'), `Worker pages produced auth/server failures: ${JSON.stringify(failures)}`).toEqual([]);\n\n    await page.goto(`${BASE_URL}/worker/settings`, { waitUntil: 'domcontentloaded' });\n    const logout = page.getByRole('button', { name: 'Log out', exact: true });"
+          if live.count(before_logout) != 1:
+              raise SystemExit('worker pre-logout health anchor mismatch')
+          live = live.replace(before_logout, with_health, 1)
+          trailing_health = "\n    expect(unexpectedApiFailures(failures, 'worker'), `Worker pages produced auth/server failures: ${JSON.stringify(failures)}`).toEqual([]);\n    await context.close();"
+          if live.count(trailing_health) != 1:
+              raise SystemExit(f'worker post-logout health anchor mismatch: {live.count(trailing_health)}')
+          live = live.replace(trailing_health, "\n    await context.close();", 1)
+          live_path.write_text(live)
+          print('patched current live page audit paths and logout semantics')
+
+          replace_exact(
+              'frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js',
+              "  await ownerPage.getByLabel('Notes / memory', { exact: true }).fill(`Prepared-only human audit memory ${token}`);",
+              "  await ownerPage.locator('.cvDraftForm label').filter({ hasText: 'Notes / memory' }).locator('textarea').fill(`Prepared-only human audit memory ${token}`);",
+              'current client notes field selector',
+          )
+
+          # Simplify Worker View on phone/tablet using full media-block replacement.
+          css_path = Path('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css')
+          css = css_path.read_text()
+          old_900 = '''@media (max-width: 900px) {
+            .cvWorkerRouteShell {
+              grid-template-columns: 1fr;
+              grid-template-areas:
+                "hero"
+                "phone"
+                "desk";
+              padding: 12px;
+            }
+
+            .cvWorkerHero {
+              align-items: start;
+              flex-direction: column;
+              border-radius: 26px;
+              padding: 20px;
+            }
+
+            .cvWorkerHero strong {
+              max-width: none;
+              width: 100%;
+            }
+
+            .cvWorkerRoutePhone {
+              width: 100%;
+              min-height: auto;
+              margin: 0 auto;
+              border-width: 7px;
+              border-radius: 32px;
+            }
+
+            .cvWorkerRouteDesk button {
+              grid-template-columns: 1fr;
+            }
+          }'''.replace('\n          ', '\n')
+          new_900 = '''@media (max-width: 900px) {
+            .cvWorkerRouteShell {
+              grid-template-columns: 1fr;
+              grid-template-areas:
+                "hero"
+                "phone";
+              padding: 12px;
+            }
+
+            .cvWorkerHero {
+              align-items: start;
+              flex-direction: column;
+              border-radius: 26px;
+              padding: 20px;
+            }
+
+            .cvWorkerHero strong {
+              max-width: none;
+              width: 100%;
+            }
+
+            .cvWorkerRoutePhone {
+              width: 100%;
+              min-height: auto;
+              margin: 0 auto;
+              border-width: 7px;
+              border-radius: 32px;
+            }
+
+            .cvWorkerRouteDesk {
+              display: none;
+            }
+          }'''.replace('\n          ', '\n')
+          if css.count(old_900) != 1:
+              raise SystemExit(f'worker 900px media block mismatch: {css.count(old_900)}')
+          css = css.replace(old_900, new_900, 1)
+          old_520 = '''  .cvWorkerHero,
+            .cvWorkerRouteDesk {
+              margin: 10px;
+            }'''.replace('\n          ', '\n')
+          new_520 = '''  .cvWorkerHero {
+              display: none;
+            }
+
+            .cvWorkerRouteShell {
+              grid-template-areas: "phone";
+            }'''.replace('\n          ', '\n')
+          if css.count(old_520) != 1:
+              raise SystemExit(f'worker 520px hero block mismatch: {css.count(old_520)}')
+          css = css.replace(old_520, new_520, 1)
+          css_path.write_text(css)
+          print('patched worker mobile layout')
+
+          cleanup_path = Path('scripts/churvox-hardcore-human-cleanup.cjs')
+          cleanup = cleanup_path.read_text()
+          matches_block = '''function matches(row) {
+            MARKERS.lastIndex = 0;
+            return MARKERS.test(JSON.stringify(row || {}));
+          }
+          '''.replace('\n          ', '\n')
+          inactive_block = matches_block + '''
+          function inactiveRecord(row = {}) {
+            if (row.archived === true || row.is_archived === true || row.deleted === true || row.is_deleted === true) return true;
+            if (row.archived_at || row.deleted_at) return true;
+            return /archived|deleted|dismissed|rejected/i.test(String(row.status || row.state || ''));
+          }
+          '''.replace('\n          ', '\n')
+          if cleanup.count(matches_block) != 1:
+              raise SystemExit('cleanup matches helper anchor mismatch')
+          cleanup = cleanup.replace(matches_block, inactive_block, 1)
+          old_remaining = "    for (const row of await list(`/api/${kind}?limit=400`, headers)) if (matches(row) && !/archived|deleted|dismissed|rejected/i.test(String(row.status || ''))) remainingActive.push(`${kind}:${idOf(row)}`);"
+          new_remaining = "    for (const row of await list(`/api/${kind}?limit=400`, headers)) if (matches(row) && !inactiveRecord(row)) remainingActive.push(`${kind}:${idOf(row)}`);"
+          if cleanup.count(old_remaining) != 1:
+              raise SystemExit('cleanup remaining-active anchor mismatch')
+          cleanup = cleanup.replace(old_remaining, new_remaining, 1)
+          cleanup_path.write_text(cleanup)
+          print('patched cleanup active-record truth')
+
+          static_path = Path('scripts/churvox-hardcore-owner-worker-audit.cjs')
+          static = static_path.read_text()
+          reads_anchor = "const runner = read('scripts/churvox-hardcore-owner-worker.cjs');\n"
+          reads_new = reads_anchor + "const liveLaunchV2 = read('frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js');\nconst currentHumanFlow = read('frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js');\nconst launchV2Workflow = read('.github/workflows/churvox-live-human-launch-audit-v2.yml');\n"
+          if static.count(reads_anchor) != 1:
+              raise SystemExit('static audit V2 read anchor mismatch')
+          static = static.replace(reads_anchor, reads_new, 1)
+
+          def replace_check(text, name, next_name, body):
+              start = text.index("check(\n  '" + name + "'")
+              end = text.index("check(\n  '" + next_name + "'", start)
+              return text[:start] + body + "\n\n" + text[end:]
+
+          static = replace_check(
+              static,
+              'live read-only proof checks the actual linked worker',
+              'existing mutation test covers both directions',
+              '''check(
+            'live read-only proof checks the actual linked worker',
+            all(currentHumanFlow, [
+              "const worker = await findWorker(request, ownerToken);",
+              "await uiLogin(workerPage, WORKER_EMAIL, WORKER_PASSWORD, 'worker');",
+              "['/api/team/workers', '/api/team', '/api/workers']",
+              "expect(emailFrom(body), `${role} /api/auth/me returned wrong account`).toBe(email);",
+            ])
+              && launchV2Workflow.includes('Discover linked active worker using masked shared password'),
+            'The current live flow must prove the configured owner and worker are linked and authenticated',
+          );'''.replace('\n          ', '\n')
+          )
+          static = replace_check(
+              static,
+              'hardcore visual audit covers owner and worker on desktop and phone',
+              'worker mobile design removes explanatory desktop furniture',
+              '''check(
+            'hardcore visual audit covers owner and worker on desktop and phone',
+            all(liveLaunchV2, [
+              "['today', /today|owner command floor|churvox/i]",
+              "['command', /command|approval|owner/i]",
+              "['work', /jobs|work/i]",
+              "['/worker/today'",
+              "['/worker/jobs'",
+              "['/worker/messages'",
+              "['/worker/help'",
+            ])
+              && all(launchV2Workflow, ['--project=desktop-chromium', '--project=mobile-chromium']),
+            'The current live audit must judge both roles in both form factors',
+          );'''.replace('\n          ', '\n')
+          )
+          old_root = "scripts['test:hardcore:logic'] === 'node scripts/churvox-hardcore-owner-worker-audit.cjs'"
+          new_root = "scripts['test:hardcore:logic'] === 'node scripts/churvox-hardcore-owner-worker-audit-runner.cjs'"
+          if static.count(old_root) != 1:
+              raise SystemExit('root hardcore logic script anchor mismatch')
+          static = static.replace(old_root, new_root, 1)
+          static_path.write_text(static)
+          print('patched static audit to current V2 contracts')
+
+          Path('backend/test_churvox_worker_command_route_request_injection.py').write_text('''from __future__ import annotations
+
+          import sys
+          import types
+          import unittest
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+          from bson import ObjectId
+          from fastapi import FastAPI, HTTPException, Request
+
+          import churvox_worker_command_visibility_patch as visibility
+          import churvox_worker_field_slip_decision_patch as decision
+
+
+          class DummyCollection:
+              pass
+
+
+          class DummyDB:
+              def __getattr__(self, name):
+                  return DummyCollection()
+
+              def __getitem__(self, name):
+                  return DummyCollection()
+
+
+          async def current_user(request):
+              return {"id": "507f1f77bcf86cd799439011", "role": "owner"}
+
+
+          def fake_server(name):
+              return types.SimpleNamespace(
+                  __name__=name,
+                  app=FastAPI(),
+                  db=DummyDB(),
+                  get_current_user=current_user,
+                  ObjectId=ObjectId,
+                  Request=Request,
+                  HTTPException=HTTPException,
+              )
+
+
+          class WorkerCommandRequestInjectionTests(unittest.TestCase):
+              def assert_request_injected(self, route):
+                  self.assertEqual(route.dependant.request_param_name, "request")
+                  self.assertNotIn("request", [field.name for field in route.dependant.query_params])
+
+              def test_command_slips_request_is_not_a_query_parameter(self):
+                  server = fake_server("visibility-request-test")
+                  visibility.install(server)
+                  route = next(route for route in server.app.routes if getattr(route, "path", "") == "/api/command/slips" and "GET" in getattr(route, "methods", set()))
+                  self.assert_request_injected(route)
+
+              def test_field_slip_decision_request_is_not_a_query_parameter(self):
+                  server = fake_server("decision-request-test")
+                  decision.install(server)
+                  route = next(route for route in server.app.routes if getattr(route, "path", "") == "/api/command/field-slips/{slip_id}/{decision}" and "POST" in getattr(route, "methods", set()))
+                  self.assert_request_injected(route)
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          '''.replace('\n          ', '\n').lstrip())
+          print('added FastAPI request-injection regression test')
+          PY
+
+      - name: Verify backend, current audit logic and production build
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            python -m py_compile \
+              backend/churvox_worker_command_visibility_patch.py \
+              backend/churvox_worker_field_slip_decision_patch.py \
+              backend/test_churvox_worker_command_route_request_injection.py
+            python backend/test_churvox_worker_command_route_request_injection.py
+            node --check scripts/churvox-hardcore-owner-worker-audit.cjs
+            node --check scripts/churvox-hardcore-human-cleanup.cjs
+            node --check frontend/tests/e2e/churvox-plans-usage-truth.spec.js
+            node --check frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
+            node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+            node scripts/churvox-hardcore-owner-worker-audit.cjs
+            npm --prefix frontend install --include=dev --legacy-peer-deps
+            npm --prefix frontend run build
+          } 2>&1 | tee /tmp/churvox-fix-v2-evidence-2-verify.txt
+
+      - name: Commit verified repairs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            backend/churvox_worker_command_visibility_patch.py \
+            backend/churvox_worker_field_slip_decision_patch.py \
+            backend/test_churvox_worker_command_route_request_injection.py \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css \
+            frontend/tests/e2e/churvox-plans-usage-truth.spec.js \
+            frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
+            frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
+            scripts/churvox-hardcore-owner-worker-audit.cjs \
+            scripts/churvox-hardcore-human-cleanup.cjs
+          git commit -m "Fix V2 live audit evidence failures"
+          git push origin HEAD:main
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const logs = ['/tmp/churvox-fix-v2-evidence-2-patch.txt', '/tmp/churvox-fix-v2-evidence-2-verify.txt']
+              .map((path) => fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '')
+              .join('\n')
+              .slice(-24000);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## V2 evidence repair 2 ${{ job.status }}\n\n\`\`\`text\n${logs}\n\`\`\``
+            });
