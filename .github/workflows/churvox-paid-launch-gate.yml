@@ -1,0 +1,180 @@
+name: Churvox Paid Launch Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'package.json'
+      - '.github/workflows/churvox-paid-launch-gate.yml'
+  workflow_dispatch:
+    inputs:
+      run_live_gate:
+        description: 'Run the live Render and Stripe gate after deployment'
+        required: true
+        default: false
+        type: boolean
+      run_real_signup:
+        description: 'Create a real production signup and open Stripe checkout'
+        required: true
+        default: false
+        type: boolean
+      run_real_mutation:
+        description: 'Create real production audit records'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-paid-launch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-gate:
+    name: Build, syntax and safe browser contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install frontend dependencies
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Build production frontend
+        run: npm run build
+
+      - name: Compile paid-launch backend guards
+        working-directory: .
+        run: |
+          python -m py_compile \
+            backend/sitecustomize.py \
+            backend/usercustomize.py \
+            backend/churvox_paid_launch_guard_patch.py \
+            backend/churvox_stripe_webhook_paid_launch_patch.py \
+            backend/churvox_public_documents_paid_launch_guard.py \
+            backend/churvox_public_invoice_balance_fix.py \
+            backend/churvox_public_customer_request_paid_launch.py \
+            backend/churvox_production_launch_security.py \
+            backend/churvox_email_links_paid_launch_patch.py \
+            backend/churvox_auth_paid_launch_hardening.py \
+            backend/churvox_billing_portal_paid_launch.py \
+            backend/churvox_account_deletion_paid_launch.py
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start built frontend
+        run: |
+          npm start > /tmp/churvox-frontend.log 2>&1 &
+          echo $! > /tmp/churvox-frontend.pid
+          for i in {1..45}; do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/churvox-frontend.log
+          exit 1
+
+      - name: Run safe paid-launch browser contracts
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-auth-paid-launch-contract.spec.js \
+            tests/e2e/churvox-public-documents-paid-launch.spec.js \
+            tests/e2e/churvox-public-request-paid-launch.spec.js \
+            tests/e2e/churvox-billing-email-verification-gate.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Upload browser report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paid-launch-code-gate-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            /tmp/churvox-frontend.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  live-release-gate:
+    name: Live Render and Stripe release decision
+    if: github.event_name == 'workflow_dispatch' && inputs.run_live_gate
+    needs: code-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install frontend dependencies
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run complete live release gate
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+          CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+          CHURVOX_E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
+          CHURVOX_E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
+          CHURVOX_E2E_SIGNUP_BASE_EMAIL: ${{ secrets.CHURVOX_E2E_SIGNUP_BASE_EMAIL }}
+          CHURVOX_E2E_SIGNUP: ${{ inputs.run_real_signup && '1' || '0' }}
+          CHURVOX_E2E_MUTATE: ${{ inputs.run_real_mutation && '1' || '0' }}
+        run: node scripts/churvox-paid-launch-release-gate.cjs
+
+      - name: Upload release report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-paid-launch-release-report
+          path: |
+            /tmp/churvox-paid-launch-release
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 30
