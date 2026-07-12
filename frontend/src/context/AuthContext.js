@@ -6,29 +6,46 @@ import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } f
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
-const AUTH_TIMEOUT_MS = 6000;
-const WORKER_AUTH_TIMEOUT_MS = 6000;
+const AUTH_TIMEOUT_MS = 8000;
+const WORKER_AUTH_TIMEOUT_MS = 8000;
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
 const AUTH_SNAPSHOT_KEY = "churvox_auth_session_snapshot_v1";
 const AUTH_SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
-const AUTH_REFRESH_GRACE_MS = 1000 * 60 * 60 * 12;
+const WORKER_OFFLINE_GRACE_MS = 1000 * 60 * 60 * 2;
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 const VALID_PLANS = new Set(["start", "solo", "crew", "team", "operator", "pro", "command", "enterprise"]);
-const GOOD_STATUSES = new Set(["active", "paid", "past_due", "tester_free", "worker"]);
-const ACTIVE_PAID_STATUSES = new Set(["active", "paid", "tester_free", "worker"]);
+const LOCKED_STATUSES = new Set(["cancelled", "canceled", "unpaid", "incomplete", "incomplete_expired", "locked", "disabled", "expired", "revoked"]);
+const PAID_STATUSES = new Set(["active", "paid", "past_due", "trialing", "trial"]);
+const ACCOUNT_CACHE_KEYS = [
+  "churvox:stable-current-plan:v1",
+  "churvox:plan-override",
+  "churvox:addon:accounting_sync",
+  "churvox:addon:command_growth_pack",
+  "churvox:billing-plan",
+];
 
-function clearStoredAuth() {
-  try {
-    localStorage.removeItem("token");
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("owner_portal_session");
-    localStorage.removeItem("platform_owner_email");
-    localStorage.removeItem(AUTH_SNAPSHOT_KEY);
-  } catch {}
+function safeStorageRemove(key) {
+  try { localStorage.removeItem(key); } catch {}
+}
+
+function clearAccountPlanState() {
+  ACCOUNT_CACHE_KEYS.forEach(safeStorageRemove);
+}
+
+function clearStoredAuth({ clearPlanState = false } = {}) {
+  [
+    "token",
+    "authToken",
+    "access_token",
+    "owner_portal_session",
+    "platform_owner_email",
+    AUTH_SNAPSHOT_KEY,
+  ].forEach(safeStorageRemove);
+  if (clearPlanState) clearAccountPlanState();
 }
 
 function removePlanFlag() {
-  try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
+  safeStorageRemove(PLAN_REQUIRED_KEY);
 }
 
 function setPlanFlag() {
@@ -48,11 +65,11 @@ function hasValidPlan(user = {}) {
 }
 
 function subscriptionStatus(user = {}) {
-  return String(user.subscription_status || user.plan_status || user.billing_status || user.stripe_status || "").trim().toLowerCase();
+  return String(user.subscription_status || user.plan_status || user.billing_status || user.stripe_status || user.status || "").trim().toLowerCase();
 }
 
 function isLockedStatus(status) {
-  return ["cancelled", "canceled", "unpaid", "incomplete_expired", "locked", "disabled", "expired"].includes(status);
+  return LOCKED_STATUSES.has(String(status || "").trim().toLowerCase());
 }
 
 function rawRole(user = {}) {
@@ -68,7 +85,7 @@ function rawRole(user = {}) {
 }
 
 function truthy(value) {
-  if (typeof value === "string") return ["1", "true", "yes", "active", "enabled", "worker", "staff", "field_worker"].includes(value.trim().toLowerCase());
+  if (typeof value === "string") return ["1", "true", "yes", "active", "enabled", "worker", "staff", "field_worker", "granted", "verified"].includes(value.trim().toLowerCase());
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value > 0;
   return false;
@@ -87,6 +104,10 @@ function inferredWorker(user = {}) {
 function inferredPayroll(user = {}) {
   const role = rawRole(user);
   return Boolean(isPayrollRole(role) || truthy(user.is_payroll) || truthy(user.payroll_user) || user.payroll_id);
+}
+
+function isPlatformOwner(user = {}) {
+  return String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
 }
 
 function tokenFrom(data = {}) {
@@ -116,10 +137,10 @@ function authError(data = {}) {
   return data?.detail || data?.message || data?.error || data?.data?.detail || data?.data?.message || "Invalid email or password.";
 }
 
-function shouldTryWorkerFallback(err) {
-  const status = err?.response?.status;
+function shouldTryWorkerFallback(error) {
+  const status = error?.response?.status;
   if (!status) return true;
-  return [404, 408, 422, 500, 502, 503, 504].includes(status);
+  return [401, 404, 408, 422, 500, 502, 503, 504].includes(status);
 }
 
 function validStoredUser(user) {
@@ -143,6 +164,7 @@ function readStoredAuthSnapshot(maxAgeMs = AUTH_SNAPSHOT_MAX_AGE_MS) {
       business_id: String(storedUser.business_id || storedUser.businessId || storedUser.id || storedUser._id || ""),
       ...(storedToken ? { token: storedToken } : {}),
       restored_session: true,
+      restored_at: at,
     };
   } catch {
     return null;
@@ -160,12 +182,15 @@ function saveStoredAuthSnapshot(user = {}) {
 }
 
 function rememberPlatformOwner(nextUser = {}) {
-  const finalEmail = String(nextUser.email || "").trim().toLowerCase();
-  if (finalEmail === "hello@churvox.com" || nextUser?.is_platform_owner === true || nextUser?.is_admin === true) {
+  const email = String(nextUser.email || "").trim().toLowerCase();
+  if (email === PLATFORM_OWNER_EMAIL) {
     try {
       localStorage.setItem("owner_portal_session", "true");
-      localStorage.setItem("platform_owner_email", finalEmail);
+      localStorage.setItem("platform_owner_email", email);
     } catch {}
+  } else {
+    safeStorageRemove("owner_portal_session");
+    safeStorageRemove("platform_owner_email");
   }
 }
 
@@ -180,26 +205,59 @@ function explicitBillingLock(user = {}) {
   );
 }
 
+function parseDate(value) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function testerAccess(user = {}) {
-  return Boolean(user?.free_tester_access === true || user?.is_tester === true || subscriptionStatus(user) === "tester_free");
+  if (explicitBillingLock(user)) return false;
+  const tester = user?.free_tester_access === true || user?.is_tester === true || subscriptionStatus(user) === "tester_free";
+  if (!tester) return false;
+  const until = parseDate(user?.free_tester_until || user?.free_until);
+  return !until || until > new Date();
+}
+
+function manualAccessProof(user = {}) {
+  return Boolean(
+    truthy(user?.manual_access_granted_by_app_owner) ||
+    truthy(user?.access_granted_by_app_owner) ||
+    truthy(user?.billing_verified) ||
+    truthy(user?.subscription_verified) ||
+    truthy(user?.checkout_verified_by_stripe)
+  );
 }
 
 function stripeBackedAccess(user = {}) {
-  return Boolean(user?.stripe_subscription_id || user?.stripe_customer_id || user?.stripe_checkout_session_id || user?.checkout_session_id);
+  return Boolean(
+    user?.stripe_subscription_id ||
+    user?.stripe_customer_id ||
+    user?.stripe_checkout_session_id ||
+    user?.checkout_session_id ||
+    manualAccessProof(user)
+  );
 }
 
 function businessAccessFromUser(user = {}) {
   if (!user) return false;
-  if (inferredWorker(user) || inferredPayroll(user)) return true;
+  if (isPlatformOwner(user)) return true;
+  if (inferredWorker(user) || inferredPayroll(user)) return !explicitBillingLock(user);
   if (explicitBillingLock(user)) return false;
+  if (user.email_verified === false) return false;
   if (testerAccess(user)) return true;
+
   const status = subscriptionStatus(user);
-  if (ACTIVE_PAID_STATUSES.has(status)) return true;
-  if (["trialing", "trial"].includes(status)) return stripeBackedAccess(user);
+  const trialEnd = parseDate(user.trial_ends_at);
+  if (["trial", "trialing"].includes(status) && trialEnd && trialEnd <= new Date()) return false;
+  if (PAID_STATUSES.has(status)) return stripeBackedAccess(user);
   if (typeof user.has_app_access === "boolean") return user.has_app_access && stripeBackedAccess(user);
-  if (hasValidPlan(user) && stripeBackedAccess(user)) return true;
-  if (GOOD_STATUSES.has(status)) return true;
+  if (hasValidPlan(user)) return stripeBackedAccess(user);
   return false;
+}
+
+function offlineWorkerSnapshot(user = {}) {
+  return inferredWorker(user) && !explicitBillingLock(user) && !isPlatformOwner(user);
 }
 
 export function AuthProvider({ children }) {
@@ -224,28 +282,25 @@ export function AuthProvider({ children }) {
     const runId = ++authRunRef.current;
     let token = "";
     try { token = localStorage.getItem("token") || ""; } catch {}
-    const storedSession = readStoredAuthSnapshot(AUTH_REFRESH_GRACE_MS);
-    if (storedSession) setUser((current) => current || storedSession);
+    const workerSession = readStoredAuthSnapshot(WORKER_OFFLINE_GRACE_MS);
 
     try {
-      const me = await fetchMe(token || storedSession?.token || undefined);
+      const me = await fetchMe(token || workerSession?.token || undefined);
       if (businessAccessFromUser(me)) removePlanFlag();
       if (me?.token) localStorage.setItem("token", me.token);
       saveStoredAuthSnapshot(me);
       rememberPlatformOwner(me);
       if (runId === authRunRef.current) setUser(me);
       return me;
-    } catch (err) {
-      const status = err?.response?.status;
-      if (storedSession && !status) {
-        if (runId === authRunRef.current) setUser(storedSession);
-        return storedSession;
+    } catch (error) {
+      const status = error?.response?.status;
+      if (!status && workerSession && offlineWorkerSnapshot(workerSession)) {
+        if (runId === authRunRef.current) setUser(workerSession);
+        return workerSession;
       }
-      if (status === 401 || status === 403) {
-        clearStoredAuth();
-        if (runId === authRunRef.current) setUser(null);
-      }
-      throw err;
+      clearStoredAuth({ clearPlanState: status === 401 || status === 403 });
+      if (runId === authRunRef.current) setUser(null);
+      throw error;
     } finally {
       if (runId === authRunRef.current) setLoading(false);
     }
@@ -258,14 +313,12 @@ export function AuthProvider({ children }) {
   }, [checkAuth]);
 
   useEffect(() => {
-    const refreshAuthAfterBilling = () => {
-      checkAuth().catch(() => {});
-    };
-    window.addEventListener("churvox-auth-refresh", refreshAuthAfterBilling);
-    window.addEventListener("storage", refreshAuthAfterBilling);
+    const refreshAuth = () => checkAuth().catch(() => {});
+    window.addEventListener("churvox-auth-refresh", refreshAuth);
+    window.addEventListener("storage", refreshAuth);
     return () => {
-      window.removeEventListener("churvox-auth-refresh", refreshAuthAfterBilling);
-      window.removeEventListener("storage", refreshAuthAfterBilling);
+      window.removeEventListener("churvox-auth-refresh", refreshAuth);
+      window.removeEventListener("storage", refreshAuth);
     };
   }, [checkAuth]);
 
@@ -278,17 +331,19 @@ export function AuthProvider({ children }) {
       );
       if (response.data?.success === false) throw new Error(authError(response.data));
       return response;
-    } catch (workerErr) {
-      const message = workerErr?.response?.data?.detail || workerErr?.response?.data?.message || workerErr?.message;
+    } catch (workerError) {
+      const message = workerError?.response?.data?.detail || workerError?.response?.data?.message || workerError?.message;
       const original = originalError?.response?.data?.detail || originalError?.response?.data?.message || originalError?.message;
-      throw new Error(message || original || "Invalid email or password.");
+      const error = new Error(message || original || "Invalid email or password.");
+      error.response = workerError?.response || originalError?.response;
+      throw error;
     }
   }
 
   const login = useCallback(async (email, password) => {
     const runId = ++authRunRef.current;
     setLoading(true);
-    clearStoredAuth();
+    clearStoredAuth({ clearPlanState: true });
     setUser(null);
 
     const cleanEmail = String(email || "").trim().toLowerCase();
@@ -302,51 +357,41 @@ export function AuthProvider({ children }) {
           { email: cleanEmail, password },
           { withCredentials: true, timeout: AUTH_TIMEOUT_MS }
         );
-      } catch (err) {
-        normalLoginError = err;
-        if (!shouldTryWorkerFallback(err)) throw err;
-        response = await workerLoginBridge(cleanEmail, password, err);
+      } catch (error) {
+        normalLoginError = error;
+        if (!shouldTryWorkerFallback(error)) throw error;
+        response = await workerLoginBridge(cleanEmail, password, error);
       }
 
       if (response.data?.success === false) {
-        try {
-          response = await workerLoginBridge(cleanEmail, password, normalLoginError);
-        } catch (err) {
-          throw new Error(authError(response.data) || err.message);
-        }
+        response = await workerLoginBridge(cleanEmail, password, normalLoginError);
       }
 
       const token = tokenFrom(response.data);
       const nextUser = userFrom(response.data);
-
-      if (!nextUser) {
-        throw new Error("Login failed because the server did not return account JSON.");
-      }
+      if (!nextUser) throw new Error("Login failed because the server did not return account JSON.");
 
       const returnedEmail = String(nextUser.email || "").trim().toLowerCase();
-      if (returnedEmail && returnedEmail !== cleanEmail) {
-        throw new Error("Churvox returned a different account than the email entered.");
-      }
+      if (returnedEmail && returnedEmail !== cleanEmail) throw new Error("Churvox returned a different account than the email entered.");
 
       if (token) {
         nextUser.token = token;
         localStorage.setItem("token", token);
       } else {
-        localStorage.removeItem("token");
+        safeStorageRemove("token");
       }
 
       if (businessAccessFromUser(nextUser)) removePlanFlag();
       saveStoredAuthSnapshot(nextUser);
       rememberPlatformOwner(nextUser);
       if (runId === authRunRef.current) setUser(nextUser);
-
       return { ...response.data, user: nextUser, ...nextUser };
-    } catch (err) {
+    } catch (error) {
       if (runId === authRunRef.current) {
-        clearStoredAuth();
+        clearStoredAuth({ clearPlanState: true });
         setUser(null);
       }
-      throw err;
+      throw error;
     } finally {
       if (runId === authRunRef.current) setLoading(false);
     }
@@ -355,7 +400,7 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (userData) => {
     const runId = ++authRunRef.current;
     setLoading(true);
-    clearStoredAuth();
+    clearStoredAuth({ clearPlanState: true });
     setUser(null);
     try {
       const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true, timeout: AUTH_TIMEOUT_MS });
@@ -369,7 +414,7 @@ export function AuthProvider({ children }) {
         nextUser.token = token;
         localStorage.setItem("token", token);
       } else {
-        localStorage.removeItem("token");
+        safeStorageRemove("token");
       }
 
       if (testerAccess(nextUser) || inferredWorker(nextUser) || inferredPayroll(nextUser)) {
@@ -395,8 +440,8 @@ export function AuthProvider({ children }) {
       const token = localStorage.getItem("token") || "";
       await axios.post(`${API_BASE}/api/auth/logout`, {}, { headers: headersFor(token), withCredentials: true, timeout: AUTH_TIMEOUT_MS });
     } catch {}
-    clearStoredAuth();
-    try { localStorage.removeItem(PLAN_REQUIRED_KEY); } catch {}
+    clearStoredAuth({ clearPlanState: true });
+    safeStorageRemove(PLAN_REQUIRED_KEY);
     if (runId === authRunRef.current) {
       setUser(null);
       setLoading(false);
@@ -406,24 +451,26 @@ export function AuthProvider({ children }) {
   const forgotPassword = useCallback(async (email) => {
     try {
       const response = await axios.post(`${API_BASE}/api/auth/forgot-password`, { email }, { timeout: AUTH_TIMEOUT_MS });
-      return { success: true, email_sent: response.data.email_sent !== false };
-    } catch (err) {
-      return { success: false, error: err?.response?.data?.detail || "Failed to send reset link. Please try again." };
+      return { success: true, email_sent: response.data?.email_sent !== false };
+    } catch (error) {
+      if (error?.response?.status === 429) return { success: false, error: "Too many reset requests. Please wait 15 minutes and try again." };
+      return { success: false, error: error?.response?.data?.detail || "Failed to send reset link. Please try again." };
     }
   }, []);
 
   const resetPassword = useCallback(async (token, newPassword) => {
     try {
       await axios.post(`${API_BASE}/api/auth/reset-password`, { token, new_password: newPassword }, { timeout: AUTH_TIMEOUT_MS });
+      clearStoredAuth({ clearPlanState: true });
       return { success: true };
-    } catch (err) {
-      return { success: false, error: err?.response?.data?.detail || "Failed to reset password." };
+    } catch (error) {
+      return { success: false, error: error?.response?.data?.detail || "Failed to reset password." };
     }
   }, []);
 
   const updateUser = useCallback((updates) => {
-    setUser((prev) => {
-      const next = prev ? { ...prev, ...updates } : prev;
+    setUser((previous) => {
+      const next = previous ? { ...previous, ...updates } : previous;
       if (next) saveStoredAuthSnapshot(next);
       return next;
     });
@@ -439,13 +486,13 @@ export function AuthProvider({ children }) {
   const isTrialExpired = (() => {
     if (!user?.trial_ends_at) return false;
     const status = subscriptionStatus(user);
-    if (ACTIVE_PAID_STATUSES.has(status)) return false;
-    try { return new Date(user.trial_ends_at) < new Date(); } catch { return false; }
+    if (["active", "paid", "past_due"].includes(status)) return false;
+    const end = parseDate(user.trial_ends_at);
+    return Boolean(end && end < new Date());
   })();
 
   const hasAppAccess = (() => {
-    if (!user) return false;
-    if (isTrialExpired) return false;
+    if (!user || isTrialExpired) return false;
     return businessAccessFromUser(user);
   })();
 
