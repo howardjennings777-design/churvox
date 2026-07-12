@@ -14,7 +14,7 @@ try:
 except Exception:  # Unit tests for pure helpers do not need FastAPI installed.
     JSONResponse = None
 
-VERSION = "churvox-login-emergency-final-20260712b"
+VERSION = "churvox-login-emergency-final-20260712c"
 LOCKOUT_FAILURES = 5
 LOCKOUT_MINUTES = 15
 LOOKUP_TIMEOUT_SECONDS = 6
@@ -32,7 +32,7 @@ ACCOUNT_DISABLED_STATUSES = {"revoked", "locked", "disabled", "removed", "archiv
 WORKER_DISABLED_STATUSES = ACCOUNT_DISABLED_STATUSES | {
     "expired", "cancelled", "canceled", "inactive",
 }
-PAID_STATUSES = {"active", "paid", "trialing", "trial", "past_due"}
+PAID_STATUSES = {"active", "paid", "past_due"}
 BILLING_LOCKED_STATUSES = {
     "cancelled", "canceled", "unpaid", "incomplete", "incomplete_expired",
     "expired", "payment_required", "plan_required",
@@ -186,9 +186,20 @@ def paid_app_access(user: dict[str, Any] | None, now: datetime | None = None) ->
     )
     if status in BILLING_LOCKED_STATUSES:
         return False
-    trial_end = _aware(user.get("trial_ends_at"))
-    if status in {"trial", "trialing"} and trial_end and trial_end <= (now or _now()):
-        return False
+    current_time = now or _now()
+    if status in {"trial", "trialing"}:
+        plan = _lower(user.get("plan") or user.get("subscription_plan") or user.get("plan_type"))
+        trial_end = _aware(
+            user.get("trial_ends_at")
+            or user.get("trial_end")
+            or user.get("trial_end_date")
+        )
+        return bool(
+            plan
+            and plan not in {"none", "free", "null", "undefined"}
+            and trial_end
+            and trial_end > current_time
+        )
     return status in PAID_STATUSES and _billing_proof(user)
 
 
