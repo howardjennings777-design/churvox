@@ -4,7 +4,7 @@ function json(body, status = 200) {
   return { status, contentType: 'application/json', body: JSON.stringify(body) };
 }
 
-async function bootOwner(page, plan = 'command') {
+async function bootOwner(page, plan = 'command', hash = '') {
   const aliases = { start: 'solo', crew: 'team', operator: 'pro', command: 'enterprise' };
   const user = {
     id: `more-${plan}-owner`,
@@ -32,106 +32,125 @@ async function bootOwner(page, plan = 'command') {
     if (/\/api\/auth\/(?:me|check|session)$/.test(path)) return route.fulfill(json({ success: true, user, ...user }));
     if (path === '/api/platform/visit') return route.fulfill(json({ ok: true }));
     if (path === '/api/healthz') return route.fulfill(json({ ok: true }));
-    return route.fulfill(json({ success: true, items: [], rows: [], data: [], counts: {} }));
+    if (path.includes('/api/command/')) return route.fulfill(json({ success: true, source: 'backend-command-clear', decisions: [], audit: [], items: [] }));
+    return route.fulfill(json({ success: true, items: [], rows: [], data: [], decisions: [], audit: [], counts: {} }));
   });
 
-  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('.freshApp')).toBeVisible();
+  await page.goto(`/dashboard${hash}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.cvOwnerReady')).toBeVisible();
   return user;
 }
 
-async function detailsOpen(details) {
-  return details.evaluate((node) => node.open === true);
+function ownerNav(page) {
+  return page.locator('.cvOwnerNavigation');
 }
 
-test.describe('Paid-launch More navigation', () => {
-  test('desktop More tools stays under user control across app re-renders', async ({ page }) => {
+function moreTrigger(page) {
+  return ownerNav(page).getByRole('button', { name: 'More', exact: true });
+}
+
+test.describe('Paid-launch dashboard More navigation', () => {
+  test('Start shows only included owner pages and More tools', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 960 });
-    await bootOwner(page, 'command');
-
-    const details = page.locator('.freshNavMore');
-    const summary = details.locator(':scope > summary');
-    await expect(details).toBeVisible();
-    await expect(summary).toHaveAttribute('aria-haspopup', 'true');
-    await expect(summary).toHaveAttribute('aria-expanded', 'false');
-
-    await summary.click();
-    await expect.poll(() => detailsOpen(details)).toBe(true);
-    await expect(summary).toHaveAttribute('aria-expanded', 'true');
-
-    await page.evaluate(() => {
-      window.dispatchEvent(new Event('churvox:plan-updated'));
-      window.dispatchEvent(new Event('churvox:fresh-data-updated'));
-    });
-    await page.waitForTimeout(200);
-    await expect.poll(() => detailsOpen(details)).toBe(true);
-
-    await summary.click();
-    await expect.poll(() => detailsOpen(details)).toBe(false);
-    await expect(summary).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  test('desktop More tools stays open when its current page is active', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 960 });
-    await bootOwner(page, 'command');
-
-    const details = page.locator('.freshNavMore');
-    const payroll = details.getByRole('button', { name: 'Payroll' });
-    const summary = details.locator(':scope > summary');
-    await summary.click();
-    await payroll.click();
-
-    await expect(payroll).toHaveClass(/active/);
-    await expect.poll(() => detailsOpen(details)).toBe(true);
-    await expect(summary).toHaveAttribute('aria-expanded', 'true');
-  });
-
-  test('mobile More opens as an accessible modal and closes by Escape or backdrop', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await bootOwner(page, 'command');
-
-    const more = page.locator('.freshMobileNav').getByRole('button', { name: 'More' });
-    await expect(more).toBeVisible();
-    await expect(more).toHaveAttribute('aria-expanded', 'false');
-
-    await more.click();
-    const dialog = page.getByRole('dialog', { name: 'More Churvox tools' });
-    await expect(dialog).toBeVisible();
-    await expect(more).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByRole('button', { name: 'Close More tools' })).toBeVisible();
-    await expect(page.locator('.freshMobileMoreBackdrop')).toBeVisible();
-    await expect(page.locator('body')).toHaveAttribute('data-churvox-more-open', 'true');
-
-    await page.keyboard.press('Escape');
-    await expect(dialog).toHaveCount(0);
-    await expect(page.locator('.freshMobileMoreBackdrop')).toHaveCount(0);
-    await expect(more).toHaveAttribute('aria-expanded', 'false');
-
-    await more.click();
-    await expect(page.getByRole('dialog', { name: 'More Churvox tools' })).toBeVisible();
-    await page.locator('.freshMobileMoreBackdrop').click({ position: { x: 5, y: 5 } });
-    await expect(page.getByRole('dialog', { name: 'More Churvox tools' })).toHaveCount(0);
-    await expect(more).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  test('Start plan More menu does not expose higher-tier tools', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
     await bootOwner(page, 'start');
 
-    const more = page.locator('.freshMobileNav').getByRole('button', { name: 'More' });
-    await more.click();
-    const dialog = page.getByRole('dialog', { name: 'More Churvox tools' });
-    await expect(dialog).toBeVisible();
+    const nav = ownerNav(page);
+    await expect(nav).toHaveAttribute('data-plan', 'start');
+    await expect(nav.getByRole('button', { name: 'Today', exact: true })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Jobs', exact: true })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Clients', exact: true })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Quotes', exact: true })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Invoices', exact: true })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Command', exact: true })).toHaveCount(0);
+    await expect(nav.getByRole('button', { name: 'Workers', exact: true })).toHaveCount(0);
 
-    await expect(dialog.getByRole('button', { name: 'Clients' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Quotes' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Settings' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Plans' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Help' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Setup Coach' })).toBeVisible();
+    const trigger = moreTrigger(page);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    const menu = page.getByRole('menu', { name: 'More tools for start' });
+    await expect(menu).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(menu.getByRole('menuitem', { name: 'Schedule' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'How Churvox works' })).toBeVisible();
 
-    for (const restricted of ['Command', 'Messages', 'Team', 'Worker View', 'Time Approval', 'Proof Packs', 'Payroll', 'Control Score', 'Imports', 'Exports']) {
-      await expect(dialog.getByRole('button', { name: restricted })).toHaveCount(0);
+    for (const locked of ['Messages', 'Payroll', 'Xero', 'Activity']) {
+      await expect(menu.getByRole('menuitem', { name: locked })).toHaveCount(0);
     }
+  });
+
+  test('Crew and Operator expose only their correct More tools', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await bootOwner(page, 'crew');
+    await moreTrigger(page).click();
+    let menu = page.getByRole('menu', { name: 'More tools for crew' });
+    await expect(menu.getByRole('menuitem', { name: 'Messages' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Payroll' })).toHaveCount(0);
+    await expect(menu.getByRole('menuitem', { name: 'Xero' })).toHaveCount(0);
+
+    await page.evaluate(() => {
+      localStorage.setItem('churvox:stable-current-plan:v1', 'operator');
+      localStorage.setItem('churvox:plan-override', 'operator');
+      window.dispatchEvent(new Event('churvox:plan-updated'));
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.cvOwnerReady')).toBeVisible();
+    await moreTrigger(page).click();
+    menu = page.getByRole('menu', { name: 'More tools for operator' });
+    await expect(menu.getByRole('menuitem', { name: 'Messages' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Payroll' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Activity' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Xero' })).toHaveCount(0);
+  });
+
+  test('desktop More supports keyboard navigation, Escape and focus return', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await bootOwner(page, 'command');
+
+    const trigger = moreTrigger(page);
+    await trigger.focus();
+    await page.keyboard.press('ArrowDown');
+    const menu = page.getByRole('menu', { name: 'More tools for command' });
+    await expect(menu).toBeVisible();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(menu.getByRole('menuitem').first()).toBeFocused();
+
+    await page.keyboard.press('ArrowDown');
+    await expect(menu.getByRole('menuitem').nth(1)).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(trigger).toBeFocused();
+  });
+
+  test('mobile More has a backdrop and reliable close controls', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await bootOwner(page, 'command');
+
+    const trigger = moreTrigger(page);
+    await trigger.click();
+    const menu = page.getByRole('menu', { name: 'More tools for command' });
+    await expect(menu).toBeVisible();
+    await expect(page.locator('.cvOwnerMoreBackdrop')).toBeVisible();
+    await expect(menu.getByRole('button', { name: 'Close More menu' })).toBeVisible();
+
+    await page.locator('.cvOwnerMoreBackdrop').click({ position: { x: 5, y: 5 } });
+    await expect(menu).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    await trigger.click();
+    await expect(page.getByRole('menu', { name: 'More tools for command' })).toBeVisible();
+    await page.getByRole('menu', { name: 'More tools for command' }).getByRole('button', { name: 'Close More menu' }).click();
+    await expect(page.getByRole('menu', { name: 'More tools for command' })).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
+  test('typing a locked hash sends Start to Plans instead of rendering Payroll', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await bootOwner(page, 'start', '#payroll');
+
+    await expect.poll(() => page.url()).toMatch(/\/dashboard#plans$/);
+    await expect(page.locator('.cvOwnerReady')).toHaveAttribute('data-screen', 'plans');
+    await expect(page.getByRole('alert')).toContainText(/Operator required|Payroll opens on Operator/i);
+    await expect(page.getByText(/Payroll review only/i)).toHaveCount(0);
   });
 });
