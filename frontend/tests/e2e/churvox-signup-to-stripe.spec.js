@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-const RUN_SIGNUP = process.env.CHURVOX_E2E_SIGNUP === '1';
+const RUN_SIGNUP = /^(1|true|yes)$/i.test(process.env.CHURVOX_E2E_SIGNUP || '');
 const BASE_EMAIL = process.env.CHURVOX_E2E_SIGNUP_BASE_EMAIL || 'howardjennings777@gmail.com';
 
 function uniqueEmail() {
@@ -10,25 +10,21 @@ function uniqueEmail() {
 
 async function fillFirst(page, selectors, value) {
   for (const selector of selectors) {
-    const loc = page.locator(selector).first();
-    if (await loc.count().catch(() => 0)) {
-      if (await loc.isVisible().catch(() => false)) {
-        await loc.fill(value);
-        return true;
-      }
+    const locator = page.locator(selector).first();
+    if (await locator.isVisible().catch(() => false)) {
+      await locator.fill(value);
+      return true;
     }
   }
   return false;
 }
 
 async function clickText(page, texts) {
-  for (const text of texts) {
-    const loc = page.getByText(text, { exact: false }).first();
-    if (await loc.count().catch(() => 0)) {
-      if (await loc.isVisible().catch(() => false)) {
-        await loc.click();
-        return true;
-      }
+  for (const value of texts) {
+    const locator = page.getByText(value, { exact: false }).first();
+    if (await locator.isVisible().catch(() => false)) {
+      await locator.click();
+      return true;
     }
   }
   return false;
@@ -39,83 +35,70 @@ function isStripeCheckoutUrl(url) {
 }
 
 test.describe('Fresh customer signup to Stripe launch path', () => {
-  test('new owner can sign up, land on Plans, and open Stripe checkout', async ({ page }) => {
+  test('new owner keeps the chosen plan, reaches Plans, and opens Stripe checkout', async ({ page }) => {
     test.skip(!RUN_SIGNUP, 'Set CHURVOX_E2E_SIGNUP=1 because this creates a real test owner account.');
 
-    const checkoutEvents = [];
+    const billingRequests = [];
     page.on('request', (request) => {
       const url = request.url();
-      if (url.includes('/billing/') || url.includes('stripe')) {
-        checkoutEvents.push({ type: 'request', method: request.method(), url });
-      }
-    });
-    page.on('response', (response) => {
-      const url = response.url();
-      if (url.includes('/billing/') || url.includes('stripe')) {
-        checkoutEvents.push({ type: 'response', status: response.status(), url });
-      }
+      if (!url.includes('/billing/') && !url.includes('stripe')) return;
+      let payload = null;
+      try { payload = request.postDataJSON(); } catch {}
+      billingRequests.push({ method: request.method(), url, payload });
     });
 
     const email = uniqueEmail();
     const secret = `Churvox${Date.now()}!`;
     const businessName = `Playwright Signup ${Date.now()}`;
 
-    await page.goto('/signup');
-    await page.waitForLoadState('domcontentloaded');
+    await page.goto('/signup?plan=operator&country=NZ', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('body')).toContainText(/Create your Churvox account|Create account/i);
+    await expect(page.locator('body')).toContainText(/Selected plan:\s*Operator/i);
 
-    await expect(page.locator('body')).toContainText(/Create account|Start your Churvox trial/i);
+    expect(await fillFirst(page, ['input[name="name"]', 'input[autocomplete="name"]'], 'Playwright Signup Owner')).toBeTruthy();
+    expect(await fillFirst(page, ['input[name="email"]', 'input[type="email"]'], email)).toBeTruthy();
+    await fillFirst(page, ['input[name="business_name"]', 'input[autocomplete="organization"]'], businessName);
 
-    await fillFirst(page, ['input[name="name"]', 'input[autocomplete="name"]', 'input[placeholder*="name" i]'], 'Playwright Signup Owner');
-    await fillFirst(page, ['input[name="email"]', 'input[type="email"]', 'input[placeholder*="email" i]'], email);
-    await fillFirst(page, ['input[name="business_name"]', 'input[autocomplete="organization"]', 'input[placeholder*="business" i]'], businessName);
+    const passwordInputs = page.locator('input[type="password"]');
+    await expect(passwordInputs).toHaveCount(2);
+    await passwordInputs.nth(0).fill(secret);
+    await passwordInputs.nth(1).fill(secret);
 
-    const passInputs = page.locator('input[type="password"]');
-    await expect(passInputs).toHaveCount(2);
-    await passInputs.nth(0).fill(secret);
-    await passInputs.nth(1).fill(secret);
-
-    const created = await clickText(page, ['Create account and choose plan', 'Create account']);
-    expect(created, 'signup submit should be clickable').toBeTruthy();
-
-    await page.waitForURL(/plans/i, { timeout: 45000 });
+    expect(await clickText(page, ['Create account and choose plan', 'Create account'])).toBeTruthy();
+    await page.waitForURL(/\/plans/i, { timeout: 45000 });
     await page.waitForLoadState('domcontentloaded');
 
     const body = page.locator('body');
-    await expect(body).toContainText(/Churvox pricing|Current plan|Start your 14-day trial/i, { timeout: 30000 });
-    await expect(body).not.toContainText(/Non-JSON response/i);
-    await expect(body).not.toContainText(/Plans need attention/i);
-
-    const trace = await page.locator('[data-checkout-trace]').first().getAttribute('data-checkout-trace').catch(() => '');
-    expect(trace || '', 'live Plans bundle should include latest auth recovery marker').toContain('auth-recover');
+    await expect(body).toContainText(/Churvox pricing|Current plan|14-day trial/i, { timeout: 30000 });
+    await expect(body).toContainText(/Selected\s*Operator|Operator/i);
+    await expect(body).not.toContainText(/Checkout trace|Non-JSON response|Plans need attention/i);
 
     const beforeClickUrl = page.url();
-    const stripeNavigation = page
-      .waitForURL(/checkout\.stripe\.com/i, { timeout: 45000 })
-      .then(() => true)
-      .catch(() => false);
-
-    const opened = await clickText(page, ['Start Stripe checkout']);
-    expect(opened, 'Start Stripe checkout should be clickable').toBeTruthy();
+    const stripeNavigation = page.waitForURL(/checkout\.stripe\.com/i, { timeout: 45000 }).then(() => true).catch(() => false);
+    expect(await clickText(page, ['Start free trial'])).toBeTruthy();
 
     const reachedStripeByWait = await stripeNavigation;
     const afterClickUrl = page.url();
     const reachedStripe = reachedStripeByWait || isStripeCheckoutUrl(afterClickUrl);
 
+    const checkoutRequest = billingRequests.find((item) => item.method === 'POST' && item.url.includes('/billing/create-checkout-session'));
+    expect(checkoutRequest, `Expected checkout request. Seen: ${JSON.stringify(billingRequests.slice(-20), null, 2)}`).toBeTruthy();
+    expect(String(checkoutRequest?.payload?.plan || '')).toMatch(/pro|operator/i);
+    expect(String(checkoutRequest?.payload?.selected_plan || '')).toMatch(/operator/i);
+    expect(String(checkoutRequest?.payload?.country || '')).toBe('NZ');
+
     if (!reachedStripe) {
-      await page.waitForTimeout(2500).catch(() => {});
-      const finalUrl = page.url();
       const visibleText = await page.locator('body').innerText({ timeout: 5000 }).catch(() => 'Could not read page body');
       throw new Error([
         'Stripe checkout did not open.',
         `Before click URL: ${beforeClickUrl}`,
         `After click URL: ${afterClickUrl}`,
-        `Final URL: ${finalUrl}`,
-        `Checkout events: ${JSON.stringify(checkoutEvents.slice(-20), null, 2)}`,
-        `Visible body: ${String(visibleText).slice(0, 1200)}`,
+        `Billing requests: ${JSON.stringify(billingRequests.slice(-20), null, 2)}`,
+        `Visible body: ${String(visibleText).slice(0, 1400)}`,
       ].join('\n'));
     }
 
     expect(page.url()).toMatch(/checkout\.stripe\.com/i);
-    await expect(page.locator('body')).toContainText(/Start for free|Churvox|trial/i, { timeout: 30000 });
+    await expect(page.locator('body')).toContainText(/Churvox|trial|subscribe|start/i, { timeout: 30000 });
   });
 });
