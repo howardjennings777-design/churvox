@@ -52,7 +52,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backend-compile-diagnostics
-          path: /tmp/backend-compile-errors.txt
+          path: |
+            /tmp/backend-compile-errors.txt
+            backend/server.py
           if-no-files-found: error
           retention-days: 3
 
