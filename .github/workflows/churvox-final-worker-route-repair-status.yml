@@ -1,0 +1,38 @@
+name: Churvox Final Worker Route Repair Status
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  actions: read
+  issues: write
+  contents: read
+
+jobs:
+  probe:
+    if: startsWith(github.event.issue.title, '[churvox-final-worker-route-repair-status]')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Read latest repair failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow churvox-final-worker-route-repair.yml --limit 10 --json databaseId,displayTitle --jq '[.[] | select(.displayTitle | startswith("[churvox-final-worker-route-repair]"))][0].databaseId')"
+          test -n "$run_id"
+          {
+            echo "Run $run_id"
+            gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --json status,conclusion,jobs --jq '{status, conclusion, jobs: [.jobs[] | {name, conclusion, failedSteps: [.steps[] | select(.conclusion == "failure") | .name]}]}'
+            echo '--- failed log tail ---'
+            gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --log-failed 2>&1 | sed -r 's/\x1B\[[0-9;]*[mK]//g' | tail -n 180
+          } > /tmp/worker-route-repair-status.txt
+
+      - name: Post result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const text = fs.readFileSync('/tmp/worker-route-repair-status.txt', 'utf8');
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Worker-route repair failure\n\n\`\`\`text\n${text.replace(/```/g, '``\\`')}\n\`\`\`` });
