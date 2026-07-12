@@ -1,0 +1,115 @@
+name: Churvox Brain Mimic Live Audit
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    if: startsWith(github.event.issue.title, '[churvox-brain-mimic-live-audit]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+    steps:
+      - name: Audit live brain and mimic responses
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/churvox-brain-mimic-live-audit.txt 2>&1
+          const api = process.env.API_BASE.replace(/\/+$/, '');
+          const email = process.env.OWNER_EMAIL;
+          const password = process.env.OWNER_PASSWORD;
+          const safeRoles = new Set(['Office Manager','Receptionist','Bookkeeper','Accountant','Payroll Clerk','Client Memory','Quality Checker','Operations Manager']);
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+          async function read(response) {
+            const text = await response.text();
+            try { return JSON.parse(text); } catch { return { text: text.slice(0, 500) }; }
+          }
+          async function call(path, options = {}) {
+            const response = await fetch(`${api}${path}`, options);
+            return { response, body: await read(response) };
+          }
+          function rows(body, keys) {
+            for (const key of keys) if (Array.isArray(body?.[key])) return body[key];
+            if (Array.isArray(body)) return body;
+            return [];
+          }
+          function safety(item = {}) {
+            const payload = item.payload && typeof item.payload === 'object' ? item.payload : {};
+            return [
+              item.owner_review_only ?? payload.owner_review_only,
+              item.prepared_only ?? payload.prepared_only,
+              item.no_auto_send ?? payload.no_auto_send,
+              item.no_auto_sync ?? payload.no_auto_sync,
+              item.no_auto_charge ?? payload.no_auto_charge,
+              item.no_auto_record_change ?? payload.no_auto_record_change,
+            ].every((value) => value === true);
+          }
+          (async () => {
+            const login = await call('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ email, password }) });
+            if (!login.response.ok) throw new Error(`Owner login failed ${login.response.status}: ${JSON.stringify(login.body).slice(0,300)}`);
+            const token = tokenFrom(login.body);
+            if (!token) throw new Error('Owner login returned no token');
+            const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' };
+
+            const commandScan = await call('/api/command/scan', { method: 'POST', headers, body: JSON.stringify({ source: 'brain-mimic-live-audit', prepared_only: true, owner_review_only: true }) });
+            const commandList = await call(`/api/command/slips?ts=${Date.now()}`, { headers });
+            const brainScan = await call(`/api/admin-brain/scan?ts=${Date.now()}`, { headers });
+
+            const scanSlips = [...rows(commandScan.body, ['slips']), ...rows(commandScan.body, ['existing'])];
+            const listedSlips = rows(commandList.body, ['slips']);
+            const brainActions = rows(brainScan.body, ['actions','items']);
+            const roles = [...new Set(listedSlips.map((item) => item.office_role || item.payload?.office_role || '').filter(Boolean))].sort();
+            const unknownRoles = roles.filter((role) => !safeRoles.has(role));
+            const unsafe = listedSlips.filter((item) => !safety(item));
+            const withEvidence = listedSlips.filter((item) => Array.isArray(item.payload?.evidence) && item.payload.evidence.length > 0).length;
+            const withPreparedForm = listedSlips.filter((item) => item.payload?.prepared_form && typeof item.payload.prepared_form === 'object').length;
+            const brainErrors = Array.isArray(brainScan.body?.errors) ? brainScan.body.errors : [];
+
+            console.log(`Command scan HTTP: ${commandScan.response.status}`);
+            console.log(`Command scan source: ${commandScan.body?.source || 'missing'}`);
+            console.log(`Command scan created/existing: ${Number(commandScan.body?.created_count || 0)}/${Number(commandScan.body?.existing_count || 0)}`);
+            console.log(`Command list HTTP: ${commandList.response.status}`);
+            console.log(`Open Command slips: ${listedSlips.length}`);
+            console.log(`Active mimic roles: ${roles.length ? roles.join(', ') : 'none returned'}`);
+            console.log(`Slips with evidence: ${withEvidence}`);
+            console.log(`Slips with prepared forms: ${withPreparedForm}`);
+            console.log(`Unsafe slip flags: ${unsafe.length}`);
+            console.log(`Unknown role labels: ${unknownRoles.length ? unknownRoles.join(', ') : 'none'}`);
+            console.log(`Admin Brain HTTP: ${brainScan.response.status}`);
+            console.log(`Admin Brain source: ${brainScan.body?.source || 'missing'}`);
+            console.log(`Admin Brain actions: ${brainActions.length}`);
+            console.log(`Admin Brain scan errors: ${brainErrors.length ? brainErrors.join(' | ') : 'none reported'}`);
+
+            const failures = [];
+            if (!commandScan.response.ok) failures.push(`Command scan HTTP ${commandScan.response.status}`);
+            if (!commandList.response.ok) failures.push(`Command list HTTP ${commandList.response.status}`);
+            if (!brainScan.response.ok) failures.push(`Admin Brain HTTP ${brainScan.response.status}`);
+            if (!String(commandScan.body?.source || '').includes('mimic')) failures.push('Command scan did not identify mimic engine source');
+            if (unsafe.length) failures.push(`${unsafe.length} Command slips missing safety flags`);
+            if (unknownRoles.length) failures.push(`Unknown mimic roles: ${unknownRoles.join(', ')}`);
+            if (brainErrors.length) failures.push(`Admin Brain reported scan errors`);
+            if (failures.length) {
+              console.log(`RESULT: FAIL — ${failures.join('; ')}`);
+              process.exit(1);
+            }
+            console.log('RESULT: PASS — live brain and mimic endpoints responded with owner-controlled safety flags.');
+          })().catch((error) => { console.error(`RESULT: FAIL — ${error.message || error}`); process.exit(1); });
+          NODE
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.existsSync('/tmp/churvox-brain-mimic-live-audit.txt') ? fs.readFileSync('/tmp/churvox-brain-mimic-live-audit.txt','utf8').slice(-12000) : 'No audit output.';
+            const heading = '${{ job.status }}' === 'success' ? '## Live brain and mimic audit passed' : '## Live brain and mimic audit failed';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `${heading}\n\n\`\`\`text\n${output}\n\`\`\`` });
