@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-VERSION = "churvox-auth-launch-status-20260712"
+VERSION = "churvox-auth-launch-status-20260712b"
 REQUIRED_STATE = {
     "auth_hardening": "churvox_auth_paid_launch_hardening",
     "password_recovery": "churvox_password_recovery_paid_launch",
     "session_precision": "churvox_session_token_precision",
     "login_final": "churvox_login_paid_launch_final",
     "worker_role_guard": "churvox_worker_login_role_guard",
+    "invite_security": "churvox_invite_security_paid_launch",
     "checkout_token_guard": "churvox_checkout_token_session_guard",
 }
 
@@ -43,6 +44,9 @@ def install(module) -> None:
             "reset_password": _route_exists(app, "/api/auth/reset-password", "POST"),
             "refresh": _route_exists(app, "/api/auth/refresh", "POST"),
             "resend_verification": _route_exists(app, "/api/auth/resend-verification", "POST"),
+            "invite_verify": _route_exists(app, "/api/invite/verify/{token}", "GET"),
+            "invite_accept": _route_exists(app, "/api/invite/accept", "POST"),
+            "invite_resend": _route_exists(app, "/api/team/resend-invite/{worker_id}", "POST"),
         }
         ready = all(checks.values()) and all(routes.values())
         return {
