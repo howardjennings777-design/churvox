@@ -127,7 +127,7 @@ export default function AccountDeletionPage() {
           <article>
             <b>Billing questions</b>
             <span>Check trial, cancellation and refund information before deleting an account with an active Stripe subscription.</span>
-            <Link to="/refunds-cancellations">Billing and cancellations</Link>
+            <Link to="/legal/terms#billing-cancellations">Billing and cancellations</Link>
           </article>
           <article>
             <b>Contact support</b>
