@@ -34,6 +34,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install backend contract dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check fastapi==0.110.1 pymongo==4.5.0
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
