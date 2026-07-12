@@ -3,6 +3,7 @@ import axios from "axios";
 const OWNER_LOGIN_PATH = "/api/auth/login";
 const SERVICE_ERROR_STATUS = 520;
 const OWNER_LOGIN_TIMEOUT_MS = 30000;
+const SERVICE_MESSAGE = "Churvox login is temporarily unavailable while the service restarts. Please try again shortly.";
 
 function requestPath(config = {}) {
   try {
@@ -38,6 +39,7 @@ axios.interceptors.response.use(
       const headers = error?.response?.headers || {};
       const stage = data.stage || headers["x-churvox-login-stage"] || headers["X-Churvox-Login-Stage"] || "unknown";
       const route = data.login_route || data.version || headers["x-churvox-login-route"] || headers["X-Churvox-Login-Route"] || "unknown";
+      const originalDetail = data.detail || "";
 
       try {
         window.sessionStorage.setItem("churvox:last-login-diagnostic", JSON.stringify({
@@ -45,7 +47,7 @@ axios.interceptors.response.use(
           original_status: status || null,
           stage,
           route,
-          detail: data.detail || "",
+          detail: originalDetail,
           error_type: data.error_type || "",
         }));
       } catch {}
@@ -54,7 +56,7 @@ axios.interceptors.response.use(
         original_status: status || null,
         stage,
         route,
-        detail: data.detail || "",
+        detail: originalDetail,
         error_type: data.error_type || "",
       });
 
@@ -64,7 +66,8 @@ axios.interceptors.response.use(
         status: SERVICE_ERROR_STATUS,
         data: {
           ...data,
-          detail: data.detail || "Churvox is restarting. Please wait a moment and sign in again.",
+          detail: SERVICE_MESSAGE,
+          original_detail: originalDetail,
           retryable: true,
           original_status: status || null,
           stage,
