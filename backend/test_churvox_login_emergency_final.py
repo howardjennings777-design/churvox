@@ -77,6 +77,16 @@ class EmergencyLoginRulesTest(unittest.TestCase):
         self.assertFalse(account_disabled(user))
         self.assertFalse(paid_app_access(user, self.now))
 
+    def test_worker_without_explicit_business_id_is_never_promoted(self):
+        user = {
+            "_id": "worker-no-business",
+            "email": "worker@example.test",
+            "role": "worker",
+            "status": "cancelled",
+        }
+        self.assertFalse(self_owned_legacy_owner(user))
+        self.assertTrue(account_disabled(user))
+
     def test_real_worker_with_other_business_remains_disabled(self):
         user = {
             "_id": "worker-1",
@@ -180,6 +190,13 @@ class EmergencyLoginRulesTest(unittest.TestCase):
         self.assertEqual(state["count"], 1)
         self.assertIsNone(state["locked_until"])
         self.assertFalse(lockout_active(state, self.now))
+
+    def test_all_login_routes_use_the_fail_closed_emergency_handler(self):
+        source = (__import__("pathlib").Path(__file__).parent / "churvox_login_emergency_final.py").read_text()
+        self.assertIn('"lockout-check-error"', source)
+        self.assertIn('"lockout-record-error"', source)
+        self.assertIn('for worker_path in ("/api/auth/worker-login", "/api/worker/auth/login")', source)
+        self.assertIn('app.add_api_route(worker_path, emergency_login, methods=["POST"])', source)
 
     def test_critical_owner_repair_must_be_confirmed_before_tokens(self):
         source = (__import__("pathlib").Path(__file__).parent / "churvox_login_emergency_final.py").read_text()
