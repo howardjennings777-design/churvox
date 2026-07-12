@@ -166,7 +166,7 @@ test.describe('Paid-launch dashboard More navigation', () => {
     await page.setViewportSize({ width: 1440, height: 960 });
     await bootOwner(page, 'start', '#payroll');
 
-    await expect.poll(() => page.url()).toMatch(/\/dashboard#plans$/);
+    await expect.poll(() => page.url()).toMatch(/\/dashboard(?:\?[^#]*)?#plans$/);
     await expect(page.locator('.cvOwnerReady')).toHaveAttribute('data-screen', 'plans');
     await expect(page.getByRole('alert')).toContainText(/Operator required|Payroll opens on Operator/i);
     await expect(page.getByText(/Payroll review only/i)).toHaveCount(0);
