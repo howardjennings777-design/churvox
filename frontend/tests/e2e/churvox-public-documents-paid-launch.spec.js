@@ -105,9 +105,9 @@ test.describe('Public customer documents paid-launch behaviour', () => {
     await page.goto('/quote/accepted-token', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('QUO-ACCEPTED-1')).toBeVisible();
     await expect(page.getByText('Accepted', { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /accept quote/i })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /^decline/i })).toHaveCount(0);
-    await expect(page.getByText(/does not take payment automatically/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Accepted', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Decline', exact: true })).toBeDisabled();
+    await expect(page.getByText(/Your response is recorded as accepted/i)).toBeVisible();
   });
 
   test('client portal does not allow approval before completion', async ({ page }) => {
