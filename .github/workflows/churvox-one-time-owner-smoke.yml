@@ -1,0 +1,162 @@
+name: Churvox One-Time Owner Login Proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  owner-login-proof:
+    if: startsWith(github.event.issue.title, '[churvox-owner-smoke]')
+    name: Read-only owner browser login proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Mark owner proof as started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Read-only owner browser login proof is running. No business records will be changed.'
+            })
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run read-only owner browser login proof
+        id: smoke
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL || 'howardjennings77@gmail.com' }}
+          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+        run: |
+          cat > /tmp/churvox-owner-smoke.cjs <<'NODE'
+          const { chromium } = require('playwright');
+
+          const email = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLowerCase();
+          const password = String(process.env.CHURVOX_OWNER_PASSWORD || '');
+          const base = String(process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com').replace(/\/+$/, '');
+          const api = String(process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
+
+          function tokenFrom(data = {}) {
+            return data?.token || data?.access_token || data?.auth_token || data?.jwt || data?.accessToken
+              || data?.user?.token || data?.user?.access_token || data?.user?.accessToken
+              || data?.data?.token || data?.data?.access_token || data?.data?.user?.token || '';
+          }
+
+          function accountEmail(data = {}) {
+            return String(data?.email || data?.user?.email || data?.data?.email || data?.data?.user?.email || '').trim().toLowerCase();
+          }
+
+          (async () => {
+            if (!email) throw new Error('CHURVOX_OWNER_EMAIL is missing.');
+            if (!password) throw new Error('CHURVOX_OWNER_PASSWORD is missing.');
+
+            const browser = await chromium.launch();
+            const context = await browser.newContext();
+            const page = await context.newPage();
+
+            const login = await page.request.post(`${api}/api/auth/login`, {
+              data: { email, password },
+              timeout: 30000,
+            });
+            console.log(`login_status=${login.status()}`);
+            const loginData = await login.json().catch(() => null);
+            if (!login.ok() || !loginData || loginData.success === false) {
+              throw new Error(`Owner login failed with HTTP ${login.status()}.`);
+            }
+
+            const token = tokenFrom(loginData);
+            if (!token) throw new Error('Owner login returned no usable token.');
+            const returnedEmail = accountEmail(loginData);
+            if (returnedEmail && returnedEmail !== email) throw new Error('Owner login returned a different account.');
+
+            const me = await page.request.get(`${api}/api/auth/me`, {
+              headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+              timeout: 30000,
+            });
+            console.log(`auth_me_status=${me.status()}`);
+            const meData = await me.json().catch(() => null);
+            if (!me.ok() || !meData) throw new Error(`Owner /api/auth/me failed with HTTP ${me.status()}.`);
+            if (accountEmail(meData) !== email) throw new Error('Owner /api/auth/me did not confirm the same account.');
+            console.log('auth_me_email_match=true');
+
+            await page.goto(`${base}/login`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            await page.evaluate((value) => localStorage.setItem('token', value), token);
+            await page.goto(`${base}/dashboard#today`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            await page.waitForTimeout(2500);
+            const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ').trim();
+            if (body.length < 80) throw new Error('Owner dashboard rendered blank or too little content.');
+            if (/something went wrong|application error|cannot read properties|failed to render/i.test(body)) {
+              throw new Error('Owner dashboard rendered an application error.');
+            }
+            if (/\/login(?:[?#]|$)/i.test(new URL(page.url()).pathname)) {
+              throw new Error('Owner dashboard redirected back to login.');
+            }
+            console.log('dashboard_rendered=true');
+
+            await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
+            await page.waitForTimeout(1500);
+            const stored = await page.evaluate(() => Boolean(localStorage.getItem('token')));
+            if (!stored) throw new Error('Owner session token did not persist across refresh.');
+            console.log('refresh_persistence=true');
+
+            await context.close();
+            await browser.close();
+            console.log('OWNER_LOGIN_PROOF_PASSED');
+          })().catch((error) => {
+            console.error(`OWNER_LOGIN_PROOF_FAILED: ${error.message}`);
+            process.exit(1);
+          });
+          NODE
+
+          set -o pipefail
+          node /tmp/churvox-owner-smoke.cjs 2>&1 | tee /tmp/churvox-owner-smoke.txt
+
+      - name: Post owner proof result
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '/tmp/churvox-owner-smoke.txt';
+            let report = 'The owner smoke output was not created.';
+            if (fs.existsSync(path)) report = fs.readFileSync(path, 'utf8').slice(-12000);
+            const outcome = process.env.SMOKE_OUTCOME === 'success' ? 'PASSED' : 'FAILED';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## Owner login proof ${outcome}\n\n\`\`\`text\n${report}\n\`\`\``
+            });
+
+      - name: Fail workflow when owner proof failed
+        if: steps.smoke.outcome != 'success'
+        run: exit 1
