@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 
-VERSION = "churvox-email-links-paid-launch-20260712g"
+VERSION = "churvox-email-links-paid-launch-20260712h"
 REPLACEMENTS = {
     "/dashboard#jobs": "/dashboard#work",
     "/dashboard#support": "/support",
@@ -69,6 +69,7 @@ def install(module) -> None:
     _install_patch(module, "churvox_checkout_token_session_guard", "backend.churvox_checkout_token_session_guard")
     _install_patch(module, "churvox_login_paid_launch_final_patch", "backend.churvox_login_paid_launch_final_patch")
     _install_patch(module, "churvox_worker_login_role_guard", "backend.churvox_worker_login_role_guard")
+    _install_patch(module, "churvox_invite_security_paid_launch_patch", "backend.churvox_invite_security_paid_launch_patch")
     _install_patch(module, "churvox_feature_tier_paid_launch_guard", "backend.churvox_feature_tier_paid_launch_guard")
     _install_patch(module, "churvox_plan_usage_guard_patch", "backend.churvox_plan_usage_guard_patch")
     _install_patch(module, "churvox_auth_launch_status_patch", "backend.churvox_auth_launch_status_patch")
