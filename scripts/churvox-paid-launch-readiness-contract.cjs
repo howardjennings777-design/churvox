@@ -31,6 +31,7 @@ const checks = [
   ['mimic no longer treats incomplete as complete', mimic.includes('if "incomplete" in words') && mimic.includes('return bool(words & {"complete", "completed", "done", "finished", "closed"})')],
   ['strict mimic excludes unresolved completion from assignment', strictMimic.includes('unresolved_completion = (') && strictMimic.includes('if unresolved_completion:') && strictMimic.includes('"pending completion", "awaiting completion"')],
   ['strict recurrence uses completed matching visits only', (strictMimic.match(/if not explicitly_complete\(row\):/g) || []).length >= 3 && strictMimic.includes('fewer than three matching visits')],
+  ['informational preferences do not create reply drafts', strictMimic.includes('informational_preference = memory_candidate(body) and not request_words') && strictMimic.includes('if informational_preference:')],
   ['final live queue rejects unresolved completion across job roles', liveMimic.includes('def unresolved_completion(row):') && liveMimic.includes('job_actions =') && liveMimic.includes('if job and unresolved_completion(job):')],
   ['mimic reports scan health', mimic.includes('"scan_complete": not scan_errors') && mimic.includes('"scan_errors": list(dict.fromkeys(scan_errors))')],
   ['Command requests retry transient backend failures', commandApi.includes('async function fetchWithRetry') && commandApi.includes('response.status >= 500')],
