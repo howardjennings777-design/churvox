@@ -744,16 +744,33 @@ def install(module) -> None:
                     unset = {field: "" for field in PLAIN_PASSWORD_FIELDS}
                 except Exception:
                     unset = {}
+            critical_repair = bool(
+                self_owned_legacy_owner(user)
+                or matched_field in PLAIN_PASSWORD_FIELDS
+                or not user.get("business_id")
+            )
             try:
-                await _wait(
+                update_result = await _wait(
                     db.users.update_one(
                         {"_id": user["_id"]},
                         {"$set": updates, **({"$unset": unset} if unset else {})},
                     ),
                     4,
                 )
-            except Exception:
-                pass
+                if critical_repair and int(getattr(update_result, "matched_count", 0) or 0) != 1:
+                    return _error(
+                        503, "user-repair-missing",
+                        "Account access repair could not be confirmed. Please try again shortly.",
+                        retryable=True,
+                    )
+            except Exception as exc:
+                if critical_repair:
+                    return _error(
+                        503, "user-repair-error",
+                        "Account access repair could not be saved. Please try again shortly.",
+                        error_type=exc.__class__.__name__,
+                        retryable=True,
+                    )
             user.update(updates)
 
             try:
