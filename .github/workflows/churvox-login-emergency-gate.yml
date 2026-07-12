@@ -1,0 +1,44 @@
+name: Churvox Login Emergency Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/churvox_login_emergency_final.py'
+      - 'backend/churvox_login_route_finalizer.py'
+      - 'backend/churvox_outer_cors_error_shield.py'
+      - 'backend/churvox_auth_paid_launch_hardening.py'
+      - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
+      - '.github/workflows/churvox-login-emergency-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  login-code-gate:
+    name: Compile final login stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile login stack
+        run: |
+          python -m py_compile \
+            backend/churvox_login_emergency_final.py \
+            backend/churvox_login_route_finalizer.py \
+            backend/churvox_outer_cors_error_shield.py \
+            backend/churvox_auth_paid_launch_hardening.py
+
+      - name: Verify final route markers
+        run: |
+          grep -q 'churvox-login-emergency-final-20260712' backend/churvox_login_emergency_final.py
+          grep -q 'isolated emergency login route' backend/churvox_outer_cors_error_shield.py
+          grep -q 'if path == "/api/auth/login"' backend/churvox_auth_paid_launch_hardening.py
