@@ -1,0 +1,93 @@
+name: Churvox Live Current State
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-live-current-state.yml'
+      - 'backend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  current-state:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read live production state without credentials
+        env:
+          API_BASE: https://grassley-backend.onrender.com
+        run: |
+          mkdir -p /tmp/churvox-live-current-state
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          api = os.environ['API_BASE'].rstrip('/')
+          report = {'checks': {}}
+
+          def call(name, path, method='GET', body=None):
+              payload = None if body is None else json.dumps(body).encode()
+              headers = {'Accept': 'application/json'}
+              if body is not None:
+                  headers['Content-Type'] = 'application/json'
+              request = urllib.request.Request(api + path, data=payload, headers=headers, method=method)
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      raw = response.read().decode('utf-8', 'replace')
+                      status = response.status
+                      response_headers = dict(response.headers.items())
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode('utf-8', 'replace')
+                  status = exc.code
+                  response_headers = dict(exc.headers.items())
+              except Exception as exc:
+                  report['checks'][name] = {'status': 0, 'error': f'{exc.__class__.__name__}: {exc}'}
+                  return
+              try:
+                  data = json.loads(raw) if raw else None
+              except Exception:
+                  data = None
+              report['checks'][name] = {
+                  'status': status,
+                  'json': data,
+                  'headers': {k.lower(): v for k, v in response_headers.items() if k.lower().startswith('x-churvox-')},
+                  'body_preview': raw[:300] if data is None else None,
+              }
+
+          call('login_health', '/api/auth/login-health')
+          call('launch_status', '/api/security/launch-status')
+          call('signed_out_me', '/api/auth/me')
+          call('billing_portal_signed_out', '/api/billing/create-portal-session', 'POST', {})
+          call('account_delete_signed_out', '/api/account/self-delete', 'DELETE', {'confirmation': 'DELETE MY ACCOUNT'})
+
+          health = report['checks'].get('login_health', {}).get('json') or {}
+          launch = report['checks'].get('launch_status', {}).get('json') or {}
+          report['summary'] = {
+              'login_route': health.get('login_route'),
+              'jwt_source': health.get('jwt_source'),
+              'jwt_persistent': health.get('jwt_persistent'),
+              'restart_persistence_ready': health.get('restart_persistence_ready'),
+              'jwt_key_id': health.get('jwt_key_id'),
+              'jwt_health_version': health.get('jwt_health_version'),
+              'launch_version': launch.get('version'),
+              'ready_for_paid_launch': launch.get('ready_for_paid_launch'),
+              'critical_failures': launch.get('critical_failures'),
+          }
+          output = Path('/tmp/churvox-live-current-state/report.json')
+          output.write_text(json.dumps(report, indent=2, default=str) + '\n')
+          print(output.read_text())
+          PY
+      - name: Upload current-state report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-current-state
+          path: /tmp/churvox-live-current-state/report.json
+          if-no-files-found: error
+          retention-days: 7
