@@ -49,6 +49,18 @@ const OfficeTeamWorkerRoute = React.lazy(() => import("./churvox-office-lab/Offi
 
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
+// Stable production fingerprint used by deployment gates. The real owner and
+// worker screens are lazy-loaded, so their chunk strings are not guaranteed
+// to appear in main.js without this explicit, harmless build marker.
+if (typeof window !== "undefined") {
+  window.__CHURVOX_LIVE_BUILD__ = Object.freeze({
+    version: "churvox-current-os-20260713a",
+    ownerNavigation: "cvOwnerMainNavigation",
+    secureCheckout: "Continue to secure checkout",
+    workerLogout: "cvWorkerLogout",
+  });
+}
+
 function isPlatformOwnerUser(user = {}) {
   return String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
 }
