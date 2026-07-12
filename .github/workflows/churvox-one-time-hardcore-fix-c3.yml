@@ -1,0 +1,179 @@
+name: Churvox One-Time Hardcore Repair C3
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair-c3:
+    if: startsWith(github.event.issue.title, '[churvox-hardcore-fix-c3]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Apply audit changes with exact YAML indentation
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee /tmp/churvox-fix-c3-patch.txt
+          from pathlib import Path
+
+          audit_path = Path('frontend/tests/e2e/churvox-live-hardcore-human-everything.spec.js')
+          audit = audit_path.read_text()
+
+          if 'async function ensureMoreOpen(page)' not in audit:
+              index = audit.index('async function safeControlSweep(page, routeLabel, limit = 18) {')
+              helper = """async function ensureMoreOpen(page) {
+            const trigger = page.getByRole('button', { name: 'More', exact: true }).first();
+            await expect(trigger).toBeVisible({ timeout: 12_000 });
+            if (await trigger.getAttribute('aria-expanded') !== 'true') await trigger.click();
+            const menu = page.getByRole('menu', { name: /More tools/i });
+            await expect(menu).toBeVisible({ timeout: 10_000 });
+            return menu;
+          }
+
+          async function closeMore(page) {
+            const trigger = page.getByRole('button', { name: 'More', exact: true }).first();
+            if (!(await trigger.count()) || await trigger.getAttribute('aria-expanded') !== 'true') return;
+            const close = page.getByRole('button', { name: 'Close More menu' }).last();
+            if (await close.count() && await close.isVisible().catch(() => false)) await close.click();
+            else await page.keyboard.press('Escape');
+            await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+          }
+
+          """
+              audit = audit[:index] + helper + audit[index:]
+
+          fragile = "    await openOwnerHash(page, 'today', /today|churvox/i);\n    await clickVisibleNavigation(page, 'More');"
+          if fragile in audit:
+              start = audit.index(fragile)
+              end = audit.index("\n\n    for (const label of ['Settings', 'Plans', 'Help']) {", start)
+              replacement = """    await openOwnerHash(page, 'today', /today|churvox/i);
+            const moreMenu = await ensureMoreOpen(page);
+            const box = await moreMenu.boundingBox();
+            expect(box, 'More menu has no visible box').toBeTruthy();
+            expect(box.x).toBeGreaterThanOrEqual(0);
+            expect(box.y).toBeGreaterThanOrEqual(0);
+            expect(box.x + box.width).toBeLessThanOrEqual((await page.viewportSize()).width + 1);
+            const moreItems = (await moreMenu.getByRole('menuitem').allTextContents()).map(clean).filter(Boolean);
+            await closeMore(page);
+            for (const item of moreItems) {
+              await openOwnerHash(page, 'today', /today|churvox/i);
+              const reopened = await ensureMoreOpen(page);
+              const menuItem = reopened.getByRole('menuitem', { name: item, exact: true });
+              await expect(menuItem).toBeVisible();
+              await menuItem.click();
+              await page.waitForTimeout(400);
+              await assertNoLegacy(page, `More → ${item}`);
+            }"""
+              audit = audit[:start] + replacement + audit[end:]
+
+          fixed = """      await workerPage.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
+                await pageSleep(500);
+                expect(workerPage.url(), `worker reached forbidden owner route ${path}`).toMatch(/\\/worker\\/|\\/login/);"""
+          if fixed in audit:
+              poll = """      await workerPage.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
+                await expect.poll(() => workerPage.url(), {
+                  message: `worker reached forbidden owner route ${path}`,
+                  timeout: 15_000,
+                  intervals: [250, 500, 900, 1500, 2500],
+                }).toMatch(/\\/worker\\/|\\/login/);"""
+              audit = audit.replace(fixed, poll, 1)
+          audit_path.write_text(audit)
+          print('audit navigation and role polling patched')
+
+          workflow_path = Path('.github/workflows/churvox-one-time-hardcore-human-everything.yml')
+          wf = workflow_path.read_text()
+
+          check = '          node --check tests/e2e/churvox-live-hardcore-human-everything.spec.js\n'
+          if 'node --check tests/e2e/churvox-current-human-owner-worker-flow.spec.js' not in wf:
+              wf = wf.replace(check, check + '          node --check tests/e2e/churvox-current-human-owner-worker-flow.spec.js\n', 1)
+
+          deploy_start = wf.index('      - name: Wait for latest new owner OS deployment')
+          deploy_end = wf.index('      - name: Discover a linked worker', deploy_start)
+          deploy = wf[deploy_start:deploy_end]
+          if '/tmp/churvox-deploy.txt' not in deploy:
+              deploy = deploy.replace("        run: |\n          node <<'NODE'", "        run: |\n          set -o pipefail\n          node <<'NODE' 2>&1 | tee /tmp/churvox-deploy.txt", 1)
+              wf = wf[:deploy_start] + deploy + wf[deploy_end:]
+
+          if '/tmp/churvox-static.txt' not in wf:
+              wf = wf.replace(
+                  '        run: node scripts/churvox-hardcore-owner-worker-audit.cjs',
+                  '        run: |\n          set -o pipefail\n          node scripts/churvox-hardcore-owner-worker-audit.cjs 2>&1 | tee /tmp/churvox-static.txt',
+                  1,
+              )
+
+          obsolete = '            tests/e2e/churvox-full-ui-logic-buttons.spec.js \\\n'
+          if obsolete in wf:
+              wf = wf.replace(obsolete, '', 1)
+          if 'churvox-full-ui-logic-buttons.spec.js' in wf:
+              raise SystemExit('Obsolete lab test still present')
+
+          wf = wf.replace(
+              '          npx playwright test tests/e2e/churvox-real-human-owner-worker-flow.spec.js \\\n',
+              '          npx playwright test tests/e2e/churvox-current-human-owner-worker-flow.spec.js \\\n',
+              1,
+          )
+
+          cleanup_start = wf.index('      - name: Clean every live audit record')
+          cleanup_end = wf.index('      - name: Build audit report', cleanup_start)
+          cleanup_lines = [
+              '      - name: Clean every live audit record',
+              '        id: cleanup',
+              '        if: always()',
+              '        continue-on-error: true',
+              '        run: |',
+              '          set -o pipefail',
+              '          node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/churvox-cleanup.txt',
+              '',
+          ]
+          wf = wf[:cleanup_start] + '\n'.join(cleanup_lines) + wf[cleanup_end:]
+
+          upload = '            /tmp/churvox-hardcore-local.log\n'
+          if '/tmp/churvox-cleanup.txt' not in wf[wf.index('      - name: Upload full evidence'):]:
+              wf = wf.replace(upload, upload + '            /tmp/churvox-deploy.txt\n            /tmp/churvox-static.txt\n            /tmp/churvox-cleanup.txt\n', 1)
+
+          workflow_path.write_text(wf)
+          print('human audit workflow patched')
+          PY
+
+      - name: Verify JavaScript and YAML
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            node --check frontend/tests/e2e/churvox-live-hardcore-human-everything.spec.js
+            node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+            node --check scripts/churvox-hardcore-human-cleanup.cjs
+            ruby -e "require 'yaml'; YAML.load_file('.github/workflows/churvox-one-time-hardcore-human-everything.yml'); puts 'workflow YAML valid'"
+            grep -q 'churvox-current-human-owner-worker-flow.spec.js' .github/workflows/churvox-one-time-hardcore-human-everything.yml
+            if grep -q 'churvox-full-ui-logic-buttons.spec.js' .github/workflows/churvox-one-time-hardcore-human-everything.yml; then exit 1; fi
+          } 2>&1 | tee /tmp/churvox-fix-c3-verify.txt
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/tests/e2e/churvox-live-hardcore-human-everything.spec.js frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js scripts/churvox-hardcore-human-cleanup.cjs .github/workflows/churvox-one-time-hardcore-human-everything.yml
+          git commit -m "Strengthen current human audit and cleanup"
+          git push origin HEAD:main
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const parts = ['/tmp/churvox-fix-c3-patch.txt', '/tmp/churvox-fix-c3-verify.txt'].map((p) => fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '').join('\n').slice(-18000);
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Repair C3 ${{ job.status }}\n\n\`\`\`text\n${parts}\n\`\`\`` });
