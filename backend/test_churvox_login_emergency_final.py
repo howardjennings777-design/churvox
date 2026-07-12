@@ -1,0 +1,152 @@
+from datetime import datetime, timedelta, timezone
+import importlib
+import types
+import unittest
+from unittest import mock
+
+from backend.churvox_login_emergency_final import (
+    LOCKOUT_FAILURES,
+    LOCKOUT_MINUTES,
+    PLATFORM_OWNER_EMAIL,
+    _patch_worker_lockout_helpers,
+    account_disabled,
+    lockout_active,
+    next_failure_state,
+    paid_app_access,
+    tester_access,
+)
+
+
+class EmergencyLoginRulesTest(unittest.TestCase):
+    def setUp(self):
+        self.now = datetime(2026, 7, 12, 6, 0, tzinfo=timezone.utc)
+
+    def test_cancelled_owner_can_authenticate_but_is_sent_to_plans(self):
+        user = {
+            "email": "owner@example.test",
+            "role": "employer",
+            "status": "active",
+            "subscription_status": "cancelled",
+            "email_verified": True,
+            "stripe_subscription_id": "sub_old",
+        }
+        self.assertFalse(account_disabled(user))
+        self.assertFalse(paid_app_access(user, self.now))
+
+    def test_expired_billing_status_is_not_identity_revocation(self):
+        user = {
+            "email": "owner@example.test",
+            "role": "owner",
+            "status": "expired",
+            "email_verified": True,
+        }
+        self.assertFalse(account_disabled(user))
+        self.assertFalse(paid_app_access(user, self.now))
+
+    def test_explicitly_disabled_owner_is_blocked(self):
+        self.assertTrue(account_disabled({
+            "email": "owner@example.test",
+            "role": "owner",
+            "account_status": "disabled",
+        }))
+        self.assertTrue(account_disabled({
+            "email": "owner@example.test",
+            "role": "owner",
+            "account_locked": True,
+        }))
+
+    def test_cancelled_worker_is_blocked(self):
+        self.assertTrue(account_disabled({
+            "email": "worker@example.test",
+            "role": "worker",
+            "status": "cancelled",
+        }))
+
+    def test_current_tester_grant_survives_old_cancelled_billing(self):
+        user = {
+            "email": "tester@example.test",
+            "role": "employer",
+            "status": "active",
+            "subscription_status": "cancelled",
+            "free_tester_access": True,
+            "free_tester_until": self.now + timedelta(days=30),
+            "email_verified": True,
+        }
+        self.assertTrue(tester_access(user, self.now))
+        self.assertTrue(paid_app_access(user, self.now))
+
+    def test_revoked_tester_grant_does_not_disable_identity(self):
+        user = {
+            "email": "tester@example.test",
+            "role": "employer",
+            "status": "active",
+            "subscription_status": "cancelled",
+            "free_tester_access": True,
+            "free_tester_revoked_at": self.now,
+            "email_verified": True,
+        }
+        self.assertFalse(account_disabled(user))
+        self.assertFalse(tester_access(user, self.now))
+        self.assertFalse(paid_app_access(user, self.now))
+
+    def test_platform_owner_is_exact_email_only(self):
+        self.assertTrue(paid_app_access({"email": PLATFORM_OWNER_EMAIL, "role": "owner"}, self.now))
+        self.assertFalse(paid_app_access({
+            "email": "other@example.test",
+            "role": "owner",
+            "is_platform_owner": True,
+            "subscription_status": "none",
+            "email_verified": True,
+        }, self.now))
+
+    def test_fifth_failure_starts_fifteen_minute_lockout(self):
+        state = {}
+        for _ in range(LOCKOUT_FAILURES):
+            state = next_failure_state(state, self.now)
+        self.assertEqual(state["count"], LOCKOUT_FAILURES)
+        self.assertEqual(state["locked_until"], self.now + timedelta(minutes=LOCKOUT_MINUTES))
+        self.assertTrue(lockout_active(state, self.now + timedelta(minutes=1)))
+
+    def test_first_failure_after_expired_lockout_restarts_at_one(self):
+        expired = {
+            "count": LOCKOUT_FAILURES,
+            "locked_until": self.now - timedelta(seconds=1),
+        }
+        state = next_failure_state(expired, self.now)
+        self.assertEqual(state["count"], 1)
+        self.assertIsNone(state["locked_until"])
+        self.assertFalse(lockout_active(state, self.now))
+
+    def test_worker_route_helper_is_patched_to_same_reset_logic(self):
+        fake = types.SimpleNamespace(
+            next_failure_state=lambda *_: {"count": 99},
+            LOCKOUT_FAILURES=99,
+            LOCKOUT_MINUTES=99,
+        )
+        original = importlib.import_module
+
+        def mocked(name):
+            if name in {
+                "churvox_login_paid_launch_final_patch",
+                "backend.churvox_login_paid_launch_final_patch",
+            }:
+                return fake
+            return original(name)
+
+        with mock.patch(
+            "backend.churvox_login_emergency_final.importlib.import_module",
+            side_effect=mocked,
+        ):
+            _patch_worker_lockout_helpers()
+
+        expired = {
+            "count": LOCKOUT_FAILURES,
+            "locked_until": self.now - timedelta(seconds=1),
+        }
+        self.assertEqual(fake.next_failure_state(expired, self.now)["count"], 1)
+        self.assertEqual(fake.LOCKOUT_FAILURES, LOCKOUT_FAILURES)
+        self.assertEqual(fake.LOCKOUT_MINUTES, LOCKOUT_MINUTES)
+
+
+if __name__ == "__main__":
+    unittest.main()
