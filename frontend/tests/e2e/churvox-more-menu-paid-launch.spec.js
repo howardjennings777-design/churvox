@@ -4,7 +4,7 @@ function json(body, status = 200) {
   return { status, contentType: 'application/json', body: JSON.stringify(body) };
 }
 
-async function bootOwner(page, plan = 'command', hash = '') {
+async function bootOwner(page, plan = 'command', hash = '', cachedPlan = plan) {
   const aliases = { start: 'solo', crew: 'team', operator: 'pro', command: 'enterprise' };
   const user = {
     id: `more-${plan}-owner`,
@@ -25,7 +25,9 @@ async function bootOwner(page, plan = 'command', hash = '') {
     window.localStorage.setItem('authToken', 'more-menu-paid-launch-token');
     window.localStorage.setItem('churvox:stable-current-plan:v1', selectedPlan);
     window.localStorage.setItem('churvox:plan-override', selectedPlan);
-  }, { selectedPlan: plan });
+    window.localStorage.setItem('churvox:addon:accounting_sync', 'true');
+    window.localStorage.setItem('churvox:addon:command_growth_pack', '9');
+  }, { selectedPlan: cachedPlan });
 
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -73,6 +75,23 @@ test.describe('Paid-launch dashboard More navigation', () => {
     await expect(menu.getByRole('menuitem', { name: 'Schedule' })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: 'How Churvox works' })).toBeVisible();
 
+    for (const locked of ['Messages', 'Payroll', 'Xero', 'Activity']) {
+      await expect(menu.getByRole('menuitem', { name: locked })).toHaveCount(0);
+    }
+  });
+
+  test('authenticated Start beats cached Command, Xero add-on and Growth Pack values', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await bootOwner(page, 'start', '', 'command');
+
+    const nav = ownerNav(page);
+    await expect(nav).toHaveAttribute('data-plan', 'start');
+    await expect(nav.getByRole('button', { name: 'Command', exact: true })).toHaveCount(0);
+    await expect(nav.getByRole('button', { name: 'Workers', exact: true })).toHaveCount(0);
+
+    await moreTrigger(page).click();
+    const menu = page.getByRole('menu', { name: 'More tools for start' });
+    await expect(menu).toBeVisible();
     for (const locked of ['Messages', 'Payroll', 'Xero', 'Activity']) {
       await expect(menu.getByRole('menuitem', { name: locked })).toHaveCount(0);
     }
