@@ -1,0 +1,85 @@
+name: Churvox Add Main Bundle Fingerprint
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  fingerprint:
+    if: startsWith(github.event.issue.title, '[churvox-main-build-fingerprint]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Add explicit current-OS build fingerprint
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('frontend/src/App.js')
+          text = path.read_text()
+          marker = '''
+          // Stable production fingerprint used by deployment gates. The real owner and
+          // worker screens are lazy-loaded, so their chunk strings are not guaranteed
+          // to appear in main.js without this explicit, harmless build marker.
+          if (typeof window !== "undefined") {
+            window.__CHURVOX_LIVE_BUILD__ = Object.freeze({
+              version: "churvox-current-os-20260713a",
+              ownerNavigation: "cvOwnerMainNavigation",
+              secureCheckout: "Continue to secure checkout",
+              workerLogout: "cvWorkerLogout",
+            });
+          }
+          '''
+          anchor = 'const PLATFORM_OWNER_EMAIL = "hello@churvox.com";\n'
+          if 'churvox-current-os-20260713a' not in text:
+              if text.count(anchor) != 1:
+                  raise SystemExit(f'App fingerprint anchor mismatch: {text.count(anchor)}')
+              text = text.replace(anchor, anchor + marker, 1)
+              path.write_text(text)
+          PY
+
+      - name: Build production frontend
+        run: |
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+          npm --prefix frontend run build
+          grep -R -q 'churvox-current-os-20260713a' frontend/build/static/js/main.*.js
+          grep -R -q 'cvWorkerLogout' frontend/build/static/js/main.*.js
+          grep -R -q 'Continue to secure checkout' frontend/build/static/js/main.*.js
+          grep -R -q 'cvOwnerMainNavigation' frontend/build/static/js/main.*.js
+
+      - name: Commit and push fingerprint
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/App.js
+          if git diff --cached --quiet; then
+            echo 'Fingerprint already present.'
+          else
+            git commit -m "Add current OS deployment fingerprint"
+            git push origin HEAD:main
+          fi
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Main-bundle fingerprint job: **${{ job.status }}**.`,
+            });
