@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-VERSION = "churvox-feature-tier-paid-launch-20260712"
+VERSION = "churvox-feature-tier-paid-launch-20260712b"
 PLAN_ORDER = ("start", "crew", "operator", "command")
 PLAN_ALIASES = {
     "solo": "start",
@@ -56,8 +56,8 @@ FEATURE_PREFIXES = (
         "/xero", "/integrations/xero", "/accounting", "/myob",
     )),
     (FeatureAccess("command", "Command Approval System", "operator"), (
-        "/command", "/command-hub", "/ai-operator", "/operator/slips", "/ai/actions",
-        "/ai/operator/ask", "/ai/operator/business-health", "/ai/operator/today-plan",
+        "/command", "/command-hub", "/ai-operator", "/operator/slips", "/slips", "/ai/actions",
+        "/ai/operator/ask", "/ai/operator/business-health", "/ai/operator/today-plan", "/ai/operator/slips",
         "/ai/customer-updates", "/ai/receptionist", "/ai/quotes/drafts", "/ai/recurring",
         "/ai/client-memory", "/approved-notifications",
     )),
@@ -65,7 +65,7 @@ FEATURE_PREFIXES = (
         "/payroll", "/hours-review", "/admin-debt", "/followups", "/automation",
     )),
     (FeatureAccess("team", "Team and worker tools", "crew"), (
-        "/logic/team-members", "/workers", "/team/invite", "/team/workers", "/team/members",
+        "/logic/team-members", "/workers", "/team",
     )),
     (FeatureAccess("proof", "Worker proof and customer proof packs", "crew"), (
         "/proof-packs", "/job-proof-packs", "/client-portal/proof-job", "/field-activity",
