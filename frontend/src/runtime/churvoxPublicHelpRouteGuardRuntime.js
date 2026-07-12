@@ -24,6 +24,11 @@ function redirectPublicHelpRoutes() {
     return;
   }
 
+  if (path === '/refunds-cancellations') {
+    window.location.replace('/legal/terms#billing-cancellations');
+    return;
+  }
+
   if (path === '/support' && !hasSession()) {
     window.location.replace('/contact?reason=support');
   }
