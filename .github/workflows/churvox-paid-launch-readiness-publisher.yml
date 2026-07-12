@@ -1,0 +1,163 @@
+name: Churvox Paid Launch Readiness Publisher
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  publish:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-readiness-publish]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: paid-launch-readiness
+          fetch-depth: 0
+
+      - name: Rebase repair branch on current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'churvox-launch-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git fetch origin main
+          git rebase origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply paid launch repair
+        id: apply
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/churvox_paid_launch_readiness_apply.py 2>&1 | tee /tmp/churvox-paid-launch-apply.txt
+
+      - name: Compile backend and repair scripts
+        id: compile
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m py_compile \
+            backend/churvox_paid_launch_readiness_routes.py \
+            backend/churvox_worker_login_bridge_patch.py \
+            backend/churvox_command_human_mimic_routes.py \
+            backend/churvox_command_human_mimic_guard_routes.py \
+            backend/churvox_command_apply_routes.py \
+            backend/usercustomize.py \
+            usercustomize.py \
+            scripts/churvox_paid_launch_readiness_apply.py \
+            scripts/churvox_paid_launch_backend_contract.py 2>&1 | tee /tmp/churvox-paid-launch-compile.txt
+          node --check scripts/churvox-paid-launch-readiness-contract.cjs 2>&1 | tee -a /tmp/churvox-paid-launch-compile.txt
+          node --check frontend/src/churvox-office-lab/OfficeTeamCommandApi.js 2>&1 | tee -a /tmp/churvox-paid-launch-compile.txt
+          node --check frontend/src/churvox-office-lab/officeTeamApi.js 2>&1 | tee -a /tmp/churvox-paid-launch-compile.txt
+
+      - name: Run paid launch backend behavior contract
+        id: backend_contract
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/churvox_paid_launch_backend_contract.py 2>&1 | tee /tmp/churvox-paid-launch-backend-contract.txt
+
+      - name: Run mimic and approval contracts
+        id: mimic
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/churvox_mimic_full_test.py 2>&1 | tee /tmp/churvox-paid-launch-mimic.txt
+          node scripts/churvox-command-approval-readiness.cjs 2>&1 | tee /tmp/churvox-paid-launch-approval.txt
+
+      - name: Run paid launch static contract
+        id: static_contract
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-paid-launch-readiness-contract.cjs 2>&1 | tee /tmp/churvox-paid-launch-static.txt
+
+      - name: Install frontend dependencies
+        id: install
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Build production frontend
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          npm --prefix frontend run build 2>&1 | tee /tmp/churvox-paid-launch-build.txt
+
+      - name: Commit verified repairs
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -- frontend/package.json frontend/package-lock.json 2>/dev/null || true
+          git add \
+            backend/churvox_paid_launch_readiness_routes.py \
+            backend/churvox_worker_login_bridge_patch.py \
+            backend/churvox_command_human_mimic_routes.py \
+            backend/usercustomize.py \
+            usercustomize.py \
+            frontend/src/App.js \
+            frontend/src/churvox-office-lab/OfficeTeamCommandApi.js \
+            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
+            frontend/src/churvox-office-lab/officeTeamApi.js \
+            scripts/churvox_paid_launch_readiness_apply.py \
+            scripts/churvox_paid_launch_backend_contract.py \
+            scripts/churvox-paid-launch-readiness-contract.cjs
+          if git diff --cached --quiet; then
+            echo 'No new repair diff to commit.'
+          else
+            git commit -m 'Harden Churvox for paid launch readiness'
+          fi
+          git push origin HEAD:paid-launch-readiness
+          git push origin HEAD:main
+          git rev-parse HEAD | tee /tmp/churvox-paid-launch-commit.txt
+
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-paid-launch-readiness-publisher
+          path: |
+            /tmp/churvox-paid-launch-*.txt
+          if-no-files-found: ignore
+
+      - name: Post publisher result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const files = [
+              '/tmp/churvox-paid-launch-apply.txt',
+              '/tmp/churvox-paid-launch-compile.txt',
+              '/tmp/churvox-paid-launch-backend-contract.txt',
+              '/tmp/churvox-paid-launch-mimic.txt',
+              '/tmp/churvox-paid-launch-approval.txt',
+              '/tmp/churvox-paid-launch-static.txt',
+              '/tmp/churvox-paid-launch-build.txt',
+              '/tmp/churvox-paid-launch-commit.txt',
+            ];
+            const sections = files.map((file) => {
+              const label = file.split('/').pop();
+              const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').slice(-5000) : 'No output.';
+              return `### ${label}\n\`\`\`text\n${text}\n\`\`\``;
+            }).join('\n\n');
+            const heading = '${{ job.status }}' === 'success' ? '## Paid launch readiness repair published' : '## Paid launch readiness repair stopped safely';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `${heading}\n\n${sections}` });
