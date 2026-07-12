@@ -14,7 +14,7 @@ try:
 except Exception:  # Unit tests for pure helpers do not need FastAPI installed.
     JSONResponse = None
 
-VERSION = "churvox-login-emergency-final-20260712c"
+VERSION = "churvox-login-emergency-final-20260712d"
 LOCKOUT_FAILURES = 5
 LOCKOUT_MINUTES = 15
 LOOKUP_TIMEOUT_SECONDS = 6
@@ -90,6 +90,20 @@ def _role(user: dict[str, Any] | None) -> str:
     ).replace("-", "_").replace(" ", "_")
 
 
+def self_owned_legacy_owner(user: dict[str, Any] | None) -> bool:
+    user = user or {}
+    user_id = _text(user.get("_id") or user.get("id"))
+    business_id = _text(user.get("business_id") or user_id)
+    return bool(
+        user_id
+        and business_id == user_id
+        and _role(user) in WORKER_ROLES | PAYROLL_ROLES
+        and not user.get("owner_id")
+        and not user.get("employer_id")
+        and not user.get("owner_business_id")
+    )
+
+
 def account_disabled(user: dict[str, Any] | None) -> bool:
     """Block identity revocation, not ordinary billing loss.
 
@@ -98,7 +112,7 @@ def account_disabled(user: dict[str, Any] | None) -> bool:
     employment states, so they remain blocked.
     """
     user = user or {}
-    role = _role(user)
+    role = "employer" if self_owned_legacy_owner(user) else _role(user)
     identity_status = _lower(
         user.get("account_status")
         or user.get("login_status")
@@ -164,7 +178,7 @@ def _billing_proof(user: dict[str, Any]) -> bool:
 def paid_app_access(user: dict[str, Any] | None, now: datetime | None = None) -> bool:
     user = user or {}
     email = _lower(user.get("email"))
-    role = _role(user)
+    role = "employer" if self_owned_legacy_owner(user) else _role(user)
     if email == PLATFORM_OWNER_EMAIL:
         return True
     if role in WORKER_ROLES | PAYROLL_ROLES:
@@ -710,13 +724,7 @@ def install(module) -> None:
                 "canonical_email": email,
                 "normalized_email": email,
             }
-            owner_business_id = user.get("business_id") or user.get("_id")
-            if (
-                str(owner_business_id) == str(user.get("_id"))
-                and _role(user) in WORKER_ROLES | PAYROLL_ROLES
-                and not user.get("owner_id")
-                and not user.get("employer_id")
-            ):
+            if self_owned_legacy_owner(user):
                 updates.update({
                     "role": "employer",
                     "user_role": "employer",
@@ -778,22 +786,21 @@ def install(module) -> None:
             )
 
     async def emergency_logout(request: Request):
-        response = _json(200, "logout-complete", {
-            "success": True,
-            "message": "Logged out successfully.",
-            "sessions_revoked": True,
-            "login_route": VERSION,
-        })
         token = _text(request.headers.get("Authorization"))
         token = token[7:].strip() if token.startswith("Bearer ") else _text(request.cookies.get("access_token"))
+        sessions_revoked = False
+        token_state = "missing"
+        revocation_error = None
+
         if token:
             try:
                 secret = _text(getattr(module, "JWT_SECRET", ""))
                 payload = jwt.decode(token, secret, algorithms=[algorithm])
                 user_id = _text(payload.get("sub"))
+                token_state = "valid"
                 if user_id:
                     now = _now()
-                    await _wait(
+                    result = await _wait(
                         db.users.update_one(
                             {"_id": ObjectId(user_id)},
                             {"$set": {
@@ -804,17 +811,43 @@ def install(module) -> None:
                         ),
                         4,
                     )
-                    try:
-                        await _wait(db.auth_security_events.insert_one({
-                            "kind": "logout_sessions_revoked",
-                            "user_id": user_id,
-                            "created_at": now,
-                            "version": VERSION,
-                        }), 3)
-                    except Exception:
-                        pass
-            except Exception:
-                pass
+                    sessions_revoked = int(getattr(result, "matched_count", 0) or 0) == 1
+                    token_state = "revoked" if sessions_revoked else "account-missing"
+                    if sessions_revoked:
+                        try:
+                            await _wait(db.auth_security_events.insert_one({
+                                "kind": "logout_sessions_revoked",
+                                "user_id": user_id,
+                                "created_at": now,
+                                "version": VERSION,
+                            }), 3)
+                        except Exception:
+                            pass
+                else:
+                    token_state = "invalid"
+            except jwt.ExpiredSignatureError:
+                token_state = "expired"
+            except jwt.InvalidTokenError:
+                token_state = "invalid"
+            except Exception as exc:
+                token_state = "revocation-error"
+                revocation_error = exc.__class__.__name__
+
+        failed = revocation_error is not None
+        response = _json(503 if failed else 200, "logout-revocation-error" if failed else "logout-complete", {
+            "success": not failed,
+            "message": (
+                "Signed out locally, but server session revocation could not be confirmed. Please sign in again before retrying logout."
+                if failed
+                else "Logged out successfully."
+            ),
+            "sessions_revoked": sessions_revoked,
+            "token_present": bool(token),
+            "token_state": token_state,
+            "error_type": revocation_error or "",
+            "retryable": failed,
+            "login_route": VERSION,
+        })
         _clear_cookies(response)
         return response
 
