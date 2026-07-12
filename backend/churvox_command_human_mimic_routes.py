@@ -95,7 +95,7 @@ def build_command_human_mimic_router(db, get_current_user, ObjectId):
                 clauses.append({key: business_oid})
         return business_id, business_oid, {"$or": clauses}
 
-    async def scoped_rows(user, collection_names, limit=120):
+    async def scoped_rows(user, collection_names, limit=120, errors=None):
         _, _, query = business_scope(user)
         rows = []
         for name in collection_names:
@@ -107,8 +107,9 @@ def build_command_human_mimic_router(db, get_current_user, ObjectId):
                     cursor = cursor.sort("_id", -1)
                 found = await cursor.limit(limit).to_list(limit)
                 rows.extend([{**dict(item), "_collection": name} for item in found])
-            except Exception:
-                continue
+            except Exception as exc:
+                if errors is not None:
+                    errors.append(f"{name}: {exc.__class__.__name__}")
         return rows[:limit]
 
     def rec_id(row, fallback="record"):
@@ -121,7 +122,12 @@ def build_command_human_mimic_router(db, get_current_user, ObjectId):
         return lower(first(row, ["status", "job_status", "invoice_status", "payment_status", "state"], ""))
 
     def is_done(row):
-        return any(word in status_of(row) for word in ["complete", "completed", "done", "finished", "closed"])
+        status = status_of(row)
+        normalized = status.replace("_", " ").replace("-", " ").replace("/", " ")
+        words = {word for word in normalized.split() if word}
+        if "incomplete" in words or ("not" in words and ("complete" in words or "completed" in words)):
+            return False
+        return bool(words & {"complete", "completed", "done", "finished", "closed"}) or status in {"complete", "completed", "done", "finished", "closed"}
 
     def is_cancelled(row):
         return any(word in status_of(row) for word in ["cancel", "deleted", "archived"])
@@ -738,12 +744,13 @@ def build_command_human_mimic_router(db, get_current_user, ObjectId):
     @router.post("/command/scan")
     async def run_human_mimic_scan(payload: Optional[Dict[str, Any]] = None, request: Request = None):
         user = await require_owner(request)
-        jobs = await scoped_rows(user, ["jobs", "job_records", "appointments", "bookings"], 180)
-        invoices = await scoped_rows(user, ["invoices", "invoice_records"], 140)
-        clients = await scoped_rows(user, ["clients", "customers"], 100)
-        messages = await scoped_rows(user, ["messages", "client_messages", "inbox_messages"], 100)
-        timers = await scoped_rows(user, ["time_entries", "timers", "worker_time_entries", "timesheets"], 100)
-        settings = await scoped_rows(user, ["businesses", "business_settings", "settings"], 30)
+        scan_errors = []
+        jobs = await scoped_rows(user, ["jobs", "job_records", "appointments", "bookings"], 180, scan_errors)
+        invoices = await scoped_rows(user, ["invoices", "invoice_records"], 140, scan_errors)
+        clients = await scoped_rows(user, ["clients", "customers"], 100, scan_errors)
+        messages = await scoped_rows(user, ["messages", "client_messages", "inbox_messages"], 100, scan_errors)
+        timers = await scoped_rows(user, ["time_entries", "timers", "worker_time_entries", "timesheets"], 100, scan_errors)
+        settings = await scoped_rows(user, ["businesses", "business_settings", "settings"], 30, scan_errors)
 
         candidates = []
         counts = {
@@ -850,7 +857,13 @@ def build_command_human_mimic_router(db, get_current_user, ObjectId):
             "role_counts": counts,
             "slips": created,
             "existing": existing,
-            "message": f"Human-like mimic intelligence checked live records and prepared {len(created)} evidence-backed Command slip(s).",
+            "scan_complete": not scan_errors,
+            "scan_errors": list(dict.fromkeys(scan_errors)),
+            "message": (
+                f"Human-like mimic intelligence checked live records and prepared {len(created)} evidence-backed Command slip(s)."
+                if not scan_errors
+                else f"Human mimic prepared {len(created)} Command slip(s), but part of the live record scan failed. Review the scan warning before relying on a clear queue."
+            ),
             "safety": SAFE_RESULT,
         }
 

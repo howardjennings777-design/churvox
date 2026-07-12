@@ -128,7 +128,9 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         setResolved({});
         const createdCount = Number(command?.scan?.createdCount || 0);
         const existingCount = Number(command?.scan?.existingCount || 0);
-        if (isOwnerApp && createdCount) setNotice(`Churvox prepared ${createdCount} new Command decision${createdCount === 1 ? "" : "s"}. Open the first slip and correct anything that is not right.`);
+        const scanErrors = Array.isArray(command?.scan?.scanErrors) ? command.scan.scanErrors : [];
+        if (isOwnerApp && scanErrors.length) setNotice(`Command check incomplete. ${scanErrors.length} live data source${scanErrors.length === 1 ? "" : "s"} could not be read, so do not treat an empty queue as all clear.`);
+        else if (isOwnerApp && createdCount) setNotice(`Churvox prepared ${createdCount} new Command decision${createdCount === 1 ? "" : "s"}. Open the first slip and correct anything that is not right.`);
         else if (isOwnerApp && existingCount) setNotice(`${existingCount} Command decision${existingCount === 1 ? " is" : "s are"} still waiting for you.`);
         else if (isOwnerApp && command?.decisions?.length) setNotice("Command is ready. Open the first slip, check the evidence and approve only what is right.");
         else if (isOwnerApp && command?.source === "backend-command-clear") setNotice("Churvox checked the live records. Nothing needs your decision right now.");

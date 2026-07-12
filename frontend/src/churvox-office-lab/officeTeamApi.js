@@ -180,18 +180,30 @@ const ARRAY_KEYS = {
 async function safeRead(path) {
   const base = host();
   if (!base) return { ok: false, locked: true, status: 0, body: {}, path };
-  const response = await fetch(`${base}${path}`, {
-    credentials: "include",
-    headers: authHeaders({ json: false }),
-  });
-  const body = await response.json().catch(() => ({}));
-  return {
-    ok: response.ok && body?.success !== false,
-    locked: response.status === 401 || response.status === 403,
-    status: response.status,
-    body,
-    path,
-  };
+  let last = { ok: false, locked: false, status: 0, body: {}, path, error: "network" };
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(`${base}${path}`, {
+        credentials: "include",
+        headers: authHeaders({ json: false }),
+      });
+      const body = await response.json().catch(() => ({}));
+      last = {
+        ok: response.ok && body?.success !== false,
+        locked: response.status === 401 || response.status === 403,
+        status: response.status,
+        body,
+        path,
+      };
+      const transient = response.status === 408 || response.status === 429 || response.status >= 500;
+      if (!transient || attempt === 3) return last;
+    } catch (error) {
+      last = { ok: false, locked: false, status: 0, body: {}, path, error: error?.message || "network" };
+      if (attempt === 3) return last;
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 300 * attempt));
+  }
+  return last;
 }
 
 function extractArray(body, area, depth = 0) {

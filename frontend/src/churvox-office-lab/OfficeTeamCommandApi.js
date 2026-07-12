@@ -20,6 +20,27 @@ function authHeaders({ json = true } = {}) {
   };
 }
 
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url, options = {}, attempts = 3) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, options);
+      const transient = response.status === 408 || response.status === 429 || response.status >= 500;
+      if (!transient || attempt === attempts) return response;
+      await wait(350 * attempt);
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts) throw error;
+      await wait(350 * attempt);
+    }
+  }
+  throw lastError || new Error("Live Churvox request failed.");
+}
+
 function clean(value, fallback = "") {
   const text = String(value || "").trim();
   return text || fallback;
@@ -155,7 +176,7 @@ export function mapBackendCommandAudit(item = {}, index = 0) {
 export async function fetchBackendCommandDecisions() {
   const base = host();
   if (!base) return { source: "command-unavailable", decisions: [], message: "No API host" };
-  const response = await fetch(`${base}/api/command/slips`, { credentials: "include", headers: authHeaders({ json: false }) });
+  const response = await fetchWithRetry(`${base}/api/command/slips`, { credentials: "include", headers: authHeaders({ json: false }) });
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "command-unavailable", decisions: [], message: body?.detail || "Command backend unavailable" };
   if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command slips failed ${response.status}`);
@@ -166,7 +187,7 @@ export async function fetchBackendCommandDecisions() {
 export async function fetchBackendCommandAudit() {
   const base = host();
   if (!base) return { source: "command-audit-unavailable", audit: [], message: "No API host" };
-  const response = await fetch(`${base}/api/command/audit`, { credentials: "include", headers: authHeaders({ json: false }) });
+  const response = await fetchWithRetry(`${base}/api/command/audit`, { credentials: "include", headers: authHeaders({ json: false }) });
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "command-audit-unavailable", audit: [], message: body?.detail || "Command audit unavailable" };
   if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command audit failed ${response.status}`);
@@ -177,7 +198,7 @@ export async function fetchBackendCommandAudit() {
 export async function runBackendOfficeEngineScan() {
   const base = host();
   if (!base) return { source: "backend-office-engine-unavailable", createdCount: 0, existingCount: 0, message: "No API host" };
-  const response = await fetch(`${base}/api/command/scan`, {
+  const response = await fetchWithRetry(`${base}/api/command/scan`, {
     method: "POST",
     credentials: "include",
     headers: authHeaders(),
@@ -194,6 +215,9 @@ export async function runBackendOfficeEngineScan() {
     createdCount: Number(body?.created_count || 0),
     existingCount: Number(body?.existing_count || 0),
     roleCounts: body?.role_counts || {},
+    scanComplete: body?.scan_complete !== false,
+    scanErrors: Array.isArray(body?.scan_errors) ? body.scan_errors : [],
+    guard: body?.guard || "",
     message: body?.message || body?.safety || SAFE_RESULT,
   };
 }

@@ -343,6 +343,8 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
         service = service_key(job)
         dates = []
         for row in jobs:
+            if not explicitly_complete(row):
+                continue
             if client and client_key(row) != client:
                 continue
             if service and service_key(row) and service_key(row) != service:
@@ -366,6 +368,8 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
         service = service_key(job)
         names = []
         for row in jobs:
+            if not explicitly_complete(row):
+                continue
             if client and client_key(row) != client:
                 continue
             if service and service_key(row) and service_key(row) != service:
@@ -383,6 +387,8 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
         service = service_key(job)
         dates = []
         for row in jobs:
+            if not explicitly_complete(row):
+                continue
             if client and client_key(row) != client:
                 continue
             if service and service_key(row) and service_key(row) != service:
@@ -677,6 +683,15 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
     def harden_assignment(doc, job):
         if not job or cancelled(job) or explicitly_complete(job):
             return None
+        status = status_text(job)
+        words = status_words(job)
+        unresolved_completion = (
+            "incomplete" in words
+            or ("not" in words and bool(words & {"complete", "completed"}))
+            or status in {"pending completion", "awaiting completion"}
+        )
+        if unresolved_completion:
+            return None
         scheduled = record_date(job)
         worker = worker_name(job, "")
         if scheduled is not None and worker:
@@ -742,6 +757,9 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
         text = lower(body)
         request_words = bool(re.search(r"\b(can|could|would|when|where|how|what|why|book|available|appointment|schedule|invoice|price|cost|charge|payment|late|delay|change|cancel|help|please)\b", text)) or "?" in body
         acknowledgement = bool(re.fullmatch(r"[\s\W]*(thanks|thank you|great|perfect|awesome|ok|okay|cheers|all good)[\s\W]*", text))
+        informational_preference = memory_candidate(body) and not request_words
+        if informational_preference:
+            return False
         return bool(request_words or not acknowledgement)
 
     def harden_reply(doc, message):

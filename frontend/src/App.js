@@ -54,7 +54,7 @@ const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 // to appear in main.js without this explicit, harmless build marker.
 if (typeof window !== "undefined") {
   window.__CHURVOX_LIVE_BUILD__ = Object.freeze({
-    version: "churvox-auth-session-authority-20260713d",
+    version: "churvox-paid-launch-readiness-20260713a",
     ownerNavigation: "cvOwnerMainNavigation",
     secureCheckout: "Continue to secure checkout",
     workerLogout: "cvWorkerLogout",

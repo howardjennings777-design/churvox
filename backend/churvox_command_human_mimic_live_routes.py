@@ -78,6 +78,19 @@ def build_command_human_mimic_live_router(db, get_current_user, ObjectId):
         except Exception:
             return ""
 
+    def status_text(row):
+        return text((row or {}).get("status") or (row or {}).get("job_status") or (row or {}).get("state")).lower()
+
+    def unresolved_completion(row):
+        status = status_text(row)
+        normalized = status.replace("_", " ").replace("-", " ").replace("/", " ")
+        words = {word for word in normalized.split() if word}
+        return (
+            "incomplete" in words
+            or ("not" in words and bool(words & {"complete", "completed"}))
+            or status in {"pending completion", "awaiting completion"}
+        )
+
     def maybe_oid(value):
         try:
             return ObjectId(str(value))
@@ -174,10 +187,17 @@ def build_command_human_mimic_live_router(db, get_current_user, ObjectId):
         result = await strict_scan(request=request, payload=payload)
         user = await get_current_user(request)
         retired_ids = set()
+        job_actions = {"prepare_invoice", "prepare_recurring_next_date", "complete_job_setup", "request_completion_proof", "prepare_client_memory"}
         for slip in list(result.get("slips") or []) + list(result.get("existing") or []):
-            if text(slip.get("action_type")) != "prepare_invoice":
+            action = text(slip.get("action_type"))
+            job = await source_job(user, slip.get("source_id")) if action in job_actions else None
+            if job and unresolved_completion(job):
+                reason = "The source job has an unresolved completion status, so no normal booking, invoice, proof, assignment or memory decision is safe yet. " + SAFE_NOTE
+                if await supersede(slip, reason):
+                    retired_ids.add(text(slip.get("id") or slip.get("_id")))
                 continue
-            job = await source_job(user, slip.get("source_id"))
+            if action != "prepare_invoice":
+                continue
             if job and await linked_invoice(user, job, slip.get("source_id")):
                 reason = "A live invoice already links to this job, so the duplicate invoice decision was removed. " + SAFE_NOTE
                 if await supersede(slip, reason):

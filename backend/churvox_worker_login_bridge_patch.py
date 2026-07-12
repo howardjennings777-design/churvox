@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import asyncio
 import importlib
 import importlib.abc
 import importlib.machinery
@@ -94,13 +95,18 @@ def install(module):
             return None
 
     async def collections():
-        try:
-            return set(await db.list_collection_names())
-        except Exception:
-            return set(WORKER_COLLECTIONS)
+        last_error = None
+        for attempt in range(3):
+            try:
+                names = await asyncio.wait_for(db.list_collection_names(), timeout=6)
+                return set(names), None
+            except Exception as exc:
+                last_error = exc
+                if attempt < 2:
+                    await asyncio.sleep(0.35 * (attempt + 1))
+        return set(WORKER_COLLECTIONS), last_error
 
     async def find_worker_by_email(email):
-        names = await collections()
         checks = [
             {"email": email},
             {"user_email": email},
@@ -108,17 +114,24 @@ def install(module):
             {"staff_email": email},
             {"contact_email": email},
         ]
-        for collection_name in WORKER_COLLECTIONS:
-            if collection_name not in names:
-                continue
-            for query in checks:
-                try:
-                    doc = await db[collection_name].find_one(query)
-                except Exception:
-                    doc = None
-                if doc:
-                    return collection_name, doc
-        return None, None
+        last_error = None
+        for attempt in range(3):
+            names, collection_error = await collections()
+            last_error = collection_error or last_error
+            for collection_name in WORKER_COLLECTIONS:
+                if collection_name not in names:
+                    continue
+                for query in checks:
+                    try:
+                        doc = await asyncio.wait_for(db[collection_name].find_one(query), timeout=6)
+                    except Exception as exc:
+                        last_error = exc
+                        doc = None
+                    if doc:
+                        return collection_name, doc, None
+            if attempt < 2:
+                await asyncio.sleep(0.35 * (attempt + 1))
+        return None, None, last_error
 
     def check_password(password, doc):
         for field in PASSWORD_FIELDS:
@@ -214,8 +227,12 @@ def install(module):
             return {"success": False, "detail": "Enter worker email and password."}
         if response:
             clear_auth_cookies(response)
-        collection_name, worker_doc = await find_worker_by_email(email)
+        collection_name, worker_doc, lookup_error = await find_worker_by_email(email)
         if not worker_doc:
+            if lookup_error is not None:
+                if response:
+                    response.status_code = 503
+                return {"success": False, "detail": "Worker login service is temporarily unavailable. Please try again."}
             if response:
                 response.status_code = 401
             return {"success": False, "detail": "Worker account not found."}
@@ -234,6 +251,13 @@ def install(module):
         except Exception:
             pass
         return response_for(user, token)
+
+    # Nested functions plus postponed annotations otherwise become query parameters in FastAPI.
+    worker_login.__annotations__ = {
+        "payload": dict,
+        "response": Response,
+        "request": Request,
+    }
 
     for path in ["/api/worker/auth/login", "/api/auth/worker-login"]:
         remove_route(app, path, "POST")
