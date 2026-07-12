@@ -1,0 +1,46 @@
+name: Churvox Auth Live Snapshot
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  snapshot:
+    if: startsWith(github.event.issue.title, '[churvox-auth-live-snapshot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect current live frontend bundle
+        shell: bash
+        run: |
+          node <<'NODE' > /tmp/churvox-auth-live-snapshot.txt 2>&1
+          const site = 'https://www.churvox.com';
+          const marker = 'churvox-auth-401-storm-repair-20260713b';
+          (async () => {
+            const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
+            console.log(`manifest=${manifestResponse.status}`);
+            const manifest = await manifestResponse.json();
+            const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((value) => /main\..*\.js$/.test(value));
+            console.log(`main=${mainPath || 'missing'}`);
+            if (!mainPath) process.exit(1);
+            const bundleResponse = await fetch(new URL(mainPath, site), { cache: 'no-store' });
+            const bundle = await bundleResponse.text();
+            console.log(`bundle=${bundleResponse.status}`);
+            console.log(`marker=${bundle.includes(marker)}`);
+            console.log(`guard=${bundle.includes('churvoxProtectedFetchAuthGuardRuntime')}`);
+            console.log(`size=${bundle.length}`);
+          })().catch((error) => { console.error(error.stack || error); process.exit(1); });
+          NODE
+
+      - name: Post snapshot
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const text = fs.existsSync('/tmp/churvox-auth-live-snapshot.txt') ? fs.readFileSync('/tmp/churvox-auth-live-snapshot.txt', 'utf8') : 'No snapshot output.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Current auth bundle snapshot\n\n\`\`\`text\n${text}\n\`\`\`` });
