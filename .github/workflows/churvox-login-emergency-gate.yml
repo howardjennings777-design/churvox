@@ -14,6 +14,7 @@ on:
       - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
       - 'frontend/src/pages/owner/OwnerLoginPage.jsx'
       - 'frontend/src/pages/owner/OwnerDashboardPage.jsx'
+      - 'frontend/src/pages/auth/AdminLoginPage.js'
       - 'scripts/test_platform_owner_frontend_lock.py'
       - '.github/workflows/churvox-login-emergency-gate.yml'
   pull_request:
@@ -28,6 +29,7 @@ on:
       - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
       - 'frontend/src/pages/owner/OwnerLoginPage.jsx'
       - 'frontend/src/pages/owner/OwnerDashboardPage.jsx'
+      - 'frontend/src/pages/auth/AdminLoginPage.js'
       - 'scripts/test_platform_owner_frontend_lock.py'
       - '.github/workflows/churvox-login-emergency-gate.yml'
   workflow_dispatch:
@@ -87,3 +89,4 @@ jobs:
           grep -F 'if path == "/api/auth/login"' backend/churvox_auth_paid_launch_hardening.py
           grep -F 'normalizedEmail !== OWNER_EMAIL' frontend/src/pages/owner/OwnerLoginPage.jsx
           grep -F 'response.ok && email === OWNER_EMAIL' frontend/src/pages/owner/OwnerDashboardPage.jsx
+          grep -F 'verifiedEmail !== PLATFORM_OWNER_EMAIL' frontend/src/pages/auth/AdminLoginPage.js
