@@ -1,0 +1,233 @@
+name: Churvox Auth Session Authority Repair
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-auth-session-authority-repair]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply authoritative access and transient-session repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' 2>&1 | tee /tmp/churvox-auth-session-authority-repair.txt
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              file = Path(path)
+              text = file.read_text()
+              if new in text:
+                  print(f'already patched: {label}')
+                  return
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              file.write_text(text.replace(old, new, 1))
+              print(f'patched: {label}')
+
+          auth = 'frontend/src/context/AuthContext.js'
+
+          replace_once(
+              auth,
+              'const WORKER_OFFLINE_GRACE_MS = 1000 * 60 * 60 * 2;\n',
+              'const WORKER_OFFLINE_GRACE_MS = 1000 * 60 * 60 * 2;\nconst BUSINESS_OFFLINE_GRACE_MS = 1000 * 60 * 15;\n',
+              'bounded owner session grace',
+          )
+
+          replace_once(
+              auth,
+              '''  if (PAID_STATUSES.has(status)) return stripeBackedAccess(user);
+          if (typeof user.has_app_access === "boolean") return user.has_app_access && stripeBackedAccess(user);
+          if (hasValidPlan(user)) return stripeBackedAccess(user);'''.replace('\n          ', '\n'),
+              '''  // /api/auth/me is the authoritative billing gate. It intentionally may
+          // omit Stripe identifiers, so an explicit server-granted access flag must not
+          // be rejected merely because private billing proof is absent from browser JSON.
+          if (user.has_app_access === true) return true;
+          if (PAID_STATUSES.has(status)) return stripeBackedAccess(user);
+          if (hasValidPlan(user)) return stripeBackedAccess(user);'''.replace('\n          ', '\n'),
+              'trust authoritative backend access flag',
+          )
+
+          replace_once(
+              auth,
+              '''function offlineWorkerSnapshot(user = {}) {
+            return inferredWorker(user) && !explicitBillingLock(user) && !isPlatformOwner(user);
+          }
+          '''.replace('\n          ', '\n'),
+              '''function offlineWorkerSnapshot(user = {}) {
+            return inferredWorker(user) && !explicitBillingLock(user) && !isPlatformOwner(user);
+          }
+
+          function offlineBusinessSnapshot(user = {}) {
+            return !inferredWorker(user) && !inferredPayroll(user) && businessAccessFromUser(user);
+          }
+          '''.replace('\n          ', '\n'),
+              'recent owner session fallback helper',
+          )
+
+          replace_once(
+              auth,
+              '''    const workerSession = readStoredAuthSnapshot(WORKER_OFFLINE_GRACE_MS);
+
+            try {
+              const me = await fetchMe(token || workerSession?.token || undefined);'''.replace('\n            ', '\n'),
+              '''    const workerSession = readStoredAuthSnapshot(WORKER_OFFLINE_GRACE_MS);
+            const businessSession = readStoredAuthSnapshot(BUSINESS_OFFLINE_GRACE_MS);
+            const fallbackSession = workerSession || businessSession;
+
+            try {
+              const me = await fetchMe(token || fallbackSession?.token || undefined);'''.replace('\n            ', '\n'),
+              'read bounded owner fallback session',
+          )
+
+          replace_once(
+              auth,
+              '''    } catch (error) {
+            const status = error?.response?.status;
+            if (!status && workerSession && offlineWorkerSnapshot(workerSession)) {
+              if (runId === authRunRef.current) setUser(workerSession);
+              return workerSession;
+            }
+            clearStoredAuth({ clearPlanState: status === 401 || status === 403 });
+            if (runId === authRunRef.current) setUser(null);
+            throw error;
+          } finally {'''.replace('\n            ', '\n'),
+              '''    } catch (error) {
+            const status = error?.response?.status;
+            const transient = !status || status === 408 || status === 429 || status >= 500;
+            if (transient && workerSession && offlineWorkerSnapshot(workerSession)) {
+              if (runId === authRunRef.current) setUser(workerSession);
+              return workerSession;
+            }
+            if (transient && businessSession && offlineBusinessSnapshot(businessSession)) {
+              if (runId === authRunRef.current) setUser(businessSession);
+              return businessSession;
+            }
+            if (status === 401 || status === 403) clearStoredAuth({ clearPlanState: true });
+            if (runId === authRunRef.current) setUser(null);
+            throw error;
+          } finally {'''.replace('\n            ', '\n'),
+              'preserve valid session only for transient auth failures',
+          )
+
+          marker_old = 'churvox-worker-command-routes-20260713c'
+          marker_new = 'churvox-auth-session-authority-20260713d'
+          marker_paths = [
+              'frontend/src/App.js',
+              '.github/workflows/churvox-worker-command-route-live-probe.yml',
+              '.github/workflows/churvox-final-worker-route-repair.yml',
+          ]
+          for path in marker_paths:
+              file = Path(path)
+              text = file.read_text()
+              if marker_new in text:
+                  print(f'already patched marker: {path}')
+                  continue
+              count = text.count(marker_old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one old marker, found {count}')
+              file.write_text(text.replace(marker_old, marker_new, 1))
+              print(f'patched deployment marker: {path}')
+
+          contract = Path('scripts/churvox-auth-session-authority-contract.cjs')
+          contract.write_text(r'''#!/usr/bin/env node
+          const fs = require('fs');
+
+          const auth = fs.readFileSync('frontend/src/context/AuthContext.js', 'utf8');
+          const app = fs.readFileSync('frontend/src/App.js', 'utf8');
+          const probe = fs.readFileSync('.github/workflows/churvox-worker-command-route-live-probe.yml', 'utf8');
+
+          const checks = [
+            ['authoritative access flag', auth.includes('if (user.has_app_access === true) return true;')],
+            ['explicit false remains a lock', auth.includes('user.has_app_access === false')],
+            ['owner grace is bounded', auth.includes('const BUSINESS_OFFLINE_GRACE_MS = 1000 * 60 * 15;')],
+            ['owner fallback is transient only', auth.includes('if (transient && businessSession && offlineBusinessSnapshot(businessSession))')],
+            ['definitive 401/403 clears session', auth.includes('if (status === 401 || status === 403) clearStoredAuth({ clearPlanState: true });')],
+            ['new frontend fingerprint', app.includes('churvox-auth-session-authority-20260713d')],
+            ['live probe expects new fingerprint', probe.includes('churvox-auth-session-authority-20260713d')],
+          ];
+
+          for (const [name, pass] of checks) {
+            console.log(`${pass ? 'PASS' : 'FAIL'} — ${name}`);
+            if (!pass) process.exitCode = 1;
+          }
+          ''`.replace(/^          /gm, ''));
+          print('wrote permanent auth session authority contract')
+          PY
+
+      - name: Run guarded contract and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/churvox-auth-session-authority-contract.cjs | tee /tmp/churvox-auth-session-authority-contract.txt
+          npm --prefix frontend install --legacy-peer-deps
+          CI=false npm --prefix frontend run build 2>&1 | tee /tmp/churvox-auth-session-authority-build.txt
+
+      - name: Commit verified repair
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/context/AuthContext.js frontend/src/App.js scripts/churvox-auth-session-authority-contract.cjs .github/workflows/churvox-worker-command-route-live-probe.yml .github/workflows/churvox-final-worker-route-repair.yml
+          if git diff --cached --quiet; then
+            echo 'sha='$(git rev-parse HEAD) >> "$GITHUB_OUTPUT"
+            echo 'No new product changes were needed.' | tee /tmp/churvox-auth-session-authority-commit.txt
+            exit 0
+          fi
+          git commit -m 'Fix authoritative owner access and transient auth recovery'
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo 'sha='$(git rev-parse HEAD) >> "$GITHUB_OUTPUT"
+          git show --stat --oneline --summary HEAD | tee /tmp/churvox-auth-session-authority-commit.txt
+
+      - name: Post success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const read = (path) => fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-6000) : 'No output.';
+            const sha = '${{ steps.commit.outputs.sha }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## Auth session authority repair committed\n\nCommit: \`${sha}\`\n\nThe owner app now trusts the backend's explicit access decision, keeps a recent valid owner session only through transient backend delays, and still clears immediately on 401/403.\n\n### Contract\n\`\`\`text\n${read('/tmp/churvox-auth-session-authority-contract.txt')}\n\`\`\`\n\n### Commit\n\`\`\`text\n${read('/tmp/churvox-auth-session-authority-commit.txt')}\n\`\`\``
+            });
+
+      - name: Post failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const files = [
+              '/tmp/churvox-auth-session-authority-repair.txt',
+              '/tmp/churvox-auth-session-authority-contract.txt',
+              '/tmp/churvox-auth-session-authority-build.txt',
+              '/tmp/churvox-auth-session-authority-commit.txt',
+            ];
+            const body = files.map((path) => `### ${path}\n\`\`\`text\n${fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-5000) : 'No output.'}\n\`\`\``).join('\n\n');
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Auth session authority repair failed\n\n${body}` });
