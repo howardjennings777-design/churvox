@@ -1,6 +1,6 @@
 import API_BASE from "../lib/apiBase";
 
-const VERSION = "CHURVOX_PLANS_USAGE_TRUTH_20260712C";
+const VERSION = "CHURVOX_PLANS_USAGE_TRUTH_20260712D";
 const PANEL_ID = "churvox-plan-live-usage";
 const LABELS = [
   ["active_team_members", "active_team_members", "Active team members"],
@@ -55,7 +55,9 @@ function ensureStyles() {
   style.id = "churvox-plan-live-usage-style";
   style.textContent = `
     #${PANEL_ID} {
+      grid-column: 1 / -1;
       width: 100%;
+      min-width: 0;
       box-sizing: border-box;
       margin: 16px 0 22px;
       padding: 20px;
@@ -281,10 +283,10 @@ async function loadUsage(force = false) {
     if (!response.ok || body?.success === false) throw new Error(text(body?.detail || body?.error || body?.message, `Usage request failed (${response.status}).`));
     if (body?.limit_source !== "locked_paid_launch_limits_2026_07_12") throw new Error("The backend returned an outdated plan-limit source.");
     renderUsage(panel, body);
-    lastLoadedAt = Date.now();
   } catch (error) {
     renderError(panel, error?.message || "Live usage could not be loaded.");
   } finally {
+    lastLoadedAt = Date.now();
     loading = false;
   }
 }
