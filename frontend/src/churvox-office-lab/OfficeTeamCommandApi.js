@@ -2,6 +2,8 @@ import API_BASE from "../lib/apiBase";
 
 export const BACKEND_COMMAND_EVENT = "churvox-backend-command-slip";
 const SAFE_RESULT = "Owner approval recorded. Nothing was sent, synced, charged or changed.";
+const COMMAND_QUEUE_CACHE_KEY = "churvox:command:confirmed-queue:v1";
+const COMMAND_QUEUE_CACHE_MAX_AGE_MS = 1000 * 60 * 15;
 
 function host() {
   const configured = String(API_BASE || "").replace(/\/$/, "");
@@ -182,15 +184,34 @@ export function mapBackendCommandAudit(item = {}, index = 0) {
   };
 }
 
-export async function fetchBackendCommandDecisions() {
+export function readCachedBackendCommandDecisions(maxAgeMs = COMMAND_QUEUE_CACHE_MAX_AGE_MS) {
+  try {
+    const raw = localStorage.getItem(COMMAND_QUEUE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const at = Number(parsed?.at || 0);
+    const payload = parsed?.payload;
+    if (!at || Date.now() - at > maxAgeMs || !payload || !Array.isArray(payload.decisions)) return null;
+    return { ...payload, source: payload.source || "backend-command-cache", cached: true, cachedAt: new Date(at).toISOString() };
+  } catch { return null; }
+}
+
+function cacheBackendCommandDecisions(payload) {
+  if (!payload || !Array.isArray(payload.decisions)) return;
+  try { localStorage.setItem(COMMAND_QUEUE_CACHE_KEY, JSON.stringify({ at: Date.now(), payload })); } catch {}
+}
+
+export async function fetchBackendCommandDecisions({ timeoutMs = 3000, attempts = 1 } = {}) {
   const base = host();
   if (!base) return { source: "command-unavailable", decisions: [], message: "No API host" };
-  const response = await fetchWithRetry(`${base}/api/command/slips`, { credentials: "include", headers: authHeaders({ json: false }), timeoutMs: 6000 }, 2);
+  const response = await fetchWithRetry(`${base}/api/command/slips`, { credentials: "include", headers: authHeaders({ json: false }), timeoutMs }, attempts);
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "command-unavailable", decisions: [], message: body?.detail || "Command backend unavailable" };
   if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command slips failed ${response.status}`);
   const slips = Array.isArray(body?.slips) ? body.slips : [];
-  return { source: slips.length ? "backend-command" : "backend-command-clear", decisions: slips.map(mapCommandSlipToDecision), message: body?.safety || SAFE_RESULT, fetchedAt: new Date().toISOString() };
+  const payload = { source: slips.length ? "backend-command" : "backend-command-clear", decisions: slips.map(mapCommandSlipToDecision), message: body?.safety || SAFE_RESULT, fetchedAt: new Date().toISOString() };
+  cacheBackendCommandDecisions(payload);
+  return payload;
 }
 
 export async function fetchBackendCommandAudit() {

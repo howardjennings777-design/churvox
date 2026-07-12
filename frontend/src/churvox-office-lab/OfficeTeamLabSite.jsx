@@ -22,7 +22,7 @@ import { QuotesScreen, InvoicesScreen, IntegrationsScreen, HelpScreen } from "./
 import { MessagesScreen, WorkerViewScreen } from "./OfficeTeamCommunicationScreens";
 import { ScheduleScreen, AutomationScreen, PayrollScreen, BrandingScreen } from "./OfficeTeamBackOfficeScreens";
 import { fetchOfficeTeamSnapshot, makeStatusCards, recordOfficeTeamDecision } from "./officeTeamApi";
-import { BACKEND_COMMAND_EVENT, fetchBackendCommandAudit, fetchBackendCommandDecisions, recordBackendCommandDecision, runBackendOfficeEngineScan } from "./OfficeTeamCommandApi";
+import { BACKEND_COMMAND_EVENT, fetchBackendCommandAudit, fetchBackendCommandDecisions, readCachedBackendCommandDecisions, recordBackendCommandDecision, runBackendOfficeEngineScan } from "./OfficeTeamCommandApi";
 import { fetchOfficeTeamCommandDrafts } from "./OfficeTeamCommandDrafts";
 import { readOfficeTeamLocalActivityLog, readOfficeTeamLocalCommandQueue, recordOfficeTeamLocalActivity, removeOfficeTeamLocalCommand, subscribeOfficeTeamLocalActivity, subscribeOfficeTeamLocalCommand } from "./OfficeTeamLocalCommand";
 import { readOfficeTeamApprovalTrail, recordOfficeTeamApprovalTrail, subscribeOfficeTeamApprovalTrail } from "./OfficeTeamApprovalTrail";
@@ -32,7 +32,7 @@ const COMMAND_CARD_LIMIT = 3;
 const SAFE_APPROVAL_TEXT = "Nothing was sent, synced, charged or filed.";
 const RECORD_ONLY_TEXT = "Nothing was sent, synced, charged or changed.";
 const MISSING_VALUE = "Not found — owner must enter";
-const COMMAND_FAST_LOAD_BUILD = "churvox-command-fast-load-build-20260713c";
+const COMMAND_FAST_LOAD_BUILD = "churvox-command-instant-load-20260713d";
 if (typeof window !== "undefined") window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ = COMMAND_FAST_LOAD_BUILD;
 
 const screens = [
@@ -95,10 +95,11 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   const [screen, setScreen] = useState(() => cleanScreen(window.location.hash));
   const [tray, setTray] = useState("command");
   const [activeRole, setActiveRole] = useState("Office Manager");
+  const initialCachedCommand = isOwnerApp ? readCachedBackendCommandDecisions() : null;
   const [snapshot, setSnapshot] = useState({ source: "starter", decisions: [] });
-  const [backendCommand, setBackendCommand] = useState({ source: "command-unavailable", decisions: [] });
+  const [backendCommand, setBackendCommand] = useState(initialCachedCommand || { source: "command-unavailable", decisions: [] });
   const [backendAudit, setBackendAudit] = useState({ source: "command-audit-unavailable", audit: [] });
-  const [commandLoading, setCommandLoading] = useState(isOwnerApp);
+  const [commandLoading, setCommandLoading] = useState(isOwnerApp && !initialCachedCommand);
   const [liveDrafts, setLiveDrafts] = useState([]);
   const [localQueue, setLocalQueue] = useState(() => readOfficeTeamLocalCommandQueue());
   const [localActivity, setLocalActivity] = useState(() => readOfficeTeamLocalActivityLog());
@@ -122,13 +123,20 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     }
 
     if (isOwnerApp) {
-      setCommandLoading(true);
-      setNotice("Opening the current Command queue. The full business check will continue behind it.");
+      const cachedCommand = readCachedBackendCommandDecisions();
+      if (cachedCommand) {
+        setBackendCommand(cachedCommand);
+        setCommandLoading(false);
+        setNotice("Command is open from the last confirmed queue. Churvox is refreshing live records behind it.");
+      } else {
+        setCommandLoading(true);
+        setNotice("Opening the current Command queue. The full business check will continue behind it.");
+      }
 
-      const loadCurrentQueue = async ({ afterScan = false, scan = null } = {}) => {
+      const loadCurrentQueue = async ({ afterScan = false, scan = null, timeoutMs = 3000, attempts = 1 } = {}) => {
         try {
           if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueRequestedAt: Date.now() };
-          const command = await fetchBackendCommandDecisions();
+          const command = await fetchBackendCommandDecisions({ timeoutMs, attempts });
           if (!mounted) return null;
           const nextCommand = scan ? { ...command, scan } : command;
           setBackendCommand(nextCommand || { source: "command-unavailable", decisions: [] });
@@ -142,14 +150,16 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
           return command;
         } catch (error) {
           if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueError: error?.message || "connection issue" };
-          if (mounted && !afterScan) setNotice(`Command queue could not load: ${error?.message || "connection issue"}. Nothing was changed.`);
+          if (mounted && !afterScan) setNotice(cachedCommand
+            ? `Command is showing the last confirmed queue. Live refresh is still retrying: ${error?.message || "connection issue"}.`
+            : `Command opened without waiting for the slow service. Live refresh is still retrying: ${error?.message || "connection issue"}. Nothing was changed.`);
           return null;
         } finally {
           if (mounted && !afterScan) setCommandLoading(false);
         }
       };
 
-      const queuePromise = loadCurrentQueue();
+      const queuePromise = loadCurrentQueue({ timeoutMs: 3000, attempts: 1 });
 
       fetchBackendCommandAudit()
         .then((audit) => { if (mounted && audit) setBackendAudit(audit); })
@@ -161,7 +171,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
           try {
             const scan = await runBackendOfficeEngineScan();
             if (!mounted) return;
-            const command = await loadCurrentQueue({ afterScan: true, scan });
+            const command = await loadCurrentQueue({ afterScan: true, scan, timeoutMs: 8000, attempts: 1 });
             if (!mounted) return;
             const createdCount = Number(scan?.createdCount || 0);
             const existingCount = Number(scan?.existingCount || 0);
@@ -173,7 +183,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
           } catch (error) {
             if (mounted) setNotice(`The current queue is open. The background business check could not finish: ${error?.message || "connection issue"}. Nothing was changed.`);
           }
-        }, 180);
+        }, 900);
       });
 
       return () => {
