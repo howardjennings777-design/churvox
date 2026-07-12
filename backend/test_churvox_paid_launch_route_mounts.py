@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 import types
 import unittest
 
@@ -27,13 +28,18 @@ def route_for(app, path, method):
 
 
 class PaidLaunchRouteMountTest(unittest.TestCase):
-    def test_authoritative_startup_loader_owns_billing_and_deletion_patches(self):
+    def test_authoritative_startup_loader_and_final_wrapper_own_protected_routes(self):
         self.assertIn("churvox_billing_portal_paid_launch", startup_loader.PATCH_MODULES)
         self.assertIn("churvox_account_deletion_paid_launch", startup_loader.PATCH_MODULES)
         self.assertLess(
             startup_loader.PATCH_MODULES.index("churvox_paid_launch_guard_patch"),
             startup_loader.PATCH_MODULES.index("churvox_billing_portal_paid_launch"),
         )
+        outer = (Path(__file__).with_name("churvox_outer_cors_error_shield.py")).read_text(encoding="utf-8")
+        self.assertIn("churvox_billing_portal_paid_launch", outer)
+        self.assertIn("churvox_account_deletion_paid_launch", outer)
+        self.assertLess(outer.index("churvox_login_emergency_final"), outer.index("churvox_billing_portal_paid_launch"))
+        self.assertLess(outer.index("churvox_account_deletion_paid_launch"), outer.index("churvox_jwt_health_fingerprint_patch"))
 
     def test_billing_portal_post_is_mounted_and_signed_out_returns_401(self):
         name = "test.billing.portal.server"
@@ -51,6 +57,20 @@ class PaidLaunchRouteMountTest(unittest.TestCase):
         with self.assertRaises(HTTPException) as captured:
             asyncio.run(route.endpoint(object()))
         self.assertEqual(captured.exception.status_code, 401)
+
+    def test_billing_portal_repairs_a_stale_installed_marker(self):
+        name = "test.billing.portal.stale"
+        billing_portal.INSTALLED.add(name)
+        module = types.SimpleNamespace(
+            __name__=name,
+            app=FastAPI(),
+            get_current_user=signed_out,
+            stripe=types.SimpleNamespace(),
+        )
+
+        billing_portal.install(module)
+        route_for(module.app, "/api/billing/create-portal-session", "POST")
+        self.assertIn(name, billing_portal.INSTALLED)
 
     def test_account_deletion_delete_and_post_are_mounted_and_protected(self):
         name = "test.account.deletion.server"
@@ -72,6 +92,23 @@ class PaidLaunchRouteMountTest(unittest.TestCase):
             with self.assertRaises(HTTPException) as captured:
                 asyncio.run(route.endpoint(object()))
             self.assertEqual(captured.exception.status_code, 401)
+
+    def test_account_deletion_repairs_a_stale_installed_marker(self):
+        name = "test.account.deletion.stale"
+        account_deletion.INSTALLED.add(name)
+        module = types.SimpleNamespace(
+            __name__=name,
+            app=FastAPI(),
+            db=types.SimpleNamespace(),
+            get_current_user=signed_out,
+            ObjectId=ObjectId,
+            stripe=types.SimpleNamespace(),
+        )
+
+        account_deletion.install(module)
+        route_for(module.app, "/api/account/self-delete", "DELETE")
+        route_for(module.app, "/api/account/self-delete", "POST")
+        self.assertIn(name, account_deletion.INSTALLED)
 
 
 if __name__ == "__main__":
