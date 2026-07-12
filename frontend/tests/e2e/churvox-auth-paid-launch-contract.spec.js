@@ -17,6 +17,7 @@ async function installAuthApi(page, options = {}) {
     has_app_access: true,
     email_verified: true,
   };
+  let currentUser = owner;
 
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -26,12 +27,16 @@ async function installAuthApi(page, options = {}) {
     requests.push({ pathname, method: request.method(), payload });
 
     if (pathname === '/api/auth/register') {
-      return route.fulfill(json({ success: true, token: 'signup-token', user: { ...owner, email: payload.email, has_app_access: false, subscription_status: 'none', stripe_subscription_id: '', email_verified: false }, email_verification_sent: true, email_verification_provider: 'postmark' }));
+      currentUser = { ...owner, email: payload.email, has_app_access: false, subscription_status: 'none', stripe_subscription_id: '', email_verified: false };
+      return route.fulfill(json({ success: true, token: 'signup-token', user: currentUser, email_verification_sent: true, email_verification_provider: 'postmark' }));
     }
-    if (pathname === '/api/auth/login') return route.fulfill(json({ success: true, token: 'login-token', user: owner }));
+    if (pathname === '/api/auth/login') {
+      currentUser = owner;
+      return route.fulfill(json({ success: true, token: 'login-token', user: owner }));
+    }
     if (/\/api\/auth\/(?:me|check|session)$/.test(pathname)) {
       if (options.initiallyLoggedOut && !requests.some((item) => item.pathname === '/api/auth/login')) return route.fulfill(json({ detail: 'Not authenticated' }, 401));
-      return route.fulfill(json({ success: true, user: owner, ...owner }));
+      return route.fulfill(json({ success: true, user: currentUser, ...currentUser }));
     }
     if (pathname === '/api/lifecycle/welcome') return route.fulfill(json({ success: true }));
     if (pathname === '/api/platform/visit') return route.fulfill(json({ ok: true }));
@@ -71,13 +76,14 @@ test.describe('Paid-launch auth contract', () => {
     await expect(page.getByText(/Agree to the Terms of Service and Privacy Policy/i)).toBeVisible();
   });
 
-  test('signup sends consent versions and preserves selected plan', async ({ page }) => {
+  test('signup records consent and carries the selected plan into verification', async ({ page }) => {
     const api = await installAuthApi(page);
     await page.goto('/signup?plan=operator&country=NZ', { waitUntil: 'domcontentloaded' });
     await fillSignup(page, 'LongEnough8');
     await page.locator('input[name="termsAccepted"]').check();
     await createAccountButton(page).click();
-    await page.waitForURL(/\/plans/i);
+    await page.waitForURL(/\/verify-email\?.*plan=operator/i);
+    await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
 
     const registration = api.requests.find((item) => item.pathname === '/api/auth/register');
     expect(registration).toBeTruthy();
