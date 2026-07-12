@@ -26,7 +26,7 @@ jobs:
 
       - name: Apply focused auth repair
         run: |
-          python scripts/churvox-auth-401-storm-repair.py
+          python scripts/churvox-auth-401-storm-repair-v2.py
           python scripts/churvox-auth-runtime-ready-patch.py
 
       - name: Run permanent contract
