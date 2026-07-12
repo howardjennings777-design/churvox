@@ -5,8 +5,8 @@ import { PublicFooter, PublicNav } from "../marketing/ChurvoxPublicShell";
 const UPDATED = "12 July 2026";
 const CONTACT = "hello@churvox.com";
 
-function Section({ title, children }) {
-  return <section className="border-t border-slate-200 pt-6"><h2 className="mb-3 text-xl font-black text-slate-950">{title}</h2><div className="space-y-3">{children}</div></section>;
+function Section({ title, id, children }) {
+  return <section id={id} className="scroll-mt-24 border-t border-slate-200 pt-6"><h2 className="mb-3 text-xl font-black text-slate-950">{title}</h2><div className="space-y-3">{children}</div></section>;
 }
 
 export default function TermsOfServicePage() {
@@ -48,10 +48,10 @@ export default function TermsOfServicePage() {
               <p>A customer accepting a public quote records approval to proceed but does not automatically take payment. A customer approving completed work records that response but does not automatically create or pay an invoice.</p>
             </Section>
 
-            <Section title="6. Plans, trials and subscriptions">
+            <Section id="billing-cancellations" title="6. Plans, trials, cancellations and subscriptions">
               <p>Current plan prices, included features, trial length, currency and applicable tax are shown on the pricing and checkout screens. A trial begins only when the required checkout is completed. Stripe handles subscription checkout and card details.</p>
               <p>Unless cancelled, a subscription may renew at the end of the trial or billing period at the price shown for the selected plan. Keep billing details current. Failed payment, misuse or an inactive subscription may restrict access.</p>
-              <p>Cancellation and refund information is available on the <Link className="font-black text-orange-700" to="/refunds-cancellations">billing and cancellations page</Link>. Any mandatory rights under applicable consumer law remain unaffected.</p>
+              <p>You can cancel future renewal through the available billing controls or by contacting <a className="font-black text-orange-700" href={`mailto:${CONTACT}?subject=Churvox%20billing%20or%20cancellation`}>{CONTACT}</a>. Cancellation does not automatically create a refund for a completed billing period. Refund requests are assessed against applicable law, the checkout information and the circumstances of the request. Any mandatory consumer rights remain unaffected.</p>
             </Section>
 
             <Section title="7. Testers and free access">
