@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import API_BASE from "../lib/apiBase";
 import "./OfficeTeamPlansScreen.css";
 import "./OfficeTeamPlansActions.css";
 
@@ -10,6 +11,14 @@ const COUNTRIES = {
 };
 
 const STORAGE_KEY = "churvox:billing-country";
+const EMAIL_STORAGE_KEY = "churvox:billing-email";
+const CHECKOUT_PLAN_KEYS = { Start: "solo", Crew: "team", Operator: "pro", Command: "enterprise" };
+const CHECKOUT_ENDPOINTS = [
+  "/billing/create-checkout-session",
+  "/stripe/create-checkout-session",
+  "/billing/checkout",
+  "/stripe/checkout",
+];
 
 const plans = [
   {
@@ -61,6 +70,8 @@ const growthPack = {
 export default function OfficeTeamPlansScreen() {
   const [country, setCountry] = useState(() => detectCountry());
   const [selected, setSelected] = useState("Operator");
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [billingError, setBillingError] = useState("");
   const meta = COUNTRIES[country] || COUNTRIES.NZ;
   const plan = plans.find((item) => item.name === selected) || plans[2];
   const selectedPricing = priceParts(meta, plan.price);
@@ -78,13 +89,71 @@ export default function OfficeTeamPlansScreen() {
 
   const countryOptions = useMemo(() => Object.entries(COUNTRIES), []);
 
-  function openBilling() {
+  async function openBilling() {
+    if (billingBusy) return;
+    setBillingBusy(true);
+    setBillingError("");
+
+    const displayPlan = plan.name.toLowerCase();
+    const stripePlan = CHECKOUT_PLAN_KEYS[plan.name] || displayPlan;
+    const ownerEmail = readStoredEmail();
+
     try {
       localStorage.setItem(STORAGE_KEY, country);
-      localStorage.setItem("churvox:selected-plan", plan.name.toLowerCase());
+      localStorage.setItem("churvox:selected-plan", displayPlan);
+      localStorage.setItem("churvox:billing-plan", displayPlan);
+      if (ownerEmail) localStorage.setItem(EMAIL_STORAGE_KEY, ownerEmail);
     } catch {}
-    const params = new URLSearchParams({ country, plan: plan.name.toLowerCase() });
-    window.location.assign(`/plans?${params.toString()}`);
+
+    const returnBase = `${window.location.origin}/dashboard`;
+    const payload = {
+      plan: stripePlan,
+      plan_key: displayPlan,
+      selected_plan: displayPlan,
+      tier: stripePlan,
+      plan_name: plan.name,
+      action: "start_trial",
+      country,
+      billing_country: country,
+      currency: meta.currency,
+      email: ownerEmail,
+      billing_interval: "monthly",
+      interval: "month",
+      success_url: `${returnBase}?checkout=success&plan=${encodeURIComponent(displayPlan)}#plans`,
+      cancel_url: `${returnBase}?checkout=cancelled&plan=${encodeURIComponent(displayPlan)}#plans`,
+      metadata: {
+        display_plan: displayPlan,
+        stripe_plan: stripePlan,
+        source: "new_owner_plans_screen",
+      },
+    };
+
+    let lastError = null;
+    for (const endpoint of CHECKOUT_ENDPOINTS) {
+      try {
+        const response = await fetch(apiUrl(endpoint), {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", ...tokenHeaders() },
+          body: JSON.stringify(payload),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || body?.success === false) {
+          throw new Error(body?.detail || body?.error || body?.message || `Billing returned HTTP ${response.status}`);
+        }
+        const checkoutUrl = body?.url || body?.checkout_url || body?.session_url || body?.checkoutSession?.url || body?.data?.url;
+        if (!checkoutUrl) throw new Error("Stripe checkout URL was not returned.");
+        const secureUrl = new URL(checkoutUrl, window.location.origin);
+        if (secureUrl.protocol !== "https:") throw new Error("Billing did not return a secure checkout URL.");
+        window.location.assign(secureUrl.toString());
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    setBillingError(lastError?.message || "Secure billing could not open. No plan was changed and nothing was charged.");
+    setBillingBusy(false);
   }
 
   return (
@@ -93,7 +162,7 @@ export default function OfficeTeamPlansScreen() {
         <div>
           <span>Plans</span>
           <h2>Choose the level of control Churvox runs for the business.</h2>
-          <p>Compare what is included and locked here. Selecting a card does not change billing; the secure billing page opens only when you continue.</p>
+          <p>Compare what is included and locked here. Selecting a card does not change billing; Stripe opens only when you continue.</p>
         </div>
         <aside className="cvPlanCountryCard">
           <label>
@@ -154,11 +223,12 @@ export default function OfficeTeamPlansScreen() {
 
       <section className="cvPlanBillingAction">
         <div>
-          <span>Billing handoff</span>
+          <span>Secure checkout</span>
           <h3>Continue with {plan.name}</h3>
-          <p>Open the real billing page to see current subscription status and start or manage checkout. Nothing is charged from this comparison screen.</p>
+          <p>Open Stripe Checkout for the selected plan. You return to this new Plans screen after checkout or cancellation.</p>
+          {billingError ? <small className="cvPlanBillingError" role="alert">{billingError}</small> : null}
         </div>
-        <button type="button" onClick={openBilling}>Open secure billing</button>
+        <button type="button" onClick={openBilling} disabled={billingBusy}>{billingBusy ? "Opening Stripe…" : "Continue to secure checkout"}</button>
       </section>
     </section>
   );
@@ -182,6 +252,31 @@ function FeatureList({ title, items, tone }) {
       <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul>
     </section>
   );
+}
+
+function apiUrl(path) {
+  const base = String(API_BASE || "").replace(/\/$/, "");
+  return `${base}/api${path}`;
+}
+
+function tokenHeaders() {
+  try {
+    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
+function readStoredEmail() {
+  try {
+    const direct = String(localStorage.getItem(EMAIL_STORAGE_KEY) || "").trim().toLowerCase();
+    if (direct) return direct;
+    const snapshot = JSON.parse(localStorage.getItem("churvox_auth_session_snapshot_v1") || "{}");
+    return String(snapshot?.user?.email || snapshot?.email || "").trim().toLowerCase();
+  } catch {
+    return "";
+  }
 }
 
 function detectCountry() {
