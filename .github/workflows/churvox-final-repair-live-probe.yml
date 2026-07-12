@@ -1,0 +1,89 @@
+name: Churvox Final Repair Live Probe
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  probe:
+    if: startsWith(github.event.issue.title, '[churvox-final-repair-live-probe]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Wait for exact final repair deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/final-live-probe.txt 2>&1
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const site = 'https://www.churvox.com';
+          const api = 'https://grassley-backend.onrender.com';
+
+          async function frontend() {
+            const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
+            if (!manifestResponse.ok) return { ok: false, detail: `manifest ${manifestResponse.status}` };
+            const manifest = await manifestResponse.json();
+            const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((item) => /main\..*\.js$/.test(item));
+            if (!mainPath) return { ok: false, detail: 'main bundle missing' };
+            const text = await (await fetch(new URL(mainPath, site), { cache: 'no-store' })).text();
+            const live = text.includes('churvox-final-human-audit-20260713b');
+            return { ok: live, detail: `${mainPath} final-fingerprint=${live ? 'LIVE' : 'MISSING'}` };
+          }
+
+          async function backend() {
+            const response = await fetch(`${api}/api/command/decision-route-health?ts=${Date.now()}`, {
+              headers: { Accept: 'application/json' },
+              cache: 'no-store',
+            });
+            const text = await response.text();
+            const protectedRouteExists = response.status === 401 || response.status === 403;
+            return {
+              ok: protectedRouteExists,
+              detail: `decision-health signed-out=${response.status} ${text.slice(0, 100)}`,
+            };
+          }
+
+          async function main() {
+            let last = '';
+            for (let attempt = 1; attempt <= 60; attempt += 1) {
+              try {
+                const [front, back] = await Promise.all([frontend(), backend()]);
+                last = `${front.detail}; ${back.detail}`;
+                console.log(`Attempt ${attempt}: ${last}`);
+                if (front.ok && back.ok) {
+                  console.log('FINAL_REPAIR_LIVE');
+                  return;
+                }
+              } catch (error) {
+                last = error.message || String(error);
+                console.log(`Attempt ${attempt}: ${last}`);
+              }
+              if (attempt < 60) await sleep(10_000);
+            }
+            throw new Error(`Final repair did not deploy in the probe window: ${last}`);
+          }
+
+          main().catch((error) => { console.error(error.message || error); process.exit(1); });
+          NODE
+
+      - name: Post success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const text = fs.readFileSync('/tmp/final-live-probe.txt', 'utf8');
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Final repair is live\n\n\`\`\`text\n${text}\n\`\`\`` });
+
+      - name: Post failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const text = fs.existsSync('/tmp/final-live-probe.txt') ? fs.readFileSync('/tmp/final-live-probe.txt', 'utf8') : 'Probe produced no output.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Final repair deployment probe failed\n\n\`\`\`text\n${text}\n\`\`\`` });
