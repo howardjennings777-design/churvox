@@ -4,7 +4,7 @@ import importlib
 import logging
 from typing import Any
 
-VERSION = "churvox-outer-cors-error-shield-20260712e"
+VERSION = "churvox-outer-cors-error-shield-20260712f"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
@@ -88,7 +88,7 @@ class OuterCorsErrorShield:
             logging.exception("Unhandled Churvox request error outside normal middleware")
             if response_started:
                 raise
-            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"stage":"outer-shield","version":"churvox-outer-cors-error-shield-20260712e"}'
+            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"stage":"outer-shield","version":"churvox-outer-cors-error-shield-20260712f"}'
             headers = [
                 (b"content-type", b"application/json"),
                 (b"content-length", str(len(body)).encode("ascii")),
@@ -129,6 +129,13 @@ def install(module) -> None:
         module,
         ("churvox_login_emergency_final", "backend.churvox_login_emergency_final"),
         "isolated emergency login route",
+    )
+    # This must run after the emergency route so startup order cannot overwrite
+    # the persistent-source fields or the safe restart fingerprint.
+    _install_patch(
+        module,
+        ("churvox_jwt_health_fingerprint_patch", "backend.churvox_jwt_health_fingerprint_patch"),
+        "JWT health fingerprint",
     )
 
     app = getattr(module, "app", None)
