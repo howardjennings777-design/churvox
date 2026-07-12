@@ -27,8 +27,8 @@ function ensureStyle() {
   style.textContent = `
     #${BUTTON_ID}{min-height:44px;border:0;border-radius:999px;padding:11px 18px;background:#111827;color:#fff;font-weight:950;cursor:pointer;box-shadow:0 10px 24px rgba(15,23,42,.14)}
     #${BUTTON_ID}:disabled{opacity:.6;cursor:wait}
-    .churvoxBillingPortalBar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0 18px;padding:15px 17px;border:1px solid rgba(15,23,42,.12);border-radius:18px;background:#fff;color:#111827;box-shadow:0 12px 30px rgba(15,23,42,.06)}
-    .churvoxBillingPortalBar div{display:grid;gap:3px}.churvoxBillingPortalBar b{font-size:15px}.churvoxBillingPortalBar span{font-size:12px;color:#64748b;font-weight:750}
+    .churvoxBillingPortalBar{grid-column:1/-1;width:100%;min-width:0;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0 18px;padding:15px 17px;border:1px solid rgba(15,23,42,.12);border-radius:18px;background:#fff;color:#111827;box-shadow:0 12px 30px rgba(15,23,42,.06);position:relative;z-index:2}
+    .churvoxBillingPortalBar div{display:grid;gap:3px;min-width:0}.churvoxBillingPortalBar b{font-size:15px}.churvoxBillingPortalBar span{font-size:12px;color:#64748b;font-weight:750}
     @media(max-width:560px){.churvoxBillingPortalBar{align-items:stretch;flex-direction:column}#${BUTTON_ID}{width:100%}}
   `;
   document.head.appendChild(style);
