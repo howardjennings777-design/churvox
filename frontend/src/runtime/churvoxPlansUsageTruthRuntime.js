@@ -1,6 +1,6 @@
 import API_BASE from "../lib/apiBase";
 
-const VERSION = "CHURVOX_PLANS_USAGE_TRUTH_20260712B";
+const VERSION = "CHURVOX_PLANS_USAGE_TRUTH_20260712C";
 const PANEL_ID = "churvox-plan-live-usage";
 const LABELS = [
   ["active_team_members", "active_team_members", "Active team members"],
@@ -14,8 +14,8 @@ let lastLoadedAt = 0;
 let observer = null;
 
 function plansRoot() {
-  if (window.location.pathname !== "/plans") return null;
-  return document.querySelector(".freshPricingPage, .cvPlansPage, [data-churvox-page='plans']");
+  if (window.location.pathname !== "/plans" && !(window.location.pathname === "/dashboard" && window.location.hash === "#plans")) return null;
+  return document.querySelector(".cv3Product, .freshPricingPage, .cvPlansPage, [data-churvox-page='plans']");
 }
 
 function isPlansPage() {
@@ -55,6 +55,8 @@ function ensureStyles() {
   style.id = "churvox-plan-live-usage-style";
   style.textContent = `
     #${PANEL_ID} {
+      width: 100%;
+      box-sizing: border-box;
       margin: 16px 0 22px;
       padding: 20px;
       border: 1px solid rgba(15, 23, 42, .12);
@@ -63,6 +65,8 @@ function ensureStyles() {
       background: #fff;
       box-shadow: 0 14px 40px rgba(15, 23, 42, .07);
       color: #111827;
+      position: relative;
+      z-index: 1;
     }
     #${PANEL_ID} .cvUsageHead {
       display: flex;
@@ -173,7 +177,7 @@ function ensurePanel() {
   markStaticCards();
   let panel = document.getElementById(PANEL_ID);
   if (panel) return panel;
-  const anchor = root.querySelector(".cvPlanPanel, .freshPricingHero, .freshPlanNotice, .freshPricingCards") || root.firstElementChild;
+  const anchor = root.querySelector(".cv3Hero.page-plans, .cvPlanPanel, .freshPricingHero, .freshPlanNotice, .freshPricingCards") || root.firstElementChild;
   if (!anchor) return null;
   panel = document.createElement("section");
   panel.id = PANEL_ID;
