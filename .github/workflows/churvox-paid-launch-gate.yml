@@ -66,6 +66,10 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install backend test dependencies
+        working-directory: .
+        run: python -m pip install --disable-pip-version-check fastapi==0.110.1 pymongo==4.5.0
+
       - name: Install frontend dependencies
         run: npm install --include=dev --legacy-peer-deps
 
