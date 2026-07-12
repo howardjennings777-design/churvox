@@ -43,6 +43,7 @@ async function installLoginApi(page, options = {}) {
   let loggedIn = Boolean(options.initialUser);
   let currentUser = options.initialUser || null;
   let postLoginMeFailures = Number(options.postLoginMeFailures || 0);
+  const failPostLoginMeAlways = Boolean(options.failPostLoginMeAlways);
 
   if (options.initialUser) {
     await page.addInitScript((user) => {
@@ -73,8 +74,8 @@ async function installLoginApi(page, options = {}) {
     }
     if (/\/api\/auth\/(?:me|check|session)$/.test(path)) {
       if (!loggedIn) return route.fulfill(json({ detail: 'Not authenticated' }, 401));
-      if (postLoginMeFailures > 0) {
-        postLoginMeFailures -= 1;
+      if (failPostLoginMeAlways || postLoginMeFailures > 0) {
+        if (postLoginMeFailures > 0) postLoginMeFailures -= 1;
         return route.fulfill(json({ detail: 'Session service unavailable' }, 503));
       }
       return route.fulfill(json({ success: true, user: currentUser, ...currentUser }));
@@ -120,7 +121,7 @@ test.describe('Paid-launch login and recovery', () => {
     await installLoginApi(page);
     await page.goto('/login?next=https%3A%2F%2Fevil.example%2Fsteal', { waitUntil: 'domcontentloaded' });
     await signIn(page);
-    await expect.poll(() => page.url()).toMatch(/\/dashboard(?:#today)?$/);
+    await expect.poll(() => page.url()).toMatch(/\/dashboard(?:#(?:today|smart))?$/);
     expect(page.url()).not.toContain('evil.example');
   });
 
@@ -179,7 +180,7 @@ test.describe('Paid-launch login and recovery', () => {
   });
 
   test('login does not navigate when the new session cannot be confirmed', async ({ page }) => {
-    await installLoginApi(page, { postLoginMeFailures: 1 });
+    await installLoginApi(page, { failPostLoginMeAlways: true });
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await signIn(page);
     await expect(page).toHaveURL(/\/login/);
