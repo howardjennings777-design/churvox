@@ -1,0 +1,237 @@
+name: Churvox Command Fast Load Live Gate
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  live:
+    if: startsWith(github.event.issue.title, '[churvox-command-fast-load-live]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      SITE: https://www.churvox.com
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Wait for exact frontend and backend repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-command-live-wait.txt
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const site = process.env.SITE.replace(/\/+$/, '');
+          const api = process.env.API_BASE.replace(/\/+$/, '');
+          const email = process.env.OWNER_EMAIL;
+          const password = process.env.OWNER_PASSWORD;
+          const frontendMarker = 'churvox-command-fast-load-build-20260713c';
+          const backendMarker = 'churvox-command-fast-load-backend-20260713b';
+
+          async function login() {
+            const response = await fetch(`${api}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const body = await response.json().catch(() => ({}));
+            const token = body.token || body.access_token || body.user?.token || body.data?.token || body.data?.user?.token || '';
+            if (!response.ok || !token) throw new Error(`login HTTP ${response.status}`);
+            return token;
+          }
+
+          async function check(token) {
+            const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
+            const manifest = await manifestResponse.json();
+            const mainPath = manifest.files?.['main.js'] || manifest.entrypoints?.find((value) => /main\..*\.js$/.test(value));
+            const bundle = mainPath ? await (await fetch(new URL(mainPath, site), { cache: 'no-store' })).text() : '';
+            const frontendLive = bundle.includes(frontendMarker);
+
+            const backendResponse = await fetch(`${api}/api/paid-launch/backend-readiness?ts=${Date.now()}`, {
+              cache: 'no-store',
+              headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+            const backend = await backendResponse.json().catch(() => ({}));
+            const backendLive = backendResponse.ok && backend.marker === backendMarker && backend.indexes_ready === true;
+            return {
+              ok: frontendLive && backendLive,
+              detail: `${mainPath || 'no-main'} frontend=${frontendLive} backendHTTP=${backendResponse.status} marker=${backend.marker || ''} indexes=${backend.indexes_ready}`,
+            };
+          }
+
+          (async () => {
+            let token = await login();
+            let last = '';
+            for (let attempt = 1; attempt <= 120; attempt += 1) {
+              try {
+                const result = await check(token);
+                last = result.detail;
+                console.log(`Attempt ${attempt}: ${last}`);
+                if (result.ok) {
+                  console.log('COMMAND_FAST_LOAD_DEPLOYED');
+                  return;
+                }
+              } catch (error) {
+                last = error.message || String(error);
+                console.log(`Attempt ${attempt}: ${last}`);
+                if (/401|403/.test(last)) token = await login();
+              }
+              if (attempt < 120) await sleep(10_000);
+            }
+            throw new Error(`Exact Command repair did not deploy: ${last}`);
+          })().catch((error) => { console.error(error.stack || error); process.exit(1); });
+          NODE
+
+      - name: Measure live Command APIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-command-live-api.txt
+          const api = process.env.API_BASE.replace(/\/+$/, '');
+          const email = process.env.OWNER_EMAIL;
+          const password = process.env.OWNER_PASSWORD;
+          const failures = [];
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.user?.token || body.data?.token || body.data?.user?.token || '';
+
+          async function call(path, options = {}, timeoutMs = 20000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            const started = Date.now();
+            try {
+              const response = await fetch(`${api}${path}`, { ...options, signal: controller.signal });
+              const body = await response.json().catch(() => ({}));
+              const ms = Date.now() - started;
+              console.log(`${options.method || 'GET'} ${path} HTTP ${response.status} ${ms}ms source=${body.source || ''} guard=${body.guard || ''}`);
+              return { response, body, ms };
+            } finally {
+              clearTimeout(timer);
+            }
+          }
+
+          (async () => {
+            const login = await call('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const token = tokenFrom(login.body);
+            if (!login.response.ok || !token) throw new Error('Owner login failed');
+            const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' };
+
+            const slips = await call('/api/command/slips', { headers }, 8000);
+            if (!slips.response.ok) failures.push(`slips HTTP ${slips.response.status}`);
+            if (slips.body.source !== 'paid-launch-fast-command-v2') failures.push(`slips source ${slips.body.source || 'missing'}`);
+            if (slips.ms > 6000) failures.push(`slips slow ${slips.ms}ms`);
+
+            const scan = await call('/api/command/scan', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ source: 'command_fast_load_live_gate', prepared_only: true, owner_review_only: true }),
+            }, 22000);
+            if (!scan.response.ok || scan.body.success === false) failures.push(`scan HTTP ${scan.response.status}`);
+            if (scan.body.guard !== 'human-mimic-scan-guard-v2') failures.push(`scan guard ${scan.body.guard || 'missing'}`);
+
+            const admin = await call('/api/admin-brain/scan', {
+              method: 'POST',
+              headers,
+              body: '{}',
+            }, 22000);
+            if (!admin.response.ok || admin.body.source !== 'paid-launch-admin-brain-bridge') failures.push(`admin bridge HTTP ${admin.response.status} source=${admin.body.source || 'missing'}`);
+
+            if (failures.length) throw new Error(failures.join('\n'));
+            console.log('COMMAND_FAST_LOAD_API_PASS');
+          })().catch((error) => { console.error(error.stack || error); process.exit(1); });
+          NODE
+
+      - name: Install frontend browser dependencies
+        working-directory: frontend
+        run: |
+          npm install --legacy-peer-deps
+          npx playwright install --with-deps chromium
+
+      - name: Prove live owner Command opens queue first
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: https://www.churvox.com
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-command-live-browser.txt
+          const { chromium } = require('@playwright/test');
+          const site = process.env.PLAYWRIGHT_BASE_URL.replace(/\/+$/, '');
+          const api = process.env.API_BASE.replace(/\/+$/, '');
+          const email = process.env.OWNER_EMAIL;
+          const password = process.env.OWNER_PASSWORD;
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.user?.token || body.data?.token || body.data?.user?.token || '';
+
+          (async () => {
+            const loginResponse = await fetch(`${api}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const login = await loginResponse.json();
+            const token = tokenFrom(login);
+            const user = login.user || login.data?.user || login.data || login;
+            if (!loginResponse.ok || !token || !user?.email) throw new Error('Could not create live owner browser session');
+
+            const browser = await chromium.launch({ headless: true });
+            const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+            const page = await context.newPage();
+            const calls = [];
+            page.on('request', (request) => {
+              if (request.url().includes('/api/')) {
+                try { calls.push({ method: request.method(), path: new URL(request.url()).pathname, at: Date.now() }); } catch {}
+              }
+            });
+            await page.addInitScript(({ token, user }) => {
+              localStorage.setItem('token', token);
+              localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({ at: Date.now(), token, user: { ...user, token } }));
+            }, { token, user });
+
+            await page.goto(`${site}/dashboard#command`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await page.waitForFunction(() => window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ === 'churvox-command-fast-load-build-20260713c', null, { timeout: 20000 });
+            await page.waitForFunction(() => window.__CHURVOX_COMMAND_LOAD_STATE__?.queueResolvedAt, null, { timeout: 12000 });
+            const state = await page.evaluate(() => window.__CHURVOX_COMMAND_LOAD_STATE__);
+            const body = await page.locator('body').innerText();
+            const legacyCalls = calls.filter((call) => call.path === '/api/admin-brain/scan');
+            const queueCalls = calls.filter((call) => call.path === '/api/command/slips');
+            const scanCalls = calls.filter((call) => call.path === '/api/command/scan');
+            console.log(JSON.stringify({ state, queueCalls, scanCalls, legacyCalls, body: body.slice(0, 1200) }, null, 2));
+
+            if (state?.branch !== 'owner-queue') throw new Error(`Wrong Command branch: ${state?.branch}`);
+            if (state?.queueSource !== 'backend-command' && state?.queueSource !== 'backend-command-clear') throw new Error(`Queue source unavailable: ${state?.queueSource}`);
+            if (!queueCalls.length) throw new Error('Live owner page did not request Command slips');
+            if (legacyCalls.length) throw new Error('Live owner page still called legacy Admin Brain');
+            if (!/No decisions in this tray|COMMAND SLIP|owner decision/i.test(body)) throw new Error('Command owner information did not render');
+            console.log('COMMAND_FAST_LOAD_BROWSER_PASS');
+            await browser.close();
+          })().catch((error) => { console.error(error.stack || error); process.exit(1); });
+          NODE
+
+      - name: Post live result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const wait = fs.existsSync('/tmp/churvox-command-live-wait.txt') ? fs.readFileSync('/tmp/churvox-command-live-wait.txt', 'utf8').slice(-5000) : '';
+            const api = fs.existsSync('/tmp/churvox-command-live-api.txt') ? fs.readFileSync('/tmp/churvox-command-live-api.txt', 'utf8').slice(-8000) : '';
+            const browser = fs.existsSync('/tmp/churvox-command-live-browser.txt') ? fs.readFileSync('/tmp/churvox-command-live-browser.txt', 'utf8').slice(-10000) : '';
+            const ok = '${{ job.status }}' === 'success';
+            const body = ok
+              ? `## Live Command fast-load gate passed\n\nThe exact frontend and backend repair is deployed. The real owner Command page requests the saved queue, renders owner information before the background scan, and does not call the legacy Admin Brain route.\n\n\`\`\`text\n${api}\n${browser}\n\`\`\``
+              : `## Live Command fast-load gate failed\n\nThe exact deployment or live behaviour did not pass.\n\n\`\`\`text\n${wait}\n${api}\n${browser}\n\`\`\``;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
