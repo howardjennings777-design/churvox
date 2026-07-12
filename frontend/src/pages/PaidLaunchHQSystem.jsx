@@ -38,7 +38,11 @@ const PACK_OPTIONS = [["full_access", "Full tester access"], ["operator_pack", "
 const PLAN_LABELS = { start: "Start", solo: "Start", crew: "Crew", team: "Crew", operator: "Operator", pro: "Operator", command: "Command", enterprise: "Command" };
 
 const arr = (value) => Array.isArray(value) ? value : [];
-const text = (value, fallback = "") => String(value ?? "").replace(/\s+/g, " ").trim() || fallback;
+const text = (value, fallback = "") => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "object") return fallback;
+  return String(value).replace(/\s+/g, " ").trim() || fallback;
+};
 const low = (value) => text(value).toLowerCase();
 const hasValue = (value) => value !== null && value !== undefined && value !== "";
 const numberText = (value) => Number.isFinite(Number(value)) ? Number(value).toLocaleString("en-NZ") : "0";
@@ -82,14 +86,31 @@ function ageText(value) {
   if (hours < 24) return `${hours}h`;
   return `${Math.floor(hours / 24)}d`;
 }
-function displayEmailOf(item) { return text(item?.display_email || item?.original_email || item?.typed_email || item?.email || item?.user_email || item?.owner_email || item?.tester_email || item?.target_email || item?.to); }
-function emailOf(item) { return low(item?.email || item?.canonical_email || item?.user_email || item?.owner_email || item?.tester_email || item?.target_email || item?.to || displayEmailOf(item)); }
+function cleanEmail(value) {
+  const candidate = text(value).trim();
+  if (!candidate || candidate.includes("{") || candidate.includes("}")) return "";
+  if (!candidate.includes("@") || candidate.includes(" ")) return "";
+  return candidate;
+}
+function firstEmail(...values) {
+  for (const value of values) {
+    const email = cleanEmail(value);
+    if (email) return email;
+  }
+  return "";
+}
+function displayEmailOf(item) {
+  return firstEmail(item?.display_email, item?.original_email, item?.typed_email, item?.email, item?.user_email, item?.owner_email, item?.tester_email, item?.target_email, item?.to);
+}
+function emailOf(item) {
+  return low(firstEmail(item?.email, item?.canonical_email, item?.user_email, item?.owner_email, item?.tester_email, item?.target_email, item?.to, displayEmailOf(item)));
+}
 function idOf(item, index = 0) { return text(item?.id || item?._id || item?.stripe_subscription_id || emailOf(item) || item?.visitor_key || item?.created_at, `row-${index}`); }
 function nameOf(item) { return text(item?.business_name || item?.company || item?.name || item?.full_name || displayEmailOf(item) || item?.title || item?.path, "Unnamed record"); }
 function statusOf(item) { return text(item?.status || item?.subscription_status || item?.billing_status || item?.stripe_status || item?.tester_status, "Unknown"); }
 function planOf(item) {
-  const value = low(item?.plan_name || item?.plan || item?.subscription_plan || item?.tier);
-  return PLAN_LABELS[value] || (value ? value.charAt(0).toUpperCase() + value.slice(1) : "No plan");
+  const value = low(item?.plan_name || item?.plan || item?.subscription_plan || item?.tier || "pro");
+  return PLAN_LABELS[value] || (value ? value.charAt(0).toUpperCase() + value.slice(1) : "Operator");
 }
 function tone(value) {
   const v = low(value);
@@ -106,7 +127,10 @@ function logout() {
   } catch {}
   window.location.href = "/login";
 }
-
+function sourceText(value) {
+  const parts = text(value, "Not verified").split(",").map((item) => text(item)).filter(Boolean);
+  return Array.from(new Set(parts)).join(", ") || "Not verified";
+}
 function downloadCsv(filename, rows) {
   const source = arr(rows);
   if (!source.length) return false;
@@ -129,22 +153,23 @@ function normaliseTester(row, source = "tester") {
   const result = row?.result && typeof row.result === "object" ? row.result : {};
   const nestedTester = result?.tester && typeof result.tester === "object" ? result.tester : {};
   const base = { ...payload, ...row, ...nestedTester };
-  const displayEmail = displayEmailOf(base);
   const email = emailOf(base);
+  const displayEmail = displayEmailOf(base) || email;
   if (!email || email === PLATFORM_OWNER_EMAIL || /example\.com|sample|fake|demo/i.test(JSON.stringify(base))) return null;
   const status = text(base.status || base.subscription_status || (base.accepted ? "accepted" : "invited"), "invited");
+  const plan = base.plan || base.plan_name || base.tier || "pro";
   return {
     ...base,
     email,
     canonical_email: email,
-    display_email: displayEmail || email,
-    original_email: text(base.original_email || displayEmail || email),
-    name: text(base.name || base.full_name || base.business_name || base.company || displayEmail || email),
+    display_email: displayEmail,
+    original_email: text(base.original_email || displayEmail),
+    name: text(base.name || base.full_name || base.business_name || base.company || displayEmail),
     business_name: text(base.business_name || base.company || base.business),
-    plan: base.plan || base.plan_name || base.tier || "pro",
+    plan,
     status,
     subscription_status: base.subscription_status || status,
-    source: base.source || source,
+    source: sourceText(base.source || source),
     accepted: base.accepted === true || ["accepted", "access_granted", "active", "signed_up", "signup_complete", "tester_free"].includes(low(status)),
     active: base.active === true || low(status) === "active",
     invited_at: base.invited_at || base.created_at || base.updated_at || row?.created_at || row?.updated_at,
@@ -153,6 +178,9 @@ function normaliseTester(row, source = "tester") {
   };
 }
 
+function mergeSources(a, b) {
+  return sourceText([a, b].filter(Boolean).join(","));
+}
 function mergeTesterData({ testerEndpoint, control, billing, optimistic }) {
   const map = new Map();
   const add = (row, source) => {
@@ -165,9 +193,10 @@ function mergeTesterData({ testerEndpoint, control, billing, optimistic }) {
     map.set(key, {
       ...current,
       ...tester,
+      plan: tester.plan || current.plan || "pro",
       display_email: currentDisplay && current.source === "saved this session" ? currentDisplay : nextDisplay || currentDisplay || key,
       original_email: current.original_email || tester.original_email || nextDisplay || key,
-      source: current.source && current.source !== source ? `${current.source}, ${source}` : tester.source,
+      source: mergeSources(current.source, tester.source || source),
     });
   };
   arr(testerEndpoint?.testers).forEach((row) => add(row, row?.source || "tester endpoint"));
@@ -203,7 +232,7 @@ function LaunchChecks({ checks }) {
 function RecordTable({ rows, onOpen, onControl, control = false, title = "records" }) {
   const source = arr(rows);
   if (!source.length) return <Empty title={`No ${title}`} />;
-  return <div className="hq2TableWrap"><table><thead><tr><th>User / business</th><th>Plan</th><th>Status</th><th>Source / proof</th><th>Last activity</th>{control ? <th>Control</th> : null}</tr></thead><tbody>{source.map((item, index) => <tr key={idOf(item, index)}><td><button type="button" className="hq2RecordButton" onClick={() => onOpen(item)}><strong>{nameOf(item)}</strong><span>{displayEmailOf(item) || emailOf(item) || "No email returned"}</span>{displayEmailOf(item) && emailOf(item) && displayEmailOf(item) !== emailOf(item) ? <small>Saved key: {emailOf(item)}</small> : null}</button></td><td>{planOf(item)}</td><td><span className={`hq2Pill ${tone(statusOf(item))}`}>{statusOf(item)}</span></td><td>{text(item?.stripe_subscription_id || item?.source, "Not verified")}</td><td>{ageText(item?.last_active || item?.last_login_at || item?.last_login || item?.updated_at || item?.created_at || item?.invited_at)}</td>{control ? <td><div className="hq2RowActions"><button type="button" onClick={() => onControl(item, "grant")}>Grant</button><button type="button" className="danger" onClick={() => onControl(item, "revoke")}>Revoke</button></div></td> : null}</tr>)}</tbody></table></div>;
+  return <div className="hq2TableWrap"><table><thead><tr><th>User / business</th><th>Plan</th><th>Status</th><th>Source / proof</th><th>Last activity</th>{control ? <th>Control</th> : null}</tr></thead><tbody>{source.map((item, index) => <tr key={idOf(item, index)}><td><button type="button" className="hq2RecordButton" onClick={() => onOpen(item)}><strong>{nameOf(item)}</strong><span>{displayEmailOf(item) || emailOf(item) || "No email returned"}</span>{displayEmailOf(item) && emailOf(item) && displayEmailOf(item) !== emailOf(item) ? <small>Saved key: {emailOf(item)}</small> : null}</button></td><td>{planOf(item)}</td><td><span className={`hq2Pill ${tone(statusOf(item))}`}>{statusOf(item)}</span></td><td>{sourceText(item?.stripe_subscription_id || item?.source)}</td><td>{ageText(item?.last_active || item?.last_login_at || item?.last_login || item?.updated_at || item?.created_at || item?.invited_at)}</td>{control ? <td><div className="hq2RowActions"><button type="button" onClick={() => onControl(item, "grant")}>Grant</button><button type="button" className="danger" onClick={() => onControl(item, "revoke")}>Revoke</button></div></td> : null}</tr>)}</tbody></table></div>;
 }
 function TesterRoster({ data, query, onOpen, onControl, endpointError }) {
   const testers = arr(data?.testers);
@@ -223,7 +252,7 @@ function TesterForm({ onSaved }) {
     event.preventDefault();
     setBusy(true);
     setMessage("");
-    const typedEmail = text(form.email);
+    const typedEmail = cleanEmail(form.email) || text(form.email);
     const canonicalEmail = low(typedEmail);
     const payload = { ...form, email: typedEmail, display_email: typedEmail, original_email: typedEmail, canonical_email: canonicalEmail };
     const immediateRow = { ...payload, email: canonicalEmail, display_email: typedEmail, original_email: typedEmail, status: "pending_signup", source: "saved this session", invited_at: new Date().toISOString() };
@@ -300,7 +329,7 @@ export default function PaidLaunchHQSystem() {
     if (OWNER_EMAILS.has(email)) { setNotice("Platform owner accounts are protected and cannot be changed from HQ."); return; }
     setNotice(action === "revoke" ? "Revoking access…" : "Granting access…");
     try {
-      const result = await apiPost("/api/admin/owner/control-access", { identifier: email || idOf(user), action, plan: action === "revoke" ? user?.plan : "pro", pack: "full_access", days: 90, note: `${action === "revoke" ? "Revoked" : "Granted"} from paid-launch HQ` });
+      const result = await apiPost("/api/admin/owner/control-access", { identifier: email || idOf(user), display_email: displayEmailOf(user), action, plan: action === "revoke" ? user?.plan : "pro", pack: "full_access", days: 90, note: `${action === "revoke" ? "Revoked" : "Granted"} from paid-launch HQ` });
       setNotice(result.message || "Access updated.");
       await load(true);
     } catch (error) { setNotice(error.message || "Access update failed."); }
@@ -312,7 +341,7 @@ export default function PaidLaunchHQSystem() {
     load(true);
   }
 
-  return <main className="hq2" data-version="CHURVOX_HQ_SYSTEM_TESTER_FIXED_20260712"><DetailModal item={selected} onClose={() => setSelected(null)} /><aside className="hq2Side"><section className="hq2Brand"><div><ShieldCheck size={26} /></div><small>Platform owner only</small><h1>Churvox HQ</h1><p>Paid launch control centre for real users, billing proof, testers, live collections and platform data controls.</p><button type="button" onClick={logout}><LogOut size={16} />Log out</button></section><nav>{TABS.map((item) => <button type="button" className={tab === item ? "active" : ""} onClick={() => setTab(item)} key={item}>{item}{item === "Launch" && launchReady === false ? <em>!</em> : null}</button>)}</nav><section className="hq2Pulse"><small>Live source</small><div><span>Database</span><strong>{connection?.database_connected === true ? "Connected" : connection?.database_connected === false ? "Unavailable" : "Checking"}</strong></div><div><span>Stripe</span><strong>{billing?.stripe?.available === true ? "Confirmed" : billing?.stripe?.available === false ? "Check" : "Checking"}</strong></div><div><span>Refresh</span><strong>30 sec</strong></div></section></aside><section className="hq2Main"><header className="hq2Hero"><div><span><ShieldCheck size={15} /> Real launch control</span><h2>{tab}</h2><p>{tab === "Command" ? "A high-contrast owner console showing what is safe to sell, what needs attention, and what data is live." : "Live backend responses, truthful empty states, and no demo number substitution."}</p></div><div className="hq2HeroActions"><button type="button" onClick={() => { if (!downloadCsv(`churvox-${tab.toLowerCase().replaceAll(" ", "-")}.csv`, exportRows)) setNotice("No loaded rows are available to export from this tab."); }}><Download size={16} />Export</button><button type="button" className="primary" onClick={() => load(false)}><RefreshCw size={16} className={loading ? "spin" : ""} />Refresh</button></div></header>{notice ? <div className={`hq2Notice ${tone(notice)}`}>{notice}</div> : null}{errors.length ? <div className="hq2Notice bad"><AlertTriangle size={18} />{errors.length} HQ endpoint{errors.length === 1 ? "" : "s"} failed. Check System for exact errors.</div> : null}{!["Command", "Launch", "System", "Data"].includes(tab) ? <label className="hq2Search"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search loaded live records…" /></label> : null}
+  return <main className="hq2" data-version="CHURVOX_HQ_SYSTEM_TESTER_ROSTER_CLEAN_20260712"><DetailModal item={selected} onClose={() => setSelected(null)} /><aside className="hq2Side"><section className="hq2Brand"><div><ShieldCheck size={26} /></div><small>Platform owner only</small><h1>Churvox HQ</h1><p>Paid launch control centre for real users, billing proof, testers, live collections and platform data controls.</p><button type="button" onClick={logout}><LogOut size={16} />Log out</button></section><nav>{TABS.map((item) => <button type="button" className={tab === item ? "active" : ""} onClick={() => setTab(item)} key={item}>{item}{item === "Launch" && launchReady === false ? <em>!</em> : null}</button>)}</nav><section className="hq2Pulse"><small>Live source</small><div><span>Database</span><strong>{connection?.database_connected === true ? "Connected" : connection?.database_connected === false ? "Unavailable" : "Checking"}</strong></div><div><span>Stripe</span><strong>{billing?.stripe?.available === true ? "Confirmed" : billing?.stripe?.available === false ? "Check" : "Checking"}</strong></div><div><span>Refresh</span><strong>30 sec</strong></div></section></aside><section className="hq2Main"><header className="hq2Hero"><div><span><ShieldCheck size={15} /> Real launch control</span><h2>{tab}</h2><p>{tab === "Command" ? "A high-contrast owner console showing what is safe to sell, what needs attention, and what data is live." : "Live backend responses, truthful empty states, and no demo number substitution."}</p></div><div className="hq2HeroActions"><button type="button" onClick={() => { if (!downloadCsv(`churvox-${tab.toLowerCase().replaceAll(" ", "-")}.csv`, exportRows)) setNotice("No loaded rows are available to export from this tab."); }}><Download size={16} />Export</button><button type="button" className="primary" onClick={() => load(false)}><RefreshCw size={16} className={loading ? "spin" : ""} />Refresh</button></div></header>{notice ? <div className={`hq2Notice ${tone(notice)}`}>{notice}</div> : null}{errors.length ? <div className="hq2Notice bad"><AlertTriangle size={18} />{errors.length} HQ endpoint{errors.length === 1 ? "" : "s"} failed. Check System for exact errors.</div> : null}{!["Command", "Launch", "System", "Data"].includes(tab) ? <label className="hq2Search"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search loaded live records…" /></label> : null}
     {tab === "Command" ? <div className="hq2Stack"><section className="hq2Metrics"><Metric label="Launch state" value={launchReady === true ? "Confirmed" : launchReady === false ? "Check" : "Unknown"} note="Database, Stripe and billing truth gates" icon={ShieldCheck} state={launchReady === true ? "good" : "bad"} /><Metric label="Verified paid" value={numberText(launchCounts.verified_paid_users)} note="Stripe subscription proof required" icon={CreditCard} state="good" /><Metric label="Stripe MRR" value={money(actualMrr)} note="Actual recurring price items only" icon={CreditCard} state={hasValue(actualMrr) ? "good" : "warn"} /><Metric label="Needs check" value={numberText(launchCounts.billing_needs_verification)} note="Never counted as paid" icon={AlertTriangle} state={Number(launchCounts.billing_needs_verification || 0) ? "warn" : "good"} /><Metric label="Users" value={numberText(launchCounts.users_total)} note={`${numberText(launchCounts.internal_users_excluded)} internal excluded`} icon={Users} /><Metric label="Businesses" value={numberText(launchCounts.businesses_total)} note={text(launchCounts.businesses_source, "Source unavailable")} icon={Building2} /><Metric label="Testers" value={numberText(testers?.counts?.total ?? launchCounts.tester_users)} note={`${numberText(testers?.counts?.invited_not_accepted)} invited not accepted`} icon={Gift} /><Metric label="Visits" value={numberText(growthCounts.unique_total)} note={`${numberText(growthCounts.new_unique_today)} new today`} icon={Activity} /></section><section className="hq2Card"><header className="hq2CardHead"><div><ShieldCheck size={18} /><strong>Launch gate</strong></div><span className={`hq2Pill ${launchReady === true ? "good" : "bad"}`}>{launchReady === true ? "confirmed" : "check"}</span></header><LaunchChecks checks={launch?.launch_checks} /></section></div> : null}
     {tab === "Launch" ? <div className="hq2Stack"><section className="hq2Metrics tight"><Metric label="Verified paid" value={numberText(launchCounts.verified_paid_users)} note="Active/paid with Stripe proof" icon={CreditCard} state="good" /><Metric label="Verified trials" value={numberText(launchCounts.verified_trial_users)} note="Trialing with Stripe proof" icon={Activity} /><Metric label="Actual MRR" value={money(actualMrr)} note="Not replaced by estimates" icon={CreditCard} state={hasValue(actualMrr) ? "good" : "warn"} /><Metric label="Estimated MRR" value={money(estimatedMrr)} note="Separated from confirmed MRR" icon={Database} /></section><section className="hq2Card"><header className="hq2CardHead"><div><ShieldCheck size={18} /><strong>Paid-launch checks</strong></div></header><LaunchChecks checks={launch?.launch_checks} /></section><section className="hq2Card"><header className="hq2CardHead"><div><CreditCard size={18} /><strong>Verified paid subscriptions</strong></div><span className="hq2Pill good">Stripe proof required</span></header><RecordTable rows={filterRows(billing?.verified_paid_users)} onOpen={setSelected} onControl={controlUser} title="paid subscriptions" /></section><section className="hq2Card"><header className="hq2CardHead"><div><AlertTriangle size={18} /><strong>Billing records needing verification</strong></div><span className="hq2Pill warn">not counted as paid</span></header><RecordTable rows={filterRows(billing?.needs_verification)} onOpen={setSelected} onControl={controlUser} title="unverified billing" /></section></div> : null}
     {tab === "Users" ? <section className="hq2Card hq2Stack"><header className="hq2CardHead"><div><Users size={18} /><strong>All loaded user records</strong></div><span className="hq2Pill">{users.length}</span></header><RecordTable rows={filterRows(users)} onOpen={setSelected} onControl={controlUser} title="users" control /></section> : null}
