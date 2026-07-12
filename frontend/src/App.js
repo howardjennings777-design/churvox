@@ -33,6 +33,10 @@ const FeaturesPage = React.lazy(() => import("./pages/marketing/ExecutiveFeature
 const PublicDemoPage = React.lazy(() => import("./pages/marketing/PublicDemoPage"));
 const IndustryPage = React.lazy(() => import("./pages/marketing/IndustryPage"));
 const ContactPage = React.lazy(() => import("./pages/marketing/ExecutiveContactPage"));
+const AboutPage = React.lazy(() => import("./pages/marketing/PublicTrustPages").then((module) => ({ default: module.AboutPage })));
+const SecurityPage = React.lazy(() => import("./pages/marketing/PublicTrustPages").then((module) => ({ default: module.SecurityPage })));
+const PublicSupportPage = React.lazy(() => import("./pages/marketing/PublicTrustPages").then((module) => ({ default: module.PublicSupportPage })));
+const RefundsCancellationsPage = React.lazy(() => import("./pages/marketing/PublicTrustPages").then((module) => ({ default: module.RefundsCancellationsPage })));
 const PrivacyPage = React.lazy(() => import("./pages/legal/PrivacyPage"));
 const TermsPage = React.lazy(() => import("./pages/legal/TermsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./pages/legal/PrivacyPolicyPage"));
@@ -176,6 +180,10 @@ function App() {
               <Route path="/app" element={<PwaLaunchPage />} />
               <Route path="/product" element={<FeaturesPage />} />
               <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/security" element={<SecurityPage />} />
+              <Route path="/support" element={<PublicSupportPage />} />
+              <Route path="/refunds-cancellations" element={<RefundsCancellationsPage />} />
               <Route path="/industries/:slug" element={<IndustryPage />} />
               <Route path="/demo" element={<PublicDemoPage />} />
               <Route path="/pricing" element={<PricingPage />} />
@@ -243,7 +251,6 @@ function App() {
               <Route path="/calendar" element={<AppRedirect to="/dashboard#schedule" />} />
               <Route path="/settings" element={<AppRedirect to="/dashboard#settings" />} />
               <Route path="/settings-board" element={<AppRedirect to="/dashboard#settings" />} />
-              <Route path="/support" element={<AppRedirect to="/dashboard#help" />} />
               <Route path="/support-board" element={<AppRedirect to="/dashboard#help" />} />
               <Route path="/offline-sync" element={<AppRedirect to="/dashboard#help" />} />
               <Route path="/onboarding" element={<AppRedirect to="/dashboard#help" />} />
@@ -265,6 +272,7 @@ function App() {
               <Route path="/admin/unlock" element={<PlatformAdminRoute><PlatformUnlock /></PlatformAdminRoute>} />
               <Route path="/platform" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
               <Route path="/billing/success" element={<BillingReturnBridge />} />
+              <Route path="/billing/cancel" element={<BillingReturnBridge cancelled />} />
               <Route path="/billing/cancelled" element={<BillingReturnBridge cancelled />} />
               <Route path="/quote/:token" element={<PublicQuotePage />} />
               <Route path="/invoice/:token" element={<PublicInvoicePage />} />
