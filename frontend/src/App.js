@@ -50,8 +50,7 @@ const OfficeTeamWorkerRoute = React.lazy(() => import("./churvox-office-lab/Offi
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
 function isPlatformOwnerUser(user = {}) {
-  const email = String(user?.email || "").trim().toLowerCase();
-  return email === PLATFORM_OWNER_EMAIL;
+  return String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
 }
 
 const Spinner = () => (
@@ -97,18 +96,9 @@ function FreshBusinessRoute({ children }) {
   if (isPayroll) return <Navigate to="/dashboard#payroll" replace />;
 
   const testerAccess = user?.free_tester_access === true || user?.is_tester === true || String(user?.subscription_status || "").toLowerCase() === "tester_free";
-  if (!hasAppAccess && !(isPlans || isCheckoutReturn || (testerAccess && isTesterProfileSetup))) {
-    return <Navigate to="/plans" replace />;
-  }
-
-  if (!hasAppAccess && isTesterProfileSetup && !testerAccess) {
-    return <Navigate to="/plans" replace />;
-  }
-
-  if (!hasAppAccess && currentPath !== "/plans" && currentHash !== "#setupassistant" && currentHash !== "#firstrun") {
-    return <Navigate to="/plans" replace />;
-  }
-
+  if (!hasAppAccess && !(isPlans || isCheckoutReturn || (testerAccess && isTesterProfileSetup))) return <Navigate to="/plans" replace />;
+  if (!hasAppAccess && isTesterProfileSetup && !testerAccess) return <Navigate to="/plans" replace />;
+  if (!hasAppAccess && currentPath !== "/plans" && currentHash !== "#setupassistant" && currentHash !== "#firstrun") return <Navigate to="/plans" replace />;
   return <AppPage>{children}</AppPage>;
 }
 
@@ -178,7 +168,6 @@ function App() {
               <Route path="/office-team-lab" element={<PlatformAdminRoute><OfficeTeamLab /></PlatformAdminRoute>} />
               <Route path="/office-lab" element={<PlatformAdminRoute><OfficeTeamLab /></PlatformAdminRoute>} />
               <Route path="/new-command-lab" element={<PlatformAdminRoute><OfficeTeamLab /></PlatformAdminRoute>} />
-
               <Route path="/" element={<HomePage />} />
               <Route path="/app" element={<PwaLaunchPage />} />
               <Route path="/product" element={<FeaturesPage />} />
@@ -202,10 +191,9 @@ function App() {
               <Route path="/register" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <SignupPage />} />
               <Route path="/register/" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <SignupPage />} />
               <Route path="/verify-email" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <VerifyEmailPage />} />
-              <Route path="/forgot-password" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-              <Route path="/reset-password" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <PublicRoute><ResetPasswordPage /></PublicRoute>} />
+              <Route path="/forgot-password" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <ForgotPasswordPage />} />
+              <Route path="/reset-password" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <ResetPasswordPage />} />
               <Route path="/invite/setup/:token" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <InviteSetupPage />} />
-
               <Route path="/dashboard" element={<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>} />
               <Route path="/legacy-dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
@@ -218,7 +206,6 @@ function App() {
               <Route path="/command-board" element={<AppRedirect to="/dashboard#command" />} />
               <Route path="/operator-tools" element={<AppRedirect to="/dashboard#command" />} />
               <Route path="/cockpit" element={<AppRedirect to="/dashboard#command" />} />
-
               <Route path="/jobs" element={<AppRedirect to="/dashboard#work" />} />
               <Route path="/jobs-board" element={<AppRedirect to="/dashboard#work" />} />
               <Route path="/jobs/new" element={<AppRedirect to="/dashboard#work" />} />
@@ -257,7 +244,6 @@ function App() {
               <Route path="/support-board" element={<AppRedirect to="/dashboard#help" />} />
               <Route path="/offline-sync" element={<AppRedirect to="/dashboard#help" />} />
               <Route path="/onboarding" element={<AppRedirect to="/dashboard#help" />} />
-
               <Route path="/worker" element={<AppRedirect to="/worker/today" />} />
               <Route path="/worker/today" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
               <Route path="/worker/jobs" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
@@ -268,7 +254,6 @@ function App() {
               <Route path="/worker/settings" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
               <Route path="/legacy-worker" element={<AppRedirect to="/legacy-worker/today" />} />
               <Route path="/legacy-worker/today" element={<WorkerRoute><WorkerNoFussRoute /></WorkerRoute>} />
-
               <Route path="/q/auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
               <Route path="/admin" element={<PlatformAdminRoute><ChurvoxHQPage /></PlatformAdminRoute>} />
               <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
