@@ -59,11 +59,15 @@ jobs:
 
       - name: Verify final route markers
         run: |
-          grep -F 'VERSION = "churvox-login-emergency-final-20260712c"' backend/churvox_login_emergency_final.py
-          grep -F 'VERSION = "churvox-production-launch-security-20260712e"' backend/churvox_production_launch_security.py
+          grep -F 'VERSION = "churvox-login-emergency-final-20260712d"' backend/churvox_login_emergency_final.py
+          grep -F 'VERSION = "churvox-production-launch-security-20260712f"' backend/churvox_production_launch_security.py
           grep -F 'app.add_api_route("/api/auth/login", emergency_login, methods=["POST"])' backend/churvox_login_emergency_final.py
           grep -F 'app.add_api_route("/api/auth/logout", emergency_logout, methods=["POST"])' backend/churvox_login_emergency_final.py
+          grep -F 'critical_repair = bool(' backend/churvox_login_emergency_final.py
+          grep -F '"sessions_revoked": sessions_revoked' backend/churvox_login_emergency_final.py
           grep -F '"jwt_persistent": jwt_source == "environment"' backend/churvox_login_emergency_final.py
+          grep -F 'return raw.startswith("sk" + "_")' backend/churvox_production_launch_security.py
+          grep -F 'return raw.startswith("whsec" + "_")' backend/churvox_production_launch_security.py
           grep -F 'module.PLATFORM_OWNER_EMAILS = [PLATFORM_OWNER_EMAIL]' backend/churvox_production_launch_security.py
           grep -F 'isolated emergency login route' backend/churvox_outer_cors_error_shield.py
           grep -F 'if path == "/api/auth/login"' backend/churvox_auth_paid_launch_hardening.py
