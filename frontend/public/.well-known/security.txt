@@ -1,0 +1,5 @@
+Contact: mailto:hello@churvox.com
+Preferred-Languages: en
+Canonical: https://www.churvox.com/.well-known/security.txt
+Policy: https://www.churvox.com/security
+Expires: 2027-07-12T00:00:00Z
