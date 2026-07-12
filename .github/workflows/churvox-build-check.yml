@@ -22,8 +22,26 @@ jobs:
 
       - name: Backend compile checks
         run: |
-          python3 -m py_compile backend/server.py
-          python3 -m compileall -q backend
+          python3 - <<'PY'
+          from pathlib import Path
+          import py_compile
+          import sys
+
+          failures = []
+          for path in sorted(Path("backend").rglob("*.py")):
+              try:
+                  py_compile.compile(str(path), doraise=True)
+              except py_compile.PyCompileError as exc:
+                  failures.append((path, exc.msg))
+
+          if failures:
+              print(f"Backend compile failures: {len(failures)}")
+              for path, message in failures:
+                  print(f"\n--- {path} ---\n{message}")
+              sys.exit(1)
+
+          print("All backend Python files compiled successfully.")
+          PY
 
   frontend-build:
     name: Frontend install and build
