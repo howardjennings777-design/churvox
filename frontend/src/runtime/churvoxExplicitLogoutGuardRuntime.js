@@ -32,6 +32,13 @@ function pathOf(config = {}) {
 }
 
 if (typeof window !== "undefined") {
+  if (window.location.pathname === "/admin/login") {
+    const params = new URLSearchParams(window.location.search || "");
+    params.set("admin", "1");
+    if (!params.get("email")) params.set("email", "hello@churvox.com");
+    window.history.replaceState(window.history.state, "", `/login?${params.toString()}`);
+  }
+
   const params = new URLSearchParams(window.location.search || "");
   if (params.get("logged_out") === "1") {
     try { sessionStorage.setItem(MARKER, String(Date.now())); } catch {}
