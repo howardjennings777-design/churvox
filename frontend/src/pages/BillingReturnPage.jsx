@@ -21,13 +21,41 @@ function hasUsablePlan(value) {
   return Boolean(plan && !["none", "free", "null", "undefined"].includes(plan));
 }
 
+function statusKey(details = {}) {
+  return String(details.subscription_status || details.billing_status || details.stripe_status || "").trim().toLowerCase();
+}
+
+function hasStripeProof(details = {}) {
+  return Boolean(
+    details.stripe_subscription_id ||
+    details.stripe_customer_id ||
+    details.stripe_checkout_session_id ||
+    details.checkout_session_id
+  );
+}
+
+function isTester(details = {}) {
+  return Boolean(
+    details.free_tester_access === true ||
+    details.is_tester === true ||
+    statusKey(details) === "tester_free"
+  );
+}
+
+function hasConfirmedAccess(details = {}) {
+  if (details.has_app_access === true) return true;
+  if (isTester(details)) return true;
+  const status = statusKey(details);
+  return hasStripeProof(details) && ["trial", "trialing", "active", "paid", "past_due"].includes(status);
+}
+
 function subscriptionText(details) {
   if (!details) return "Checking setup status";
   if (details.subscription_status === "trialing") return "14-day trial active";
   if (details.subscription_status === "active") return "Subscription active";
   if (details.billing_lock_reason === "payment_required") return "Payment required";
   if (details.stripe_subscription_id) return "Subscription saved";
-  if (hasUsablePlan(details.plan)) return "Plan active";
+  if (hasUsablePlan(details.plan)) return "Plan selected — payment confirmation required";
   return "Waiting for confirmation";
 }
 
@@ -63,14 +91,14 @@ export default function BillingReturnPage({ cancelled = false }) {
     if (sub?.success) {
       const data = unwrap(sub);
       const planValue = data?.plan || data?.plan_name || "";
-      const hasAccess = data?.has_app_access === true || hasUsablePlan(planValue) || Boolean(data?.stripe_subscription_id);
+      const hasAccess = hasConfirmedAccess(data);
       setDetails({ ...data, has_app_access: hasAccess });
       setStatus(hasAccess ? "Your plan is active. Opening setup now…" : `Plan status: ${niceStatus(planValue)} · ${subscriptionText(data)}`);
       if (hasAccess) {
         setConfirmed(true);
         updateUser?.({
           plan: planValue,
-          subscription_status: data.subscription_status || (data.stripe_subscription_id ? "active" : "trialing"),
+          subscription_status: data.subscription_status || (data.stripe_subscription_id ? "active" : isTester(data) ? "tester_free" : "trialing"),
           trial_ends_at: data.trial_ends_at,
           stripe_customer_id: data.stripe_customer_id,
           stripe_subscription_id: data.stripe_subscription_id,
@@ -79,6 +107,8 @@ export default function BillingReturnPage({ cancelled = false }) {
         });
         refreshAuthUser();
         if (goToSetup) openSetupSoon();
+      } else {
+        updateUser?.({ has_app_access: false, billing_lock_reason: data.billing_lock_reason || "payment_confirmation_required" });
       }
     } else {
       setStatus("Could not refresh your plan yet. Open Plans or Contact if this does not update shortly.");
@@ -135,6 +165,7 @@ export default function BillingReturnPage({ cancelled = false }) {
             trial_ends_at: result?.trial_ends_at,
             stripe_customer_id: result?.stripe_customer_id,
             stripe_subscription_id: result?.stripe_subscription_id,
+            stripe_checkout_session_id: sessionId,
             has_app_access: true,
             billing_lock_reason: null,
           });
@@ -160,5 +191,5 @@ export default function BillingReturnPage({ cancelled = false }) {
   }, []);
 
   const title = cancelled ? "Checkout cancelled" : confirmed ? "Plan active" : "Checking your plan";
-  return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Plan setup</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{title}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Status: {subscriptionText(details)}</div>{details.trial_ends_at ? <div>Trial ends: {new Date(details.trial_ends_at).toLocaleString("en-NZ")}</div> : null}{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={() => refreshBilling({ goToSetup: true })} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh plan status</button><button type="button" onClick={() => navigate("/setup-guide?first_setup=1", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Open setup now</button><button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900">Back to Plans</button><Link to="/contact" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div></article></section></main>;
+  return <main className="min-h-screen bg-[#f7f3ea] p-4 text-slate-950 md:p-8"><section className="mx-auto grid min-h-[70vh] max-w-4xl place-items-center"><article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9"><div className="inline-flex rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">Plan setup</div><h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{title}</h1><p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>{addonStatus ? <p className="mt-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-black text-orange-900">{addonStatus}</p> : null}{details ? <div className="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800 md:grid-cols-2"><div>Plan: {niceStatus(details.plan_name || details.plan)}</div><div>Status: {subscriptionText(details)}</div>{details.trial_ends_at ? <div>Trial ends: {new Date(details.trial_ends_at).toLocaleString("en-NZ")}</div> : null}{checkedAt ? <div>Last checked: {checkedAt}</div> : null}</div> : null}<div className="mt-6 flex flex-wrap gap-3"><button type="button" onClick={() => refreshBilling({ goToSetup: true })} className="rounded-full bg-amber-300 px-5 py-3 text-sm font-black text-slate-950">Refresh plan status</button>{confirmed ? <button type="button" onClick={() => navigate("/setup-guide?first_setup=1", { replace: true })} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">Open setup now</button> : null}<button type="button" onClick={() => navigate("/plans", { replace: true })} className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900">Back to Plans</button><Link to="/contact" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Need help?</Link></div></article></section></main>;
 }
