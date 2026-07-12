@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import importlib
 import logging
 from typing import Any
 
-VERSION = "churvox-outer-cors-error-shield-20260712c"
+VERSION = "churvox-outer-cors-error-shield-20260712d"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
@@ -36,7 +37,10 @@ def cors_headers(origin: str, request_headers: str = "") -> list[tuple[bytes, by
         (b"access-control-allow-credentials", b"true"),
         (b"access-control-allow-methods", b"GET,POST,PUT,PATCH,DELETE,OPTIONS"),
         (b"access-control-allow-headers", (_text(request_headers) or "Authorization,Content-Type,X-Requested-With").encode("latin1")),
-        (b"access-control-expose-headers", b"Retry-After,X-Churvox-Cors-Shield,X-Churvox-Auth-Version,X-Churvox-Boot-Fingerprint"),
+        (
+            b"access-control-expose-headers",
+            b"Retry-After,X-Churvox-Cors-Shield,X-Churvox-Auth-Version,X-Churvox-Boot-Fingerprint,X-Churvox-Login-Route,X-Churvox-Login-Stage,X-Churvox-Auth-Gate",
+        ),
         (b"vary", b"Origin"),
         (b"x-churvox-cors-shield", VERSION.encode("latin1")),
     ]
@@ -84,7 +88,7 @@ class OuterCorsErrorShield:
             logging.exception("Unhandled Churvox request error outside normal middleware")
             if response_started:
                 raise
-            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"version":"churvox-outer-cors-error-shield-20260712c"}'
+            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"version":"churvox-outer-cors-error-shield-20260712d"}'
             headers = [
                 (b"content-type", b"application/json"),
                 (b"content-length", str(len(body)).encode("ascii")),
@@ -96,7 +100,31 @@ class OuterCorsErrorShield:
             await send({"type": "http.response.body", "body": body})
 
 
+def _install_definitive_login(module) -> None:
+    patch = None
+    for name in (
+        "churvox_login_route_finalizer",
+        "backend.churvox_login_route_finalizer",
+    ):
+        try:
+            patch = importlib.import_module(name)
+            break
+        except Exception:
+            continue
+    if patch is None:
+        logging.getLogger(__name__).warning("[Churvox] Definitive login route module could not be imported")
+        return
+    try:
+        patch.install(module)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("[Churvox] Definitive login route install skipped: %s", exc)
+
+
 def install(module) -> None:
+    # This hook is called from the final wrapper patch. Install the definitive
+    # login route even when the CORS middleware itself was installed earlier.
+    _install_definitive_login(module)
+
     app = getattr(module, "app", None)
     if app is None:
         return
