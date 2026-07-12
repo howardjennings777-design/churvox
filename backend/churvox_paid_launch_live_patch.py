@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict
 
@@ -11,6 +12,10 @@ INSTALLED = set()
 OPEN_STATUSES = ["open", "edited", "pending", "ready", "waiting", "snoozed"]
 OWNER_ROLES = {"employer", "admin", "owner", "business_owner", "manager", "office_admin"}
 SAFETY = "Owner approval required. Nothing was sent, synced, charged, filed or paid."
+QUEUE_CACHE_TTL_SECONDS = 20
+QUEUE_CACHE_STALE_SECONDS = 15 * 60
+QUEUE_STATUS_LIMIT = 12
+QUEUE_QUERY_TIMEOUT_SECONDS = 2.2
 
 
 def _safe(value: Any, ObjectId):
@@ -81,6 +86,7 @@ def install(module, force=False):
                 return
             jobs = [
                 ("command_slips", [("business_id", 1), ("status", 1), ("updated_at", -1)]),
+                ("command_slips", [("business_id", 1), ("updated_at", -1)]),
                 ("command_slips", [("business_id", 1), ("source_type", 1), ("action_type", 1), ("source_id", 1), ("status", 1)]),
                 ("command_events", [("business_id", 1), ("created_at", -1)]),
             ]
@@ -120,6 +126,71 @@ def install(module, force=False):
         remove_route(path, "GET")
     app.include_router(build_paid_launch_readiness_router(db, get_current_user, ObjectId), prefix="/api")
 
+    queue_cache: Dict[str, Dict[str, Any]] = {}
+    queue_refresh_tasks: Dict[str, asyncio.Task] = {}
+
+    def queue_sort_value(row: Dict[str, Any]) -> str:
+        value = row.get("updated_at") or row.get("created_at") or row.get("_id") or ""
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return str(value)
+
+    async def read_queue_status(bid: str, status: str):
+        query = {"business_id": bid, "status": status}
+        cursor = db.command_slips.find(query, {"audit": 0}).sort("updated_at", -1).limit(QUEUE_STATUS_LIMIT)
+        try:
+            cursor = cursor.hint([("business_id", 1), ("status", 1), ("updated_at", -1)])
+        except Exception:
+            pass
+        try:
+            cursor = cursor.max_time_ms(900)
+        except Exception:
+            pass
+        return await cursor.to_list(length=QUEUE_STATUS_LIMIT)
+
+    async def load_queue_rows(bid: str):
+        started = time.monotonic()
+        batches = await bounded(
+            asyncio.gather(*(read_queue_status(bid, status) for status in OPEN_STATUSES)),
+            QUEUE_QUERY_TIMEOUT_SECONDS,
+            "Command queue",
+        )
+        rows = [row for batch in batches for row in batch]
+        rows.sort(key=queue_sort_value, reverse=True)
+        rows = rows[:50]
+        queue_cache[bid] = {"at": time.monotonic(), "rows": rows}
+        return rows, round((time.monotonic() - started) * 1000)
+
+    async def refresh_queue_cache(bid: str):
+        try:
+            await load_queue_rows(bid)
+        except Exception:
+            pass
+        finally:
+            queue_refresh_tasks.pop(bid, None)
+
+    def schedule_queue_refresh(bid: str):
+        task = queue_refresh_tasks.get(bid)
+        if task and not task.done():
+            return
+        try:
+            queue_refresh_tasks[bid] = asyncio.create_task(refresh_queue_cache(bid))
+        except Exception:
+            pass
+
+    def queue_response(rows, *, source: str, elapsed_ms: int = 0, cached: bool = False, stale: bool = False):
+        return {
+            "success": True,
+            "source": source,
+            "slips": [_safe(row, ObjectId) for row in rows],
+            "cached": cached,
+            "stale": stale,
+            "elapsed_ms": elapsed_ms,
+            "scan_complete": not stale,
+            "scan_errors": ["Command queue is showing the last confirmed server cache while a live refresh retries."] if stale else [],
+            "safety": SAFETY,
+        }
+
     async def fast_slips(request: Request):
         user = await require_owner(request)
         bid = business_id(user)
@@ -128,21 +199,22 @@ def install(module, force=False):
                 asyncio.create_task(ensure_indexes())
             except Exception:
                 pass
-        query = {"business_id": bid, "status": {"$in": OPEN_STATUSES}}
-        cursor = db.command_slips.find(query, {"audit": 0}).sort("updated_at", -1).limit(50)
+
+        cached = queue_cache.get(bid)
+        age = time.monotonic() - float((cached or {}).get("at") or 0)
+        if cached and age <= QUEUE_CACHE_TTL_SECONDS:
+            if age > 5:
+                schedule_queue_refresh(bid)
+            return queue_response(cached.get("rows") or [], source="paid-launch-command-server-cache-v3", cached=True)
+
         try:
-            cursor = cursor.max_time_ms(2500)
-        except Exception:
-            pass
-        rows = await bounded(cursor.to_list(length=50), 5, "Command queue")
-        return {
-            "success": True,
-            "source": "paid-launch-fast-command-v2",
-            "slips": [_safe(row, ObjectId) for row in rows],
-            "scan_complete": True,
-            "scan_errors": [],
-            "safety": SAFETY,
-        }
+            rows, elapsed_ms = await load_queue_rows(bid)
+            return queue_response(rows, source="paid-launch-fast-command-v3", elapsed_ms=elapsed_ms)
+        except HTTPException:
+            if cached and age <= QUEUE_CACHE_STALE_SECONDS:
+                schedule_queue_refresh(bid)
+                return queue_response(cached.get("rows") or [], source="paid-launch-command-stale-cache-v3", cached=True, stale=True)
+            raise
 
     try:
         from churvox_command_human_mimic_guard_routes import build_command_human_mimic_guard_router
@@ -197,7 +269,7 @@ def install(module, force=False):
         await ensure_indexes()
         return {
             "success": True,
-            "marker": "churvox-command-fast-load-backend-20260713b",
+            "marker": "churvox-command-queue-speed-backend-20260713e",
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,

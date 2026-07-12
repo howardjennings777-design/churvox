@@ -7,7 +7,7 @@ import traceback
 from datetime import datetime, timezone
 from typing import Any
 
-VERSION = "churvox-command-fast-load-boot-20260713d"
+VERSION = "churvox-command-queue-speed-boot-20260713e"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
