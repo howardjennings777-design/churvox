@@ -14,7 +14,7 @@ try:
 except Exception:  # Unit tests for pure helpers do not need FastAPI installed.
     JSONResponse = None
 
-VERSION = "churvox-login-emergency-final-20260712e"
+VERSION = "churvox-login-emergency-final-20260712f"
 LOCKOUT_FAILURES = 5
 LOCKOUT_MINUTES = 15
 LOOKUP_TIMEOUT_SECONDS = 6
@@ -131,6 +131,16 @@ def account_disabled(user: dict[str, Any] | None) -> bool:
         or user.get("revoked_at")
         or user.get("removed_at")
         or user.get("disabled_at")
+    )
+
+
+def worker_fallback_allowed(user: dict[str, Any] | None) -> bool:
+    if not user:
+        return True
+    return bool(
+        _role(user) in WORKER_ROLES
+        and not self_owned_legacy_owner(user)
+        and not account_disabled(user)
     )
 
 
@@ -648,7 +658,7 @@ def install(module) -> None:
                 )
 
             valid, matched_field, stored_hash = _password_ok(password, user or {}) if user else (False, None, None)
-            if not user:
+            if not valid and worker_fallback_allowed(user):
                 try:
                     collection_name, worker_document = await _find_worker(email)
                 except asyncio.TimeoutError:
