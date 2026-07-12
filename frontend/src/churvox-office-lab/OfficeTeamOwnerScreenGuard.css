@@ -1,0 +1,84 @@
+.cvOwnerScreenGuardLoading {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: #17120e;
+  background: #f6efe4;
+  text-align: center;
+}
+
+.cvOwnerScreenGuardLoading strong {
+  font-size: 1.15rem;
+  font-weight: 1000;
+}
+
+.cvOwnerScreenGuardLoading span {
+  color: #655c52;
+  font-size: .85rem;
+  font-weight: 760;
+}
+
+.cvOwnerScreenGuardNotice {
+  position: fixed;
+  z-index: 2147483000;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  width: min(720px, calc(100% - 24px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 14px 13px 17px;
+  border: 1px solid rgba(154, 52, 18, .24);
+  border-left: 6px solid #f97316;
+  border-radius: 18px;
+  color: #17120e;
+  background: rgba(255, 247, 237, .98);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, .22);
+  backdrop-filter: blur(18px);
+}
+
+.cvOwnerScreenGuardNotice > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.cvOwnerScreenGuardNotice strong {
+  font-size: .88rem;
+  font-weight: 1000;
+}
+
+.cvOwnerScreenGuardNotice span {
+  color: #7c2d12;
+  font-size: .76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.cvOwnerScreenGuardNotice button {
+  flex: 0 0 auto;
+  min-width: 74px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  color: #fffaf0;
+  background: #17120e;
+  font-size: .72rem;
+  font-weight: 1000;
+}
+
+@media (max-width: 640px) {
+  .cvOwnerScreenGuardNotice {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cvOwnerScreenGuardNotice button {
+    width: 100%;
+  }
+}
