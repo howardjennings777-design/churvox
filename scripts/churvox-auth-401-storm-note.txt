@@ -1,0 +1,1 @@
+This file documents the guarded paid-launch auth repair trigger. Product changes are committed only after the stale-session browser test and production build pass.
