@@ -12,6 +12,9 @@ on:
       - 'backend/churvox_runtime_jwt_secret_patch.py'
       - 'backend/test_churvox_login_emergency_final.py'
       - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
+      - 'frontend/src/pages/owner/OwnerLoginPage.jsx'
+      - 'frontend/src/pages/owner/OwnerDashboardPage.jsx'
+      - 'scripts/test_platform_owner_frontend_lock.py'
       - '.github/workflows/churvox-login-emergency-gate.yml'
   pull_request:
     paths:
@@ -23,6 +26,9 @@ on:
       - 'backend/churvox_runtime_jwt_secret_patch.py'
       - 'backend/test_churvox_login_emergency_final.py'
       - 'frontend/src/runtime/churvoxOwnerLoginFallbackGuardRuntime.js'
+      - 'frontend/src/pages/owner/OwnerLoginPage.jsx'
+      - 'frontend/src/pages/owner/OwnerDashboardPage.jsx'
+      - 'scripts/test_platform_owner_frontend_lock.py'
       - '.github/workflows/churvox-login-emergency-gate.yml'
   workflow_dispatch:
 
@@ -52,10 +58,13 @@ jobs:
             backend/churvox_auth_paid_launch_hardening.py \
             backend/churvox_production_launch_security.py \
             backend/churvox_runtime_jwt_secret_patch.py \
-            backend/test_churvox_login_emergency_final.py
+            backend/test_churvox_login_emergency_final.py \
+            scripts/test_platform_owner_frontend_lock.py
 
       - name: Run final login access contracts
-        run: python -m unittest backend.test_churvox_login_emergency_final
+        run: |
+          python -m unittest backend.test_churvox_login_emergency_final
+          python -m unittest scripts.test_platform_owner_frontend_lock
 
       - name: Verify final route markers
         run: |
@@ -76,3 +85,5 @@ jobs:
           grep -F 'module.PLATFORM_OWNER_EMAILS = [PLATFORM_OWNER_EMAIL]' backend/churvox_production_launch_security.py
           grep -F 'isolated emergency login route' backend/churvox_outer_cors_error_shield.py
           grep -F 'if path == "/api/auth/login"' backend/churvox_auth_paid_launch_hardening.py
+          grep -F 'normalizedEmail !== OWNER_EMAIL' frontend/src/pages/owner/OwnerLoginPage.jsx
+          grep -F 'response.ok && email === OWNER_EMAIL' frontend/src/pages/owner/OwnerDashboardPage.jsx
