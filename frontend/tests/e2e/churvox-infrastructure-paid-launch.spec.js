@@ -8,7 +8,7 @@ async function read(response) {
 }
 
 test.describe('Paid-launch live infrastructure', () => {
-  test('backend health and Command marker are live', async ({ request }) => {
+  test('backend health, Command marker and production secrets are ready', async ({ request }) => {
     const health = await request.get(`${API_BASE}/api/healthz`, { timeout: 30000 });
     const healthPayload = await read(health);
     expect(health.status(), `Health failed: ${healthPayload.text}`).toBe(200);
@@ -19,6 +19,15 @@ test.describe('Paid-launch live infrastructure', () => {
     expect(marker.status(), `Command marker failed: ${markerPayload.text}`).toBe(200);
     expect(markerPayload.body?.success).toBeTruthy();
     expect(String(markerPayload.body?.marker || '')).toMatch(/command-live-smoke/i);
+
+    const security = await request.get(`${API_BASE}/api/security/launch-status`, { timeout: 30000 });
+    const securityPayload = await read(security);
+    expect(security.status(), `Security launch status failed: ${securityPayload.text}`).toBe(200);
+    expect(securityPayload.body?.success).toBeTruthy();
+    expect(securityPayload.body?.ready_for_paid_launch, `Critical configuration failures: ${JSON.stringify(securityPayload.body?.critical_failures || [])}`).toBe(true);
+    for (const [name, result] of Object.entries(securityPayload.body?.checks || {})) {
+      expect(result?.ok, `${name}: ${result?.detail || 'not ready'}`).toBe(true);
+    }
   });
 
   test('signed Stripe webhook route is mounted and configured', async ({ request }) => {
@@ -48,13 +57,26 @@ test.describe('Paid-launch live infrastructure', () => {
     expect(String(payload.body?.detail || '')).toMatch(/cannot mark an invoice paid|verified payment provider/i);
   });
 
+  test('public customer requests require a verified business target', async ({ request }) => {
+    const response = await request.post(`${API_BASE}/api/public/customer-request`, {
+      data: {
+        customer_name: 'Launch Probe',
+        customer_email: 'probe@example.invalid',
+        service_needed: 'Non-mutating launch check',
+      },
+      timeout: 30000,
+    });
+    const payload = await read(response);
+    expect(response.status(), `Untargeted public request should be rejected: ${payload.text}`).toBe(400);
+    expect(String(payload.body?.detail || '')).toMatch(/not connected to a valid business/i);
+  });
+
   test('HQ control-access is mounted but rejects unauthenticated calls', async ({ request }) => {
     const response = await request.post(`${API_BASE}/api/admin/owner/control-access`, {
       data: { identifier: 'launch-probe@example.invalid', action: 'revoke' },
       timeout: 30000,
     });
     const payload = await read(response);
-    expect(response.status(), `HQ control route should be protected, not missing: ${payload.text}`).toBeGreaterThanOrEqual(401);
-    expect(response.status()).toBeLessThan(404);
+    expect([401, 403], `HQ control route should be protected, not missing: ${payload.text}`).toContain(response.status());
   });
 });
