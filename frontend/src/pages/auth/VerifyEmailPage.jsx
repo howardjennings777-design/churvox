@@ -18,8 +18,15 @@ function verifiedDestination(user = {}) {
   const status = String(user?.subscription_status || user?.billing_status || user?.stripe_status || "").trim().toLowerCase();
   const worker = /worker|staff|field_worker|technician|subcontractor/.test(role) || truthy(user?.is_worker) || truthy(user?.worker_account) || user?.worker_id;
   const tester = truthy(user?.free_tester_access) || truthy(user?.is_tester) || status === "tester_free";
-  const stripeProof = Boolean(user?.stripe_subscription_id || user?.stripe_customer_id || user?.stripe_checkout_session_id || user?.checkout_session_id);
-  const active = user?.has_app_access === true || tester || (stripeProof && ["active", "paid", "trialing", "trial", "past_due"].includes(status));
+  const billingProof = Boolean(
+    user?.stripe_subscription_id ||
+    user?.stripe_customer_id ||
+    user?.stripe_checkout_session_id ||
+    user?.checkout_session_id ||
+    user?.manual_access_granted_by_app_owner ||
+    user?.access_granted_by_app_owner
+  );
+  const active = user?.has_app_access === true || tester || (billingProof && ["active", "paid", "trialing", "trial", "past_due"].includes(status));
 
   if (email === PLATFORM_OWNER_EMAIL) return "/admin";
   if (worker) return "/worker/today";
@@ -28,22 +35,68 @@ function verifiedDestination(user = {}) {
   return "/plans";
 }
 
+function authToken() {
+  try {
+    return window.localStorage.getItem("token") || window.localStorage.getItem("authToken") || window.localStorage.getItem("access_token") || "";
+  } catch {
+    return "";
+  }
+}
+
+function safeEmail(value) {
+  const email = String(value || "").trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "";
+}
+
 export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
-  const [status, setStatus] = React.useState("Verifying your email…");
+  const token = params.get("token") || "";
+  const pending = params.get("pending") === "1";
+  const email = safeEmail(params.get("email"));
+
+  const [status, setStatus] = React.useState(pending && !token ? "Check your inbox and open the verification link from Churvox." : "Verifying your email…");
   const [ok, setOk] = React.useState(false);
   const [done, setDone] = React.useState(false);
+  const [pendingMode, setPendingMode] = React.useState(pending && !token);
+  const [resending, setResending] = React.useState(false);
+  const [resendMessage, setResendMessage] = React.useState("");
   const [destination, setDestination] = React.useState("/login?verified=1");
   const redirectTimer = React.useRef(null);
 
   React.useEffect(() => {
     let alive = true;
 
+    async function confirmCurrentSession() {
+      try {
+        const refreshed = await checkAuth?.();
+        const currentUser = refreshed?.user || refreshed || null;
+        if (!alive || !currentUser) return false;
+        if (currentUser?.email_verified === true) {
+          const next = verifiedDestination(currentUser);
+          setDestination(next);
+          setOk(true);
+          setDone(true);
+          setPendingMode(false);
+          setStatus("Email verified. Opening the right Churvox workspace now.");
+          redirectTimer.current = window.setTimeout(() => navigate(next, { replace: true }), 900);
+          return true;
+        }
+      } catch {}
+      return false;
+    }
+
     async function verify() {
-      const token = params.get("token") || "";
       if (!token) {
+        if (pending) {
+          const alreadyVerified = await confirmCurrentSession();
+          if (!alive || alreadyVerified) return;
+          setPendingMode(true);
+          setDone(true);
+          setStatus("Check your inbox and open the verification link from Churvox. You can safely request another email below.");
+          return;
+        }
         setStatus("This verification link is missing its token. Request a new verification email or contact support.");
         setDone(true);
         return;
@@ -70,6 +123,7 @@ export default function VerifyEmailPage() {
         const next = currentUser ? verifiedDestination(currentUser) : "/login?verified=1";
         setDestination(next);
         setOk(true);
+        setPendingMode(false);
         setStatus(currentUser ? (next === "/plans" ? "Email verified. Choose and confirm a plan to continue." : "Email verified. Opening the right Churvox workspace now.") : "Email verified. Sign in to continue.");
         redirectTimer.current = window.setTimeout(() => navigate(next, { replace: true }), 1400);
       } catch (error) {
@@ -85,20 +139,51 @@ export default function VerifyEmailPage() {
       alive = false;
       window.clearTimeout(redirectTimer.current);
     };
-  }, [checkAuth, navigate, params]);
+  }, [checkAuth, navigate, pending, token]);
+
+  async function resendVerification() {
+    if (resending) return;
+    setResending(true);
+    setResendMessage("");
+    try {
+      const headers = { "Content-Type": "application/json", Accept: "application/json" };
+      const storedToken = authToken();
+      if (storedToken) headers.Authorization = `Bearer ${storedToken}`;
+      const response = await fetch(`${API_BASE}/api/auth/resend-verification`, {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify(email ? { email } : {}),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || body?.success === false || body?.email_verification_sent === false) {
+        throw new Error(body?.detail || body?.message || "The verification email could not be confirmed as sent.");
+      }
+      setResendMessage("Verification email sent. Check your inbox and spam folder.");
+    } catch (error) {
+      setResendMessage(error?.message || "The verification email could not be sent. Try again or contact support.");
+    } finally {
+      setResending(false);
+    }
+  }
+
+  const heading = ok ? "Email verified" : pendingMode ? "Verify your email" : "Checking your link";
+  const badge = ok ? "Verified" : pendingMode ? "Action needed" : "Email verification";
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_EMAIL_VERIFICATION_PAID_LAUNCH_20260712">
+    <main className="cp26Site" data-version="CHURVOX_EMAIL_VERIFICATION_LOGIN_FLOW_20260712">
       <PublicNav />
       <section className="min-h-[68vh] bg-[#f7f3ea] p-4 text-slate-950 md:p-8">
         <div className="mx-auto grid min-h-[64vh] max-w-3xl place-items-center">
           <article className="w-full rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] md:p-9">
-            <div className={`inline-flex rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${ok ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{ok ? "Verified" : "Email verification"}</div>
-            <h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{ok ? "Email verified" : "Checking your link"}</h1>
-            <p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600">{status}</p>
+            <div className={`inline-flex rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${ok ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{badge}</div>
+            <h1 className="mt-4 text-4xl font-black tracking-[-0.07em] md:text-6xl">{heading}</h1>
+            <p className="mt-4 max-w-2xl text-base font-bold leading-7 text-slate-600" role="status" aria-live="polite">{status}</p>
+            {resendMessage ? <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-black text-slate-800" role="status">{resendMessage}</p> : null}
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link to={destination} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline">{ok ? "Continue to Churvox" : "Sign in"}</Link>
-              {!ok && done ? <Link to="/forgot-password" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Account help</Link> : null}
+              {pendingMode ? <button type="button" onClick={resendVerification} disabled={resending} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">{resending ? "Sending…" : "Resend verification email"}</button> : null}
+              {ok ? <Link to={destination} className="rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline">Continue to Churvox</Link> : null}
+              {!ok && done ? <Link to="/login" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Back to login</Link> : null}
               {!ok && done ? <Link to="/support" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 no-underline">Contact support</Link> : null}
             </div>
           </article>
