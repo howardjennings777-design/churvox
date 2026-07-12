@@ -104,6 +104,21 @@ jobs:
           CI: 'false'
         run: npm run build
 
+      - name: Verify compiled Command bundle
+        if: ${{ contains(github.event.issue.body, 'COMMAND_FAST_LOAD_REPAIR=1') }}
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -R -q "churvox-command-fast-load-build-20260713c" build/static/js
+          grep -R -q "Opening the current Command queue" build/static/js
+          grep -R -q "/api/command/slips" build/static/js
+          if grep -R -q "churvox-admin-brain-surface-style" build/static/js; then
+            echo "Legacy Admin Brain surface is still compiled into the owner app."
+            exit 1
+          fi
+          echo "COMPILED_COMMAND_FAST_LOAD_PASS"
+
       - name: Install Chromium
         if: ${{ contains(github.event.issue.body, 'COMMAND_FAST_LOAD_REPAIR=1') }}
         working-directory: frontend
@@ -144,6 +159,7 @@ jobs:
           git add \
             frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
             frontend/src/churvox-office-lab/OfficeTeamCommandApi.js \
+            frontend/src/runtime/churvoxDrawerRecordActionsRuntime.js \
             backend/churvox_paid_launch_live_patch.py \
             backend/churvox_command_human_mimic_routes.py \
             backend/churvox_command_human_mimic_guard_routes.py \
@@ -173,6 +189,6 @@ jobs:
             const sha = '${{ steps.command_publish.outputs.sha }}' || 'not published';
             const browser = fs.existsSync('/tmp/churvox-command-browser.txt') ? fs.readFileSync('/tmp/churvox-command-browser.txt', 'utf8').slice(-16000) : 'Browser proof did not run or produced no output.';
             const body = ok
-              ? `## Command fast-load repair passed\n\n- Existing Command decisions render before the full business scan and audit.\n- Queue, audit and scan requests have bounded deadlines.\n- Final production route precedence is forced after legacy server registration.\n- Command reads exclude audit history and no longer wait for index creation or unrelated counts.\n- Human mimic reads, storage and guard cleanup use bounded concurrency.\n- Backend precedence test, production build and browser queue-first test passed.\n- Commit: \`${sha}\``
+              ? `## Command fast-load repair passed\n\n- Existing Command decisions render before the full business scan and audit.\n- Queue, audit and scan requests have bounded deadlines.\n- The legacy Admin Brain surface is removed from the owner runtime.\n- The compiled production bundle contains the queue-first marker and real Command endpoint.\n- Final production route precedence is forced after legacy server registration.\n- Command reads exclude audit history and no longer wait for index creation or unrelated counts.\n- Human mimic reads, storage and guard cleanup use bounded concurrency.\n- Backend precedence test, production build and browser queue-first test passed.\n- Commit: \`${sha}\``
               : `## Command fast-load repair failed safely\n\nNo unverified product repair was published. Exact browser tail:\n\n\`\`\`text\n${browser}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
