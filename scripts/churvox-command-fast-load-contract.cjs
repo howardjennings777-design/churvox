@@ -10,11 +10,14 @@ execFileSync('python', ['scripts/churvox-command-owner-route-fix.py'], { stdio: 
 
 const site = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const api = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
+const drawer = read('frontend/src/runtime/churvoxDrawerRecordActionsRuntime.js');
 const live = read('backend/churvox_paid_launch_live_patch.py');
 const mimic = read('backend/churvox_command_human_mimic_routes.py');
 const guard = read('backend/churvox_command_human_mimic_guard_routes.py');
 const start = read('backend/churvox_start.py');
 
+must(site.includes('churvox-command-fast-load-build-20260713c'), 'compiled Command screen has a unique fast-load marker');
+must(site.includes('window.__CHURVOX_COMMAND_LOAD_STATE__'), 'Command exposes safe runtime load diagnostics');
 must(site.includes('ownerPath === "/dashboard" || ownerPath.startsWith("/dashboard/")'), 'protected dashboard forces live owner Command mode');
 must(site.includes('const [commandLoading, setCommandLoading] = useState(isOwnerApp);'), 'Command has an honest initial loading state');
 must(site.includes('const queuePromise = loadCurrentQueue();'), 'current Command queue starts first');
@@ -22,6 +25,7 @@ must(site.indexOf('const queuePromise = loadCurrentQueue();') < site.indexOf('ru
 must(!site.includes('runBackendOfficeEngineScan().catch(() => null).then((scan) => fetchBackendCommandDecisions()'), 'old scan-before-queue chain is removed');
 must(site.includes('The full business check continues behind it.'), 'owner sees queue-first background-scan wording');
 must(site.includes('fetchBackendCommandAudit().then((audit)'), 'audit refresh is independent from queue rendering');
+must(!drawer.includes("churvoxAdminBrainSurfaceRuntime"), 'legacy Admin Brain surface is not loaded in the owner drawer runtime');
 
 must(api.includes('timeoutMs = 8000'), 'Command fetches have bounded deadlines');
 must(api.includes('/api/command/slips`') && api.includes('timeoutMs: 6000'), 'queue request has a six-second safety deadline');
