@@ -6,6 +6,8 @@ import importlib.abc
 import importlib.machinery
 import sys
 
+from starlette.requests import Request as StarletteRequest
+
 PLAN_ALIASES = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 PLAN_LABELS = {"solo": "Start", "team": "Crew", "pro": "Operator", "enterprise": "Command"}
 BASE_LIMITS = {
@@ -88,15 +90,14 @@ def install(module):
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
     ObjectId = getattr(module, "ObjectId", None)
-    Request = getattr(module, "Request", None)
-    if not app or db is None or not get_current_user or ObjectId is None or Request is None:
+    if not app or db is None or not get_current_user or ObjectId is None:
         return
     existing = {getattr(route, "path", "") for route in getattr(app, "routes", [])}
     if "/api/plan/usage" in existing:
         INSTALLED.add(name)
         return
 
-    async def plan_usage_endpoint(request: Request):
+    async def plan_usage_endpoint(request: StarletteRequest):
         user = await get_current_user(request)
         values = business_values(user, ObjectId)
         owner = await owner_for(db, values) or user

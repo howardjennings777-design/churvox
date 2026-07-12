@@ -19,7 +19,7 @@ const css = `
     align-items: center;
     justify-content: center;
     gap: 7px;
-    min-height: 38px;
+    min-height: 44px;
     border: 1px solid rgba(16, 21, 19, 0.12);
     border-radius: 999px;
     padding: 9px 12px;
@@ -49,7 +49,7 @@ const css = `
   }
   @media (max-width: 720px) {
     .cv3Top .cv3Account { display: grid !important; gap: 6px !important; justify-items: end !important; }
-    .cv3Account .cvxVisibleLogout { min-height: 34px; padding: 8px 10px; font-size: 11px; }
+    .cv3Account .cvxVisibleLogout { min-height: 44px; padding: 8px 10px; font-size: 11px; }
     .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { min-height: 40px; }
   }
 `;
@@ -174,6 +174,12 @@ function run() {
   if (!isAppPath() || typeof document === 'undefined') return;
   ensureStyle();
   const button = removeDuplicates();
+  const nativeLogout = document.querySelector('.cvSiteLogout, .cvWorkerLogout, .cvWorkerRouteLogout, [data-churvox-native-logout="true"]');
+  const authenticating = document.querySelector('.cvAuthLoading');
+  if (nativeLogout || authenticating) {
+    button?.remove();
+    return;
+  }
   const path = window.location.pathname || '';
   const placed = path.startsWith('/worker') ? injectWorkerLogout(button) : (path.includes('admin') || path.includes('hq') || path.includes('owner') || path.includes('platform') || path.includes('app-owner')) ? injectHqLogout(button) : injectOwnerLogout(button);
   if (!placed) injectFallback(button);

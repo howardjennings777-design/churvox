@@ -9,6 +9,7 @@ import "./OfficeTeamPremiumPolish.css";
 import "./OfficeTeamLogicPolish.css";
 import "./OfficeTeamSlipForm.css";
 import "./OfficeTeamVisionPolish.css";
+import "./OfficeTeamVisualRepair.css";
 import OfficeTeamRoleControls from "./OfficeTeamRoleControls";
 import OfficeTeamSiteSettings from "./OfficeTeamSiteSettings";
 import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
@@ -309,7 +310,7 @@ function Topbar({ screen, go, appMode, pendingCount }) {
       {isOwnerApp
         ? <OfficeTeamOwnerNavigation screen={screen} go={go} pendingCount={pendingCount} />
         : <nav>{screens.map(([key, label]) => <button key={key} className={screen === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav>}
-      <button type="button" className="cvSiteLogout" onClick={logoutOffice}>Log out</button>
+      <button type="button" className="cvSiteLogout" data-churvox-native-logout="true" aria-label="Log out of Churvox" onClick={logoutOffice}>Log out</button>
     </header>
   );
 }

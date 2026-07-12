@@ -122,7 +122,7 @@ export default function OfficeTeamOwnerNavigation({ screen, go, pendingCount = 0
             </button>
           ))}
         </nav>
-        {visibleOffice.length ? (
+        {(visibleOffice.length || visibleUtility.length) ? (
           <div className="cvOwnerMore" ref={menuRef}>
             <button
               ref={triggerRef}
@@ -149,6 +149,14 @@ export default function OfficeTeamOwnerNavigation({ screen, go, pendingCount = 0
                       {label}
                     </button>
                   ))}
+                  {visibleUtility.length ? (
+                    <section className="cvOwnerMoreUtility" aria-label="Account and help">
+                      <span>Account and help</span>
+                      {visibleUtility.map(([key, label]) => (
+                        <button key={key} type="button" role="menuitem" className={screen === key ? "active" : ""} onClick={() => navigate(key)}>{label}</button>
+                      ))}
+                    </section>
+                  ) : null}
                   <small>Only tools included in the current Churvox plan are shown.</small>
                 </div>
               </>

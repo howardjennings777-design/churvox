@@ -58,6 +58,7 @@ if (typeof window !== "undefined") {
     ownerNavigation: "cvOwnerMainNavigation",
     secureCheckout: "Continue to secure checkout",
     workerLogout: "cvWorkerLogout",
+    visualRepair: "churvox-owner-visual-repair-20260713e",
   });
 }
 
@@ -73,7 +74,7 @@ function verificationPath(user = {}) {
 }
 
 const Spinner = () => (
-  <main className="min-h-screen bg-[#f5f2ec] p-6 text-center text-slate-950 grid place-items-center">
+  <main className="cvAuthLoading min-h-screen bg-[#f5f2ec] p-6 text-center text-slate-950 grid place-items-center">
     <section>
       <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-t-2 border-orange-500" />
       <p className="text-sm font-black uppercase tracking-[0.16em] text-orange-700">Loading Churvox</p>
@@ -96,7 +97,7 @@ function PublicRoute({ children }) {
 
 function FreshBusinessRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
-  if (loading) return <Spinner />;
+  if (loading && !user) return <Spinner />;
 
   const currentPath = typeof window === "undefined" ? "" : window.location.pathname;
   const currentSearch = typeof window === "undefined" ? "" : window.location.search || "";
@@ -124,7 +125,7 @@ function FreshBusinessRoute({ children }) {
 
 function WorkerRoute({ children }) {
   const { user, loading, isWorker, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
+  if (loading && !user) return <Spinner />;
   if (!user) return <Navigate to="/login?worker=1" replace />;
   if (!isWorker) return <Navigate to={isPlatformOwnerUser(user) ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
   return <AppPage>{children}</AppPage>;

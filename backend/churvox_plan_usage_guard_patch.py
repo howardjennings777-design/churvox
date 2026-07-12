@@ -4,6 +4,8 @@ import importlib
 import importlib.abc
 import importlib.machinery
 import sys
+
+from starlette.requests import Request as StarletteRequest
 from datetime import datetime, timezone
 from typing import Any
 
@@ -170,13 +172,12 @@ def install(module):
         return
     app = getattr(module, "app", None)
     get_current_user = getattr(module, "get_current_user", None)
-    Request = getattr(module, "Request", None)
     db = getattr(module, "db", None)
     ObjectId = getattr(module, "ObjectId", None)
-    if not app or not get_current_user or Request is None or db is None or ObjectId is None:
+    if not app or not get_current_user or db is None or ObjectId is None:
         return
 
-    async def plan_usage_guard(request: Request):
+    async def plan_usage_guard(request: StarletteRequest):
         user = await get_current_user(request)
         plan = plan_name(user)
         packs = growth_pack_count(user) if plan == "command" else 0
