@@ -5,6 +5,7 @@ import importlib
 import importlib.abc
 import importlib.machinery
 import sys
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from fastapi import Request as FastAPIRequest
 
 TARGETS = {"server", "backend.server", "churvox_legacy_server"}
@@ -58,6 +59,44 @@ def remove_route(app, path, method="GET"):
         app.router.routes = [route for route in app.router.routes if not route_matches(route, path, method)]
     except Exception:
         pass
+
+
+def safe_cancel_url(value):
+    raw = clean(value)
+    if not raw:
+        return raw
+    try:
+        parts = urlsplit(raw)
+        query = dict(parse_qsl(parts.query, keep_blank_values=True))
+        checkout_state = clean(query.get("checkout") or query.get("state")).lower()
+        old_cancel_path = parts.path.rstrip("/") in {"/dashboard", "/plans", "/billing/cancel"}
+        if old_cancel_path and checkout_state in {"cancelled", "canceled", "cancel"}:
+            query.pop("checkout", None)
+            query.pop("state", None)
+            return urlunsplit((parts.scheme, parts.netloc, "/billing/cancelled", urlencode(query), ""))
+    except Exception:
+        pass
+    return raw
+
+
+def patch_stripe_checkout_returns(module):
+    stripe_module = getattr(module, "stripe", None)
+    try:
+        session_api = stripe_module.checkout.Session
+        current_create = session_api.create
+    except Exception:
+        return
+    if getattr(current_create, "__churvox_safe_cancel_return__", False):
+        return
+
+    def safe_create(*args, **kwargs):
+        if kwargs.get("cancel_url"):
+            kwargs["cancel_url"] = safe_cancel_url(kwargs.get("cancel_url"))
+        return current_create(*args, **kwargs)
+
+    safe_create.__churvox_safe_cancel_return__ = True
+    safe_create.__churvox_wrapped_create__ = current_create
+    session_api.create = safe_create
 
 
 def command_item_from_slip(slip):
@@ -134,6 +173,7 @@ async def create_general_slip(db, user, payload):
 
 def install(module):
     name = getattr(module, "__name__", "")
+    patch_stripe_checkout_returns(module)
     if name in INSTALLED:
         return
     app = getattr(module, "app", None)
