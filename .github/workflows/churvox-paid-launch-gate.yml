@@ -37,7 +37,7 @@ jobs:
   code-gate:
     name: Build, syntax and safe browser contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
     defaults:
       run:
         working-directory: frontend
@@ -79,9 +79,13 @@ jobs:
             backend/churvox_auth_paid_launch_hardening.py \
             backend/churvox_password_recovery_paid_launch_patch.py \
             backend/churvox_session_token_precision_patch.py \
+            backend/churvox_token_revocation_paid_launch_patch.py \
+            backend/churvox_registration_verification_paid_launch_patch.py \
+            backend/churvox_registration_claim_guard.py \
             backend/churvox_checkout_token_session_guard.py \
             backend/churvox_login_paid_launch_final_patch.py \
             backend/churvox_worker_login_role_guard.py \
+            backend/churvox_invite_security_paid_launch_patch.py \
             backend/churvox_auth_launch_status_patch.py \
             backend/churvox_feature_tier_paid_launch_guard.py \
             backend/churvox_plan_usage_guard_patch.py \
@@ -96,7 +100,10 @@ jobs:
             backend.test_churvox_login_paid_launch_final_patch \
             backend.test_churvox_password_recovery_paid_launch_patch \
             backend.test_churvox_checkout_token_session_guard \
-            backend.test_churvox_worker_login_role_guard
+            backend.test_churvox_worker_login_role_guard \
+            backend.test_churvox_invite_security_paid_launch_patch \
+            backend.test_churvox_registration_verification_paid_launch_patch \
+            backend.test_churvox_token_revocation_paid_launch_patch
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -121,6 +128,7 @@ jobs:
           npx playwright test \
             tests/e2e/churvox-auth-paid-launch-contract.spec.js \
             tests/e2e/churvox-login-recovery-paid-launch.spec.js \
+            tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js \
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-plans-usage-truth.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
@@ -131,12 +139,13 @@ jobs:
             --workers=1 \
             --reporter=line
 
-      - name: Run mobile login, More and billing contracts
+      - name: Run mobile account, More and billing contracts
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: |
           npx playwright test \
             tests/e2e/churvox-login-recovery-paid-launch.spec.js \
+            tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js \
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
             --project=mobile-chromium \
@@ -160,7 +169,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.run_live_gate
     needs: code-gate
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 70
     defaults:
       run:
         working-directory: frontend
