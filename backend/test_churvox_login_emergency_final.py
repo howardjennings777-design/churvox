@@ -15,6 +15,7 @@ from backend.churvox_login_emergency_final import (
     paid_app_access,
     self_owned_legacy_owner,
     tester_access,
+    worker_fallback_allowed,
 )
 
 
@@ -97,6 +98,32 @@ class EmergencyLoginRulesTest(unittest.TestCase):
         }
         self.assertFalse(self_owned_legacy_owner(user))
         self.assertTrue(account_disabled(user))
+
+    def test_active_worker_stub_can_fall_back_to_worker_collection(self):
+        user = {
+            "_id": "worker-stub",
+            "business_id": "owner-1",
+            "email": "worker@example.test",
+            "role": "worker",
+            "status": "active",
+        }
+        self.assertTrue(worker_fallback_allowed(user))
+
+    def test_owner_and_disabled_worker_cannot_use_worker_fallback(self):
+        self.assertFalse(worker_fallback_allowed({
+            "_id": "owner-1",
+            "business_id": "owner-1",
+            "email": "owner@example.test",
+            "role": "owner",
+            "status": "active",
+        }))
+        self.assertFalse(worker_fallback_allowed({
+            "_id": "worker-1",
+            "business_id": "owner-1",
+            "email": "worker@example.test",
+            "role": "worker",
+            "status": "disabled",
+        }))
 
     def test_current_tester_grant_survives_old_cancelled_billing(self):
         user = {
