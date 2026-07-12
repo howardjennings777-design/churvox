@@ -89,6 +89,19 @@ class EmergencyLoginRulesTest(unittest.TestCase):
         self.assertFalse(tester_access(user, self.now))
         self.assertFalse(paid_app_access(user, self.now))
 
+    def test_verified_paid_status_overrides_stale_cached_access_flags(self):
+        user = {
+            "email": "paid@example.test",
+            "role": "employer",
+            "status": "active",
+            "subscription_status": "active",
+            "email_verified": True,
+            "stripe_subscription_id": "sub_live",
+            "has_app_access": False,
+            "billing_lock_reason": "old_cache",
+        }
+        self.assertTrue(paid_app_access(user, self.now))
+
     def test_platform_owner_is_exact_email_only(self):
         self.assertTrue(paid_app_access({"email": PLATFORM_OWNER_EMAIL, "role": "owner"}, self.now))
         self.assertFalse(paid_app_access({
@@ -120,6 +133,7 @@ class EmergencyLoginRulesTest(unittest.TestCase):
     def test_worker_route_helper_is_patched_to_same_reset_logic(self):
         fake = types.SimpleNamespace(
             next_failure_state=lambda *_: {"count": 99},
+            _attempt_key=lambda *_: "wrong",
             LOCKOUT_FAILURES=99,
             LOCKOUT_MINUTES=99,
         )
@@ -146,6 +160,14 @@ class EmergencyLoginRulesTest(unittest.TestCase):
         self.assertEqual(fake.next_failure_state(expired, self.now)["count"], 1)
         self.assertEqual(fake.LOCKOUT_FAILURES, LOCKOUT_FAILURES)
         self.assertEqual(fake.LOCKOUT_MINUTES, LOCKOUT_MINUTES)
+        request = types.SimpleNamespace(
+            headers={},
+            client=types.SimpleNamespace(host="127.0.0.1"),
+        )
+        self.assertEqual(
+            fake._attempt_key(request, "worker@example.test", "worker-login"),
+            fake._attempt_key(request, "worker@example.test", "owner-login"),
+        )
 
 
 if __name__ == "__main__":
