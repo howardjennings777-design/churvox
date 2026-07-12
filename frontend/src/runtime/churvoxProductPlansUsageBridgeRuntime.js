@@ -1,6 +1,6 @@
-// Keeps the verified usage panel attached to the current ProductApp plans layout.
-// The main usage runtime supports legacy plan roots; this bridge gives the
-// current .cv3Product screen the same stable hooks and explicitly runs a scan.
+// The main usage runtime now recognises the current ProductApp plans layout.
+// This small bridge only requests a fresh scan after client-side navigation;
+// it must never add legacy layout classes to the current product screen.
 
 let observer = null;
 let scanning = false;
@@ -13,14 +13,9 @@ function isProductPlansPage() {
 
 async function bridge() {
   if (!isProductPlansPage() || scanning) return;
-  const root = document.querySelector(".cv3Product");
-  const hero = root?.querySelector(".cv3Hero.page-plans");
-  if (!root || !hero) return;
-
+  if (!document.querySelector(".cv3Product, .freshPricingPage, .cvPlansPage, [data-churvox-page='plans']")) return;
   scanning = true;
   try {
-    root.classList.add("cvPlansPage");
-    hero.classList.add("cvPlanPanel");
     const runtime = await import("./churvoxPlansUsageTruthRuntime");
     runtime.scan?.();
   } finally {
