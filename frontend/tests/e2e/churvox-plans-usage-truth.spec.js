@@ -37,6 +37,48 @@ async function bootPlans(page, usageResponse) {
   await expect(page.locator('.cv3Product, .cvPlansPage, .freshPricingPage').first()).toBeVisible();
 }
 
+async function bootNewOwnerPlans(page) {
+  const user = {
+    id: 'new-plans-owner',
+    business_id: 'new-plans-owner',
+    email: 'owner@example.test',
+    role: 'owner',
+    plan: 'pro',
+    ui_plan: 'operator',
+    subscription_status: 'active',
+    stripe_subscription_id: 'sub_new_plans',
+    has_app_access: true,
+    email_verified: true,
+  };
+  let checkoutPayload = null;
+
+  await page.addInitScript((snapshotUser) => {
+    localStorage.setItem('token', 'new-plans-token');
+    localStorage.setItem('authToken', 'new-plans-token');
+    localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({ at: Date.now(), token: 'new-plans-token', user: snapshotUser }));
+  }, user);
+
+  await page.route('https://checkout.stripe.com/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>Stripe checkout test</body></html>' });
+  });
+
+  await page.route('**/api/**', async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (/\/api\/auth\/(?:me|check|session)$/.test(path)) return route.fulfill(json({ success: true, user, ...user }));
+    if (path === '/api/billing/create-checkout-session') {
+      checkoutPayload = request.postDataJSON();
+      return route.fulfill(json({ success: true, url: 'https://checkout.stripe.com/c/pay/churvox-new-plans-test' }));
+    }
+    if (path === '/api/platform/visit') return route.fulfill(json({ ok: true }));
+    return route.fulfill(json({ success: true, items: [], decisions: [], audit: [], data: [] }));
+  });
+
+  await page.goto('/dashboard#plans', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'Choose the level of control Churvox runs for the business.' })).toBeVisible();
+  return () => checkoutPayload;
+}
+
 test.describe('Plans live usage truth', () => {
   test('shows verified real counts and exact locked limits', async ({ page }) => {
     await bootPlans(page, {
@@ -103,5 +145,23 @@ test.describe('Plans live usage truth', () => {
     await expect(panel.getByRole('heading', { name: 'Live usage is unavailable' })).toBeVisible();
     await expect(panel).toContainText('outdated plan-limit source');
     await expect(panel.locator('.cvUsageCard')).toHaveCount(0);
+  });
+
+  test('new Plans secure checkout opens Stripe and returns to dashboard plans', async ({ page }) => {
+    const getCheckoutPayload = await bootNewOwnerPlans(page);
+
+    await page.getByRole('button', { name: 'Continue to secure checkout' }).click();
+    await expect(page).toHaveURL(/checkout\.stripe\.com\/c\/pay\/churvox-new-plans-test/);
+
+    const payload = getCheckoutPayload();
+    expect(payload).toBeTruthy();
+    expect(payload.plan).toBe('pro');
+    expect(payload.plan_key).toBe('operator');
+    expect(payload.selected_plan).toBe('operator');
+    expect(payload.email).toBe('owner@example.test');
+    expect(payload.success_url).toContain('/dashboard?checkout=success&plan=operator#plans');
+    expect(payload.cancel_url).toContain('/dashboard?checkout=cancelled&plan=operator#plans');
+    expect(payload.success_url).not.toContain('/plans?');
+    expect(payload.cancel_url).not.toContain('/plans?');
   });
 });
