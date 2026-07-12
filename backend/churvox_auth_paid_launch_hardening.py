@@ -7,13 +7,13 @@ from typing import Any
 
 from starlette.responses import JSONResponse
 
-VERSION = "churvox-auth-paid-launch-hardening-20260712"
+VERSION = "churvox-auth-paid-launch-hardening-20260712b"
 PASSWORD_PATH_FIELDS = {
     ("/api/auth/register", "POST"): "password",
     ("/api/auth/reset-password", "POST"): "new_password",
     ("/api/invite/accept", "POST"): "password",
 }
-LOGIN_PATHS = {"/api/auth/login", "/api/worker/auth/login"}
+LOGIN_PATHS = {"/api/auth/login", "/api/worker/auth/login", "/api/auth/worker-login"}
 FORGOT_PATHS = {"/api/auth/forgot-password"}
 LOCKED_STATUSES = {"revoked", "locked", "disabled", "expired", "cancelled", "canceled", "unpaid", "incomplete_expired"}
 OWNER_ROLES = {"owner", "business_owner", "employer", "admin", "manager", "office_admin", "superadmin"}
@@ -202,19 +202,9 @@ class AuthPaidLaunchMiddleware:
                 response = JSONResponse({"success": True, "message": "If the email exists, a reset link has been sent", "email_sent": True, "version": VERSION})
                 return await response(scope, replay, send)
 
-        if path in LOGIN_PATHS:
-            email = _text(payload.get("email")).lower()
-            db = getattr(self.module, "db", None)
-            if email and db is not None:
-                try:
-                    user = await db.users.find_one({"email": email})
-                except Exception:
-                    user = None
-                if isinstance(user, dict):
-                    status = _text(user.get("status") or user.get("subscription_status")).lower()
-                    if status in LOCKED_STATUSES or user.get("account_locked") is True or user.get("revoked_at") or user.get("free_tester_revoked_at"):
-                        response = _json_response("Account access is disabled. Contact Churvox support.", 403)
-                        return await response(scope, replay, send)
+        if path in LOGIN_PATHS and await self._rate_limited("login_request", key, 30, 15):
+            response = _json_response("Too many login requests. Try again in 15 minutes.", 429)
+            return await response(scope, replay, send)
 
         return await self.app(scope, replay, send)
 
