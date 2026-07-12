@@ -152,7 +152,7 @@ const READ_ENDPOINTS = {
   schedule: ["/api/jobs?limit=12", "/api/schedule", "/api/calendar/events"],
   clients: ["/api/clients?limit=12", "/api/clients", "/api/customers"],
   messages: ["/api/messages?limit=12", "/api/messages", "/api/approved-notifications", "/api/ai/actions"],
-  worker: ["/api/worker/jobs", "/api/team/workers", "/api/workers"],
+  worker: ["/api/worker/jobs"],
   quotes: ["/api/quotes?limit=12", "/api/quotes"],
   invoices: ["/api/invoices?limit=12", "/api/invoices"],
   money: ["/api/invoices?limit=12", "/api/accounting/health"],
@@ -279,7 +279,17 @@ function rowFor(area, item = {}, index = 0) {
       first(item, ["summary", "snippet", "body", "message", "detail"], "Reply is prepared-only until owner approval."),
     ];
   }
-  if (area === "worker" || area === "staff") {
+  if (area === "worker") {
+    const meta = paymentMeta(item);
+    return [
+      shortWhen(first(item, ["scheduled_date", "date", "start", "start_time", "due_date"], index === 0 ? "Today" : "Assigned")),
+      first(item, ["title", "job_title", "job_name", "name", "service", "description", "client_name", "customer_name"], "Assigned job"),
+      first(item, ["status", "job_status", "workflow_status", "state", "stage"], "Ready"),
+      first(item, ["worker_notes", "notes", "summary", "address", "client_name", "customer_name"], "Check the job notes before starting."),
+      meta,
+    ];
+  }
+  if (area === "staff") {
     const meta = paymentMeta(item);
     return [
       first(item, ["name", "worker_name", "staff_name", "email", "role"], "Worker"),

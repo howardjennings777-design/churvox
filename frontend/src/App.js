@@ -204,8 +204,8 @@ function App() {
               <Route path="/reset-password" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <ResetPasswordPage />} />
               <Route path="/invite/setup/:token" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <InviteSetupPage />} />
               <Route path="/dashboard" element={<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>} />
-              <Route path="/legacy-dashboard" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
-              <Route path="/plans" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
+              <Route path="/legacy-dashboard" element={<FreshBusinessRoute><AppRedirect to="/dashboard" /></FreshBusinessRoute>} />
+              <Route path="/plans" element={<FreshBusinessRoute><AppRedirect to="/dashboard#plans" /></FreshBusinessRoute>} />
               <Route path="/guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/setup" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/setup-guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />

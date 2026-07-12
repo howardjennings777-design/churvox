@@ -205,7 +205,8 @@ check(
     'source: rows.length ? "live" : allowFallback ? "preview" : "empty"',
     'rows: [],',
   ])
-    && officeApi.includes('worker: ["/api/worker/jobs", "/api/team/workers", "/api/workers"]'),
+    && officeApi.includes('worker: ["/api/worker/jobs"]')
+    && officeApi.includes('staff: ["/api/team/workers", "/api/team", "/api/workers"]'),
   'Fallback rows are acceptable only in the explicit lab routes',
 );
 

@@ -82,6 +82,7 @@ PATCH_MODULES = [
     "churvox_business_system_suite_patch",
     "churvox_hq_hello_canonical_patch",
     "churvox_hq_hello_only_guard_patch",
+    "churvox_worker_command_visibility_patch",
 ]
 
 
