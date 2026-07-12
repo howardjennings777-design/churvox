@@ -1,0 +1,43 @@
+name: Churvox One-Time Hardcore Audit Syntax Diagnostic
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    if: startsWith(github.event.issue.title, '[churvox-hardcore-audit-syntax]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run syntax checks
+        id: check
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            echo '=== live audit ==='
+            node --check frontend/tests/e2e/churvox-live-hardcore-human-everything.spec.js
+            echo '=== current human flow ==='
+            node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+            echo '=== cleanup ==='
+            node --check scripts/churvox-hardcore-human-cleanup.cjs
+            echo '=== workflow references ==='
+            grep -n 'churvox-full-ui-logic-buttons\|churvox-current-human-owner-worker-flow\|churvox-cleanup.txt' .github/workflows/churvox-one-time-hardcore-human-everything.yml || true
+          } 2>&1 | tee /tmp/churvox-audit-syntax.txt
+      - name: Post diagnostics
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.existsSync('/tmp/churvox-audit-syntax.txt') ? fs.readFileSync('/tmp/churvox-audit-syntax.txt', 'utf8') : 'No diagnostic output.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Audit syntax ${{ steps.check.outcome }}\n\n\`\`\`text\n${log.slice(-16000)}\n\`\`\`` });
