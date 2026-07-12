@@ -34,14 +34,29 @@ const pythonFiles = [
   'backend/churvox_auth_paid_launch_hardening.py',
   'backend/churvox_password_recovery_paid_launch_patch.py',
   'backend/churvox_session_token_precision_patch.py',
+  'backend/churvox_token_revocation_paid_launch_patch.py',
+  'backend/churvox_registration_verification_paid_launch_patch.py',
+  'backend/churvox_registration_claim_guard.py',
   'backend/churvox_checkout_token_session_guard.py',
   'backend/churvox_login_paid_launch_final_patch.py',
   'backend/churvox_worker_login_role_guard.py',
+  'backend/churvox_invite_security_paid_launch_patch.py',
   'backend/churvox_auth_launch_status_patch.py',
   'backend/churvox_feature_tier_paid_launch_guard.py',
   'backend/churvox_plan_usage_guard_patch.py',
   'backend/churvox_billing_portal_paid_launch.py',
   'backend/churvox_account_deletion_paid_launch.py',
+];
+
+const backendTests = [
+  'backend.test_churvox_feature_tier_paid_launch_guard',
+  'backend.test_churvox_login_paid_launch_final_patch',
+  'backend.test_churvox_password_recovery_paid_launch_patch',
+  'backend.test_churvox_checkout_token_session_guard',
+  'backend.test_churvox_worker_login_role_guard',
+  'backend.test_churvox_invite_security_paid_launch_patch',
+  'backend.test_churvox_registration_verification_paid_launch_patch',
+  'backend.test_churvox_token_revocation_paid_launch_patch',
 ];
 
 function log(line = '') {
@@ -103,16 +118,9 @@ function pythonSyntax() {
 
 function backendContracts() {
   return {
-    name: 'Backend tier, login and recovery contracts',
+    name: 'Backend tier and account lifecycle contracts',
     command: process.env.PYTHON || 'python',
-    args: [
-      '-m', 'unittest',
-      'backend.test_churvox_feature_tier_paid_launch_guard',
-      'backend.test_churvox_login_paid_launch_final_patch',
-      'backend.test_churvox_password_recovery_paid_launch_patch',
-      'backend.test_churvox_checkout_token_session_guard',
-      'backend.test_churvox_worker_login_role_guard',
-    ],
+    args: ['-m', 'unittest', ...backendTests],
     cwd: repoRoot,
   };
 }
@@ -133,11 +141,12 @@ async function main() {
     { name: 'Frontend production build', command: 'npm', args: ['run', 'build'] },
     pythonSyntax(),
     backendContracts(),
-    playwright('Live configuration, security, webhook and route mount', ['tests/e2e/churvox-infrastructure-paid-launch.spec.js']),
+    playwright('Live configuration, security, auth stack, webhook and route mount', ['tests/e2e/churvox-infrastructure-paid-launch.spec.js']),
     playwright('Live plan limits and real usage counts', ['tests/e2e/churvox-plan-usage-live.spec.js']),
-    playwright('Authentication, login confirmation, recovery and role boundaries', [
+    playwright('Authentication, recovery, signup, invite, logout and role boundaries', [
       'tests/e2e/churvox-auth-paid-launch-contract.spec.js',
       'tests/e2e/churvox-login-recovery-paid-launch.spec.js',
+      'tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js',
     ]),
     playwright('Plans shows verified usage and never assumes zero', ['tests/e2e/churvox-plans-usage-truth.spec.js']),
     playwright('Billing portal, cancellation and deletion lifecycle', ['tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js']),
@@ -149,8 +158,9 @@ async function main() {
     playwright('HQ, tester invite and revoke reality', ['tests/e2e/churvox-paid-launch-hq-reality.spec.js']),
     playwright('Public honesty and functional routes', ['tests/e2e/churvox-public-honesty-and-function.spec.js']),
     playwright('Owner wiring and tier boundaries', ['tests/e2e/churvox-owner-logical-wiring-contract.spec.js', 'tests/e2e/churvox-sidebar-tier-contract.spec.js']),
-    playwright('Mobile login, More menu, public and billing lifecycle', [
+    playwright('Mobile account lifecycle, More menu, public and billing', [
       'tests/e2e/churvox-login-recovery-paid-launch.spec.js',
+      'tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js',
       'tests/e2e/churvox-more-menu-paid-launch.spec.js',
       'tests/e2e/churvox-public-documents-paid-launch.spec.js',
       'tests/e2e/churvox-public-request-paid-launch.spec.js',
@@ -186,7 +196,7 @@ async function main() {
   for (const step of steps) {
     const result = await run(step);
     results.push(result);
-    if (result.code !== 0 && ['Frontend production build', 'Backend paid-launch syntax', 'Backend tier, login and recovery contracts'].includes(step.name)) break;
+    if (result.code !== 0 && ['Frontend production build', 'Backend paid-launch syntax', 'Backend tier and account lifecycle contracts'].includes(step.name)) break;
   }
 
   log('');
