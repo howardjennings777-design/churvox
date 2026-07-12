@@ -1,0 +1,34 @@
+name: Churvox One-Time Hardcore Human Audit Observer
+
+on:
+  workflow_run:
+    workflows: ["Churvox One-Time Hardcore Human Everything Audit"]
+    types: [completed]
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  report-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post exact run identity
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const body = [
+              '## Hardcore audit Actions run completed',
+              '',
+              `- Run ID: ${run.id}`,
+              `- Conclusion: ${run.conclusion || 'unknown'}`,
+              `- Head SHA: ${run.head_sha}`,
+              `- Run: ${run.html_url}`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 379,
+              body,
+            });
