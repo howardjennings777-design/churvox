@@ -11,6 +11,7 @@ const rootUsercustomize = read('usercustomize.py');
 const workerLogin = read('backend/churvox_worker_login_bridge_patch.py');
 const mimic = read('backend/churvox_command_human_mimic_routes.py');
 const strictMimic = read('backend/churvox_command_human_mimic_v3_routes.py');
+const liveMimic = read('backend/churvox_command_human_mimic_live_routes.py');
 const commandApi = read('frontend/src/churvox-office-lab/OfficeTeamCommandApi.js');
 const ownerSite = read('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx');
 const officeApi = read('frontend/src/churvox-office-lab/officeTeamApi.js');
@@ -29,6 +30,7 @@ const checks = [
   ['worker login has concrete FastAPI annotations', workerLogin.includes('worker_login.__annotations__') && workerLogin.includes('"request": Request')],
   ['mimic no longer treats incomplete as complete', mimic.includes('if "incomplete" in words') && mimic.includes('return bool(words & {"complete", "completed", "done", "finished", "closed"})')],
   ['strict mimic excludes unresolved completion from assignment', strictMimic.includes('unresolved_completion = (') && strictMimic.includes('if unresolved_completion:') && strictMimic.includes('"pending completion", "awaiting completion"')],
+  ['final live queue rejects unresolved completion across job roles', liveMimic.includes('def unresolved_completion(row):') && liveMimic.includes('job_actions =') && liveMimic.includes('if job and unresolved_completion(job):')],
   ['mimic reports scan health', mimic.includes('"scan_complete": not scan_errors') && mimic.includes('"scan_errors": list(dict.fromkeys(scan_errors))')],
   ['Command requests retry transient backend failures', commandApi.includes('async function fetchWithRetry') && commandApi.includes('response.status >= 500')],
   ['Command maps scan health', commandApi.includes('scanComplete: body?.scan_complete !== false') && commandApi.includes('scanErrors: Array.isArray(body?.scan_errors)')],
