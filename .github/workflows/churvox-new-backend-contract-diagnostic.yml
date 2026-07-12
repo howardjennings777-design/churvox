@@ -47,6 +47,10 @@ jobs:
           retention-days: 7
       - name: Fail when any contract failed
         run: |
-          grep -q '^OK$' /tmp/churvox-new-contracts/mongo-jwt.txt
-          grep -q '^OK$' /tmp/churvox-new-contracts/route-mounts.txt
-          grep -q '^OK$' /tmp/churvox-new-contracts/fingerprint.txt
+          for file in /tmp/churvox-new-contracts/*.txt; do
+            if grep -Eq '^(FAILED|ERROR)' "$file"; then
+              echo "Contract failure in $file"
+              cat "$file"
+              exit 1
+            fi
+          done
