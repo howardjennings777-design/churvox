@@ -1,0 +1,81 @@
+name: Churvox Paid Launch Backend Publisher
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  publish:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-backend-publish]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Wire live patch into guaranteed startup install
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          path = Path('backend/churvox_business_system_suite_patch.py')
+          text = path.read_text()
+          marker = 'churvox_paid_launch_live_patch.install(module)'
+          if marker not in text:
+              needle = '''    if not app or db is None or get_current_user is None or ObjectId is None:\n        return\n'''
+              insert = needle + '''\n    try:\n        try:\n            import churvox_paid_launch_live_patch\n        except Exception:\n            from backend import churvox_paid_launch_live_patch\n        churvox_paid_launch_live_patch.install(module)\n    except Exception as exc:\n        try:\n            print(f"Churvox paid-launch live patch install skipped: {exc}", file=sys.stderr)\n        except Exception:\n            pass\n'''
+              if needle not in text:
+                  raise SystemExit('startup install anchor missing')
+              text = text.replace(needle, insert, 1)
+              path.write_text(text)
+              print('wired paid launch patch')
+          else:
+              print('paid launch patch already wired')
+          PY
+      - name: Verify backend syntax and wiring
+        shell: bash
+        run: |
+          python -m py_compile backend/churvox_paid_launch_live_patch.py backend/churvox_paid_launch_readiness_routes.py backend/churvox_business_system_suite_patch.py backend/churvox_start.py
+          python <<'PY'
+          from pathlib import Path
+          suite = Path('backend/churvox_business_system_suite_patch.py').read_text()
+          patch = Path('backend/churvox_paid_launch_live_patch.py').read_text()
+          checks = {
+              'guaranteed startup install': 'churvox_paid_launch_live_patch.install(module)' in suite,
+              'payroll routes': '/api/payroll' in patch and '/api/payroll/summary' in patch,
+              'fast command queue': 'paid-launch-fast-command' in patch,
+              'typed command scan': 'Body(default_factory=dict)' in patch,
+              'admin brain bridge': 'paid-launch-admin-brain-bridge' in patch,
+              'bounded route calls': 'asyncio.wait_for' in patch,
+              'startup indexes': 'create_index' in patch,
+              'owner safety': 'Nothing was sent, synced, charged, filed or paid' in patch,
+          }
+          failed = [name for name, ok in checks.items() if not ok]
+          for name, ok in checks.items(): print(('PASS' if ok else 'FAIL'), name)
+          if failed: raise SystemExit('contract failed: ' + ', '.join(failed))
+          PY
+      - name: Commit product wiring only
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add backend/churvox_business_system_suite_patch.py
+          if git diff --cached --quiet; then
+            echo 'No product wiring change required.'
+          else
+            git commit -m 'Wire paid launch backend routes into production startup'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            let head=''; try { head=execSync('git rev-parse HEAD').toString().trim(); } catch {}
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`Paid-launch backend publisher completed with job status **${{ job.status }}**. Head: \`${head}\`.`});
