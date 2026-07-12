@@ -20,8 +20,31 @@ jobs:
         with:
           python-version: '3.12'
       - name: Mongo-backed JWT contract
-        run: python -m unittest -v backend.test_churvox_runtime_jwt_secret_patch
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/churvox-new-contracts
+          python -m unittest -v backend.test_churvox_runtime_jwt_secret_patch 2>&1 | tee /tmp/churvox-new-contracts/mongo-jwt.txt
       - name: Billing and deletion route mount contract
-        run: python -m unittest -v backend.test_churvox_paid_launch_route_mounts
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -m unittest -v backend.test_churvox_paid_launch_route_mounts 2>&1 | tee /tmp/churvox-new-contracts/route-mounts.txt
       - name: Safe JWT fingerprint contract
-        run: python -m unittest -v backend.test_churvox_jwt_health_fingerprint_patch
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -m unittest -v backend.test_churvox_jwt_health_fingerprint_patch 2>&1 | tee /tmp/churvox-new-contracts/fingerprint.txt
+      - name: Upload contract diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-new-backend-contract-diagnostics
+          path: /tmp/churvox-new-contracts
+          if-no-files-found: error
+          retention-days: 7
+      - name: Fail when any contract failed
+        run: |
+          grep -q '^OK$' /tmp/churvox-new-contracts/mongo-jwt.txt
+          grep -q '^OK$' /tmp/churvox-new-contracts/route-mounts.txt
+          grep -q '^OK$' /tmp/churvox-new-contracts/fingerprint.txt
