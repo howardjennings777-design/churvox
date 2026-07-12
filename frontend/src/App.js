@@ -53,6 +53,13 @@ function isPlatformOwnerUser(user = {}) {
   return String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
 }
 
+function verificationPath(user = {}) {
+  const params = new URLSearchParams({ pending: "1" });
+  const email = String(user?.email || "").trim().toLowerCase();
+  if (email) params.set("email", email);
+  return `/verify-email?${params.toString()}`;
+}
+
 const Spinner = () => (
   <main className="min-h-screen bg-[#f5f2ec] p-6 text-center text-slate-950 grid place-items-center">
     <section>
@@ -93,6 +100,7 @@ function FreshBusinessRoute({ children }) {
     const next = encodeURIComponent(`${currentPath}${currentSearch}${currentHash}` || "/dashboard");
     return <Navigate to={`/login?next=${next}`} replace />;
   }
+  if (user?.email_verified === false && !isPlatformOwnerUser(user)) return <Navigate to={verificationPath(user)} replace />;
   if (isPayroll) return <Navigate to="/dashboard#payroll" replace />;
 
   const testerAccess = user?.free_tester_access === true || user?.is_tester === true || String(user?.subscription_status || "").toLowerCase() === "tester_free";
@@ -126,6 +134,7 @@ function RoleRedirect() {
   if (user && isWorker) return <Navigate to="/worker/today" replace />;
   if (OWNER_MAINTENANCE_MODE) return <OwnerMaintenance />;
   if (!user) return <Navigate to="/login" replace />;
+  if (user?.email_verified === false && !isPlatformOwnerUser(user)) return <Navigate to={verificationPath(user)} replace />;
   return <Navigate to={isPlatformOwnerUser(user) ? "/admin" : getDefaultRoute(normalizedRole)} replace />;
 }
 
