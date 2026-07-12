@@ -2,6 +2,7 @@ from pathlib import Path
 import unittest
 
 
+# Full-system audit trigger: verifies the latest main auth stack in PR workflows.
 ROOT = Path(__file__).resolve().parents[1]
 PATCH = ROOT / "backend/churvox_auth_me_401_patch.py"
 SITECUSTOMIZE = ROOT / "backend/sitecustomize.py"
