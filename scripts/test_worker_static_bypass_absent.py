@@ -2,6 +2,7 @@ from pathlib import Path
 import unittest
 
 
+# Final full-system audit trigger: this file also permanently guards worker URL isolation.
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_WORKER = ROOT / "frontend/public/worker"
 APP = ROOT / "frontend/src/App.js"
