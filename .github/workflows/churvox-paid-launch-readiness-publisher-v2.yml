@@ -129,7 +129,7 @@ jobs:
             scripts/churvox_paid_launch_backend_contract.py \
             scripts/churvox-paid-launch-readiness-contract.cjs
           if ! git diff --cached --quiet; then git commit -m 'Harden Churvox for paid launch readiness'; fi
-          git push origin HEAD:paid-launch-readiness
+          git push --force-with-lease origin HEAD:paid-launch-readiness
           git push origin HEAD:main
           git rev-parse HEAD | tee /tmp/churvox-paid-launch-v2-commit.txt
 
