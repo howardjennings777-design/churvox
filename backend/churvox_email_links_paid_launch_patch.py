@@ -73,3 +73,8 @@ def install(module) -> None:
         "churvox_feature_tier_paid_launch_guard",
         "backend.churvox_feature_tier_paid_launch_guard",
     )
+    _install_patch(
+        module,
+        "churvox_plan_usage_guard_patch",
+        "backend.churvox_plan_usage_guard_patch",
+    )
