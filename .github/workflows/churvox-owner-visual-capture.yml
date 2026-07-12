@@ -1,0 +1,208 @@
+name: Churvox Owner Visual Capture
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  capture:
+    if: startsWith(github.event.issue.title, '[churvox-owner-visual-capture]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_URL: https://www.churvox.com
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install browser tooling
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npx playwright install --with-deps chromium
+
+      - name: Capture owner desktop and phone
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/churvox-owner-visual
+          cat > /tmp/churvox-owner-visual.cjs <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { chromium } = require(process.cwd() + '/node_modules/@playwright/test');
+
+          const base = process.env.BASE_URL.replace(/\/+$/, '');
+          const apiBase = process.env.API_BASE.replace(/\/+$/, '');
+          const email = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
+          const password = process.env.OWNER_PASSWORD || '';
+          const out = '/tmp/churvox-owner-visual';
+          const results = [];
+          const runtimeErrors = [];
+
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+            || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+
+          async function ownerLogin() {
+            const response = await fetch(`${apiBase}/api/auth/login`, {
+              method: 'POST',
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const text = await response.text();
+            let body = {};
+            try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 500) }; }
+            const token = tokenFrom(body);
+            if (!response.ok || !token) throw new Error(`Owner login failed ${response.status}: ${JSON.stringify(body).slice(0, 500)}`);
+            return token;
+          }
+
+          async function contextFor(browser, viewport, token) {
+            const context = await browser.newContext({ viewport, serviceWorkers: 'block' });
+            await context.addInitScript(({ tokenValue, emailValue }) => {
+              localStorage.setItem('token', tokenValue);
+              localStorage.setItem('authToken', tokenValue);
+              localStorage.setItem('access_token', tokenValue);
+              localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+                at: Date.now(), token: tokenValue,
+                user: { email: emailValue, role: 'owner', has_app_access: true, email_verified: true, token: tokenValue },
+              }));
+            }, { tokenValue: token, emailValue: email });
+            return context;
+          }
+
+          async function inspect(page, label, target, filename) {
+            await page.goto(target, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await page.waitForTimeout(1500);
+            const metrics = await page.evaluate(() => {
+              const visible = (el) => {
+                if (!(el instanceof HTMLElement)) return false;
+                const style = getComputedStyle(el);
+                const rect = el.getBoundingClientRect();
+                return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0 && rect.width > 1 && rect.height > 1;
+              };
+              const controls = [...document.querySelectorAll('button,a[href],input:not([type="hidden"]),textarea,select')].filter(visible);
+              const tinyControls = controls.map((el) => {
+                const rect = el.getBoundingClientRect();
+                return { text: String(el.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || '').replace(/\s+/g, ' ').trim().slice(0, 80), width: Math.round(rect.width), height: Math.round(rect.height) };
+              }).filter((item) => item.height < 40 || item.width < 32).slice(0, 30);
+              const boxed = [...document.querySelectorAll('section,article,aside,[class*="Card"],[class*="card"],[class*="Panel"],[class*="panel"]')].filter(visible).filter((el) => {
+                const style = getComputedStyle(el);
+                const border = parseFloat(style.borderTopWidth || '0') + parseFloat(style.borderRightWidth || '0') + parseFloat(style.borderBottomWidth || '0') + parseFloat(style.borderLeftWidth || '0');
+                return border > 0 || (style.backgroundColor !== 'rgba(0, 0, 0, 0)' && parseFloat(style.borderRadius || '0') > 0);
+              });
+              return {
+                url: location.href,
+                bodyTextLength: String(document.body.innerText || '').trim().length,
+                horizontalOverflow: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+                tinyControls,
+                boxedRegions: boxed.length,
+                headings: [...document.querySelectorAll('h1,h2,h3')].filter(visible).map((el) => String(el.innerText || '').replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 15),
+                buttons: [...document.querySelectorAll('button')].filter(visible).map((el) => String(el.innerText || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 30),
+              };
+            });
+            await page.screenshot({ path: path.join(out, filename), fullPage: true });
+            results.push({ label, filename, ...metrics });
+          }
+
+          async function capture(browser, viewport, pages, token) {
+            const context = await contextFor(browser, viewport, token);
+            const page = await context.newPage();
+            page.on('pageerror', (error) => runtimeErrors.push(`${viewport.width} pageerror: ${error.message}`));
+            page.on('console', (message) => {
+              if (message.type() !== 'error') return;
+              const text = message.text();
+              if (!/favicon|manifest|ResizeObserver|ERR_ABORTED/i.test(text)) runtimeErrors.push(`${viewport.width} console: ${text}`);
+            });
+            for (const item of pages) await inspect(page, `owner-${viewport.width}-${item.name}`, `${base}${item.path}`, `owner-${viewport.width}-${item.name}.png`);
+            await context.close();
+          }
+
+          function writeSummary(error = null) {
+            fs.writeFileSync(path.join(out, 'metrics.json'), JSON.stringify({ results, runtimeErrors, failure: error ? String(error.stack || error) : null }, null, 2));
+            const overflow = results.filter((item) => item.horizontalOverflow > 2);
+            const tiny = results.filter((item) => item.tinyControls.length);
+            const blank = results.filter((item) => item.bodyTextLength < 90);
+            const dense = results.filter((item) => item.boxedRegions > 42);
+            const lines = [
+              '# Churvox owner visual capture', '',
+              `- Screens captured: ${results.length}`,
+              `- Horizontal overflow pages: ${overflow.length}`,
+              `- Pages with controls under 40px high: ${tiny.length}`,
+              `- Blank/nearly blank pages: ${blank.length}`,
+              `- Very card-dense pages: ${dense.length}`,
+              `- Runtime errors: ${runtimeErrors.length}`,
+              error ? `- Capture failure: ${String(error.message || error)}` : '- Capture completed: yes',
+              '',
+              overflow.length ? `Overflow: ${overflow.map((item) => item.label).join(', ')}` : 'No horizontal overflow detected.',
+              tiny.length ? `Small controls: ${tiny.map((item) => item.label).join(', ')}` : 'No undersized controls detected.',
+              dense.length ? `Card-dense: ${dense.map((item) => item.label).join(', ')}` : 'No page exceeded the card-density threshold.',
+              runtimeErrors.length ? `Runtime errors:\n${runtimeErrors.slice(0, 15).map((item) => `- ${item}`).join('\n')}` : 'No material runtime errors detected.',
+            ];
+            fs.writeFileSync(path.join(out, 'summary.md'), lines.join('\n') + '\n');
+            if (error) fs.writeFileSync(path.join(out, 'failure.txt'), String(error.stack || error));
+            console.log(lines.join('\n'));
+          }
+
+          (async () => {
+            let browser;
+            try {
+              const token = await ownerLogin();
+              browser = await chromium.launch({ headless: true });
+              const pages = [
+                ['today','/dashboard#today'],['command','/dashboard#command'],['work','/dashboard#work'],['clients','/dashboard#clients'],
+                ['worker','/dashboard#worker'],['quotes','/dashboard#quotes'],['invoices','/dashboard#invoices'],['schedule','/dashboard#schedule'],
+                ['messages','/dashboard#messages'],['payroll','/dashboard#payroll'],['integrations','/dashboard#integrations'],['team','/dashboard#team'],
+                ['settings','/dashboard#settings'],['plans','/dashboard#plans'],['help','/dashboard#help']
+              ].map(([name,path]) => ({ name, path }));
+              const phonePages = pages.filter((item) => ['today','command','work','clients','worker','plans','help'].includes(item.name));
+              await capture(browser, { width: 1440, height: 1000 }, pages, token);
+              await capture(browser, { width: 390, height: 844 }, phonePages, token);
+              writeSummary();
+            } catch (error) {
+              writeSummary(error);
+              process.exitCode = 1;
+            } finally {
+              if (browser) await browser.close().catch(() => {});
+            }
+          })();
+          NODE
+          node /tmp/churvox-owner-visual.cjs 2>&1 | tee /tmp/churvox-owner-visual/capture.log
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-owner-visual-capture
+          path: /tmp/churvox-owner-visual
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const read = (file) => fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+            const summary = read('/tmp/churvox-owner-visual/summary.md') || 'Owner visual capture failed before summary creation.';
+            const failure = read('/tmp/churvox-owner-visual/failure.txt');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${summary}${failure ? `\nFailure detail:\n\`\`\`text\n${failure.slice(-2500)}\n\`\`\`` : ''}\n\nWorkflow run: \`${context.runId}\`\nArtifact: \`churvox-owner-visual-capture\``
+            });
