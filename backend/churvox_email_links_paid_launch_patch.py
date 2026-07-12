@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 
-VERSION = "churvox-email-links-paid-launch-20260712e"
+VERSION = "churvox-email-links-paid-launch-20260712f"
 REPLACEMENTS = {
     "/dashboard#jobs": "/dashboard#work",
     "/dashboard#support": "/support",
@@ -63,38 +63,11 @@ def install(module) -> None:
         if getattr(module, "build_lifecycle_email", None) is original:
             module.build_lifecycle_email = fixed_build_lifecycle_email
 
-    _install_patch(
-        module,
-        "churvox_auth_paid_launch_hardening",
-        "backend.churvox_auth_paid_launch_hardening",
-    )
-    _install_patch(
-        module,
-        "churvox_password_recovery_paid_launch_patch",
-        "backend.churvox_password_recovery_paid_launch_patch",
-    )
-    _install_patch(
-        module,
-        "churvox_checkout_token_session_guard",
-        "backend.churvox_checkout_token_session_guard",
-    )
-    _install_patch(
-        module,
-        "churvox_login_paid_launch_final_patch",
-        "backend.churvox_login_paid_launch_final_patch",
-    )
-    _install_patch(
-        module,
-        "churvox_worker_login_role_guard",
-        "backend.churvox_worker_login_role_guard",
-    )
-    _install_patch(
-        module,
-        "churvox_feature_tier_paid_launch_guard",
-        "backend.churvox_feature_tier_paid_launch_guard",
-    )
-    _install_patch(
-        module,
-        "churvox_plan_usage_guard_patch",
-        "backend.churvox_plan_usage_guard_patch",
-    )
+    _install_patch(module, "churvox_auth_paid_launch_hardening", "backend.churvox_auth_paid_launch_hardening")
+    _install_patch(module, "churvox_password_recovery_paid_launch_patch", "backend.churvox_password_recovery_paid_launch_patch")
+    _install_patch(module, "churvox_session_token_precision_patch", "backend.churvox_session_token_precision_patch")
+    _install_patch(module, "churvox_checkout_token_session_guard", "backend.churvox_checkout_token_session_guard")
+    _install_patch(module, "churvox_login_paid_launch_final_patch", "backend.churvox_login_paid_launch_final_patch")
+    _install_patch(module, "churvox_worker_login_role_guard", "backend.churvox_worker_login_role_guard")
+    _install_patch(module, "churvox_feature_tier_paid_launch_guard", "backend.churvox_feature_tier_paid_launch_guard")
+    _install_patch(module, "churvox_plan_usage_guard_patch", "backend.churvox_plan_usage_guard_patch")
