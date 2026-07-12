@@ -86,11 +86,13 @@ async function installLoginApi(page, options = {}) {
     }
     if (path === '/api/auth/resend-verification') {
       if (options.resendFails) return route.fulfill(json({ success: false, email_verification_sent: false, detail: 'Provider did not confirm delivery' }, 502));
+      if (options.alreadyVerifiedOnResend) {
+        currentUser = { ...currentUser, email_verified: true, has_app_access: true };
+        return route.fulfill(json({ success: true, email_verified: true, email_verification_sent: false }));
+      }
       return route.fulfill(json({ success: true, email_verification_sent: true, email_verification_provider: 'postmark' }));
     }
-    if (path === '/api/auth/reset-password') {
-      return route.fulfill(json({ success: true, sessions_revoked: true }));
-    }
+    if (path === '/api/auth/reset-password') return route.fulfill(json({ success: true, sessions_revoked: true }));
     if (path === '/api/platform/visit') return route.fulfill(json({ ok: true }));
     if (path === '/api/healthz') return route.fulfill(json({ ok: true }));
     return route.fulfill(json({ success: true, items: [], rows: [], data: [], decisions: [], audit: [], counts: {} }));
@@ -139,6 +141,14 @@ test.describe('Paid-launch login and recovery', () => {
     await expect(page.getByText(/Verification email sent/i)).toBeVisible();
   });
 
+  test('unverified owner refreshing a protected page is sent to verification, not Plans', async ({ page }) => {
+    await installLoginApi(page, { initialUser: owner({ email_verified: false, has_app_access: false }) });
+    await page.goto('/dashboard#clients', { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.url()).toMatch(/\/verify-email\?pending=1/);
+    await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
+    expect(page.url()).not.toMatch(/\/plans/);
+  });
+
   test('verification page does not claim delivery when provider fails', async ({ page }) => {
     await installLoginApi(page, { initialUser: owner({ email_verified: false, has_app_access: false }), resendFails: true });
     await page.goto('/verify-email?pending=1&email=owner%40login.test', { waitUntil: 'domcontentloaded' });
@@ -146,6 +156,14 @@ test.describe('Paid-launch login and recovery', () => {
     await page.getByRole('button', { name: 'Resend verification email' }).click();
     await expect(page.getByText(/Provider did not confirm delivery|could not be confirmed/i)).toBeVisible();
     await expect(page.getByText(/Verification email sent/i)).toHaveCount(0);
+  });
+
+  test('resend opens the account when another tab already verified the email', async ({ page }) => {
+    await installLoginApi(page, { initialUser: owner({ email_verified: false, has_app_access: false }), alreadyVerifiedOnResend: true });
+    await page.goto('/verify-email?pending=1&email=owner%40login.test', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Resend verification email' }).click();
+    await expect(page.getByRole('heading', { name: 'Email verified' })).toBeVisible();
+    await expect.poll(() => page.url()).toMatch(/\/dashboard/);
   });
 
   test('login does not navigate when the new session cannot be confirmed', async ({ page }) => {
