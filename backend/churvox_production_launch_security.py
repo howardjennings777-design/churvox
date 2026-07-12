@@ -311,11 +311,7 @@ def _paid_owner_access(user: dict[str, Any]) -> bool:
         or user.get("billing_status")
         or user.get("stripe_status")
     ).lower()
-    if (
-        status in LOCKED_STATUSES
-        or user.get("billing_lock_reason")
-        or user.get("has_app_access") is False
-    ):
+    if status in LOCKED_STATUSES:
         return False
     trial_end = _date(user.get("trial_ends_at"))
     if status in {"trial", "trialing"} and trial_end and trial_end <= datetime.now(timezone.utc):
