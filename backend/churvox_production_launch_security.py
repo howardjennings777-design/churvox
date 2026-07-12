@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import os
 from datetime import datetime, timezone
 from typing import Any
@@ -7,7 +8,7 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-VERSION = "churvox-production-launch-security-20260712b"
+VERSION = "churvox-production-launch-security-20260712c"
 WEAK_SECRETS = {
     "",
     "default_secret_change_me",
@@ -80,6 +81,28 @@ def _secret_is_strong(value: Any) -> bool:
     return len(secret) >= 32 and lowered not in WEAK_SECRETS and "change" not in lowered and "default" not in lowered
 
 
+def _current_jwt_secret(module) -> str:
+    return _text(os.environ.get("JWT_SECRET") or getattr(module, "JWT_SECRET", ""))
+
+
+def _ensure_runtime_jwt_secret(module) -> bool:
+    if _secret_is_strong(_current_jwt_secret(module)):
+        return True
+    patch = None
+    for name in ("churvox_runtime_jwt_secret_patch", "backend.churvox_runtime_jwt_secret_patch"):
+        try:
+            patch = importlib.import_module(name)
+            break
+        except Exception:
+            continue
+    if patch is not None:
+        try:
+            patch.install(module)
+        except Exception:
+            pass
+    return _secret_is_strong(_current_jwt_secret(module))
+
+
 def _owner_emails() -> list[str]:
     values = []
     for key in ("PLATFORM_OWNER_EMAIL", "PLATFORM_OWNER_EMAILS", "PLATFORM_ADMIN_EMAILS"):
@@ -91,7 +114,8 @@ def _owner_emails() -> list[str]:
 
 
 def _checks(module) -> dict[str, dict[str, Any]]:
-    jwt_value = os.environ.get("JWT_SECRET") or getattr(module, "JWT_SECRET", "")
+    jwt_value = _current_jwt_secret(module)
+    jwt_source = _text(getattr(module, "CHURVOX_JWT_SECRET_SOURCE", "environment" if os.environ.get("JWT_SECRET") else "missing"))
     frontend = _text(os.environ.get("FRONTEND_URL") or "https://www.churvox.com").rstrip("/")
     webhook_secret = next((_text(os.environ.get(key)) for key in (
         "STRIPE_WEBHOOK_SECRET",
@@ -104,7 +128,11 @@ def _checks(module) -> dict[str, dict[str, Any]]:
     return {
         "jwt_secret": {
             "ok": _secret_is_strong(jwt_value),
-            "detail": "Configured with at least 32 non-default characters" if _secret_is_strong(jwt_value) else "Missing, weak or using a known default",
+            "detail": f"Strong signing secret active ({jwt_source})" if _secret_is_strong(jwt_value) else "Missing, weak or using a known default",
+        },
+        "jwt_secret_persistent": {
+            "ok": jwt_source == "environment",
+            "detail": "Permanent Render JWT_SECRET configured" if jwt_source == "environment" else "A secure runtime secret is active, but set a permanent JWT_SECRET in Render so sessions survive restarts",
         },
         "database": {
             "ok": bool(_text(os.environ.get("MONGO_URL")) and _text(os.environ.get("DB_NAME"))),
@@ -206,13 +234,11 @@ def _is_access_exempt(path: str) -> bool:
 
 
 def install(module) -> None:
+    _ensure_runtime_jwt_secret(module)
     app = getattr(module, "app", None)
     get_current_user = getattr(module, "get_current_user", None)
     if app is None or getattr(app.state, "churvox_production_launch_security", False):
         return
-
-    checks = _checks(module)
-    jwt_safe = checks["jwt_secret"]["ok"]
 
     @app.middleware("http")
     async def paid_launch_security_middleware(request: Request, call_next):
@@ -220,6 +246,7 @@ def install(module) -> None:
         if request.method.upper() == "OPTIONS":
             return await call_next(request)
 
+        jwt_safe = _ensure_runtime_jwt_secret(module)
         if not jwt_safe and path.startswith("/api/") and not any(path == allowed or path.startswith(allowed) for allowed in PUBLIC_WHEN_AUTH_UNSAFE):
             return JSONResponse(
                 {
@@ -228,6 +255,7 @@ def install(module) -> None:
                     "version": VERSION,
                 },
                 status_code=503,
+                headers={"X-Churvox-Auth-Gate": "jwt-secret-unsafe"},
             )
 
         if jwt_safe and callable(get_current_user) and path.startswith("/api/") and not _is_access_exempt(path):
@@ -255,6 +283,7 @@ def install(module) -> None:
     _remove_status_route(app)
 
     async def launch_security_status():
+        _ensure_runtime_jwt_secret(module)
         current = _checks(module)
         ready = all(item.get("ok") is True for item in current.values())
         return {
