@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { filterOwnerItems, ownerPlan } from "./OfficeTeamAccess";
+import "./OfficeTeamMoreMenuPaidLaunch.css";
 
 const primary = [
   ["today", "Today"],
