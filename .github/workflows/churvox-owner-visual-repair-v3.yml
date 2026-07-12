@@ -1,0 +1,67 @@
+name: Churvox Owner Visual Repair V3
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-owner-visual-repair-v3]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply owner visual repair
+        run: python scripts/churvox_owner_visual_repair_apply.py
+
+      - name: Validate owner visual repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/churvox-owner-visual-repair-contract.cjs | tee /tmp/churvox-owner-visual-contract-v3.txt
+          python -m py_compile backend/churvox_plan_usage_routes.py backend/churvox_plan_usage_guard_patch.py
+          npm --prefix frontend install --legacy-peer-deps
+          CI=false npm --prefix frontend run build 2>&1 | tee /tmp/churvox-owner-visual-build-v3.txt
+
+      - name: Commit verified repair
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git restore frontend/package-lock.json 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/App.js frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx frontend/src/churvox-office-lab/OfficeTeamVisualRepair.css frontend/src/runtime/churvoxVisibleLogoutRuntime.js backend/churvox_plan_usage_routes.py backend/churvox_plan_usage_guard_patch.py scripts/churvox-owner-visual-repair-contract.cjs
+          git diff --cached --check
+          git commit -m 'Fix owner visual shell and plan usage loading'
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git show --stat --oneline --summary HEAD | tee /tmp/churvox-owner-visual-commit-v3.txt
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const success = '${{ job.status }}' === 'success';
+            const contract = fs.existsSync('/tmp/churvox-owner-visual-contract-v3.txt') ? fs.readFileSync('/tmp/churvox-owner-visual-contract-v3.txt', 'utf8').slice(-6000) : 'No contract output.';
+            const commit = fs.existsSync('/tmp/churvox-owner-visual-commit-v3.txt') ? fs.readFileSync('/tmp/churvox-owner-visual-commit-v3.txt', 'utf8').slice(-3000) : 'No commit output.';
+            const body = success
+              ? `## Owner visual repair committed\n\nCommit: \`${{ steps.commit.outputs.sha }}\`\n\n\`\`\`text\n${contract}\n\`\`\`\n\n\`\`\`text\n${commit}\n\`\`\``
+              : `## Owner visual repair V3 failed\n\n\`\`\`text\n${contract}\n\`\`\``;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
