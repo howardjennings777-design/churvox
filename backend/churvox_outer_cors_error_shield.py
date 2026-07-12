@@ -4,7 +4,7 @@ import importlib
 import logging
 from typing import Any
 
-VERSION = "churvox-outer-cors-error-shield-20260712g"
+VERSION = "churvox-outer-cors-error-shield-20260712h"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
@@ -88,7 +88,7 @@ class OuterCorsErrorShield:
             logging.exception("Unhandled Churvox request error outside normal middleware")
             if response_started:
                 raise
-            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"stage":"outer-shield","version":"churvox-outer-cors-error-shield-20260712g"}'
+            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"stage":"outer-shield","version":"churvox-outer-cors-error-shield-20260712h"}'
             headers = [
                 (b"content-type", b"application/json"),
                 (b"content-length", str(len(body)).encode("ascii")),
@@ -141,6 +141,19 @@ def install(module) -> None:
         module,
         ("churvox_account_deletion_paid_launch", "backend.churvox_account_deletion_paid_launch"),
         "secure account deletion route",
+    )
+    # Worker field truth and owner Command must also be final-route owners. Older
+    # Command routers register the same paths during startup and can otherwise hide
+    # a successfully saved worker issue from the owner's current Command screen.
+    _install_patch(
+        module,
+        ("churvox_worker_command_visibility_patch", "backend.churvox_worker_command_visibility_patch"),
+        "worker-to-Command visibility route",
+    )
+    _install_patch(
+        module,
+        ("churvox_worker_field_slip_decision_patch", "backend.churvox_worker_field_slip_decision_patch"),
+        "worker field-slip owner decision route",
     )
     # This must run after the emergency route so startup order cannot overwrite
     # the persistent-source fields or the safe restart fingerprint.
