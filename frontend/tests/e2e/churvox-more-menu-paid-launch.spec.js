@@ -78,24 +78,23 @@ test.describe('Paid-launch dashboard More navigation', () => {
     }
   });
 
-  test('Crew and Operator expose only their correct More tools', async ({ page }) => {
+  test('Crew More includes Messages but not Operator or Command tools', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 960 });
     await bootOwner(page, 'crew');
     await moreTrigger(page).click();
-    let menu = page.getByRole('menu', { name: 'More tools for crew' });
+    const menu = page.getByRole('menu', { name: 'More tools for crew' });
+    await expect(menu.getByRole('menuitem', { name: 'Schedule' })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: 'Messages' })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: 'Payroll' })).toHaveCount(0);
+    await expect(menu.getByRole('menuitem', { name: 'Activity' })).toHaveCount(0);
     await expect(menu.getByRole('menuitem', { name: 'Xero' })).toHaveCount(0);
+  });
 
-    await page.evaluate(() => {
-      localStorage.setItem('churvox:stable-current-plan:v1', 'operator');
-      localStorage.setItem('churvox:plan-override', 'operator');
-      window.dispatchEvent(new Event('churvox:plan-updated'));
-    });
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.cvOwnerReady')).toBeVisible();
+  test('Operator More includes Payroll and Activity but not Xero without the add-on', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await bootOwner(page, 'operator');
     await moreTrigger(page).click();
-    menu = page.getByRole('menu', { name: 'More tools for operator' });
+    const menu = page.getByRole('menu', { name: 'More tools for operator' });
     await expect(menu.getByRole('menuitem', { name: 'Messages' })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: 'Payroll' })).toBeVisible();
     await expect(menu.getByRole('menuitem', { name: 'Activity' })).toBeVisible();
