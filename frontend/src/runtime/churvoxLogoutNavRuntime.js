@@ -1,32 +1,40 @@
+import API_BASE from "../lib/apiBase";
+
 const LOGOUT_ID = "churvox-runtime-logout-button";
 const WORKER_LOGOUT_ID = "churvox-worker-runtime-logout-button";
 const PRODUCT_LOGOUT_ID = "churvox-product-runtime-logout-button";
+const LOGOUT_KEYS = [
+  "token",
+  "authToken",
+  "access_token",
+  "owner_portal_session",
+  "platform_owner_email",
+  "churvox_auth_session_snapshot_v1",
+  "churvox_plan_choice_required",
+  "churvox_first_setup_pending",
+  "churvox_business_profile_required",
+  "churvox:stable-current-plan:v1",
+  "churvox:plan-override",
+  "churvox:addon:accounting_sync",
+  "churvox:addon:command_growth_pack",
+  "churvox:billing-plan",
+  "churvox:pending-checkout:v1",
+  "churvox_email_verified",
+];
 
 function clearAuthStorage() {
-  try {
-    [
-      "token",
-      "authToken",
-      "access_token",
-      "owner_portal_session",
-      "platform_owner_email",
-      "churvox_plan_choice_required",
-      "churvox_first_setup_pending",
-    ].forEach((key) => window.localStorage.removeItem(key));
-  } catch {}
-  try {
-    ["token", "authToken", "access_token"].forEach((key) => window.sessionStorage.removeItem(key));
-  } catch {}
+  try { LOGOUT_KEYS.forEach((key) => localStorage.removeItem(key)); } catch {}
+  try { LOGOUT_KEYS.forEach((key) => sessionStorage.removeItem(key)); } catch {}
+  try { sessionStorage.setItem("churvox:logged-out", String(Date.now())); } catch {}
 }
 
 async function callLogout() {
+  const base = String(API_BASE || window.__CHURVOX_API_BASE__ || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+  const token = (() => {
+    try { return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || ""; } catch { return ""; }
+  })();
   try {
-    const base = window.__CHURVOX_API_BASE__ || process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_BASE || "https://churvox-backend.onrender.com";
-    const cleanBase = String(base || "").replace(/\/$/, "");
-    const token = (() => {
-      try { return window.localStorage.getItem("token") || ""; } catch { return ""; }
-    })();
-    await window.fetch(`${cleanBase}/api/auth/logout`, {
+    const response = await fetch(`${base}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -35,17 +43,23 @@ async function callLogout() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: "{}",
+      keepalive: true,
     });
-  } catch {}
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
-async function logout() {
+async function logout(button) {
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Signing out…";
+  }
   await callLogout();
   clearAuthStorage();
-  try {
-    window.dispatchEvent(new Event("churvox-auth-refresh"));
-  } catch {}
-  window.location.href = "/login";
+  try { window.dispatchEvent(new Event("churvox-auth-refresh")); } catch {}
+  window.location.replace("/login?logged_out=1");
 }
 
 function makeButton(id, className, text = "Log out") {
@@ -58,7 +72,7 @@ function makeButton(id, className, text = "Log out") {
   button.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    logout();
+    logout(button);
   });
   return button;
 }
@@ -66,22 +80,19 @@ function makeButton(id, className, text = "Log out") {
 function installOwnerLogout() {
   const nav = document.querySelector(".cocNav");
   if (!nav || document.getElementById(LOGOUT_ID)) return;
-  const button = makeButton(LOGOUT_ID, "cocLogoutNavButton", "Log out");
-  nav.appendChild(button);
+  nav.appendChild(makeButton(LOGOUT_ID, "cocLogoutNavButton"));
 }
 
 function installProductLogout() {
   const nav = document.querySelector(".cvxProduct .cvxNav");
   if (!nav || document.getElementById(PRODUCT_LOGOUT_ID)) return;
-  const button = makeButton(PRODUCT_LOGOUT_ID, "cvxLogoutNavButton", "Log out");
-  nav.appendChild(button);
+  nav.appendChild(makeButton(PRODUCT_LOGOUT_ID, "cvxLogoutNavButton"));
 }
 
 function installWorkerLogout() {
   const nav = document.querySelector(".swNav");
   if (!nav || document.getElementById(WORKER_LOGOUT_ID)) return;
-  const button = makeButton(WORKER_LOGOUT_ID, "swLogoutNavButton", "Log out");
-  nav.appendChild(button);
+  nav.appendChild(makeButton(WORKER_LOGOUT_ID, "swLogoutNavButton"));
 }
 
 function installLogoutButtons() {
@@ -112,6 +123,9 @@ function installStyles() {
       background:rgba(239,68,68,.18)!important;
       color:#fff!important;
     }
+    .cocLogoutNavButton:disabled,
+    .cvxLogoutNavButton:disabled,
+    .swLogoutNavButton:disabled{opacity:.65!important;cursor:wait!important;}
     .cocNav .cocLogoutNavButton{
       margin-left:auto!important;
       border-radius:999px!important;
@@ -162,3 +176,5 @@ if (typeof window !== "undefined") {
   window.setInterval(installLogoutButtons, 800);
   boot();
 }
+
+export { callLogout, clearAuthStorage, logout };
