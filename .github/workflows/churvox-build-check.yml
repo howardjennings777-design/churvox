@@ -34,14 +34,27 @@ jobs:
               except py_compile.PyCompileError as exc:
                   failures.append((path, exc.msg))
 
+          report = Path("/tmp/backend-compile-errors.txt")
           if failures:
-              print(f"Backend compile failures: {len(failures)}")
+              lines = [f"Backend compile failures: {len(failures)}"]
               for path, message in failures:
-                  print(f"\n--- {path} ---\n{message}")
+                  lines.extend(["", f"--- {path} ---", message])
+              report.write_text("\n".join(lines) + "\n")
+              print(report.read_text())
               sys.exit(1)
 
-          print("All backend Python files compiled successfully.")
+          report.write_text("All backend Python files compiled successfully.\n")
+          print(report.read_text())
           PY
+
+      - name: Upload backend compile diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-compile-diagnostics
+          path: /tmp/backend-compile-errors.txt
+          if-no-files-found: error
+          retention-days: 3
 
   frontend-build:
     name: Frontend install and build
