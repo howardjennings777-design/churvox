@@ -29,6 +29,24 @@ jobs:
         run: python -m unittest -v backend.test_churvox_paid_launch_route_mounts 2>&1 | tee /tmp/churvox-new-contracts/route-mounts.txt
       - name: Safe JWT fingerprint contract
         run: python -m unittest -v backend.test_churvox_jwt_health_fingerprint_patch 2>&1 | tee /tmp/churvox-new-contracts/fingerprint.txt
+      - name: Complete backend contract interaction
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -m unittest -v \
+            backend.test_churvox_feature_tier_paid_launch_guard \
+            backend.test_churvox_login_paid_launch_final_patch \
+            backend.test_churvox_password_recovery_paid_launch_patch \
+            backend.test_churvox_checkout_token_session_guard \
+            backend.test_churvox_worker_login_role_guard \
+            backend.test_churvox_invite_security_paid_launch_patch \
+            backend.test_churvox_registration_verification_paid_launch_patch \
+            backend.test_churvox_token_revocation_paid_launch_patch \
+            backend.test_churvox_runtime_jwt_secret_patch \
+            backend.test_churvox_paid_launch_route_mounts \
+            backend.test_churvox_jwt_health_fingerprint_patch \
+            scripts.test_worker_static_bypass_absent \
+            2>&1 | tee /tmp/churvox-new-contracts/combined.txt
       - name: Upload contract diagnostics
         if: always()
         uses: actions/upload-artifact@v4
