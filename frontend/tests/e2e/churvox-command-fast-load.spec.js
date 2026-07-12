@@ -43,17 +43,16 @@ test('Command shows its saved queue before the background brain scan and audit f
     }
   });
 
-  // One API router avoids overlapping Playwright mocks and makes request order explicit.
   await page.route('**/api/**', async (route) => {
     const request = route.request();
-    const path = new URL(request.url()).pathname;
+    const path = new URL(request.url()).pathname.replace(/\/+$/, '');
 
-    if (path.replace(/\/+$/, '') === '/api/auth/me') {
+    if (path === '/api/auth/me') {
       calls.push({ name: 'auth-me', at: Date.now() });
       return json(route, { success: true, user: USER });
     }
 
-    if (path.replace(/\/+$/, '') === '/api/command/slips' && request.method() === 'GET') {
+    if (path === '/api/command/slips' && request.method() === 'GET') {
       calls.push({ name: 'slips', at: Date.now() });
       await pause(120);
       slipsFulfilledAt = Date.now();
@@ -83,13 +82,13 @@ test('Command shows its saved queue before the background brain scan and audit f
       });
     }
 
-    if (path.replace(/\/+$/, '') === '/api/command/audit') {
+    if (path === '/api/command/audit') {
       calls.push({ name: 'audit', at: Date.now() });
       await auditGate.promise;
       return json(route, { success: true, audit: [] });
     }
 
-    if (path.replace(/\/+$/, '') === '/api/command/scan') {
+    if (path === '/api/command/scan') {
       calls.push({ name: 'scan', at: Date.now() });
       await scanGate.promise;
       return json(route, {
@@ -105,16 +104,31 @@ test('Command shows its saved queue before the background brain scan and audit f
       });
     }
 
+    if (path === '/api/admin-brain/scan') {
+      calls.push({ name: 'legacy-admin-brain', at: Date.now() });
+      return json(route, { success: true, actions: [], counts: { total: 0 } });
+    }
+
     return json(route, { success: true, items: [], data: [], counts: {} });
   });
 
   await page.goto('/dashboard#command', { waitUntil: 'domcontentloaded' });
 
+  await expect.poll(
+    () => page.evaluate(() => window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ || ''),
+    { timeout: 12000, message: 'The compiled queue-first Command module must execute.' },
+  ).toBe('churvox-command-fast-load-build-20260713c');
+
   const queueDeadline = Date.now() + 12000;
   while (!calls.some((call) => call.name === 'slips') && Date.now() < queueDeadline) await pause(150);
   if (!calls.some((call) => call.name === 'slips')) {
     const body = await page.locator('body').innerText().catch(() => 'body unavailable');
-    throw new Error(`Command queue was never requested. URL=${page.url()} API=${JSON.stringify(calls.slice(-40))} BODY=${String(body).slice(0,1600)}`);
+    const state = await page.evaluate(() => ({
+      build: window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ || null,
+      load: window.__CHURVOX_COMMAND_LOAD_STATE__ || null,
+      scripts: Array.from(document.scripts).map((script) => script.src).filter(Boolean),
+    })).catch(() => ({}));
+    throw new Error(`Command queue was never requested. URL=${page.url()} STATE=${JSON.stringify(state)} API=${JSON.stringify(calls.slice(-40))} BODY=${String(body).slice(0,1600)}`);
   }
 
   await expect.poll(() => slipsFulfilledAt > 0, { timeout: 3000 }).toBe(true);
@@ -123,13 +137,12 @@ test('Command shows its saved queue before the background brain scan and audit f
   await expect(page.getByText('Fast queue decision', { exact: true }).first()).toBeVisible({ timeout: 2000 });
   expect(Date.now() - responseAt).toBeLessThan(2000);
 
-  // The scan begins only after the current queue request, and both scan and audit
-  // are still deliberately unresolved when the saved decision is already visible.
   await expect.poll(() => calls.some((call) => call.name === 'scan'), { timeout: 3000 }).toBe(true);
   const scanCall = calls.find((call) => call.name === 'scan');
   expect(scanCall).toBeTruthy();
   expect(scanCall.at).toBeGreaterThanOrEqual(slipsFulfilledAt);
   expect(calls.some((call) => call.name === 'audit')).toBe(true);
+  expect(calls.some((call) => call.name === 'legacy-admin-brain')).toBe(false);
 
   auditGate.resolve();
   scanGate.resolve();
