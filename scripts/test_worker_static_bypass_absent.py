@@ -2,7 +2,7 @@ from pathlib import Path
 import unittest
 
 
-# Final2 audit trigger: this guard must stay green alongside the complete browser suite.
+# Final2 rerun: includes the full-width Plans billing and verified-usage grid fix.
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_WORKER = ROOT / "frontend/public/worker"
 APP = ROOT / "frontend/src/App.js"
