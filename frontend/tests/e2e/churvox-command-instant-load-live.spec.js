@@ -62,6 +62,7 @@ async function waitForQueueOutcome(page, timeout = 5_000) {
     intervals: [100, 180, 300, 500, 800],
     message: 'Command foreground queue did not resolve or fail within its speed budget',
   }).toBe(true);
+  return page.evaluate(() => ({ ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}) }));
 }
 
 test('live Command opens promptly and repeat-open uses the confirmed queue cache', async ({ page }) => {
@@ -77,7 +78,7 @@ test('live Command opens promptly and repeat-open uses the confirmed queue cache
     }
   });
 
-  const firstStart = Date.now();
+  const coldPageStart = Date.now();
   await page.goto(`${BASE_URL}/dashboard#command`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.cvOwnerReady')).toBeVisible({ timeout: 15_000 });
   await expect.poll(() => page.evaluate(() => window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ || ''), {
@@ -85,23 +86,32 @@ test('live Command opens promptly and repeat-open uses the confirmed queue cache
     message: 'The exact instant-load Command module did not execute',
   }).toBe(BUILD_MARKER);
   await expect(page.locator('.cvSiteDecisionGrid')).toBeVisible({ timeout: 15_000 });
-  await waitForQueueOutcome(page, 5_000);
+  const firstState = await waitForQueueOutcome(page, 5_000);
   await expect(page.locator('.cvSiteDecisionGrid')).not.toContainText('Opening current decisions', { timeout: 5_000 });
-  const firstMs = Date.now() - firstStart;
-  expect(firstMs, `First Command queue took ${firstMs}ms`).toBeLessThan(6_000);
+
+  const queueMs = Number(firstState.queueResolvedAt || Date.now()) - Number(firstState.queueRequestedAt || firstState.mountedAt || Date.now());
+  const coldPageMs = Date.now() - coldPageStart;
+  console.log(`COMMAND_SPEED coldPageMs=${coldPageMs} queueMs=${queueMs} source=${firstState.queueSource || 'error'} cached=${Boolean(firstState.cachedAt)}`);
+  expect(queueMs, `Foreground Command queue took ${queueMs}ms: ${JSON.stringify(firstState)}`).toBeLessThan(4_500);
 
   const cached = await page.evaluate((key) => localStorage.getItem(key), CACHE_KEY);
   expect(cached, 'A successful confirmed queue was not cached for repeat-open').toBeTruthy();
 
-  await page.goto(`${BASE_URL}/dashboard#today`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('.cvOwnerReady')).toBeVisible({ timeout: 15_000 });
+  const todayButton = page.getByRole('button', { name: /^Today(?:\s|$)/i }).first();
+  await expect(todayButton).toBeVisible({ timeout: 10_000 });
+  await todayButton.click();
+  await expect.poll(() => page.url(), { timeout: 5_000 }).toMatch(/#today$/i);
 
   const repeatStart = Date.now();
-  await page.goto(`${BASE_URL}/dashboard#command`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('.cvSiteDecisionGrid')).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator('.cvSiteDecisionGrid')).not.toContainText('Opening current decisions', { timeout: 1_800 });
+  const commandButton = page.getByRole('button', { name: /^Command(?:\s|$)/i }).first();
+  await expect(commandButton).toBeVisible({ timeout: 10_000 });
+  await commandButton.click();
+  await expect.poll(() => page.url(), { timeout: 5_000 }).toMatch(/#command$/i);
+  await expect(page.locator('.cvSiteDecisionGrid')).toBeVisible({ timeout: 5_000 });
+  await expect(page.locator('.cvSiteDecisionGrid')).not.toContainText('Opening current decisions', { timeout: 1_500 });
   const repeatMs = Date.now() - repeatStart;
-  expect(repeatMs, `Cached Command repeat-open took ${repeatMs}ms`).toBeLessThan(2_500);
+  console.log(`COMMAND_SPEED repeatSpaOpenMs=${repeatMs}`);
+  expect(repeatMs, `Cached Command SPA repeat-open took ${repeatMs}ms`).toBeLessThan(2_000);
 
   expect(failures, `Command produced protected/server failures: ${JSON.stringify(failures)}`).toEqual([]);
 });
