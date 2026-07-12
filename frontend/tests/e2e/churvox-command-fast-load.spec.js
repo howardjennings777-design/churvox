@@ -37,17 +37,23 @@ test('Command shows its saved queue before the background brain scan and audit f
     }));
   }, { user: USER });
 
+  page.on('request', (request) => {
+    if (request.url().includes('/api/')) {
+      try { calls.push({ name: 'observed', method: request.method(), path: new URL(request.url()).pathname, at: Date.now() }); } catch {}
+    }
+  });
+
   // One API router avoids overlapping Playwright mocks and makes request order explicit.
   await page.route('**/api/**', async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
 
-    if (path === '/api/auth/me') {
+    if (path.replace(/\/+$/, '') === '/api/auth/me') {
       calls.push({ name: 'auth-me', at: Date.now() });
       return json(route, { success: true, user: USER });
     }
 
-    if (path === '/api/command/slips' && request.method() === 'GET') {
+    if (path.replace(/\/+$/, '') === '/api/command/slips' && request.method() === 'GET') {
       calls.push({ name: 'slips', at: Date.now() });
       await pause(120);
       slipsFulfilledAt = Date.now();
@@ -77,13 +83,13 @@ test('Command shows its saved queue before the background brain scan and audit f
       });
     }
 
-    if (path === '/api/command/audit') {
+    if (path.replace(/\/+$/, '') === '/api/command/audit') {
       calls.push({ name: 'audit', at: Date.now() });
       await auditGate.promise;
       return json(route, { success: true, audit: [] });
     }
 
-    if (path === '/api/command/scan') {
+    if (path.replace(/\/+$/, '') === '/api/command/scan') {
       calls.push({ name: 'scan', at: Date.now() });
       await scanGate.promise;
       return json(route, {
@@ -104,9 +110,13 @@ test('Command shows its saved queue before the background brain scan and audit f
 
   await page.goto('/dashboard#command', { waitUntil: 'domcontentloaded' });
 
-  // Dev-mode lazy compilation is not part of Command API latency. Measure from the
-  // completed queue response to visible owner information instead.
-  await expect.poll(() => calls.some((call) => call.name === 'slips'), { timeout: 12000 }).toBe(true);
+  const queueDeadline = Date.now() + 12000;
+  while (!calls.some((call) => call.name === 'slips') && Date.now() < queueDeadline) await pause(150);
+  if (!calls.some((call) => call.name === 'slips')) {
+    const body = await page.locator('body').innerText().catch(() => 'body unavailable');
+    throw new Error(`Command queue was never requested. URL=${page.url()} API=${JSON.stringify(calls.slice(-40))} BODY=${String(body).slice(0,1600)}`);
+  }
+
   await expect.poll(() => slipsFulfilledAt > 0, { timeout: 3000 }).toBe(true);
   const responseAt = slipsFulfilledAt;
 
@@ -116,9 +126,7 @@ test('Command shows its saved queue before the background brain scan and audit f
   // The scan begins only after the current queue request, and both scan and audit
   // are still deliberately unresolved when the saved decision is already visible.
   await expect.poll(() => calls.some((call) => call.name === 'scan'), { timeout: 3000 }).toBe(true);
-  const slipsCall = calls.find((call) => call.name === 'slips');
   const scanCall = calls.find((call) => call.name === 'scan');
-  expect(slipsCall).toBeTruthy();
   expect(scanCall).toBeTruthy();
   expect(scanCall.at).toBeGreaterThanOrEqual(slipsFulfilledAt);
   expect(calls.some((call) => call.name === 'audit')).toBe(true);
