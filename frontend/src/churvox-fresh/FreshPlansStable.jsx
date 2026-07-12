@@ -28,7 +28,7 @@ function unwrap(result) {
 }
 
 function planFromBackend(value) {
-  return UI_PLAN[String(value || "pro").toLowerCase()] || "operator";
+  return UI_PLAN[String(value || "").toLowerCase()] || null;
 }
 
 function selectedPlan(id) {
@@ -47,9 +47,9 @@ function queryParams() {
 function initialChoice() {
   const params = queryParams();
   try {
-    return planFromBackend(params.get("plan") || params.get("selected_plan") || window.localStorage.getItem(BILLING_PLAN_KEY) || "operator");
+    return planFromBackend(params.get("plan") || params.get("selected_plan") || window.localStorage.getItem(BILLING_PLAN_KEY)) || "operator";
   } catch {
-    return planFromBackend(params.get("plan") || params.get("selected_plan") || "operator");
+    return planFromBackend(params.get("plan") || params.get("selected_plan")) || "operator";
   }
 }
 
@@ -71,11 +71,21 @@ function hasExplicitPlanChoice() {
   }
 }
 
+function statusKey(status = {}) {
+  return String(status.subscription_status || status.billing_status || status.stripe_status || "").trim().toLowerCase();
+}
+
+function hasPlanProof(status = {}) {
+  if (status.has_app_access === true || status.free_tester_access === true || status.is_tester === true) return true;
+  const stripeProof = Boolean(status.stripe_subscription_id || status.stripe_customer_id || status.checkout_session_id || status.stripe_checkout_session_id);
+  return stripeProof && ["trial", "trialing", "active", "paid", "past_due", "tester_free"].includes(statusKey(status));
+}
+
 export default function FreshPlansStable({ onNavigate }) {
   const { get, post } = useApi();
-  const [current, setCurrent] = React.useState(initialChoice);
+  const [current, setCurrent] = React.useState(null);
   const [choice, setChoice] = React.useState(initialChoice);
-  const [notice, setNotice] = React.useState("Loading plan");
+  const [notice, setNotice] = React.useState("Checking plan status");
   const [error, setError] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
@@ -85,11 +95,14 @@ export default function FreshPlansStable({ onNavigate }) {
     setError("");
     try {
       const status = unwrap(await get("/billing/subscription-status"));
-      const next = planFromBackend(status.plan);
-      setCurrent(next);
-      if (!hasExplicitPlanChoice()) setChoice(next);
-      setNotice(status.subscription_status === "trialing" ? "Trial active" : "Plan loaded");
+      const next = planFromBackend(status.plan || status.plan_name);
+      const verified = hasPlanProof(status);
+      setCurrent(verified ? next : null);
+      if (!hasExplicitPlanChoice() && next) setChoice(next);
+      if (verified) setNotice(statusKey(status) === "trialing" ? "Trial active" : "Plan active");
+      else setNotice(next ? "Plan selected — checkout not confirmed" : "No active plan");
     } catch (err) {
+      setCurrent(null);
       setNotice("Plan needs attention");
       setError(err?.message || "Could not load your plan.");
     }
@@ -184,7 +197,7 @@ export default function FreshPlansStable({ onNavigate }) {
         </div>
         <aside>
           <small>Current plan</small>
-          <strong>{selectedPlan(current).name}</strong>
+          <strong>{current ? selectedPlan(current).name : "No active plan"}</strong>
           <p>{notice}</p>
         </aside>
       </header>
