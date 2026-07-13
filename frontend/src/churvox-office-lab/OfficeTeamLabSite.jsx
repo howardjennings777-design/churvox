@@ -438,6 +438,7 @@ function commandQueuePriority(item = {}) {
   const raw = item.raw || {};
   const payload = raw.payload && typeof raw.payload === "object" ? raw.payload : {};
   if (raw.source_type === "worker_field_problem" || payload.worker_field_problem) return 100;
+  if (["manual_form", "quick_intake", "csv_import"].includes(String(payload.source || "").toLowerCase())) return 95;
   if (/top priority|urgent|high/.test(level)) return 80;
   if (/accounting check|needs check/.test(level)) return 50;
   return 30;

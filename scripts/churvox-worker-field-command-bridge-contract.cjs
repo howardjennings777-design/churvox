@@ -26,6 +26,7 @@ const checks = [
   ['mobile open-slip target is at least 48px', ownerCss.includes('.cvOwnerReady .cvSiteDecisionCard footer button') && ownerCss.includes('min-height: 48px')],
   ['worker problems rank ahead of routine Command items', field.includes('worker_field_problem') && marker.includes('worker-problems-ranked-before-routine-command-items')],
   ['open Command refreshes live without rerunning scan', site.includes('screen !== \"command\"') && site.includes('window.setInterval(refreshOpenCommand, 5000)') && site.includes('force: true') && marker.includes('command-screen-bounded-five-second-refresh')],
+  ['fresh manual owner slips rank before routine items', site.includes('[\"manual_form\", \"quick_intake\", \"csv_import\"]') && site.includes('return 95') && marker.includes('fresh-owner-created-slips-ranked-before-routine-command-items')],
   ['owner approval statement remains', field.includes('owner must approve, edit, park or dismiss')],
 ];
 

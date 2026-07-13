@@ -150,7 +150,9 @@ def install(module, force=False):
         urgency = str(row.get("urgency") or row.get("level") or row.get("priority") or "").strip().lower()
         payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
         worker_problem = source == "worker_field_problem" or bool(payload.get("worker_field_problem"))
-        priority = 100 if worker_problem else 80 if any(word in urgency for word in ("urgent", "top", "high")) else 40
+        payload_source = str(payload.get("source") or "").strip().lower()
+        owner_manual = payload_source in {"manual_form", "quick_intake", "csv_import"}
+        priority = 100 if worker_problem else 95 if owner_manual else 80 if any(word in urgency for word in ("urgent", "top", "high")) else 40
         value = row.get("updated_at") or row.get("created_at") or row.get("_id") or ""
         if isinstance(value, datetime):
             value = value.isoformat()
@@ -299,6 +301,7 @@ def install(module, force=False):
             "command_force_refresh": COMMAND_FORCE_REFRESH_BUILD,
             "worker_field_command_bridge": "churvox-worker-field-command-bridge-v10-20260713",
             "worker_command_priority": "churvox-worker-command-priority-v10-20260713",
+            "owner_manual_command_priority": "churvox-owner-manual-command-priority-v12-20260713",
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,

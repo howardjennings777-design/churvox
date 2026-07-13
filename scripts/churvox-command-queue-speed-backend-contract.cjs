@@ -13,6 +13,7 @@ const checks = [
   ['background cache refresh', live.includes('asyncio.create_task(refresh_queue_cache(bid))')],
   ['bounded fifty-slip payload', live.includes('rows = rows[:50]')],
   ['worker problems receive queue priority', live.includes('worker_problem = source == \"worker_field_problem\"') && live.includes('priority = 100 if worker_problem')],
+  ['fresh owner-created slips receive queue priority', live.includes('payload_source in {\"manual_form\", \"quick_intake\", \"csv_import\"}') && live.includes('95 if owner_manual')],
   ['explicit post-create cache bypass', live.includes('x-churvox-command-refresh') && live.includes('queue_cache.pop(bid, None)')],
   ['force-refresh readiness marker', live.includes('churvox-command-force-refresh-v4-20260713')],
   ['current backend marker', live.includes('churvox-command-v3-live-backend-20260713g')],
