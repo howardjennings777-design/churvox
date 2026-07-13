@@ -33,8 +33,10 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply definitive Worker Jobs route repair
-        run: python scripts/churvox-worker-jobs-definitive-route-apply.py
+      - name: Apply definitive and current-first Worker Jobs repairs
+        run: |
+          python scripts/churvox-worker-jobs-definitive-route-apply.py
+          python scripts/churvox-worker-jobs-current-first-apply.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -45,13 +47,18 @@ jobs:
         run: |
           set -o pipefail
           python -m py_compile backend/churvox_worker_jobs_read_patch.py backend/server/__init__.py
+          node --check scripts/churvox-worker-assignment-diagnostic-v2.cjs
           node scripts/churvox-command-queue-speed-backend-contract.cjs
           node scripts/churvox-server-wrapper-final-command-contract.cjs
           node scripts/churvox-hardcore-owner-worker-audit.cjs
           npm --prefix frontend run build
-          grep -q 'worker-jobs-definitive-route-v3-20260713' backend/churvox_worker_jobs_read_patch.py
+          grep -q 'worker-jobs-current-first-v4-20260713' backend/churvox_worker_jobs_read_patch.py
+          grep -q 'sort(\[("created_at", -1), ("updated_at", -1)\])' backend/churvox_worker_jobs_read_patch.py
           grep -q '_remove_route(app, "/api/worker/jobs", "GET")' backend/churvox_worker_jobs_read_patch.py
           grep -q 'definitive_route_owner' backend/churvox_worker_jobs_read_patch.py
+          grep -q 'churvox-worker-current-first-20260713c' frontend/src/churvox-office-lab/officeTeamApi.js
+          grep -q 'area === "worker" ? 80 : 12' frontend/src/churvox-office-lab/officeTeamApi.js
+          grep -q 'recordTime(right) - recordTime(left)' frontend/src/churvox-office-lab/officeTeamApi.js
           ! grep -q 'Open the full slip to inspect the evidence and prepared form' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
 
       - name: Publish verified product repair
@@ -61,13 +68,17 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
             backend/churvox_worker_jobs_read_patch.py \
-            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
+            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
+            frontend/src/churvox-office-lab/officeTeamApi.js \
+            frontend/public/churvox-paid-launch-build.json \
+            .github/workflows/churvox-worker-jobs-definitive-live-proof.yml \
+            scripts/churvox-worker-assignment-diagnostic-v2.cjs
           if git diff --cached --quiet; then
-            echo 'Definitive Worker Jobs route repair already present.'
+            echo 'Current-first Worker Jobs repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Make Worker Jobs reader the definitive live route'
+          git commit -m 'Show newest Worker Jobs assignments first'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -79,6 +90,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Definitive Worker Jobs route repair passed\n\nThe old route is removed before the repaired business-scoped reader is registered. Backend compilation, wrapper contracts, owner/worker audit and production build passed. Published commit: \`${sha}\`.`
-              : `## Definitive Worker Jobs route repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Current-first Worker Jobs repair passed\n\nThe definitive backend reader now returns newest assignments first, Worker View renders up to 80 current records instead of silently slicing at 12, and all backend/frontend contracts and the production build passed. Published commit: \`${sha}\`.`
+              : `## Current-first Worker Jobs repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
