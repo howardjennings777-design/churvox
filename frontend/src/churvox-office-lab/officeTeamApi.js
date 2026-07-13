@@ -1,6 +1,6 @@
 import API_BASE from "../lib/apiBase";
 
-export const WORKER_LIVE_READ_BUILD = "churvox-worker-current-first-20260713c";
+export const WORKER_LIVE_READ_BUILD = "churvox-worker-active-jobs-only-v15-20260713";
 if (typeof window !== "undefined") window.__CHURVOX_WORKER_LIVE_READ_BUILD__ = WORKER_LIVE_READ_BUILD;
 
 function host() {
@@ -248,6 +248,14 @@ function objectAsRows(area, body) {
   return [];
 }
 
+function workerRecordActive(item = {}) {
+  if (item.archived === true || item.is_archived === true || item.deleted === true || item.is_deleted === true) return false;
+  if (item.active === false || item.is_active === false) return false;
+  const status = clean(item.status || item.job_status || item.workflow_status || item.state || item.stage).toLowerCase().replace(/[-\s]+/g, "_");
+  return !["archived", "deleted", "cancelled", "canceled", "void"].includes(status) && !status.startsWith("archiv");
+}
+
+
 function recordTime(item = {}) {
   const raw = item.updated_at || item.created_at || item.assigned_at || item.scheduled_date || item.date || "";
   const parsed = Date.parse(String(raw || ""));
@@ -256,9 +264,10 @@ function recordTime(item = {}) {
 
 function normalizeRows(area, body) {
   const sourceRecords = extractArray(body, area);
+  const activeRecords = area === "worker" ? sourceRecords.filter(workerRecordActive) : sourceRecords;
   const ordered = area === "worker"
-    ? [...sourceRecords].sort((left, right) => recordTime(right) - recordTime(left))
-    : sourceRecords;
+    ? [...activeRecords].sort((left, right) => recordTime(right) - recordTime(left))
+    : activeRecords;
   const records = ordered.slice(0, area === "worker" ? 80 : 12);
   const rows = records.map((item, index) => rowFor(area, item, index)).filter(Boolean);
   if (rows.length) return rows;

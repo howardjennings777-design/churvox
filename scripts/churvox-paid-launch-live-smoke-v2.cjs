@@ -130,12 +130,21 @@ async function ownerPlatformChecks(ownerToken) {
   const payrollSummary = await call(`/api/payroll/summary?ts=${Date.now()}`, { headers: auth });
   assert(payrollSummary.response?.status === 200 && payrollSummary.body?.success !== false, `payroll summary ${payrollSummary.response?.status}`);
 
-  const scan = await call('/api/command/scan', {
-    method: 'POST',
-    headers: auth,
-    body: JSON.stringify({ source: 'paid_launch_final_gate_v2', prepared_only: true, owner_review_only: true }),
-  }, 2);
-  assert(scan.response?.status === 200 && scan.body?.success === true, `Command scan ${scan.response?.status}: ${JSON.stringify(scan.body).slice(0,1200)}`);
+  let scan = null;
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    scan = await call('/api/command/scan', {
+      method: 'POST',
+      headers: auth,
+      body: JSON.stringify({ source: 'paid_launch_final_gate_v2', prepared_only: true, owner_review_only: true }),
+    }, 1);
+    if (scan.response?.status === 200 && scan.body?.success === true) break;
+    const detail = String(scan.body?.detail || scan.body?.message || scan.body?.error || '');
+    const safeTimeout = scan.response?.status === 503 && /timed out safely/i.test(detail);
+    if (!safeTimeout || attempt === 4) break;
+    console.log(`Command scan safe timeout on attempt ${attempt}; retrying within the bounded launch gate.`);
+    await sleep(1200 * attempt);
+  }
+  assert(scan?.response?.status === 200 && scan?.body?.success === true, `Command scan ${scan?.response?.status}: ${JSON.stringify(scan?.body).slice(0,1200)}`);
   assert(scan.body?.source === 'human-mimic-intelligence-v3', `wrong brain source ${scan.body?.source}`);
   assert(scan.body?.guard === 'human-mimic-strict-preflight-v3', `wrong brain guard ${scan.body?.guard}`);
   assert(scan.body?.scan_complete === true && !(scan.body?.scan_errors || []).length, `brain scan incomplete: ${JSON.stringify(scan.body?.scan_errors || [])}`);

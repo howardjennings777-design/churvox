@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
 _ORIGINAL_IMPORT = builtins.__import__
-LIVE_PATCH_VERSION = "worker-jobs-current-first-v4-20260713"
+LIVE_PATCH_VERSION = "worker-jobs-active-only-v5-20260713"
 
 
 def _text(value):
@@ -109,6 +109,16 @@ def _assigned(job, user):
     return False
 
 
+def _inactive(job):
+    job = job or {}
+    if any(job.get(key) is True for key in ("archived", "is_archived", "deleted", "is_deleted")):
+        return True
+    if job.get("active") is False or job.get("is_active") is False:
+        return True
+    status = str(job.get("status") or job.get("job_status") or job.get("workflow_status") or job.get("state") or job.get("stage") or "").strip().lower().replace("-", "_").replace(" ", "_")
+    return status in {"archived", "deleted", "cancelled", "canceled", "void"} or status.startswith("archiv")
+
+
 def _business_query(user):
     bid = _business_id(user)
     values = [bid]
@@ -187,7 +197,7 @@ def _install(module):
         try:
             cursor = db.jobs.find(_business_query(current_user)).sort([("created_at", -1), ("updated_at", -1)]).limit(300)
             async for job in cursor:
-                if _assigned(job, current_user):
+                if _assigned(job, current_user) and not _inactive(job):
                     rows.append(_safe(job))
         except Exception:
             rows = []

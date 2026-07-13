@@ -34,10 +34,13 @@ export default function OfficeTeamWorkerRoute() {
   const [stepBusy, setStepBusy] = useState("");
   const [proofFiles, setProofFiles] = useState(null);
   const [proofBusy, setProofBusy] = useState(false);
+  const [showAllJobs, setShowAllJobs] = useState(false);
 
   const viewKey = workerView(pathname);
   const view = workerViews[viewKey];
   const rows = live.rows;
+  const visibleJobRows = showAllJobs ? rows : rows.slice(0, 8);
+  const hiddenJobCount = Math.max(0, rows.length - visibleJobRows.length);
   const hasWork = rows.length > 0;
   const current = selectedRow(rows, selected, []);
   const title = hasWork ? current?.[1] || "today’s work" : "No assigned work yet";
@@ -210,7 +213,7 @@ export default function OfficeTeamWorkerRoute() {
 
         {showWork ? <>
           <article className={`cvWorkerRouteJob ${hasWork ? "" : "cvWorkerRouteEmptyJob"}`}><small>{type}</small><h3>{title}</h3><p>{detail}</p><em>{badge}</em></article>
-          {viewKey === "jobs" ? <section className="cvWorkerRouteQueue" aria-label="Assigned worker jobs"><h3>Job queue</h3>{hasWork ? rows.map((row) => <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button"><span>{row[0]}</span><b>{row[1]}</b><small>{row[2]}</small></button>) : <p>No assigned jobs.</p>}</section> : null}
+          {viewKey === "jobs" ? <section className="cvWorkerRouteQueue" aria-label="Assigned worker jobs"><h3>Job queue</h3>{hasWork ? <>{visibleJobRows.map((row) => <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button"><span>{row[0]}</span><b>{row[1]}</b><small>{row[2]}</small></button>)}{rows.length > 8 ? <button className="cvWorkerQueueToggle" type="button" onClick={() => setShowAllJobs((value) => !value)}>{showAllJobs ? "Show fewer jobs" : `Show all ${rows.length} jobs`}{hiddenJobCount && !showAllJobs ? ` · ${hiddenJobCount} more` : ""}</button> : null}</> : <p>No assigned jobs.</p>}</section> : null}
           <div className="cvWorkerRouteSteps">{statusSteps.map((step) => <button key={step} type="button" disabled={!hasWork || Boolean(stepBusy)} onClick={() => recordWorkerStep(step)}>{stepBusy === step ? "Saving…" : step}</button>)}</div>
           <section className="cvWorkerPaymentPanel" aria-label="Worker payment panel">
             <div><span>Payment</span><h3>{payment.link ? "Customer pay link" : "Link needed"}</h3><p>{payment.copy}</p></div>
@@ -228,7 +231,7 @@ export default function OfficeTeamWorkerRoute() {
         {showMe ? <section className="cvWorkerRouteProfile"><h3>Worker access only</h3><p>No owner settings, pricing, billing or admin controls are available here.</p><Link to="/worker/help">Open field help</Link></section> : null}
       </section>
 
-      <aside className="cvWorkerRouteDesk"><span>Office link</span><h2>{view.title}</h2><p>{view.copy}</p><strong>{hasWork ? live.label : "No live assigned work found"}</strong><section><h3>Worker queue</h3>{hasWork ? rows.map((row) => <button key={rowKey(row)} className={rowKey(current) === rowKey(row) ? "active" : ""} onClick={() => setSelected(row)} type="button"><span>{row[0]}</span><b>{row[1]}</b><small>{row[2]}</small></button>) : <p>No assigned work yet.</p>}</section><section><h3>Phone trail</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No worker actions yet.</p>}</section></aside>
+      <aside className="cvWorkerRouteDesk"><span>Office link</span><h2>{view.title}</h2><p>{view.copy}</p><strong>{hasWork ? live.label : "No live assigned work found"}</strong><section><h3>Worker queue</h3>{hasWork ? <><p>{rows.length} active job{rows.length === 1 ? "" : "s"} assigned.</p><strong>{title}</strong><small>{badge}</small></> : <p>No assigned work yet.</p>}</section><section><h3>Phone trail</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No worker actions yet.</p>}</section></aside>
     </main>
   );
 }
