@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
 _ORIGINAL_IMPORT = builtins.__import__
-LIVE_PATCH_VERSION = "worker-jobs-owner-visibility-v2-20260706"
+LIVE_PATCH_VERSION = "worker-jobs-definitive-route-v3-20260713"
 
 
 def _text(value):
@@ -136,6 +136,20 @@ def _route_loaded(app, path, method):
     return False
 
 
+def _remove_route(app, path, method):
+    method = method.upper()
+    try:
+        app.router.routes = [
+            route for route in getattr(app.router, "routes", [])
+            if not (
+                getattr(route, "path", "") == path
+                and method in set(getattr(route, "methods", set()) or set())
+            )
+        ]
+    except Exception:
+        pass
+
+
 def _install_extra_owner_visibility(module):
     try:
         import churvox_owner_data_visibility_patch
@@ -160,7 +174,7 @@ def _install(module):
     get_current_user = getattr(module, "get_current_user", None)
     if app is None or db is None or get_current_user is None:
         return
-    if getattr(app.state, "worker_jobs_read_patch", False):
+    if getattr(app.state, "worker_jobs_read_patch", "") == LIVE_PATCH_VERSION:
         _install_extra_owner_visibility(module)
         return
     router = APIRouter(prefix="/api")
@@ -178,6 +192,18 @@ def _install(module):
         except Exception:
             rows = []
         return {"success": True, "jobs": rows, "items": rows, "data": rows}
+
+    @router.get("/worker/jobs-readiness")
+    async def worker_jobs_readiness():
+        return {
+            "success": True,
+            "ready": True,
+            "version": LIVE_PATCH_VERSION,
+            "route": "/api/worker/jobs",
+            "definitive_route_owner": "worker_jobs",
+            "safety": "Read-only worker assignment visibility. No records were changed.",
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     @router.get("/health/wiring")
     async def direct_wiring_health():
@@ -204,6 +230,11 @@ def _install(module):
     async def live_version():
         return {"success": True, "version": LIVE_PATCH_VERSION, "checked_at": datetime.now(timezone.utc).isoformat()}
 
+    # FastAPI resolves matching routes in registration order. Remove every
+    # older worker-jobs reader first so this business-scoped implementation is
+    # the definitive live route rather than an unreachable duplicate.
+    _remove_route(app, "/api/worker/jobs", "GET")
+    _remove_route(app, "/api/worker/jobs-readiness", "GET")
     app.include_router(router)
     try:
         @app.get("/favicon.ico", include_in_schema=False)
@@ -211,7 +242,7 @@ def _install(module):
             return RedirectResponse(url="https://www.churvox.com/favicon.svg", status_code=307)
     except Exception:
         pass
-    app.state.worker_jobs_read_patch = True
+    app.state.worker_jobs_read_patch = LIVE_PATCH_VERSION
     _install_extra_owner_visibility(module)
 
 

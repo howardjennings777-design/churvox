@@ -476,7 +476,7 @@ function Decision({ item, onOpen, selected }) {
   const happened = briefDecisionText(item.happened, 96);
   const prepared = briefDecisionText(item.prepared, 88);
   const need = briefDecisionText(item.need, 88);
-  return <article className={`cvSiteDecisionCard ${selected ? "selected" : ""}`}><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).slice(0, 5).map((x, index) => <small key={`${x}-${index}`}>{briefDecisionText(x, 64)}</small>)}</dd><dt>Prepared</dt><dd>{prepared}</dd><dt>Owner decision</dt><dd>{need}</dd></dl><footer><button type="button" className="openSlip" onClick={onOpen}>Open slip</button></footer><small>Open the full slip to inspect the evidence and prepared form</small></article>;
+  return <article className={`cvSiteDecisionCard ${selected ? "selected" : ""}`}><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).slice(0, 5).map((x, index) => <small key={`${x}-${index}`}>{briefDecisionText(x, 64)}</small>)}</dd><dt>Prepared</dt><dd>{prepared}</dd><dt>Owner decision</dt><dd>{need}</dd></dl><footer><button type="button" className="openSlip" onClick={onOpen}>Open slip</button></footer></article>;
 }
 function Info({ title, items }) { return <section><h3>{title}</h3><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section>; }
 function Empty({ title, text }) { return <article className="cvSiteEmpty"><strong>{title}</strong><p>{text}</p></article>; }
