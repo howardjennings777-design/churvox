@@ -64,7 +64,8 @@ jobs:
               print('PASS', name)
           PY
 
-      - name: Publish verified product repair
+      - name: Publish verified repair branch
+        id: publish
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
@@ -77,10 +78,13 @@ jobs:
             scripts/churvox-hardcore-human-cleanup.cjs
           if git diff --cached --quiet; then
             echo 'No product changes to publish.'
+            echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m 'Fix final paid-launch blockers'
-          git push origin HEAD:main
+          VERIFIED_SHA=$(git rev-parse HEAD)
+          git push --force origin HEAD:refs/heads/launch/verified-paid-launch-fixes
+          echo "commit_sha=$VERIFIED_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Post result
         if: always()
@@ -88,7 +92,8 @@ jobs:
         with:
           script: |
             const ok = '${{ job.status }}' === 'success';
+            const sha = '${{ steps.publish.outputs.commit_sha }}';
             const body = ok
-              ? '## Final paid-launch product repair passed\n\nVerified product repairs were published for Command truth and concise cards, form edit preservation, Worker View assignment refresh, complete Command cleanup draining, and the aligned live-row truth contract. The final-gate workflow readiness change is applied separately through the permitted repository connector.'
+              ? `## Final paid-launch product repair verified\n\nAll focused checks passed and the verified repair was published to \`launch/verified-paid-launch-fixes\`.\n\nVerified commit: \`${sha}\`.\n\nNothing was sent, synced, charged, filed or paid.`
               : `## Final paid-launch blocker repair failed safely\n\nNo unverified product change was published. The failed workflow step identifies the exact remaining contract. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
