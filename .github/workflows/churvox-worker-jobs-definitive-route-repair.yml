@@ -33,10 +33,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply definitive and current-first Worker Jobs repairs
+      - name: Apply Worker Jobs and message-context repairs
         run: |
           python scripts/churvox-worker-jobs-definitive-route-apply.py
           python scripts/churvox-worker-jobs-current-first-apply.py
+          python scripts/churvox-worker-message-job-context-apply.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -59,6 +60,10 @@ jobs:
           grep -q 'churvox-worker-current-first-20260713c' frontend/src/churvox-office-lab/officeTeamApi.js
           grep -q 'area === "worker" ? 80 : 12' frontend/src/churvox-office-lab/officeTeamApi.js
           grep -q 'recordTime(right) - recordTime(left)' frontend/src/churvox-office-lab/officeTeamApi.js
+          grep -q 'churvox-worker-message-context-v5-20260713' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -q 'updateBusy || live.isLoading' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -q 'Loading assigned job' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -q 'churvox-worker-message-context-v5-20260713' frontend/public/churvox-paid-launch-build.json
           ! grep -q 'Open the full slip to inspect the evidence and prepared form' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
 
       - name: Publish verified product repair
@@ -70,13 +75,14 @@ jobs:
             backend/churvox_worker_jobs_read_patch.py \
             frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
             frontend/src/churvox-office-lab/officeTeamApi.js \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
             frontend/public/churvox-paid-launch-build.json
           if git diff --cached --quiet; then
-            echo 'Current-first Worker Jobs repair already present.'
+            echo 'Worker message-context repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Show newest Worker Jobs assignments first'
+          git commit -m 'Wait for assigned job before sending worker issue'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -88,6 +94,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Current-first Worker Jobs repair passed\n\nThe definitive backend reader now returns newest assignments first, Worker View renders up to 80 current records instead of silently slicing at 12, and all backend/frontend contracts and the production build passed. Published commit: \`${sha}\`.`
-              : `## Current-first Worker Jobs repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Worker message-context repair passed\n\nWorker View now waits for the assigned-job context before sending an issue from Messages. The definitive newest-first queue, backend/frontend contracts and production build passed. Published commit: \`${sha}\`.`
+              : `## Worker message-context repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
