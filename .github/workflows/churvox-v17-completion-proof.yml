@@ -1,0 +1,65 @@
+name: Churvox V17 Completion Proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-v17-completion-proof]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Mark proof started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Exact v17 completion proof started on run \`${context.runId}\`. It will not mutate live data until the v17 backend route marker is deployed.`
+            });
+
+      - name: Check out current main
+        uses: actions/checkout@v4
+
+      - name: Run exact v17 completion proof
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-v17-completion-proof.cjs 2>&1 | tee /tmp/churvox-v17-completion-proof.txt
+
+      - name: Post proof result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const raw = fs.existsSync('/tmp/churvox-v17-completion-proof.txt')
+              ? fs.readFileSync('/tmp/churvox-v17-completion-proof.txt', 'utf8')
+              : 'No proof output.';
+            const safe = raw
+              .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email-hidden]')
+              .replace(/[a-f0-9]{24}/gi, '[id-hidden]')
+              .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]')
+              .slice(-12000);
+            const passed = raw.includes('EXACT_V17_COMPLETION_CHANNEL_PROOF_PASS');
+            const heading = passed
+              ? '## Exact v17 completion-channel proof passed'
+              : '## Exact v17 completion-channel proof failed';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${heading}\n\n\`\`\`text\n${safe}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`
+            });
