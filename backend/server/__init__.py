@@ -570,7 +570,7 @@ def _force_install_final_session_revocation():
 _force_install_final_session_revocation()
 
 
-FINAL_OWNER_MESSAGES_VERSION = 'churvox-final-owner-messages-v16-20260713'
+FINAL_OWNER_MESSAGES_VERSION = 'churvox-final-owner-messages-v17-20260714'
 FINAL_OWNER_MESSAGES_PATCH_INSTALLED = False
 FINAL_OWNER_MESSAGES_PATCH_ERROR = ''
 

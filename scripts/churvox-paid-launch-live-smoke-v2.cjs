@@ -5,7 +5,7 @@ const api = String(process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.
 const ownerEmail = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLowerCase();
 const password = process.env.CHURVOX_OWNER_PASSWORD || '';
 const expectedBackend = 'churvox-command-v3-server-wrapper-20260713g';
-const expectedOwnerMessages = 'churvox-final-owner-messages-v16-20260713';
+const expectedOwnerMessages = 'churvox-final-owner-messages-v17-20260714';
 const frontendMarkers = {
   auth: 'churvox-auth-401-storm-repair-20260713b',
   growth: 'churvox-growth-pack-checkout-20260713a',

@@ -1,5 +1,5 @@
 {
-  "build": "churvox-final-owner-messages-v16-20260713",
+  "build": "churvox-final-owner-messages-v17-20260714",
   "backend": "worker-jobs-active-only-v5-20260713",
   "command_backend": "churvox-command-force-refresh-v4-20260713",
   "field_command_backend": "churvox-worker-field-command-bridge-v10-20260713",
@@ -29,15 +29,18 @@
     "bounded-command-scan-safe-timeout-retries",
     "final-owner-messages-route-ownership",
     "runtime-logical-completion-dedupe",
-    "messages-readiness-verified-by-live-smoke"
+    "messages-readiness-verified-by-live-smoke",
+    "final-owner-messages-request-signature",
+    "messages-route-no-422-request-query"
   ],
   "safety": "Owner approval remains required. This marker performs no action.",
   "command_priority_backend": "churvox-worker-command-priority-v10-20260713",
   "command_live_refresh": "churvox-command-open-live-refresh-v11-20260713",
   "owner_manual_command_priority": "churvox-owner-manual-command-priority-v12-20260713",
-  "owner_message_dedupe": "churvox-final-owner-messages-v16-20260713",
+  "owner_message_dedupe": "churvox-final-owner-messages-v17-20260714",
   "worker_jobs_copy_trim": "churvox-worker-jobs-copy-trim-v14-20260713",
   "worker_jobs_active_filter": "churvox-worker-active-jobs-only-v15-20260713",
   "command_scan_retry": "bounded-safe-timeout-retry-v15-20260713",
-  "owner_messages_final_route": "churvox-final-owner-messages-v16-20260713"
+  "owner_messages_final_route": "churvox-final-owner-messages-v17-20260714",
+  "owner_messages_request_signature": "fastapi-request-global-v17-20260714"
 }

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-BUILD = "churvox-final-owner-messages-v16-20260713"
+from fastapi import Request
+
+BUILD = "churvox-final-owner-messages-v17-20260714"
 INSTALLED = set()
 COLLECTIONS = ["notifications", "approved_notifications", "worker_messages", "worker_field_slips"]
 
@@ -122,8 +124,7 @@ def install(module, force=False):
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
     ObjectId = getattr(module, "ObjectId", None)
-    Request = getattr(module, "Request", None)
-    if app is None or db is None or get_current_user is None or ObjectId is None or Request is None:
+    if app is None or db is None or get_current_user is None or ObjectId is None:
         return False
 
     async def list_messages(request: Request):
