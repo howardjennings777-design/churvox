@@ -134,9 +134,14 @@ jobs:
         working-directory: frontend
         shell: bash
         run: |
-          npm start > /tmp/churvox-final-v2-local-server.txt 2>&1 &
-          for i in {1..75}; do
-            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
+          setsid npm start </dev/null > /tmp/churvox-final-v2-local-server.txt 2>&1 &
+          echo $! > /tmp/churvox-final-v2-local-server.pid
+          for i in {1..90}; do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
+            if [[ "$status" =~ ^[234] ]]; then
+              echo "Local owner build ready with HTTP $status"
+              exit 0
+            fi
             sleep 2
           done
           cat /tmp/churvox-final-v2-local-server.txt
