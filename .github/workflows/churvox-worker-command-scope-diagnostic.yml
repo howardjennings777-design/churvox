@@ -23,60 +23,55 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `Safe worker→Command scope diagnostic started on run \`${context.runId}\`.` });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `Safe completion-channel diagnostic started on run \`${context.runId}\`.` });
 
-      - name: Compare live owner, worker, job, slip and Command scope safely
+      - name: Measure completion rows per owner-facing channel
         shell: bash
         run: |
           set -o pipefail
-          node <<'NODE' 2>&1 | tee /tmp/churvox-worker-command-scope.txt
-          const fs = require('fs');
+          node <<'NODE' 2>&1 | tee /tmp/churvox-completion-channel-diagnostic.txt
           const api = process.env.API.replace(/\/+$/, '');
           const ownerEmail = process.env.OWNER_EMAIL;
           const password = process.env.PASSWORD;
           const run = Date.now();
-          const jobTitle = `HUMAN CURRENT JOB SCOPE ${run}`;
-          const issueToken = `HUMAN CURRENT WORKER ISSUE SCOPE ${run}: extra work needs owner decision`;
-          const clientToken = `HUMAN CURRENT CLIENT SCOPE ${run}`;
+          const title = `HARDCORE completion diagnostic ${run}`;
+          const note = `Complete ${run} with proof`;
           const read = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0, 500) }));
           const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
-          const account = (body = {}) => body.user || body.data?.user || body.data || body || {};
           const rowsFrom = (payload) => {
             const body = payload?.data?.data ?? payload?.data ?? payload;
             if (Array.isArray(body)) return body;
-            for (const key of ['items','records','results','workers','team','members','jobs','slips','actions','data']) if (Array.isArray(body?.[key])) return body[key];
+            for (const key of ['items','records','results','workers','team','members','jobs','messages','notifications','slips','actions','data']) if (Array.isArray(body?.[key])) return body[key];
             return [];
           };
-          const idOf = (row = {}) => String(row.id || row._id || row.job_id || row.worker_id || row.user_id || row.action_id || row.source_id || row.$oid || '');
+          const idOf = (row = {}) => String(row.id || row._id || row.event_id || row.notification_id || row.message_id || row.action_id || row.source_id || '');
           const emailOf = (row = {}) => String(row.email || row.worker_email || row.user_email || '').trim().toLowerCase();
-          const bidOf = (row = {}) => String(row.business_id || row.businessId || row.owner_business_id || row.contractor_id || row.business?.id || row.business?._id || '');
           const contains = (value, token) => JSON.stringify(value || {}).toLowerCase().includes(String(token || '').toLowerCase());
           const auth = (token, json = false) => ({ Authorization: `Bearer ${token}`, Accept: 'application/json', ...(json ? { 'Content-Type': 'application/json' } : {}) });
-          const cleanup = async (ownerToken, jobId, slipIds = []) => {
-            for (const slipId of slipIds.filter(Boolean)) {
-              await fetch(`${api}/api/command/slips/${encodeURIComponent(slipId)}/ignore`, { method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({ action: 'Ignore', note: 'Scope diagnostic cleanup' }) }).catch(() => null);
-              await fetch(`${api}/api/command/field-slips/${encodeURIComponent(slipId)}/dismiss`, { method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({ note: 'Scope diagnostic cleanup' }) }).catch(() => null);
+          const typeOf = (row = {}) => String(row.type || row.kind || row.event_type || row.action_type || row.source_type || 'unknown').toLowerCase();
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          async function login(email) {
+            for (const path of ['/api/auth/login','/api/worker/auth/login']) {
+              const response = await fetch(`${api}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+              const body = await read(response);
+              const token = tokenFrom(body);
+              if (response.ok && token) return token;
             }
-            if (jobId) {
-              let response = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE', headers: auth(ownerToken) }).catch(() => null);
-              if (!response || (!response.ok && response.status !== 404)) {
-                response = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}/archive`, { method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({ archived: true, archive_reason: 'scope diagnostic cleanup' }) }).catch(() => null);
-              }
+            return '';
+          }
+          async function cleanup(ownerToken, jobId) {
+            if (!jobId) return;
+            let response = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE', headers: auth(ownerToken) }).catch(() => null);
+            if (!response || (!response.ok && response.status !== 404)) {
+              await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}/archive`, { method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({ archived: true, archive_reason: 'completion diagnostic cleanup' }) }).catch(() => null);
             }
-          };
+          }
           (async () => {
             let ownerToken = '';
             let jobId = '';
-            const cleanupSlipIds = [];
             try {
-              const ownerLoginResponse = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ownerEmail, password }) });
-              const ownerLogin = await read(ownerLoginResponse);
-              ownerToken = tokenFrom(ownerLogin);
-              if (!ownerLoginResponse.ok || !ownerToken) throw new Error(`Owner login failed ${ownerLoginResponse.status}`);
-              const ownerMeResponse = await fetch(`${api}/api/auth/me`, { headers: auth(ownerToken) });
-              const ownerMe = account(await read(ownerMeResponse));
-              if (!ownerMeResponse.ok) throw new Error(`Owner me failed ${ownerMeResponse.status}`);
-
+              ownerToken = await login(ownerEmail);
+              if (!ownerToken) throw new Error('Owner login failed');
               const candidates = [];
               for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
                 const response = await fetch(`${api}${endpoint}?ts=${Date.now()}`, { headers: auth(ownerToken), cache: 'no-store' });
@@ -89,72 +84,57 @@ jobs:
                 }
               }
               let workerToken = '';
-              let workerRow = null;
+              let worker = null;
               for (const candidate of candidates.slice(0, 12)) {
-                for (const path of ['/api/auth/login','/api/worker/auth/login']) {
-                  const response = await fetch(`${api}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: candidate.email, password }) });
-                  const body = await read(response);
-                  const token = tokenFrom(body);
-                  if (response.ok && token) { workerToken = token; workerRow = candidate.row; break; }
-                }
-                if (workerToken) break;
+                const token = await login(candidate.email);
+                if (token) { workerToken = token; worker = candidate.row; break; }
               }
-              if (!workerToken || !workerRow) throw new Error('No linked worker could authenticate');
-              const workerMeResponse = await fetch(`${api}/api/auth/me`, { headers: auth(workerToken) });
-              const workerMe = account(await read(workerMeResponse));
-              if (!workerMeResponse.ok) throw new Error(`Worker me failed ${workerMeResponse.status}`);
+              if (!workerToken || !worker) throw new Error('No linked worker could authenticate');
+              const workerId = String(worker.id || worker._id || worker.worker_id || worker.user_id || '');
+              const workerEmail = emailOf(worker);
+              if (!workerId) throw new Error('Linked worker has no stable id');
 
-              const workerId = idOf(workerRow);
-              const workerEmail = emailOf(workerRow);
               const createResponse = await fetch(`${api}/api/jobs`, {
                 method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({
-                  title: jobTitle, job_title: jobTitle, job_type: 'other', client_name: clientToken, customer_name: clientToken,
-                  address: '1 Human Audit Street, Wellington', scheduled_date: new Date().toISOString().slice(0,10), scheduled_time: '09:00',
-                  status: 'assigned', price: 0, assigned_worker_id: workerId, worker_id: workerId, worker_email: workerEmail,
-                  assigned_worker_name: workerRow.name || workerRow.full_name || 'Linked worker', source: 'human-current-owner-worker-test',
+                  title, job_title: title, job_type: 'other', client_name: `Hardcore Diagnostic Client ${run}`,
+                  customer_name: `Hardcore Diagnostic Client ${run}`, address: '1 Diagnostic Street, Wellington',
+                  scheduled_date: new Date().toISOString().slice(0, 10), scheduled_time: '09:00', status: 'assigned', price: 0,
+                  assigned_worker_id: workerId, worker_id: workerId, worker_email: workerEmail,
+                  assigned_worker_name: worker.name || worker.full_name || 'Linked worker', source: 'hardcore-completion-diagnostic',
                 }),
               });
               const created = await read(createResponse);
               if (!createResponse.ok) throw new Error(`Job create failed ${createResponse.status}`);
-              let job = created.job || created.record || created.data?.job || created.data?.record || created.data || created;
-              jobId = idOf(job);
-              if (!jobId) {
-                const listedResponse = await fetch(`${api}/api/jobs?ts=${Date.now()}`, { headers: auth(ownerToken), cache: 'no-store' });
-                const listed = await read(listedResponse);
-                job = rowsFrom(listed).find((row) => contains(row, jobTitle)) || job;
-                jobId = idOf(job);
-              }
+              const job = created.job || created.record || created.data?.job || created.data?.record || created.data || created;
+              jobId = String(job.id || job._id || job.job_id || '');
               if (!jobId) throw new Error('Created job has no id');
 
-              const workerJobsResponse = await fetch(`${api}/api/worker/jobs?ts=${Date.now()}`, { headers: auth(workerToken), cache: 'no-store' });
-              const workerJobs = await read(workerJobsResponse);
-              const workerJob = rowsFrom(workerJobs).find((row) => idOf(row) === jobId || contains(row, jobTitle));
-              if (!workerJobsResponse.ok || !workerJob) throw new Error('Worker could not read assigned job');
-
-              const slipResponse = await fetch(`${api}/api/worker/field-slip`, {
-                method: 'POST', headers: auth(workerToken, true), body: JSON.stringify({ job_id: jobId, type: 'worker_problem', text: issueToken, summary: issueToken, status: 'waiting_owner_review' }),
+              const completeResponse = await fetch(`${api}/api/worker/jobs/${encodeURIComponent(jobId)}/complete`, {
+                method: 'POST', headers: auth(workerToken, true), body: JSON.stringify({
+                  worker_notes: note, note, proof_photo_names: [`diagnostic-${run}.jpg`], proof_photo_count: 1, source: 'hardcore-completion-diagnostic',
+                }),
               });
-              const slipBody = await read(slipResponse);
-              const slip = slipBody.slip || slipBody.data?.slip || slipBody.data || {};
-              if (!slipResponse.ok) throw new Error(`Worker field slip failed ${slipResponse.status}`);
+              const completeBody = await read(completeResponse);
+              if (!completeResponse.ok || completeBody.success === false) throw new Error(`Complete failed ${completeResponse.status}`);
 
-              const commandResponse = await fetch(`${api}/api/command/slips?refresh=1&ts=${Date.now()}`, { headers: { ...auth(ownerToken), 'X-Churvox-Command-Refresh': 'churvox-command-force-refresh-v4-20260713' }, cache: 'no-store' });
-              const command = await read(commandResponse);
-              const commandRows = rowsFrom(command);
-              const matched = commandRows.filter((row) => contains(row, issueToken));
-              cleanupSlipIds.push(...matched.map(idOf));
-
-              const ownerBid = bidOf(ownerMe);
-              const workerBid = bidOf(workerMe);
-              const jobBid = bidOf(workerJob || job);
-              const slipBid = bidOf(slip);
-              console.log(`SCOPE owner_bid_present=${Boolean(ownerBid)} worker_bid_present=${Boolean(workerBid)} job_bid_present=${Boolean(jobBid)} slip_bid_present=${Boolean(slipBid)}`);
-              console.log(`SCOPE owner_worker_equal=${Boolean(ownerBid && workerBid && ownerBid === workerBid)} owner_job_equal=${Boolean(ownerBid && jobBid && ownerBid === jobBid)} owner_slip_equal=${Boolean(ownerBid && slipBid && ownerBid === slipBid)} worker_job_equal=${Boolean(workerBid && jobBid && workerBid === jobBid)} job_slip_equal=${Boolean(jobBid && slipBid && jobBid === slipBid)}`);
-              console.log(`BRIDGE status=${slipResponse.status} response_success=${slipBody.success === true} version_match=${slipBody.bridge_version === 'churvox-worker-field-command-bridge-v9-20260713'} owner_match=${slipBody.definitive_route_owner === 'paid_launch_guard_bridge'} type=${String(slip.type || slip.kind || '')}`);
-              console.log(`COMMAND status=${commandResponse.status} success=${command.success === true} queue_count=${commandRows.length} token_matches=${matched.length} source=${String(command.source || '')} cached=${Boolean(command.cached)} stale=${Boolean(command.stale)}`);
-              if (!matched.length) process.exitCode = 2;
+              const paths = ['/api/notifications?limit=160', '/api/messages?limit=160', '/api/command/slips'];
+              for (let attempt = 1; attempt <= 5; attempt += 1) {
+                await sleep(attempt === 1 ? 700 : 1600);
+                const report = {};
+                for (const path of paths) {
+                  const response = await fetch(`${api}${path}${path.includes('?') ? '&' : '?'}ts=${Date.now()}`, { headers: { ...auth(ownerToken), 'X-Churvox-Command-Refresh': 'churvox-command-force-refresh-v4-20260713' }, cache: 'no-store' });
+                  const body = await read(response);
+                  const rows = response.ok ? rowsFrom(body) : [];
+                  const matches = rows.filter((row) => contains(row, title) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
+                  const unique = new Set(matches.map((row) => idOf(row) || JSON.stringify(row))).size;
+                  const types = {};
+                  for (const row of matches) types[typeOf(row)] = (types[typeOf(row)] || 0) + 1;
+                  report[path.split('?')[0]] = { status: response.status, rows: rows.length, matches: matches.length, unique, types };
+                }
+                console.log(`ATTEMPT ${attempt} ${JSON.stringify(report)}`);
+              }
             } finally {
-              if (ownerToken) await cleanup(ownerToken, jobId, cleanupSlipIds);
+              if (ownerToken) await cleanup(ownerToken, jobId);
             }
           })().catch((error) => { console.error(`DIAGNOSTIC_ERROR ${error.message || error}`); process.exit(1); });
           NODE
@@ -165,10 +145,10 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const raw = fs.existsSync('/tmp/churvox-worker-command-scope.txt') ? fs.readFileSync('/tmp/churvox-worker-command-scope.txt', 'utf8') : 'No diagnostic output.';
+            const raw = fs.existsSync('/tmp/churvox-completion-channel-diagnostic.txt') ? fs.readFileSync('/tmp/churvox-completion-channel-diagnostic.txt', 'utf8') : 'No diagnostic output.';
             const safe = raw
               .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email-hidden]')
               .replace(/[a-f0-9]{24}/gi, '[id-hidden]')
               .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]')
-              .slice(-7000);
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Safe worker→Command scope diagnostic\n\n\`\`\`text\n${safe}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.` });
+              .slice(-9000);
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Safe completion-channel diagnostic\n\n\`\`\`text\n${safe}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.` });
