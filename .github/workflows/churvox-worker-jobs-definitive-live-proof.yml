@@ -44,7 +44,7 @@ jobs:
           const frontend = 'https://www.churvox.com/churvox-paid-launch-build.json';
           const backend = 'https://grassley-backend.onrender.com/api/worker/jobs-readiness';
           const expected = 'worker-jobs-current-first-v4-20260713';
-          const expectedFrontend = 'churvox-command-created-slip-refresh-v6-20260713';
+          const expectedFrontend = 'churvox-worker-field-command-bridge-v7-20260713';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           (async () => {
             let last = '';
@@ -69,11 +69,11 @@ jobs:
               }
               if (attempt < 100) await sleep(10_000);
             }
-            throw new Error(`Exact v6 frontend and Worker Jobs backend did not deploy: ${last}`);
+            throw new Error(`Exact v7 frontend and Worker Jobs backend did not deploy: ${last}`);
           })().catch((error) => { console.error(error.stack || error); process.exit(1); });
           NODE
 
-      - name: Wait for exact Command backend and discover one linked worker
+      - name: Wait for exact Command and field bridge backends and discover one linked worker
         shell: bash
         run: |
           node <<'NODE'
@@ -82,6 +82,7 @@ jobs:
           const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
           const password = process.env.CHURVOX_OWNER_PASSWORD;
           const expectedCommand = 'churvox-command-force-refresh-v4-20260713';
+          const expectedBridge = 'churvox-worker-field-command-bridge-v7-20260713';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
           const rowsFrom = (payload) => {
@@ -98,21 +99,30 @@ jobs:
             const token = tokenFrom(owner);
             if (!login.ok || !token) throw new Error(`Owner login failed ${login.status}`);
 
-            let commandReady = false;
-            let commandLast = '';
+            let backendReady = false;
+            let backendLast = '';
             for (let attempt = 1; attempt <= 100; attempt += 1) {
-              const response = await fetch(`${api}/api/paid-launch/backend-readiness?ts=${Date.now()}`, {
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-                cache: 'no-store',
-              });
-              const body = await read(response);
-              commandReady = response.ok && body.command_force_refresh === expectedCommand;
-              commandLast = body.command_force_refresh || String(response.status);
-              console.log(`COMMAND_DEPLOY attempt=${attempt} marker=${commandLast} ready=${commandReady}`);
-              if (commandReady) break;
+              const [commandResponse, bridgeResponse] = await Promise.all([
+                fetch(`${api}/api/paid-launch/backend-readiness?ts=${Date.now()}`, {
+                  headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                  cache: 'no-store',
+                }),
+                fetch(`${api}/api/worker/field-command-readiness?ts=${Date.now()}`, { cache: 'no-store' }),
+              ]);
+              const commandBody = await read(commandResponse);
+              const bridgeBody = await read(bridgeResponse);
+              backendReady = commandResponse.ok
+                && bridgeResponse.ok
+                && commandBody.command_force_refresh === expectedCommand
+                && commandBody.worker_field_command_bridge === expectedBridge
+                && bridgeBody.version === expectedBridge
+                && bridgeBody.ready === true;
+              backendLast = `command=${commandBody.command_force_refresh || commandResponse.status} bridge=${bridgeBody.version || bridgeResponse.status}`;
+              console.log(`BACKEND_DEPLOY attempt=${attempt} ${backendLast} ready=${backendReady}`);
+              if (backendReady) break;
               if (attempt < 100) await sleep(10_000);
             }
-            if (!commandReady) throw new Error(`Exact Command refresh backend did not deploy: ${commandLast}`);
+            if (!backendReady) throw new Error(`Exact Command and field bridge backends did not deploy: ${backendLast}`);
 
             const candidates = [];
             for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
@@ -177,6 +187,6 @@ jobs:
               .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[worker-email-hidden]')
               .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]');
             const body = ok
-              ? '## Fresh Command and Worker flow live proof passed\n\nThe exact v6 frontend, v4 Worker Jobs backend and Command force-refresh backend are deployed. One real owner→worker assignment, field lifecycle, proof, owner issue receipt, logout and cleanup passed.'
-              : `## Fresh Command and Worker flow live proof failed\n\nThe exact deployment passed, but the real lifecycle did not. Safe error tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+              ? '## Worker problem Command bridge live proof passed\n\nThe exact v7 frontend, Worker Jobs v4, Command force-refresh v4 and field bridge v7 backends are deployed. One real owner→worker assignment, field lifecycle, proof, worker issue, immediate owner Command receipt, logout and cleanup passed.'
+              : `## Worker problem Command bridge live proof failed\n\nThe exact deployment passed, but the real lifecycle did not. Safe error tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
