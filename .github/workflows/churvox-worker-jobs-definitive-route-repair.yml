@@ -33,9 +33,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply Worker Jobs and message-context repairs
+      - name: Apply current Worker Jobs and message-context repairs
         run: |
-          python scripts/churvox-worker-jobs-definitive-route-apply.py
           python scripts/churvox-worker-jobs-current-first-apply.py
           python scripts/churvox-worker-message-job-context-apply.py
 
