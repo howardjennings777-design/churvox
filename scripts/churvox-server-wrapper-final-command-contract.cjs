@@ -10,7 +10,7 @@ const checks = [
   ['final install occurs after generic patch list', forceIndex > wrapper.indexOf('_install_launch_patch(_patch)')],
   ['final install occurs before later wrapper routes', proofIndex < 0 || forceIndex < proofIndex],
   ['safe public boot marker exists', wrapper.includes("app.add_api_route('/api/command-fast-load/boot', _final_command_wrapper_marker, methods=['GET'])")],
-  ['wrapper marker version exists', wrapper.includes('churvox-command-queue-speed-server-wrapper-20260713f')],
+  ['wrapper marker version exists', wrapper.includes('churvox-command-v3-server-wrapper-20260713g')],
   ['marker reports route owners', wrapper.includes("'/api/command/slips', '/api/command/scan', '/api/admin-brain/scan'")],
   ['queue route implementation is v3', live.includes('paid-launch-fast-command-v3')],
   ['queue uses parallel exact-status reads', live.includes('read_queue_status(bid, status) for status in OPEN_STATUSES')],
