@@ -1,0 +1,167 @@
+name: Churvox Worker Command Priority Live Proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-worker-command-priority-live-proof]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Mark proof started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `V10 worker-first Command live proof started on run \`${context.runId}\`.` });
+
+      - name: Check out current main
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies and Chromium
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npx playwright install --with-deps chromium
+
+      - name: Wait for exact v10 deployment and discover linked worker
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
+          const frontUrl = `${process.env.PLAYWRIGHT_BASE_URL.replace(/\/+$/, '')}/churvox-paid-launch-build.json`;
+          const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
+          const password = process.env.CHURVOX_OWNER_PASSWORD;
+          const bridge = 'churvox-worker-field-command-bridge-v10-20260713';
+          const priority = 'churvox-worker-command-priority-v10-20260713';
+          const workerJobs = 'worker-jobs-current-first-v4-20260713';
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const read = async (response) => response.json().catch(() => ({}));
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
+          const rowsFrom = (payload) => {
+            const body = payload?.data?.data ?? payload?.data ?? payload;
+            if (Array.isArray(body)) return body;
+            for (const key of ['workers','team','members','items','records','results','data']) if (Array.isArray(body?.[key])) return body[key];
+            return [];
+          };
+          const emailOf = (row = {}) => String(row.email || row.worker_email || row.user_email || '').trim().toLowerCase();
+          (async () => {
+            const login = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ownerEmail, password }) });
+            const owner = await read(login);
+            const ownerToken = tokenFrom(owner);
+            if (!login.ok || !ownerToken) throw new Error(`Owner login failed ${login.status}`);
+            let ready = false;
+            let last = '';
+            for (let attempt = 1; attempt <= 120; attempt += 1) {
+              try {
+                const [frontResponse, jobsResponse, commandResponse, bridgeResponse] = await Promise.all([
+                  fetch(`${frontUrl}?ts=${Date.now()}`, { cache: 'no-store' }),
+                  fetch(`${api}/api/worker/jobs-readiness?ts=${Date.now()}`, { cache: 'no-store' }),
+                  fetch(`${api}/api/paid-launch/backend-readiness?ts=${Date.now()}`, { headers: { Authorization: `Bearer ${ownerToken}`, Accept: 'application/json' }, cache: 'no-store' }),
+                  fetch(`${api}/api/worker/field-command-readiness?ts=${Date.now()}`, { cache: 'no-store' }),
+                ]);
+                const [front, jobs, commandBody, bridgeBody] = await Promise.all([read(frontResponse), read(jobsResponse), read(commandResponse), read(bridgeResponse)]);
+                ready = frontResponse.ok && jobsResponse.ok && commandResponse.ok && bridgeResponse.ok
+                  && front.build === priority
+                  && front.field_command_backend === bridge
+                  && front.command_priority_backend === priority
+                  && Array.isArray(front.includes)
+                  && front.includes.includes('worker-problems-ranked-before-routine-command-items')
+                  && jobs.version === workerJobs
+                  && jobs.definitive_route_owner === 'worker_jobs'
+                  && commandBody.worker_field_command_bridge === bridge
+                  && commandBody.worker_command_priority === priority
+                  && bridgeBody.version === bridge
+                  && bridgeBody.definitive_route_owner === 'paid_launch_guard_bridge'
+                  && bridgeBody.cache_alias_strategy === 'invalidate_all_loaded_aliases';
+                last = `front=${front.build || frontResponse.status} bridge=${bridgeBody.version || bridgeResponse.status} priority=${commandBody.worker_command_priority || ''} owner=${bridgeBody.definitive_route_owner || ''}`;
+                console.log(`DEPLOY attempt=${attempt} ${last} ready=${ready}`);
+                if (ready) break;
+              } catch (error) { last = error.message || String(error); }
+              if (attempt < 120) await sleep(10_000);
+            }
+            if (!ready) throw new Error(`Exact v10 deployment did not arrive: ${last}`);
+
+            const candidates = [];
+            for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
+              const response = await fetch(`${api}${endpoint}?ts=${Date.now()}`, { headers: { Authorization: `Bearer ${ownerToken}`, Accept: 'application/json' }, cache: 'no-store' });
+              if (!response.ok) continue;
+              for (const row of rowsFrom(await read(response))) {
+                const email = emailOf(row);
+                const status = String(row.status || '').toLowerCase();
+                if (!email || email === ownerEmail || /inactive|deleted|archived|disabled/.test(status) || candidates.includes(email)) continue;
+                candidates.push(email);
+              }
+            }
+            for (const email of candidates.slice(0, 12)) {
+              for (const path of ['/api/auth/login','/api/worker/auth/login']) {
+                const response = await fetch(`${api}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+                if (response.ok && tokenFrom(await read(response))) {
+                  fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${email}\n`);
+                  console.log('Linked worker credential verified without exposing identity.');
+                  return;
+                }
+              }
+            }
+            throw new Error('No linked active worker could authenticate.');
+          })().catch((error) => { console.error(error.stack || error); process.exit(1); });
+          NODE
+
+      - name: Run real owner-worker lifecycle once
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --repeat-each=1 \
+            --retries=0 \
+            --reporter=line 2>&1 | tee /tmp/churvox-v10-worker-command-priority-live-proof.txt
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-v10-worker-command-priority-live-proof
+          path: |
+            /tmp/churvox-v10-worker-command-priority-live-proof.txt
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const ok = '${{ job.status }}' === 'success';
+            const raw = fs.existsSync('/tmp/churvox-v10-worker-command-priority-live-proof.txt') ? fs.readFileSync('/tmp/churvox-v10-worker-command-priority-live-proof.txt', 'utf8') : '';
+            const tail = raw.slice(-7000)
+              .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[worker-email-hidden]')
+              .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]');
+            const body = ok
+              ? '## V10 worker-first Command live proof passed\n\nThe exact v10 deployment is live and one real owner→worker assignment, complete field lifecycle, proof, worker problem, immediate visible owner Command receipt, logout and cleanup passed.'
+              : `## V10 worker-first Command live proof failed\n\nThe exact deployment or real lifecycle failed. Safe tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
