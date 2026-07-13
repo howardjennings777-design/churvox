@@ -46,12 +46,17 @@ async function bodyOf(response) {
 
 async function call(path, options = {}, attempts = 3) {
   let last = null;
+  const { headers: suppliedHeaders = {}, ...requestOptions } = options || {};
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const started = Date.now();
     try {
       const response = await fetch(`${api}${path}`, {
-        headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) },
-        ...options,
+        ...requestOptions,
+        headers: {
+          Accept: 'application/json',
+          ...(requestOptions.body ? { 'Content-Type': 'application/json' } : {}),
+          ...suppliedHeaders,
+        },
       });
       const body = await bodyOf(response);
       last = { response, body, elapsedMs: Date.now() - started };
@@ -96,6 +101,8 @@ async function backendReady() {
   const scanOwners = body.route_owners?.['/api/command/scan'] || [];
   assert(body.version === expectedBackend, `wrong backend version ${body.version}`);
   assert(body.patch_installed === true && body.patch_stage === 'ready', `backend patch not ready: ${JSON.stringify(body).slice(0,700)}`);
+  assert(body.billing_patch_installed === true && body.billing_error == null, `billing patch not ready: ${body.billing_error || 'not installed'}`);
+  assert(body.session_revocation_installed === true && body.session_revocation_error == null, `session revocation not ready: ${body.session_revocation_error || 'not installed'}`);
   assert(slipOwners.some((value) => String(value).endsWith(':fast_slips')), `fast_slips not live: ${JSON.stringify(slipOwners)}`);
   assert(scanOwners.some((value) => String(value).endsWith(':fast_scan')), `fast_scan not live: ${JSON.stringify(scanOwners)}`);
   return { version: body.version, elapsedMs: result.elapsedMs, slipOwners, scanOwners };
@@ -206,31 +213,37 @@ async function billingChecks(ownerToken) {
   return { planSession, addonStatus: addon.response.status, addonMode: addon.response.ok ? 'secure_checkout' : 'command_required' };
 }
 
-async function main() {
-  let ready = null;
+async function exactDeployment() {
   let last = '';
-  for (let attempt = 1; attempt <= 75; attempt += 1) {
+  for (let attempt = 1; attempt <= 20; attempt += 1) {
     try {
       const frontend = await deployedFrontend();
       const backend = await backendReady();
-      const ownerToken = await ownerLogin();
-      const platform = await ownerPlatformChecks(ownerToken);
-      ready = { frontend, backend, ownerToken, platform };
-      console.log(`Deployment attempt ${attempt}: exact frontend chunks, v3 backend, Payroll, queue and strict brain are healthy.`);
-      break;
+      console.log(`Deployment attempt ${attempt}: exact frontend chunks and final backend wrapper are live.`);
+      return { frontend, backend };
     } catch (error) {
       last = error.message || String(error);
       console.log(`Deployment attempt ${attempt}: ${last}`);
-      if (attempt < 75) await sleep(12_000);
+      if (attempt < 20) await sleep(6_000);
     }
   }
-  if (!ready) throw new Error(`exact paid-launch v2 deployment did not become healthy: ${last}`);
-  const worker = await discoverWorker(ready.ownerToken);
+  throw new Error(`exact paid-launch v2 deployment did not become healthy: ${last}`);
+}
+
+async function main() {
+  const deployment = await exactDeployment();
+  const ownerToken = await ownerLogin();
+
+  // Discover and export the linked worker before the deeper smoke checks so
+  // later page/lifecycle stages never fail merely because an earlier check did.
+  const worker = await discoverWorker(ownerToken);
   console.log(`::add-mask::${worker.email}`);
-  fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${worker.email}\n`);
+  if (process.env.GITHUB_ENV) fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${worker.email}\n`);
+
+  const platform = await ownerPlatformChecks(ownerToken);
   await workerBoundary(worker);
-  const billing = await billingChecks(ready.ownerToken);
-  console.log(JSON.stringify({ frontend: ready.frontend, backend: ready.backend, platform: ready.platform, worker: 'authenticated and isolated', billing }, null, 2));
+  const billing = await billingChecks(ownerToken);
+  console.log(JSON.stringify({ ...deployment, platform, worker: 'authenticated and isolated', billing }, null, 2));
   console.log('PAID_LAUNCH_LIVE_SMOKE_V2_PASS');
 }
 
