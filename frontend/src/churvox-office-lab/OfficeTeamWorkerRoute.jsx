@@ -9,6 +9,7 @@ import { createBackendWorkerPaymentRequest, createBackendWorkerUpdateRequest } f
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Resume", "Complete"];
 const payKeywords = ["payment", "pay", "invoice", "card", "checkout"];
+export const WORKER_MESSAGE_CONTEXT_BUILD = "churvox-worker-message-context-v5-20260713";
 const workerViews = {
   today: { label: "Today", title: "Current job", copy: "Do the next job and keep the office updated." },
   jobs: { label: "Jobs", title: "Assigned jobs", copy: "Only work assigned to this worker appears here." },
@@ -90,7 +91,7 @@ export default function OfficeTeamWorkerRoute() {
   }
 
   async function sendBossUpdate(text = note) {
-  if (updateBusy) return;
+  if (updateBusy || live.isLoading) return;
   const clean = String(text || "Worker update from phone view").trim();
   setUpdateBusy(true);
   let sent = false;
@@ -222,7 +223,7 @@ export default function OfficeTeamWorkerRoute() {
           <section className="cvWorkerRouteProof"><label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label><button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : proofNames.length ? `Send ${proofNames.length} proof item${proofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button><button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button></section>
         </> : null}
 
-        {showMessages ? <><section className="cvWorkerRouteNoteBox"><span>Boss update</span><h3>Send one clear update</h3><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed?" /><button type="button" disabled={updateBusy} onClick={() => sendBossUpdate()}>{updateBusy ? "Sending…" : "Send to Command"}</button></section><div className="cvWorkerRouteQuickNotes">{quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}</div><section className="cvWorkerRouteTrail"><h3>This phone</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No updates sent this session.</p>}</section></> : null}
+        {showMessages ? <><section className="cvWorkerRouteNoteBox"><span>Boss update</span><h3>Send one clear update</h3><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed?" /><button type="button" disabled={updateBusy || live.isLoading} onClick={() => sendBossUpdate()}>{updateBusy ? "Sending…" : live.isLoading ? "Loading assigned job…" : "Send to Command"}</button></section><div className="cvWorkerRouteQuickNotes">{quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}</div><section className="cvWorkerRouteTrail"><h3>This phone</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No updates sent this session.</p>}</section></> : null}
         {showHelp ? <section className="cvWorkerRouteHelp"><h3>Four field rules</h3><ol><li>Open the assigned job.</li><li>Update the status when it changes.</li><li>Send proof or a short issue note.</li><li>Complete only when the work is ready for owner review.</li></ol></section> : null}
         {showMe ? <section className="cvWorkerRouteProfile"><h3>Worker access only</h3><p>No owner settings, pricing, billing or admin controls are available here.</p><Link to="/worker/help">Open field help</Link></section> : null}
       </section>

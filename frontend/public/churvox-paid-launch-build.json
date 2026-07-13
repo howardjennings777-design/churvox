@@ -1,9 +1,11 @@
 {
-  "build": "churvox-worker-jobs-current-first-v4-20260713",
+  "build": "churvox-worker-message-context-v5-20260713",
+  "backend": "worker-jobs-current-first-v4-20260713",
   "includes": [
     "definitive-worker-jobs-route",
     "current-assignment-first",
     "expanded-worker-live-queue",
+    "worker-message-job-context-guard",
     "concise-command-cards",
     "current-wrapper-contract"
   ],
