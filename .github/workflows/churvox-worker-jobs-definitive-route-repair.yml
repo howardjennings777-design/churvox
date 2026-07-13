@@ -12,7 +12,7 @@ jobs:
   repair:
     if: startsWith(github.event.issue.title, '[churvox-worker-jobs-definitive-route-repair]')
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
 
     steps:
       - name: Check out current main
@@ -33,12 +33,13 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply current worker, Command refresh and field bridge repairs
+      - name: Apply current worker, Command and final paid-launch repairs
         run: |
           python scripts/churvox-worker-jobs-current-first-apply.py
           python scripts/churvox-worker-message-job-context-apply.py
           python scripts/churvox-command-created-slip-refresh-apply.py
           python scripts/churvox-worker-field-command-bridge-apply.py
+          python scripts/churvox-paid-launch-last-two-blockers-apply.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -50,6 +51,7 @@ jobs:
           set -o pipefail
           python -m py_compile \
             backend/churvox_worker_jobs_read_patch.py \
+            backend/churvox_paid_launch_guard_patch.py \
             backend/churvox_paid_launch_live_patch.py \
             backend/churvox_field_truth_fix_patch.py \
             backend/server/__init__.py
@@ -73,11 +75,15 @@ jobs:
           grep -q 'queue_cache.pop(bid, None)' backend/churvox_paid_launch_live_patch.py
           grep -q 'X-Churvox-Command-Refresh' frontend/src/churvox-office-lab/OfficeTeamCommandApi.js
           grep -q 'force: true' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
-          grep -q 'churvox-worker-field-command-bridge-v7-20260713' backend/churvox_field_truth_fix_patch.py
-          grep -q 'db.command_slips.update_one' backend/churvox_field_truth_fix_patch.py
+          grep -q 'churvox-worker-field-command-bridge-v8-20260713' backend/churvox_field_truth_fix_patch.py
+          grep -q 'field_truth_fix.fixed_create_field_slip' backend/churvox_paid_launch_guard_patch.py
+          grep -q 'paid_launch_guard_bridge' backend/churvox_paid_launch_guard_patch.py
+          grep -q 'raise RuntimeError("Worker problem could not be prepared in Command' backend/churvox_field_truth_fix_patch.py
           grep -q '_invalidate_command_cache(business_id)' backend/churvox_field_truth_fix_patch.py
-          grep -q '/api/worker/field-command-readiness' backend/churvox_field_truth_fix_patch.py
-          grep -q 'churvox-worker-field-command-bridge-v7-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'churvox-worker-field-command-bridge-v8-20260713' backend/churvox_paid_launch_live_patch.py
+          grep -q 'min-height: 48px' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
+          grep -q 'churvox-worker-field-command-bridge-v8-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'mobile-command-touch-targets' frontend/public/churvox-paid-launch-build.json
           ! grep -q 'Open the full slip to inspect the evidence and prepared form' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
 
       - name: Publish verified product repair
@@ -87,21 +93,24 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
             backend/churvox_worker_jobs_read_patch.py \
+            backend/churvox_paid_launch_guard_patch.py \
             backend/churvox_paid_launch_live_patch.py \
             backend/churvox_field_truth_fix_patch.py \
             frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
             frontend/src/churvox-office-lab/OfficeTeamCommandApi.js \
             frontend/src/churvox-office-lab/officeTeamApi.js \
             frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css \
             frontend/public/churvox-paid-launch-build.json \
             scripts/churvox-command-queue-speed-backend-contract.cjs \
+            scripts/churvox-worker-field-command-bridge-apply.py \
             scripts/churvox-worker-field-command-bridge-contract.cjs
           if git diff --cached --quiet; then
-            echo 'Worker problem Command bridge already present.'
+            echo 'Definitive v8 paid-launch repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Bridge worker problems into owner Command'
+          git commit -m 'Fix final worker Command bridge and mobile touch targets'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -113,6 +122,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Worker problem Command bridge passed\n\nGenuine worker problems are now deduplicated into the owner Command queue and invalidate its short server cache immediately. Proof and routine messages stay outside Command. All backend/frontend contracts and the production build passed. Published commit: \`${sha}\`.`
-              : `## Worker problem Command bridge failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Definitive v8 paid-launch repair passed\n\nThe final live worker field-slip route delegates to the problem-to-Command bridge, required bridge writes fail safely instead of reporting a false send, and Command “Open slip” controls have a 48px touch target. Worker queue, Command, wrapper, owner/worker safety contracts and the production build passed. Published commit: \`${sha}\`.`
+              : `## Definitive v8 paid-launch repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
