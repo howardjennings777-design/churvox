@@ -33,8 +33,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply Command cache alias repair
-        run: python scripts/churvox-command-cache-alias-repair.py
+      - name: Apply worker Command priority repair
+        run: python scripts/churvox-worker-command-priority-repair.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -57,17 +57,18 @@ jobs:
           node scripts/churvox-worker-field-command-bridge-contract.cjs
           npm --prefix frontend run build
           grep -q 'worker-jobs-current-first-v4-20260713' backend/churvox_worker_jobs_read_patch.py
-          grep -q 'churvox-worker-field-command-bridge-v9-20260713' backend/churvox_field_truth_fix_patch.py
+          grep -q 'churvox-worker-field-command-bridge-v10-20260713' backend/churvox_field_truth_fix_patch.py
           grep -q 'field_truth_fix.fixed_create_field_slip' backend/churvox_paid_launch_guard_patch.py
           grep -q 'paid_launch_guard_bridge' backend/churvox_paid_launch_guard_patch.py
           grep -q 'seen = set()' backend/churvox_field_truth_fix_patch.py
-          grep -q 'invalidated += 1' backend/churvox_field_truth_fix_patch.py
-          ! grep -A18 'def _invalidate_command_cache' backend/churvox_field_truth_fix_patch.py | grep -q 'invalidate(business_id).*return'
-          grep -q 'raise RuntimeError("Worker problem could not be prepared in Command' backend/churvox_field_truth_fix_patch.py
-          grep -q 'churvox-worker-field-command-bridge-v9-20260713' backend/churvox_paid_launch_live_patch.py
+          grep -q 'worker_problem = source == "worker_field_problem"' backend/churvox_paid_launch_live_patch.py
+          grep -q 'priority = 100 if worker_problem' backend/churvox_paid_launch_live_patch.py
+          grep -q 'worker_command_priority.*churvox-worker-command-priority-v10-20260713' backend/churvox_paid_launch_live_patch.py
+          grep -q 'commandQueuePriority' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
+          grep -q 'worker_field_problem' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
           grep -q 'min-height: 48px' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
-          grep -q 'churvox-worker-field-command-bridge-v9-20260713' frontend/public/churvox-paid-launch-build.json
-          grep -q 'all-command-cache-aliases-invalidated' frontend/public/churvox-paid-launch-build.json
+          grep -q 'churvox-worker-command-priority-v10-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'worker-problems-ranked-before-routine-command-items' frontend/public/churvox-paid-launch-build.json
 
       - name: Publish verified product repair
         shell: bash
@@ -78,14 +79,16 @@ jobs:
             backend/churvox_paid_launch_guard_patch.py \
             backend/churvox_paid_launch_live_patch.py \
             backend/churvox_field_truth_fix_patch.py \
+            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
             frontend/public/churvox-paid-launch-build.json \
+            scripts/churvox-command-queue-speed-backend-contract.cjs \
             scripts/churvox-worker-field-command-bridge-contract.cjs
           if git diff --cached --quiet; then
-            echo 'Command cache alias repair already present.'
+            echo 'Worker Command priority repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Invalidate every live Command cache alias'
+          git commit -m 'Rank worker problems first in Command'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -97,6 +100,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Command cache alias repair passed\n\nWorker problems now invalidate every distinct loaded Command cache module rather than stopping after the first import alias. The final route delegation, safe bridge persistence, mobile touch target, owner/worker contracts and production build passed. Published commit: \`${sha}\`.`
-              : `## Command cache alias repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Worker Command priority repair passed\n\nTop-priority worker problems now rank ahead of routine office-scan slips in both the backend queue and the Command browser, so the three-card owner view cannot hide a new field issue. Cache, bridge, touch-target and owner/worker safety contracts plus the production build passed. Published commit: \`${sha}\`.`
+              : `## Worker Command priority repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
