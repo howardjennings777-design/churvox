@@ -156,7 +156,7 @@ def _remove_route(path, method):
 
 async def _final_command_wrapper_marker():
     route_owners = {}
-    for path in ['/api/command/slips', '/api/command/scan', '/api/admin-brain/scan']:
+    for path in ['/api/command/slips', '/api/command/scan', '/api/admin-brain/scan', '/api/billing/create-checkout-session', '/api/billing/create-addon-checkout-session']:
         owners = []
         for route in list(getattr(app.router, 'routes', []) or []):
             if getattr(route, 'path', '') != path:
@@ -173,6 +173,9 @@ async def _final_command_wrapper_marker():
         'patch_installed': FINAL_COMMAND_PATCH_INSTALLED,
         'patch_stage': 'ready' if FINAL_COMMAND_PATCH_INSTALLED else 'force_install_failed',
         'patch_error': FINAL_COMMAND_PATCH_ERROR or None,
+        'billing_patch_installed': globals().get('FINAL_BILLING_PATCH_INSTALLED', False),
+        'billing_version': globals().get('FINAL_BILLING_VERSION'),
+        'billing_error': globals().get('FINAL_BILLING_PATCH_ERROR') or None,
         'route_owners': route_owners,
         'checked_at': datetime.now(timezone.utc).isoformat(),
     }
@@ -513,6 +516,29 @@ app.add_api_route('/api/command/events', _command_protected_placeholder, methods
 app.add_api_route('/api/command/audit', _command_protected_placeholder, methods=['GET', 'POST'])
 app.add_api_route('/api/command/worker-payment-request', _command_worker_request_placeholder, methods=['POST'])
 app.add_api_route('/api/command/worker-update-request', _command_worker_request_placeholder, methods=['POST'])
+
+
+FINAL_BILLING_VERSION = 'churvox-paid-launch-billing-final-20260713a'
+FINAL_BILLING_PATCH_INSTALLED = False
+FINAL_BILLING_PATCH_ERROR = ''
+
+
+def _force_install_final_billing_patch():
+    global FINAL_BILLING_PATCH_INSTALLED, FINAL_BILLING_PATCH_ERROR
+    try:
+        try:
+            import churvox_paid_launch_billing_final_patch as billing_patch
+        except Exception:
+            from backend import churvox_paid_launch_billing_final_patch as billing_patch
+        FINAL_BILLING_PATCH_INSTALLED = bool(billing_patch.install(legacy, force=True))
+        FINAL_BILLING_PATCH_ERROR = '' if FINAL_BILLING_PATCH_INSTALLED else 'installer_not_ready'
+    except Exception as exc:
+        FINAL_BILLING_PATCH_INSTALLED = False
+        FINAL_BILLING_PATCH_ERROR = f'{type(exc).__name__}:{exc}'
+        print(f'Churvox final billing patch failed: {exc}', file=sys.stderr)
+
+
+_force_install_final_billing_patch()
 
 
 @app.options('/{full_path:path}')
