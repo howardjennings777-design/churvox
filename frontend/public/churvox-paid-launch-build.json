@@ -1,0 +1,9 @@
+{
+  "build": "churvox-worker-jobs-definitive-route-v3-20260713",
+  "includes": [
+    "definitive-worker-jobs-route",
+    "concise-command-cards",
+    "current-wrapper-contract"
+  ],
+  "safety": "Owner approval remains required. This marker performs no action."
+}
