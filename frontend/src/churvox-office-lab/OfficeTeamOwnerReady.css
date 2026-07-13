@@ -171,8 +171,9 @@
 }
 
 .cvOwnerReady .cvSiteDecisionCard footer button {
-  min-height: 34px;
-  border-radius: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
 }
 
 .cvOwnerReady .cvSiteDecisionCard > small:last-child {

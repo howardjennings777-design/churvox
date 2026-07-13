@@ -6,10 +6,11 @@ import importlib.abc
 import importlib.machinery
 import sys
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
-from fastapi import Request as FastAPIRequest
+from fastapi import HTTPException, Request as FastAPIRequest
 
 TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
+FINAL_WORKER_FIELD_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v8-20260713"
 
 
 def now_utc():
@@ -238,18 +239,59 @@ def install(module):
     db = getattr(module, "db", None)
     get_current_user = getattr(module, "get_current_user", None)
     Request = getattr(module, "Request", None)
-    if not app or db is None or not get_current_user or Request is None:
+    ObjectId = getattr(module, "ObjectId", None)
+    if not app or db is None or not get_current_user or Request is None or ObjectId is None:
         return
+
+    try:
+        import churvox_field_truth_fix_patch as field_truth_fix
+    except Exception:
+        try:
+            from backend import churvox_field_truth_fix_patch as field_truth_fix
+        except Exception:
+            field_truth_fix = None
 
     async def general_worker_field_slip_endpoint(request: FastAPIRequest):
         user = await get_current_user(request)
         payload = await read_payload(request)
-        slip = await create_general_slip(db, user, payload)
-        item = command_item_from_slip(slip)
-        return json_safe({"success": True, "slip": slip, "command_item": item, "item": item, "action": item})
+        if field_truth_fix is None:
+            raise HTTPException(status_code=503, detail="Worker Command bridge is unavailable. Nothing was sent or changed.")
+        job_id = clean(
+            (payload or {}).get("job_id")
+            or (payload or {}).get("jobId")
+            or (payload or {}).get("record_id")
+            or (payload or {}).get("recordId")
+            or "general-message"
+        )
+        slip = await field_truth_fix.fixed_create_field_slip(db, user, ObjectId, job_id, payload)
+        item = field_truth_fix.base.command_item_from_slip(slip)
+        return json_safe({
+            "success": True,
+            "slip": slip,
+            "command_item": item,
+            "item": item,
+            "action": item,
+            "bridge_version": FINAL_WORKER_FIELD_BRIDGE_BUILD,
+            "definitive_route_owner": "paid_launch_guard_bridge",
+        })
 
-    remove_route(app, "/api/worker/field-slip", "POST")
-    app.add_api_route("/api/worker/field-slip", general_worker_field_slip_endpoint, methods=["POST"])
+    async def final_worker_field_bridge_readiness():
+        return {
+            "success": True,
+            "ready": field_truth_fix is not None,
+            "version": FINAL_WORKER_FIELD_BRIDGE_BUILD,
+            "definitive_route_owner": "paid_launch_guard_bridge",
+            "mirrors": ["worker_problem", "worker_issue", "blocked", "owner_check"],
+            "excludes": ["job_proof", "routine_worker_message"],
+            "safety": "Problems are prepared for owner review only. Nothing is sent, synced, charged or changed.",
+        }
+
+    for method, path, endpoint in [
+        ("POST", "/api/worker/field-slip", general_worker_field_slip_endpoint),
+        ("GET", "/api/worker/field-command-readiness", final_worker_field_bridge_readiness),
+    ]:
+        remove_route(app, path, method)
+        app.add_api_route(path, endpoint, methods=[method])
     INSTALLED.add(name)
 
 

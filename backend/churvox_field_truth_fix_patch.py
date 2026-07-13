@@ -9,7 +9,7 @@ import churvox_field_truth_patch as base
 
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
-FIELD_COMMAND_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v7-20260713"
+FIELD_COMMAND_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v8-20260713"
 
 
 def route_matches(route, path, method):
@@ -105,8 +105,8 @@ async def _mirror_problem_to_command(db, user, ObjectId, slip):
             upsert=True,
         )
         created = bool(getattr(result, "upserted_id", None))
-    except Exception:
-        created = False
+    except Exception as exc:
+        raise RuntimeError("Worker problem could not be prepared in Command. Nothing was sent or changed.") from exc
     if created:
         try:
             await db.command_events.insert_one({
@@ -250,6 +250,7 @@ def install(module):
             "success": True,
             "ready": True,
             "version": FIELD_COMMAND_BRIDGE_BUILD,
+            "definitive_route_owner": "field_truth_fix",
             "mirrors": ["worker_problem", "worker_issue", "blocked", "owner_check"],
             "excludes": ["job_proof", "routine_worker_message"],
             "safety": "Problems are prepared for owner review only. Nothing is sent, synced, charged or changed.",
