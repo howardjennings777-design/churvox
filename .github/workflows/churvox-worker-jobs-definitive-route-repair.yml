@@ -33,8 +33,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply open Command live-refresh repair
-        run: python scripts/churvox-command-open-live-refresh-repair.py
+      - name: Apply owner manual Command priority repair
+        run: python scripts/churvox-owner-manual-command-priority-repair.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -61,14 +61,16 @@ jobs:
           grep -q 'field_truth_fix.fixed_create_field_slip' backend/churvox_paid_launch_guard_patch.py
           grep -q 'paid_launch_guard_bridge' backend/churvox_paid_launch_guard_patch.py
           grep -q 'worker_problem = source == "worker_field_problem"' backend/churvox_paid_launch_live_patch.py
-          grep -q 'priority = 100 if worker_problem' backend/churvox_paid_launch_live_patch.py
+          grep -q 'owner_manual = payload_source in' backend/churvox_paid_launch_live_patch.py
+          grep -q '95 if owner_manual' backend/churvox_paid_launch_live_patch.py
+          grep -q 'owner_manual_command_priority.*churvox-owner-manual-command-priority-v12-20260713' backend/churvox_paid_launch_live_patch.py
           grep -q 'commandQueuePriority' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
+          grep -q '\["manual_form", "quick_intake", "csv_import"\]' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
+          grep -q 'return 95' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
           grep -q 'screen !== "command"' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
           grep -q 'window.setInterval(refreshOpenCommand, 5000)' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
-          grep -q 'window.addEventListener("focus", refreshOpenCommand)' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
-          grep -q 'document.addEventListener("visibilitychange", refreshWhenVisible)' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
-          grep -q 'churvox-command-open-live-refresh-v11-20260713' frontend/public/churvox-paid-launch-build.json
-          grep -q 'command-screen-bounded-five-second-refresh' frontend/public/churvox-paid-launch-build.json
+          grep -q 'churvox-owner-manual-command-priority-v12-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'fresh-owner-created-slips-ranked-before-routine-command-items' frontend/public/churvox-paid-launch-build.json
           grep -q 'min-height: 48px' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
 
       - name: Publish verified product repair
@@ -77,15 +79,17 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
+            backend/churvox_paid_launch_live_patch.py \
             frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
             frontend/public/churvox-paid-launch-build.json \
+            scripts/churvox-command-queue-speed-backend-contract.cjs \
             scripts/churvox-worker-field-command-bridge-contract.cjs
           if git diff --cached --quiet; then
-            echo 'Open Command live-refresh repair already present.'
+            echo 'Owner manual Command priority repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Refresh live Command while the owner screen is open'
+          git commit -m 'Prioritize fresh owner-created Command slips'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -97,6 +101,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Open Command live-refresh repair passed\n\nThe owner Command screen now opens from its fast confirmed cache, then force-refreshes immediately, on focus/visibility return, and every five seconds while it remains open. It does not rerun the heavy office scan. Queue priority, bridge, mobile touch, safety contracts and the production build passed. Published commit: \`${sha}\`.`
-              : `## Open Command live-refresh repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Owner manual Command priority repair passed\n\nFresh owner-created manual forms, quick intake and CSV import slips now rank directly behind genuine worker problems and ahead of routine office-scan items. The three-card Command view therefore shows a newly prepared owner slip immediately. Existing live refresh, bridge, touch-target, safety contracts and the production build passed. Published commit: \`${sha}\`.`
+              : `## Owner manual Command priority repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
