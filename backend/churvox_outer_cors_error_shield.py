@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import importlib
+import json
 import logging
 from typing import Any
 
-VERSION = "churvox-outer-cors-error-shield-20260712h"
+VERSION = "churvox-outer-cors-error-shield-20260713j"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
@@ -19,6 +20,24 @@ ALLOWED_ORIGINS = {
 
 def _text(value: Any) -> str:
     return str(value or "").strip().rstrip("/")
+
+
+def _error_types(exc: Exception) -> list[str]:
+    """Return only exception class names; never expose messages or request data."""
+    found: list[str] = []
+    pending: list[BaseException] = [exc]
+    while pending and len(found) < 8:
+        current = pending.pop(0)
+        name = type(current).__name__
+        if name not in found:
+            found.append(name)
+        nested = getattr(current, "exceptions", None)
+        if isinstance(nested, (list, tuple)):
+            pending.extend(item for item in nested if isinstance(item, BaseException))
+        cause = getattr(current, "__cause__", None) or getattr(current, "__context__", None)
+        if isinstance(cause, BaseException):
+            pending.append(cause)
+    return found
 
 
 def origin_allowed(origin: str) -> bool:
@@ -84,11 +103,22 @@ class OuterCorsErrorShield:
 
         try:
             await self.app(scope, receive, shielded_send)
-        except Exception:
+        except Exception as exc:
             logging.exception("Unhandled Churvox request error outside normal middleware")
             if response_started:
                 raise
-            body = b'{"success":false,"detail":"Churvox is restarting. Please try again shortly.","retryable":true,"stage":"outer-shield","version":"churvox-outer-cors-error-shield-20260712h"}'
+            payload = {
+                "success": False,
+                "detail": "Churvox is restarting. Please try again shortly.",
+                "retryable": True,
+                "stage": "outer-shield",
+                "version": VERSION,
+            }
+            # The live-proof workflow supplies this fixed header. Only safe class
+            # names are returned; exception messages, request data and secrets stay hidden.
+            if request_headers.get("x-churvox-live-proof") == "billing":
+                payload["error_types"] = _error_types(exc)
+            body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
             headers = [
                 (b"content-type", b"application/json"),
                 (b"content-length", str(len(body)).encode("ascii")),
