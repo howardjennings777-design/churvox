@@ -70,15 +70,16 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -- \
+            .github/workflows/churvox-paid-launch-final-gate-v2.yml \
+            .github/workflows/churvox-worker-command-priority-live-proof.yml
           git add \
             backend/churvox_worker_jobs_read_patch.py \
             frontend/src/churvox-office-lab/officeTeamApi.js \
             frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
             frontend/public/churvox-paid-launch-build.json \
             scripts/churvox-paid-launch-live-smoke-v2.cjs \
-            scripts/churvox-final-pass-v15-contract.cjs \
-            .github/workflows/churvox-paid-launch-final-gate-v2.yml \
-            .github/workflows/churvox-worker-command-priority-live-proof.yml
+            scripts/churvox-final-pass-v15-contract.cjs
           if git diff --cached --quiet; then
             echo 'Final pass v15 repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
