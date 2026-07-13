@@ -44,7 +44,7 @@ jobs:
           const frontend = 'https://www.churvox.com/churvox-paid-launch-build.json';
           const backend = 'https://grassley-backend.onrender.com/api/worker/jobs-readiness';
           const expected = 'worker-jobs-current-first-v4-20260713';
-          const expectedFrontend = 'churvox-worker-jobs-current-first-v4-20260713';
+          const expectedFrontend = 'churvox-worker-message-context-v5-20260713';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           (async () => {
             let last = '';
@@ -69,7 +69,7 @@ jobs:
               }
               if (attempt < 100) await sleep(10_000);
             }
-            throw new Error(`Exact current-first Worker Jobs build did not deploy: ${last}`);
+            throw new Error(`Exact Worker Messages context build did not deploy: ${last}`);
           })().catch((error) => { console.error(error.stack || error); process.exit(1); });
           NODE
 
@@ -158,6 +158,6 @@ jobs:
               .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[worker-email-hidden]')
               .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]');
             const body = ok
-              ? '## Current-first Worker Jobs live proof passed\n\nThe exact frontend/backend markers are deployed and one real owner→worker assignment, field lifecycle and cleanup passed.'
-              : `## Current-first Worker Jobs live proof failed\n\nThe exact deployment passed, but the real lifecycle did not. Safe error tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+              ? '## Worker Messages context live proof passed\n\nThe exact frontend/backend markers are deployed and one real owner→worker assignment, field lifecycle, owner issue receipt, logout and cleanup passed.'
+              : `## Worker Messages context live proof failed\n\nThe exact deployment passed, but the real lifecycle did not. Safe error tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
