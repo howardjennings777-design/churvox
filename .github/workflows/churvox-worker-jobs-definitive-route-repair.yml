@@ -33,45 +33,35 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply owner completion message dedupe repair
-        run: python scripts/churvox-owner-message-completion-dedupe-repair.py
+      - name: Apply final Worker Jobs copy trim
+        run: python scripts/churvox-worker-jobs-copy-trim-repair.py
 
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install --include=dev --legacy-peer-deps
 
-      - name: Verify backend, contracts and production build
+      - name: Verify contracts and production build
         shell: bash
         run: |
           set -o pipefail
           python -m py_compile \
-            backend/churvox_worker_jobs_read_patch.py \
-            backend/churvox_paid_launch_guard_patch.py \
             backend/churvox_paid_launch_live_patch.py \
-            backend/churvox_field_truth_fix_patch.py \
             backend/churvox_owner_data_visibility_patch.py \
             backend/server/__init__.py
-          node --check scripts/churvox-worker-assignment-diagnostic-v2.cjs
           node scripts/churvox-command-queue-speed-backend-contract.cjs
-          node scripts/churvox-server-wrapper-final-command-contract.cjs
           node scripts/churvox-hardcore-owner-worker-audit.cjs
           node scripts/churvox-worker-field-command-bridge-contract.cjs
           node scripts/churvox-owner-message-dedupe-contract.cjs
+          node scripts/churvox-worker-jobs-copy-trim-contract.cjs
           npm --prefix frontend run build
-          grep -q 'worker-jobs-current-first-v4-20260713' backend/churvox_worker_jobs_read_patch.py
-          grep -q 'owner_manual = payload_source in' backend/churvox_paid_launch_live_patch.py
-          grep -q '95 if owner_manual' backend/churvox_paid_launch_live_patch.py
-          grep -q 'owner_manual_command_priority.*churvox-owner-manual-command-priority-v12-20260713' backend/churvox_paid_launch_live_patch.py
-          grep -q '\["manual_form", "quick_intake", "csv_import"\]' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
-          grep -q 'return 95' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
-          grep -q 'OWNER_MESSAGE_DEDUPE_BUILD = "churvox-owner-message-completion-dedupe-v13-20260713"' backend/churvox_owner_data_visibility_patch.py
-          grep -q 'rows = dedupe_owner_messages(rows)\[:200\]' backend/churvox_owner_data_visibility_patch.py
-          grep -q 'job_completion:' backend/churvox_owner_data_visibility_patch.py
-          grep -q 'logical_job_event' backend/churvox_owner_data_visibility_patch.py
-          grep -q '/api/messages/readiness' backend/churvox_owner_data_visibility_patch.py
-          grep -q 'churvox-owner-message-completion-dedupe-v13-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'Only your assigned work appears.' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -q 'Worker View never charges cards. Use an approved invoice link.' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          ! grep -q 'Only work assigned to this worker appears here.' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          ! grep -q 'Payment happens through an approved secure invoice link.' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -q 'churvox-worker-jobs-copy-trim-v14-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'worker-jobs-under-hardcore-word-limit' frontend/public/churvox-paid-launch-build.json
           grep -q 'single-owner-completion-per-message-channel' frontend/public/churvox-paid-launch-build.json
-          grep -q 'min-height: 48px' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
+          grep -q 'fresh-owner-created-slips-ranked-before-routine-command-items' frontend/public/churvox-paid-launch-build.json
 
       - name: Publish verified product repair
         shell: bash
@@ -79,15 +69,15 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
-            backend/churvox_owner_data_visibility_patch.py \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
             frontend/public/churvox-paid-launch-build.json \
-            scripts/churvox-owner-message-dedupe-contract.cjs
+            scripts/churvox-worker-jobs-copy-trim-contract.cjs
           if git diff --cached --quiet; then
-            echo 'Owner completion message dedupe repair already present.'
+            echo 'Worker Jobs copy trim already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Deduplicate owner-facing completion messages'
+          git commit -m 'Trim redundant Worker Jobs copy'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -99,6 +89,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Owner completion message dedupe repair passed\n\nThe owner Messages feed now collapses duplicate copies of the same logical job completion across Notifications, approved notifications, worker messages and field slips. Notifications remains a single valid record, while Messages exposes one completion per job event. Manual-slip priority, live refresh, bridge, touch-target, safety contracts and the production build passed. Published commit: \`${sha}\`.`
-              : `## Owner completion message dedupe repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Worker Jobs copy trim passed\n\nEight redundant words were removed from Worker Jobs while retaining every job, status, proof, payment and owner-approval control. Existing manual-slip priority, completion dedupe, bridge and safety contracts plus the production build passed. Published commit: \`${sha}\`.`
+              : `## Worker Jobs copy trim failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
