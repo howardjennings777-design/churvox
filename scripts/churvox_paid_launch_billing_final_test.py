@@ -3,11 +3,19 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 from fastapi import FastAPI
 
-from backend import churvox_paid_launch_billing_final_patch as patch
+ROOT = Path(__file__).resolve().parents[1]
+BACKEND = ROOT / "backend"
+for path in (str(ROOT), str(BACKEND)):
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+import churvox_paid_launch_billing_final_patch as patch
 
 
 class FakeRequest:
