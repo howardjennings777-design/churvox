@@ -33,13 +33,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply current worker, Command and final paid-launch repairs
-        run: |
-          python scripts/churvox-worker-jobs-current-first-apply.py
-          python scripts/churvox-worker-message-job-context-apply.py
-          python scripts/churvox-command-created-slip-refresh-apply.py
-          python scripts/churvox-worker-field-command-bridge-apply.py
-          python scripts/churvox-paid-launch-last-two-blockers-apply.py
+      - name: Apply definitive v8 paid-launch repair
+        run: python scripts/churvox-paid-launch-last-two-blockers-apply.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -92,17 +87,11 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
-            backend/churvox_worker_jobs_read_patch.py \
             backend/churvox_paid_launch_guard_patch.py \
             backend/churvox_paid_launch_live_patch.py \
             backend/churvox_field_truth_fix_patch.py \
-            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
-            frontend/src/churvox-office-lab/OfficeTeamCommandApi.js \
-            frontend/src/churvox-office-lab/officeTeamApi.js \
-            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
             frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css \
             frontend/public/churvox-paid-launch-build.json \
-            scripts/churvox-command-queue-speed-backend-contract.cjs \
             scripts/churvox-worker-field-command-bridge-apply.py \
             scripts/churvox-worker-field-command-bridge-contract.cjs
           if git diff --cached --quiet; then
