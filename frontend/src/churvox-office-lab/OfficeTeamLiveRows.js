@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchOfficeTeamRows } from "./officeTeamApi";
 
+export const WORKER_LIVE_REFRESH_BUILD = "churvox-worker-live-refresh-20260713a";
+if (typeof window !== "undefined") window.__CHURVOX_WORKER_LIVE_REFRESH_BUILD__ = WORKER_LIVE_REFRESH_BUILD;
+
 export function isOfficeTeamPreviewRoute() {
   if (typeof window === "undefined") return false;
   const path = String(window.location.pathname || "").replace(/\/+$/, "");
