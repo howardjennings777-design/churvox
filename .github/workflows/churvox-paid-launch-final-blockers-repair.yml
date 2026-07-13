@@ -35,13 +35,17 @@ jobs:
         working-directory: frontend
         run: npm install --include=dev --legacy-peer-deps
 
-      - name: Verify focused contracts and build
-        shell: bash
+      - name: Verify cleanup script syntax
+        run: node --check scripts/churvox-hardcore-human-cleanup.cjs
+
+      - name: Verify owner and worker contract
+        run: node scripts/churvox-hardcore-owner-worker-audit.cjs
+
+      - name: Verify production frontend build
+        run: npm --prefix frontend run build
+
+      - name: Verify focused repair markers
         run: |
-          set -o pipefail
-          node --check scripts/churvox-hardcore-human-cleanup.cjs
-          node scripts/churvox-hardcore-owner-worker-audit.cjs
-          npm --prefix frontend run build
           python <<'PY'
           from pathlib import Path
           checks = {
@@ -83,5 +87,5 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const body = ok
               ? '## Final paid-launch blocker repair passed\n\nVerified repairs were published for Command truth and concise cards, form edit preservation, Worker View assignment refresh, complete Command cleanup draining, and local build readiness.'
-              : `## Final paid-launch blocker repair failed safely\n\nNo unverified product change should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              : `## Final paid-launch blocker repair failed safely\n\nNo unverified product change was published. The failed workflow step identifies the exact remaining contract. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
