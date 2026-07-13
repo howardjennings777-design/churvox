@@ -8,7 +8,7 @@ const ownerCss = fs.readFileSync('frontend/src/churvox-office-lab/OfficeTeamOwne
 const marker = fs.readFileSync('frontend/public/churvox-paid-launch-build.json', 'utf8');
 
 const checks = [
-  ['bridge build marker', field.includes('churvox-worker-field-command-bridge-v8-20260713') && marker.includes('churvox-worker-field-command-bridge-v8-20260713')],
+  ['bridge build marker', field.includes('churvox-worker-field-command-bridge-v9-20260713') && marker.includes('churvox-worker-field-command-bridge-v9-20260713')],
   ['problem-only classification', field.includes('def _needs_command(kind)') && field.includes('"problem"') && field.includes('"issue"')],
   ['proof remains outside Command', field.includes('"excludes": ["job_proof", "routine_worker_message"]')],
   ['deduplicated command upsert', field.includes('db.command_slips.update_one') && field.includes('"$setOnInsert": command_doc') && field.includes('upsert=True')],
@@ -16,10 +16,11 @@ const checks = [
   ['owner review safety fields', field.includes('"owner_review_only": True') && field.includes('"no_auto_send": True') && field.includes('"no_auto_sync": True') && field.includes('"no_auto_charge": True')],
   ['bridge failure is not reported as success', field.includes('raise RuntimeError("Worker problem could not be prepared in Command')],
   ['command cache invalidated after problem', field.includes('_invalidate_command_cache(business_id)')],
+  ['every loaded Command cache alias invalidated', field.includes('seen = set()') && field.includes('invalidated += 1') && !field.includes('invalidate(business_id)\n                return')],
   ['shared queue invalidator exists', live.includes('def invalidate_command_queue(business_id: str)') && live.includes('COMMAND_QUEUE_CACHES')],
   ['final route delegates to bridge', guard.includes('field_truth_fix.fixed_create_field_slip') && guard.includes('paid_launch_guard_bridge')],
   ['final readiness owns live route', guard.includes('/api/worker/field-command-readiness') && guard.includes('FINAL_WORKER_FIELD_BRIDGE_BUILD')],
-  ['paid launch readiness marker aligned', live.includes('churvox-worker-field-command-bridge-v8-20260713')],
+  ['paid launch readiness marker aligned', live.includes('churvox-worker-field-command-bridge-v9-20260713')],
   ['worker problem route remains field slip', workerUi.includes('sendFieldSlip(needsDecision ? "worker_problem" : "worker_message"')],
   ['mobile open-slip target is at least 48px', ownerCss.includes('.cvOwnerReady .cvSiteDecisionCard footer button') && ownerCss.includes('min-height: 48px')],
   ['owner approval statement remains', field.includes('owner must approve, edit, park or dismiss')],

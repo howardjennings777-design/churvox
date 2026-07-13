@@ -10,7 +10,7 @@ from fastapi import HTTPException, Request as FastAPIRequest
 
 TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
-FINAL_WORKER_FIELD_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v8-20260713"
+FINAL_WORKER_FIELD_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v9-20260713"
 
 
 def now_utc():
@@ -281,6 +281,7 @@ def install(module):
             "ready": field_truth_fix is not None,
             "version": FINAL_WORKER_FIELD_BRIDGE_BUILD,
             "definitive_route_owner": "paid_launch_guard_bridge",
+            "cache_alias_strategy": "invalidate_all_loaded_aliases",
             "mirrors": ["worker_problem", "worker_issue", "blocked", "owner_check"],
             "excludes": ["job_proof", "routine_worker_message"],
             "safety": "Problems are prepared for owner review only. Nothing is sent, synced, charged or changed.",

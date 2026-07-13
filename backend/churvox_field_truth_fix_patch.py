@@ -9,7 +9,7 @@ import churvox_field_truth_patch as base
 
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
-FIELD_COMMAND_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v8-20260713"
+FIELD_COMMAND_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v9-20260713"
 
 
 def route_matches(route, path, method):
@@ -29,15 +29,25 @@ def _needs_command(kind):
 
 
 def _invalidate_command_cache(business_id):
+    # Startup can load the paid-launch module under both direct and package
+    # names. Clear every distinct module cache; stopping after the first alias
+    # can leave the live Command route serving its old 20-second queue.
+    seen = set()
+    invalidated = 0
     for module_name in ["churvox_paid_launch_live_patch", "backend.churvox_paid_launch_live_patch"]:
         try:
             module = importlib.import_module(module_name)
+            marker = id(module)
+            if marker in seen:
+                continue
+            seen.add(marker)
             invalidate = getattr(module, "invalidate_command_queue", None)
             if callable(invalidate):
                 invalidate(business_id)
-                return
+                invalidated += 1
         except Exception:
             continue
+    return invalidated
 
 
 async def _mirror_problem_to_command(db, user, ObjectId, slip):
@@ -251,6 +261,7 @@ def install(module):
             "ready": True,
             "version": FIELD_COMMAND_BRIDGE_BUILD,
             "definitive_route_owner": "field_truth_fix",
+            "cache_alias_strategy": "invalidate_all_loaded_aliases",
             "mirrors": ["worker_problem", "worker_issue", "blocked", "owner_check"],
             "excludes": ["job_proof", "routine_worker_message"],
             "safety": "Problems are prepared for owner review only. Nothing is sent, synced, charged or changed.",

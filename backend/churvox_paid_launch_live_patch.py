@@ -292,7 +292,7 @@ def install(module, force=False):
             "success": True,
             "marker": "churvox-command-v3-live-backend-20260713g",
             "command_force_refresh": COMMAND_FORCE_REFRESH_BUILD,
-            "worker_field_command_bridge": "churvox-worker-field-command-bridge-v8-20260713",
+            "worker_field_command_bridge": "churvox-worker-field-command-bridge-v9-20260713",
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,
