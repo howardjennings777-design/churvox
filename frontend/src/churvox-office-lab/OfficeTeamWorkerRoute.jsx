@@ -12,7 +12,7 @@ const payKeywords = ["payment", "pay", "invoice", "card", "checkout"];
 export const WORKER_MESSAGE_CONTEXT_BUILD = "churvox-worker-message-context-v5-20260713";
 const workerViews = {
   today: { label: "Today", title: "Current job", copy: "Do the next job and keep the office updated." },
-  jobs: { label: "Jobs", title: "Assigned jobs", copy: "Only work assigned to this worker appears here." },
+  jobs: { label: "Jobs", title: "Assigned jobs", copy: "Only your assigned work appears." },
   messages: { label: "Messages", title: "Update the boss", copy: "Send a short job update or ask for a decision." },
   help: { label: "Help", title: "Field help", copy: "Four simple rules for using Churvox on site." },
   settings: { label: "Me", title: "Worker access", copy: "This account can use field tools only." },
@@ -217,7 +217,7 @@ export default function OfficeTeamWorkerRoute() {
             <div className={`cvWorkerPayCode ${payment.link ? "ready" : "locked"}`} aria-hidden="true"><b>{payment.code}</b></div>
             <dl><div><dt>Amount</dt><dd>{payment.amount || "Owner check"}</dd></div><div><dt>Invoice</dt><dd>{payment.invoice || "Not linked"}</dd></div></dl>
             <div className="cvWorkerPaymentActions"><button type="button" disabled={!hasWork || paymentBusy} onClick={openPaymentLink}>{paymentBusy ? "Preparing…" : payment.link ? "Open pay page" : "Request link"}</button><button type="button" disabled={!hasWork || paymentBusy} onClick={copyPaymentLink}>{payment.link ? "Copy link" : "Prepare request"}</button></div>
-            <small>No card is charged inside Worker View. Payment happens through an approved secure invoice link.</small>
+            <small>Worker View never charges cards. Use an approved invoice link.</small>
             {paymentNotice ? <p className="cvWorkerPaymentNotice">{paymentNotice}</p> : null}
           </section>
           <section className="cvWorkerRouteProof"><label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label><button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : proofNames.length ? `Send ${proofNames.length} proof item${proofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button><button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button></section>

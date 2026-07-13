@@ -176,18 +176,16 @@ check(
   all(worker, [
     'createBackendWorkerPaymentRequest',
     'Worker cannot charge a card without an approved link',
-    'No card is charged inside Worker View',
   ])
+    && (worker.includes('No card is charged inside Worker View') || worker.includes('Worker View never charges cards'))
     && !/payment-intent|StripeTerminal|processPayment|collectPaymentMethod/.test(worker),
   'Worker View may request or open an approved invoice link but must not create/process a direct charge',
 );
 
 check(
   'payment truth waits for provider confirmation',
-  all(worker, [
-    'Payment happens through an approved secure invoice link',
-    'only mark paid after the real provider confirms it',
-  ]),
+  (worker.includes('Payment happens through an approved secure invoice link') || worker.includes('Use an approved invoice link'))
+    && worker.includes('only mark paid after the real provider confirms it'),
   'Opening or copying a link is not proof that payment succeeded',
 );
 
