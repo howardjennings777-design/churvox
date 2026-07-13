@@ -37,14 +37,14 @@ jobs:
           npm install --include=dev --legacy-peer-deps
           npx playwright install --with-deps chromium
 
-      - name: Wait for exact frontend and backend builds
+      - name: Wait for exact frontend and Worker Jobs backend builds
         shell: bash
         run: |
           node <<'NODE'
           const frontend = 'https://www.churvox.com/churvox-paid-launch-build.json';
           const backend = 'https://grassley-backend.onrender.com/api/worker/jobs-readiness';
           const expected = 'worker-jobs-current-first-v4-20260713';
-          const expectedFrontend = 'churvox-worker-message-context-v5-20260713';
+          const expectedFrontend = 'churvox-command-created-slip-refresh-v6-20260713';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           (async () => {
             let last = '';
@@ -61,19 +61,19 @@ jobs:
                   && back.version === expected
                   && back.ready === true
                   && back.definitive_route_owner === 'worker_jobs';
-                console.log(`DEPLOY attempt=${attempt} frontend=${front.build || frontResponse.status} backend=${back.version || backResponse.status} ready=${ready}`);
+                console.log(`DEPLOY attempt=${attempt} frontend=${front.build || frontResponse.status} worker_backend=${back.version || backResponse.status} ready=${ready}`);
                 if (ready) return;
-                last = `frontend=${front.build || frontResponse.status} backend=${back.version || backResponse.status}`;
+                last = `frontend=${front.build || frontResponse.status} worker_backend=${back.version || backResponse.status}`;
               } catch (error) {
                 last = error.message || String(error);
               }
               if (attempt < 100) await sleep(10_000);
             }
-            throw new Error(`Exact Worker Messages context build did not deploy: ${last}`);
+            throw new Error(`Exact v6 frontend and Worker Jobs backend did not deploy: ${last}`);
           })().catch((error) => { console.error(error.stack || error); process.exit(1); });
           NODE
 
-      - name: Discover one linked worker without exposing identity
+      - name: Wait for exact Command backend and discover one linked worker
         shell: bash
         run: |
           node <<'NODE'
@@ -81,6 +81,8 @@ jobs:
           const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
           const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
           const password = process.env.CHURVOX_OWNER_PASSWORD;
+          const expectedCommand = 'churvox-command-force-refresh-v4-20260713';
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
           const rowsFrom = (payload) => {
             const body = payload?.data?.data ?? payload?.data ?? payload;
@@ -95,6 +97,23 @@ jobs:
             const owner = await read(login);
             const token = tokenFrom(owner);
             if (!login.ok || !token) throw new Error(`Owner login failed ${login.status}`);
+
+            let commandReady = false;
+            let commandLast = '';
+            for (let attempt = 1; attempt <= 100; attempt += 1) {
+              const response = await fetch(`${api}/api/paid-launch/backend-readiness?ts=${Date.now()}`, {
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                cache: 'no-store',
+              });
+              const body = await read(response);
+              commandReady = response.ok && body.command_force_refresh === expectedCommand;
+              commandLast = body.command_force_refresh || String(response.status);
+              console.log(`COMMAND_DEPLOY attempt=${attempt} marker=${commandLast} ready=${commandReady}`);
+              if (commandReady) break;
+              if (attempt < 100) await sleep(10_000);
+            }
+            if (!commandReady) throw new Error(`Exact Command refresh backend did not deploy: ${commandLast}`);
+
             const candidates = [];
             for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
               const response = await fetch(`${api}${endpoint}?ts=${Date.now()}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }, cache: 'no-store' });
@@ -158,6 +177,6 @@ jobs:
               .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[worker-email-hidden]')
               .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]');
             const body = ok
-              ? '## Worker Messages context live proof passed\n\nThe exact frontend/backend markers are deployed and one real owner→worker assignment, field lifecycle, owner issue receipt, logout and cleanup passed.'
-              : `## Worker Messages context live proof failed\n\nThe exact deployment passed, but the real lifecycle did not. Safe error tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+              ? '## Fresh Command and Worker flow live proof passed\n\nThe exact v6 frontend, v4 Worker Jobs backend and Command force-refresh backend are deployed. One real owner→worker assignment, field lifecycle, proof, owner issue receipt, logout and cleanup passed.'
+              : `## Fresh Command and Worker flow live proof failed\n\nThe exact deployment passed, but the real lifecycle did not. Safe error tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
