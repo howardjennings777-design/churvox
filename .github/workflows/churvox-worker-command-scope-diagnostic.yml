@@ -12,7 +12,7 @@ jobs:
   diagnose:
     if: startsWith(github.event.issue.title, '[churvox-worker-command-scope-diagnostic]')
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     env:
       API: https://grassley-backend.onrender.com
       OWNER_EMAIL: howardjennings777@gmail.com
@@ -23,9 +23,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `Safe completion-channel diagnostic started on run \`${context.runId}\`.` });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `Exact v16 completion-channel proof started on run \`${context.runId}\`. It will not mutate live data until the final Messages route marker is deployed.` });
 
-      - name: Measure completion rows per owner-facing channel
+      - name: Prove exact deployed completion rows per owner-facing channel
         shell: bash
         run: |
           set -o pipefail
@@ -33,9 +33,12 @@ jobs:
           const api = process.env.API.replace(/\/+$/, '');
           const ownerEmail = process.env.OWNER_EMAIL;
           const password = process.env.PASSWORD;
+          const expectedMessages = 'churvox-final-owner-messages-v16-20260713';
+          const expectedOwner = 'final_owner_messages_wrapper';
           const run = Date.now();
           const title = `HARDCORE completion diagnostic ${run}`;
           const note = `Complete ${run} with proof`;
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           const read = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0, 500) }));
           const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
           const rowsFrom = (payload) => {
@@ -49,7 +52,38 @@ jobs:
           const contains = (value, token) => JSON.stringify(value || {}).toLowerCase().includes(String(token || '').toLowerCase());
           const auth = (token, json = false) => ({ Authorization: `Bearer ${token}`, Accept: 'application/json', ...(json ? { 'Content-Type': 'application/json' } : {}) });
           const typeOf = (row = {}) => String(row.type || row.kind || row.event_type || row.action_type || row.source_type || 'unknown').toLowerCase();
-          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          async function waitForExactDeployment() {
+            let last = {};
+            for (let attempt = 1; attempt <= 120; attempt += 1) {
+              const readyResponse = await fetch(`${api}/api/messages/readiness?ts=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
+              const ready = readyResponse ? await read(readyResponse) : {};
+              const bootResponse = await fetch(`${api}/api/command-fast-load/boot?ts=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
+              const boot = bootResponse ? await read(bootResponse) : {};
+              last = {
+                readiness_status: readyResponse?.status || 0,
+                version: String(ready.version || ''),
+                route_owner: String(ready.route_owner || ''),
+                boot_status: bootResponse?.status || 0,
+                boot_installed: boot.owner_messages_patch_installed === true,
+                boot_version: String(boot.owner_messages_version || ''),
+                boot_error: Boolean(boot.owner_messages_error),
+              };
+              const exact = readyResponse?.status === 200
+                && ready.ready === true
+                && ready.version === expectedMessages
+                && ready.route_owner === expectedOwner
+                && bootResponse?.status === 200
+                && boot.owner_messages_patch_installed === true
+                && boot.owner_messages_version === expectedMessages
+                && !boot.owner_messages_error;
+              console.log(`DEPLOY attempt=${attempt} exact=${exact} ${JSON.stringify(last)}`);
+              if (exact) return last;
+              if (attempt < 120) await sleep(10_000);
+            }
+            throw new Error(`V16_NOT_DEPLOYED ${JSON.stringify(last)}`);
+          }
+
           async function login(email) {
             for (const path of ['/api/auth/login','/api/worker/auth/login']) {
               const response = await fetch(`${api}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
@@ -59,6 +93,7 @@ jobs:
             }
             return '';
           }
+
           async function cleanup(ownerToken, jobId) {
             if (!jobId) return;
             let response = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE', headers: auth(ownerToken) }).catch(() => null);
@@ -66,10 +101,14 @@ jobs:
               await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}/archive`, { method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({ archived: true, archive_reason: 'completion diagnostic cleanup' }) }).catch(() => null);
             }
           }
+
           (async () => {
             let ownerToken = '';
             let jobId = '';
             try {
+              const deployment = await waitForExactDeployment();
+              console.log(`EXACT_V16_DEPLOYMENT ${JSON.stringify(deployment)}`);
+
               ownerToken = await login(ownerEmail);
               if (!ownerToken) throw new Error('Owner login failed');
               const candidates = [];
@@ -118,7 +157,8 @@ jobs:
               if (!completeResponse.ok || completeBody.success === false) throw new Error(`Complete failed ${completeResponse.status}`);
 
               const paths = ['/api/notifications?limit=160', '/api/messages?limit=160', '/api/command/slips'];
-              for (let attempt = 1; attempt <= 5; attempt += 1) {
+              let passed = false;
+              for (let attempt = 1; attempt <= 8; attempt += 1) {
                 await sleep(attempt === 1 ? 700 : 1600);
                 const report = {};
                 for (const path of paths) {
@@ -129,10 +169,20 @@ jobs:
                   const unique = new Set(matches.map((row) => idOf(row) || JSON.stringify(row))).size;
                   const types = {};
                   for (const row of matches) types[typeOf(row)] = (types[typeOf(row)] || 0) + 1;
-                  report[path.split('?')[0]] = { status: response.status, rows: rows.length, matches: matches.length, unique, types };
+                  report[path.split('?')[0]] = { status: response.status, rows: rows.length, matches: matches.length, unique, types, route_owner: body.route_owner || '', dedupe_version: body.dedupe_version || '' };
                 }
-                console.log(`ATTEMPT ${attempt} ${JSON.stringify(report)}`);
+                const notifications = report['/api/notifications'];
+                const messages = report['/api/messages'];
+                const command = report['/api/command/slips'];
+                passed = notifications.status === 200 && notifications.matches === 1
+                  && messages.status === 200 && messages.matches === 1 && messages.unique === 1
+                  && messages.route_owner === expectedOwner && messages.dedupe_version === expectedMessages
+                  && command.status === 200 && command.matches === 0;
+                console.log(`ATTEMPT ${attempt} pass=${passed} ${JSON.stringify(report)}`);
+                if (passed) break;
               }
+              if (!passed) throw new Error('COMPLETION_TRUTH_FAILED expected notifications=1 messages=1 command=0');
+              console.log('EXACT_V16_COMPLETION_CHANNEL_PROOF_PASS');
             } finally {
               if (ownerToken) await cleanup(ownerToken, jobId);
             }
@@ -150,5 +200,7 @@ jobs:
               .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email-hidden]')
               .replace(/[a-f0-9]{24}/gi, '[id-hidden]')
               .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]')
-              .slice(-9000);
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Safe completion-channel diagnostic\n\n\`\`\`text\n${safe}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.` });
+              .slice(-12000);
+            const passed = raw.includes('EXACT_V16_COMPLETION_CHANNEL_PROOF_PASS');
+            const heading = passed ? '## Exact v16 completion-channel proof passed' : '## Exact v16 completion-channel proof failed';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `${heading}\n\n\`\`\`text\n${safe}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.` });
