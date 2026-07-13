@@ -1,0 +1,75 @@
+name: Churvox Worker Refresh Cache Repair
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-worker-refresh-cache-repair]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply Worker View live-read hardening
+        run: python scripts/churvox-worker-refresh-cache-apply.py
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Verify launch contracts and production build
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-command-queue-speed-backend-contract.cjs
+          node scripts/churvox-hardcore-owner-worker-audit.cjs
+          npm --prefix frontend run build
+          grep -q 'churvox-worker-live-read-no-cache-20260713b' frontend/src/churvox-office-lab/officeTeamApi.js
+          grep -q 'cache: "no-store"' frontend/src/churvox-office-lab/officeTeamApi.js
+          grep -q 'const requestEndpoint = area === "worker"' frontend/src/churvox-office-lab/officeTeamApi.js
+          grep -q 'Decision {index + 1}' frontend/src/churvox-office-lab/OfficeTeamTodayScreen.jsx
+
+      - name: Publish verified repair
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/churvox-office-lab/officeTeamApi.js
+          if git diff --cached --quiet; then
+            echo 'Worker View cache repair already present.'
+            echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          git commit -m 'Prevent stale Worker View assignment reads'
+          git push origin HEAD:main
+          echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ job.status }}' === 'success';
+            const sha = process.env.published_sha || '';
+            const body = ok
+              ? `## Worker View live-read repair passed\n\nThe no-cache worker assignment read, launch contracts, owner/worker audit and production build passed. Published commit: \`${sha}\`.`
+              : `## Worker View live-read repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
