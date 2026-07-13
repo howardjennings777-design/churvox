@@ -176,6 +176,9 @@ async def _final_command_wrapper_marker():
         'billing_patch_installed': globals().get('FINAL_BILLING_PATCH_INSTALLED', False),
         'billing_version': globals().get('FINAL_BILLING_VERSION'),
         'billing_error': globals().get('FINAL_BILLING_PATCH_ERROR') or None,
+        'session_revocation_installed': globals().get('FINAL_SESSION_REVOCATION_INSTALLED', False),
+        'session_revocation_version': globals().get('FINAL_SESSION_REVOCATION_VERSION'),
+        'session_revocation_error': globals().get('FINAL_SESSION_REVOCATION_ERROR') or None,
         'route_owners': route_owners,
         'checked_at': datetime.now(timezone.utc).isoformat(),
     }
@@ -539,6 +542,29 @@ def _force_install_final_billing_patch():
 
 
 _force_install_final_billing_patch()
+
+
+FINAL_SESSION_REVOCATION_VERSION = 'churvox-logout-all-sessions-final-20260713a'
+FINAL_SESSION_REVOCATION_INSTALLED = False
+FINAL_SESSION_REVOCATION_ERROR = ''
+
+
+def _force_install_final_session_revocation():
+    global FINAL_SESSION_REVOCATION_INSTALLED, FINAL_SESSION_REVOCATION_ERROR
+    try:
+        try:
+            import churvox_logout_all_sessions_final_patch as session_patch
+        except Exception:
+            from backend import churvox_logout_all_sessions_final_patch as session_patch
+        FINAL_SESSION_REVOCATION_INSTALLED = bool(session_patch.install(legacy, force=True))
+        FINAL_SESSION_REVOCATION_ERROR = '' if FINAL_SESSION_REVOCATION_INSTALLED else 'installer_not_ready'
+    except Exception as exc:
+        FINAL_SESSION_REVOCATION_INSTALLED = False
+        FINAL_SESSION_REVOCATION_ERROR = f'{type(exc).__name__}:{exc}'
+        print(f'Churvox final session revocation patch failed: {exc}', file=sys.stderr)
+
+
+_force_install_final_session_revocation()
 
 
 @app.options('/{full_path:path}')
