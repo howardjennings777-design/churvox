@@ -1,0 +1,97 @@
+name: Churvox Revoke Diagnostic Session
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  revoke:
+    if: startsWith(github.event.issue.title, '[churvox-revoke-diagnostic-session]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      API_BASE: https://grassley-backend.onrender.com
+
+    steps:
+      - name: Recover token only from private run log, revoke and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ID=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow churvox-final-live-smoke-snapshot.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+          test -n "$RUN_ID"
+          gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log > /tmp/churvox-diagnostic-run.log
+          python <<'PY' > /tmp/churvox-revoke-result.txt
+          import base64
+          import json
+          import re
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          text = Path('/tmp/churvox-diagnostic-run.log').read_text(encoding='utf-8', errors='ignore')
+          candidates = re.findall(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+', text)
+          chosen = None
+          chosen_payload = None
+          for token in candidates:
+              try:
+                  middle = token.split('.')[1]
+                  middle += '=' * (-len(middle) % 4)
+                  payload = json.loads(base64.urlsafe_b64decode(middle.encode()).decode())
+              except Exception:
+                  continue
+              if payload.get('type') == 'access' and str(payload.get('email') or '').lower() == 'howardjennings777@gmail.com':
+                  if chosen_payload is None or float(payload.get('iat') or 0) > float(chosen_payload.get('iat') or 0):
+                      chosen = token
+                      chosen_payload = payload
+          if not chosen:
+              raise SystemExit('No matching diagnostic access token was found in the private run log.')
+
+          api = 'https://grassley-backend.onrender.com'
+          request = urllib.request.Request(
+              api + '/api/auth/logout',
+              data=b'{}',
+              method='POST',
+              headers={'Authorization': 'Bearer ' + chosen, 'Content-Type': 'application/json'},
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  logout_status = response.status
+                  logout_body = json.loads(response.read().decode() or '{}')
+          except urllib.error.HTTPError as error:
+              logout_status = error.code
+              logout_body = json.loads(error.read().decode() or '{}')
+
+          verify = urllib.request.Request(api + '/api/auth/me', headers={'Authorization': 'Bearer ' + chosen})
+          try:
+              with urllib.request.urlopen(verify, timeout=20) as response:
+                  verify_status = response.status
+          except urllib.error.HTTPError as error:
+              verify_status = error.code
+
+          if logout_status != 200 or 'access' not in (logout_body.get('revoked') or []) or verify_status != 401:
+              raise SystemExit(f'Revocation verification failed: logout={logout_status}, revoked={logout_body.get("revoked")}, verify={verify_status}')
+          print('DIAGNOSTIC_SESSION_REVOKED')
+          print(f'logout_status={logout_status}')
+          print(f'verify_status={verify_status}')
+          print(f'jti={chosen_payload.get("jti", "present")[:5]}…redacted')
+          PY
+          shred -u /tmp/churvox-diagnostic-run.log || rm -f /tmp/churvox-diagnostic-run.log
+
+      - name: Post safe revocation result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const ok = '${{ job.status }}' === 'success';
+            const output = fs.existsSync('/tmp/churvox-revoke-result.txt') ? fs.readFileSync('/tmp/churvox-revoke-result.txt', 'utf8') : 'No safe result was produced.';
+            const body = ok
+              ? `## Diagnostic session revoked\n\nThe exposed diagnostic access token was recovered only from the private Actions log, revoked through Churvox logout, and verified unusable with a 401 response.\n\n\`\`\`text\n${output}\n\`\`\``
+              : `## Diagnostic session revocation failed\n\nThe session still requires revocation. No token value is included here. Workflow run: \`${context.runId}\`.`;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
