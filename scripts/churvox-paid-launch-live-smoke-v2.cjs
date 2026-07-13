@@ -5,6 +5,7 @@ const api = String(process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.
 const ownerEmail = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLowerCase();
 const password = process.env.CHURVOX_OWNER_PASSWORD || '';
 const expectedBackend = 'churvox-command-v3-server-wrapper-20260713g';
+const expectedOwnerMessages = 'churvox-final-owner-messages-v16-20260713';
 const frontendMarkers = {
   auth: 'churvox-auth-401-storm-repair-20260713b',
   growth: 'churvox-growth-pack-checkout-20260713a',
@@ -99,13 +100,18 @@ async function backendReady() {
   const body = result.body || {};
   const slipOwners = body.route_owners?.['/api/command/slips'] || [];
   const scanOwners = body.route_owners?.['/api/command/scan'] || [];
+  const messageOwners = body.route_owners?.['/api/messages'] || [];
+  const messageReadinessOwners = body.route_owners?.['/api/messages/readiness'] || [];
   assert(body.version === expectedBackend, `wrong backend version ${body.version}`);
   assert(body.patch_installed === true && body.patch_stage === 'ready', `backend patch not ready: ${JSON.stringify(body).slice(0,700)}`);
   assert(body.billing_patch_installed === true && body.billing_error == null, `billing patch not ready: ${body.billing_error || 'not installed'}`);
   assert(body.session_revocation_installed === true && body.session_revocation_error == null, `session revocation not ready: ${body.session_revocation_error || 'not installed'}`);
   assert(slipOwners.some((value) => String(value).endsWith(':fast_slips')), `fast_slips not live: ${JSON.stringify(slipOwners)}`);
   assert(scanOwners.some((value) => String(value).endsWith(':fast_scan')), `fast_scan not live: ${JSON.stringify(scanOwners)}`);
-  return { version: body.version, elapsedMs: result.elapsedMs, slipOwners, scanOwners };
+  assert(body.owner_messages_patch_installed === true && body.owner_messages_version === expectedOwnerMessages && body.owner_messages_error == null, `owner messages patch not ready: ${JSON.stringify(body).slice(0,900)}`);
+  assert(messageOwners.some((value) => String(value).endsWith(':list_messages')), `final list_messages not live: ${JSON.stringify(messageOwners)}`);
+  assert(messageReadinessOwners.some((value) => String(value).endsWith(':readiness')), `messages readiness not live: ${JSON.stringify(messageReadinessOwners)}`);
+  return { version: body.version, elapsedMs: result.elapsedMs, slipOwners, scanOwners, messageOwners, messageReadinessOwners };
 }
 
 async function ownerLogin() {
@@ -119,6 +125,9 @@ async function ownerLogin() {
 
 async function ownerPlatformChecks(ownerToken) {
   const auth = { Authorization: `Bearer ${ownerToken}` };
+  const messagesReady = await call(`/api/messages/readiness?ts=${Date.now()}`, { headers: auth }, 2);
+  assert(messagesReady.response?.status === 200 && messagesReady.body?.ready === true, `messages readiness ${messagesReady.response?.status}: ${JSON.stringify(messagesReady.body).slice(0,600)}`);
+  assert(messagesReady.body?.version === expectedOwnerMessages && messagesReady.body?.route_owner === 'final_owner_messages_wrapper', `wrong messages route owner: ${JSON.stringify(messagesReady.body).slice(0,700)}`);
   const queue = await call(`/api/command/slips?ts=${Date.now()}`, { headers: auth }, 1);
   assert(queue.response?.status === 200 && queue.body?.success !== false, `Command queue ${queue.response?.status}: ${JSON.stringify(queue.body).slice(0,600)}`);
   assert(queue.elapsedMs < 4500, `Command queue took ${queue.elapsedMs}ms`);

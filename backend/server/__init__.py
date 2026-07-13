@@ -156,7 +156,7 @@ def _remove_route(path, method):
 
 async def _final_command_wrapper_marker():
     route_owners = {}
-    for path in ['/api/command/slips', '/api/command/scan', '/api/admin-brain/scan', '/api/billing/create-checkout-session', '/api/billing/create-addon-checkout-session']:
+    for path in ['/api/command/slips', '/api/command/scan', '/api/admin-brain/scan', '/api/billing/create-checkout-session', '/api/billing/create-addon-checkout-session', '/api/messages', '/api/messages/readiness']:
         owners = []
         for route in list(getattr(app.router, 'routes', []) or []):
             if getattr(route, 'path', '') != path:
@@ -179,6 +179,9 @@ async def _final_command_wrapper_marker():
         'session_revocation_installed': globals().get('FINAL_SESSION_REVOCATION_INSTALLED', False),
         'session_revocation_version': globals().get('FINAL_SESSION_REVOCATION_VERSION'),
         'session_revocation_error': globals().get('FINAL_SESSION_REVOCATION_ERROR') or None,
+        'owner_messages_patch_installed': globals().get('FINAL_OWNER_MESSAGES_PATCH_INSTALLED', False),
+        'owner_messages_version': globals().get('FINAL_OWNER_MESSAGES_VERSION'),
+        'owner_messages_error': globals().get('FINAL_OWNER_MESSAGES_PATCH_ERROR') or None,
         'route_owners': route_owners,
         'checked_at': datetime.now(timezone.utc).isoformat(),
     }
@@ -565,6 +568,29 @@ def _force_install_final_session_revocation():
 
 
 _force_install_final_session_revocation()
+
+
+FINAL_OWNER_MESSAGES_VERSION = 'churvox-final-owner-messages-v16-20260713'
+FINAL_OWNER_MESSAGES_PATCH_INSTALLED = False
+FINAL_OWNER_MESSAGES_PATCH_ERROR = ''
+
+
+def _force_install_final_owner_messages_patch():
+    global FINAL_OWNER_MESSAGES_PATCH_INSTALLED, FINAL_OWNER_MESSAGES_PATCH_ERROR
+    try:
+        try:
+            import churvox_final_owner_messages_route_patch as messages_patch
+        except Exception:
+            from backend import churvox_final_owner_messages_route_patch as messages_patch
+        FINAL_OWNER_MESSAGES_PATCH_INSTALLED = bool(messages_patch.install(legacy, force=True))
+        FINAL_OWNER_MESSAGES_PATCH_ERROR = '' if FINAL_OWNER_MESSAGES_PATCH_INSTALLED else 'installer_not_ready'
+    except Exception as exc:
+        FINAL_OWNER_MESSAGES_PATCH_INSTALLED = False
+        FINAL_OWNER_MESSAGES_PATCH_ERROR = f'{type(exc).__name__}:{exc}'
+        print(f'Churvox final owner messages patch failed: {exc}', file=sys.stderr)
+
+
+_force_install_final_owner_messages_patch()
 
 
 @app.options('/{full_path:path}')
