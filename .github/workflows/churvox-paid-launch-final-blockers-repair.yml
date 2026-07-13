@@ -64,13 +64,9 @@ jobs:
               print('PASS', name)
           PY
 
-      - name: Publish verified repair
+      - name: Publish verified product repair
         shell: bash
         run: |
-          if git diff --quiet; then
-            echo 'No changes to publish.'
-            exit 0
-          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add \
@@ -78,8 +74,11 @@ jobs:
             frontend/src/churvox-office-lab/OfficeTeamWorkForms.jsx \
             frontend/src/churvox-office-lab/OfficeTeamLiveRows.js \
             scripts/churvox-hardcore-owner-worker-audit.cjs \
-            scripts/churvox-hardcore-human-cleanup.cjs \
-            .github/workflows/churvox-paid-launch-final-gate-v2.yml
+            scripts/churvox-hardcore-human-cleanup.cjs
+          if git diff --cached --quiet; then
+            echo 'No product changes to publish.'
+            exit 0
+          fi
           git commit -m 'Fix final paid-launch blockers'
           git push origin HEAD:main
 
@@ -90,6 +89,6 @@ jobs:
           script: |
             const ok = '${{ job.status }}' === 'success';
             const body = ok
-              ? '## Final paid-launch blocker repair passed\n\nVerified repairs were published for Command truth and concise cards, form edit preservation, Worker View assignment refresh, complete Command cleanup draining, local build readiness, and the aligned live-row truth contract.'
+              ? '## Final paid-launch product repair passed\n\nVerified product repairs were published for Command truth and concise cards, form edit preservation, Worker View assignment refresh, complete Command cleanup draining, and the aligned live-row truth contract. The final-gate workflow readiness change is applied separately through the permitted repository connector.'
               : `## Final paid-launch blocker repair failed safely\n\nNo unverified product change was published. The failed workflow step identifies the exact remaining contract. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
