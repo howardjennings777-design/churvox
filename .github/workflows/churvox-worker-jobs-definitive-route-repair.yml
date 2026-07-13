@@ -70,9 +70,7 @@ jobs:
             backend/churvox_worker_jobs_read_patch.py \
             frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
             frontend/src/churvox-office-lab/officeTeamApi.js \
-            frontend/public/churvox-paid-launch-build.json \
-            .github/workflows/churvox-worker-jobs-definitive-live-proof.yml \
-            scripts/churvox-worker-assignment-diagnostic-v2.cjs
+            frontend/public/churvox-paid-launch-build.json
           if git diff --cached --quiet; then
             echo 'Current-first Worker Jobs repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
