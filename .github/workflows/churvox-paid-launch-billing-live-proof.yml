@@ -1,0 +1,96 @@
+name: Churvox Paid Launch Billing Live Proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-billing-live]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      API: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Wait for exact billing engine and prove real Stripe sessions
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-paid-launch-billing-live.txt
+          const api = process.env.API.replace(/\/+$/, '');
+          const expected = 'churvox-paid-launch-billing-final-20260713a';
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const read = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0,900) }));
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
+          const secureUrl = (body = {}) => body.url || body.checkout_url || body.session_url || body.data?.url || '';
+          (async () => {
+            let readiness = null;
+            for (let attempt = 1; attempt <= 120; attempt += 1) {
+              const response = await fetch(`${api}/api/billing/checkout-readiness?ts=${Date.now()}`, { cache: 'no-store' });
+              const body = await read(response);
+              const planOwners = body.route_owners?.['/api/billing/create-checkout-session'] || [];
+              const addonOwners = body.route_owners?.['/api/billing/create-addon-checkout-session'] || [];
+              const ready = response.status === 200 && body.version === expected && body.ready === true
+                && planOwners.some((value) => String(value).endsWith(':create_plan_checkout'))
+                && addonOwners.some((value) => String(value).endsWith(':create_addon_checkout'));
+              console.log(`DEPLOY attempt=${attempt} status=${response.status} version=${body.version || ''} ready=${ready}`);
+              if (ready) { readiness = body; break; }
+              if (attempt < 120) await sleep(10_000);
+            }
+            if (!readiness) throw new Error('Final billing engine did not deploy inside the proof window.');
+            console.log(`READINESS stripe_module=${readiness.stripe_module} stripe_secret=${readiness.stripe_secret_configured} dynamic_fallback=${readiness.dynamic_locked_price_fallback}`);
+
+            const loginResponse = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: process.env.OWNER_EMAIL, password: process.env.PASSWORD }) });
+            const loginBody = await read(loginResponse);
+            const token = tokenFrom(loginBody);
+            if (!loginResponse.ok || !token) throw new Error(`Owner login failed ${loginResponse.status}`);
+            const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+            const planStart = Date.now();
+            const planResponse = await fetch(`${api}/api/billing/create-checkout-session`, {
+              method: 'POST', headers,
+              body: JSON.stringify({ plan: 'start', plan_key: 'start', country: 'NZ', billing_country: 'NZ', source: 'billing_live_proof' }),
+            });
+            const planBody = await read(planResponse);
+            const planUrl = secureUrl(planBody);
+            console.log(`PLAN status=${planResponse.status} elapsed_ms=${Date.now() - planStart} success=${planBody.success} plan=${planBody.plan || ''} source=${planBody.price_source || ''} trial_days=${planBody.trial_days || ''} secure_url=${/^https:\/\//.test(String(planUrl))} code=${planBody.code || ''} stage=${planBody.stage || ''}`);
+            if (!planResponse.ok || planBody.success !== true || !/^https:\/\//.test(String(planUrl)) || planBody.plan !== 'solo' || planBody.trial_days !== 14) {
+              throw new Error(`Plan checkout failed safely: status=${planResponse.status} code=${planBody.code || ''} stage=${planBody.stage || ''} detail=${planBody.detail || ''}`);
+            }
+
+            const addonStart = Date.now();
+            const addonResponse = await fetch(`${api}/api/billing/create-addon-checkout-session`, {
+              method: 'POST', headers,
+              body: JSON.stringify({ addon: 'command_growth_pack', addon_key: 'command_growth_pack', country: 'NZ', quantity: 1, growth_packs: 1, packs: 1, source: 'billing_live_proof' }),
+            });
+            const addonBody = await read(addonResponse);
+            const addonUrl = secureUrl(addonBody);
+            const commandRequired = /command/i.test(String(addonBody.detail || addonBody.message || '')) && [400,403,409].includes(addonResponse.status);
+            console.log(`ADDON status=${addonResponse.status} elapsed_ms=${Date.now() - addonStart} success=${addonBody.success} addon=${addonBody.addon || ''} quantity=${addonBody.quantity || ''} source=${addonBody.price_source || ''} secure_url=${/^https:\/\//.test(String(addonUrl))} command_required=${commandRequired} code=${addonBody.code || ''} stage=${addonBody.stage || ''}`);
+            if (!((addonResponse.ok && addonBody.success === true && /^https:\/\//.test(String(addonUrl)) && addonBody.addon === 'command_growth_pack') || commandRequired)) {
+              throw new Error(`Growth Pack checkout failed safely: status=${addonResponse.status} code=${addonBody.code || ''} stage=${addonBody.stage || ''} detail=${addonBody.detail || ''}`);
+            }
+            if ([404,405,422].includes(addonResponse.status) || addonResponse.status >= 500) throw new Error(`Growth Pack route unhealthy ${addonResponse.status}`);
+            console.log('PAID_LAUNCH_BILLING_LIVE_PROOF_PASS');
+          })().catch((error) => { console.error(error.stack || error.message || error); process.exit(1); });
+          NODE
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const ok = '${{ job.status }}' === 'success';
+            const output = fs.existsSync('/tmp/churvox-paid-launch-billing-live.txt') ? fs.readFileSync('/tmp/churvox-paid-launch-billing-live.txt', 'utf8').slice(-9000) : 'No output.';
+            const body = ok
+              ? `## Live paid-launch billing proof passed\n\nThe exact final billing engine is deployed. Real owner-authenticated Start-plan and Growth Pack/Command-required checkout behavior passed without exposing session URLs.\n\n\`\`\`text\n${output}\n\`\`\``
+              : `## Live paid-launch billing proof failed\n\nDeployment, plan checkout or Growth Pack checkout did not pass. No credentials, tokens or checkout URLs are included.\n\n\`\`\`text\n${output}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
