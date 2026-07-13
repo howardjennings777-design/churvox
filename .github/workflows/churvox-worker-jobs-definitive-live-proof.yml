@@ -133,13 +133,31 @@ jobs:
             --retries=0 \
             --reporter=line 2>&1 | tee /tmp/churvox-worker-jobs-definitive-live-proof.txt
 
+      - name: Upload focused proof evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-worker-jobs-definitive-live-proof
+          path: |
+            /tmp/churvox-worker-jobs-definitive-live-proof.txt
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Post result
         if: always()
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const ok = '${{ job.status }}' === 'success';
+            const raw = fs.existsSync('/tmp/churvox-worker-jobs-definitive-live-proof.txt')
+              ? fs.readFileSync('/tmp/churvox-worker-jobs-definitive-live-proof.txt', 'utf8')
+              : '';
+            const tail = raw.slice(-6500)
+              .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[worker-email-hidden]')
+              .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]');
             const body = ok
               ? '## Definitive Worker Jobs live proof passed\n\nThe exact frontend/backend markers are deployed and one real owner→worker assignment, field lifecycle and cleanup passed.'
-              : `## Definitive Worker Jobs live proof failed\n\nThe exact deployment or real owner→worker lifecycle did not pass. Workflow run: \`${context.runId}\`.`;
+              : `## Definitive Worker Jobs live proof failed\n\nThe exact deployment passed, but the real lifecycle did not. Safe error tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
