@@ -36,7 +36,10 @@ jobs:
           const site = 'https://www.churvox.com';
           const api = 'https://grassley-backend.onrender.com';
           const frontendMarker = 'churvox-command-instant-load-20260713d';
-          const backendVersion = 'churvox-command-queue-speed-boot-20260713e';
+          const acceptedBackendVersions = new Set([
+            'churvox-command-queue-speed-boot-20260713e',
+            'churvox-command-queue-speed-server-wrapper-20260713f',
+          ]);
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           async function inspect() {
             const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
@@ -55,8 +58,12 @@ jobs:
             const bootResponse = await fetch(`${api}/api/command-fast-load/boot?ts=${Date.now()}`, { cache: 'no-store' });
             if (!bootResponse.ok) throw new Error(`backend boot ${bootResponse.status}`);
             const boot = await bootResponse.json();
-            if (boot.version !== backendVersion || boot.patch_installed !== true || boot.patch_stage !== 'ready') {
-              throw new Error(`backend not exact: version=${boot.version} installed=${boot.patch_installed} stage=${boot.patch_stage}`);
+            const slipOwners = boot.route_owners?.['/api/command/slips'] || [];
+            const scanOwners = boot.route_owners?.['/api/command/scan'] || [];
+            const ownsQueue = slipOwners.some((value) => String(value).endsWith(':fast_slips'));
+            const ownsScan = scanOwners.some((value) => String(value).endsWith(':fast_scan'));
+            if (!acceptedBackendVersions.has(boot.version) || boot.patch_installed !== true || boot.patch_stage !== 'ready' || !ownsQueue || !ownsScan) {
+              throw new Error(`backend not exact: version=${boot.version} installed=${boot.patch_installed} stage=${boot.patch_stage} slips=${JSON.stringify(slipOwners)} scan=${JSON.stringify(scanOwners)}`);
             }
             return { frontendAsset, assetCount: assets.length, backendVersion: boot.version };
           }
