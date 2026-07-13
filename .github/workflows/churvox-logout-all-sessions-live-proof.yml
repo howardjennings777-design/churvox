@@ -1,0 +1,93 @@
+name: Churvox Log Out All Sessions Live Proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-logout-all-sessions-live]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      API: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Wait for route, revoke all old sessions and prove fresh login
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-logout-all-sessions-live.txt
+          const api = process.env.API.replace(/\/+$/, '');
+          const expected = 'churvox-logout-all-sessions-final-20260713a';
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          const read = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0,700) }));
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
+          async function login() {
+            const response = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: process.env.OWNER_EMAIL, password: process.env.PASSWORD }) });
+            const body = await read(response);
+            const token = tokenFrom(body);
+            if (!response.ok || !token) throw new Error(`Owner login failed ${response.status}`);
+            return token;
+          }
+          async function me(token) {
+            const response = await fetch(`${api}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+            await read(response);
+            return response.status;
+          }
+          (async () => {
+            let ready = false;
+            for (let attempt = 1; attempt <= 90; attempt += 1) {
+              const response = await fetch(`${api}/api/auth/logout-all-readiness?ts=${Date.now()}`, { cache: 'no-store' });
+              const body = await read(response);
+              ready = response.status === 200 && body.version === expected && body.ready === true && (body.route_owners || []).some((value) => String(value).endsWith(':logout_all_sessions'));
+              console.log(`DEPLOY attempt=${attempt} status=${response.status} version=${body.version || ''} ready=${ready}`);
+              if (ready) break;
+              if (attempt < 90) await sleep(10_000);
+            }
+            if (!ready) throw new Error('Log-out-all-sessions route did not deploy inside the proof window.');
+
+            const oldToken = await login();
+            const before = await me(oldToken);
+            console.log(`OLD_SESSION_BEFORE status=${before}`);
+            if (before !== 200) throw new Error(`Fresh pre-revocation session was not valid: ${before}`);
+
+            const revokeResponse = await fetch(`${api}/api/auth/logout-all`, { method: 'POST', headers: { Authorization: `Bearer ${oldToken}`, 'Content-Type': 'application/json' }, body: '{}' });
+            const revokeBody = await read(revokeResponse);
+            console.log(`REVOKE status=${revokeResponse.status} success=${revokeBody.success} sessions_revoked=${revokeBody.sessions_revoked}`);
+            if (!revokeResponse.ok || revokeBody.success !== true || revokeBody.sessions_revoked !== true) throw new Error(`Logout-all failed ${revokeResponse.status}`);
+
+            await sleep(1500);
+            const oldAfter = await me(oldToken);
+            console.log(`OLD_SESSION_AFTER status=${oldAfter}`);
+            if (oldAfter !== 401) throw new Error(`Old session still works after revocation: ${oldAfter}`);
+
+            const newToken = await login();
+            const newAfter = await me(newToken);
+            console.log(`NEW_SESSION_AFTER status=${newAfter}`);
+            if (newAfter !== 200) throw new Error(`Fresh login failed after revocation: ${newAfter}`);
+
+            const finalLogout = await fetch(`${api}/api/auth/logout`, { method: 'POST', headers: { Authorization: `Bearer ${newToken}`, 'Content-Type': 'application/json' }, body: '{}' });
+            console.log(`FINAL_LOGOUT status=${finalLogout.status}`);
+            console.log('LOGOUT_ALL_SESSIONS_LIVE_PROOF_PASS');
+          })().catch((error) => { console.error(error.stack || error.message || error); process.exit(1); });
+          NODE
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const ok = '${{ job.status }}' === 'success';
+            const output = fs.existsSync('/tmp/churvox-logout-all-sessions-live.txt') ? fs.readFileSync('/tmp/churvox-logout-all-sessions-live.txt', 'utf8').slice(-7000) : 'No output.';
+            const body = ok
+              ? `## Live log-out-all-sessions proof passed\n\nEvery owner session issued before the revocation was invalidated. The old token returned 401, a fresh login returned 200, and the proof session was logged out. You may need to sign in again in your browser.\n\n\`\`\`text\n${output}\n\`\`\``
+              : `## Live log-out-all-sessions proof failed\n\nThe route deployment, old-token rejection or fresh-login recovery did not pass. No credentials or tokens are included.\n\n\`\`\`text\n${output}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
