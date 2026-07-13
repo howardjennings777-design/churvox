@@ -1,0 +1,311 @@
+name: Churvox Paid Launch Final Gate V2
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  final-gate-v2:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-final-gate-v2]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CHURVOX_E2E_MUTATE: '1'
+
+    steps:
+      - name: Mark exact final gate started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Paid-launch final gate V2 started on run \`${context.runId}\`: current main, every deployed JS chunk, strict v3 backend, Command speed, Payroll, billing, owner/worker pages, three field lifecycles, hardcore flow and cleanup.`
+            });
+
+      - name: Check out current main
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify private credential
+        id: credential
+        continue-on-error: true
+        run: |
+          test -n "$CHURVOX_OWNER_PASSWORD"
+          echo 'Owner credential is present and remains masked.'
+
+      - name: Install backend test dependencies
+        id: backend_install
+        continue-on-error: true
+        run: python -m pip install --disable-pip-version-check fastapi==0.110.1 pymongo==4.5.0 pytest
+
+      - name: Install frontend dependencies
+        id: install
+        continue-on-error: true
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Compile, behavioural contracts and production build
+        id: build
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            python -m py_compile \
+              backend/churvox_paid_launch_readiness_routes.py \
+              backend/churvox_paid_launch_live_patch.py \
+              backend/churvox_boot.py \
+              backend/server/__init__.py \
+              backend/churvox_worker_login_bridge_patch.py \
+              backend/churvox_command_human_mimic_routes.py \
+              backend/churvox_command_human_mimic_v3_routes.py \
+              backend/churvox_command_human_mimic_live_routes.py \
+              backend/churvox_command_apply_routes.py \
+              backend/usercustomize.py \
+              usercustomize.py
+            python scripts/churvox_paid_launch_backend_contract.py
+            python scripts/churvox_mimic_full_test.py
+            pytest -q backend/test_churvox_command_fast_load_patch.py backend/test_churvox_command_boot_entrypoint.py
+            node scripts/churvox-command-approval-readiness.cjs
+            node scripts/churvox-paid-launch-readiness-contract.cjs
+            node scripts/churvox-hardcore-owner-worker-audit.cjs
+            node scripts/churvox-auth-401-storm-contract.cjs
+            node scripts/churvox-command-instant-load-contract.cjs
+            node scripts/churvox-command-queue-speed-backend-contract.cjs
+            node scripts/churvox-render-backend-entrypoint-contract.cjs
+            node scripts/churvox-server-wrapper-final-command-contract.cjs
+            node scripts/churvox-live-command-v3-bridge-contract.cjs
+            npm --prefix frontend run build
+          } 2>&1 | tee /tmp/churvox-final-v2-build.txt
+
+      - name: Install Chromium
+        id: chromium
+        continue-on-error: true
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Exact deployed chunks, v3 API, Payroll, billing and roles smoke
+        id: live_smoke
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-paid-launch-live-smoke-v2.cjs 2>&1 | tee /tmp/churvox-final-v2-live-smoke.txt
+
+      - name: Measure live Command first and repeat-open speed
+        id: command_speed
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-command-instant-load-live.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --retries=0 \
+            --reporter=line 2>&1 | tee /tmp/churvox-final-v2-command-speed.txt
+
+      - name: Start local owner build for isolated UI contracts
+        id: server
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          npm start > /tmp/churvox-final-v2-local-server.txt 2>&1 &
+          for i in {1..75}; do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/churvox-final-v2-local-server.txt
+          exit 1
+
+      - name: Run local paid UI truth desktop and phone
+        id: local_ui
+        continue-on-error: true
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test \
+            tests/e2e/churvox-more-menu-paid-launch.spec.js \
+            tests/e2e/churvox-plans-usage-truth.spec.js \
+            tests/e2e/churvox-owner-no-fake-data.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-final-v2-local-ui.txt
+
+      - name: Run live every-page owner and worker audit desktop and phone
+        id: live_pages
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-final-v2-live-pages.txt
+
+      - name: Run real owner-worker lifecycle three consecutive times
+        id: human_flow
+        continue-on-error: true
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --repeat-each=3 \
+            --retries=0 \
+            --reporter=line 2>&1 | tee /tmp/churvox-final-v2-human-flow.txt
+
+      - name: Run hardcore visual and full field lifecycle
+        id: hardcore
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-owner-worker.cjs 2>&1 | tee /tmp/churvox-final-v2-hardcore.txt
+
+      - name: Clean every active audit record
+        id: cleanup
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/churvox-final-v2-cleanup.txt
+
+      - name: Build exact paid-launch verdict
+        id: report
+        if: always()
+        env:
+          CREDENTIAL: ${{ steps.credential.outcome }}
+          BACKEND_INSTALL: ${{ steps.backend_install.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+          LIVE_SMOKE: ${{ steps.live_smoke.outcome }}
+          COMMAND_SPEED: ${{ steps.command_speed.outcome }}
+          SERVER: ${{ steps.server.outcome }}
+          LOCAL_UI: ${{ steps.local_ui.outcome }}
+          LIVE_PAGES: ${{ steps.live_pages.outcome }}
+          HUMAN_FLOW: ${{ steps.human_flow.outcome }}
+          HARDCORE: ${{ steps.hardcore.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const checks = {
+            'Private launch credential': process.env.CREDENTIAL,
+            'Backend test dependencies': process.env.BACKEND_INSTALL,
+            'Frontend dependency install': process.env.INSTALL,
+            'Compile, behavioural contracts and production build': process.env.BUILD,
+            'Chromium installation': process.env.CHROMIUM,
+            'Exact deployed chunks, strict v3 API, Payroll, billing and roles': process.env.LIVE_SMOKE,
+            'Live Command first/repeat-open speed': process.env.COMMAND_SPEED,
+            'Local owner build server': process.env.SERVER,
+            'Local paid UI truth desktop/mobile': process.env.LOCAL_UI,
+            'Live every-page owner/worker desktop/mobile': process.env.LIVE_PAGES,
+            'Three consecutive real owner-worker lifecycles': process.env.HUMAN_FLOW,
+            'Hardcore visual and full field lifecycle': process.env.HARDCORE,
+            'Complete active audit-record cleanup': process.env.CLEANUP,
+          };
+          const failures = Object.entries(checks).filter(([, value]) => value !== 'success').map(([name]) => name);
+          const lines = [
+            '# Churvox exact paid-launch final gate V2',
+            '',
+            ...Object.entries(checks).map(([name, value]) => `- ${value === 'success' ? 'PASS' : 'FAIL'} — ${name}`),
+            '',
+            failures.length
+              ? `**PAID LAUNCH BLOCKED — ${failures.length} gate area(s) failed.**`
+              : '**PAID LAUNCH GATE V2 PASSED — current build/contracts, exact deployed chunks, strict v3 brain, Command speed, Payroll, billing, roles, every owner/worker page, desktop, phone, three field lifecycles, hardcore flow and cleanup all passed.**',
+          ];
+          fs.writeFileSync('/tmp/churvox-final-v2-summary.md', `${lines.join('\n')}\n`);
+          fs.writeFileSync('/tmp/churvox-final-v2-report.json', JSON.stringify({ success: failures.length === 0, checks, failures }, null, 2));
+          console.log(lines.join('\n'));
+          NODE
+
+      - name: Upload complete exact paid-launch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-paid-launch-final-gate-v2
+          path: |
+            /tmp/churvox-final-v2-*.txt
+            /tmp/churvox-final-v2-summary.md
+            /tmp/churvox-final-v2-report.json
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Post exact final gate result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.existsSync('/tmp/churvox-final-v2-summary.md')
+              ? fs.readFileSync('/tmp/churvox-final-v2-summary.md', 'utf8')
+              : 'Paid-launch final gate V2 failed before the verdict was created.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: summary });
+
+      - name: Fail unless every exact paid-launch gate passed
+        if: always()
+        env:
+          CREDENTIAL: ${{ steps.credential.outcome }}
+          BACKEND_INSTALL: ${{ steps.backend_install.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+          LIVE_SMOKE: ${{ steps.live_smoke.outcome }}
+          COMMAND_SPEED: ${{ steps.command_speed.outcome }}
+          SERVER: ${{ steps.server.outcome }}
+          LOCAL_UI: ${{ steps.local_ui.outcome }}
+          LIVE_PAGES: ${{ steps.live_pages.outcome }}
+          HUMAN_FLOW: ${{ steps.human_flow.outcome }}
+          HARDCORE: ${{ steps.hardcore.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: |
+          test "$CREDENTIAL" = success
+          test "$BACKEND_INSTALL" = success
+          test "$INSTALL" = success
+          test "$BUILD" = success
+          test "$CHROMIUM" = success
+          test "$LIVE_SMOKE" = success
+          test "$COMMAND_SPEED" = success
+          test "$SERVER" = success
+          test "$LOCAL_UI" = success
+          test "$LIVE_PAGES" = success
+          test "$HUMAN_FLOW" = success
+          test "$HARDCORE" = success
+          test "$CLEANUP" = success
