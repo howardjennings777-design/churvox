@@ -1,0 +1,65 @@
+name: Churvox Worker Refresh Live Proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-worker-refresh-live-proof]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Wait for exact Worker View build marker
+        shell: bash
+        run: |
+          node <<'NODE'
+          const site = 'https://www.churvox.com';
+          const marker = 'churvox-worker-live-read-no-cache-20260713b';
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          async function deployed() {
+            const response = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`manifest ${response.status}`);
+            const manifest = await response.json();
+            const assets = [...new Set(Object.values(manifest.files || {}).filter((value) => typeof value === 'string' && /\.js(?:$|\?)/.test(value)))];
+            for (const asset of assets) {
+              const js = await fetch(new URL(asset, site), { cache: 'no-store' });
+              if (js.ok && (await js.text()).includes(marker)) return { asset, count: assets.length };
+            }
+            return null;
+          }
+          (async () => {
+            let last = '';
+            for (let attempt = 1; attempt <= 100; attempt += 1) {
+              try {
+                const found = await deployed();
+                if (found) {
+                  console.log(`WORKER_REFRESH_LIVE_PROOF_PASS attempt=${attempt} asset=${found.asset} assets=${found.count}`);
+                  return;
+                }
+                last = 'marker missing';
+              } catch (error) {
+                last = error.message || String(error);
+              }
+              console.log(`DEPLOY_WAIT attempt=${attempt} detail=${last}`);
+              if (attempt < 100) await sleep(10_000);
+            }
+            throw new Error(`Exact Worker View build did not deploy: ${last}`);
+          })().catch((error) => { console.error(error.stack || error); process.exit(1); });
+          NODE
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ job.status }}' === 'success';
+            const body = ok
+              ? '## Exact Worker View build is live\n\nThe deployed frontend contains `churvox-worker-live-read-no-cache-20260713b`. The final paid-launch gate can now test the repaired live build.'
+              : `## Worker View deployment proof failed\n\nThe exact repaired frontend marker did not become live inside the proof window. Workflow run: \`${context.runId}\`.`;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
