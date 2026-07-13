@@ -44,27 +44,39 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python -m py_compile \
-            backend/churvox_final_owner_messages_route_patch.py \
-            backend/churvox_worker_jobs_read_patch.py \
-            backend/churvox_owner_data_visibility_patch.py \
-            backend/churvox_paid_launch_live_patch.py \
-            backend/churvox_field_truth_fix_patch.py \
-            backend/server/__init__.py
-          node --check scripts/churvox-paid-launch-live-smoke-v2.cjs
-          node scripts/churvox-hardcore-owner-worker-audit.cjs
-          node scripts/churvox-worker-field-command-bridge-contract.cjs
-          node scripts/churvox-owner-message-dedupe-contract.cjs
-          node scripts/churvox-worker-jobs-copy-trim-contract.cjs
-          node scripts/churvox-final-pass-v15-contract.cjs
-          node scripts/churvox-final-owner-messages-v16-contract.cjs
-          npm --prefix frontend run build
-          grep -q 'churvox-final-owner-messages-v16-20260713' backend/churvox_final_owner_messages_route_patch.py
-          grep -q 'messages_patch.install(legacy, force=True)' backend/server/__init__.py
-          grep -q "'/api/messages/readiness'" backend/server/__init__.py
-          grep -q 'final_owner_messages_wrapper' scripts/churvox-paid-launch-live-smoke-v2.cjs
-          grep -q 'churvox-final-owner-messages-v16-20260713' frontend/public/churvox-paid-launch-build.json
-          grep -q 'active-worker-jobs-only' frontend/public/churvox-paid-launch-build.json
+          {
+            echo '=== Python compile ==='
+            python -m py_compile \
+              backend/churvox_final_owner_messages_route_patch.py \
+              backend/churvox_worker_jobs_read_patch.py \
+              backend/churvox_owner_data_visibility_patch.py \
+              backend/churvox_paid_launch_live_patch.py \
+              backend/churvox_field_truth_fix_patch.py \
+              backend/server/__init__.py
+            echo '=== Live smoke syntax ==='
+            node --check scripts/churvox-paid-launch-live-smoke-v2.cjs
+            echo '=== Hardcore static audit ==='
+            node scripts/churvox-hardcore-owner-worker-audit.cjs
+            echo '=== Worker bridge contract ==='
+            node scripts/churvox-worker-field-command-bridge-contract.cjs
+            echo '=== Historical message dedupe contract ==='
+            node scripts/churvox-owner-message-dedupe-contract.cjs
+            echo '=== Worker Jobs copy contract ==='
+            node scripts/churvox-worker-jobs-copy-trim-contract.cjs
+            echo '=== V15 retained-protections contract ==='
+            node scripts/churvox-final-pass-v15-contract.cjs
+            echo '=== V16 final route contract ==='
+            node scripts/churvox-final-owner-messages-v16-contract.cjs
+            echo '=== Production build ==='
+            npm --prefix frontend run build
+            echo '=== Marker assertions ==='
+            grep -q 'churvox-final-owner-messages-v16-20260713' backend/churvox_final_owner_messages_route_patch.py
+            grep -q 'messages_patch.install(legacy, force=True)' backend/server/__init__.py
+            grep -q "'/api/messages/readiness'" backend/server/__init__.py
+            grep -q 'final_owner_messages_wrapper' scripts/churvox-paid-launch-live-smoke-v2.cjs
+            grep -q 'churvox-final-owner-messages-v16-20260713' frontend/public/churvox-paid-launch-build.json
+            grep -q 'active-worker-jobs-only' frontend/public/churvox-paid-launch-build.json
+          } 2>&1 | tee /tmp/churvox-v16-verify.txt
 
       - name: Publish verified product repair
         shell: bash
@@ -91,9 +103,14 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
+            const raw = fs.existsSync('/tmp/churvox-v16-verify.txt') ? fs.readFileSync('/tmp/churvox-v16-verify.txt', 'utf8') : '';
+            const tail = raw.slice(-9000)
+              .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email-hidden]')
+              .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]');
             const body = ok
               ? `## Final owner Messages route v16 passed\n\nThe live server wrapper now force-installs the final business-scoped /api/messages route after every older patch. It collapses the four physical completion copies into one logical job completion, exposes a readiness/route-owner marker, and is required by the paid-launch live smoke. Existing v15 Worker Jobs, bridge, payment safety, pricing, owner approval and production build contracts passed. Published commit: \`${sha}\`.`
-              : `## Final owner Messages route v16 failed safely\n\nNo failed repair was published as launch-ready. Workflow run: \`${context.runId}\`.`;
+              : `## Final owner Messages route v16 failed safely\n\nNo failed repair was published as launch-ready. Exact verification tail:\n\n\`\`\`text\n${tail || 'No verification output was produced.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
