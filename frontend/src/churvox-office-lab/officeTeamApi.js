@@ -1,5 +1,8 @@
 import API_BASE from "../lib/apiBase";
 
+export const WORKER_LIVE_READ_BUILD = "churvox-worker-live-read-no-cache-20260713b";
+if (typeof window !== "undefined") window.__CHURVOX_WORKER_LIVE_READ_BUILD__ = WORKER_LIVE_READ_BUILD;
+
 function host() {
   return String(API_BASE || "").replace(/\/$/, "");
 }
@@ -185,6 +188,7 @@ async function safeRead(path) {
     try {
       const response = await fetch(`${base}${path}`, {
         credentials: "include",
+        cache: "no-store",
         headers: authHeaders({ json: false }),
       });
       const body = await response.json().catch(() => ({}));
@@ -352,7 +356,10 @@ export async function fetchOfficeTeamRows(area) {
 
   for (const endpoint of endpoints) {
     try {
-      const result = await safeRead(endpoint);
+      const requestEndpoint = area === "worker"
+        ? `${endpoint}${endpoint.includes("?") ? "&" : "?"}ts=${Date.now()}`
+        : endpoint;
+      const result = await safeRead(requestEndpoint);
       if (result.locked) return { source: "locked", rows: [], endpoint, message: "Sign in as an owner to load live read-only data" };
       if (!result.ok) continue;
       const rows = normalizeRows(area, result.body);
