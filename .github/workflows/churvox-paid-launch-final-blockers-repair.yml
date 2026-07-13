@@ -29,7 +29,9 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Apply focused paid-launch repairs
-        run: python scripts/churvox-paid-launch-final-blockers-apply.py
+        run: |
+          python scripts/churvox-paid-launch-final-blockers-apply.py
+          python scripts/churvox-paid-launch-final-blockers-contract-fix.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -55,6 +57,7 @@ jobs:
               'worker live refresh': ('frontend/src/churvox-office-lab/OfficeTeamLiveRows.js', 'area === "worker" ? 3000 : 0'),
               'Command cleanup drain': ('scripts/churvox-hardcore-human-cleanup.cjs', 'for (let round = 0; round < 24; round += 1)'),
               'local server readiness': ('.github/workflows/churvox-paid-launch-final-gate-v2.yml', 'status=$(curl -sS -o /dev/null'),
+              'live-row truth contract': ('scripts/churvox-hardcore-owner-worker-audit.cjs', 'source: nextRows.length ? "live"'),
           }
           for name, (path, marker) in checks.items():
               assert marker in Path(path).read_text(encoding='utf-8'), name
@@ -74,6 +77,7 @@ jobs:
             frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
             frontend/src/churvox-office-lab/OfficeTeamWorkForms.jsx \
             frontend/src/churvox-office-lab/OfficeTeamLiveRows.js \
+            scripts/churvox-hardcore-owner-worker-audit.cjs \
             scripts/churvox-hardcore-human-cleanup.cjs \
             .github/workflows/churvox-paid-launch-final-gate-v2.yml
           git commit -m 'Fix final paid-launch blockers'
@@ -86,6 +90,6 @@ jobs:
           script: |
             const ok = '${{ job.status }}' === 'success';
             const body = ok
-              ? '## Final paid-launch blocker repair passed\n\nVerified repairs were published for Command truth and concise cards, form edit preservation, Worker View assignment refresh, complete Command cleanup draining, and local build readiness.'
+              ? '## Final paid-launch blocker repair passed\n\nVerified repairs were published for Command truth and concise cards, form edit preservation, Worker View assignment refresh, complete Command cleanup draining, local build readiness, and the aligned live-row truth contract.'
               : `## Final paid-launch blocker repair failed safely\n\nNo unverified product change was published. The failed workflow step identifies the exact remaining contract. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
