@@ -27,6 +27,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install focused test dependencies
+        run: python -m pip install --disable-pip-version-check fastapi==0.110.1 stripe pymongo==4.5.0
+
       - name: Apply checkout stream repair
         run: python scripts/churvox-checkout-header-auth-bypass-apply.py
 
