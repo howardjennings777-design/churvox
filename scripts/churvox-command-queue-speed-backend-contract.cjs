@@ -12,7 +12,7 @@ const checks = [
   ['stale cache is explicit', live.includes('paid-launch-command-stale-cache-v3') && live.includes('"scan_complete": not stale')],
   ['background cache refresh', live.includes('asyncio.create_task(refresh_queue_cache(bid))')],
   ['bounded fifty-slip payload', live.includes('rows = rows[:50]')],
-  ['new backend marker', live.includes('churvox-command-queue-speed-backend-20260713e')],
+  ['current backend marker', live.includes('churvox-command-v3-live-backend-20260713g')],
   ['new boot marker', boot.includes('churvox-command-queue-speed-boot-20260713e')],
   ['owner safety unchanged', live.includes('Owner approval required. Nothing was sent, synced, charged, filed or paid.')],
   ['route precedence remains forced', boot.includes('churvox_paid_launch_live_patch.install(churvox_start.server, force=True)')],
