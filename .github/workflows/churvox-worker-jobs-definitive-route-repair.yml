@@ -33,18 +33,19 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply final pass v15 repair
-        run: python scripts/churvox-final-pass-v15-repair.py
+      - name: Apply final owner messages v16 repair
+        run: python scripts/churvox-final-owner-messages-v16-repair.py
 
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install --include=dev --legacy-peer-deps
 
-      - name: Verify v15 contracts and production build
+      - name: Verify v16 contracts and production build
         shell: bash
         run: |
           set -o pipefail
           python -m py_compile \
+            backend/churvox_final_owner_messages_route_patch.py \
             backend/churvox_worker_jobs_read_patch.py \
             backend/churvox_owner_data_visibility_patch.py \
             backend/churvox_paid_launch_live_patch.py \
@@ -56,36 +57,32 @@ jobs:
           node scripts/churvox-owner-message-dedupe-contract.cjs
           node scripts/churvox-worker-jobs-copy-trim-contract.cjs
           node scripts/churvox-final-pass-v15-contract.cjs
+          node scripts/churvox-final-owner-messages-v16-contract.cjs
           npm --prefix frontend run build
-          grep -q 'worker-jobs-active-only-v5-20260713' backend/churvox_worker_jobs_read_patch.py
-          grep -q '_assigned(job, current_user) and not _inactive(job)' backend/churvox_worker_jobs_read_patch.py
-          grep -q 'sourceRecords.filter(workerRecordActive)' frontend/src/churvox-office-lab/officeTeamApi.js
-          grep -q 'rows.slice(0, 8)' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          grep -q 'Show all ${rows.length} jobs' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          grep -q 'Command scan safe timeout on attempt' scripts/churvox-paid-launch-live-smoke-v2.cjs
-          grep -q 'churvox-final-pass-v15-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'churvox-final-owner-messages-v16-20260713' backend/churvox_final_owner_messages_route_patch.py
+          grep -q 'messages_patch.install(legacy, force=True)' backend/server/__init__.py
+          grep -q "'/api/messages/readiness'" backend/server/__init__.py
+          grep -q 'final_owner_messages_wrapper' scripts/churvox-paid-launch-live-smoke-v2.cjs
+          grep -q 'churvox-final-owner-messages-v16-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'active-worker-jobs-only' frontend/public/churvox-paid-launch-build.json
 
       - name: Publish verified product repair
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git checkout -- \
-            .github/workflows/churvox-paid-launch-final-gate-v2.yml \
-            .github/workflows/churvox-worker-command-priority-live-proof.yml
           git add \
-            backend/churvox_worker_jobs_read_patch.py \
-            frontend/src/churvox-office-lab/officeTeamApi.js \
-            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+            backend/churvox_final_owner_messages_route_patch.py \
+            backend/server/__init__.py \
             frontend/public/churvox-paid-launch-build.json \
             scripts/churvox-paid-launch-live-smoke-v2.cjs \
-            scripts/churvox-final-pass-v15-contract.cjs
+            scripts/churvox-final-owner-messages-v16-contract.cjs
           if git diff --cached --quiet; then
-            echo 'Final pass v15 repair already present.'
+            echo 'Final owner messages v16 repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Filter inactive worker jobs and harden final gate'
+          git commit -m 'Own and deduplicate final owner messages route'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -97,6 +94,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Final pass v15 repair passed\n\nArchived, deleted and cancelled jobs are excluded from Worker Jobs at both API and UI layers. The queue shows eight jobs by default with an explicit Show all control, the desktop summary no longer duplicates the queue, and the live smoke retries only the explicit safe Command timeout with a strict four-attempt ceiling. Existing bridge, completion dedupe, payment safety, pricing, owner approval and production build contracts passed. Published commit: \`${sha}\`.`
-              : `## Final pass v15 repair failed safely\n\nNo failed repair was published as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Final owner Messages route v16 passed\n\nThe live server wrapper now force-installs the final business-scoped /api/messages route after every older patch. It collapses the four physical completion copies into one logical job completion, exposes a readiness/route-owner marker, and is required by the paid-launch live smoke. Existing v15 Worker Jobs, bridge, payment safety, pricing, owner approval and production build contracts passed. Published commit: \`${sha}\`.`
+              : `## Final owner Messages route v16 failed safely\n\nNo failed repair was published as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
