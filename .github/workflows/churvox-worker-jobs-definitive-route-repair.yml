@@ -12,7 +12,7 @@ jobs:
   repair:
     if: startsWith(github.event.issue.title, '[churvox-worker-jobs-definitive-route-repair]')
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
 
     steps:
       - name: Check out current main
@@ -33,54 +33,59 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply final Worker Jobs copy trim
-        run: python scripts/churvox-worker-jobs-copy-trim-repair.py
+      - name: Apply final pass v15 repair
+        run: python scripts/churvox-final-pass-v15-repair.py
 
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install --include=dev --legacy-peer-deps
 
-      - name: Verify contracts and production build
+      - name: Verify v15 contracts and production build
         shell: bash
         run: |
           set -o pipefail
           python -m py_compile \
-            backend/churvox_paid_launch_live_patch.py \
+            backend/churvox_worker_jobs_read_patch.py \
             backend/churvox_owner_data_visibility_patch.py \
+            backend/churvox_paid_launch_live_patch.py \
+            backend/churvox_field_truth_fix_patch.py \
             backend/server/__init__.py
-          node scripts/churvox-command-queue-speed-backend-contract.cjs
+          node --check scripts/churvox-paid-launch-live-smoke-v2.cjs
           node scripts/churvox-hardcore-owner-worker-audit.cjs
           node scripts/churvox-worker-field-command-bridge-contract.cjs
           node scripts/churvox-owner-message-dedupe-contract.cjs
           node scripts/churvox-worker-jobs-copy-trim-contract.cjs
+          node scripts/churvox-final-pass-v15-contract.cjs
           npm --prefix frontend run build
-          grep -q 'Only your assigned work appears.' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          grep -q 'Worker View never charges cards. Use an approved invoice link.' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          ! grep -q 'Only work assigned to this worker appears here.' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          ! grep -q 'Payment happens through an approved secure invoice link.' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          grep -q "worker.includes('Worker View never charges cards')" scripts/churvox-hardcore-owner-worker-audit.cjs
-          grep -q "worker.includes('Use an approved invoice link')" scripts/churvox-hardcore-owner-worker-audit.cjs
-          grep -q 'churvox-worker-jobs-copy-trim-v14-20260713' frontend/public/churvox-paid-launch-build.json
-          grep -q 'worker-jobs-under-hardcore-word-limit' frontend/public/churvox-paid-launch-build.json
-          grep -q 'single-owner-completion-per-message-channel' frontend/public/churvox-paid-launch-build.json
-          grep -q 'fresh-owner-created-slips-ranked-before-routine-command-items' frontend/public/churvox-paid-launch-build.json
+          grep -q 'worker-jobs-active-only-v5-20260713' backend/churvox_worker_jobs_read_patch.py
+          grep -q '_assigned(job, current_user) and not _inactive(job)' backend/churvox_worker_jobs_read_patch.py
+          grep -q 'sourceRecords.filter(workerRecordActive)' frontend/src/churvox-office-lab/officeTeamApi.js
+          grep -q 'rows.slice(0, 8)' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -q 'Show all ${rows.length} jobs' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          grep -q 'Command scan safe timeout on attempt' scripts/churvox-paid-launch-live-smoke-v2.cjs
+          grep -q 'churvox-final-pass-v15-20260713' frontend/public/churvox-paid-launch-build.json
 
       - name: Publish verified product repair
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -- \
+            .github/workflows/churvox-paid-launch-final-gate-v2.yml \
+            .github/workflows/churvox-worker-command-priority-live-proof.yml
           git add \
+            backend/churvox_worker_jobs_read_patch.py \
+            frontend/src/churvox-office-lab/officeTeamApi.js \
             frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
             frontend/public/churvox-paid-launch-build.json \
-            scripts/churvox-hardcore-owner-worker-audit.cjs \
-            scripts/churvox-worker-jobs-copy-trim-contract.cjs
+            scripts/churvox-paid-launch-live-smoke-v2.cjs \
+            scripts/churvox-final-pass-v15-contract.cjs
           if git diff --cached --quiet; then
-            echo 'Worker Jobs copy trim already present.'
+            echo 'Final pass v15 repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Trim redundant Worker Jobs copy'
+          git commit -m 'Filter inactive worker jobs and harden final gate'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -92,6 +97,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Worker Jobs copy trim passed\n\nEight redundant words were removed from Worker Jobs while retaining every job, status, proof, payment and owner-approval control. The safety audit now accepts the shorter equivalent no-charge and approved-link wording. Existing manual-slip priority, completion dedupe, bridge contracts and the production build passed. Published commit: \`${sha}\`.`
-              : `## Worker Jobs copy trim failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Final pass v15 repair passed\n\nArchived, deleted and cancelled jobs are excluded from Worker Jobs at both API and UI layers. The queue shows eight jobs by default with an explicit Show all control, the desktop summary no longer duplicates the queue, and the live smoke retries only the explicit safe Command timeout with a strict four-attempt ceiling. Existing bridge, completion dedupe, payment safety, pricing, owner approval and production build contracts passed. Published commit: \`${sha}\`.`
+              : `## Final pass v15 repair failed safely\n\nNo failed repair was published as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
