@@ -16,6 +16,7 @@ QUEUE_CACHE_TTL_SECONDS = 20
 QUEUE_CACHE_STALE_SECONDS = 15 * 60
 QUEUE_STATUS_LIMIT = 12
 QUEUE_QUERY_TIMEOUT_SECONDS = 2.2
+COMMAND_FORCE_REFRESH_BUILD = "churvox-command-force-refresh-v4-20260713"
 
 
 def _safe(value: Any, ObjectId):
@@ -200,9 +201,14 @@ def install(module, force=False):
             except Exception:
                 pass
 
+        force_live = str(request.query_params.get("refresh") or "").lower() in {"1", "true", "yes"} \
+            or request.headers.get("x-churvox-command-refresh") == COMMAND_FORCE_REFRESH_BUILD
+        if force_live:
+            queue_cache.pop(bid, None)
+
         cached = queue_cache.get(bid)
         age = time.monotonic() - float((cached or {}).get("at") or 0)
-        if cached and age <= QUEUE_CACHE_TTL_SECONDS:
+        if cached and age <= QUEUE_CACHE_TTL_SECONDS and not force_live:
             if age > 5:
                 schedule_queue_refresh(bid)
             return queue_response(cached.get("rows") or [], source="paid-launch-command-server-cache-v3", cached=True)
@@ -270,6 +276,7 @@ def install(module, force=False):
         return {
             "success": True,
             "marker": "churvox-command-v3-live-backend-20260713g",
+            "command_force_refresh": COMMAND_FORCE_REFRESH_BUILD,
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,

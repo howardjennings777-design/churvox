@@ -133,10 +133,10 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
         setNotice("Opening the current Command queue. The full business check will continue behind it.");
       }
 
-      const loadCurrentQueue = async ({ afterScan = false, scan = null, timeoutMs = 3000, attempts = 1 } = {}) => {
+      const loadCurrentQueue = async ({ afterScan = false, scan = null, timeoutMs = 3000, attempts = 1, force = false } = {}) => {
         try {
           if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LOAD_STATE__ = { ...(window.__CHURVOX_COMMAND_LOAD_STATE__ || {}), queueRequestedAt: Date.now() };
-          const command = await fetchBackendCommandDecisions({ timeoutMs, attempts });
+          const command = await fetchBackendCommandDecisions({ timeoutMs, attempts, force });
           if (!mounted) return null;
           const nextCommand = scan ? { ...command, scan } : command;
           setBackendCommand(nextCommand || { source: "command-unavailable", decisions: [] });
@@ -171,7 +171,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
           try {
             const scan = await runBackendOfficeEngineScan();
             if (!mounted) return;
-            const command = await loadCurrentQueue({ afterScan: true, scan, timeoutMs: 8000, attempts: 1 });
+            const command = await loadCurrentQueue({ afterScan: true, scan, timeoutMs: 8000, attempts: 1, force: true });
             if (!mounted) return;
             const createdCount = Number(scan?.createdCount || 0);
             const existingCount = Number(scan?.existingCount || 0);
@@ -214,7 +214,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
   useEffect(() => {
     if (!isOwnerApp) return () => {};
     const refreshBackendCommand = () => {
-      fetchBackendCommandDecisions()
+      fetchBackendCommandDecisions({ timeoutMs: 8000, attempts: 2, force: true })
         .then((command) => {
           setBackendCommand(command || { source: "command-unavailable", decisions: [] });
           setResolved({});

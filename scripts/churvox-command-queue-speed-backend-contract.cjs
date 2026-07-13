@@ -12,6 +12,8 @@ const checks = [
   ['stale cache is explicit', live.includes('paid-launch-command-stale-cache-v3') && live.includes('"scan_complete": not stale')],
   ['background cache refresh', live.includes('asyncio.create_task(refresh_queue_cache(bid))')],
   ['bounded fifty-slip payload', live.includes('rows = rows[:50]')],
+  ['explicit post-create cache bypass', live.includes('x-churvox-command-refresh') && live.includes('queue_cache.pop(bid, None)')],
+  ['force-refresh readiness marker', live.includes('churvox-command-force-refresh-v4-20260713')],
   ['current backend marker', live.includes('churvox-command-v3-live-backend-20260713g')],
   ['new boot marker', boot.includes('churvox-command-queue-speed-boot-20260713e')],
   ['owner safety unchanged', live.includes('Owner approval required. Nothing was sent, synced, charged, filed or paid.')],

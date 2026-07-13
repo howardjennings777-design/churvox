@@ -1,6 +1,7 @@
 import API_BASE from "../lib/apiBase";
 
 export const BACKEND_COMMAND_EVENT = "churvox-backend-command-slip";
+export const COMMAND_FORCE_REFRESH_BUILD = "churvox-command-force-refresh-v4-20260713";
 const SAFE_RESULT = "Owner approval recorded. Nothing was sent, synced, charged or changed.";
 const COMMAND_QUEUE_CACHE_KEY = "churvox:command:confirmed-queue:v1";
 const COMMAND_QUEUE_CACHE_MAX_AGE_MS = 1000 * 60 * 15;
@@ -201,10 +202,15 @@ function cacheBackendCommandDecisions(payload) {
   try { localStorage.setItem(COMMAND_QUEUE_CACHE_KEY, JSON.stringify({ at: Date.now(), payload })); } catch {}
 }
 
-export async function fetchBackendCommandDecisions({ timeoutMs = 3000, attempts = 1 } = {}) {
+export async function fetchBackendCommandDecisions({ timeoutMs = 3000, attempts = 1, force = false } = {}) {
   const base = host();
   if (!base) return { source: "command-unavailable", decisions: [], message: "No API host" };
-  const response = await fetchWithRetry(`${base}/api/command/slips`, { credentials: "include", headers: authHeaders({ json: false }), timeoutMs }, attempts);
+  const path = force ? `/api/command/slips?refresh=${Date.now()}` : "/api/command/slips";
+  const headers = {
+    ...authHeaders({ json: false }),
+    ...(force ? { "X-Churvox-Command-Refresh": COMMAND_FORCE_REFRESH_BUILD } : {}),
+  };
+  const response = await fetchWithRetry(`${base}${path}`, { credentials: "include", headers, timeoutMs }, attempts);
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 || response.status === 403 || response.status === 404) return { source: "command-unavailable", decisions: [], message: body?.detail || "Command backend unavailable" };
   if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Command slips failed ${response.status}`);
