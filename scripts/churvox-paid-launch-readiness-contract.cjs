@@ -19,7 +19,7 @@ const app = read('frontend/src/App.js');
 const plans = read('frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx');
 
 const checks = [
-  ['paid launch deployment marker exists', app.includes('churvox-paid-launch-readiness-20260713a')],
+  ['current paid launch deployment marker exists', app.includes('churvox-auth-401-storm-repair-20260713b')],
   ['payroll GET routes exist', backendRoutes.includes('@router.get("/payroll")') && backendRoutes.includes('@router.get("/payroll/summary")')],
   ['payroll is owner-only', backendRoutes.includes('Only owners/admins can review payroll')],
   ['payroll cannot pay or file', backendRoutes.includes('"no_tax_filing": True') && backendRoutes.includes('"no_government_submission": True') && backendRoutes.includes('"no_bank_file": True') && backendRoutes.includes('"no_payment": True')],
@@ -37,7 +37,7 @@ const checks = [
   ['base mimic reports scan health', mimic.includes('"scan_complete": not scan_errors') && mimic.includes('"scan_errors": list(dict.fromkeys(scan_errors))')],
   ['Command requests retry transient backend failures', commandApi.includes('async function fetchWithRetry') && commandApi.includes('response.status >= 500')],
   ['Command maps scan health', commandApi.includes('scanComplete: body?.scan_complete !== false') && commandApi.includes('scanErrors: Array.isArray(body?.scan_errors)')],
-  ['owner sees incomplete brain warning', ownerSite.includes('Command check incomplete') && ownerSite.includes('do not treat an empty queue as all clear')],
+  ['owner sees incomplete brain warning', ownerSite.includes('live data source') && ownerSite.includes('Do not treat an empty queue as all clear')],
   ['owner live row reads retry', officeApi.includes('for (let attempt = 1; attempt <= 3; attempt += 1)') && officeApi.includes('response.status >= 500')],
   ['pricing remains locked', plans.includes('price: 39') && plans.includes('price: 89') && plans.includes('price: 149') && plans.includes('price: 299') && plans.includes('price: 99')],
   ['Growth Pack checkout remains wired', plans.includes('Buy Growth Packs') && plans.includes('/billing/create-addon-checkout-session') && plans.includes('command_growth_pack')],
