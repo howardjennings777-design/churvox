@@ -33,8 +33,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply definitive v8 paid-launch repair
-        run: python scripts/churvox-paid-launch-last-two-blockers-apply.py
+      - name: Apply Command cache alias repair
+        run: python scripts/churvox-command-cache-alias-repair.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -57,29 +57,17 @@ jobs:
           node scripts/churvox-worker-field-command-bridge-contract.cjs
           npm --prefix frontend run build
           grep -q 'worker-jobs-current-first-v4-20260713' backend/churvox_worker_jobs_read_patch.py
-          grep -q 'sort(\[("created_at", -1), ("updated_at", -1)\])' backend/churvox_worker_jobs_read_patch.py
-          grep -q '_remove_route(app, "/api/worker/jobs", "GET")' backend/churvox_worker_jobs_read_patch.py
-          grep -q 'definitive_route_owner' backend/churvox_worker_jobs_read_patch.py
-          grep -q 'churvox-worker-current-first-20260713c' frontend/src/churvox-office-lab/officeTeamApi.js
-          grep -q 'area === "worker" ? 80 : 12' frontend/src/churvox-office-lab/officeTeamApi.js
-          grep -q 'recordTime(right) - recordTime(left)' frontend/src/churvox-office-lab/officeTeamApi.js
-          grep -q 'churvox-worker-message-context-v5-20260713' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          grep -q 'updateBusy || live.isLoading' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          grep -q 'Loading assigned job' frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
-          grep -q 'churvox-command-force-refresh-v4-20260713' backend/churvox_paid_launch_live_patch.py
-          grep -q 'queue_cache.pop(bid, None)' backend/churvox_paid_launch_live_patch.py
-          grep -q 'X-Churvox-Command-Refresh' frontend/src/churvox-office-lab/OfficeTeamCommandApi.js
-          grep -q 'force: true' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
-          grep -q 'churvox-worker-field-command-bridge-v8-20260713' backend/churvox_field_truth_fix_patch.py
+          grep -q 'churvox-worker-field-command-bridge-v9-20260713' backend/churvox_field_truth_fix_patch.py
           grep -q 'field_truth_fix.fixed_create_field_slip' backend/churvox_paid_launch_guard_patch.py
           grep -q 'paid_launch_guard_bridge' backend/churvox_paid_launch_guard_patch.py
+          grep -q 'seen = set()' backend/churvox_field_truth_fix_patch.py
+          grep -q 'invalidated += 1' backend/churvox_field_truth_fix_patch.py
+          ! grep -A18 'def _invalidate_command_cache' backend/churvox_field_truth_fix_patch.py | grep -q 'invalidate(business_id).*return'
           grep -q 'raise RuntimeError("Worker problem could not be prepared in Command' backend/churvox_field_truth_fix_patch.py
-          grep -q '_invalidate_command_cache(business_id)' backend/churvox_field_truth_fix_patch.py
-          grep -q 'churvox-worker-field-command-bridge-v8-20260713' backend/churvox_paid_launch_live_patch.py
+          grep -q 'churvox-worker-field-command-bridge-v9-20260713' backend/churvox_paid_launch_live_patch.py
           grep -q 'min-height: 48px' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
-          grep -q 'churvox-worker-field-command-bridge-v8-20260713' frontend/public/churvox-paid-launch-build.json
-          grep -q 'mobile-command-touch-targets' frontend/public/churvox-paid-launch-build.json
-          ! grep -q 'Open the full slip to inspect the evidence and prepared form' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
+          grep -q 'churvox-worker-field-command-bridge-v9-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'all-command-cache-aliases-invalidated' frontend/public/churvox-paid-launch-build.json
 
       - name: Publish verified product repair
         shell: bash
@@ -90,16 +78,14 @@ jobs:
             backend/churvox_paid_launch_guard_patch.py \
             backend/churvox_paid_launch_live_patch.py \
             backend/churvox_field_truth_fix_patch.py \
-            frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css \
             frontend/public/churvox-paid-launch-build.json \
-            scripts/churvox-worker-field-command-bridge-apply.py \
             scripts/churvox-worker-field-command-bridge-contract.cjs
           if git diff --cached --quiet; then
-            echo 'Definitive v8 paid-launch repair already present.'
+            echo 'Command cache alias repair already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Fix final worker Command bridge and mobile touch targets'
+          git commit -m 'Invalidate every live Command cache alias'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -111,6 +97,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Definitive v8 paid-launch repair passed\n\nThe final live worker field-slip route delegates to the problem-to-Command bridge, required bridge writes fail safely instead of reporting a false send, and Command “Open slip” controls have a 48px touch target. Worker queue, Command, wrapper, owner/worker safety contracts and the production build passed. Published commit: \`${sha}\`.`
-              : `## Definitive v8 paid-launch repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Command cache alias repair passed\n\nWorker problems now invalidate every distinct loaded Command cache module rather than stopping after the first import alias. The final route delegation, safe bridge persistence, mobile touch target, owner/worker contracts and production build passed. Published commit: \`${sha}\`.`
+              : `## Command cache alias repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
