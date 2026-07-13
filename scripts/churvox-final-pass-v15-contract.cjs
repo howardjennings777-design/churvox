@@ -6,7 +6,7 @@ const smoke = fs.readFileSync('scripts/churvox-paid-launch-live-smoke-v2.cjs', '
 const marker = fs.readFileSync('frontend/public/churvox-paid-launch-build.json', 'utf8');
 const gate = fs.readFileSync('.github/workflows/churvox-paid-launch-final-gate-v2.yml', 'utf8');
 const checks = [
-  ['v15 build marker', marker.includes('churvox-final-pass-v15-20260713')],
+  ['v15 protections retained in current build', marker.includes('active-worker-jobs-only') && marker.includes('worker-job-queue-bounded-with-show-all') && marker.includes('desktop-worker-queue-not-duplicated') && marker.includes('bounded-command-scan-safe-timeout-retries')],
   ['worker API version', backend.includes('worker-jobs-active-only-v5-20260713')],
   ['backend excludes inactive assignments', backend.includes('def _inactive(job):') && backend.includes('_assigned(job, current_user) and not _inactive(job)')],
   ['frontend filters inactive assignments', api.includes('function workerRecordActive(item = {})') && api.includes('sourceRecords.filter(workerRecordActive)')],
@@ -14,7 +14,6 @@ const checks = [
   ['desktop queue is summary not duplicate list', route.includes('active job{rows.length === 1 ? "" : "s"} assigned') && !route.includes('<aside className="cvWorkerRouteDesk"><span>Office link</span><h2>{view.title}</h2><p>{view.copy}</p><strong>{hasWork ? live.label : "No live assigned work found"}</strong><section><h3>Worker queue</h3>{hasWork ? rows.map')],
   ['safe Command timeout retry is bounded', smoke.includes('attempt <= 4') && smoke.includes('/timed out safely/i') && smoke.includes('attempt === 4')],
   ['persistent Command scan failure still blocks', smoke.includes('assert(scan?.response?.status === 200 && scan?.body?.success === true')],
-  ['marker records all v15 protections', marker.includes('active-worker-jobs-only') && marker.includes('worker-job-queue-bounded-with-show-all') && marker.includes('bounded-command-scan-safe-timeout-retries')],
   ['full gate runs v15 contract', gate.includes('churvox-final-pass-v15-contract.cjs') && gate.includes('backend/churvox_worker_jobs_read_patch.py')],
 ];
 let failed = false;
