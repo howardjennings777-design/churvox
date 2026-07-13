@@ -1,0 +1,1 @@
+Exact v16 completion proof runner updated in commit 6a0605dc944ae7804277cb342ac327c275a64f5a. It refuses stale deployments and requires Notifications=1, Messages=1, Command=0 before passing.
