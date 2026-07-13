@@ -9,6 +9,20 @@ from fastapi import Body, HTTPException, Request
 
 
 INSTALLED = set()
+COMMAND_QUEUE_CACHES: Dict[str, Dict[str, Dict[str, Any]]] = {}
+
+
+def invalidate_command_queue(business_id: str):
+    bid = str(business_id or "").strip()
+    if not bid:
+        return
+    for cache in list(COMMAND_QUEUE_CACHES.values()):
+        try:
+            cache.pop(bid, None)
+        except Exception:
+            continue
+
+
 OPEN_STATUSES = ["open", "edited", "pending", "ready", "waiting", "snoozed"]
 OWNER_ROLES = {"employer", "admin", "owner", "business_owner", "manager", "office_admin"}
 SAFETY = "Owner approval required. Nothing was sent, synced, charged, filed or paid."
@@ -129,6 +143,7 @@ def install(module, force=False):
 
     queue_cache: Dict[str, Dict[str, Any]] = {}
     queue_refresh_tasks: Dict[str, asyncio.Task] = {}
+    COMMAND_QUEUE_CACHES[name or f"module-{id(module)}"] = queue_cache
 
     def queue_sort_value(row: Dict[str, Any]) -> str:
         value = row.get("updated_at") or row.get("created_at") or row.get("_id") or ""
@@ -277,6 +292,7 @@ def install(module, force=False):
             "success": True,
             "marker": "churvox-command-v3-live-backend-20260713g",
             "command_force_refresh": COMMAND_FORCE_REFRESH_BUILD,
+            "worker_field_command_bridge": "churvox-worker-field-command-bridge-v7-20260713",
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,

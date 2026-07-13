@@ -1,13 +1,15 @@
 {
-  "build": "churvox-command-created-slip-refresh-v6-20260713",
+  "build": "churvox-worker-field-command-bridge-v7-20260713",
   "backend": "worker-jobs-current-first-v4-20260713",
   "command_backend": "churvox-command-force-refresh-v4-20260713",
+  "field_command_backend": "churvox-worker-field-command-bridge-v7-20260713",
   "includes": [
     "definitive-worker-jobs-route",
     "current-assignment-first",
     "expanded-worker-live-queue",
     "worker-message-job-context-guard",
     "new-command-slip-force-refresh",
+    "worker-problem-command-bridge",
     "concise-command-cards",
     "current-wrapper-contract"
   ],

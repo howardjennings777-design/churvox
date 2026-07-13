@@ -9,6 +9,7 @@ import churvox_field_truth_patch as base
 
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
+FIELD_COMMAND_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v7-20260713"
 
 
 def route_matches(route, path, method):
@@ -20,6 +21,109 @@ def remove_route(app, path, method="GET"):
         app.router.routes = [route for route in app.router.routes if not route_matches(route, path, method)]
     except Exception:
         pass
+
+
+def _needs_command(kind):
+    text = base.lower(kind)
+    return any(token in text for token in ["problem", "issue", "blocked", "decision", "extra_work", "owner_check"])
+
+
+def _invalidate_command_cache(business_id):
+    for module_name in ["churvox_paid_launch_live_patch", "backend.churvox_paid_launch_live_patch"]:
+        try:
+            module = importlib.import_module(module_name)
+            invalidate = getattr(module, "invalidate_command_queue", None)
+            if callable(invalidate):
+                invalidate(business_id)
+                return
+        except Exception:
+            continue
+
+
+async def _mirror_problem_to_command(db, user, ObjectId, slip):
+    kind = base.lower((slip or {}).get("type") or (slip or {}).get("kind"))
+    if not _needs_command(kind):
+        return None
+    business_id = base.clean((slip or {}).get("business_id") or base.business_id_string(user))
+    slip_id = base.clean((slip or {}).get("id") or (slip or {}).get("_id"))
+    if not business_id or not slip_id:
+        return None
+    now = (slip or {}).get("updated_at") or base.now_utc()
+    text = base.clean((slip or {}).get("text") or (slip or {}).get("summary") or "Worker needs an owner decision.")
+    try:
+        contractor_id = ObjectId(business_id)
+    except Exception:
+        contractor_id = business_id
+    command_doc = {
+        "business_id": business_id,
+        "contractor_id": contractor_id,
+        "source_type": "worker_field_problem",
+        "source_id": slip_id,
+        "action_type": "review_worker_problem",
+        "title": "Worker issue needs owner decision",
+        "found": text,
+        "prepared": "Churvox kept the worker moving and prepared the field issue for owner review. Nothing was sent, synced, charged or changed.",
+        "why": "The owner must approve, edit, park or dismiss the field issue before business records or customer communication change.",
+        "urgency": "Top priority",
+        "status": "open",
+        "payload": {
+            "worker_field_problem": True,
+            "worker_field_slip_id": slip_id,
+            "job_id": base.clean((slip or {}).get("job_id")),
+            "worker_id": base.clean((slip or {}).get("worker_id")),
+            "worker_name": base.clean((slip or {}).get("worker_name")),
+            "text": text,
+            "prepared_only": True,
+            "owner_review_only": True,
+            "no_auto_send": True,
+            "no_auto_sync": True,
+            "no_auto_charge": True,
+            "no_auto_record_change": True,
+        },
+        "owner_review_only": True,
+        "prepared_only": True,
+        "no_auto_send": True,
+        "no_auto_sync": True,
+        "no_auto_charge": True,
+        "no_auto_record_change": True,
+        "created_by": base.user_id_string(user),
+        "created_at": (slip or {}).get("created_at") or now,
+        "updated_at": now,
+        "audit": [{
+            "by": base.user_id_string(user),
+            "role": base.clean((user or {}).get("role") or "worker"),
+            "action": "worker_problem_created",
+            "note": "Worker problem mirrored to Command for owner review only.",
+            "at": now,
+            "safety": "Nothing was sent, synced, charged or changed.",
+        }],
+    }
+    try:
+        result = await db.command_slips.update_one(
+            {"business_id": business_id, "source_type": "worker_field_problem", "source_id": slip_id},
+            {"$setOnInsert": command_doc},
+            upsert=True,
+        )
+        created = bool(getattr(result, "upserted_id", None))
+    except Exception:
+        created = False
+    if created:
+        try:
+            await db.command_events.insert_one({
+                "business_id": business_id,
+                "contractor_id": contractor_id,
+                "event_type": "worker_problem_created",
+                "title": command_doc["title"],
+                "detail": text,
+                "slip_id": slip_id,
+                "safety": "Nothing was sent, synced, charged or changed.",
+                "created_by": base.user_id_string(user),
+                "created_at": now,
+            })
+        except Exception:
+            pass
+    _invalidate_command_cache(business_id)
+    return command_doc
 
 
 async def fixed_create_field_slip(db, user, ObjectId, job_id, payload):
@@ -77,6 +181,7 @@ async def fixed_create_field_slip(db, user, ObjectId, job_id, payload):
     except Exception:
         pass
     await base.save_passport(db, user, ObjectId, job_id, {"steps": {"worker_note": True}, "note": text})
+    await _mirror_problem_to_command(db, user, ObjectId, set_doc)
     return set_doc
 
 
@@ -140,10 +245,21 @@ def install(module):
         user = await get_current_user(request)
         return base.json_safe(await fixed_offline_sync(db, user, ObjectId, await base.read_payload(request)))
 
+    async def field_command_readiness():
+        return {
+            "success": True,
+            "ready": True,
+            "version": FIELD_COMMAND_BRIDGE_BUILD,
+            "mirrors": ["worker_problem", "worker_issue", "blocked", "owner_check"],
+            "excludes": ["job_proof", "routine_worker_message"],
+            "safety": "Problems are prepared for owner review only. Nothing is sent, synced, charged or changed.",
+        }
+
     for method, path, endpoint in [
         ("POST", "/api/worker/jobs/{job_id}/field-slip", field_slip_endpoint),
         ("POST", "/api/worker/field-slip", loose_field_slip_endpoint),
         ("POST", "/api/worker/offline-sync", offline_sync_endpoint),
+        ("GET", "/api/worker/field-command-readiness", field_command_readiness),
     ]:
         remove_route(app, path, method)
         app.add_api_route(path, endpoint, methods=[method])
