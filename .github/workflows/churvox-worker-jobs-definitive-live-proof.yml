@@ -12,7 +12,7 @@ jobs:
   proof:
     if: startsWith(github.event.issue.title, '[churvox-worker-jobs-definitive-live-proof]')
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     env:
       PLAYWRIGHT_BASE_URL: https://www.churvox.com
       PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
@@ -37,18 +37,18 @@ jobs:
           npm install --include=dev --legacy-peer-deps
           npx playwright install --with-deps chromium
 
-      - name: Wait for exact frontend and Worker Jobs backend builds
+      - name: Wait for exact v8 frontend and Worker Jobs backend
         shell: bash
         run: |
           node <<'NODE'
           const frontend = 'https://www.churvox.com/churvox-paid-launch-build.json';
           const backend = 'https://grassley-backend.onrender.com/api/worker/jobs-readiness';
           const expected = 'worker-jobs-current-first-v4-20260713';
-          const expectedFrontend = 'churvox-worker-field-command-bridge-v7-20260713';
+          const expectedFrontend = 'churvox-worker-field-command-bridge-v8-20260713';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           (async () => {
             let last = '';
-            for (let attempt = 1; attempt <= 100; attempt += 1) {
+            for (let attempt = 1; attempt <= 120; attempt += 1) {
               try {
                 const [frontResponse, backResponse] = await Promise.all([
                   fetch(`${frontend}?ts=${Date.now()}`, { cache: 'no-store' }),
@@ -58,6 +58,9 @@ jobs:
                 const back = await backResponse.json().catch(() => ({}));
                 const ready = frontResponse.ok && backResponse.ok
                   && front.build === expectedFrontend
+                  && Array.isArray(front.includes)
+                  && front.includes.includes('mobile-command-touch-targets')
+                  && front.includes.includes('final-field-slip-route-delegates-to-command-bridge')
                   && back.version === expected
                   && back.ready === true
                   && back.definitive_route_owner === 'worker_jobs';
@@ -67,13 +70,13 @@ jobs:
               } catch (error) {
                 last = error.message || String(error);
               }
-              if (attempt < 100) await sleep(10_000);
+              if (attempt < 120) await sleep(10_000);
             }
-            throw new Error(`Exact v7 frontend and Worker Jobs backend did not deploy: ${last}`);
+            throw new Error(`Exact v8 frontend and Worker Jobs backend did not deploy: ${last}`);
           })().catch((error) => { console.error(error.stack || error); process.exit(1); });
           NODE
 
-      - name: Wait for exact Command and field bridge backends and discover one linked worker
+      - name: Wait for final Command bridge owner and discover one linked worker
         shell: bash
         run: |
           node <<'NODE'
@@ -82,7 +85,7 @@ jobs:
           const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
           const password = process.env.CHURVOX_OWNER_PASSWORD;
           const expectedCommand = 'churvox-command-force-refresh-v4-20260713';
-          const expectedBridge = 'churvox-worker-field-command-bridge-v7-20260713';
+          const expectedBridge = 'churvox-worker-field-command-bridge-v8-20260713';
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
           const rowsFrom = (payload) => {
@@ -101,7 +104,7 @@ jobs:
 
             let backendReady = false;
             let backendLast = '';
-            for (let attempt = 1; attempt <= 100; attempt += 1) {
+            for (let attempt = 1; attempt <= 120; attempt += 1) {
               const [commandResponse, bridgeResponse] = await Promise.all([
                 fetch(`${api}/api/paid-launch/backend-readiness?ts=${Date.now()}`, {
                   headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
@@ -116,13 +119,14 @@ jobs:
                 && commandBody.command_force_refresh === expectedCommand
                 && commandBody.worker_field_command_bridge === expectedBridge
                 && bridgeBody.version === expectedBridge
-                && bridgeBody.ready === true;
-              backendLast = `command=${commandBody.command_force_refresh || commandResponse.status} bridge=${bridgeBody.version || bridgeResponse.status}`;
+                && bridgeBody.ready === true
+                && bridgeBody.definitive_route_owner === 'paid_launch_guard_bridge';
+              backendLast = `command=${commandBody.command_force_refresh || commandResponse.status} bridge=${bridgeBody.version || bridgeResponse.status} owner=${bridgeBody.definitive_route_owner || ''}`;
               console.log(`BACKEND_DEPLOY attempt=${attempt} ${backendLast} ready=${backendReady}`);
               if (backendReady) break;
-              if (attempt < 100) await sleep(10_000);
+              if (attempt < 120) await sleep(10_000);
             }
-            if (!backendReady) throw new Error(`Exact Command and field bridge backends did not deploy: ${backendLast}`);
+            if (!backendReady) throw new Error(`Exact final Command bridge backend did not deploy: ${backendLast}`);
 
             const candidates = [];
             for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
@@ -150,6 +154,61 @@ jobs:
           })().catch((error) => { console.error(error.stack || error); process.exit(1); });
           NODE
 
+      - name: Prove mobile Command touch target against a real slip
+        working-directory: frontend
+        shell: bash
+        run: |
+          node <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
+          const base = process.env.PLAYWRIGHT_BASE_URL.replace(/\/+$/, '');
+          const email = process.env.CHURVOX_OWNER_EMAIL;
+          const password = process.env.CHURVOX_OWNER_PASSWORD;
+          const tokenText = `MOBILE TOUCH PROOF ${Date.now()}`;
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
+          const read = async (response) => response.json().catch(() => ({}));
+          (async () => {
+            const login = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+            const loginBody = await read(login);
+            const token = tokenFrom(loginBody);
+            if (!login.ok || !token) throw new Error(`Owner API login failed ${login.status}`);
+            const createdResponse = await fetch(`${api}/api/command/slips`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'X-Churvox-Command-Refresh': 'churvox-command-force-refresh-v4-20260713' },
+              body: JSON.stringify({ source_type: 'paid_launch_mobile_touch', action_type: 'review_mobile_touch', title: tokenText, found: 'Mobile touch target proof.', prepared: 'Prepared for owner review only.', why: 'Verifies a safe mobile control size.', urgency: 'Owner review', status: 'open' }),
+            });
+            const created = await read(createdResponse);
+            const slipId = created?.slip?.id || created?.slip?._id || created?.id || '';
+            if (!createdResponse.ok || !slipId) throw new Error(`Could not create mobile proof slip ${createdResponse.status}`);
+            const browser = await chromium.launch({ headless: true });
+            try {
+              const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+              const page = await context.newPage();
+              await page.goto(`${base}/login`, { waitUntil: 'domcontentloaded' });
+              await page.getByLabel(/email/i).first().fill(email);
+              await page.getByLabel(/password/i).first().fill(password);
+              await page.getByRole('button', { name: /sign in|log in/i }).first().click();
+              await page.waitForURL((url) => !/\/login(?:[?#]|$)/.test(url.pathname), { timeout: 30000 });
+              await page.goto(`${base}/dashboard#command`, { waitUntil: 'domcontentloaded' });
+              await page.waitForSelector('.cvOwnerReady', { timeout: 30000 });
+              await page.waitForFunction((text) => document.body.innerText.includes(text), tokenText, { timeout: 30000 });
+              const card = page.locator('.cvSiteDecisionCard').filter({ hasText: tokenText }).first();
+              const button = card.getByRole('button', { name: 'Open slip', exact: true });
+              const box = await button.boundingBox();
+              if (!box || box.height < 44) throw new Error(`Open slip mobile height was ${box?.height || 0}px`);
+              console.log(`MOBILE_TOUCH_PASS height=${box.height}`);
+              await context.close();
+            } finally {
+              await browser.close();
+              await fetch(`${api}/api/command/slips/${encodeURIComponent(slipId)}/ignore`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'Ignore', note: 'Paid-launch mobile touch proof cleanup' }),
+              }).catch(() => null);
+            }
+          })().catch((error) => { console.error(error.stack || error); process.exit(1); });
+          NODE
+
       - name: Run one real owner-worker lifecycle
         working-directory: frontend
         shell: bash
@@ -166,7 +225,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: churvox-worker-jobs-definitive-live-proof
+          name: churvox-worker-jobs-definitive-live-proof-v8
           path: |
             /tmp/churvox-worker-jobs-definitive-live-proof.txt
             frontend/test-results
@@ -187,6 +246,6 @@ jobs:
               .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[worker-email-hidden]')
               .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]');
             const body = ok
-              ? '## Worker problem Command bridge live proof passed\n\nThe exact v7 frontend, Worker Jobs v4, Command force-refresh v4 and field bridge v7 backends are deployed. One real owner→worker assignment, field lifecycle, proof, worker issue, immediate owner Command receipt, logout and cleanup passed.'
-              : `## Worker problem Command bridge live proof failed\n\nThe exact deployment passed, but the real lifecycle did not. Safe error tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+              ? '## Final v8 bridge and mobile touch live proof passed\n\nThe exact v8 frontend, Worker Jobs v4, Command refresh v4 and final paid-launch guard bridge are deployed. A real mobile Command slip measured at least 44px, and one real owner→worker assignment, complete field lifecycle, proof, worker problem, immediate owner Command receipt, logout and cleanup passed.'
+              : `## Final v8 bridge and mobile touch live proof failed\n\nA deployment, mobile touch or real lifecycle step did not pass. Safe lifecycle tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
