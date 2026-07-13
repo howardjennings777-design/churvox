@@ -227,6 +227,49 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
     return () => window.removeEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
   }, [isOwnerApp]);
 
+  useEffect(() => {
+    if (!isOwnerApp || screen !== "command") return () => {};
+    let active = true;
+    let inFlight = false;
+    const refreshOpenCommand = async () => {
+      if (!active || inFlight || document.visibilityState === "hidden") return;
+      inFlight = true;
+      try {
+        const command = await fetchBackendCommandDecisions({ timeoutMs: 8000, attempts: 2, force: true });
+        if (!active) return;
+        setBackendCommand(command || { source: "command-unavailable", decisions: [] });
+        setResolved({});
+        if (typeof window !== "undefined") window.__CHURVOX_COMMAND_LIVE_REFRESH__ = {
+          build: "churvox-command-open-live-refresh-v11-20260713",
+          refreshedAt: Date.now(),
+          count: command?.decisions?.length || 0,
+          source: command?.source || "unknown",
+        };
+      } catch (error) {
+        if (active && typeof window !== "undefined") window.__CHURVOX_COMMAND_LIVE_REFRESH__ = {
+          build: "churvox-command-open-live-refresh-v11-20260713",
+          failedAt: Date.now(),
+          error: error?.message || "connection issue",
+        };
+      } finally {
+        inFlight = false;
+      }
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState !== "hidden") refreshOpenCommand();
+    };
+    refreshOpenCommand();
+    const timer = window.setInterval(refreshOpenCommand, 5000);
+    window.addEventListener("focus", refreshOpenCommand);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshOpenCommand);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [isOwnerApp, screen]);
+
   useEffect(() => isOwnerApp ? () => {} : subscribeOfficeTeamLocalCommand(setLocalQueue), [isOwnerApp]);
   useEffect(() => isOwnerApp ? () => {} : subscribeOfficeTeamLocalActivity(setLocalActivity), [isOwnerApp]);
   useEffect(() => subscribeOfficeTeamApprovalTrail(setApprovalTrail), []);

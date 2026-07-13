@@ -4,6 +4,7 @@ const field = fs.readFileSync('backend/churvox_field_truth_fix_patch.py', 'utf8'
 const guard = fs.readFileSync('backend/churvox_paid_launch_guard_patch.py', 'utf8');
 const live = fs.readFileSync('backend/churvox_paid_launch_live_patch.py', 'utf8');
 const workerUi = fs.readFileSync('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx', 'utf8');
+const site = fs.readFileSync('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx', 'utf8');
 const ownerCss = fs.readFileSync('frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css', 'utf8');
 const marker = fs.readFileSync('frontend/public/churvox-paid-launch-build.json', 'utf8');
 
@@ -24,6 +25,7 @@ const checks = [
   ['worker problem route remains field slip', workerUi.includes('sendFieldSlip(needsDecision ? "worker_problem" : "worker_message"')],
   ['mobile open-slip target is at least 48px', ownerCss.includes('.cvOwnerReady .cvSiteDecisionCard footer button') && ownerCss.includes('min-height: 48px')],
   ['worker problems rank ahead of routine Command items', field.includes('worker_field_problem') && marker.includes('worker-problems-ranked-before-routine-command-items')],
+  ['open Command refreshes live without rerunning scan', site.includes('screen !== \"command\"') && site.includes('window.setInterval(refreshOpenCommand, 5000)') && site.includes('force: true') && marker.includes('command-screen-bounded-five-second-refresh')],
   ['owner approval statement remains', field.includes('owner must approve, edit, park or dismiss')],
 ];
 
