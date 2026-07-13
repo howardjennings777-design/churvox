@@ -217,11 +217,11 @@ def install(module, force=False):
             raise
 
     try:
-        from churvox_command_human_mimic_guard_routes import build_command_human_mimic_guard_router
+        from churvox_command_human_mimic_v3_routes import build_command_human_mimic_v3_router
     except Exception:
-        from backend.churvox_command_human_mimic_guard_routes import build_command_human_mimic_guard_router
+        from backend.churvox_command_human_mimic_v3_routes import build_command_human_mimic_v3_router
 
-    guarded_router = build_command_human_mimic_guard_router(db, get_current_user, ObjectId)
+    guarded_router = build_command_human_mimic_v3_router(db, get_current_user, ObjectId)
     guarded_scan = None
     for route in getattr(guarded_router, "routes", []):
         if getattr(route, "path", "") == "/command/scan" and "POST" in set(getattr(route, "methods", set()) or set()):
@@ -237,11 +237,11 @@ def install(module, force=False):
                 pass
         if guarded_scan is None:
             raise HTTPException(status_code=503, detail="Guarded Command scanner is unavailable")
-        result = await bounded(guarded_scan(request=request, payload=payload or {}), 18, "Command brain scan")
+        result = await bounded(guarded_scan(request=request, payload=payload or {}), 25, "Command brain scan")
         result = dict(result or {})
         result.setdefault("success", True)
-        result.setdefault("source", "human-mimic-intelligence-v2")
-        result.setdefault("guard", "human-mimic-scan-guard-v2")
+        result.setdefault("source", "human-mimic-intelligence-v3")
+        result.setdefault("guard", "human-mimic-strict-preflight-v3")
         result["scan_complete"] = True
         result["scan_errors"] = []
         result["safety"] = result.get("safety") or SAFETY
@@ -269,7 +269,7 @@ def install(module, force=False):
         await ensure_indexes()
         return {
             "success": True,
-            "marker": "churvox-command-queue-speed-backend-20260713e",
+            "marker": "churvox-command-v3-live-backend-20260713g",
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,

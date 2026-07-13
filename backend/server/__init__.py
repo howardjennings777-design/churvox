@@ -120,7 +120,7 @@ for _patch in [
     _install_launch_patch(_patch)
 
 
-FINAL_COMMAND_WRAPPER_VERSION = 'churvox-command-queue-speed-server-wrapper-20260713f'
+FINAL_COMMAND_WRAPPER_VERSION = 'churvox-command-v3-server-wrapper-20260713g'
 FINAL_COMMAND_PATCH_INSTALLED = False
 FINAL_COMMAND_PATCH_ERROR = ''
 
