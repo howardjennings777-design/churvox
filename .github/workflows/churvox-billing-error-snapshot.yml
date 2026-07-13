@@ -1,0 +1,51 @@
+name: Churvox Billing Error Snapshot
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  snapshot:
+    if: startsWith(github.event.issue.title, '[churvox-billing-error-snapshot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      API: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Fetch safe checkout error detail
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-billing-error.txt
+          const api = process.env.API;
+          const read = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0,900) }));
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || '';
+          (async () => {
+            const login = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: process.env.OWNER_EMAIL, password: process.env.PASSWORD }) });
+            const loginBody = await read(login);
+            const token = tokenFrom(loginBody);
+            if (!login.ok || !token) throw new Error(`owner login ${login.status}`);
+            const payload = { plan: 'solo', plan_key: 'start', selected_plan: 'start', tier: 'solo', plan_name: 'Start', action: 'start_trial', country: 'NZ', billing_country: 'NZ', currency: 'NZD', email: process.env.OWNER_EMAIL, billing_interval: 'monthly', interval: 'month', success_url: 'https://www.churvox.com/dashboard?checkout=success&plan=start#plans', cancel_url: 'https://www.churvox.com/dashboard?checkout=cancelled&plan=start#plans', metadata: { source: 'billing_error_snapshot' } };
+            const response = await fetch(`${api}/api/billing/create-checkout-session`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const body = await read(response);
+            const safe = { status: response.status, success: body.success, detail: body.detail, message: body.message, error: body.error, price_source: body.price_source, plan: body.plan, country: body.country, has_url: Boolean(body.url || body.checkout_url || body.session_url || body.data?.url) };
+            console.log(JSON.stringify(safe, null, 2));
+            if (response.ok) console.log('BILLING_CHECKOUT_CURRENTLY_HEALTHY');
+          })().catch((error) => { console.error(error.stack || error.message || error); process.exit(1); });
+          NODE
+
+      - name: Post safe detail
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.existsSync('/tmp/churvox-billing-error.txt') ? fs.readFileSync('/tmp/churvox-billing-error.txt', 'utf8').slice(-5000) : 'No output.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Safe billing checkout detail\n\n\`\`\`json\n${output}\n\`\`\`` });
