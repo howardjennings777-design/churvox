@@ -19,171 +19,17 @@ jobs:
       PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
 
     steps:
-      - name: Run safe assignment identity diagnostic
+      - name: Check out current main
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run robust safe assignment diagnostic
         shell: bash
-        run: |
-          node <<'NODE' | tee /tmp/churvox-worker-assignment-diagnostic.txt
-          const fs = require('fs');
-          const api = process.env.API.replace(/\/+$/, '');
-          const ownerEmail = process.env.OWNER_EMAIL;
-          const password = process.env.PASSWORD;
-          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
-          const idOf = (row = {}) => {
-            const raw = row.id || row._id || row.user_id || row.worker_id || row.job_id || '';
-            if (raw && typeof raw === 'object') return String(raw.$oid || raw.oid || raw.id || '');
-            return String(raw || '');
-          };
-          const emailOf = (row = {}) => String(row.email || row.worker_email || row.user_email || '').trim().toLowerCase();
-          const rowsFrom = (payload) => {
-            const body = payload?.data?.data ?? payload?.data ?? payload;
-            if (Array.isArray(body)) return body;
-            for (const key of ['workers','team','members','jobs','items','records','results','data']) if (Array.isArray(body?.[key])) return body[key];
-            return [];
-          };
-          const bodyOf = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0, 400) }));
-          const authHeaders = (token) => ({ Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' });
-          const same = (a, b) => Boolean(String(a || '') && String(a || '') === String(b || ''));
-          const valueType = (value) => value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
-          (async () => {
-            let ownerToken = '';
-            let jobId = '';
-            const report = {
-              version: 'worker-assignment-link-diagnostic-20260713a',
-              owner_login: false,
-              worker_discovered: false,
-              worker_login: false,
-              job_created: false,
-              readiness_ok: false,
-              route_version_correct: false,
-              worker_list_status: 0,
-              worker_list_count: 0,
-              worker_list_contains_job: false,
-              generic_worker_jobs_status: 0,
-              generic_worker_jobs_contains_job: false,
-              direct_worker_job_status: 0,
-              team_id_equals_auth_id: false,
-              team_id_equals_auth_worker_id: false,
-              stored_assignment_equals_team_id: false,
-              stored_assignment_equals_auth_id: false,
-              stored_assignment_equals_auth_worker_id: false,
-              stored_assignment_type: 'missing',
-              stored_worker_name_present: false,
-              stored_worker_email_present: false,
-              business_ids_equal: false,
-              cleanup_ok: false,
-            };
-            try {
-              const ownerLogin = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ownerEmail, password }) });
-              const ownerBody = await bodyOf(ownerLogin);
-              ownerToken = tokenFrom(ownerBody);
-              report.owner_login = ownerLogin.ok && Boolean(ownerToken);
-              if (!report.owner_login) throw new Error(`owner login ${ownerLogin.status}`);
-
-              let worker = null;
-              for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
-                const response = await fetch(`${api}${endpoint}?ts=${Date.now()}`, { headers: authHeaders(ownerToken), cache: 'no-store' });
-                if (!response.ok) continue;
-                const candidates = rowsFrom(await bodyOf(response));
-                worker = candidates.find((row) => {
-                  const email = emailOf(row);
-                  const status = String(row.status || '').toLowerCase();
-                  return email && email !== ownerEmail && !/inactive|deleted|archived|disabled/.test(status);
-                }) || worker;
-                if (worker) break;
-              }
-              report.worker_discovered = Boolean(worker);
-              if (!worker) throw new Error('worker not found');
-              const teamId = idOf(worker);
-              const workerEmail = emailOf(worker);
-
-              let workerResponse = null;
-              let workerBody = null;
-              for (const path of ['/api/auth/login','/api/worker/auth/login']) {
-                const response = await fetch(`${api}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: workerEmail, password }) });
-                const body = await bodyOf(response);
-                if (response.ok && tokenFrom(body)) { workerResponse = response; workerBody = body; break; }
-              }
-              const workerToken = tokenFrom(workerBody || {});
-              report.worker_login = Boolean(workerResponse?.ok && workerToken);
-              if (!report.worker_login) throw new Error('worker login failed');
-              const workerUser = workerBody.user || workerBody.data?.user || workerBody || {};
-              const authId = idOf(workerUser);
-              const authWorkerId = String(workerUser.worker_id || workerUser.team_member_id || '');
-              report.team_id_equals_auth_id = same(teamId, authId);
-              report.team_id_equals_auth_worker_id = same(teamId, authWorkerId);
-              report.business_ids_equal = same(worker.business_id, workerUser.business_id);
-
-              const readinessResponse = await fetch(`${api}/api/worker/jobs-readiness?ts=${Date.now()}`, { cache: 'no-store' });
-              const readiness = await bodyOf(readinessResponse);
-              report.readiness_ok = readinessResponse.ok && readiness.ready === true;
-              report.route_version_correct = readiness.version === 'worker-jobs-definitive-route-v3-20260713';
-
-              const token = `WORKER LINK DIAGNOSTIC ${Date.now()}`;
-              const createResponse = await fetch(`${api}/api/jobs`, {
-                method: 'POST', headers: authHeaders(ownerToken),
-                body: JSON.stringify({
-                  title: token,
-                  job_title: token,
-                  job_type: 'other',
-                  customer_name: 'Worker link diagnostic',
-                  client_name: 'Worker link diagnostic',
-                  address: 'Diagnostic only',
-                  scheduled_date: new Date().toISOString().slice(0, 10),
-                  scheduled_time: '09:00',
-                  status: 'assigned',
-                  price: 0,
-                  assigned_worker_id: teamId,
-                  worker_id: teamId,
-                  worker_email: workerEmail,
-                  assigned_worker_name: worker.name || worker.full_name || 'Worker',
-                  notes: 'Isolated paid-launch diagnostic; remove after read.',
-                  source: 'worker-assignment-link-diagnostic',
-                }),
-              });
-              const createdBody = await bodyOf(createResponse);
-              const created = createdBody.job || createdBody.record || createdBody.data?.job || createdBody.data?.record || createdBody.data || createdBody;
-              jobId = idOf(created);
-              report.job_created = createResponse.ok && Boolean(jobId);
-              if (!report.job_created) throw new Error(`job create ${createResponse.status}`);
-
-              const ownerJobResponse = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}?ts=${Date.now()}`, { headers: authHeaders(ownerToken), cache: 'no-store' });
-              const ownerJobBody = await bodyOf(ownerJobResponse);
-              const stored = ownerJobBody.job || ownerJobBody.data?.job || ownerJobBody.data || ownerJobBody || created;
-              const assigned = String(stored.assigned_worker_id || stored.worker_id || '');
-              report.stored_assignment_type = valueType(stored.assigned_worker_id ?? stored.worker_id);
-              report.stored_assignment_equals_team_id = same(assigned, teamId);
-              report.stored_assignment_equals_auth_id = same(assigned, authId);
-              report.stored_assignment_equals_auth_worker_id = same(assigned, authWorkerId);
-              report.stored_worker_name_present = Boolean(stored.assigned_worker_name || stored.worker_name);
-              report.stored_worker_email_present = Boolean(stored.worker_email || stored.assigned_worker_email);
-
-              const workerListResponse = await fetch(`${api}/api/worker/jobs?ts=${Date.now()}`, { headers: authHeaders(workerToken), cache: 'no-store' });
-              const workerListBody = await bodyOf(workerListResponse);
-              const workerRows = rowsFrom(workerListBody);
-              report.worker_list_status = workerListResponse.status;
-              report.worker_list_count = workerRows.length;
-              report.worker_list_contains_job = workerRows.some((row) => idOf(row) === jobId || JSON.stringify(row).includes(token));
-
-              const genericResponse = await fetch(`${api}/api/jobs?ts=${Date.now()}`, { headers: authHeaders(workerToken), cache: 'no-store' });
-              const genericBody = await bodyOf(genericResponse);
-              report.generic_worker_jobs_status = genericResponse.status;
-              report.generic_worker_jobs_contains_job = rowsFrom(genericBody).some((row) => idOf(row) === jobId || JSON.stringify(row).includes(token));
-
-              const directResponse = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}?ts=${Date.now()}`, { headers: authHeaders(workerToken), cache: 'no-store' });
-              report.direct_worker_job_status = directResponse.status;
-            } finally {
-              if (ownerToken && jobId) {
-                let response = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE', headers: authHeaders(ownerToken) });
-                if (!response.ok && response.status !== 404) {
-                  response = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}/archive`, { method: 'POST', headers: authHeaders(ownerToken), body: JSON.stringify({ archived: true, archive_reason: 'worker assignment diagnostic cleanup' }) });
-                }
-                report.cleanup_ok = response.ok || response.status === 404;
-              }
-              fs.writeFileSync('/tmp/churvox-worker-assignment-report.json', JSON.stringify(report, null, 2));
-              console.log(JSON.stringify(report, null, 2));
-            }
-          })().catch((error) => { console.error(`DIAGNOSTIC_ERROR ${error.message || error}`); process.exit(1); });
-          NODE
+        run: node scripts/churvox-worker-assignment-diagnostic-v2.cjs 2>&1 | tee /tmp/churvox-worker-assignment-diagnostic-v2.txt
 
       - name: Post safe diagnostic
         if: always()
@@ -191,12 +37,12 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const report = fs.existsSync('/tmp/churvox-worker-assignment-report.json')
-              ? fs.readFileSync('/tmp/churvox-worker-assignment-report.json', 'utf8')
+            const report = fs.existsSync('/tmp/churvox-worker-assignment-report-v2.json')
+              ? fs.readFileSync('/tmp/churvox-worker-assignment-report-v2.json', 'utf8')
               : '{"report":"not created"}';
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `## Safe worker assignment diagnostic\n\nNo emails, tokens or raw IDs are included.\n\n\`\`\`json\n${report}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`
+              body: `## Safe worker assignment diagnostic V2\n\nThe workflow tested all active linked worker candidates and includes no emails, tokens or raw IDs.\n\n\`\`\`json\n${report}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`
             });
