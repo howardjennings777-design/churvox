@@ -1,4 +1,4 @@
-name: Churvox Open Command Live Refresh Proof
+name: Churvox Final Two Blockers Live Proof
 
 on:
   issues:
@@ -12,20 +12,22 @@ jobs:
   proof:
     if: startsWith(github.event.issue.title, '[churvox-worker-command-priority-live-proof]')
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 95
     env:
       PLAYWRIGHT_BASE_URL: https://www.churvox.com
       PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
       CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
       CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
       CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CHURVOX_E2E_MUTATE: '1'
 
     steps:
       - name: Mark proof started
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `V11 open-Command live-refresh proof started on run \`${context.runId}\`.` });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `V12 owner-slip priority and V13 completion-dedupe live proof started on run \`${context.runId}\`.` });
 
       - name: Check out current main
         uses: actions/checkout@v4
@@ -43,7 +45,7 @@ jobs:
           npm install --include=dev --legacy-peer-deps
           npx playwright install --with-deps chromium
 
-      - name: Wait for exact v11 frontend and existing backend stack
+      - name: Wait for exact v12 and v13 deployment and discover linked worker
         shell: bash
         run: |
           node <<'NODE'
@@ -52,6 +54,9 @@ jobs:
           const frontUrl = `${process.env.PLAYWRIGHT_BASE_URL.replace(/\/+$/, '')}/churvox-paid-launch-build.json`;
           const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
           const password = process.env.CHURVOX_OWNER_PASSWORD;
+          const build = 'churvox-owner-message-completion-dedupe-v13-20260713';
+          const manualPriority = 'churvox-owner-manual-command-priority-v12-20260713';
+          const messageDedupe = 'churvox-owner-message-completion-dedupe-v13-20260713';
           const liveRefresh = 'churvox-command-open-live-refresh-v11-20260713';
           const bridge = 'churvox-worker-field-command-bridge-v10-20260713';
           const priority = 'churvox-worker-command-priority-v10-20260713';
@@ -73,37 +78,43 @@ jobs:
             if (!login.ok || !ownerToken) throw new Error(`Owner login failed ${login.status}`);
             let ready = false;
             let last = '';
-            for (let attempt = 1; attempt <= 120; attempt += 1) {
+            for (let attempt = 1; attempt <= 150; attempt += 1) {
               try {
-                const [frontResponse, jobsResponse, commandResponse, bridgeResponse] = await Promise.all([
+                const [frontResponse, jobsResponse, commandResponse, bridgeResponse, messagesResponse] = await Promise.all([
                   fetch(`${frontUrl}?ts=${Date.now()}`, { cache: 'no-store' }),
                   fetch(`${api}/api/worker/jobs-readiness?ts=${Date.now()}`, { cache: 'no-store' }),
                   fetch(`${api}/api/paid-launch/backend-readiness?ts=${Date.now()}`, { headers: { Authorization: `Bearer ${ownerToken}`, Accept: 'application/json' }, cache: 'no-store' }),
                   fetch(`${api}/api/worker/field-command-readiness?ts=${Date.now()}`, { cache: 'no-store' }),
+                  fetch(`${api}/api/messages/readiness?ts=${Date.now()}`, { cache: 'no-store' }),
                 ]);
-                const [front, jobs, commandBody, bridgeBody] = await Promise.all([read(frontResponse), read(jobsResponse), read(commandResponse), read(bridgeResponse)]);
-                ready = frontResponse.ok && jobsResponse.ok && commandResponse.ok && bridgeResponse.ok
-                  && front.build === liveRefresh
+                const [front, jobs, commandBody, bridgeBody, messagesBody] = await Promise.all([read(frontResponse), read(jobsResponse), read(commandResponse), read(bridgeResponse), read(messagesResponse)]);
+                ready = frontResponse.ok && jobsResponse.ok && commandResponse.ok && bridgeResponse.ok && messagesResponse.ok
+                  && front.build === build
+                  && front.owner_manual_command_priority === manualPriority
+                  && front.owner_message_dedupe === messageDedupe
                   && front.command_live_refresh === liveRefresh
                   && front.field_command_backend === bridge
                   && front.command_priority_backend === priority
                   && Array.isArray(front.includes)
-                  && front.includes.includes('command-screen-immediate-live-refresh')
-                  && front.includes.includes('command-screen-bounded-five-second-refresh')
-                  && front.includes.includes('worker-problems-ranked-before-routine-command-items')
+                  && front.includes.includes('fresh-owner-created-slips-ranked-before-routine-command-items')
+                  && front.includes.includes('single-owner-completion-per-message-channel')
                   && jobs.version === workerJobs
                   && jobs.definitive_route_owner === 'worker_jobs'
+                  && commandBody.owner_manual_command_priority === manualPriority
                   && commandBody.worker_field_command_bridge === bridge
                   && commandBody.worker_command_priority === priority
                   && bridgeBody.version === bridge
-                  && bridgeBody.definitive_route_owner === 'paid_launch_guard_bridge';
-                last = `front=${front.build || frontResponse.status} live_refresh=${front.command_live_refresh || ''} bridge=${bridgeBody.version || bridgeResponse.status} priority=${commandBody.worker_command_priority || ''}`;
+                  && bridgeBody.definitive_route_owner === 'paid_launch_guard_bridge'
+                  && messagesBody.version === messageDedupe
+                  && messagesBody.route_owner === 'owner_data_visibility'
+                  && messagesBody.strategy === 'logical_job_event';
+                last = `front=${front.build || frontResponse.status} manual=${commandBody.owner_manual_command_priority || ''} messages=${messagesBody.version || messagesResponse.status} route=${messagesBody.route_owner || ''}`;
                 console.log(`DEPLOY attempt=${attempt} ${last} ready=${ready}`);
                 if (ready) break;
               } catch (error) { last = error.message || String(error); }
-              if (attempt < 120) await sleep(10_000);
+              if (attempt < 150) await sleep(10_000);
             }
-            if (!ready) throw new Error(`Exact v11 deployment did not arrive: ${last}`);
+            if (!ready) throw new Error(`Exact v12/v13 deployment did not arrive: ${last}`);
 
             const candidates = [];
             for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
@@ -130,7 +141,7 @@ jobs:
           })().catch((error) => { console.error(error.stack || error); process.exit(1); });
           NODE
 
-      - name: Run the previously failing real lifecycle once
+      - name: Run real owner-worker lifecycle three consecutive times
         working-directory: frontend
         shell: bash
         run: |
@@ -138,17 +149,30 @@ jobs:
           npx playwright test tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
             --project=desktop-chromium \
             --workers=1 \
-            --repeat-each=1 \
+            --repeat-each=3 \
             --retries=0 \
-            --reporter=line 2>&1 | tee /tmp/churvox-v11-open-command-live-refresh-proof.txt
+            --reporter=line 2>&1 | tee /tmp/churvox-v12-v13-human-flow.txt
+
+      - name: Run hardcore visual and full field lifecycle
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-owner-worker.cjs 2>&1 | tee /tmp/churvox-v12-v13-hardcore.txt
+
+      - name: Clean active audit records
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/churvox-v12-v13-cleanup.txt
 
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: churvox-v11-open-command-live-refresh-proof
+          name: churvox-v12-v13-final-two-blockers-proof
           path: |
-            /tmp/churvox-v11-open-command-live-refresh-proof.txt
+            /tmp/churvox-v12-v13-*.txt
             frontend/test-results
           if-no-files-found: warn
           retention-days: 14
@@ -160,11 +184,12 @@ jobs:
           script: |
             const fs = require('fs');
             const ok = '${{ job.status }}' === 'success';
-            const raw = fs.existsSync('/tmp/churvox-v11-open-command-live-refresh-proof.txt') ? fs.readFileSync('/tmp/churvox-v11-open-command-live-refresh-proof.txt', 'utf8') : '';
-            const tail = raw.slice(-7000)
+            const human = fs.existsSync('/tmp/churvox-v12-v13-human-flow.txt') ? fs.readFileSync('/tmp/churvox-v12-v13-human-flow.txt', 'utf8') : '';
+            const hardcore = fs.existsSync('/tmp/churvox-v12-v13-hardcore.txt') ? fs.readFileSync('/tmp/churvox-v12-v13-hardcore.txt', 'utf8') : '';
+            const tail = `${human}\n${hardcore}`.slice(-9000)
               .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[worker-email-hidden]')
               .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]');
             const body = ok
-              ? '## V11 open-Command live-refresh proof passed\n\nThe exact v11 frontend is deployed with the verified v10 backend stack. One real owner→worker assignment, complete field lifecycle, proof, worker problem, automatic visible owner Command receipt while the owner tab remained open, logout and cleanup passed.'
-              : `## V11 open-Command live-refresh proof failed\n\nThe exact deployment or previously failing lifecycle did not pass. Safe tail:\n\n\`\`\`text\n${tail || 'No lifecycle log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
+              ? '## Final two blockers live proof passed\n\nThe exact v12 owner-created slip priority and v13 completion-message dedupe are deployed. Three consecutive real owner→worker lifecycles, the hardcore visual/full field mutation loop, and cleanup all passed.'
+              : `## Final two blockers live proof failed\n\nThe exact deployment or a focused live gate failed. Safe tail:\n\n\`\`\`text\n${tail || 'No focused test log was created.'}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
