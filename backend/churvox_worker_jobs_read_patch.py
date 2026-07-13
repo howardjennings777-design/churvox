@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
 _ORIGINAL_IMPORT = builtins.__import__
-LIVE_PATCH_VERSION = "worker-jobs-definitive-route-v3-20260713"
+LIVE_PATCH_VERSION = "worker-jobs-current-first-v4-20260713"
 
 
 def _text(value):
@@ -185,7 +185,7 @@ def _install(module):
             return {"success": True, "jobs": [], "items": [], "data": []}
         rows = []
         try:
-            cursor = db.jobs.find(_business_query(current_user)).limit(300)
+            cursor = db.jobs.find(_business_query(current_user)).sort([("created_at", -1), ("updated_at", -1)]).limit(300)
             async for job in cursor:
                 if _assigned(job, current_user):
                     rows.append(_safe(job))

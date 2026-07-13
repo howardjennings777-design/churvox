@@ -1,6 +1,6 @@
 import API_BASE from "../lib/apiBase";
 
-export const WORKER_LIVE_READ_BUILD = "churvox-worker-live-read-no-cache-20260713b";
+export const WORKER_LIVE_READ_BUILD = "churvox-worker-current-first-20260713c";
 if (typeof window !== "undefined") window.__CHURVOX_WORKER_LIVE_READ_BUILD__ = WORKER_LIVE_READ_BUILD;
 
 function host() {
@@ -248,8 +248,18 @@ function objectAsRows(area, body) {
   return [];
 }
 
+function recordTime(item = {}) {
+  const raw = item.updated_at || item.created_at || item.assigned_at || item.scheduled_date || item.date || "";
+  const parsed = Date.parse(String(raw || ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function normalizeRows(area, body) {
-  const records = extractArray(body, area).slice(0, 12);
+  const sourceRecords = extractArray(body, area);
+  const ordered = area === "worker"
+    ? [...sourceRecords].sort((left, right) => recordTime(right) - recordTime(left))
+    : sourceRecords;
+  const records = ordered.slice(0, area === "worker" ? 80 : 12);
   const rows = records.map((item, index) => rowFor(area, item, index)).filter(Boolean);
   if (rows.length) return rows;
   return objectAsRows(area, body);

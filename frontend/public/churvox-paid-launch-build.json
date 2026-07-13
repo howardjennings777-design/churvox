@@ -1,7 +1,9 @@
 {
-  "build": "churvox-worker-jobs-definitive-route-v3-20260713",
+  "build": "churvox-worker-jobs-current-first-v4-20260713",
   "includes": [
     "definitive-worker-jobs-route",
+    "current-assignment-first",
+    "expanded-worker-live-queue",
     "concise-command-cards",
     "current-wrapper-contract"
   ],
