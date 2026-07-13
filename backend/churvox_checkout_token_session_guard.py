@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from urllib.parse import parse_qs
 
-VERSION = "churvox-checkout-token-session-guard-20260712c"
+VERSION = "churvox-checkout-token-session-guard-20260713i"
 CHECKOUT_PATHS = {
     "/api/billing/create-checkout-session",
     "/api/billing/start-checkout",
@@ -41,6 +41,17 @@ class CheckoutBodyTokenGuard:
         if scope.get("type") != "http" or scope.get("path") not in CHECKOUT_PATHS or scope.get("method", "GET").upper() not in {"POST", "PUT", "PATCH"}:
             return await self.app(scope, receive, send)
 
+        headers = {key.decode("latin1").lower(): value.decode("latin1") for key, value in scope.get("headers", [])}
+        authorization = _text(headers.get("authorization"))
+        cookie = _text(headers.get("cookie"))
+        has_header_auth = authorization.lower().startswith("bearer ")
+        has_cookie_auth = any(name in cookie.lower() for name in ("access_token=", "auth_token=", "token=", "session="))
+        # Header/cookie sessions are validated by the definitive downstream
+        # get_current_user path. Do not consume and replay their checkout body;
+        # doing so can break the ASGI receive stream before FastAPI parses JSON.
+        if has_header_auth or has_cookie_auth:
+            return await self.app(scope, receive, send)
+
         chunks = []
         more = True
         while more:
@@ -59,7 +70,6 @@ class CheckoutBodyTokenGuard:
             sent = True
             return {"type": "http.request", "body": body, "more_body": False}
 
-        headers = {key.decode("latin1").lower(): value.decode("latin1") for key, value in scope.get("headers", [])}
         token = _extract_token(body, headers.get("content-type", ""))
         if not token:
             return await self.app(scope, replay, send)
