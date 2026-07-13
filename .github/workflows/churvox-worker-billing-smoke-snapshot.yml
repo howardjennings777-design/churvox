@@ -1,0 +1,110 @@
+name: Churvox Worker Billing Smoke Snapshot
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  snapshot:
+    if: startsWith(github.event.issue.title, '[churvox-worker-billing-snapshot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITE: https://www.churvox.com
+      API: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Check worker authentication and billing without exposing credentials
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-worker-billing-snapshot.txt
+          const api = process.env.API;
+          const site = process.env.SITE;
+          const ownerEmail = process.env.OWNER_EMAIL.toLowerCase();
+          const password = process.env.PASSWORD;
+          const read = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0,700) }));
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
+          const rowsFrom = (payload) => {
+            const body = payload?.data?.data ?? payload?.data ?? payload;
+            if (Array.isArray(body)) return body;
+            for (const key of ['workers','team','members','items','records','results','data']) if (Array.isArray(body?.[key])) return body[key];
+            return [];
+          };
+          const emailOf = (row = {}) => String(row.email || row.worker_email || row.user_email || row.login_email || '').trim().toLowerCase();
+          const active = (row = {}) => row.active !== false && row.is_active !== false && !/inactive|deleted|archived|disabled/.test(String(row.status || row.worker_status || '').toLowerCase());
+          const request = async (path, options = {}) => {
+            const at = Date.now();
+            const response = await fetch(api + path, { headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) }, ...options });
+            const body = await read(response);
+            return { status: response.status, ok: response.ok, body, ms: Date.now() - at };
+          };
+          const login = async (path, email) => {
+            const result = await request(path, { method: 'POST', body: JSON.stringify({ email, password }) });
+            return { ...result, token: tokenFrom(result.body) };
+          };
+          (async () => {
+            const owner = await login('/api/auth/login', ownerEmail);
+            if (!owner.ok || !owner.token) throw new Error(`owner login ${owner.status}`);
+            console.log(`OWNER_LOGIN status=${owner.status} elapsed_ms=${owner.ms}`);
+            const auth = { Authorization: `Bearer ${owner.token}` };
+
+            const candidates = [];
+            for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
+              const result = await request(`${endpoint}?ts=${Date.now()}`, { headers: auth });
+              const rows = result.ok ? rowsFrom(result.body) : [];
+              console.log(`WORKER_LIST endpoint=${endpoint} status=${result.status} elapsed_ms=${result.ms} rows=${rows.length}`);
+              for (const row of rows) {
+                const email = emailOf(row);
+                if (email && email !== ownerEmail && active(row) && !candidates.includes(email)) candidates.push(email);
+              }
+            }
+            console.log(`WORKER_CANDIDATES count=${candidates.length}`);
+            let worker = null;
+            for (const email of candidates.slice(0,10)) {
+              let result = await login('/api/auth/login', email);
+              let route = '/api/auth/login';
+              if (!result.ok || !result.token) { result = await login('/api/worker/auth/login', email); route = '/api/worker/auth/login'; }
+              console.log(`WORKER_LOGIN route=${route} status=${result.status} elapsed_ms=${result.ms} success=${Boolean(result.ok && result.token)}`);
+              if (result.ok && result.token) { worker = result; break; }
+            }
+            if (!worker) throw new Error('no linked worker could authenticate');
+            const workerPayroll = await request('/api/payroll', { headers: { Authorization: `Bearer ${worker.token}` } });
+            console.log(`WORKER_PAYROLL status=${workerPayroll.status} elapsed_ms=${workerPayroll.ms}`);
+            if (workerPayroll.status !== 403) throw new Error(`worker payroll boundary ${workerPayroll.status}`);
+
+            const returnBase = `${site}/dashboard`;
+            const planPayload = { plan: 'solo', plan_key: 'start', selected_plan: 'start', tier: 'solo', plan_name: 'Start', action: 'start_trial', country: 'NZ', billing_country: 'NZ', currency: 'NZD', email: ownerEmail, billing_interval: 'monthly', interval: 'month', success_url: `${returnBase}?checkout=success&plan=start#plans`, cancel_url: `${returnBase}?checkout=cancelled&plan=start#plans`, metadata: { source: 'worker_billing_snapshot' } };
+            let planOk = false;
+            for (const endpoint of ['/api/billing/create-checkout-session','/api/stripe/create-checkout-session','/api/billing/checkout','/api/stripe/checkout']) {
+              const result = await request(endpoint, { method: 'POST', headers: auth, body: JSON.stringify(planPayload) });
+              const url = result.body?.url || result.body?.checkout_url || result.body?.session_url || result.body?.data?.url;
+              console.log(`PLAN_CHECKOUT endpoint=${endpoint} status=${result.status} elapsed_ms=${result.ms} secure_url=${/^https:\/\//.test(String(url || ''))}`);
+              if (result.ok && /^https:\/\//.test(String(url || ''))) { planOk = true; break; }
+            }
+            if (!planOk) throw new Error('no secure plan checkout session');
+
+            const addon = await request('/api/billing/create-addon-checkout-session', { method: 'POST', headers: auth, body: JSON.stringify({ addon: 'command_growth_pack', addon_key: 'command_growth_pack', country: 'NZ', quantity: 1, growth_packs: 1, packs: 1, source: 'worker_billing_snapshot' }) });
+            const addonUrl = addon.body?.url || addon.body?.checkout_url || addon.body?.session_url || addon.body?.data?.url;
+            const commandRequired = /command/i.test(String(addon.body?.detail || addon.body?.error || addon.body?.message || '')) && [400,403,409].includes(addon.status);
+            console.log(`ADDON_CHECKOUT status=${addon.status} elapsed_ms=${addon.ms} secure_url=${/^https:\/\//.test(String(addonUrl || ''))} command_required=${commandRequired}`);
+            if (!((addon.ok && /^https:\/\//.test(String(addonUrl || ''))) || commandRequired)) throw new Error(`invalid addon response ${addon.status}`);
+            if ([404,405,422].includes(addon.status) || addon.status >= 500) throw new Error(`unhealthy addon route ${addon.status}`);
+            console.log('WORKER_BILLING_SMOKE_PASS');
+          })().catch((error) => { console.error(error.stack || error.message || error); process.exit(1); });
+          NODE
+
+      - name: Post safe snapshot
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.existsSync('/tmp/churvox-worker-billing-snapshot.txt') ? fs.readFileSync('/tmp/churvox-worker-billing-snapshot.txt', 'utf8').slice(-10000) : 'No output.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Worker and billing smoke snapshot\n\n\`\`\`text\n${output}\n\`\`\`` });
