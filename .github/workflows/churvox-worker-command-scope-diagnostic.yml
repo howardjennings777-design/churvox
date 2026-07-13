@@ -1,0 +1,174 @@
+name: Churvox Worker Command Scope Diagnostic
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    if: startsWith(github.event.issue.title, '[churvox-worker-command-scope-diagnostic]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      API: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Mark diagnostic started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `Safe worker→Command scope diagnostic started on run \`${context.runId}\`.` });
+
+      - name: Compare live owner, worker, job, slip and Command scope safely
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-worker-command-scope.txt
+          const fs = require('fs');
+          const api = process.env.API.replace(/\/+$/, '');
+          const ownerEmail = process.env.OWNER_EMAIL;
+          const password = process.env.PASSWORD;
+          const run = Date.now();
+          const jobTitle = `HUMAN CURRENT JOB SCOPE ${run}`;
+          const issueToken = `HUMAN CURRENT WORKER ISSUE SCOPE ${run}: extra work needs owner decision`;
+          const clientToken = `HUMAN CURRENT CLIENT SCOPE ${run}`;
+          const read = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0, 500) }));
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || '';
+          const account = (body = {}) => body.user || body.data?.user || body.data || body || {};
+          const rowsFrom = (payload) => {
+            const body = payload?.data?.data ?? payload?.data ?? payload;
+            if (Array.isArray(body)) return body;
+            for (const key of ['items','records','results','workers','team','members','jobs','slips','actions','data']) if (Array.isArray(body?.[key])) return body[key];
+            return [];
+          };
+          const idOf = (row = {}) => String(row.id || row._id || row.job_id || row.worker_id || row.user_id || row.action_id || row.source_id || row.$oid || '');
+          const emailOf = (row = {}) => String(row.email || row.worker_email || row.user_email || '').trim().toLowerCase();
+          const bidOf = (row = {}) => String(row.business_id || row.businessId || row.owner_business_id || row.contractor_id || row.business?.id || row.business?._id || '');
+          const contains = (value, token) => JSON.stringify(value || {}).toLowerCase().includes(String(token || '').toLowerCase());
+          const auth = (token, json = false) => ({ Authorization: `Bearer ${token}`, Accept: 'application/json', ...(json ? { 'Content-Type': 'application/json' } : {}) });
+          const cleanup = async (ownerToken, jobId, slipIds = []) => {
+            for (const slipId of slipIds.filter(Boolean)) {
+              await fetch(`${api}/api/command/slips/${encodeURIComponent(slipId)}/ignore`, { method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({ action: 'Ignore', note: 'Scope diagnostic cleanup' }) }).catch(() => null);
+              await fetch(`${api}/api/command/field-slips/${encodeURIComponent(slipId)}/dismiss`, { method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({ note: 'Scope diagnostic cleanup' }) }).catch(() => null);
+            }
+            if (jobId) {
+              let response = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE', headers: auth(ownerToken) }).catch(() => null);
+              if (!response || (!response.ok && response.status !== 404)) {
+                response = await fetch(`${api}/api/jobs/${encodeURIComponent(jobId)}/archive`, { method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({ archived: true, archive_reason: 'scope diagnostic cleanup' }) }).catch(() => null);
+              }
+            }
+          };
+          (async () => {
+            let ownerToken = '';
+            let jobId = '';
+            const cleanupSlipIds = [];
+            try {
+              const ownerLoginResponse = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ownerEmail, password }) });
+              const ownerLogin = await read(ownerLoginResponse);
+              ownerToken = tokenFrom(ownerLogin);
+              if (!ownerLoginResponse.ok || !ownerToken) throw new Error(`Owner login failed ${ownerLoginResponse.status}`);
+              const ownerMeResponse = await fetch(`${api}/api/auth/me`, { headers: auth(ownerToken) });
+              const ownerMe = account(await read(ownerMeResponse));
+              if (!ownerMeResponse.ok) throw new Error(`Owner me failed ${ownerMeResponse.status}`);
+
+              const candidates = [];
+              for (const endpoint of ['/api/team/workers','/api/team','/api/workers']) {
+                const response = await fetch(`${api}${endpoint}?ts=${Date.now()}`, { headers: auth(ownerToken), cache: 'no-store' });
+                if (!response.ok) continue;
+                for (const row of rowsFrom(await read(response))) {
+                  const email = emailOf(row);
+                  const status = String(row.status || '').toLowerCase();
+                  if (!email || email === ownerEmail || /inactive|deleted|archived|disabled/.test(status) || candidates.some((item) => item.email === email)) continue;
+                  candidates.push({ email, row });
+                }
+              }
+              let workerToken = '';
+              let workerRow = null;
+              for (const candidate of candidates.slice(0, 12)) {
+                for (const path of ['/api/auth/login','/api/worker/auth/login']) {
+                  const response = await fetch(`${api}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: candidate.email, password }) });
+                  const body = await read(response);
+                  const token = tokenFrom(body);
+                  if (response.ok && token) { workerToken = token; workerRow = candidate.row; break; }
+                }
+                if (workerToken) break;
+              }
+              if (!workerToken || !workerRow) throw new Error('No linked worker could authenticate');
+              const workerMeResponse = await fetch(`${api}/api/auth/me`, { headers: auth(workerToken) });
+              const workerMe = account(await read(workerMeResponse));
+              if (!workerMeResponse.ok) throw new Error(`Worker me failed ${workerMeResponse.status}`);
+
+              const workerId = idOf(workerRow);
+              const workerEmail = emailOf(workerRow);
+              const createResponse = await fetch(`${api}/api/jobs`, {
+                method: 'POST', headers: auth(ownerToken, true), body: JSON.stringify({
+                  title: jobTitle, job_title: jobTitle, job_type: 'other', client_name: clientToken, customer_name: clientToken,
+                  address: '1 Human Audit Street, Wellington', scheduled_date: new Date().toISOString().slice(0,10), scheduled_time: '09:00',
+                  status: 'assigned', price: 0, assigned_worker_id: workerId, worker_id: workerId, worker_email: workerEmail,
+                  assigned_worker_name: workerRow.name || workerRow.full_name || 'Linked worker', source: 'human-current-owner-worker-test',
+                }),
+              });
+              const created = await read(createResponse);
+              if (!createResponse.ok) throw new Error(`Job create failed ${createResponse.status}`);
+              let job = created.job || created.record || created.data?.job || created.data?.record || created.data || created;
+              jobId = idOf(job);
+              if (!jobId) {
+                const listedResponse = await fetch(`${api}/api/jobs?ts=${Date.now()}`, { headers: auth(ownerToken), cache: 'no-store' });
+                const listed = await read(listedResponse);
+                job = rowsFrom(listed).find((row) => contains(row, jobTitle)) || job;
+                jobId = idOf(job);
+              }
+              if (!jobId) throw new Error('Created job has no id');
+
+              const workerJobsResponse = await fetch(`${api}/api/worker/jobs?ts=${Date.now()}`, { headers: auth(workerToken), cache: 'no-store' });
+              const workerJobs = await read(workerJobsResponse);
+              const workerJob = rowsFrom(workerJobs).find((row) => idOf(row) === jobId || contains(row, jobTitle));
+              if (!workerJobsResponse.ok || !workerJob) throw new Error('Worker could not read assigned job');
+
+              const slipResponse = await fetch(`${api}/api/worker/field-slip`, {
+                method: 'POST', headers: auth(workerToken, true), body: JSON.stringify({ job_id: jobId, type: 'worker_problem', text: issueToken, summary: issueToken, status: 'waiting_owner_review' }),
+              });
+              const slipBody = await read(slipResponse);
+              const slip = slipBody.slip || slipBody.data?.slip || slipBody.data || {};
+              if (!slipResponse.ok) throw new Error(`Worker field slip failed ${slipResponse.status}`);
+
+              const commandResponse = await fetch(`${api}/api/command/slips?refresh=1&ts=${Date.now()}`, { headers: { ...auth(ownerToken), 'X-Churvox-Command-Refresh': 'churvox-command-force-refresh-v4-20260713' }, cache: 'no-store' });
+              const command = await read(commandResponse);
+              const commandRows = rowsFrom(command);
+              const matched = commandRows.filter((row) => contains(row, issueToken));
+              cleanupSlipIds.push(...matched.map(idOf));
+
+              const ownerBid = bidOf(ownerMe);
+              const workerBid = bidOf(workerMe);
+              const jobBid = bidOf(workerJob || job);
+              const slipBid = bidOf(slip);
+              console.log(`SCOPE owner_bid_present=${Boolean(ownerBid)} worker_bid_present=${Boolean(workerBid)} job_bid_present=${Boolean(jobBid)} slip_bid_present=${Boolean(slipBid)}`);
+              console.log(`SCOPE owner_worker_equal=${Boolean(ownerBid && workerBid && ownerBid === workerBid)} owner_job_equal=${Boolean(ownerBid && jobBid && ownerBid === jobBid)} owner_slip_equal=${Boolean(ownerBid && slipBid && ownerBid === slipBid)} worker_job_equal=${Boolean(workerBid && jobBid && workerBid === jobBid)} job_slip_equal=${Boolean(jobBid && slipBid && jobBid === slipBid)}`);
+              console.log(`BRIDGE status=${slipResponse.status} response_success=${slipBody.success === true} version_match=${slipBody.bridge_version === 'churvox-worker-field-command-bridge-v9-20260713'} owner_match=${slipBody.definitive_route_owner === 'paid_launch_guard_bridge'} type=${String(slip.type || slip.kind || '')}`);
+              console.log(`COMMAND status=${commandResponse.status} success=${command.success === true} queue_count=${commandRows.length} token_matches=${matched.length} source=${String(command.source || '')} cached=${Boolean(command.cached)} stale=${Boolean(command.stale)}`);
+              if (!matched.length) process.exitCode = 2;
+            } finally {
+              if (ownerToken) await cleanup(ownerToken, jobId, cleanupSlipIds);
+            }
+          })().catch((error) => { console.error(`DIAGNOSTIC_ERROR ${error.message || error}`); process.exit(1); });
+          NODE
+
+      - name: Post diagnostic
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const raw = fs.existsSync('/tmp/churvox-worker-command-scope.txt') ? fs.readFileSync('/tmp/churvox-worker-command-scope.txt', 'utf8') : 'No diagnostic output.';
+            const safe = raw
+              .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email-hidden]')
+              .replace(/[a-f0-9]{24}/gi, '[id-hidden]')
+              .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]')
+              .slice(-7000);
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## Safe worker→Command scope diagnostic\n\n\`\`\`text\n${safe}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.` });
