@@ -1,0 +1,96 @@
+name: Churvox Paid Launch Last Two Blockers
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-paid-launch-last-two-blockers]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply definitive worker bridge and mobile touch repair
+        run: python scripts/churvox-paid-launch-last-two-blockers-apply.py
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Verify backend, safety contracts and production build
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m py_compile \
+            backend/churvox_paid_launch_guard_patch.py \
+            backend/churvox_field_truth_fix_patch.py \
+            backend/churvox_paid_launch_live_patch.py \
+            backend/server/__init__.py
+          node scripts/churvox-worker-field-command-bridge-contract.cjs
+          node scripts/churvox-command-queue-speed-backend-contract.cjs
+          node scripts/churvox-server-wrapper-final-command-contract.cjs
+          node scripts/churvox-hardcore-owner-worker-audit.cjs
+          npm --prefix frontend run build
+          grep -q 'field_truth_fix.fixed_create_field_slip' backend/churvox_paid_launch_guard_patch.py
+          grep -q 'definitive_route_owner.*paid_launch_guard_bridge' backend/churvox_paid_launch_guard_patch.py
+          grep -q 'churvox-worker-field-command-bridge-v8-20260713' backend/churvox_field_truth_fix_patch.py
+          grep -q 'churvox-worker-field-command-bridge-v8-20260713' backend/churvox_paid_launch_live_patch.py
+          grep -q 'min-height: 48px' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
+          grep -q 'mobile-command-touch-targets' frontend/public/churvox-paid-launch-build.json
+
+      - name: Publish verified repair
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            backend/churvox_paid_launch_guard_patch.py \
+            backend/churvox_field_truth_fix_patch.py \
+            backend/churvox_paid_launch_live_patch.py \
+            frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css \
+            frontend/public/churvox-paid-launch-build.json \
+            scripts/churvox-worker-field-command-bridge-apply.py \
+            scripts/churvox-worker-field-command-bridge-contract.cjs
+          if git diff --cached --quiet; then
+            echo 'Final two-blocker repair already present.'
+            echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          git commit -m 'Fix final worker Command bridge and mobile touch targets'
+          git push origin HEAD:main
+          echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ job.status }}' === 'success';
+            const sha = process.env.published_sha || '';
+            const body = ok
+              ? `## Final two-blocker repair passed\n\nThe final live worker field-slip route now delegates to the problem-to-Command bridge, required bridge writes fail safely instead of reporting a false send, and Command “Open slip” buttons have a 48px touch target. Backend compilation, safety contracts, owner/worker audit and the production build passed. Published commit: \`${sha}\`.`
+              : `## Final two-blocker repair failed safely\n\nNo failed repair was published as launch-ready. Workflow run: \`${context.runId}\`.`;
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
