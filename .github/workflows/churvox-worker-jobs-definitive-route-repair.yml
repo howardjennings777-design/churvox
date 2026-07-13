@@ -33,11 +33,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Apply current worker and fresh Command repairs
+      - name: Apply current worker, Command refresh and field bridge repairs
         run: |
           python scripts/churvox-worker-jobs-current-first-apply.py
           python scripts/churvox-worker-message-job-context-apply.py
           python scripts/churvox-command-created-slip-refresh-apply.py
+          python scripts/churvox-worker-field-command-bridge-apply.py
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -50,11 +51,13 @@ jobs:
           python -m py_compile \
             backend/churvox_worker_jobs_read_patch.py \
             backend/churvox_paid_launch_live_patch.py \
+            backend/churvox_field_truth_fix_patch.py \
             backend/server/__init__.py
           node --check scripts/churvox-worker-assignment-diagnostic-v2.cjs
           node scripts/churvox-command-queue-speed-backend-contract.cjs
           node scripts/churvox-server-wrapper-final-command-contract.cjs
           node scripts/churvox-hardcore-owner-worker-audit.cjs
+          node scripts/churvox-worker-field-command-bridge-contract.cjs
           npm --prefix frontend run build
           grep -q 'worker-jobs-current-first-v4-20260713' backend/churvox_worker_jobs_read_patch.py
           grep -q 'sort(\[("created_at", -1), ("updated_at", -1)\])' backend/churvox_worker_jobs_read_patch.py
@@ -70,7 +73,11 @@ jobs:
           grep -q 'queue_cache.pop(bid, None)' backend/churvox_paid_launch_live_patch.py
           grep -q 'X-Churvox-Command-Refresh' frontend/src/churvox-office-lab/OfficeTeamCommandApi.js
           grep -q 'force: true' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
-          grep -q 'churvox-command-created-slip-refresh-v6-20260713' frontend/public/churvox-paid-launch-build.json
+          grep -q 'churvox-worker-field-command-bridge-v7-20260713' backend/churvox_field_truth_fix_patch.py
+          grep -q 'db.command_slips.update_one' backend/churvox_field_truth_fix_patch.py
+          grep -q '_invalidate_command_cache(business_id)' backend/churvox_field_truth_fix_patch.py
+          grep -q '/api/worker/field-command-readiness' backend/churvox_field_truth_fix_patch.py
+          grep -q 'churvox-worker-field-command-bridge-v7-20260713' frontend/public/churvox-paid-launch-build.json
           ! grep -q 'Open the full slip to inspect the evidence and prepared form' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
 
       - name: Publish verified product repair
@@ -81,18 +88,20 @@ jobs:
           git add \
             backend/churvox_worker_jobs_read_patch.py \
             backend/churvox_paid_launch_live_patch.py \
+            backend/churvox_field_truth_fix_patch.py \
             frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
             frontend/src/churvox-office-lab/OfficeTeamCommandApi.js \
             frontend/src/churvox-office-lab/officeTeamApi.js \
             frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
             frontend/public/churvox-paid-launch-build.json \
-            scripts/churvox-command-queue-speed-backend-contract.cjs
+            scripts/churvox-command-queue-speed-backend-contract.cjs \
+            scripts/churvox-worker-field-command-bridge-contract.cjs
           if git diff --cached --quiet; then
-            echo 'Fresh Command slip refresh repair already present.'
+            echo 'Worker problem Command bridge already present.'
             echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
             exit 0
           fi
-          git commit -m 'Refresh Command immediately after a new slip'
+          git commit -m 'Bridge worker problems into owner Command'
           git push origin HEAD:main
           echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
@@ -104,6 +113,6 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             const sha = process.env.published_sha || '';
             const body = ok
-              ? `## Fresh Command slip refresh repair passed\n\nNewly created or scanned Command slips now bypass the short server cache once, while normal Command opening remains fast and cached. Worker queue/message repairs, backend/frontend contracts and production build passed. Published commit: \`${sha}\`.`
-              : `## Fresh Command slip refresh repair failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
+              ? `## Worker problem Command bridge passed\n\nGenuine worker problems are now deduplicated into the owner Command queue and invalidate its short server cache immediately. Proof and routine messages stay outside Command. All backend/frontend contracts and the production build passed. Published commit: \`${sha}\`.`
+              : `## Worker problem Command bridge failed safely\n\nNo failed repair should be treated as launch-ready. Workflow run: \`${context.runId}\`.`;
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
