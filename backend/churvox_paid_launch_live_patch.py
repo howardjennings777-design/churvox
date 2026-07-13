@@ -302,6 +302,8 @@ def install(module, force=False):
             "worker_field_command_bridge": "churvox-worker-field-command-bridge-v10-20260713",
             "worker_command_priority": "churvox-worker-command-priority-v10-20260713",
             "owner_manual_command_priority": "churvox-owner-manual-command-priority-v12-20260713",
+            "command_scan_performance": "churvox-command-scan-performance-v18-20260714",
+            "command_scan_timeout_seconds": 25,
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,

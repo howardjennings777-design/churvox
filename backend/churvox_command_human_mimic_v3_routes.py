@@ -3,9 +3,11 @@ from __future__ import annotations
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
+import asyncio
 import hashlib
 import json
 import re
+import time
 from statistics import median
 from typing import Any, Dict, List, Optional
 
@@ -19,6 +21,7 @@ except Exception:
 
 HUMAN_MIMIC_VERSION = "human-mimic-intelligence-v3"
 HUMAN_MIMIC_GUARD = "human-mimic-strict-preflight-v3"
+HUMAN_MIMIC_PERFORMANCE = "churvox-command-scan-performance-v18-20260714"
 SAFE_RESULT = "Owner approval required. Nothing was sent, synced, charged or changed."
 OPEN_STATUSES = ["open", "edited", "pending", "ready", "waiting", "snoozed"]
 OWNER_ROLES = {"employer", "admin", "owner", "business_owner", "manager", "office_admin"}
@@ -173,20 +176,28 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
         ]}
 
     async def scoped_rows(user_business_id, names, limit=240, errors=None):
-        rows = []
         query = business_clause(user_business_id)
-        for name in names:
+
+        async def load_collection(name):
             try:
                 cursor = db[name].find(query)
                 try:
                     cursor = cursor.sort("updated_at", -1)
                 except Exception:
                     cursor = cursor.sort("_id", -1)
-                found = await cursor.limit(limit).to_list(limit)
-                rows.extend([{**dict(item), "_collection": name} for item in found])
+                try:
+                    cursor = cursor.max_time_ms(1800)
+                except Exception:
+                    pass
+                found = await asyncio.wait_for(cursor.limit(limit).to_list(limit), timeout=2.5)
+                return [{**dict(item), "_collection": name} for item in found]
             except Exception as exc:
                 if errors is not None:
                     errors.append(f"{name}: {exc.__class__.__name__}")
+                return []
+
+        batches = await asyncio.gather(*(load_collection(name) for name in names))
+        rows = [row for batch in batches for row in batch]
         return rows[:limit]
 
     def row_ids(row):
@@ -493,7 +504,7 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
                 return True
         return False
 
-    async def linked_invoice_exists(user_business_id, job, invoices):
+    def linked_invoice_exists(user_business_id, job, invoices):
         refs = row_ids(job)
         if not refs:
             return False
@@ -960,19 +971,27 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
 
     async def retire_legacy(user_business_id):
         try:
-            rows = await db.command_slips.find({
+            cursor = db.command_slips.find({
                 "business_id": user_business_id,
                 "status": {"$in": OPEN_STATUSES},
                 "office_engine": True,
                 "payload.human_mimic_intelligence_v3": {"$ne": True},
-            }).limit(400).to_list(400)
+            })
+            try:
+                cursor = cursor.max_time_ms(1800)
+            except Exception:
+                pass
+            rows = await asyncio.wait_for(cursor.limit(400).to_list(400), timeout=2.5)
         except Exception:
             rows = []
-        count = 0
-        for row in rows:
-            if await supersede(row, "Strict human mimic v3 replaced an older judgement before launch. No business record changed."):
-                count += 1
-        return count
+        semaphore = asyncio.Semaphore(8)
+
+        async def retire(row):
+            async with semaphore:
+                return await supersede(row, "Strict human mimic v3 replaced an older judgement before launch. No business record changed.")
+
+        results = await asyncio.gather(*(retire(row) for row in rows))
+        return sum(1 for result in results if result)
 
     async def insert_hardened(user, doc):
         user_business_id = business_id(user)
@@ -1021,9 +1040,13 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
 
     @router.post("/command/scan")
     async def strict_human_mimic_scan(request: Request, payload: Optional[Dict[str, Any]] = None):
+        scan_started = time.monotonic()
+        stage_timings = {}
         user = await require_owner(request)
         user_business_id = business_id(user)
+        stage_started = time.monotonic()
         retired = await retire_legacy(user_business_id)
+        stage_timings["retire_legacy_ms"] = round((time.monotonic() - stage_started) * 1000)
 
         capture_db = _CaptureDB(db, ObjectId)
         base_router = build_command_human_mimic_router(capture_db, get_current_user, ObjectId)
@@ -1034,25 +1057,39 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
                 break
         if base_scan is None:
             raise HTTPException(status_code=500, detail="Human mimic reasoning engine is unavailable")
+        stage_started = time.monotonic()
         base_result = await base_scan(payload=payload, request=request)
+        stage_timings["base_scan_ms"] = round((time.monotonic() - stage_started) * 1000)
         captured = capture_db.capture.get("command_slips", [])
         scan_errors = list(base_result.get("scan_errors") or [])
 
+        stage_started = time.monotonic()
+        jobs, invoices, clients, messages, timers, settings = await asyncio.gather(
+            scoped_rows(user_business_id, ["jobs", "job_records", "appointments", "bookings"], 260, scan_errors),
+            scoped_rows(user_business_id, ["invoices", "invoice_records"], 220, scan_errors),
+            scoped_rows(user_business_id, ["clients", "customers"], 180, scan_errors),
+            scoped_rows(user_business_id, ["messages", "client_messages", "inbox_messages"], 180, scan_errors),
+            scoped_rows(user_business_id, ["time_entries", "timers", "worker_time_entries", "timesheets"], 180, scan_errors),
+            scoped_rows(user_business_id, ["businesses", "business_settings", "settings"], 60, scan_errors),
+        )
         context = {
-            "jobs": await scoped_rows(user_business_id, ["jobs", "job_records", "appointments", "bookings"], 260, scan_errors),
-            "invoices": await scoped_rows(user_business_id, ["invoices", "invoice_records"], 220, scan_errors),
-            "clients": await scoped_rows(user_business_id, ["clients", "customers"], 180, scan_errors),
-            "messages": await scoped_rows(user_business_id, ["messages", "client_messages", "inbox_messages"], 180, scan_errors),
-            "timers": await scoped_rows(user_business_id, ["time_entries", "timers", "worker_time_entries", "timesheets"], 180, scan_errors),
-            "settings": await scoped_rows(user_business_id, ["businesses", "business_settings", "settings"], 60, scan_errors),
+            "jobs": jobs,
+            "invoices": invoices,
+            "clients": clients,
+            "messages": messages,
+            "timers": timers,
+            "settings": settings,
         }
+        stage_timings["context_load_ms"] = round((time.monotonic() - stage_started) * 1000)
         scan_errors = list(dict.fromkeys(scan_errors))
         context["business_rate"], context["business_inclusive"], context["business_tax_source"] = business_tax_context(context["settings"])
+        stage_started = time.monotonic()
         linked_jobs = {}
         for job in context["jobs"]:
             source = next(iter(row_ids(job)), "")
-            linked_jobs[source] = await linked_invoice_exists(user_business_id, job, context["invoices"])
+            linked_jobs[source] = linked_invoice_exists(user_business_id, job, context["invoices"])
         context["linked_jobs"] = linked_jobs
+        stage_timings["link_index_ms"] = round((time.monotonic() - stage_started) * 1000)
 
         regular = []
         operations = []
@@ -1091,20 +1128,31 @@ def build_command_human_mimic_v3_router(db, get_current_user, ObjectId):
             else:
                 retired += len(briefs)
 
+        stage_started = time.monotonic()
         created = []
         existing = []
-        for doc in regular[:100]:
-            item, old, _ = await insert_hardened(user, doc)
+        store_semaphore = asyncio.Semaphore(8)
+
+        async def store_hardened(doc):
+            async with store_semaphore:
+                return await insert_hardened(user, doc)
+
+        stored = await asyncio.gather(*(store_hardened(doc) for doc in regular[:100]))
+        for item, old, _ in stored:
             if item:
                 created.append(item)
             elif old:
                 existing.append(old)
+        stage_timings["store_ms"] = round((time.monotonic() - stage_started) * 1000)
+        stage_timings["total_ms"] = round((time.monotonic() - scan_started) * 1000)
 
         role_counts = Counter(item.get("office_role") or (item.get("payload") or {}).get("office_role") or "Unknown" for item in created + existing)
         return {
             "success": True,
             "source": HUMAN_MIMIC_VERSION,
             "guard": HUMAN_MIMIC_GUARD,
+            "performance_version": HUMAN_MIMIC_PERFORMANCE,
+            "stage_timings_ms": stage_timings,
             "created_count": len(created),
             "existing_count": len(existing),
             "superseded_count": retired,

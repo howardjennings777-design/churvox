@@ -31,7 +31,11 @@
     "runtime-logical-completion-dedupe",
     "messages-readiness-verified-by-live-smoke",
     "final-owner-messages-request-signature",
-    "messages-route-no-422-request-query"
+    "messages-route-no-422-request-query",
+    "parallel-command-context-load",
+    "bounded-command-collection-reads",
+    "parallel-command-decision-storage",
+    "command-scan-stage-timings"
   ],
   "safety": "Owner approval remains required. This marker performs no action.",
   "command_priority_backend": "churvox-worker-command-priority-v10-20260713",
@@ -42,5 +46,7 @@
   "worker_jobs_active_filter": "churvox-worker-active-jobs-only-v15-20260713",
   "command_scan_retry": "bounded-safe-timeout-retry-v15-20260713",
   "owner_messages_final_route": "churvox-final-owner-messages-v17-20260714",
-  "owner_messages_request_signature": "fastapi-request-global-v17-20260714"
+  "owner_messages_request_signature": "fastapi-request-global-v17-20260714",
+  "command_scan_performance": "churvox-command-scan-performance-v18-20260714",
+  "command_scan_timeout_seconds": 25
 }
