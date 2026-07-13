@@ -65,11 +65,11 @@ export default function OfficeTeamTodayScreen({ pending, resolved, approvalTrail
             <strong>{pending.length} waiting · {recentApprovals.length} recent decisions</strong>
             <p>{ownerRoute ? "Command is the only approval queue. Open the first decision, correct anything wrong and leave the rest parked until it matters." : "Prepared work stays waiting for Command. Owner decisions stay visible in the approval trail."}</p>
             <div className="cvSiteMiniList">
-              {preparedWaiting.length ? preparedWaiting.map((item) => (
+              {preparedWaiting.length ? preparedWaiting.map((item, index) => (
                 <article key={item.id || item.action_id || item.title}>
                   <button onClick={() => go("command")}>
                     <b>{item.title}</b>
-                    <small>{item.roleName || item.tray || "Churvox"} · owner decision required</small>
+                    <small>Decision {index + 1} · {item.level || item.tray || item.roleName || "Review"}</small>
                   </button>
                 </article>
               )) : <article><b>Command is clear</b><small>Routine admin stays in the background until a real decision is needed.</small></article>}
