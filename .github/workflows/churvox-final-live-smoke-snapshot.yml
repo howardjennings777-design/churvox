@@ -1,0 +1,98 @@
+name: Churvox Final Live Smoke Snapshot
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  snapshot:
+    if: startsWith(github.event.issue.title, '[churvox-final-live-smoke-snapshot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITE: https://www.churvox.com
+      API: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Run one-shot live snapshot
+        shell: bash
+        run: |
+          set -o pipefail
+          node <<'NODE' 2>&1 | tee /tmp/churvox-final-live-smoke-snapshot.txt
+          const site = process.env.SITE;
+          const api = process.env.API;
+          const started = Date.now();
+          const read = async (response) => response.json().catch(async () => ({ text: (await response.text().catch(() => '')).slice(0,900) }));
+          const timed = async (label, fn) => {
+            const at = Date.now();
+            try {
+              const value = await fn();
+              console.log(`${label} elapsed_ms=${Date.now() - at} ${JSON.stringify(value).slice(0,3000)}`);
+              return value;
+            } catch (error) {
+              console.log(`${label} elapsed_ms=${Date.now() - at} ERROR=${error.message || error}`);
+              throw error;
+            }
+          };
+          function tokenFrom(body = {}) { return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || ''; }
+          (async () => {
+            await timed('ASSETS', async () => {
+              const manifestResponse = await fetch(`${site}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store' });
+              const manifest = await manifestResponse.json();
+              const assets = [...new Set(Object.values(manifest.files || {}).filter((value) => typeof value === 'string' && /\.js(?:$|\?)/.test(value)))];
+              const markers = { auth: 'churvox-auth-401-storm-repair-20260713b', growth: 'churvox-growth-pack-checkout-20260713a', command: 'churvox-command-instant-load-20260713d' };
+              const found = {};
+              for (const asset of assets) {
+                const text = await (await fetch(new URL(asset, site), { cache: 'no-store' })).text();
+                for (const [key, marker] of Object.entries(markers)) if (!found[key] && text.includes(marker)) found[key] = asset;
+              }
+              return { count: assets.length, found };
+            });
+            await timed('BOOT', async () => {
+              const response = await fetch(`${api}/api/command-fast-load/boot?ts=${Date.now()}`, { cache: 'no-store' });
+              return { status: response.status, body: await read(response) };
+            });
+            const login = await timed('LOGIN', async () => {
+              const response = await fetch(`${api}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: process.env.OWNER_EMAIL, password: process.env.OWNER_PASSWORD }) });
+              const body = await read(response);
+              return { status: response.status, body, token: tokenFrom(body) };
+            });
+            if (!login.token) throw new Error(`login token missing status=${login.status}`);
+            const auth = { Authorization: `Bearer ${login.token}` };
+            await timed('QUEUE', async () => {
+              const response = await fetch(`${api}/api/command/slips?ts=${Date.now()}`, { headers: auth, cache: 'no-store' });
+              const body = await read(response);
+              return { status: response.status, source: body.source, count: Array.isArray(body.slips) ? body.slips.length : null, body: response.ok ? undefined : body };
+            });
+            await timed('PAYROLL', async () => {
+              const response = await fetch(`${api}/api/payroll?ts=${Date.now()}`, { headers: auth, cache: 'no-store' });
+              const body = await read(response);
+              return { status: response.status, success: body.success, read_only: body.read_only, owner_approval_required: body.owner_approval_required, body: response.ok ? undefined : body };
+            });
+            await timed('SCAN', async () => {
+              const controller = new AbortController();
+              const timer = setTimeout(() => controller.abort(), 45_000);
+              try {
+                const response = await fetch(`${api}/api/command/scan`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'one_shot_snapshot', prepared_only: true, owner_review_only: true }), signal: controller.signal });
+                const body = await read(response);
+                return { status: response.status, source: body.source, guard: body.guard, complete: body.scan_complete, errors: body.scan_errors, roles: body.roles_checked, created: body.created_count, existing: body.existing_count, detail: body.detail, message: body.message };
+              } finally { clearTimeout(timer); }
+            });
+            console.log(`SNAPSHOT_TOTAL elapsed_ms=${Date.now() - started}`);
+          })().catch((error) => { console.error(error.stack || error.message || error); process.exit(1); });
+          NODE
+
+      - name: Post snapshot
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.existsSync('/tmp/churvox-final-live-smoke-snapshot.txt') ? fs.readFileSync('/tmp/churvox-final-live-smoke-snapshot.txt', 'utf8').slice(-12000) : 'No output.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `## One-shot final live smoke snapshot\n\n\`\`\`text\n${output}\n\`\`\`` });
