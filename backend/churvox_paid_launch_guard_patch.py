@@ -10,7 +10,7 @@ from fastapi import HTTPException, Request as FastAPIRequest
 
 TARGETS = {"server", "backend.server", "churvox_legacy_server"}
 INSTALLED = set()
-FINAL_WORKER_FIELD_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v9-20260713"
+FINAL_WORKER_FIELD_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v10-20260713"
 
 
 def now_utc():

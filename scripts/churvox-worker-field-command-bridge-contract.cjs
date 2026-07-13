@@ -8,7 +8,7 @@ const ownerCss = fs.readFileSync('frontend/src/churvox-office-lab/OfficeTeamOwne
 const marker = fs.readFileSync('frontend/public/churvox-paid-launch-build.json', 'utf8');
 
 const checks = [
-  ['bridge build marker', field.includes('churvox-worker-field-command-bridge-v9-20260713') && marker.includes('churvox-worker-field-command-bridge-v9-20260713')],
+  ['bridge build marker', field.includes('churvox-worker-field-command-bridge-v10-20260713') && marker.includes('churvox-worker-field-command-bridge-v10-20260713')],
   ['problem-only classification', field.includes('def _needs_command(kind)') && field.includes('"problem"') && field.includes('"issue"')],
   ['proof remains outside Command', field.includes('"excludes": ["job_proof", "routine_worker_message"]')],
   ['deduplicated command upsert', field.includes('db.command_slips.update_one') && field.includes('"$setOnInsert": command_doc') && field.includes('upsert=True')],
@@ -20,9 +20,10 @@ const checks = [
   ['shared queue invalidator exists', live.includes('def invalidate_command_queue(business_id: str)') && live.includes('COMMAND_QUEUE_CACHES')],
   ['final route delegates to bridge', guard.includes('field_truth_fix.fixed_create_field_slip') && guard.includes('paid_launch_guard_bridge')],
   ['final readiness owns live route', guard.includes('/api/worker/field-command-readiness') && guard.includes('FINAL_WORKER_FIELD_BRIDGE_BUILD')],
-  ['paid launch readiness marker aligned', live.includes('churvox-worker-field-command-bridge-v9-20260713')],
+  ['paid launch readiness marker aligned', live.includes('churvox-worker-field-command-bridge-v10-20260713')],
   ['worker problem route remains field slip', workerUi.includes('sendFieldSlip(needsDecision ? "worker_problem" : "worker_message"')],
   ['mobile open-slip target is at least 48px', ownerCss.includes('.cvOwnerReady .cvSiteDecisionCard footer button') && ownerCss.includes('min-height: 48px')],
+  ['worker problems rank ahead of routine Command items', field.includes('worker_field_problem') && marker.includes('worker-problems-ranked-before-routine-command-items')],
   ['owner approval statement remains', field.includes('owner must approve, edit, park or dismiss')],
 ];
 

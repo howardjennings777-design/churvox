@@ -1,8 +1,8 @@
 {
-  "build": "churvox-worker-field-command-bridge-v9-20260713",
+  "build": "churvox-worker-command-priority-v10-20260713",
   "backend": "worker-jobs-current-first-v4-20260713",
   "command_backend": "churvox-command-force-refresh-v4-20260713",
-  "field_command_backend": "churvox-worker-field-command-bridge-v9-20260713",
+  "field_command_backend": "churvox-worker-field-command-bridge-v10-20260713",
   "includes": [
     "definitive-worker-jobs-route",
     "current-assignment-first",
@@ -14,7 +14,9 @@
     "mobile-command-touch-targets",
     "concise-command-cards",
     "current-wrapper-contract",
-    "all-command-cache-aliases-invalidated"
+    "all-command-cache-aliases-invalidated",
+    "worker-problems-ranked-before-routine-command-items"
   ],
-  "safety": "Owner approval remains required. This marker performs no action."
+  "safety": "Owner approval remains required. This marker performs no action.",
+  "command_priority_backend": "churvox-worker-command-priority-v10-20260713"
 }

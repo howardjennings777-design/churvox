@@ -390,8 +390,19 @@ function Status({ metrics, sourceLabel, notice, appMode }) {
   return <section className="cvSiteStatus"><div className="cvSiteStatusLead"><span>{modeLabel} · {sourceLabel}</span><h1>{title}</h1><p>{text}</p><small>{notice}</small></div>{metrics.map((m) => <article key={m.label}><strong>{m.value}</strong><span>{m.label}</span><small>{m.note}</small></article>)}</section>;
 }
 
+function commandQueuePriority(item = {}) {
+  const level = String(item.level || "").toLowerCase();
+  const raw = item.raw || {};
+  const payload = raw.payload && typeof raw.payload === "object" ? raw.payload : {};
+  if (raw.source_type === "worker_field_problem" || payload.worker_field_problem) return 100;
+  if (/top priority|urgent|high/.test(level)) return 80;
+  if (/accounting check|needs check/.test(level)) return 50;
+  return 30;
+}
+
 function Command({ tray, setTray, counts, pending, onAction, commandLoading }) {
-  const queue = tray === "command" ? pending : pending.filter((item) => trayKey(item.tray) === tray);
+  const queueBase = tray === "command" ? pending : pending.filter((item) => trayKey(item.tray) === tray);
+  const queue = [...queueBase].sort((left, right) => commandQueuePriority(right) - commandQueuePriority(left));
   const shown = queue.slice(0, COMMAND_CARD_LIMIT);
   const waiting = Math.max(0, queue.length - shown.length);
   const [selectedId, setSelectedId] = useState("");

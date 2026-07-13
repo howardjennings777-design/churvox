@@ -9,7 +9,7 @@ import churvox_field_truth_patch as base
 
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
-FIELD_COMMAND_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v9-20260713"
+FIELD_COMMAND_BRIDGE_BUILD = "churvox-worker-field-command-bridge-v10-20260713"
 
 
 def route_matches(route, path, method):

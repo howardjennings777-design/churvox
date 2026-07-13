@@ -145,11 +145,16 @@ def install(module, force=False):
     queue_refresh_tasks: Dict[str, asyncio.Task] = {}
     COMMAND_QUEUE_CACHES[name or f"module-{id(module)}"] = queue_cache
 
-    def queue_sort_value(row: Dict[str, Any]) -> str:
+    def queue_sort_value(row: Dict[str, Any]):
+        source = str(row.get("source_type") or "").strip().lower()
+        urgency = str(row.get("urgency") or row.get("level") or row.get("priority") or "").strip().lower()
+        payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+        worker_problem = source == "worker_field_problem" or bool(payload.get("worker_field_problem"))
+        priority = 100 if worker_problem else 80 if any(word in urgency for word in ("urgent", "top", "high")) else 40
         value = row.get("updated_at") or row.get("created_at") or row.get("_id") or ""
         if isinstance(value, datetime):
-            return value.isoformat()
-        return str(value)
+            value = value.isoformat()
+        return priority, str(value)
 
     async def read_queue_status(bid: str, status: str):
         query = {"business_id": bid, "status": status}
@@ -292,7 +297,8 @@ def install(module, force=False):
             "success": True,
             "marker": "churvox-command-v3-live-backend-20260713g",
             "command_force_refresh": COMMAND_FORCE_REFRESH_BUILD,
-            "worker_field_command_bridge": "churvox-worker-field-command-bridge-v9-20260713",
+            "worker_field_command_bridge": "churvox-worker-field-command-bridge-v10-20260713",
+            "worker_command_priority": "churvox-worker-command-priority-v10-20260713",
             "routes": ["payroll", "payroll-summary", "command-slips", "command-scan", "admin-brain"],
             "indexes_ready": index_ready,
             "safety": SAFETY,
