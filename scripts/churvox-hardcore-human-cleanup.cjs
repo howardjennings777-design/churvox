@@ -93,6 +93,7 @@ async function main() {
   const headers = { Authorization: `Bearer ${token}` };
   const failures = [];
   const settled = new Set();
+  const commandSeen = new Set();
   let matched = 0;
   let cleaned = 0;
 
@@ -107,12 +108,25 @@ async function main() {
     }
   }
 
-  for (const row of await list('/api/command/slips?limit=400', headers)) {
-    if (!matches(row)) continue;
-    matched += 1;
-    const id = idOf(row);
-    if (await resolveCommandSlip(row, headers)) { cleaned += 1; if (id) settled.add(`command:${id}`); }
-    else failures.push(`command:${id || 'missing-id'}`);
+  // The live Command endpoint can expose a bounded page. Drain successive
+  // pages until no matching active audit slips remain instead of cleaning only page one.
+  for (let round = 0; round < 24; round += 1) {
+    const commandRows = (await list('/api/command/slips?limit=400', headers)).filter((row) => matches(row) && !inactiveRecord(row));
+    if (!commandRows.length) break;
+    let progressed = 0;
+    for (const row of commandRows) {
+      const id = idOf(row);
+      if (id && !commandSeen.has(id)) { commandSeen.add(id); matched += 1; }
+      if (await resolveCommandSlip(row, headers)) {
+        progressed += 1;
+        cleaned += 1;
+        if (id) settled.add(`command:${id}`);
+      } else {
+        failures.push(`command:${id || 'missing-id'}`);
+      }
+    }
+    if (!progressed) break;
+    await new Promise((resolve) => setTimeout(resolve, 150));
   }
 
   // Messages and notifications are immutable audit history. They are checked for safety but are not treated as active business records.
@@ -125,7 +139,7 @@ async function main() {
   for (const kind of ['jobs', 'clients', 'quotes', 'invoices']) {
     for (const row of await list(`/api/${kind}?limit=400`, headers)) { const key = `${kind}:${idOf(row)}`; if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key); }
   }
-  for (const row of await list('/api/command/slips?limit=400', headers)) { const key = `command:${idOf(row)}`; if (matches(row) && !settled.has(key)) remainingActive.push(key); }
+  for (const row of await list('/api/command/slips?limit=400', headers)) { const key = `command:${idOf(row)}`; if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key); }
 
   console.log(`Cleanup matched ${matched} active audit records and cleaned/resolved ${cleaned}.`);
   console.log(`Retained ${historyMatches.length} immutable message/notification audit entries.`);

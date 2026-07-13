@@ -11,37 +11,53 @@ export function useOfficeTeamRows(area, fallbackRows = [], options = {}) {
   const allowFallback = isOfficeTeamPreviewRoute() && options.allowFallback !== false;
   const emptyMessage = options.emptyMessage || "No live records found yet";
   const [state, setState] = useState({ source: "loading", rows: [], message: "Checking live records" });
+  const refreshMs = Math.max(0, Number(options.refreshMs ?? (area === "worker" ? 3000 : 0)));
 
   useEffect(() => {
     let mounted = true;
+    let timer = null;
+    let loading = false;
     setState({ source: "loading", rows: [], message: "Checking live records" });
-    fetchOfficeTeamRows(area)
-      .then((next) => {
+
+    const load = async () => {
+      if (loading) return;
+      loading = true;
+      try {
+        const next = await fetchOfficeTeamRows(area);
         if (!mounted) return;
-        const rows = Array.isArray(next?.rows) ? next.rows : [];
+        const nextRows = Array.isArray(next?.rows) ? next.rows : [];
         setState({
           ...(next || {}),
-          source: rows.length ? "live" : allowFallback ? "preview" : "empty",
-          rows,
-          message: rows.length
-            ? next?.message || `Live read-only · ${rows.length} records`
+          source: nextRows.length ? "live" : allowFallback ? "preview" : "empty",
+          rows: nextRows,
+          message: nextRows.length
+            ? next?.message || `Live read-only · ${nextRows.length} records`
             : allowFallback
               ? "Example preview records"
               : emptyMessage,
         });
-      })
-      .catch(() => {
+      } catch {
         if (!mounted) return;
-        setState({
+        setState((current) => Array.isArray(current?.rows) && current.rows.length ? {
+          ...current,
+          message: "Live refresh retrying",
+        } : {
           source: allowFallback ? "preview" : "error",
           rows: [],
           message: allowFallback ? "Example preview records" : "Live records unavailable",
         });
-      });
+      } finally {
+        loading = false;
+      }
+    };
+
+    load();
+    if (refreshMs > 0) timer = window.setInterval(load, refreshMs);
     return () => {
       mounted = false;
+      if (timer) window.clearInterval(timer);
     };
-  }, [allowFallback, area, emptyMessage]);
+  }, [allowFallback, area, emptyMessage, refreshMs]);
 
   return useMemo(() => {
     const liveRows = Array.isArray(state.rows) ? state.rows : [];

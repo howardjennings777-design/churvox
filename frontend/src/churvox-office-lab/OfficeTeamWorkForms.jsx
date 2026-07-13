@@ -132,14 +132,16 @@ export default function OfficeTeamWorkForms({ area = "work", title = "Work", sel
   const [intakeText, setIntakeText] = useState("");
   const [trail, setTrail] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const ownerRoute = isOwnerRoute();
   const parsed = useMemo(() => intakeText ? parseIntakeText(intakeText) : null, [intakeText]);
 
   useEffect(() => {
-    setValues(initialValues(config, selectedRecord));
-  }, [config, selectedRecord]);
+    if (!dirty) setValues(initialValues(config, selectedRecord));
+  }, [config, selectedRecord, dirty]);
 
   function setField(key, value) {
+    setDirty(true);
     setValues((current) => ({ ...current, [key]: value }));
   }
 

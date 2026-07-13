@@ -203,11 +203,12 @@ check(
 
 check(
   'live owner and worker screens never inject sample records',
-  all(liveRows, [
-    'const allowFallback = isOfficeTeamPreviewRoute()',
-    'source: rows.length ? "live" : allowFallback ? "preview" : "empty"',
-    'rows: [],',
-  ])
+  liveRows.includes('const allowFallback = isOfficeTeamPreviewRoute()')
+    && (
+      liveRows.includes('source: rows.length ? "live" : allowFallback ? "preview" : "empty"')
+      || liveRows.includes('source: nextRows.length ? "live" : allowFallback ? "preview" : "empty"')
+    )
+    && liveRows.includes('rows: [],')
     && officeApi.includes('worker: ["/api/worker/jobs"]')
     && officeApi.includes('staff: ["/api/team/workers", "/api/team", "/api/workers"]'),
   'Fallback rows are acceptable only in the explicit lab routes',

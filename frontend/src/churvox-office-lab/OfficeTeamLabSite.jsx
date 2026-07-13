@@ -220,7 +220,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
           setResolved({});
           setNotice(command?.decisions?.length ? "Command refreshed. A prepared decision is waiting for you." : "Command refreshed. Nothing needs your decision right now.");
         })
-        .catch(() => setNotice("Command refresh failed. No fallback decisions were shown and nothing changed."));
+        .catch(() => setNotice("Command refresh failed. No fallback or browser-only decisions are being shown. Nothing changed."));
       fetchBackendCommandAudit().then((audit) => { if (audit) setBackendAudit(audit); }).catch(() => {});
     };
     window.addEventListener(BACKEND_COMMAND_EVENT, refreshBackendCommand);
@@ -429,6 +429,7 @@ function CommandSlip({ item, onAction }) {
     <div className="cvCommandSlipTop"><span>Command slip</span><em>{item.level || "Review"}</em></div>
     <h3>{item.title}</h3>
     <p className="cvSlipPlainSummary">{plainSlipSummary(item)}</p>
+    {Array.isArray(item.checked) && item.checked.length ? <section className="cvSlipEvidence"><b>Evidence checked</b><div>{item.checked.slice(0, 5).map((entry, index) => <span key={`${entry}-${index}`}>{briefDecisionText(entry, 72)}</span>)}</div></section> : null}
     <div className="cvCommandSlipMeta"><b>{item.roleName || item.tray || "Churvox"}</b><small>{item.tray || "Command"}</small><small>{source}</small></div>
 
     <section className="cvSlipForm" aria-label="Editable prepared approval form">
@@ -471,7 +472,12 @@ function Safety() {
 }
 
 function Header({ eyebrow, title, text }) { return <header className="cvSiteScreenHeader"><span>{eyebrow}</span><h2>{title}</h2><p>{text}</p></header>; }
-function Decision({ item, onOpen, selected }) { return <article className={`cvSiteDecisionCard ${selected ? "selected" : ""}`}><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{item.happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).map((x) => <small key={x}>{x}</small>)}</dd><dt>Prepared</dt><dd>{item.prepared}</dd><dt>Owner decision</dt><dd>{item.need}</dd></dl><footer><button type="button" className="openSlip" onClick={onOpen}>Open slip</button></footer><small>Open the full slip to inspect the evidence and prepared form</small></article>; }
+function Decision({ item, onOpen, selected }) {
+  const happened = briefDecisionText(item.happened, 96);
+  const prepared = briefDecisionText(item.prepared, 88);
+  const need = briefDecisionText(item.need, 88);
+  return <article className={`cvSiteDecisionCard ${selected ? "selected" : ""}`}><div><span>{item.level}</span><em>{item.tray}</em></div><h3>{item.title}</h3><p>{happened}</p><dl><dt>Checked</dt><dd>{(item.checked || []).slice(0, 5).map((x, index) => <small key={`${x}-${index}`}>{briefDecisionText(x, 64)}</small>)}</dd><dt>Prepared</dt><dd>{prepared}</dd><dt>Owner decision</dt><dd>{need}</dd></dl><footer><button type="button" className="openSlip" onClick={onOpen}>Open slip</button></footer><small>Open the full slip to inspect the evidence and prepared form</small></article>;
+}
 function Info({ title, items }) { return <section><h3>{title}</h3><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></section>; }
 function Empty({ title, text }) { return <article className="cvSiteEmpty"><strong>{title}</strong><p>{text}</p></article>; }
 function role(name, dept, summary, checks, prepares, ownerAsk, feeds, guard) { return { name, dept, summary, checks, prepares, ownerAsk, feeds, guard }; }
@@ -486,7 +492,13 @@ function logoutOffice() { try { localStorage.removeItem("token"); localStorage.r
 function cleanText(value) { return String(value || "").trim(); }
 function firstValue(...values) { return values.map(cleanText).find(Boolean) || ""; }
 function payloadOf(item = {}) { return item?.raw?.payload && typeof item.raw.payload === "object" ? item.raw.payload : {}; }
-function plainSlipSummary(item = {}) { return firstValue(item.happened, item.detail, item.raw?.found, "Churvox found something that needs an owner decision."); }
+function briefDecisionText(value, limit = 96) {
+  const raw = cleanText(value).replace(/\s+/g, " ");
+  const concise = raw.split(/\bEvidence used:/i)[0].trim() || raw;
+  if (!concise) return "Owner review needed.";
+  return concise.length > limit ? `${concise.slice(0, Math.max(1, limit - 1)).trimEnd()}…` : concise;
+}
+function plainSlipSummary(item = {}) { return briefDecisionText(firstValue(item.happened, item.detail, item.raw?.found, "Churvox found something that needs an owner decision."), 108); }
 function makeSlipFormTitle(item = {}) {
   const text = `${item.tray || ""} ${item.roleName || ""} ${item.raw?.action_type || ""} ${item.title || ""}`.toLowerCase();
   if (/timer|hours|payroll|staff/.test(text)) return "Hours review form";
