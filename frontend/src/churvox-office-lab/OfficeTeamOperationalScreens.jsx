@@ -7,13 +7,6 @@ import OfficeTeamMoneyRadar from "./OfficeTeamMoneyRadar";
 import OfficeTeamClientsWorkspace from "./OfficeTeamClientsWorkspace";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
-const moneyRows = [
-  ["Draft invoice", "$185", "Extra charge held", "Owner decision"],
-  ["Quote follow-up", "$420", "Viewed, no reply", "Follow-up ready"],
-  ["Payment reminder", "$89", "Due soon", "Reminder prepared"],
-  ["Accounting sync", "0", "Locked", "No auto-sync"],
-];
-
 const staffRows = [
   ["Cam", "Timer check", "Odd timer", "Ask or edit"],
   ["Worker setup", "Invite incomplete", "Reminder ready", "No auto-send"],

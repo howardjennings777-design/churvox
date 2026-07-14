@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import API_BASE from "../lib/apiBase";
 
 const CACHE_MS = 15000;

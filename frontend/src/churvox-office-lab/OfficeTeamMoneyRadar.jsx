@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createBackendCommandSlip } from "./OfficeTeamCommandApi";
-import { buildMoneyRadar, moneyLabel, numberValue, shortDate, signatureOwnerRoute, useOfficeTeamSignatureData } from "./OfficeTeamSignatureData";
+import { buildMoneyRadar, moneyLabel, numberValue, signatureOwnerRoute, useOfficeTeamSignatureData } from "./OfficeTeamSignatureData";
 import "./OfficeTeamSignatureFlows.css";
 
 const FILTERS = [
