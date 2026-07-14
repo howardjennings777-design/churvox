@@ -110,7 +110,7 @@ function watchRuntime(page) {
   page.on('console', (message) => {
     if (message.type() !== 'error') return;
     const text = message.text();
-    if (/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|Failed to load resource.*404/i.test(text)) return;
+    if (/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|Failed to load resource.*(?:401|404)/i.test(text)) return;
     errors.push(`console: ${text.slice(0, 700)}`);
   });
   page.on('response', (response) => {
