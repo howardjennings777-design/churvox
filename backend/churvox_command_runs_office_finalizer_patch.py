@@ -13,7 +13,8 @@ except Exception:
     from . import churvox_command_runs_office_patch as engine
 
 
-VERSION = "churvox-command-runs-office-finalizer-v3-20260715"
+VERSION = "churvox-command-runs-office-finalizer-v4-20260715"
+PUBLIC_CONTRACT_VERSION = "churvox-command-runs-office-v2-20260715"
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
 WORKER_ASSIGNMENT_ACTIONS = {
@@ -231,6 +232,7 @@ def install(module):
     if not app or db is None or not get_current_user or ObjectId is None or module_name in INSTALLED:
         return
 
+    engine.VERSION = PUBLIC_CONTRACT_VERSION
     engine.load_context = fast_load_context
     engine.enrich_worker_decision = enhanced_worker_decision
     engine.enrich_generic_decision = enhanced_generic_decision
