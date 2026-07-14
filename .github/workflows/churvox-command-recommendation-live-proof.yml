@@ -1,0 +1,66 @@
+name: Churvox Command Recommendation Live Proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-command-recommendation-live-proof]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - name: Mark proof started
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Live Command recommendation proof started on run \`${context.runId}\`. It will wait for the merged backend, create one marked unassigned job and one marked generic slip, verify both recommendation paths, then clean them up.`
+            });
+
+      - name: Check out current main
+        uses: actions/checkout@v4
+
+      - name: Run live recommendation proof
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/churvox-command-recommendation-live-proof.cjs 2>&1 | tee /tmp/churvox-command-recommendation-live-proof.txt
+
+      - name: Post proof result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const raw = fs.existsSync('/tmp/churvox-command-recommendation-live-proof.txt')
+              ? fs.readFileSync('/tmp/churvox-command-recommendation-live-proof.txt', 'utf8')
+              : 'No proof output.';
+            const safe = raw
+              .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email-hidden]')
+              .replace(/[a-f0-9]{24}/gi, '[id-hidden]')
+              .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]')
+              .replace(/id=[^\s]+/gi, 'id=[hidden]')
+              .slice(-16000);
+            const passed = raw.includes('COMMAND_RECOMMENDATION_LIVE_PROOF_PASS');
+            const heading = passed
+              ? '## Live Command recommendation proof passed'
+              : '## Live Command recommendation proof failed';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${heading}\n\n\`\`\`text\n${safe}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.`
+            });
