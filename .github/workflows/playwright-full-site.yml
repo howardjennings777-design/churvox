@@ -1,4 +1,4 @@
-# clean-audit-marker: 2026-07-14g
+# clean-audit-marker: 2026-07-14h
 name: Churvox Playwright Full Site Test
 
 on:
@@ -33,6 +33,7 @@ jobs:
 
     env:
       PLAYWRIGHT_BASE_URL: ${{ github.event.inputs.base_url || vars.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com' }}
+      PLAYWRIGHT_API_BASE: ${{ vars.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com' }}
       E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
       E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
 
@@ -111,6 +112,10 @@ jobs:
         if: github.event_name == 'push'
         run: sleep 90
 
+      - name: Verify live Job Done deployment fingerprints
+        if: github.event_name != 'pull_request'
+        run: node ../scripts/churvox-live-job-done-deploy.cjs
+
       - name: Run live public desktop and mobile contracts
         if: github.event_name != 'pull_request'
         run: |
@@ -135,7 +140,7 @@ jobs:
         if: github.event_name != 'pull_request' && (env.E2E_EMAIL == '' || env.E2E_PASSWORD == '')
         run: |
           echo "Authenticated full-site coverage was not run because CHURVOX_E2E_EMAIL and CHURVOX_E2E_PASSWORD are not configured."
-          echo "The complete local UI suite and live public contracts still ran and must pass."
+          echo "The complete local UI suite, live Job Done deploy proof and live public contracts still ran and must pass."
 
       - name: Upload Playwright report
         if: always()
