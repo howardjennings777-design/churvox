@@ -1,29 +1,8 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import CommandSlipEverything from "../components/CommandSlipEverything";
-
-const navGroups = [
-  { title: "Command", items: [["Command Board", "/dashboard", "CB"], ["AI Operator", "/ai-operator", "AI"], ["Approvals", "/ai-operator/approvals", "OK"], ["Notifications", "/notifications", "NT"]] },
-  { title: "Work", items: [["Jobs", "/jobs", "JB"], ["Dispatch", "/dispatch", "DP"], ["Clients", "/clients", "CL"], ["Quotes", "/quotes", "QT"], ["Invoices", "/invoices", "IV"], ["Money Desk", "/money-desk", "$"]] },
-  { title: "Crew & Admin", items: [["Team", "/team", "TM"], ["Crew Ops", "/crew-ops", "CO"], ["Payroll", "/payroll", "PR"], ["Reports", "/reports", "RP"]] },
-  { title: "System", items: [["Setup", "/onboarding", "SU"], ["Trade Presets", "/trade-presets", "TP"], ["Automation", "/automation", "AU"], ["Integrations", "/integrations", "IN"], ["Operator Tools", "/operator-tools", "OT"], ["Plans", "/plans", "PL"], ["Billing", "/billing-confidence", "BI"], ["Settings", "/settings", "ST"], ["Support", "/support", "?"]] },
-];
-
-const sampleRecords = [
-  { id: "sample-m1", type: "ready_invoice", title: "Completed job ready to invoice", client_name: "Green Street Rentals", status: "ready", amount_due: 680, description: "Job completed, photos uploaded, invoice can be drafted." },
-  { id: "sample-m2", type: "overdue_invoice", invoice_number: "INV-2040", client_name: "Sarah Williams", status: "overdue", amount_due: 420, description: "Payment reminder should be reviewed before sending." },
-  { id: "sample-m3", type: "accepted_quote", quote_number: "QT-1039", client_name: "ECB Property Maintenance", status: "accepted", amount_due: 1850, description: "Accepted quote can move into job/invoice flow." },
-  { id: "sample-m4", type: "paid_invoice", invoice_number: "INV-2038", client_name: "Wilson Family", status: "paid", amount_due: 0, total: 310, description: "Paid invoice record." },
-];
-
-function isActivePath(pathname, href) {
-  if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/overview";
-  if (href === "/dispatch") return pathname === "/dispatch" || pathname === "/dispatch-board";
-  if (href === "/money-desk") return pathname === "/money-desk" || pathname === "/money";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 function arr(value) {
   const data = value?.data ?? value;
@@ -44,8 +23,8 @@ function idOf(record) {
 }
 
 function money(value) {
-  const n = Number(value || 0);
-  return Number.isFinite(n) ? n.toLocaleString("en-NZ", { style: "currency", currency: "NZD" }) : "$0.00";
+  const amount = Number(value || 0);
+  return Number.isFinite(amount) ? amount.toLocaleString("en-NZ", { style: "currency", currency: "NZD" }) : "$0.00";
 }
 
 function titleOf(record) {
@@ -78,7 +57,7 @@ function isDraft(record) {
 }
 
 function pretty(value) {
-  return String(value || "").replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase());
+  return String(value || "").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function statusStyle(record) {
@@ -92,18 +71,11 @@ function statusStyle(record) {
 
 function linkFor(record) {
   const id = idOf(record);
-  if (!id || id.startsWith("sample-")) return "/invoices/new";
+  if (!id) return "/invoices";
   const type = String(record?.type || "").toLowerCase();
   if (record?.quote_number || type.includes("quote")) return `/quotes/${id}`;
   if (record?.job_title || record?.job_name || type.includes("job")) return `/jobs/${id}`;
   return `/invoices/${id}`;
-}
-
-function Sidebar() {
-  const { pathname } = useLocation();
-  return (
-    
-  );
 }
 
 function MoneyCard({ record, onOpen }) {
@@ -122,7 +94,7 @@ function MoneyCard({ record, onOpen }) {
         <div className="text-slate-500">Amount: {money(valueOf(record))}</div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={() => onOpen(record)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review slip</button>
+        <button type="button" onClick={() => onOpen(record)} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Review decision</button>
         <Link to={linkFor(record)} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open record</Link>
       </div>
     </article>
@@ -138,7 +110,7 @@ function MoneySlip({ record, onClose }) {
           <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
           <div className="relative flex items-start justify-between gap-4">
             <div>
-              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Money Work Slip</div>
+              <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Money decision</div>
               <h2 className="mt-4 text-3xl font-black leading-[0.95] tracking-[-0.07em] md:text-5xl">{titleOf(record)}</h2>
             </div>
             <button type="button" onClick={onClose} className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">Close</button>
@@ -150,18 +122,14 @@ function MoneySlip({ record, onClose }) {
           <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">What needs attention</div>
             <p className="mt-3 text-lg font-black tracking-[-0.035em] text-slate-950">Status: {isPaid(record) ? "Paid" : pretty(statusOf(record))}</p>
-            <div className={`mt-4 rounded-2xl border p-4 text-sm font-bold leading-6 ${isOverdue(record) ? "border-red-100 bg-red-50 text-red-950" : isPaid(record) ? "border-emerald-100 bg-emerald-50 text-emerald-950" : "border-blue-100 bg-blue-50 text-blue-950"}`}>{isOverdue(record) ? "This needs a payment reminder or owner follow-up." : isPaid(record) ? "This is already paid. Keep it as a money record." : "Review this money item and open the record to approve the next action."}</div>
+            <div className={`mt-4 rounded-2xl border p-4 text-sm font-bold leading-6 ${isOverdue(record) ? "border-red-100 bg-red-50 text-red-950" : isPaid(record) ? "border-emerald-100 bg-emerald-50 text-emerald-950" : "border-blue-100 bg-blue-50 text-blue-950"}`}>{isOverdue(record) ? "This may need an owner-approved payment follow-up." : isPaid(record) ? "This payment is already recorded." : "Review the record and approve the next step when it is correct."}</div>
           </section>
           <section className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Client</div><div className="mt-1 text-sm font-black text-slate-950">{clientName(record)}</div></div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Amount</div><div className="mt-1 text-sm font-black text-slate-950">{money(valueOf(record))}</div></div>
           </section>
-        
-              <CommandSlipEverything
-                record={record}
-                context="MoneySlip"
-              />
-</main>
+          <CommandSlipEverything record={record} context="MoneySlip" />
+        </main>
 
         <footer className="flex flex-wrap gap-3 border-t border-slate-200 bg-white p-5">
           <Link to={linkFor(record)} className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700">Open record</Link>
@@ -169,6 +137,16 @@ function MoneySlip({ record, onClose }) {
         </footer>
       </div>
     </div>
+  );
+}
+
+function EmptyMoneyQueue({ error }) {
+  return (
+    <article className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+      <h3 className="text-xl font-black tracking-[-0.04em] text-slate-950">{error ? "Money records are unavailable" : "Nothing needs attention"}</h3>
+      <p className="mx-auto mt-2 max-w-xl text-sm font-semibold leading-6 text-slate-600">{error ? "Churvox could not confirm the current records. Nothing was changed. Try again shortly." : "Ready invoices, accepted quotes and payment follow-ups will appear here when they need an owner decision."}</p>
+      <div className="mt-5 flex justify-center gap-3"><Link to="/invoices" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800">Open invoices</Link><Link to="/invoices/new" className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950">Create invoice</Link></div>
+    </article>
   );
 }
 
@@ -183,13 +161,14 @@ function MoneyDeskCommandContent() {
     let alive = true;
     async function loadMoney() {
       setLoading(true);
+      setError("");
       const [invoicesRes, quotesRes, jobsRes] = await Promise.all([get("/invoices"), get("/quotes"), get("/jobs")]);
       if (!alive) return;
       const next = [];
-      if (invoicesRes?.success) next.push(...arr(invoicesRes).map((x) => ({ ...x, type: x.type || "invoice" })));
-      else setError(invoicesRes?.error || "Could not load money data");
-      if (quotesRes?.success) next.push(...arr(quotesRes).filter((q) => ["accepted", "approved", "won"].includes(statusOf(q))).map((x) => ({ ...x, type: "accepted_quote" })));
-      if (jobsRes?.success) next.push(...arr(jobsRes).filter((j) => ["completed", "done", "ready_to_invoice"].includes(statusOf(j))).map((x) => ({ ...x, type: "ready_invoice", amount_due: valueOf(x) })));
+      if (invoicesRes?.success) next.push(...arr(invoicesRes).map((item) => ({ ...item, type: item.type || "invoice" })));
+      else setError(invoicesRes?.error || "Could not confirm the current money records");
+      if (quotesRes?.success) next.push(...arr(quotesRes).filter((quote) => ["accepted", "approved", "won"].includes(statusOf(quote))).map((item) => ({ ...item, type: "accepted_quote" })));
+      if (jobsRes?.success) next.push(...arr(jobsRes).filter((job) => ["completed", "done", "ready_to_invoice"].includes(statusOf(job))).map((item) => ({ ...item, type: "ready_invoice", amount_due: valueOf(item) })));
       setRecords(next);
       setLoading(false);
     }
@@ -197,49 +176,45 @@ function MoneyDeskCommandContent() {
     return () => { alive = false; };
   }, [get]);
 
-  const list = records.length ? records : sampleRecords;
   const counts = React.useMemo(() => {
-    const total = list.length;
-    const overdue = list.filter(isOverdue).length;
-    const ready = list.filter((record) => !isPaid(record) && (isDraft(record) || statusOf(record) === "accepted")).length;
-    const paid = list.filter(isPaid).length;
-    const due = list.reduce((sum, record) => sum + (isPaid(record) ? 0 : Math.max(valueOf(record), 0)), 0);
+    const total = records.length;
+    const overdue = records.filter(isOverdue).length;
+    const ready = records.filter((record) => !isPaid(record) && (isDraft(record) || statusOf(record) === "accepted")).length;
+    const paid = records.filter(isPaid).length;
+    const due = records.reduce((sum, record) => sum + (isPaid(record) ? 0 : Math.max(valueOf(record), 0)), 0);
     return { total, overdue, ready, paid, due };
-  }, [list]);
+  }, [records]);
 
   return (
     <main className="fixed inset-0 z-[2147483000] overflow-y-auto bg-[#eef1f4] text-slate-950">
-      <div className="flex min-h-screen">
-        <Sidebar />
-        <section className="min-w-0 flex-1 p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28">
-          <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Money Desk</div><div className="text-sm font-bold text-slate-500">Ready invoices, overdue money, accepted quotes and paid records.</div></div>
-            <div className="flex flex-wrap gap-3"><Link to="/invoices" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Invoices</Link><Link to="/invoices/new" className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400">Create invoice</Link></div>
-          </header>
+      <section className="min-h-screen p-4 pb-28 md:p-6 md:pb-28 xl:p-8 xl:pb-28">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+          <div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Money Desk</div><div className="text-sm font-bold text-slate-500">Ready invoices, overdue money, accepted quotes and paid records.</div></div>
+          <div className="flex flex-wrap gap-3"><Link to="/invoices" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-800 hover:bg-slate-50">Invoices</Link><Link to="/invoices/new" className="rounded-2xl bg-amber-500 px-4 py-2 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400">Create invoice</Link></div>
+        </header>
 
-          <section className="grid gap-5 xl:grid-cols-[1fr_430px]">
-            <div className="overflow-hidden rounded-[30px] border border-slate-900 bg-slate-950 shadow-[0_26px_80px_rgba(15,23,42,0.20)]">
-              <div className="relative p-6 md:p-8"><div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" /><div className="relative"><span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Money Desk</span><h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Keep cash moving after the job is done.</h1><p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Churvox puts ready-to-invoice work, overdue payments and accepted quotes in one owner approval workspace.</p></div></div>
-            </div>
-            <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Cash health</div><h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">What needs attention</h2>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1"><div className="rounded-2xl border border-red-200 bg-red-50 p-4"><div className="text-2xl font-black text-red-800">{counts.overdue}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-red-700">Overdue</div></div><div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><div className="text-2xl font-black text-amber-800">{counts.ready}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">Ready actions</div></div><div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-2xl font-black text-emerald-800">{money(counts.due)}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Outstanding</div></div></div>
-            </div>
-          </section>
-
-          <section className="mt-5 grid gap-4 md:grid-cols-4">
-            <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Money items</div><div className="mt-3 text-3xl font-black tracking-[-0.06em]">{counts.total}</div></div>
-            <div className="rounded-[22px] border border-red-200 bg-red-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-red-700">Overdue</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-red-900">{counts.overdue}</div></div>
-            <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Ready</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-amber-900">{counts.ready}</div></div>
-            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 shadow-[0_14px_38px_rgba(15,23,42,0.055)]"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Paid</div><div className="mt-3 text-3xl font-black tracking-[-0.06em] text-emerald-900">{counts.paid}</div></div>
-          </section>
-
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Money queue</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Open money actions</h2></div>{loading && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span>}{error && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">Showing sample layout</span>}</div>
-            <div className="grid gap-4 xl:grid-cols-2">{list.map((record) => <MoneyCard key={idOf(record) || titleOf(record)} record={record} onOpen={setActiveRecord} />)}</div>
-          </section>
+        <section className="grid gap-5 xl:grid-cols-[1fr_430px]">
+          <div className="overflow-hidden rounded-[30px] border border-slate-900 bg-slate-950 shadow-[0_26px_80px_rgba(15,23,42,0.20)]">
+            <div className="relative p-6 md:p-8"><div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" /><div className="relative"><span className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Money Desk</span><h1 className="mt-5 max-w-3xl text-4xl font-black leading-[0.92] tracking-[-0.075em] text-white md:text-6xl">Keep cash moving after the job is done.</h1><p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Churvox puts ready-to-invoice work, overdue payments and accepted quotes in one owner approval workspace.</p></div></div>
+          </div>
+          <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Cash health</div><h2 className="mt-2 text-2xl font-black tracking-[-0.055em] text-slate-950">What needs attention</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1"><div className="rounded-2xl border border-red-200 bg-red-50 p-4"><div className="text-2xl font-black text-red-800">{counts.overdue}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-red-700">Overdue</div></div><div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><div className="text-2xl font-black text-amber-800">{counts.ready}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">Ready actions</div></div><div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-2xl font-black text-emerald-800">{money(counts.due)}</div><div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Outstanding</div></div></div>
+          </div>
         </section>
-      </div>
+
+        <section className="mt-5 grid gap-4 md:grid-cols-4">
+          <div className="rounded-[22px] border border-slate-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Money items</div><div className="mt-3 text-3xl font-black">{counts.total}</div></div>
+          <div className="rounded-[22px] border border-red-200 bg-red-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-red-700">Overdue</div><div className="mt-3 text-3xl font-black text-red-900">{counts.overdue}</div></div>
+          <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Ready</div><div className="mt-3 text-3xl font-black text-amber-900">{counts.ready}</div></div>
+          <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4"><div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Paid</div><div className="mt-3 text-3xl font-black text-emerald-900">{counts.paid}</div></div>
+        </section>
+
+        <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.055)]">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Money queue</div><h2 className="mt-2 text-3xl font-black tracking-[-0.06em] text-slate-950">Open money actions</h2></div>{loading && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Loading…</span>}</div>
+          {records.length ? <div className="grid gap-4 xl:grid-cols-2">{records.map((record) => <MoneyCard key={idOf(record) || titleOf(record)} record={record} onOpen={setActiveRecord} />)}</div> : !loading ? <EmptyMoneyQueue error={error} /> : null}
+        </section>
+      </section>
       <MoneySlip record={activeRecord} onClose={() => setActiveRecord(null)} />
     </main>
   );
