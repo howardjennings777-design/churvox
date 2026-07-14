@@ -13,9 +13,17 @@ except Exception:
     from . import churvox_command_runs_office_patch as engine
 
 
-VERSION = "churvox-command-runs-office-finalizer-v2-20260715"
+VERSION = "churvox-command-runs-office-finalizer-v3-20260715"
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
+WORKER_ASSIGNMENT_ACTIONS = {
+    "assign_worker_review",
+    "assign_worker",
+    "prepare_worker_assignment",
+    "worker_assignment_review",
+    "complete_job_setup",
+    "prepare_recurring_next_date",
+}
 
 
 async def fast_load_context(db, ObjectId, user):
@@ -45,6 +53,7 @@ async def fast_load_context(db, ObjectId, user):
 
 _original_worker_decision = engine.enrich_worker_decision
 _original_generic_decision = engine.enrich_generic_decision
+_original_enrich_slip = engine.enrich_slip
 
 
 def enhanced_worker_decision(ObjectId, slip, job, workers, jobs):
@@ -93,6 +102,36 @@ def enhanced_generic_decision(slip):
     payload["recommended_decision"] = recommendation
     engine.set_field(payload, "Churvox recommends", recommendation, "primary prepared action plus the office-role judgement", 0.9)
     slip["prepared"] = f"Churvox recommends: {recommendation}"
+
+
+def enhanced_enrich_slip(ObjectId, slip, context):
+    if not isinstance(slip, dict):
+        return slip
+    action = engine.clean(slip.get("action_type"))
+    if action not in WORKER_ASSIGNMENT_ACTIONS:
+        return _original_enrich_slip(ObjectId, slip, context)
+    payload = engine.payload_of(slip)
+    job = engine.source_job(ObjectId, slip, context.get("jobs", []))
+    if job:
+        engine.enrich_worker_decision(ObjectId, slip, job, context.get("workers", []), context.get("jobs", []))
+    else:
+        engine.enrich_generic_decision(slip)
+    payload["command_runs_office"] = True
+    payload["decision_contract_version"] = engine.VERSION
+    payload["owner_review_only"] = True
+    payload["prepared_only"] = True
+    payload["no_auto_send"] = True
+    payload["no_auto_sync"] = True
+    payload["no_auto_charge"] = True
+    payload["no_auto_record_change"] = True
+    slip["owner_review_only"] = True
+    slip["prepared_only"] = True
+    slip["no_auto_send"] = True
+    slip["no_auto_sync"] = True
+    slip["no_auto_charge"] = True
+    slip["no_auto_record_change"] = True
+    slip["updated_at"] = engine.now_utc()
+    return slip
 
 
 def route_for(app, path, method):
@@ -195,6 +234,7 @@ def install(module):
     engine.load_context = fast_load_context
     engine.enrich_worker_decision = enhanced_worker_decision
     engine.enrich_generic_decision = enhanced_generic_decision
+    engine.enrich_slip = enhanced_enrich_slip
 
     path = "/api/command/slips/{slip_id}/approve"
     route = route_for(app, path, "POST")
