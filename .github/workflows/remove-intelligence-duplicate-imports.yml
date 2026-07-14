@@ -1,0 +1,48 @@
+name: Remove Intelligence Duplicate Imports
+
+on:
+  push:
+    branches:
+      - agent/churvox-owner-intelligence
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    if: ${{ !contains(github.event.head_commit.message || '', '[skip-import-cleanup]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-owner-intelligence
+      - name: Keep one copy of each Intelligence import
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          fixes = {
+              Path('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx'): 'import OfficeTeamIntelligence from "./OfficeTeamIntelligence";',
+              Path('frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx'): 'import { checkWorkerProofCoach, fetchWorkerProofCoach } from "./OfficeTeamIntelligenceApi";',
+          }
+          for path, target in fixes.items():
+              lines = path.read_text(encoding='utf-8').splitlines()
+              seen = False
+              output = []
+              for line in lines:
+                  if line == target:
+                      if seen:
+                          continue
+                      seen = True
+                  output.append(line)
+              if not seen:
+                  raise SystemExit(f'Missing expected import in {path}')
+              path.write_text('\n'.join(output) + '\n', encoding='utf-8')
+          PY
+      - name: Commit import cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx
+          git commit -m "Remove duplicate Intelligence imports [skip-import-cleanup]"
+          git push origin HEAD:agent/churvox-owner-intelligence
