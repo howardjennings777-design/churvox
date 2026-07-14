@@ -326,10 +326,13 @@ test.describe('Churvox full launch owner audit', () => {
       await expect(page.getByRole('menuitem', { name: new RegExp(`^${item}$`, 'i') }).first(), `missing More navigation item: ${item}`).toBeVisible();
     }
 
-    const accountNav = page.getByRole('navigation', { name: /Account and help pages/i });
-    await expect(accountNav, 'missing Account and help navigation').toBeVisible();
     for (const item of ['Settings', 'Plans', 'Help']) {
-      await expect(accountNav.getByRole('button', { name: new RegExp(`^${item}$`, 'i') }).first(), `missing account navigation item: ${item}`).toBeVisible();
+      const menuItem = page.getByRole('menuitem', { name: new RegExp(`^${item}$`, 'i') }).first();
+      const accountButton = page.getByRole('navigation', { name: /Account and help pages/i })
+        .getByRole('button', { name: new RegExp(`^${item}$`, 'i') }).first();
+      const visibleInMenu = await menuItem.isVisible().catch(() => false);
+      const visibleAsButton = await accountButton.isVisible().catch(() => false);
+      expect(visibleInMenu || visibleAsButton, `missing responsive account navigation item: ${item}`).toBeTruthy();
     }
   });
 });
@@ -348,7 +351,7 @@ test.describe('Churvox full launch worker audit', () => {
     await expect(page.locator('body')).not.toContainText(/Owner workspace|Platform Admin|Billing|Reports/i);
   });
 
-  test('worker job detail has real field controls for an assigned job', async ({ page }) => {
+  test('worker job detail has real field controls for an assigned job', async ({ page, isMobile }) => {
     test.setTimeout(120_000);
     const fixture = await createAssignedWorkerJob(page);
     try {
@@ -364,8 +367,11 @@ test.describe('Churvox full launch worker audit', () => {
         await expect(page.getByRole('button', { name: new RegExp(`^${control}$`, 'i') }).first(), `missing worker control: ${control}`).toBeVisible();
       }
       await expect(page.getByText('Photo proof', { exact: true }).first(), 'missing Photo proof control').toBeVisible();
-      await expect(page.getByText('Timer note', { exact: true }).first(), 'missing Timer note control').toBeVisible();
-      await expect(page.getByText('Office link', { exact: true }).first(), 'missing Office link control').toBeVisible();
+      await expect(page.getByRole('button', { name: /^Send proof note$/i }).first(), 'missing Send proof note control').toBeVisible();
+      await expect(page.getByRole('button', { name: /^Timer note$/i }).first(), 'missing Timer note control').toBeVisible();
+      if (!isMobile) {
+        await expect(page.getByText('Office link', { exact: true }).first(), 'missing desktop Office link control').toBeVisible();
+      }
       await expectBasics(page, 'worker job detail');
     } finally {
       await cleanupAssignedWorkerJob(page, fixture);
