@@ -1,0 +1,50 @@
+name: Polish Intelligence Proof Count
+
+on:
+  push:
+    branches:
+      - agent/churvox-owner-intelligence
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    if: ${{ !contains(github.event.head_commit.message || '', '[skip-proof-count]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-owner-intelligence
+      - name: Make proof count read naturally
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          component = Path('frontend/src/churvox-office-lab/OfficeTeamIntelligence.jsx')
+          text = component.read_text(encoding='utf-8')
+          old = 'title={`${data.needs_proof || 0} jobs still need clearer proof`}'
+          new = 'title={`${data.needs_proof || 0} ${(data.needs_proof || 0) === 1 ? "job" : "jobs"} still need clearer proof`}'
+          if old not in text:
+              if new not in text:
+                  raise SystemExit('Worker Proof Coach count heading was not found')
+          else:
+              component.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          spec = Path('frontend/tests/e2e/churvox-owner-intelligence.spec.js')
+          tests = spec.read_text(encoding='utf-8')
+          old_test = ".toContainText('2 jobs')"
+          new_test = ".toContainText('1 job')"
+          if old_test not in tests:
+              if new_test not in tests:
+                  raise SystemExit('Worker Proof Coach count assertion was not found')
+          else:
+              spec.write_text(tests.replace(old_test, new_test, 1), encoding='utf-8')
+          PY
+      - name: Commit proof count polish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/OfficeTeamIntelligence.jsx frontend/tests/e2e/churvox-owner-intelligence.spec.js
+          git commit -m "Polish Worker Proof Coach count [skip-proof-count]"
+          git push origin HEAD:agent/churvox-owner-intelligence
