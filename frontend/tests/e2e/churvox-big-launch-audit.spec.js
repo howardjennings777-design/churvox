@@ -4,6 +4,7 @@ const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || process.env.CHURVOX_E2E_E
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX_E2E_PASSWORD || process.env.CHURVOX_E2E_OWNER_PASSWORD || process.env.E2E_PASSWORD || '';
 const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || process.env.CHURVOX_E2E_WORKER_EMAIL || process.env.E2E_WORKER_EMAIL || '';
 const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURVOX_E2E_WORKER_PASSWORD || process.env.E2E_WORKER_PASSWORD || '';
+const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 const REQUIRE_AUTH_AUDIT = /^(1|true|yes)$/i.test(process.env.CHURVOX_REQUIRE_AUTH_AUDIT || '');
 
 const publicRoutes = ['/', '/features', '/pricing', '/login', '/signup', '/privacy', '/terms'];
@@ -27,6 +28,20 @@ const blockedVisibleWords = [
   /\bdebug mode\b/i,
   /\btodo\b/i,
 ];
+
+function apiUrl(path) {
+  return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
+}
+
+function tokenFrom(data = {}) {
+  return data?.token || data?.access_token || data?.auth_token || data?.jwt || data?.accessToken
+    || data?.user?.token || data?.user?.access_token || data?.user?.accessToken
+    || data?.data?.token || data?.data?.access_token || data?.data?.user?.token || '';
+}
+
+function accountEmail(data = {}) {
+  return String(data?.email || data?.user?.email || data?.data?.email || data?.data?.user?.email || '').trim().toLowerCase();
+}
 
 async function waitStable(page) {
   await page.waitForLoadState('domcontentloaded');
@@ -132,7 +147,42 @@ function requireOrSkip(condition, message) {
   test.skip(true, message);
 }
 
-async function login(page, email, password, role) {
+async function readJson(response) {
+  return response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
+}
+
+async function verifyIdentity(page, token, email, role) {
+  const response = await page.request.get(apiUrl('/api/auth/me'), {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    timeout: 30_000,
+  });
+  const body = await readJson(response);
+  expect(response.ok(), `${role} auth/me failed with ${response.status()}: ${JSON.stringify(body).slice(0, 400)}`).toBeTruthy();
+  const returnedEmail = accountEmail(body);
+  if (returnedEmail) expect(returnedEmail, `${role} auth/me returned a different account`).toBe(email.toLowerCase());
+}
+
+async function apiLogin(page, email, password, role) {
+  const paths = role === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
+  const attempts = [];
+  for (const path of paths) {
+    const response = await page.request.post(apiUrl(path), {
+      data: { email, password },
+      timeout: 30_000,
+    });
+    const body = await readJson(response);
+    const token = tokenFrom(body);
+    attempts.push({ path, status: response.status(), token: Boolean(token) });
+    if (!response.ok() || body?.success === false || !token) continue;
+    await verifyIdentity(page, token, email, role);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.evaluate((value) => localStorage.setItem('token', value), token);
+    return token;
+  }
+  throw new Error(`${role} API login failed: ${JSON.stringify(attempts)}`);
+}
+
+async function uiLogin(page, email, password, role) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await waitStable(page);
   const emailFilled = await fillByLabelOrPlaceholder(page, 'email', email);
@@ -140,16 +190,12 @@ async function login(page, email, password, role) {
   expect(emailFilled, `${role} login email field was not found`).toBeTruthy();
   expect(passwordFilled, `${role} login password field was not found`).toBeTruthy();
   await clickLogin(page);
-  await page.waitForURL(/dashboard|worker|plans|guide|setup|command|#/i, { timeout: 30000 }).catch(() => null);
-  await waitStable(page);
-
-  const finalUrl = page.url();
-  expect(finalUrl, `${role} login did not leave the login page`).not.toMatch(/\/login(?:[?#]|$)/i);
-  if (role === 'worker') {
-    expect(finalUrl, 'worker login did not reach a worker route').toMatch(/\/worker(?:[/?#]|$)/i);
-  } else {
-    expect(finalUrl, 'owner login did not reach an owner route').toMatch(/dashboard|plans|guide|setup|command|#/i);
-  }
+  await page.waitForFunction(() => Boolean(localStorage.getItem('token')), null, { timeout: 30_000 });
+  const token = await page.evaluate(() => localStorage.getItem('token') || '');
+  expect(token, `${role} login form did not create an authenticated token`).toBeTruthy();
+  await verifyIdentity(page, token, email, role);
+  await page.waitForURL((url) => !/\/login(?:[?#]|$)/i.test(url.pathname), { timeout: 15_000 }).catch(() => null);
+  expect(page.url(), `${role} login did not leave the login page`).not.toMatch(/\/login(?:[?#]|$)/i);
 }
 
 test.describe('Churvox full launch public audit', () => {
@@ -161,10 +207,22 @@ test.describe('Churvox full launch public audit', () => {
   }
 });
 
+test.describe('Churvox authenticated login entry', () => {
+  test('owner login form creates the correct authenticated session', async ({ page }) => {
+    requireOrSkip(Boolean(OWNER_EMAIL && OWNER_PASSWORD), 'Set CHURVOX_OWNER_EMAIL and CHURVOX_OWNER_PASSWORD.');
+    await uiLogin(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
+  });
+
+  test('worker login form creates the correct authenticated session', async ({ page }) => {
+    requireOrSkip(Boolean(WORKER_EMAIL && WORKER_PASSWORD), 'Set CHURVOX_WORKER_EMAIL and CHURVOX_WORKER_PASSWORD.');
+    await uiLogin(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
+  });
+});
+
 test.describe('Churvox full launch owner audit', () => {
   test.beforeEach(async ({ page }) => {
     requireOrSkip(Boolean(OWNER_EMAIL && OWNER_PASSWORD), 'Set CHURVOX_OWNER_EMAIL and CHURVOX_OWNER_PASSWORD.');
-    await login(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
+    await apiLogin(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
   });
 
   for (const hash of ownerHashes) {
@@ -197,7 +255,7 @@ test.describe('Churvox full launch owner audit', () => {
 test.describe('Churvox full launch worker audit', () => {
   test.beforeEach(async ({ page }) => {
     requireOrSkip(Boolean(WORKER_EMAIL && WORKER_PASSWORD), 'Set CHURVOX_WORKER_EMAIL and CHURVOX_WORKER_PASSWORD.');
-    await login(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
+    await apiLogin(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
   });
 
   test('worker jobs page is launch-clean and worker-scoped', async ({ page }) => {
