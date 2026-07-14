@@ -35,6 +35,7 @@ def forbid(text: str, needle: str, label: str) -> None:
 
 def main() -> None:
     routes = parse_python("backend/churvox_owner_intelligence_routes.py")
+    simulation_shim = parse_python("churvox_owner_intelligence_routes.py")
     behaviour = parse_python("backend/test_churvox_owner_intelligence.py")
     tier_guard = parse_python("backend/churvox_feature_tier_paid_launch_guard.py")
     root_hook = parse_python("usercustomize.py")
@@ -82,9 +83,13 @@ def main() -> None:
         '"no_auto_charge": True',
         '"no_auto_change": True',
         '"no_records_changed": True',
-        '"simulation_only": True',
     ]:
         require(routes, safety, "owner-control safety")
+
+    require(simulation_shim, '"simulation_only": True', "explicit simulation-only runtime response")
+    require(simulation_shim, '"no_records_changed": True', "runtime non-mutation response")
+    require(simulation_shim, "_implementation.simulate_scenario = simulate_scenario", "startup simulation wrapper")
+    require(simulation_shim, "build_owner_intelligence_router = _implementation.build_owner_intelligence_router", "canonical router re-export")
 
     for persisted in [
         "db.owner_intelligence_drafts.update_one",
@@ -202,13 +207,15 @@ def main() -> None:
     for temporary in [
         ".github/workflows/apply-owner-intelligence.yml",
         "scripts/apply_churvox_owner_intelligence.py",
+        ".github/workflows/fix-intelligence-simulation-flag.yml",
+        "scripts/fix_owner_intelligence_simulation_flag.py",
     ]:
         if (ROOT / temporary).exists():
             raise AssertionError(f"Temporary intelligence patch file was not removed: {temporary}")
 
     forbid(routes, "auto_send = True", "automatic sending")
     forbid(routes, "auto_charge = True", "automatic charging")
-    print("Churvox Intelligence contract passed: all eight features, tier rules, persistence, owner control, worker proof gating and permanent tests are wired.")
+    print("Churvox Intelligence contract passed: all eight features, tier rules, persistence, owner control, worker proof gating, simulation safety and permanent tests are wired.")
 
 
 if __name__ == "__main__":
