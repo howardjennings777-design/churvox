@@ -8,6 +8,12 @@ on:
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
       - '.github/workflows/churvox-full-launch-audit.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/tests/e2e/**'
+      - 'frontend/playwright.config.js'
+      - '.github/workflows/churvox-full-launch-audit.yml'
 
 permissions:
   contents: write
@@ -36,16 +42,48 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run public and app launch audit
+      - name: Verify authenticated audit credentials
+        env:
+          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+          CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+        run: |
+          missing=()
+          for name in CHURVOX_OWNER_EMAIL CHURVOX_OWNER_PASSWORD CHURVOX_WORKER_EMAIL CHURVOX_WORKER_PASSWORD; do
+            if [ -z "${!name}" ]; then missing+=("$name") ; fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Full launch audit cannot be honest because these repository secrets are missing: ${missing[*]}"
+            exit 1
+          fi
+          echo "Owner and worker audit credentials are configured and remain masked."
+
+      - name: Run public and authenticated app launch audit
         id: run_audit
         env:
           PLAYWRIGHT_BASE_URL: https://www.churvox.com
+          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
+          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
+          CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+          CHURVOX_REQUIRE_AUTH_AUDIT: '1'
           CI: true
         run: |
           set +e
           npx playwright test tests/e2e/churvox-big-launch-audit.spec.js --project=desktop-chromium --project=mobile-chromium 2>&1 | tee ../churvox-audit-output.txt
           status=${PIPESTATUS[0]}
+          skipped=$(grep -Eo '[0-9]+ skipped' ../churvox-audit-output.txt | tail -n 1 | awk '{print $1}')
+          passed=$(grep -Eo '[0-9]+ passed' ../churvox-audit-output.txt | tail -n 1 | awk '{print $1}')
+          skipped=${skipped:-0}
+          passed=${passed:-0}
+          if [ "$skipped" != "0" ]; then
+            echo "::error::Authenticated launch audit is incomplete: $skipped tests were skipped."
+            status=1
+          fi
           echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "skipped=$skipped" >> "$GITHUB_OUTPUT"
+          echo "passed=$passed" >> "$GITHUB_OUTPUT"
           exit 0
 
       - name: Save readable audit result into repo
@@ -59,6 +97,9 @@ jobs:
             echo "- Commit: $GITHUB_SHA"
             echo "- Run: $GITHUB_RUN_ID"
             echo "- Status code: ${{ steps.run_audit.outputs.status }}"
+            echo "- Passed: ${{ steps.run_audit.outputs.passed }}"
+            echo "- Skipped: ${{ steps.run_audit.outputs.skipped }}"
+            echo "- Authenticated audit required: yes"
             echo "- Time: $(date -u)"
             echo ""
             echo "## Output"
@@ -68,7 +109,7 @@ jobs:
           } > ../audit-results/churvox-full-launch-audit-latest.md
 
       - name: Commit readable audit result
-        if: always()
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           cd ..
           git config user.name "github-actions"
@@ -97,9 +138,12 @@ jobs:
           path: frontend/test-results
           if-no-files-found: ignore
 
-      - name: Fail job if audit failed
+      - name: Fail job if audit is incomplete or failed
         if: always()
         run: |
           if [ "${{ steps.run_audit.outputs.status }}" != "0" ]; then
+            exit 1
+          fi
+          if [ "${{ steps.run_audit.outputs.skipped }}" != "0" ]; then
             exit 1
           fi

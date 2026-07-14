@@ -4,6 +4,7 @@ const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || process.env.CHURVOX_E2E_E
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX_E2E_PASSWORD || process.env.CHURVOX_E2E_OWNER_PASSWORD || process.env.E2E_PASSWORD || '';
 const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || process.env.CHURVOX_E2E_WORKER_EMAIL || process.env.E2E_WORKER_EMAIL || '';
 const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURVOX_E2E_WORKER_PASSWORD || process.env.E2E_WORKER_PASSWORD || '';
+const REQUIRE_AUTH_AUDIT = /^(1|true|yes)$/i.test(process.env.CHURVOX_REQUIRE_AUTH_AUDIT || '');
 
 const publicRoutes = ['/', '/features', '/pricing', '/login', '/signup', '/privacy', '/terms'];
 const ownerHashes = [
@@ -125,14 +126,30 @@ async function clickLogin(page) {
   await page.keyboard.press('Enter');
 }
 
-async function login(page, email, password) {
+function requireOrSkip(condition, message) {
+  if (condition) return;
+  if (REQUIRE_AUTH_AUDIT) throw new Error(message);
+  test.skip(true, message);
+}
+
+async function login(page, email, password, role) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await waitStable(page);
-  await fillByLabelOrPlaceholder(page, 'email', email);
-  await fillByLabelOrPlaceholder(page, 'password', password);
+  const emailFilled = await fillByLabelOrPlaceholder(page, 'email', email);
+  const passwordFilled = await fillByLabelOrPlaceholder(page, 'password', password);
+  expect(emailFilled, `${role} login email field was not found`).toBeTruthy();
+  expect(passwordFilled, `${role} login password field was not found`).toBeTruthy();
   await clickLogin(page);
   await page.waitForURL(/dashboard|worker|plans|guide|setup|command|#/i, { timeout: 30000 }).catch(() => null);
   await waitStable(page);
+
+  const finalUrl = page.url();
+  expect(finalUrl, `${role} login did not leave the login page`).not.toMatch(/\/login(?:[?#]|$)/i);
+  if (role === 'worker') {
+    expect(finalUrl, 'worker login did not reach a worker route').toMatch(/\/worker(?:[/?#]|$)/i);
+  } else {
+    expect(finalUrl, 'owner login did not reach an owner route').toMatch(/dashboard|plans|guide|setup|command|#/i);
+  }
 }
 
 test.describe('Churvox full launch public audit', () => {
@@ -146,13 +163,14 @@ test.describe('Churvox full launch public audit', () => {
 
 test.describe('Churvox full launch owner audit', () => {
   test.beforeEach(async ({ page }) => {
-    test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'Set CHURVOX_OWNER_EMAIL and CHURVOX_OWNER_PASSWORD.');
-    await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+    requireOrSkip(Boolean(OWNER_EMAIL && OWNER_PASSWORD), 'Set CHURVOX_OWNER_EMAIL and CHURVOX_OWNER_PASSWORD.');
+    await login(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
   });
 
   for (const hash of ownerHashes) {
     test(`owner area opens and is launch-clean: ${hash}`, async ({ page }) => {
       await page.goto(`/dashboard#${hash}`, { waitUntil: 'domcontentloaded' });
+      expect(page.url(), `dashboard#${hash} redirected out of the authenticated owner area`).toMatch(/\/dashboard(?:[/?#]|$)/i);
       await expect(page.locator('body')).toContainText(/Churvox|Command|Job|Client|Quote|Invoice|Payroll|Xero|Support|Settings/i);
       await expectBasics(page, `dashboard#${hash}`);
     });
@@ -160,6 +178,7 @@ test.describe('Churvox full launch owner audit', () => {
 
   test('sidebar keeps full launch feature navigation', async ({ page, isMobile }) => {
     await page.goto('/dashboard#command');
+    expect(page.url(), 'owner sidebar audit redirected out of dashboard').toMatch(/\/dashboard(?:[/?#]|$)/i);
     await waitStable(page);
     if (isMobile) {
       await page.getByRole('button', { name: /more/i }).click().catch(() => null);
@@ -177,12 +196,13 @@ test.describe('Churvox full launch owner audit', () => {
 
 test.describe('Churvox full launch worker audit', () => {
   test.beforeEach(async ({ page }) => {
-    test.skip(!WORKER_EMAIL || !WORKER_PASSWORD, 'Set CHURVOX_WORKER_EMAIL and CHURVOX_WORKER_PASSWORD.');
-    await login(page, WORKER_EMAIL, WORKER_PASSWORD);
+    requireOrSkip(Boolean(WORKER_EMAIL && WORKER_PASSWORD), 'Set CHURVOX_WORKER_EMAIL and CHURVOX_WORKER_PASSWORD.');
+    await login(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
   });
 
   test('worker jobs page is launch-clean and worker-scoped', async ({ page }) => {
     await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
+    expect(page.url(), 'worker jobs audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
     await expect(page.locator('body')).toContainText(/Today|Work|Job|Waiting|Assigned|Refresh/i);
     await expectBasics(page, 'worker jobs');
     await expect(page.locator('body')).not.toContainText(/Owner workspace|Platform Admin|Billing|Reports/i);
@@ -190,9 +210,11 @@ test.describe('Churvox full launch worker audit', () => {
 
   test('worker job detail has real field controls when a job is assigned', async ({ page }) => {
     await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
+    expect(page.url(), 'worker detail audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
     await waitStable(page);
     const firstJob = page.locator('a[href^="/worker/jobs/"]').first();
-    test.skip(!(await firstJob.count().catch(() => 0)), 'No assigned worker job available for detail audit.');
+    const jobCount = await firstJob.count().catch(() => 0);
+    requireOrSkip(jobCount > 0, 'No assigned worker job available for the required detail audit.');
     await firstJob.click();
     await waitStable(page);
     await expect(page.locator('body')).toContainText(/Job checklist|Work timer|Job notes|Photos|Finish job/i);
