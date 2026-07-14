@@ -103,6 +103,10 @@ def _install_churvox_real_ai_hook():
                 except Exception:
                     from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
                 try:
+                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                except Exception:
+                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+                try:
                     from churvox_command_apply_routes import build_command_apply_router
                 except Exception:
                     from backend.churvox_command_apply_routes import build_command_apply_router
@@ -125,6 +129,14 @@ def _install_churvox_real_ai_hook():
                 )
                 if not job_done_get_mounted:
                     original_include_router(self, build_job_done_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Churvox Intelligence reads the same business records and remains owner-controlled.
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not intelligence_summary_mounted:
+                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Churvox Intelligence reads the same business records and remains owner-controlled.
                 intelligence_summary_mounted = any(
                     getattr(route, "path", "") == "/api/owner-intelligence/summary"
