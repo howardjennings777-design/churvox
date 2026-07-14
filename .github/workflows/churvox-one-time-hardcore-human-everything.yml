@@ -83,7 +83,7 @@ jobs:
           const required = [
             'Continue to secure checkout',
             'cvOwnerMainNavigation',
-            'churvox-worker-message-context-v6-20260715',
+            'churvox-worker-message-context-v7-20260715',
             'What changed on this job?'
           ];
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
