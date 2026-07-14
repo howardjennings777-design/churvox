@@ -263,7 +263,7 @@ function WorkerProofCoach({ data = {} }) {
   const items = Array.isArray(data.items) ? data.items : [];
   return (
     <section className="cvIntelPanel" data-intelligence-feature="worker-proof-coach">
-      <PanelHeader eyebrow="Worker Proof Coach" title={`${data.needs_proof || 0} jobs still need clearer proof`} text="Trade-aware checklists are also shown inside the real worker phone flow before Complete is accepted." />
+      <PanelHeader eyebrow="Worker Proof Coach" title={`${data.needs_proof || 0} ${(data.needs_proof || 0) === 1 ? "job" : "jobs"} still need clearer proof`} text="Trade-aware checklists are also shown inside the real worker phone flow before Complete is accepted." />
       <div className="cvIntelProofGrid">{items.length ? items.map((item) => <article key={item.job_id}><span>{item.check?.ready ? "Ready" : `${item.check?.missing_count || 0} missing`}</span><h3>{item.job_title}</h3><p>{item.check?.ready ? "Required proof is present." : item.check?.missing?.map((missing) => missing.label).join(" · ")}</p><small>{item.job_id}</small></article>) : <Empty title="No assigned jobs need proof coaching" text="The coach appears when real job records are available." />}</div>
     </section>
   );

@@ -134,7 +134,7 @@ test.describe('Churvox Intelligence eight-feature product', () => {
     await expect(voice).toContainText('$180.00');
 
     await page.getByRole('tab', { name: /Worker Proof Coach/ }).click();
-    await expect(page.locator('[data-intelligence-feature="worker-proof-coach"]')).toContainText('2 jobs');
+    await expect(page.locator('[data-intelligence-feature="worker-proof-coach"]')).toContainText('1 job');
     await expect(page.locator('[data-intelligence-feature="worker-proof-coach"]')).toContainText('Confirm gates');
 
     await page.getByRole('tab', { name: /Explain My Week/ }).click();
