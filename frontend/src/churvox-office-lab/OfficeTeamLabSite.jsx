@@ -16,6 +16,7 @@ import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
 import OfficeTeamReadinessScreen from "./OfficeTeamReadinessScreen";
 import OfficeTeamTodayScreen from "./OfficeTeamTodayScreen";
 import OfficeTeamIntelligence from "./OfficeTeamIntelligence";
+import OfficeTeamLaunchHardening from "./OfficeTeamLaunchHardening";
 import OfficeTeamOwnerNavigation from "./OfficeTeamOwnerNavigation";
 import OfficeTeamContextStrip from "./OfficeTeamContextStrip";
 import { WorkScreen, MoneyScreen, ClientsScreen, StaffScreen } from "./OfficeTeamOperationalScreens";
@@ -38,7 +39,7 @@ const COMMAND_FAST_LOAD_BUILD = "churvox-command-instant-load-20260713d";
 if (typeof window !== "undefined") window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ = COMMAND_FAST_LOAD_BUILD;
 
 const screens = [
-  ["today", "Today"], ["intelligence", "Intelligence"], ["command", "Command"], ["work", "Work"], ["schedule", "Schedule"], ["clients", "Clients"],
+  ["today", "Today"], ["intelligence", "Intelligence"], ["golive", "Go Live"], ["command", "Command"], ["work", "Work"], ["schedule", "Schedule"], ["clients", "Clients"],
   ["messages", "Messages"], ["worker", "Worker View"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["money", "Money"],
   ["staff", "Staff"], ["payroll", "Payroll"], ["team", "Office Team"], ["playbooks", "Playbooks"], ["integrations", "Integrations"],
   ["activity", "Activity"], ["automation", "Automation"], ["branding", "Branding"], ["settings", "Settings"], ["plans", "Plans"],
@@ -46,7 +47,7 @@ const screens = [
 ];
 
 const screenAliases = {
-  "": "today", dashboard: "today", home: "today", hub: "today", "smart-hub": "today", intelligence: "intelligence", insights: "intelligence", brain: "intelligence",
+  "": "today", dashboard: "today", home: "today", hub: "today", "smart-hub": "today", intelligence: "intelligence", insights: "intelligence", brain: "intelligence", golive: "golive", onboarding: "golive", imports: "golive", portability: "golive", trust: "golive",
   cockpit: "command", command: "command", "command-board": "command",
   jobs: "work", job: "work", work: "work", recurring: "work",
   calendar: "schedule", schedule: "schedule", clients: "clients", customers: "clients",
@@ -388,6 +389,7 @@ function ScreenRouter(props) {
   const { screen, appMode } = props;
   if (screen === "today") return <OfficeTeamTodayScreen {...props} />;
   if (screen === "intelligence") return <OfficeTeamIntelligence appMode={appMode} go={props.go} />;
+  if (screen === "golive") return <OfficeTeamLaunchHardening appMode={appMode} go={props.go} />;
   if (screen === "command") return <Command {...props} />;
   if (screen === "work") return <WorkScreen appMode={appMode} go={props.go} />;
   if (screen === "schedule") return <ScheduleScreen appMode={appMode} />;

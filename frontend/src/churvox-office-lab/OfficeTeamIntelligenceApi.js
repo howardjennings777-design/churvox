@@ -90,3 +90,7 @@ export async function checkWorkerProofCoach(jobId, payload = {}) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function fetchIntelligenceEvidenceOutcomes() {
+  return request("/api/launch-hardening/evidence/outcomes");
+}
