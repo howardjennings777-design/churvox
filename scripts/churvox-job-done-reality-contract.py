@@ -128,6 +128,23 @@ def main() -> None:
     frontend_entry = read("frontend/src/index.js")
     require(frontend_entry, "churvox-job-done-live-v2-20260714", "eager frontend deploy fingerprint")
 
+    live_deploy = read("scripts/churvox-live-job-done-deploy.cjs")
+    for invariant in [
+        "churvox-job-done-live-v2-20260714",
+        "job-done-reality-v2-20260714",
+        "startup-mount-confirmed-v1",
+        "/asset-manifest.json",
+        "/api/command/human-mimic-marker",
+        "/api/job-done/marker",
+        "/api/job-done/closeouts",
+        "[401, 403].includes",
+    ]:
+        require(live_deploy, invariant, "live Job Done deployment proof")
+    full_workflow = read(".github/workflows/playwright-full-site.yml")
+    require(full_workflow, "Verify live Job Done deployment fingerprints", "main deploy proof workflow step")
+    require(full_workflow, "node ../scripts/churvox-live-job-done-deploy.cjs", "main deploy proof command")
+    require(full_workflow, "PLAYWRIGHT_API_BASE", "live backend workflow URL")
+
     api = read("frontend/src/churvox-office-lab/OfficeTeamJobDoneApi.js")
     component = read("frontend/src/churvox-office-lab/OfficeTeamJobDone.js")
     site = read("frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx")
@@ -172,7 +189,7 @@ def main() -> None:
         if (ROOT / temporary_path).exists():
             raise AssertionError(f"Temporary Job Done patch file was not removed: {temporary_path}")
 
-    print("Job Done reality contract passed: persistence, explicit IDs, stale-data protection, proof gating, idempotency, safety, owner control and button outcomes are wired.")
+    print("Job Done reality contract passed: persistence, explicit IDs, stale-data protection, proof gating, idempotency, safety, owner control, button outcomes and live deploy proof are wired.")
 
 
 if __name__ == "__main__":
