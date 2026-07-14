@@ -1,0 +1,97 @@
+name: Fix paid-launch billing and auth contracts
+
+on:
+  push:
+    branches:
+      - agent/job-done-money-radar
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/job-done-money-radar
+          fetch-depth: 1
+
+      - name: Apply billing portal and strict auth fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected text not found in {path}: {old[:180]!r}")
+              file.write_text(text.replace(old, new, count))
+
+          plans = "frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx"
+          replace(
+              plans,
+              '  const activePacks = Math.max(0, Number(growthPackStatus.activePacks || 0));\n  const packAddsTeam = packQuantity * 50;\n',
+              '  const activePacks = Math.max(0, Number(growthPackStatus.activePacks || 0));\n  const packAddsTeam = packQuantity * 50;\n  const billingAccount = readStoredBillingAccount();\n  const billingStatus = String(billingAccount?.subscription_status || billingAccount?.billing_status || billingAccount?.stripe_status || "").trim().toLowerCase();\n  const hasStripeBilling = Boolean(\n    (billingAccount?.stripe_customer_id || billingAccount?.stripe_subscription_id)\n    && ["active", "paid", "past_due", "trial", "trialing"].includes(billingStatus)\n  );\n'
+          )
+          replace(
+              plans,
+              '  async function openBilling() {\n',
+              '''  async function openBillingPortal() {\n    if (billingBusy) return;\n    setBillingBusy(true);\n    setBillingError("");\n    try {\n      const response = await fetch(apiUrl("/billing/create-portal-session"), {\n        method: "POST",\n        credentials: "include",\n        headers: { "Content-Type": "application/json", Accept: "application/json", ...tokenHeaders() },\n        body: JSON.stringify({ return_url: `${window.location.origin}/dashboard#plans`, source: "owner_plans_screen" }),\n      });\n      const body = await response.json().catch(() => ({}));\n      if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.error || body?.message || `Billing portal returned HTTP ${response.status}`);\n      const portalUrl = body?.url || body?.portal_url || body?.session_url || body?.data?.url;\n      if (!portalUrl) throw new Error("Stripe billing portal URL was not returned.");\n      const secureUrl = new URL(portalUrl, window.location.origin);\n      if (secureUrl.protocol !== "https:") throw new Error("Billing did not return a secure portal URL.");\n      window.location.assign(secureUrl.toString());\n      return;\n    } catch (error) {\n      setBillingError(error?.message || "Secure billing management could not open. No plan or payment detail was changed.");\n      setBillingBusy(false);\n    }\n  }\n\n  async function openBilling() {\n'''
+          )
+          replace(
+              plans,
+              '''      <section className="cvPlanBillingAction">\n        <div>\n          <span>Secure checkout</span>\n          <h3>Continue with {plan.name}</h3>\n          <p>Open Stripe Checkout for the selected plan. You return to this new Plans screen after checkout or cancellation.</p>\n          {billingError ? <small className="cvPlanBillingError" role="alert">{billingError}</small> : null}\n        </div>\n        <button type="button" onClick={openBilling} disabled={billingBusy}>{billingBusy ? "Opening Stripe…" : "Continue to secure checkout"}</button>\n      </section>\n''',
+              '''      <section className="cvPlanBillingAction">\n        <div>\n          <span>{hasStripeBilling ? "Billing account" : "Secure checkout"}</span>\n          <h3>{hasStripeBilling ? "Manage current Churvox billing" : `Continue with ${plan.name}`}</h3>\n          <p>{hasStripeBilling ? "Open Stripe's secure customer portal to review the subscription, payment method, invoices or cancellation. No change happens on this page." : "Open Stripe Checkout for the selected plan. You return to this new Plans screen after checkout or cancellation."}</p>\n          {billingError ? <small className="cvPlanBillingError" role="alert">{billingError}</small> : null}\n        </div>\n        <button type="button" onClick={hasStripeBilling ? openBillingPortal : openBilling} disabled={billingBusy}>{billingBusy ? "Opening Stripe…" : hasStripeBilling ? "Manage billing" : "Continue to secure checkout"}</button>\n      </section>\n'''
+          )
+          replace(
+              plans,
+              'function readStoredEmail() {\n',
+              '''function readStoredBillingAccount() {\n  try {\n    const snapshot = JSON.parse(localStorage.getItem("churvox_auth_session_snapshot_v1") || "{}");\n    const user = snapshot?.user || snapshot || {};\n    const business = user?.business && typeof user.business === "object" ? user.business : {};\n    return { ...business, ...user };\n  } catch {\n    return {};\n  }\n}\n\nfunction readStoredEmail() {\n'''
+          )
+
+          auth = "frontend/src/context/AuthContext.js"
+          replace(
+              auth,
+              '  const checkAuth = useCallback(async () => {\n    const runId = ++authRunRef.current;\n',
+              '  const checkAuth = useCallback(async (options = {}) => {\n    const allowOfflineFallback = options?.allowOfflineFallback !== false;\n    const runId = ++authRunRef.current;\n'
+          )
+          replace(auth, '      if (transient && workerSession && offlineWorkerSnapshot(workerSession)) {', '      if (allowOfflineFallback && transient && workerSession && offlineWorkerSnapshot(workerSession)) {')
+          replace(auth, '      if (transient && businessSession && offlineBusinessSnapshot(businessSession)) {', '      if (allowOfflineFallback && transient && businessSession && offlineBusinessSnapshot(businessSession)) {')
+
+          login = "frontend/src/pages/auth/LoginPage.js"
+          replace(
+              login,
+              '        freshUser = await withTimeout(checkAuth(), ACCESS_REFRESH_TIMEOUT_MS, "Your session could not be confirmed. Please sign in again.");',
+              '        freshUser = await withTimeout(checkAuth({ allowOfflineFallback: false }), ACCESS_REFRESH_TIMEOUT_MS, "Your session could not be confirmed. Please sign in again.");'
+          )
+
+          site = "frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx"
+          replace(
+              site,
+              'import React, { useEffect, useMemo, useState } from "react";\n',
+              'import React, { useEffect, useMemo, useState } from "react";\nimport API_BASE from "../lib/apiBase";\n'
+          )
+          replace(
+              site,
+              'function logoutOffice() { try { localStorage.removeItem("token"); localStorage.removeItem("owner_portal_session"); localStorage.removeItem("platform_owner_email"); sessionStorage.clear(); } catch {} window.location.href = "/login"; }',
+              '''async function logoutOffice() {\n  const accountKeys = [\n    "token", "authToken", "access_token", "owner_portal_session", "platform_owner_email",\n    "churvox_auth_session_snapshot_v1", "churvox:stable-current-plan:v1", "churvox:plan-override",\n    "churvox:addon:accounting_sync", "churvox:addon:command_growth_pack", "churvox:billing-plan",\n  ];\n  let token = "";\n  try { token = localStorage.getItem("token") || localStorage.getItem("authToken") || ""; } catch {}\n  try {\n    const base = String(API_BASE || "").replace(/\\/$/, "");\n    await fetch(`${base}/api/auth/logout`, {\n      method: "POST",\n      credentials: "include",\n      headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },\n    });\n  } catch {}\n  try {\n    accountKeys.forEach((key) => localStorage.removeItem(key));\n    sessionStorage.clear();\n    sessionStorage.setItem("churvox:logged-out", String(Date.now()));\n  } catch {}\n  window.location.replace("/login?logged_out=1");\n}'''
+          )
+          PY
+
+          rm -f .github/workflows/churvox-fix-paid-launch-contracts.yml
+
+      - name: Commit paid-launch contract fixes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx \
+                  frontend/src/context/AuthContext.js \
+                  frontend/src/pages/auth/LoginPage.js \
+                  frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
+                  .github/workflows/churvox-fix-paid-launch-contracts.yml
+          git commit -m "Harden billing portal, login confirmation and logout"
+          git push origin HEAD:agent/job-done-money-radar
