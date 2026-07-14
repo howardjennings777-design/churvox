@@ -52,33 +52,36 @@ jobs:
           echo ${PIPESTATUS[0]} > /tmp/owner-intelligence-verify.status
           exit 0
 
-      - name: Upload wiring diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: owner-intelligence-diagnostics-${{ github.run_id }}
-          path: |
-            /tmp/owner-intelligence-apply.log
-            /tmp/owner-intelligence-verify.log
-            /tmp/owner-intelligence-apply.status
-            /tmp/owner-intelligence-verify.status
-          if-no-files-found: warn
-          retention-days: 3
-
-      - name: Commit wired product or fail with diagnostics
+      - name: Commit success or publish isolated failure report
         shell: bash
         run: |
           apply_status=$(cat /tmp/owner-intelligence-apply.status)
           verify_status=$(cat /tmp/owner-intelligence-verify.status)
-          if [ "$apply_status" -ne 0 ] || [ "$verify_status" -ne 0 ]; then
-            echo "Apply status: $apply_status"
-            echo "Verify status: $verify_status"
-            cat /tmp/owner-intelligence-apply.log || true
-            cat /tmp/owner-intelligence-verify.log || true
-            exit 1
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Wire all eight Churvox Intelligence features [skip-intelligence-apply]"
+
+          if [ "$apply_status" -eq 0 ] && [ "$verify_status" -eq 0 ]; then
+            git add -A
+            git commit -m "Wire all eight Churvox Intelligence features [skip-intelligence-apply]"
+            git push origin HEAD:agent/churvox-owner-intelligence
+            exit 0
+          fi
+
+          apply_log=$(cat /tmp/owner-intelligence-apply.log 2>/dev/null || true)
+          verify_log=$(cat /tmp/owner-intelligence-verify.log 2>/dev/null || true)
+          git reset --hard HEAD
+          mkdir -p audit-results
+          {
+            echo "Apply status: $apply_status"
+            echo "Verify status: $verify_status"
+            echo
+            echo "--- apply ---"
+            printf '%s\n' "$apply_log"
+            echo
+            echo "--- verify ---"
+            printf '%s\n' "$verify_log"
+          } > audit-results/churvox-owner-intelligence-apply-latest.txt
+          git add audit-results/churvox-owner-intelligence-apply-latest.txt
+          git commit -m "Record Intelligence wiring failure [skip-intelligence-apply]"
           git push origin HEAD:agent/churvox-owner-intelligence
+          exit 1
