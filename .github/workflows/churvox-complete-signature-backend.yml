@@ -1,0 +1,96 @@
+name: Complete Job Done and Money Radar backend handoff
+
+on:
+  push:
+    branches:
+      - agent/job-done-money-radar
+
+permissions:
+  contents: write
+
+jobs:
+  complete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/job-done-money-radar
+          fetch-depth: 1
+
+      - name: Add safe internal draft persistence and edge-case fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected text not found in {path}: {old[:180]!r}")
+              file.write_text(text.replace(old, new, count))
+
+          data = "frontend/src/churvox-office-lab/OfficeTeamSignatureData.js"
+          replace(
+              data,
+              'let signatureCache = { at: 0, value: null, promise: null };',
+              'let signatureCache = { at: 0, value: null, promise: null, key: "" };'
+          )
+          replace(
+              data,
+              'export async function loadOfficeTeamSignatureData({ allowFallback = false, force = false } = {}) {\n  if (!force && signatureCache.value && Date.now() - signatureCache.at < CACHE_MS) return signatureCache.value;\n  if (!force && signatureCache.promise) return signatureCache.promise;\n',
+              'export async function loadOfficeTeamSignatureData({ allowFallback = false, force = false } = {}) {\n  const cacheKey = allowFallback ? "preview" : "live";\n  if (!force && signatureCache.key === cacheKey && signatureCache.value && Date.now() - signatureCache.at < CACHE_MS) return signatureCache.value;\n  if (!force && signatureCache.key === cacheKey && signatureCache.promise) return signatureCache.promise;\n'
+          )
+          replace(data, '  signatureCache = { ...signatureCache, promise };', '  signatureCache = { ...signatureCache, promise, key: cacheKey };')
+          replace(data, '    signatureCache = { at: Date.now(), value, promise: null };', '    signatureCache = { at: Date.now(), value, promise: null, key: cacheKey };')
+          replace(data, '    signatureCache = { at: 0, value: null, promise: null };', '    signatureCache = { at: 0, value: null, promise: null, key: "" };')
+
+          radar = "frontend/src/churvox-office-lab/OfficeTeamMoneyRadar.jsx"
+          replace(
+              radar,
+              '  const selected = visibleItems.find((item) => item.id === selectedId) || visibleItems[0] || radar.reviewItems[0] || null;',
+              '  const selected = visibleItems.find((item) => item.id === selectedId) || visibleItems[0] || null;'
+          )
+
+          command = "backend/churvox_command_routes.py"
+          helper = '''\n\nSIGNATURE_DRAFT_SOURCES = {"job_done_closeout", "money_radar_review"}\n\n\ndef _draft_text(value, fallback="", limit=2400):\n    text = " ".join(str(value or "").strip().split())\n    return (text[:limit] or fallback)\n\n\ndef _approved_fields(value):\n    if not isinstance(value, list):\n        return []\n    rows = []\n    for index, item in enumerate(value[:40]):\n        if not isinstance(item, dict):\n            continue\n        rows.append({\n            "label": _draft_text(item.get("label") or item.get("name") or item.get("key"), f"Field {index + 1}", 120),\n            "value": _draft_text(item.get("value"), "", 4000),\n            "long": bool(item.get("long")),\n        })\n    return rows\n\n\ndef build_signature_internal_draft(slip, approval, approved_by, approved_at):\n    slip = slip or {}\n    source_type = _draft_text(slip.get("source_type"), "")\n    if source_type not in SIGNATURE_DRAFT_SOURCES:\n        return None\n    approval = approval if isinstance(approval, dict) else {}\n    slip_payload = slip.get("payload") if isinstance(slip.get("payload"), dict) else {}\n    prepared_form = slip_payload.get("prepared_form") if isinstance(slip_payload.get("prepared_form"), dict) else {}\n    action = _draft_text(approval.get("action"), "Approve internal draft", 240)\n    note = _draft_text(approval.get("note") or approval.get("owner_note"), "Owner approved the internal draft.", 1200)\n    fields = _approved_fields(approval.get("fields"))\n    return {\n        "business_id": str(slip.get("business_id") or ""),\n        "contractor_id": slip.get("contractor_id"),\n        "command_slip_id": str(slip.get("_id") or slip.get("id") or ""),\n        "source_type": source_type,\n        "source_id": _draft_text(slip.get("source_id"), ""),\n        "action_type": _draft_text(slip.get("action_type"), "owner_review"),\n        "draft_type": "job_done" if source_type == "job_done_closeout" else "money_radar",\n        "title": _draft_text(slip.get("title"), "Owner-approved internal draft", 300),\n        "form_title": _draft_text(approval.get("form_title"), "Owner approval form", 240),\n        "prepared_form": prepared_form,\n        "approved_fields": fields,\n        "owner_action": action,\n        "owner_note": note,\n        "status": "owner_approved_internal_draft",\n        "prepared_only": True,\n        "owner_review_only": True,\n        "external_actions_locked": True,\n        "no_auto_send": True,\n        "no_auto_sync": True,\n        "no_auto_charge": True,\n        "no_auto_record_change": True,\n        "no_auto_mark_paid": True,\n        "no_auto_payroll": True,\n        "no_auto_tax": True,\n        "approved_by": str(approved_by or ""),\n        "approved_at": approved_at,\n        "updated_at": approved_at,\n        "safety": SAFE_RESULT,\n    }\n'''
+          replace(
+              command,
+              'OPEN_STATUSES = ["open", "edited", "pending", "ready", "waiting", "snoozed"]\n',
+              'OPEN_STATUSES = ["open", "edited", "pending", "ready", "waiting", "snoozed"]\n' + helper
+          )
+
+          old_approve = '''        note = (payload or {}).get("note") or (payload or {}).get("owner_note") or "Owner approved the prepared direction."\n        update = {\n            "status": "approved_recorded",\n            "approved_at": now(),\n            "approved_by": str(user.get("id")),\n            "owner_decision": {"action": (payload or {}).get("action") or "approve", "note": safe_text(note), "safety": SAFE_RESULT},\n            "result": {"stored_only": True, "message": SAFE_RESULT},\n            "updated_at": now(),\n        }\n        await db.command_slips.update_one({"_id": slip["_id"]}, {"$set": update, "$push": {"audit": audit_entry(user, "approved_recorded", note)}})\n        slip.update(update)\n        await command_event(user, "approved_recorded", slip, SAFE_RESULT)\n        return {"success": True, "slip": doc_out(slip), "result": update["result"], "safety": SAFE_RESULT}\n'''
+          new_approve = '''        approval = payload if isinstance(payload, dict) else {}\n        note = approval.get("note") or approval.get("owner_note") or "Owner approved the prepared direction."\n        approved_at = now()\n        execution = {"applied": False, "type": "approval_record_only", "external_actions_locked": True}\n        internal_draft = build_signature_internal_draft(slip, approval, user.get("id"), approved_at)\n        if internal_draft:\n            draft_key = {"business_id": business_id, "command_slip_id": str(slip["_id"])}\n            await db.command_approved_drafts.update_one(\n                draft_key,\n                {"$set": internal_draft, "$setOnInsert": {"created_at": approved_at}},\n                upsert=True,\n            )\n            saved_draft = await db.command_approved_drafts.find_one(draft_key)\n            execution = {\n                "applied": True,\n                "type": "owner_approved_internal_draft",\n                "draft_id": str((saved_draft or {}).get("_id") or ""),\n                "draft_type": internal_draft["draft_type"],\n                "external_actions_locked": True,\n            }\n        update = {\n            "status": "approved_recorded",\n            "approved_at": approved_at,\n            "approved_by": str(user.get("id")),\n            "owner_decision": {"action": approval.get("action") or "approve", "note": safe_text(note), "safety": SAFE_RESULT},\n            "approved_form": {\n                "form_title": safe_text(approval.get("form_title"), "Owner approval form"),\n                "fields": _approved_fields(approval.get("fields")),\n            },\n            "result": {"stored_only": True, "message": SAFE_RESULT, "execution": execution},\n            "updated_at": approved_at,\n        }\n        await db.command_slips.update_one({"_id": slip["_id"]}, {"$set": update, "$push": {"audit": audit_entry(user, "approved_recorded", note)}})\n        slip.update(update)\n        event_note = "Owner-approved internal draft saved. External sends, syncs, charges, payments, tax actions and live-record changes remain locked." if execution["applied"] else SAFE_RESULT\n        await command_event(user, "approved_recorded", slip, event_note)\n        return {"success": True, "slip": doc_out(slip), "result": update["result"], "safety": SAFE_RESULT}\n'''
+          replace(command, old_approve, new_approve)
+
+          route_marker = '''    @router.post("/command/slips/{slip_id}/snooze")\n'''
+          drafts_route = '''    @router.get("/command/approved-drafts")\n    async def list_command_approved_drafts(request: Request):\n        user = await require_owner(request)\n        business_id, _ = business_ids(user)\n        drafts = await db.command_approved_drafts.find({"business_id": business_id}).sort("approved_at", -1).limit(100).to_list(100)\n        return {"success": True, "drafts": [doc_out(item) for item in drafts], "safety": SAFE_RESULT}\n\n'''
+          replace(command, route_marker, drafts_route + route_marker)
+
+          test_path = Path("backend/test_churvox_command_signature_draft.py")
+          test_path.write_text('''import unittest\nfrom datetime import datetime, timezone\n\nfrom backend.churvox_command_routes import build_signature_internal_draft\n\n\nclass CommandSignatureDraftTests(unittest.TestCase):\n    def setUp(self):\n        self.at = datetime(2026, 7, 14, tzinfo=timezone.utc)\n        self.approval = {\n            "action": "Approve Job Done draft",\n            "owner_note": "Checked by owner",\n            "form_title": "Job Done closeout",\n            "fields": [{"label": "Invoice total", "value": "$245.00"}],\n        }\n\n    def test_job_done_builds_locked_internal_draft(self):\n        draft = build_signature_internal_draft({\n            "_id": "slip-1",\n            "business_id": "business-1",\n            "source_type": "job_done_closeout",\n            "source_id": "job-1",\n            "action_type": "owner_review_job_done",\n            "title": "Job Done: Smith lawn",\n            "payload": {"prepared_form": {"job": "Smith lawn", "worker_time": "3 hours"}},\n        }, self.approval, "owner-1", self.at)\n        self.assertEqual(draft["draft_type"], "job_done")\n        self.assertEqual(draft["prepared_form"]["job"], "Smith lawn")\n        self.assertEqual(draft["approved_fields"][0]["value"], "$245.00")\n        self.assertTrue(draft["external_actions_locked"])\n        self.assertTrue(draft["no_auto_send"])\n        self.assertTrue(draft["no_auto_payroll"])\n        self.assertTrue(draft["no_auto_tax"])\n\n    def test_money_radar_builds_locked_internal_draft(self):\n        draft = build_signature_internal_draft({\n            "_id": "slip-2",\n            "business_id": "business-1",\n            "source_type": "money_radar_review",\n            "source_id": "invoice-1",\n            "action_type": "owner_review_money_radar",\n            "title": "Money Radar: INV-1",\n            "payload": {"prepared_form": {"expected_next_30_days": "$1,250.00"}},\n        }, {**self.approval, "action": "Approve money review"}, "owner-1", self.at)\n        self.assertEqual(draft["draft_type"], "money_radar")\n        self.assertTrue(draft["no_auto_mark_paid"])\n        self.assertTrue(draft["no_auto_sync"])\n        self.assertEqual(draft["prepared_form"]["expected_next_30_days"], "$1,250.00")\n\n    def test_other_command_slips_remain_record_only(self):\n        draft = build_signature_internal_draft({"source_type": "booking"}, self.approval, "owner-1", self.at)\n        self.assertIsNone(draft)\n\n\nif __name__ == "__main__":\n    unittest.main()\n''')
+
+          gate = ".github/workflows/churvox-paid-launch-gate.yml"
+          replace(
+              gate,
+              '            backend.test_churvox_paid_launch_route_mounts \\\n',
+              '            backend.test_churvox_paid_launch_route_mounts \\\n            backend.test_churvox_command_signature_draft \\\n'
+          )
+          PY
+
+          rm -f .github/workflows/churvox-complete-signature-backend.yml
+
+      - name: Commit completed signature workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/churvox_command_routes.py \
+                  backend/test_churvox_command_signature_draft.py \
+                  frontend/src/churvox-office-lab/OfficeTeamSignatureData.js \
+                  frontend/src/churvox-office-lab/OfficeTeamMoneyRadar.jsx \
+                  .github/workflows/churvox-paid-launch-gate.yml \
+                  .github/workflows/churvox-complete-signature-backend.yml
+          git commit -m "Complete Job Done and Money Radar internal draft handoff"
+          git push origin HEAD:agent/job-done-money-radar
