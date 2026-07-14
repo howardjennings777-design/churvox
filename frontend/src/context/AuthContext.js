@@ -10,6 +10,7 @@ const AUTH_TIMEOUT_MS = 8000;
 const WORKER_AUTH_TIMEOUT_MS = 8000;
 const PLAN_REQUIRED_KEY = "churvox_plan_choice_required";
 const AUTH_SNAPSHOT_KEY = "churvox_auth_session_snapshot_v1";
+const LOGGED_OUT_KEY = "churvox:logged-out";
 const AUTH_SNAPSHOT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 const WORKER_OFFLINE_GRACE_MS = 1000 * 60 * 60 * 2;
 const BUSINESS_OFFLINE_GRACE_MS = 1000 * 60 * 15;
@@ -66,6 +67,18 @@ const ACCOUNT_CACHE_KEYS = [
 
 function safeStorageRemove(key) {
   try { localStorage.removeItem(key); } catch {}
+}
+
+function hasExplicitLogoutLock() {
+  try { return Boolean(sessionStorage.getItem(LOGGED_OUT_KEY)); } catch { return false; }
+}
+
+function setExplicitLogoutLock() {
+  try { sessionStorage.setItem(LOGGED_OUT_KEY, String(Date.now())); } catch {}
+}
+
+function clearExplicitLogoutLock() {
+  try { sessionStorage.removeItem(LOGGED_OUT_KEY); } catch {}
 }
 
 function clearAccountPlanState() {
@@ -325,8 +338,17 @@ export function AuthProvider({ children }) {
     return nextUser;
   }, []);
 
-  const checkAuth = useCallback(async () => {
+  const checkAuth = useCallback(async ({ allowOfflineFallback = true } = {}) => {
     const runId = ++authRunRef.current;
+    if (hasExplicitLogoutLock()) {
+      clearStoredAuth({ clearPlanState: true });
+      publishAuthState("anonymous");
+      if (runId === authRunRef.current) {
+        setUser(null);
+        setLoading(false);
+      }
+      return null;
+    }
     publishAuthState("checking");
     let token = "";
     try { token = localStorage.getItem("token") || ""; } catch {}
@@ -349,13 +371,13 @@ export function AuthProvider({ children }) {
     } catch (error) {
       const status = error?.response?.status;
       const transient = !status || status === 408 || status === 429 || status >= 500;
-      if (transient && workerSession && offlineWorkerSnapshot(workerSession)) {
+      if (allowOfflineFallback && transient && workerSession && offlineWorkerSnapshot(workerSession)) {
         setAxiosAuthToken(workerSession.token || requestToken);
         publishAuthState("authenticated", workerSession);
         if (runId === authRunRef.current) setUser(workerSession);
         return workerSession;
       }
-      if (transient && businessSession && offlineBusinessSnapshot(businessSession)) {
+      if (allowOfflineFallback && transient && businessSession && offlineBusinessSnapshot(businessSession)) {
         setAxiosAuthToken(businessSession.token || requestToken);
         publishAuthState("authenticated", businessSession);
         if (runId === authRunRef.current) setUser(businessSession);
@@ -431,8 +453,10 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, options = {}) => {
     const runId = ++authRunRef.current;
+    const confirmSession = options?.confirmSession === true;
+    clearExplicitLogoutLock();
     publishAuthState("checking");
     setLoading(true);
     clearStoredAuth({ clearPlanState: true });
@@ -475,14 +499,19 @@ export function AuthProvider({ children }) {
       setAxiosAuthToken(token);
 
       if (businessAccessFromUser(nextUser)) removePlanFlag();
-      saveStoredAuthSnapshot(nextUser);
-      rememberPlatformOwner(nextUser);
-      publishAuthState("authenticated", nextUser);
-      if (runId === authRunRef.current) setUser(nextUser);
+      if (confirmSession) {
+        publishAuthState("checking");
+      } else {
+        saveStoredAuthSnapshot(nextUser);
+        rememberPlatformOwner(nextUser);
+        publishAuthState("authenticated", nextUser);
+        if (runId === authRunRef.current) setUser(nextUser);
+      }
       return { ...response.data, user: nextUser, ...nextUser };
     } catch (error) {
       if (runId === authRunRef.current) {
         clearStoredAuth({ clearPlanState: true });
+        if (confirmSession) setExplicitLogoutLock();
         setUser(null);
         publishAuthState("anonymous");
       }
@@ -535,6 +564,13 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     const runId = ++authRunRef.current;
+    setExplicitLogoutLock();
+    clearStoredAuth({ clearPlanState: true });
+    publishAuthState("anonymous");
+    if (runId === authRunRef.current) {
+      setUser(null);
+      setLoading(false);
+    }
     try {
       const token = localStorage.getItem("token") || "";
       await axios.post(`${API_BASE}/api/auth/logout`, {}, { headers: headersFor(token), withCredentials: true, timeout: AUTH_TIMEOUT_MS });
