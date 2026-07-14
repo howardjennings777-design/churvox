@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import re
 from typing import Any, Dict, Optional
 
 from starlette.requests import Request as StarletteRequest
@@ -12,7 +13,7 @@ except Exception:
     from . import churvox_command_runs_office_patch as engine
 
 
-VERSION = "churvox-command-runs-office-finalizer-v1-20260715"
+VERSION = "churvox-command-runs-office-finalizer-v2-20260715"
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
 
@@ -43,15 +44,22 @@ async def fast_load_context(db, ObjectId, user):
 
 
 _original_worker_decision = engine.enrich_worker_decision
+_original_generic_decision = engine.enrich_generic_decision
 
 
 def enhanced_worker_decision(ObjectId, slip, job, workers, jobs):
     _original_worker_decision(ObjectId, slip, job, workers, jobs)
     payload = engine.payload_of(slip)
+    form = engine.prepared_form(payload)
     top = payload.get("recommended_worker") if isinstance(payload.get("recommended_worker"), dict) else None
     backups = payload.get("worker_alternatives") if isinstance(payload.get("worker_alternatives"), list) else []
     if not top or not engine.clean(top.get("name")):
+        if "availability check" in engine.lower(payload.get("recommended_decision")):
+            engine.set_field(payload, "Worker", "Unassigned — team availability check prepared", "no active worker could be ranked safely", 0.98)
         return
+    top_name = engine.clean(top.get("name"), "", 180)
+    engine.set_field(payload, "Worker", top_name, "highest suitable-worker score", 0.94 if float(top.get("score") or 0) >= 60 else 0.76)
+    form["Owner check before approval"] = "Churvox selected the best recorded fit. The owner can approve this worker, approve a ranked backup, edit the form, ask staff or park it."
     ranked = [top] + [item for item in backups if isinstance(item, dict) and engine.clean(item.get("name"))]
     actions = []
     action_map = {}
@@ -72,6 +80,19 @@ def enhanced_worker_decision(ObjectId, slip, job, workers, jobs):
     payload["worker_action_map"] = action_map
     payload["owner_question"] = "Approve the recommended worker, approve a ranked backup, ask staff, or park this job?"
     slip["why"] = payload["owner_question"]
+
+
+def enhanced_generic_decision(slip):
+    _original_generic_decision(slip)
+    payload = engine.payload_of(slip)
+    actions = engine.text_list(payload.get("actions"))
+    primary = next((action for action in actions if not re.search(r"\b(ask|park|ignore|snooze|later|personally|call)\b", action, re.I)), actions[0] if actions else "Approve prepared decision")
+    recommendation = engine.clean(payload.get("recommended_decision"), "Approve the prepared decision shown in this slip.")
+    if not engine.lower(recommendation).startswith(engine.lower(primary)):
+        recommendation = f"{primary}. {recommendation}"
+    payload["recommended_decision"] = recommendation
+    engine.set_field(payload, "Churvox recommends", recommendation, "primary prepared action plus the office-role judgement", 0.9)
+    slip["prepared"] = f"Churvox recommends: {recommendation}"
 
 
 def route_for(app, path, method):
@@ -173,6 +194,7 @@ def install(module):
 
     engine.load_context = fast_load_context
     engine.enrich_worker_decision = enhanced_worker_decision
+    engine.enrich_generic_decision = enhanced_generic_decision
 
     path = "/api/command/slips/{slip_id}/approve"
     route = route_for(app, path, "POST")
