@@ -67,7 +67,7 @@ export default function OfficeTeamLaunchHardening({ go }) {
     <section className="cvSiteScreen cvLaunch" data-go-live-trust="v1">
       <header className="cvLaunchHero">
         <div><span>Go Live & Trust · {summary?.plan || "checking"}</span><h1>Get the business operating properly, then keep it safe.</h1><p>Bring existing work in, finish the first real job, control access, recover owner-approved changes and take the entire business back out whenever needed.</p><small>Trust controls are not upgrade bait. Churvox shows exactly what was prepared, changed and recoverable.</small></div>
-        <div className="cvLaunchHeroStats"><article><strong>{complete}/{required || 8}</strong><span>go-live steps</span></article><article><strong>{summary?.portability?.record_count || 0}</strong><span>portable records</span></article><article><strong>{(summary?.recovery || []).filter((item) => item.reversible && item.status === "available").length}</strong><span>undo actions</span></article></div>
+        <div className="cvLaunchHeroStats"><article><strong>{complete}/{required || 8}</strong><span>go-live steps</span></article><article><strong>{summary?.portability?.record_count || 0}</strong><span>portable records</span></article><article><strong>{(summary?.recovery || []).filter((item) => item && item.reversible && item.status === "available").length}</strong><span>undo actions</span></article></div>
       </header>
 
       <div className="cvLaunchFeatureStrip" aria-label="Go Live trust features">
@@ -169,13 +169,20 @@ function Portals({ items, busy, setBusy, setSummary, setNotice }) {
 }
 
 function Recovery({ items, busy, setBusy, setSummary, setNotice }) {
+  const receipts = (Array.isArray(items) ? items : []).filter((item) => item?.id);
   async function undo(item) {
     setBusy(`undo-${item.id}`);
-    try { const body = await undoRecoveryReceipt(item.id); setSummary((current) => ({ ...current, recovery: (current.recovery || []).map((receipt) => receipt.id === item.id ? body.receipt : receipt) })); setNotice("The reversible internal action was undone and recorded."); }
+    try {
+      const body = await undoRecoveryReceipt(item.id);
+      const updatedReceipt = body?.receipt;
+      if (!updatedReceipt?.id || updatedReceipt.id !== item.id) throw new Error("Churvox could not confirm the recovery receipt. Nothing was changed on this screen.");
+      setSummary((current) => ({ ...current, recovery: (current?.recovery || []).filter(Boolean).map((receipt) => receipt.id === item.id ? updatedReceipt : receipt) }));
+      setNotice("The reversible internal action was undone and recorded.");
+    }
     catch (error) { setNotice(error.message); }
     finally { setBusy(""); }
   }
-  return <section className="cvLaunchPanel"><PanelHeader eyebrow="Recovery and undo" title="Show the owner what changed and what can be put back" text="External actions already delivered cannot be magically recalled. Churvox clearly separates reversible internal changes from actions requiring manual correction." /><div className="cvLaunchRecovery">{items.length ? items.map((item) => <article key={item.id} data-reversible={item.reversible}><span>{item.reversible ? item.status : "Manual correction"}</span><h3>{item.title}</h3><details><summary>Before and after</summary><pre>{JSON.stringify({ before: item.before, after: item.after }, null, 2)}</pre></details><button type="button" disabled={Boolean(busy) || !item.reversible || item.status !== "available"} onClick={() => undo(item)}>{busy === `undo-${item.id}` ? "Undoing…" : item.status === "undone" ? "Already undone" : item.reversible ? "Undo safely" : "Not automatically reversible"}</button></article>) : <Empty title="No recovery receipts yet" text="Imports, portal links and permission changes will leave a clear before/after receipt here." />}</div></section>;
+  return <section className="cvLaunchPanel"><PanelHeader eyebrow="Recovery and undo" title="Show the owner what changed and what can be put back" text="External actions already delivered cannot be magically recalled. Churvox clearly separates reversible internal changes from actions requiring manual correction." /><div className="cvLaunchRecovery">{receipts.length ? receipts.map((item) => <article key={item.id} data-reversible={item.reversible}><span>{item.reversible ? item.status : "Manual correction"}</span><h3>{item.title}</h3><details><summary>Before and after</summary><pre>{JSON.stringify({ before: item.before, after: item.after }, null, 2)}</pre></details><button type="button" disabled={Boolean(busy) || !item.reversible || item.status !== "available"} onClick={() => undo(item)}>{busy === `undo-${item.id}` ? "Undoing…" : item.status === "undone" ? "Already undone" : item.reversible ? "Undo safely" : "Not automatically reversible"}</button></article>) : <Empty title="No recovery receipts yet" text="Imports, portal links and permission changes will leave a clear before/after receipt here." />}</div></section>;
 }
 
 function Portability({ data = {}, busy, setBusy, setNotice }) {

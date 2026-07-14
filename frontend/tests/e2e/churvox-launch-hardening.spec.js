@@ -71,7 +71,11 @@ async function installApi(page, plan, calls) {
     if (path === '/api/launch-hardening/imports/commit') return route.fulfill(json({ success: true, batch: { preview_id: 'preview-1', kind: 'clients', status: 'committed', inserted_count: 2 }, receipt: { id: 'receipt-new', title: 'Import clients', reversible: true, status: 'available' } }));
     if (path === '/api/launch-hardening/permissions') return route.fulfill(json({ success: true, permissions: summary(plan).permissions, receipt: { id: 'permissions-receipt', reversible: true, status: 'available' } }));
     if (path === '/api/launch-hardening/portal-links' && method === 'POST') return route.fulfill(json({ success: true, portal: { id: 'portal-new', public_token: 'portal-token-new-1234567890', customer_name: body.customer_name, job_title: body.job_title, status: 'active' }, url: '/client/portal-token-new-1234567890', receipt: { id: 'portal-receipt', reversible: true, status: 'available' } }));
-    if (path === '/api/launch-hardening/recovery/receipt-1/undo') return route.fulfill(json({ success: true, receipt: { ...summary(plan).recovery[0], status: 'undone' } }));
+    if (/^\/api\/launch-hardening\/recovery\/[^/]+\/undo$/.test(path)) {
+      const receiptId = decodeURIComponent(path.split('/').at(-2));
+      const known = summary(plan).recovery.find((item) => item.id === receiptId) || { id: receiptId, title: 'Reversible owner action', reversible: true, before: {}, after: {} };
+      return route.fulfill(json({ success: true, receipt: { ...known, status: 'undone', reversible: false } }));
+    }
     if (/\/api\/command\//.test(path)) return route.fulfill(json({ success: true, slips: [], events: [], audit: [] }));
     return route.fulfill(json({ success: true, rows: [], items: [], records: [] }));
   });
