@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import API_BASE from "../lib/apiBase";
 import "./OfficeTeamLabFinal.css";
 import "./OfficeTeamLabLive.css";
 import "./OfficeTeamLabSite.css";
@@ -15,6 +16,7 @@ import OfficeTeamSiteSettings from "./OfficeTeamSiteSettings";
 import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
 import OfficeTeamReadinessScreen from "./OfficeTeamReadinessScreen";
 import OfficeTeamTodayScreen from "./OfficeTeamTodayScreen";
+import OfficeTeamJobDoneScreen from "./OfficeTeamJobDoneScreen";
 import OfficeTeamOwnerNavigation from "./OfficeTeamOwnerNavigation";
 import OfficeTeamContextStrip from "./OfficeTeamContextStrip";
 import { WorkScreen, MoneyScreen, ClientsScreen, StaffScreen } from "./OfficeTeamOperationalScreens";
@@ -36,7 +38,7 @@ const COMMAND_FAST_LOAD_BUILD = "churvox-command-instant-load-20260713d";
 if (typeof window !== "undefined") window.__CHURVOX_COMMAND_FAST_LOAD_BUILD__ = COMMAND_FAST_LOAD_BUILD;
 
 const screens = [
-  ["today", "Today"], ["command", "Command"], ["work", "Work"], ["schedule", "Schedule"], ["clients", "Clients"],
+  ["today", "Today"], ["command", "Command"], ["work", "Work"], ["jobdone", "Job Done"], ["schedule", "Schedule"], ["clients", "Clients"],
   ["messages", "Messages"], ["worker", "Worker View"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["money", "Money"],
   ["staff", "Staff"], ["payroll", "Payroll"], ["team", "Office Team"], ["playbooks", "Playbooks"], ["integrations", "Integrations"],
   ["activity", "Activity"], ["automation", "Automation"], ["branding", "Branding"], ["settings", "Settings"], ["plans", "Plans"],
@@ -46,7 +48,7 @@ const screens = [
 const screenAliases = {
   "": "today", dashboard: "today", home: "today", hub: "today", "smart-hub": "today",
   cockpit: "command", command: "command", "command-board": "command",
-  jobs: "work", job: "work", work: "work", recurring: "work",
+  jobs: "work", job: "work", work: "work", recurring: "work", jobdone: "jobdone", "job-done": "jobdone", closeout: "jobdone", closeouts: "jobdone",
   calendar: "schedule", schedule: "schedule", clients: "clients", customers: "clients",
   messages: "messages", inbox: "messages", workers: "worker", worker: "worker", dispatch: "worker",
   quotes: "quotes", invoices: "invoices", reports: "invoices", money: "money", accounting: "money", accountant: "money", xero: "integrations",
@@ -386,14 +388,15 @@ function ScreenRouter(props) {
   const { screen, appMode } = props;
   if (screen === "today") return <OfficeTeamTodayScreen {...props} />;
   if (screen === "command") return <Command {...props} />;
-  if (screen === "work") return <WorkScreen appMode={appMode} />;
+  if (screen === "work") return <WorkScreen {...props} />;
+  if (screen === "jobdone") return <OfficeTeamJobDoneScreen {...props} />;
   if (screen === "schedule") return <ScheduleScreen appMode={appMode} />;
   if (screen === "clients") return <ClientsScreen appMode={appMode} />;
   if (screen === "messages") return <MessagesScreen appMode={appMode} />;
   if (screen === "worker") return <WorkerViewScreen appMode={appMode} />;
   if (screen === "quotes") return <QuotesScreen appMode={appMode} />;
   if (screen === "invoices") return <InvoicesScreen appMode={appMode} />;
-  if (screen === "money") return <MoneyScreen appMode={appMode} />;
+  if (screen === "money") return <MoneyScreen {...props} />;
   if (screen === "staff") return <StaffScreen appMode={appMode} />;
   if (screen === "payroll") return <PayrollScreen appMode={appMode} />;
   if (screen === "team") return <Team {...props} />;
@@ -543,7 +546,29 @@ function countDepartments(items = []) { return items.reduce((acc, item) => { acc
 function cleanScreen(hash) { const key = String(hash || "").replace("#", "").trim().toLowerCase(); return screenAliases[key] || "today"; }
 function makeSourceLabel({ isOwnerApp, backendCommand, snapshot, liveDrafts }) { if (isOwnerApp && backendCommand?.source === "backend-command") return "Command live"; if (isOwnerApp && backendCommand?.source === "backend-command-clear") return "Command clear"; if (isOwnerApp) return "Command unavailable"; if (snapshot?.source === "admin-brain") return "live check"; if (liveDrafts?.length) return "live rows"; return "control mode"; }
 function isOwnerRoute() { return typeof window !== "undefined" && window.location.pathname.includes("dashboard"); }
-function logoutOffice() { try { localStorage.removeItem("token"); localStorage.removeItem("owner_portal_session"); localStorage.removeItem("platform_owner_email"); sessionStorage.clear(); } catch {} window.location.href = "/login"; }
+async function logoutOffice() {
+  const accountKeys = [
+    "token", "authToken", "access_token", "owner_portal_session", "platform_owner_email",
+    "churvox_auth_session_snapshot_v1", "churvox:stable-current-plan:v1", "churvox:plan-override",
+    "churvox:addon:accounting_sync", "churvox:addon:command_growth_pack", "churvox:billing-plan",
+  ];
+  let token = "";
+  try { token = localStorage.getItem("token") || localStorage.getItem("authToken") || ""; } catch {}
+  try {
+    const base = String(API_BASE || "").replace(/\/$/, "");
+    await fetch(`${base}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+  } catch {}
+  try {
+    accountKeys.forEach((key) => localStorage.removeItem(key));
+    sessionStorage.clear();
+    sessionStorage.setItem("churvox:logged-out", String(Date.now()));
+  } catch {}
+  window.location.replace("/login?logged_out=1");
+}
 function cleanText(value) { return String(value || "").trim(); }
 function firstValue(...values) { return values.map(cleanText).find(Boolean) || ""; }
 function payloadOf(item = {}) { return item?.raw?.payload && typeof item.raw.payload === "object" ? item.raw.payload : {}; }

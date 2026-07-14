@@ -3,15 +3,9 @@ import "./OfficeTeamOperationalScreens.css";
 import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import OfficeTeamWorkForms from "./OfficeTeamWorkForms";
 import OfficeTeamJobsWorkspace from "./OfficeTeamJobsWorkspace";
+import OfficeTeamMoneyRadar from "./OfficeTeamMoneyRadar";
 import OfficeTeamClientsWorkspace from "./OfficeTeamClientsWorkspace";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
-
-const moneyRows = [
-  ["Draft invoice", "$185", "Extra charge held", "Owner decision"],
-  ["Quote follow-up", "$420", "Viewed, no reply", "Follow-up ready"],
-  ["Payment reminder", "$89", "Due soon", "Reminder prepared"],
-  ["Accounting sync", "0", "Locked", "No auto-sync"],
-];
 
 const staffRows = [
   ["Cam", "Timer check", "Odd timer", "Ask or edit"],
@@ -29,7 +23,7 @@ export function ClientsScreen(props) {
 }
 
 export function MoneyScreen(props) {
-  return <OperationalScreen area="money" eyebrow="Money" title="Invoices, quotes and payment follow-up" text="Prepare invoice/payment work and keep it safe. Command gets the owner decision before anything sends, syncs or charges." rows={moneyRows} primary="Prepare money item" secondary="Review export" {...props} />;
+  return <OfficeTeamMoneyRadar {...props} />;
 }
 
 export function StaffScreen(props) {

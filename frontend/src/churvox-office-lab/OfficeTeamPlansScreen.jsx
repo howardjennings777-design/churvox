@@ -86,6 +86,12 @@ export default function OfficeTeamPlansScreen() {
   const commandActive = currentPlan === "command";
   const activePacks = Math.max(0, Number(growthPackStatus.activePacks || 0));
   const packAddsTeam = packQuantity * 50;
+  const billingAccount = readStoredBillingAccount();
+  const billingStatus = String(billingAccount?.subscription_status || billingAccount?.billing_status || billingAccount?.stripe_status || "").trim().toLowerCase();
+  const hasStripeBilling = Boolean(
+    (billingAccount?.stripe_customer_id || billingAccount?.stripe_subscription_id)
+    && ["active", "paid", "past_due", "trial", "trialing"].includes(billingStatus)
+  );
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, country); } catch {}
@@ -126,6 +132,31 @@ export default function OfficeTeamPlansScreen() {
     });
     return () => { cancelled = true; };
   }, []);
+
+  async function openBillingPortal() {
+    if (billingBusy) return;
+    setBillingBusy(true);
+    setBillingError("");
+    try {
+      const response = await fetch(apiUrl("/billing/create-portal-session"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...tokenHeaders() },
+        body: JSON.stringify({ return_url: `${window.location.origin}/dashboard#plans`, source: "owner_plans_screen" }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.error || body?.message || `Billing portal returned HTTP ${response.status}`);
+      const portalUrl = body?.url || body?.portal_url || body?.session_url || body?.data?.url;
+      if (!portalUrl) throw new Error("Stripe billing portal URL was not returned.");
+      const secureUrl = new URL(portalUrl, window.location.origin);
+      if (secureUrl.protocol !== "https:") throw new Error("Billing did not return a secure portal URL.");
+      window.location.assign(secureUrl.toString());
+      return;
+    } catch (error) {
+      setBillingError(error?.message || "Secure billing management could not open. No plan or payment detail was changed.");
+      setBillingBusy(false);
+    }
+  }
 
   async function openBilling() {
     if (billingBusy) return;
@@ -329,12 +360,12 @@ export default function OfficeTeamPlansScreen() {
 
       <section className="cvPlanBillingAction">
         <div>
-          <span>Secure checkout</span>
-          <h3>Continue with {plan.name}</h3>
-          <p>Open Stripe Checkout for the selected plan. You return to this new Plans screen after checkout or cancellation.</p>
+          <span>{hasStripeBilling ? "Billing account" : "Secure checkout"}</span>
+          <h3>{hasStripeBilling ? "Manage current Churvox billing" : `Continue with ${plan.name}`}</h3>
+          <p>{hasStripeBilling ? "Open Stripe's secure customer portal to review the subscription, payment method, invoices or cancellation. No change happens on this page." : "Open Stripe Checkout for the selected plan. You return to this new Plans screen after checkout or cancellation."}</p>
           {billingError ? <small className="cvPlanBillingError" role="alert">{billingError}</small> : null}
         </div>
-        <button type="button" onClick={openBilling} disabled={billingBusy}>{billingBusy ? "Opening Stripe…" : "Continue to secure checkout"}</button>
+        <button type="button" onClick={hasStripeBilling ? openBillingPortal : openBilling} disabled={billingBusy}>{billingBusy ? "Opening Stripe…" : hasStripeBilling ? "Manage billing" : "Continue to secure checkout"}</button>
       </section>
     </section>
   );
@@ -369,6 +400,17 @@ function tokenHeaders() {
   try {
     const token = localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
     return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
+function readStoredBillingAccount() {
+  try {
+    const snapshot = JSON.parse(localStorage.getItem("churvox_auth_session_snapshot_v1") || "{}");
+    const user = snapshot?.user || snapshot || {};
+    const business = user?.business && typeof user.business === "object" ? user.business : {};
+    return { ...business, ...user };
   } catch {
     return {};
   }

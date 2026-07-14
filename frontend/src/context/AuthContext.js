@@ -325,7 +325,8 @@ export function AuthProvider({ children }) {
     return nextUser;
   }, []);
 
-  const checkAuth = useCallback(async () => {
+  const checkAuth = useCallback(async (options = {}) => {
+    const allowOfflineFallback = options?.allowOfflineFallback !== false;
     const runId = ++authRunRef.current;
     publishAuthState("checking");
     let token = "";
@@ -349,13 +350,13 @@ export function AuthProvider({ children }) {
     } catch (error) {
       const status = error?.response?.status;
       const transient = !status || status === 408 || status === 429 || status >= 500;
-      if (transient && workerSession && offlineWorkerSnapshot(workerSession)) {
+      if (allowOfflineFallback && transient && workerSession && offlineWorkerSnapshot(workerSession)) {
         setAxiosAuthToken(workerSession.token || requestToken);
         publishAuthState("authenticated", workerSession);
         if (runId === authRunRef.current) setUser(workerSession);
         return workerSession;
       }
-      if (transient && businessSession && offlineBusinessSnapshot(businessSession)) {
+      if (allowOfflineFallback && transient && businessSession && offlineBusinessSnapshot(businessSession)) {
         setAxiosAuthToken(businessSession.token || requestToken);
         publishAuthState("authenticated", businessSession);
         if (runId === authRunRef.current) setUser(businessSession);

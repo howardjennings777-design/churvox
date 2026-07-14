@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from backend import churvox_account_deletion_paid_launch as account_deletion
 from backend import churvox_billing_portal_paid_launch as billing_portal
 from backend import churvox_startup_patch_loader as startup_loader
+from backend.churvox_signature_command_create_routes import route_signature_draft_area
 
 
 async def signed_out(_request):
@@ -109,6 +110,41 @@ class PaidLaunchRouteMountTest(unittest.TestCase):
         route_for(module.app, "/api/account/self-delete", "DELETE")
         route_for(module.app, "/api/account/self-delete", "POST")
         self.assertIn(name, account_deletion.INSTALLED)
+
+    def test_job_done_command_slip_is_routed_to_operations_review(self):
+        payload = route_signature_draft_area({
+            "source_type": "job_done_closeout",
+            "payload": {"area": "job-done", "prepared_only": True},
+        })
+        self.assertEqual(payload["source_type"], "job_done_closeout")
+        self.assertEqual(payload["payload"]["area"], "operations_review")
+        self.assertTrue(payload["payload"]["internal_draft_only"])
+        self.assertTrue(payload["payload"]["source_records_unchanged"])
+        self.assertTrue(payload["payload"]["external_actions_locked"])
+
+    def test_money_radar_command_slip_is_routed_to_accounting_review(self):
+        payload = route_signature_draft_area({
+            "source_type": "money_radar_review",
+            "payload": {"area": "money", "no_auto_mark_paid": True},
+        })
+        self.assertEqual(payload["source_type"], "money_radar_review")
+        self.assertEqual(payload["payload"]["area"], "accounting_review")
+        self.assertTrue(payload["payload"]["no_auto_mark_paid"])
+        self.assertTrue(payload["payload"]["internal_draft_only"])
+
+    def test_non_signature_command_slips_keep_their_existing_area(self):
+        original = {"source_type": "booking", "payload": {"area": "work"}}
+        payload = route_signature_draft_area(original)
+        self.assertEqual(payload, original)
+        self.assertIsNot(payload, original)
+
+    def test_signature_create_router_is_registered_before_legacy_command_router(self):
+        customize = (Path(__file__).resolve().parents[1] / "usercustomize.py").read_text(encoding="utf-8")
+        signature_mount = "build_signature_command_create_router(local_db, local_get_current_user, ObjectId)"
+        legacy_mount = "build_command_router(local_db, local_get_current_user, ObjectId)"
+        self.assertIn(signature_mount, customize)
+        self.assertIn(legacy_mount, customize)
+        self.assertLess(customize.index(signature_mount), customize.index(legacy_mount))
 
 
 if __name__ == "__main__":

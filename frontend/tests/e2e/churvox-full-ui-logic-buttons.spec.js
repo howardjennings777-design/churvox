@@ -1,13 +1,13 @@
 const { test, expect } = require('@playwright/test');
 
 const LAB_SCREENS = [
-  'today', 'command', 'work', 'schedule', 'clients', 'messages', 'worker', 'quotes', 'invoices', 'money',
+  'today', 'command', 'work', 'jobdone', 'schedule', 'clients', 'messages', 'worker', 'quotes', 'invoices', 'money',
   'staff', 'payroll', 'team', 'playbooks', 'integrations', 'activity', 'automation', 'branding', 'settings',
   'plans', 'help', 'readiness', 'safety',
 ];
 
 const INTERACTIVE_SCREENS = [
-  'today', 'command', 'work', 'schedule', 'clients', 'messages', 'worker', 'quotes', 'invoices', 'money',
+  'today', 'command', 'work', 'jobdone', 'schedule', 'clients', 'messages', 'worker', 'quotes', 'invoices', 'money',
   'staff', 'payroll', 'team', 'integrations', 'automation', 'branding', 'settings', 'plans', 'help', 'readiness',
 ];
 
@@ -410,7 +410,7 @@ test.describe('Full Churvox UI logic and button gauntlet', () => {
       await route.fulfill(json({ success: false, detail: 'Deliberate UI failure-state test' }, 503));
     });
 
-    for (const screen of ['work', 'clients', 'messages', 'integrations', 'settings']) {
+    for (const screen of ['work', 'jobdone', 'money', 'clients', 'messages', 'integrations', 'settings']) {
       await lab(page, screen);
       await page.waitForTimeout(500);
       const result = await health(page, { mobile: /mobile/i.test(testInfo.project.name) });
