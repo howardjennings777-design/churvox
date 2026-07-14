@@ -166,7 +166,7 @@ export default function LoginPage() {
 
       let freshUser;
       try {
-        freshUser = await withTimeout(checkAuth(), ACCESS_REFRESH_TIMEOUT_MS, "Your session could not be confirmed. Please sign in again.");
+        freshUser = await withTimeout(checkAuth({ allowOfflineFallback: false }), ACCESS_REFRESH_TIMEOUT_MS, "Your session could not be confirmed. Please sign in again.");
       } catch {
         try { await logout?.(); } catch {}
         throw new Error("Your session could not be confirmed. Please sign in again.");

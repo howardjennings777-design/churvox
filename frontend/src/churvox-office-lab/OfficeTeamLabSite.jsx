@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import API_BASE from "../lib/apiBase";
 import "./OfficeTeamLabFinal.css";
 import "./OfficeTeamLabLive.css";
 import "./OfficeTeamLabSite.css";
@@ -545,7 +546,29 @@ function countDepartments(items = []) { return items.reduce((acc, item) => { acc
 function cleanScreen(hash) { const key = String(hash || "").replace("#", "").trim().toLowerCase(); return screenAliases[key] || "today"; }
 function makeSourceLabel({ isOwnerApp, backendCommand, snapshot, liveDrafts }) { if (isOwnerApp && backendCommand?.source === "backend-command") return "Command live"; if (isOwnerApp && backendCommand?.source === "backend-command-clear") return "Command clear"; if (isOwnerApp) return "Command unavailable"; if (snapshot?.source === "admin-brain") return "live check"; if (liveDrafts?.length) return "live rows"; return "control mode"; }
 function isOwnerRoute() { return typeof window !== "undefined" && window.location.pathname.includes("dashboard"); }
-function logoutOffice() { try { localStorage.removeItem("token"); localStorage.removeItem("owner_portal_session"); localStorage.removeItem("platform_owner_email"); sessionStorage.clear(); } catch {} window.location.href = "/login"; }
+async function logoutOffice() {
+  const accountKeys = [
+    "token", "authToken", "access_token", "owner_portal_session", "platform_owner_email",
+    "churvox_auth_session_snapshot_v1", "churvox:stable-current-plan:v1", "churvox:plan-override",
+    "churvox:addon:accounting_sync", "churvox:addon:command_growth_pack", "churvox:billing-plan",
+  ];
+  let token = "";
+  try { token = localStorage.getItem("token") || localStorage.getItem("authToken") || ""; } catch {}
+  try {
+    const base = String(API_BASE || "").replace(/\/$/, "");
+    await fetch(`${base}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+      headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+  } catch {}
+  try {
+    accountKeys.forEach((key) => localStorage.removeItem(key));
+    sessionStorage.clear();
+    sessionStorage.setItem("churvox:logged-out", String(Date.now()));
+  } catch {}
+  window.location.replace("/login?logged_out=1");
+}
 function cleanText(value) { return String(value || "").trim(); }
 function firstValue(...values) { return values.map(cleanText).find(Boolean) || ""; }
 function payloadOf(item = {}) { return item?.raw?.payload && typeof item.raw.payload === "object" ? item.raw.payload : {}; }
