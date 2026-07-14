@@ -3,6 +3,7 @@ import "./OfficeTeamOperationalScreens.css";
 import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import OfficeTeamWorkForms from "./OfficeTeamWorkForms";
 import OfficeTeamJobsWorkspace from "./OfficeTeamJobsWorkspace";
+import OfficeTeamMoneyRadar from "./OfficeTeamMoneyRadar";
 import OfficeTeamClientsWorkspace from "./OfficeTeamClientsWorkspace";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
@@ -29,7 +30,7 @@ export function ClientsScreen(props) {
 }
 
 export function MoneyScreen(props) {
-  return <OperationalScreen area="money" eyebrow="Money" title="Invoices, quotes and payment follow-up" text="Prepare invoice/payment work and keep it safe. Command gets the owner decision before anything sends, syncs or charges." rows={moneyRows} primary="Prepare money item" secondary="Review export" {...props} />;
+  return <OfficeTeamMoneyRadar {...props} />;
 }
 
 export function StaffScreen(props) {

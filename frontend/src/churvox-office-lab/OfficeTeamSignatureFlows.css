@@ -852,3 +852,15 @@
     grid-row: auto;
   }
 }
+
+.cvJobDoneLaunch {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(243, 107, 33, .35);
+  border-radius: 15px;
+  background: #fff6ec;
+  color: #8a3a08;
+  font-size: 13px;
+  font-weight: 1000;
+  cursor: pointer;
+}

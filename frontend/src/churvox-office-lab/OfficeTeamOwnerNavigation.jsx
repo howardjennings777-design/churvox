@@ -7,6 +7,7 @@ const primary = [
   ["today", "Today"],
   ["command", "Command"],
   ["work", "Jobs"],
+  ["jobdone", "Job Done"],
   ["clients", "Clients"],
   ["worker", "Workers"],
   ["quotes", "Quotes"],
@@ -16,6 +17,7 @@ const primary = [
 const office = [
   ["schedule", "Schedule"],
   ["messages", "Messages"],
+  ["money", "Money Radar"],
   ["payroll", "Payroll"],
   ["integrations", "Xero"],
   ["team", "How Churvox works"],

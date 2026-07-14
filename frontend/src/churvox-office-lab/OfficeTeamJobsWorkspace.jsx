@@ -18,7 +18,7 @@ const filters = [
   ["complete", "Completed"],
 ];
 
-export default function OfficeTeamJobsWorkspace({ appMode = "lab" }) {
+export default function OfficeTeamJobsWorkspace({ appMode = "lab", go = () => {} }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = appMode !== "owner" && !ownerRoute;
   const live = useOfficeTeamRows("work", fallbackRows, { allowFallback, emptyMessage: "No live jobs found yet." });
@@ -98,6 +98,7 @@ export default function OfficeTeamJobsWorkspace({ appMode = "lab" }) {
                 </ol>
               </div>
               <OfficeTeamSafeControls area="work" record={current} primary="Prepare job change" secondary="Review job details" command="Open owner decision" />
+              {jobLane(current) === "done" ? <button type="button" className="cvJobDoneLaunch" onClick={() => go("jobdone")}>Open Job Done closeout</button> : null}
             </>
           ) : <Empty title="No job selected" text="The job sheet will open when a real job exists." />}
         </aside>

@@ -3,18 +3,19 @@ import "./OfficeTeamTodayScreen.css";
 import "./OfficeTeamTodayVision.css";
 import { useOfficeTeamOverview } from "./OfficeTeamOverview";
 
-const labShortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];
-const ownerShortcuts = ["command", "work", "clients", "worker", "quotes", "invoices"];
+const labShortcuts = ["command", "work", "jobdone", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];
+const ownerShortcuts = ["command", "work", "jobdone", "money", "clients", "worker", "quotes", "invoices"];
 
 const labels = {
   command: "Command",
   work: "Jobs",
+  jobdone: "Job Done",
   schedule: "Schedule",
   messages: "Messages",
   worker: "Workers",
   quotes: "Quotes",
   invoices: "Invoices",
-  money: "Money",
+  money: "Money Radar",
   clients: "Clients",
   staff: "Staff",
   payroll: "Payroll",
