@@ -1,7 +1,0 @@
-
-intel_path = "frontend/src/churvox-office-lab/OfficeTeamIntelligence.jsx"
-intel = read(intel_path)
-intel = replace_exact(intel, '  fetchOwnerIntelligenceSummary,', '  fetchOwnerIntelligenceSummary,\n  fetchIntelligenceEvidenceOutcomes,', "Intelligence evidence import")
-intel = replace_exact(intel, '  const [notice, setNotice] = useState("");', '  const [notice, setNotice] = useState("");\n  const [evidence, setEvidence] = useState(null);', "Intelligence evidence state")
-intel = replace_exact(intel, '      const body = await fetchOwnerIntelligenceSummary();\n      if (body?.locked)', '      const [body, evidenceBody] = await Promise.all([fetchOwnerIntelligenceSummary(), fetchIntelligenceEvidenceOutcomes().catch(() => null)]);\n      setEvidence(evidenceBody);\n      if (body?.locked)', "Intelligence evidence load")
-intel = replace_exact(intel, '      </header>\n\n      <div className="cvIntelFeatureRail"', '      </header>\n\n      <EvidenceDrawer data={evidence} />\n\n      <div className="cvIntelFeatureRail"', "Intelligence evidence drawer placement")

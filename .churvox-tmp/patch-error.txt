@@ -1,7 +1,0 @@
-Traceback (most recent call last):
-  File "/tmp/apply-go-live-trust.py", line 34, in <module>
-    shutil.copyfile(ROOT / ".churvox-tmp/launch-api.part", ROOT / "frontend/src/churvox-office-lab/OfficeTeamLaunchHardeningApi.js")
-  File "/usr/lib/python3.12/shutil.py", line 260, in copyfile
-    with open(src, 'rb') as fsrc:
-         ^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: '/.churvox-tmp/launch-api.part'
