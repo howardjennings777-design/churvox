@@ -111,6 +111,7 @@ const workerRuntimeImports = [
 const hqRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxHqTesterOutreachRuntime'),
+  () => import('./runtime/churvoxHqAssistantDraftImportRuntime'),
 ];
 
 function runImports(imports) {
