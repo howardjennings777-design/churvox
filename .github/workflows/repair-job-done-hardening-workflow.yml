@@ -1,0 +1,73 @@
+name: Repair Job Done Hardening Workflow
+
+on:
+  push:
+    branches:
+      - feature/job-done-money-radar
+    paths:
+      - .github/workflows/repair-job-done-hardening-workflow.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/job-done-money-radar
+          fetch-depth: 0
+
+      - name: Repair embedded Python strings
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path(".github/workflows/job-done-product-hardening.yml")
+          text = path.read_text()
+
+          broken_import = '''              "from datetime import datetime, timezone
+          from typing import Any, Dict, Optional
+          ",
+                        "from datetime import datetime, timezone
+          import hashlib
+          import json
+          from typing import Any, Dict, Optional
+          ",'''
+          fixed_import = '''              ''' + "'''from datetime import datetime, timezone\\nfrom typing import Any, Dict, Optional\\n''',\n              '''from datetime import datetime, timezone\\nimport hashlib\\nimport json\\nfrom typing import Any, Dict, Optional\\n'''," + ''''''
+          if broken_import not in text:
+              raise SystemExit("Broken import replacement was not found")
+          text = text.replace(broken_import, fixed_import, 1)
+
+          broken_status = '''          executor = executor.replace('"status": "approved",
+                              "closeout_state": "approved",', '"status": final_status,
+                              "closeout_state": final_state,', 1)'''
+          fixed_status = '''          executor = executor.replace(
+              ''' + "'''\"status\": \"approved\",\\n                    \"closeout_state\": \"approved\",''',\n              '''\"status\": final_status,\\n                    \"closeout_state\": final_state,''',\n              1,\n          )" + ''''''
+          if broken_status not in text:
+              raise SystemExit("Broken status replacement was not found")
+          text = text.replace(broken_status, fixed_status, 1)
+
+          path.write_text(text)
+
+      - name: Validate repaired workflow script syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/job-done-product-hardening.yml').read_text()
+          script = text.split('        run: |\n', 1)[1].split('\n      - name: Validate hardening', 1)[0]
+          lines = script.splitlines()
+          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in lines)
+          compile(script, 'job-done-product-hardening.py', 'exec')
+          print('Hardening workflow embedded Python compiles.')
+          PY
+
+      - name: Commit workflow repair
+        run: |
+          git config user.name "Churvox Reality Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/repair-job-done-hardening-workflow.yml
+          git add .github/workflows/job-done-product-hardening.yml
+          git commit -m "Repair Job Done hardening workflow"
+          git push origin feature/job-done-money-radar
