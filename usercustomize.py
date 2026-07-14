@@ -99,6 +99,18 @@ def _install_churvox_real_ai_hook():
                 except Exception:
                     from backend.churvox_job_done_routes import build_job_done_router
                 try:
+                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                except Exception:
+                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+                try:
+                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                except Exception:
+                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+                try:
+                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                except Exception:
+                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+                try:
                     from churvox_command_apply_routes import build_command_apply_router
                 except Exception:
                     from backend.churvox_command_apply_routes import build_command_apply_router
@@ -121,6 +133,30 @@ def _install_churvox_real_ai_hook():
                 )
                 if not job_done_get_mounted:
                     original_include_router(self, build_job_done_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Churvox Intelligence reads the same business records and remains owner-controlled.
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not intelligence_summary_mounted:
+                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Churvox Intelligence reads the same business records and remains owner-controlled.
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not intelligence_summary_mounted:
+                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Churvox Intelligence reads the same business records and remains owner-controlled.
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not intelligence_summary_mounted:
+                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_human_mimic_guard_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_human_mimic_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_mimic_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
@@ -137,9 +173,22 @@ def _install_churvox_real_ai_hook():
                     and "GET" in set(getattr(route, "methods", set()) or set())
                     for route in self.router.routes
                 )
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                intelligence_marker_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/marker"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
                 if not job_done_get_mounted or not job_done_marker_mounted:
                     raise RuntimeError("Job Done routes did not mount during Churvox startup")
+                if not intelligence_summary_mounted or not intelligence_marker_mounted:
+                    raise RuntimeError("Churvox Intelligence routes did not mount during startup")
                 self.state.churvox_job_done_routes_installed = True
+                self.state.churvox_owner_intelligence_routes_installed = True
                 self.state.churvox_real_ai_operator_routes_installed = True
                 self.state.churvox_real_ai_operator_routes_installing = False
                 return result

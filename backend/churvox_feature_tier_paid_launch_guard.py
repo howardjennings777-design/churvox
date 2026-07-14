@@ -49,6 +49,48 @@ EXEMPT_EXACT = {
 }
 
 FEATURE_PREFIXES = (
+    (FeatureAccess("owner_intelligence_scenarios", "What Happens If?", "command"), (
+        "/owner-intelligence/what-if",
+    )),
+    (FeatureAccess("owner_intelligence_operator", "Owner Intelligence analysis", "operator"), (
+        "/owner-intelligence/explain-my-week", "/owner-intelligence/approval-budget",
+    )),
+    (FeatureAccess("worker_proof_coach", "Worker Proof Coach", "crew"), (
+        "/owner-intelligence/worker-proof-coach",
+    )),
+    (FeatureAccess("owner_intelligence_core", "Churvox Intelligence core", "start"), (
+        "/owner-intelligence/features", "/owner-intelligence/summary",
+        "/owner-intelligence/money-left-behind", "/owner-intelligence/job-truth-receipts",
+        "/owner-intelligence/promise-memory", "/owner-intelligence/voice-to-business",
+    )),
+    (FeatureAccess("owner_intelligence_scenarios", "What Happens If?", "command"), (
+        "/owner-intelligence/what-if",
+    )),
+    (FeatureAccess("owner_intelligence_operator", "Owner Intelligence analysis", "operator"), (
+        "/owner-intelligence/explain-my-week", "/owner-intelligence/approval-budget",
+    )),
+    (FeatureAccess("worker_proof_coach", "Worker Proof Coach", "crew"), (
+        "/owner-intelligence/worker-proof-coach",
+    )),
+    (FeatureAccess("owner_intelligence_core", "Churvox Intelligence core", "start"), (
+        "/owner-intelligence/features", "/owner-intelligence/summary",
+        "/owner-intelligence/money-left-behind", "/owner-intelligence/job-truth-receipts",
+        "/owner-intelligence/promise-memory", "/owner-intelligence/voice-to-business",
+    )),
+    (FeatureAccess("owner_intelligence_scenarios", "What Happens If?", "command"), (
+        "/owner-intelligence/what-if",
+    )),
+    (FeatureAccess("owner_intelligence_operator", "Owner Intelligence analysis", "operator"), (
+        "/owner-intelligence/explain-my-week", "/owner-intelligence/approval-budget",
+    )),
+    (FeatureAccess("worker_proof_coach", "Worker Proof Coach", "crew"), (
+        "/owner-intelligence/worker-proof-coach",
+    )),
+    (FeatureAccess("owner_intelligence_core", "Churvox Intelligence core", "start"), (
+        "/owner-intelligence/features", "/owner-intelligence/summary",
+        "/owner-intelligence/money-left-behind", "/owner-intelligence/job-truth-receipts",
+        "/owner-intelligence/promise-memory", "/owner-intelligence/voice-to-business",
+    )),
     (FeatureAccess("accounting_sync", "Accounting Sync", "command", "accounting_sync"), (
         "/xero", "/integrations/xero", "/accounting", "/myob",
     )),

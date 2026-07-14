@@ -28,8 +28,8 @@ const plans = [
     tag: "Solo control",
     summary: "For a solo or small service operator who needs the basics tidy.",
     bestFor: "One owner, simple jobs, clear client records.",
-    included: ["Clients", "Work tracking", "Basic office queue", "Quotes and invoices", "Owner review before send"],
-    locked: ["Workers and team runs", "Timers", "Command queue", "Office Team review", "Xero/accounting approval", "Payroll", "Command Growth Pack"],
+    included: ["Clients", "Work tracking", "Basic office queue", "Quotes and invoices", "Owner review before send", "Money Left Behind", "Job Truth Receipt", "Promise Memory", "Voice-to-Business"],
+    locked: ["Workers and team runs", "Timers", "Worker Proof Coach", "Explain My Week", "Approval Budget", "What Happens If?", "Command queue", "Office Team review", "Xero/accounting approval", "Payroll", "Command Growth Pack"],
   },
   {
     name: "Crew",
@@ -37,8 +37,8 @@ const plans = [
     tag: "Small team",
     summary: "For a small team that needs staff updates and job visibility.",
     bestFor: "Workers, timers, daily run view and simple team control.",
-    included: ["Everything in Start", "Team / workers", "Timers", "Daily run view", "Worker updates", "Simple staff visibility"],
-    locked: ["Full Command queue", "Office Team review", "Advanced approvals", "Xero/accounting sync approval", "Payroll controls", "Command Growth Pack"],
+    included: ["Everything in Start", "Team / workers", "Timers", "Daily run view", "Worker updates", "Simple staff visibility", "Worker Proof Coach"],
+    locked: ["Explain My Week", "Approval Budget", "What Happens If?", "Full Command queue", "Office Team review", "Advanced approvals", "Xero/accounting sync approval", "Payroll controls", "Command Growth Pack"],
   },
   {
     name: "Operator",
@@ -46,8 +46,8 @@ const plans = [
     tag: "Most useful",
     summary: "For a busy service business that needs office admin help.",
     bestFor: "Owners who want Churvox preparing admin while they approve the decisions.",
-    included: ["Everything in Crew", "Command queue", "Office Team review", "Follow-ups and reminders", "Worker-to-owner updates", "Prepared admin cards"],
-    locked: ["Advanced Command", "Accounting export/sync approval", "50 active team members", "Command Growth Pack", "Full owner approval desk capacity"],
+    included: ["Everything in Crew", "Command queue", "Office Team review", "Follow-ups and reminders", "Worker-to-owner updates", "Prepared admin cards", "Explain My Week", "Approval Budget"],
+    locked: ["What Happens If?", "Advanced Command", "Accounting export/sync approval", "50 active team members", "Command Growth Pack", "Full owner approval desk capacity"],
   },
   {
     name: "Command",
@@ -55,7 +55,7 @@ const plans = [
     tag: "Full approval desk",
     summary: "For owners who want the full Churvox approval desk and bigger team capacity.",
     bestFor: "Larger teams, deeper owner control, accounting approval and the full Command model.",
-    included: ["Everything in Operator", "Advanced Command", "Accounting export/sync approval", "50 active team members", "Full owner approval desk", "More capacity"],
+    included: ["Everything in Operator", "Advanced Command", "Accounting export/sync approval", "50 active team members", "Full owner approval desk", "More capacity", "What Happens If?"],
     locked: ["Extra team capacity needs Growth Pack", "Nothing auto-sends", "Nothing auto-syncs", "Nothing auto-charges", "Nothing changes records without owner approval"],
   },
 ];
