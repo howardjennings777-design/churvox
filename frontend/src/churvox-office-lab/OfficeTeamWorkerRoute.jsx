@@ -10,7 +10,7 @@ import { checkWorkerProofCoach, fetchWorkerProofCoach } from "./OfficeTeamIntell
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Resume", "Complete"];
 const payKeywords = ["payment", "pay", "invoice", "card", "checkout"];
-export const WORKER_MESSAGE_CONTEXT_BUILD = "churvox-worker-message-context-v5-20260713";
+export const WORKER_MESSAGE_CONTEXT_BUILD = "churvox-worker-message-context-v6-20260715";
 const workerViews = {
   today: { label: "Today", title: "Current job", copy: "Do the next job and keep the office updated." },
   jobs: { label: "Jobs", title: "Assigned jobs", copy: "Only your assigned work appears." },
@@ -262,6 +262,12 @@ export default function OfficeTeamWorkerRoute() {
             <div className="cvWorkerPaymentActions"><button type="button" disabled={!hasWork || paymentBusy} onClick={openPaymentLink}>{paymentBusy ? "Preparing…" : payment.link ? "Open pay page" : "Request link"}</button><button type="button" disabled={!hasWork || paymentBusy} onClick={copyPaymentLink}>{payment.link ? "Copy link" : "Prepare request"}</button></div>
             <small>Worker View never charges cards. Use an approved invoice link.</small>
             {paymentNotice ? <p className="cvWorkerPaymentNotice">{paymentNotice}</p> : null}
+          </section>
+          <section className="cvWorkerRouteNoteBox" aria-label="Worker job note">
+            <span>Job note</span>
+            <h3>What changed?</h3>
+            <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed on this job?" />
+            <small>This note is used for proof and status updates. Nothing sends until you choose a send button.</small>
           </section>
           {proofChecklist.length ? <section className="cvWorkerProofCoach" aria-label="Worker Proof Coach"><span>Worker Proof Coach</span><h3>Before you leave</h3><p>Churvox checks the proof needed for this exact job. Complete stays blocked until required evidence is present.</p><div>{proofChecklist.map((item) => item.proof === "confirmation" ? <label key={item.id}><input type="checkbox" checked={Boolean(proofConfirmations[item.id])} onChange={(event) => setProofConfirmations((current) => ({ ...current, [item.id]: event.target.checked }))} /><span>{item.label}</span></label> : <article key={item.id} className={(item.proof === "photo" ? proofNames.length > 0 : String(note || "").trim()) ? "ready" : "missing"}><b>{item.proof === "photo" ? proofNames.length > 0 ? "Photo ready" : "Photo needed" : String(note || "").trim() ? "Note ready" : "Note needed"}</b><span>{item.label}</span></article>)}</div><small>{proofCoach?.industry ? `Checklist: ${proofCoach.industry}` : "Trade-aware checklist"}</small></section> : null}
           <section className="cvWorkerRouteProof"><label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label><button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : proofNames.length ? `Send ${proofNames.length} proof item${proofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button><button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button></section>
