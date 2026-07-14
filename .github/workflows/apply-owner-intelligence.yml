@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - agent/churvox-owner-intelligence
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: write
@@ -26,54 +23,33 @@ jobs:
           ref: agent/churvox-owner-intelligence
           fetch-depth: 0
 
-      - name: Apply, verify and commit or report
+      - name: Apply and commit exact production files
         shell: bash
         run: |
-          set +e
-          python3 scripts/apply_churvox_owner_intelligence.py > /tmp/intelligence-apply.log 2>&1
-          apply_status=$?
-          verify_status=99
-
-          if [ "$apply_status" -eq 0 ]; then
-            cp scripts/apply_churvox_owner_intelligence.py /tmp/apply_churvox_owner_intelligence.py
-            cp .github/workflows/apply-owner-intelligence.yml /tmp/apply-owner-intelligence.yml
-            rm scripts/apply_churvox_owner_intelligence.py .github/workflows/apply-owner-intelligence.yml
-            {
-              python3 scripts/churvox-owner-intelligence-contract.py
-              python3 -m py_compile backend/churvox_owner_intelligence_routes.py backend/test_churvox_owner_intelligence.py usercustomize.py backend/usercustomize.py
-              git diff --check
-            } > /tmp/intelligence-verify.log 2>&1
-            verify_status=$?
-            cp /tmp/apply_churvox_owner_intelligence.py scripts/apply_churvox_owner_intelligence.py
-            cp /tmp/apply-owner-intelligence.yml .github/workflows/apply-owner-intelligence.yml
-          fi
+          set -euxo pipefail
+          python3 scripts/apply_churvox_owner_intelligence.py
+          mkdir -p audit-results
+          git status --short > audit-results/churvox-owner-intelligence-wiring-status.txt
+          cat audit-results/churvox-owner-intelligence-wiring-status.txt
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          if [ "$apply_status" -eq 0 ] && [ "$verify_status" -eq 0 ]; then
-            git add -A
-            git reset .github/workflows/apply-owner-intelligence.yml scripts/apply_churvox_owner_intelligence.py
-            git commit -m "Wire all eight Churvox Intelligence features [skip-intelligence-apply]"
-            git push origin HEAD:agent/churvox-owner-intelligence
-            exit 0
-          fi
-
-          apply_log=$(cat /tmp/intelligence-apply.log 2>/dev/null || true)
-          verify_log=$(cat /tmp/intelligence-verify.log 2>/dev/null || true)
-          git reset --hard HEAD
-          mkdir -p audit-results
-          {
-            echo "Apply status: $apply_status"
-            echo "Verify status: $verify_status"
-            echo
-            echo "--- apply ---"
-            printf '%s\n' "$apply_log"
-            echo
-            echo "--- verify ---"
-            printf '%s\n' "$verify_log"
-          } > audit-results/churvox-owner-intelligence-apply-latest.txt
-          git add audit-results/churvox-owner-intelligence-apply-latest.txt
-          git commit -m "Record Intelligence contract failure [skip-intelligence-apply]"
+          git add \
+            backend/churvox_feature_tier_paid_launch_guard.py \
+            backend/usercustomize.py \
+            usercustomize.py \
+            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamAccess.js \
+            frontend/src/churvox-fresh/planRules.js \
+            frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css \
+            frontend/package.json \
+            .github/workflows/churvox-build-check.yml \
+            .github/workflows/churvox-paid-launch-gate.yml \
+            scripts/churvox-owner-intelligence-contract.py \
+            audit-results/churvox-owner-intelligence-wiring-status.txt
+          git diff --cached --stat
+          git commit -m "Wire all eight Churvox Intelligence features [skip-intelligence-apply]"
           git push origin HEAD:agent/churvox-owner-intelligence
-          exit 1
