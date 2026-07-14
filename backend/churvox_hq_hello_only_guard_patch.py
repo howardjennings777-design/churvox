@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import importlib.abc
 import importlib.machinery
 import sys
@@ -7,12 +8,20 @@ import sys
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
 PLATFORM_OWNER_EMAIL = "hello@churvox.com"
+OUTREACH_WRAPPER_VERSION = "churvox-outreach-live-wrapper-20260715b"
 HQ_PATH_PREFIXES = (
     "/api/admin/owner",
     "/api/platform/hq",
 )
 HQ_EXACT_PATHS = {
     "/api/platform/hq",
+}
+OUTREACH_ROUTES = {
+    ("GET", "/api/admin/owner/tester-outreach"),
+    ("POST", "/api/admin/owner/tester-outreach/draft"),
+    ("POST", "/api/admin/owner/tester-outreach/send"),
+    ("POST", "/api/admin/owner/tester-outreach/status"),
+    ("POST", "/api/admin/owner/tester-outreach/import-drafts"),
 }
 
 
@@ -41,15 +50,98 @@ def _with_cors(response, request):
     return response
 
 
+def _route_owners(app):
+    owners = {}
+    for method, path in sorted(OUTREACH_ROUTES):
+        matches = []
+        for route in list(getattr(getattr(app, "router", None), "routes", []) or []):
+            if getattr(route, "path", "") != path:
+                continue
+            methods = set(getattr(route, "methods", set()) or set())
+            if method not in methods:
+                continue
+            endpoint = getattr(route, "endpoint", None)
+            matches.append(getattr(endpoint, "__name__", "unknown"))
+        owners[f"{method} {path}"] = matches
+    return owners
+
+
+def _remove_route(app, path, method):
+    try:
+        app.router.routes = [
+            route for route in app.router.routes
+            if not (
+                getattr(route, "path", "") == path
+                and method.upper() in set(getattr(route, "methods", set()) or set())
+            )
+        ]
+    except Exception:
+        pass
+
+
+def _install_outreach_routes(module):
+    app = getattr(module, "app", None)
+    if app is None:
+        return False, ["app_missing"]
+
+    errors = []
+    target_name = getattr(module, "__name__", "")
+    for patch_name in (
+        "churvox_tester_outreach_desk_patch",
+        "churvox_tester_outreach_import_patch",
+    ):
+        try:
+            try:
+                patch = __import__(patch_name)
+            except Exception:
+                patch = __import__(f"backend.{patch_name}", fromlist=[patch_name])
+            installed = getattr(patch, "INSTALLED", None)
+            if isinstance(installed, set):
+                installed.discard(target_name)
+            installer = getattr(patch, "install", None)
+            if not installer:
+                raise RuntimeError("install function missing")
+            installer(module)
+        except Exception as exc:
+            errors.append(f"{patch_name}:{type(exc).__name__}:{exc}")
+            print(f"Churvox Outreach live-wrapper patch failed: {patch_name}: {exc}", file=sys.stderr)
+
+    async def outreach_boot_marker():
+        route_owners = _route_owners(app)
+        ready = all(bool(route_owners.get(f"{method} {path}")) for method, path in OUTREACH_ROUTES)
+        return {
+            "ok": ready,
+            "success": ready,
+            "ready": ready,
+            "version": OUTREACH_WRAPPER_VERSION,
+            "live_entrypoint": "backend/server/__init__.py via uvicorn server:app",
+            "route_owners": route_owners,
+            "errors": errors,
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    _remove_route(app, "/api/tester-outreach/boot", "GET")
+    app.add_api_route("/api/tester-outreach/boot", outreach_boot_marker, methods=["GET"])
+    owners = _route_owners(app)
+    ready = all(bool(owners.get(f"{method} {path}")) for method, path in OUTREACH_ROUTES)
+    return ready, errors
+
+
 def install(module):
     name = getattr(module, "__name__", "")
-    if name in INSTALLED:
-        return
 
     app = getattr(module, "app", None)
     get_current_user = getattr(module, "get_current_user", None)
     JSONResponse = getattr(module, "JSONResponse", None)
     if app is None or get_current_user is None or JSONResponse is None:
+        return
+
+    # The live Render service starts with `uvicorn server:app`, which loads
+    # backend/server/__init__.py. This patch is already guaranteed in that wrapper,
+    # so mount Outreach here rather than relying on Procfile/sitecustomize paths.
+    _install_outreach_routes(module)
+
+    if name in INSTALLED:
         return
 
     state = getattr(app, "state", None)
