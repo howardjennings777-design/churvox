@@ -23,6 +23,7 @@ engine = importlib.import_module("churvox_command_runs_office_patch")
 finalizer = importlib.import_module("churvox_command_runs_office_finalizer_patch")
 engine.load_context = finalizer.fast_load_context
 engine.enrich_worker_decision = finalizer.enhanced_worker_decision
+engine.enrich_generic_decision = finalizer.enhanced_generic_decision
 
 
 def fake_object_id(value=None):
@@ -113,6 +114,7 @@ def test_worker_ranking_and_backup_approval():
     form = payload["prepared_form"]
     require(payload.get("command_runs_office") is True, "Command decision contract marker is missing")
     require(payload.get("recommended_worker", {}).get("name") == "Cam", "recommended worker was not stored")
+    require(form.get("Worker") == "Cam", "original Worker field still hands selection back to the owner")
     require(form.get("Recommended worker") == "Cam", "recommended worker is not visible in the prepared form")
     require("Why this worker" in form and "Backup workers" in form and "Schedule / capacity check" in form, "worker reasoning is incomplete")
     require("Worker" not in payload.get("required_fields", []), "owner is still being handed the worker-selection task")
@@ -124,12 +126,14 @@ def test_worker_ranking_and_backup_approval():
     approval = {
         "action": "Approve Stuart",
         "fields": [
+            {"label": "Worker", "value": "Cam", "long": False},
             {"label": "Recommended worker", "value": "Cam", "long": False},
             {"label": "Churvox recommends", "value": "Assign Cam to this job", "long": False},
         ],
     }
     mapped = finalizer.apply_worker_action(deepcopy(approval), enriched)
     selected_fields = {item["label"]: item["value"] for item in mapped["fields"]}
+    require(selected_fields.get("Worker") == "Stuart", "backup approval did not replace the original Worker field")
     require(selected_fields.get("Recommended worker") == "Stuart", "backup approval did not select the backup worker")
     require(mapped.get("selected_worker", {}).get("name") == "Stuart", "approved backup worker was not attached to the approval payload")
 
@@ -156,6 +160,7 @@ def test_generic_slip_contract():
     form = payload["prepared_form"]
     for label in ["Churvox recommends", "Why this is the best next step", "Other safe options", "What approval will do"]:
         require(label in form, f"generic Command slip is missing {label}")
+    require(form["Churvox recommends"].startswith("Approve follow-up draft."), "generic recommendation does not lead with the actual prepared action")
     require(payload.get("recommended_decision"), "generic recommendation was not stored")
     require(payload.get("recommendation_reason"), "generic recommendation reason was not stored")
     require(payload.get("approval_effect"), "generic approval effect was not stored")
@@ -175,6 +180,7 @@ def test_safe_no_worker_fallback():
     payload = enriched["payload"]
     require("availability check" in payload.get("recommended_decision", "").lower(), "no-worker fallback did not prepare an availability check")
     require(payload.get("actions", [""])[0] == "Approve availability check", "fallback still asks the owner to invent a worker")
+    require(payload.get("prepared_form", {}).get("Worker", "").startswith("Unassigned"), "fallback leaves the Worker field as an owner task")
     require(not payload.get("recommended_worker"), "fallback invented a worker")
 
 
@@ -185,7 +191,7 @@ def test_installation_and_source_contract():
     require(loader.index('"churvox_command_runs_office_patch"') < loader.index('"churvox_command_runs_office_finalizer_patch"'), "Command finalizer is not loaded after the recommendation engine")
     for token in ["same_client", "same_service", "worker_skill_text", "workload", "clashes", "available_days", "recommended_decision", "recommendation_reason", "approval_effect"]:
         require(token in main_source, f"Command recommendation source is missing {token}")
-    for token in ["asyncio.gather", "Approve {name}", "worker_action_map", "apply_worker_action"]:
+    for token in ["asyncio.gather", "Approve {name}", "worker_action_map", "apply_worker_action", "enhanced_generic_decision", '"Worker", top_name']:
         require(token in final_source, f"Command finalizer is missing {token}")
 
 
@@ -194,4 +200,4 @@ if __name__ == "__main__":
     test_generic_slip_contract()
     test_safe_no_worker_fallback()
     test_installation_and_source_contract()
-    print("Command runs-office contract passed: every slip recommends a decision; worker slips rank active team members, expose backups, map backup approval correctly, and preserve owner-control safety.")
+    print("Command runs-office contract passed: every slip recommends an actionable decision; worker slips replace the original Worker field, rank active team members, expose backups, map backup approval correctly, and preserve owner-control safety.")
