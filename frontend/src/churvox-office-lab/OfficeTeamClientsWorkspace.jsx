@@ -5,16 +5,16 @@ import OfficeTeamWorkForms from "./OfficeTeamWorkForms";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const fallbackRows = [
-  ["Sarah", "Preference memory", "Save note", "A colour and sensitivity detail may help future work."],
-  ["Jay", "Rebook cycle", "No next booking", "The client normally returns on a repeat cycle."],
-  ["Stuart", "Invoice question", "Owner decision needed", "An extra-work question needs a clear response."],
+  ["Client A", "Preference memory", "Save note", "A service preference may help future work."],
+  ["Client B", "Rebook cycle", "No next booking", "The client normally returns on a repeat cycle."],
+  ["Client C", "Invoice question", "Owner decision needed", "An extra-work question needs a clear response."],
   ["New lead", "Missing details", "Ask for address", "The contact record is incomplete."],
 ];
 
 export default function OfficeTeamClientsWorkspace({ appMode = "lab" }) {
   const ownerRoute = isOwnerRoute();
   const allowFallback = appMode !== "owner" && !ownerRoute;
-  const live = useOfficeTeamRows("clients", fallbackRows, { allowFallback, emptyMessage: "No live clients found yet." });
+  const live = useOfficeTeamRows("clients", fallbackRows, { allowFallback, emptyMessage: "No clients found yet." });
   const [selected, setSelected] = useState(fallbackRows[0]);
   const [query, setQuery] = useState("");
   const rows = live.rows;
@@ -54,7 +54,7 @@ export default function OfficeTeamClientsWorkspace({ appMode = "lab" }) {
                 <span><strong>{row[0]}</strong><small>{row[1]}</small></span>
                 <em>{row[2]}</em>
               </button>
-            )) : <Empty title={rows.length ? "No matching clients" : "No clients yet"} text={rows.length ? "Try a different search." : ownerRoute ? "Add or import the first client below." : "Live client records will appear here."} />}
+            )) : <Empty title={rows.length ? "No matching clients" : "No clients yet"} text={rows.length ? "Try a different search." : ownerRoute ? "Add or import the first client below." : "Client records will appear here."} />}
           </div>
         </aside>
 
@@ -70,10 +70,10 @@ export default function OfficeTeamClientsWorkspace({ appMode = "lab" }) {
               <section className="cvClientMemoryBoard">
                 <article className="cvClientMemoryPrimary">
                   <span>Latest useful context</span>
-                  <strong>{current[3] || "No live detail found"}</strong>
-                  <p>This is shown exactly as loaded. Churvox does not turn it into permanent memory until the owner approves an appropriate record change.</p>
+                  <strong>{current[3] || "No detail found"}</strong>
+                  <p>Churvox does not turn this into permanent memory until the owner approves the appropriate record change.</p>
                 </article>
-                <article><small>Record type / status</small><strong>{current[1] || "Not found"}</strong></article>
+                <article><small>Record type or status</small><strong>{current[1] || "Not found"}</strong></article>
                 <article><small>Suggested next check</small><strong>{current[2] || "Not found"}</strong></article>
                 <article><small>Memory rule</small><strong>Useful, relevant and appropriate only</strong></article>
               </section>
@@ -90,12 +90,12 @@ export default function OfficeTeamClientsWorkspace({ appMode = "lab" }) {
 
               <OfficeTeamSafeControls area="clients" record={current} primary="Prepare client update" secondary="Review client history" command="Prepare memory decision" />
             </>
-          ) : <Empty title="No client selected" text="The relationship view will open when a real client exists." />}
+          ) : <Empty title="No client selected" text="The relationship view will open when a client exists." />}
         </section>
       </div>
 
       <section className="cvCoreWorkingDock cvClientIntakeDock">
-        <div><span>Client intake</span><h3>Add one person or import a real list</h3><p>New clients, corrections and memory updates stay editable and owner-controlled. Imported CSV rows remain attached to the prepared work.</p></div>
+        <div><span>Client intake</span><h3>Add one person or import a list</h3><p>New clients, corrections and memory updates stay editable and owner-controlled. Imported rows remain attached to the prepared work.</p></div>
         <OfficeTeamWorkForms area="clients" title="Clients" selectedRecord={current} />
       </section>
     </section>

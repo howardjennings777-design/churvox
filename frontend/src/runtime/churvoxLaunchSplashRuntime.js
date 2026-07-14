@@ -1,5 +1,4 @@
-// CHURVOX_BRAND_META_SAFE_20260708D
-// Site-safe metadata only. No global DOM observer, no splash removal, no image swapping.
+import './churvoxForbiddenExampleScrubRuntime';
 
 const ICON_VERSION = 'churvox-integrated-mark-20260708b';
 

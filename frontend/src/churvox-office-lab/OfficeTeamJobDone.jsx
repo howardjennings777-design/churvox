@@ -4,17 +4,17 @@ import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import { rowKey, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const previewJobs = [
-  ["Today", "Smith lawn service", "Completed · proof ready", "3 photos · 2.5 hours · $45 extra labour noted"],
-  ["Today", "Jones property tidy", "Completed · needs check", "Final photo missing · invoice not prepared"],
+  ["Today", "Completed job A", "Completed · evidence ready", "3 photos · 2.5 hours · extra labour noted"],
+  ["Today", "Completed job B", "Completed · needs check", "Final photo missing · invoice not prepared"],
 ];
 
 const previewInvoices = [
-  ["Draft", "Smith lawn service", "$247.25", "Ready for owner review"],
-  ["Waiting", "Jones property tidy", "$185.00", "Completion needs proof first"],
+  ["Draft", "Completed job A", "$247.25", "Ready for owner review"],
+  ["Waiting", "Completed job B", "$185.00", "Completion evidence needs checking first"],
 ];
 
 const previewPayroll = [
-  ["This week", "Cam", "36.5 hrs", "One completed-job timer needs review"],
+  ["This week", "Worker A", "36.5 hrs", "One completed-job timer needs review"],
 ];
 
 export function JobDoneBoard({ appMode = "lab", compact = false, go }) {
@@ -30,7 +30,7 @@ export function JobDoneBoard({ appMode = "lab", compact = false, go }) {
   if (compact) {
     return (
       <article className="cvJobDoneCompact">
-        <div><span>Job Done</span><strong>{candidates.length ? `${candidates.length} closeout${candidates.length === 1 ? "" : "s"} ready` : "Closeout queue clear"}</strong><p>Finished work is checked for proof, time, extras and invoice readiness before anything reaches the customer or accounting.</p></div>
+        <div><span>Job Done</span><strong>{candidates.length ? `${candidates.length} closeout${candidates.length === 1 ? "" : "s"} ready` : "Closeout queue clear"}</strong><p>Finished work is checked for completion evidence, time, extras and invoice readiness before anything reaches the customer or accounting.</p></div>
         <button type="button" onClick={() => go?.("work")}>{candidates.length ? "Review Job Done" : "Open Jobs"}</button>
       </article>
     );
@@ -39,7 +39,7 @@ export function JobDoneBoard({ appMode = "lab", compact = false, go }) {
   return (
     <section className="cvJobDone" aria-label="Job Done closeout">
       <header className="cvJobDoneHero">
-        <div><span>Signature workflow · Job Done</span><h3>From finished work to owner-ready admin</h3><p>Churvox checks proof, worker time, extras, invoice readiness and the next booking. The owner reviews one closeout instead of chasing five separate screens.</p></div>
+        <div><span>Job Done</span><h3>From finished work to owner-ready admin</h3><p>Churvox checks completion evidence, worker time, extras, invoice readiness and the next booking. The owner reviews one closeout instead of chasing separate screens.</p></div>
         <div className="cvJobDoneStats"><article><strong>{candidates.length}</strong><small>Ready to review</small></article><article><strong>{candidates.filter((item) => item.riskCount).length}</strong><small>Need a check</small></article><article><strong>{candidates.filter((item) => item.invoiceReady).length}</strong><small>Invoice-ready</small></article></div>
       </header>
 
@@ -49,7 +49,7 @@ export function JobDoneBoard({ appMode = "lab", compact = false, go }) {
             <button key={item.key} type="button" className={selected?.key === item.key ? "active" : ""} onClick={() => setSelectedKey(item.key)}>
               <span>{item.when}</span><strong>{item.title}</strong><em>{item.riskCount ? `${item.riskCount} check${item.riskCount === 1 ? "" : "s"}` : "Ready"}</em><small>{item.summary}</small>
             </button>
-          )) : <article className="cvJobDoneEmpty"><strong>No finished jobs need the owner</strong><p>Completed work will appear here only when there is a real closeout to check.</p></article>}
+          )) : <article className="cvJobDoneEmpty"><strong>No finished jobs need the owner</strong><p>Completed work will appear here when there is a closeout to check.</p></article>}
         </div>
 
         <aside className="cvJobDoneSheet">
@@ -59,9 +59,9 @@ export function JobDoneBoard({ appMode = "lab", compact = false, go }) {
             <div className="cvJobDoneChecks">
               {selected.checks.map((check) => <article key={check.label} className={check.tone}><span>{check.label}</span><strong>{check.value}</strong><small>{check.note}</small></article>)}
             </div>
-            <div className="cvJobDonePrepared"><span>Prepared next step</span><strong>{selected.prepared}</strong><p>Nothing has been sent, synced, charged or changed. Approval creates only the owner-approved internal draft and records the trail.</p></div>
-            <OfficeTeamSafeControls area="job-done" record={selected.record} primary="Prepare full closeout" secondary="Review proof and time" command="Send Job Done to Command" />
-          </> : <article className="cvJobDoneEmpty"><strong>Closeout queue clear</strong><p>Churvox will bring back the next finished job when proof, time, extras or money needs the owner.</p></article>}
+            <div className="cvJobDonePrepared"><span>Prepared next step</span><strong>{selected.prepared}</strong><p>Nothing has been sent, synced, charged or changed. Approval creates only the owner-approved internal draft and records the decision.</p></div>
+            <OfficeTeamSafeControls area="job-done" record={selected.record} primary="Prepare full closeout" secondary="Review evidence and time" command="Send Job Done to Command" />
+          </> : <article className="cvJobDoneEmpty"><strong>Closeout queue clear</strong><p>Churvox will bring back the next finished job when evidence, time, extras or money needs the owner.</p></article>}
         </aside>
       </div>
     </section>
@@ -85,8 +85,8 @@ export function MoneyRadar({ appMode = "lab", go }) {
         {radar.metrics.map((metric) => <article key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong><small>{metric.note}</small></article>)}
       </div>
       <div className="cvMoneyRadarLayout">
-        <section className="cvMoneyRadarList"><header><strong>What needs attention</strong><small>Live read-only checks</small></header>{radar.items.length ? radar.items.map((item) => <button key={item.key} type="button" className={selected?.key === item.key ? "active" : ""} onClick={() => setSelected(item)}><span>{item.type}</span><strong>{item.title}</strong><em>{item.amount}</em><small>{item.detail}</small></button>) : <article className="cvJobDoneEmpty"><strong>Money queue clear</strong><p>No completed work, invoice or payment exception currently needs review.</p></article>}</section>
-        <aside className="cvMoneyRadarDetail">{selected ? <><span>{selected.type}</span><h3>{selected.title}</h3><strong>{selected.amount}</strong><p>{selected.detail}</p><dl><div><dt>Risk</dt><dd>{selected.risk}</dd></div><div><dt>Prepared</dt><dd>{selected.next}</dd></div><div><dt>Owner control</dt><dd>Required</dd></div></dl><OfficeTeamSafeControls area="money-radar" record={selected.record} primary={selected.next} secondary="Review source records" command="Prepare money Command card" /></> : <article className="cvJobDoneEmpty"><strong>Nothing selected</strong><p>Select a money item to review the prepared next step.</p></article>}</aside>
+        <section className="cvMoneyRadarList"><header><strong>What needs attention</strong><small>Current read-only checks</small></header>{radar.items.length ? radar.items.map((item) => <button key={item.key} type="button" className={selected?.key === item.key ? "active" : ""} onClick={() => setSelected(item)}><span>{item.type}</span><strong>{item.title}</strong><em>{item.amount}</em><small>{item.detail}</small></button>) : <article className="cvJobDoneEmpty"><strong>Money queue clear</strong><p>No completed work, invoice or payment exception currently needs review.</p></article>}</section>
+        <aside className="cvMoneyRadarDetail">{selected ? <><span>{selected.type}</span><h3>{selected.title}</h3><strong>{selected.amount}</strong><p>{selected.detail}</p><dl><div><dt>Risk</dt><dd>{selected.risk}</dd></div><div><dt>Prepared</dt><dd>{selected.next}</dd></div><div><dt>Owner control</dt><dd>Required</dd></div></dl><OfficeTeamSafeControls area="money-radar" record={selected.record} primary={selected.next} secondary="Review source records" command="Prepare money decision" /></> : <article className="cvJobDoneEmpty"><strong>Nothing selected</strong><p>Select a money item to review the prepared next step.</p></article>}</aside>
       </div>
       <JobDoneBoard appMode={appMode} go={go} />
     </section>
@@ -94,27 +94,27 @@ export function MoneyRadar({ appMode = "lab", go }) {
 }
 
 function closeoutCandidates(jobRows, invoiceRows, payrollRows) {
-  const completed = (jobRows || []).filter((row) => /complete|completed|done|finished|closed|proof ready|needs check/i.test(`${row?.[2]} ${row?.[3]}`));
+  const completed = (jobRows || []).filter((row) => /complete|completed|done|finished|closed|evidence ready|needs check|proof ready/i.test(`${row?.[2]} ${row?.[3]}`));
   return completed.map((row, index) => {
     const text = row.join(" ");
-    const missingProof = /missing.*photo|missing.*proof|no proof|proof missing/i.test(text);
-    const hasProof = /photo|proof|checklist|evidence/i.test(text) && !missingProof;
+    const missingEvidence = /missing.*photo|missing.*proof|missing.*evidence|no proof|proof missing|evidence missing/i.test(text);
+    const hasEvidence = /photo|proof|checklist|evidence/i.test(text) && !missingEvidence;
     const extra = /extra|over|additional|material/i.test(text);
     const timerRisk = /timer|hour|time|longer/i.test(text);
     const invoice = findRelated(invoiceRows, row[1]);
     const payroll = findRelated(payrollRows, row[1]);
-    const riskCount = [missingProof, extra, timerRisk].filter(Boolean).length;
+    const riskCount = [missingEvidence, extra, timerRisk].filter(Boolean).length;
     const checks = [
-      { label: "Proof", value: missingProof ? "Missing" : hasProof ? "Ready" : "Check", note: missingProof ? "Ask the worker before customer closeout." : "Customer-visible evidence is ready for review.", tone: missingProof ? "warn" : "good" },
+      { label: "Completion evidence", value: missingEvidence ? "Missing" : hasEvidence ? "Ready" : "Check", note: missingEvidence ? "Ask the worker before customer closeout." : "Customer-visible evidence is ready for review.", tone: missingEvidence ? "warn" : "good" },
       { label: "Worker time", value: payroll?.[2] || (timerRisk ? "Review" : "Ready"), note: timerRisk ? "Compare the timer with the planned work." : "No unusual time is visible in the closeout.", tone: timerRisk ? "warn" : "good" },
       { label: "Extras", value: extra ? "Detected" : "None found", note: extra ? "Confirm the amount before the invoice draft is approved." : "No extra charge is currently flagged.", tone: extra ? "warn" : "good" },
-      { label: "Invoice", value: invoice?.[2] || "Not prepared", note: invoice ? invoice[3] || "Draft is ready for review." : "Prepare a draft after proof and extras are confirmed.", tone: invoice ? "good" : "neutral" },
+      { label: "Invoice", value: invoice?.[2] || "Not prepared", note: invoice ? invoice[3] || "Draft is ready for review." : "Prepare a draft after evidence and extras are confirmed.", tone: invoice ? "good" : "neutral" },
     ];
     return {
       key: rowKey(row), record: [row[0], row[1], row[2], row[3]], when: row[0] || "Completed", title: row[1] || `Completed job ${index + 1}`,
-      detail: row[3] || "Completed work is ready for a joined-up closeout review.", summary: riskCount ? `${riskCount} exception${riskCount === 1 ? "" : "s"} before closeout` : "Proof, time and money ready for review",
+      detail: row[3] || "Completed work is ready for a joined-up closeout review.", summary: riskCount ? `${riskCount} exception${riskCount === 1 ? "" : "s"} before closeout` : "Evidence, time and money ready for review",
       riskCount, invoiceReady: Boolean(invoice), checks,
-      prepared: missingProof ? "Prepare a worker proof request and hold the invoice" : extra ? "Prepare the invoice draft with extras left editable" : invoice ? "Prepare the complete customer and invoice handoff" : "Prepare the closeout and invoice draft",
+      prepared: missingEvidence ? "Prepare a worker evidence request and hold the invoice" : extra ? "Prepare the invoice draft with extras left editable" : invoice ? "Prepare the complete customer and invoice handoff" : "Prepare the closeout and invoice draft",
     };
   });
 }
@@ -130,7 +130,7 @@ function buildRadar(jobRows, invoiceRows, moneyRows, payrollRows) {
   workerChecks.forEach((row) => items.push(radarItem("Worker cost", row, row[2] || "Hours need review", row[3] || "Worker time needs checking before payroll.", "Cost not confirmed", "Prepare hours review")));
   return {
     metrics: [
-      { label: "Finished, not closed", value: completed.length, note: "Jobs that may still need proof, time or invoice review" },
+      { label: "Finished, not closed", value: completed.length, note: "Jobs that may still need evidence, time or invoice review" },
       { label: "Invoice actions", value: drafts.length, note: "Drafts, due items and follow-ups waiting" },
       { label: "Payment risk", value: overdue.length, note: "Late or follow-up items that could delay cash" },
       { label: "Worker cost checks", value: workerChecks.length, note: "Hours or timers needing owner review" },

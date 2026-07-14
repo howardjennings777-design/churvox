@@ -1,7 +1,7 @@
 import API_BASE from '../lib/apiBase';
 
-const STYLE_ID = 'churvox-admin-brain-surface-style';
-const FLAG = '__CHURVOX_ADMIN_BRAIN_SURFACE_RUNTIME__';
+const STYLE_ID = 'churvox-office-decision-surface-style';
+const FLAG = '__CHURVOX_OFFICE_DECISION_SURFACE_RUNTIME__';
 let lastSig = '';
 let observerStarted = false;
 
@@ -73,13 +73,13 @@ function ensureStyle() {
 }
 function host() { return String(API_BASE || '').replace(/\/$/, ''); }
 function token() { try { return localStorage.getItem('token') || ''; } catch { return ''; } }
-function headers() { const t = token(); return { Accept: 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) }; }
-function escapeHtml(value) { return String(value || '').replace(/[&<>"]/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch])); }
-async function fetchBrain() {
-  const res = await fetch(`${host()}/api/admin-brain/scan`, { credentials: 'include', headers: headers() });
-  const body = await res.json().catch(() => ({}));
-  if (res.status === 401 || res.status === 403) return null;
-  if (!res.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Admin Brain failed ${res.status}`);
+function headers() { const currentToken = token(); return { Accept: 'application/json', ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}) }; }
+function escapeHtml(value) { return String(value || '').replace(/[&<>"]/g, (character) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[character])); }
+async function fetchDecisions() {
+  const response = await fetch(`${host()}/api/admin-brain/scan`, { credentials: 'include', headers: headers() });
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403) return null;
+  if (!response.ok || body?.success === false) throw new Error(body?.message || body?.detail || `Office check failed ${response.status}`);
   return body;
 }
 function anchor() {
@@ -97,10 +97,10 @@ function goCommand() {
 function pageRankedActions(actions, page) {
   if (page === 'today' || page === 'command') return actions;
   const target = page.replace(/s$/, '');
-  return [...actions].sort((a, b) => {
-    const ar = String(a.record_type || '').toLowerCase() === target ? 0 : 1;
-    const br = String(b.record_type || '').toLowerCase() === target ? 0 : 1;
-    return ar - br;
+  return [...actions].sort((left, right) => {
+    const leftRank = String(left.record_type || '').toLowerCase() === target ? 0 : 1;
+    const rightRank = String(right.record_type || '').toLowerCase() === target ? 0 : 1;
+    return leftRank - rightRank;
   });
 }
 function render(body) {
@@ -114,28 +114,30 @@ function render(body) {
   const actions = Array.isArray(body?.actions) ? body.actions : Array.isArray(body?.items) ? body.items : [];
   const counts = body?.counts || {};
   const ranked = pageRankedActions(actions, page);
-  const sig = `${page}|${counts.total || actions.length}|${ranked.slice(0,4).map((a) => a.id || a.title).join('|')}`;
-  if (sig === lastSig && document.querySelector('.cvxAdminBrainSurface')) return;
-  lastSig = sig;
+  const signature = `${page}|${counts.total || actions.length}|${ranked.slice(0,4).map((action) => action.id || action.title).join('|')}`;
+  if (signature === lastSig && document.querySelector('.cvxAdminBrainSurface')) return;
+  lastSig = signature;
   ensureStyle();
-  const a = anchor();
-  if (!a) return;
+  const target = anchor();
+  if (!target) return;
   let card = document.querySelector('.cvxAdminBrainSurface');
   if (!card) {
     card = document.createElement('section');
     card.className = 'cvxAdminBrainSurface';
-    a.insertAdjacentElement('afterend', card);
-  } else if (card.previousElementSibling !== a) {
-    a.insertAdjacentElement('afterend', card);
+    target.insertAdjacentElement('afterend', card);
+  } else if (card.previousElementSibling !== target) {
+    target.insertAdjacentElement('afterend', card);
   }
   const top = ranked.slice(0, 4);
-  const rows = top.length ? top.map((item) => `<article data-cvx-open-command="true"><small>${escapeHtml(item.record_type || item.kind || 'admin')}</small><b>${escapeHtml(item.problem || item.title || 'Admin decision')}</b><span>${escapeHtml(item.why || item.suggestion || item.summary || 'Owner review needed.').slice(0, 150)}</span><i>${escapeHtml(item.priority || 'medium')}</i></article>`).join('') : `<article><small>clear</small><b>No admin problems found</b><span>Churvox is still watching jobs, clients, invoices, quotes, messages and workers.</span><i>watching</i></article>`;
-  card.innerHTML = `<header class="cvxAdminBrainHead"><div><small>admin brain</small><h3>Churvox found ${counts.total ?? actions.length} owner decision${Number(counts.total ?? actions.length) === 1 ? '' : 's'}</h3><p>These are live admin gaps Churvox found across jobs, clients, workers, quotes, invoices and messages. Nothing is sent, synced or money-changed unless the owner approves the next step.</p></div><div class="cvxAdminBrainMeta"><em>${counts.high || 0} high</em><button type="button" data-cvx-open-command="true">Review in Command</button></div></header><div class="cvxAdminBrainGrid">${rows}</div>`;
+  const rows = top.length
+    ? top.map((item) => `<article data-cvx-open-command="true"><small>${escapeHtml(item.record_type || item.kind || 'office')}</small><b>${escapeHtml(item.problem || item.title || 'Owner decision')}</b><span>${escapeHtml(item.why || item.suggestion || item.summary || 'Owner review needed.').slice(0, 150)}</span><i>${escapeHtml(item.priority || 'medium')}</i></article>`).join('')
+    : `<article><small>clear</small><b>No office decisions need attention</b><span>Churvox is checking jobs, clients, invoices, quotes, messages and workers.</span><i>clear</i></article>`;
+  card.innerHTML = `<header class="cvxAdminBrainHead"><div><small>Churvox office check</small><h3>Churvox found ${counts.total ?? actions.length} owner decision${Number(counts.total ?? actions.length) === 1 ? '' : 's'}</h3><p>These are the current decisions Churvox prepared across jobs, clients, workers, quotes, invoices and messages. Nothing sends, syncs, charges or changes records unless the owner approves the next step.</p></div><div class="cvxAdminBrainMeta"><em>${counts.high || 0} high</em><button type="button" data-cvx-open-command="true">Review in Command</button></div></header><div class="cvxAdminBrainGrid">${rows}</div>`;
   card.querySelectorAll('[data-cvx-open-command="true"]').forEach((node) => node.addEventListener('click', goCommand));
 }
 async function run() {
   if (!isOwnerApp()) return;
-  try { render(await fetchBrain()); } catch {}
+  try { render(await fetchDecisions()); } catch {}
 }
 function schedule(delay = 200) { setTimeout(run, delay); }
 function observe() {
