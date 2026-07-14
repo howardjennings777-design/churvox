@@ -43,6 +43,28 @@ function accountEmail(data = {}) {
   return String(data?.email || data?.user?.email || data?.data?.email || data?.data?.user?.email || '').trim().toLowerCase();
 }
 
+function idOf(value) {
+  if (!value) return '';
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  const raw = value.id || value._id || value.$oid || value.oid || value.worker_id || value.user_id || value.team_member_id || value.job_id || '';
+  if (raw && typeof raw === 'object') return String(raw.$oid || raw.oid || raw.id || '');
+  return String(raw || '');
+}
+
+function listFrom(payload, keys = []) {
+  const data = payload?.data?.data ?? payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  for (const key of keys) if (Array.isArray(data?.[key])) return data[key];
+  for (const key of ['workers', 'team', 'members', 'jobs', 'items', 'records', 'results', 'data']) {
+    if (Array.isArray(data?.[key])) return data[key];
+  }
+  return [];
+}
+
+function textHas(value, token) {
+  return JSON.stringify(value || {}).toLowerCase().includes(String(token || '').toLowerCase());
+}
+
 async function waitStable(page) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(500);
@@ -65,21 +87,6 @@ async function collectVisibleText(page) {
     }
     return [...new Set(chunks)].join('\n');
   });
-}
-
-async function anyVisibleText(page, text) {
-  return page.evaluate((needle) => {
-    const wanted = String(needle || '').toLowerCase();
-    const els = [...document.querySelectorAll('body *')];
-    return els.some((el) => {
-      const value = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
-      if (!value.includes(wanted)) return false;
-      const style = getComputedStyle(el);
-      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity || '1') < 0.08) return false;
-      const rect = el.getBoundingClientRect();
-      return rect.width > 1 && rect.height > 1;
-    });
-  }, text);
 }
 
 async function expectNoLaunchLanguage(page, label) {
@@ -151,18 +158,25 @@ async function readJson(response) {
   return response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
 }
 
-async function verifyIdentity(page, token, email, role) {
-  const response = await page.request.get(apiUrl('/api/auth/me'), {
+async function requestJson(page, token, method, path, data) {
+  const options = {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     timeout: 30_000,
-  });
+  };
+  if (data !== undefined) options.data = data;
+  const response = await page.request[method](apiUrl(path), options);
   const body = await readJson(response);
-  expect(response.ok(), `${role} auth/me failed with ${response.status()}: ${JSON.stringify(body).slice(0, 400)}`).toBeTruthy();
-  const returnedEmail = accountEmail(body);
+  return { ok: response.ok(), status: response.status(), body };
+}
+
+async function verifyIdentity(page, token, email, role) {
+  const result = await requestJson(page, token, 'get', '/api/auth/me');
+  expect(result.ok, `${role} auth/me failed with ${result.status}: ${JSON.stringify(result.body).slice(0, 400)}`).toBeTruthy();
+  const returnedEmail = accountEmail(result.body);
   if (returnedEmail) expect(returnedEmail, `${role} auth/me returned a different account`).toBe(email.toLowerCase());
 }
 
-async function apiLogin(page, email, password, role) {
+async function fetchLoginToken(page, email, password, role) {
   const paths = role === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
   const attempts = [];
   for (const path of paths) {
@@ -175,11 +189,16 @@ async function apiLogin(page, email, password, role) {
     attempts.push({ path, status: response.status(), token: Boolean(token) });
     if (!response.ok() || body?.success === false || !token) continue;
     await verifyIdentity(page, token, email, role);
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.evaluate((value) => localStorage.setItem('token', value), token);
     return token;
   }
   throw new Error(`${role} API login failed: ${JSON.stringify(attempts)}`);
+}
+
+async function apiLogin(page, email, password, role) {
+  const token = await fetchLoginToken(page, email, password, role);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.evaluate((value) => localStorage.setItem('token', value), token);
+  return token;
 }
 
 async function uiLogin(page, email, password, role) {
@@ -196,6 +215,61 @@ async function uiLogin(page, email, password, role) {
   await verifyIdentity(page, token, email, role);
   await page.waitForURL((url) => !/\/login(?:[?#]|$)/i.test(url.pathname), { timeout: 15_000 }).catch(() => null);
   expect(page.url(), `${role} login did not leave the login page`).not.toMatch(/\/login(?:[?#]|$)/i);
+}
+
+async function findLinkedWorker(page, ownerToken) {
+  for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
+    const result = await requestJson(page, ownerToken, 'get', `${endpoint}?ts=${Date.now()}`);
+    if (!result.ok) continue;
+    const worker = listFrom(result.body, ['workers', 'team', 'members'])
+      .find((row) => String(row.email || row.worker_email || row.user_email || '').trim().toLowerCase() === WORKER_EMAIL.toLowerCase());
+    if (worker) return worker;
+  }
+  throw new Error('Could not find the authenticated linked worker in Team.');
+}
+
+async function createAssignedWorkerJob(page) {
+  const ownerToken = await fetchLoginToken(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
+  const worker = await findLinkedWorker(page, ownerToken);
+  const workerId = idOf(worker);
+  expect(workerId, 'linked worker id').toBeTruthy();
+
+  const marker = `Full launch worker detail ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const created = await requestJson(page, ownerToken, 'post', '/api/jobs', {
+    title: marker,
+    job_type: 'other',
+    customer_name: 'Churvox launch audit',
+    address: '1 Test Street, Wellington',
+    scheduled_date: new Date().toISOString(),
+    scheduled_time: '09:00',
+    estimated_duration: 30,
+    price: 0,
+    assigned_worker_id: workerId,
+    worker_instructions: marker,
+    notes: marker,
+  });
+  expect(created.ok, `owner could not create assigned worker audit job: ${created.status} ${JSON.stringify(created.body).slice(0, 500)}`).toBeTruthy();
+
+  let job = created.body?.job || created.body?.data?.job || created.body?.data || created.body;
+  let jobId = idOf(job);
+  if (!jobId) {
+    const listed = await requestJson(page, ownerToken, 'get', `/api/jobs?ts=${Date.now()}`);
+    job = listFrom(listed.body, ['jobs']).find((row) => textHas(row, marker));
+    jobId = idOf(job);
+  }
+  expect(jobId, 'created assigned worker audit job id').toBeTruthy();
+  return { ownerToken, jobId };
+}
+
+async function cleanupAssignedWorkerJob(page, fixture) {
+  if (!fixture?.jobId || !fixture?.ownerToken) return;
+  const deleted = await requestJson(page, fixture.ownerToken, 'delete', `/api/jobs/${encodeURIComponent(fixture.jobId)}`);
+  if (deleted.ok || deleted.status === 404) return;
+  const archived = await requestJson(page, fixture.ownerToken, 'post', `/api/jobs/${encodeURIComponent(fixture.jobId)}/archive`, {
+    archived: true,
+    archive_reason: 'full launch worker detail audit cleanup',
+  });
+  expect(archived.ok || archived.status === 404, `audit job cleanup failed: delete ${deleted.status}, archive ${archived.status}`).toBeTruthy();
 }
 
 test.describe('Churvox full launch public audit', () => {
@@ -229,26 +303,28 @@ test.describe('Churvox full launch owner audit', () => {
     test(`owner area opens and is launch-clean: ${hash}`, async ({ page }) => {
       await page.goto(`/dashboard#${hash}`, { waitUntil: 'domcontentloaded' });
       expect(page.url(), `dashboard#${hash} redirected out of the authenticated owner area`).toMatch(/\/dashboard(?:[/?#]|$)/i);
-      await expect(page.locator('body')).toContainText(/Churvox|Command|Job|Client|Quote|Invoice|Payroll|Xero|Support|Settings/i);
+      await expect(page.locator('body')).toContainText(/Churvox|Command|Job|Client|Quote|Invoice|Payroll|Xero|Help|Settings/i);
       await expectBasics(page, `dashboard#${hash}`);
     });
   }
 
-  test('sidebar keeps full launch feature navigation', async ({ page, isMobile }) => {
+  test('owner navigation keeps every current launch page', async ({ page }) => {
     await page.goto('/dashboard#command');
-    expect(page.url(), 'owner sidebar audit redirected out of dashboard').toMatch(/\/dashboard(?:[/?#]|$)/i);
+    expect(page.url(), 'owner navigation audit redirected out of dashboard').toMatch(/\/dashboard(?:[/?#]|$)/i);
     await waitStable(page);
-    if (isMobile) {
-      await page.getByRole('button', { name: /more/i }).click().catch(() => null);
-      await waitStable(page);
+
+    for (const item of ['Today', 'Intelligence', 'Command', 'Jobs', 'Clients', 'Workers', 'Quotes', 'Invoices']) {
+      await expect(page.getByRole('button', { name: new RegExp(`^${item}$`, 'i') }).first(), `missing main owner navigation: ${item}`).toBeVisible();
     }
-    const required = ['AI Guide', 'Command', 'Jobs', 'Clients', 'Quotes', 'Invoices', 'Team', 'Payroll', 'Xero', 'Settings', 'Support'];
-    const missing = [];
-    for (const item of required) {
-      const found = await anyVisibleText(page, item);
-      if (!found) missing.push(item);
+
+    const more = page.getByRole('button', { name: /^More$/i }).first();
+    await expect(more, 'missing More navigation button').toBeVisible();
+    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click();
+    await expect(page.getByRole('menu', { name: /More tools/i }), 'More navigation menu did not open').toBeVisible();
+
+    for (const item of ['Schedule', 'Messages', 'Payroll', 'Xero', 'How Churvox works', 'Activity', 'Settings', 'Plans', 'Help']) {
+      await expect(page.getByRole('menuitem', { name: new RegExp(`^${item}$`, 'i') }).first(), `missing More navigation item: ${item}`).toBeVisible();
     }
-    expect(missing, 'missing launch nav items').toEqual([]);
   });
 });
 
@@ -266,16 +342,16 @@ test.describe('Churvox full launch worker audit', () => {
     await expect(page.locator('body')).not.toContainText(/Owner workspace|Platform Admin|Billing|Reports/i);
   });
 
-  test('worker job detail has real field controls when a job is assigned', async ({ page }) => {
-    await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
-    expect(page.url(), 'worker detail audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
-    await waitStable(page);
-    const firstJob = page.locator('a[href^="/worker/jobs/"]').first();
-    const jobCount = await firstJob.count().catch(() => 0);
-    requireOrSkip(jobCount > 0, 'No assigned worker job available for the required detail audit.');
-    await firstJob.click();
-    await waitStable(page);
-    await expect(page.locator('body')).toContainText(/Job checklist|Work timer|Job notes|Photos|Finish job/i);
-    await expectBasics(page, 'worker job detail');
+  test('worker job detail has real field controls for an assigned job', async ({ page }) => {
+    test.setTimeout(120_000);
+    const fixture = await createAssignedWorkerJob(page);
+    try {
+      await page.goto(`/worker/jobs/${encodeURIComponent(fixture.jobId)}`, { waitUntil: 'domcontentloaded' });
+      expect(page.url(), 'worker detail audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
+      await expect(page.locator('body')).toContainText(/Job checklist|Work timer|Job notes|Photos|Finish job/i, { timeout: 30_000 });
+      await expectBasics(page, 'worker job detail');
+    } finally {
+      await cleanupAssignedWorkerJob(page, fixture);
+    }
   });
 });
