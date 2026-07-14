@@ -77,6 +77,7 @@ PATCH_MODULES = [
     "churvox_hq_tester_status_patch",
     "churvox_tester_email_case_preserve_patch",
     "churvox_hq_tester_system_patch",
+    "churvox_tester_outreach_desk_patch",
     "churvox_hq_control_access_final_patch",
     "churvox_business_logic_health_patch",
     "churvox_business_system_suite_patch",
