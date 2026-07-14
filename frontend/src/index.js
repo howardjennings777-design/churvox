@@ -112,6 +112,7 @@ const hqRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxHqTesterOutreachRuntime'),
   () => import('./runtime/churvoxHqAssistantDraftImportRuntime'),
+  () => import('./runtime/churvoxHqOneClickDraftImportRuntime'),
 ];
 
 function runImports(imports) {
