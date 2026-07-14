@@ -1,0 +1,50 @@
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not intelligence_summary_mounted:
+                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Churvox Intelligence reads the same business records and remains owner-controlled.
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not intelligence_summary_mounted:
+                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Churvox Intelligence reads the same business records and remains owner-controlled.
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not intelligence_summary_mounted:
+                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+'''
+    new_mount = '''                # Churvox Intelligence reads the same business records and remains owner-controlled.
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not intelligence_summary_mounted:
+                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                launch_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/launch-hardening/summary"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not launch_summary_mounted:
+                    original_include_router(self, build_launch_hardening_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                install_permission_middleware(self, local_db, local_get_current_user)
+'''
+    source = replace_exact(source, repeated_mount, new_mount, f"{path} startup mounts")
+    source = replace_exact(source, '                if not intelligence_summary_mounted or not intelligence_marker_mounted:\n                    raise RuntimeError("Churvox Intelligence routes did not mount during startup")', '                launch_summary_mounted = any(getattr(route, "path", "") == "/api/launch-hardening/summary" and "GET" in set(getattr(route, "methods", set()) or set()) for route in self.router.routes)\n                launch_marker_mounted = any(getattr(route, "path", "") == "/api/launch-hardening/marker" and "GET" in set(getattr(route, "methods", set()) or set()) for route in self.router.routes)\n                if not intelligence_summary_mounted or not intelligence_marker_mounted:\n                    raise RuntimeError("Churvox Intelligence routes did not mount during startup")\n                if not launch_summary_mounted or not launch_marker_mounted:\n                    raise RuntimeError("Churvox Go Live & Trust routes did not mount during startup")', f"{path} startup verification")
+    source = replace_exact(source, '                self.state.churvox_owner_intelligence_routes_installed = True\n                self.state.churvox_real_ai_operator_routes_installed = True', '                self.state.churvox_owner_intelligence_routes_installed = True\n                self.state.churvox_launch_hardening_routes_installed = True\n                self.state.churvox_real_ai_operator_routes_installed = True', f"{path} startup state")
+    write(path, source)
+
+patch_startup("usercustomize.py")
+patch_startup("backend/usercustomize.py")
+
+# Cleanup staging only after every checked replacement succeeded.
+shutil.rmtree(ROOT / ".churvox-tmp")
+print("Go Live & Trust product wiring applied.")
