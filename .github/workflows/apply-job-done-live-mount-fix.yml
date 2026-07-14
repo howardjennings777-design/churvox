@@ -1,0 +1,41 @@
+name: Apply Job Done Live Mount Fix
+
+on:
+  push:
+    branches:
+      - fix/job-done-live-mount
+    paths:
+      - .github/workflows/apply-job-done-live-mount-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/job-done-live-mount
+          fetch-depth: 0
+
+      - name: Apply live mount repair
+        run: python scripts/churvox-job-done-live-mount-fix.py
+
+      - name: Validate repaired source
+        run: |
+          python -m py_compile scripts/churvox-job-done-live-mount-fix.py
+          python -m py_compile backend/churvox_job_done_routes.py backend/churvox_command_human_mimic_marker_routes.py backend/usercustomize.py usercustomize.py
+          python scripts/churvox-job-done-reality-contract.py
+          grep -q 'churvox-job-done-live-v2-20260714' frontend/src/index.js
+          grep -q 'job-done-reality-v2-20260714' backend/churvox_command_human_mimic_marker_routes.py
+
+      - name: Commit repair and remove temporary patch files
+        run: |
+          git config user.name "Churvox Reality Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/apply-job-done-live-mount-fix.yml
+          git rm scripts/churvox-job-done-live-mount-fix.py
+          git add backend/churvox_job_done_routes.py backend/churvox_command_human_mimic_marker_routes.py backend/usercustomize.py usercustomize.py frontend/src/index.js scripts/churvox-job-done-reality-contract.py
+          git commit -m "Harden Job Done live route mounting"
+          git push origin fix/job-done-live-mount
