@@ -99,6 +99,10 @@ def _install_churvox_real_ai_hook():
                 except Exception:
                     from backend.churvox_command_apply_routes import build_command_apply_router
                 try:
+                    from churvox_signature_command_create_routes import build_signature_command_create_router
+                except Exception:
+                    from backend.churvox_signature_command_create_routes import build_signature_command_create_router
+                try:
                     from churvox_command_routes import build_command_router
                 except Exception:
                     from backend.churvox_command_routes import build_command_router
@@ -114,6 +118,8 @@ def _install_churvox_real_ai_hook():
                 original_include_router(self, build_command_mimic_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Register the safe approval executor before the older record-only Command routes.
                 original_include_router(self, build_command_apply_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Signature slips keep their Command tray, but approved drafts are routed into internal review collections.
+                original_include_router(self, build_signature_command_create_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 return result
         except Exception as exc:
