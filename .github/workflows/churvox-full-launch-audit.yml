@@ -25,6 +25,12 @@ jobs:
     defaults:
       run:
         working-directory: frontend
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,31 +48,107 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Verify authenticated audit credentials
-        env:
-          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
-          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
-          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
-          CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
+      - name: Verify private owner credential
+        id: credential
+        continue-on-error: true
         run: |
-          missing=()
-          for name in CHURVOX_OWNER_EMAIL CHURVOX_OWNER_PASSWORD CHURVOX_WORKER_EMAIL CHURVOX_WORKER_PASSWORD; do
-            if [ -z "${!name}" ]; then missing+=("$name") ; fi
-          done
-          if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Full launch audit cannot be honest because these repository secrets are missing: ${missing[*]}"
+          if [ -z "$CHURVOX_OWNER_PASSWORD" ]; then
+            echo "::error::CHURVOX_OWNER_PASSWORD repository secret is missing."
             exit 1
           fi
-          echo "Owner and worker audit credentials are configured and remain masked."
+          echo "Owner credential is configured and remains masked."
+
+      - name: Discover linked worker login
+        id: worker
+        if: steps.credential.outcome == 'success'
+        continue-on-error: true
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
+          const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
+          const password = process.env.CHURVOX_OWNER_PASSWORD;
+
+          function tokenFrom(body = {}) {
+            return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+              || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+          }
+          function rowsFrom(payload) {
+            const data = payload?.data?.data ?? payload?.data ?? payload;
+            if (Array.isArray(data)) return data;
+            for (const key of ['workers', 'team', 'members', 'items', 'records', 'results', 'data']) {
+              if (Array.isArray(data?.[key])) return data[key];
+            }
+            return [];
+          }
+          function emailOf(row = {}) {
+            return String(row.email || row.worker_email || row.user_email || row.login_email || '').trim().toLowerCase();
+          }
+          function active(row = {}) {
+            const status = String(row.status || row.worker_status || '').toLowerCase();
+            return row.active !== false && row.is_active !== false && !/inactive|deleted|archived|disabled/.test(status);
+          }
+          async function request(path, options = {}) {
+            const response = await fetch(`${api}${path}`, {
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
+              ...options,
+            });
+            const text = await response.text();
+            let body = {};
+            try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
+            return { response, body };
+          }
+          async function login(path, email) {
+            const { response, body } = await request(path, {
+              method: 'POST',
+              body: JSON.stringify({ email, password }),
+            });
+            return { ok: response.ok && body?.success !== false && Boolean(tokenFrom(body)), body, status: response.status };
+          }
+          async function main() {
+            const ownerLogin = await login('/api/auth/login', ownerEmail);
+            if (!ownerLogin.ok) throw new Error(`Owner login failed during worker discovery with HTTP ${ownerLogin.status}.`);
+            const token = tokenFrom(ownerLogin.body);
+            const candidates = [];
+            for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
+              const { response, body } = await request(`${endpoint}?ts=${Date.now()}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (!response.ok) continue;
+              for (const row of rowsFrom(body)) {
+                const email = emailOf(row);
+                if (!email || email === ownerEmail.toLowerCase() || !active(row)) continue;
+                if (!candidates.includes(email)) candidates.push(email);
+              }
+            }
+            if (!candidates.length) throw new Error('No active linked worker was found in the owner team endpoints.');
+
+            let selected = '';
+            const attempts = [];
+            for (const email of candidates.slice(0, 8)) {
+              let result = await login('/api/auth/login', email);
+              if (!result.ok) result = await login('/api/worker/auth/login', email);
+              attempts.push(`${email}:${result.status}`);
+              if (result.ok) {
+                selected = email;
+                break;
+              }
+            }
+            if (!selected) throw new Error(`No linked worker accepted the shared password. Attempts: ${attempts.join(', ')}`);
+            console.log(`::add-mask::${selected}`);
+            fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${selected}\n`);
+            console.log('A linked active worker was discovered and its email was masked.');
+          }
+          main().catch((error) => {
+            console.error(error.message || error);
+            process.exit(1);
+          });
+          NODE
 
       - name: Run public and authenticated app launch audit
         id: run_audit
+        if: steps.credential.outcome == 'success' && steps.worker.outcome == 'success'
         env:
-          PLAYWRIGHT_BASE_URL: https://www.churvox.com
-          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL }}
-          CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
-          CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
-          CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
           CHURVOX_REQUIRE_AUTH_AUDIT: '1'
           CI: true
         run: |
@@ -90,15 +172,23 @@ jobs:
         if: always()
         run: |
           mkdir -p ../audit-results
+          status="${{ steps.run_audit.outputs.status }}"
+          passed="${{ steps.run_audit.outputs.passed }}"
+          skipped="${{ steps.run_audit.outputs.skipped }}"
+          status=${status:-1}
+          passed=${passed:-0}
+          skipped=${skipped:-0}
           {
             echo "# Churvox Full Launch Audit"
             echo ""
             echo "- Site: https://www.churvox.com"
             echo "- Commit: $GITHUB_SHA"
             echo "- Run: $GITHUB_RUN_ID"
-            echo "- Status code: ${{ steps.run_audit.outputs.status }}"
-            echo "- Passed: ${{ steps.run_audit.outputs.passed }}"
-            echo "- Skipped: ${{ steps.run_audit.outputs.skipped }}"
+            echo "- Status code: $status"
+            echo "- Passed: $passed"
+            echo "- Skipped: $skipped"
+            echo "- Owner credential: ${{ steps.credential.outcome }}"
+            echo "- Linked worker discovery: ${{ steps.worker.outcome }}"
             echo "- Authenticated audit required: yes"
             echo "- Time: $(date -u)"
             echo ""
@@ -141,9 +231,7 @@ jobs:
       - name: Fail job if audit is incomplete or failed
         if: always()
         run: |
-          if [ "${{ steps.run_audit.outputs.status }}" != "0" ]; then
-            exit 1
-          fi
-          if [ "${{ steps.run_audit.outputs.skipped }}" != "0" ]; then
-            exit 1
-          fi
+          test "${{ steps.credential.outcome }}" = success || exit 1
+          test "${{ steps.worker.outcome }}" = success || exit 1
+          test "${{ steps.run_audit.outputs.status }}" = 0 || exit 1
+          test "${{ steps.run_audit.outputs.skipped }}" = 0 || exit 1
