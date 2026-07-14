@@ -5,7 +5,7 @@ import "./OfficeTeamWorkerHardcore.css";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 import { useAuth } from "../context/AuthContext";
 import { createBackendWorkerPaymentRequest, createBackendWorkerUpdateRequest } from "./OfficeTeamCommandApi";
-import { fetchWorkerProofCoach } from "./OfficeTeamIntelligenceApi";
+import { checkWorkerProofCoach, fetchWorkerProofCoach } from "./OfficeTeamIntelligenceApi";
 import { syncWorkerEvents } from "./OfficeTeamLaunchHardeningApi";
 import { cacheWorkerJobs, filesForOffline, flushWorkerEvents, listWorkerEvents, queueWorkerEvent, readCachedWorkerJobs, subscribeWorkerSync, workerNetworkState } from "./workerOfflineQueue";
 
@@ -143,6 +143,20 @@ export default function OfficeTeamWorkerRoute() {
     if (step === "Complete" && proofChecklist.length) {
       const missing = proofChecklist.filter((item) => item.proof === "photo" ? !proofNames.length : item.proof === "note" ? !String(note || "").trim() : item.proof === "confirmation" ? !proofConfirmationIds.includes(item.id) : false);
       if (missing.length) { addTrail(`Finish blocked: ${missing.map((item) => item.label).join(" · ")}.`); return; }
+    }
+    if (step === "Complete" && workerNetworkState().online) {
+      setProofCoachBusy(true);
+      try {
+        const proofCheck = await checkWorkerProofCoach(jobId, { notes: String(note || "").trim(), photo_names: proofNames, confirmations: proofConfirmationIds, industry: proofCoach?.industry || "" });
+        if (proofCheck?.ready === false) {
+          const missing = Array.isArray(proofCheck?.missing) ? proofCheck.missing.map((item) => item.label || item.id).filter(Boolean) : [];
+          addTrail(`Finish blocked: ${missing.length ? missing.join(" · ") : "required proof still needs checking"}.`);
+          return;
+        }
+      } catch (error) {
+        addTrail(`Finish blocked until Churvox can verify the proof. ${error?.message || ""}`.trim());
+        return;
+      } finally { setProofCoachBusy(false); }
     }
     setStepBusy(step);
     try {
