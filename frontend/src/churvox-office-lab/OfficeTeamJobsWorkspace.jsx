@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import "./OfficeTeamCorePageIdentity.css";
 import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
 import OfficeTeamWorkForms from "./OfficeTeamWorkForms";
+import { JobDoneBoard } from "./OfficeTeamJobDone";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 
 const fallbackRows = [
@@ -52,6 +53,8 @@ export default function OfficeTeamJobsWorkspace({ appMode = "lab" }) {
           <article><strong>{decisionCount}</strong><small>Need attention</small></article>
         </div>
       </header>
+
+      <JobDoneBoard appMode={appMode} />
 
       <div className="cvJobsControlRail">
         <div className="cvCoreFilterBar" aria-label="Job filters">
