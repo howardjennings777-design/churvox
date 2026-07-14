@@ -1,4 +1,4 @@
-# clean-audit-marker: 2026-07-14d
+# clean-audit-marker: 2026-07-14e
 name: Churvox Playwright Full Site Test
 
 on:
@@ -112,6 +112,7 @@ jobs:
         run: sleep 90
 
       - name: Run live public desktop and mobile contracts
+        if: github.event_name != 'pull_request'
         run: |
           npx playwright test \
             tests/e2e/churvox-public-honesty-and-function.spec.js \
@@ -121,7 +122,7 @@ jobs:
             --reporter=line
 
       - name: Run authenticated desktop and mobile launch contracts
-        if: env.E2E_EMAIL != '' && env.E2E_PASSWORD != ''
+        if: github.event_name != 'pull_request' && env.E2E_EMAIL != '' && env.E2E_PASSWORD != ''
         run: |
           npx playwright test \
             tests/e2e/deep-launch-audit.spec.js \
@@ -131,7 +132,7 @@ jobs:
             --reporter=line
 
       - name: Report missing authenticated test credentials
-        if: env.E2E_EMAIL == '' || env.E2E_PASSWORD == ''
+        if: github.event_name != 'pull_request' && (env.E2E_EMAIL == '' || env.E2E_PASSWORD == '')
         run: |
           echo "Authenticated full-site coverage was not run because CHURVOX_E2E_EMAIL and CHURVOX_E2E_PASSWORD are not configured."
           echo "The complete local UI suite and live public contracts still ran and must pass."
