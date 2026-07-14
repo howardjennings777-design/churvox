@@ -1,0 +1,59 @@
+name: Clean Job Done and Money Radar build warnings
+
+on:
+  push:
+    branches:
+      - agent/job-done-money-radar
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/job-done-money-radar
+          fetch-depth: 1
+      - name: Remove unused feature code
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected text not found in {path}: {old!r}")
+              file.write_text(text.replace(old, new, 1))
+
+          replace(
+              "frontend/src/churvox-office-lab/OfficeTeamSignatureData.js",
+              'import { useEffect, useMemo, useState } from "react";',
+              'import { useEffect, useState } from "react";'
+          )
+          replace(
+              "frontend/src/churvox-office-lab/OfficeTeamMoneyRadar.jsx",
+              'import { buildMoneyRadar, moneyLabel, numberValue, shortDate, signatureOwnerRoute, useOfficeTeamSignatureData } from "./OfficeTeamSignatureData";',
+              'import { buildMoneyRadar, moneyLabel, numberValue, signatureOwnerRoute, useOfficeTeamSignatureData } from "./OfficeTeamSignatureData";'
+          )
+          replace(
+              "frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx",
+              'const moneyRows = [\n  ["Draft invoice", "$185", "Extra charge held", "Owner decision"],\n  ["Quote follow-up", "$420", "Viewed, no reply", "Follow-up ready"],\n  ["Payment reminder", "$89", "Due soon", "Reminder prepared"],\n  ["Accounting sync", "0", "Locked", "No auto-sync"],\n];\n\n',
+              ''
+          )
+          PY
+          rm -f .github/workflows/churvox-fix-signature-lint.yml
+      - name: Commit clean build
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/OfficeTeamSignatureData.js \
+                  frontend/src/churvox-office-lab/OfficeTeamMoneyRadar.jsx \
+                  frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx \
+                  .github/workflows/churvox-fix-signature-lint.yml
+          git commit -m "Clean Job Done and Money Radar build warnings"
+          git push origin HEAD:agent/job-done-money-radar
