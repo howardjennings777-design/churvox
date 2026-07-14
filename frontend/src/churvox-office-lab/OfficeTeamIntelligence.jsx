@@ -84,7 +84,7 @@ export default function OfficeTeamIntelligence({ appMode = "owner", go }) {
   const availableCount = cards.filter((item) => item.available).length;
 
   return (
-    <section className="cvIntel" data-churvox-intelligence="v1" data-plan={plan}>
+    <section className="cvSiteScreen cvIntel" data-churvox-intelligence="v1" data-plan={plan}>
       <header className="cvIntelHero">
         <div>
           <span>Churvox Intelligence · {PLAN_LABELS[plan] || plan}</span>

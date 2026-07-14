@@ -388,8 +388,6 @@ function ScreenRouter(props) {
   const { screen, appMode } = props;
   if (screen === "today") return <OfficeTeamTodayScreen {...props} />;
   if (screen === "intelligence") return <OfficeTeamIntelligence appMode={appMode} go={props.go} />;
-  if (screen === "intelligence") return <OfficeTeamIntelligence appMode={appMode} go={props.go} />;
-  if (screen === "intelligence") return <OfficeTeamIntelligence appMode={appMode} go={props.go} />;
   if (screen === "command") return <Command {...props} />;
   if (screen === "work") return <WorkScreen appMode={appMode} go={props.go} />;
   if (screen === "schedule") return <ScheduleScreen appMode={appMode} />;
