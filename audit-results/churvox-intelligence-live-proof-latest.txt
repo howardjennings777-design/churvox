@@ -1,0 +1,17 @@
+{
+  "attempts": 30,
+  "backend_build": "",
+  "backend_marker_http": 405,
+  "frontend_build_found": false,
+  "frontend_http": 200,
+  "frontend_scripts_checked": [
+    {
+      "bytes": 314522,
+      "status": 200,
+      "url": "https://www.churvox.com/static/js/main.29743d86.js"
+    }
+  ],
+  "protected_summary_http": 405,
+  "safety": "Read-only proof. No account was used and no business data was created or changed.",
+  "success": false
+}
