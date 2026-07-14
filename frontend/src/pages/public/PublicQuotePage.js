@@ -63,7 +63,7 @@ function Unavailable({ message }) {
           <small>Churvox quote</small>
           <h1>Quote unavailable</h1>
           <p>{message}</p>
-          <p>Ask the business to resend the quote, or <a href="mailto:hello@churvox.com?subject=Churvox%20quote%20link">contact Churvox support</a>.</p>
+          <p>Ask the business to resend the quote, or <a href="mailto:hello@churvox.com?subject=Churvox%20quote%20link" style={{ display: "inline-flex", alignItems: "center", minHeight: 28, padding: "2px 4px" }}>contact Churvox support</a>.</p>
         </section>
       </article>
     </main>
