@@ -20,6 +20,7 @@ CUSTOMER_FILES = [
     "churvox-office-lab/OfficeTeamOperationalScreens.jsx",
     "churvox-office-lab/OfficeTeamWorkForms.jsx",
     "churvox-office-lab/OfficeTeamWorkFormsClean.jsx",
+    "runtime/churvoxAdminBrainSurfaceRuntime.js",
     "runtime/churvoxLaunchSplashRuntime.js",
 ]
 
@@ -40,8 +41,10 @@ FORBIDDEN_PHRASES = [
     "lab preview",
     "Live Admin Brain",
     "Admin Brain",
+    "admin brain",
     "Live scan",
     "live scan",
+    "live admin gaps",
     "Showing sample layout",
     "Sample business",
     "sample records",
@@ -93,6 +96,11 @@ REQUIRED_CONTRACTS = {
     "churvox-office-lab/OfficeTeamWorkFormsClean.jsx": [
         "Check every prepared field in Command before approval.",
         "Nothing is imported before approval.",
+    ],
+    "runtime/churvoxAdminBrainSurfaceRuntime.js": [
+        "Churvox office check",
+        "No office decisions need attention",
+        "Nothing sends, syncs, charges or changes records unless the owner approves the next step.",
     ],
     "runtime/churvoxLaunchSplashRuntime.js": [
         "churvoxForbiddenExampleScrubRuntime",
@@ -176,5 +184,5 @@ if failures:
     sys.exit(1)
 
 print(
-    "Customer wording contract passed: active public, owner, Command, Money, client, worker, message, Job Done and working-form surfaces contain no real tester/business identifiers, named fallback people, build/deploy/debug wording or fabricated owner records."
+    "Customer wording contract passed: active public, owner, Command, Money, client, worker, message, Job Done, owner-decision overlay and working-form surfaces contain no real tester/business identifiers, named fallback people, build/deploy/debug wording or fabricated owner records."
 )
