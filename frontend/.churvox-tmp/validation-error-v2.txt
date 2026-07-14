@@ -126,7 +126,7 @@ npm error
 npm error aliases: clean-install, ic, install-clean, isntall-clean
 npm error
 npm error Run "npm help ci" for more info
-npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-14T10_35_52_656Z-debug-0.log
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-14T10_36_57_884Z-debug-0.log
 
 > frontend@0.1.2 build
 > node scripts/generate-pwa-icons.cjs && craco build
