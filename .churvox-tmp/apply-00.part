@@ -3,7 +3,7 @@ import json
 import re
 import shutil
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path.cwd()
 
 
 def read(path):
