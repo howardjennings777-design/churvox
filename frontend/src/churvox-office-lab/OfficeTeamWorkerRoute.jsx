@@ -10,7 +10,7 @@ import { checkWorkerProofCoach, fetchWorkerProofCoach } from "./OfficeTeamIntell
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Resume", "Complete"];
 const payKeywords = ["payment", "pay", "invoice", "card", "checkout"];
-export const WORKER_MESSAGE_CONTEXT_BUILD = "churvox-worker-message-context-v6-20260715";
+export const WORKER_MESSAGE_CONTEXT_BUILD = "churvox-worker-message-context-v7-20260715";
 const workerViews = {
   today: { label: "Today", title: "Current job", copy: "Do the next job and keep the office updated." },
   jobs: { label: "Jobs", title: "Assigned jobs", copy: "Only your assigned work appears." },
@@ -34,6 +34,7 @@ export default function OfficeTeamWorkerRoute() {
   const [updateBusy, setUpdateBusy] = useState(false);
   const [stepBusy, setStepBusy] = useState("");
   const [proofFiles, setProofFiles] = useState(null);
+  const [sentProofNames, setSentProofNames] = useState([]);
   const [proofBusy, setProofBusy] = useState(false);
   const [proofCoach, setProofCoach] = useState({ checklist: [] });
   const [proofConfirmations, setProofConfirmations] = useState({});
@@ -54,7 +55,8 @@ export default function OfficeTeamWorkerRoute() {
   const payment = paymentDetails(current);
   const jobId = String(current?.[4]?.jobId || "").trim();
   const quickNotes = useMemo(() => ["Running late", "Need owner check", "Extra work found", "Proof added"], []);
-  const proofNames = Array.from(proofFiles || []).map((file) => file.name);
+  const selectedProofNames = Array.from(proofFiles || []).map((file) => file.name);
+  const proofNames = [...new Set([...sentProofNames, ...selectedProofNames])];
   const showWork = viewKey === "today" || viewKey === "jobs";
   const showMessages = viewKey === "messages";
   const showHelp = viewKey === "help";
@@ -65,6 +67,8 @@ export default function OfficeTeamWorkerRoute() {
   React.useEffect(() => {
     let active = true;
     setProofConfirmations({});
+    setProofFiles(null);
+    setSentProofNames([]);
     if (!jobId) {
       setProofCoach({ checklist: [] });
       return () => { active = false; };
@@ -175,14 +179,17 @@ export default function OfficeTeamWorkerRoute() {
 
   async function sendProof() {
     if (!hasWork || proofBusy) return;
-    if (!proofNames.length && !String(note || "").trim()) {
+    if (!selectedProofNames.length && !String(note || "").trim()) {
       addTrail("Choose at least one photo or add a proof note first.");
       return;
     }
     setProofBusy(true);
     try {
-      await sendFieldSlip("job_proof", String(note || "Worker added job proof.").trim(), proofNames);
-      addTrail(`Proof sent to the office${proofNames.length ? ` with ${proofNames.length} photo name${proofNames.length === 1 ? "" : "s"}` : ""}.`);
+      await sendFieldSlip("job_proof", String(note || "Worker added job proof.").trim(), selectedProofNames);
+      if (selectedProofNames.length) {
+        setSentProofNames((currentNames) => [...new Set([...currentNames, ...selectedProofNames])]);
+      }
+      addTrail(`Proof sent to the office${selectedProofNames.length ? ` with ${selectedProofNames.length} photo name${selectedProofNames.length === 1 ? "" : "s"}` : ""}.`);
       setProofFiles(null);
     } catch (error) {
       addTrail(`Proof was not sent. Check the connection and retry. ${error?.message || ""}`.trim());
@@ -269,8 +276,8 @@ export default function OfficeTeamWorkerRoute() {
             <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed on this job?" />
             <small>This note is used for proof and status updates. Nothing sends until you choose a send button.</small>
           </section>
-          {proofChecklist.length ? <section className="cvWorkerProofCoach" aria-label="Worker Proof Coach"><span>Worker Proof Coach</span><h3>Before you leave</h3><p>Churvox checks the proof needed for this exact job. Complete stays blocked until required evidence is present.</p><div>{proofChecklist.map((item) => item.proof === "confirmation" ? <label key={item.id}><input type="checkbox" checked={Boolean(proofConfirmations[item.id])} onChange={(event) => setProofConfirmations((current) => ({ ...current, [item.id]: event.target.checked }))} /><span>{item.label}</span></label> : <article key={item.id} className={(item.proof === "photo" ? proofNames.length > 0 : String(note || "").trim()) ? "ready" : "missing"}><b>{item.proof === "photo" ? proofNames.length > 0 ? "Photo ready" : "Photo needed" : String(note || "").trim() ? "Note ready" : "Note needed"}</b><span>{item.label}</span></article>)}</div><small>{proofCoach?.industry ? `Checklist: ${proofCoach.industry}` : "Trade-aware checklist"}</small></section> : null}
-          <section className="cvWorkerRouteProof"><label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label><button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : proofNames.length ? `Send ${proofNames.length} proof item${proofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button><button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button></section>
+          {proofChecklist.length ? <section className="cvWorkerProofCoach" aria-label="Worker Proof Coach"><span>Worker Proof Coach</span><h3>Before you leave</h3><p>Churvox checks the proof needed for this exact job. Complete stays blocked until required evidence is present.</p><div>{proofChecklist.map((item) => item.proof === "confirmation" ? <label key={item.id}><input type="checkbox" checked={Boolean(proofConfirmations[item.id])} onChange={(event) => setProofConfirmations((current) => ({ ...current, [item.id]: event.target.checked }))} /><span>{item.label}</span></label> : <article key={item.id} className={(item.proof === "photo" ? proofNames.length > 0 : String(note || "").trim()) ? "ready" : "missing"}><b>{item.proof === "photo" ? proofNames.length > 0 ? "Photo ready" : "Photo needed" : String(note || "").trim() ? "Note ready" : "Note needed"}</b><span>{item.label}</span></article>)}</div><small>{proofCoach?.industry ? `Checklist: ${proofCoach.industry}` : "Trade-aware checklist"}{sentProofNames.length ? ` · ${sentProofNames.length} photo${sentProofNames.length === 1 ? "" : "s"} sent` : ""}</small></section> : null}
+          <section className="cvWorkerRouteProof"><label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label><button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : selectedProofNames.length ? `Send ${selectedProofNames.length} proof item${selectedProofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button><button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button></section>
         </> : null}
 
         {showMessages ? <><section className="cvWorkerRouteNoteBox"><span>Boss update</span><h3>Send one clear update</h3><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed?" /><button type="button" disabled={updateBusy || live.isLoading} onClick={() => sendBossUpdate()}>{updateBusy ? "Sending…" : live.isLoading ? "Loading assigned job…" : "Send to Command"}</button></section><div className="cvWorkerRouteQuickNotes">{quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}</div><section className="cvWorkerRouteTrail"><h3>This phone</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No updates sent this session.</p>}</section></> : null}
