@@ -7,8 +7,6 @@ import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import { createBackendWorkerPaymentRequest, createBackendWorkerUpdateRequest } from "./OfficeTeamCommandApi";
 import { checkWorkerProofCoach, fetchWorkerProofCoach } from "./OfficeTeamIntelligenceApi";
-import { checkWorkerProofCoach, fetchWorkerProofCoach } from "./OfficeTeamIntelligenceApi";
-import { checkWorkerProofCoach, fetchWorkerProofCoach } from "./OfficeTeamIntelligenceApi";
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Resume", "Complete"];
 const payKeywords = ["payment", "pay", "invoice", "card", "checkout"];

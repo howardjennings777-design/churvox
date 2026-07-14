@@ -16,8 +16,6 @@ import OfficeTeamPlansScreen from "./OfficeTeamPlansScreen";
 import OfficeTeamReadinessScreen from "./OfficeTeamReadinessScreen";
 import OfficeTeamTodayScreen from "./OfficeTeamTodayScreen";
 import OfficeTeamIntelligence from "./OfficeTeamIntelligence";
-import OfficeTeamIntelligence from "./OfficeTeamIntelligence";
-import OfficeTeamIntelligence from "./OfficeTeamIntelligence";
 import OfficeTeamOwnerNavigation from "./OfficeTeamOwnerNavigation";
 import OfficeTeamContextStrip from "./OfficeTeamContextStrip";
 import { WorkScreen, MoneyScreen, ClientsScreen, StaffScreen } from "./OfficeTeamOperationalScreens";
