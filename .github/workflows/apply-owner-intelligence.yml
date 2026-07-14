@@ -29,7 +29,6 @@ jobs:
           fetch-depth: 0
 
       - name: Apply and create exact product commit
-        id: commit
         shell: bash
         run: |
           set -euxo pipefail
@@ -48,44 +47,7 @@ jobs:
             frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
             frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css \
             frontend/package.json \
-            .github/workflows/churvox-build-check.yml \
-            .github/workflows/churvox-paid-launch-gate.yml \
             scripts/churvox-owner-intelligence-contract.py
-          git diff --cached --stat | tee /tmp/intelligence-diff.txt
+          git diff --cached --stat
           git commit -m "Wire all eight Churvox Intelligence features [skip-intelligence-apply]"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Push product commit
-        id: push
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          git push --verbose origin HEAD:agent/churvox-owner-intelligence 2>&1 | tee /tmp/intelligence-push.txt
-
-      - name: Report branch push on PR
-        if: always()
-        uses: actions/github-script@v7
-        env:
-          CREATED_SHA: ${{ steps.commit.outputs.sha }}
-          PUSH_OUTCOME: ${{ steps.push.outcome }}
-        with:
-          script: |
-            const fs = require('fs');
-            const read = (path) => { try { return fs.readFileSync(path, 'utf8'); } catch { return ''; } };
-            const body = [
-              '### Churvox Intelligence wiring runner',
-              '',
-              `- Created commit: \`${process.env.CREATED_SHA || 'not created'}\``,
-              `- Push outcome: **${process.env.PUSH_OUTCOME || 'unknown'}**`,
-              '',
-              '```text',
-              read('/tmp/intelligence-diff.txt').slice(0, 5000),
-              read('/tmp/intelligence-push.txt').slice(0, 5000),
-              '```',
-            ].join('\n');
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: 679, body });
-
-      - name: Fail if push was rejected
-        if: steps.push.outcome != 'success'
-        run: exit 1
+          git push --verbose origin HEAD:agent/churvox-owner-intelligence
