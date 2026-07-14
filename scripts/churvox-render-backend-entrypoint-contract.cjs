@@ -11,7 +11,7 @@ const checks = [
   ['backend Procfile keeps lifespan enabled', !backend.includes('--lifespan off')],
   ['Docker CMD uses production server wrapper', docker.includes('"server:app"')],
   ['wrapper documents the Render server entrypoint', wrapper.includes('Render starts with: uvicorn server:app')],
-  ['wrapper loads the guaranteed HQ guard patch', wrapper.includes("'churvox_hq_hello_only_guard_patch' || wrapper.includes(\"\\\"churvox_hq_hello_only_guard_patch\\\"\")")],
+  ['wrapper loads the guaranteed HQ guard patch', wrapper.includes("'churvox_hq_hello_only_guard_patch'")],
   ['HQ guard mounts the Outreach desk patch', hqGuard.includes('churvox_tester_outreach_desk_patch')],
   ['HQ guard mounts the Outreach importer patch', hqGuard.includes('churvox_tester_outreach_import_patch')],
   ['HQ guard exposes the Outreach boot marker', hqGuard.includes('/api/tester-outreach/boot')],
