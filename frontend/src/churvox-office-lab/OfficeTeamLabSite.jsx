@@ -17,6 +17,7 @@ import OfficeTeamReadinessScreen from "./OfficeTeamReadinessScreen";
 import OfficeTeamTodayScreen from "./OfficeTeamTodayScreen";
 import OfficeTeamIntelligence from "./OfficeTeamIntelligence";
 import OfficeTeamIntelligence from "./OfficeTeamIntelligence";
+import OfficeTeamIntelligence from "./OfficeTeamIntelligence";
 import OfficeTeamOwnerNavigation from "./OfficeTeamOwnerNavigation";
 import OfficeTeamContextStrip from "./OfficeTeamContextStrip";
 import { WorkScreen, MoneyScreen, ClientsScreen, StaffScreen } from "./OfficeTeamOperationalScreens";
@@ -388,6 +389,7 @@ export default function OfficeTeamLabSite({ appMode = "lab" }) {
 function ScreenRouter(props) {
   const { screen, appMode } = props;
   if (screen === "today") return <OfficeTeamTodayScreen {...props} />;
+  if (screen === "intelligence") return <OfficeTeamIntelligence appMode={appMode} go={props.go} />;
   if (screen === "intelligence") return <OfficeTeamIntelligence appMode={appMode} go={props.go} />;
   if (screen === "intelligence") return <OfficeTeamIntelligence appMode={appMode} go={props.go} />;
   if (screen === "command") return <Command {...props} />;
