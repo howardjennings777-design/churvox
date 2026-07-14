@@ -47,7 +47,7 @@ export default function OfficeTeamWorkerRoute() {
 
   const viewKey = workerView(pathname);
   const view = workerViews[viewKey];
-  const liveRows = Array.isArray(live.rows) ? live.rows : [];
+  const liveRows = useMemo(() => Array.isArray(live.rows) ? live.rows : [], [live.rows]);
   const rows = liveRows.length ? liveRows : cachedRows;
   const visibleJobRows = showAllJobs ? rows : rows.slice(0, 8);
   const hiddenJobCount = Math.max(0, rows.length - visibleJobRows.length);
