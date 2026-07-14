@@ -6,6 +6,8 @@ on:
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
   diagnose:
@@ -16,4 +18,22 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run Intelligence contract only
-        run: python3 scripts/churvox-owner-intelligence-contract.py
+        id: contract
+        continue-on-error: true
+        run: python3 scripts/churvox-owner-intelligence-contract.py > /tmp/intelligence-contract.txt 2>&1
+      - name: Report exact result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('/tmp/intelligence-contract.txt', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 684,
+              body: `### Intelligence contract diagnostic\n\n\`\`\`text\n${output}\n\`\`\``
+            });
+      - name: Preserve failure
+        if: steps.contract.outcome != 'success'
+        run: exit 1
