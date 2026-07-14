@@ -1,0 +1,40 @@
+name: Apply Job Done Product Hardening
+
+on:
+  push:
+    branches:
+      - feature/job-done-money-radar
+    paths:
+      - .github/workflows/apply-job-done-product-hardening.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/job-done-money-radar
+          fetch-depth: 0
+
+      - name: Apply hardening script
+        run: python scripts/churvox-job-done-product-hardening.py
+
+      - name: Validate hardened product
+        run: |
+          python -m py_compile scripts/churvox-job-done-product-hardening.py
+          python -m py_compile backend/churvox_job_done_routes.py backend/churvox_command_apply_routes.py backend/churvox_worker_complete_elapsed_patch.py backend/usercustomize.py usercustomize.py
+          python scripts/churvox-job-done-reality-contract.py
+          python -m json.tool frontend/package.json >/dev/null
+
+      - name: Commit hardened source and remove temporary runner
+        run: |
+          git config user.name "Churvox Reality Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/apply-job-done-product-hardening.yml
+          git rm scripts/churvox-job-done-product-hardening.py
+          git add backend/churvox_job_done_routes.py backend/churvox_command_apply_routes.py backend/churvox_worker_complete_elapsed_patch.py frontend/package.json
+          git commit -m "Harden persisted Job Done workflow"
+          git push origin feature/job-done-money-radar
