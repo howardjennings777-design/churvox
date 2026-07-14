@@ -264,8 +264,10 @@ function App() {
               <Route path="/settings" element={<AppRedirect to="/dashboard#settings" />} />
               <Route path="/settings-board" element={<AppRedirect to="/dashboard#settings" />} />
               <Route path="/support-board" element={<AppRedirect to="/dashboard#help" />} />
-              <Route path="/offline-sync" element={<AppRedirect to="/dashboard#help" />} />
-              <Route path="/onboarding" element={<AppRedirect to="/dashboard#help" />} />
+              <Route path="/offline-sync" element={<AppRedirect to="/dashboard#golive" />} />
+              <Route path="/onboarding" element={<AppRedirect to="/dashboard#golive" />} />
+              <Route path="/imports" element={<AppRedirect to="/dashboard#golive" />} />
+              <Route path="/portability" element={<AppRedirect to="/dashboard#golive" />} />
               <Route path="/worker" element={<AppRedirect to="/worker/today" />} />
               <Route path="/worker/today" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />
               <Route path="/worker/jobs" element={<WorkerRoute><WorkerOfficeApp /></WorkerRoute>} />

@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import "./OfficeTeamWorkerRoute.css";
 import "./OfficeTeamWorkerHardcore.css";
 import { rowKey, selectedRow, useOfficeTeamRows } from "./OfficeTeamLiveRows";
-import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import { createBackendWorkerPaymentRequest, createBackendWorkerUpdateRequest } from "./OfficeTeamCommandApi";
 import { checkWorkerProofCoach, fetchWorkerProofCoach } from "./OfficeTeamIntelligenceApi";
+import { syncWorkerEvents } from "./OfficeTeamLaunchHardeningApi";
+import { cacheWorkerJobs, filesForOffline, flushWorkerEvents, listWorkerEvents, queueWorkerEvent, readCachedWorkerJobs, subscribeWorkerSync, workerNetworkState } from "./workerOfflineQueue";
 
 const statusSteps = ["Acknowledge", "Start", "Pause", "Resume", "Complete"];
 const payKeywords = ["payment", "pay", "invoice", "card", "checkout"];
@@ -23,7 +24,6 @@ export default function OfficeTeamWorkerRoute() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading, isWorker, logout } = useAuth();
-  const { post } = useApi();
   const live = useOfficeTeamRows("worker", []);
   const [selected, setSelected] = useState(null);
   const [status, setStatus] = useState("Ready");
@@ -39,10 +39,16 @@ export default function OfficeTeamWorkerRoute() {
   const [proofConfirmations, setProofConfirmations] = useState({});
   const [proofCoachBusy, setProofCoachBusy] = useState(false);
   const [showAllJobs, setShowAllJobs] = useState(false);
+  const [cachedRows, setCachedRows] = useState([]);
+  const [network, setNetwork] = useState(() => workerNetworkState());
+  const [syncItems, setSyncItems] = useState([]);
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncState, setSyncState] = useState("Synced");
 
   const viewKey = workerView(pathname);
   const view = workerViews[viewKey];
-  const rows = live.rows;
+  const liveRows = useMemo(() => Array.isArray(live.rows) ? live.rows : [], [live.rows]);
+  const rows = liveRows.length ? liveRows : cachedRows;
   const visibleJobRows = showAllJobs ? rows : rows.slice(0, 8);
   const hiddenJobCount = Math.max(0, rows.length - visibleJobRows.length);
   const hasWork = rows.length > 0;
@@ -75,162 +81,123 @@ export default function OfficeTeamWorkerRoute() {
     return () => { active = false; };
   }, [jobId]);
 
+  useEffect(() => {
+    if (!liveRows.length) return;
+    setCachedRows(liveRows);
+    cacheWorkerJobs(liveRows).catch(() => {});
+  }, [liveRows]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([readCachedWorkerJobs(), listWorkerEvents()]).then(([snapshot, events]) => {
+      if (!active) return;
+      setCachedRows((current) => current.length ? current : (Array.isArray(snapshot?.rows) ? snapshot.rows : []));
+      setSyncItems(events);
+      setSyncState(events.some((item) => ["needs_attention", "denied"].includes(item.status)) ? "Needs attention" : events.length ? workerNetworkState().online ? "Waiting to sync" : "Saved offline" : "Synced");
+    }).catch(() => {});
+    const unsubscribe = subscribeWorkerSync((state) => {
+      if (!active) return;
+      setNetwork({ online: state.online });
+      refreshSyncState();
+      if (state.online) flushQueue();
+    });
+    return () => { active = false; unsubscribe(); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function refreshSyncState() {
+    const events = await listWorkerEvents().catch(() => []);
+    setSyncItems(events);
+    if (events.some((item) => ["needs_attention", "denied"].includes(item.status))) setSyncState("Needs attention");
+    else if (events.length) setSyncState(workerNetworkState().online ? "Waiting to sync" : "Saved offline");
+    else setSyncState("Synced");
+    return events;
+  }
+
+  async function flushQueue() {
+    if (syncBusy || !workerNetworkState().online) return null;
+    setSyncBusy(true);
+    setSyncState("Waiting to sync");
+    try {
+      const result = await flushWorkerEvents(syncWorkerEvents);
+      await refreshSyncState();
+      if (result?.needs_attention_count) addTrail(`${result.needs_attention_count} saved update${result.needs_attention_count === 1 ? " needs" : "s need"} attention.`);
+      else if (result?.applied_count) addTrail(`${result.applied_count} saved update${result.applied_count === 1 ? "" : "s"} synced to the office.`);
+      return result;
+    } catch (error) {
+      await refreshSyncState();
+      addTrail(`Queued work is still saved on this phone. Sync will retry. ${error?.message || ""}`.trim());
+      return null;
+    } finally { setSyncBusy(false); }
+  }
+
+  async function queueAndSync(action, payload = {}) {
+    const event = await queueWorkerEvent({ jobId, action, payload });
+    setSyncState(workerNetworkState().online ? "Waiting to sync" : "Saved offline");
+    await refreshSyncState();
+    if (workerNetworkState().online) await flushQueue();
+    return event;
+  }
+
   async function recordWorkerStep(step) {
-    if (!hasWork || stepBusy || proofCoachBusy) {
-      if (!hasWork) addTrail("No live assigned work to update yet.");
-      return;
-    }
+    if (!hasWork || stepBusy) { if (!hasWork) addTrail("No saved assigned work to update yet."); return; }
     if (step === "Complete" && proofChecklist.length) {
+      const missing = proofChecklist.filter((item) => item.proof === "photo" ? !proofNames.length : item.proof === "note" ? !String(note || "").trim() : item.proof === "confirmation" ? !proofConfirmationIds.includes(item.id) : false);
+      if (missing.length) { addTrail(`Finish blocked: ${missing.map((item) => item.label).join(" · ")}.`); return; }
+    }
+    if (step === "Complete" && workerNetworkState().online) {
       setProofCoachBusy(true);
       try {
-        const proofResult = await checkWorkerProofCoach(jobId, {
-          photo_names: proofNames,
-          note: String(note || "").trim(),
-          confirmations: proofConfirmationIds,
-          owner_review_only: true,
-        });
-        if (!proofResult?.check?.ready) {
-          const missing = (proofResult?.check?.missing || []).map((item) => item.label).filter(Boolean);
-          addTrail(`Finish blocked: ${missing.join(" · ") || "required proof is still missing"}.`);
+        const proofCheck = await checkWorkerProofCoach(jobId, { notes: String(note || "").trim(), photo_names: proofNames, confirmations: proofConfirmationIds, industry: proofCoach?.industry || "" });
+        if (proofCheck?.ready === false) {
+          const missing = Array.isArray(proofCheck?.missing) ? proofCheck.missing.map((item) => item.label || item.id).filter(Boolean) : [];
+          addTrail(`Finish blocked: ${missing.length ? missing.join(" · ") : "required proof still needs checking"}.`);
           return;
         }
       } catch (error) {
-        addTrail(`Finish blocked: Worker Proof Coach could not confirm the required evidence. ${error?.message || "Check the connection and retry."}`);
+        addTrail(`Finish blocked until Churvox can verify the proof. ${error?.message || ""}`.trim());
         return;
-      } finally {
-        setProofCoachBusy(false);
-      }
-    }
-    if (step === "Complete" && proofChecklist.length) {
-      setProofCoachBusy(true);
-      try {
-        const proofResult = await checkWorkerProofCoach(jobId, {
-          photo_names: proofNames,
-          note: String(note || "").trim(),
-          confirmations: proofConfirmationIds,
-          owner_review_only: true,
-        });
-        if (!proofResult?.check?.ready) {
-          const missing = (proofResult?.check?.missing || []).map((item) => item.label).filter(Boolean);
-          addTrail(`Finish blocked: ${missing.join(" · ") || "required proof is still missing"}.`);
-          return;
-        }
-      } catch (error) {
-        addTrail(`Finish blocked: Worker Proof Coach could not confirm the required evidence. ${error?.message || "Check the connection and retry."}`);
-        return;
-      } finally {
-        setProofCoachBusy(false);
-      }
-    }
-    if (step === "Complete" && proofChecklist.length) {
-      setProofCoachBusy(true);
-      try {
-        const proofResult = await checkWorkerProofCoach(jobId, {
-          photo_names: proofNames,
-          note: String(note || "").trim(),
-          confirmations: proofConfirmationIds,
-          owner_review_only: true,
-        });
-        if (!proofResult?.check?.ready) {
-          const missing = (proofResult?.check?.missing || []).map((item) => item.label).filter(Boolean);
-          addTrail(`Finish blocked: ${missing.join(" · ") || "required proof is still missing"}.`);
-          return;
-        }
-      } catch (error) {
-        addTrail(`Finish blocked: Worker Proof Coach could not confirm the required evidence. ${error?.message || "Check the connection and retry."}`);
-        return;
-      } finally {
-        setProofCoachBusy(false);
-      }
+      } finally { setProofCoachBusy(false); }
     }
     setStepBusy(step);
-    const endpoint = stepEndpoint(step);
-    const updateText = workerActionText(step, title);
     try {
-      if (!jobId || !endpoint) throw new Error("Live job id is not available for a direct status update.");
-      const result = await post(`/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}`, {
-        source: "churvox-worker",
-        worker_notes: String(note || updateText).trim(),
-        proof_photo_names: step === "Complete" ? proofNames : undefined,
-        proof_photo_count: step === "Complete" ? proofNames.length : undefined,
-      });
-      if (result?.success === false) throw new Error(result?.detail || result?.message || `Could not ${step.toLowerCase()} this job.`);
+      const action = stepEndpoint(step);
+      if (!jobId || !action) throw new Error("A saved assigned job is required.");
+      await queueAndSync(action, { note: String(note || workerActionText(step, title)).trim(), photo_names: step === "Complete" ? proofNames : [], confirmations: step === "Complete" ? proofConfirmationIds : [], industry: proofCoach?.industry || "" });
       setStatus(step);
-      addTrail(`${step} saved on the live job and the office can see it.`);
-    } catch (error) {
-      try {
-        await createBackendWorkerUpdateRequest({
-          title,
-          update: `${updateText} Direct job update was unavailable, so the office must review it. ${error?.message || ""}`.trim(),
-          updateType: `Worker ${step}`,
-          status: "Owner review",
-        });
-        setStatus(`${step} requested`);
-        addTrail(`${step} could not update the job, so a real owner-review request was sent to Command.`);
-      } catch (commandError) {
-        addTrail(`${step} was not sent. Check the connection and retry. ${commandError?.message || error?.message || ""}`.trim());
-      }
-    } finally {
-      setStepBusy("");
-    }
+      addTrail(workerNetworkState().online ? `${step} saved. Churvox is confirming it with the office.` : `${step} saved offline. It will sync when reception returns.`);
+    } catch (error) { addTrail(`${step} could not be saved on this phone. ${error?.message || ""}`.trim()); }
+    finally { setStepBusy(""); }
   }
 
   async function sendBossUpdate(text = note) {
-  if (updateBusy || live.isLoading) return;
-  const clean = String(text || "Worker update from phone view").trim();
-  setUpdateBusy(true);
-  let sent = false;
-  try {
-    const needsDecision = /owner check|extra work|issue|problem|decision|blocked|cannot|help/i.test(clean);
-    if (hasWork && jobId) {
-      await sendFieldSlip(needsDecision ? "worker_problem" : "worker_message", clean);
-      addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
-    } else {
-      await createBackendWorkerUpdateRequest({ title, update: clean, updateType: needsDecision ? "Worker problem" : "Worker update", status: needsDecision ? "Owner review" : "General update" });
-      addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
-    }
-    sent = true;
-  } catch (error) {
-    addTrail(`Update was not sent to the boss. Check the connection and retry. ${error?.message || ""}`.trim());
-  } finally {
-    setUpdateBusy(false);
-    if (sent) setNote("");
-  }
-}
-
-  async function sendFieldSlip(kind, text, photoNames = []) {
-    if (!jobId) throw new Error("Live job id is missing.");
-    const result = await post("/worker/field-slip", {
-      type: kind,
-      kind,
-      job_id: jobId,
-      job_title: title,
-      text,
-      note: String(note || text).trim(),
-      photo_names: photoNames,
-      photo_count: photoNames.length,
-      source: "churvox-worker",
-    });
-    if (result?.success === false) throw new Error(result?.detail || result?.message || "Could not send the worker update.");
-    return result;
+    if (updateBusy || live.isLoading) return;
+    const clean = String(text || "Worker update from phone view").trim();
+    setUpdateBusy(true);
+    try {
+      const needsDecision = /owner check|extra work|issue|problem|decision|blocked|cannot|help/i.test(clean);
+      if (hasWork && jobId) {
+        await queueAndSync(needsDecision ? "worker_problem" : "worker_message", { text: clean, note: clean, photo_names: [] });
+        addTrail(workerNetworkState().online ? `Update saved for the office: ${clean}` : `Update saved offline: ${clean}`);
+      } else {
+        await createBackendWorkerUpdateRequest({ title, update: clean, updateType: needsDecision ? "Worker problem" : "Worker update", status: needsDecision ? "Owner review" : "General update" });
+        addTrail(needsDecision ? `Issue sent to owner Command: ${clean}` : `Update sent to the office: ${clean}`);
+      }
+      setNote("");
+    } catch (error) { addTrail(`Update remains unsent. Check the saved queue. ${error?.message || ""}`.trim()); }
+    finally { setUpdateBusy(false); }
   }
 
   async function sendProof() {
     if (!hasWork || proofBusy) return;
-    if (!proofNames.length && !String(note || "").trim()) {
-      addTrail("Choose at least one photo or add a proof note first.");
-      return;
-    }
+    if (!proofNames.length && !String(note || "").trim()) { addTrail("Choose at least one photo or add a proof note first."); return; }
     setProofBusy(true);
     try {
-      await sendFieldSlip("job_proof", String(note || "Worker added job proof.").trim(), proofNames);
-      addTrail(`Proof sent to the office${proofNames.length ? ` with ${proofNames.length} photo name${proofNames.length === 1 ? "" : "s"}` : ""}.`);
+      const photos = await filesForOffline(proofFiles);
+      await queueAndSync("job_proof", { text: String(note || "Worker added job proof.").trim(), note: String(note || "Worker added job proof.").trim(), photo_names: proofNames, photos });
+      addTrail(workerNetworkState().online ? "Proof saved and queued for the office." : "Proof saved offline on this phone.");
       setProofFiles(null);
-    } catch (error) {
-      addTrail(`Proof was not sent. Check the connection and retry. ${error?.message || ""}`.trim());
-    } finally {
-      setProofBusy(false);
-    }
+    } catch (error) { addTrail(`Proof could not be saved. ${error?.message || ""}`.trim()); }
+    finally { setProofBusy(false); }
   }
 
   async function copyPaymentLink() {
@@ -290,6 +257,8 @@ export default function OfficeTeamWorkerRoute() {
         <button className="cvWorkerLogout" type="button" onClick={handleLogout}>Log out</button>
       </nav>
 
+      <section className={`cvWorkerSyncBar ${syncState === "Needs attention" ? "attention" : network.online ? "online" : "offline"}`} aria-label="Worker sync status"><div><span>{network.online ? "Connection available" : "No reception"}</span><strong>{syncState}</strong><small>{syncItems.length ? `${syncItems.length} update${syncItems.length === 1 ? "" : "s"} saved on this phone` : "All saved updates confirmed"}</small></div><button type="button" disabled={syncBusy || !network.online || !syncItems.length} onClick={flushQueue}>{syncBusy ? "Syncing…" : syncItems.length ? "Sync now" : "Synced"}</button></section>
+
       <section className="cvWorkerRoutePhone" aria-label="Churvox worker phone app">
         <header><div><span>{view.label}</span><h2>{view.title}</h2></div><strong>{hasWork ? status : "Waiting"}</strong></header>
 
@@ -306,13 +275,11 @@ export default function OfficeTeamWorkerRoute() {
             {paymentNotice ? <p className="cvWorkerPaymentNotice">{paymentNotice}</p> : null}
           </section>
           {proofChecklist.length ? <section className="cvWorkerProofCoach" aria-label="Worker Proof Coach"><span>Worker Proof Coach</span><h3>Before you leave</h3><p>Churvox checks the proof needed for this exact job. Complete stays blocked until required evidence is present.</p><div>{proofChecklist.map((item) => item.proof === "confirmation" ? <label key={item.id}><input type="checkbox" checked={Boolean(proofConfirmations[item.id])} onChange={(event) => setProofConfirmations((current) => ({ ...current, [item.id]: event.target.checked }))} /><span>{item.label}</span></label> : <article key={item.id} className={(item.proof === "photo" ? proofNames.length > 0 : String(note || "").trim()) ? "ready" : "missing"}><b>{item.proof === "photo" ? proofNames.length > 0 ? "Photo ready" : "Photo needed" : String(note || "").trim() ? "Note ready" : "Note needed"}</b><span>{item.label}</span></article>)}</div><small>{proofCoach?.industry ? `Checklist: ${proofCoach.industry}` : "Trade-aware checklist"}</small></section> : null}
-          {proofChecklist.length ? <section className="cvWorkerProofCoach" aria-label="Worker Proof Coach"><span>Worker Proof Coach</span><h3>Before you leave</h3><p>Churvox checks the proof needed for this exact job. Complete stays blocked until required evidence is present.</p><div>{proofChecklist.map((item) => item.proof === "confirmation" ? <label key={item.id}><input type="checkbox" checked={Boolean(proofConfirmations[item.id])} onChange={(event) => setProofConfirmations((current) => ({ ...current, [item.id]: event.target.checked }))} /><span>{item.label}</span></label> : <article key={item.id} className={(item.proof === "photo" ? proofNames.length > 0 : String(note || "").trim()) ? "ready" : "missing"}><b>{item.proof === "photo" ? proofNames.length > 0 ? "Photo ready" : "Photo needed" : String(note || "").trim() ? "Note ready" : "Note needed"}</b><span>{item.label}</span></article>)}</div><small>{proofCoach?.industry ? `Checklist: ${proofCoach.industry}` : "Trade-aware checklist"}</small></section> : null}
-          {proofChecklist.length ? <section className="cvWorkerProofCoach" aria-label="Worker Proof Coach"><span>Worker Proof Coach</span><h3>Before you leave</h3><p>Churvox checks the proof needed for this exact job. Complete stays blocked until required evidence is present.</p><div>{proofChecklist.map((item) => item.proof === "confirmation" ? <label key={item.id}><input type="checkbox" checked={Boolean(proofConfirmations[item.id])} onChange={(event) => setProofConfirmations((current) => ({ ...current, [item.id]: event.target.checked }))} /><span>{item.label}</span></label> : <article key={item.id} className={(item.proof === "photo" ? proofNames.length > 0 : String(note || "").trim()) ? "ready" : "missing"}><b>{item.proof === "photo" ? proofNames.length > 0 ? "Photo ready" : "Photo needed" : String(note || "").trim() ? "Note ready" : "Note needed"}</b><span>{item.label}</span></article>)}</div><small>{proofCoach?.industry ? `Checklist: ${proofCoach.industry}` : "Trade-aware checklist"}</small></section> : null}
           <section className="cvWorkerRouteProof"><label className="cvWorkerProofPicker">Photo proof<input type="file" accept="image/*" capture="environment" multiple disabled={!hasWork || proofBusy} onChange={(event) => setProofFiles(event.target.files)} /></label><button type="button" disabled={!hasWork || proofBusy} onClick={sendProof}>{proofBusy ? "Sending…" : proofNames.length ? `Send ${proofNames.length} proof item${proofNames.length === 1 ? "" : "s"}` : "Send proof note"}</button><button type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(`Timer needs office review for ${title}. ${note || "Please check the recorded time."}`)}>Timer note</button></section>
         </> : null}
 
-        {showMessages ? <><section className="cvWorkerRouteNoteBox"><span>Boss update</span><h3>Send one clear update</h3><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed?" /><button type="button" disabled={updateBusy || live.isLoading} onClick={() => sendBossUpdate()}>{updateBusy ? "Sending…" : live.isLoading ? "Loading assigned job…" : "Send to Command"}</button></section><div className="cvWorkerRouteQuickNotes">{quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}</div><section className="cvWorkerRouteTrail"><h3>This phone</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No updates sent this session.</p>}</section></> : null}
-        {showHelp ? <section className="cvWorkerRouteHelp"><h3>Four field rules</h3><ol><li>Open the assigned job.</li><li>Update the status when it changes.</li><li>Send proof or a short issue note.</li><li>Complete only when the work is ready for owner review.</li></ol></section> : null}
+        {showMessages ? <><section className="cvWorkerRouteNoteBox"><span>Boss update</span><h3>Send one clear update</h3><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed?" /><button type="button" disabled={updateBusy || live.isLoading} onClick={() => sendBossUpdate()}>{updateBusy ? "Sending…" : live.isLoading ? "Loading assigned job…" : "Send to Command"}</button></section><div className="cvWorkerRouteQuickNotes">{quickNotes.map((item) => <button key={item} type="button" disabled={!hasWork || updateBusy} onClick={() => sendBossUpdate(item)}>{item}</button>)}</div><section className="cvWorkerRouteTrail"><h3>This phone</h3>{trail.length ? trail.map((item) => <p key={item.id}>{item.text}</p>) : <p>No updates saved this session.</p>}</section></> : null}
+        {showHelp ? <section className="cvWorkerRouteHelp"><h3>Four field rules</h3><ol><li>Open the assigned job.</li><li>Update the status when it changes.</li><li>Save proof or a short issue note.</li><li>Complete only when the work is ready for owner review.</li></ol><p>When reception drops out, look for <b>Saved offline</b>. Churvox will show <b>Waiting to sync</b>, <b>Synced</b> or <b>Needs attention</b> rather than silently losing the update.</p></section> : null}
         {showMe ? <section className="cvWorkerRouteProfile"><h3>Worker access only</h3><p>No owner settings, pricing, billing or admin controls are available here.</p><Link to="/worker/help">Open field help</Link></section> : null}
       </section>
 

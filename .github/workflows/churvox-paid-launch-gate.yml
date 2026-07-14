@@ -114,6 +114,7 @@ jobs:
             backend.test_churvox_jwt_health_fingerprint_patch \
             backend.test_churvox_job_done_reality \
             backend.test_churvox_owner_intelligence \
+            backend.test_churvox_launch_hardening \
             scripts.test_worker_static_bypass_absent
 
       - name: Install Chromium
@@ -146,6 +147,7 @@ jobs:
             tests/e2e/churvox-public-documents-paid-launch.spec.js \
             tests/e2e/churvox-public-request-paid-launch.spec.js \
             tests/e2e/churvox-billing-email-verification-gate.spec.js \
+            tests/e2e/churvox-launch-hardening.spec.js \
             --project=desktop-chromium \
             --workers=1 \
             --reporter=line
@@ -159,6 +161,7 @@ jobs:
             tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js \
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
+            tests/e2e/churvox-launch-hardening.spec.js \
             --project=mobile-chromium \
             --workers=1 \
             --reporter=line
