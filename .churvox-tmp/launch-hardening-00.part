@@ -1,0 +1,210 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+import csv
+import hashlib
+import io
+import json
+import secrets
+import zipfile
+from typing import Any, Iterable
+
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
+
+try:
+    from churvox_feature_tier_paid_launch_guard import effective_plan, plan_meets
+except Exception:
+    from backend.churvox_feature_tier_paid_launch_guard import effective_plan, plan_meets
+
+try:
+    from churvox_owner_intelligence_routes import (
+        BUSINESS_COLLECTIONS,
+        CLIENT_COLLECTIONS,
+        CLOSEOUT_COLLECTIONS,
+        INVOICE_COLLECTIONS,
+        JOB_COLLECTIONS,
+        OWNER_ROLES,
+        QUOTE_COLLECTIONS,
+        TIME_COLLECTIONS,
+        WORKER_ROLES,
+        _business_id,
+        _business_scope,
+        _client_id,
+        _date,
+        _first,
+        _maybe_oid,
+        _number,
+        _record_id,
+        _role,
+        _serial,
+        _status,
+        _text,
+        _title,
+        evaluate_proof,
+        proof_checklist_for,
+    )
+except Exception:
+    from backend.churvox_owner_intelligence_routes import (
+        BUSINESS_COLLECTIONS,
+        CLIENT_COLLECTIONS,
+        CLOSEOUT_COLLECTIONS,
+        INVOICE_COLLECTIONS,
+        JOB_COLLECTIONS,
+        OWNER_ROLES,
+        QUOTE_COLLECTIONS,
+        TIME_COLLECTIONS,
+        WORKER_ROLES,
+        _business_id,
+        _business_scope,
+        _client_id,
+        _date,
+        _first,
+        _maybe_oid,
+        _number,
+        _record_id,
+        _role,
+        _serial,
+        _status,
+        _text,
+        _title,
+        evaluate_proof,
+        proof_checklist_for,
+    )
+
+
+LAUNCH_HARDENING_BUILD = "churvox-go-live-trust-v1-20260714"
+SAFE_RESULT = "Owner-controlled. Nothing was sent, charged, paid, filed or synced to an external service automatically."
+TRUST_FEATURES = {
+    "offline_worker_sync": {"label": "Offline Worker Sync", "minimum_plan": "crew"},
+    "onboarding_imports": {"label": "Ten-minute onboarding and imports", "minimum_plan": "start"},
+    "golden_journey": {"label": "Golden Journey reliability", "minimum_plan": "start"},
+    "permissions_security": {"label": "Permissions and security", "minimum_plan": "start"},
+    "customer_portal": {"label": "Customer portal", "minimum_plan": "start"},
+    "recovery_undo": {"label": "Recovery and undo", "minimum_plan": "start"},
+    "portability_pack": {"label": "Business Portability Pack", "minimum_plan": "start"},
+    "evidence_outcomes": {"label": "Evidence Drawer and measured outcomes", "minimum_plan": "start"},
+}
+
+ROLE_PRESETS = {
+    "owner": {
+        "label": "Owner",
+        "actions": ["business.read", "business.manage", "jobs.manage", "clients.manage", "quotes.manage", "invoices.manage", "workers.manage", "payroll.review", "exports.download", "permissions.manage", "portal.manage", "recovery.undo", "intelligence.view"],
+    },
+    "manager": {
+        "label": "Manager",
+        "actions": ["business.read", "jobs.manage", "clients.manage", "quotes.manage", "invoices.prepare", "workers.manage", "portal.manage", "intelligence.view"],
+    },
+    "office_admin": {
+        "label": "Office administrator",
+        "actions": ["business.read", "jobs.manage", "clients.manage", "quotes.manage", "invoices.prepare", "portal.manage"],
+    },
+    "scheduler": {
+        "label": "Scheduler",
+        "actions": ["business.read", "jobs.schedule", "clients.read", "workers.read"],
+    },
+    "bookkeeper": {
+        "label": "Bookkeeper",
+        "actions": ["business.read", "jobs.read", "clients.read", "quotes.read", "invoices.manage", "exports.download", "payroll.read"],
+    },
+    "accountant": {
+        "label": "Accountant",
+        "actions": ["business.read", "invoices.read", "payroll.read", "exports.download"],
+    },
+    "worker": {
+        "label": "Worker",
+        "actions": ["assigned_jobs.read", "assigned_jobs.update", "proof.add", "messages.send"],
+    },
+    "subcontractor": {
+        "label": "Subcontractor",
+        "actions": ["assigned_jobs.read", "assigned_jobs.update", "proof.add", "messages.send"],
+    },
+    "read_only": {
+        "label": "Read-only adviser",
+        "actions": ["business.read", "jobs.read", "clients.read", "quotes.read", "invoices.read", "intelligence.view"],
+    },
+}
+
+IMPORT_TYPES = {
+    "clients": {"collection": "clients", "required": ("name",), "aliases": {"name": ("name", "client", "client_name", "customer", "customer_name", "contact"), "email": ("email", "email_address"), "phone": ("phone", "mobile", "phone_number"), "address": ("address", "service_address", "site_address"), "notes": ("notes", "note", "details")}},
+    "workers": {"collection": "workers", "required": ("name",), "aliases": {"name": ("name", "worker", "worker_name", "staff", "employee"), "email": ("email", "email_address"), "phone": ("phone", "mobile", "phone_number"), "role": ("role", "worker_role", "employment_type"), "notes": ("notes", "note")}},
+    "jobs": {"collection": "jobs", "required": ("title",), "aliases": {"title": ("title", "job", "job_title", "service", "description"), "client_name": ("client", "client_name", "customer", "customer_name"), "client_id": ("client_id", "customer_id"), "address": ("address", "service_address", "site_address"), "scheduled_date": ("date", "scheduled_date", "start_date"), "price": ("price", "amount", "total"), "notes": ("notes", "instructions")}},
+    "recurring_jobs": {"collection": "jobs", "required": ("title", "frequency"), "aliases": {"title": ("title", "job", "job_title", "service", "description"), "client_name": ("client", "client_name", "customer", "customer_name"), "address": ("address", "service_address", "site_address"), "frequency": ("frequency", "repeat", "recurrence", "cycle"), "next_date": ("next_date", "next_service_date", "date"), "price": ("price", "amount", "total"), "notes": ("notes", "instructions")}},
+    "quotes": {"collection": "quotes", "required": ("customer_name",), "aliases": {"customer_name": ("customer", "customer_name", "client", "client_name"), "quote_number": ("quote", "quote_number", "number"), "description": ("description", "service", "job"), "total": ("total", "amount", "price"), "status": ("status", "stage"), "email": ("email", "customer_email")}},
+    "invoices": {"collection": "invoices", "required": ("customer_name",), "aliases": {"customer_name": ("customer", "customer_name", "client", "client_name"), "invoice_number": ("invoice", "invoice_number", "number"), "description": ("description", "service", "job"), "total": ("total", "amount", "price"), "amount_due": ("amount_due", "balance", "balance_due"), "status": ("status", "payment_status"), "email": ("email", "customer_email")}},
+}
+
+PORTABILITY_COLLECTIONS = (
+    "businesses", "business_profiles", "clients", "customers", "jobs", "job_records", "appointments", "bookings",
+    "quotes", "quote_records", "invoices", "invoice_records", "workers", "team", "time_entries", "timers",
+    "worker_time_entries", "timesheets", "client_promises", "job_closeouts", "job_truth_receipts", "command_slips",
+    "command_decisions", "owner_intelligence_drafts", "launch_import_batches", "launch_journey_events",
+    "launch_permission_policies", "launch_recovery_receipts", "client_portals", "public_client_portals", "job_proof_packs",
+    "worker_sync_events", "customer_portal_requests",
+)
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _hash(*parts: Any, size: int = 24) -> str:
+    raw = "|".join(_text(part, "", 10000) for part in parts)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:size]
+
+
+def _slug(value: Any) -> str:
+    return "_".join(_text(value, "", 200).lower().replace("-", " ").split())
+
+
+def _doc(row: dict[str, Any] | None, ObjectId=None) -> dict[str, Any] | None:
+    if not row:
+        return None
+    output = dict(row)
+    if "_id" in output:
+        output["id"] = str(output.pop("_id"))
+    return _serial(output, ObjectId)
+
+
+def _parse_csv(text: str) -> list[dict[str, Any]]:
+    raw = str(text or "").strip()
+    if not raw:
+        return []
+    sample = raw[:4096]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=",;\t|")
+    except Exception:
+        dialect = csv.excel
+    reader = csv.DictReader(io.StringIO(raw), dialect=dialect)
+    return [dict(row) for row in reader if isinstance(row, dict)]
+
+
+def _normalise_headers(row: dict[str, Any]) -> dict[str, Any]:
+    return {_slug(key): value for key, value in (row or {}).items() if _slug(key)}
+
+
+def normalise_import_row(kind: str, row: dict[str, Any], row_number: int) -> dict[str, Any]:
+    spec = IMPORT_TYPES[kind]
+    source = _normalise_headers(row)
+    clean: dict[str, Any] = {}
+    used: dict[str, str] = {}
+    for target, aliases in spec["aliases"].items():
+        for alias in aliases:
+            key = _slug(alias)
+            if key in source and _text(source.get(key), ""):
+                clean[target] = _text(source.get(key), "", 4000)
+                used[target] = key
+                break
+    if kind in {"jobs", "recurring_jobs", "quotes", "invoices"}:
+        for money_key in ("price", "total", "amount_due"):
+            if money_key in clean:
+                clean[money_key] = _number(clean[money_key])
+    if kind == "recurring_jobs":
+        clean["recurring"] = True
+    errors = [f"{field.replace('_', ' ').title()} is required" for field in spec["required"] if not _text(clean.get(field), "")]
+    primary = _text(clean.get("name") or clean.get("title") or clean.get("customer_name"), "")
+    identity = _hash(kind, primary.lower(), _text(clean.get("email"), "").lower(), _text(clean.get("address"), "").lower())
+    return {
+        "row_number": row_number,
+        "source": row,
+        "mapped": clean,
