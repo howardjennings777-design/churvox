@@ -1,0 +1,42 @@
+name: Apply final invoice support link fix
+
+on:
+  push:
+    branches:
+      - agent/clean-full-ui-test
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/clean-full-ui-test
+          fetch-depth: 1
+
+      - name: Enlarge unavailable invoice support link
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('frontend/src/pages/public/PublicInvoicePage.js')
+          text = path.read_text()
+          old = '<a href="mailto:hello@churvox.com?subject=Churvox%20invoice%20link">Contact Churvox support</a>'
+          new = '<a href="mailto:hello@churvox.com?subject=Churvox%20invoice%20link" style={{ display: "inline-flex", alignItems: "center", minHeight: 28, padding: "2px 4px" }}>Contact Churvox support</a>'
+          if old not in text:
+              raise SystemExit('Expected unavailable invoice support link was not found.')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          rm -f .github/workflows/churvox-apply-clean-test-fixes-5.yml
+
+      - name: Commit invoice tap-target fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/pages/public/PublicInvoicePage.js .github/workflows/churvox-apply-clean-test-fixes-5.yml
+          git commit -m "Make invoice support link mobile tap friendly"
+          git push origin HEAD:agent/clean-full-ui-test
