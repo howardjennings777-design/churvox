@@ -95,6 +95,10 @@ def _install_churvox_real_ai_hook():
                 except Exception:
                     from backend.churvox_command_mimic_intelligence_routes import build_command_mimic_intelligence_router
                 try:
+                    from churvox_job_done_routes import build_job_done_router
+                except Exception:
+                    from backend.churvox_job_done_routes import build_job_done_router
+                try:
                     from churvox_command_apply_routes import build_command_apply_router
                 except Exception:
                     from backend.churvox_command_apply_routes import build_command_apply_router
@@ -112,6 +116,8 @@ def _install_churvox_real_ai_hook():
                 original_include_router(self, build_command_human_mimic_guard_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_human_mimic_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_mimic_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                # Persisted closeouts and Money Radar must be registered before the approval executor.
+                original_include_router(self, build_job_done_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Register the safe approval executor before the older record-only Command routes.
                 original_include_router(self, build_command_apply_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_router(local_db, local_get_current_user, ObjectId), prefix="/api")

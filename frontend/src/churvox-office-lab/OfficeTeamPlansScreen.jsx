@@ -73,6 +73,7 @@ export default function OfficeTeamPlansScreen() {
   const [selected, setSelected] = useState("Operator");
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingError, setBillingError] = useState("");
+  const [billingAccount, setBillingAccount] = useState({ loading: true, hasStripeCustomer: false, hasSubscription: false, status: "", currentPlan: "" });
   const [packQuantity, setPackQuantity] = useState(1);
   const [growthPackBusy, setGrowthPackBusy] = useState(false);
   const [growthPackError, setGrowthPackError] = useState("");
@@ -126,6 +127,57 @@ export default function OfficeTeamPlansScreen() {
     });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadBillingAccount() {
+      try {
+        const response = await fetch(apiUrl("/billing/subscription-status"), {
+          credentials: "include",
+          cache: "no-store",
+          headers: { Accept: "application/json", ...tokenHeaders() },
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.message || "Billing status unavailable");
+        const source = billingAccountSource(body);
+        if (!cancelled) setBillingAccount({
+          loading: false,
+          hasStripeCustomer: Boolean(source.stripe_customer_id || source.stripeCustomerId),
+          hasSubscription: Boolean(source.stripe_subscription_id || source.stripeSubscriptionId),
+          status: String(source.subscription_status || source.billing_status || source.stripe_status || source.status || "").trim().toLowerCase(),
+          currentPlan: normalizePlanKey(source.ui_plan || source.current_plan || source.plan || source.subscription_plan || source.billing_plan || source.tier || ""),
+        });
+      } catch {
+        if (!cancelled) setBillingAccount((current) => ({ ...current, loading: false }));
+      }
+    }
+    loadBillingAccount();
+    return () => { cancelled = true; };
+  }, []);
+
+  async function openBillingPortal() {
+    if (billingBusy) return;
+    setBillingBusy(true);
+    setBillingError("");
+    try {
+      const response = await fetch(apiUrl("/billing/create-portal-session"), {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...tokenHeaders() },
+        body: JSON.stringify({ return_url: `${window.location.origin}/dashboard#plans`, source: "owner_plans_manage_billing" }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.message || `Billing portal returned HTTP ${response.status}`);
+      const portalUrl = body?.url || body?.portal_url || body?.session_url || body?.data?.url;
+      if (!portalUrl) throw new Error("Stripe billing portal URL was not returned.");
+      const secureUrl = new URL(portalUrl, window.location.origin);
+      if (secureUrl.protocol !== "https:") throw new Error("Billing portal did not return a secure URL.");
+      window.location.assign(secureUrl.toString());
+    } catch (error) {
+      setBillingError(error?.message || "Billing management could not open. No plan was changed and nothing was charged.");
+      setBillingBusy(false);
+    }
+  }
 
   async function openBilling() {
     if (billingBusy) return;
@@ -329,12 +381,15 @@ export default function OfficeTeamPlansScreen() {
 
       <section className="cvPlanBillingAction">
         <div>
-          <span>Secure checkout</span>
-          <h3>Continue with {plan.name}</h3>
-          <p>Open Stripe Checkout for the selected plan. You return to this new Plans screen after checkout or cancellation.</p>
+          <span>{billingAccount.hasStripeCustomer ? "Current subscription" : "Secure checkout"}</span>
+          <h3>{billingAccount.hasStripeCustomer ? `${displayPlanName(billingAccount.currentPlan || currentPlan)} billing` : `Continue with ${plan.name}`}</h3>
+          <p>{billingAccount.hasStripeCustomer ? "Open Stripe’s secure customer portal to update payment details, review invoices or manage the current subscription. Churvox does not change the plan until Stripe confirms it." : "Open Stripe Checkout for the selected plan. You return to this new Plans screen after checkout or cancellation."}</p>
+          {billingAccount.hasStripeCustomer && billingAccount.status ? <small>Subscription status: {billingAccount.status.replaceAll("_", " ")}</small> : null}
           {billingError ? <small className="cvPlanBillingError" role="alert">{billingError}</small> : null}
         </div>
-        <button type="button" onClick={openBilling} disabled={billingBusy}>{billingBusy ? "Opening Stripe…" : "Continue to secure checkout"}</button>
+        {billingAccount.hasStripeCustomer
+          ? <button type="button" onClick={openBillingPortal} disabled={billingBusy}>{billingBusy ? "Opening Stripe…" : "Manage billing"}</button>
+          : <button type="button" onClick={openBilling} disabled={billingBusy || billingAccount.loading}>{billingBusy ? "Opening Stripe…" : billingAccount.loading ? "Checking billing…" : "Continue to secure checkout"}</button>}
       </section>
     </section>
   );
@@ -407,6 +462,16 @@ function normalizeCountry(value) {
 function normalizePlanKey(value) {
   const raw = String(value || "").trim().toLowerCase();
   return { solo: "start", start: "start", team: "crew", crew: "crew", pro: "operator", operator: "operator", enterprise: "command", command: "command" }[raw] || "";
+}
+
+function displayPlanName(value) {
+  const plan = normalizePlanKey(value);
+  return { start: "Start", crew: "Crew", operator: "Operator", command: "Command" }[plan] || "Current plan";
+}
+
+function billingAccountSource(body = {}) {
+  const nested = body?.user || body?.account || body?.subscription || body?.data;
+  return nested && typeof nested === "object" ? { ...body, ...nested } : body;
 }
 
 function readStoredPlan() {

@@ -161,12 +161,12 @@ export default function LoginPage() {
     setError("");
     setSubmitting(true);
     try {
-      const result = await withTimeout(login(cleanEmail, password), LOGIN_TIMEOUT_MS, "Login service did not respond in time.");
+      const result = await withTimeout(login(cleanEmail, password, { confirmSession: true }), LOGIN_TIMEOUT_MS, "Login service did not respond in time.");
       if (!loginLooksValid(result)) throw new Error("Invalid email or password.");
 
       let freshUser;
       try {
-        freshUser = await withTimeout(checkAuth(), ACCESS_REFRESH_TIMEOUT_MS, "Your session could not be confirmed. Please sign in again.");
+        freshUser = await withTimeout(checkAuth({ allowOfflineFallback: false }), ACCESS_REFRESH_TIMEOUT_MS, "Your session could not be confirmed. Please sign in again.");
       } catch {
         try { await logout?.(); } catch {}
         throw new Error("Your session could not be confirmed. Please sign in again.");

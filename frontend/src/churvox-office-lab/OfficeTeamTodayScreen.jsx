@@ -1,10 +1,11 @@
 import React from "react";
 import "./OfficeTeamTodayScreen.css";
 import "./OfficeTeamTodayVision.css";
+import { JobDoneBoard } from "./OfficeTeamJobDone";
 import { useOfficeTeamOverview } from "./OfficeTeamOverview";
 
 const labShortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];
-const ownerShortcuts = ["command", "work", "clients", "worker", "quotes", "invoices"];
+const ownerShortcuts = ["command", "work", "clients", "worker", "quotes", "invoices", "money"];
 
 const labels = {
   command: "Command",
@@ -14,7 +15,7 @@ const labels = {
   worker: "Workers",
   quotes: "Quotes",
   invoices: "Invoices",
-  money: "Money",
+  money: "Money Radar",
   clients: "Clients",
   staff: "Staff",
   payroll: "Payroll",
@@ -46,6 +47,8 @@ export default function OfficeTeamTodayScreen({ pending, resolved, approvalTrail
         <h2>{ownerRoute ? "Your business, reduced to what needs you" : "Your office team has checked the business"}</h2>
         <p>{ownerRoute ? "Start here. Churvox keeps routine admin in the background and brings back only the work, decisions and exceptions that need the owner." : "Start here. The owner sees what matters, opens Command when a decision is needed, and leaves the rest with the office team."}</p>
       </header>
+
+      <JobDoneBoard appMode={appMode} compact go={go} />
 
       <div className="cvSiteTodayGrid">
         <article className="cvSiteBriefing">
