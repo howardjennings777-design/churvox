@@ -393,7 +393,7 @@ function ScreenRouter(props) {
   if (screen === "worker") return <WorkerViewScreen appMode={appMode} />;
   if (screen === "quotes") return <QuotesScreen appMode={appMode} />;
   if (screen === "invoices") return <InvoicesScreen appMode={appMode} />;
-  if (screen === "money") return <MoneyScreen appMode={appMode} />;
+  if (screen === "money") return <MoneyScreen appMode={appMode} go={props.go} />;
   if (screen === "staff") return <StaffScreen appMode={appMode} />;
   if (screen === "payroll") return <PayrollScreen appMode={appMode} />;
   if (screen === "team") return <Team {...props} />;
