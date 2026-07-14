@@ -24,6 +24,7 @@ finalizer = importlib.import_module("churvox_command_runs_office_finalizer_patch
 engine.load_context = finalizer.fast_load_context
 engine.enrich_worker_decision = finalizer.enhanced_worker_decision
 engine.enrich_generic_decision = finalizer.enhanced_generic_decision
+engine.enrich_slip = finalizer.enhanced_enrich_slip
 
 
 def fake_object_id(value=None):
@@ -57,9 +58,9 @@ def base_assignment_slip():
         "id": "slip-1",
         "source_id": "job-target",
         "source_type": "booking",
-        "action_type": "complete_job_setup",
-        "title": "Job setup needs a decision: Lawn mowing",
-        "prepared": "Receptionist prepared the job setup.",
+        "action_type": "assign_worker_review",
+        "title": "Job needs worker: Lawn mowing",
+        "prepared": "Receptionist prepared a staff assignment slip for owner review.",
         "payload": {
             "prepared_form": {
                 "Job": "Lawn mowing",
@@ -113,7 +114,7 @@ def test_worker_ranking_and_backup_approval():
     payload = enriched["payload"]
     form = payload["prepared_form"]
     require(payload.get("command_runs_office") is True, "Command decision contract marker is missing")
-    require(payload.get("recommended_worker", {}).get("name") == "Cam", "recommended worker was not stored")
+    require(payload.get("recommended_worker", {}).get("name") == "Cam", "legacy assign_worker_review source did not receive a worker recommendation")
     require(form.get("Worker") == "Cam", "original Worker field still hands selection back to the owner")
     require(form.get("Recommended worker") == "Cam", "recommended worker is not visible in the prepared form")
     require("Why this worker" in form and "Backup workers" in form and "Schedule / capacity check" in form, "worker reasoning is incomplete")
@@ -188,10 +189,12 @@ def test_installation_and_source_contract():
     loader = (BACKEND / "churvox_startup_patch_loader.py").read_text(encoding="utf-8")
     main_source = (BACKEND / "churvox_command_runs_office_patch.py").read_text(encoding="utf-8")
     final_source = (BACKEND / "churvox_command_runs_office_finalizer_patch.py").read_text(encoding="utf-8")
+    command_sources = (BACKEND / "churvox_command_routes.py").read_text(encoding="utf-8")
     require(loader.index('"churvox_command_runs_office_patch"') < loader.index('"churvox_command_runs_office_finalizer_patch"'), "Command finalizer is not loaded after the recommendation engine")
+    require('"assign_worker_review"' in command_sources, "legacy worker-assignment source disappeared from Command routes")
     for token in ["same_client", "same_service", "worker_skill_text", "workload", "clashes", "available_days", "recommended_decision", "recommendation_reason", "approval_effect"]:
         require(token in main_source, f"Command recommendation source is missing {token}")
-    for token in ["asyncio.gather", "Approve {name}", "worker_action_map", "apply_worker_action", "enhanced_generic_decision", '"Worker", top_name']:
+    for token in ["asyncio.gather", "Approve {name}", "worker_action_map", "apply_worker_action", "enhanced_generic_decision", '"Worker", top_name', "WORKER_ASSIGNMENT_ACTIONS", '"assign_worker_review"', "enhanced_enrich_slip"]:
         require(token in final_source, f"Command finalizer is missing {token}")
 
 
@@ -200,4 +203,4 @@ if __name__ == "__main__":
     test_generic_slip_contract()
     test_safe_no_worker_fallback()
     test_installation_and_source_contract()
-    print("Command runs-office contract passed: every slip recommends an actionable decision; worker slips replace the original Worker field, rank active team members, expose backups, map backup approval correctly, and preserve owner-control safety.")
+    print("Command runs-office contract passed: every slip recommends an actionable decision; every active worker-assignment source, including assign_worker_review, ranks the real team, exposes backups, maps backup approval correctly, and preserves owner-control safety.")
