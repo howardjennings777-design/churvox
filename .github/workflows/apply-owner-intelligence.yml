@@ -27,61 +27,25 @@ jobs:
           fetch-depth: 0
 
       - name: Apply checked product wiring
-        shell: bash
-        run: |
-          set +e
-          python3 scripts/apply_churvox_owner_intelligence.py 2>&1 | tee /tmp/owner-intelligence-apply.log
-          echo ${PIPESTATUS[0]} > /tmp/owner-intelligence-apply.status
-          exit 0
+        run: python3 scripts/apply_churvox_owner_intelligence.py
 
-      - name: Remove one-time patch machinery and verify
+      - name: Verify with temporary machinery outside the tree
         shell: bash
         run: |
-          apply_status=$(cat /tmp/owner-intelligence-apply.status)
-          if [ "$apply_status" -ne 0 ]; then
-            echo "$apply_status" > /tmp/owner-intelligence-verify.status
-            exit 0
-          fi
-          rm -f scripts/apply_churvox_owner_intelligence.py .github/workflows/apply-owner-intelligence.yml
-          set +e
-          {
-            python3 scripts/churvox-owner-intelligence-contract.py
-            python3 -m py_compile backend/churvox_owner_intelligence_routes.py backend/test_churvox_owner_intelligence.py usercustomize.py backend/usercustomize.py
-            git diff --check
-          } 2>&1 | tee /tmp/owner-intelligence-verify.log
-          echo ${PIPESTATUS[0]} > /tmp/owner-intelligence-verify.status
-          exit 0
+          cp scripts/apply_churvox_owner_intelligence.py /tmp/apply_churvox_owner_intelligence.py
+          cp .github/workflows/apply-owner-intelligence.yml /tmp/apply-owner-intelligence.yml
+          rm scripts/apply_churvox_owner_intelligence.py .github/workflows/apply-owner-intelligence.yml
+          python3 scripts/churvox-owner-intelligence-contract.py
+          python3 -m py_compile backend/churvox_owner_intelligence_routes.py backend/test_churvox_owner_intelligence.py usercustomize.py backend/usercustomize.py
+          git diff --check
+          cp /tmp/apply_churvox_owner_intelligence.py scripts/apply_churvox_owner_intelligence.py
+          cp /tmp/apply-owner-intelligence.yml .github/workflows/apply-owner-intelligence.yml
 
-      - name: Commit success or publish isolated failure report
-        shell: bash
+      - name: Commit product wiring
         run: |
-          apply_status=$(cat /tmp/owner-intelligence-apply.status)
-          verify_status=$(cat /tmp/owner-intelligence-verify.status)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          if [ "$apply_status" -eq 0 ] && [ "$verify_status" -eq 0 ]; then
-            git add -A
-            git commit -m "Wire all eight Churvox Intelligence features [skip-intelligence-apply]"
-            git push origin HEAD:agent/churvox-owner-intelligence
-            exit 0
-          fi
-
-          apply_log=$(cat /tmp/owner-intelligence-apply.log 2>/dev/null || true)
-          verify_log=$(cat /tmp/owner-intelligence-verify.log 2>/dev/null || true)
-          git reset --hard HEAD
-          mkdir -p audit-results
-          {
-            echo "Apply status: $apply_status"
-            echo "Verify status: $verify_status"
-            echo
-            echo "--- apply ---"
-            printf '%s\n' "$apply_log"
-            echo
-            echo "--- verify ---"
-            printf '%s\n' "$verify_log"
-          } > audit-results/churvox-owner-intelligence-apply-latest.txt
-          git add audit-results/churvox-owner-intelligence-apply-latest.txt
-          git commit -m "Record Intelligence wiring failure [skip-intelligence-apply]"
+          git add -A
+          git reset .github/workflows/apply-owner-intelligence.yml scripts/apply_churvox_owner_intelligence.py
+          git commit -m "Wire all eight Churvox Intelligence features [skip-intelligence-apply]"
           git push origin HEAD:agent/churvox-owner-intelligence
-          exit 1
