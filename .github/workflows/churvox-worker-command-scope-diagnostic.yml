@@ -23,7 +23,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `Exact v16 completion-channel proof started on run \`${context.runId}\`. It will not mutate live data until the final Messages route marker is deployed.` });
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `Exact v17 completion-channel proof started on run \`${context.runId}\`. It will not mutate live data until the final Messages route marker is deployed.` });
 
       - name: Prove exact deployed completion rows per owner-facing channel
         shell: bash
@@ -33,7 +33,7 @@ jobs:
           const api = process.env.API.replace(/\/+$/, '');
           const ownerEmail = process.env.OWNER_EMAIL;
           const password = process.env.PASSWORD;
-          const expectedMessages = 'churvox-final-owner-messages-v16-20260713';
+          const expectedMessages = 'churvox-final-owner-messages-v17-20260714';
           const expectedOwner = 'final_owner_messages_wrapper';
           const run = Date.now();
           const title = `HARDCORE completion diagnostic ${run}`;
@@ -55,7 +55,7 @@ jobs:
 
           async function waitForExactDeployment() {
             let last = {};
-            for (let attempt = 1; attempt <= 120; attempt += 1) {
+            for (let attempt = 1; attempt <= 60; attempt += 1) {
               const readyResponse = await fetch(`${api}/api/messages/readiness?ts=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
               const ready = readyResponse ? await read(readyResponse) : {};
               const bootResponse = await fetch(`${api}/api/command-fast-load/boot?ts=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
@@ -79,9 +79,9 @@ jobs:
                 && !boot.owner_messages_error;
               console.log(`DEPLOY attempt=${attempt} exact=${exact} ${JSON.stringify(last)}`);
               if (exact) return last;
-              if (attempt < 120) await sleep(10_000);
+              if (attempt < 60) await sleep(5_000);
             }
-            throw new Error(`V16_NOT_DEPLOYED ${JSON.stringify(last)}`);
+            throw new Error(`V17_NOT_DEPLOYED ${JSON.stringify(last)}`);
           }
 
           async function login(email) {
@@ -107,7 +107,7 @@ jobs:
             let jobId = '';
             try {
               const deployment = await waitForExactDeployment();
-              console.log(`EXACT_V16_DEPLOYMENT ${JSON.stringify(deployment)}`);
+              console.log(`EXACT_V17_DEPLOYMENT ${JSON.stringify(deployment)}`);
 
               ownerToken = await login(ownerEmail);
               if (!ownerToken) throw new Error('Owner login failed');
@@ -182,7 +182,7 @@ jobs:
                 if (passed) break;
               }
               if (!passed) throw new Error('COMPLETION_TRUTH_FAILED expected notifications=1 messages=1 command=0');
-              console.log('EXACT_V16_COMPLETION_CHANNEL_PROOF_PASS');
+              console.log('EXACT_V17_COMPLETION_CHANNEL_PROOF_PASS');
             } finally {
               if (ownerToken) await cleanup(ownerToken, jobId);
             }
@@ -201,6 +201,6 @@ jobs:
               .replace(/[a-f0-9]{24}/gi, '[id-hidden]')
               .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [hidden]')
               .slice(-12000);
-            const passed = raw.includes('EXACT_V16_COMPLETION_CHANNEL_PROOF_PASS');
-            const heading = passed ? '## Exact v16 completion-channel proof passed' : '## Exact v16 completion-channel proof failed';
+            const passed = raw.includes('EXACT_V17_COMPLETION_CHANNEL_PROOF_PASS');
+            const heading = passed ? '## Exact v17 completion-channel proof passed' : '## Exact v17 completion-channel proof failed';
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `${heading}\n\n\`\`\`text\n${safe}\n\`\`\`\n\nWorkflow run: \`${context.runId}\`.` });
