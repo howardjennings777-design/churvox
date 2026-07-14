@@ -17,6 +17,7 @@ jobs:
       PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
       CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
       CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_COMMAND_CONTRACT: churvox-command-runs-office-v2-20260715
 
     steps:
       - name: Mark proof started
@@ -27,11 +28,24 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `Live Command recommendation proof started on run \`${context.runId}\`. It will wait for the merged backend, create one marked unassigned job and one marked generic slip, verify both recommendation paths, then clean them up.`
+              body: `Live Command recommendation proof started on run \`${context.runId}\`. It will wait for the corrected assignment-source contract, create one marked unassigned job and one marked generic slip, verify both recommendation paths, then clean them up.`
             });
 
       - name: Check out current main
         uses: actions/checkout@v4
+
+      - name: Pin proof to corrected live contract
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          path = Path('scripts/churvox-command-recommendation-live-proof.cjs')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('churvox-command-runs-office-v1-20260715', os.environ['CHURVOX_COMMAND_CONTRACT'])
+          path.write_text(text, encoding='utf-8')
+          PY
+          node --check scripts/churvox-command-recommendation-live-proof.cjs
 
       - name: Run live recommendation proof
         shell: bash
