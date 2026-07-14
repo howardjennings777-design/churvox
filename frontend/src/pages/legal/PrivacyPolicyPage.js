@@ -4,6 +4,7 @@ import { PublicFooter, PublicNav } from "../marketing/ChurvoxPublicShell";
 
 const UPDATED = "12 July 2026";
 const CONTACT = "hello@churvox.com";
+const LINK_CLASS = "inline-flex min-h-7 items-center px-1 font-black text-orange-700";
 
 function Section({ title, children }) {
   return <section className="border-t border-slate-200 pt-6"><h2 className="mb-3 text-xl font-black text-slate-950">{title}</h2><div className="space-y-3">{children}</div></section>;
@@ -55,17 +56,17 @@ export default function PrivacyPolicyPage() {
 
             <Section title="7. Security and business separation">
               <p>We use authentication, role-aware access, business identifiers, restricted owner routes, secure transport and operational logging to protect information. Businesses are responsible for strong passwords, protecting shared devices, removing old users and ensuring public links are sent to the correct recipients.</p>
-              <p>No online service can guarantee absolute security. Report suspected unauthorised access promptly to <a className="font-black text-orange-700" href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
+              <p>No online service can guarantee absolute security. Report suspected unauthorised access promptly to <a className={LINK_CLASS} href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
             </Section>
 
             <Section title="8. Retention and deletion">
               <p>Information is kept while needed to provide the service, maintain security, support the account, meet legal or tax obligations, resolve disputes and keep required billing records. Retention periods vary by record type and context.</p>
-              <p>Authenticated owners can request account deletion through the <Link className="font-black text-orange-700" to="/delete-account">account deletion page</Link>. Deletion may not remove information that must be retained for legal, billing, fraud-prevention, dispute or security reasons.</p>
+              <p>Authenticated owners can request account deletion through the <Link className={LINK_CLASS} to="/delete-account">account deletion page</Link>. Deletion may not remove information that must be retained for legal, billing, fraud-prevention, dispute or security reasons.</p>
             </Section>
 
             <Section title="9. Access, correction and complaints">
               <p>People may ask for access to or correction of personal information Churvox holds about them, subject to applicable law and identity verification. Business clients and workers should normally contact the business account first for information that business entered into Churvox.</p>
-              <p>Email <a className="font-black text-orange-700" href={`mailto:${CONTACT}?subject=Churvox%20privacy%20request`}>{CONTACT}</a> with the account email, the information involved and the request. You may also raise a complaint with the relevant privacy regulator.</p>
+              <p>Email <a className={LINK_CLASS} href={`mailto:${CONTACT}?subject=Churvox%20privacy%20request`}>{CONTACT}</a> with the account email, the information involved and the request. You may also raise a complaint with the relevant privacy regulator.</p>
             </Section>
 
             <Section title="10. Cookies and local storage">
@@ -78,7 +79,7 @@ export default function PrivacyPolicyPage() {
 
             <Section title="12. Changes and contact">
               <p>We may update this policy as the service, providers or legal requirements change. Material changes will be dated on this page and may also be communicated through the service.</p>
-              <p>Privacy questions: <a className="font-black text-orange-700" href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
+              <p>Privacy questions: <a className={LINK_CLASS} href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
             </Section>
           </div>
         </article>

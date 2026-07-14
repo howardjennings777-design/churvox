@@ -13,6 +13,17 @@ const INTERACTIVE_SCREENS = [
 
 const PUBLIC_PAGES = ['/', '/pricing', '/contact', '/login'];
 const SAFETY = 'Nothing was sent, synced, charged or changed.';
+const PLATFORM_OWNER = Object.freeze({
+  id: 'safe-platform-owner',
+  email: 'hello@churvox.com',
+  role: 'owner',
+  user_role: 'owner',
+  email_verified: true,
+  has_app_access: true,
+  subscription_status: 'active',
+  plan: 'command',
+  business_id: 'safe-platform-owner-business',
+});
 
 function json(body, status = 200, headers = {}) {
   return { status, contentType: 'application/json', headers, body: JSON.stringify(body) };
@@ -37,6 +48,15 @@ async function installSafeApi(page) {
     const url = new URL(request.url());
     const pathname = url.pathname;
     const method = request.method();
+
+    if (pathname === '/api/auth/me') {
+      const currentPath = new URL(page.url()).pathname;
+      const labRoute = ['/office-team-lab', '/office-lab', '/new-command-lab'].includes(currentPath);
+      await route.fulfill(labRoute
+        ? json({ success: true, user: PLATFORM_OWNER, ...PLATFORM_OWNER })
+        : json({ success: false, user: null }, 401));
+      return;
+    }
 
     if (/\/accounting\/export\/pack/i.test(pathname)) {
       await route.fulfill({ status: 200, contentType: 'application/zip', body: 'CHURVOX-SAFE-TEST-EXPORT' });
@@ -90,7 +110,7 @@ function watchRuntime(page) {
   page.on('console', (message) => {
     if (message.type() !== 'error') return;
     const text = message.text();
-    if (/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|Failed to load resource.*404/i.test(text)) return;
+    if (/favicon|manifest|ResizeObserver|AbortError|net::ERR_ABORTED|Failed to load resource.*(?:401|404)/i.test(text)) return;
     errors.push(`console: ${text.slice(0, 700)}`);
   });
   page.on('response', (response) => {
@@ -382,6 +402,11 @@ test.describe('Full Churvox UI logic and button gauntlet', () => {
   test('API failures show truthful states without blank screens or stuck controls', async ({ page }, testInfo) => {
     await page.unroute('**/api/**');
     await page.route('**/api/**', async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname === '/api/auth/me') {
+        await route.fulfill(json({ success: true, user: PLATFORM_OWNER, ...PLATFORM_OWNER }));
+        return;
+      }
       await route.fulfill(json({ success: false, detail: 'Deliberate UI failure-state test' }, 503));
     });
 

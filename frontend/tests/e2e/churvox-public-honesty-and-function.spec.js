@@ -221,7 +221,7 @@ test.describe('Churvox public honesty and functionality', () => {
       await route.fulfill(json({ success: true, data: [] }));
     });
 
-    await openPublic(page, '/request');
+    await openPublic(page, '/request?owner=owner%40safe.test');
     await page.getByRole('button', { name: /Send request/i }).click();
     await expect(page.getByText(/Please add your name/i)).toBeVisible();
 
@@ -235,7 +235,8 @@ test.describe('Churvox public honesty and functionality', () => {
       customer_name: 'Public Test Person',
       customer_phone: '0210000000',
       service_needed: 'Example lawn tidy request',
-      source: 'Public request quote page',
+      owner_email: 'owner@safe.test',
+      source: 'public_customer_request',
     });
   });
 });

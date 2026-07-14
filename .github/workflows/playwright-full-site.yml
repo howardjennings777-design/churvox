@@ -1,3 +1,4 @@
+# clean-audit-marker: 2026-07-14g
 name: Churvox Playwright Full Site Test
 
 on:
@@ -12,11 +13,19 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: churvox-full-site-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   playwright:
-    name: Playwright public site and authenticated launch audit
+    name: Clean full UI, public site and authenticated launch audit
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
 
     defaults:
       run:
@@ -28,30 +37,82 @@ jobs:
       E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
 
     steps:
+      - name: Remove old Actions artifacts and dependency caches
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const removeInBatches = async (items, remove, label) => {
+              const batchSize = 20;
+              let removed = 0;
+              for (let start = 0; start < items.length; start += batchSize) {
+                const batch = items.slice(start, start + batchSize);
+                const results = await Promise.allSettled(batch.map(remove));
+                removed += results.filter((result) => result.status === 'fulfilled').length;
+                const failed = results.filter((result) => result.status === 'rejected');
+                if (failed.length) core.warning(`${failed.length} ${label} deletion(s) failed in a batch.`);
+              }
+              return removed;
+            };
+
+            const artifacts = await github.paginate(
+              github.rest.actions.listArtifactsForRepo,
+              { owner, repo, per_page: 100 }
+            );
+            const removedArtifacts = await removeInBatches(
+              artifacts,
+              (artifact) => github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id }),
+              'artifact'
+            );
+            core.info(`Deleted ${removedArtifacts} of ${artifacts.length} old workflow artifact(s).`);
+
+            try {
+              const caches = await github.paginate(
+                github.rest.actions.getActionsCacheList,
+                { owner, repo, per_page: 100 }
+              );
+              const removedCaches = await removeInBatches(
+                caches,
+                (cache) => github.rest.actions.deleteActionsCacheById({ owner, repo, cache_id: cache.id }),
+                'cache'
+              );
+              core.info(`Deleted ${removedCaches} of ${caches.length} old Actions cache(s).`);
+            } catch (error) {
+              core.warning(`Cache cleanup was unavailable: ${error.message}`);
+            }
+
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          clean: true
+          fetch-depth: 1
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install frontend dependencies
-        run: npm install --legacy-peer-deps
+      - name: Remove generated frontend files
+        run: |
+          rm -rf node_modules build playwright-report test-results .cache coverage
+          npm cache clean --force
 
-      - name: Build frontend
-        run: CI=false npm run build
+      - name: Install frontend dependencies from lockfile
+        run: npm ci --legacy-peer-deps
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      - name: Run complete local desktop and mobile UI suite
+        run: npm run test:ui:full
 
       - name: Wait briefly for live deploy to settle
         if: github.event_name == 'push'
         run: sleep 90
 
-      - name: Run public desktop and mobile site contracts
+      - name: Run live public desktop and mobile contracts
+        if: github.event_name != 'pull_request'
         run: |
           npx playwright test \
             tests/e2e/churvox-public-honesty-and-function.spec.js \
@@ -61,7 +122,7 @@ jobs:
             --reporter=line
 
       - name: Run authenticated desktop and mobile launch contracts
-        if: env.E2E_EMAIL != '' && env.E2E_PASSWORD != ''
+        if: github.event_name != 'pull_request' && env.E2E_EMAIL != '' && env.E2E_PASSWORD != ''
         run: |
           npx playwright test \
             tests/e2e/deep-launch-audit.spec.js \
@@ -71,25 +132,25 @@ jobs:
             --reporter=line
 
       - name: Report missing authenticated test credentials
-        if: env.E2E_EMAIL == '' || env.E2E_PASSWORD == ''
+        if: github.event_name != 'pull_request' && (env.E2E_EMAIL == '' || env.E2E_PASSWORD == '')
         run: |
           echo "Authenticated full-site coverage was not run because CHURVOX_E2E_EMAIL and CHURVOX_E2E_PASSWORD are not configured."
-          echo "Public desktop and mobile contracts still ran and must pass."
+          echo "The complete local UI suite and live public contracts still ran and must pass."
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ github.run_id }}
           path: frontend/playwright-report
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1
 
       - name: Upload Playwright test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-test-results
+          name: playwright-test-results-${{ github.run_id }}
           path: frontend/test-results
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1

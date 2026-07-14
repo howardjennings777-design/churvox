@@ -61,7 +61,7 @@ function Unavailable({ message }) {
           <small>Churvox invoice</small>
           <h1>Invoice unavailable</h1>
           <p>{message}</p>
-          <p><a href="mailto:hello@churvox.com?subject=Churvox%20invoice%20link">Contact Churvox support</a> if the business has confirmed this link should still work.</p>
+          <p><a href="mailto:hello@churvox.com?subject=Churvox%20invoice%20link" style={{ display: "inline-flex", alignItems: "center", minHeight: 28, padding: "2px 4px" }}>Contact Churvox support</a> if the business has confirmed this link should still work.</p>
         </section>
       </article>
     </main>
