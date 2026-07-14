@@ -43,7 +43,7 @@ function Unavailable({ message }) {
           <small>Churvox client portal</small>
           <h1>Client portal unavailable</h1>
           <p>{message}</p>
-          <p>Ask the business to resend the portal link, or <a href="mailto:hello@churvox.com?subject=Churvox%20client%20portal">contact Churvox support</a>.</p>
+          <p>Ask the business to resend the portal link, or <a href="mailto:hello@churvox.com?subject=Churvox%20client%20portal" style={{ display: "inline-flex", alignItems: "center", minHeight: 28, padding: "2px 4px" }}>contact Churvox support</a>.</p>
         </section>
       </article>
     </main>

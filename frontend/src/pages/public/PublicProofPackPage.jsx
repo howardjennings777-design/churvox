@@ -42,7 +42,7 @@ function Unavailable({ message }) {
         <small>Churvox proof pack</small>
         <h1>Proof pack unavailable</h1>
         <p>{message}</p>
-        <p>Ask the business to resend the proof link, or <a href="mailto:hello@churvox.com?subject=Churvox%20proof%20pack">contact Churvox support</a>.</p>
+        <p>Ask the business to resend the proof link, or <a href="mailto:hello@churvox.com?subject=Churvox%20proof%20pack" style={{ display: "inline-flex", alignItems: "center", minHeight: 28, padding: "2px 4px" }}>contact Churvox support</a>.</p>
       </section>
     </main>
   );
