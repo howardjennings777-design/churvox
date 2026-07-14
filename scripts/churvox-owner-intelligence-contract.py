@@ -165,6 +165,7 @@ def main() -> None:
     ]:
         require(component, label, "visible intelligence tool")
     require(component, "data-churvox-intelligence=\"v1\"", "intelligence workspace marker")
+    require(component, 'className="cvSiteScreen cvIntel"', "standard owner page position")
     require(api, "simulation_only: true", "frontend simulation-only flag")
     require(api, "owner_review_only: true", "frontend prepared-only owner flag")
     require(styles, ".cvIntelHero", "intelligence workspace styling")
