@@ -36,7 +36,7 @@ export default function OfficeTeamJobDoneScreen({ appMode = "lab", go = () => {}
     setFields(fieldsForJob(selected));
     setNotice("");
     setPrepared(false);
-  }, [selected?.id]);
+  }, [selected]);
 
   const readyCount = jobs.filter((job) => job.ready).length;
   const blockedCount = jobs.filter((job) => job.blockers.length > 0).length;
