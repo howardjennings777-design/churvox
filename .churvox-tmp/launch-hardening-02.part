@@ -1,0 +1,210 @@
+    def worker_matches(user: dict[str, Any], job: dict[str, Any]) -> bool:
+        if _role(user) in OWNER_ROLES or user.get("is_admin"):
+            return True
+        assigned = [_first(job, ("worker_id", "assigned_worker_id", "assigned_to", "workerId"), ""), _first(job, ("worker_email", "assigned_worker_email"), "")]
+        explicit = [str(value).strip().lower() for value in assigned if str(value or "").strip()]
+        if not explicit:
+            return False
+        identities = {
+            str(_first(user, ("_id", "id", "worker_id", "user_id"), "")).strip().lower(),
+            str(user.get("email") or "").strip().lower(),
+        }
+        return any(value in identities for value in explicit)
+
+    async def import_preview_payload(user: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+        kind = _slug(payload.get("kind"))
+        if kind not in IMPORT_TYPES:
+            raise HTTPException(status_code=400, detail="Choose clients, workers, jobs, recurring jobs, quotes or invoices")
+        source_rows = payload.get("rows") if isinstance(payload.get("rows"), list) else _parse_csv(_text(payload.get("csv_text"), "", 2_000_000))
+        if not source_rows:
+            raise HTTPException(status_code=400, detail="Paste CSV rows or provide a row list")
+        if len(source_rows) > 5000:
+            raise HTTPException(status_code=400, detail="Import batches are limited to 5,000 rows")
+        normalised = [normalise_import_row(kind, row if isinstance(row, dict) else {}, index + 2) for index, row in enumerate(source_rows)]
+        seen: set[str] = set()
+        for row in normalised:
+            if row["identity"] in seen:
+                row["duplicate"] = True
+                row["ready"] = False
+                row["errors"].append("Possible duplicate inside this file")
+            else:
+                row["duplicate"] = False
+                seen.add(row["identity"])
+        existing = set()
+        target = IMPORT_TYPES[kind]["collection"]
+        try:
+            cursor = db[target].find(_business_scope(user, ObjectId), {"launch_import_identity": 1})
+            existing = {str(item.get("launch_import_identity")) for item in await cursor.limit(10000).to_list(10000) if item.get("launch_import_identity")}
+        except Exception:
+            pass
+        for row in normalised:
+            if row["identity"] in existing:
+                row["duplicate"] = True
+                row["ready"] = False
+                row["errors"].append("This row appears to have been imported before")
+        preview_id = _hash(_business_id(user), kind, json.dumps(source_rows, sort_keys=True, default=str), _now().isoformat())
+        ready_count = sum(1 for row in normalised if row["ready"])
+        batch = {
+            "business_id": _business_id(user),
+            "preview_id": preview_id,
+            "kind": kind,
+            "target_collection": target,
+            "status": "preview",
+            "rows": normalised,
+            "row_count": len(normalised),
+            "ready_count": ready_count,
+            "needs_review_count": len(normalised) - ready_count,
+            "owner_approval_required": True,
+            "reversible": True,
+            "created_at": _now(),
+            "updated_at": _now(),
+        }
+        await db.launch_import_batches.update_one({"business_id": batch["business_id"], "preview_id": preview_id}, {"$set": batch}, upsert=True)
+        return _doc(batch, ObjectId)
+
+    async def undo_import(user: dict[str, Any], preview_id: str, receipt: bool = True) -> dict[str, Any]:
+        business_id = _business_id(user)
+        batch = await db.launch_import_batches.find_one({"business_id": business_id, "preview_id": preview_id})
+        if not batch:
+            raise HTTPException(status_code=404, detail="Import batch was not found")
+        target = _text(batch.get("target_collection"), "")
+        committed_at = _date(batch.get("committed_at"))
+        if not target or not committed_at:
+            raise HTTPException(status_code=409, detail="Only committed import batches can be undone")
+        query = {"business_id": business_id, "launch_import_batch_id": preview_id, "launch_import_owned": True}
+        records = await db[target].find(query).limit(6000).to_list(6000)
+        protected = [item for item in records if (_date(item.get("updated_at")) or committed_at) > committed_at]
+        removable = [item for item in records if item not in protected]
+        ids = [item.get("_id") for item in removable]
+        if ids:
+            await db[target].delete_many({"_id": {"$in": ids}})
+        await db.launch_import_batches.update_one({"_id": batch["_id"]}, {"$set": {"status": "undone", "undone_at": _now(), "removed_count": len(ids), "protected_count": len(protected), "updated_at": _now()}})
+        result = {"preview_id": preview_id, "removed_count": len(ids), "protected_count": len(protected), "status": "undone"}
+        if receipt:
+            await recovery_receipt(user, "import_undo", f"Undo {batch.get('kind')} import", _doc(batch, ObjectId), result, None, False)
+        return result
+
+    async def journey_summary(user: dict[str, Any], plan: str) -> dict[str, Any]:
+        jobs = await rows(user, JOB_COLLECTIONS, 500)
+        counts = {
+            "business": await count_rows(user, BUSINESS_COLLECTIONS),
+            "clients": await count_rows(user, CLIENT_COLLECTIONS),
+            "jobs": len(jobs),
+            "workers": await count_rows(user, ("workers", "team", "employees", "staff")),
+            "completed_jobs": sum(1 for item in jobs if any(word in _status(item) for word in ("complete", "done", "finished", "closed"))),
+            "truth_receipts": await count_rows(user, ("job_truth_receipts",)),
+            "invoices": await count_rows(user, INVOICE_COLLECTIONS),
+            "active_days": 0,
+        }
+        try:
+            activity = await db.launch_journey_events.find({"business_id": _business_id(user)}).sort("created_at", -1).limit(500).to_list(500)
+            counts["active_days"] = len({(_date(item.get("created_at")) or _now()).date().isoformat() for item in activity})
+        except Exception:
+            pass
+        steps = build_journey_steps(counts, plan)
+        complete = sum(1 for step in steps if step["complete"])
+        required = sum(1 for step in steps if step["required"])
+        return {"counts": counts, "steps": steps, "complete_count": complete, "required_count": required, "ready": all(step["complete"] for step in steps if step["required"])}
+
+    async def permissions_payload(user: dict[str, Any], plan: str) -> dict[str, Any]:
+        stored = []
+        try:
+            stored = await db.launch_permission_policies.find({"business_id": _business_id(user)}).sort("role", 1).limit(100).to_list(100)
+        except Exception:
+            pass
+        by_role = {_slug(item.get("role")): _doc(item, ObjectId) for item in stored}
+        policies = []
+        for preset in default_permissions():
+            role = preset["role"]
+            policies.append({**preset, **(by_role.get(role) or {}), "custom": bool(by_role.get(role))})
+        return {"plan": plan, "policies": policies, "custom_overrides_available": plan_meets(plan, "operator"), "team_role_management_available": plan_meets(plan, "crew")}
+
+    async def evidence_payload(user: dict[str, Any]) -> dict[str, Any]:
+        jobs = await rows(user, JOB_COLLECTIONS, 500)
+        invoices = await rows(user, INVOICE_COLLECTIONS, 500)
+        quotes = await rows(user, QUOTE_COLLECTIONS, 300)
+        receipts = await rows(user, ("job_truth_receipts",), 300)
+        promises = await rows(user, ("client_promises",), 500)
+        drafts = await rows(user, ("owner_intelligence_drafts",), 500)
+        findings: list[dict[str, Any]] = []
+        invoice_by_job = {}
+        for invoice in invoices:
+            jid = _text(_first(invoice, ("job_id", "jobId", "source_job_id", "linked_job_id"), ""), "")
+            if jid:
+                invoice_by_job.setdefault(jid, []).append(invoice)
+        for job in jobs:
+            job_id = _record_id(job)
+            if not job_id:
+                continue
+            amount = _number(_first(job, ("total", "price", "amount", "job_total"), 0))
+            completed = any(word in _status(job) for word in ("complete", "done", "finished", "closed"))
+            if completed and not invoice_by_job.get(job_id):
+                findings.append({"id": _hash("completed_not_invoiced", job_id), "kind": "completed_not_invoiced", "record_id": job_id, "record_collection": job.get("_collection"), "title": _title(job), "amount": amount, "reason": "Completed work has no linked invoice.", "calculation": "Job total with no invoice sharing the job id.", "assumptions": ["The job status accurately represents completed work."], "missing": ["invoice"]})
+        for quote in quotes:
+            if _status(quote) in {"sent", "viewed", "open", "pending"}:
+                findings.append({"id": _hash("open_quote", _record_id(quote)), "kind": "open_quote", "record_id": _record_id(quote), "record_collection": quote.get("_collection"), "title": _title(quote, "Open quote"), "amount": _number(_first(quote, ("total", "amount"), 0)), "reason": "Quote remains open.", "calculation": "Status is sent, viewed, open or pending.", "assumptions": ["No acceptance or decline was recorded elsewhere."], "missing": []})
+        return {"outcomes": build_evidence_outcomes(findings, drafts, invoices, receipts, promises), "findings": findings[:100]}
+
+    @router.get("/launch-hardening/marker")
+    async def marker():
+        return {"success": True, "build": LAUNCH_HARDENING_BUILD, "features": list(TRUST_FEATURES), "trust_not_paywalled": True, "owner_approval_required": True}
+
+    @router.get("/launch-hardening/summary")
+    async def summary(request: Request):
+        user = await require_owner(request)
+        plan = await business_plan(user)
+        imports = []
+        recovery = []
+        portals = []
+        try:
+            imports = [_doc(item, ObjectId) for item in await db.launch_import_batches.find({"business_id": _business_id(user)}, {"rows": 0}).sort("updated_at", -1).limit(20).to_list(20)]
+        except Exception:
+            pass
+        try:
+            recovery = [_doc(item, ObjectId) for item in await db.launch_recovery_receipts.find({"business_id": _business_id(user)}).sort("created_at", -1).limit(30).to_list(30)]
+        except Exception:
+            pass
+        try:
+            portals = [_doc(item, ObjectId) for item in await db.client_portals.find({"business_id": _business_id(user)}).sort("updated_at", -1).limit(30).to_list(30)]
+        except Exception:
+            pass
+        portability_counts = {}
+        for name in PORTABILITY_COLLECTIONS:
+            try:
+                count = await db[name].count_documents(_business_scope(user, ObjectId))
+                if count:
+                    portability_counts[name] = count
+            except Exception:
+                continue
+        return {
+            "success": True,
+            "build": LAUNCH_HARDENING_BUILD,
+            "plan": plan,
+            "features": feature_catalog(plan),
+            "journey": await journey_summary(user, plan),
+            "permissions": await permissions_payload(user, plan),
+            "security": {
+                "role": _role(user),
+                "server_enforced_permissions": True,
+                "business_scoped_requests": True,
+                "deny_sensitive_actions_by_default": True,
+                "backup_status": "not_confirmed",
+                "backup_message": "Churvox does not claim a successful backup until the hosting backup can be verified.",
+                "data_export_available": True,
+            },
+            "imports": imports,
+            "recovery": recovery,
+            "portals": portals,
+            "portability": {"collection_counts": portability_counts, "record_count": sum(portability_counts.values()), "download_ready": True},
+            "evidence": await evidence_payload(user),
+            "safety": SAFE_RESULT,
+        }
+
+    @router.post("/launch-hardening/imports/preview")
+    async def import_preview(request: Request):
+        user = await require_owner(request)
+        return {"success": True, "preview": await import_preview_payload(user, await request.json()), "safety": SAFE_RESULT}
+
+    @router.post("/launch-hardening/imports/commit")
+    async def import_commit(request: Request):
+        user = await require_owner(request)
