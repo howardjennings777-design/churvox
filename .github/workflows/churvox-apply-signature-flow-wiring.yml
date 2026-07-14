@@ -1,0 +1,167 @@
+name: Apply Job Done and Money Radar wiring
+
+on:
+  push:
+    branches:
+      - agent/job-done-money-radar
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/job-done-money-radar
+          fetch-depth: 1
+
+      - name: Wire signature workflows
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected text not found in {path}: {old[:160]!r}")
+              file.write_text(text.replace(old, new, count))
+
+          site = "frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx"
+          replace(
+              site,
+              'import OfficeTeamTodayScreen from "./OfficeTeamTodayScreen";\n',
+              'import OfficeTeamTodayScreen from "./OfficeTeamTodayScreen";\nimport OfficeTeamJobDoneScreen from "./OfficeTeamJobDoneScreen";\n'
+          )
+          replace(
+              site,
+              '  ["today", "Today"], ["command", "Command"], ["work", "Work"], ["schedule", "Schedule"], ["clients", "Clients"],\n',
+              '  ["today", "Today"], ["command", "Command"], ["work", "Work"], ["jobdone", "Job Done"], ["schedule", "Schedule"], ["clients", "Clients"],\n'
+          )
+          replace(
+              site,
+              '  jobs: "work", job: "work", work: "work", recurring: "work",\n',
+              '  jobs: "work", job: "work", work: "work", recurring: "work", jobdone: "jobdone", "job-done": "jobdone", closeout: "jobdone", closeouts: "jobdone",\n'
+          )
+          replace(
+              site,
+              '  if (screen === "work") return <WorkScreen appMode={appMode} />;\n',
+              '  if (screen === "work") return <WorkScreen {...props} />;\n  if (screen === "jobdone") return <OfficeTeamJobDoneScreen {...props} />;\n'
+          )
+          replace(
+              site,
+              '  if (screen === "money") return <MoneyScreen appMode={appMode} />;\n',
+              '  if (screen === "money") return <MoneyScreen {...props} />;\n'
+          )
+
+          operational = "frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx"
+          replace(
+              operational,
+              'import OfficeTeamJobsWorkspace from "./OfficeTeamJobsWorkspace";\n',
+              'import OfficeTeamJobsWorkspace from "./OfficeTeamJobsWorkspace";\nimport OfficeTeamMoneyRadar from "./OfficeTeamMoneyRadar";\n'
+          )
+          replace(
+              operational,
+              'export function MoneyScreen(props) {\n  return <OperationalScreen area="money" eyebrow="Money" title="Invoices, quotes and payment follow-up" text="Prepare invoice/payment work and keep it safe. Command gets the owner decision before anything sends, syncs or charges." rows={moneyRows} primary="Prepare money item" secondary="Review export" {...props} />;\n}\n',
+              'export function MoneyScreen(props) {\n  return <OfficeTeamMoneyRadar {...props} />;\n}\n'
+          )
+
+          nav = "frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx"
+          replace(
+              nav,
+              '  ["work", "Jobs"],\n  ["clients", "Clients"],\n',
+              '  ["work", "Jobs"],\n  ["jobdone", "Job Done"],\n  ["clients", "Clients"],\n'
+          )
+          replace(
+              nav,
+              '  ["messages", "Messages"],\n  ["payroll", "Payroll"],\n',
+              '  ["messages", "Messages"],\n  ["money", "Money Radar"],\n  ["payroll", "Payroll"],\n'
+          )
+
+          access = "frontend/src/churvox-office-lab/OfficeTeamAccess.js"
+          replace(
+              access,
+              '  work: "jobs",\n  schedule: "planday",\n',
+              '  work: "jobs",\n  jobdone: "jobs",\n  schedule: "planday",\n'
+          )
+          replace(
+              access,
+              '  recurring: "work",\n  calendar: "schedule",\n',
+              '  recurring: "work",\n  jobdone: "jobdone",\n  "job-done": "jobdone",\n  closeout: "jobdone",\n  closeouts: "jobdone",\n  calendar: "schedule",\n'
+          )
+
+          today = "frontend/src/churvox-office-lab/OfficeTeamTodayScreen.jsx"
+          replace(
+              today,
+              'const labShortcuts = ["command", "work", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];\nconst ownerShortcuts = ["command", "work", "clients", "worker", "quotes", "invoices"];\n',
+              'const labShortcuts = ["command", "work", "jobdone", "schedule", "messages", "worker", "quotes", "invoices", "money", "clients", "staff", "payroll", "automation", "branding", "plans", "integrations", "readiness"];\nconst ownerShortcuts = ["command", "work", "jobdone", "money", "clients", "worker", "quotes", "invoices"];\n'
+          )
+          replace(
+              today,
+              '  work: "Jobs",\n  schedule: "Schedule",\n',
+              '  work: "Jobs",\n  jobdone: "Job Done",\n  schedule: "Schedule",\n'
+          )
+          replace(today, '  money: "Money",\n', '  money: "Money Radar",\n')
+
+          jobs = "frontend/src/churvox-office-lab/OfficeTeamJobsWorkspace.jsx"
+          replace(
+              jobs,
+              'export default function OfficeTeamJobsWorkspace({ appMode = "lab" }) {\n',
+              'export default function OfficeTeamJobsWorkspace({ appMode = "lab", go = () => {} }) {\n'
+          )
+          replace(
+              jobs,
+              '              <OfficeTeamSafeControls area="work" record={current} primary="Prepare job change" secondary="Review job details" command="Open owner decision" />\n',
+              '              <OfficeTeamSafeControls area="work" record={current} primary="Prepare job change" secondary="Review job details" command="Open owner decision" />\n              {jobLane(current) === "done" ? <button type="button" className="cvJobDoneLaunch" onClick={() => go("jobdone")}>Open Job Done closeout</button> : null}\n'
+          )
+
+          css = Path("frontend/src/churvox-office-lab/OfficeTeamSignatureFlows.css")
+          css_text = css.read_text()
+          if ".cvJobDoneLaunch" not in css_text:
+              css.write_text(css_text + '\n.cvJobDoneLaunch {\n  width: 100%;\n  min-height: 48px;\n  border: 1px solid rgba(243, 107, 33, .35);\n  border-radius: 15px;\n  background: #fff6ec;\n  color: #8a3a08;\n  font-size: 13px;\n  font-weight: 1000;\n  cursor: pointer;\n}\n')
+
+          full_ui = "frontend/tests/e2e/churvox-full-ui-logic-buttons.spec.js"
+          replace(
+              full_ui,
+              "  'today', 'command', 'work', 'schedule', 'clients', 'messages', 'worker', 'quotes', 'invoices', 'money',\n",
+              "  'today', 'command', 'work', 'jobdone', 'schedule', 'clients', 'messages', 'worker', 'quotes', 'invoices', 'money',\n",
+              2
+          )
+          replace(
+              full_ui,
+              "    for (const screen of ['work', 'clients', 'messages', 'integrations', 'settings']) {\n",
+              "    for (const screen of ['work', 'jobdone', 'money', 'clients', 'messages', 'integrations', 'settings']) {\n"
+          )
+
+          package = "frontend/package.json"
+          replace(
+              package,
+              'tests/e2e/churvox-public-honesty-and-function.spec.js tests/e2e/churvox-owner-no-fake-data.spec.js',
+              'tests/e2e/churvox-public-honesty-and-function.spec.js tests/e2e/churvox-job-done-money-radar.spec.js tests/e2e/churvox-owner-no-fake-data.spec.js',
+              3
+          )
+          PY
+
+          rm -f .github/workflows/churvox-apply-signature-flow-wiring.yml
+
+      - name: Commit feature wiring
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
+                  frontend/src/churvox-office-lab/OfficeTeamOperationalScreens.jsx \
+                  frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx \
+                  frontend/src/churvox-office-lab/OfficeTeamAccess.js \
+                  frontend/src/churvox-office-lab/OfficeTeamTodayScreen.jsx \
+                  frontend/src/churvox-office-lab/OfficeTeamJobsWorkspace.jsx \
+                  frontend/src/churvox-office-lab/OfficeTeamSignatureFlows.css \
+                  frontend/tests/e2e/churvox-full-ui-logic-buttons.spec.js \
+                  frontend/package.json \
+                  .github/workflows/churvox-apply-signature-flow-wiring.yml
+          git commit -m "Wire Job Done and Money Radar into Churvox"
+          git push origin HEAD:agent/job-done-money-radar
