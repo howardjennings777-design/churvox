@@ -110,6 +110,7 @@ const workerRuntimeImports = [
 // overlay runtimes here, because they can show stale tester/visitor panels.
 const hqRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
+  () => import('./runtime/churvoxHqTesterOutreachRuntime'),
 ];
 
 function runImports(imports) {
