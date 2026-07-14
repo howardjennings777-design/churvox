@@ -32,6 +32,10 @@ function isHqPath() {
   return ['/admin', '/churvox-hq', '/admin/hq', '/owner/dashboard', '/platform-dashboard', '/app-owner', '/admin/usage', '/admin/qa-auditor', '/platform'].includes(path);
 }
 
+function setText(node, value) {
+  if (node && node.textContent !== value) node.textContent = value;
+}
+
 function installStyle() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
@@ -147,14 +151,14 @@ function syncDeskLoadButton() {
   const complete = loadIsComplete(engine);
 
   if (complete) {
-    button.textContent = 'All 10 drafts loaded';
+    setText(button, 'All 10 drafts loaded');
     button.disabled = true;
     button.title = 'All prepared drafts are visible below';
   } else if (busy) {
-    button.textContent = engineText || 'Loading all 10 drafts…';
+    setText(button, engineText || 'Loading all 10 drafts…');
     button.disabled = true;
   } else {
-    button.textContent = 'Load all 10 drafts';
+    setText(button, 'Load all 10 drafts');
     button.disabled = !engine;
     button.title = engine ? 'Load all prepared NZ and international emails here' : 'Preparing the outreach loader';
   }
@@ -168,13 +172,20 @@ function moveBulkSendIntoGuide() {
   if (!actions || !send) return;
   if (send.parentElement !== actions) actions.appendChild(send);
   const count = preparedDraftCount();
-  if (!send.disabled && count) send.textContent = `Approve & send all (${count})`;
+  if (!send.disabled && count) setText(send, `Approve & send all (${count})`);
 }
 
 function keepOutreachOpen() {
   const root = outreachRoot();
   if (root?.classList.contains('open')) return;
   document.getElementById(OUTREACH_BUTTON_ID)?.click();
+}
+
+function clearOutreachSearch() {
+  const input = outreachRoot()?.querySelector('[data-query]');
+  if (!input || !input.value) return;
+  input.value = '';
+  input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 function stopLoadMonitor() {
@@ -192,6 +203,7 @@ function startLoadFromDesk(event) {
   const engine = loadEngine();
   if (!engine || loadMonitor || loadIsComplete(engine)) return;
 
+  clearOutreachSearch();
   document.body?.classList.add('churvoxSinglePlaceImporting');
   engine.hidden = true;
   engine.disabled = false;
@@ -200,6 +212,7 @@ function startLoadFromDesk(event) {
   loadMonitor = window.setInterval(() => {
     hideOldControls();
     keepOutreachOpen();
+    clearOutreachSearch();
     syncAll();
     const text = String(engine.textContent || '');
     if (/all 10 drafts loaded/i.test(text) || preparedRows().length === PREPARED_EMAILS.length) stopLoadMonitor();
@@ -212,12 +225,9 @@ function startLoadFromDesk(event) {
 
 function updateDeskCopy(root) {
   const head = root?.querySelector('.htoHead');
-  const small = head?.querySelector('small');
-  const title = head?.querySelector('h2');
-  const copy = head?.querySelector('p');
-  if (small) small.textContent = 'One owner outreach desk · email only';
-  if (title) title.textContent = 'Tester outreach';
-  if (copy) copy.textContent = 'Load, review, approve and send from this one screen. Churvox keeps every draft and reply together.';
+  setText(head?.querySelector('small'), 'One owner outreach desk · email only');
+  setText(head?.querySelector('h2'), 'Tester outreach');
+  setText(head?.querySelector('p'), 'Load, review, approve and send from this one screen. Churvox keeps every draft and reply together.');
 }
 
 function syncAll() {
