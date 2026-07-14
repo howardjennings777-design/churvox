@@ -1,0 +1,42 @@
+name: Apply Paid Account Boundary Fix
+
+on:
+  push:
+    branches:
+      - feature/job-done-money-radar
+    paths:
+      - .github/workflows/apply-paid-account-boundary-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/job-done-money-radar
+          fetch-depth: 0
+
+      - name: Apply account boundary fixes
+        run: python scripts/churvox-paid-account-boundary-fix.py
+
+      - name: Validate source contracts
+        run: |
+          python -m py_compile scripts/churvox-paid-account-boundary-fix.py
+          grep -q 'confirmSession: true' frontend/src/pages/auth/LoginPage.js
+          grep -q 'allowOfflineFallback: false' frontend/src/pages/auth/LoginPage.js
+          grep -q 'hasExplicitLogoutLock' frontend/src/context/AuthContext.js
+          grep -q 'Manage billing' frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx
+          grep -q 'performVisibleLogout' frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx
+
+      - name: Commit product fixes and remove temporary patch files
+        run: |
+          git config user.name "Churvox Reality Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/apply-paid-account-boundary-fix.yml
+          git rm scripts/churvox-paid-account-boundary-fix.py
+          git add frontend/src/context/AuthContext.js frontend/src/pages/auth/LoginPage.js frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx frontend/src/churvox-office-lab/OfficeTeamPlansScreen.jsx
+          git commit -m "Harden billing login and logout boundaries"
+          git push origin feature/job-done-money-radar
