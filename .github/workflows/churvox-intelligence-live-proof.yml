@@ -6,16 +6,19 @@ on:
       - agent/churvox-intelligence-live-proof
 
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
 jobs:
   prove:
+    if: ${{ !contains(github.event.head_commit.message || '', '[live-proof-result]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-intelligence-live-proof
 
       - name: Prove deployed Intelligence frontend and backend
         id: proof
@@ -75,7 +78,7 @@ jobs:
                       url = urllib.parse.urljoin(site, src)
                       status, javascript, _ = read(url)
                       checked.append({'url': url, 'status': status, 'bytes': len(javascript)})
-                      if build in javascript or 'Money Left Behind' in javascript and 'What Happens If?' in javascript:
+                      if build in javascript or ('Money Left Behind' in javascript and 'What Happens If?' in javascript):
                           found = True
                   result['frontend_build_found'] = found
                   result['frontend_scripts_checked'] = checked
@@ -96,6 +99,18 @@ jobs:
           print(json.dumps(result, indent=2, sort_keys=True))
           raise SystemExit(0 if result['success'] else 1)
           PY
+
+      - name: Persist live proof result on proof branch
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p audit-results
+          cp /tmp/churvox-intelligence-live-proof.txt audit-results/churvox-intelligence-live-proof-latest.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audit-results/churvox-intelligence-live-proof-latest.txt
+          git commit -m "Save Intelligence live proof [live-proof-result]" || true
+          git push origin HEAD:agent/churvox-intelligence-live-proof
 
       - name: Post live result on merged release PR
         if: always()
