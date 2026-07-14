@@ -116,6 +116,7 @@ def main() -> None:
 
     api = read("frontend/src/churvox-office-lab/OfficeTeamJobDoneApi.js")
     component = read("frontend/src/churvox-office-lab/OfficeTeamJobDone.js")
+    site = read("frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx")
     for endpoint in [
         "/api/job-done/closeouts?limit=120",
         "/api/job-done/money-radar",
@@ -126,6 +127,10 @@ def main() -> None:
     require(component, "fetchJobDoneCloseouts", "persisted closeout reader")
     require(component, "prepareJobDoneCloseout(selected.id", "ID-based closeout preparation")
     require(component, "Money Radar · {state.source}", "Money Radar source disclosure")
+    require(component, "Preview review opened. Proof, time and extras remain editable", "preview review outcome")
+    require(component, "Preview Job Done closeout prepared. Nothing was sent, synced, charged or changed.", "preview closeout outcome")
+    require(site, 'WorkScreen appMode={appMode} go={props.go}', "Jobs Command navigation prop")
+    require(site, 'MoneyScreen appMode={appMode} go={props.go}', "Money Radar Command navigation prop")
     forbid(component, 'useOfficeTeamRows("work"', "display-row closeout inference")
     forbid(component, "findRelated", "title-based record joining")
 
@@ -146,12 +151,14 @@ def main() -> None:
         ".github/workflows/job-done-product-hardening.yml",
         ".github/workflows/repair-job-done-hardening-workflow.yml",
         ".github/workflows/apply-job-done-product-hardening.yml",
+        ".github/workflows/apply-job-done-button-outcomes-fix.yml",
         "scripts/churvox-job-done-product-hardening.py",
+        "scripts/churvox-job-done-button-outcomes-fix.py",
     ]:
         if (ROOT / temporary_path).exists():
             raise AssertionError(f"Temporary Job Done patch file was not removed: {temporary_path}")
 
-    print("Job Done reality contract passed: persistence, explicit IDs, stale-data protection, proof gating, idempotency, safety and owner control are wired.")
+    print("Job Done reality contract passed: persistence, explicit IDs, stale-data protection, proof gating, idempotency, safety, owner control and button outcomes are wired.")
 
 
 if __name__ == "__main__":
