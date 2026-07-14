@@ -2,21 +2,21 @@ const fs = require('fs');
 const root = fs.readFileSync('Procfile', 'utf8');
 const backend = fs.readFileSync('backend/Procfile', 'utf8');
 const docker = fs.readFileSync('Dockerfile', 'utf8');
-const guardedBoot = fs.readFileSync('backend/churvox_boot.py', 'utf8');
-const outreachBoot = fs.readFileSync('backend/churvox_outreach_boot.py', 'utf8');
+const wrapper = fs.readFileSync('backend/server/__init__.py', 'utf8');
+const hqGuard = fs.readFileSync('backend/churvox_hq_hello_only_guard_patch.py', 'utf8');
 
-const target = 'churvox_outreach_boot:app';
 const checks = [
-  ['root Procfile uses final Outreach boot', root.includes(`uvicorn ${target}`)],
-  ['backend Procfile uses final Outreach boot', backend.includes(`uvicorn ${target}`)],
+  ['root Procfile uses production server wrapper', root.includes('uvicorn server:app')],
+  ['backend Procfile uses production server wrapper', backend.includes('uvicorn server:app')],
   ['backend Procfile keeps lifespan enabled', !backend.includes('--lifespan off')],
-  ['Docker CMD uses final Outreach boot', docker.includes('"churvox_outreach_boot:app"')],
-  ['entrypoint still wraps guarded boot', outreachBoot.includes('import churvox_boot as guarded_boot')],
-  ['Outreach desk is force-installed last', outreachBoot.includes('_force_install(outreach_patch, target)')],
-  ['Outreach importer is force-installed last', outreachBoot.includes('_force_install(import_patch, target)')],
-  ['Outreach live status route exists', outreachBoot.includes('/api/tester-outreach/boot')],
-  ['guarded boot still force-installs final Command routes', guardedBoot.includes('fast_patch.install(target, force=True)')],
-  ['legacy server is not a direct entrypoint', !root.includes('uvicorn server:app') && !backend.includes('uvicorn server:app') && !docker.includes('"server:app"')],
+  ['Docker CMD uses production server wrapper', docker.includes('"server:app"')],
+  ['wrapper documents the Render server entrypoint', wrapper.includes('Render starts with: uvicorn server:app')],
+  ['wrapper loads the guaranteed HQ guard patch', wrapper.includes("'churvox_hq_hello_only_guard_patch' || wrapper.includes(\"\\\"churvox_hq_hello_only_guard_patch\\\"\")")],
+  ['HQ guard mounts the Outreach desk patch', hqGuard.includes('churvox_tester_outreach_desk_patch')],
+  ['HQ guard mounts the Outreach importer patch', hqGuard.includes('churvox_tester_outreach_import_patch')],
+  ['HQ guard exposes the Outreach boot marker', hqGuard.includes('/api/tester-outreach/boot')],
+  ['HQ guard verifies the Outreach GET route', hqGuard.includes('/api/admin/owner/tester-outreach')],
+  ['HQ guard carries the live wrapper version', hqGuard.includes('churvox-outreach-live-wrapper-20260715b')],
 ];
 
 let failed = false;
