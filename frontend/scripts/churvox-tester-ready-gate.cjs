@@ -15,6 +15,7 @@ const env = {
   PLAYWRIGHT_API_BASE: process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com',
   CHURVOX_E2E_MUTATE: '0',
   CHURVOX_E2E_SIGNUP: '0',
+  CHURVOX_REQUIRE_AUTH_AUDIT: '1',
 };
 
 function log(line = '') {
@@ -43,9 +44,32 @@ function testStep(name, files, project = 'desktop-chromium') {
   return [name, 'npx', ['playwright', 'test', ...files, `--project=${project}`, '--workers=1', '--reporter=line']];
 }
 
+function assertCredentials() {
+  const required = [
+    'CHURVOX_OWNER_EMAIL',
+    'CHURVOX_OWNER_PASSWORD',
+    'CHURVOX_WORKER_EMAIL',
+    'CHURVOX_WORKER_PASSWORD',
+  ];
+  const missing = required.filter((name) => !String(env[name] || '').trim());
+  if (missing.length) {
+    log('===== AUTHENTICATED TEST CREDENTIALS FAILED =====');
+    log(`Missing: ${missing.join(', ')}`);
+    log('Tester-ready proof cannot pass with skipped owner or worker checks.');
+    log(`Saved report: ${reportPath}`);
+    process.exit(1);
+  }
+  log('Authenticated owner and worker credentials are present and remain private.');
+}
+
 (async () => {
+  assertCredentials();
+
   const steps = [
     ['Production build', 'npm', ['run', 'build']],
+    testStep('Authenticated full launch desktop', ['tests/e2e/churvox-big-launch-audit.spec.js']),
+    testStep('Authenticated full launch mobile', ['tests/e2e/churvox-big-launch-audit.spec.js'], 'mobile-chromium'),
+    testStep('Live read-only owner and worker operations', ['tests/e2e/churvox-live-owner-worker-readonly.spec.js']),
     testStep('Public signup, tester link and support routes', ['tests/e2e/churvox-paid-launch-full-audit.spec.js']),
     testStep('Rebuilt HQ tester controls', ['tests/e2e/churvox-paid-launch-hq-reality.spec.js']),
     testStep('Tier and navigation contract', ['tests/e2e/churvox-sidebar-tier-contract.spec.js']),
