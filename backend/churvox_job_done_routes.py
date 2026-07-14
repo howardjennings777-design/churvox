@@ -8,6 +8,8 @@ from fastapi import APIRouter, HTTPException, Request
 
 SAFE_RESULT = "Prepared for owner approval. Nothing was sent, synced, charged, filed or paid."
 OPEN_COMMAND_STATUSES = ["open", "edited", "pending", "ready", "waiting", "snoozed"]
+JOB_DONE_REALITY_BUILD = "job-done-reality-v2-20260714"
+JOB_DONE_ROUTE_GUARD = "startup-mount-confirmed-v1"
 JOB_COLLECTIONS = ["jobs", "job_records", "appointments", "bookings"]
 INVOICE_COLLECTIONS = ["invoices", "invoice_records"]
 TIME_COLLECTIONS = ["time_entries", "timers", "worker_time_entries", "timesheets"]
@@ -15,6 +17,21 @@ TIME_COLLECTIONS = ["time_entries", "timers", "worker_time_entries", "timesheets
 
 def build_job_done_router(db, get_current_user, ObjectId):
     router = APIRouter()
+
+    @router.get("/job-done/marker")
+    async def job_done_marker():
+        return {
+            "success": True,
+            "build": JOB_DONE_REALITY_BUILD,
+            "route_guard": JOB_DONE_ROUTE_GUARD,
+            "persisted_closeouts": True,
+            "owner_approval_required": True,
+            "no_auto_send": True,
+            "no_auto_sync": True,
+            "no_auto_charge": True,
+            "no_auto_file_tax": True,
+            "no_auto_pay": True,
+        }
 
     def now():
         return datetime.now(timezone.utc)
