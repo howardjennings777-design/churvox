@@ -5,6 +5,7 @@ import "./OfficeTeamMoreMenuPaidLaunch.css";
 
 const primary = [
   ["today", "Today"],
+  ["intelligence", "Intelligence"],
   ["command", "Command"],
   ["work", "Jobs"],
   ["clients", "Clients"],

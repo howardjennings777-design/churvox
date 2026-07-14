@@ -160,8 +160,8 @@ def main() -> None:
     ]:
         require(component, label, "visible intelligence tool")
     require(component, "data-churvox-intelligence=\"v1\"", "intelligence workspace marker")
-    require(component, "simulation_only: true", "frontend simulation-only flag")
-    require(component, "owner_review_only: true", "frontend prepared-only owner flag")
+    require(api, "simulation_only: true", "frontend simulation-only flag")
+    require(api, "owner_review_only: true", "frontend prepared-only owner flag")
     require(styles, ".cvIntelHero", "intelligence workspace styling")
 
     require(site, 'import OfficeTeamIntelligence from "./OfficeTeamIntelligence";', "owner workspace import")
@@ -194,7 +194,7 @@ def main() -> None:
     require(spec, "owner_review_only", "browser owner approval assertion")
     require(spec, "no_records_changed", "browser simulation assertion")
 
-    build_workflow = read(".github/workflows/build-check.yml")
+    build_workflow = read(".github/workflows/churvox-build-check.yml")
     paid_workflow = read(".github/workflows/churvox-paid-launch-gate.yml")
     require(build_workflow, "churvox-owner-intelligence-contract.py", "Build Check intelligence contract")
     require(paid_workflow, "backend.test_churvox_owner_intelligence", "Paid Launch intelligence behaviour test")

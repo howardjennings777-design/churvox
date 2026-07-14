@@ -2,6 +2,7 @@ import { accessForPage, currentPlanForUser } from "../churvox-fresh/planRules";
 
 export const OWNER_SCREEN_FEATURE = Object.freeze({
   today: "planday",
+  intelligence: "intelligence",
   command: "command",
   work: "jobs",
   schedule: "planday",
@@ -32,6 +33,9 @@ const OWNER_SCREEN_ALIASES = Object.freeze({
   home: "today",
   hub: "today",
   "smart-hub": "today",
+  intelligence: "intelligence",
+  insights: "intelligence",
+  brain: "intelligence",
   cockpit: "command",
   command: "command",
   "command-board": "command",
