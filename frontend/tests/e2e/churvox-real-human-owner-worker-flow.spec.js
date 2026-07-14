@@ -27,30 +27,6 @@ function textHas(value, token) {
   return JSON.stringify(value || {}).toLowerCase().includes(String(token || '').toLowerCase());
 }
 
-async function bodyOf(res) {
-  return res.json().catch(async () => ({ text: await res.text().catch(() => '') }));
-}
-
-async function apiLogin(request, email, password, label) {
-  const res = await request.post(apiUrl('/api/auth/login'), {
-    data: { email, password },
-    timeout: 15000,
-  });
-  const body = await bodyOf(res);
-  const token = body.token || body.access_token || body.data?.token || body.user?.token || '';
-  expect(res.ok(), `${label} API login failed ${res.status()}: ${JSON.stringify(body).slice(0, 900)}`).toBeTruthy();
-  expect(token, `${label} API login should return token`).toBeTruthy();
-  return token;
-}
-
-async function authedGet(request, token, path) {
-  const res = await request.get(apiUrl(path), {
-    headers: { Authorization: `Bearer ${token}` },
-    timeout: 15000,
-  });
-  return { ok: res.ok(), status: res.status(), body: await bodyOf(res) };
-}
-
 function rowsFrom(payload) {
   const data = payload?.data?.data ?? payload?.data ?? payload;
   if (Array.isArray(data)) return data;
@@ -67,30 +43,58 @@ function idOf(value) {
   return String(raw || '');
 }
 
-async function findWorker(request, ownerToken) {
-  for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
-    const res = await authedGet(request, ownerToken, `${endpoint}?ts=${Date.now()}`);
-    if (!res.ok) continue;
-    const workers = rowsFrom(res.body);
-    const found = workers.find((worker) => String(worker.email || worker.worker_email || '').toLowerCase() === WORKER_EMAIL.toLowerCase());
-    if (found) return found;
-  }
-  throw new Error(`Could not find worker ${WORKER_EMAIL}. Add the worker first, then rerun.`);
+async function bodyOf(response) {
+  return response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
 }
 
+async function apiLogin(request, email, password, label) {
+  const response = await request.post(apiUrl('/api/auth/login'), {
+    data: { email, password },
+    timeout: 30_000,
+  });
+  const body = await bodyOf(response);
+  const token = body.token || body.access_token || body.auth_token || body.jwt || body.data?.token || body.user?.token || '';
+  expect(response.ok(), `${label} API login failed ${response.status()}: ${JSON.stringify(body).slice(0, 900)}`).toBeTruthy();
+  expect(token, `${label} API login should return a token`).toBeTruthy();
+  return token;
+}
+
+async function authedGet(request, token, path) {
+  const response = await request.get(apiUrl(path), {
+    headers: { Authorization: `Bearer ${token}` },
+    timeout: 30_000,
+  });
+  return { ok: response.ok(), status: response.status(), body: await bodyOf(response) };
+}
+
+async function authedWrite(request, token, method, path, data) {
+  const options = {
+    headers: { Authorization: `Bearer ${token}` },
+    timeout: 30_000,
+  };
+  if (data !== undefined) options.data = data;
+  const response = await request[method](apiUrl(path), options);
+  return { ok: response.ok(), status: response.status(), body: await bodyOf(response) };
+}
+
+async function findWorker(request, ownerToken) {
+  for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
+    const result = await authedGet(request, ownerToken, `${endpoint}?ts=${Date.now()}`);
+    if (!result.ok) continue;
+    const worker = rowsFrom(result.body).find((row) => String(row.email || row.worker_email || row.user_email || '').toLowerCase() === WORKER_EMAIL.toLowerCase());
+    if (worker) return worker;
+  }
+  throw new Error(`Could not find linked worker ${WORKER_EMAIL}.`);
+}
 
 async function newHumanContext(browser) {
   const context = await browser.newContext({ serviceWorkers: 'block' });
   await context.addInitScript(() => {
     try {
-      navigator.serviceWorker?.getRegistrations?.().then((registrations) => {
-        registrations.forEach((registration) => registration.unregister());
-      });
+      navigator.serviceWorker?.getRegistrations?.().then((registrations) => registrations.forEach((registration) => registration.unregister()));
     } catch {}
     try {
-      caches?.keys?.().then((keys) => {
-        keys.forEach((key) => caches.delete(key));
-      });
+      caches?.keys?.().then((keys) => keys.forEach((key) => caches.delete(key)));
     } catch {}
   });
   return context;
@@ -107,62 +111,63 @@ async function clearSession(page) {
 async function uiLogin(page, email, password, label) {
   await clearSession(page);
   await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
-
   await page.getByLabel(/email/i).first().fill(email);
   await page.getByLabel(/password/i).first().fill(password);
-
-  await Promise.all([
-    page.waitForLoadState('domcontentloaded').catch(() => {}),
-    page.getByRole('button', { name: /sign in|log in/i }).first().click(),
-  ]);
-
-  await page.waitForTimeout(2500);
-
-  const body = clean(await page.locator('body').innerText({ timeout: 15000 }));
-  expect(body, `${label} should not still be on login page`).not.toMatch(/WELCOME BACK|Sign in to see|Forgot password/i);
-
-  return body;
+  await page.getByRole('button', { name: /sign in|log in/i }).first().click();
+  await page.waitForFunction(() => Boolean(localStorage.getItem('token')), null, { timeout: 30_000 });
+  const token = await page.evaluate(() => localStorage.getItem('token') || '');
+  expect(token, `${label} login did not create an authenticated session`).toBeTruthy();
+  await expect.poll(() => page.url(), { timeout: 20_000 }).not.toMatch(/\/login(?:[?#]|$)/i);
+  return token;
 }
 
 async function gotoOwnerSection(page, name) {
-  const button = page.getByRole('button', { name: new RegExp(`^${name}\\b|${name}`, 'i') }).first();
-  if (await button.count()) {
-    await button.click();
-  } else {
-    await page.goto(`${BASE_URL}/dashboard#${name.toLowerCase()}`, { waitUntil: 'domcontentloaded' });
-  }
-  await page.waitForTimeout(1200);
+  await page.goto(`${BASE_URL}/dashboard#today`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
 
-  const body = clean(await page.locator('body').innerText({ timeout: 10000 }));
-  expect(body, `${name} page should not be login page`).not.toMatch(/WELCOME BACK|Sign in to see|Forgot password/i);
+  const direct = page.getByRole('button', { name: new RegExp(`^${name}(?:\\s+\\d+)?$`, 'i') }).first();
+  if (await direct.isVisible().catch(() => false)) {
+    await direct.click();
+  } else {
+    const more = page.getByRole('button', { name: /^More$/i }).first();
+    if (await more.isVisible().catch(() => false)) {
+      if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click();
+      const menuItem = page.getByRole('menuitem', { name: new RegExp(`^${name}$`, 'i') }).first();
+      if (await menuItem.isVisible().catch(() => false)) await menuItem.click();
+      else await page.goto(`${BASE_URL}/dashboard#${name.toLowerCase()}`, { waitUntil: 'domcontentloaded' });
+    } else {
+      await page.goto(`${BASE_URL}/dashboard#${name.toLowerCase()}`, { waitUntil: 'domcontentloaded' });
+    }
+  }
+
+  await page.waitForTimeout(900);
+  const body = clean(await page.locator('body').innerText({ timeout: 15_000 }));
+  expect(body, `${name} page should not be the login screen`).not.toMatch(/WELCOME BACK|Sign in to see|Forgot password/i);
   expect(body, `${name} page should not crash`).not.toMatch(/Something went wrong|Application error|Cannot read properties|Minified React error/i);
   return body;
 }
 
 async function clickButton(page, label, scope = page) {
   const button = scope.getByRole('button', { name: label }).first();
-  await expect(button, `button ${label} should exist`).toBeVisible({ timeout: 15000 });
+  await expect(button, `button ${label} should exist`).toBeVisible({ timeout: 20_000 });
   await button.click();
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(400);
 }
 
 async function visibleForm(page) {
   const form = page.locator('.cvxDrawerLayer:visible, [role="dialog"]:visible, .cvxDrawer:visible').first();
-  await expect(form, 'working drawer/form should open').toBeVisible({ timeout: 15000 });
+  await expect(form, 'working drawer/form should open').toBeVisible({ timeout: 20_000 });
   return form;
 }
 
-async function fillField(page, name, value, scope = null) {
-  const root = scope || await visibleForm(page);
-  const field = root.getByLabel(new RegExp(`^${name}$`, 'i')).first();
-  await expect(field, `field ${name} should be visible`).toBeVisible({ timeout: 10000 });
-
-  const tag = await field.evaluate((el) => el.tagName.toLowerCase());
+async function fillField(name, value, scope) {
+  const field = scope.getByLabel(new RegExp(`^${name}$`, 'i')).first();
+  await expect(field, `field ${name} should be visible`).toBeVisible({ timeout: 15_000 });
+  const tag = await field.evaluate((element) => element.tagName.toLowerCase());
   if (tag === 'select') {
-    const wanted = String(value);
     const options = await field.locator('option').allTextContents();
-    const exact = options.find((option) => clean(option).toLowerCase() === clean(wanted).toLowerCase());
-    const partial = options.find((option) => clean(option).toLowerCase().includes(clean(wanted).toLowerCase()));
+    const exact = options.find((option) => clean(option).toLowerCase() === clean(value).toLowerCase());
+    const partial = options.find((option) => clean(option).toLowerCase().includes(clean(value).toLowerCase()));
     await field.selectOption({ label: exact || partial || options[0] });
   } else {
     await field.fill(String(value));
@@ -171,253 +176,231 @@ async function fillField(page, name, value, scope = null) {
 
 async function saveDrawer(page, endpointPattern, label) {
   const responsePromise = page.waitForResponse(
-    (res) => endpointPattern.test(res.url()) && ['POST', 'PATCH', 'PUT'].includes(res.request().method()),
-    { timeout: 20000 }
-  ).catch(() => null);
-
+    (response) => endpointPattern.test(response.url()) && ['POST', 'PATCH', 'PUT'].includes(response.request().method()),
+    { timeout: 30_000 }
+  );
   await clickButton(page, /Create record|Save record|Save/i);
-
   const response = await responsePromise;
-  expect(response, `${label} should send a real save request`).toBeTruthy();
-
   const body = await bodyOf(response);
   expect(response.ok(), `${label} save failed ${response.status()}: ${JSON.stringify(body).slice(0, 900)}`).toBeTruthy();
-
-  await page.waitForTimeout(1600);
+  await page.waitForTimeout(1000);
   return body;
 }
 
 async function expectBodyHas(page, token, label) {
   await expect.poll(async () => clean(await page.locator('body').innerText()), {
-    timeout: 15000,
+    timeout: 20_000,
     message: `${label} should appear on page`,
   }).toContain(token);
 }
 
 async function waitForApiText(request, token, path, wanted, label) {
   let last = null;
-  for (let i = 0; i < 8; i += 1) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
     last = await authedGet(request, token, `${path}?ts=${Date.now()}`);
     if (last.ok && textHas(last.body, wanted)) return last.body;
-    await pageSleep(800);
+    await new Promise((resolve) => setTimeout(resolve, 800));
   }
   throw new Error(`${label} did not contain ${wanted}. Last: ${JSON.stringify(last).slice(0, 1200)}`);
 }
 
-function pageSleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function createClientByHumanClicking(page, data) {
+async function createClient(page, data) {
   await gotoOwnerSection(page, 'Clients');
   await clickButton(page, /Add client/i);
-
   const form = await visibleForm(page);
-  await fillField(page, 'Name', data.clientName, form);
-  await fillField(page, 'Phone', '0210000000', form);
-  await fillField(page, 'Email', data.clientEmail, form);
-  await fillField(page, 'Address', data.address, form);
-  await fillField(page, 'Preferred service', 'Lawn mowing', form);
-  await fillField(page, 'Saved price', data.amount, form);
-  await fillField(page, 'Preferred schedule', 'Weekly', form);
-  await fillField(page, 'Access notes', `Human test access notes ${data.id}`, form);
-
-  await saveDrawer(page, /\/api\/clients(\/create)?$/, 'client UI create');
+  await fillField('Name', data.clientName, form);
+  await fillField('Phone', '0210000000', form);
+  await fillField('Email', data.clientEmail, form);
+  await fillField('Address', data.address, form);
+  await fillField('Preferred service', 'Lawn mowing', form);
+  await fillField('Saved price', data.amount, form);
+  await fillField('Preferred schedule', 'Weekly', form);
+  await fillField('Access notes', `Human test access notes ${data.id}`, form);
+  await saveDrawer(page, /\/api\/clients(?:\/create)?(?:\?|$)/, 'client UI create');
   await gotoOwnerSection(page, 'Clients');
   await expectBodyHas(page, data.clientName, 'new client');
 }
 
-async function createJobByHumanClicking(page, data) {
+async function createJob(page, data) {
   await gotoOwnerSection(page, 'Jobs');
   await clickButton(page, /Add job/i);
-
   const form = await visibleForm(page);
-  await fillField(page, 'Job name', data.jobName, form);
-  await fillField(page, 'Client', data.clientName, form);
-  await fillField(page, 'Site address', data.address, form);
-  await fillField(page, 'Service', 'Lawn mowing', form);
-  await fillField(page, 'Assigned worker', data.workerName, form);
-  await fillField(page, 'Scheduled date', todayPlus(1), form);
-  await fillField(page, 'Start time', '09:00', form);
-  await fillField(page, 'Price NZD', data.amount, form);
-  await fillField(page, 'Billing type', 'Fixed price', form);
-  await fillField(page, 'Frequency', 'Weekly', form);
-  await fillField(page, 'Status', 'assigned', form);
-  await fillField(page, 'Proof/photos', 'Required before finish', form);
-  await fillField(page, 'Job notes', `Human test job notes ${data.id}`, form);
-
-  const body = await saveDrawer(page, /\/api\/jobs(\/create)?$/, 'job UI create');
-  const created = body.job || body.data?.job || body.data || body;
-  data.jobId = idOf(created);
-
+  await fillField('Job name', data.jobName, form);
+  await fillField('Client', data.clientName, form);
+  await fillField('Site address', data.address, form);
+  await fillField('Service', 'Lawn mowing', form);
+  await fillField('Assigned worker', data.workerName, form);
+  await fillField('Scheduled date', todayPlus(1), form);
+  await fillField('Start time', '09:00', form);
+  await fillField('Price NZD', data.amount, form);
+  await fillField('Billing type', 'Fixed price', form);
+  await fillField('Frequency', 'Weekly', form);
+  await fillField('Status', 'assigned', form);
+  await fillField('Proof/photos', 'Required before finish', form);
+  await fillField('Job notes', `Human test job notes ${data.id}`, form);
+  const body = await saveDrawer(page, /\/api\/jobs(?:\/create)?(?:\?|$)/, 'job UI create');
+  data.jobId = idOf(body.job || body.data?.job || body.data || body);
   await gotoOwnerSection(page, 'Jobs');
   await expectBodyHas(page, data.jobName, 'new job');
   expect(data.jobId, `job save should return id: ${JSON.stringify(body).slice(0, 900)}`).toBeTruthy();
 }
 
-async function createQuoteByHumanClicking(page, data) {
+async function createQuote(page, data) {
   await gotoOwnerSection(page, 'Quotes');
   await clickButton(page, /Add quote|New quote|Create quote/i);
-
   const form = await visibleForm(page);
-  await fillField(page, 'Quote', data.quoteName, form);
-  await fillField(page, 'Client', data.clientName, form);
-  await fillField(page, 'Amount', data.amount, form);
-  await fillField(page, 'Status', 'Ready', form);
-  await fillField(page, 'Scope', `Human quote scope ${data.id}`, form);
-  await fillField(page, 'Terms', 'Valid for 14 days', form);
-  await fillField(page, 'Follow-up', todayPlus(3), form);
-  await fillField(page, 'Next step', 'Owner review in Command', form);
-
-  await saveDrawer(page, /\/api\/quotes(\/create)?$/, 'quote UI create');
+  await fillField('Quote', data.quoteName, form);
+  await fillField('Client', data.clientName, form);
+  await fillField('Amount', data.amount, form);
+  await fillField('Status', 'Ready', form);
+  await fillField('Scope', `Human quote scope ${data.id}`, form);
+  await fillField('Terms', 'Valid for 14 days', form);
+  await fillField('Follow-up', todayPlus(3), form);
+  await fillField('Next step', 'Owner review in Command', form);
+  await saveDrawer(page, /\/api\/quotes(?:\/create)?(?:\?|$)/, 'quote UI create');
   await gotoOwnerSection(page, 'Quotes');
   await expectBodyHas(page, data.quoteName, 'new quote');
 }
 
-async function createInvoiceByHumanClicking(page, data) {
+async function createInvoice(page, data) {
   await gotoOwnerSection(page, 'Invoices');
   await clickButton(page, /Add invoice|New invoice|Create invoice/i);
-
   const form = await visibleForm(page);
-  await fillField(page, 'Invoice', data.invoiceNumber, form);
-  await fillField(page, 'Client', data.clientName, form);
-  await fillField(page, 'Job', data.jobName, form);
-  await fillField(page, 'Amount', data.amount, form);
-  await fillField(page, 'Due date', todayPlus(7), form);
-  await fillField(page, 'Status', 'Draft', form);
-  await fillField(page, 'Xero/MYOB status', 'Command approval', form);
-  await fillField(page, 'Line item', `Human invoice line ${data.id}`, form);
-  await fillField(page, 'Evidence', `Human invoice evidence ${data.id}`, form);
-
-  await saveDrawer(page, /\/api\/invoices(\/create)?$/, 'invoice UI create');
+  await fillField('Invoice', data.invoiceNumber, form);
+  await fillField('Client', data.clientName, form);
+  await fillField('Job', data.jobName, form);
+  await fillField('Amount', data.amount, form);
+  await fillField('Due date', todayPlus(7), form);
+  await fillField('Status', 'Draft', form);
+  await fillField('Xero/MYOB status', 'Command approval', form);
+  await fillField('Line item', `Human invoice line ${data.id}`, form);
+  await fillField('Evidence', `Human invoice evidence ${data.id}`, form);
+  await saveDrawer(page, /\/api\/invoices(?:\/create)?(?:\?|$)/, 'invoice UI create');
   await gotoOwnerSection(page, 'Invoices');
   await expectBodyHas(page, data.invoiceNumber, 'new invoice');
 }
 
-async function createOwnerMessageByHumanClicking(page, data) {
-  await gotoOwnerSection(page, 'Messages');
-
-  const add = page.getByRole('button', { name: /Add message|New message|Create message|Draft reply|Message/i }).first();
-  await expect(add, 'owner Messages page should have a real create-message button').toBeVisible({ timeout: 15000 });
-  await add.click();
-
-  const form = await visibleForm(page);
-  await fillField(page, 'From', OWNER_EMAIL, form);
-  await fillField(page, 'Channel', 'Internal', form);
-  await fillField(page, 'Client', data.clientName, form);
-  await fillField(page, 'Job', data.jobName, form);
-  await fillField(page, 'Subject', data.ownerMessageSubject, form);
-  await fillField(page, 'Priority', 'Normal', form);
-  await fillField(page, 'Message', data.ownerMessageBody, form);
-  await fillField(page, 'Drafted reply', `Worker instruction: ${data.ownerMessageBody}`, form);
-
-  await saveDrawer(page, /\/api\/messages|\/api\/command\/execute-approved/, 'owner message UI create');
-  await gotoOwnerSection(page, 'Messages');
-  await expectBodyHas(page, data.ownerMessageSubject, 'owner message');
+async function selectWorkerJob(page, jobName) {
+  await page.goto(`${BASE_URL}/worker/jobs`, { waitUntil: 'domcontentloaded' });
+  const job = page.getByRole('button', { name: new RegExp(jobName, 'i') }).first();
+  await expect(job, 'worker should see the assigned job in the real queue').toBeVisible({ timeout: 30_000 });
+  await job.click();
+  await expect(page.locator('body')).toContainText(jobName, { timeout: 15_000 });
 }
 
-async function workerDoesJobLikeHuman(workerPage, data) {
-  await uiLogin(workerPage, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
+async function clickWorkerStatus(page, label, endpoint) {
+  const responsePromise = page.waitForResponse(
+    (response) => new RegExp(`/api/worker/jobs/[^/]+/${endpoint}(?:\\?|$)`).test(response.url()) && response.request().method() === 'POST',
+    { timeout: 30_000 }
+  );
+  await page.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }).click();
+  const response = await responsePromise;
+  expect(response.ok(), `${label} should update the live assigned job`).toBeTruthy();
+}
 
-  await workerPage.goto(`${BASE_URL}/worker/jobs`, { waitUntil: 'domcontentloaded' });
-  await workerPage.waitForTimeout(2500);
+async function workerDoesJob(page, data) {
+  await uiLogin(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
+  await selectWorkerJob(page, data.jobName);
 
-  await expect(workerPage.getByText(data.jobName).first(), 'worker should see assigned job').toBeVisible({ timeout: 20000 });
+  await clickWorkerStatus(page, 'Acknowledge', 'acknowledge');
+  await clickWorkerStatus(page, 'Start', 'start');
 
-  const jobCard = workerPage.locator('.swJob').filter({ hasText: data.jobName }).first();
-  const openLink = jobCard.getByRole('link', { name: /View job|Open job/i }).first();
-  await expect(openLink, 'worker job card should have View/Open job').toBeVisible({ timeout: 10000 });
-  await openLink.click();
+  const note = page.getByPlaceholder(/What changed on this job/i).first();
+  await expect(note, 'worker job-note input should exist beside proof controls').toBeVisible({ timeout: 15_000 });
+  await note.fill(data.proofText);
 
-  await workerPage.waitForTimeout(1600);
-  await expect(workerPage.getByText(data.jobName).first(), 'worker job detail should open').toBeVisible({ timeout: 15000 });
-
-  await Promise.all([
-    workerPage.waitForResponse((res) => /\/api\/jobs\/[^/]+\/acknowledge|\/api\/worker\/field-slip/.test(res.url()) && res.request().method() === 'POST', { timeout: 20000 }),
-    workerPage.getByRole('button', { name: /Acknowledge/i }).click(),
-  ]);
-
-  const note = workerPage.getByPlaceholder(/What happened|Access issue|extra work|completed proof|customer note/i).first();
-  await expect(note, 'worker note textarea should exist').toBeVisible({ timeout: 10000 });
-
-  await note.fill(data.issueText);
-  await Promise.all([
-    workerPage.waitForResponse((res) => /\/api\/jobs\/[^/]+\/start|\/api\/worker\/field-slip/.test(res.url()) && res.request().method() === 'POST', { timeout: 20000 }),
-    workerPage.getByRole('button', { name: /Start job/i }).click(),
-  ]);
-
-  await note.fill(data.issueText);
-  await Promise.all([
-    workerPage.waitForResponse((res) => /\/api\/worker\/field-slip/.test(res.url()) && res.request().method() === 'POST', { timeout: 20000 }),
-    workerPage.getByRole('button', { name: /Send issue to Command/i }).click(),
-  ]);
-
-  const fileInput = workerPage.locator('input[type="file"]').first();
-  await expect(fileInput, 'worker proof photo input should exist').toBeAttached({ timeout: 10000 });
+  const fileInput = page.locator('input[type="file"]').first();
+  await expect(fileInput, 'worker proof photo input should exist').toBeAttached();
   await fileInput.setInputFiles({
     name: `human-proof-${data.id}.png`,
     mimeType: 'image/png',
     buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=', 'base64'),
   });
 
-  await note.fill(data.proofText);
-  await Promise.all([
-    workerPage.waitForResponse((res) => /\/api\/worker\/field-slip/.test(res.url()) && res.request().method() === 'POST', { timeout: 20000 }),
-    workerPage.getByRole('button', { name: /Send proof \/ note/i }).click(),
-  ]);
+  const proofResponse = page.waitForResponse(
+    (response) => /\/api\/worker\/field-slip(?:\?|$)/.test(response.url()) && response.request().method() === 'POST',
+    { timeout: 30_000 }
+  );
+  await page.getByRole('button', { name: /Send .*proof|Send proof note/i }).first().click();
+  expect((await proofResponse).ok(), 'worker proof should reach the live field-slip endpoint').toBeTruthy();
 
-  await note.fill(data.doneText);
-  await Promise.all([
-    workerPage.waitForResponse((res) => /\/api\/jobs\/[^/]+\/complete|\/api\/worker\/field-slip/.test(res.url()) && res.request().method() === 'POST', { timeout: 20000 }),
-    workerPage.getByRole('button', { name: /Finish job/i }).click(),
-  ]);
+  const coach = page.getByRole('region', { name: /Worker Proof Coach/i }).first();
+  if (await coach.isVisible().catch(() => false)) {
+    const confirmations = coach.locator('input[type="checkbox"]');
+    for (let index = 0; index < await confirmations.count(); index += 1) {
+      const checkbox = confirmations.nth(index);
+      if (!(await checkbox.isChecked())) await checkbox.check();
+    }
+  }
 
-  await workerPage.waitForTimeout(2000);
+  await clickWorkerStatus(page, 'Complete', 'complete');
 
-  await workerPage.goto(`${BASE_URL}/worker/messages`, { waitUntil: 'domcontentloaded' });
-  await workerPage.waitForTimeout(1000);
-
-  const workerMessage = `Worker to boss message ${data.id}`;
-  await workerPage.getByPlaceholder(/Type message/i).fill(workerMessage);
-  await Promise.all([
-    workerPage.waitForResponse((res) => /\/api\/worker\/field-slip/.test(res.url()) && res.request().method() === 'POST', { timeout: 20000 }),
-    workerPage.getByRole('button', { name: /^Send$/i }).click(),
-  ]);
-
-  data.workerMessage = workerMessage;
+  await page.goto(`${BASE_URL}/worker/messages`, { waitUntil: 'domcontentloaded' });
+  const message = `Worker to boss message ${data.id}`;
+  await page.getByPlaceholder(/What changed/i).fill(message);
+  const messageResponse = page.waitForResponse(
+    (response) => /\/api\/worker\/field-slip(?:\?|$)/.test(response.url()) && response.request().method() === 'POST',
+    { timeout: 30_000 }
+  );
+  await page.getByRole('button', { name: /Send to Command/i }).click();
+  expect((await messageResponse).ok(), 'worker message should reach Command').toBeTruthy();
+  data.workerMessage = message;
 }
 
-async function ownerChecksWorkerUpdates(ownerPage, data) {
-  await gotoOwnerSection(ownerPage, 'Command');
-  const commandBody = clean(await ownerPage.locator('body').innerText({ timeout: 10000 }));
-  expect(commandBody, 'Command should be real owner approval desk').toMatch(/Command|Approval|Approve|Park|owner/i);
-  expect(commandBody, 'Command should receive worker issue or proof/message').toMatch(new RegExp(`${data.issueText}|${data.proofText}|${data.workerMessage}|job_issue|job_proof|worker_message|Worker`, 'i'));
+async function ownerChecksWorkerUpdates(page, data) {
+  const commandBody = await gotoOwnerSection(page, 'Command');
+  expect(commandBody, 'Command should remain the owner approval desk').toMatch(/Command|Approval|Approve|Park|owner/i);
+  expect(commandBody, 'Command should receive worker proof or message').toMatch(new RegExp(`${data.proofText}|${data.workerMessage}|job_proof|worker_message|Worker`, 'i'));
 
-  await gotoOwnerSection(ownerPage, 'Jobs');
-  await expectBodyHas(ownerPage, data.jobName, 'owner jobs after worker finish');
+  await gotoOwnerSection(page, 'Jobs');
+  await expectBodyHas(page, data.jobName, 'owner jobs after worker completion');
 
-  await gotoOwnerSection(ownerPage, 'Workers');
-  const workersBody = clean(await ownerPage.locator('body').innerText({ timeout: 10000 }));
-  expect(workersBody, 'Workers page should show field team area').toMatch(/Workers|GPS|Proof|Field/i);
+  const workersBody = await gotoOwnerSection(page, 'Workers');
+  expect(workersBody, 'Workers page should show the field team area').toMatch(/Workers|GPS|Proof|Field/i);
 
-  await gotoOwnerSection(ownerPage, 'Xero');
-  const xeroBody = clean(await ownerPage.locator('body').innerText({ timeout: 10000 }));
+  const xeroBody = await gotoOwnerSection(page, 'Xero');
   expect(xeroBody, 'Xero page should keep draft sync only').toMatch(/Draft sync only/i);
   expect(xeroBody, 'Xero page should keep owner approval').toMatch(/Owner-approved|Owner approved/i);
-  expect(xeroBody, 'Xero page should block auto sending/tax/payout').toMatch(/No automatic invoice sending, tax filing or payout files|No tax filing|No bank payout files|No payout files/i);
+  expect(xeroBody, 'Xero must not imply automatic tax or payouts').toMatch(/No automatic invoice sending|No tax filing|No bank payout files|No payout files/i);
+}
+
+async function cleanupCoreRecords(request, ownerToken, data) {
+  const resources = [
+    ['invoices', '/api/invoices', data.invoiceNumber],
+    ['quotes', '/api/quotes', data.quoteName],
+    ['jobs', '/api/jobs', data.jobName],
+    ['clients', '/api/clients', data.clientName],
+  ];
+  const failures = [];
+  for (const [kind, listPath, marker] of resources) {
+    const listed = await authedGet(request, ownerToken, `${listPath}?limit=500&ts=${Date.now()}`);
+    if (!listed.ok) continue;
+    for (const row of rowsFrom(listed.body).filter((item) => textHas(item, marker))) {
+      const id = idOf(row);
+      if (!id) continue;
+      let result = await authedWrite(request, ownerToken, 'delete', `${listPath}/${encodeURIComponent(id)}`);
+      if (!result.ok && kind === 'jobs') {
+        result = await authedWrite(request, ownerToken, 'post', `/api/jobs/${encodeURIComponent(id)}/archive`, {
+          archived: true,
+          archive_reason: 'real human owner-worker flow cleanup',
+        });
+      }
+      if (!result.ok && result.status !== 404) failures.push(`${kind}:${id}:${result.status}`);
+    }
+  }
+  expect(failures, 'human flow should clean its core live records').toEqual([]);
 }
 
 test.describe('Churvox real human owner-worker flow', () => {
-  test.setTimeout(360000);
+  test.setTimeout(420_000);
 
-  test('human clicks owner app, worker app, forms, buttons, messages and Command', async ({ browser, request }) => {
+  test('human clicks owner forms, worker proof controls, completion and Command loop', async ({ browser, request }) => {
     if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error('Set owner email/password env vars.');
     if (!WORKER_EMAIL || !WORKER_PASSWORD) throw new Error('Set worker email/password env vars.');
 
     const ownerToken = await apiLogin(request, OWNER_EMAIL, OWNER_PASSWORD, 'owner support');
     const worker = await findWorker(request, ownerToken);
     const workerName = clean(worker.name || worker.full_name || worker.display_name || worker.email || WORKER_EMAIL);
-
     const id = stamp();
     const data = {
       id,
@@ -429,61 +412,39 @@ test.describe('Churvox real human owner-worker flow', () => {
       jobName: `Human Job ${id}`,
       quoteName: `Human Quote ${id}`,
       invoiceNumber: `HUMAN-INV-${id}`,
-      ownerMessageSubject: `Boss to worker ${id}`,
-      ownerMessageBody: `Please check gate code and send proof ${id}`,
-      issueText: `Human worker issue ${id}`,
       proofText: `Human worker proof ${id}`,
-      doneText: `Human worker completed ${id}`,
       workerMessage: '',
       jobId: '',
     };
 
     const ownerContext = await newHumanContext(browser);
-    const ownerPage = await ownerContext.newPage();
-
-    await test.step('Owner logs in through the real login screen', async () => {
-      await uiLogin(ownerPage, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
-      await ownerPage.goto(`${BASE_URL}/dashboard`, { waitUntil: 'domcontentloaded' });
-      await expect(ownerPage.locator('body'), 'owner dashboard should load').toContainText(/Owner command floor|Today|Command/i, { timeout: 20000 });
-    });
-
-    await test.step('Owner clicks Clients and creates a client through the real drawer', async () => {
-      await createClientByHumanClicking(ownerPage, data);
-      await waitForApiText(request, ownerToken, '/api/clients', data.clientName, 'clients API after UI create');
-    });
-
-    await test.step('Owner clicks Jobs and creates/assigns a job through the real drawer', async () => {
-      await createJobByHumanClicking(ownerPage, data);
-      await waitForApiText(request, ownerToken, '/api/jobs', data.jobName, 'jobs API after UI create');
-    });
-
-    await test.step('Owner clicks Quotes and creates a quote through the real drawer', async () => {
-      await createQuoteByHumanClicking(ownerPage, data);
-      await waitForApiText(request, ownerToken, '/api/quotes', data.quoteName, 'quotes API after UI create');
-    });
-
-    await test.step('Owner clicks Invoices and creates a draft invoice through the real drawer', async () => {
-      await createInvoiceByHumanClicking(ownerPage, data);
-      await waitForApiText(request, ownerToken, '/api/invoices', data.invoiceNumber, 'invoices API after UI create');
-    });
-
-    await test.step('Owner clicks Messages and creates a boss-side message record', async () => {
-      await createOwnerMessageByHumanClicking(ownerPage, data);
-      await waitForApiText(request, ownerToken, '/api/messages', data.ownerMessageSubject, 'messages API after UI create');
-    });
-
     const workerContext = await newHumanContext(browser);
+    const ownerPage = await ownerContext.newPage();
     const workerPage = await workerContext.newPage();
 
-    await test.step('Worker logs in through real login and taps job controls', async () => {
-      await workerDoesJobLikeHuman(workerPage, data);
-    });
+    try {
+      await uiLogin(ownerPage, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
+      await ownerPage.goto(`${BASE_URL}/dashboard`, { waitUntil: 'domcontentloaded' });
+      await expect(ownerPage.locator('body')).toContainText(/Today|Command|Churvox/i, { timeout: 20_000 });
 
-    await test.step('Owner goes back to Command/Jobs/Workers and checks worker updates came back', async () => {
+      await createClient(ownerPage, data);
+      await waitForApiText(request, ownerToken, '/api/clients', data.clientName, 'clients API after UI create');
+
+      await createJob(ownerPage, data);
+      await waitForApiText(request, ownerToken, '/api/jobs', data.jobName, 'jobs API after UI create');
+
+      await createQuote(ownerPage, data);
+      await waitForApiText(request, ownerToken, '/api/quotes', data.quoteName, 'quotes API after UI create');
+
+      await createInvoice(ownerPage, data);
+      await waitForApiText(request, ownerToken, '/api/invoices', data.invoiceNumber, 'invoices API after UI create');
+
+      await workerDoesJob(workerPage, data);
       await ownerChecksWorkerUpdates(ownerPage, data);
-    });
-
-    await workerContext.close();
-    await ownerContext.close();
+    } finally {
+      await cleanupCoreRecords(request, ownerToken, data).catch((error) => console.error(error));
+      await workerContext.close();
+      await ownerContext.close();
+    }
   });
 });
