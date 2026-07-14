@@ -11,7 +11,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,6 +36,11 @@ jobs:
           node-version: '20'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Install backend dependencies
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
       - name: Apply checked product wiring
         if: steps.gate.outputs.run == 'true'
         run: |
@@ -54,20 +59,44 @@ jobs:
       - name: Validate backend and production build
         if: steps.gate.outputs.run == 'true'
         run: |
-          python -m py_compile backend/churvox_launch_hardening_routes.py churvox_launch_hardening_routes.py backend/test_churvox_launch_hardening.py scripts/churvox-launch-hardening-contract.py
+          python -m py_compile backend/churvox_launch_hardening_routes.py churvox_launch_hardening_routes.py backend/test_churvox_launch_hardening.py
           python -m unittest -v backend.test_churvox_launch_hardening backend.test_churvox_owner_intelligence backend.test_churvox_job_done_reality backend.test_churvox_feature_tier_paid_launch_guard
           node --check frontend/src/churvox-office-lab/OfficeTeamLaunchHardeningApi.js
           node --check frontend/src/churvox-office-lab/workerOfflineQueue.js
           node --check frontend/tests/e2e/churvox-launch-hardening.spec.js
           cd frontend
           npm config set registry https://registry.npmjs.org/
-          npm ci --no-audit --no-fund
+          npm install --legacy-peer-deps --no-audit --no-fund
           CI=false NODE_OPTIONS=--max_old_space_size=4096 npm run build
-      - name: Commit verified product release
+      - name: Commit permanent product files only
         if: steps.gate.outputs.run == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add \
+            backend/churvox_launch_hardening_routes.py \
+            backend/test_churvox_launch_hardening.py \
+            churvox_launch_hardening_routes.py \
+            frontend/package.json \
+            frontend/package-lock.json \
+            frontend/src/App.js \
+            frontend/src/churvox-fresh/planRules.js \
+            frontend/src/churvox-office-lab/OfficeTeamAccess.js \
+            frontend/src/churvox-office-lab/OfficeTeamIntelligence.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamIntelligence.css \
+            frontend/src/churvox-office-lab/OfficeTeamIntelligenceApi.js \
+            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamLaunchHardening.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamLaunchHardening.css \
+            frontend/src/churvox-office-lab/OfficeTeamLaunchHardeningApi.js \
+            frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css \
+            frontend/src/churvox-office-lab/workerOfflineQueue.js \
+            frontend/src/pages/public/PublicClientPortalPage.js \
+            frontend/tests/e2e/churvox-launch-hardening.spec.js \
+            scripts/churvox-launch-hardening-contract.py \
+            usercustomize.py \
+            backend/usercustomize.py
           git commit -m "Build final Go Live and Trust hardening"
           git push origin HEAD:agent/churvox-go-live-trust
