@@ -18,7 +18,7 @@ import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 
-const CHURVOX_DEPLOY_BUILD = 'churvox-hq-load-drafts-visible-v1-20260715';
+const CHURVOX_DEPLOY_BUILD = 'churvox-hq-one-place-outreach-v1-20260715';
 if (typeof window !== 'undefined') window.__CHURVOX_DEPLOY_BUILD__ = CHURVOX_DEPLOY_BUILD;
 
 function preconnectBackend() {
@@ -114,6 +114,7 @@ const hqRuntimeImports = [
   () => import('./runtime/churvoxHqAssistantDraftImportRuntime'),
   () => import('./runtime/churvoxHqOneClickDraftImportRuntime'),
   () => import('./runtime/churvoxHqLoadDraftsVisibilityRuntime'),
+  () => import('./runtime/churvoxHqSinglePlaceOutreachRuntime'),
 ];
 
 function runImports(imports) {
