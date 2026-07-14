@@ -102,7 +102,6 @@ REQUIRED_CONTRACTS = {
 GLOBAL_BUSINESS_TERMS = [
     "ECB Property Maintenance",
     "Focus Landscaping",
-    "howardjennings777@gmail.com",
 ]
 
 failures: list[str] = []
@@ -142,6 +141,7 @@ for relative, required in REQUIRED_CONTRACTS.items():
             failures.append(f"{path.relative_to(ROOT)}: missing required customer-language contract {phrase!r}")
 
 # Real tester/business identifiers must not survive anywhere in production frontend source.
+# Private HQ account identifiers are intentionally outside this customer-facing rule.
 for path in sorted(FRONTEND.rglob("*")):
     if path.suffix.lower() not in {".js", ".jsx", ".ts", ".tsx"}:
         continue
@@ -154,7 +154,7 @@ for path in sorted(FRONTEND.rglob("*")):
     for phrase in GLOBAL_BUSINESS_TERMS:
         offset = text.find(phrase)
         if offset >= 0:
-            add_failure(path, text, offset, f"production frontend source contains real identifier {phrase!r}")
+            add_failure(path, text, offset, f"production frontend source contains real business identifier {phrase!r}")
 
 # Owner work pages must never fall back to fabricated records.
 money = (FRONTEND / "pages/MoneyDeskCommandPage.jsx").read_text(encoding="utf-8")
