@@ -1,0 +1,52 @@
+name: Publish Validated Go Live Trust Files
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-go-live-trust
+          fetch-depth: 0
+      - name: Check whether staging remains
+        id: gate
+        shell: bash
+        run: |
+          if [ -f .churvox-tmp/apply-00.part ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: '3.11'
+      - name: Apply already-validated product wiring
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          cat .churvox-tmp/apply-00.part \
+              .churvox-tmp/apply-01.part \
+              .churvox-tmp/apply-02.part \
+              .churvox-tmp/apply-03.part \
+              .churvox-tmp/apply-04.part \
+              .churvox-tmp/apply-05a.part \
+              .churvox-tmp/apply-05b.part \
+              .churvox-tmp/apply-05c.part \
+              .churvox-tmp/apply-06.part \
+              .churvox-tmp/apply-07.part > /tmp/apply-go-live-trust.py
+          python /tmp/apply-go-live-trust.py
+          python -m py_compile backend/churvox_launch_hardening_routes.py churvox_launch_hardening_routes.py backend/test_churvox_launch_hardening.py scripts/churvox-launch-hardening-contract.py
+          python -m unittest -v backend.test_churvox_launch_hardening backend.test_churvox_owner_intelligence backend.test_churvox_job_done_reality backend.test_churvox_feature_tier_paid_launch_guard
+      - name: Commit validated product files
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build final Go Live and Trust hardening"
+          git push origin HEAD:agent/churvox-go-live-trust

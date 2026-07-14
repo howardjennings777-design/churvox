@@ -1,0 +1,102 @@
+name: Publish Go Live Trust Release
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-go-live-trust
+          fetch-depth: 0
+      - name: Check whether staging remains
+        id: gate
+        shell: bash
+        run: |
+          if [ -f .churvox-tmp/apply-00.part ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install backend dependencies
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
+      - name: Apply checked product wiring
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          cat .churvox-tmp/apply-00.part \
+              .churvox-tmp/apply-01.part \
+              .churvox-tmp/apply-02.part \
+              .churvox-tmp/apply-03.part \
+              .churvox-tmp/apply-04.part \
+              .churvox-tmp/apply-05a.part \
+              .churvox-tmp/apply-05b.part \
+              .churvox-tmp/apply-05c.part \
+              .churvox-tmp/apply-06.part \
+              .churvox-tmp/apply-07.part > /tmp/apply-go-live-trust.py
+          python -m py_compile /tmp/apply-go-live-trust.py
+          python /tmp/apply-go-live-trust.py
+      - name: Validate backend and production build
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          python -m py_compile backend/churvox_launch_hardening_routes.py churvox_launch_hardening_routes.py backend/test_churvox_launch_hardening.py
+          python -m unittest -v backend.test_churvox_launch_hardening backend.test_churvox_owner_intelligence backend.test_churvox_job_done_reality backend.test_churvox_feature_tier_paid_launch_guard
+          node --check frontend/src/churvox-office-lab/OfficeTeamLaunchHardeningApi.js
+          node --check frontend/src/churvox-office-lab/workerOfflineQueue.js
+          node --check frontend/tests/e2e/churvox-launch-hardening.spec.js
+          cd frontend
+          npm config set registry https://registry.npmjs.org/
+          npm install --legacy-peer-deps --no-audit --no-fund
+          CI=false NODE_OPTIONS=--max_old_space_size=4096 npm run build
+      - name: Commit permanent product files only
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            backend/churvox_launch_hardening_routes.py \
+            backend/test_churvox_launch_hardening.py \
+            churvox_launch_hardening_routes.py \
+            frontend/package.json \
+            frontend/package-lock.json \
+            frontend/src/App.js \
+            frontend/src/churvox-fresh/planRules.js \
+            frontend/src/churvox-office-lab/OfficeTeamAccess.js \
+            frontend/src/churvox-office-lab/OfficeTeamIntelligence.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamIntelligence.css \
+            frontend/src/churvox-office-lab/OfficeTeamIntelligenceApi.js \
+            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamLaunchHardening.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamLaunchHardening.css \
+            frontend/src/churvox-office-lab/OfficeTeamLaunchHardeningApi.js \
+            frontend/src/churvox-office-lab/OfficeTeamOwnerNavigation.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamWorkerRoute.css \
+            frontend/src/churvox-office-lab/workerOfflineQueue.js \
+            frontend/src/pages/public/PublicClientPortalPage.js \
+            frontend/tests/e2e/churvox-launch-hardening.spec.js \
+            scripts/churvox-launch-hardening-contract.py \
+            usercustomize.py \
+            backend/usercustomize.py
+          git commit -m "Build final Go Live and Trust hardening"
+          git push origin HEAD:agent/churvox-go-live-trust

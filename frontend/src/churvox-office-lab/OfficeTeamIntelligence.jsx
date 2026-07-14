@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { currentPlanForUser, PLAN_LABELS, planMeets } from "../churvox-fresh/planRules";
 import {
   fetchOwnerIntelligenceSummary,
+  fetchIntelligenceEvidenceOutcomes,
   prepareMoneyLeftBehind,
   prepareVoiceToBusiness,
   runWhatIfScenario,
@@ -33,6 +34,13 @@ function featureAccess(summary, plan, feature) {
   return live ? Boolean(live.available) : planMeets(plan, feature.minimum);
 }
 
+
+function EvidenceDrawer({ data = {} }) {
+  const outcomes = data?.outcomes?.money_recovered || {};
+  const findings = Array.isArray(data?.findings) ? data.findings : [];
+  return <details className="cvIntelEvidenceDrawer"><summary><span>Evidence Drawer</span><strong>{money(outcomes.found)} found · {money(outcomes.paid)} linked paid</strong><small>Open the records, calculations and assumptions</small></summary><div className="cvIntelEvidenceOutcomes"><article><strong>{money(outcomes.found)}</strong><span>found</span></article><article><strong>{money(outcomes.prepared)}</strong><span>prepared</span></article><article><strong>{money(outcomes.invoiced)}</strong><span>linked invoiced</span></article><article><strong>{money(outcomes.paid)}</strong><span>linked paid</span></article></div><p>{outcomes.definition || "Outcomes appear only when record links support them."}</p><div className="cvIntelEvidenceList">{findings.length ? findings.map((item) => <article key={item.id}><span>{String(item.kind || "record check").replaceAll("_", " ")}</span><h3>{item.title}</h3><p>{item.reason}</p><small>Source: {item.record_collection || "record"} · {item.record_id || "missing id"}</small><details><summary>Calculation and assumptions</summary><p>{item.calculation || "No calculation supplied."}</p>{(item.assumptions || []).map((assumption) => <small key={assumption}>{assumption}</small>)}</details></article>) : <Empty title="No evidence items need attention" text="Churvox has not found a supported record-level issue to explain." />}</div></details>;
+}
+
 function Loading() {
   return <section className="cvIntelEmpty"><strong>Checking the business</strong><p>Churvox is joining the real jobs, invoices, proof, time and client records.</p></section>;
 }
@@ -57,6 +65,7 @@ export default function OfficeTeamIntelligence({ appMode = "owner", go }) {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState("money_left_behind");
   const [notice, setNotice] = useState("");
+  const [evidence, setEvidence] = useState(null);
 
   async function load() {
     if (appMode !== "owner") {
@@ -67,7 +76,8 @@ export default function OfficeTeamIntelligence({ appMode = "owner", go }) {
     setLoading(true);
     setError("");
     try {
-      const body = await fetchOwnerIntelligenceSummary();
+      const [body, evidenceBody] = await Promise.all([fetchOwnerIntelligenceSummary(), fetchIntelligenceEvidenceOutcomes().catch(() => null)]);
+      setEvidence(evidenceBody);
       if (body?.locked) throw new Error(body.detail || "Sign in as an owner.");
       setSummary(body);
     } catch (err) {
@@ -98,6 +108,8 @@ export default function OfficeTeamIntelligence({ appMode = "owner", go }) {
           <article><strong>{summary?.job_truth_receipts?.length ?? 0}</strong><span>truth receipts</span></article>
         </div>
       </header>
+
+      <EvidenceDrawer data={evidence} />
 
       <div className="cvIntelFeatureRail" role="tablist" aria-label="Churvox Intelligence tools">
         {cards.map((feature) => (

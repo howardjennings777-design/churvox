@@ -103,13 +103,9 @@ def _install_churvox_real_ai_hook():
                 except Exception:
                     from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
                 try:
-                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                    from churvox_launch_hardening_routes import build_launch_hardening_router, install_permission_middleware
                 except Exception:
-                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
-                try:
-                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
-                except Exception:
-                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+                    from backend.churvox_launch_hardening_routes import build_launch_hardening_router, install_permission_middleware
                 try:
                     from churvox_command_apply_routes import build_command_apply_router
                 except Exception:
@@ -141,22 +137,14 @@ def _install_churvox_real_ai_hook():
                 )
                 if not intelligence_summary_mounted:
                     original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
-                # Churvox Intelligence reads the same business records and remains owner-controlled.
-                intelligence_summary_mounted = any(
-                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
+                launch_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/launch-hardening/summary"
                     and "GET" in set(getattr(route, "methods", set()) or set())
                     for route in self.router.routes
                 )
-                if not intelligence_summary_mounted:
-                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
-                # Churvox Intelligence reads the same business records and remains owner-controlled.
-                intelligence_summary_mounted = any(
-                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
-                    and "GET" in set(getattr(route, "methods", set()) or set())
-                    for route in self.router.routes
-                )
-                if not intelligence_summary_mounted:
-                    original_include_router(self, build_owner_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                if not launch_summary_mounted:
+                    original_include_router(self, build_launch_hardening_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                install_permission_middleware(self, local_db, local_get_current_user)
                 original_include_router(self, build_command_human_mimic_guard_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_human_mimic_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_mimic_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
@@ -185,10 +173,15 @@ def _install_churvox_real_ai_hook():
                 )
                 if not job_done_get_mounted or not job_done_marker_mounted:
                     raise RuntimeError("Job Done routes did not mount during Churvox startup")
+                launch_summary_mounted = any(getattr(route, "path", "") == "/api/launch-hardening/summary" and "GET" in set(getattr(route, "methods", set()) or set()) for route in self.router.routes)
+                launch_marker_mounted = any(getattr(route, "path", "") == "/api/launch-hardening/marker" and "GET" in set(getattr(route, "methods", set()) or set()) for route in self.router.routes)
                 if not intelligence_summary_mounted or not intelligence_marker_mounted:
                     raise RuntimeError("Churvox Intelligence routes did not mount during startup")
+                if not launch_summary_mounted or not launch_marker_mounted:
+                    raise RuntimeError("Churvox Go Live & Trust routes did not mount during startup")
                 self.state.churvox_job_done_routes_installed = True
                 self.state.churvox_owner_intelligence_routes_installed = True
+                self.state.churvox_launch_hardening_routes_installed = True
                 self.state.churvox_real_ai_operator_routes_installed = True
                 self.state.churvox_real_ai_operator_routes_installing = False
                 return result

@@ -1,0 +1,95 @@
+import React, { useEffect, useState } from "react";
+import {
+  commitBusinessImport,
+  createCustomerPortal,
+  downloadBusinessPortabilityPack,
+  fetchLaunchHardeningSummary,
+  previewBusinessImport,
+  recordJourneyCheckpoint,
+  revokeCustomerPortal,
+  saveRolePermissions,
+  undoBusinessImport,
+  undoRecoveryReceipt,
+} from "./OfficeTeamLaunchHardeningApi";
+import "./OfficeTeamLaunchHardening.css";
+
+const TABS = [
+  ["journey", "Golden Journey"],
+  ["imports", "Bring My Business In"],
+  ["permissions", "Permissions & security"],
+  ["portal", "Customer portal"],
+  ["recovery", "Recovery & undo"],
+  ["portability", "Portability Pack"],
+  ["evidence", "Measured outcomes"],
+  ["offline", "Offline worker sync"],
+];
+
+const IMPORT_SAMPLE = `Customer,Mobile,Service Address,Notes
+Jane Smith,021 555 0101,4 Harbour Road,Gate code in client notes
+Tom Wilson,027 555 0184,19 Hill Street,Fortnightly lawns`;
+
+function money(value) {
+  return `$${Number(value || 0).toLocaleString("en-NZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function Empty({ title, text }) {
+  return <article className="cvLaunchEmpty"><strong>{title}</strong><p>{text}</p></article>;
+}
+
+export default function OfficeTeamLaunchHardening({ go }) {
+  const [summary, setSummary] = useState(null);
+  const [active, setActive] = useState("journey");
+  const [busy, setBusy] = useState("");
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+
+  async function load() {
+    setError("");
+    try {
+      const body = await fetchLaunchHardeningSummary();
+      if (body?.locked) throw new Error(body.detail || "Sign in as the owner.");
+      setSummary(body);
+    } catch (loadError) {
+      setError(loadError?.message || "Go Live & Trust could not load. Nothing was changed.");
+    }
+  }
+
+  useEffect(() => {
+    load();
+    recordJourneyCheckpoint("go_live_visit", "golive").catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const features = Array.isArray(summary?.features) ? summary.features : [];
+  const complete = summary?.journey?.complete_count || 0;
+  const required = summary?.journey?.required_count || 0;
+
+  return (
+    <section className="cvSiteScreen cvLaunch" data-go-live-trust="v1">
+      <header className="cvLaunchHero">
+        <div><span>Go Live & Trust · {summary?.plan || "checking"}</span><h1>Get the business operating properly, then keep it safe.</h1><p>Bring existing work in, finish the first real job, control access, recover owner-approved changes and take the entire business back out whenever needed.</p><small>Trust controls are not upgrade bait. Churvox shows exactly what was prepared, changed and recoverable.</small></div>
+        <div className="cvLaunchHeroStats"><article><strong>{complete}/{required || 8}</strong><span>go-live steps</span></article><article><strong>{summary?.portability?.record_count || 0}</strong><span>portable records</span></article><article><strong>{(summary?.recovery || []).filter((item) => item.reversible && item.status === "available").length}</strong><span>undo actions</span></article></div>
+      </header>
+
+      <div className="cvLaunchFeatureStrip" aria-label="Go Live trust features">
+        {features.map((item) => <article key={item.key} data-available={item.available}><span>{item.available ? "Included" : `${item.minimum_plan}+`}</span><strong>{item.label}</strong></article>)}
+      </div>
+
+      <nav className="cvLaunchTabs" aria-label="Go Live and trust tools">
+        {TABS.map(([key, label]) => <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => { setActive(key); setNotice(""); }}>{label}</button>)}
+      </nav>
+      {notice ? <div className="cvLaunchNotice" role="status">{notice}</div> : null}
+      {error ? <div className="cvLaunchError" role="alert">{error}<button type="button" onClick={load}>Retry</button></div> : null}
+
+      {!summary && !error ? <Empty title="Checking the business" text="Churvox is checking real clients, jobs, receipts, invoices and safety records." /> : null}
+      {summary && active === "journey" ? <Journey data={summary.journey} go={go} /> : null}
+      {summary && active === "imports" ? <Imports setSummary={setSummary} busy={busy} setBusy={setBusy} setNotice={setNotice} /> : null}
+      {summary && active === "permissions" ? <Permissions data={summary.permissions} security={summary.security} busy={busy} setBusy={setBusy} setSummary={setSummary} setNotice={setNotice} /> : null}
+      {summary && active === "portal" ? <Portals items={summary.portals || []} busy={busy} setBusy={setBusy} setSummary={setSummary} setNotice={setNotice} /> : null}
+      {summary && active === "recovery" ? <Recovery items={summary.recovery || []} busy={busy} setBusy={setBusy} setSummary={setSummary} setNotice={setNotice} /> : null}
+      {summary && active === "portability" ? <Portability data={summary.portability} busy={busy} setBusy={setBusy} setNotice={setNotice} /> : null}
+      {summary && active === "evidence" ? <Evidence data={summary.evidence} go={go} /> : null}
+      {summary && active === "offline" ? <OfflineFeature feature={features.find((item) => item.key === "offline_worker_sync")} go={go} /> : null}
+    </section>
+  );
+}
+

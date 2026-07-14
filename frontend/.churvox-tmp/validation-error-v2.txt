@@ -1,0 +1,140 @@
+=== APPLY PATCH ===
+Go Live & Trust product wiring applied.
+=== PYTHON COMPILE ===
+=== BACKEND TESTS ===
+test_churvox_launch_hardening (unittest.loader._FailedTest.test_churvox_launch_hardening) ... ERROR
+test_churvox_owner_intelligence (unittest.loader._FailedTest.test_churvox_owner_intelligence) ... ERROR
+test_churvox_job_done_reality (unittest.loader._FailedTest.test_churvox_job_done_reality) ... ERROR
+test_accounting_addon_opens_xero_below_command (backend.test_churvox_feature_tier_paid_launch_guard.FeatureTierPaidLaunchTests.test_accounting_addon_opens_xero_below_command) ... ok
+test_command_and_full_access_tester_get_full_features (backend.test_churvox_feature_tier_paid_launch_guard.FeatureTierPaidLaunchTests.test_command_and_full_access_tester_get_full_features) ... ok
+test_core_routes_stay_open_from_start (backend.test_churvox_feature_tier_paid_launch_guard.FeatureTierPaidLaunchTests.test_core_routes_stay_open_from_start) ... ok
+test_crew_gets_messages_workers_and_proof_not_operator_tools (backend.test_churvox_feature_tier_paid_launch_guard.FeatureTierPaidLaunchTests.test_crew_gets_messages_workers_and_proof_not_operator_tools) ... ok
+test_operator_gets_command_and_payroll_not_accounting_without_addon (backend.test_churvox_feature_tier_paid_launch_guard.FeatureTierPaidLaunchTests.test_operator_gets_command_and_payroll_not_accounting_without_addon) ... ok
+test_public_worker_auth_and_billing_routes_are_exempt (backend.test_churvox_feature_tier_paid_launch_guard.FeatureTierPaidLaunchTests.test_public_worker_auth_and_billing_routes_are_exempt) ... ok
+test_start_cannot_call_higher_tier_owner_apis (backend.test_churvox_feature_tier_paid_launch_guard.FeatureTierPaidLaunchTests.test_start_cannot_call_higher_tier_owner_apis) ... ok
+
+======================================================================
+ERROR: test_churvox_launch_hardening (unittest.loader._FailedTest.test_churvox_launch_hardening)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_churvox_launch_hardening
+Traceback (most recent call last):
+  File "/home/runner/work/churvox/churvox/backend/test_churvox_launch_hardening.py", line 4, in <module>
+    from churvox_launch_hardening_routes import (
+  File "/home/runner/work/churvox/churvox/churvox_launch_hardening_routes.py", line 3, in <module>
+    from backend.churvox_launch_hardening_routes import (  # noqa: F401
+  File "/home/runner/work/churvox/churvox/backend/churvox_launch_hardening_routes.py", line 12, in <module>
+    from fastapi import APIRouter, HTTPException, Request
+ModuleNotFoundError: No module named 'fastapi'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/unittest/loader.py", line 162, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/churvox/churvox/backend/test_churvox_launch_hardening.py", line 13, in <module>
+    from backend.churvox_launch_hardening_routes import (
+  File "/home/runner/work/churvox/churvox/backend/churvox_launch_hardening_routes.py", line 12, in <module>
+    from fastapi import APIRouter, HTTPException, Request
+ModuleNotFoundError: No module named 'fastapi'
+
+
+======================================================================
+ERROR: test_churvox_owner_intelligence (unittest.loader._FailedTest.test_churvox_owner_intelligence)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_churvox_owner_intelligence
+Traceback (most recent call last):
+  File "/home/runner/work/churvox/churvox/backend/test_churvox_owner_intelligence.py", line 4, in <module>
+    from churvox_owner_intelligence_routes import (
+  File "/home/runner/work/churvox/churvox/churvox_owner_intelligence_routes.py", line 10, in <module>
+    from backend import churvox_owner_intelligence_routes as _implementation
+  File "/home/runner/work/churvox/churvox/backend/churvox_owner_intelligence_routes.py", line 10, in <module>
+    from fastapi import APIRouter, HTTPException, Request
+ModuleNotFoundError: No module named 'fastapi'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/unittest/loader.py", line 162, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/churvox/churvox/backend/test_churvox_owner_intelligence.py", line 12, in <module>
+    from backend.churvox_owner_intelligence_routes import (
+  File "/home/runner/work/churvox/churvox/backend/churvox_owner_intelligence_routes.py", line 10, in <module>
+    from fastapi import APIRouter, HTTPException, Request
+ModuleNotFoundError: No module named 'fastapi'
+
+
+======================================================================
+ERROR: test_churvox_job_done_reality (unittest.loader._FailedTest.test_churvox_job_done_reality)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_churvox_job_done_reality
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.15/x64/lib/python3.11/unittest/loader.py", line 162, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/churvox/churvox/backend/test_churvox_job_done_reality.py", line 5, in <module>
+    from bson import ObjectId
+ModuleNotFoundError: No module named 'bson'
+
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.001s
+
+FAILED (errors=3)
+=== NODE CHECKS ===
+=== NPM INSTALL AND BUILD ===
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @typescript-eslint/utils@5.62.0
+npm warn Found: eslint@9.23.0
+npm warn node_modules/eslint
+npm warn   dev eslint@"9.23.0" from the root project
+npm warn   8 more (@babel/eslint-parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/utils@5.62.0
+npm warn node_modules/@typescript-eslint/type-utils/node_modules/@typescript-eslint/utils
+npm warn   @typescript-eslint/utils@"5.62.0" from @typescript-eslint/type-utils@5.62.0
+npm warn   node_modules/@typescript-eslint/type-utils
+npm warn
+npm warn Conflicting peer dependency: eslint@8.57.1
+npm warn node_modules/eslint
+npm warn   peer eslint@"^6.0.0 || ^7.0.0 || ^8.0.0" from @typescript-eslint/utils@5.62.0
+npm warn   node_modules/@typescript-eslint/type-utils/node_modules/@typescript-eslint/utils
+npm warn     @typescript-eslint/utils@"5.62.0" from @typescript-eslint/type-utils@5.62.0
+npm warn     node_modules/@typescript-eslint/type-utils
+npm error code EUSAGE
+npm error
+npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+npm error
+npm error Missing: yaml@2.9.0 from lock file
+npm error
+npm error Clean install a project
+npm error
+npm error Usage:
+npm error npm ci
+npm error
+npm error Options:
+npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+npm error [--no-bin-links] [--no-fund] [--dry-run]
+npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+npm error
+npm error aliases: clean-install, ic, install-clean, isntall-clean
+npm error
+npm error Run "npm help ci" for more info
+npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-07-14T10_39_20_301Z-debug-0.log
+
+> frontend@0.1.2 build
+> node scripts/generate-pwa-icons.cjs && craco build
+
+Generated Churvox PNG app icons (churvox-integrated-mark-20260708b)
+sh: 1: craco: not found
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 12.0.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.1
+npm notice To update run: npm install -g npm@12.0.1
+npm notice

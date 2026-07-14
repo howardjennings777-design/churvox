@@ -57,6 +57,9 @@ export default function PublicClientPortalPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [portalAction, setPortalAction] = useState("");
+  const [portalMessage, setPortalMessage] = useState("");
+  const [rating, setRating] = useState(5);
 
   const loadPortal = useCallback(async () => {
     setLoading(true);
@@ -111,6 +114,24 @@ export default function PublicClientPortalPage() {
       setSaving(false);
     }
   };
+
+
+  async function submitPortalAction(kind) {
+    if (saving || !token) return;
+    if (kind !== "feedback" && portalMessage.trim().length < 3) { setNotice("Tell the business what you need first."); return; }
+    setSaving(true);
+    setNotice("");
+    const endpoint = kind === "change" ? "request-change" : kind === "work" ? "request-work" : "feedback";
+    try {
+      const response = await fetch(`${API_BASE}/api/public/client-portal/${encodeURIComponent(token)}/${endpoint}`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(kind === "feedback" ? { rating, comment: portalMessage } : { message: portalMessage }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success === false) throw new Error(data?.detail || data?.message || "The request could not be recorded");
+      setNotice(data.message || "Your request was recorded for the business.");
+      setPortalMessage("");
+      setPortalAction("");
+    } catch (requestError) { setNotice(requestError?.message || "The request could not be recorded"); }
+    finally { setSaving(false); }
+  }
 
   async function copyLink() {
     try {
@@ -204,6 +225,22 @@ export default function PublicClientPortalPage() {
             <h2>{approved ? "Approved" : completed ? "Ready for your review" : "Not ready for approval"}</h2>
             <p>{approved ? "Your approval has been recorded. Contact the business directly if anything needs to be corrected." : completed ? "Approve only when the work summary and customer-visible proof look right. This does not charge you or automatically send an invoice." : "The business has not marked this work ready for approval yet."}</p>
             {canApprove ? <button className="cpd-primary-action" type="button" disabled={saving} onClick={approve}>{saving ? "Approving…" : "Approve completed work"}</button> : null}
+          </div>
+
+          <div className="cpd-card" style={{ marginTop: 18 }}>
+            <small>Contact the business</small>
+            <h2>What happens next?</h2>
+            <p>Choose an option below. Churvox records the request for the business but does not automatically change the job, create a quote or send an invoice.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+              <button type="button" onClick={() => setPortalAction("change")}>Request a change</button>
+              <button type="button" onClick={() => setPortalAction("work")}>Request more work</button>
+              <button type="button" onClick={() => setPortalAction("feedback")}>Leave feedback</button>
+            </div>
+            {portalAction ? <div style={{ display: "grid", gap: 10 }}>
+              {portalAction === "feedback" ? <label>Rating<select value={rating} onChange={(event) => setRating(Number(event.target.value))}><option value={5}>5 - Great</option><option value={4}>4</option><option value={3}>3</option><option value={2}>2</option><option value={1}>1 - Poor</option></select></label> : null}
+              <label>{portalAction === "change" ? "What needs changing?" : portalAction === "work" ? "What work do you need?" : "Feedback for the business"}<textarea value={portalMessage} onChange={(event) => setPortalMessage(event.target.value)} rows={4} /></label>
+              <button className="cpd-primary-action" type="button" disabled={saving} onClick={() => submitPortalAction(portalAction)}>{saving ? "Recording…" : "Send to the business"}</button>
+            </div> : null}
           </div>
         </section>
 

@@ -1,0 +1,24 @@
+
+          <div className="cpd-card" style={{ marginTop: 18 }}>
+            <small>Contact the business</small>
+            <h2>What happens next?</h2>
+            <p>Choose an option below. Churvox records the request for the business but does not automatically change the job, create a quote or send an invoice.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+              <button type="button" onClick={() => setPortalAction("change")}>Request a change</button>
+              <button type="button" onClick={() => setPortalAction("work")}>Request more work</button>
+              <button type="button" onClick={() => setPortalAction("feedback")}>Leave feedback</button>
+            </div>
+            {portalAction ? <div style={{ display: "grid", gap: 10 }}>
+              {portalAction === "feedback" ? <label>Rating<select value={rating} onChange={(event) => setRating(Number(event.target.value))}><option value={5}>5 - Great</option><option value={4}>4</option><option value={3}>3</option><option value={2}>2</option><option value={1}>1 - Poor</option></select></label> : null}
+              <label>{portalAction === "change" ? "What needs changing?" : portalAction === "work" ? "What work do you need?" : "Feedback for the business"}<textarea value={portalMessage} onChange={(event) => setPortalMessage(event.target.value)} rows={4} /></label>
+              <button className="cpd-primary-action" type="button" disabled={saving} onClick={() => submitPortalAction(portalAction)}>{saving ? "Recording…" : "Send to the business"}</button>
+            </div> : null}
+          </div>'''
+portal = replace_exact(portal, '          </div>\n        </section>\n\n        <footer className="cpd-footer">', '          </div>' + portal_card + '\n        </section>\n\n        <footer className="cpd-footer">', "portal action card")
+write(portal_path, portal)
+
+# Intelligence evidence drawer and measured outcomes.
+intel_api_path = "frontend/src/churvox-office-lab/OfficeTeamIntelligenceApi.js"
+intel_api = read(intel_api_path)
+intel_api += '\nexport async function fetchIntelligenceEvidenceOutcomes() {\n  return request("/api/launch-hardening/evidence/outcomes");\n}\n'
+write(intel_api_path, intel_api)
