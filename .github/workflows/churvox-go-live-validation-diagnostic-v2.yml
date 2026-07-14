@@ -1,0 +1,81 @@
+name: Go Live Validation Diagnostic V2
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-go-live-trust
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Capture exact validation result
+        shell: bash
+        run: |
+          if [ -f .churvox-tmp/validation-error-v2.txt ] || [ -f .churvox-tmp/validation-success-v2.txt ]; then
+            echo "Validation result already captured."
+            exit 0
+          fi
+          cat .churvox-tmp/apply-00.part \
+              .churvox-tmp/apply-01.part \
+              .churvox-tmp/apply-02.part \
+              .churvox-tmp/apply-03.part \
+              .churvox-tmp/apply-04.part \
+              .churvox-tmp/apply-05a.part \
+              .churvox-tmp/apply-05b.part \
+              .churvox-tmp/apply-05c.part \
+              .churvox-tmp/apply-06.part \
+              .churvox-tmp/apply-07.part > /tmp/apply-go-live-trust.py
+          set +e
+          {
+            echo '=== APPLY PATCH ==='
+            python /tmp/apply-go-live-trust.py
+            echo '=== PYTHON COMPILE ==='
+            python -m py_compile backend/churvox_launch_hardening_routes.py churvox_launch_hardening_routes.py backend/test_churvox_launch_hardening.py scripts/churvox-launch-hardening-contract.py
+            echo '=== BACKEND TESTS ==='
+            python -m unittest -v backend.test_churvox_launch_hardening backend.test_churvox_owner_intelligence backend.test_churvox_job_done_reality backend.test_churvox_feature_tier_paid_launch_guard
+            echo '=== NODE CHECKS ==='
+            node --check frontend/src/churvox-office-lab/OfficeTeamLaunchHardeningApi.js
+            node --check frontend/src/churvox-office-lab/workerOfflineQueue.js
+            node --check frontend/tests/e2e/churvox-launch-hardening.spec.js
+            echo '=== NPM INSTALL AND BUILD ==='
+            cd frontend
+            npm config set registry https://registry.npmjs.org/
+            npm ci --no-audit --no-fund
+            CI=false NODE_OPTIONS=--max_old_space_size=4096 npm run build
+          } > /tmp/go-live-validation-v2.txt 2>&1
+          status=$?
+          set -e
+          git reset --hard HEAD
+          mkdir -p .churvox-tmp
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/go-live-validation-v2.txt .churvox-tmp/validation-error-v2.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .churvox-tmp/validation-error-v2.txt
+            git commit -m "Save Go Live validation diagnostic v2"
+            git push origin HEAD:agent/churvox-go-live-trust
+            exit 1
+          fi
+          cp /tmp/go-live-validation-v2.txt .churvox-tmp/validation-success-v2.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .churvox-tmp/validation-success-v2.txt
+          git commit -m "Save Go Live validation success v2"
+          git push origin HEAD:agent/churvox-go-live-trust
