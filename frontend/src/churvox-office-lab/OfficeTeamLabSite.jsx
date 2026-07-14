@@ -387,14 +387,14 @@ function ScreenRouter(props) {
   const { screen, appMode } = props;
   if (screen === "today") return <OfficeTeamTodayScreen {...props} />;
   if (screen === "command") return <Command {...props} />;
-  if (screen === "work") return <WorkScreen appMode={appMode} />;
+  if (screen === "work") return <WorkScreen appMode={appMode} go={props.go} />;
   if (screen === "schedule") return <ScheduleScreen appMode={appMode} />;
   if (screen === "clients") return <ClientsScreen appMode={appMode} />;
   if (screen === "messages") return <MessagesScreen appMode={appMode} />;
   if (screen === "worker") return <WorkerViewScreen appMode={appMode} />;
   if (screen === "quotes") return <QuotesScreen appMode={appMode} />;
   if (screen === "invoices") return <InvoicesScreen appMode={appMode} />;
-  if (screen === "money") return <MoneyScreen appMode={appMode} />;
+  if (screen === "money") return <MoneyScreen appMode={appMode} go={props.go} />;
   if (screen === "staff") return <StaffScreen appMode={appMode} />;
   if (screen === "payroll") return <PayrollScreen appMode={appMode} />;
   if (screen === "team") return <Team {...props} />;

@@ -68,8 +68,12 @@ export function JobDoneBoard({ appMode = "lab", compact = false, go }) {
   }, [closeouts, selectedKey]);
 
   async function prepare(intent, openCommand = false) {
-    if (!selected || busy || reality.preview) {
-      if (reality.preview && openCommand) go?.("command");
+    if (!selected || busy) return;
+    if (reality.preview) {
+      setNotice(intent === "review_proof_time"
+        ? "Preview review opened. Proof, time and extras remain editable; nothing was changed."
+        : "Preview Job Done closeout prepared. Nothing was sent, synced, charged or changed.");
+      if (openCommand) go?.("command");
       return;
     }
     setBusy(intent);
