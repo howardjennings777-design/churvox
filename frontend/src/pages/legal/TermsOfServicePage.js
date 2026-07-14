@@ -4,6 +4,7 @@ import { PublicFooter, PublicNav } from "../marketing/ChurvoxPublicShell";
 
 const UPDATED = "12 July 2026";
 const CONTACT = "hello@churvox.com";
+const LINK_CLASS = "inline-flex min-h-7 items-center px-1 font-black text-orange-700";
 
 function Section({ title, id, children }) {
   return <section id={id} className="scroll-mt-24 border-t border-slate-200 pt-6"><h2 className="mb-3 text-xl font-black text-slate-950">{title}</h2><div className="space-y-3">{children}</div></section>;
@@ -51,7 +52,7 @@ export default function TermsOfServicePage() {
             <Section id="billing-cancellations" title="6. Plans, trials, cancellations and subscriptions">
               <p>Current plan prices, included features, trial length, currency and applicable tax are shown on the pricing and checkout screens. A trial begins only when the required checkout is completed. Stripe handles subscription checkout and card details.</p>
               <p>Unless cancelled, a subscription may renew at the end of the trial or billing period at the price shown for the selected plan. Keep billing details current. Failed payment, misuse or an inactive subscription may restrict access.</p>
-              <p>You can cancel future renewal through the available billing controls or by contacting <a className="font-black text-orange-700" href={`mailto:${CONTACT}?subject=Churvox%20billing%20or%20cancellation`}>{CONTACT}</a>. Cancellation does not automatically create a refund for a completed billing period. Refund requests are assessed against applicable law, the checkout information and the circumstances of the request. Any mandatory consumer rights remain unaffected.</p>
+              <p>You can cancel future renewal through the available billing controls or by contacting <a className={LINK_CLASS} href={`mailto:${CONTACT}?subject=Churvox%20billing%20or%20cancellation`}>{CONTACT}</a>. Cancellation does not automatically create a refund for a completed billing period. Refund requests are assessed against applicable law, the checkout information and the circumstances of the request. Any mandatory consumer rights remain unaffected.</p>
             </Section>
 
             <Section title="7. Testers and free access">
@@ -96,8 +97,8 @@ export default function TermsOfServicePage() {
             </Section>
 
             <Section title="16. Privacy, changes and governing law">
-              <p>Use of personal information is explained in the <Link className="font-black text-orange-700" to="/legal/privacy">Privacy Policy</Link>. We may update these terms and will date material changes on this page.</p>
-              <p>These terms are governed by New Zealand law, subject to any mandatory rights or jurisdiction that applies to you. Questions can be sent to <a className="font-black text-orange-700" href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
+              <p>Use of personal information is explained in the <Link className={LINK_CLASS} to="/legal/privacy">Privacy Policy</Link>. We may update these terms and will date material changes on this page.</p>
+              <p>These terms are governed by New Zealand law, subject to any mandatory rights or jurisdiction that applies to you. Questions can be sent to <a className={LINK_CLASS} href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
             </Section>
           </div>
         </article>
