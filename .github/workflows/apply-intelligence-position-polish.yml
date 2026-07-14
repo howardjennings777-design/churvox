@@ -1,0 +1,74 @@
+name: Apply Intelligence Position Polish
+
+on:
+  push:
+    branches:
+      - agent/polish-intelligence-position
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    if: ${{ !contains(github.event.head_commit.message || '', '[skip-intelligence-position]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out polish branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/polish-intelligence-position
+          fetch-depth: 0
+
+      - name: Align Intelligence with the shared owner page shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          component_path = Path('frontend/src/churvox-office-lab/OfficeTeamIntelligence.jsx')
+          component = component_path.read_text(encoding='utf-8')
+          old_root = '<section className="cvIntel" data-churvox-intelligence="v1" data-plan={plan}>'
+          new_root = '<section className="cvSiteScreen cvIntel" data-churvox-intelligence="v1" data-plan={plan}>'
+          if old_root not in component and new_root not in component:
+              raise SystemExit('Intelligence root shell marker was not found')
+          component = component.replace(old_root, new_root, 1)
+          component_path.write_text(component, encoding='utf-8')
+
+          site_path = Path('frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx')
+          site_lines = site_path.read_text(encoding='utf-8').splitlines()
+          route = 'if (screen === "intelligence") return <OfficeTeamIntelligence appMode={appMode} go={props.go} />;'
+          seen = False
+          cleaned = []
+          for line in site_lines:
+              if line.strip() == route:
+                  if seen:
+                      continue
+                  seen = True
+              cleaned.append(line)
+          if not seen:
+              raise SystemExit('Intelligence screen route was not found')
+          site_path.write_text('\n'.join(cleaned) + '\n', encoding='utf-8')
+
+          contract_path = Path('scripts/churvox-owner-intelligence-contract.py')
+          contract = contract_path.read_text(encoding='utf-8')
+          marker = '    require(component, "data-churvox-intelligence=\\"v1\\"", "intelligence workspace marker")\n'
+          assertion = '    require(component, \'className="cvSiteScreen cvIntel"\', "standard owner page position")\n'
+          if marker not in contract:
+              raise SystemExit('Intelligence contract marker was not found')
+          if assertion not in contract:
+              contract = contract.replace(marker, marker + assertion, 1)
+          contract_path.write_text(contract, encoding='utf-8')
+          PY
+
+          python3 scripts/churvox-owner-intelligence-contract.py
+          git diff --check
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            frontend/src/churvox-office-lab/OfficeTeamIntelligence.jsx \
+            frontend/src/churvox-office-lab/OfficeTeamLabSite.jsx \
+            scripts/churvox-owner-intelligence-contract.py
+          git commit -m "Polish Intelligence page position [skip-intelligence-position]"
+          git push origin HEAD:agent/polish-intelligence-position
