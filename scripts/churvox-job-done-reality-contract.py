@@ -41,6 +41,7 @@ def main() -> None:
     root_hook = parse_python("usercustomize.py")
 
     for route in [
+        '@router.get("/job-done/marker")',
         '@router.post("/job-done/scan")',
         '@router.get("/job-done/closeouts")',
         '@router.get("/job-done/closeouts/{closeout_id}")',
@@ -51,6 +52,8 @@ def main() -> None:
         require(routes, route, "persisted API route")
 
     for invariant in [
+        'JOB_DONE_REALITY_BUILD = "job-done-reality-v2-20260714"',
+        'JOB_DONE_ROUTE_GUARD = "startup-mount-confirmed-v1"',
         '"business_id": business_id',
         '"job_id": job_id',
         '"job_collection":',
@@ -112,7 +115,18 @@ def main() -> None:
 
     for hook in [backend_hook, root_hook]:
         require(hook, "build_job_done_router", "Job Done runtime registration")
-        require(hook, "build_job_done_router(local_db, local_get_current_user, ObjectId)", "Job Done router install")
+        require(hook, "Mount Job Done immediately after the public build marker", "early Job Done mount")
+        require(hook, 'getattr(route, "path", "") == "/api/job-done/closeouts"', "Job Done closeout mount verification")
+        require(hook, 'getattr(route, "path", "") == "/api/job-done/marker"', "Job Done marker mount verification")
+        require(hook, "self.state.churvox_job_done_routes_installed = True", "verified Job Done startup state")
+        require(hook, "self.state.churvox_real_ai_operator_routes_installed = True", "late installed flag")
+        require(hook, "self.state.churvox_real_ai_operator_routes_installed = False", "failed install retry reset")
+
+    command_marker = read("backend/churvox_command_human_mimic_marker_routes.py")
+    require(command_marker, '"job_done_reality_build": JOB_DONE_REALITY_BUILD', "public backend deploy fingerprint")
+    require(command_marker, '"job_done_route_guard": JOB_DONE_ROUTE_GUARD', "public route guard fingerprint")
+    frontend_entry = read("frontend/src/index.js")
+    require(frontend_entry, "churvox-job-done-live-v2-20260714", "eager frontend deploy fingerprint")
 
     api = read("frontend/src/churvox-office-lab/OfficeTeamJobDoneApi.js")
     component = read("frontend/src/churvox-office-lab/OfficeTeamJobDone.js")

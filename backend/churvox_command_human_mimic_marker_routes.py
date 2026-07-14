@@ -7,6 +7,8 @@ HUMAN_MIMIC_POST_GUARD = "linked-invoice-source-recheck-v1"
 HUMAN_MIMIC_SOURCE_NORMALIZATION = "legacy-job-status-and-timer-units-v1"
 HUMAN_MIMIC_ROLE_SCHEMA_GUARD = "role-required-evidence-v1"
 HUMAN_MIMIC_SUMMARY_GUARD = "strict-surviving-queue-summary-v1"
+JOB_DONE_REALITY_BUILD = "job-done-reality-v2-20260714"
+JOB_DONE_ROUTE_GUARD = "startup-mount-confirmed-v1"
 HUMAN_MIMIC_SAFETY = "Owner approval required. Nothing was sent, synced, charged or changed."
 
 
@@ -35,6 +37,8 @@ def build_command_human_mimic_marker_router():
             "source_normalization": HUMAN_MIMIC_SOURCE_NORMALIZATION,
             "role_schema_guard": HUMAN_MIMIC_ROLE_SCHEMA_GUARD,
             "summary_guard": HUMAN_MIMIC_SUMMARY_GUARD,
+            "job_done_reality_build": JOB_DONE_REALITY_BUILD,
+            "job_done_route_guard": JOB_DONE_ROUTE_GUARD,
             "roles": ROLE_NAMES,
             "preflight": {
                 "source_validation": True,

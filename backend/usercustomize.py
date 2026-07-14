@@ -92,7 +92,7 @@ def _install_churvox_real_ai_hook():
                 except Exception:
                     from backend.churvox_command_routes import build_command_router
                 from bson import ObjectId
-                self.state.churvox_real_ai_operator_routes_installed = True
+                self.state.churvox_real_ai_operator_routes_installing = True
                 original_include_router(self, build_ai_operator_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Compatibility endpoints remain first so worker and live-smoke routes cannot be shadowed.
                 original_include_router(self, build_command_compat_router(local_db, local_get_current_user, ObjectId), prefix="/api")
@@ -100,18 +100,41 @@ def _install_churvox_real_ai_hook():
                 original_include_router(self, build_paid_launch_readiness_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Public marker proves that the human mimic build reached the live backend.
                 original_include_router(self, build_command_human_mimic_marker_router(), prefix="/api")
+                # Mount Job Done immediately after the public build marker so later optional routers cannot block it.
+                job_done_get_mounted = any(
+                    getattr(route, "path", "") == "/api/job-done/closeouts"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not job_done_get_mounted:
+                    original_include_router(self, build_job_done_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # The guard owns /command/scan, calls human mimic v2, then retires stale or false Command slips.
                 original_include_router(self, build_command_human_mimic_guard_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Keep the unguarded v2 and v1 scanners behind it as compatibility fallbacks only.
                 original_include_router(self, build_command_human_mimic_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_mimic_intelligence_router(local_db, local_get_current_user, ObjectId), prefix="/api")
-                # Job Done owns persisted closeouts and Money Radar reads before Command applies any approved drafts.
-                original_include_router(self, build_job_done_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 # Register the safe approval executor before the older record-only Command routes.
                 original_include_router(self, build_command_apply_router(local_db, local_get_current_user, ObjectId), prefix="/api")
                 original_include_router(self, build_command_router(local_db, local_get_current_user, ObjectId), prefix="/api")
+                job_done_get_mounted = any(
+                    getattr(route, "path", "") == "/api/job-done/closeouts"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                job_done_marker_mounted = any(
+                    getattr(route, "path", "") == "/api/job-done/marker"
+                    and "GET" in set(getattr(route, "methods", set()) or set())
+                    for route in self.router.routes
+                )
+                if not job_done_get_mounted or not job_done_marker_mounted:
+                    raise RuntimeError("Job Done routes did not mount during Churvox startup")
+                self.state.churvox_job_done_routes_installed = True
+                self.state.churvox_real_ai_operator_routes_installed = True
+                self.state.churvox_real_ai_operator_routes_installing = False
                 return result
         except Exception as exc:
+            self.state.churvox_real_ai_operator_routes_installed = False
+            self.state.churvox_real_ai_operator_routes_installing = False
             print(f"Churvox real AI/Command route install skipped: {exc}", file=sys.stderr)
         return result
 
