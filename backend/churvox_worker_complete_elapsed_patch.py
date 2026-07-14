@@ -1,4 +1,4 @@
-"""Ensure worker completion preserves elapsed timer time."""
+"""Ensure worker completion preserves elapsed timer time and starts Job Done."""
 
 from __future__ import annotations
 
@@ -61,8 +61,76 @@ def _safe(doc):
     return out
 
 
+def _text(value, fallback=""):
+    value = " ".join(str(value or "").strip().split())
+    return value or fallback
+
+
 def _route_matches(route):
     return getattr(route, "path", "") == PATH and "POST" in set(getattr(route, "methods", set()) or set())
+
+
+async def _seed_job_done(db, user, job, now):
+    """Create the durable closeout identity at the exact worker-completion moment."""
+    try:
+        business_id = _text((job or {}).get("business_id") or (job or {}).get("businessId") or (job or {}).get("owner_id") or (user or {}).get("business_id") or (user or {}).get("id"), "")
+        job_id = _text((job or {}).get("_id") or (job or {}).get("id"), "")
+        if not business_id or not job_id:
+            return None
+        title = _text((job or {}).get("title") or (job or {}).get("job_title") or (job or {}).get("name") or (job or {}).get("service") or (job or {}).get("description"), "Completed job")
+        client_id = _text((job or {}).get("client_id") or (job or {}).get("customer_id"), "")
+        worker_id = _text((job or {}).get("worker_id") or (job or {}).get("assigned_worker_id") or (user or {}).get("id"), "")
+        key = {"business_id": business_id, "job_collection": "jobs", "job_id": job_id}
+        await db.job_closeouts.update_one(
+            key,
+            {
+                "$set": {
+                    **key,
+                    "contractor_id": (job or {}).get("contractor_id") or business_id,
+                    "job_title": title,
+                    "client_id": client_id,
+                    "worker_ids": [worker_id] if worker_id else [],
+                    "source_job_status": "completed",
+                    "source_snapshot": {
+                        "completed_at": now,
+                        "scheduled_date": (job or {}).get("scheduled_date") or (job or {}).get("date"),
+                        "notes": _text((job or {}).get("worker_notes") or (job or {}).get("completion_note") or (job or {}).get("notes"), ""),
+                    },
+                    "closeout_state": "scanning",
+                    "status": "open",
+                    "trigger": "worker_completion",
+                    "updated_at": now,
+                    "version": 1,
+                },
+                "$setOnInsert": {
+                    "created_at": now,
+                    "owner_decisions": [],
+                    "execution": {},
+                },
+            },
+            upsert=True,
+        )
+        stored = await db.job_closeouts.find_one(key)
+        try:
+            await db.field_activity_events.insert_one({
+                "business_id": business_id,
+                "contractor_id": (job or {}).get("contractor_id") or business_id,
+                "event_type": "job_done_started",
+                "title": title,
+                "detail": "Worker completed the job. A persisted Job Done closeout was started for owner review.",
+                "record_type": "job_closeout",
+                "record_id": str((stored or {}).get("_id") or ""),
+                "source_job_id": job_id,
+                "status": "new",
+                "source": "worker_completion",
+                "created_at": now,
+            })
+        except Exception:
+            pass
+        return stored
+    except Exception:
+        # Completion must never fail because the follow-up closeout seed could not be written.
+        return None
 
 
 def _install(module):
@@ -126,9 +194,29 @@ def _install(module):
         }
         if isinstance(payload, dict) and "worker_notes" in payload:
             update["worker_notes"] = str(payload.get("worker_notes") or "")
+        if isinstance(payload, dict):
+            for source_key, target_key in [
+                ("completion_photos", "completion_photos"),
+                ("photos", "completion_photos"),
+                ("completion_checklist", "completion_checklist"),
+                ("extras", "extras"),
+                ("extras_total", "extras_total"),
+                ("materials", "materials"),
+            ]:
+                if source_key in payload:
+                    update[target_key] = payload.get(source_key)
         await db.jobs.update_one({"_id": job["_id"]}, {"$set": update})
         updated = await db.jobs.find_one({"_id": job["_id"]})
-        return {"success": True, "status": "completed", "completed": True, "total_time_seconds": total, "job": _safe(updated)}
+        closeout = await _seed_job_done(db, user, updated or {**job, **update}, now)
+        return {
+            "success": True,
+            "status": "completed",
+            "completed": True,
+            "total_time_seconds": total,
+            "job": _safe(updated),
+            "job_done_started": bool(closeout),
+            "job_done_closeout_id": str((closeout or {}).get("_id") or ""),
+        }
 
     try:
         app.router.routes = [route for route in app.router.routes if not _route_matches(route)]
