@@ -1,0 +1,44 @@
+name: Apply Churvox Owner Intelligence
+
+on:
+  push:
+    branches:
+      - agent/churvox-owner-intelligence
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-owner-intelligence-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-owner-intelligence
+          fetch-depth: 0
+
+      - name: Apply checked product wiring
+        run: python3 scripts/apply_churvox_owner_intelligence.py
+
+      - name: Remove one-time patch machinery
+        run: rm -f scripts/apply_churvox_owner_intelligence.py .github/workflows/apply-owner-intelligence.yml
+
+      - name: Verify permanent Intelligence contract
+        run: |
+          python3 scripts/churvox-owner-intelligence-contract.py
+          python3 -m py_compile backend/churvox_owner_intelligence_routes.py backend/test_churvox_owner_intelligence.py usercustomize.py backend/usercustomize.py
+          git diff --check
+
+      - name: Commit wired product
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Wire all eight Churvox Intelligence features"
+          git push origin HEAD:agent/churvox-owner-intelligence
