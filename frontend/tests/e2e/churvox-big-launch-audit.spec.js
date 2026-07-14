@@ -258,18 +258,18 @@ async function createAssignedWorkerJob(page) {
     jobId = idOf(job);
   }
   expect(jobId, 'created assigned worker audit job id').toBeTruthy();
-  return { ownerToken, jobId };
+  return { ownerToken, jobId, marker };
 }
 
 async function cleanupAssignedWorkerJob(page, fixture) {
   if (!fixture?.jobId || !fixture?.ownerToken) return;
-  const deleted = await requestJson(page, fixture.ownerToken, 'delete', `/api/jobs/${encodeURIComponent(fixture.jobId)}`);
-  if (deleted.ok || deleted.status === 404) return;
   const archived = await requestJson(page, fixture.ownerToken, 'post', `/api/jobs/${encodeURIComponent(fixture.jobId)}/archive`, {
     archived: true,
     archive_reason: 'full launch worker detail audit cleanup',
   });
-  expect(archived.ok || archived.status === 404, `audit job cleanup failed: delete ${deleted.status}, archive ${archived.status}`).toBeTruthy();
+  const deleted = await requestJson(page, fixture.ownerToken, 'delete', `/api/jobs/${encodeURIComponent(fixture.jobId)}`);
+  const cleaned = archived.ok || archived.status === 404 || deleted.ok || deleted.status === 404;
+  expect(cleaned, `audit job cleanup failed: archive ${archived.status}, delete ${deleted.status}`).toBeTruthy();
 }
 
 test.describe('Churvox full launch public audit', () => {
@@ -314,7 +314,7 @@ test.describe('Churvox full launch owner audit', () => {
     await waitStable(page);
 
     for (const item of ['Today', 'Intelligence', 'Command', 'Jobs', 'Clients', 'Workers', 'Quotes', 'Invoices']) {
-      await expect(page.getByRole('button', { name: new RegExp(`^${item}$`, 'i') }).first(), `missing main owner navigation: ${item}`).toBeVisible();
+      await expect(page.getByRole('button', { name: new RegExp(`^${item}(?:\\s+\\d+)?$`, 'i') }).first(), `missing main owner navigation: ${item}`).toBeVisible();
     }
 
     const more = page.getByRole('button', { name: /^More$/i }).first();
@@ -322,8 +322,14 @@ test.describe('Churvox full launch owner audit', () => {
     if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click();
     await expect(page.getByRole('menu', { name: /More tools/i }), 'More navigation menu did not open').toBeVisible();
 
-    for (const item of ['Schedule', 'Messages', 'Payroll', 'Xero', 'How Churvox works', 'Activity', 'Settings', 'Plans', 'Help']) {
+    for (const item of ['Schedule', 'Messages', 'Payroll', 'Xero', 'How Churvox works', 'Activity']) {
       await expect(page.getByRole('menuitem', { name: new RegExp(`^${item}$`, 'i') }).first(), `missing More navigation item: ${item}`).toBeVisible();
+    }
+
+    const accountNav = page.getByRole('navigation', { name: /Account and help pages/i });
+    await expect(accountNav, 'missing Account and help navigation').toBeVisible();
+    for (const item of ['Settings', 'Plans', 'Help']) {
+      await expect(accountNav.getByRole('button', { name: new RegExp(`^${item}$`, 'i') }).first(), `missing account navigation item: ${item}`).toBeVisible();
     }
   });
 });
@@ -346,9 +352,20 @@ test.describe('Churvox full launch worker audit', () => {
     test.setTimeout(120_000);
     const fixture = await createAssignedWorkerJob(page);
     try {
-      await page.goto(`/worker/jobs/${encodeURIComponent(fixture.jobId)}`, { waitUntil: 'domcontentloaded' });
+      await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
       expect(page.url(), 'worker detail audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
-      await expect(page.locator('body')).toContainText(/Job checklist|Work timer|Job notes|Photos|Finish job/i, { timeout: 30_000 });
+
+      const assignedJob = page.getByRole('button', { name: new RegExp(fixture.marker, 'i') }).first();
+      await expect(assignedJob, 'created assigned job did not appear in the worker queue').toBeVisible({ timeout: 30_000 });
+      await assignedJob.click();
+      await expect(page.locator('body')).toContainText(fixture.marker, { timeout: 15_000 });
+
+      for (const control of ['Acknowledge', 'Start', 'Pause', 'Resume', 'Complete']) {
+        await expect(page.getByRole('button', { name: new RegExp(`^${control}$`, 'i') }).first(), `missing worker control: ${control}`).toBeVisible();
+      }
+      await expect(page.getByText('Photo proof', { exact: true }).first(), 'missing Photo proof control').toBeVisible();
+      await expect(page.getByText('Timer note', { exact: true }).first(), 'missing Timer note control').toBeVisible();
+      await expect(page.getByText('Office link', { exact: true }).first(), 'missing Office link control').toBeVisible();
       await expectBasics(page, 'worker job detail');
     } finally {
       await cleanupAssignedWorkerJob(page, fixture);
