@@ -173,6 +173,17 @@
   line-height: 1.58;
 }
 
+.cvPublicAuthCard > label.cvPublicAuthIntro a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 4px;
+  color: #111318;
+  font-weight: 1000;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .cvPublicAuthBottom a {
   color: #111318;
   font-weight: 1000;

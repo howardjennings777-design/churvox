@@ -153,14 +153,14 @@ test.describe('Rebuilt paid-launch HQ', () => {
     await expect(page.getByText('Access updated from safe test')).toBeVisible();
 
     await page.getByRole('button', { name: 'Testers', exact: true }).click();
-    await expect(page.getByText('Tester@Real.test', { exact: true })).toBeVisible();
+    await expect(page.getByText('Tester@Real.test', { exact: true }).first()).toBeVisible();
     await page.getByRole('textbox', { name: 'Email', exact: true }).fill('NewTester@Real.test');
     await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Real Tester');
     await page.getByRole('textbox', { name: 'Business', exact: true }).fill('Real Tester Business');
     await page.getByRole('button', { name: 'Grant tester access' }).click();
     await expect(page.getByText('NewTester@Real.test', { exact: true })).toBeVisible();
 
-    const pendingRow = page.locator('tr').filter({ hasText: 'Tester@Real.test' });
+    const pendingRow = page.locator('tr').filter({ hasText: 'Tester@Real.test' }).filter({ has: page.getByRole('button', { name: 'Revoke', exact: true }) }).first();
     await pendingRow.getByRole('button', { name: 'Revoke', exact: true }).click();
     await expect(page.getByText('Tester access revoked')).toBeVisible();
     await expect(page.getByText('Revoked / locked testers')).toBeVisible();
