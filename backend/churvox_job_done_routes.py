@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+import hashlib
+import json
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException, Request
@@ -121,6 +123,10 @@ def build_job_done_router(db, get_current_user, ObjectId):
             values.append(object_id)
         return values
 
+    def revision_for(value):
+        payload = json.dumps(serial(value), sort_keys=True, separators=(",", ":"), default=str)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24]
+
     async def scoped_rows(user, collection_names, limit=250):
         rows = []
         query = business_scope(user)
@@ -139,15 +145,24 @@ def build_job_done_router(db, get_current_user, ObjectId):
 
     async def linked_rows(user, collections, job, limit=80):
         job_id = record_id(job)
-        client_id = safe_text(first_value(job, ["client_id", "customer_id", "clientId", "customerId"], ""), "")
         conditions = []
         for value in id_values(job_id):
             conditions.extend([
                 {"job_id": value}, {"jobId": value}, {"source_job_id": value},
                 {"linked_job_id": value}, {"record_id": value},
             ])
-        for value in id_values(client_id):
-            conditions.extend([{"client_id": value}, {"customer_id": value}])
+        direct_values = []
+        if any(name in INVOICE_COLLECTIONS for name in collections):
+            direct_values.append(first_value(job, ["invoice_id", "invoiceId", "linked_invoice_id"], ""))
+        if any(name in TIME_COLLECTIONS for name in collections):
+            raw_time_ids = first_value(job, ["time_entry_ids", "timer_ids", "timesheet_ids"], [])
+            direct_values.extend(raw_time_ids if isinstance(raw_time_ids, list) else [raw_time_ids])
+        for direct in direct_values:
+            for value in id_values(direct):
+                conditions.extend([
+                    {"_id": value}, {"id": value}, {"invoice_id": value},
+                    {"time_entry_id": value}, {"timer_id": value},
+                ])
         if not conditions:
             return []
         query = {"$and": [business_scope(user), {"$or": conditions}]}
@@ -260,14 +275,15 @@ def build_job_done_router(db, get_current_user, ObjectId):
             risks.append("invoice")
         if recurring["status"] == "review":
             risks.append("recurring")
-        closeout_state = "needs_owner" if risks else "ready"
+        calculated_state = "needs_owner" if risks else "ready"
         job_value = amount_value(first_value(job, ["price", "total", "amount", "quoted_total", "job_total"], 0))
-        payload = {
-            "business_id": business_id,
-            "contractor_id": business_oid or business_id,
+        source_snapshot = {
+            "scheduled_date": serial(first_value(job, ["scheduled_date", "date", "start_date", "due_date"], None)),
+            "completed_at": serial(first_value(job, ["completed_at", "finished_at", "updated_at"], None)),
+            "notes": safe_text(first_value(job, ["completion_note", "worker_note", "notes"], ""), "", 2000),
+        }
+        source_core = {
             "job_id": job_id,
-            "job_collection": safe_text(job.get("_collection"), "jobs"),
-            "job_title": record_title(job),
             "client_id": client_id,
             "worker_ids": [safe_text(item, "") for item in worker_ids if safe_text(item, "")],
             "proof": proof,
@@ -276,23 +292,68 @@ def build_job_done_router(db, get_current_user, ObjectId):
             "invoice": invoice,
             "recurring": recurring,
             "job_value": job_value,
+            "source_job_status": status_text(job),
+            "source_snapshot": source_snapshot,
+        }
+        source_revision = revision_for(source_core)
+        job_collection = safe_text(job.get("_collection"), "jobs")
+        key = {"business_id": business_id, "job_collection": job_collection, "job_id": job_id}
+        existing = await db.job_closeouts.find_one(key)
+        same_revision = bool(existing and existing.get("source_revision") == source_revision)
+        existing_status = safe_text((existing or {}).get("status"), "open")
+        existing_execution = (existing or {}).get("execution") if isinstance((existing or {}).get("execution"), dict) else {}
+        if same_revision and existing_status == "approved" and existing_execution.get("applied"):
+            next_status = "approved"
+            next_state = "approved"
+        elif same_revision and existing_status == "waiting_proof" and proof.get("status") == "missing":
+            next_status = "waiting_proof"
+            next_state = "waiting_proof"
+        elif same_revision and existing_status == "in_command":
+            next_status = "in_command"
+            next_state = calculated_state
+        else:
+            next_status = "open"
+            next_state = calculated_state
+        payload = {
+            "business_id": business_id,
+            "contractor_id": business_oid or business_id,
+            "job_id": job_id,
+            "job_collection": job_collection,
+            "job_title": record_title(job),
+            "client_id": client_id,
+            "worker_ids": source_core["worker_ids"],
+            "proof": proof,
+            "worker_time": worker_time,
+            "extras": extras,
+            "invoice": invoice,
+            "recurring": recurring,
+            "job_value": job_value,
             "risk_keys": risks,
             "risk_count": len(risks),
-            "closeout_state": closeout_state,
-            "source_job_status": status_text(job),
-            "source_snapshot": {
-                "scheduled_date": serial(first_value(job, ["scheduled_date", "date", "start_date", "due_date"], None)),
-                "completed_at": serial(first_value(job, ["completed_at", "finished_at", "updated_at"], None)),
-                "notes": safe_text(first_value(job, ["completion_note", "worker_note", "notes"], ""), "", 2000),
-            },
+            "closeout_state": next_state,
+            "status": next_status,
+            "source_job_status": source_core["source_job_status"],
+            "source_snapshot": source_snapshot,
+            "source_revision": source_revision,
             "updated_at": now(),
             "version": 1,
         }
-        key = {"business_id": business_id, "job_collection": payload["job_collection"], "job_id": job_id}
-        await db.job_closeouts.update_one(key, {"$set": payload, "$setOnInsert": {"created_at": now(), "owner_decisions": [], "execution": {}, "status": "open"}}, upsert=True)
+        await db.job_closeouts.update_one(
+            key,
+            {"$set": payload, "$setOnInsert": {"created_at": now(), "owner_decisions": [], "execution": {}}},
+            upsert=True,
+        )
         return await db.job_closeouts.find_one(key)
 
     async def scan_closeouts(user):
+        try:
+            await db.job_closeouts.create_index(
+                [("business_id", 1), ("job_collection", 1), ("job_id", 1)],
+                unique=True,
+                name="one_closeout_per_job",
+            )
+        except Exception:
+            pass
         jobs = await scoped_rows(user, JOB_COLLECTIONS, 300)
         closeouts = []
         for job in jobs:
@@ -322,15 +383,32 @@ def build_job_done_router(db, get_current_user, ObjectId):
     async def create_closeout_slip(user, closeout, intent="full_closeout"):
         business_id, business_oid = business_ids(user)
         closeout_id = str(closeout.get("_id"))
+        execution = closeout.get("execution") if isinstance(closeout.get("execution"), dict) else {}
+        if closeout.get("status") == "approved" and execution.get("applied"):
+            raise HTTPException(status_code=409, detail="This Job Done closeout is already approved. No duplicate draft was created.")
         existing = await db.command_slips.find_one({
             "business_id": business_id,
             "source_type": "job_done",
             "source_id": closeout_id,
             "status": {"$in": OPEN_COMMAND_STATUSES},
         })
+        current_revision = safe_text(closeout.get("source_revision"), "")
         if existing:
-            return existing, True
+            existing_payload = existing.get("payload") if isinstance(existing.get("payload"), dict) else {}
+            existing_revision = safe_text(existing_payload.get("closeout_revision"), "")
+            if not current_revision or not existing_revision or existing_revision == current_revision:
+                return existing, True
+            await db.command_slips.update_one(
+                {"_id": existing["_id"]},
+                {"$set": {"status": "superseded", "updated_at": now(), "superseded_reason": "Job Done source records changed before approval."}},
+            )
         risks = closeout.get("risk_keys") or []
+        proof_status = safe_text((closeout.get("proof") or {}).get("status"), "check")
+        invoice_state = closeout.get("invoice") if isinstance(closeout.get("invoice"), dict) else {}
+        invoice_amount = amount_value(invoice_state.get("amount") or closeout.get("job_value"))
+        required_fields = []
+        if proof_status != "missing" and not invoice_state.get("invoice_id") and invoice_amount <= 0:
+            required_fields.append("invoice amount")
         title = f"Job Done: {closeout.get('job_title') or 'Completed job'}"
         doc = {
             "business_id": business_id,
@@ -348,12 +426,15 @@ def build_job_done_router(db, get_current_user, ObjectId):
                 "office_role": "Office Manager",
                 "job_done_reality_v1": True,
                 "job_done_closeout_id": closeout_id,
+                "closeout_revision": current_revision,
                 "job_id": closeout.get("job_id") or "",
                 "job_collection": closeout.get("job_collection") or "jobs",
                 "client_id": closeout.get("client_id") or "",
                 "invoice_id": (closeout.get("invoice") or {}).get("invoice_id") or "",
                 "time_entry_ids": (closeout.get("worker_time") or {}).get("entry_ids") or [],
                 "risk_keys": risks,
+                "required_fields": required_fields,
+                "approval_blocked": bool(required_fields),
                 "prepared_form": prepared_form(closeout, intent),
                 "actions": ["Approve closeout drafts", "Ask staff", "Park"],
                 "will_do": [
@@ -388,13 +469,14 @@ def build_job_done_router(db, get_current_user, ObjectId):
         return doc, False
 
     def radar_from(closeouts, invoices):
+        active_closeouts = [item for item in closeouts if item.get("status") not in {"approved", "closed"}]
         items = []
-        for closeout in closeouts:
+        for closeout in active_closeouts:
             invoice = closeout.get("invoice") or {}
             amount = invoice.get("amount") or closeout.get("job_value") or 0
             items.append({
                 "key": f"closeout-{closeout.get('_id')}",
-                "type": "Earned, not closed" if closeout.get("status") not in {"approved", "closed"} else "Closed work",
+                "type": "Earned, not closed",
                 "title": closeout.get("job_title") or "Completed job",
                 "amount": amount,
                 "risk": ", ".join(closeout.get("risk_keys") or []) or "Owner approval waiting",
@@ -412,10 +494,10 @@ def build_job_done_router(db, get_current_user, ObjectId):
             if any(word in status for word in ["draft", "ready", "waiting", "unpaid", "due", "overdue"]):
                 waiting += 1
         metrics = [
-            {"label": "Finished, not closed", "value": sum(1 for item in closeouts if item.get("status") not in {"approved", "closed"}), "note": "Persisted job closeouts waiting for a final owner-controlled step"},
+            {"label": "Finished, not closed", "value": len(active_closeouts), "note": "Persisted job closeouts waiting for a final owner-controlled step"},
             {"label": "Invoice actions", "value": waiting, "note": "Draft, due or unpaid invoices currently visible"},
             {"label": "Payment risk", "value": overdue, "note": "Invoices marked late or overdue"},
-            {"label": "Worker cost checks", "value": sum(1 for item in closeouts if (item.get("worker_time") or {}).get("status") in {"review", "missing"}), "note": "Completed jobs whose hours still need review"},
+            {"label": "Worker cost checks", "value": sum(1 for item in active_closeouts if (item.get("worker_time") or {}).get("status") in {"review", "missing"}), "note": "Completed jobs whose hours still need review"},
         ]
         return {"metrics": metrics, "items": items}
 

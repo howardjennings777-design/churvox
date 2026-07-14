@@ -68,9 +68,9 @@
     "test:office-lab": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-office-team-lab.spec.js --project=desktop-chromium",
     "test:office-lab:mobile": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-office-team-lab.spec.js --project=mobile-chromium",
     "test:rebuild:routes": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-rebuild-route-safety.spec.js --project=desktop-chromium",
-    "test:ui:full": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-full-ui-logic-buttons.spec.js tests/e2e/churvox-public-honesty-and-function.spec.js tests/e2e/churvox-owner-no-fake-data.spec.js tests/e2e/churvox-paid-launch-hq-reality.spec.js --workers=1",
-    "test:ui:desktop": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-full-ui-logic-buttons.spec.js tests/e2e/churvox-public-honesty-and-function.spec.js tests/e2e/churvox-owner-no-fake-data.spec.js tests/e2e/churvox-paid-launch-hq-reality.spec.js --project=desktop-chromium --workers=1",
-    "test:ui:mobile": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-full-ui-logic-buttons.spec.js tests/e2e/churvox-public-honesty-and-function.spec.js tests/e2e/churvox-owner-no-fake-data.spec.js tests/e2e/churvox-paid-launch-hq-reality.spec.js --project=mobile-chromium --workers=1",
+    "test:ui:full": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-full-ui-logic-buttons.spec.js tests/e2e/churvox-public-honesty-and-function.spec.js tests/e2e/churvox-owner-no-fake-data.spec.js tests/e2e/churvox-paid-launch-hq-reality.spec.js tests/e2e/churvox-job-done-reality.spec.js --workers=1",
+    "test:ui:desktop": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-full-ui-logic-buttons.spec.js tests/e2e/churvox-public-honesty-and-function.spec.js tests/e2e/churvox-owner-no-fake-data.spec.js tests/e2e/churvox-paid-launch-hq-reality.spec.js tests/e2e/churvox-job-done-reality.spec.js --project=desktop-chromium --workers=1",
+    "test:ui:mobile": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-full-ui-logic-buttons.spec.js tests/e2e/churvox-public-honesty-and-function.spec.js tests/e2e/churvox-owner-no-fake-data.spec.js tests/e2e/churvox-paid-launch-hq-reality.spec.js tests/e2e/churvox-job-done-reality.spec.js --project=mobile-chromium --workers=1",
     "test:hq:reality": "PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test tests/e2e/churvox-paid-launch-hq-reality.spec.js --workers=1",
     "test:hq:reality:live": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-paid-launch-hq-reality.spec.js --workers=1",
     "test:launch": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-big-launch-audit.spec.js",
@@ -114,8 +114,16 @@
     "test:tester:ready": "node scripts/churvox-tester-ready-gate.cjs"
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",

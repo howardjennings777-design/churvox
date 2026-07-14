@@ -70,6 +70,11 @@ def _route_matches(route):
     return getattr(route, "path", "") == PATH and "POST" in set(getattr(route, "methods", set()) or set())
 
 
+def safe_existing_status(existing):
+    status = _text((existing or {}).get("status"), "open")
+    return status if status in {"open", "in_command", "waiting_proof"} else "open"
+
+
 async def _seed_job_done(db, user, job, now):
     """Create the durable closeout identity at the exact worker-completion moment."""
     try:
@@ -81,6 +86,11 @@ async def _seed_job_done(db, user, job, now):
         client_id = _text((job or {}).get("client_id") or (job or {}).get("customer_id"), "")
         worker_id = _text((job or {}).get("worker_id") or (job or {}).get("assigned_worker_id") or (user or {}).get("id"), "")
         key = {"business_id": business_id, "job_collection": "jobs", "job_id": job_id}
+        existing = await db.job_closeouts.find_one(key)
+        existing_execution = (existing or {}).get("execution") if isinstance((existing or {}).get("execution"), dict) else {}
+        preserve_approved = bool((existing or {}).get("status") == "approved" and existing_execution.get("applied"))
+        seed_status = "approved" if preserve_approved else safe_existing_status(existing)
+        seed_state = "approved" if preserve_approved else ("waiting_proof" if seed_status == "waiting_proof" else "scanning")
         await db.job_closeouts.update_one(
             key,
             {
@@ -96,8 +106,8 @@ async def _seed_job_done(db, user, job, now):
                         "scheduled_date": (job or {}).get("scheduled_date") or (job or {}).get("date"),
                         "notes": _text((job or {}).get("worker_notes") or (job or {}).get("completion_note") or (job or {}).get("notes"), ""),
                     },
-                    "closeout_state": "scanning",
-                    "status": "open",
+                    "closeout_state": seed_state,
+                    "status": seed_status,
                     "trigger": "worker_completion",
                     "updated_at": now,
                     "version": 1,

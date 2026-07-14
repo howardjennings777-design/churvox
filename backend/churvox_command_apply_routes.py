@@ -248,7 +248,7 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             return 0.0
 
     async def ensure_job_done_indexes():
-        for collection_name in ["invoices", "invoice_reviews", "payroll_reviews", "message_drafts", "jobs", "accounting_reviews"]:
+        for collection_name in ["invoices", "invoice_reviews", "payroll_reviews", "quality_reviews", "message_drafts", "jobs", "accounting_reviews"]:
             try:
                 await db[collection_name].create_index(
                     [("business_id", 1), ("source_job_closeout_id", 1), ("record_kind", 1)],
@@ -297,6 +297,10 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         closeout = await db.job_closeouts.find_one({"_id": closeout_oid, "business_id": business_id})
         if not closeout:
             return {"applied": False, "message": "The persisted Job Done closeout could not be found. Nothing was applied."}
+        expected_revision = safe_text(payload.get("closeout_revision"), "")
+        current_revision = safe_text(closeout.get("source_revision"), "")
+        if expected_revision and current_revision and expected_revision != current_revision:
+            raise HTTPException(status_code=409, detail="This Job Done closeout changed after Command prepared it. Refresh Job Done and review the new evidence before approval. Nothing was applied.")
         previous = closeout.get("execution") if isinstance(closeout.get("execution"), dict) else {}
         if closeout.get("status") == "approved" and previous.get("applied"):
             return {**serial(previous), "idempotent": True}
@@ -308,6 +312,8 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         time_state = closeout.get("worker_time") if isinstance(closeout.get("worker_time"), dict) else {}
         extras_state = closeout.get("extras") if isinstance(closeout.get("extras"), dict) else {}
         recurring_state = closeout.get("recurring") if isinstance(closeout.get("recurring"), dict) else {}
+        proof_state = closeout.get("proof") if isinstance(closeout.get("proof"), dict) else {}
+        proof_missing = safe_text(proof_state.get("status"), "check").lower() == "missing"
         job_title = safe_text(closeout.get("job_title") or pick(form, "job", "title"), "Completed job")
         job_id = safe_text(closeout.get("job_id") or payload.get("job_id"), "")
         client_id = safe_text(closeout.get("client_id") or payload.get("client_id"), "")
@@ -317,33 +323,6 @@ def build_command_apply_router(db, get_current_user, ObjectId):
         customer_message = safe_text(pick(form, "customer completion message", "message"), "Your work is complete. The owner will review the final closeout before anything is sent.", 2400)
         next_date = safe_text(pick(form, "next recurring date", "next date") or recurring_state.get("next_date"), "")
         artifacts = {}
-
-        if invoice_state.get("invoice_id"):
-            artifacts["invoice_review_id"] = await upsert_job_done_artifact(user, "invoice_reviews", closeout_id, "linked_invoice_review", {
-                "title": f"Invoice review: {job_title}",
-                "job_id": job_id,
-                "client_id": client_id,
-                "invoice_id": safe_text(invoice_state.get("invoice_id"), ""),
-                "amount": invoice_total,
-                "extras_amount": extras_amount,
-                "status": "draft_approved",
-                "command_slip_id": str(slip.get("_id")),
-                "prepared_form": serial(form),
-            })
-        else:
-            artifacts["invoice_draft_id"] = await upsert_job_done_artifact(user, "invoices", closeout_id, "job_done_invoice_draft", {
-                "title": f"Draft invoice: {job_title}",
-                "job_id": job_id,
-                "client_id": client_id,
-                "total": invoice_total,
-                "amount": invoice_total,
-                "extras_amount": extras_amount,
-                "status": "draft_approved",
-                "command_slip_id": str(slip.get("_id")),
-                "prepared_form": serial(form),
-                "sent": False,
-                "synced": False,
-            })
 
         if worker_hours > 0 or time_state.get("status") in {"review", "missing"}:
             artifacts["payroll_review_id"] = await upsert_job_done_artifact(user, "payroll_reviews", closeout_id, "job_done_hours_review", {
@@ -357,40 +336,90 @@ def build_command_apply_router(db, get_current_user, ObjectId):
                 "gross_only": True,
             })
 
-        artifacts["message_draft_id"] = await upsert_job_done_artifact(user, "message_drafts", closeout_id, "job_done_customer_message", {
-            "title": f"Completion message: {job_title}",
-            "job_id": job_id,
-            "client_id": client_id,
-            "body": customer_message,
-            "status": "draft_approved",
-            "command_slip_id": str(slip.get("_id")),
-            "sent": False,
-        })
-
-        if recurring_state.get("recurring") and next_date:
-            artifacts["next_job_draft_id"] = await upsert_job_done_artifact(user, "jobs", closeout_id, "recurring_next_job_draft", {
-                "title": job_title,
-                "source_job_id": job_id,
+        if proof_missing:
+            artifacts["quality_review_id"] = await upsert_job_done_artifact(user, "quality_reviews", closeout_id, "job_done_proof_review", {
+                "title": f"Completion proof needed: {job_title}",
+                "job_id": job_id,
                 "client_id": client_id,
-                "scheduled_date": next_date,
+                "proof_status": "missing",
                 "status": "draft_approved",
-                "recurring": True,
                 "command_slip_id": str(slip.get("_id")),
+                "note": safe_text(proof_state.get("note"), "Required completion proof is missing."),
             })
-
-        artifacts["accounting_review_id"] = await upsert_job_done_artifact(user, "accounting_reviews", closeout_id, "job_done_accounting_review", {
-            "title": f"Accounting review: {job_title}",
-            "job_id": job_id,
-            "invoice_id": invoice_state.get("invoice_id") or artifacts.get("invoice_draft_id") or "",
-            "amount": invoice_total,
-            "status": "draft_approved",
-            "command_slip_id": str(slip.get("_id")),
-            "sync_status": "locked_pending_owner_action",
-        })
+            artifacts["worker_proof_request_id"] = await upsert_job_done_artifact(user, "message_drafts", closeout_id, "worker_proof_request", {
+                "title": f"Proof request: {job_title}",
+                "job_id": job_id,
+                "worker_ids": closeout.get("worker_ids") or [],
+                "body": f"Please add the required completion proof for {job_title}.",
+                "status": "draft_approved",
+                "command_slip_id": str(slip.get("_id")),
+                "sent": False,
+            })
+            final_status = "waiting_proof"
+            final_state = "waiting_proof"
+            execution_type = "job_done_proof_hold"
+        else:
+            if invoice_state.get("invoice_id"):
+                artifacts["invoice_review_id"] = await upsert_job_done_artifact(user, "invoice_reviews", closeout_id, "linked_invoice_review", {
+                    "title": f"Invoice review: {job_title}",
+                    "job_id": job_id,
+                    "client_id": client_id,
+                    "invoice_id": safe_text(invoice_state.get("invoice_id"), ""),
+                    "amount": invoice_total,
+                    "extras_amount": extras_amount,
+                    "status": "draft_approved",
+                    "command_slip_id": str(slip.get("_id")),
+                    "prepared_form": serial(form),
+                })
+            else:
+                artifacts["invoice_draft_id"] = await upsert_job_done_artifact(user, "invoices", closeout_id, "job_done_invoice_draft", {
+                    "title": f"Draft invoice: {job_title}",
+                    "job_id": job_id,
+                    "client_id": client_id,
+                    "total": invoice_total,
+                    "amount": invoice_total,
+                    "extras_amount": extras_amount,
+                    "status": "draft_approved",
+                    "command_slip_id": str(slip.get("_id")),
+                    "prepared_form": serial(form),
+                    "sent": False,
+                    "synced": False,
+                })
+            artifacts["message_draft_id"] = await upsert_job_done_artifact(user, "message_drafts", closeout_id, "job_done_customer_message", {
+                "title": f"Completion message: {job_title}",
+                "job_id": job_id,
+                "client_id": client_id,
+                "body": customer_message,
+                "status": "draft_approved",
+                "command_slip_id": str(slip.get("_id")),
+                "sent": False,
+            })
+            if recurring_state.get("recurring") and next_date:
+                artifacts["next_job_draft_id"] = await upsert_job_done_artifact(user, "jobs", closeout_id, "recurring_next_job_draft", {
+                    "title": job_title,
+                    "source_job_id": job_id,
+                    "client_id": client_id,
+                    "scheduled_date": next_date,
+                    "status": "draft_approved",
+                    "recurring": True,
+                    "command_slip_id": str(slip.get("_id")),
+                })
+            artifacts["accounting_review_id"] = await upsert_job_done_artifact(user, "accounting_reviews", closeout_id, "job_done_accounting_review", {
+                "title": f"Accounting review: {job_title}",
+                "job_id": job_id,
+                "invoice_id": invoice_state.get("invoice_id") or artifacts.get("invoice_draft_id") or "",
+                "amount": invoice_total,
+                "status": "draft_approved",
+                "command_slip_id": str(slip.get("_id")),
+                "sync_status": "locked_pending_owner_action",
+            })
+            final_status = "approved"
+            final_state = "approved"
+            execution_type = "job_done_closeout"
 
         execution = {
             "applied": True,
-            "type": "job_done_closeout",
+            "type": execution_type,
             "closeout_id": closeout_id,
             "job_id": job_id,
             "artifacts": artifacts,
@@ -402,8 +431,8 @@ def build_command_apply_router(db, get_current_user, ObjectId):
             {"_id": closeout_oid, "business_id": business_id},
             {
                 "$set": {
-                    "status": "approved",
-                    "closeout_state": "approved",
+                    "status": final_status,
+                    "closeout_state": final_state,
                     "approved_at": now(),
                     "approved_by": str(user.get("id")),
                     "command_slip_id": str(slip.get("_id")),
