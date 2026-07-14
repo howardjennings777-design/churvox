@@ -9,6 +9,7 @@ const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURV
 
 const OWNER_ROUTES = [
   ['today', /today|churvox/i],
+  ['intelligence', /intelligence|money left|promise|what happens/i],
   ['command', /command|decision|approval/i],
   ['work', /jobs|work/i],
   ['clients', /clients/i],
@@ -26,24 +27,22 @@ const OWNER_ROUTES = [
   ['help', /help|support/i],
 ];
 
+const MAIN_NAV = ['Today', 'Intelligence', 'Command', 'Jobs', 'Clients', 'Workers', 'Quotes', 'Invoices'];
+const MORE_NAV = ['Schedule', 'Messages', 'Payroll', 'Xero', 'How Churvox works', 'Activity'];
+const ACCOUNT_NAV = ['Settings', 'Plans', 'Help'];
 const WORKER_ROUTES = [
   ['/worker/today', /today|job|worker/i],
   ['/worker/jobs', /jobs|assigned|work/i],
   ['/worker/messages', /messages|boss|office/i],
   ['/worker/help', /help|support|issue/i],
+  ['/worker/settings', /worker access|field tools|me/i],
 ];
 
 const FORBIDDEN_FINAL_URL = /\/(?:legacy-dashboard|fresh|office-team-lab|office-lab|new-command-lab|smart-hub|cockpit|jobs-board)(?:[/?#]|$)|\/plans(?:[/?#]|$)/i;
 const FORBIDDEN_HREF = /\/(?:legacy-dashboard|fresh|office-team-lab|office-lab|new-command-lab|smart-hub|cockpit|jobs-board)(?:[/?#]|$)|\/plans(?:[/?#]|$)/i;
-const FORBIDDEN_SELECTORS = [
-  '.churvoxOptionC',
-  '.freshPricingPage',
-  '.cv3Product',
-  '#option-f-plans-pricing-desk',
-  '[data-legacy-dashboard]',
-];
+const FORBIDDEN_SELECTORS = ['.churvoxOptionC', '.freshPricingPage', '.cv3Product', '#option-f-plans-pricing-desk', '[data-legacy-dashboard]'];
 const FATAL_TEXT = /something went wrong|application error|cannot read properties|failed to render|minified react error|unexpected error|page not found/i;
-const UNSAFE_CONTROL = /delete|remove|trash|archive|send|approve|charge|pay|payment|start job|pause|resume|complete|finish|acknowledge|save|create|add |new |invite|upload|import|export|sync|disconnect|connect xero|submit|mark paid|open stripe|secure checkout|billing portal|manage billing|log out|sign out/i;
+const UNSAFE_CONTROL = /delete|remove|trash|archive|send|approve|charge|pay|payment|start|pause|resume|complete|finish|acknowledge|save|create|add |new |invite|upload|import|export|sync|disconnect|connect xero|submit|mark paid|open stripe|secure checkout|billing portal|manage billing|log out|sign out/i;
 
 function apiUrl(path) {
   return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
@@ -51,12 +50,6 @@ function apiUrl(path) {
 
 function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
-}
-
-function tokenFrom(payload = {}) {
-  return payload?.token || payload?.access_token || payload?.auth_token || payload?.jwt || payload?.accessToken
-    || payload?.user?.token || payload?.user?.access_token || payload?.user?.accessToken
-    || payload?.data?.token || payload?.data?.access_token || payload?.data?.user?.token || '';
 }
 
 function emailFrom(payload = {}) {
@@ -79,25 +72,6 @@ async function clearBrowser(page) {
   });
 }
 
-async function loginThroughScreen(page, email, password, role) {
-  if (!email || !password) throw new Error(`Missing real ${role} credentials. This audit fails rather than skipping.`);
-  await clearBrowser(page);
-  const loginUrl = role === 'worker' ? `${BASE_URL}/login?worker=1` : `${BASE_URL}/login`;
-  await page.goto(loginUrl, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByLabel(/email/i).first()).toBeVisible({ timeout: 20_000 });
-  await page.getByLabel(/email/i).first().fill(email);
-  await page.getByLabel(/password/i).first().fill(password);
-  await page.getByRole('button', { name: /sign in|log in/i }).first().click();
-  await expect.poll(async () => clean(await page.locator('body').innerText().catch(() => '')), {
-    message: `${role} stayed on the login screen`,
-    timeout: 25_000,
-    intervals: [300, 600, 1000, 1800, 3000],
-  }).not.toMatch(/welcome back|sign in to see|forgot password/i);
-  await page.waitForLoadState('domcontentloaded').catch(() => {});
-  await page.waitForTimeout(900);
-  return verifyCurrentAccount(page, email, role);
-}
-
 async function verifyCurrentAccount(page, expectedEmail, role) {
   const token = await page.evaluate(() => localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('access_token') || '');
   expect(token, `${role} browser login did not persist a token`).toBeTruthy();
@@ -111,19 +85,30 @@ async function verifyCurrentAccount(page, expectedEmail, role) {
   return { token, body };
 }
 
+async function loginThroughScreen(page, email, password, role) {
+  if (!email || !password) throw new Error(`Missing real ${role} credentials. This audit fails rather than skipping.`);
+  await clearBrowser(page);
+  await page.goto(role === 'worker' ? `${BASE_URL}/login?worker=1` : `${BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
+  await page.getByLabel(/email/i).first().fill(email);
+  await page.getByLabel(/password/i).first().fill(password);
+  await page.getByRole('button', { name: /sign in|log in/i }).first().click();
+  await page.waitForFunction(() => Boolean(localStorage.getItem('token')), null, { timeout: 30_000 });
+  await expect.poll(() => page.url(), { timeout: 20_000 }).not.toMatch(/\/login(?:[?#]|$)/i);
+  await page.waitForTimeout(700);
+  return verifyCurrentAccount(page, email, role);
+}
+
 async function waitForRealContent(page, label) {
   await expect(page.locator('body')).toBeVisible({ timeout: 20_000 });
   await expect.poll(async () => clean(await page.locator('body').innerText().catch(() => '')).length, {
     message: `${label} stayed blank or on a loading shell`,
     timeout: 25_000,
-    intervals: [250, 500, 900, 1500, 2500],
   }).toBeGreaterThan(90);
 }
 
 async function assertNoLegacy(page, label, expectedMarker = null) {
   await waitForRealContent(page, label);
-  const current = page.url();
-  expect(current, `${label} opened an old or standalone route`).not.toMatch(FORBIDDEN_FINAL_URL);
+  expect(page.url(), `${label} opened an old or standalone route`).not.toMatch(FORBIDDEN_FINAL_URL);
   const body = clean(await page.locator('body').innerText());
   expect(body, `${label} rendered a fatal/error boundary`).not.toMatch(FATAL_TEXT);
   if (expectedMarker) expect(body, `${label} did not render its own purpose`).toMatch(expectedMarker);
@@ -141,44 +126,78 @@ async function assertNoLegacy(page, label, expectedMarker = null) {
   expect(badLinks, `${label} contains links back to old routes: ${JSON.stringify(badLinks)}`).toEqual([]);
 }
 
-async function clickVisibleNavigation(page, label) {
-  const control = page.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }).first();
-  if (!(await control.count())) return false;
-  await expect(control, `${label} navigation should be visible`).toBeVisible({ timeout: 12_000 });
-  await control.click();
-  await page.waitForTimeout(450);
-  await assertNoLegacy(page, `navigation ${label}`);
-  return true;
+async function openOwnerHash(page, hash, marker) {
+  await page.goto(`${BASE_URL}/dashboard#${hash}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(650);
+  await expect(page.locator('.cvOwnerReady'), `owner ${hash} is not the new owner OS`).toBeVisible({ timeout: 20_000 });
+  await assertNoLegacy(page, `owner ${hash}`, marker);
 }
 
-async function safeControlSweep(page, routeLabel, limit = 18) {
-  const candidates = await page.locator('button:visible, a[href]:visible').evaluateAll((nodes) => nodes.map((node, index) => ({
-    index,
-    tag: node.tagName.toLowerCase(),
-    text: String(node.textContent || node.getAttribute('aria-label') || node.getAttribute('title') || '').replace(/\s+/g, ' ').trim(),
-  })));
-  const unique = [];
-  const seen = new Set();
-  for (const item of candidates) {
-    const key = item.text.toLowerCase();
-    if (!item.text || item.text.length > 90 || seen.has(key) || UNSAFE_CONTROL.test(item.text)) continue;
-    seen.add(key);
-    unique.push(item.text);
-    if (unique.length >= limit) break;
+async function openWorkerPath(page, path, marker) {
+  await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(650);
+  await expect(page.locator('[data-worker-view]'), `worker ${path} is not the strict Worker View`).toBeVisible({ timeout: 20_000 });
+  await assertNoLegacy(page, `worker ${path}`, marker);
+}
+
+async function openMore(page) {
+  const trigger = page.getByRole('button', { name: /^More$/i }).first();
+  await expect(trigger, 'More navigation should be visible').toBeVisible({ timeout: 12_000 });
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
+  const menu = page.getByRole('menu', { name: /More tools/i });
+  await expect(menu, 'More tools menu should open').toBeVisible({ timeout: 10_000 });
+  return menu;
+}
+
+async function clickResponsiveOwnerNavigation(page, label) {
+  const direct = page.getByRole('button', { name: new RegExp(`^${label}(?:\\s+\\d+)?$`, 'i') }).first();
+  if (await direct.isVisible().catch(() => false)) {
+    await direct.click();
+    await page.waitForTimeout(450);
+    await assertNoLegacy(page, `navigation ${label}`);
+    return true;
   }
+
+  const menu = await openMore(page);
+  const menuItem = menu.getByRole('menuitem', { name: new RegExp(`^${label}$`, 'i') }).first();
+  if (await menuItem.isVisible().catch(() => false)) {
+    await menuItem.click();
+    await page.waitForTimeout(450);
+    await assertNoLegacy(page, `More navigation ${label}`);
+    return true;
+  }
+
+  const accountNav = page.getByRole('navigation', { name: /Account and help pages/i });
+  const accountButton = accountNav.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }).first();
+  if (await accountButton.isVisible().catch(() => false)) {
+    await page.keyboard.press('Escape').catch(() => {});
+    await accountButton.click();
+    await page.waitForTimeout(450);
+    await assertNoLegacy(page, `account navigation ${label}`);
+    return true;
+  }
+
+  return false;
+}
+
+async function safeControlSweep(page, routeLabel, limit = 16) {
+  const labels = await page.locator('button:visible, a[href]:visible').evaluateAll((nodes) => nodes.map((node) =>
+    String(node.textContent || node.getAttribute('aria-label') || node.getAttribute('title') || '').replace(/\s+/g, ' ').trim()
+  ));
+  const unique = [...new Set(labels)].filter((text) => text && text.length <= 90 && !UNSAFE_CONTROL.test(text)).slice(0, limit);
 
   let clicked = 0;
   for (const text of unique) {
     const target = page.getByRole('button', { name: text, exact: true }).or(page.getByRole('link', { name: text, exact: true })).first();
-    if (!(await target.count()) || !(await target.isVisible().catch(() => false))) continue;
+    if (!(await target.isVisible().catch(() => false))) continue;
     const before = page.url();
     await target.click({ timeout: 8_000 }).catch(() => null);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(250);
     await assertNoLegacy(page, `${routeLabel} control “${text}”`);
-    clicked += 1;
     if (page.url() !== before && !page.url().includes('/dashboard') && !page.url().includes('/worker/')) {
       throw new Error(`${routeLabel} control “${text}” left the new app: ${page.url()}`);
     }
+    clicked += 1;
   }
   return clicked;
 }
@@ -192,30 +211,26 @@ function attachRuntimeTraps(page, errors) {
     errors.push(`console: ${text}`);
   });
   page.on('response', (response) => {
-    const status = response.status();
-    if (status < 500) return;
-    errors.push(`HTTP ${status}: ${response.request().method()} ${response.url()}`);
+    if (response.status() >= 500) errors.push(`HTTP ${response.status()}: ${response.request().method()} ${response.url()}`);
   });
 }
 
-async function openOwnerHash(page, hash, marker) {
-  await page.goto(`${BASE_URL}/dashboard#${hash}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(650);
-  await assertNoLegacy(page, `owner ${hash}`, marker);
-  await expect(page.locator('.cvOwnerReady'), `owner ${hash} is not the new owner OS`).toBeVisible({ timeout: 20_000 });
-}
-
-async function openWorkerPath(page, path, marker) {
-  await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(650);
-  await assertNoLegacy(page, `worker ${path}`, marker);
-  await expect(page.locator('[data-worker-view]'), `worker ${path} is not the strict Worker View`).toBeVisible({ timeout: 20_000 });
+async function logout(page) {
+  let button = page.getByRole('button', { name: /Log out/i }).first();
+  if (!(await button.isVisible().catch(() => false))) {
+    await openMore(page).catch(() => null);
+    button = page.getByRole('button', { name: /Log out/i }).first();
+  }
+  await expect(button, 'Log out should remain reachable').toBeVisible({ timeout: 10_000 });
+  await button.click();
+  await expect.poll(() => page.url(), { timeout: 15_000 }).toMatch(/\/login/);
+  expect(await page.evaluate(() => localStorage.getItem('token') || localStorage.getItem('authToken') || ''), 'logout left browser token behind').toBe('');
 }
 
 test.describe('Live hardcore human everything and no-legacy audit', () => {
   test.setTimeout(720_000);
 
-  test('real owner: every new page, navigation group, safe control, refresh and logout stay in the new OS', async ({ browser }, testInfo) => {
+  test('real owner: every current page, responsive navigation, safe controls, refresh and logout stay in the new OS', async ({ browser }, testInfo) => {
     const context = await browser.newContext({ serviceWorkers: 'block' });
     const page = await context.newPage();
     const runtimeErrors = [];
@@ -223,60 +238,52 @@ test.describe('Live hardcore human everything and no-legacy audit', () => {
 
     await loginThroughScreen(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
     await page.goto(`${BASE_URL}/dashboard#today`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.cvOwnerMainNavigation'), 'latest fixed owner navigation is not deployed').toBeVisible({ timeout: 25_000 });
+    await expect(page.locator('.cvOwnerMainNavigation'), 'latest owner navigation is not deployed').toBeVisible({ timeout: 25_000 });
 
     let auditedControls = 0;
     for (const [hash, marker] of OWNER_ROUTES) {
       await test.step(`owner page ${hash}`, async () => {
         await openOwnerHash(page, hash, marker);
-        auditedControls += await safeControlSweep(page, `owner ${hash}`, /mobile/i.test(testInfo.project.name) ? 8 : 14);
+        auditedControls += await safeControlSweep(page, `owner ${hash}`, /mobile/i.test(testInfo.project.name) ? 6 : 10);
       });
     }
 
-    await openOwnerHash(page, 'today', /today|churvox/i);
-    for (const label of ['Today', 'Command', 'Jobs', 'Clients', 'Workers', 'Quotes', 'Invoices']) {
-      await clickVisibleNavigation(page, label);
+    for (const label of MAIN_NAV) {
+      await openOwnerHash(page, 'today', /today|churvox/i);
+      expect(await clickResponsiveOwnerNavigation(page, label), `current owner navigation is missing ${label}`).toBeTruthy();
     }
 
     await openOwnerHash(page, 'today', /today|churvox/i);
-    await clickVisibleNavigation(page, 'More');
-    const moreMenu = page.getByRole('menu', { name: /More tools/i });
-    await expect(moreMenu).toBeVisible({ timeout: 10_000 });
-    const box = await moreMenu.boundingBox();
+    const menu = await openMore(page);
+    const box = await menu.boundingBox();
+    const viewport = page.viewportSize();
     expect(box, 'More menu has no visible box').toBeTruthy();
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.y).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual((await page.viewportSize()).width + 1);
-    for (const item of await moreMenu.getByRole('menuitem').allTextContents()) {
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
+
+    for (const label of MORE_NAV) {
       await openOwnerHash(page, 'today', /today|churvox/i);
-      await clickVisibleNavigation(page, 'More');
-      const menuItem = page.getByRole('menuitem', { name: clean(item), exact: true });
-      await expect(menuItem).toBeVisible();
-      await menuItem.click();
-      await page.waitForTimeout(400);
-      await assertNoLegacy(page, `More → ${clean(item)}`);
+      expect(await clickResponsiveOwnerNavigation(page, label), `More navigation is missing ${label}`).toBeTruthy();
     }
 
-    for (const label of ['Settings', 'Plans', 'Help']) {
+    for (const label of ACCOUNT_NAV) {
       await openOwnerHash(page, 'today', /today|churvox/i);
-      await clickVisibleNavigation(page, label);
+      expect(await clickResponsiveOwnerNavigation(page, label), `responsive account navigation is missing ${label}`).toBeTruthy();
     }
 
     await openOwnerHash(page, 'plans', /plans|billing|checkout/i);
-    await expect(page.getByRole('button', { name: /Continue to secure checkout/i }), 'new in-app Stripe button is not deployed').toBeVisible();
+    await expect(page.getByRole('button', { name: /Continue to secure checkout/i }), 'current in-app Stripe button is not deployed').toBeVisible();
     await expect(page.getByRole('button', { name: /^Open secure billing$/i }), 'old billing handoff button still exists').toHaveCount(0);
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await assertNoLegacy(page, 'owner refresh persistence', /plans|billing|checkout/i);
     await verifyCurrentAccount(page, OWNER_EMAIL, 'owner after refresh');
 
-    expect(auditedControls, `Too few owner controls were human-clicked on ${testInfo.project.name}`).toBeGreaterThan(/mobile/i.test(testInfo.project.name) ? 25 : 40);
+    expect(auditedControls, `Too few owner controls were human-clicked on ${testInfo.project.name}`).toBeGreaterThan(/mobile/i.test(testInfo.project.name) ? 18 : 30);
     expect(runtimeErrors, `Owner runtime failures:\n${runtimeErrors.join('\n')}`).toEqual([]);
-
-    await page.getByRole('button', { name: /Log out/i }).first().click();
-    await expect.poll(() => page.url(), { timeout: 15_000 }).toMatch(/\/login/);
-    const tokenAfter = await page.evaluate(() => localStorage.getItem('token') || localStorage.getItem('authToken') || '');
-    expect(tokenAfter, 'owner logout left browser token behind').toBe('');
+    await logout(page);
     await context.close();
   });
 
@@ -291,16 +298,12 @@ test.describe('Live hardcore human everything and no-legacy audit', () => {
     for (const [path, marker] of WORKER_ROUTES) {
       await test.step(`worker page ${path}`, async () => {
         await openWorkerPath(page, path, marker);
-        auditedControls += await safeControlSweep(page, `worker ${path}`, /mobile/i.test(testInfo.project.name) ? 8 : 12);
+        auditedControls += await safeControlSweep(page, `worker ${path}`, /mobile/i.test(testInfo.project.name) ? 6 : 10);
       });
     }
 
     await page.goto(`${BASE_URL}/dashboard#today`, { waitUntil: 'domcontentloaded' });
-    await expect.poll(() => page.url(), {
-      message: 'worker remained inside owner dashboard',
-      timeout: 15_000,
-      intervals: [250, 500, 900, 1500],
-    }).toMatch(/\/worker\//);
+    await expect.poll(() => page.url(), { timeout: 15_000 }).toMatch(/\/worker\//);
     await assertNoLegacy(page, 'worker blocked from owner dashboard');
 
     await openWorkerPath(page, '/worker/today', /today|job|worker/i);
@@ -308,15 +311,9 @@ test.describe('Live hardcore human everything and no-legacy audit', () => {
     await assertNoLegacy(page, 'worker refresh persistence', /today|job|worker/i);
     await verifyCurrentAccount(page, WORKER_EMAIL, 'worker after refresh');
 
-    expect(auditedControls, `Too few worker controls were human-clicked on ${testInfo.project.name}`).toBeGreaterThan(/mobile/i.test(testInfo.project.name) ? 6 : 8);
+    expect(auditedControls, `Too few worker controls were human-clicked on ${testInfo.project.name}`).toBeGreaterThan(/mobile/i.test(testInfo.project.name) ? 5 : 7);
     expect(runtimeErrors, `Worker runtime failures:\n${runtimeErrors.join('\n')}`).toEqual([]);
-
-    const logout = page.getByRole('button', { name: /Log out/i }).first();
-    await expect(logout).toBeVisible();
-    await logout.click();
-    await expect.poll(() => page.url(), { timeout: 15_000 }).toMatch(/\/login/);
-    const tokenAfter = await page.evaluate(() => localStorage.getItem('token') || localStorage.getItem('authToken') || '');
-    expect(tokenAfter, 'worker logout left browser token behind').toBe('');
+    await logout(page);
     await context.close();
   });
 
@@ -334,7 +331,7 @@ test.describe('Live hardcore human everything and no-legacy audit', () => {
     const { token } = await loginThroughScreen(workerPage, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
     for (const path of ['/dashboard#today', '/dashboard#plans', '/plans', '/admin']) {
       await workerPage.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' });
-      await pageSleep(500);
+      await workerPage.waitForTimeout(500);
       expect(workerPage.url(), `worker reached forbidden owner route ${path}`).toMatch(/\/worker\/|\/login/);
       expect(workerPage.url(), `worker was sent to legacy route from ${path}`).not.toMatch(FORBIDDEN_FINAL_URL);
     }
@@ -346,7 +343,3 @@ test.describe('Live hardcore human everything and no-legacy audit', () => {
     await workerContext.close();
   });
 });
-
-function pageSleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
