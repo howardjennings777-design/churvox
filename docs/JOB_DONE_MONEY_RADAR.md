@@ -49,6 +49,14 @@ Both workflows follow the same product rule:
 5. Churvox stores the approved draft and its safety locks without mutating the source records.
 6. External sends, syncs, charges, payments, tax actions and live-record changes remain separate owner-approved actions.
 
+## Release safeguards
+
+- Job Done approvals are routed to the existing operations-review draft collection.
+- Money Radar approvals are routed to the existing accounting-review draft collection.
+- Active Stripe-backed owners see secure billing management instead of being offered a second checkout.
+- A newly submitted login must be confirmed by the server; an offline browser snapshot cannot confirm a fresh login.
+- Explicit logout calls the server, clears cached account state, records the signed-out lock and returns to `/login?logged_out=1`.
+
 ## Validation
 
-The feature branch includes a Playwright contract that verifies both workflows create backend Command slips with prepared-only and no-auto-action safety flags. Job Done is also included in the full route, mobile layout and button gauntlets. A backend unit contract verifies that only Job Done and Money Radar approvals create the locked internal draft record.
+The feature branch includes a Playwright contract that verifies both workflows create backend Command slips with prepared-only and no-auto-action safety flags. Job Done is also included in the full route, mobile layout and button gauntlets. Backend route-isolation tests verify that signature drafts enter the internal review collections while ordinary Command slips keep their existing routing.
