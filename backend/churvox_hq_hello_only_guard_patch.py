@@ -8,7 +8,7 @@ import sys
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
 PLATFORM_OWNER_EMAIL = "hello@churvox.com"
-OUTREACH_WRAPPER_VERSION = "churvox-outreach-live-wrapper-20260715b"
+OUTREACH_WRAPPER_VERSION = "churvox-outreach-live-wrapper-20260715c"
 HQ_PATH_PREFIXES = (
     "/api/admin/owner",
     "/api/platform/hq",
@@ -46,6 +46,7 @@ def _with_cors(response, request):
     response.headers["Access-Control-Allow-Credentials"] = "true"
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,PATCH,DELETE,OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = request.headers.get("access-control-request-headers") or "Authorization,Content-Type,Accept,X-Requested-With"
+    response.headers["Access-Control-Max-Age"] = "600"
     response.headers["Vary"] = "Origin"
     return response
 
@@ -81,6 +82,7 @@ def _remove_route(app, path, method):
 
 def _install_outreach_routes(module):
     app = getattr(module, "app", None)
+    JSONResponse = getattr(module, "JSONResponse", None)
     if app is None:
         return False, ["app_missing"]
 
@@ -106,6 +108,14 @@ def _install_outreach_routes(module):
             errors.append(f"{patch_name}:{type(exc).__name__}:{exc}")
             print(f"Churvox Outreach live-wrapper patch failed: {patch_name}: {exc}", file=sys.stderr)
 
+    if JSONResponse is not None:
+        async def outreach_options(request):
+            return _with_cors(JSONResponse({"ok": True, "outreach_preflight": True}), request)
+
+        for path in sorted({path for _, path in OUTREACH_ROUTES}):
+            _remove_route(app, path, "OPTIONS")
+            app.add_api_route(path, outreach_options, methods=["OPTIONS"])
+
     async def outreach_boot_marker():
         route_owners = _route_owners(app)
         ready = all(bool(route_owners.get(f"{method} {path}")) for method, path in OUTREACH_ROUTES)
@@ -116,6 +126,7 @@ def _install_outreach_routes(module):
             "version": OUTREACH_WRAPPER_VERSION,
             "live_entrypoint": "backend/server/__init__.py via uvicorn server:app",
             "route_owners": route_owners,
+            "explicit_options": True,
             "errors": errors,
             "checked_at": datetime.now(timezone.utc).isoformat(),
         }
