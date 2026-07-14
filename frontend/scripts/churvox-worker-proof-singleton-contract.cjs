@@ -26,6 +26,18 @@ const checks = [
     ok: source.includes('placeholder="What changed on this job?"'),
     message: 'worker proof/completion note input is missing',
   },
+  {
+    ok: source.includes('const [sentProofNames, setSentProofNames] = useState([]);'),
+    message: 'sent photo proof is not preserved after the file picker clears',
+  },
+  {
+    ok: source.includes('const proofNames = [...new Set([...sentProofNames, ...selectedProofNames])];'),
+    message: 'completion does not combine sent and newly selected proof photos',
+  },
+  {
+    ok: source.includes('setSentProofNames((currentNames) => [...new Set([...currentNames, ...selectedProofNames])]);'),
+    message: 'successful proof sends are not recorded for the later Complete check',
+  },
 ];
 
 const failures = checks.filter((check) => !check.ok).map((check) => check.message);
@@ -34,4 +46,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Worker proof contract passed: one proof panel, one completion check, and one usable job-note input.');
+console.log('Worker proof contract passed: one proof panel, one completion check, one job note, and sent photo proof persists through Complete.');
