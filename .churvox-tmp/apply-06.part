@@ -1,0 +1,55 @@
+insert_component = '''
+function EvidenceDrawer({ data = {} }) {
+  const outcomes = data?.outcomes?.money_recovered || {};
+  const findings = Array.isArray(data?.findings) ? data.findings : [];
+  return <details className="cvIntelEvidenceDrawer"><summary><span>Evidence Drawer</span><strong>{money(outcomes.found)} found · {money(outcomes.paid)} linked paid</strong><small>Open the records, calculations and assumptions</small></summary><div className="cvIntelEvidenceOutcomes"><article><strong>{money(outcomes.found)}</strong><span>found</span></article><article><strong>{money(outcomes.prepared)}</strong><span>prepared</span></article><article><strong>{money(outcomes.invoiced)}</strong><span>linked invoiced</span></article><article><strong>{money(outcomes.paid)}</strong><span>linked paid</span></article></div><p>{outcomes.definition || "Outcomes appear only when record links support them."}</p><div className="cvIntelEvidenceList">{findings.length ? findings.map((item) => <article key={item.id}><span>{String(item.kind || "record check").replaceAll("_", " ")}</span><h3>{item.title}</h3><p>{item.reason}</p><small>Source: {item.record_collection || "record"} · {item.record_id || "missing id"}</small><details><summary>Calculation and assumptions</summary><p>{item.calculation || "No calculation supplied."}</p>{(item.assumptions || []).map((assumption) => <small key={assumption}>{assumption}</small>)}</details></article>) : <Empty title="No evidence items need attention" text="Churvox has not found a supported record-level issue to explain." />}</div></details>;
+}
+
+'''
+intel = replace_exact(intel, 'function Loading() {', insert_component + 'function Loading() {', "Intelligence evidence component")
+write(intel_path, intel)
+
+intel_css_path = "frontend/src/churvox-office-lab/OfficeTeamIntelligence.css"
+intel_css = read(intel_css_path)
+intel_css += '.cvIntelEvidenceDrawer{border:1px solid #d9dde1;border-radius:18px;background:#fff;box-shadow:0 12px 28px rgba(24,28,33,.05)}.cvIntelEvidenceDrawer>summary{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:15px;cursor:pointer}.cvIntelEvidenceDrawer>summary>span{color:#d45c09;font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.cvIntelEvidenceDrawer>summary>small{color:#737b86}.cvIntelEvidenceDrawer>p{margin:0 15px 15px;color:#626a75}.cvIntelEvidenceOutcomes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 15px 12px}.cvIntelEvidenceOutcomes article{display:grid;gap:4px;padding:12px;border-radius:12px;background:#f6f7f8}.cvIntelEvidenceOutcomes span{font-size:10px;font-weight:900;text-transform:uppercase;color:#737b86}.cvIntelEvidenceList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:0 15px 15px}.cvIntelEvidenceList>article{padding:13px;border:1px solid #e0e3e6;border-radius:13px}.cvIntelEvidenceList h3{margin:4px 0}.cvIntelEvidenceList p{color:#626a75}.cvIntelEvidenceList>article>span{font-size:10px;font-weight:900;text-transform:uppercase;color:#d45c09}.cvIntelEvidenceList details{margin-top:9px;padding:8px;border-radius:9px;background:#f7f8f9}.cvIntelEvidenceList details small{display:block;margin-top:5px}@media(max-width:760px){.cvIntelEvidenceDrawer>summary,.cvIntelEvidenceOutcomes,.cvIntelEvidenceList{grid-template-columns:1fr}}'
+write(intel_css_path, intel_css)
+
+# Package test suite includes the permanent browser contract.
+package_path = ROOT / "frontend/package.json"
+package_data = json.loads(package_path.read_text(encoding="utf-8"))
+for key in ("test:ui:full", "test:ui:desktop", "test:ui:mobile"):
+    script = package_data["scripts"][key]
+    if "churvox-launch-hardening.spec.js" not in script:
+        script = script.replace(" --workers=1", " tests/e2e/churvox-launch-hardening.spec.js --workers=1")
+    package_data["scripts"][key] = script
+package_path.write_text(json.dumps(package_data, indent=2) + "\n", encoding="utf-8")
+
+# Startup mount: collapse duplicate Intelligence wiring and mount Go Live once.
+def patch_startup(path):
+    source = read(path)
+    duplicate_import = '''                try:
+                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                except Exception:
+                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+                try:
+                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                except Exception:
+                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+                try:
+                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                except Exception:
+                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+'''
+    new_import = '''                try:
+                    from churvox_owner_intelligence_routes import build_owner_intelligence_router
+                except Exception:
+                    from backend.churvox_owner_intelligence_routes import build_owner_intelligence_router
+                try:
+                    from churvox_launch_hardening_routes import build_launch_hardening_router, install_permission_middleware
+                except Exception:
+                    from backend.churvox_launch_hardening_routes import build_launch_hardening_router, install_permission_middleware
+'''
+    source = replace_exact(source, duplicate_import, new_import, f"{path} startup imports")
+    repeated_mount = '''                # Churvox Intelligence reads the same business records and remains owner-controlled.
+                intelligence_summary_mounted = any(
+                    getattr(route, "path", "") == "/api/owner-intelligence/summary"
