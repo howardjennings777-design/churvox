@@ -7,7 +7,7 @@ import traceback
 from datetime import datetime, timezone
 from typing import Any
 
-VERSION = "churvox-command-queue-speed-boot-20260713e"
+VERSION = "churvox-command-runs-office-boot-20260715a"
 ALLOWED_ORIGINS = {
     "https://www.churvox.com",
     "https://churvox.com",
@@ -56,18 +56,51 @@ def _fingerprint(error: BaseException | None) -> str:
     return hashlib.sha256(material.encode("utf-8", "ignore")).hexdigest()[:16]
 
 
+def _import_patch(name: str):
+    try:
+        return __import__(name)
+    except Exception:
+        package = __import__(f"backend.{name}", fromlist=[name])
+        return package
+
+
+def _module_name(module) -> str:
+    return str(getattr(module, "__name__", "") or "server")
+
+
+def _ensure_installed(patch, target):
+    name = _module_name(target)
+    installed = getattr(patch, "INSTALLED", None)
+    if isinstance(installed, set) and name in installed:
+        return False
+    patch.install(target)
+    return True
+
+
+def _force_reinstall(patch, target):
+    name = _module_name(target)
+    installed = getattr(patch, "INSTALLED", None)
+    if isinstance(installed, set):
+        installed.discard(name)
+    patch.install(target)
+
+
 BOOT_ERROR: BaseException | None = None
 PATCH_ERROR: BaseException | None = None
 PATCH_STAGE = "not_started"
 PATCH_INSTALLED = False
 PATCH_ROUTES: dict[str, list[str]] = {}
 INNER_APP = None
+RECOMMENDATION_CONTRACT_VERSION = ""
+RECOMMENDATION_ENGINE_VERSION = ""
+RECOMMENDATION_FINALIZER_VERSION = ""
 
 
 def _route_owners(inner_app) -> dict[str, list[str]]:
     wanted = {
         "/api/command/slips",
         "/api/command/scan",
+        "/api/command/slips/{slip_id}/approve",
         "/api/admin-brain/scan",
         "/api/paid-launch/backend-readiness",
     }
@@ -92,19 +125,33 @@ try:
     import churvox_start
 
     INNER_APP = churvox_start.app
+    target = churvox_start.server
+
     PATCH_STAGE = "force_install_fast_command"
-    try:
-        import churvox_paid_launch_live_patch
-    except Exception:
-        from backend import churvox_paid_launch_live_patch
-    # Procfile boots this module. Reinstall after churvox_start has completed so
-    # no legacy server route can shadow the paid-launch Command routes.
-    churvox_paid_launch_live_patch.install(churvox_start.server, force=True)
+    fast_patch = _import_patch("churvox_paid_launch_live_patch")
+    # Procfile boots this module. Install the fast base routes after the legacy
+    # server finishes, then put the recommendation layer on top of those routes.
+    fast_patch.install(target, force=True)
+
+    PATCH_STAGE = "install_command_recommendations"
+    recommendation_engine = _import_patch("churvox_command_runs_office_patch")
+    recommendation_finalizer = _import_patch("churvox_command_runs_office_finalizer_patch")
+    # The finalizer owns ranking aliases, backup approval mapping and the public
+    # contract version. It may already be installed by sitecustomize; do not
+    # double-wrap approval. The engine itself must always be reinstalled because
+    # the fast-route install above deliberately replaced GET /slips and POST /scan.
+    _ensure_installed(recommendation_finalizer, target)
+    _force_reinstall(recommendation_engine, target)
+
+    RECOMMENDATION_CONTRACT_VERSION = str(getattr(recommendation_engine, "VERSION", "") or "")
+    RECOMMENDATION_ENGINE_VERSION = RECOMMENDATION_CONTRACT_VERSION
+    RECOMMENDATION_FINALIZER_VERSION = str(getattr(recommendation_finalizer, "VERSION", "") or "")
     PATCH_ROUTES = _route_owners(INNER_APP)
     PATCH_INSTALLED = bool(
-        any(owner.endswith(":fast_slips") for owner in PATCH_ROUTES.get("/api/command/slips", []))
-        and any(owner.endswith(":fast_scan") for owner in PATCH_ROUTES.get("/api/command/scan", []))
+        any(owner.endswith(":command_slips_run_office") for owner in PATCH_ROUTES.get("/api/command/slips", []))
+        and any(owner.endswith(":command_scan_runs_office") for owner in PATCH_ROUTES.get("/api/command/scan", []))
         and any(owner.endswith(":admin_brain_bridge") for owner in PATCH_ROUTES.get("/api/admin-brain/scan", []))
+        and RECOMMENDATION_CONTRACT_VERSION == "churvox-command-runs-office-v2-20260715"
     )
     PATCH_STAGE = "ready" if PATCH_INSTALLED else "route_owner_mismatch"
 except BaseException as exc:  # keep Render up even when an import-time patch fails
@@ -115,7 +162,7 @@ except BaseException as exc:  # keep Render up even when an import-time patch fa
         PATCH_ERROR = exc
         PATCH_STAGE = "force_install_failed"
         PATCH_ROUTES = _route_owners(INNER_APP)
-        logging.critical("Churvox Command fast-load patch failed to install\n%s", traceback.format_exc())
+        logging.critical("Churvox Command recommendation boot failed to install\n%s", traceback.format_exc())
 
 
 class BootSafeApp:
@@ -161,6 +208,9 @@ class BootSafeApp:
                 "boot_ready": self.inner_app is not None,
                 "patch_installed": PATCH_INSTALLED,
                 "patch_stage": PATCH_STAGE,
+                "recommendation_contract_version": RECOMMENDATION_CONTRACT_VERSION,
+                "recommendation_engine_version": RECOMMENDATION_ENGINE_VERSION,
+                "recommendation_finalizer_version": RECOMMENDATION_FINALIZER_VERSION,
                 "patch_error_type": type(PATCH_ERROR).__name__ if PATCH_ERROR else None,
                 "patch_error_fingerprint": _fingerprint(PATCH_ERROR) if PATCH_ERROR else "ready",
                 "route_owners": PATCH_ROUTES,
