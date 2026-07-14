@@ -2,17 +2,21 @@ const fs = require('fs');
 const root = fs.readFileSync('Procfile', 'utf8');
 const backend = fs.readFileSync('backend/Procfile', 'utf8');
 const docker = fs.readFileSync('Dockerfile', 'utf8');
-const boot = fs.readFileSync('backend/churvox_boot.py', 'utf8');
+const guardedBoot = fs.readFileSync('backend/churvox_boot.py', 'utf8');
+const outreachBoot = fs.readFileSync('backend/churvox_outreach_boot.py', 'utf8');
 
+const target = 'churvox_outreach_boot:app';
 const checks = [
-  ['root Procfile uses guarded boot', root.includes('uvicorn churvox_boot:app')],
-  ['backend Procfile uses guarded boot', backend.includes('uvicorn churvox_boot:app')],
+  ['root Procfile uses final Outreach boot', root.includes(`uvicorn ${target}`)],
+  ['backend Procfile uses final Outreach boot', backend.includes(`uvicorn ${target}`)],
   ['backend Procfile keeps lifespan enabled', !backend.includes('--lifespan off')],
-  ['Docker CMD uses guarded boot', docker.includes('"churvox_boot:app"')],
-  ['Docker CMD no longer starts legacy server directly', !docker.includes('"server:app"')],
-  ['backend Procfile no longer starts legacy server directly', !backend.includes('uvicorn server:app')],
-  ['boot force-installs final Command routes', boot.includes('churvox_paid_launch_live_patch.install(churvox_start.server, force=True)')],
-  ['boot carries queue-speed version', boot.includes('churvox-command-queue-speed-boot-20260713e')],
+  ['Docker CMD uses final Outreach boot', docker.includes('"churvox_outreach_boot:app"')],
+  ['entrypoint still wraps guarded boot', outreachBoot.includes('import churvox_boot as guarded_boot')],
+  ['Outreach desk is force-installed last', outreachBoot.includes('_force_install(outreach_patch, target)')],
+  ['Outreach importer is force-installed last', outreachBoot.includes('_force_install(import_patch, target)')],
+  ['Outreach live status route exists', outreachBoot.includes('/api/tester-outreach/boot')],
+  ['guarded boot still force-installs final Command routes', guardedBoot.includes('fast_patch.install(target, force=True)')],
+  ['legacy server is not a direct entrypoint', !root.includes('uvicorn server:app') && !backend.includes('uvicorn server:app') && !docker.includes('"server:app"')],
 ];
 
 let failed = false;
