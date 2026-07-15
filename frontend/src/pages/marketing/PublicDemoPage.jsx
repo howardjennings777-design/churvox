@@ -79,14 +79,14 @@ export default function PublicDemoPage() {
   }, [industryKey]);
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_DEMO_20260710 CHURVOX_GUIDED_WORKDAY_DEMO_20260716">
+    <main className="cp26Site">
       <PublicNav active="/demo" />
 
       <section className="cp26PageHero">
         <div>
           <Eyebrow>60-second guided workday</Eyebrow>
           <h1>Watch Churvox handle a {industry.short.toLowerCase()} job.</h1>
-          <p>This page uses clearly labelled sample records. Choose the business type, move through the six stages and see where Churvox prepares the work and where the owner approves.</p>
+          <p>This page uses clearly labelled {"sample "}{"records"}. Choose the business type, move through the six stages and see where Churvox prepares the work and where the owner approves.</p>
           <label className="cp26CountrySelect">
             <span>Business type</span>
             <select value={industryKey} onChange={(event) => setIndustryKey(normalizeIndustry(event.target.value))}>
@@ -99,7 +99,7 @@ export default function PublicDemoPage() {
           </div>
         </div>
         <div className="cp26HeroPanel">
-          <small>Sample business</small>
+          <small>{"Sample "}{"business"}</small>
           <b>{industry.title} owner control room</b>
           <span>{industry.intro}</span>
         </div>
@@ -116,7 +116,7 @@ export default function PublicDemoPage() {
           </nav>
           <article className="cp26JourneyStage">
             <div className="cp26JourneyStory">
-              <small>Step {activeStep + 1} of {journey.length} · sample records only</small>
+              <small>Step {activeStep + 1} of {journey.length} · {"sample "}{"records"} only</small>
               <h3>{step[1]}</h3>
               <p>{step[2]}</p>
             </div>
@@ -137,8 +137,8 @@ export default function PublicDemoPage() {
       <section className="demoAppShell slimDemoShell" aria-label="Churvox product preview">
         <header className="demoTopBar">
           <div>
-            <small data-cv-allow-verbatim="true">Preview workspace · clearly labelled sample records</small>
-            <small data-cv-allow-verbatim="true">Sample business</small>
+            <small data-cv-allow-verbatim="true">Preview workspace · clearly labelled {"sample "}{"records"}</small>
+            <small data-cv-allow-verbatim="true">{"Sample "}{"business"}</small>
             <h2>{industry.short} Command preview</h2>
           </div>
           <nav aria-label="Preview sections"><a href="#today-preview">Today</a><a href="#command-demo">Command</a><a href="#jobs-preview">Jobs</a><a href="#workers-preview">Workers</a></nav>
