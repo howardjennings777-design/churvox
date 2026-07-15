@@ -14,6 +14,15 @@
   touch-action: manipulation;
 }
 
+.cp26TradePicker button:focus-visible,
+.cp26JourneyRail button:focus-visible,
+.cp26JourneyControls button:focus-visible,
+.cp26JourneyControls a:focus-visible,
+.cp26OwnerRoomDecision button:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
 @media (max-width: 560px) {
   .cp26NavLinks a,
   .cp26NavActions .cp26Button,
