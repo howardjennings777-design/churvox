@@ -12,6 +12,7 @@ import {
   SectionHeading,
   coreAreas,
 } from "./ChurvoxPublicShell";
+import "./OwnerControlRoomHome.css";
 
 export const Nav = PublicNav;
 export const Footer = PublicFooter;
