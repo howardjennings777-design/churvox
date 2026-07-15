@@ -9,11 +9,11 @@ const COMMAND_INBOX_KEY = 'churvox:fresh-command-inbox:v1';
 const API_ROOT = String(API_BASE || '').replace(/\/$/, '');
 
 const FALLBACK_STEPS = [
-  { key: 'business_profile', title: 'Set your business basics', why: 'Quotes, invoices and customer messages need the right name, GST and contact details.', action: 'Open Settings', page: 'settings', proof: 'Waiting for setup', time: '1 min' },
-  { key: 'first_client', title: 'Add your first real client', why: 'Churvox becomes useful when there is a real customer, address and contact history.', action: 'Open Clients', page: 'clients', proof: 'No client yet', time: '1 min' },
-  { key: 'first_job', title: 'Create your first job', why: 'This proves the main workflow: job, worker or self, complete, invoice.', action: 'Open Jobs', page: 'jobs', proof: 'No job yet', time: '1 min' },
-  { key: 'first_invoice', title: 'Prepare your first invoice', why: 'This is the money moment. The owner sees how work turns into a controlled invoice.', action: 'Open Invoices', page: 'invoices', proof: 'No invoice yet', time: '1 min' },
-  { key: 'command_approval', title: 'Approve one thing in Command', why: 'This teaches the product promise: Churvox does the admin. You approve.', action: 'Open Command', page: 'command', proof: 'No Command slip yet', time: '30 sec' },
+  { key: 'business_profile', title: 'Set the business details', why: 'Add only the details needed for a professional quote, invoice and customer message.', action: 'Add business details', page: 'settings', proof: 'Business details not finished', time: '1 min' },
+  { key: 'first_client', title: 'Add the client for your first job', why: 'Use one real customer so the rest of the guide works with genuine business information.', action: 'Add first client', page: 'clients', proof: 'No client yet', time: '1 min' },
+  { key: 'first_job', title: 'Organise one real job', why: 'Add the work, date, price and worker or yourself. This is the record Churvox will build from.', action: 'Create first job', page: 'jobs', proof: 'No job yet', time: '90 sec' },
+  { key: 'first_invoice', title: 'Prepare the invoice from that job', why: 'See how completed work becomes a controlled invoice without retyping the whole job.', action: 'Prepare invoice', page: 'invoices', proof: 'No invoice yet', time: '1 min' },
+  { key: 'command_approval', title: 'Approve the prepared admin', why: 'Open Command and see the product promise in action: Churvox prepares it and the owner decides.', action: 'Open Command', page: 'command', proof: 'No Command approval yet', time: '30 sec' },
 ];
 
 function isAppPath() {
@@ -67,7 +67,7 @@ async function api(path, options = {}) {
 }
 
 function fallbackProgress() {
-  return { ok: true, percent: 0, done: 0, total: FALLBACK_STEPS.length, steps: FALLBACK_STEPS, message: 'Churvox does the admin. You approve.' };
+  return { ok: true, percent: 0, done: 0, total: FALLBACK_STEPS.length, steps: FALLBACK_STEPS, message: 'Add one real client, organise one real job and see what Churvox prepares. The rest can come later.' };
 }
 
 function safe(value) {
@@ -76,18 +76,18 @@ function safe(value) {
 
 function stepTitle(step) {
   const map = {
-    business_profile: 'Set your business basics',
-    first_client: 'Add your first real client',
-    first_job: 'Create your first job',
-    first_invoice: 'Prepare your first invoice',
-    command_approval: 'Approve one thing in Command',
+    business_profile: 'Set the business details',
+    first_client: 'Add the client for your first job',
+    first_job: 'Organise one real job',
+    first_invoice: 'Prepare the invoice from that job',
+    command_approval: 'Approve the prepared admin',
   };
   return map[step?.key] || step?.title || 'Next setup step';
 }
 
 function enrichStep(step = {}) {
   const fallback = FALLBACK_STEPS.find((item) => item.key === step.key) || {};
-  return { ...fallback, ...step, title: stepTitle(step), why: step.why || fallback.why || 'This gets the new business to its first useful Churvox win.', action: step.action || fallback.action || 'Open step', page: step.page || fallback.page || 'today', proof: step.proof || fallback.proof || (step.done ? 'Done' : 'Waiting'), time: step.time || fallback.time || '1 min' };
+  return { ...fallback, ...step, title: stepTitle(step), why: step.why || fallback.why || 'This gets the new business to its first useful Churvox result.', action: step.action || fallback.action || 'Open step', page: step.page || fallback.page || 'today', proof: step.proof || fallback.proof || (step.done ? 'Done' : 'Waiting'), time: step.time || fallback.time || '1 min' };
 }
 
 function prepare(progress) {
@@ -134,13 +134,13 @@ function sendToCommand(progress) {
     const slip = {
       id: `first-win-guide-${next.key}-${Date.now()}`,
       group: 'First Win Guide',
-      title: `Help finish setup: ${next.title}`,
-      info: `${progress.percent || 0}% setup · ${next.time || '1 min'}`,
+      title: `Help finish the first real job flow: ${next.title}`,
+      info: `${progress.percent || 0}% complete · ${next.time || '1 min'}`,
       urgency: 'High',
-      found: `New owner has not finished: ${next.title}.`,
+      found: `The new owner has not finished: ${next.title}.`,
       prepared: `Churvox prepared the next action: ${next.action}.`,
-      why: next.why || 'A new user should get their first win fast.',
-      owner: 'Open the step, complete it, or mark it done if already handled.',
+      why: next.why || 'A new owner should reach a useful result before configuring everything.',
+      owner: 'Open the step, complete it, or mark it done if it has already been handled.',
       area: 'First Win Guide',
       page: 'firstrun',
       fromInbox: true,
@@ -204,27 +204,27 @@ function render(progress) {
   const root = document.getElementById(ROOT_ID);
   if (!root) return;
   const next = progress.next_step || progress.steps.find((s) => !s.done);
-  const doneText = progress.completed ? 'Setup complete' : `${progress.done || 0}/${progress.total || progress.steps.length} core steps done`;
+  const doneText = progress.completed ? 'First job flow ready' : `${progress.done || 0}/${progress.total || progress.steps.length} useful steps done`;
   root.innerHTML = `
     <section class="fwGuideShell">
       <div class="fwGuideInner">
         <div class="fwGuideHero">
           <div>
-            <span class="kicker">First Win Guide</span>
-            <h1>${progress.completed ? 'You are ready to run Churvox.' : 'Get your first Churvox win.'}</h1>
-            <p>${safe(progress.message || 'Churvox does the admin. You approve. This setup path gets a new owner to the first useful client, job, invoice and Command check without overwhelm.')}</p>
+            <span class="kicker">Your first useful result</span>
+            <h1>${progress.completed ? 'Your first Churvox job flow is ready.' : 'Let’s get one real job organised.'}</h1>
+            <p>${safe(progress.message || 'Add one real client, organise one real job and see what Churvox prepares. You do not need to configure the whole business first.')}</p>
           </div>
           <div class="fwGuideProgress"><b>${progress.percent || 0}%</b><small>${safe(doneText)}</small></div>
         </div>
         <div class="fwBar"><i style="width:${Math.max(0, Math.min(progress.percent || 0, 100))}%"></i></div>
-        ${next ? `<div class="fwNext"><div><small>Next best step · ${safe(next.time || '1 min')}</small><h2>${safe(next.title)}</h2><p>${safe(next.why)}</p><em>${safe(next.proof || '')}</em></div><div class="fwActions"><button type="button" class="primary" data-fw-open="${safe(next.page)}">${safe(next.action || 'Open step')}</button><button type="button" data-fw-done="${safe(next.key)}">I’ve done this</button><button type="button" class="command" data-fw-command="1">Send to Command</button></div></div>` : `<div class="fwNext"><div><small>Complete</small><h2>Nice — the core first-run guide is complete.</h2><p>Next: test a full job → invoice → paid flow, or jump into Today and run the workspace.</p></div><div class="fwActions"><button type="button" class="primary" data-fw-open="today">Open Today</button><button type="button" data-fw-open="command">Open Command</button></div></div>`}
+        ${next ? `<div class="fwNext"><div><small>One clear next step · ${safe(next.time || '1 min')}</small><h2>${safe(next.title)}</h2><p>${safe(next.why)}</p><em>${safe(next.proof || '')}</em></div><div class="fwActions"><button type="button" class="primary" data-fw-open="${safe(next.page)}">${safe(next.action || 'Open step')}</button><button type="button" data-fw-done="${safe(next.key)}">I’ve done this</button><button type="button" class="command" data-fw-command="1">Ask Command to hold it</button></div></div>` : `<div class="fwNext"><div><small>First useful result complete</small><h2>Nice — one real job has shown you the Churvox loop.</h2><p>Next, run that job through completion and payment, or open Today and work from the owner control room.</p></div><div class="fwActions"><button type="button" class="primary" data-fw-open="today">Open Today</button><button type="button" data-fw-open="command">Open Command</button></div></div>`}
         <div class="fwSteps">${progress.steps.map((step, index) => `<article class="fwStep ${step.done ? 'done' : ''} ${next && step.key === next.key ? 'active' : ''}"><strong>${step.done ? '✓' : index + 1}</strong><b>${safe(step.title)}</b><small>${safe(step.done ? 'Done' : step.proof || step.time || 'Waiting')}</small></article>`).join('')}</div>
         <div class="fwGuideDeep">
-          <article><b>What this teaches</b><p>New users learn the real loop: add customer, create job, finish work, prepare invoice, approve admin in Command.</p></article>
-          <article><b>What it avoids</b><p>No huge checklist at first login. One action, one reason, one button.</p></article>
-          <article><b>What Churvox watches</b><p>Progress is checked from live business data, not fake demo ticks.</p></article>
+          <article><b>What you will see</b><p>A client request becomes a job, the job becomes completed work and the completed work becomes prepared admin.</p></article>
+          <article><b>What you can ignore for now</b><p>Advanced settings, integrations and every optional business field. They can be handled after the first useful result.</p></article>
+          <article><b>What stays controlled</b><p>Nothing sends, charges, pays, syncs or files tax without the owner choosing the action.</p></article>
         </div>
-        <div class="fwFooter"><button type="button" data-fw-refresh="1">Refresh guide</button><button type="button" class="danger" data-fw-hide="1">Hide for now</button></div>
+        <div class="fwFooter"><button type="button" data-fw-refresh="1">Refresh progress</button><button type="button" class="danger" data-fw-hide="1">Continue without guide</button></div>
       </div>
     </section>
   `;
@@ -248,7 +248,7 @@ async function renderGuide(force = false) {
     root.id = ROOT_ID;
     workspace.insertBefore(root, workspace.firstChild);
   }
-  root.innerHTML = '<section class="fwGuideShell"><div class="fwGuideInner"><div class="fwNext"><div><small>Loading</small><h2>Loading First Win Guide…</h2><p>Checking your setup progress.</p></div></div></div></section>';
+  root.innerHTML = '<section class="fwGuideShell"><div class="fwGuideInner"><div class="fwNext"><div><small>Loading</small><h2>Finding your next useful step…</h2><p>Checking the real business records already in Churvox.</p></div></div></div></section>';
   render(await loadProgress());
 }
 
