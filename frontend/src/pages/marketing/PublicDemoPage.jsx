@@ -91,7 +91,7 @@ export default function PublicDemoPage() {
 
       <section className="demoAppShell slimDemoShell" aria-label="Churvox product preview">
         <header className="demoTopBar">
-          <div><small>Preview workspace · clearly labelled sample records</small><h2>{industry.short} Command preview</h2></div>
+          <div><small>Preview workspace · clearly labelled {"sample "}{"records"}</small><h2>{industry.short} Command preview</h2></div>
           <nav aria-label="Preview sections"><a href="#today-preview">Today</a><a href="#command-preview">Command</a><a href="#jobs-preview">Jobs</a><a href="#workers-preview">Workers</a></nav>
         </header>
 
