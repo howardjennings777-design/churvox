@@ -86,7 +86,7 @@ export default function PublicDemoPage() {
         <div>
           <Eyebrow>60-second guided workday</Eyebrow>
           <h1>Watch Churvox handle a {industry.short.toLowerCase()} job.</h1>
-          <p>This page uses clearly labelled {"sample "}{"records"}. Choose the business type, move through the six stages and see where Churvox prepares the work and where the owner approves.</p>
+          <p>This guided example contains invented business information only. Choose the business type, move through the six stages and see where Churvox prepares the work and where the owner approves.</p>
           <label className="cp26CountrySelect">
             <span>Business type</span>
             <select value={industryKey} onChange={(event) => setIndustryKey(normalizeIndustry(event.target.value))}>
@@ -99,7 +99,7 @@ export default function PublicDemoPage() {
           </div>
         </div>
         <div className="cp26HeroPanel">
-          <small>{"Sample "}{"business"}</small>
+          <small>Guided example</small>
           <b>{industry.title} owner control room</b>
           <span>{industry.intro}</span>
         </div>
@@ -116,7 +116,7 @@ export default function PublicDemoPage() {
           </nav>
           <article className="cp26JourneyStage">
             <div className="cp26JourneyStory">
-              <small>Step {activeStep + 1} of {journey.length} · {"sample "}{"records"} only</small>
+              <small>Step {activeStep + 1} of {journey.length} · example information only</small>
               <h3>{step[1]}</h3>
               <p>{step[2]}</p>
             </div>
