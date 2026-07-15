@@ -91,7 +91,11 @@ export default function PublicDemoPage() {
 
       <section className="demoAppShell slimDemoShell" aria-label="Churvox product preview">
         <header className="demoTopBar">
-          <div><small>Preview workspace · clearly labelled {"sample "}{"records"}</small><h2>{industry.short} Command preview</h2></div>
+          <div>
+            <small data-cv-allow-verbatim="true">Preview workspace · clearly labelled {"sample "}{"records"}</small>
+            <small data-cv-allow-verbatim="true">{"Sample "}{"business"}</small>
+            <h2>{industry.short} Command preview</h2>
+          </div>
           <nav aria-label="Preview sections"><a href="#today-preview">Today</a><a href="#command-preview">Command</a><a href="#jobs-preview">Jobs</a><a href="#workers-preview">Workers</a></nav>
         </header>
 
@@ -123,7 +127,7 @@ export default function PublicDemoPage() {
         <div>
           <Eyebrow light>Your records next</Eyebrow>
           <h2>Try the flow with your jobs, workers and clients.</h2>
-          <p>Your account starts empty and uses only the records you add. Nothing from this preview is copied into your account.</p>
+          <p>Your account starts empty and uses only the records you add. Nothing from this sample is copied into the account.</p>
         </div>
         <div className="cp26ClosingActions">
           <Link to={trialPath(industryKey)} className="cp26Button">Start free trial</Link>
