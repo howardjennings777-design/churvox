@@ -8,12 +8,23 @@
   touch-action: manipulation;
 }
 
+.cp26OwnerRoomDecision button {
+  min-width: 32px;
+  min-height: 32px;
+  touch-action: manipulation;
+}
+
 @media (max-width: 560px) {
   .cp26NavLinks a,
   .cp26NavActions .cp26Button,
   .cp26Footer nav a,
   .cp26ContactGrid a,
-  .cvPublicAuth .cvPublicAuthBottom a {
+  .cvPublicAuth .cvPublicAuthBottom a,
+  .cp26TradePicker button,
+  .cp26JourneyRail button,
+  .cp26JourneyControls button,
+  .cp26JourneyControls a,
+  .cp26OwnerRoomDecision button {
     min-height: 44px;
     touch-action: manipulation;
   }
