@@ -1,11 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  CHURVOX_PLANS,
-  detectCountryCode,
-  pricePlanForCountry,
-} from "../../config/churvoxPlans";
-import {
   PublicNav,
   PublicFooter,
   Eyebrow,
@@ -109,13 +104,6 @@ const firstWin = [
   ["4", "See what Churvox prepares"],
 ];
 
-const homePlanCopy = {
-  Start: "Core jobs, clients, quotes and invoices.",
-  Crew: "Worker flow, team updates and field records.",
-  Operator: "Prepared admin and the owner Command desk.",
-  Command: "The full approval engine for larger operations.",
-};
-
 function OwnerControlRoom({ journey }) {
   return (
     <aside className="cp26ControlRoom" aria-label={`Example ${journey.label} owner control room`}>
@@ -128,14 +116,24 @@ function OwnerControlRoom({ journey }) {
         <span>4 need you</span>
       </header>
       <div className="cp26ControlRoomRail">
-        <span className="active">Needs you</span><span>Today</span><span>Prepared</span><span>Done</span>
+        <span className="active">Needs you</span>
+        <span>Today</span>
+        <span>Prepared</span>
+        <span>Done</span>
       </div>
       <div className="cp26DecisionStack">
         {journey.items.map(([type, client, detail, value, action], index) => (
           <article key={`${type}-${client}`} className={index === 0 ? "selected" : ""}>
             <div className="cp26DecisionNumber">{index + 1}</div>
-            <div className="cp26DecisionCopy"><small>{type}</small><b>{client}</b><span>{detail}</span></div>
-            <div className="cp26DecisionValue"><strong>{value}</strong><em>{action}</em></div>
+            <div className="cp26DecisionCopy">
+              <small>{type}</small>
+              <b>{client}</b>
+              <span>{detail}</span>
+            </div>
+            <div className="cp26DecisionValue">
+              <strong>{value}</strong>
+              <em>{action}</em>
+            </div>
           </article>
         ))}
       </div>
@@ -148,18 +146,13 @@ function OwnerControlRoom({ journey }) {
 }
 
 export default function ExecutiveHomePage() {
-  const [country] = React.useState(() => detectCountryCode());
   const [tradeKey, setTradeKey] = React.useState("lawn");
   const journey = tradeJourneys[tradeKey];
-  const plans = React.useMemo(
-    () => CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, country)),
-    [country],
-  );
   const demoPath = `/demo?industry=${encodeURIComponent(journey.industry)}`;
   const trialPath = `${DEFAULT_TRIAL_PATH}&industry=${encodeURIComponent(journey.industry)}`;
 
   return (
-    <main className="cp26Site cp26ControlRoomSite" data-version="CHURVOX_OWNER_CONTROL_ROOM_20260716">
+    <main className="cp26Site cp26ControlRoomSite" data-version="CHURVOX_OWNER_CONTROL_ROOM_20260716B">
       <PublicNav />
 
       <section className="cp26Hero cp26ControlHero">
@@ -177,7 +170,14 @@ export default function ExecutiveHomePage() {
             <small>Show me Churvox for</small>
             <div>
               {Object.entries(tradeJourneys).map(([key, item]) => (
-                <button key={key} type="button" className={key === tradeKey ? "active" : ""} onClick={() => setTradeKey(key)}>{item.label}</button>
+                <button
+                  key={key}
+                  type="button"
+                  className={key === tradeKey ? "active" : ""}
+                  onClick={() => setTradeKey(key)}
+                >
+                  {item.label}
+                </button>
               ))}
             </div>
           </div>
@@ -197,7 +197,13 @@ export default function ExecutiveHomePage() {
           text="Churvox is organised around what an owner needs to know—not around software modules that need managing."
         />
         <div className="cp26OutcomeGrid">
-          {outcomes.map(([title, text], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{text}</p></article>)}
+          {outcomes.map(([title, text], index) => (
+            <article key={title}>
+              <span>0{index + 1}</span>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -213,7 +219,13 @@ export default function ExecutiveHomePage() {
             ["02", "Churvox prepares", "The client, job, worker, price and history are brought together."],
             ["03", "Worker does the job", "Acknowledgement, progress, time, notes and proof update the record."],
             ["04", "Owner approves", "Only the quote, reply, variation or invoice needing a decision comes back."],
-          ].map(([number, title, text]) => <article key={number}><b>{number}</b><h3>{title}</h3><p>{text}</p></article>)}
+          ].map(([number, title, text]) => (
+            <article key={number}>
+              <b>{number}</b>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))}
         </div>
         <div className="cp26CenteredActions">
           <Link className="cp26Button" to={demoPath}>Open the 60-second walkthrough</Link>
@@ -226,10 +238,17 @@ export default function ExecutiveHomePage() {
             <Eyebrow>Your first useful result</Eyebrow>
             <h2>Do one real job before setting up everything.</h2>
             <p>New owners should not face an empty system or a wall of settings. Churvox guides them to one complete client-and-job flow first.</p>
-            <div className="cp26HeroActions"><Link className="cp26Button" to={trialPath}>Get my first job organised</Link></div>
+            <div className="cp26HeroActions">
+              <Link className="cp26Button" to={trialPath}>Get my first job organised</Link>
+            </div>
           </div>
           <div className="cp26FirstWinSteps">
-            {firstWin.map(([number, text]) => <article key={number}><b>{number}</b><span>{text}</span></article>)}
+            {firstWin.map(([number, text]) => (
+              <article key={number}>
+                <b>{number}</b>
+                <span>{text}</span>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -241,7 +260,15 @@ export default function ExecutiveHomePage() {
           text="Churvox does the routine preparation while the owner keeps authority over communication, money, accounting and access."
         />
         <div className="cp26TrustGrid">
-          {trust.map(([title, text]) => <article key={title}><span>✓</span><div><h3>{title}</h3><p>{text}</p></div></article>)}
+          {trust.map(([title, text]) => (
+            <article key={title}>
+              <span>✓</span>
+              <div>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -251,42 +278,29 @@ export default function ExecutiveHomePage() {
             <Eyebrow>The complete workspace</Eyebrow>
             <h2>Each page holds the facts. Command holds the decision.</h2>
             <p>Jobs controls work. Clients holds the relationship. Workers tracks the field. Quotes and invoices manage the money trail. The owner does not have to run every page.</p>
-            <div className="cp26HeroActions"><Link className="cp26Button" to="/product">See the full product</Link></div>
+            <div className="cp26HeroActions">
+              <Link className="cp26Button" to="/product">See the full product</Link>
+            </div>
           </div>
           <div className="cp26AreaGrid">
-            {coreAreas.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
+            {coreAreas.map(([title, text]) => (
+              <article key={title}>
+                <b>{title}</b>
+                <span>{text}</span>
+              </article>
+            ))}
           </div>
-        </div>
-      </section>
-
-      <section className="cp26Section">
-        <SectionHeading
-          eyebrow="Pricing"
-          title="Start where the business is now."
-          text="The same plan configuration is used here and at checkout. Move up only when the team, admin load or approval needs grow."
-        />
-        <div className="cp26PlanGrid">
-          {plans.map((plan) => (
-            <article key={plan.key || plan.name} className={`cp26PlanCard${plan.popular ? " featured" : ""}`}>
-              {plan.popular ? <span className="cp26PlanBadge">Most Popular</span> : null}
-              <h3>{plan.name}</h3>
-              <div className="cp26PlanPrice">{plan.priceLabel}</div>
-              {plan.taxInclusiveLabel ? <small>{plan.taxInclusiveLabel}</small> : null}
-              <p>{homePlanCopy[plan.name] || plan.summary}</p>
-              <Link className={`cp26Button${plan.popular ? "" : " cp26ButtonGhost"}`} to="/pricing">View plan</Link>
-            </article>
-          ))}
         </div>
       </section>
 
       <section className="cp26Closing cp26ControlClosing">
         <div>
-          <Eyebrow light>The owner control room</Eyebrow>
-          <h2>Stop running the software. Run the business.</h2>
-          <p>See the work, review what Churvox prepared and approve from one clear owner experience.</p>
+          <Eyebrow light>14-day trial · no card upfront</Eyebrow>
+          <h2>Compare plans once, then test Churvox with a real job.</h2>
+          <p>All four plans and add-ons live on one clear pricing page. Choose only the level the business needs today.</p>
         </div>
         <div className="cp26ClosingActions">
-          <Link className="cp26Button" to={demoPath}>See my day in Churvox</Link>
+          <Link className="cp26Button" to="/pricing">View pricing</Link>
           <Link className="cp26Button cp26ButtonGhost" to={trialPath}>Start free trial</Link>
         </div>
       </section>
