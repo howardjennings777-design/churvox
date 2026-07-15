@@ -58,7 +58,7 @@ export default function OfficeTeamMessagesDesk({ appMode = "lab" }) {
             <p>{preparedReply}</p>
           </section> : <section className="cvMessagesDraftBox"><span>No reply prepared</span><p>{ownerRoute ? "This inbox is clear. Replies will appear when a message needs owner review." : "Messages will appear here when there is something for the owner to review."}</p></section>}
 
-          {hasRows ? <OfficeTeamSafeControls area="messages" record={current} primary="Prepare reply" secondary="Prepare staff question" command="Prepare Command decision" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "No message needs owner approval right now." : "When messages arrive, Churvox can prepare replies for owner approval."}</p></article>}
+          {hasRows ? <OfficeTeamSafeControls area="messages" record={current} primary="Prepare reply" secondary="Prepare staff question" command="Prepare Command card" /> : <article className="cvSiteEmpty"><strong>Nothing to prepare</strong><p>{ownerRoute ? "No message needs owner approval right now." : "When messages arrive, Churvox can prepare replies for owner approval."}</p></article>}
         </article>
       </div>
     </section>

@@ -19,7 +19,11 @@ import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 
 const CHURVOX_DEPLOY_BUILD = 'churvox-hq-one-place-outreach-v1-20260715';
-if (typeof window !== 'undefined') window.__CHURVOX_DEPLOY_BUILD__ = CHURVOX_DEPLOY_BUILD;
+const CHURVOX_JOB_DONE_DEPLOY_BUILD = 'churvox-job-done-live-v2-20260714';
+if (typeof window !== 'undefined') {
+  window.__CHURVOX_DEPLOY_BUILD__ = CHURVOX_DEPLOY_BUILD;
+  window.__CHURVOX_JOB_DONE_DEPLOY_BUILD__ = CHURVOX_JOB_DONE_DEPLOY_BUILD;
+}
 
 function preconnectBackend() {
   if (typeof document === 'undefined' || !API_BASE) return;
