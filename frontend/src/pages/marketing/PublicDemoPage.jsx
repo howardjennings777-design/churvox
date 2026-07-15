@@ -45,16 +45,32 @@ function rowsFor(industry) {
   };
 }
 
+function journeyFor(industry, preview) {
+  const [client, work, worker, price, repeat] = preview.form;
+  return [
+    ["Request", `${client} asks for ${work.toLowerCase()}`, `Churvox captures the request and attaches it to the right ${industry.jobWords.client.toLowerCase()} record.`, "Check only anything unclear."],
+    ["Plan", "The job record is prepared", `${worker}, timing, price basis and ${repeat.toLowerCase()} details are placed together.`, "Approve or adjust the plan."],
+    ["Field", `${worker} receives one clear job`, "Directions, work details, notes and status stay attached to the same record.", "Step in only when an exception is raised."],
+    ["Proof", "Completion evidence is checked", "Time, notes, checklist details and photos are checked before money moves.", "Resolve missing or unusual details."],
+    ["Money", `${price} invoice is ready`, "The completed work, amount and proof are combined into an editable owner decision.", "Approve, edit or park."],
+    ["Next", "The next useful action is prepared", "A follow-up, repeat visit or quote is prepared from the real job history.", "Approve it only when it makes sense."],
+  ];
+}
+
 function Panel({ title, eyebrow, children, className = "", id }) {
   return <section id={id} className={`demoPanel ${className}`}><header>{eyebrow ? <small>{eyebrow}</small> : null}<h3>{title}</h3></header>{children}</section>;
 }
 
 export default function PublicDemoPage() {
   const [industryKey, setIndustryKey] = React.useState(queryIndustry);
+  const [activeStep, setActiveStep] = React.useState(0);
   const industry = getIndustry(industryKey);
   const preview = rowsFor(industry);
+  const journey = journeyFor(industry, preview);
+  const step = journey[activeStep] || journey[0];
 
   React.useEffect(() => {
+    setActiveStep(0);
     try {
       const next = new URL(window.location.href);
       next.searchParams.set("industry", industryKey);
@@ -63,14 +79,14 @@ export default function PublicDemoPage() {
   }, [industryKey]);
 
   return (
-    <main className="cp26Site">
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_DEMO_20260710 CHURVOX_GUIDED_WORKDAY_DEMO_20260716">
       <PublicNav active="/demo" />
 
       <section className="cp26PageHero">
         <div>
-          <Eyebrow>Guided product preview</Eyebrow>
-          <h1>See the Churvox flow for {industry.short.toLowerCase()}.</h1>
-          <p>This guided preview uses neutral examples to show the workflow: {industry.flow.join(" → ")}. Work pages hold the facts and Command holds the owner decisions.</p>
+          <Eyebrow>60-second guided workday</Eyebrow>
+          <h1>Watch Churvox handle a {industry.short.toLowerCase()} job.</h1>
+          <p>This page uses clearly labelled sample records. Choose the business type, move through the six stages and see where Churvox prepares the work and where the owner approves.</p>
           <label className="cp26CountrySelect">
             <span>Business type</span>
             <select value={industryKey} onChange={(event) => setIndustryKey(normalizeIndustry(event.target.value))}>
@@ -78,25 +94,54 @@ export default function PublicDemoPage() {
             </select>
           </label>
           <div className="cp26HeroActions">
-            <a href="#command-preview" className="cp26Button">Jump to Command</a>
+            <a href="#command-demo" className="cp26Button">Run the workday</a>
             <Link to={trialPath(industryKey)} className="cp26Button cp26ButtonGhost">Start free trial</Link>
           </div>
         </div>
         <div className="cp26HeroPanel">
-          <small>{industry.title}</small>
-          <b>The wording follows the business type.</b>
+          <small>Sample business</small>
+          <b>{industry.title} owner control room</b>
           <span>{industry.intro}</span>
+        </div>
+      </section>
+
+      <section id="command-demo" className="cp26Section cp26DemoJourneySection">
+        <div className="cp26Journey">
+          <nav className="cp26JourneyRail" aria-label="Guided Churvox workday">
+            {journey.map((item, index) => (
+              <button key={item[0]} type="button" className={activeStep === index ? "active" : ""} aria-pressed={activeStep === index} onClick={() => setActiveStep(index)}>
+                <b>{index + 1}</b><span>{item[0]}</span>
+              </button>
+            ))}
+          </nav>
+          <article className="cp26JourneyStage">
+            <div className="cp26JourneyStory">
+              <small>Step {activeStep + 1} of {journey.length} · sample records only</small>
+              <h3>{step[1]}</h3>
+              <p>{step[2]}</p>
+            </div>
+            <div className="cp26JourneyDecision">
+              <section><span>Churvox prepares</span><b>{step[2]}</b></section>
+              <section><span>The owner does</span><b>{step[3]}</b></section>
+              <section><span>The rule</span><b>Nothing sends, syncs, charges or changes without owner approval.</b></section>
+            </div>
+            <div className="cp26JourneyControls">
+              <button type="button" onClick={() => setActiveStep((current) => Math.max(0, current - 1))} disabled={activeStep === 0}>Back</button>
+              <button type="button" className="primary" onClick={() => setActiveStep((current) => Math.min(journey.length - 1, current + 1))} disabled={activeStep === journey.length - 1}>Next step</button>
+              <Link to={trialPath(industryKey)}>Try it with my records</Link>
+            </div>
+          </article>
         </div>
       </section>
 
       <section className="demoAppShell slimDemoShell" aria-label="Churvox product preview">
         <header className="demoTopBar">
           <div>
-            <small data-cv-allow-verbatim="true">Preview workspace · clearly labelled {"sample "}{"records"}</small>
-            <small data-cv-allow-verbatim="true">{"Sample "}{"business"}</small>
+            <small data-cv-allow-verbatim="true">Preview workspace · clearly labelled sample records</small>
+            <small data-cv-allow-verbatim="true">Sample business</small>
             <h2>{industry.short} Command preview</h2>
           </div>
-          <nav aria-label="Preview sections"><a href="#today-preview">Today</a><a href="#command-preview">Command</a><a href="#jobs-preview">Jobs</a><a href="#workers-preview">Workers</a></nav>
+          <nav aria-label="Preview sections"><a href="#today-preview">Today</a><a href="#command-demo">Command</a><a href="#jobs-preview">Jobs</a><a href="#workers-preview">Workers</a></nav>
         </header>
 
         <section id="today-preview" className="demoHeroStrip compactDemoHero">
@@ -108,7 +153,7 @@ export default function PublicDemoPage() {
           <Panel title="Run sheet" eyebrow="Today" className="span7">
             <div className="demoList">{preview.jobs.map(([time, title, client, worker, price, repeat]) => <article className="demoRow" key={time + title}><div><b>{time} · {title}</b><span>{client} · {worker} · {repeat}</span></div><em>{price}</em></article>)}</div>
           </Panel>
-          <Panel title="Owner checks" eyebrow="Command" className="span5 dark" id="command-preview">
+          <Panel title="Owner checks" eyebrow="Command" className="span5 dark">
             <div className="demoList compact">{preview.queue.map(([type, title, amount, action]) => <article className="demoRow hot" key={title}><div><b>{type}</b><span>{title} · {amount}</span></div><em>{action}</em></article>)}</div>
           </Panel>
         </section>
@@ -126,7 +171,7 @@ export default function PublicDemoPage() {
       <section className="cp26Closing">
         <div>
           <Eyebrow light>Your records next</Eyebrow>
-          <h2>Try the flow with your jobs, workers and clients.</h2>
+          <h2>Organise one real job before setting up everything else.</h2>
           <p>Your account starts empty and uses only the records you add. Nothing from this sample is copied into the account.</p>
         </div>
         <div className="cp26ClosingActions">
