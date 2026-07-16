@@ -110,15 +110,12 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
 ];
 
-// HQ is now owned by the React PaidLaunchHQSystem component. Do not load old
-// overlay runtimes here, because they can show stale tester/visitor panels.
+// HQ is owned by the React PaidLaunchHQSystem component. The verified outreach
+// runtime owns its complete draft-loading and compliance-safe approval flow.
 const hqRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxHqTesterOutreachRuntime'),
   () => import('./runtime/churvoxHqAssistantDraftImportRuntime'),
-  () => import('./runtime/churvoxHqOneClickDraftImportRuntime'),
-  () => import('./runtime/churvoxHqLoadDraftsVisibilityRuntime'),
-  () => import('./runtime/churvoxHqSinglePlaceOutreachRuntime'),
   () => import('./runtime/churvoxHqVerifiedSmallBusinessOutreachRuntime'),
 ];
 
