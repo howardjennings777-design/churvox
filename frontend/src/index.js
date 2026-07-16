@@ -18,7 +18,7 @@ import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 
-const CHURVOX_DEPLOY_BUILD = 'churvox-hq-one-place-outreach-v1-20260715';
+const CHURVOX_DEPLOY_BUILD = 'churvox-verified-small-business-outreach-v1-20260716';
 const CHURVOX_JOB_DONE_DEPLOY_BUILD = 'churvox-job-done-live-v2-20260714';
 if (typeof window !== 'undefined') {
   window.__CHURVOX_DEPLOY_BUILD__ = CHURVOX_DEPLOY_BUILD;
@@ -110,15 +110,13 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
 ];
 
-// HQ is now owned by the React PaidLaunchHQSystem component. Do not load old
-// overlay runtimes here, because they can show stale tester/visitor panels.
+// HQ is owned by the React PaidLaunchHQSystem component. The verified outreach
+// runtime owns its complete draft-loading and compliance-safe approval flow.
 const hqRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxHqTesterOutreachRuntime'),
   () => import('./runtime/churvoxHqAssistantDraftImportRuntime'),
-  () => import('./runtime/churvoxHqOneClickDraftImportRuntime'),
-  () => import('./runtime/churvoxHqLoadDraftsVisibilityRuntime'),
-  () => import('./runtime/churvoxHqSinglePlaceOutreachRuntime'),
+  () => import('./runtime/churvoxHqVerifiedSmallBusinessOutreachRuntime'),
 ];
 
 function runImports(imports) {
