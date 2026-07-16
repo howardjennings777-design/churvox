@@ -18,7 +18,7 @@ import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 
-const CHURVOX_DEPLOY_BUILD = 'churvox-hq-one-place-outreach-v1-20260715';
+const CHURVOX_DEPLOY_BUILD = 'churvox-verified-small-business-outreach-v1-20260716';
 const CHURVOX_JOB_DONE_DEPLOY_BUILD = 'churvox-job-done-live-v2-20260714';
 if (typeof window !== 'undefined') {
   window.__CHURVOX_DEPLOY_BUILD__ = CHURVOX_DEPLOY_BUILD;
@@ -119,6 +119,7 @@ const hqRuntimeImports = [
   () => import('./runtime/churvoxHqOneClickDraftImportRuntime'),
   () => import('./runtime/churvoxHqLoadDraftsVisibilityRuntime'),
   () => import('./runtime/churvoxHqSinglePlaceOutreachRuntime'),
+  () => import('./runtime/churvoxHqVerifiedSmallBusinessOutreachRuntime'),
 ];
 
 function runImports(imports) {
