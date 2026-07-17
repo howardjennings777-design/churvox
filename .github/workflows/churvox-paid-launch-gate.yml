@@ -97,6 +97,18 @@ jobs:
           print('All backend Python files compiled successfully.')
           PY
 
+      - name: Run HQ billing truth behavior
+        working-directory: .
+        run: |
+          set -o pipefail
+          python -m scripts.churvox_hq_paid_launch_behavior_test 2>&1 | tee /tmp/churvox-billing-truth-behavior.log
+
+      - name: Run HQ billing truth static audit
+        working-directory: .
+        run: |
+          set -o pipefail
+          node scripts/churvox-paid-launch-reality-audit.cjs 2>&1 | tee /tmp/churvox-billing-truth-static.log
+
       - name: Run backend paid-launch and route-isolation contracts
         working-directory: .
         run: |
@@ -147,6 +159,7 @@ jobs:
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-plans-usage-truth.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
+            tests/e2e/churvox-paid-launch-hq-reality.spec.js \
             tests/e2e/churvox-public-documents-paid-launch.spec.js \
             tests/e2e/churvox-public-request-paid-launch.spec.js \
             tests/e2e/churvox-billing-email-verification-gate.spec.js \
@@ -163,11 +176,12 @@ jobs:
             tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js \
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
+            tests/e2e/churvox-paid-launch-hq-reality.spec.js \
             --project=mobile-chromium \
             --workers=1 \
             --reporter=line
 
-      - name: Upload browser report on failure
+      - name: Upload browser and billing diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -176,6 +190,8 @@ jobs:
             frontend/playwright-report
             frontend/test-results
             /tmp/churvox-frontend.log
+            /tmp/churvox-billing-truth-behavior.log
+            /tmp/churvox-billing-truth-static.log
           if-no-files-found: ignore
           retention-days: 14
 

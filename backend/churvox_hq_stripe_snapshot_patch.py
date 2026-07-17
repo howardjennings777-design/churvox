@@ -50,6 +50,24 @@ def _monthly_amount(unit_amount, interval, interval_count, quantity):
     return 0.0
 
 
+def _empty_value(now, signature, *, configured, source, errors):
+    value = {
+        "configured": configured,
+        "available": False,
+        "credential_verified": False,
+        "account_id": "",
+        "source": source,
+        "generated_at": now.isoformat(),
+        "subscriptions_checked": 0,
+        "mrr_by_currency": {},
+        "active_subscriptions": [],
+        "checked_subscriptions": [],
+        "errors": list(errors or [])[:30],
+    }
+    CACHE.update({"at": now, "signature": signature, "value": value})
+    return value
+
+
 def stripe_snapshot(subscription_ids):
     ids = sorted(set(_text(value) for value in subscription_ids if _text(value)))[:500]
     signature = "|".join(ids)
@@ -61,37 +79,37 @@ def stripe_snapshot(subscription_ids):
 
     secret = _text(os.environ.get("STRIPE_SECRET_KEY"))
     if not secret:
-        value = {
-            "configured": False,
-            "available": False,
-            "source": "stripe_not_configured",
-            "generated_at": now.isoformat(),
-            "subscriptions_checked": 0,
-            "mrr_by_currency": {},
-            "active_subscriptions": [],
-            "checked_subscriptions": [],
-            "errors": ["STRIPE_SECRET_KEY is not configured"],
-        }
-        CACHE.update({"at": now, "signature": signature, "value": value})
-        return value
+        return _empty_value(
+            now,
+            signature,
+            configured=False,
+            source="stripe_not_configured",
+            errors=["STRIPE_SECRET_KEY is not configured"],
+        )
 
     try:
         import stripe
         stripe.api_key = secret
     except Exception as exc:
-        value = {
-            "configured": True,
-            "available": False,
-            "source": "stripe_import_failed",
-            "generated_at": now.isoformat(),
-            "subscriptions_checked": 0,
-            "mrr_by_currency": {},
-            "active_subscriptions": [],
-            "checked_subscriptions": [],
-            "errors": [str(exc)],
-        }
-        CACHE.update({"at": now, "signature": signature, "value": value})
-        return value
+        return _empty_value(
+            now,
+            signature,
+            configured=True,
+            source="stripe_import_failed",
+            errors=[str(exc)],
+        )
+
+    try:
+        account = stripe.Account.retrieve()
+        account_id = _text(_obj_get(account, "id"))
+    except Exception as exc:
+        return _empty_value(
+            now,
+            signature,
+            configured=True,
+            source="stripe_credential_verification_failed",
+            errors=[f"Stripe credential verification failed: {exc}"],
+        )
 
     totals = {}
     active = []
@@ -135,8 +153,10 @@ def stripe_snapshot(subscription_ids):
 
     value = {
         "configured": True,
-        "available": not errors or checked > 0,
-        "source": "stripe_subscription_api_all_statuses",
+        "available": not errors,
+        "credential_verified": True,
+        "account_id": account_id,
+        "source": "stripe_account_and_subscription_api",
         "generated_at": now.isoformat(),
         "subscriptions_checked": checked,
         "mrr_by_currency": {key: round(value / 100, 2) for key, value in totals.items()},

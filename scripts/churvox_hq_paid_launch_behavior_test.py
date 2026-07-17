@@ -97,25 +97,91 @@ def endpoint_for(app, path):
     raise AssertionError(f"Missing route {path}")
 
 
-def fake_stripe_snapshot(_subscription_ids):
+def fake_price_validation():
     return {
         "configured": True,
         "available": True,
-        "source": "stripe_subscription_api",
-        "generated_at": "2026-07-11T00:00:00+00:00",
-        "subscriptions_checked": 2,
-        "mrr_by_currency": {"nzd": 89.0},
-        "active_subscriptions": [
-            {"subscription_id": "sub_paid", "customer_id": "cus_paid", "status": "active", "mrr_by_currency": {"nzd": 89.0}},
-            {"subscription_id": "sub_trial", "customer_id": "cus_trial", "status": "trialing", "mrr_by_currency": {"nzd": 149.0}},
+        "valid": True,
+        "source": "stripe_price_api",
+        "generated_at": "2026-07-18T00:00:00+00:00",
+        "checked": 4,
+        "expected": 4,
+        "prices": [
+            {"plan": "Start", "valid": True},
+            {"plan": "Crew", "valid": True},
+            {"plan": "Operator", "valid": True},
+            {"plan": "Command", "valid": True},
         ],
+        "missing": [],
         "errors": [],
     }
 
 
+def fake_stripe_snapshot(subscription_ids):
+    ids = set(subscription_ids)
+    assert ids == {"sub_paid", "sub_trial"}, ids
+    return {
+        "configured": True,
+        "available": True,
+        "credential_verified": True,
+        "account_id": "acct_live_truth",
+        "source": "stripe_account_and_subscription_api",
+        "generated_at": "2026-07-18T00:00:00+00:00",
+        "subscriptions_checked": 2,
+        "mrr_by_currency": {"nzd": 238.0},
+        "active_subscriptions": [
+            {"subscription_id": "sub_paid", "customer_id": "cus_paid", "status": "active", "mrr_by_currency": {"nzd": 89.0}},
+            {"subscription_id": "sub_trial", "customer_id": "cus_trial", "status": "trialing", "mrr_by_currency": {"nzd": 149.0}},
+        ],
+        "checked_subscriptions": [],
+        "errors": [],
+    }
+
+
+def fake_empty_stripe_snapshot(subscription_ids):
+    assert list(subscription_ids) == [], subscription_ids
+    return {
+        "configured": True,
+        "available": True,
+        "credential_verified": True,
+        "account_id": "acct_live_truth",
+        "source": "stripe_account_and_subscription_api",
+        "generated_at": "2026-07-18T00:00:00+00:00",
+        "subscriptions_checked": 0,
+        "mrr_by_currency": {},
+        "active_subscriptions": [],
+        "checked_subscriptions": [],
+        "errors": [],
+    }
+
+
+def install_report(name, db, stripe_snapshot):
+    patch.INSTALLED.clear()
+    postguard_patch.INSTALLED.clear()
+    patch.CACHE.update({"at": None, "signature": "", "value": None})
+    postguard_patch.PRICE_CACHE.update({"at": None, "signature": "", "value": None})
+    patch._stripe_snapshot = stripe_snapshot
+    postguard_patch._validate_live_prices = fake_price_validation
+    filter_patch.install()
+
+    app = FakeApp()
+    module = SimpleNamespace(
+        __name__=name,
+        app=app,
+        db=db,
+        get_current_user=get_current_user,
+        Request=FakeRequest,
+        HTTPException=TestHTTPException,
+    )
+    patch.install(module)
+    postguard_patch.install(module)
+    return endpoint_for(app, "/api/admin/owner/paid-launch-report")
+
+
 async def main():
+    os.environ["STRIPE_SECRET_KEY"] = "sk_live_test_only"
+    os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_only"
     for key in (
-        "STRIPE_WEBHOOK_SECRET",
         "STRIPE_PRICE_SOLO",
         "STRIPE_PRICE_TEAM",
         "STRIPE_PRICE_PRO",
@@ -123,18 +189,13 @@ async def main():
     ):
         os.environ[key] = f"configured_{key.lower()}"
 
-    patch.INSTALLED.clear()
-    postguard_patch.INSTALLED.clear()
-    patch.CACHE.update({"at": None, "signature": "", "value": None})
-    patch._stripe_snapshot = fake_stripe_snapshot
-    filter_patch.install()
-
     users = [
         {"_id": "owner", "email": "hello@churvox.com", "role": "platform_owner", "business_name": "Churvox"},
         {"_id": "paid", "email": "paid@customer.nz", "business_name": "Paid Customer", "plan": "team", "subscription_status": "active", "stripe_customer_id": "cus_paid", "stripe_subscription_id": "sub_paid", "business_id": "biz-paid"},
         {"_id": "unverified", "email": "unverified@customer.nz", "business_name": "Unverified Customer", "plan": "solo", "subscription_status": "active", "stripe_customer_id": "cus_only", "business_id": "biz-unverified"},
         {"_id": "trial", "email": "trial@customer.nz", "business_name": "Trial Customer", "plan": "pro", "subscription_status": "trialing", "stripe_subscription_id": "sub_trial", "business_id": "biz-trial"},
         {"_id": "tester", "email": "tester@customer.nz", "business_name": "Tester Customer", "plan": "pro", "subscription_status": "tester_free", "free_tester_access": True, "business_id": "biz-tester"},
+        {"_id": "mixed-tester", "email": "mixedtester@customer.nz", "business_name": "Mixed Tester", "plan": "enterprise", "subscription_status": "active", "stripe_subscription_id": "sub_tester_hidden", "free_tester_access": False, "is_tester": "true", "business_id": "biz-mixed-tester"},
         {"_id": "sample", "email": "sample@example.com", "business_name": "Sample Business", "plan": "enterprise", "subscription_status": "active", "stripe_subscription_id": "sub_sample"},
     ]
     db = FakeDB({
@@ -144,57 +205,52 @@ async def main():
             {"_id": "biz-unverified", "business_name": "Unverified Customer"},
             {"_id": "biz-trial", "business_name": "Trial Customer"},
             {"_id": "biz-tester", "business_name": "Tester Customer"},
+            {"_id": "biz-mixed-tester", "business_name": "Mixed Tester"},
             {"_id": "biz-sample", "business_name": "Sample Business", "is_sample": True},
         ],
         "jobs": [{"_id": "job-1"}],
         "clients": [{"_id": "client-1"}],
         "quotes": [],
         "invoices": [{"_id": "invoice-1"}],
-        "stripe_webhook_events": [{"_id": "event-1", "created_at": "2026-07-11T00:00:00+00:00"}],
+        "stripe_webhook_events": [{"_id": "event-1", "created_at": "2026-07-18T00:00:00+00:00"}],
         "support_messages": [],
         "lifecycle_emails": [],
     })
-    app = FakeApp()
-    module = SimpleNamespace(
-        __name__="churvox_hq_paid_launch_behavior_test",
-        app=app,
-        db=db,
-        get_current_user=get_current_user,
-        Request=FakeRequest,
-        HTTPException=TestHTTPException,
-    )
-
-    patch.install(module)
-    postguard_patch.install(module)
-    endpoint = endpoint_for(app, "/api/admin/owner/paid-launch-report")
+    endpoint = install_report("churvox_hq_paid_launch_behavior_test", db, fake_stripe_snapshot)
     report = await endpoint(FakeRequest({"email": "hello@churvox.com", "role": "platform_owner"}))
 
     assert filter_patch.is_internal_record({"email": "tester@customer.nz", "business_name": "Tester Customer"}) is False
     assert filter_patch.is_internal_record({"email": "test@example.com", "business_name": "Demo Business"}) is True
     assert report["success"] is True
-    assert report["source"] == "live_database_and_stripe_v2"
+    assert report["source"] == "live_database_and_stripe_v3"
     assert report["truth"]["sample_records_included"] is False
     assert report["truth"]["paid_definition"] == "stripe_subscription_status_active"
     assert report["truth"]["trial_definition"] == "stripe_subscription_status_trialing"
     assert report["truth"]["mrr_definition"] == "active_stripe_subscription_price_items_only"
+    assert report["truth"]["price_definition"] == "active_nzd_monthly_prices_matching_locked_plan_amounts"
     assert report["truth"]["subscription_id_alone_is_not_paid"] is True
+    assert report["truth"]["stripe_credentials_verified"] is True
+    assert report["truth"]["prices_live_verified"] is True
+    assert report["truth"]["zero_mrr_is_zero"] is True
+    assert report["truth"]["testers_excluded_from_billing"] is True
     assert report["counts"]["verified_paid_users"] == 1, report["counts"]
     assert report["counts"]["verified_trial_users"] == 1, report["counts"]
-    assert report["counts"]["tester_users"] == 1, report["counts"]
+    assert report["counts"]["tester_users"] == 2, report["counts"]
     assert report["counts"]["billing_needs_verification"] == 1, report["counts"]
     assert report["counts"]["internal_users_excluded"] == 2, report["counts"]
-    assert report["counts"]["businesses_total"] == 4, report["counts"]
+    assert report["counts"]["businesses_total"] == 5, report["counts"]
     assert report["counts"]["businesses_source"] == "filtered_businesses_collection"
     assert report["billing"]["actual_mrr_nzd"] == 89.0
     assert report["billing"]["estimated_mrr_nzd"] == 89
     assert report["billing"]["stripe"]["paid_mrr_by_currency"]["nzd"] == 89.0
     assert report["billing"]["stripe_confirmed_subscriptions"] == 2
+    assert report["billing"]["stripe_price_validation"]["valid"] is True
     assert len(report["billing"]["verified_paid_users"]) == 1
     assert report["billing"]["verified_paid_users"][0]["email"] == "paid@customer.nz"
-    assert report["billing"]["tester_users"][0]["email"] == "tester@customer.nz"
+    assert {row["email"] for row in report["billing"]["tester_users"]} == {"tester@customer.nz", "mixedtester@customer.nz"}
     assert report["billing"]["needs_verification"][0]["email"] == "unverified@customer.nz"
     assert all(row["email"] != "sample@example.com" for row in report["billing"]["verified_paid_users"])
-    assert report["collections"]["counts"]["businesses"] == 5
+    assert report["collections"]["counts"]["businesses"] == 6
     assert report["collections"]["counts"]["jobs"] == 1
     assert report["collections"]["counts"]["clients"] == 1
 
@@ -212,7 +268,27 @@ async def main():
     else:
         raise AssertionError("Non-platform owner reached paid launch HQ report")
 
-    print("HQ paid launch behavior passed: live Stripe status, active-only MRR, price/webhook gates, tester visibility, filtered businesses and owner lock.")
+    empty_db = FakeDB({
+        "users": [{"_id": "owner", "email": "hello@churvox.com", "role": "platform_owner"}],
+        "businesses": [],
+        "stripe_webhook_events": [],
+    })
+    empty_endpoint = install_report("churvox_hq_paid_launch_zero_mrr_test", empty_db, fake_empty_stripe_snapshot)
+    empty_report = await empty_endpoint(FakeRequest({"email": "hello@churvox.com", "role": "platform_owner"}))
+    empty_checks = {item["key"]: item for item in empty_report["launch_checks"]}
+    assert empty_report["source"] == "live_database_and_stripe_v3"
+    assert empty_report["counts"]["verified_paid_users"] == 0
+    assert empty_report["counts"]["verified_trial_users"] == 0
+    assert empty_report["counts"]["billing_needs_verification"] == 0
+    assert empty_report["billing"]["actual_mrr_nzd"] == 0.0
+    assert empty_report["billing"]["stripe"]["credential_verified"] is True
+    assert empty_checks["stripe"]["status"] == "pass"
+    assert empty_checks["prices"]["status"] == "pass"
+    assert empty_checks["billing_truth"]["status"] == "pass"
+    assert empty_checks["webhooks"]["status"] == "pass"
+    assert empty_report["ready_to_take_payments"] is True
+
+    print("HQ paid launch behavior passed: live Stripe credentials, live locked prices, active-only MRR, zero-MRR truth, tester exclusion, filtered businesses and owner lock.")
 
 
 if __name__ == "__main__":

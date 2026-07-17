@@ -16,6 +16,7 @@ const files = [
   'backend/churvox_command_apply_routes.py',
   'backend/churvox_hq_connection_status_patch.py',
   'backend/churvox_hq_paid_launch_filter_patch.py',
+  'backend/churvox_hq_stripe_snapshot_patch.py',
   'backend/churvox_hq_paid_launch_report_patch.py',
   'backend/churvox_hq_paid_launch_postguard_patch.py',
   'backend/usercustomize.py',
