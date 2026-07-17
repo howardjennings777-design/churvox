@@ -1,5 +1,5 @@
 const FLAG = '__CHURVOX_HQ_VERIFIED_SMALL_BUSINESS_OUTREACH__';
-const VERSION = 'churvox-verified-small-business-outreach-v1-20260716';
+const VERSION = 'churvox-verified-small-business-outreach-v2-20260718';
 const OUTREACH_BUTTON_ID = 'churvox-hq-tester-outreach-button';
 const OUTREACH_ROOT_ID = 'churvox-hq-tester-outreach-root';
 const IMPORT_BUTTON_ID = 'churvox-hq-assistant-draft-import-button';
@@ -198,6 +198,7 @@ function loadedCount() { return ALL_EMAILS.filter((email) => rowFor(email)).leng
 
 function eligibleDraftRows() {
   return ELIGIBLE_EMAILS.map((email) => ({ email, row: rowFor(email) })).filter(({ row }) => {
+    if (!row) return false;
     const status = canonical(row.querySelector('.htoStatus')?.textContent).replace(/\s+/g, '_');
     return status === 'draft' && Boolean(row.querySelector('[data-row-action="send"]'));
   });
