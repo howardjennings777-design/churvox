@@ -1,0 +1,60 @@
+name: Churvox Stripe Price Resolution Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sitecustomize.py'
+      - 'backend/churvox_stripe_plan_price_resolver.py'
+      - 'backend/churvox_plan_consistency_price_resolution_patch.py'
+      - 'backend/churvox_plan_checkout_form_patch.py'
+      - 'backend/churvox_hq_stripe_price_resolution_patch.py'
+      - 'backend/churvox_hq_connection_status_patch.py'
+      - 'scripts/churvox_stripe_price_resolution_test.py'
+      - '.github/workflows/churvox-stripe-price-resolution-gate.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sitecustomize.py'
+      - 'backend/churvox_stripe_plan_price_resolver.py'
+      - 'backend/churvox_plan_consistency_price_resolution_patch.py'
+      - 'backend/churvox_plan_checkout_form_patch.py'
+      - 'backend/churvox_hq_stripe_price_resolution_patch.py'
+      - 'backend/churvox_hq_connection_status_patch.py'
+      - 'scripts/churvox_stripe_price_resolution_test.py'
+      - '.github/workflows/churvox-stripe-price-resolution-gate.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-stripe-price-resolution-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  price-resolution:
+    name: Checkout and HQ use the same live Stripe price
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile price-resolution modules
+        run: |
+          python -m py_compile \
+            sitecustomize.py \
+            backend/churvox_stripe_plan_price_resolver.py \
+            backend/churvox_plan_consistency_price_resolution_patch.py \
+            backend/churvox_plan_checkout_form_patch.py \
+            backend/churvox_hq_stripe_price_resolution_patch.py \
+            backend/churvox_hq_connection_status_patch.py \
+            scripts/churvox_stripe_price_resolution_test.py
+
+      - name: Prove current prices beat stale legacy IDs
+        run: python -m scripts.churvox_stripe_price_resolution_test

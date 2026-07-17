@@ -11,6 +11,11 @@ import stripe
 from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 
+try:
+    from churvox_stripe_plan_price_resolver import resolve_plan_price_env
+except Exception:
+    from backend.churvox_stripe_plan_price_resolver import resolve_plan_price_env
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com")
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 if STRIPE_SECRET_KEY:
@@ -29,10 +34,6 @@ PLAN_ALIASES = {
     "enterprise": ("enterprise", "command"),
 }
 PRICE_ENV_ALIASES = {
-    "solo": ["STRIPE_PRICE_START", "STRIPE_PRICE_SOLO", "STRIPE_START_PRICE_ID", "STRIPE_PRICE_ID_START", "STRIPE_PRICE_SOLO_MONTHLY"],
-    "team": ["STRIPE_PRICE_CREW", "STRIPE_PRICE_TEAM", "STRIPE_CREW_PRICE_ID", "STRIPE_PRICE_ID_CREW", "STRIPE_PRICE_TEAM_MONTHLY"],
-    "pro": ["STRIPE_PRICE_OPERATOR", "STRIPE_PRICE_PRO", "STRIPE_OPERATOR_PRICE_ID", "STRIPE_PRICE_ID_OPERATOR", "STRIPE_PRICE_PRO_MONTHLY"],
-    "enterprise": ["STRIPE_PRICE_COMMAND", "STRIPE_PRICE_ENTERPRISE", "STRIPE_COMMAND_PRICE_ID", "STRIPE_PRICE_ID_COMMAND", "STRIPE_PRICE_ENTERPRISE_MONTHLY"],
     "xero_addon": ["STRIPE_PRICE_XERO_ADDON", "STRIPE_XERO_ADDON_PRICE_ID", "STRIPE_PRICE_ACCOUNTING_SYNC", "STRIPE_ACCOUNTING_SYNC_PRICE_ID"],
     "command_growth_pack": ["STRIPE_PRICE_COMMAND_GROWTH_PACK", "STRIPE_COMMAND_GROWTH_PACK_PRICE_ID", "STRIPE_PRICE_GROWTH_PACK", "STRIPE_GROWTH_PACK_PRICE_ID"],
 }
@@ -55,7 +56,10 @@ def positive_int(value, default=0):
         return int(default or 0)
 
 
-def env_price(key):
+def env_price(key, country="NZ"):
+    if key in {"solo", "team", "pro", "enterprise"}:
+        value, env_name, candidates = resolve_plan_price_env(key, country)
+        return value, env_name if value else ", ".join(candidates)
     for env_name in PRICE_ENV_ALIASES.get(key, []):
         value = os.environ.get(env_name, "").strip()
         if value:
@@ -149,18 +153,18 @@ def install(module):
 
         if not STRIPE_SECRET_KEY:
             raise HTTPException(status_code=400, detail="Stripe secret key is not configured")
-        plan_price, plan_envs = env_price(backend_plan)
+        plan_price, plan_envs = env_price(backend_plan, country)
         if not plan_price:
             raise HTTPException(status_code=400, detail=f"Missing Stripe plan price env var for {ui_plan}: {plan_envs}")
 
         line_items = [{"price": plan_price, "quantity": 1}]
         if accounting_sync and backend_plan != "enterprise":
-            xero_price, xero_envs = env_price("xero_addon")
+            xero_price, xero_envs = env_price("xero_addon", country)
             if not xero_price:
                 raise HTTPException(status_code=400, detail=f"Missing Stripe Xero add-on price env var: {xero_envs}")
             line_items.append({"price": xero_price, "quantity": 1})
         if growth_packs > 0:
-            growth_price, growth_envs = env_price("command_growth_pack")
+            growth_price, growth_envs = env_price("command_growth_pack", country)
             if not growth_price:
                 raise HTTPException(status_code=400, detail=f"Missing Stripe Command Growth Pack price env var: {growth_envs}")
             line_items.append({"price": growth_price, "quantity": growth_packs})
