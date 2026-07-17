@@ -9,6 +9,11 @@ except Exception:
     pass
 
 try:
+    import backend.churvox_plan_consistency_price_resolution_patch  # noqa: F401
+except Exception:
+    pass
+
+try:
     import backend.churvox_monthly_job_limit  # noqa: F401
 except Exception:
     pass
