@@ -49,6 +49,8 @@ def _read(doc, *keys):
 def _truthy(value):
     if isinstance(value, bool):
         return value
+    if isinstance(value, (int, float)):
+        return value != 0
     return _low(value) in {"1", "true", "yes", "on"}
 
 
@@ -108,5 +110,20 @@ def install(_module=None):
         import churvox_hq_paid_launch_report_patch as report
     except Exception:
         from backend import churvox_hq_paid_launch_report_patch as report
+
+    def is_tester_record(doc):
+        doc = doc or {}
+        has_tester_flag = any(_truthy(_read(doc, key)) for key in (
+            "free_tester_access",
+            "is_free_tester",
+            "is_tester",
+            "app_owner_free_pack",
+        ))
+        if has_tester_flag:
+            until = report._parse_dt(_read(doc, "free_tester_until", "free_until"))
+            return not until or until >= report._now()
+        return "tester" in report._status(doc)
+
     report._is_internal = is_internal_record
+    report._is_tester = is_tester_record
     return report
