@@ -1,9 +1,12 @@
 import API_BASE from '../lib/apiBase';
 
 const FLAG = '__CHURVOX_HQ_ASSISTANT_DRAFT_IMPORT_RUNTIME__';
+const VERSION = 'churvox-hq-outreach-navigation-repair-v1-20260717';
 const BUTTON_ID = 'churvox-hq-assistant-draft-import-button';
 const ROOT_ID = 'churvox-hq-assistant-draft-import-root';
 const STYLE_ID = 'churvox-hq-assistant-draft-import-style';
+const OUTREACH_BUTTON_ID = 'churvox-hq-tester-outreach-button';
+const OUTREACH_ROOT_ID = 'churvox-hq-tester-outreach-root';
 const API_ROOT = String(API_BASE || '').replace(/\/$/, '');
 const MAX_BATCH = 25;
 
@@ -18,6 +21,10 @@ const state = {
   fileName: '',
   result: null,
 };
+
+let importButton = null;
+let outreachButton = null;
+let repairQueued = false;
 
 function lower(value) { return String(value || '').trim().toLowerCase(); }
 
@@ -68,7 +75,7 @@ function installStyle() {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    #${BUTTON_ID}{position:relative}
+    #${BUTTON_ID},#${OUTREACH_BUTTON_ID}{position:relative}
     #${ROOT_ID}{position:fixed;inset:0;z-index:2147482500;display:none;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0f172a}
     #${ROOT_ID}.open{display:block}
     #${ROOT_ID} .adiBackdrop{position:absolute;inset:0;background:rgba(2,6,23,.74);backdrop-filter:blur(5px)}
@@ -119,10 +126,10 @@ function normaliseBatch(value) {
 function parseRaw() {
   state.parseError = '';
   state.parsed = [];
-  const text = String(state.raw || '').trim();
-  if (!text) return;
+  const raw = String(state.raw || '').trim();
+  if (!raw) return;
   try {
-    const value = JSON.parse(text);
+    const value = JSON.parse(raw);
     const items = normaliseBatch(value);
     if (!items.length) throw new Error('JSON must contain a drafts array');
     if (items.length > MAX_BATCH) throw new Error(`A batch can contain at most ${MAX_BATCH} drafts`);
@@ -139,6 +146,7 @@ function ensureRoot() {
   if (root) return root;
   root = document.createElement('section');
   root.id = ROOT_ID;
+  root.dataset.version = VERSION;
   root.innerHTML = '<div class="adiBackdrop" data-adi-close></div><div class="adiShell"><header class="adiHead"></header><div class="adiBody"></div></div>';
   root.addEventListener('click', handleClick);
   root.addEventListener('input', handleInput);
@@ -154,7 +162,7 @@ function render() {
 
   root.querySelector('.adiHead').innerHTML = `
     <div><small>Owner-controlled import</small><h2>Assistant Draft Import</h2>
-    <p>Add a prepared prospect batch to Outreach as drafts. This tool has no route to send email, grant tester access, or change prospect status.</p></div>
+    <p>Add a prepared prospect batch to Outreach as drafts. This tool cannot send email, grant tester access, or change prospect status.</p></div>
     <button class="adiClose" type="button" data-adi-close>Close</button>
   `;
 
@@ -201,27 +209,84 @@ function openPanel() {
   state.notice = '';
   state.noticeTone = 'plain';
   state.result = null;
+  document.body.style.overflow = 'hidden';
   render();
 }
 
 function closePanel() {
   state.open = false;
   render();
+  if (!document.getElementById(OUTREACH_ROOT_ID)?.classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
 }
 
-function ensureButton() {
-  if (!isHqPath()) return;
-  const nav = document.querySelector('.hq2Side nav');
-  if (!nav || document.getElementById(BUTTON_ID)) return;
-  const button = document.createElement('button');
-  button.id = BUTTON_ID;
-  button.type = 'button';
-  button.textContent = 'Import drafts';
-  button.title = 'Import assistant-prepared tester outreach drafts';
-  button.addEventListener('click', openPanel);
-  const outreach = Array.from(nav.querySelectorAll('button')).find((item) => lower(item.textContent).startsWith('outreach'));
-  if (outreach?.nextSibling) nav.insertBefore(button, outreach.nextSibling);
-  else nav.appendChild(button);
+function hqNav() {
+  return document.querySelector('.hq2Side nav');
+}
+
+function findNavButton(prefix) {
+  return Array.from(hqNav()?.querySelectorAll('button') || []).find((item) => lower(item.textContent).startsWith(prefix)) || null;
+}
+
+function insertAfter(reference, node, parent) {
+  if (!parent || !node) return;
+  if (reference?.nextSibling) parent.insertBefore(node, reference.nextSibling);
+  else parent.appendChild(node);
+}
+
+function captureOutreachButton() {
+  const live = document.getElementById(OUTREACH_BUTTON_ID) || findNavButton('outreach');
+  if (live) {
+    live.id = OUTREACH_BUTTON_ID;
+    outreachButton = live;
+  }
+  return outreachButton;
+}
+
+function ensureImportButton(nav) {
+  const live = document.getElementById(BUTTON_ID);
+  if (live) importButton = live;
+  if (!importButton) {
+    importButton = document.createElement('button');
+    importButton.id = BUTTON_ID;
+    importButton.type = 'button';
+    importButton.textContent = 'Import drafts';
+    importButton.title = 'Import assistant-prepared tester outreach drafts';
+    importButton.addEventListener('click', openPanel);
+  }
+  if (!importButton.isConnected) {
+    insertAfter(captureOutreachButton() || findNavButton('testers'), importButton, nav);
+  }
+}
+
+function repairNavigation() {
+  repairQueued = false;
+  if (!isHqPath()) {
+    if (state.open) closePanel();
+    const outreachRoot = document.getElementById(OUTREACH_ROOT_ID);
+    if (outreachRoot?.classList.contains('open')) outreachRoot.classList.remove('open');
+    document.body.style.overflow = '';
+    return;
+  }
+
+  installStyle();
+  ensureRoot();
+  const nav = hqNav();
+  if (!nav) return;
+
+  const captured = captureOutreachButton();
+  if (captured && !captured.isConnected) {
+    insertAfter(findNavButton('testers'), captured, nav);
+  }
+  ensureImportButton(nav);
+  window.__CHURVOX_HQ_OUTREACH_NAVIGATION_REPAIR__ = VERSION;
+}
+
+function queueRepair() {
+  if (repairQueued) return;
+  repairQueued = true;
+  window.setTimeout(repairNavigation, 20);
 }
 
 async function readFile(file) {
@@ -238,66 +303,40 @@ async function readFile(file) {
   render();
 }
 
-async function importBatch() {
-  if (!state.parsed.length || state.busy) return;
+async function importDrafts() {
+  if (state.busy || !state.parsed.length) return;
   state.busy = true;
-  state.notice = '';
+  state.notice = 'Importing prepared drafts…';
   state.noticeTone = 'plain';
   state.result = null;
   render();
   try {
     const result = await apiPost('/api/admin/owner/tester-outreach/import-drafts', {
-      batch_id: `assistant-${new Date().toISOString().replace(/[:.]/g, '-')}`,
       drafts: state.parsed,
+      batch_id: `hq-${new Date().toISOString().replace(/[:.]/g, '-')}`,
     });
     state.result = result;
     state.notice = result.message || 'Prepared drafts imported.';
     state.noticeTone = 'good';
-    window.dispatchEvent(new CustomEvent('churvox-tester-outreach-imported', { detail: result }));
-    const refresh = document.querySelector('#churvox-hq-tester-outreach-root [data-action="refresh"]');
-    if (refresh) refresh.click();
+    window.dispatchEvent(new CustomEvent('churvox-outreach-drafts-imported', { detail: result }));
   } catch (error) {
     state.notice = error.message || 'Could not import prepared drafts.';
     state.noticeTone = 'bad';
   } finally {
     state.busy = false;
     render();
+    queueRepair();
   }
 }
 
 function openOutreach() {
-  const button = document.getElementById('churvox-hq-tester-outreach-button');
-  if (button) button.click();
-  else {
-    state.notice = 'Outreach button is not available yet. Refresh HQ and try again.';
-    state.noticeTone = 'bad';
-    render();
-    return;
-  }
   closePanel();
+  repairNavigation();
+  const button = captureOutreachButton();
+  if (button?.isConnected) button.click();
 }
 
-function handleInput(event) {
-  if (!event.target.matches('[data-adi-raw]')) return;
-  const cursor = event.target.selectionStart || 0;
-  state.raw = event.target.value;
-  state.notice = '';
-  state.noticeTone = 'plain';
-  state.result = null;
-  parseRaw();
-  render();
-  const next = document.querySelector(`#${ROOT_ID} [data-adi-raw]`);
-  if (next) {
-    next.focus();
-    try { next.setSelectionRange(cursor, cursor); } catch {}
-  }
-}
-
-function handleChange(event) {
-  if (event.target.matches('[data-adi-file]')) readFile(event.target.files?.[0]);
-}
-
-function handleClick(event) {
+async function handleClick(event) {
   if (event.target.closest('[data-adi-close]')) { closePanel(); return; }
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action === 'clear') {
@@ -305,29 +344,43 @@ function handleClick(event) {
     state.parsed = [];
     state.parseError = '';
     state.notice = '';
-    state.noticeTone = 'plain';
-    state.fileName = '';
     state.result = null;
+    state.fileName = '';
     render();
+    return;
   }
-  if (action === 'import') importBatch();
-  if (action === 'open-outreach') openOutreach();
+  if (action === 'open-outreach') { openOutreach(); return; }
+  if (action === 'import') await importDrafts();
+}
+
+function handleInput(event) {
+  if (!event.target.matches('[data-adi-raw]')) return;
+  state.raw = event.target.value;
+  state.notice = '';
+  state.result = null;
+  parseRaw();
+  render();
+}
+
+function handleChange(event) {
+  if (event.target.matches('[data-adi-file]')) readFile(event.target.files?.[0]);
 }
 
 function schedule() {
-  if (!isHqPath()) return;
-  installStyle();
-  ensureRoot();
-  [0, 450, 1200, 2600].forEach((delay) => setTimeout(ensureButton, delay));
+  [0, 80, 220, 500, 1000, 2200, 5000].forEach((delay) => window.setTimeout(repairNavigation, delay));
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window[FLAG]) {
-  window[FLAG] = true;
+  window[FLAG] = VERSION;
   schedule();
   window.addEventListener('popstate', schedule);
   window.addEventListener('hashchange', schedule);
+  window.addEventListener('churvox-auth-state', schedule);
   window.addEventListener('churvox-owner-app-ready', schedule);
-  setInterval(() => { if (isHqPath()) ensureButton(); }, 30000);
+  window.addEventListener('churvox-outreach-open', openOutreach);
+  const observer = new MutationObserver(queueRepair);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  window.setInterval(repairNavigation, 1500);
 }
 
 export {};
