@@ -97,6 +97,12 @@ jobs:
           print('All backend Python files compiled successfully.')
           PY
 
+      - name: Run HQ billing truth behavior and static audit
+        working-directory: .
+        run: |
+          python scripts/churvox_hq_paid_launch_behavior_test.py
+          node scripts/churvox-paid-launch-reality-audit.cjs
+
       - name: Run backend paid-launch and route-isolation contracts
         working-directory: .
         run: |
@@ -147,6 +153,7 @@ jobs:
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-plans-usage-truth.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
+            tests/e2e/churvox-paid-launch-hq-reality.spec.js \
             tests/e2e/churvox-public-documents-paid-launch.spec.js \
             tests/e2e/churvox-public-request-paid-launch.spec.js \
             tests/e2e/churvox-billing-email-verification-gate.spec.js \
@@ -163,6 +170,7 @@ jobs:
             tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js \
             tests/e2e/churvox-more-menu-paid-launch.spec.js \
             tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
+            tests/e2e/churvox-paid-launch-hq-reality.spec.js \
             --project=mobile-chromium \
             --workers=1 \
             --reporter=line
