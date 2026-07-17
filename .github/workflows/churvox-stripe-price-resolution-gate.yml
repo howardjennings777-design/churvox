@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'sitecustomize.py'
       - 'backend/churvox_stripe_plan_price_resolver.py'
+      - 'backend/churvox_plan_consistency_price_resolution_patch.py'
       - 'backend/churvox_plan_checkout_form_patch.py'
       - 'backend/churvox_hq_stripe_price_resolution_patch.py'
       - 'backend/churvox_hq_connection_status_patch.py'
@@ -13,7 +15,9 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'sitecustomize.py'
       - 'backend/churvox_stripe_plan_price_resolver.py'
+      - 'backend/churvox_plan_consistency_price_resolution_patch.py'
       - 'backend/churvox_plan_checkout_form_patch.py'
       - 'backend/churvox_hq_stripe_price_resolution_patch.py'
       - 'backend/churvox_hq_connection_status_patch.py'
@@ -44,7 +48,9 @@ jobs:
       - name: Compile price-resolution modules
         run: |
           python -m py_compile \
+            sitecustomize.py \
             backend/churvox_stripe_plan_price_resolver.py \
+            backend/churvox_plan_consistency_price_resolution_patch.py \
             backend/churvox_plan_checkout_form_patch.py \
             backend/churvox_hq_stripe_price_resolution_patch.py \
             backend/churvox_hq_connection_status_patch.py \
