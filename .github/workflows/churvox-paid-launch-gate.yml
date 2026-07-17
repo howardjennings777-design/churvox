@@ -97,11 +97,13 @@ jobs:
           print('All backend Python files compiled successfully.')
           PY
 
-      - name: Run HQ billing truth behavior and static audit
+      - name: Run HQ billing truth behavior
         working-directory: .
-        run: |
-          python scripts/churvox_hq_paid_launch_behavior_test.py
-          node scripts/churvox-paid-launch-reality-audit.cjs
+        run: python scripts/churvox_hq_paid_launch_behavior_test.py
+
+      - name: Run HQ billing truth static audit
+        working-directory: .
+        run: node scripts/churvox-paid-launch-reality-audit.cjs
 
       - name: Run backend paid-launch and route-isolation contracts
         working-directory: .
