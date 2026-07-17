@@ -23,10 +23,11 @@ function validJs(source) {
 
 const baseReport = read('backend/churvox_hq_paid_launch_report_patch.py');
 const filterPatch = read('backend/churvox_hq_paid_launch_filter_patch.py');
+const stripeSnapshot = read('backend/churvox_hq_stripe_snapshot_patch.py');
 const postguard = read('backend/churvox_hq_paid_launch_postguard_patch.py');
 const installer = read('backend/churvox_hq_connection_status_patch.py');
-const hq = read('frontend/src/pages/PaidLaunchHQ.jsx');
-const hqCss = read('frontend/src/pages/PaidLaunchHQ.css');
+const hq = read('frontend/src/pages/PaidLaunchHQSystem.jsx');
+const hqCss = read('frontend/src/pages/PaidLaunchHQSystem.css');
 const hqEntry = read('frontend/src/pages/ChurvoxHQPage.jsx');
 const adminRoute = read('frontend/src/components/admin/PlatformAdminRoute.jsx');
 const mockedHqTest = read('frontend/tests/e2e/churvox-paid-launch-hq-reality.spec.js');
@@ -59,39 +60,67 @@ check(
 );
 
 check(
-  'every subscription candidate is checked against live Stripe',
-  postguard.includes('async def billing_population')
-    && postguard.includes('rows = await db.users.find({})')
-    && postguard.includes('if subscription_id:')
-    && postguard.includes('stripe = _stripe_snapshot([row.get("stripe_subscription_id") for row in subscription_candidates])')
-    && postguard.includes('live_status_by_id')
-    && postguard.includes('if live_status == "active"')
-    && postguard.includes('elif live_status == "trialing"')
-    && postguard.includes('"database_status_is_not_billing_truth": True'),
-  'Mongo status cannot decide paid/trial classification; Stripe must classify every non-tester subscription ID',
+  'Stripe credentials are proven even with zero subscriptions',
+  stripeSnapshot.includes('stripe.Account.retrieve()')
+    && stripeSnapshot.includes('"credential_verified": True')
+    && stripeSnapshot.includes('"credential_verified": False')
+    && stripeSnapshot.includes('stripe_credential_verification_failed')
+    && stripeSnapshot.includes('"source": "stripe_account_and_subscription_api"'),
+  'A configured or invalid secret must never pass merely because there are no subscription candidates',
 );
 
 check(
-  'paid counts and MRR are Stripe-confirmed only',
+  'every non-tester subscription candidate is checked against live Stripe',
+  postguard.includes('async def billing_population')
+    && postguard.includes('if is_tester_record(row):')
+    && postguard.includes('if subscription_id:')
+    && postguard.includes('stripe = _stripe_snapshot([row.get("stripe_subscription_id") for row in subscription_candidates])')
+    && postguard.includes('stripe_complete = (')
+    && postguard.includes('stripe.get("credential_verified") is True')
+    && postguard.includes('if live_status == "active"')
+    && postguard.includes('elif live_status == "trialing"')
+    && postguard.includes('"database_status_is_not_billing_truth": True'),
+  'Mongo status, mixed tester flags or a stored subscription ID cannot decide paid/trial classification',
+);
+
+check(
+  'paid counts and MRR are complete Stripe truth only',
   postguard.includes('"paid_definition": "stripe_subscription_status_active"')
     && postguard.includes('"trial_definition": "stripe_subscription_status_trialing"')
     && postguard.includes('"subscription_id_alone_is_not_paid": True')
     && postguard.includes('if _low(item.get("status")) != "active"')
-    && postguard.includes('billing["actual_mrr_nzd"] = paid_mrr_by_currency.get("nzd")')
+    && postguard.includes('paid_mrr_by_currency.get("nzd", 0.0) if stripe_complete else None')
+    && postguard.includes('"zero_mrr_is_zero": True')
+    && postguard.includes('"testers_excluded_from_billing": True')
     && postguard.includes('"mrr_definition": "active_stripe_subscription_price_items_only"')
-    && postguard.includes('report["source"] = "live_database_and_stripe_v2"'),
-  'Trials, stored IDs and estimates must not inflate verified paid users or actual MRR',
+    && postguard.includes('report["source"] = "live_database_and_stripe_v3"'),
+  'Partial Stripe failures, trials, testers, stored IDs and estimates must not inflate paid users or MRR',
+);
+
+check(
+  'locked plan prices are retrieved and validated live',
+  postguard.includes('def _validate_live_prices')
+    && postguard.includes('stripe.Price.retrieve(price_id)')
+    && postguard.includes('"amount_minor": 3900')
+    && postguard.includes('"amount_minor": 8900')
+    && postguard.includes('"amount_minor": 14900')
+    && postguard.includes('"amount_minor": 29900')
+    && postguard.includes('currency == "nzd"')
+    && postguard.includes('interval == "month"')
+    && postguard.includes('"prices_live_verified": price_validation.get("valid") is True'),
+  'Environment-variable presence alone is not price proof; Stripe must return active monthly NZD prices at the locked amounts',
 );
 
 check(
   'hard payment launch checks are enforced',
-  ['STRIPE_PRICE_SOLO', 'STRIPE_PRICE_TEAM', 'STRIPE_PRICE_PRO', 'STRIPE_PRICE_ENTERPRISE'].every((key) => postguard.includes(`"${key}"`))
-    && postguard.includes('STRIPE_WEBHOOK_SECRET')
+  postguard.includes('STRIPE_WEBHOOK_SECRET')
     && postguard.includes('"label": "Stripe plan prices"')
     && postguard.includes('"label": "Stripe webhooks"')
     && postguard.includes('"label": "Billing truth"')
+    && postguard.includes('"status": "pass" if stripe_complete else "fail"')
+    && postguard.includes('"status": "pass" if price_validation.get("valid") is True else "fail"')
     && postguard.includes('report["ready_to_take_payments"] = all(item.get("status") != "fail"'),
-  'Missing Stripe access, a price ID, webhook signing or unresolved billing must block paid-ready status',
+  'Missing Stripe proof, a wrong live price, webhook signing or unresolved billing must block paid-ready status',
 );
 
 check(
@@ -105,25 +134,27 @@ check(
 );
 
 check(
-  'normal backend startup installs filter, report and postguard in order',
+  'normal backend startup installs snapshot, report and postguard in order',
   installer.includes('install_paid_launch_filter(module)')
+    && installer.includes('install_stripe_snapshot(module)')
     && installer.includes('install_paid_launch_report(module)')
     && installer.includes('install_paid_launch_postguard(module)')
-    && installer.indexOf('install_paid_launch_filter(module)') < installer.indexOf('install_paid_launch_report(module)')
+    && installer.indexOf('install_paid_launch_filter(module)') < installer.indexOf('install_stripe_snapshot(module)')
+    && installer.indexOf('install_stripe_snapshot(module)') < installer.indexOf('install_paid_launch_report(module)')
     && installer.indexOf('install_paid_launch_report(module)') < installer.indexOf('install_paid_launch_postguard(module)')
     && installer.includes('paid_launch_endpoint.__annotations__["request"] = Request')
     && installer.includes('app.add_api_route(paid_launch_path, paid_launch_endpoint, methods=["GET"])'),
-  'Render startup must install the full real-data chain in order and preserve FastAPI Request injection so HQ does not return 422',
+  'Render startup must install the complete truth chain and preserve FastAPI Request injection',
 );
 
 check(
-  'HQ screen consumes authoritative report without inferred fallbacks',
-  hqEntry.includes('export { default } from "./PaidLaunchHQ"')
-    && hq.includes('CHURVOX_REAL_PAID_LAUNCH_HQ_20260711')
+  'current HQ screen consumes authoritative report without inferred fallbacks',
+  hqEntry.includes('PaidLaunchHQSystem')
+    && hq.includes('data-version="CHURVOX_HQ_SYSTEM')
     && hq.includes('launch: "/api/admin/owner/paid-launch-report"')
     && hq.includes('numberText(launchCounts.verified_paid_users)')
     && hq.includes('hasValue(actualMrr)')
-    && hq.includes('Not replaced by an estimate')
+    && hq.includes('Actual recurring price items only')
     && !hq.includes('metrics.paid_users ||')
     && !hq.includes('monthly_revenue_estimate ||'),
   'True zeroes and unavailable values must not be replaced by old overview estimates',
@@ -131,12 +162,12 @@ check(
 
 check(
   'HQ retains real operations and responsive design',
-  ['"Paid launch"', '"Users"', '"Billing"', '"Testers"', '"Businesses"', '"Activity"', '"System"', '"Data"'].every((value) => hq.includes(value))
+  ['"Launch"', '"Users"', '"Billing"', '"Testers"', '"Businesses"', '"Activity"', '"System"', '"Data"'].every((value) => hq.includes(value))
     && hq.includes('apiPost("/api/admin/owner/control-access"')
     && hq.includes('apiPost("/api/admin/owner/tester-intake"')
     && hq.includes('<RemoveCustomerDataCard />')
-    && hqCss.includes('@media (max-width: 820px)')
-    && hqCss.includes('@media (max-width: 560px)'),
+    && hqCss.includes('@media(max-width:820px)')
+    && hqCss.includes('@media(max-width:560px)'),
   'HQ must keep real owner controls and work on desktop/mobile',
 );
 
@@ -150,41 +181,45 @@ check(
 );
 
 check(
-  'safe HQ browser proof challenges fake fallback numbers',
+  'safe HQ browser proof challenges zero MRR and current controls',
   validJs(mockedHqTest)
-    && mockedHqTest.includes('metrics: { total_users: 99, paid_users: 99, monthly_revenue_estimate: 9999 }')
-    && mockedHqTest.includes('true zero and unavailable values are never replaced by old inferred totals')
-    && mockedHqTest.includes('all HQ areas render and safe owner controls perform real requests')
+    && mockedHqTest.includes("source: 'live_database_and_stripe_v3'")
+    && mockedHqTest.includes('true zero MRR is rendered as $0.00 rather than unavailable')
+    && mockedHqTest.includes('all HQ areas render and tester grant/revoke requests use the final routes')
     && mockedHqTest.includes('endpoint failure stays visible and mobile controls remain usable')
     && !/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(mockedHqTest),
-  'The desktop/mobile HQ test must challenge old totals, zeroes, failures and controls without being skipped',
+  'The desktop/mobile HQ test must challenge current v3 truth, true zeroes, failures and controls without being skipped',
 );
 
 check(
-  'authenticated live HQ smoke compares backend and rendered values',
+  'authenticated live HQ smoke compares backend and current rendered values',
   validJs(liveHqTest)
-    && liveHqTest.includes("expect(report.source).toBe('live_database_and_stripe_v2')")
-    && liveHqTest.includes("expect(report.truth?.paid_definition).toBe('stripe_subscription_status_active')")
-    && liveHqTest.includes("expect(report.truth?.mrr_definition).toBe('active_stripe_subscription_price_items_only')")
+    && liveHqTest.includes("expect(report.source).toBe('live_database_and_stripe_v3')")
+    && liveHqTest.includes("expect(report.truth?.stripe_credentials_verified).toBe(true)")
+    && liveHqTest.includes("expect(report.truth?.prices_live_verified).toBe(true)")
+    && liveHqTest.includes("expect(report.truth?.zero_mrr_is_zero).toBe(true)")
+    && liveHqTest.includes("expect(report.billing?.stripe_price_validation?.valid).toBe(true)")
     && liveHqTest.includes("for (const key of ['database', 'owner_lock', 'stripe', 'prices', 'billing_truth', 'webhooks', 'email'])")
     && liveHqTest.includes("page.goto('/admin'")
+    && liveHqTest.includes('CHURVOX_HQ_SYSTEM_TESTER_REVOKE_FIXED_20260712')
     && liveHqRunner.includes('CHURVOX_OWNER_EMAIL')
     && !/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(liveHqTest),
-  'After deployment the real report, hard launch checks and /admin values must agree under owner auth',
+  'After deployment the v3 report, hard launch checks and current /admin values must agree under owner auth',
 );
 
 check(
-  'backend behavior proof executes real classification and launch gates',
-  behaviorTest.includes('assert report["source"] == "live_database_and_stripe_v2"')
-    && behaviorTest.includes('assert report["truth"]["paid_definition"] == "stripe_subscription_status_active"')
-    && behaviorTest.includes('assert report["truth"]["mrr_definition"] == "active_stripe_subscription_price_items_only"')
-    && behaviorTest.includes('assert report["billing"]["stripe"]["paid_mrr_by_currency"]["nzd"] == 89.0')
+  'backend behavior proof executes strict classification and launch gates',
+  behaviorTest.includes('assert report["source"] == "live_database_and_stripe_v3"')
+    && behaviorTest.includes('assert report["truth"]["stripe_credentials_verified"] is True')
+    && behaviorTest.includes('assert report["truth"]["prices_live_verified"] is True')
+    && behaviorTest.includes('assert report["truth"]["testers_excluded_from_billing"] is True')
+    && behaviorTest.includes('assert empty_report["billing"]["actual_mrr_nzd"] == 0.0')
+    && behaviorTest.includes('"is_tester": "true"')
     && behaviorTest.includes('assert check_by_key["prices"]["status"] == "pass"')
     && behaviorTest.includes('assert check_by_key["webhooks"]["status"] == "pass"')
-    && behaviorTest.includes('assert report["counts"]["businesses_source"] == "filtered_businesses_collection"')
     && behaviorTest.includes('assert exc.status_code == 403')
     && behaviorRunner.includes('scripts/churvox_hq_paid_launch_behavior_test.py'),
-  'The real backend route must execute with controlled database, Stripe, pricing, webhook and owner-lock cases',
+  'The backend route must prove credentials, prices, mixed tester exclusion, zero MRR, webhooks and owner lock',
 );
 
 check(
@@ -229,8 +264,15 @@ check(
 
 check(
   'Python syntax gate includes the complete HQ backend chain',
-  ['backend/churvox_hq_paid_launch_filter_patch.py', 'backend/churvox_hq_paid_launch_report_patch.py', 'backend/churvox_hq_paid_launch_postguard_patch.py', 'backend/churvox_hq_connection_status_patch.py', 'scripts/churvox_hq_paid_launch_behavior_test.py'].every((value) => pythonSyntax.includes(value)),
-  'All new Python files must be AST parsed before browser tests',
+  [
+    'backend/churvox_hq_paid_launch_filter_patch.py',
+    'backend/churvox_hq_stripe_snapshot_patch.py',
+    'backend/churvox_hq_paid_launch_report_patch.py',
+    'backend/churvox_hq_paid_launch_postguard_patch.py',
+    'backend/churvox_hq_connection_status_patch.py',
+    'scripts/churvox_hq_paid_launch_behavior_test.py',
+  ].every((value) => pythonSyntax.includes(value)),
+  'Every billing-truth Python file must be AST parsed before browser tests',
 );
 
 for (const item of checks) console.log(`${item.passed ? '✓' : '✗'} ${item.name}`);
