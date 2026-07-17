@@ -130,6 +130,11 @@ def install(module):
         install_paid_launch_report(module)
         from churvox_hq_paid_launch_postguard_patch import install as install_paid_launch_postguard
         install_paid_launch_postguard(module)
+        try:
+            from churvox_hq_stripe_price_resolution_patch import install as install_stripe_price_resolution
+        except Exception:
+            from backend.churvox_hq_stripe_price_resolution_patch import install as install_stripe_price_resolution
+        install_stripe_price_resolution(module)
 
         # The postguard wrapper is intentionally dependency-light, so restore the
         # concrete Request annotation before FastAPI builds the final dependency
