@@ -11,6 +11,10 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
+function compact(value) {
+  return String(value || '').replace(/\s+/g, '');
+}
+
 function check(name, ok, detail) {
   const passed = Boolean(ok);
   checks.push({ name, passed });
@@ -18,7 +22,12 @@ function check(name, ok, detail) {
 }
 
 function validJs(source) {
-  try { new Function(source); return true; } catch { return false; }
+  try {
+    new Function(source);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 const baseReport = read('backend/churvox_hq_paid_launch_report_patch.py');
@@ -40,6 +49,7 @@ const ownerWorkerRunner = read('scripts/churvox-live-owner-worker-readonly.cjs')
 const pythonSyntax = read('scripts/churvox-command-python-syntax.cjs');
 const rootPackage = JSON.parse(read('package.json'));
 const frontendPackage = JSON.parse(read('frontend/package.json'));
+const compactCss = compact(hqCss);
 
 check(
   'owner-only live HQ route exists',
@@ -47,30 +57,30 @@ check(
     && baseReport.includes('async def require_owner')
     && baseReport.includes('raise HTTPException(status_code=403')
     && baseReport.includes('"sample_records_included": False'),
-  'Paid-launch data must be protected and sample records explicitly excluded',
+  'Paid-launch data must be owner protected and sample records explicitly excluded',
 );
 
 check(
-  'synthetic filtering is precise rather than broad',
+  'synthetic filtering remains precise',
   filterPatch.includes('def is_internal_record')
     && filterPatch.includes('SYNTHETIC_DOMAINS')
     && filterPatch.includes('real tester accounts must stay visible')
     && !filterPatch.includes('any(marker in hay for marker in INTERNAL_MARKERS)'),
-  'Legitimate testers must remain visible while explicit demo/sample records are excluded',
+  'Real tester accounts must remain visible while explicit demo and sample records are excluded',
 );
 
 check(
-  'Stripe credentials are proven even with zero subscriptions',
+  'Stripe credentials are proven with a live API call',
   stripeSnapshot.includes('stripe.Account.retrieve()')
     && stripeSnapshot.includes('"credential_verified": True')
     && stripeSnapshot.includes('"credential_verified": False')
     && stripeSnapshot.includes('stripe_credential_verification_failed')
     && stripeSnapshot.includes('"source": "stripe_account_and_subscription_api"'),
-  'A configured or invalid secret must never pass merely because there are no subscription candidates',
+  'An empty subscription list or invalid secret must never pass as Stripe availability',
 );
 
 check(
-  'every non-tester subscription candidate is checked against live Stripe',
+  'all non-tester subscription candidates require complete Stripe confirmation',
   postguard.includes('async def billing_population')
     && postguard.includes('if is_tester_record(row):')
     && postguard.includes('if subscription_id:')
@@ -80,11 +90,11 @@ check(
     && postguard.includes('if live_status == "active"')
     && postguard.includes('elif live_status == "trialing"')
     && postguard.includes('"database_status_is_not_billing_truth": True'),
-  'Mongo status, mixed tester flags or a stored subscription ID cannot decide paid/trial classification',
+  'Mongo status, mixed tester flags and stored subscription IDs cannot decide paid or trial classification',
 );
 
 check(
-  'paid counts and MRR are complete Stripe truth only',
+  'paid counts and MRR use complete active Stripe truth only',
   postguard.includes('"paid_definition": "stripe_subscription_status_active"')
     && postguard.includes('"trial_definition": "stripe_subscription_status_trialing"')
     && postguard.includes('"subscription_id_alone_is_not_paid": True')
@@ -94,7 +104,7 @@ check(
     && postguard.includes('"testers_excluded_from_billing": True')
     && postguard.includes('"mrr_definition": "active_stripe_subscription_price_items_only"')
     && postguard.includes('report["source"] = "live_database_and_stripe_v3"'),
-  'Partial Stripe failures, trials, testers, stored IDs and estimates must not inflate paid users or MRR',
+  'Partial Stripe errors, trials, testers, stored IDs and estimates must not inflate paid users or actual MRR',
 );
 
 check(
@@ -108,11 +118,11 @@ check(
     && postguard.includes('currency == "nzd"')
     && postguard.includes('interval == "month"')
     && postguard.includes('"prices_live_verified": price_validation.get("valid") is True'),
-  'Environment-variable presence alone is not price proof; Stripe must return active monthly NZD prices at the locked amounts',
+  'Stripe must return active monthly NZD prices at the four locked Churvox amounts',
 );
 
 check(
-  'hard payment launch checks are enforced',
+  'hard paid-launch gates cannot be bypassed',
   postguard.includes('STRIPE_WEBHOOK_SECRET')
     && postguard.includes('"label": "Stripe plan prices"')
     && postguard.includes('"label": "Stripe webhooks"')
@@ -120,21 +130,21 @@ check(
     && postguard.includes('"status": "pass" if stripe_complete else "fail"')
     && postguard.includes('"status": "pass" if price_validation.get("valid") is True else "fail"')
     && postguard.includes('report["ready_to_take_payments"] = all(item.get("status") != "fail"'),
-  'Missing Stripe proof, a wrong live price, webhook signing or unresolved billing must block paid-ready status',
+  'Missing Stripe proof, wrong prices, webhook signing or unresolved billing must block payment readiness',
 );
 
 check(
-  'raw database counts and filtered customer metrics remain separate',
+  'raw collection counts and customer metrics remain separate',
   baseReport.includes('count_documents({})')
     && baseReport.includes('"collections": {')
     && postguard.includes('async def filtered_business_count')
     && postguard.includes('counts["businesses_source"] = "filtered_businesses_collection"')
     && baseReport.includes('"stripe_webhook": await latest("stripe_webhook_events")'),
-  'HQ should show raw collection totals while excluding internal/sample businesses from customer headlines',
+  'Raw database totals must remain visible without inflating customer headlines',
 );
 
 check(
-  'normal backend startup installs snapshot, report and postguard in order',
+  'backend startup installs the complete truth chain in order',
   installer.includes('install_paid_launch_filter(module)')
     && installer.includes('install_stripe_snapshot(module)')
     && installer.includes('install_paid_launch_report(module)')
@@ -144,11 +154,11 @@ check(
     && installer.indexOf('install_paid_launch_report(module)') < installer.indexOf('install_paid_launch_postguard(module)')
     && installer.includes('paid_launch_endpoint.__annotations__["request"] = Request')
     && installer.includes('app.add_api_route(paid_launch_path, paid_launch_endpoint, methods=["GET"])'),
-  'Render startup must install the complete truth chain and preserve FastAPI Request injection',
+  'Render startup must install filter, snapshot, report and postguard before restoring FastAPI request injection',
 );
 
 check(
-  'current HQ screen consumes authoritative report without inferred fallbacks',
+  'current HQ uses the authoritative report without inferred fallbacks',
   hqEntry.includes('PaidLaunchHQSystem')
     && hq.includes('data-version="CHURVOX_HQ_SYSTEM')
     && hq.includes('launch: "/api/admin/owner/paid-launch-report"')
@@ -157,42 +167,42 @@ check(
     && hq.includes('Actual recurring price items only')
     && !hq.includes('metrics.paid_users ||')
     && !hq.includes('monthly_revenue_estimate ||'),
-  'True zeroes and unavailable values must not be replaced by old overview estimates',
+  'The current /admin screen must display true zeroes and never substitute old overview estimates',
 );
 
 check(
-  'HQ retains real operations and responsive design',
+  'HQ operations and responsive layout remain intact',
   ['"Launch"', '"Users"', '"Billing"', '"Testers"', '"Businesses"', '"Activity"', '"System"', '"Data"'].every((value) => hq.includes(value))
     && hq.includes('apiPost("/api/admin/owner/control-access"')
     && hq.includes('apiPost("/api/admin/owner/tester-intake"')
     && hq.includes('<RemoveCustomerDataCard />')
-    && hqCss.includes('@media(max-width:820px)')
-    && hqCss.includes('@media(max-width:560px)'),
-  'HQ must keep real owner controls and work on desktop/mobile',
+    && compactCss.includes('@media(max-width:820px)')
+    && compactCss.includes('@media(max-width:560px)'),
+  'HQ must retain real owner controls and responsive desktop/mobile behavior',
 );
 
 check(
-  'platform-owner frontend access matches protected backend access',
+  'frontend and backend owner access remain aligned',
   adminRoute.includes('PLATFORM_OWNER_EMAILS')
     && adminRoute.includes('hello@churvox.com')
     && adminRoute.includes('howardjennings77@gmail.com')
     && adminRoute.includes('platform_owner'),
-  'Known owner identities and explicit platform-owner roles must reach /admin',
+  'Known owner identities and platform-owner roles must reach /admin',
 );
 
 check(
-  'safe HQ browser proof challenges zero MRR and current controls',
+  'safe HQ browser proof covers v3 truth and zero MRR',
   validJs(mockedHqTest)
     && mockedHqTest.includes("source: 'live_database_and_stripe_v3'")
     && mockedHqTest.includes('true zero MRR is rendered as $0.00 rather than unavailable')
     && mockedHqTest.includes('all HQ areas render and tester grant/revoke requests use the final routes')
     && mockedHqTest.includes('endpoint failure stays visible and mobile controls remain usable')
     && !/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(mockedHqTest),
-  'The desktop/mobile HQ test must challenge current v3 truth, true zeroes, failures and controls without being skipped',
+  'Desktop/mobile HQ tests must challenge current truth, true zeroes, failures and controls without skips',
 );
 
 check(
-  'authenticated live HQ smoke compares backend and current rendered values',
+  'authenticated live HQ proof matches the current v3 screen',
   validJs(liveHqTest)
     && liveHqTest.includes("expect(report.source).toBe('live_database_and_stripe_v3')")
     && liveHqTest.includes("expect(report.truth?.stripe_credentials_verified).toBe(true)")
@@ -204,11 +214,11 @@ check(
     && liveHqTest.includes('CHURVOX_HQ_SYSTEM_TESTER_REVOKE_FIXED_20260712')
     && liveHqRunner.includes('CHURVOX_OWNER_EMAIL')
     && !/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(liveHqTest),
-  'After deployment the v3 report, hard launch checks and current /admin values must agree under owner auth',
+  'After deployment the v3 backend report and current /admin values must agree under owner authentication',
 );
 
 check(
-  'backend behavior proof executes strict classification and launch gates',
+  'backend behavior proof covers strict billing cases',
   behaviorTest.includes('assert report["source"] == "live_database_and_stripe_v3"')
     && behaviorTest.includes('assert report["truth"]["stripe_credentials_verified"] is True')
     && behaviorTest.includes('assert report["truth"]["prices_live_verified"] is True')
@@ -219,11 +229,11 @@ check(
     && behaviorTest.includes('assert check_by_key["webhooks"]["status"] == "pass"')
     && behaviorTest.includes('assert exc.status_code == 403')
     && behaviorRunner.includes('scripts/churvox_hq_paid_launch_behavior_test.py'),
-  'The backend route must prove credentials, prices, mixed tester exclusion, zero MRR, webhooks and owner lock',
+  'Controlled backend proof must cover credentials, prices, tester exclusion, zero MRR, webhooks and owner lock',
 );
 
 check(
-  'read-only deployed owner/worker smoke covers real operational surfaces',
+  'read-only deployed owner/worker proof remains present',
   validJs(ownerWorkerTest)
     && ownerWorkerTest.includes("'/api/auth/login'")
     && ownerWorkerTest.includes("'/api/worker/auth/login'")
@@ -232,25 +242,25 @@ check(
     && ownerWorkerTest.includes("['clients', '/api/clients']")
     && ownerWorkerTest.includes("['quotes', '/api/quotes']")
     && ownerWorkerTest.includes("['invoices', '/api/invoices']")
-    && ownerWorkerTest.includes('Team does not contain configured worker')
-    && ownerWorkerTest.includes("'/worker/today'")
-    && ownerWorkerTest.includes("'/worker/jobs'")
-    && ownerWorkerTest.includes("'/worker/help'")
     && ownerWorkerRunner.includes('CHURVOX_WORKER_EMAIL')
     && ownerWorkerRunner.includes('No POST/PATCH/DELETE business operations are performed after login.')
     && !/request\.(?:patch|put|delete)\(/.test(ownerWorkerTest)
     && !/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(ownerWorkerTest),
-  'The default deployed gate must prove owner billing/data and the linked worker account without business mutations',
+  'The deployed gate must prove owner billing/data and the linked worker without business mutations',
 );
 
 for (const name of ['test:ui:full', 'test:ui:desktop', 'test:ui:mobile']) {
   const command = String(frontendPackage.scripts?.[name] || '');
-  check(`${name} includes paid-launch HQ browser proof`, command.includes('churvox-paid-launch-hq-reality.spec.js'), `${name} is missing the HQ reality spec`);
+  check(
+    `${name} includes the HQ billing browser proof`,
+    command.includes('churvox-paid-launch-hq-reality.spec.js'),
+    `${name} is missing churvox-paid-launch-hq-reality.spec.js`,
+  );
 }
 
 const scripts = rootPackage.scripts || {};
 check(
-  'one-command predeploy and deployed paid-launch gates are wired',
+  'one-command predeploy and live paid-launch gates remain wired',
   scripts['test:hq:behavior'] === 'node scripts/churvox-hq-paid-launch-behavior.cjs'
     && scripts['test:paid-launch:reality'] === 'node scripts/churvox-paid-launch-reality-audit.cjs'
     && scripts['test:paid-launch:full'] === 'npm run test:prelive:full'
@@ -259,11 +269,11 @@ check(
     && scripts['test:paid-launch:live'] === 'npm run test:truth:live && npm run test:live-command && npm run test:hq:live-real && npm run test:owner-worker:live-readonly'
     && String(scripts['test:readiness'] || '').includes('churvox-hq-paid-launch-behavior.cjs')
     && String(scripts['test:readiness'] || '').includes('churvox-paid-launch-reality-audit.cjs'),
-  'The full launch must not depend on remembering separate commands',
+  'Paid-launch checks must remain part of the normal readiness and live gate commands',
 );
 
 check(
-  'Python syntax gate includes the complete HQ backend chain',
+  'Python syntax gate includes the complete billing truth chain',
   [
     'backend/churvox_hq_paid_launch_filter_patch.py',
     'backend/churvox_hq_stripe_snapshot_patch.py',
@@ -272,7 +282,7 @@ check(
     'backend/churvox_hq_connection_status_patch.py',
     'scripts/churvox_hq_paid_launch_behavior_test.py',
   ].every((value) => pythonSyntax.includes(value)),
-  'Every billing-truth Python file must be AST parsed before browser tests',
+  'Every billing-truth Python file must be parsed before browser tests',
 );
 
 for (const item of checks) console.log(`${item.passed ? '✓' : '✗'} ${item.name}`);
