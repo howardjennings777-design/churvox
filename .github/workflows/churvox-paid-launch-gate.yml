@@ -101,7 +101,7 @@ jobs:
         working-directory: .
         run: |
           set -o pipefail
-          python scripts/churvox_hq_paid_launch_behavior_test.py 2>&1 | tee /tmp/churvox-billing-truth-behavior.log
+          python -m scripts.churvox_hq_paid_launch_behavior_test 2>&1 | tee /tmp/churvox-billing-truth-behavior.log
 
       - name: Run HQ billing truth static audit
         working-directory: .
