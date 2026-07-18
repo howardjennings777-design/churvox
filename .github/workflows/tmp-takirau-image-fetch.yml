@@ -1,41 +1,39 @@
-name: Temporary Takirau archive image fetch
+name: Temporary Takirau archive image extraction
 
 on:
   push:
     branches: [tmp-takirau-image-fetch]
     paths:
       - '.github/workflows/tmp-takirau-image-fetch.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/tmp-takirau-image-fetch.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  expose-image:
+  split-image:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Retrieve stored photograph
-        run: |
-          mkdir -p output
-          curl -fsSL 'https://raw.githubusercontent.com/howardjennings777-design/churvox/tmp-takirau-image-fetch/tmp/takirau/waitotara-1965.jpg' -o output/waitotara-1965.jpg
-          file output/waitotara-1965.jpg
-          ls -lh output/waitotara-1965.jpg
-
-      - name: Upload photograph
-        id: aerial
-        uses: actions/upload-artifact@v4
+      - name: Check out isolated branch
+        uses: actions/checkout@v4
         with:
-          name: waitotara-1965-aerial
-          path: output/waitotara-1965.jpg
-          if-no-files-found: error
-          retention-days: 1
+          ref: tmp-takirau-image-fetch
 
-      - name: Print artifact identifier
+      - name: Split image into temporary text chunks
         run: |
-          echo "ARTIFACT_ID=${{ steps.aerial.outputs.artifact-id }}"
-          echo "ARTIFACT_URL=${{ steps.aerial.outputs.artifact-url }}"
+          set -euo pipefail
+          rm -rf tmp/takirau/base64-chunks
+          mkdir -p tmp/takirau/base64-chunks
+          base64 -w0 tmp/takirau/waitotara-1965.jpg > /tmp/waitotara.b64
+          split -b 10000 -d -a 2 --additional-suffix=.txt /tmp/waitotara.b64 tmp/takirau/base64-chunks/chunk_
+          wc -c /tmp/waitotara.b64 tmp/takirau/base64-chunks/*
+
+      - name: Save chunks to isolated branch
+        run: |
+          set -euo pipefail
+          git config user.name 'archive-image-fetcher'
+          git config user.email 'archive-image-fetcher@users.noreply.github.com'
+          git add tmp/takirau/base64-chunks
+          git commit -m 'Temporarily split Waitotara aerial for extraction'
+          git push origin HEAD:tmp-takirau-image-fetch
