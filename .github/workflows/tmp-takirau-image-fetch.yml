@@ -12,112 +12,93 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   fetch-image:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Fetch DigitalNZ metadata and image
+      - name: Check out isolated branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-takirau-image-fetch
+
+      - name: Fetch the 1965 Waitotara image
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p tmp/takirau
           python - <<'PY'
-          import html
-          import json
-          import mimetypes
-          import pathlib
-          import re
-          import urllib.request
+          import html, json, mimetypes, pathlib, urllib.request
           from urllib.parse import urlparse
 
-          UA = {'User-Agent': 'Mozilla/5.0 Churvox archive research', 'Accept': '*/*'}
-          record_url = 'https://api.digitalnz.org/v3/records/22298931.json?fields=verbose'
-          with urllib.request.urlopen(urllib.request.Request(record_url, headers=UA), timeout=60) as r:
-              raw = r.read()
-          pathlib.Path('digitalnz-record.json').write_bytes(raw)
-          payload = json.loads(raw)
-          data = payload.get('record', payload)
-          print(json.dumps(data, indent=2)[:30000])
+          ua = {'User-Agent': 'Mozilla/5.0 Churvox archive research', 'Accept': '*/*'}
+          api = 'https://api.digitalnz.org/v3/records/22298931.json?fields=verbose'
+          with urllib.request.urlopen(urllib.request.Request(api, headers=ua), timeout=60) as response:
+              payload = json.load(response)
+          record = payload.get('record', payload)
+          pathlib.Path('tmp/takirau/digitalnz-record.json').write_text(json.dumps(record, indent=2))
 
           candidates = []
-          preferred = ('large_thumbnail_url', 'object_url', 'thumbnail_url', 'fulltext_url')
-          for key in preferred:
-              value = data.get(key)
-              values = value if isinstance(value, list) else [value]
-              candidates.extend((key, str(v)) for v in values if v)
+          for key in ('large_thumbnail_url', 'object_url', 'thumbnail_url', 'fulltext_url'):
+              value = record.get(key)
+              for candidate in value if isinstance(value, list) else [value]:
+                  if candidate:
+                      candidates.append((key, str(candidate)))
 
-          for key, value in data.items():
-              if 'url' not in str(key).lower() or key in preferred:
-                  continue
-              values = value if isinstance(value, list) else [value]
-              candidates.extend((str(key), str(v)) for v in values if isinstance(v, str) and v.startswith('http'))
-
-          source_url = data.get('source_url')
-          if source_url:
-              try:
-                  with urllib.request.urlopen(urllib.request.Request(str(source_url), headers=UA), timeout=60) as r:
-                      source_html = r.read()
-                  pathlib.Path('source-page.html').write_bytes(source_html)
-                  text = html.unescape(source_html.decode('utf-8', 'ignore'))
-                  for url in re.findall(r'https?://[^\"\'<>\s]+', text):
-                      if any(token in url.lower() for token in ('ndhadeliver', 'digitalnz', '.jpg', '.jpeg', '.png', '.tif', '.jp2')):
-                          candidates.append(('source-page', url.rstrip('),.;')))
-              except Exception as exc:
-                  print('Source page fetch failed:', repr(exc))
-
-          seen = set()
           failures = []
-          saved = False
           for label, url in candidates:
               url = html.unescape(url)
-              if not url.startswith('http') or url in seen:
-                  continue
-              seen.add(url)
-              print('TRY', label, url)
               try:
-                  headers = {'User-Agent': UA['User-Agent'], 'Accept': 'image/*,*/*;q=0.8'}
-                  with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=120) as r:
-                      blob = r.read()
-                      content_type = (r.headers.get_content_type() or '').lower()
-                      final_url = r.geturl()
+                  headers = {'User-Agent': ua['User-Agent'], 'Accept': 'image/*,*/*;q=0.8'}
+                  with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=120) as response:
+                      blob = response.read()
+                      content_type = (response.headers.get_content_type() or '').lower()
+                      final_url = response.geturl()
                   signature_ok = blob.startswith((b'\xff\xd8\xff', b'\x89PNG', b'II*\x00', b'MM\x00*', b'\x00\x00\x00\x0cjP  '))
                   if len(blob) < 1000 or ('image' not in content_type and not signature_ok):
-                      raise RuntimeError(f'not an image: {len(blob)} bytes {content_type} {blob[:80]!r}')
+                      raise RuntimeError(f'not an image: {len(blob)} bytes, {content_type}')
                   ext = mimetypes.guess_extension(content_type) or pathlib.Path(urlparse(final_url).path).suffix or '.jpg'
                   if ext in ('.jpe', '.jfif'):
                       ext = '.jpg'
-                  out = pathlib.Path('waitotara-1965' + ext)
-                  out.write_bytes(blob)
-                  pathlib.Path('selected-image.txt').write_text(f'{label}\n{url}\n{final_url}\n{content_type}\n{len(blob)}\n')
-                  print('SAVED', out, len(blob), content_type, final_url)
-                  saved = True
+                  output = pathlib.Path('tmp/takirau/waitotara-1965' + ext)
+                  output.write_bytes(blob)
+                  pathlib.Path('tmp/takirau/selected-image.txt').write_text(
+                      f'{label}\n{url}\n{final_url}\n{content_type}\n{len(blob)}\n'
+                  )
+                  print('IMAGE_URL=' + url)
+                  print('SAVED=' + str(output))
+                  print('BYTES=' + str(len(blob)))
                   break
               except Exception as exc:
-                  failure = f'{label}: {url}: {exc!r}'
-                  failures.append(failure)
-                  print('FAILED', failure)
-
-          pathlib.Path('image-candidates.txt').write_text('\n'.join(f'{a}\t{b}' for a, b in candidates))
-          pathlib.Path('image-failures.txt').write_text('\n'.join(failures))
-          if not saved:
+                  failures.append(f'{label}: {url}: {exc!r}')
+          else:
+              pathlib.Path('tmp/takirau/image-failures.txt').write_text('\n'.join(failures))
               raise SystemExit('No downloadable image candidate succeeded')
           PY
-          file waitotara-1965* || true
-          ls -lh
+          file tmp/takirau/waitotara-1965* || true
+          ls -lh tmp/takirau
 
-      - name: Upload fetched image and diagnostics
-        if: always()
+      - name: Save image to isolated branch
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'archive-image-fetcher'
+          git config user.email 'archive-image-fetcher@users.noreply.github.com'
+          git add tmp/takirau
+          if git diff --cached --quiet; then
+            echo 'Image already stored.'
+          else
+            git commit -m 'Temporarily store 1965 Waitotara aerial image'
+            git push origin HEAD:tmp-takirau-image-fetch
+          fi
+
+      - name: Upload fetched image
         uses: actions/upload-artifact@v4
         with:
           name: waitotara-1965-aerial
-          path: |
-            waitotara-1965*
-            selected-image.txt
-            digitalnz-record.json
-            source-page.html
-            image-candidates.txt
-            image-failures.txt
+          path: tmp/takirau/
           if-no-files-found: error
           retention-days: 1
