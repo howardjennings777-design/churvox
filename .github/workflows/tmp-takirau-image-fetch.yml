@@ -19,23 +19,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check out isolated branch
-        uses: actions/checkout@v4
-        with:
-          ref: tmp-takirau-image-fetch
-
-      - name: Verify stored photograph
+      - name: Retrieve stored photograph
         run: |
-          file tmp/takirau/waitotara-1965.jpg
-          ls -lh tmp/takirau/waitotara-1965.jpg
-          cat tmp/takirau/selected-image.txt
+          mkdir -p output
+          curl -fsSL 'https://raw.githubusercontent.com/howardjennings777-design/churvox/tmp-takirau-image-fetch/tmp/takirau/waitotara-1965.jpg' -o output/waitotara-1965.jpg
+          file output/waitotara-1965.jpg
+          ls -lh output/waitotara-1965.jpg
 
       - name: Upload photograph
         id: aerial
         uses: actions/upload-artifact@v4
         with:
           name: waitotara-1965-aerial
-          path: tmp/takirau/
+          path: output/waitotara-1965.jpg
           if-no-files-found: error
           retention-days: 1
 
