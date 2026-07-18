@@ -1,0 +1,195 @@
+{
+  "id": 22298931,
+  "created_at": "2012-04-20T23:58:02.000+12:00",
+  "updated_at": "2026-03-12T10:24:15.893+13:00",
+  "concept_ids": [],
+  "title": "Waitotara, South Taranaki District",
+  "alternate_title": [],
+  "description": "Aerial photograph taken by Whites Aviation. \nQuantity: 1 b&w original negative(s). \nPhysical Description: Cellulosic film negative, 1/2 plate",
+  "additional_description": [],
+  "content_partner": [
+    "Alexander Turnbull Library"
+  ],
+  "display_content_partner": "Alexander Turnbull Library",
+  "collection_title": [
+    "TAPUHI",
+    "Photographic Archive",
+    "Whites Aviation Ltd: Photographs",
+    "Whites Aviation Ltd :Photographs"
+  ],
+  "collection": [
+    "TAPUHI",
+    "Photographic Archive",
+    "Whites Aviation Ltd: Photographs",
+    "Whites Aviation Ltd :Photographs"
+  ],
+  "display_collection": "TAPUHI",
+  "primary_collection": [
+    "TAPUHI"
+  ],
+  "contributing_partner": [],
+  "category": [
+    "Images"
+  ],
+  "creator": [
+    "Not specified"
+  ],
+  "contributor": [],
+  "copyright": [
+    "Some rights reserved"
+  ],
+  "citation": [],
+  "credit_creator": null,
+  "language": [],
+  "provenance": null,
+  "publisher": [],
+  "rights": "Attribution 4.0 International (CC BY 4.0)",
+  "usage": [
+    "Share",
+    "Modify",
+    "Use commercially"
+  ],
+  "source": [],
+  "tag": [
+    "moe_tahurangi",
+    "natlib:online_item",
+    "emu_parent_id:1006995",
+    "emu_ead_level:2",
+    "emu_download_status:Free"
+  ],
+  "thesis_level": null,
+  "holding": [],
+  "library_collection": [
+    "Photographic Archive"
+  ],
+  "shelf_location": "WA-63774-F",
+  "eprints_type": [],
+  "fulltext": null,
+  "text": null,
+  "has_version": [],
+  "license": null,
+  "relation": [
+    "Whites Aviation Ltd: Photographs",
+    "PA-Group-00080",
+    "emu:482467"
+  ],
+  "is_part_of": [
+    "emu:1006995",
+    "Whites Aviation Ltd :Photographs",
+    "PA-Group-00080"
+  ],
+  "is_replaced_by": "Unknown",
+  "replaces": "Unknown",
+  "is_required_by": null,
+  "is_version_of": null,
+  "table_of_contents": null,
+  "dc_type": [
+    "Item"
+  ],
+  "dnz_type": "Unknown",
+  "display_date": "23 Mar 1965",
+  "format": [
+    "1 b&w original negative(s)",
+    "Film negatives",
+    "Aerial photographs",
+    "Cellulosic film negative, 1/2 plate"
+  ],
+  "dc_identifier": [
+    "ndha:IE6396138",
+    "tap:615983",
+    "emu:615983",
+    "old_tap:1379336",
+    "WA-63774-F",
+    "urn:nbn:nz:wtu:WA-63774-F"
+  ],
+  "is_commercial_use": true,
+  "date": [
+    "1965-01-01T12:00:00.000Z"
+  ],
+  "syndication_date": null,
+  "published_date": [],
+  "landing_url": "http://natlib.govt.nz/records/22298931",
+  "rights_url": [
+    "https://creativecommons.org/licenses/by/4.0/"
+  ],
+  "origin_url": "http://tiaki.natlib.govt.nz/#details=ecatalogue.615983",
+  "metadata_url": null,
+  "object_url": "https://ndhadeliver.natlib.govt.nz/content-aggregator/getIEs?system=emu&id=615983",
+  "atl_free_download": true,
+  "atl_physical_viewability": null,
+  "atl_purchasable": true,
+  "atl_purchasable_download": true,
+  "atl_location_code": null,
+  "atl_usage_code": null,
+  "anzsrc_code": null,
+  "marsden_code": [],
+  "subject": [
+    "Wait\u014dtara"
+  ],
+  "coverage": [],
+  "thumbnail_url": "https://ndhadeliver.natlib.govt.nz/delivery/DeliveryManagerServlet?dps_pid=IE6396138&dps_func=thumbnail",
+  "large_thumbnail_url": "https://ndhadeliver.natlib.govt.nz/NLNZStreamGate/get?dps_pid=IE6396138",
+  "source_url": "http://api.digitalnz.org/records/22298931/source",
+  "authorities": [
+    {
+      "_id": "69b1dd7fc7ff889ca741fe41",
+      "authority_id": -317311,
+      "text": "Wait\u014dtara",
+      "name": "place_authority",
+      "id": "69b1dd7fc7ff889ca741fe41"
+    },
+    {
+      "_id": "69b1dd7fc7ff889ca741fe42",
+      "authority_id": -336683,
+      "text": "Film negatives",
+      "name": "recordtype_authority",
+      "id": "69b1dd7fc7ff889ca741fe42"
+    },
+    {
+      "_id": "69b1dd7fc7ff889ca741fe43",
+      "authority_id": -336768,
+      "text": "Aerial photographs",
+      "name": "recordtype_authority",
+      "id": "69b1dd7fc7ff889ca741fe43"
+    },
+    {
+      "_id": "69b1dd7fc7ff889ca741fe44",
+      "authority_id": 482467,
+      "text": "Whites Aviation Ltd: Photographs",
+      "name": "collection_root",
+      "id": "69b1dd7fc7ff889ca741fe44"
+    },
+    {
+      "_id": "69b1dd7fc7ff889ca741fe45",
+      "authority_id": 482467,
+      "name": "collection_parent",
+      "text": "Whites Aviation Ltd :Photographs",
+      "id": "69b1dd7fc7ff889ca741fe45"
+    }
+  ],
+  "attachments": [
+    {
+      "_id": "69b1dd7fc7ff889ca741fe46",
+      "name": "Waitotara, South Taranaki District",
+      "dc_identifier": "IE6396138",
+      "ndha_rights": 100,
+      "thumbnail_url": "https://ndhadeliver.natlib.govt.nz/delivery/DeliveryManagerServlet?dps_pid=IE6396138&dps_func=thumbnail",
+      "large_thumbnail_url": "https://ndhadeliver.natlib.govt.nz/NLNZStreamGate/get?dps_pid=IE6396138",
+      "id": "69b1dd7fc7ff889ca741fe46"
+    }
+  ],
+  "locations": [
+    {
+      "_id": "69b1dd7fc7ff889ca741fe47",
+      "placename": "Wait\u014dtara",
+      "comment": "Location provided by the Alexander Turnbull Library",
+      "id": "69b1dd7fc7ff889ca741fe47"
+    }
+  ],
+  "thumbnail": {
+    "id": "69b1dd7fc7ff889ca741fe49"
+  },
+  "large_thumbnail": {
+    "id": "69b1dd7fc7ff889ca741fe4a"
+  }
+}

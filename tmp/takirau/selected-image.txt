@@ -1,0 +1,5 @@
+large_thumbnail_url
+https://ndhadeliver.natlib.govt.nz/NLNZStreamGate/get?dps_pid=IE6396138
+https://ndhadeliver.natlib.govt.nz/NLNZStreamGate/get?dps_pid=IE6396138
+image/jpeg
+74566
