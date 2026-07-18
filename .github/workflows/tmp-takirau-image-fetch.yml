@@ -24,82 +24,91 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
+          import html
           import json
           import mimetypes
           import pathlib
+          import re
           import urllib.request
           from urllib.parse import urlparse
 
-          record_url = 'https://api.digitalnz.org/records/22298931'
-          req = urllib.request.Request(record_url, headers={'User-Agent': 'Mozilla/5.0 Churvox archive research'})
-          with urllib.request.urlopen(req, timeout=60) as r:
+          UA = {'User-Agent': 'Mozilla/5.0 Churvox archive research', 'Accept': '*/*'}
+          record_url = 'https://api.digitalnz.org/v3/records/22298931.json?fields=verbose'
+          with urllib.request.urlopen(urllib.request.Request(record_url, headers=UA), timeout=60) as r:
               raw = r.read()
           pathlib.Path('digitalnz-record.json').write_bytes(raw)
-          data = json.loads(raw)
+          payload = json.loads(raw)
+          data = payload.get('record', payload)
+          print(json.dumps(data, indent=2)[:30000])
 
-          print(json.dumps(data, indent=2)[:20000])
           candidates = []
-          for key in ('large_thumbnail_url', 'object_url', 'thumbnail_url'):
+          preferred = ('large_thumbnail_url', 'object_url', 'thumbnail_url', 'fulltext_url')
+          for key in preferred:
               value = data.get(key)
-              if isinstance(value, list):
-                  candidates.extend((key, str(v)) for v in value if v)
-              elif value:
-                  candidates.append((key, str(value)))
+              values = value if isinstance(value, list) else [value]
+              candidates.extend((key, str(v)) for v in values if v)
 
-          source = data.get('source_url')
-          if source:
+          for key, value in data.items():
+              if 'url' not in str(key).lower() or key in preferred:
+                  continue
+              values = value if isinstance(value, list) else [value]
+              candidates.extend((str(key), str(v)) for v in values if isinstance(v, str) and v.startswith('http'))
+
+          source_url = data.get('source_url')
+          if source_url:
               try:
-                  req2 = urllib.request.Request(str(source), headers={'User-Agent': 'Mozilla/5.0 Churvox archive research'})
-                  with urllib.request.urlopen(req2, timeout=60) as r:
-                      source_raw = r.read()
-                  pathlib.Path('digitalnz-source.json').write_bytes(source_raw)
-                  source_data = json.loads(source_raw)
-                  print('SOURCE:', json.dumps(source_data, indent=2)[:20000])
-                  for key in ('large_thumbnail_url', 'object_url', 'thumbnail_url', 'fulltext_url'):
-                      value = source_data.get(key)
-                      if isinstance(value, list):
-                          candidates.extend((f'source.{key}', str(v)) for v in value if v)
-                      elif value:
-                          candidates.append((f'source.{key}', str(value)))
+                  with urllib.request.urlopen(urllib.request.Request(str(source_url), headers=UA), timeout=60) as r:
+                      source_html = r.read()
+                  pathlib.Path('source-page.html').write_bytes(source_html)
+                  text = html.unescape(source_html.decode('utf-8', 'ignore'))
+                  for url in re.findall(r'https?://[^\"\'<>\s]+', text):
+                      if any(token in url.lower() for token in ('ndhadeliver', 'digitalnz', '.jpg', '.jpeg', '.png', '.tif', '.jp2')):
+                          candidates.append(('source-page', url.rstrip('),.;')))
               except Exception as exc:
-                  print('Could not fetch source metadata:', repr(exc))
+                  print('Source page fetch failed:', repr(exc))
 
           seen = set()
           failures = []
+          saved = False
           for label, url in candidates:
-              if not url or url in seen:
+              url = html.unescape(url)
+              if not url.startswith('http') or url in seen:
                   continue
               seen.add(url)
-              print('Trying', label, url)
+              print('TRY', label, url)
               try:
-                  req3 = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 Churvox archive research', 'Accept': 'image/*,*/*;q=0.8'})
-                  with urllib.request.urlopen(req3, timeout=120) as r:
+                  headers = {'User-Agent': UA['User-Agent'], 'Accept': 'image/*,*/*;q=0.8'}
+                  with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=120) as r:
                       blob = r.read()
                       content_type = (r.headers.get_content_type() or '').lower()
                       final_url = r.geturl()
-                  if len(blob) < 1000:
-                      raise RuntimeError(f'response too small: {len(blob)} bytes')
-                  if 'image' not in content_type and not blob.startswith((b'\xff\xd8\xff', b'\x89PNG', b'II*\x00', b'MM\x00*')):
-                      raise RuntimeError(f'not an image: {content_type}, {blob[:80]!r}')
+                  signature_ok = blob.startswith((b'\xff\xd8\xff', b'\x89PNG', b'II*\x00', b'MM\x00*', b'\x00\x00\x00\x0cjP  '))
+                  if len(blob) < 1000 or ('image' not in content_type and not signature_ok):
+                      raise RuntimeError(f'not an image: {len(blob)} bytes {content_type} {blob[:80]!r}')
                   ext = mimetypes.guess_extension(content_type) or pathlib.Path(urlparse(final_url).path).suffix or '.jpg'
-                  if ext == '.jpe':
+                  if ext in ('.jpe', '.jfif'):
                       ext = '.jpg'
                   out = pathlib.Path('waitotara-1965' + ext)
                   out.write_bytes(blob)
                   pathlib.Path('selected-image.txt').write_text(f'{label}\n{url}\n{final_url}\n{content_type}\n{len(blob)}\n')
-                  print('Saved', out, len(blob), content_type, final_url)
+                  print('SAVED', out, len(blob), content_type, final_url)
+                  saved = True
                   break
               except Exception as exc:
-                  failures.append(f'{label}: {url}: {exc!r}')
-                  print('FAILED', failures[-1])
-          else:
-              pathlib.Path('image-failures.txt').write_text('\n'.join(failures))
+                  failure = f'{label}: {url}: {exc!r}'
+                  failures.append(failure)
+                  print('FAILED', failure)
+
+          pathlib.Path('image-candidates.txt').write_text('\n'.join(f'{a}\t{b}' for a, b in candidates))
+          pathlib.Path('image-failures.txt').write_text('\n'.join(failures))
+          if not saved:
               raise SystemExit('No downloadable image candidate succeeded')
           PY
           file waitotara-1965* || true
           ls -lh
 
-      - name: Upload fetched image
+      - name: Upload fetched image and diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: waitotara-1965-aerial
@@ -107,6 +116,8 @@ jobs:
             waitotara-1965*
             selected-image.txt
             digitalnz-record.json
-            digitalnz-source.json
+            source-page.html
+            image-candidates.txt
+            image-failures.txt
           if-no-files-found: error
           retention-days: 1
