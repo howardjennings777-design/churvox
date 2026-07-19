@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
+const HQ_DEPLOY_MARKER = "churvox-hq-owner-access-post-payment-20260719-v1";
 const PLATFORM_OWNER_EMAILS = new Set([
   "hello@churvox.com",
   "howardjennings77@gmail.com",
@@ -15,6 +16,10 @@ function emailOf(user = {}) {
 export default function PlatformAdminRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") window.__CHURVOX_HQ_DEPLOY_MARKER__ = HQ_DEPLOY_MARKER;
+  }, []);
 
   if (loading) {
     return (
