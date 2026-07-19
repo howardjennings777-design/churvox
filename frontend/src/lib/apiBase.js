@@ -6,7 +6,6 @@ function stripApiSuffix(value) {
   return clean(value).replace(/\/api$/i, "");
 }
 
-const PRODUCTION_BACKEND_URL = "https://grassley-backend.onrender.com";
 const OUTREACH_GET_PATH = "/api/admin/owner/tester-outreach";
 const OUTREACH_FETCH_GUARD = "__CHURVOX_OUTREACH_SIMPLE_GET_GUARD__";
 
@@ -56,8 +55,12 @@ function isChurvoxHost(host = "") {
 }
 
 function resolveApiBase() {
+  // Production uses the frontend's same-origin /api proxy. This keeps auth
+  // cookies first-party and prevents the browser from depending directly on a
+  // Render service hostname that may be renamed, suspended, or temporarily
+  // unavailable in DNS.
   if (typeof window !== "undefined" && isChurvoxHost(window.location.hostname)) {
-    return PRODUCTION_BACKEND_URL;
+    return "";
   }
 
   return configuredBackend() || "";
