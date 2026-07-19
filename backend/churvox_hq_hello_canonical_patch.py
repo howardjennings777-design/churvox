@@ -7,6 +7,7 @@ import sys
 
 TARGETS = {"server", "backend.server"}
 INSTALLED = set()
+DEPLOY_MARKER = "churvox-hq-owner-access-post-payment-20260719-v1"
 PLATFORM_OWNER_EMAIL = "hello@churvox.com"
 OWNER_EMAILS = {
     PLATFORM_OWNER_EMAIL,
