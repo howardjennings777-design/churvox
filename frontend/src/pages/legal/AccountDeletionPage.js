@@ -51,27 +51,32 @@ export default function AccountDeletionPage() {
       let lastMessage = "Account deletion failed.";
 
       for (const attempt of tries) {
+        let response;
         try {
-          const response = await fetch(`${API_BASE}${attempt.url}`, {
+          response = await fetch(`${API_BASE}${attempt.url}`, {
             method: attempt.method,
             credentials: "include",
             headers: authHeaders(),
             body: JSON.stringify({ confirmation: "DELETE" }),
           });
-          const data = await response.json().catch(() => ({}));
-
-          if (response.ok && data?.success !== false) {
-            success = true;
-            break;
-          }
-
-          if (response.status === 401 || response.status === 403) {
-            throw new Error("Your session is no longer authorised. Sign in again before deleting the account.");
-          }
-          lastMessage = data?.detail || data?.message || `${attempt.method} ${attempt.url} failed`;
         } catch (error) {
-          lastMessage = error?.message || `${attempt.method} ${attempt.url} failed`;
-          if (/session is no longer authorised/i.test(lastMessage)) break;
+          lastMessage = error?.message || `${attempt.method} ${attempt.url} could not be reached`;
+          continue;
+        }
+
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data?.success !== false) {
+          success = true;
+          break;
+        }
+
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("Your session is no longer authorised. Sign in again before deleting the account.");
+        }
+
+        lastMessage = data?.detail || data?.message || `${attempt.method} ${attempt.url} failed`;
+        if (response.status !== 404 && response.status !== 405) {
+          throw new Error(lastMessage);
         }
       }
 
@@ -92,7 +97,7 @@ export default function AccountDeletionPage() {
   };
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_ACCOUNT_DELETION_PAID_LAUNCH_20260712">
+    <main className="cp26Site" data-version="CHURVOX_ACCOUNT_DELETION_FINAL_20260720">
       <PublicNav />
       <section className="cp26PageHero">
         <div>
