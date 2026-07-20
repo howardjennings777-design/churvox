@@ -28,6 +28,8 @@ const buildBootstrap = read(FRONTEND, 'scripts/churvox-worker-proof-singleton-co
 const publicIndex = read(FRONTEND, 'public/index.html');
 const testerPage = read(FRONTEND, 'public/testers/index.html');
 const sitemap = read(FRONTEND, 'public/sitemap.xml');
+const packageJson = read(FRONTEND, 'package.json');
+const publicSearchGenerator = read(FRONTEND, 'scripts/generate-public-search-pages.cjs');
 const frontendEntry = read(FRONTEND, 'src/index.js');
 const frontendServer = read(FRONTEND, 'server.cjs');
 const currentPlans = read(FRONTEND, 'src/config/churvoxPlans.js');
@@ -106,6 +108,20 @@ check(
   'Useful public fallback remains available',
   hasAll(publicIndex, ['Your business handled. Your decisions waiting.', '/testers/', '/pricing']),
   'The no-JavaScript homepage must still explain the product and link to the tester and pricing pages.',
+);
+check(
+  'Build generates route-specific public search pages',
+  packageJson.includes('node scripts/generate-public-search-pages.cjs')
+    && hasAll(publicSearchGenerator, [
+      "route: '/product'",
+      "route: '/demo'",
+      "route: '/pricing'",
+      "slug: 'lawn-care'",
+      "slug: 'landscaping'",
+      "slug: 'cleaning'",
+      'CHURVOX PUBLIC SEARCH PAGES GENERATED',
+    ]),
+  'The production build must create distinct HTML, metadata and no-JavaScript content for high-value public routes.',
 );
 
 const attributionIndex = frontendEntry.indexOf("./runtime/churvoxTesterApplicationAttributionRuntime");

@@ -41,6 +41,27 @@ test('industry pages publish specific title, description and canonical metadata'
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', 'https://www.churvox.com/industries/cleaning');
 });
 
+test('industry and pricing pages stay specific when JavaScript is unavailable', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+
+  await page.goto(`${baseURL || 'http://127.0.0.1:3000'}/industries/cleaning`);
+  await expect(page).toHaveTitle('Cleaning job management software | Churvox');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('recurring visits');
+  await expect(page.getByText(/site checklists, key and access notes/i)).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.churvox.com/industries/cleaning');
+
+  await page.goto(`${baseURL || 'http://127.0.0.1:3000'}/pricing`);
+  await expect(page).toHaveTitle(/Churvox pricing/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('level of admin');
+  await expect(page.getByText('Operator — $149 + GST')).toBeVisible();
+
+  await page.goto(`${baseURL || 'http://127.0.0.1:3000'}/login`);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+
+  await context.close();
+});
+
 test('sitemap exposes the useful public and industry pages', async ({ request }) => {
   const response = await request.get('/sitemap.xml');
   expect(response.ok()).toBeTruthy();
