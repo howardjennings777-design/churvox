@@ -318,52 +318,142 @@
   outline: 0;
 }
 
-.freshImportsForm textarea {
-  min-height: 110px;
-  resize: vertical;
-}
-
 .freshImportsActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 9px;
+  align-items: center;
   margin-top: 14px;
 }
 
-.freshImportsActions button {
-  background: #111827;
-  color: #ffffff;
-  -webkit-text-fill-color: #ffffff;
+.freshImportsActions button:not(:first-child),
+.freshImportsManifestUpload {
+  border: 1px solid rgba(15,23,42,.14);
+  background: #ffffff;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
 }
 
-.freshImportsActions button:first-child,
-.freshImportsActions button:nth-child(2),
-.freshImportsActions button:nth-child(3) {
-  background: #fbbf24;
-  color: #111827;
-  -webkit-text-fill-color: #111827;
+.freshImportsActions button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
 }
 
-@media (max-width: 1050px) {
+.freshImportsManifestUpload {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.freshImportsManifestUpload input {
+  display: none;
+}
+
+.freshImportsManifestUpload span {
+  color: inherit;
+  -webkit-text-fill-color: inherit;
+}
+
+.freshImportsNotice,
+.freshImportsComparison {
+  margin-top: 12px;
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 14px 16px;
+}
+
+.freshImportsNotice {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.freshImportsNotice.need,
+.freshImportsComparison.need {
+  border-color: rgba(194,65,12,.28);
+  background: #fff7ed;
+}
+
+.freshImportsComparison.safe {
+  border-color: rgba(21,128,61,.28);
+  background: #f0fdf4;
+}
+
+.freshImportsComparison > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.freshImportsComparison > div:first-child b,
+.freshImportsComparison > div:first-child span,
+.freshImportsComparison p {
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+}
+
+.freshImportsComparison > div:first-child span,
+.freshImportsComparison p {
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.freshImportsComparisonGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.freshImportsComparisonGrid span {
+  display: grid;
+  gap: 4px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.8);
+  padding: 11px;
+  color: #475569;
+  -webkit-text-fill-color: #475569;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.freshImportsComparisonGrid b {
+  color: #101827;
+  -webkit-text-fill-color: #101827;
+  font-size: 22px;
+  line-height: 1;
+}
+
+@media (max-width: 900px) {
   .freshImportsHero,
-  .freshImportsHead {
-    display: grid;
-  }
-
-  .freshImportsStats,
-  .freshImportsLayout,
-  .freshImportsCards,
-  .freshImportsForm {
-    grid-template-columns: 1fr;
+  .freshImportsHead,
+  .freshImportsNotice,
+  .freshImportsComparison > div:first-child {
+    flex-direction: column;
   }
 
   .freshImportsStats {
     min-width: 0;
+    width: 100%;
   }
 
-  .freshImportsHeadActions,
-  .freshImportsActions,
-  .freshImportsMeter div {
-    display: grid;
+  .freshImportsLayout,
+  .freshImportsForm,
+  .freshImportsCards {
+    grid-template-columns: 1fr;
+  }
+
+  .freshImportsComparisonGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
