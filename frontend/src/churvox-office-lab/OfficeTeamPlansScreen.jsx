@@ -156,12 +156,20 @@ export default function OfficeTeamPlansScreen() {
         if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.message || "Billing status unavailable");
         const source = billingAccountSource(body);
         const confirmedPlan = normalizePlanKey(source.ui_plan || source.current_plan || source.plan || source.subscription_plan || source.billing_plan || source.tier || "");
+        const returnState = checkoutReturnState();
+        const requestedPlan = checkoutRequestedPlan();
         if (confirmedPlan) rememberConfirmedPlan(confirmedPlan);
-        if (checkoutReturnState() === "success" && confirmedPlan) {
+
+        if (returnState === "success" && confirmedPlan && (!requestedPlan || confirmedPlan === requestedPlan)) {
           clearPendingCheckout();
           setBillingNotice(`${displayPlanName(confirmedPlan)} is confirmed from the billing account.`);
           cleanCheckoutQuery();
+        } else if (returnState === "success") {
+          const requestedName = requestedPlan ? displayPlanName(requestedPlan) : "the selected plan";
+          const currentName = confirmedPlan ? displayPlanName(confirmedPlan) : displayPlanName(readConfirmedPlan());
+          setBillingNotice(`Stripe returned. Waiting for billing to confirm ${requestedName}. Your confirmed plan is still ${currentName}.`);
         }
+
         if (!cancelled) {
           setBillingAccount({
             loading: false,
@@ -568,6 +576,15 @@ function checkoutReturnState() {
   return "";
 }
 
+function checkoutRequestedPlan() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    return normalizePlanKey(readPendingCheckout()?.ui_plan || params.get("plan") || "");
+  } catch {
+    return normalizePlanKey(readPendingCheckout()?.ui_plan || "");
+  }
+}
+
 function checkoutReturnNotice() {
   const state = checkoutReturnState();
   if (state === "cancelled") return "Stripe checkout was cancelled. Your current plan did not change.";
@@ -576,13 +593,8 @@ function checkoutReturnNotice() {
 }
 
 function selectedPlanFromReturn() {
-  try {
-    const params = new URLSearchParams(window.location.search || "");
-    const selected = normalizePlanKey(params.get("plan") || readPendingCheckout()?.ui_plan || "");
-    return displayPlanName(selected) === "Current plan" ? "" : displayPlanName(selected);
-  } catch {
-    return "";
-  }
+  const selected = checkoutRequestedPlan();
+  return displayPlanName(selected) === "Current plan" ? "" : displayPlanName(selected);
 }
 
 function cleanCheckoutQuery() {
