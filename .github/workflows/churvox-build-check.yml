@@ -54,7 +54,10 @@ jobs:
         run: python3 scripts/churvox-recurring-idempotency-contract.py
 
       - name: Worker-to-owner message contract
-        run: python3 scripts/churvox-worker-owner-message-contract.py
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 scripts/churvox-worker-owner-message-contract.py 2>&1 | tee /tmp/worker-owner-message-contract.txt
 
       - name: Paid account boundary contract
         run: python3 scripts/churvox-paid-account-boundary-contract.py
@@ -68,12 +71,14 @@ jobs:
       - name: Customer wording contract
         run: python3 scripts/churvox-customer-wording-contract.py
 
-      - name: Upload backend compile diagnostics
+      - name: Upload backend diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-compile-diagnostics
-          path: /tmp/backend-compile-errors.txt
+          name: backend-build-diagnostics
+          path: |
+            /tmp/backend-compile-errors.txt
+            /tmp/worker-owner-message-contract.txt
           if-no-files-found: error
           retention-days: 3
 
