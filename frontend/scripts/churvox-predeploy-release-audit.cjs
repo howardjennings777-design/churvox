@@ -104,7 +104,7 @@ check(
 );
 check(
   'Useful public fallback remains available',
-  hasAll(publicIndex, ['Churvox does the admin', '/testers/', '/pricing']),
+  hasAll(publicIndex, ['Your business handled. Your decisions waiting.', '/testers/', '/pricing']),
   'The no-JavaScript homepage must still explain the product and link to the tester and pricing pages.',
 );
 
