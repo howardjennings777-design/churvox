@@ -1,0 +1,259 @@
+{
+  "/": {
+    "title": "Churvox — Owner-controlled job admin for service businesses",
+    "description": "Churvox prepares jobs, worker updates, messages, quotes, invoices and follow-ups for the service-business owner to review and approve.",
+    "canonical": "/",
+    "eyebrow": "Owner-controlled job admin",
+    "heading": "Your business handled. Your decisions waiting.",
+    "intro": "Churvox prepares jobs, worker updates, messages, quotes, invoices and follow-ups. The owner opens one control room, checks what matters and approves.",
+    "highlights": [
+      ["Jobs", "One-off and recurring work, schedules, notes, proof and status stay together."],
+      ["Workers", "Acknowledgements, progress, time, notes and job proof feed the office record."],
+      ["Quotes and invoices", "Prepared from connected job and client information for owner review."],
+      ["Command", "Approve, edit or park important decisions in one owner desk."]
+    ]
+  },
+  "/product": {
+    "title": "Churvox product — Job admin prepared for owner approval",
+    "description": "See how Churvox connects jobs, clients, workers, proof, quotes and invoices while keeping important decisions under owner approval.",
+    "canonical": "/product",
+    "eyebrow": "The Churvox product",
+    "heading": "The admin engine between the work and the owner.",
+    "intro": "Work pages hold the facts. Churvox prepares the routine admin. Command holds the decisions, corrections and exceptions that need the owner.",
+    "highlights": [
+      ["Today", "A short owner briefing shows the work, changes and money needing attention."],
+      ["Command", "Prepared decisions wait in one approval desk instead of across scattered screens."],
+      ["Jobs and clients", "Schedules, recurring work, history, access notes and proof remain connected."],
+      ["Workers and money", "Field updates can prepare the next quote or invoice step without sending it automatically."]
+    ]
+  },
+  "/features": {
+    "title": "Churvox features — Job, worker and owner approval workflow",
+    "description": "Explore Churvox features for jobs, clients, workers, proof, quotes, invoices and owner-controlled Command decisions.",
+    "canonical": "/product",
+    "eyebrow": "Churvox features",
+    "heading": "Real work becomes prepared admin.",
+    "intro": "Churvox connects the business record, prepares the next safe admin step and brings the owner a clear decision in Command.",
+    "highlights": [
+      ["Command", "Approve, edit, park or ask for the missing fact."],
+      ["Jobs", "Keep the client, worker, address, price, date, time and recurrence together."],
+      ["Worker flow", "Receive work, update progress, record time and return proof to the office."],
+      ["Accounting safety", "Draft and export work stays deliberate and owner-controlled."]
+    ]
+  },
+  "/demo": {
+    "title": "Churvox demo — See an owner-controlled service job workflow",
+    "description": "Watch a guided Churvox workday from client request and worker update to an owner-reviewed quote or invoice.",
+    "canonical": "/demo",
+    "eyebrow": "60-second guided workday",
+    "heading": "Watch Churvox handle a field service job.",
+    "intro": "Follow one clearly labelled example from request to plan, field update, proof, money and the next useful action. Nothing in the demo is a real customer record.",
+    "highlights": [
+      ["1. Request and plan", "The client, job, timing, worker and price basis are brought together."],
+      ["2. Field update", "Progress, time, notes and proof return to the same job record."],
+      ["3. Owner decision", "The owner reviews the prepared reply, variation, quote or invoice."],
+      ["4. Next action", "A useful follow-up or repeat visit can be prepared from the real history."]
+    ]
+  },
+  "/pricing": {
+    "title": "Churvox pricing — Start, Crew, Operator and Command plans",
+    "description": "Compare Churvox plans from $39 to $299 per month plus GST. Every plan starts with a 14-day trial and no card upfront.",
+    "canonical": "/pricing",
+    "eyebrow": "Simple monthly plans",
+    "heading": "Pay for the level of admin Churvox handles.",
+    "intro": "Choose the operating level that matches the business today. Every plan starts with a 14-day trial and no card upfront.",
+    "highlights": [
+      ["Start — $39/month + GST", "Core jobs, clients, quotes and invoices for a solo operator."],
+      ["Crew — $89/month + GST", "Worker flow and simple team coordination for a growing service business."],
+      ["Operator — $149/month + GST", "Prepared admin and the Command approval desk for a busy owner."],
+      ["Command — $299/month + GST", "Deeper operating controls and capacity for a larger service business."]
+    ]
+  },
+  "/about": {
+    "title": "About Churvox — Job management for service businesses",
+    "description": "Churvox reduces the admin between finishing service work and running the business while keeping the owner in control.",
+    "canonical": "/about",
+    "eyebrow": "About Churvox",
+    "heading": "Built to reduce the admin between finishing the work and running the business.",
+    "intro": "Jobs, clients, workers, quotes and invoices stay connected while Command gives the owner one place to review decisions and exceptions.",
+    "highlights": [
+      ["Connected records", "Client, job, worker, proof, quote and invoice information stays together."],
+      ["Prepared admin", "Routine next steps are prepared from real records instead of guessed."],
+      ["Owner approval", "Important communication, money and accounting actions stay deliberate."],
+      ["Multi-trade wording", "The system can match jobs, visits, appointments, workers and technicians to the business."]
+    ]
+  },
+  "/security": {
+    "title": "Churvox security — Business isolation and owner control",
+    "description": "Learn how Churvox approaches authenticated access, business isolation, Stripe checkout and owner-controlled business actions.",
+    "canonical": "/security",
+    "eyebrow": "Security and control",
+    "heading": "Important actions stay deliberate, visible and attributable.",
+    "intro": "Churvox is designed around authenticated access, separated business records and owner approval for communication, money and accounting actions.",
+    "highlights": [
+      ["Account access", "Owner, office, payroll and worker routes use authenticated, role-aware access."],
+      ["Business isolation", "Business records are filtered by the authenticated business context."],
+      ["Stripe checkout", "Stripe handles subscription checkout and card entry."],
+      ["Owner approval", "Important external actions are not treated as silent background work."]
+    ]
+  },
+  "/support": {
+    "title": "Churvox support — Signup, billing, login and product help",
+    "description": "Get email support for Churvox signup, billing, tester access, login, password reset and technical problems.",
+    "canonical": "/support",
+    "eyebrow": "Churvox support",
+    "heading": "Get help without being forced through the app.",
+    "intro": "Email hello@churvox.com with the business name, account email, page, what you clicked and what happened. Never email a password or full card details.",
+    "highlights": [
+      ["Signup and setup", "Get help choosing a path or completing the first useful workflow."],
+      ["Login and password", "Use password reset first, then report any missing or failed reset email."],
+      ["Billing", "Include the account email and business name so the correct billing record can be checked."],
+      ["Technical issue", "Include the route, expected result and a screenshot with private client details removed."]
+    ]
+  },
+  "/refunds-cancellations": {
+    "title": "Churvox billing, refunds and cancellations",
+    "description": "Read Churvox trial, subscription cancellation and refund-review information before starting checkout.",
+    "canonical": "/refunds-cancellations",
+    "eyebrow": "Billing and cancellations",
+    "heading": "Trial, cancellation and refund information in plain language.",
+    "intro": "The selected plan, trial and price are shown before checkout. Billing questions can be checked by email using the account email and business name.",
+    "highlights": [
+      ["Trial", "The public Churvox trial is 14 days and signup does not require a card upfront."],
+      ["Cancellation", "Request cancellation before the next renewal date using the account email."],
+      ["Refund review", "Requests are reviewed against the billing record, timing and applicable rights."],
+      ["Checkout safety", "Leaving checkout before completion should not activate or change a plan."]
+    ]
+  },
+  "/contact": {
+    "title": "Contact Churvox — Product, trial and technical help",
+    "description": "Contact Churvox by email for product fit, trial setup, account access, billing or a technical problem.",
+    "canonical": "/contact",
+    "eyebrow": "Contact Churvox",
+    "heading": "Tell us what is blocking the business.",
+    "intro": "Email hello@churvox.com with the business name, page involved, what happened and the result you expected.",
+    "highlights": [
+      ["Product and trial", "Explain the service business, current admin pressure and the workflow you want to test."],
+      ["Account access", "Include the account email but never send a password."],
+      ["Billing", "Include the business name, account email, date and amount involved."],
+      ["Technical issue", "A screenshot and exact route can reduce unnecessary back-and-forth."]
+    ]
+  },
+  "/industries/lawn-care": {
+    "title": "Lawn care job management software | Churvox",
+    "description": "Manage mowing rounds, garden jobs, access notes, before-and-after photos, worker updates and invoice drafts with owner approval.",
+    "canonical": "/industries/lawn-care",
+    "eyebrow": "Churvox for lawn and garden businesses",
+    "heading": "Run recurring outdoor work without losing the details.",
+    "intro": "Churvox keeps regular rounds, one-off tidy ups, photos, access notes, worker updates and invoice drafts tied to the right client.",
+    "highlights": [["Recurring rounds", "Keep weekly, fortnightly and custom schedules with the job."], ["Access notes", "Gate, property and client details remain attached to the visit."], ["Field proof", "Before-and-after photos and worker updates return to the office."], ["Invoice review", "Extras and completed work are checked before an invoice moves."]]
+  },
+  "/industries/landscaping": {
+    "title": "Landscaping job management software | Churvox",
+    "description": "Keep landscaping quotes, staged work, materials, crew notes, progress proof and invoice decisions together under owner control.",
+    "canonical": "/industries/landscaping",
+    "eyebrow": "Churvox for landscaping businesses",
+    "heading": "Keep quotes, staged work and extras under owner control.",
+    "intro": "For landscaping jobs, Churvox keeps the accepted scope, materials, crew notes, progress proof and invoice decisions together.",
+    "highlights": [["Quote-led projects", "Move accepted scope into the job without retyping the work."], ["Stages and crew", "Keep progress, people and site notes attached to each stage."], ["Materials and extras", "Surface variations for owner review before billing."], ["Progress proof", "Photos and completion detail support the next money decision."]]
+  },
+  "/industries/cleaning": {
+    "title": "Cleaning job management software | Churvox",
+    "description": "Manage recurring cleaning visits, site checklists, key and access notes, cleaner updates, client replies and repeat invoices.",
+    "canonical": "/industries/cleaning",
+    "eyebrow": "Churvox for cleaning businesses",
+    "heading": "Make recurring visits, access notes and proof easier to manage.",
+    "intro": "Cleaning teams can keep site checklists, key and access notes, cleaner updates, client replies and repeat invoices in one clean record.",
+    "highlights": [["Recurring visits", "Keep each site and schedule connected to the client record."], ["Key and access notes", "Give cleaners the useful site information without scattered messages."], ["Checklist proof", "Updates and completion details return to the same visit."], ["Repeat invoices", "Prepare the next invoice step from checked work."]]
+  },
+  "/industries/property-maintenance": {
+    "title": "Property maintenance job management software | Churvox",
+    "description": "Connect property jobs, tenants, landlords, key and access notes, photos, workers, quotes and invoices in Churvox.",
+    "canonical": "/industries/property-maintenance",
+    "eyebrow": "Churvox for property maintenance",
+    "heading": "Handle mixed jobs, tenants, keys and repeat clients without chaos.",
+    "intro": "Property maintenance work changes every day. Churvox keeps tenants, landlords, job notes, photos, workers and money steps connected.",
+    "highlights": [["Mixed repairs", "Keep urgent fixes, inspections and quoted work in one job flow."], ["Property access", "Tenant, landlord, key and site notes stay with the property."], ["Workers and proof", "Updates and photos return to the owner in context."], ["Billing review", "Completed work and evidence can prepare the next invoice decision."]]
+  },
+  "/industries/handyman": {
+    "title": "Handyman job management software | Churvox",
+    "description": "Keep handyman jobs, parts, photos, client approvals, quotes, notes and invoices from turning into scattered messages.",
+    "canonical": "/industries/handyman",
+    "eyebrow": "Churvox for handyman businesses",
+    "heading": "Small jobs still need clean admin.",
+    "intro": "Churvox helps handyman businesses keep parts, photos, client approvals, quotes, job notes and invoices from turning into messy messages.",
+    "highlights": [["Repairs and installs", "Keep the work, address, timing and client together."], ["Parts notes", "Record parts used or still needed against the job."], ["Photos and approvals", "Return evidence and questions to the owner before the next action."], ["Quick quotes and invoices", "Prepare money steps from the real work record."]]
+  },
+  "/industries/painting": {
+    "title": "Painting job management software | Churvox",
+    "description": "Manage painting scope, rooms, quote detail, painter updates, progress proof, extras and owner-reviewed invoices.",
+    "canonical": "/industries/painting",
+    "eyebrow": "Churvox for painting businesses",
+    "heading": "Keep scope, rooms, extras and final invoice review together.",
+    "intro": "Painting jobs need clear scope and proof. Churvox keeps rooms and areas, quote details, progress notes, extras and owner-approved billing in order.",
+    "highlights": [["Room and area scope", "Keep the accepted work clear from quote through completion."], ["Painter updates", "Progress notes and site details return to the job."], ["Extras", "Additional areas and costs stay visible for owner review."], ["Final invoice", "Check progress proof and amounts before billing."]]
+  },
+  "/industries/plumbing-electrical-hvac": {
+    "title": "Trade job management software for plumbing, electrical and HVAC | Churvox",
+    "description": "Connect technical callouts, parts, safety notes, proof, technicians and owner-controlled customer and accounting handoffs.",
+    "canonical": "/industries/plumbing-electrical-hvac",
+    "eyebrow": "Churvox for technical trades",
+    "heading": "Give urgent field work a safer admin handoff.",
+    "intro": "For technical service work, Churvox keeps job details, parts notes, proof, safety notes and owner-controlled customer and accounting handoff clear.",
+    "highlights": [["Urgent callouts", "Keep the site, issue, timing and technician in one job record."], ["Parts and safety notes", "Return important field detail without losing its context."], ["Proof", "Photos, time and completion detail support the office review."], ["Owner-controlled handoff", "Customer and accounting actions wait for deliberate approval."]]
+  },
+  "/industries/pest-control": {
+    "title": "Pest control job management software | Churvox",
+    "description": "Manage pest-control visits, treatment notes, technicians, proof, follow-ups, recurring reminders and invoice review.",
+    "canonical": "/industries/pest-control",
+    "eyebrow": "Churvox for pest control businesses",
+    "heading": "Track visits, notes and follow-ups cleanly.",
+    "intro": "Pest control businesses can use Churvox for scheduled visits, treatment notes, follow-ups, proof and recurring customer reminders.",
+    "highlights": [["Scheduled visits", "Keep timing, client and technician connected."], ["Treatment notes", "Record useful treatment details against the visit."], ["Follow-ups", "Prepare the next visit or customer reminder from the history."], ["Proof and invoices", "Check completion detail before the next money step."]]
+  },
+  "/industries/barber-hairdresser": {
+    "title": "Barber, hair and beauty appointment software | Churvox",
+    "description": "Manage appointments, client history, services, staff, reminders and invoices without field-service clutter.",
+    "canonical": "/industries/barber-hairdresser",
+    "eyebrow": "Churvox for barber, hair and beauty businesses",
+    "heading": "Run appointments, clients, staff and follow-ups without field-service clutter.",
+    "intro": "Churvox can fit barbers, hairdressers and beauty studios by focusing on appointments, client history, services, staff, reminders and invoices.",
+    "highlights": [["Appointments", "Keep service, client, staff, time and price together."], ["Client history", "Useful notes and past services stay with the relationship."], ["Staff flow", "The working view uses appointment and staff language."], ["Follow-ups and invoices", "Prepare the next useful action without sending it automatically."]]
+  },
+  "/privacy": {
+    "title": "Churvox privacy policy",
+    "description": "Read how Churvox collects, uses, stores and shares information across the website, owner app and worker app.",
+    "canonical": "/privacy",
+    "eyebrow": "Privacy policy",
+    "heading": "How Churvox handles personal and business information.",
+    "intro": "This policy explains the information Churvox processes, why it is needed and the controls available to account owners and users.",
+    "highlights": [["Information collected", "Account, business, job and product-usage information needed to provide the service."], ["Service providers", "Hosting, database, email, payment and accounting providers may process limited information."], ["Business records", "Authenticated business records remain tied to the correct business context."], ["Questions", "Privacy questions can be emailed to hello@churvox.com."]]
+  },
+  "/terms": {
+    "title": "Churvox terms of service",
+    "description": "Read the Churvox terms covering accounts, trials, subscriptions, acceptable use, business records and service availability.",
+    "canonical": "/terms",
+    "eyebrow": "Terms of service",
+    "heading": "The terms for using Churvox.",
+    "intro": "These terms cover account responsibilities, subscriptions, acceptable use, business records, product limits and the process for questions or cancellation.",
+    "highlights": [["Accounts", "Users are responsible for correct account details and secure access."], ["Trials and subscriptions", "The selected trial, plan and price are shown before paid activation."], ["Business decisions", "Owners remain responsible for reviewing and approving business actions."], ["Support", "Questions about these terms can be emailed to hello@churvox.com."]]
+  },
+  "/legal/privacy": {
+    "title": "Churvox privacy policy",
+    "description": "Read how Churvox collects, uses, stores and shares information across the website, owner app and worker app.",
+    "canonical": "/privacy",
+    "eyebrow": "Privacy policy",
+    "heading": "How Churvox handles personal and business information.",
+    "intro": "This policy explains the information Churvox processes, why it is needed and the controls available to account owners and users.",
+    "highlights": [["Information collected", "Account, business, job and product-usage information needed to provide the service."], ["Service providers", "Hosting, database, email, payment and accounting providers may process limited information."], ["Business records", "Authenticated business records remain tied to the correct business context."], ["Questions", "Privacy questions can be emailed to hello@churvox.com."]]
+  },
+  "/legal/terms": {
+    "title": "Churvox terms of service",
+    "description": "Read the Churvox terms covering accounts, trials, subscriptions, acceptable use, business records and service availability.",
+    "canonical": "/terms",
+    "eyebrow": "Terms of service",
+    "heading": "The terms for using Churvox.",
+    "intro": "These terms cover account responsibilities, subscriptions, acceptable use, business records, product limits and the process for questions or cancellation.",
+    "highlights": [["Accounts", "Users are responsible for correct account details and secure access."], ["Trials and subscriptions", "The selected trial, plan and price are shown before paid activation."], ["Business decisions", "Owners remain responsible for reviewing and approving business actions."], ["Support", "Questions about these terms can be emailed to hello@churvox.com."]]
+  }
+}

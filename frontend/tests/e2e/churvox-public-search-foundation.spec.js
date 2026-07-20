@@ -25,6 +25,28 @@ test('homepage still explains Churvox when JavaScript is unavailable', async ({ 
   await context.close();
 });
 
+test('pricing, demo and industry routes are distinct when JavaScript is unavailable', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  const origin = baseURL || 'http://127.0.0.1:3000';
+
+  await page.goto(`${origin}/pricing`);
+  await expect(page).toHaveTitle('Churvox pricing — Start, Crew, Operator and Command plans');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pay for the level of admin Churvox handles.');
+  await expect(page.getByText('Start — $39/month + GST')).toBeVisible();
+
+  await page.goto(`${origin}/demo`);
+  await expect(page).toHaveTitle('Churvox demo — See an owner-controlled service job workflow');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Watch Churvox handle a field service job.');
+
+  await page.goto(`${origin}/industries/cleaning`);
+  await expect(page).toHaveTitle('Cleaning job management software | Churvox');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Make recurring visits, access notes and proof easier to manage.');
+  await expect(page.getByText(/site checklists, key and access notes, cleaner updates/i)).toBeVisible();
+
+  await context.close();
+});
+
 test('industry pages publish specific title, description and canonical metadata', async ({ page }) => {
   await page.route('**/api/**', (route) => route.fulfill({
     status: 200,
