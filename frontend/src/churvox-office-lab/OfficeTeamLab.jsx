@@ -1,7 +1,8 @@
 import React from 'react'
 import OfficeTeamLabSite from './OfficeTeamLabSite'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
-import OfficeOSPreview from '../churvox-office-os/OfficeOSPreview'
+
+const OfficeOSPreview = React.lazy(() => import('../churvox-office-os/OfficeOSPreview'))
 
 const HASH_ALIASES = new Map([
   ['team', 'office-team'],
