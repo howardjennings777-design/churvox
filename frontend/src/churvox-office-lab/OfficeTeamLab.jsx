@@ -1,6 +1,7 @@
 import React from 'react'
 import OfficeTeamLabSite from './OfficeTeamLabSite'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
+import OfficeOSPreview from '../churvox-office-os/OfficeOSPreview'
 
 const HASH_ALIASES = new Map([
   ['team', 'office-team'],
@@ -17,6 +18,11 @@ function normaliseOfficeHash() {
     `${window.location.pathname}${window.location.search}#${canonical}`,
   )
   return true
+}
+
+function isOfficeOSPreviewPath() {
+  if (typeof window === 'undefined') return false
+  return window.location.pathname === '/new-command-lab'
 }
 
 function OfficeTeamLab(props) {
@@ -36,6 +42,8 @@ function OfficeTeamLab(props) {
       window.removeEventListener('popstate', handleRoute)
     }
   }, [])
+
+  if (isOfficeOSPreviewPath()) return <OfficeOSPreview />
 
   return (
     <OfficeTeamOwnerScreenGuard appMode={props.appMode}>
