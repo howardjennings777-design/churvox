@@ -50,6 +50,9 @@ jobs:
       - name: Job Done reality contract
         run: python3 scripts/churvox-job-done-reality-contract.py
 
+      - name: Recurring job idempotency contract
+        run: python3 scripts/churvox-recurring-idempotency-contract.py
+
       - name: Paid account boundary contract
         run: python3 scripts/churvox-paid-account-boundary-contract.py
 
