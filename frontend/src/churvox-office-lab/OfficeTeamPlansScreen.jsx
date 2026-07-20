@@ -12,6 +12,9 @@ const COUNTRIES = {
 
 const STORAGE_KEY = "churvox:billing-country";
 const EMAIL_STORAGE_KEY = "churvox:billing-email";
+const CONFIRMED_PLAN_KEY = "churvox:stable-current-plan:v1";
+const PENDING_CHECKOUT_KEY = "churvox:pending-checkout:v1";
+const PENDING_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const GROWTH_PACK_CHECKOUT_MARKER = "churvox-growth-pack-checkout-20260713a";
 const CHECKOUT_PLAN_KEYS = { Start: "solo", Crew: "team", Operator: "pro", Command: "enterprise" };
 const CHECKOUT_ENDPOINTS = [
@@ -64,29 +67,36 @@ const growthPack = {
   name: "Command Growth Pack",
   price: 99,
   summary: "Add more capacity to Command when the business grows.",
-  included: ["Extra active team capacity", "More room for larger operations", "Keeps Command as the approval desk"],
-  locked: ["Only available with Command", "Does not bypass owner approval", "Does not auto-send, auto-sync or auto-charge"],
+  included: ["50 more active team members", "1,500 more jobs per month", "1,000 more AI actions", "Keeps Command as the approval desk"],
+  locked: ["Only available with confirmed Command", "Does not bypass owner approval", "Does not auto-send, auto-sync or auto-charge"],
 };
 
 export default function OfficeTeamPlansScreen() {
   const [country, setCountry] = useState(() => detectCountry());
-  const [selected, setSelected] = useState("Operator");
+  const [selected, setSelected] = useState(() => selectedPlanFromReturn() || "Operator");
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingError, setBillingError] = useState("");
+  const [billingNotice, setBillingNotice] = useState(() => checkoutReturnNotice());
   const [billingAccount, setBillingAccount] = useState({ loading: true, hasStripeCustomer: false, hasSubscription: false, status: "", currentPlan: "" });
   const [packQuantity, setPackQuantity] = useState(1);
   const [growthPackBusy, setGrowthPackBusy] = useState(false);
   const [growthPackError, setGrowthPackError] = useState("");
   const [growthPackNotice, setGrowthPackNotice] = useState("");
-  const [growthPackStatus, setGrowthPackStatus] = useState(() => ({ loading: true, currentPlan: readStoredPlan(), activePacks: 0 }));
+  const [growthPackStatus, setGrowthPackStatus] = useState(() => ({ loading: true, currentPlan: readConfirmedPlan(), activePacks: 0 }));
   const meta = COUNTRIES[country] || COUNTRIES.NZ;
   const plan = plans.find((item) => item.name === selected) || plans[2];
   const selectedPricing = priceParts(meta, plan.price);
-  const currentPlan = normalizePlanKey(growthPackStatus.currentPlan || readStoredPlan());
+  const currentPlan = normalizePlanKey(growthPackStatus.currentPlan || billingAccount.currentPlan || readConfirmedPlan());
   const planKnown = Boolean(currentPlan);
   const commandActive = currentPlan === "command";
   const activePacks = Math.max(0, Number(growthPackStatus.activePacks || 0));
   const packAddsTeam = packQuantity * 50;
+
+  useEffect(() => {
+    clearLegacyUnconfirmedPlanKeys();
+    const state = checkoutReturnState();
+    if (state === "cancelled") clearPendingCheckout();
+  }, []);
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, country); } catch {}
@@ -106,15 +116,19 @@ export default function OfficeTeamPlansScreen() {
     async function loadGrowthPackStatus() {
       const headers = { Accept: "application/json", ...tokenHeaders() };
       const [usageResult, addonResult] = await Promise.allSettled([
-        fetch(apiUrl("/plan/usage"), { credentials: "include", headers }),
-        fetch(apiUrl("/billing/addons"), { credentials: "include", headers }),
+        fetch(apiUrl("/plan/usage"), { credentials: "include", cache: "no-store", headers }),
+        fetch(apiUrl("/billing/addons"), { credentials: "include", cache: "no-store", headers }),
       ]);
       if (cancelled) return;
-      let nextPlan = readStoredPlan();
+
+      let nextPlan = readConfirmedPlan();
       let nextPacks = 0;
       if (usageResult.status === "fulfilled") {
         const body = await usageResult.value.json().catch(() => ({}));
-        if (usageResult.value.ok && body?.success !== false) nextPlan = normalizePlanKey(body?.plan || body?.current_plan || nextPlan);
+        if (usageResult.value.ok && body?.success !== false) {
+          nextPlan = normalizePlanKey(body?.plan || body?.current_plan || body?.ui_plan || nextPlan);
+          if (nextPlan) rememberConfirmedPlan(nextPlan);
+        }
       }
       if (addonResult.status === "fulfilled") {
         const body = await addonResult.value.json().catch(() => ({}));
@@ -122,6 +136,7 @@ export default function OfficeTeamPlansScreen() {
       }
       setGrowthPackStatus({ loading: false, currentPlan: nextPlan, activePacks: nextPacks });
     }
+
     loadGrowthPackStatus().catch(() => {
       if (!cancelled) setGrowthPackStatus((current) => ({ ...current, loading: false }));
     });
@@ -140,17 +155,31 @@ export default function OfficeTeamPlansScreen() {
         const body = await response.json().catch(() => ({}));
         if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.message || "Billing status unavailable");
         const source = billingAccountSource(body);
-        if (!cancelled) setBillingAccount({
-          loading: false,
-          hasStripeCustomer: Boolean(source.stripe_customer_id || source.stripeCustomerId),
-          hasSubscription: Boolean(source.stripe_subscription_id || source.stripeSubscriptionId),
-          status: String(source.subscription_status || source.billing_status || source.stripe_status || source.status || "").trim().toLowerCase(),
-          currentPlan: normalizePlanKey(source.ui_plan || source.current_plan || source.plan || source.subscription_plan || source.billing_plan || source.tier || ""),
-        });
+        const confirmedPlan = normalizePlanKey(source.ui_plan || source.current_plan || source.plan || source.subscription_plan || source.billing_plan || source.tier || "");
+        if (confirmedPlan) rememberConfirmedPlan(confirmedPlan);
+        if (checkoutReturnState() === "success" && confirmedPlan) {
+          clearPendingCheckout();
+          setBillingNotice(`${displayPlanName(confirmedPlan)} is confirmed from the billing account.`);
+          cleanCheckoutQuery();
+        }
+        if (!cancelled) {
+          setBillingAccount({
+            loading: false,
+            hasStripeCustomer: Boolean(source.stripe_customer_id || source.stripeCustomerId),
+            hasSubscription: Boolean(source.stripe_subscription_id || source.stripeSubscriptionId),
+            status: String(source.subscription_status || source.billing_status || source.stripe_status || source.status || "").trim().toLowerCase(),
+            currentPlan: confirmedPlan,
+          });
+          if (confirmedPlan) setGrowthPackStatus((current) => ({ ...current, currentPlan: confirmedPlan }));
+        }
       } catch {
-        if (!cancelled) setBillingAccount((current) => ({ ...current, loading: false }));
+        if (!cancelled) {
+          setBillingAccount((current) => ({ ...current, loading: false }));
+          if (checkoutReturnState() === "success") setBillingNotice("Stripe returned. The current plan will stay unchanged until billing confirms it.");
+        }
       }
     }
+
     loadBillingAccount();
     return () => { cancelled = true; };
   }, []);
@@ -183,15 +212,15 @@ export default function OfficeTeamPlansScreen() {
     if (billingBusy) return;
     setBillingBusy(true);
     setBillingError("");
+    setBillingNotice("");
 
     const displayPlan = plan.name.toLowerCase();
     const stripePlan = CHECKOUT_PLAN_KEYS[plan.name] || displayPlan;
     const ownerEmail = readStoredEmail();
 
+    savePendingCheckout({ type: "plan", ui_plan: displayPlan, plan: stripePlan, country, email: ownerEmail });
     try {
       localStorage.setItem(STORAGE_KEY, country);
-      localStorage.setItem("churvox:selected-plan", displayPlan);
-      localStorage.setItem("churvox:billing-plan", displayPlan);
       if (ownerEmail) localStorage.setItem(EMAIL_STORAGE_KEY, ownerEmail);
     } catch {}
 
@@ -228,9 +257,7 @@ export default function OfficeTeamPlansScreen() {
           body: JSON.stringify(payload),
         });
         const body = await response.json().catch(() => ({}));
-        if (!response.ok || body?.success === false) {
-          throw new Error(body?.detail || body?.error || body?.message || `Billing returned HTTP ${response.status}`);
-        }
+        if (!response.ok || body?.success === false) throw new Error(body?.detail || body?.error || body?.message || `Billing returned HTTP ${response.status}`);
         const checkoutUrl = body?.url || body?.checkout_url || body?.session_url || body?.checkoutSession?.url || body?.data?.url;
         if (!checkoutUrl) throw new Error("Stripe checkout URL was not returned.");
         const secureUrl = new URL(checkoutUrl, window.location.origin);
@@ -242,6 +269,7 @@ export default function OfficeTeamPlansScreen() {
       }
     }
 
+    clearPendingCheckout();
     setBillingError(lastError?.message || "Secure billing could not open. No plan was changed and nothing was charged.");
     setBillingBusy(false);
   }
@@ -254,14 +282,16 @@ export default function OfficeTeamPlansScreen() {
   }
 
   async function openGrowthPackCheckout() {
-    if (growthPackBusy) return;
-    if (planKnown && !commandActive) {
+    if (growthPackBusy || growthPackStatus.loading) return;
+    if (!commandActive) {
       chooseCommandForPacks();
       return;
     }
+
     setGrowthPackBusy(true);
     setGrowthPackError("");
     setGrowthPackNotice("");
+    savePendingCheckout({ type: "addon", addon: "command_growth_pack", quantity: packQuantity, country, confirmed_plan: currentPlan });
     try {
       const response = await fetch(apiUrl("/billing/create-addon-checkout-session"), {
         method: "POST",
@@ -285,12 +315,19 @@ export default function OfficeTeamPlansScreen() {
       if (secureUrl.protocol !== "https:") throw new Error("Growth Pack checkout did not return a secure URL.");
       window.location.assign(secureUrl.toString());
     } catch (error) {
+      clearPendingCheckout();
       const message = error?.message || "Growth Pack checkout could not open. Nothing was charged.";
       setGrowthPackError(message);
       if (/Command Growth Pack needs the Command plan|Command plan/i.test(message)) setGrowthPackNotice("Choose Command first, complete that plan checkout, then buy the Growth Pack here.");
       setGrowthPackBusy(false);
     }
   }
+
+  const growthButtonLabel = growthPackStatus.loading
+    ? "Checking current plan…"
+    : commandActive
+      ? `Buy ${packQuantity} Growth Pack${packQuantity === 1 ? "" : "s"}`
+      : "Select Command to buy packs";
 
   return (
     <section className="cvSiteScreen cvPlansScreen">
@@ -358,19 +395,19 @@ export default function OfficeTeamPlansScreen() {
         <aside className="cvGrowthPackBuy" data-growth-pack-checkout={GROWTH_PACK_CHECKOUT_MARKER}>
           <div>
             <span>Buy Growth Packs</span>
-            <h4>{commandActive ? "Add more Command capacity now" : planKnown ? "Command plan required" : "Add more Command capacity"}</h4>
+            <h4>{commandActive ? "Add more Command capacity now" : planKnown ? "Command plan required" : "Current plan must be confirmed"}</h4>
             <p>Each pack adds 50 active team members, 1,500 jobs per month and 1,000 AI actions. Active packs: <b>{growthPackStatus.loading ? "Checking…" : activePacks}</b>.</p>
           </div>
           <label>
             <span>Number of packs</span>
-            <select value={packQuantity} onChange={(event) => setPackQuantity(Math.max(1, Number(event.target.value || 1)))} disabled={growthPackBusy}>
+            <select value={packQuantity} onChange={(event) => setPackQuantity(Math.max(1, Number(event.target.value || 1)))} disabled={growthPackBusy || growthPackStatus.loading}>
               {[1, 2, 3, 4, 5].map((quantity) => <option key={quantity} value={quantity}>{quantity} pack{quantity === 1 ? "" : "s"} · +{quantity * 50} team</option>)}
             </select>
           </label>
           <div className="cvGrowthPackBuyAction">
             <strong>{priceParts(meta, growthPack.price * packQuantity).ex}<small>/month ex {meta.taxName}</small></strong>
-            <button type="button" onClick={openGrowthPackCheckout} disabled={growthPackBusy}>
-              {growthPackBusy ? "Opening Stripe…" : planKnown && !commandActive ? "Select Command to buy packs" : `Buy ${packQuantity} Growth Pack${packQuantity === 1 ? "" : "s"}`}
+            <button type="button" onClick={openGrowthPackCheckout} disabled={growthPackBusy || growthPackStatus.loading}>
+              {growthPackBusy ? "Opening Stripe…" : growthButtonLabel}
             </button>
             <small>Adds {packAddsTeam} active team member spaces. Stripe opens before any charge.</small>
           </div>
@@ -383,8 +420,9 @@ export default function OfficeTeamPlansScreen() {
         <div>
           <span>{billingAccount.hasStripeCustomer ? "Current subscription" : "Secure checkout"}</span>
           <h3>{billingAccount.hasStripeCustomer ? `${displayPlanName(billingAccount.currentPlan || currentPlan)} billing` : `Continue with ${plan.name}`}</h3>
-          <p>{billingAccount.hasStripeCustomer ? "Open Stripe’s secure customer portal to update payment details, review invoices or manage the current subscription. Churvox does not change the plan until Stripe confirms it." : "Open Stripe Checkout for the selected plan. You return to this new Plans screen after checkout or cancellation."}</p>
+          <p>{billingAccount.hasStripeCustomer ? "Open Stripe’s secure customer portal to update payment details, review invoices or manage the current subscription. Churvox does not change the plan until Stripe confirms it." : "Open Stripe Checkout for the selected plan. You return to this Plans screen after checkout or cancellation."}</p>
           {billingAccount.hasStripeCustomer && billingAccount.status ? <small>Subscription status: {billingAccount.status.replaceAll("_", " ")}</small> : null}
+          {billingNotice ? <small className="cvPlanBillingNotice" role="status">{billingNotice}</small> : null}
           {billingError ? <small className="cvPlanBillingError" role="alert">{billingError}</small> : null}
         </div>
         {billingAccount.hasStripeCustomer
@@ -474,15 +512,85 @@ function billingAccountSource(body = {}) {
   return nested && typeof nested === "object" ? { ...body, ...nested } : body;
 }
 
-function readStoredPlan() {
+function readConfirmedPlan() {
   try {
     const snapshot = JSON.parse(localStorage.getItem("churvox_auth_session_snapshot_v1") || "{}");
     const user = snapshot?.user || snapshot || {};
-    const direct = user?.ui_plan || user?.current_plan || user?.plan || user?.subscription_plan || user?.billing_plan || user?.tier || localStorage.getItem("churvox:stable-current-plan:v1") || localStorage.getItem("churvox:selected-plan") || "";
+    const direct = user?.ui_plan || user?.current_plan || user?.plan || user?.subscription_plan || user?.billing_plan || user?.tier || localStorage.getItem(CONFIRMED_PLAN_KEY) || "";
     return normalizePlanKey(direct);
   } catch {
     return "";
   }
+}
+
+function rememberConfirmedPlan(value) {
+  const confirmed = normalizePlanKey(value);
+  if (!confirmed) return;
+  try { localStorage.setItem(CONFIRMED_PLAN_KEY, confirmed); } catch {}
+}
+
+function savePendingCheckout(data = {}) {
+  try { localStorage.setItem(PENDING_CHECKOUT_KEY, JSON.stringify({ ...data, saved_at: Date.now() })); } catch {}
+}
+
+function readPendingCheckout() {
+  try {
+    const raw = localStorage.getItem(PENDING_CHECKOUT_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || Date.now() - Number(data.saved_at || 0) > PENDING_MAX_AGE_MS) {
+      localStorage.removeItem(PENDING_CHECKOUT_KEY);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingCheckout() {
+  try { localStorage.removeItem(PENDING_CHECKOUT_KEY); } catch {}
+}
+
+function clearLegacyUnconfirmedPlanKeys() {
+  try {
+    localStorage.removeItem("churvox:selected-plan");
+    localStorage.removeItem("churvox:billing-plan");
+  } catch {}
+}
+
+function checkoutReturnState() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    if (params.get("checkout") === "success") return "success";
+    if (params.get("checkout") === "cancelled" || params.get("checkout") === "canceled") return "cancelled";
+  } catch {}
+  return "";
+}
+
+function checkoutReturnNotice() {
+  const state = checkoutReturnState();
+  if (state === "cancelled") return "Stripe checkout was cancelled. Your current plan did not change.";
+  if (state === "success") return "Stripe returned. Confirming the current plan from billing.";
+  return "";
+}
+
+function selectedPlanFromReturn() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    const selected = normalizePlanKey(params.get("plan") || readPendingCheckout()?.ui_plan || "");
+    return displayPlanName(selected) === "Current plan" ? "" : displayPlanName(selected);
+  } catch {
+    return "";
+  }
+}
+
+function cleanCheckoutQuery() {
+  try {
+    const url = new URL(window.location.href);
+    ["checkout", "plan", "session_id"].forEach((key) => url.searchParams.delete(key));
+    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+  } catch {}
 }
 
 function priceParts(meta, amount) {
