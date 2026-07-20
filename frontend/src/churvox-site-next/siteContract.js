@@ -49,6 +49,15 @@ export const PLANS = [
   },
 ];
 
+export const ADDONS = [
+  {
+    name: "Command Growth Pack",
+    price: "$99",
+    suffix: "/month + GST",
+    purpose: "Adds 50 active team members and extra capacity without counting inactive or former staff.",
+  },
+];
+
 export const OFFICE_DESKS = [
   ["Reception", "Turns requests and messages into complete client, quote or booking drafts."],
   ["Scheduling", "Checks availability, recurrence, duration, skills, travel and clashes."],
