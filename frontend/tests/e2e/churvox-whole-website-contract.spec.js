@@ -23,8 +23,9 @@ test.describe("Churvox whole website rebuild contract", () => {
     }
     for (const customerPage of ["request", "quote", "invoice", "portal", "proof"]) {
       expect(contract).toContain(`["${customerPage}"`);
-      expect(publicSite).toContain(`customer-${customerPage}`);
     }
+    expect(publicSite).toContain('page.startsWith("customer-")');
+    expect(publicSite).toContain('page.replace("customer-", "")');
     expect(publicSite).toContain("CHURVOX_WHOLE_PUBLIC_REBUILD_20260721");
   });
 
