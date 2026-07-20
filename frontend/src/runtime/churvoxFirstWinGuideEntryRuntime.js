@@ -1,172 +1,106 @@
 import API_BASE from '../lib/apiBase';
 
-const FLAG = '__CHURVOX_FIRST_WIN_GUIDE_ENTRY_RUNTIME__';
+const FLAG = '__CHURVOX_FIRST_WIN_GUIDE_ENTRY_RUNTIME_V2__';
 const ROOT_ID = 'churvox-first-win-guide-entry';
-const STYLE_ID = 'churvox-first-win-guide-entry-style';
+const STYLE_ID = 'churvox-first-win-guide-entry-style-v2';
 const FIRST_SETUP_KEY = 'churvox_first_setup_pending';
-const PLAN_REQUIRED_KEY = 'churvox_plan_choice_required';
-const COMMAND_INBOX_KEY = 'churvox:fresh-command-inbox:v1';
 const API_ROOT = String(API_BASE || '').replace(/\/$/, '');
 
 const FALLBACK_STEPS = [
-  { key: 'business_profile', title: 'Set your business basics', why: 'Quotes, invoices and customer messages need the right name, GST and contact details.', action: 'Open Settings', page: 'settings', proof: 'Waiting for setup', time: '1 min' },
-  { key: 'first_client', title: 'Add your first real client', why: 'Churvox becomes useful when there is a real customer, address and contact history.', action: 'Open Clients', page: 'clients', proof: 'No client yet', time: '1 min' },
-  { key: 'first_job', title: 'Create your first job', why: 'This proves the main workflow: job, worker or self, complete, invoice.', action: 'Open Jobs', page: 'jobs', proof: 'No job yet', time: '1 min' },
-  { key: 'first_invoice', title: 'Prepare your first invoice', why: 'This is the money moment. The owner sees how work turns into a controlled invoice.', action: 'Open Invoices', page: 'invoices', proof: 'No invoice yet', time: '1 min' },
-  { key: 'command_approval', title: 'Approve one thing in Command', why: 'This teaches the product promise: Churvox does the admin. You approve.', action: 'Open Command', page: 'command', proof: 'No Command slip yet', time: '30 sec' },
+  { key: 'business_profile', title: 'Set your business basics', why: 'Quotes, invoices and customer messages need the right business details.', action: 'Open Settings', page: 'settings', proof: 'Waiting for setup', time: '1 min' },
+  { key: 'first_client', title: 'Add your first real client', why: 'A real customer record makes the rest of Churvox useful.', action: 'Open Clients', page: 'clients', proof: 'No client yet', time: '1 min' },
+  { key: 'first_job', title: 'Create your first job', why: 'This starts the real job-to-invoice workflow.', action: 'Open Jobs', page: 'work', proof: 'No job yet', time: '1 min' },
+  { key: 'first_invoice', title: 'Prepare your first invoice', why: 'This turns completed work into an owner-controlled money step.', action: 'Open Invoices', page: 'invoices', proof: 'No invoice yet', time: '2 min' },
+  { key: 'command_approval', title: 'Approve one thing in Command', why: 'This teaches the product promise: Churvox prepares the admin and you approve.', action: 'Open Command', page: 'command', proof: 'No approval yet', time: '30 sec' },
+  { key: 'first_payment', title: 'Get your first invoice paid', why: 'The complete first win is a finished job becoming verified money received.', action: 'Open Payments', page: 'invoices', proof: 'No paid invoice yet', time: 'Customer step' },
 ];
 
-function isAppPath() {
-  const path = String(window.location.pathname || '').toLowerCase();
-  return ['/dashboard', '/guide', '/setup', '/setup-guide'].includes(path) || path.startsWith('/dashboard');
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
-function wantsGuide() {
-  if (!isAppPath()) return false;
-  const path = String(window.location.pathname || '').toLowerCase();
-  const hash = String(window.location.hash || '');
-  const search = new URLSearchParams(window.location.search || '');
-  if (path === '/guide' || path === '/setup' || path === '/setup-guide') return true;
-  if (hash) return false;
-  if (search.get('first_setup') === '1' || search.get('tester') === '1') return true;
-  try { return path === '/dashboard' && localStorage.getItem(FIRST_SETUP_KEY) === 'true'; } catch { return false; }
-}
-
-function normaliseToGuidePath() {
-  if (!wantsGuide()) return;
-  const path = String(window.location.pathname || '').toLowerCase();
-  const hash = String(window.location.hash || '');
-  if (path === '/dashboard' && !hash) {
-    try { window.history.replaceState({}, '', `/setup-guide${window.location.search || '?first_setup=1'}`); } catch {}
-  }
+function token() {
+  try { return localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('access_token') || ''; } catch { return ''; }
 }
 
 function authHeaders() {
-  try {
-    const token = localStorage.getItem('token') || '';
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  } catch {
-    return {};
-  }
+  const value = token();
+  return { Accept: 'application/json', 'Content-Type': 'application/json', ...(value ? { Authorization: `Bearer ${value}` } : {}) };
 }
 
 async function api(path, options = {}) {
   const response = await fetch(`${API_ROOT}/api${path}`, {
     credentials: 'include',
     ...options,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-      ...(options.headers || {}),
-    },
+    headers: { ...authHeaders(), ...(options.headers || {}) },
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok || body?.ok === false || body?.success === false) throw new Error(body?.detail || body?.message || 'Guide is offline');
+  if (!response.ok || body?.success === false || body?.ok === false) throw new Error(body?.detail || body?.message || 'Guide is offline');
   return body;
 }
 
-function fallbackProgress() {
-  return { ok: true, percent: 0, done: 0, total: FALLBACK_STEPS.length, steps: FALLBACK_STEPS, message: 'Churvox does the admin. You approve.' };
+function appPath() {
+  const path = String(window.location.pathname || '').toLowerCase();
+  return path === '/dashboard' || path === '/guide' || path === '/setup' || path === '/setup-guide' || path.startsWith('/dashboard');
 }
 
-function safe(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+function explicitlyRequested() {
+  const path = String(window.location.pathname || '').toLowerCase();
+  const params = new URLSearchParams(window.location.search || '');
+  if (['/guide', '/setup', '/setup-guide'].includes(path)) return true;
+  if (params.get('first_setup') === '1' || params.get('tester') === '1' || params.get('guide') === '1') return true;
+  try { return localStorage.getItem(FIRST_SETUP_KEY) === 'true'; } catch { return false; }
 }
 
-function stepTitle(step) {
-  const map = {
-    business_profile: 'Set your business basics',
-    first_client: 'Add your first real client',
-    first_job: 'Create your first job',
-    first_invoice: 'Prepare your first invoice',
-    command_approval: 'Approve one thing in Command',
+function prepare(progress = {}) {
+  const steps = Array.isArray(progress.steps) && progress.steps.length
+    ? progress.steps.map((step) => ({ ...FALLBACK_STEPS.find((item) => item.key === step.key), ...step }))
+    : FALLBACK_STEPS;
+  const done = Number(progress.done ?? steps.filter((step) => step.done).length);
+  const total = Number(progress.total || steps.length);
+  const percent = Number(progress.percent ?? Math.round((done / Math.max(total, 1)) * 100));
+  return {
+    ...progress,
+    steps,
+    done,
+    total,
+    percent: Math.max(0, Math.min(100, percent)),
+    completed: Boolean(progress.completed || done >= total),
+    next_step: progress.next_step || steps.find((step) => !step.done) || null,
   };
-  return map[step?.key] || step?.title || 'Next setup step';
-}
-
-function enrichStep(step = {}) {
-  const fallback = FALLBACK_STEPS.find((item) => item.key === step.key) || {};
-  return { ...fallback, ...step, title: stepTitle(step), why: step.why || fallback.why || 'This gets the new business to its first useful Churvox win.', action: step.action || fallback.action || 'Open step', page: step.page || fallback.page || 'today', proof: step.proof || fallback.proof || (step.done ? 'Done' : 'Waiting'), time: step.time || fallback.time || '1 min' };
-}
-
-function prepare(progress) {
-  const base = progress && progress.ok ? progress : fallbackProgress();
-  const rawSteps = Array.isArray(base.steps) && base.steps.length ? base.steps : FALLBACK_STEPS;
-  const steps = rawSteps.map(enrichStep);
-  const done = Number(base.done ?? steps.filter((s) => s.done).length);
-  const total = Number(base.total || steps.length || FALLBACK_STEPS.length);
-  const percent = Number(base.percent ?? Math.round((done / Math.max(total, 1)) * 100));
-  const completed = Boolean(base.completed || percent >= 100 || done >= total);
-  return { ...base, steps, done, total, percent: Math.max(0, Math.min(100, percent)), completed, next_step: base.next_step ? enrichStep(base.next_step) : steps.find((s) => !s.done) || null };
 }
 
 async function loadProgress() {
-  try { return prepare(await api('/onboarding/progress')); } catch { return prepare(fallbackProgress()); }
+  try { return prepare(await api('/onboarding/progress')); }
+  catch { return prepare({ steps: FALLBACK_STEPS, show_guide: explicitlyRequested(), message: 'One clear step at a time.' }); }
+}
+
+function workspace() {
+  return document.querySelector('.cvxWorkspace, .cocWorkspace, .churvoxOptionC .workspace, .officeTeamLab main, main');
 }
 
 function go(page) {
   const target = page || 'today';
-  document.body.classList.remove('cvxFirstWinGuideMode');
-  document.getElementById(ROOT_ID)?.remove();
   try {
     if (target === 'today') {
       localStorage.removeItem(FIRST_SETUP_KEY);
-      localStorage.removeItem(PLAN_REQUIRED_KEY);
+      window.history.pushState({}, '', '/dashboard');
     } else {
       localStorage.setItem(FIRST_SETUP_KEY, 'true');
+      window.history.pushState({}, '', `/dashboard#${target}`);
     }
-    window.history.pushState({}, '', `/dashboard${target === 'today' ? '' : `#${target}`}`);
     window.dispatchEvent(new Event('hashchange'));
     window.dispatchEvent(new Event('popstate'));
   } catch {
-    window.location.href = `/dashboard${target === 'today' ? '' : `#${target}`}`;
+    window.location.href = target === 'today' ? '/dashboard' : `/dashboard#${target}`;
   }
-}
-
-function sendToCommand(progress) {
-  const next = progress.next_step || progress.steps.find((s) => !s.done) || progress.steps[0];
-  if (!next) return;
-  try {
-    const saved = localStorage.getItem(COMMAND_INBOX_KEY);
-    const current = saved ? JSON.parse(saved) : [];
-    const list = Array.isArray(current) ? current : [];
-    const slip = {
-      id: `first-win-guide-${next.key}-${Date.now()}`,
-      group: 'First Win Guide',
-      title: `Help finish setup: ${next.title}`,
-      info: `${progress.percent || 0}% setup · ${next.time || '1 min'}`,
-      urgency: 'High',
-      found: `New owner has not finished: ${next.title}.`,
-      prepared: `Churvox prepared the next action: ${next.action}.`,
-      why: next.why || 'A new user should get their first win fast.',
-      owner: 'Open the step, complete it, or mark it done if already handled.',
-      area: 'First Win Guide',
-      page: 'firstrun',
-      fromInbox: true,
-      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-    localStorage.setItem(COMMAND_INBOX_KEY, JSON.stringify([slip, ...list].slice(0, 80)));
-    window.dispatchEvent(new CustomEvent('churvox:fresh-data-updated', { detail: { type: 'first-win-guide' } }));
-  } catch {}
-  go('command');
-}
-
-async function markDone(stepKey) {
-  if (!stepKey) return;
-  try { await api(`/onboarding/step/${encodeURIComponent(stepKey)}/done`, { method: 'POST' }); } catch {}
-  await renderGuide(true);
+  document.getElementById(ROOT_ID)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function hideGuide() {
   try { await api('/onboarding/state', { method: 'POST', body: JSON.stringify({ dismissed: true }) }); } catch {}
-  try {
-    localStorage.removeItem(FIRST_SETUP_KEY);
-    localStorage.removeItem(PLAN_REQUIRED_KEY);
-  } catch {}
-  document.body.classList.remove('cvxFirstWinGuideMode');
+  try { localStorage.removeItem(FIRST_SETUP_KEY); } catch {}
   document.getElementById(ROOT_ID)?.remove();
-  go('today');
 }
 
 function installStyle() {
@@ -174,28 +108,24 @@ function installStyle() {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    body.cvxFirstWinGuideMode .cvxWorkspace{display:block!important;overflow:auto!important;padding:18px!important;background:#f7f3ea!important}
-    body.cvxFirstWinGuideMode .cvxWorkspace>.cvxPage{display:none!important}
-    #${ROOT_ID}{font-family:inherit;color:#0f172a;max-width:1180px;margin:0 auto 24px}
+    #${ROOT_ID}{font-family:inherit;color:#111827;margin:0 auto 22px;max-width:1280px;width:100%}
     #${ROOT_ID} *{box-sizing:border-box}
-    .fwGuideShell{position:relative;overflow:hidden;border:1px solid #fed7aa;border-radius:34px;background:linear-gradient(135deg,#ffffff 0%,#fff7ed 50%,#f8fafc 100%);box-shadow:0 24px 80px rgba(15,23,42,.1)}
-    .fwGuideShell:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 92% 8%,rgba(249,115,22,.2),transparent 28%),linear-gradient(90deg,rgba(15,23,42,.045) 1px,transparent 1px);background-size:auto,48px 48px;pointer-events:none}
-    .fwGuideInner{position:relative;display:grid;gap:18px;padding:24px}
-    .fwGuideHero{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:20px;align-items:center}
-    .fwGuideHero span.kicker{display:inline-flex;width:max-content;border:1px solid #fed7aa;background:#fff7ed;color:#c2410c;border-radius:999px;padding:7px 12px;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.12em}
-    .fwGuideHero h1{margin:12px 0 8px;color:#0f172a;font-size:clamp(36px,6vw,72px);line-height:.9;letter-spacing:-.08em;font-weight:1000}
-    .fwGuideHero p{max-width:760px;margin:0;color:#475569;font-size:15px;line-height:1.65;font-weight:780}
-    .fwGuideProgress{justify-self:end;display:grid;place-items:center;width:176px;height:176px;border-radius:40px;border:1px solid #fed7aa;background:#fff;box-shadow:0 18px 48px rgba(15,23,42,.08)}
-    .fwGuideProgress b{font-size:48px;letter-spacing:-.08em;color:#0f172a}.fwGuideProgress small{margin-top:-24px;color:#64748b;font-weight:900;text-align:center}
-    .fwBar{height:12px;border-radius:999px;background:#e2e8f0;overflow:hidden}.fwBar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#f97316,#0f172a)}
-    .fwNext{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;border:1px solid #fed7aa;background:#fff;border-radius:28px;padding:18px;box-shadow:0 18px 48px rgba(15,23,42,.06)}
-    .fwNext small{color:#c2410c;text-transform:uppercase;letter-spacing:.12em;font-weight:950}.fwNext h2{margin:8px 0;color:#0f172a;font-size:28px;line-height:1;font-weight:1000;letter-spacing:-.05em}.fwNext p{margin:0;color:#475569;font-weight:760;line-height:1.55}.fwNext em{display:block;margin-top:10px;color:#64748b;font-style:normal;font-size:13px;font-weight:850}
-    .fwActions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}.fwActions button,.fwFooter button{border:1px solid #e2e8f0;background:#fff;color:#0f172a;border-radius:16px;padding:12px 15px;font-weight:950;cursor:pointer}.fwActions button.primary{background:linear-gradient(135deg,#f97316,#111827);color:#fff;border-color:transparent}.fwActions button.command{border-color:#fed7aa;background:#fff7ed;color:#c2410c}
-    .fwSteps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.fwStep{border:1px solid #e2e8f0;background:#fff;border-radius:22px;padding:14px;min-height:130px;box-shadow:0 12px 30px rgba(15,23,42,.04)}.fwStep.active{border-color:#fb923c;background:#fff7ed}.fwStep.done{border-color:#bbf7d0;background:#f0fdf4}.fwStep strong{display:grid;place-items:center;width:32px;height:32px;border-radius:12px;background:#0f172a;color:#fff;font-weight:1000}.fwStep.done strong{background:#16a34a}.fwStep b{display:block;margin-top:12px;color:#0f172a;font-size:14px;line-height:1.15}.fwStep small{display:block;margin-top:8px;color:#64748b;font-size:12px;font-weight:800;line-height:1.35}
-    .fwGuideDeep{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.fwGuideDeep article{border:1px solid #e2e8f0;background:#fff;border-radius:24px;padding:16px}.fwGuideDeep b{color:#0f172a}.fwGuideDeep p{margin:7px 0 0;color:#64748b;font-size:13px;font-weight:750;line-height:1.5}
-    .fwFooter{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.fwFooter button.danger{color:#991b1b;border-color:#fecaca;background:#fef2f2}
-    @media(max-width:980px){.fwGuideHero,.fwNext{grid-template-columns:1fr}.fwGuideProgress{justify-self:start;width:150px;height:150px}.fwSteps,.fwGuideDeep{grid-template-columns:1fr 1fr}.fwActions{justify-content:flex-start}}
-    @media(max-width:640px){.fwGuideInner{padding:16px}.fwSteps,.fwGuideDeep{grid-template-columns:1fr}.fwGuideHero h1{font-size:42px}.fwActions button,.fwFooter button{width:100%}}
+    .fw2Shell{position:relative;overflow:hidden;border:1px solid #fed7aa;border-radius:28px;background:linear-gradient(135deg,#fff 0%,#fff7ed 54%,#f8fafc 100%);box-shadow:0 20px 60px rgba(15,23,42,.09)}
+    .fw2Shell:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 92% 5%,rgba(249,115,22,.18),transparent 30%);pointer-events:none}
+    .fw2Inner{position:relative;padding:22px;display:grid;gap:16px}
+    .fw2Hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}
+    .fw2Kicker{display:inline-flex;border:1px solid #fed7aa;background:#fff;color:#c2410c;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.12em}
+    .fw2Hero h2{margin:10px 0 6px;font-size:clamp(28px,4vw,52px);line-height:.95;letter-spacing:-.06em;font-weight:1000;color:#0f172a}
+    .fw2Hero p{margin:0;max-width:760px;color:#475569;font-weight:720;line-height:1.55}
+    .fw2Score{display:grid;place-items:center;min-width:150px;min-height:112px;border:1px solid #fed7aa;border-radius:24px;background:#fff;box-shadow:0 12px 34px rgba(15,23,42,.07)}
+    .fw2Score b{font-size:38px;letter-spacing:-.06em}.fw2Score small{color:#64748b;font-weight:850}
+    .fw2Bar{height:10px;border-radius:999px;background:#e2e8f0;overflow:hidden}.fw2Bar i{display:block;height:100%;background:linear-gradient(90deg,#f97316,#111827);border-radius:999px}
+    .fw2Next{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:17px;border:1px solid #fed7aa;border-radius:22px;background:#fff}
+    .fw2Next small{color:#c2410c;font-weight:950;text-transform:uppercase;letter-spacing:.09em}.fw2Next h3{margin:7px 0 5px;font-size:25px;letter-spacing:-.04em}.fw2Next p{margin:0;color:#475569;font-weight:700}.fw2Next em{display:block;margin-top:8px;color:#64748b;font-size:12px;font-style:normal;font-weight:800}
+    .fw2Actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.fw2Actions button,.fw2Footer button{border:1px solid #dbe3ec;background:#fff;color:#0f172a;border-radius:14px;padding:11px 13px;font-weight:900;cursor:pointer}.fw2Actions .primary{background:linear-gradient(135deg,#f97316,#111827);color:#fff;border-color:transparent}.fw2Actions .example{border-color:#fed7aa;background:#fff7ed;color:#c2410c}
+    .fw2Steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.fw2Step{min-height:104px;border:1px solid #e2e8f0;border-radius:18px;background:#fff;padding:12px}.fw2Step.active{border-color:#fb923c;background:#fff7ed}.fw2Step.done{border-color:#bbf7d0;background:#f0fdf4}.fw2Step strong{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:#111827;color:#fff}.fw2Step.done strong{background:#16a34a}.fw2Step b{display:block;margin-top:9px;font-size:13px;line-height:1.15}.fw2Step small{display:block;margin-top:6px;color:#64748b;font-size:11px;font-weight:750;line-height:1.25}
+    .fw2Footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.fw2Footer p{margin:0;color:#64748b;font-size:12px;font-weight:750}.fw2Footer .hide{color:#991b1b;border-color:#fecaca;background:#fff}
+    @media(max-width:900px){.fw2Hero,.fw2Next{grid-template-columns:1fr}.fw2Score{justify-self:stretch;min-height:90px}.fw2Actions{justify-content:flex-start}.fw2Steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
   `;
   document.head.appendChild(style);
 }
@@ -203,81 +133,74 @@ function installStyle() {
 function render(progress) {
   const root = document.getElementById(ROOT_ID);
   if (!root) return;
-  const next = progress.next_step || progress.steps.find((s) => !s.done);
-  const doneText = progress.completed ? 'Setup complete' : `${progress.done || 0}/${progress.total || progress.steps.length} core steps done`;
-  root.innerHTML = `
-    <section class="fwGuideShell">
-      <div class="fwGuideInner">
-        <div class="fwGuideHero">
-          <div>
-            <span class="kicker">First Win Guide</span>
-            <h1>${progress.completed ? 'You are ready to run Churvox.' : 'Get your first Churvox win.'}</h1>
-            <p>${safe(progress.message || 'Churvox does the admin. You approve. This setup path gets a new owner to the first useful client, job, invoice and Command check without overwhelm.')}</p>
-          </div>
-          <div class="fwGuideProgress"><b>${progress.percent || 0}%</b><small>${safe(doneText)}</small></div>
-        </div>
-        <div class="fwBar"><i style="width:${Math.max(0, Math.min(progress.percent || 0, 100))}%"></i></div>
-        ${next ? `<div class="fwNext"><div><small>Next best step · ${safe(next.time || '1 min')}</small><h2>${safe(next.title)}</h2><p>${safe(next.why)}</p><em>${safe(next.proof || '')}</em></div><div class="fwActions"><button type="button" class="primary" data-fw-open="${safe(next.page)}">${safe(next.action || 'Open step')}</button><button type="button" data-fw-done="${safe(next.key)}">I’ve done this</button><button type="button" class="command" data-fw-command="1">Send to Command</button></div></div>` : `<div class="fwNext"><div><small>Complete</small><h2>Nice — the core first-run guide is complete.</h2><p>Next: test a full job → invoice → paid flow, or jump into Today and run the workspace.</p></div><div class="fwActions"><button type="button" class="primary" data-fw-open="today">Open Today</button><button type="button" data-fw-open="command">Open Command</button></div></div>`}
-        <div class="fwSteps">${progress.steps.map((step, index) => `<article class="fwStep ${step.done ? 'done' : ''} ${next && step.key === next.key ? 'active' : ''}"><strong>${step.done ? '✓' : index + 1}</strong><b>${safe(step.title)}</b><small>${safe(step.done ? 'Done' : step.proof || step.time || 'Waiting')}</small></article>`).join('')}</div>
-        <div class="fwGuideDeep">
-          <article><b>What this teaches</b><p>New users learn the real loop: add customer, create job, finish work, prepare invoice, approve admin in Command.</p></article>
-          <article><b>What it avoids</b><p>No huge checklist at first login. One action, one reason, one button.</p></article>
-          <article><b>What Churvox watches</b><p>Progress is checked from live business data, not fake demo ticks.</p></article>
-        </div>
-        <div class="fwFooter"><button type="button" data-fw-refresh="1">Refresh guide</button><button type="button" class="danger" data-fw-hide="1">Hide for now</button></div>
-      </div>
-    </section>
-  `;
+  const next = progress.next_step || progress.steps.find((step) => !step.done);
   root.__fwProgress = progress;
+  root.innerHTML = `
+    <section class="fw2Shell" data-version="CHURVOX_FIRST_WIN_GUIDE_V2_20260720">
+      <div class="fw2Inner">
+        <div class="fw2Hero">
+          <div><span class="fw2Kicker">First Win Guide</span><h2>${progress.completed ? 'You completed the full first win.' : 'One clear next step.'}</h2><p>${esc(progress.message || 'Add a real client, run one job, prepare the invoice, approve the admin and confirm payment.')}</p></div>
+          <div class="fw2Score"><b>${progress.percent}%</b><small>${progress.done}/${progress.total} complete</small></div>
+        </div>
+        <div class="fw2Bar"><i style="width:${progress.percent}%"></i></div>
+        ${next ? `<div class="fw2Next"><div><small>Do this next · ${esc(next.time || '1 min')}</small><h3>${esc(next.title)}</h3><p>${esc(next.why || '')}</p><em>${esc(next.proof || '')}</em></div><div class="fw2Actions"><button class="primary" type="button" data-fw2-open="${esc(next.page || 'today')}">${esc(next.action || 'Open step')}</button><button type="button" data-fw2-refresh="1">Check again</button><button class="example" type="button" data-fw2-example="1">See 2-minute example</button></div></div>` : `<div class="fw2Next"><div><small>Complete</small><h3>Client → job → invoice → approval → paid.</h3><p>You have completed the first useful Churvox loop with real records.</p></div><div class="fw2Actions"><button class="primary" type="button" data-fw2-open="today">Open Today</button><button class="example" type="button" data-fw2-example="1">Replay example</button></div></div>`}
+        <div class="fw2Steps">${progress.steps.map((step, index) => `<article class="fw2Step ${step.done ? 'done' : ''} ${next?.key === step.key ? 'active' : ''}"><strong>${step.done ? '✓' : index + 1}</strong><b>${esc(step.title)}</b><small>${esc(step.done ? 'Done' : step.proof || step.time || 'Waiting')}</small></article>`).join('')}</div>
+        <div class="fw2Footer"><p>Progress comes from live business records. Nothing sends, charges or changes without the required approval.</p><div><button type="button" data-fw2-refresh="1">Refresh</button> <button class="hide" type="button" data-fw2-hide="1">Hide for now</button></div></div>
+      </div>
+    </section>`;
 }
 
 async function renderGuide(force = false) {
-  normaliseToGuidePath();
-  if (!wantsGuide() && !force) {
-    document.body.classList.remove('cvxFirstWinGuideMode');
+  if (!appPath()) return;
+  const progress = await loadProgress();
+  const show = force || explicitlyRequested() || progress.show_guide;
+  if (!show) {
     document.getElementById(ROOT_ID)?.remove();
     return;
   }
   installStyle();
-  const workspace = document.querySelector('.cvxWorkspace');
-  if (!workspace) return;
-  document.body.classList.add('cvxFirstWinGuideMode');
+  const host = workspace();
+  if (!host) return;
   let root = document.getElementById(ROOT_ID);
   if (!root) {
     root = document.createElement('section');
     root.id = ROOT_ID;
-    workspace.insertBefore(root, workspace.firstChild);
+    host.insertBefore(root, host.firstChild);
   }
-  root.innerHTML = '<section class="fwGuideShell"><div class="fwGuideInner"><div class="fwNext"><div><small>Loading</small><h2>Loading First Win Guide…</h2><p>Checking your setup progress.</p></div></div></div></section>';
-  render(await loadProgress());
+  render(progress);
 }
 
-function installEvents() {
-  document.addEventListener('click', (event) => {
-    const open = event.target.closest('[data-fw-open]');
-    if (open) { go(open.getAttribute('data-fw-open') || 'today'); return; }
-    const done = event.target.closest('[data-fw-done]');
-    if (done) { markDone(done.getAttribute('data-fw-done')); return; }
-    const command = event.target.closest('[data-fw-command]');
-    if (command) { sendToCommand(document.getElementById(ROOT_ID)?.__fwProgress || prepare(fallbackProgress())); return; }
-    const refresh = event.target.closest('[data-fw-refresh]');
-    if (refresh) { renderGuide(true); return; }
-    const hide = event.target.closest('[data-fw-hide]');
-    if (hide) { hideGuide(); }
-  });
+function schedule(force = false) {
+  [0, 300, 900, 1800].forEach((delay) => window.setTimeout(() => renderGuide(force), delay));
 }
 
-function schedule() {
-  [0, 250, 800, 1600, 3000].forEach((delay) => setTimeout(() => renderGuide(false), delay));
+function loadCompanionRuntimes() {
+  const path = String(window.location.pathname || '').toLowerCase();
+  const owner = appPath() || path === '/plans';
+  const hq = ['/admin', '/churvox-hq', '/admin/hq', '/owner/dashboard', '/platform-dashboard', '/app-owner', '/admin/usage', '/admin/qa-auditor', '/platform'].includes(path);
+  if (owner) {
+    import('./churvoxFirstWinFeedbackRuntime').catch(() => {});
+    import('./churvoxInvoicePaymentLinkRuntime').catch(() => {});
+  }
+  if (hq) import('./churvoxHqFeedbackRuntime').catch(() => {});
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined' && !window[FLAG]) {
   window[FLAG] = true;
-  installEvents();
-  normaliseToGuidePath();
-  schedule();
-  window.addEventListener('hashchange', schedule);
-  window.addEventListener('popstate', schedule);
-  window.addEventListener('churvox-owner-app-ready', schedule);
-  setInterval(() => { if (wantsGuide()) renderGuide(false); }, 2500);
+  document.addEventListener('click', (event) => {
+    const open = event.target.closest('[data-fw2-open]');
+    if (open) { go(open.getAttribute('data-fw2-open')); return; }
+    if (event.target.closest('[data-fw2-example]')) { window.location.href = '/demo?industry=property-maintenance&from=first-win'; return; }
+    if (event.target.closest('[data-fw2-refresh]')) { renderGuide(true); return; }
+    if (event.target.closest('[data-fw2-hide]')) hideGuide();
+  }, true);
+  loadCompanionRuntimes();
+  schedule(false);
+  window.addEventListener('hashchange', () => { loadCompanionRuntimes(); schedule(false); });
+  window.addEventListener('popstate', () => { loadCompanionRuntimes(); schedule(false); });
+  window.addEventListener('churvox-owner-app-ready', () => schedule(false));
+  window.addEventListener('churvox:fresh-data-updated', () => schedule(false));
+  window.setInterval(() => { if (appPath()) renderGuide(false); }, 15000);
 }
+
+export {};
