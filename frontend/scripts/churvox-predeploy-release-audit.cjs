@@ -94,8 +94,8 @@ check(
 
 check(
   'Tester landing page is build-ready',
-  hasAll(testerPage, ['/api/public/tester-applications', '30-day', 'Founding 10']),
-  'The static tester page must keep the selected 30-day offer and real intake endpoint.',
+  hasAll(testerPage, ['/api/public/tester-applications', '30-day', 'up to 10']),
+  'The static tester page must keep the selected 30-day offer, ten-place limit and real intake endpoint.',
 );
 check(
   'Tester page is indexed in the sitemap',
