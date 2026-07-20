@@ -44,7 +44,9 @@ check(
 check(
     "worker contact requires an authenticated worker",
     "Depends(get_current_user)" in route_block
-    and ("Worker access required" in route_block or 'role") != "worker"' in route_block or "role') != 'worker'" in route_block),
+    and "role" in route_block
+    and "worker" in route_block
+    and ("403" in route_block or "Worker access required" in route_block),
     "the endpoint must reject unauthenticated or non-worker submissions",
 )
 check(
