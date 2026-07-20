@@ -21,7 +21,7 @@ function invoice({ paid = false } = {}) {
     amount_due: paid ? 0 : 340,
     status: paid ? 'paid' : 'sent',
     payment_link: paid ? '' : 'https://checkout.stripe.com/c/pay/cs_test_first_win',
-    business_snapshot: { business_name: "Sarah's Property Maintenance", currency: 'NZD' },
+    business_snapshot: { business_name: 'Harbour Property Services', currency: 'NZD' },
   };
 }
 
@@ -63,7 +63,7 @@ test.describe('Churvox first-win growth loop', () => {
     expect(checkoutRequested).toBe(true);
   });
 
-  test('public demo explains Sarah’s complete request-to-paid journey', async ({ page }) => {
+  test('public demo explains the complete request-to-paid journey', async ({ page }) => {
     await page.route('**/api/**', async (route) => {
       const url = new URL(route.request().url());
       if (url.pathname === '/api/platform/visit') return route.fulfill(json({ ok: true }));
@@ -72,7 +72,7 @@ test.describe('Churvox first-win growth loop', () => {
     });
 
     await page.goto('/demo?industry=property-maintenance', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByText('Sarah’s Property Maintenance').first()).toBeVisible();
+    await expect(page.getByText('Harbour Property Services').first()).toBeVisible();
     await page.getByRole('button', { name: /7 Paid/i }).click();
     await expect(page.getByText('The customer pays and Churvox verifies it')).toBeVisible();
     await expect(page.getByText('Stripe verified · invoice marked paid')).toBeVisible();
