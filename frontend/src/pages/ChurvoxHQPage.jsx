@@ -1,6 +1,7 @@
 import React from "react";
 import PaidLaunchHQSystem from "./PaidLaunchHQSystem";
 import TesterApplicationsInbox from "./admin/TesterApplicationsInbox";
+import ChurvoxPromotionCentre from "./admin/ChurvoxPromotionCentre";
 
 export default function ChurvoxHQPage() {
   return (
@@ -10,6 +11,7 @@ export default function ChurvoxHQPage() {
       aria-label="Churvox HQ system"
     >
       <TesterApplicationsInbox />
+      <ChurvoxPromotionCentre />
       <PaidLaunchHQSystem />
     </div>
   );
