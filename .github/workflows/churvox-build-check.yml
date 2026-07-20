@@ -53,6 +53,9 @@ jobs:
       - name: Recurring job idempotency contract
         run: python3 scripts/churvox-recurring-idempotency-contract.py
 
+      - name: Final job completion contract
+        run: python3 scripts/churvox-job-completion-final-contract.py
+
       - name: Paid account boundary contract
         run: python3 scripts/churvox-paid-account-boundary-contract.py
 
