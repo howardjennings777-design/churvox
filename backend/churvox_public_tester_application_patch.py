@@ -91,14 +91,27 @@ def install(module):
             return forwarded.split(",")[0].strip()
         return clean(getattr(getattr(request, "client", None), "host", ""), 100)
 
-    async def send_owner_notice(application):
+    async def send_mail(to_address, subject, html_body, text_body):
         if not mailer:
             return {"sent": False, "skipped": True, "error": "Email provider unavailable"}
+        try:
+            result = await mailer.send(to_address, subject, html_body, text_body)
+            return {
+                "sent": bool(getattr(result, "success", False)),
+                "provider": getattr(result, "provider", None),
+                "error": getattr(result, "error", None),
+            }
+        except Exception as exc:
+            return {"sent": False, "error": str(exc)}
+
+    async def send_owner_notice(application):
         business = html.escape(application.get("business_name") or "Unknown business")
         name = html.escape(application.get("name") or "Unknown")
         email = html.escape(application.get("email") or "")
         trade = html.escape(application.get("trade") or "Not supplied")
         team_size = html.escape(application.get("team_size") or "Not supplied")
+        source = html.escape(application.get("source") or "Not supplied")
+        campaign = html.escape(application.get("utm_campaign") or "Not supplied")
         subject = f"New Churvox tester application: {application.get('business_name') or application.get('name') or 'Website visitor'}"
         html_body = f"""
         <div style='font-family:Arial,sans-serif;line-height:1.55;color:#0f172a;background:#f8fafc;padding:24px;'>
@@ -111,21 +124,51 @@ def install(module):
               <tr><td style='padding:8px 0;color:#64748b;'>Trade</td><td style='padding:8px 0;font-weight:700;'>{trade}</td></tr>
               <tr><td style='padding:8px 0;color:#64748b;'>Team size</td><td style='padding:8px 0;font-weight:700;'>{team_size}</td></tr>
               <tr><td style='padding:8px 0;color:#64748b;'>Email</td><td style='padding:8px 0;font-weight:700;'><a href='mailto:{email}'>{email}</a></td></tr>
+              <tr><td style='padding:8px 0;color:#64748b;'>Source</td><td style='padding:8px 0;font-weight:700;'>{source}</td></tr>
+              <tr><td style='padding:8px 0;color:#64748b;'>Campaign</td><td style='padding:8px 0;font-weight:700;'>{campaign}</td></tr>
             </table>
             <p style='margin:20px 0 0;color:#64748b;font-size:13px;'>This application was saved in app_owner_tester_applications. No access was granted automatically.</p>
           </div>
         </div>
         """
-        text_body = f"New Churvox tester application\nName: {application.get('name')}\nBusiness: {application.get('business_name')}\nTrade: {application.get('trade')}\nTeam size: {application.get('team_size')}\nEmail: {application.get('email')}"
-        try:
-            result = await mailer.send(OWNER_EMAIL, subject, html_body, text_body)
-            return {
-                "sent": bool(getattr(result, "success", False)),
-                "provider": getattr(result, "provider", None),
-                "error": getattr(result, "error", None),
-            }
-        except Exception as exc:
-            return {"sent": False, "error": str(exc)}
+        text_body = (
+            "New Churvox tester application\n"
+            f"Name: {application.get('name')}\n"
+            f"Business: {application.get('business_name')}\n"
+            f"Trade: {application.get('trade')}\n"
+            f"Team size: {application.get('team_size')}\n"
+            f"Email: {application.get('email')}\n"
+            f"Source: {application.get('source')}\n"
+            f"Campaign: {application.get('utm_campaign')}"
+        )
+        return await send_mail(OWNER_EMAIL, subject, html_body, text_body)
+
+    async def send_applicant_confirmation(application):
+        name = html.escape(application.get("name") or "there")
+        business = html.escape(application.get("business_name") or "your business")
+        subject = "We received your Churvox tester application"
+        html_body = f"""
+        <div style='font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;background:#f8fafc;padding:24px;'>
+          <div style='max-width:580px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:30px;'>
+            <p style='margin:0 0 8px;color:#ea580c;font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.06em;'>Churvox Founding Tester Programme</p>
+            <h2 style='margin:0 0 16px;'>Thanks, {name}. Your application is in.</h2>
+            <p style='margin:0 0 14px;'>We have received the tester application for <strong>{business}</strong>.</p>
+            <p style='margin:0 0 14px;'>Howard will review it and contact you by email if one of the selected tester places is available. Applying has not created an account, started a subscription or charged anything.</p>
+            <div style='margin:22px 0;padding:16px;border-radius:12px;background:#fff7ed;color:#7c2d12;'>
+              <strong>What selected testers receive</strong><br>
+              30 days of tester access, setup help by email and no pressure to continue.
+            </div>
+            <p style='margin:0;color:#64748b;font-size:13px;'>Churvox prepares the admin. The owner checks and approves.</p>
+          </div>
+        </div>
+        """
+        text_body = (
+            f"Thanks, {application.get('name') or 'there'}. Your Churvox tester application is in.\n\n"
+            f"We received the application for {application.get('business_name') or 'your business'}. "
+            "Howard will review it and contact you by email if a selected tester place is available.\n\n"
+            "Applying has not created an account, started a subscription or charged anything. Selected testers receive 30 days of tester access and setup help by email."
+        )
+        return await send_mail(application.get("email"), subject, html_body, text_body)
 
     async def create_application(request: Request, payload: dict = Body(default={})):
         if clean(payload.get("website"), 300):
@@ -137,6 +180,13 @@ def install(module):
         email = lower(payload.get("email"), 180)
         team_size = clean(payload.get("team_size"), 40)
         source = clean(payload.get("source"), 80) or "founding_10_homepage_popup"
+        utm_source = clean(payload.get("utm_source"), 120)
+        utm_medium = clean(payload.get("utm_medium"), 120)
+        utm_campaign = clean(payload.get("utm_campaign"), 120)
+        utm_content = clean(payload.get("utm_content"), 120)
+        referrer = clean(payload.get("referrer"), 300)
+        landing_path = clean(payload.get("landing_path"), 300)
+        locale = clean(payload.get("locale"), 40)
 
         if not all([name, business_name, trade, email, team_size]):
             raise HTTPException(status_code=400, detail="Complete all five application fields")
@@ -162,6 +212,13 @@ def install(module):
             "email": email,
             "team_size": team_size,
             "source": source,
+            "utm_source": utm_source,
+            "utm_medium": utm_medium,
+            "utm_campaign": utm_campaign,
+            "utm_content": utm_content,
+            "referrer": referrer,
+            "landing_path": landing_path,
+            "locale": locale,
             "status": "new",
             "request_key": request_key,
             "user_agent": user_agent,
@@ -170,18 +227,24 @@ def install(module):
         update = {"$set": application, "$setOnInsert": {"created_at": now_utc()}}
         result = await db.app_owner_tester_applications.update_one({"email": email}, update, upsert=True)
         stored = await db.app_owner_tester_applications.find_one({"_id": result.upserted_id}) if result.upserted_id else await db.app_owner_tester_applications.find_one({"email": email})
-        notice = await send_owner_notice(application)
+        owner_notice = await send_owner_notice(application)
+        applicant_confirmation = await send_applicant_confirmation(application)
+        email_results = {
+            "owner_notice": owner_notice,
+            "applicant_confirmation": applicant_confirmation,
+        }
         await db.app_owner_control_log.insert_one({
             "created_at": now_utc(),
             "action": "public_tester_application",
             "target_email": email,
             "payload": safe(application),
-            "result": notice,
+            "result": email_results,
         })
         return {
             "success": True,
             "message": "Application received",
             "application_id": str((stored or {}).get("_id") or ""),
+            "confirmation_sent": bool(applicant_confirmation.get("sent")),
         }
 
     async def list_applications(request: Request):

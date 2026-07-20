@@ -23,6 +23,7 @@ export function PublicNav({ active = "" }) {
         {navItems.map(([to, label]) => (
           <Link key={to} to={to} aria-current={active === to ? "page" : undefined}>{label}</Link>
         ))}
+        <a href="/testers/">Testers</a>
       </nav>
       <div className="cp26NavActions">
         <Link className="cp26TextLink" to="/login">Log in</Link>
@@ -43,6 +44,7 @@ export function PublicFooter() {
         <Link to="/product">Product</Link>
         <Link to="/pricing">Pricing</Link>
         <Link to="/demo">Demo</Link>
+        <a href="/testers/">Tester programme</a>
         <Link to="/about">About</Link>
         <Link to="/security">Security</Link>
         <Link to="/support">Support</Link>

@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Become a Churvox Founding Tester | 30-day selected tester access</title>
+  <meta name="description" content="Churvox is selecting up to 10 service businesses for 30 days of tester access, personal email support and a chance to shape the product." />
+  <link rel="canonical" href="https://www.churvox.com/testers/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.churvox.com/testers/" />
+  <meta property="og:title" content="Help shape Churvox — selected testers get 30 days" />
+  <meta property="og:description" content="For lawn care, landscaping, cleaning, handyman and other service businesses. No card, sales calls or pressure to continue." />
+  <meta property="og:site_name" content="Churvox" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #0f172a;
+      --muted: #526173;
+      --line: #dce3eb;
+      --soft: #f5f2ec;
+      --paper: #ffffff;
+      --orange: #f97316;
+      --orange-dark: #c2410c;
+      --green: #166534;
+      --green-soft: #dcfce7;
+      --shadow: 0 26px 70px rgba(15, 23, 42, 0.13);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 82% 4%, rgba(249, 115, 22, 0.13), transparent 25rem),
+        var(--soft);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a { color: inherit; }
+    button, input, select { font: inherit; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 76px;
+      padding: 14px clamp(20px, 5vw, 72px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(110deg, #080d16 0%, #111827 62%, #3b1d0a 100%);
+      color: #fff;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.2);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 13px;
+      background: linear-gradient(145deg, #fb923c, #ea580c);
+      color: #111827;
+      font-size: 19px;
+      font-weight: 1000;
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.32);
+    }
+
+    .brand-copy { display: grid; line-height: 1.1; }
+    .brand-copy b { font-size: 20px; letter-spacing: -0.03em; }
+    .brand-copy small { margin-top: 4px; color: #cbd5e1; font-size: 11px; font-weight: 700; }
+
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .top-actions a { font-size: 13px; font-weight: 850; text-decoration: none; }
+    .top-actions .home-link { color: #e2e8f0; }
+    .top-actions .login-link {
+      padding: 10px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(390px, 0.96fr);
+      gap: clamp(34px, 6vw, 86px);
+      align-items: center;
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: clamp(56px, 8vw, 104px) 0 74px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: max-content;
+      margin: 0 0 20px;
+      padding: 8px 12px;
+      border: 1px solid rgba(234, 88, 12, 0.25);
+      border-radius: 999px;
+      background: #fff7ed;
+      color: var(--orange-dark);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 690px;
+      margin: 0;
+      font-size: clamp(44px, 6.5vw, 78px);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+    }
+
+    h1 span { color: var(--orange-dark); }
+
+    .lead {
+      max-width: 650px;
+      margin: 24px 0 0;
+      color: #39495c;
+      font-size: clamp(18px, 2.2vw, 22px);
+      line-height: 1.55;
+    }
+
+    .proof-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 30px 0 0;
+    }
+
+    .proof-row span {
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #334155;
+      font-size: 12px;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .fit-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 30px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .fit-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: #27364a;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .fit-list li::before {
+      content: "✓";
+      display: grid;
+      place-items: center;
+      flex: 0 0 23px;
+      width: 23px;
+      height: 23px;
+      border-radius: 999px;
+      background: #ffedd5;
+      color: #9a3412;
+      font-size: 12px;
+      font-weight: 1000;
+    }
+
+    .application-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #dbe3ec;
+      border-radius: 26px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .application-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 7px;
+      background: linear-gradient(90deg, #f97316, #fb923c, #fdba74);
+    }
+
+    .application-head { padding: 34px 32px 0; }
+    .application-head small {
+      color: var(--orange-dark);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .application-head h2 {
+      margin: 8px 0 7px;
+      font-size: 30px;
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+    .application-head p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .tester-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 25px 32px 32px;
+    }
+
+    .field { display: grid; gap: 7px; }
+    .field.wide { grid-column: 1 / -1; }
+    .field span { color: #334155; font-size: 12px; font-weight: 900; }
+    .field input, .field select {
+      width: 100%;
+      min-height: 49px;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 700;
+      outline: none;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+    }
+    .field input::placeholder { color: #7b8795; }
+    .trap { position: absolute !important; left: -9999px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
+
+    .status {
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: 11px 12px;
+      border-radius: 11px;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .submit {
+      grid-column: 1 / -1;
+      min-height: 54px;
+      border: 0;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #f97316, #fb923c);
+      color: #111827;
+      font-size: 15px;
+      font-weight: 1000;
+      cursor: pointer;
+      box-shadow: 0 13px 29px rgba(249, 115, 22, 0.25);
+    }
+    .submit:hover { filter: brightness(1.03); transform: translateY(-1px); }
+    .submit:disabled { cursor: wait; opacity: 0.68; transform: none; }
+
+    .fine-print {
+      grid-column: 1 / -1;
+      margin: 0;
+      color: #687588;
+      font-size: 11px;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .success {
+      display: grid;
+      place-items: center;
+      min-height: 480px;
+      padding: 46px 34px;
+      text-align: center;
+    }
+    .success-mark {
+      display: grid;
+      place-items: center;
+      width: 66px;
+      height: 66px;
+      margin: 0 auto 18px;
+      border-radius: 999px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 30px;
+      font-weight: 1000;
+    }
+    .success h2 { margin: 0 0 10px; font-size: 31px; letter-spacing: -0.04em; }
+    .success p { max-width: 430px; margin: 0 auto; color: var(--muted); line-height: 1.65; }
+    .success a { display: inline-flex; margin-top: 22px; color: var(--orange-dark); font-weight: 900; }
+
+    .section {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 74px 0;
+    }
+    .section.dark {
+      width: 100%;
+      padding-inline: max(20px, calc((100vw - 1120px) / 2));
+      background: #101827;
+      color: #fff;
+    }
+
+    .section-heading { max-width: 720px; }
+    .section-heading h2 {
+      margin: 10px 0 0;
+      font-size: clamp(34px, 4.7vw, 54px);
+      line-height: 1.04;
+      letter-spacing: -0.05em;
+    }
+    .section-heading p { margin: 17px 0 0; color: #58677a; font-size: 17px; line-height: 1.65; }
+    .dark .section-heading p { color: #cbd5e1; }
+
+    .steps, .why-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 34px 0 0;
+    }
+    .steps article, .why-grid article {
+      padding: 25px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+    .dark .steps article {
+      border-color: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.045);
+    }
+    .steps b {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 30px;
+      border-radius: 10px;
+      background: #ffedd5;
+      color: #9a3412;
+      font-size: 13px;
+    }
+    .steps h3, .why-grid h3 { margin: 0; font-size: 20px; letter-spacing: -0.025em; }
+    .steps p, .why-grid p { margin: 10px 0 0; color: #64748b; line-height: 1.6; }
+    .dark .steps p { color: #cbd5e1; }
+
+    .closing {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto 74px;
+      padding: 36px;
+      border-radius: 24px;
+      background: linear-gradient(125deg, #111827, #1f2937 64%, #6b2b08);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+    .closing h2 { margin: 0; font-size: clamp(28px, 4vw, 43px); line-height: 1.08; letter-spacing: -0.045em; }
+    .closing p { max-width: 620px; margin: 10px 0 0; color: #dbe4ee; }
+    .closing a {
+      flex: 0 0 auto;
+      padding: 14px 20px;
+      border-radius: 13px;
+      background: #fb923c;
+      color: #111827;
+      font-weight: 1000;
+      text-decoration: none;
+    }
+
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 28px clamp(20px, 5vw, 72px);
+      border-top: 1px solid #d9e0e7;
+      color: #5b697a;
+      font-size: 12px;
+    }
+    footer nav { display: flex; flex-wrap: wrap; gap: 16px; }
+    footer a { font-weight: 800; text-decoration: none; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .application-card { max-width: 680px; }
+      .steps, .why-grid { grid-template-columns: 1fr; }
+      .closing { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 620px) {
+      .topbar { min-height: 68px; padding: 12px 16px; }
+      .brand-copy small, .top-actions .home-link { display: none; }
+      .login-link { padding: 9px 12px !important; }
+      .hero { width: min(100% - 24px, 1180px); padding-top: 42px; }
+      h1 { font-size: 46px; }
+      .lead { font-size: 17px; }
+      .proof-row, .fit-list { grid-template-columns: 1fr; }
+      .tester-form { grid-template-columns: 1fr; padding: 22px 18px 24px; }
+      .application-head { padding: 30px 18px 0; }
+      .field.wide, .status, .submit, .fine-print { grid-column: 1; }
+      .section { width: min(100% - 28px, 1120px); padding: 58px 0; }
+      .section.dark { width: 100%; padding-inline: 14px; }
+      .closing { width: min(100% - 24px, 1120px); padding: 27px 22px; }
+      footer { align-items: flex-start; flex-direction: column; padding: 24px 18px; }
+    }
+  </style>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Churvox Founding Tester Programme",
+      "url": "https://www.churvox.com/testers/",
+      "description": "Application page for selected service businesses to test Churvox for 30 days.",
+      "isPartOf": { "@type": "WebSite", "name": "Churvox", "url": "https://www.churvox.com/" }
+    }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Churvox home">
+      <span class="brand-mark">C</span>
+      <span class="brand-copy"><b>Churvox</b><small>the admin engine for service businesses</small></span>
+    </a>
+    <nav class="top-actions" aria-label="Page navigation">
+      <a class="home-link" href="/">Back to website</a>
+      <a class="login-link" href="/login">Log in</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow">Founding tester programme</span>
+        <h1>Help shape Churvox. <span>Use it free for 30 days.</span></h1>
+        <p class="lead">We’re selecting up to 10 real service businesses to use Churvox with real jobs and tell us what saves time, what feels confusing and what would make it genuinely useful.</p>
+        <div class="proof-row" aria-label="Programme promises">
+          <span>No card or contract</span>
+          <span>Email support only</span>
+          <span>No pressure to continue</span>
+        </div>
+        <ul class="fit-list">
+          <li>Lawn care and landscaping</li>
+          <li>Cleaning and property maintenance</li>
+          <li>Handyman, painting and gardening</li>
+          <li>Plumbing, electrical and other mobile services</li>
+        </ul>
+      </div>
+
+      <aside class="application-card" id="apply" aria-labelledby="application-title">
+        <div class="application-head">
+          <small>Apply in under a minute</small>
+          <h2 id="application-title">Put your business forward</h2>
+          <p>Applying does not create an account, start a subscription or guarantee a place.</p>
+        </div>
+        <form class="tester-form" id="tester-form" novalidate>
+          <label class="field">
+            <span>Full name</span>
+            <input name="name" autocomplete="name" maxlength="100" placeholder="Your name" required />
+          </label>
+          <label class="field">
+            <span>Business name</span>
+            <input name="business_name" autocomplete="organization" maxlength="140" placeholder="Business name" required />
+          </label>
+          <label class="field">
+            <span>Trade</span>
+            <select name="trade" required>
+              <option value="">Choose one</option>
+              <option>Lawn care</option>
+              <option>Landscaping</option>
+              <option>Cleaning</option>
+              <option>Property maintenance</option>
+              <option>Handyman</option>
+              <option>Painting</option>
+              <option>Plumbing</option>
+              <option>Electrical</option>
+              <option>Pest control</option>
+              <option>Gardening</option>
+              <option>Hair &amp; beauty</option>
+              <option>Other service business</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Team size</span>
+            <select name="team_size" required>
+              <option value="">Choose one</option>
+              <option value="1">Just me</option>
+              <option value="2-5">2–5 people</option>
+              <option value="6-10">6–10 people</option>
+              <option value="11-25">11–25 people</option>
+              <option value="26+">26+ people</option>
+            </select>
+          </label>
+          <label class="field wide">
+            <span>Email</span>
+            <input name="email" type="email" inputmode="email" autocomplete="email" maxlength="180" placeholder="you@business.co.nz" required />
+          </label>
+          <label class="trap" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off" /></label>
+          <p class="status" id="form-status" role="alert" aria-live="assertive" hidden></p>
+          <button class="submit" type="submit">Apply for a tester place</button>
+          <p class="fine-print">We’ll only use these details to review your tester application and contact you about Churvox. Nothing is automatically sent, charged or changed inside Churvox without owner approval.</p>
+        </form>
+      </aside>
+    </section>
+
+    <section class="section dark">
+      <div class="section-heading">
+        <span class="eyebrow">What happens next</span>
+        <h2>A small, practical test—not a sales process.</h2>
+        <p>You will know exactly what is happening. There are no calls, surprise charges or automatic subscriptions.</p>
+      </div>
+      <div class="steps">
+        <article><b>01</b><h3>We review the fit</h3><p>Howard checks the business type, team size and whether there is still room in the selected tester group.</p></article>
+        <article><b>02</b><h3>You receive setup by email</h3><p>Selected businesses receive clear login and setup instructions, plus 30 days of tester access.</p></article>
+        <article><b>03</b><h3>You try one real workflow</h3><p>Add a client, create a job and see what Churvox prepares. Feedback can be sent whenever it suits you.</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <span class="eyebrow">Why Churvox is different</span>
+        <h2>It prepares the admin. You keep control.</h2>
+        <p>Churvox is built around the owner’s decisions, not around adding more software work to the day.</p>
+      </div>
+      <div class="why-grid">
+        <article><h3>One place for what needs you</h3><p>Jobs, worker updates, messages, quotes and invoices are brought together around the next owner decision.</p></article>
+        <article><h3>Nothing auto-sends</h3><p>Messages, changes and money-related actions stay prepared for review until the owner approves them.</p></article>
+        <article><h3>Built for real service work</h3><p>The tester programme focuses on businesses managing clients, jobs, workers, quotes, invoices and repeat work.</p></article>
+      </div>
+    </section>
+
+    <section class="closing">
+      <div>
+        <h2>Know a service business that should test Churvox?</h2>
+        <p>Share this page with them. Every application is reviewed individually and no one is added to a subscription automatically.</p>
+      </div>
+      <a href="#apply">Apply now</a>
+    </section>
+  </main>
+
+  <footer>
+    <span>© <span id="year"></span> Churvox · hello@churvox.com</span>
+    <nav aria-label="Footer links">
+      <a href="/pricing">Pricing</a>
+      <a href="/security">Security</a>
+      <a href="/legal/privacy">Privacy</a>
+      <a href="/legal/terms">Terms</a>
+    </nav>
+  </footer>
+
+  <script>
+    (function () {
+      const form = document.getElementById('tester-form');
+      const status = document.getElementById('form-status');
+      const card = document.querySelector('.application-card');
+      const params = new URLSearchParams(window.location.search);
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      function value(name) {
+        return String(new FormData(form).get(name) || '').trim();
+      }
+
+      function cleanTracking(key, fallback) {
+        return String(params.get(key) || fallback || '').trim().slice(0, 160);
+      }
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const button = form.querySelector('.submit');
+        const payload = {
+          name: value('name'),
+          business_name: value('business_name'),
+          trade: value('trade'),
+          email: value('email').toLowerCase(),
+          team_size: value('team_size'),
+          website: value('website'),
+          source: cleanTracking('utm_source', 'founding_10_landing_page'),
+          utm_source: cleanTracking('utm_source', 'direct'),
+          utm_medium: cleanTracking('utm_medium', ''),
+          utm_campaign: cleanTracking('utm_campaign', 'founding_10'),
+          utm_content: cleanTracking('utm_content', ''),
+          referrer: String(document.referrer || '').slice(0, 300),
+          landing_path: String(window.location.pathname + window.location.search).slice(0, 300),
+          locale: String(navigator.language || '').slice(0, 40)
+        };
+
+        if (!payload.name || !payload.business_name || !payload.trade || !payload.email || !payload.team_size) {
+          status.hidden = false;
+          status.textContent = 'Please complete all five fields.';
+          return;
+        }
+
+        button.disabled = true;
+        button.textContent = 'Sending application…';
+        status.hidden = true;
+
+        try {
+          const response = await fetch('/api/public/tester-applications', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const body = await response.json().catch(function () { return {}; });
+          if (!response.ok || body.success === false) throw new Error(body.detail || body.message || 'Application could not be sent.');
+
+          try { localStorage.setItem('churvox:founding-tester-popup:v2', JSON.stringify({ submittedAt: Date.now() })); } catch (_) {}
+          card.innerHTML = '<div class="success" role="status" aria-live="polite"><div><div class="success-mark">✓</div><h2>Your application is in.</h2><p>Thanks for putting your business forward. You will receive a confirmation email, and Howard will contact you by email if a tester place is available.</p><a href="/">Return to Churvox</a></div></div>';
+        } catch (error) {
+          status.hidden = false;
+          status.textContent = error && error.message ? error.message : 'Application could not be sent. Please try again.';
+          button.disabled = false;
+          button.textContent = 'Apply for a tester place';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
