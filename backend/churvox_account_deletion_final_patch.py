@@ -6,7 +6,7 @@ import importlib
 import secrets
 
 
-VERSION = "churvox-account-deletion-final-20260720a"
+VERSION = "churvox-account-deletion-final-20260720b"
 PROTECTED_OWNER_EMAILS = {
     "hello@churvox.com",
     "howardjennings77@gmail.com",
@@ -159,6 +159,17 @@ async def cancel_stripe(module, user):
     return {"required": False, "cancelled": False, "customer_id": text((user or {}).get("stripe_customer_id"))}
 
 
+async def mark_failed(db, user_oid, message, **extra):
+    values = {
+        "account_deletion_state": "failed",
+        "account_deletion_error": text(message, 500),
+        "account_deletion_failed_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+        **extra,
+    }
+    await db.users.update_one({"_id": user_oid}, {"$set": values})
+
+
 def install(module):
     app = getattr(module, "app", None)
     db = getattr(module, "db", None)
@@ -215,7 +226,6 @@ def install(module):
             raise HTTPException(status_code=409, detail="Account deletion is already being processed. Do not submit it again yet.")
 
         current_user = await db.users.find_one({"_id": user_oid}) or dict(user)
-        stripe_result = None
         try:
             stripe_result = await cancel_stripe(module, current_user)
             if stripe_result.get("cancelled"):
@@ -227,18 +237,10 @@ def install(module):
                     "updated_at": datetime.now(timezone.utc),
                 }})
         except HTTPException as exc:
-            await db.users.update_one({"_id": user_oid}, {"$set": {
-                "account_deletion_state": "failed",
-                "account_deletion_error": text(getattr(exc, "detail", exc), 400),
-                "account_deletion_failed_at": datetime.now(timezone.utc),
-            }})
+            await mark_failed(db, user_oid, getattr(exc, "detail", exc))
             raise
         except Exception as exc:
-            await db.users.update_one({"_id": user_oid}, {"$set": {
-                "account_deletion_state": "failed",
-                "account_deletion_error": text(exc, 400),
-                "account_deletion_failed_at": datetime.now(timezone.utc),
-            }})
+            await mark_failed(db, user_oid, exc)
             raise HTTPException(status_code=502, detail="Stripe cancellation could not be confirmed. The account identity was not deleted.")
 
         counts = {}
@@ -251,31 +253,22 @@ def install(module):
             except Exception as exc:
                 failures[collection_name] = text(exc, 300)
 
-        id_filter = identity_filter(values, email)
-        for collection_name in IDENTITY_COLLECTIONS:
-            try:
-                result = await db[collection_name].delete_many(id_filter)
-                counts[collection_name] = int(getattr(result, "deleted_count", 0))
-            except Exception as exc:
-                failures[collection_name] = text(exc, 300)
-
         if failures:
-            await db.users.update_one({"_id": user_oid}, {"$set": {
-                "account_deletion_state": "failed",
-                "account_deletion_error": "Workspace cleanup was incomplete",
-                "account_deletion_failures": failures,
-                "account_deletion_counts": counts,
-                "account_deletion_failed_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc),
-            }})
+            await mark_failed(
+                db,
+                user_oid,
+                "Workspace cleanup was incomplete",
+                account_deletion_failures=failures,
+                account_deletion_counts=counts,
+            )
             raise HTTPException(status_code=500, detail="Account data deletion was incomplete. The account login was kept so deletion can be retried safely.")
 
         audit = {
             "deletion_id": deletion_id,
             "status": "prepared",
             "email_hash": hashlib.sha256(email.encode("utf-8")).hexdigest(),
-            "stripe_subscription_cancelled": bool((stripe_result or {}).get("cancelled")),
-            "stripe_subscription_status": (stripe_result or {}).get("status"),
+            "stripe_subscription_cancelled": bool(stripe_result.get("cancelled")),
+            "stripe_subscription_status": stripe_result.get("status"),
             "collection_counts": counts,
             "prepared_at": datetime.now(timezone.utc),
             "version": VERSION,
@@ -283,45 +276,79 @@ def install(module):
         try:
             await db.account_deletion_audit.insert_one(audit)
         except Exception as exc:
-            await db.users.update_one({"_id": user_oid}, {"$set": {
-                "account_deletion_state": "failed",
-                "account_deletion_error": "Deletion audit could not be retained",
-                "account_deletion_failed_at": datetime.now(timezone.utc),
-            }})
+            await mark_failed(db, user_oid, "Deletion audit could not be retained")
             raise HTTPException(status_code=500, detail=f"Deletion audit could not be retained. The account identity was not deleted: {text(exc, 220)}")
 
-        business_delete = None
+        id_failures = {}
+        id_filter = identity_filter(values, email)
+        for collection_name in IDENTITY_COLLECTIONS:
+            try:
+                result = await db[collection_name].delete_many(id_filter)
+                counts[collection_name] = int(getattr(result, "deleted_count", 0))
+            except Exception as exc:
+                id_failures[collection_name] = text(exc, 300)
+
+        if id_failures:
+            await db.account_deletion_audit.update_one({"deletion_id": deletion_id}, {"$set": {
+                "status": "failed",
+                "failure": "identity token cleanup",
+                "identity_failures": id_failures,
+            }})
+            await mark_failed(db, user_oid, "Identity token cleanup was incomplete", account_deletion_failures=id_failures)
+            raise HTTPException(status_code=500, detail="Account security-token cleanup was incomplete. The owner login was kept and deletion can be retried after signing in again.")
+
+        user_filter = {"$or": [
+            {"_id": {"$in": values}},
+            {"business_id": {"$in": values}},
+        ]}
         try:
-            business_delete = await db.businesses.delete_many({"$or": [
+            users_result = await db.users.delete_many(user_filter)
+            if int(getattr(users_result, "deleted_count", 0)) < 1:
+                raise RuntimeError("No account users were removed")
+        except Exception as exc:
+            disabled_at = datetime.now(timezone.utc)
+            try:
+                await db.users.update_many(user_filter, {"$set": {
+                    "is_active": False,
+                    "disabled": True,
+                    "deleted": True,
+                    "account_deletion_state": "failed_finalization",
+                    "session_invalid_before": disabled_at,
+                    "deleted_at": disabled_at,
+                    "updated_at": disabled_at,
+                }})
+            finally:
+                if callable(clear_auth_cookies):
+                    clear_auth_cookies(response)
+            await db.account_deletion_audit.update_one({"deletion_id": deletion_id}, {"$set": {
+                "status": "failed_finalization",
+                "failure": "user identity deletion",
+            }})
+            raise HTTPException(status_code=500, detail=f"Account identity deletion could not be fully finalised. Remaining access was disabled: {text(exc, 220)}")
+
+        cleanup_pending = False
+        business_deleted = 0
+        try:
+            business_result = await db.businesses.delete_many({"$or": [
                 {"_id": {"$in": values}},
                 {"business_id": {"$in": values}},
                 {"owner_id": {"$in": values}},
             ]})
+            business_deleted = int(getattr(business_result, "deleted_count", 0))
         except Exception as exc:
-            await db.account_deletion_audit.update_one({"deletion_id": deletion_id}, {"$set": {"status": "failed", "failure": "business record deletion"}})
-            await db.users.update_one({"_id": user_oid}, {"$set": {
-                "account_deletion_state": "failed",
-                "account_deletion_error": "Business identity deletion failed",
-                "account_deletion_failed_at": datetime.now(timezone.utc),
+            cleanup_pending = True
+            await db.account_deletion_audit.update_one({"deletion_id": deletion_id}, {"$set": {
+                "status": "cleanup_pending",
+                "failure": "business shell deletion",
+                "cleanup_error": text(exc, 300),
             }})
-            raise HTTPException(status_code=500, detail=f"Business identity deletion failed. The owner login was kept for retry: {text(exc, 220)}")
 
-        try:
-            users_result = await db.users.delete_many({"$or": [
-                {"_id": {"$in": values}},
-                {"business_id": {"$in": values}},
-            ]})
-            if int(getattr(users_result, "deleted_count", 0)) < 1:
-                raise RuntimeError("No account users were removed")
-        except Exception as exc:
-            await db.account_deletion_audit.update_one({"deletion_id": deletion_id}, {"$set": {"status": "failed", "failure": "user identity deletion"}})
-            raise HTTPException(status_code=500, detail=f"Account identity deletion failed after workspace cleanup: {text(exc, 220)}")
-
-        await db.account_deletion_audit.update_one({"deletion_id": deletion_id}, {"$set": {
-            "status": "complete",
-            "business_records_deleted": int(getattr(business_delete, "deleted_count", 0)),
-            "completed_at": datetime.now(timezone.utc),
-        }})
+        if not cleanup_pending:
+            await db.account_deletion_audit.update_one({"deletion_id": deletion_id}, {"$set": {
+                "status": "complete",
+                "business_records_deleted": business_deleted,
+                "completed_at": datetime.now(timezone.utc),
+            }})
         if callable(clear_auth_cookies):
             clear_auth_cookies(response)
 
@@ -329,8 +356,9 @@ def install(module):
             "success": True,
             "message": "The Stripe subscription was cancelled where required, the workspace was deleted, and the account was signed out.",
             "deletion_id": deletion_id,
-            "stripe_cancelled": bool((stripe_result or {}).get("cancelled")),
+            "stripe_cancelled": bool(stripe_result.get("cancelled")),
             "signed_out": True,
+            "cleanup_pending": cleanup_pending,
             "version": VERSION,
         }
 
