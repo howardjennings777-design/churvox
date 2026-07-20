@@ -3,6 +3,7 @@ import { useApi } from "../hooks/useApi";
 
 const TYPES = ["Clients", "Team", "Jobs", "Quotes", "Invoices"];
 const COMMAND_INBOX_KEY = "churvox:fresh-command-inbox:v1";
+const MANIFEST_SCHEMA = "churvox.migration-manifest.v1";
 
 const CONFIG = {
   Clients: { endpoints: ["/clients"], required: "name plus email or phone", example: "name,email,phone,address,notes" },
@@ -162,6 +163,117 @@ function duplicateWarnings(rows) {
   return rows.map((r) => seen.get(r._dupKey) > 1 && !r.errors.length ? { ...r, warnings: [...r.warnings, "Possible duplicate in this CSV"], status: "Ready with warnings" } : r);
 }
 
+function stableValue(value) {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (value && typeof value === "object") return Object.keys(value).sort().reduce((out, name) => ({ ...out, [name]: stableValue(value[name]) }), {});
+  return value;
+}
+
+function stableJson(value) { return JSON.stringify(stableValue(value)); }
+
+function fingerprint(value) {
+  const raw = String(value || "");
+  let hash = 2166136261;
+  for (let i = 0; i < raw.length; i += 1) {
+    hash ^= raw.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function manifestIdentity(item) {
+  const p = item.payload || {};
+  if (item.type === "Clients") return stableJson([item.type, p.email || "", p.phone || "", p.name || ""]);
+  if (item.type === "Team") return stableJson([item.type, p.email || "", p.name || ""]);
+  if (item.type === "Jobs") return stableJson([item.type, p.title || "", p.address || "", p.scheduled_date || ""]);
+  if (item.type === "Quotes") return stableJson([item.type, p.customer_name || "", p.address || "", p.job_description || ""]);
+  if (item.type === "Invoices") return stableJson([item.type, p.customer_name || "", p.description || "", p.total || 0, p.due_date || ""]);
+  return stableJson([item.type, item.label, item.rowNumber]);
+}
+
+function buildManifest(type, fileName, rows) {
+  const manifestRows = rows.map((item) => {
+    const normalizedPayload = stableValue(item.payload || {});
+    return {
+      rowNumber: item.rowNumber,
+      label: item.label,
+      identity: manifestIdentity(item),
+      fingerprint: fingerprint(stableJson(normalizedPayload)),
+      status: item.errors.length ? "blocked" : item.warnings.length ? "ready_with_warnings" : "ready",
+      errors: [...item.errors],
+      warnings: [...item.warnings],
+      payload: normalizedPayload,
+    };
+  });
+  return {
+    schema: MANIFEST_SCHEMA,
+    generatedAt: new Date().toISOString(),
+    sourceFile: fileName || null,
+    dataType: type,
+    mode: "read_only_rehearsal",
+    totals: {
+      rows: manifestRows.length,
+      ready: manifestRows.filter((row) => row.status !== "blocked").length,
+      blocked: manifestRows.filter((row) => row.status === "blocked").length,
+      warnings: manifestRows.filter((row) => row.warnings.length).length,
+    },
+    rows: manifestRows,
+  };
+}
+
+function compareManifests(baseline, current) {
+  if (!baseline || baseline.schema !== MANIFEST_SCHEMA || !Array.isArray(baseline.rows)) return { error: "That file is not a Churvox migration manifest." };
+  if (baseline.dataType !== current.dataType) return { error: `Manifest type is ${baseline.dataType || "unknown"}, but this preview is ${current.dataType}.` };
+  const group = (list) => list.reduce((map, row) => {
+    const identity = text(row.identity) || stableJson([row.label, row.rowNumber]);
+    const values = map.get(identity) || [];
+    values.push(text(row.fingerprint));
+    map.set(identity, values);
+    return map;
+  }, new Map());
+  const oldRows = group(baseline.rows);
+  const newRows = group(current.rows);
+  const identities = new Set([...oldRows.keys(), ...newRows.keys()]);
+  let matched = 0, changed = 0, added = 0, missing = 0;
+  identities.forEach((identity) => {
+    const before = [...(oldRows.get(identity) || [])];
+    const after = [...(newRows.get(identity) || [])];
+    const unmatchedAfter = [];
+    after.forEach((signature) => {
+      const matchIndex = before.indexOf(signature);
+      if (matchIndex >= 0) { matched += 1; before.splice(matchIndex, 1); }
+      else unmatchedAfter.push(signature);
+    });
+    const changedHere = Math.min(before.length, unmatchedAfter.length);
+    changed += changedHere;
+    missing += Math.max(0, before.length - changedHere);
+    added += Math.max(0, unmatchedAfter.length - changedHere);
+  });
+  return {
+    baselineFile: baseline.sourceFile || "saved manifest",
+    baselineRows: baseline.rows.length,
+    currentRows: current.rows.length,
+    matched,
+    changed,
+    added,
+    missing,
+    blocked: current.totals.blocked,
+    safeToRehearse: changed === 0 && added === 0 && missing === 0 && current.totals.blocked === 0,
+  };
+}
+
+function downloadJson(data, fileName) {
+  const blob = new Blob([`${JSON.stringify(data, null, 2)}\n`], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function sendCommand(summary) {
   try {
     const old = JSON.parse(window.localStorage.getItem(COMMAND_INBOX_KEY) || "[]");
@@ -180,6 +292,10 @@ export default function FreshImports({ onNavigate }) {
   const [filter, setFilter] = React.useState("All");
   const [message, setMessage] = React.useState("");
   const [importing, setImporting] = React.useState(false);
+  const [baselineManifest, setBaselineManifest] = React.useState(null);
+  const [baselineName, setBaselineName] = React.useState("");
+  const currentManifest = React.useMemo(() => buildManifest(type, fileName, rows), [type, fileName, rows]);
+  const comparison = React.useMemo(() => baselineManifest ? compareManifests(baselineManifest, currentManifest) : null, [baselineManifest, currentManifest]);
   const selected = rows.find((r) => r.id === selectedId) || rows[0];
   const ready = rows.filter((r) => !r.errors.length && !r.result?.success);
   const clean = rows.filter((r) => !r.errors.length).length;
@@ -196,8 +312,32 @@ export default function FreshImports({ onNavigate }) {
     const next = duplicateWarnings(parsed.map((row, i) => build(type, row, i)));
     setRows(next); setSelectedId(next[0]?.id || ""); setMessage(next.length ? `${next.length} rows checked. ${next.filter((r) => !r.errors.length).length} ready.` : "No rows found. Check headers.");
   }
-  function reset() { setRows([]); setSelectedId(""); setFileName(""); setMessage(""); setFilter("All"); }
+
+  async function readManifest(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (parsed?.schema !== MANIFEST_SCHEMA || !Array.isArray(parsed?.rows)) throw new Error("That file is not a Churvox migration manifest.");
+      setBaselineManifest(parsed);
+      setBaselineName(file.name);
+      setMessage(`Comparison manifest loaded: ${file.name}. No live data was touched.`);
+    } catch (error) {
+      setBaselineManifest(null);
+      setBaselineName("");
+      setMessage(error?.message || "Could not read that manifest.");
+    }
+  }
+
+  function reset() { setRows([]); setSelectedId(""); setFileName(""); setMessage(""); setFilter("All"); setBaselineManifest(null); setBaselineName(""); }
   function openArea(t = type) { onNavigate?.({ Clients: "clients", Team: "team", Jobs: "jobs", Quotes: "quotes", Invoices: "invoices" }[t] || "clients"); }
+  function saveManifest() {
+    if (!rows.length) return setMessage("Load a CSV before downloading a source manifest.");
+    const safeName = key(fileName.replace(/\.[^.]+$/, "")) || key(type) || "churvox";
+    downloadJson(buildManifest(type, fileName, rows), `${safeName}-${key(type)}-migration-manifest.json`);
+    setMessage(`Read-only manifest downloaded for ${rows.length} ${type.toLowerCase()} rows. Nothing was imported.`);
+  }
   async function postOne(item) {
     let last = "Import failed";
     for (const endpoint of CONFIG[type].endpoints) {
@@ -219,8 +359,8 @@ export default function FreshImports({ onNavigate }) {
   const cfg = CONFIG[type];
   const templateLink = TEMPLATE_LINKS[type];
   return <section className="freshImportsPage">
-    <div className="freshImportsHero"><div><span>CSV import / migration</span><h1>Import real business data without making a mess</h1><p>Upload a CSV, validate rows, then approve clean rows into live Clients, Team, Jobs, Quotes or Invoices.</p></div><div className="freshImportsStats"><div><b>{rows.length}</b><small>checked</small></div><div><b>{clean}</b><small>ready</small></div><div><b>{blocked}</b><small>blocked</small></div><div><b>{imported}</b><small>imported</small></div></div></div>
-    <section className="freshCard freshImportsUploader"><div className="freshMiniGrid"><div><span>Type</span><b>{type}</b></div><div><span>Required</span><b>{cfg.required}</b></div><div><span>File</span><b>{fileName || "None"}</b></div><div><span>Failed</span><b>{failed}</b></div></div><div className="freshImportsForm"><label><span>Data type</span><select value={type} onChange={(e) => { setType(e.target.value); reset(); }}>{TYPES.map((x) => <option key={x}>{x}</option>)}</select></label><label><span>CSV file</span><input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={readFile} /></label><label className="wide"><span>Expected headers</span><input readOnly value={cfg.example} /></label></div><div className="freshImportsActions"><button type="button" onClick={importReady} disabled={importing || !ready.length}>{importing ? "Importing..." : `Import ${ready.length} ready rows`}</button>{templateLink ? <a href={templateLink} download>Download template</a> : null}<button type="button" onClick={() => openArea(type)}>Open {type}</button><button type="button" onClick={() => onNavigate?.("command")}>Open Command</button><button type="button" onClick={reset}>Reset</button></div>{message ? <div className={`freshImportsNotice ${failed || blocked ? "need" : ""}`}><b>Import status</b><span>{message}</span></div> : null}</section>
+    <div className="freshImportsHero"><div><span>CSV import / migration</span><h1>Import real business data without making a mess</h1><p>Upload a CSV, validate rows, download a read-only source manifest, then approve clean rows into live Clients, Team, Jobs, Quotes or Invoices.</p></div><div className="freshImportsStats"><div><b>{rows.length}</b><small>checked</small></div><div><b>{clean}</b><small>ready</small></div><div><b>{blocked}</b><small>blocked</small></div><div><b>{imported}</b><small>imported</small></div></div></div>
+    <section className="freshCard freshImportsUploader"><div className="freshMiniGrid"><div><span>Type</span><b>{type}</b></div><div><span>Required</span><b>{cfg.required}</b></div><div><span>File</span><b>{fileName || "None"}</b></div><div><span>Failed</span><b>{failed}</b></div></div><div className="freshImportsForm"><label><span>Data type</span><select value={type} onChange={(e) => { setType(e.target.value); reset(); }}>{TYPES.map((x) => <option key={x}>{x}</option>)}</select></label><label><span>CSV file</span><input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={readFile} /></label><label className="wide"><span>Expected headers</span><input readOnly value={cfg.example} /></label></div><div className="freshImportsActions"><button type="button" onClick={importReady} disabled={importing || !ready.length}>{importing ? "Importing..." : `Import ${ready.length} ready rows`}</button>{templateLink ? <a href={templateLink} download>Download template</a> : null}<button type="button" onClick={saveManifest} disabled={!rows.length}>Download source manifest</button><label className="freshImportsManifestUpload"><input type="file" accept=".json,application/json" onChange={readManifest} /><span>Compare saved manifest</span></label><button type="button" onClick={() => openArea(type)}>Open {type}</button><button type="button" onClick={() => onNavigate?.("command")}>Open Command</button><button type="button" onClick={reset}>Reset</button></div>{message ? <div className={`freshImportsNotice ${failed || blocked ? "need" : ""}`}><b>Import status</b><span>{message}</span></div> : null}{comparison ? <div className={`freshImportsComparison ${comparison.error || !comparison.safeToRehearse ? "need" : "safe"}`}><div><b>Read-only source comparison</b><span>{baselineName || comparison.baselineFile || "Saved manifest"} · no live data touched</span></div>{comparison.error ? <p>{comparison.error}</p> : <div className="freshImportsComparisonGrid"><span><b>{comparison.matched}</b> matched</span><span><b>{comparison.changed}</b> changed</span><span><b>{comparison.added}</b> added</span><span><b>{comparison.missing}</b> missing</span><span><b>{comparison.blocked}</b> blocked</span></div>}</div> : null}</section>
     <section className="freshCommandFilterBar">{["All", "Ready", "Blocked", "Imported", "Failed"].map((x) => <button key={x} type="button" className={filter === x ? "active" : ""} onClick={() => setFilter(x)}><span>{x}</span><b>{x === "All" ? rows.length : rows.filter((r) => x === "Ready" ? !r.errors.length && !r.result : x === "Blocked" ? r.errors.length : x === "Imported" ? r.result?.success : r.result && !r.result.success).length}</b></button>)}</section>
     <div className="freshImportsLayout"><aside className="freshImportsList"><header><div><b>CSV rows</b><span>{clean} ready · {blocked} blocked</span></div></header>{visible.map((r) => <button type="button" key={r.id} className={selected?.id === r.id ? "active" : ""} onClick={() => setSelectedId(r.id)}><b>Row {r.rowNumber}: {r.label}</b><span>{r.type} · {r.status}</span><small>{r.result ? r.result.success ? `Imported${r.result.id ? ` · ${r.result.id}` : ""}` : `Failed: ${r.result.detail}` : r.errors[0] || r.warnings[0] || "Ready"}</small></button>)}{!rows.length ? <div className="freshImportsEmpty"><b>No CSV loaded yet</b><span>Choose a type, then upload a CSV.</span></div> : null}</aside>{selected ? <article className="freshImportsDetail"><div className="freshImportsHead"><div><span>{selected.result ? selected.result.success ? "Imported" : "Failed" : selected.status}</span><h2>Row {selected.rowNumber}: {selected.label}</h2><p>{selected.type} import · {cfg.endpoints.join(" → ")}</p></div><div className="freshImportsHeadActions"><button type="button" onClick={() => openArea(selected.type)}>Open Area</button><button type="button" onClick={() => onNavigate?.("command")}>Open Command</button></div></div><div className="freshImportsCards"><section><span>Validation</span><b>{selected.errors.length ? "Blocked" : "Ready"}</b><p>{selected.errors.length ? selected.errors.join(" · ") : selected.warnings.join(" · ") || "No blocking issues found."}</p></section><section><span>Import result</span><b>{selected.result ? selected.result.success ? "Imported" : "Failed" : "Not imported"}</b><p>{selected.result?.detail || "Clean rows are imported only after owner approval."}</p></section><section><span>Owner control</span><b>{selected.type}</b><p>Bad rows stay out of live data. Fix the CSV and upload again if needed.</p></section></div><div className="freshImportsForm">{Object.entries(selected.payload || {}).slice(0, 16).map(([k, v]) => <label key={k} className={typeof v === "object" ? "wide" : ""}><span>{k}</span>{typeof v === "object" ? <textarea readOnly value={JSON.stringify(v, null, 2)} /> : <input readOnly value={v ?? ""} />}</label>)}</div></article> : null}</div>
   </section>;
