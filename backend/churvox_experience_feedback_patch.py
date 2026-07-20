@@ -86,12 +86,7 @@ def install(module) -> None:
         doc = {"business_id": bid, "user_id": user_id(user), "user_email": lower(user.get("email")), "business_name": clean(user.get("business_name") or user.get("company_name"), 300), "choice": choice, "title": {"easy": "Flow felt easy", "confusing": "Flow felt confusing", "stuck": "User got stuck"}[choice], "area": clean(payload.get("area") or payload.get("page") or "app", 120), "action": clean(payload.get("action") or payload.get("milestone") or "general_feedback", 200), "onboarding_step": clean(payload.get("onboarding_step") or payload.get("step"), 120), "note": clean(payload.get("note") or payload.get("message"), 4000), "route": clean(payload.get("route") or request.headers.get("referer"), 1000), "device": clean(payload.get("device") or request.headers.get("user-agent"), 800), "source": clean(payload.get("source") or "in_app_first_win", 120), "status": "needs_review" if choice != "easy" else "received", "priority": "high" if choice == "stuck" else "medium" if choice == "confusing" else "low", "created_at": stamp, "updated_at": stamp}
         result = await db.user_experience_feedback.insert_one(dict(doc))
         doc["_id"] = result.inserted_id
-        if choice in {"confusing", "stuck"}:
-            try:
-                await db.command_slips.insert_one({"business_id": bid, "source_type": "first_win_feedback", "source_id": str(result.inserted_id), "action_type": "owner_review", "title": f"User feedback: {doc['title']}", "found": f"{doc['area']} · {doc['action']} · {doc['note'] or 'No note added'}", "prepared": "Review the reported step and decide whether to fix, follow up by email, or park it.", "why": "A new user reported friction during a real workflow.", "urgency": "High" if choice == "stuck" else "Owner review", "status": "open", "owner_review_only": True, "prepared_only": True, "no_auto_send": True, "created_at": stamp, "updated_at": stamp})
-            except Exception:
-                pass
-        return json_safe({"success": True, "feedback": doc, "message": "Thanks — your feedback was saved."})
+        return json_safe({"success": True, "feedback": doc, "message": "Thanks — your feedback was saved for the Churvox HQ team."})
 
     async def business_items(request: Request):
         user = await get_current_user(request)
