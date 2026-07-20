@@ -1,4 +1,4 @@
 Render frontend deploy marker
-Triggered: 2026-07-20T01:52:24Z
-Deploy main through: 73d4330e9808b9c962d4a2d4b1973567e4341573
-Purpose: Founding 10 tester page, search foundation, campaign attribution, HQ applications inbox and Promotion Centre.
+Triggered: 2026-07-20T09:52:09Z
+Deploy main through: 6bd72252f825d50acdbbad8f36af28b7070d1d98
+Purpose: route-specific Google-readable HTML and metadata for Churvox public pages.
