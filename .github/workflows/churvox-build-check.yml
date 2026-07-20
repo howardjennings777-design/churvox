@@ -56,6 +56,9 @@ jobs:
       - name: Final job completion contract
         run: python3 scripts/churvox-job-completion-final-contract.py
 
+      - name: Password recovery contract
+        run: python3 scripts/churvox-password-recovery-contract.py
+
       - name: Paid account boundary contract
         run: python3 scripts/churvox-paid-account-boundary-contract.py
 
