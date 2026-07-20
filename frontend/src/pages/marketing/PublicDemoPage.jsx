@@ -28,9 +28,9 @@ function journeyFor(industry) {
     {
       key: "request",
       label: "Request",
-      title: `A customer asks Sarah for ${service.toLowerCase()}`,
+      title: `A customer asks the business for ${service.toLowerCase()}`,
       prepares: "Churvox captures the customer, address, requested work and preferred timing in one clean request.",
-      owner: "Sarah checks anything unclear before saving it.",
+      owner: "The owner checks anything unclear before saving it.",
       status: "New request",
       proof: "Customer details captured",
     },
@@ -39,7 +39,7 @@ function journeyFor(industry) {
       label: "Job",
       title: "The client and job are prepared together",
       prepares: "The real client record, job notes, price basis, schedule and repeat details are placed in the right fields.",
-      owner: "Sarah approves the job or edits the details.",
+      owner: "The owner approves the job or edits the details.",
       status: "Ready for approval",
       proof: "Job value $340",
     },
@@ -48,7 +48,7 @@ function journeyFor(industry) {
       label: "Approve",
       title: "Command shows one clear owner decision",
       prepares: "Churvox explains what it found, what it prepared and what will happen after approval.",
-      owner: "Sarah chooses Approve, Edit or Park. Nothing changes before that choice.",
+      owner: "The owner chooses Approve, Edit or Park. Nothing changes before that choice.",
       status: "Owner approved",
       proof: "Approval recorded",
     },
@@ -57,7 +57,7 @@ function journeyFor(industry) {
       label: "Worker",
       title: "The worker receives one complete job",
       prepares: "Address, access notes, work details, timing and customer-safe instructions stay attached to the job.",
-      owner: "Sarah only steps in if the worker raises an exception.",
+      owner: "The owner only steps in if the worker raises an exception.",
       status: "In progress",
       proof: "Worker acknowledged",
     },
@@ -66,7 +66,7 @@ function journeyFor(industry) {
       label: "Proof",
       title: "The work is finished with evidence",
       prepares: "Completion notes, time and customer-visible photos are checked against the job before invoicing.",
-      owner: "Sarah reviews any missing detail or extra work.",
+      owner: "The owner reviews any missing detail or extra work.",
       status: "Completed",
       proof: "3 photos · notes saved",
     },
@@ -74,8 +74,8 @@ function journeyFor(industry) {
       key: "invoice",
       label: "Invoice",
       title: "The invoice and secure payment link are ready",
-      prepares: "The completed work becomes an editable invoice. After Sarah approves, Churvox creates a secure Stripe payment link.",
-      owner: "Sarah approves the invoice and chooses when to share the link.",
+      prepares: "The completed work becomes an editable invoice. After the owner approves, Churvox creates a secure Stripe payment link.",
+      owner: "The owner approves the invoice and chooses when to share the link.",
       status: "Payment due",
       proof: "$340 invoice approved",
     },
@@ -83,8 +83,8 @@ function journeyFor(industry) {
       key: "paid",
       label: "Paid",
       title: "The customer pays and Churvox verifies it",
-      prepares: "Stripe handles the card payment. A verified payment event updates the invoice and places the result in Sarah’s owner view.",
-      owner: "Sarah sees the confirmed payment and decides the next follow-up.",
+      prepares: "Stripe handles the card payment. A verified payment event updates the invoice and places the result in the owner dashboard.",
+      owner: "The owner sees the confirmed payment and decides the next follow-up.",
       status: "Paid",
       proof: "$340 received",
     },
@@ -97,13 +97,13 @@ function StagePreview({ step, industry }) {
   const workerStarted = ["worker", "proof", "invoice", "paid"].includes(step.key);
   const completed = ["proof", "invoice", "paid"].includes(step.key);
   return (
-    <section className="demoAppShell slimDemoShell" aria-label="Sarah's Property Maintenance sample workspace">
+    <section className="demoAppShell slimDemoShell" aria-label="Harbour Property Services example workspace">
       <header className="demoTopBar">
         <div>
           <small>Invented example records only</small>
-          <h2>Sarah’s Property Maintenance</h2>
+          <h2>Harbour Property Services</h2>
         </div>
-        <nav aria-label="Sample workspace sections"><span>Today</span><span>Command</span><span>Jobs</span><span>Invoices</span></nav>
+        <nav aria-label="Example workspace sections"><span>Today</span><span>Command</span><span>Jobs</span><span>Invoices</span></nav>
       </header>
 
       <section className="demoHeroStrip compactDemoHero">
@@ -132,10 +132,10 @@ function StagePreview({ step, industry }) {
           </div>
         </section>
         <section className="demoPanel span5 dark">
-          <header><small>Command</small><h3>Sarah’s decision</h3></header>
+          <header><small>Command</small><h3>The owner’s decision</h3></header>
           <div className="demoList compact">
             <article className="demoRow hot"><div><b>Churvox prepares</b><span>{step.prepares}</span></div><em>Prepared</em></article>
-            <article className="demoRow hot"><div><b>Sarah does</b><span>{step.owner}</span></div><em>Owner</em></article>
+            <article className="demoRow hot"><div><b>The owner does</b><span>{step.owner}</span></div><em>Owner</em></article>
             <article className="demoRow hot"><div><b>Proof</b><span>{step.proof}</span></div><em>{step.status}</em></article>
           </div>
         </section>
@@ -145,13 +145,13 @@ function StagePreview({ step, industry }) {
         <section className="demoPanel span6">
           <header><small>Worker update</small><h3>{workerStarted ? "Field work connected to the job" : "Worker details prepared"}</h3></header>
           <div className="demoList">
-            <article className="demoRow cool"><div><b>Mia Thompson</b><span>{completed ? "Job completed · notes and photos added" : workerStarted ? "On site · timer running" : "Job ready after Sarah approves"}</span></div><em>{completed ? "Complete" : workerStarted ? "Working" : "Waiting"}</em></article>
+            <article className="demoRow cool"><div><b>Mia Thompson</b><span>{completed ? "Job completed · notes and photos added" : workerStarted ? "On site · timer running" : "Job ready after the owner approves"}</span></div><em>{completed ? "Complete" : workerStarted ? "Working" : "Waiting"}</em></article>
           </div>
         </section>
         <section className="demoPanel span6">
           <header><small>Money</small><h3>{paid ? "Payment confirmed" : invoiceReady ? "Invoice ready for payment" : "Invoice waits for completed work"}</h3></header>
           <div className="demoList">
-            <article className={`demoRow ${paid ? "cool" : ""}`}><div><b>INV-1001 · $340.00</b><span>{paid ? "Stripe verified · invoice marked paid" : invoiceReady ? "Sarah approved · secure link ready" : "Not created until the job is complete"}</span></div><em>{paid ? "Paid ✓" : invoiceReady ? "Pay securely" : "Waiting"}</em></article>
+            <article className={`demoRow ${paid ? "cool" : ""}`}><div><b>INV-1001 · $340.00</b><span>{paid ? "Stripe verified · invoice marked paid" : invoiceReady ? "Owner approved · secure link ready" : "Not created until the job is complete"}</span></div><em>{paid ? "Paid ✓" : invoiceReady ? "Pay securely" : "Waiting"}</em></article>
           </div>
         </section>
       </section>
@@ -176,16 +176,16 @@ export default function PublicDemoPage() {
   }, [industryKey]);
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_TWO_MINUTE_FIRST_WIN_DEMO_20260720">
+    <main className="cp26Site">
       <PublicNav active="/demo" />
 
       <section className="cp26PageHero">
         <div>
           <Eyebrow>Two-minute interactive example</Eyebrow>
           <h1>Follow one job from customer request to money received.</h1>
-          <p>Meet Sarah. She runs a small property-maintenance business. Click through one invented job and see exactly what Churvox prepares, what Sarah approves and how a verified Stripe payment closes the loop.</p>
+          <p>Meet the owner of a small property-maintenance business. Click through one invented job and see exactly what Churvox prepares, what the owner approves and how a verified Stripe payment closes the loop.</p>
           <label className="cp26CountrySelect">
-            <span>Show Sarah’s example for</span>
+            <span>Show this example for</span>
             <select value={industryKey} onChange={(event) => setIndustryKey(normalizeIndustry(event.target.value))}>
               {industryOptions(true).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
@@ -196,8 +196,8 @@ export default function PublicDemoPage() {
           </div>
         </div>
         <div className="cp26HeroPanel">
-          <small>Sample business</small>
-          <b>Sarah’s Property Maintenance</b>
+          <small>Example journey</small>
+          <b>Harbour Property Services</b>
           <span>One client · one job · one owner approval · one invoice · one verified payment.</span>
         </div>
       </section>
@@ -219,7 +219,7 @@ export default function PublicDemoPage() {
             </div>
             <div className="cp26JourneyDecision">
               <section><span>Churvox prepares</span><b>{step.prepares}</b></section>
-              <section><span>Sarah approves</span><b>{step.owner}</b></section>
+              <section><span>Owner approves</span><b>{step.owner}</b></section>
               <section><span>Result</span><b>{step.proof} · {step.status}</b></section>
             </div>
             <div className="cp26JourneyControls">
