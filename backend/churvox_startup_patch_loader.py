@@ -86,6 +86,7 @@ PATCH_MODULES = [
     "churvox_hq_hello_canonical_patch",
     "churvox_hq_hello_only_guard_patch",
     "churvox_worker_command_visibility_patch",
+    "churvox_worker_help_command_patch",
     "churvox_worker_field_slip_decision_patch",
     "churvox_command_runs_office_patch",
     "churvox_command_runs_office_finalizer_patch",
