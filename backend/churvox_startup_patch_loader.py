@@ -92,6 +92,13 @@ PATCH_MODULES = [
     "churvox_job_completion_final_patch",
     "churvox_command_runs_office_patch",
     "churvox_command_runs_office_finalizer_patch",
+    # Keep these last: they own secure invoice checkout, verified payment truth,
+    # real first-win progress and persisted user feedback.
+    "churvox_payment_core",
+    "churvox_invoice_checkout_patch",
+    "churvox_stripe_payment_webhook_patch",
+    "churvox_first_win_onboarding_patch",
+    "churvox_experience_feedback_patch",
 ]
 
 
