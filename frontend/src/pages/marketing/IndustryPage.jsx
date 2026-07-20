@@ -3,13 +3,68 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { getIndustryBySlug, professions } from "./PublicProfessionSections";
 import { PublicNav, PublicFooter, Eyebrow, SectionHeading, coreAreas } from "./ChurvoxPublicShell";
 
+const HOME_TITLE = "Churvox — Owner-controlled job admin for service businesses";
+const HOME_DESCRIPTION = "Churvox prepares jobs, worker updates, messages, quotes, invoices and follow-ups for the service-business owner to review and approve.";
+
+function setMeta(attribute, key, content) {
+  let node = document.head.querySelector(`meta[${attribute}="${key}"]`);
+  if (!node) {
+    node = document.createElement("meta");
+    node.setAttribute(attribute, key);
+    document.head.appendChild(node);
+  }
+  node.setAttribute("content", content);
+}
+
+function setCanonical(href) {
+  let node = document.head.querySelector('link[rel="canonical"]');
+  if (!node) {
+    node = document.createElement("link");
+    node.setAttribute("rel", "canonical");
+    document.head.appendChild(node);
+  }
+  node.setAttribute("href", href);
+}
+
 export default function IndustryPage() {
   const { slug } = useParams();
   const industry = getIndustryBySlug(slug);
+
+  React.useEffect(() => {
+    if (!industry || typeof document === "undefined") return undefined;
+
+    const canonical = `https://www.churvox.com/industries/${encodeURIComponent(slug)}`;
+    const title = `${industry.title} job management software | Churvox`;
+    const description = `${industry.intro} Churvox keeps important communication and money steps under owner approval.`;
+
+    document.title = title;
+    setCanonical(canonical);
+    setMeta("name", "description", description);
+    setMeta("property", "og:type", "website");
+    setMeta("property", "og:site_name", "Churvox");
+    setMeta("property", "og:title", title);
+    setMeta("property", "og:description", description);
+    setMeta("property", "og:url", canonical);
+    setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:title", title);
+    setMeta("name", "twitter:description", description);
+
+    return () => {
+      document.title = HOME_TITLE;
+      setCanonical("https://www.churvox.com/");
+      setMeta("name", "description", HOME_DESCRIPTION);
+      setMeta("property", "og:title", "Churvox — Your business handled. Your decisions waiting.");
+      setMeta("property", "og:description", "Owner-controlled job admin for service businesses. Churvox prepares the work; the owner checks and approves.");
+      setMeta("property", "og:url", "https://www.churvox.com/");
+      setMeta("name", "twitter:title", "Churvox — Your business handled. Your decisions waiting.");
+      setMeta("name", "twitter:description", "Jobs, worker updates, messages, quotes, invoices and follow-ups prepared for owner approval.");
+    };
+  }, [industry, slug]);
+
   if (!industry) return <Navigate to="/product" replace />;
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_INDUSTRY_20260710">
+    <main className="cp26Site" data-version="CHURVOX_PUBLIC_INDUSTRY_20260720_SEO">
       <PublicNav active="/product" />
 
       <section className="cp26Hero cp26HeroCompact">
