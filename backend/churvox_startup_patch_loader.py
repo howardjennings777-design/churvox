@@ -58,6 +58,7 @@ PATCH_MODULES = [
     "churvox_paid_launch_guard_patch",
     "churvox_billing_portal_paid_launch",
     "churvox_account_deletion_paid_launch",
+    "churvox_account_deletion_final_patch",
     "churvox_command_approval_tolerant_routes_patch",
     "churvox_payment_setup_live_patch",
     "churvox_worker_job_payment_summary_patch",
