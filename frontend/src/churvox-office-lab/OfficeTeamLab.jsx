@@ -3,6 +3,8 @@ import OfficeTeamLabSite from './OfficeTeamLabSite'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
 
 const OfficeOSPreview = React.lazy(() => import('../churvox-office-os/OfficeOSPreview'))
+const PublicSiteNext = React.lazy(() => import('../churvox-site-next/PublicSiteNext'))
+const HQNext = React.lazy(() => import('../churvox-site-next/HQNext'))
 
 const HASH_ALIASES = new Map([
   ['team', 'office-team'],
@@ -26,6 +28,13 @@ function isOfficeOSPreviewPath() {
   return window.location.pathname === '/new-command-lab'
 }
 
+function previewSurface() {
+  if (typeof window === 'undefined') return 'owner'
+  const value = new URLSearchParams(window.location.search || '').get('surface')
+  if (value === 'public' || value === 'hq') return value
+  return 'owner'
+}
+
 function OfficeTeamLab(props) {
   const [routeVersion, setRouteVersion] = React.useState(0)
 
@@ -44,7 +53,12 @@ function OfficeTeamLab(props) {
     }
   }, [])
 
-  if (isOfficeOSPreviewPath()) return <OfficeOSPreview />
+  if (isOfficeOSPreviewPath()) {
+    const surface = previewSurface()
+    if (surface === 'public') return <PublicSiteNext />
+    if (surface === 'hq') return <HQNext />
+    return <OfficeOSPreview />
+  }
 
   return (
     <OfficeTeamOwnerScreenGuard appMode={props.appMode}>
