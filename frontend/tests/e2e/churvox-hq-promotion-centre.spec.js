@@ -51,7 +51,7 @@ test('HQ promotion centre copies tracked content without publishing or sending',
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'Promotion Centre' })).toBeVisible();
   await expect(dialog.getByText('This screen copies content only—it never publishes or sends anything.')).toBeVisible();
-  await expect(dialog.getByText(/utm_source=facebook/)).toBeVisible();
+  await expect(dialog.getByText(/utm_source=facebook/).first()).toBeVisible();
   await expect(dialog.getByRole('button', { name: /publish|send/i })).toHaveCount(0);
 
   await dialog.getByRole('button', { name: 'Copy full post' }).click();
@@ -62,7 +62,7 @@ test('HQ promotion centre copies tracked content without publishing or sending',
   expect(copied[0]).toContain('utm_campaign=founding_10');
 
   await dialog.getByRole('button', { name: /LinkedIn Professional introduction/i }).click();
-  await expect(dialog.getByText(/utm_source=linkedin/)).toBeVisible();
+  await expect(dialog.getByText(/utm_source=linkedin/).first()).toBeVisible();
 
   await dialog.getByRole('button', { name: /Day 1 Post the Facebook founder story/i }).click();
   await expect(dialog.getByText('1/7 done')).toBeVisible();
