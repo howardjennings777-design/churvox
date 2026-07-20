@@ -1,2 +1,4 @@
 Render frontend deploy marker
-Latest public landing readability fix: 4b8d589
+Triggered: 2026-07-20T01:52:24Z
+Deploy main through: 73d4330e9808b9c962d4a2d4b1973567e4341573
+Purpose: Founding 10 tester page, search foundation, campaign attribution, HQ applications inbox and Promotion Centre.
