@@ -39,7 +39,7 @@ export const CHURVOX_PLANS = [
     name: "Operator",
     priceMonthly: 149,
     tagline: "AI Operator does the admin. You approve.",
-    activeTeam: "Up to 12 active team members",
+    activeTeam: "Up to 15 active team members",
     features: [
       "Everything in Crew",
       "AI invoice / quote / follow-up drafting",
@@ -57,7 +57,7 @@ export const CHURVOX_PLANS = [
     name: "Command",
     priceMonthly: 299,
     tagline: "Full Front Desk for growing operators.",
-    activeTeam: "Up to 25 active team members",
+    activeTeam: "Up to 50 active team members",
     features: [
       "Everything in Operator",
       "accounting sync included (approval-first)",

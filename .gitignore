@@ -70,6 +70,7 @@ dist/
 out/
 .cache/
 frontend/.cache/
+frontend/public/__churvox/release.json
 *.tsbuildinfo
 
 # Development tools
