@@ -54,6 +54,6 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(contract).toContain("Churvox does the admin. The owner checks and approves.");
     expect(contract).toContain("Customer-facing pages never expose another business");
     expect(contract).toContain("Migration has preview, duplicate checks, rollback rehearsal");
-    expect(contract).toContain("staging passes build, browser, accessibility, security, billing and real-business workflow gates".replace("staging", "Staging"));
+    expect(contract).toContain("Staging passes build, browser, accessibility, security, billing and real-business workflow gates");
   });
 });
