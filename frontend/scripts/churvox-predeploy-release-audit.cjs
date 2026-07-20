@@ -24,7 +24,7 @@ function hasAll(text, fragments) {
   return fragments.every((fragment) => text.includes(fragment));
 }
 
-const packageJson = read(FRONTEND, 'package.json');
+const buildBootstrap = read(FRONTEND, 'scripts/churvox-worker-proof-singleton-contract.cjs');
 const publicIndex = read(FRONTEND, 'public/index.html');
 const testerPage = read(FRONTEND, 'public/testers/index.html');
 const sitemap = read(FRONTEND, 'public/sitemap.xml');
@@ -40,13 +40,13 @@ const testerBackend = read(REPO, 'backend/churvox_public_tester_application_patc
 
 check(
   'Build runs the predeploy audit',
-  packageJson.includes('scripts/churvox-predeploy-release-audit.cjs'),
-  'package.json must run this audit before the production build.',
+  buildBootstrap.includes('churvox-predeploy-release-audit.cjs'),
+  'The first production build contract must run this audit before checking the worker bundle.',
 );
 check(
   'Build writes release metadata',
-  packageJson.includes('scripts/write-release-metadata.cjs'),
-  'package.json must create the public release fingerprint before the production build.',
+  buildBootstrap.includes('write-release-metadata.cjs'),
+  'The first production build contract must create the public release fingerprint.',
 );
 
 check(
