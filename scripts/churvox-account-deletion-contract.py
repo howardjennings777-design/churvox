@@ -13,6 +13,10 @@ page = PAGE.read_text(encoding="utf-8")
 ast.parse(patch, filename=str(PATCH))
 ast.parse(loader, filename=str(LOADER))
 
+audit_start = patch.find("audit = {")
+audit_end = patch.find("\n        try:", audit_start)
+audit_block = patch[audit_start:audit_end] if audit_start >= 0 and audit_end > audit_start else ""
+
 failures = []
 
 
@@ -89,9 +93,9 @@ check(
 )
 check(
     "deletion audit contains only a hash of the account email",
-    '"email_hash": hashlib.sha256(email.encode("utf-8")).hexdigest()' in patch
-    and '"email": email' not in patch
-    and '"account_email": email' not in patch,
+    '"email_hash": hashlib.sha256(email.encode("utf-8")).hexdigest()' in audit_block
+    and '"email":' not in audit_block
+    and '"account_email":' not in audit_block,
     "the retained audit must not store the raw deleted-account email",
 )
 check(
