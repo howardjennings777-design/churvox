@@ -9,6 +9,14 @@ try:
 except Exception:
     from backend import churvox_payment_core as core
 
+try:
+    import churvox_public_documents_paid_launch_guard as public_docs
+except Exception:
+    try:
+        from backend import churvox_public_documents_paid_launch_guard as public_docs
+    except Exception:
+        public_docs = None
+
 VERSION = "churvox-invoice-checkout-20260720"
 INSTALLED: set[str] = set()
 
@@ -101,6 +109,28 @@ def install(module) -> None:
             pass
         return core.json_safe({"success": True, "reused": False, "payment_link": link_doc, "public_invoice_url": public_url, "message": "Secure payment link created and attached to the invoice. Nothing was sent automatically."})
 
+    async def public_invoice(token: str):
+        collection_name, invoice = await core.find_public_invoice(db, token)
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        stamp = core.now_utc()
+        patch = {"viewed_at": stamp, "updated_at": stamp}
+        if core.lower(invoice.get("status")) == "sent":
+            patch["status"] = "viewed"
+            invoice = {**invoice, **patch}
+        try:
+            await db[collection_name].update_one({"_id": invoice["_id"]}, {"$set": patch})
+        except Exception:
+            pass
+        if public_docs is not None and hasattr(public_docs, "_invoice_public"):
+            safe_invoice = public_docs._invoice_public(invoice)
+        else:
+            safe_invoice = core.public_invoice_summary(invoice)
+        expires_at = core.parse_datetime(invoice.get("payment_link_expires_at"))
+        if expires_at and expires_at <= stamp:
+            safe_invoice["payment_link"] = ""
+        return {"success": True, "invoice": safe_invoice, "version": VERSION}
+
     async def public_checkout(token: str, request: Request):
         collection_name, invoice = await core.find_public_invoice(db, token)
         if not invoice:
@@ -148,6 +178,7 @@ def install(module) -> None:
 
     for method, path, endpoint in [
         ("POST", "/api/invoices/{invoice_id}/payment-link", create_payment_link),
+        ("GET", "/api/public/invoice/{token}", public_invoice),
         ("POST", "/api/public/invoice/{token}/checkout", public_checkout),
         ("GET", "/api/public/invoice/{token}/payment-status", payment_status),
     ]:
