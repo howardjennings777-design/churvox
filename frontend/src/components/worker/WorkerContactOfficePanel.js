@@ -3,9 +3,15 @@ import { Building2, Mail, Phone, Copy, LifeBuoy, Send, X } from "lucide-react";
 import { PremiumButton, PremiumCard } from "@/components/premium";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "sonner";
-import { sendFreshSlipToCommand } from "@/churvox-fresh/commandBridge";
 import { useAuth } from "@/context/AuthContext";
 import "./WorkerContactOfficePanel.css";
+
+function requestId() {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  } catch {}
+  return `worker-help-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 export default function WorkerContactOfficePanel({ open, onClose, defaultMessage = "", jobId = "", jobTitle = "" }) {
   const { get, post } = useApi();
@@ -39,59 +45,52 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
 
   const sendHelpRequest = async () => {
     const cleanMessage = String(message || "").trim();
-    if (!cleanMessage) return;
+    if (!cleanMessage || sending) return;
 
     setSending(true);
+    const clientRequestId = requestId();
+    const workerContext = {
+      request_id: clientRequestId,
+      source_id: clientRequestId,
+      message: cleanMessage,
+      update: cleanMessage,
+      update_type: "worker_help_request",
+      status: "Top priority",
+      job_id: jobId || "",
+      job_title: jobTitle || "",
+      worker_id: user?.id || user?._id || user?.worker_id || "",
+      worker_name: user?.name || user?.full_name || "",
+      worker_email: user?.email || "",
+    };
 
     let officeOk = false;
     let commandOk = false;
     let officeError = "";
+    let commandError = "";
 
     try {
-      const res = await post("/worker/contact-office", {
-        message: cleanMessage,
-        job_id: jobId || undefined,
-        job_title: jobTitle || undefined,
-      });
+      const officeRes = await post("/worker/contact-office", workerContext);
+      officeOk = !!officeRes?.success;
+      officeError = officeRes?.error || "Could not save the office request";
 
-      officeOk = !!res?.success;
-      officeError = res?.error || "Could not send office request";
+      const commandRes = await post("/command/worker-update-request", workerContext);
+      commandOk = !!commandRes?.success;
+      commandError = commandRes?.error || "Could not place the request in Command";
 
-      try {
-        await sendFreshSlipToCommand({
-          id: `worker-help-${jobId || "general"}-${Date.now()}`,
-          group: "Worker messages",
-          title: jobTitle ? `Worker needs help: ${jobTitle}` : "Worker needs help",
-          info: jobTitle || "General worker help request",
-          urgency: "High",
-          found: `${user?.name || user?.email || "A worker"} sent a help request from the worker app.`,
-          prepared: cleanMessage,
-          why: "The owner needs to see worker blockers quickly so jobs do not stall in the field.",
-          owner: "Open the job if linked, contact the worker, then mark this handled.",
-          area: "Workers",
-          page: jobId ? "jobs" : "team",
-          sourceType: "worker_help",
-          sourceId: jobId || "",
-          actionType: "worker_help_request",
-          payload: {
-            message: cleanMessage,
-            job_id: jobId || "",
-            job_title: jobTitle || "",
-            worker_id: user?.id || user?._id || user?.worker_id || "",
-            worker_name: user?.name || user?.full_name || "",
-            worker_email: user?.email || "",
-          },
-        }, { type: "worker-contact-office" });
-        commandOk = true;
-      } catch (_) {
-        commandOk = false;
-      }
-
-      if (officeOk || commandOk) {
-        toast.success(commandOk ? "Help request sent to Command" : "Help request sent");
+      if (officeOk && commandOk) {
+        toast.success("Help request sent to the office and Command");
+        setMessage("");
+        onClose?.();
+      } else if (officeOk) {
+        toast.success("Help request reached the office");
+        setMessage("");
+        onClose?.();
+      } else if (commandOk) {
+        toast.success("Help request sent to Command");
+        setMessage("");
         onClose?.();
       } else {
-        toast.error(officeError);
+        toast.error(commandError || officeError || "Could not send the help request");
       }
     } finally {
       setSending(false);
@@ -117,7 +116,7 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
           {!loading && !hasContacts ? (
             <div className="workerContactOfficeNotice rounded-xl border border-[var(--cx-border)] bg-[var(--cx-surface-2)] p-3">
               <p className="text-sm font-semibold text-[var(--cx-text)]">{officeMessage || "No office contact has been set yet."}</p>
-              <p className="text-sm text-[var(--cx-muted)]">You can still send a message. It will go to Command for the boss/office to handle.</p>
+              <p className="text-sm text-[var(--cx-muted)]">You can still send a message. It will be saved for the office and placed in Command for the owner to review.</p>
             </div>
           ) : null}
 
