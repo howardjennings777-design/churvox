@@ -2,6 +2,12 @@
 const fs = require('fs');
 const path = require('path');
 
+// This contract is the first command in the existing production build.
+// Keep the release checks here so Render and GitHub cannot build a bundle
+// without first proving the locked product rules and writing a public fingerprint.
+require('./churvox-predeploy-release-audit.cjs');
+require('./write-release-metadata.cjs');
+
 const sourcePath = path.join(__dirname, '..', 'src', 'churvox-office-lab', 'OfficeTeamWorkerRoute.jsx');
 const source = fs.readFileSync(sourcePath, 'utf8');
 
