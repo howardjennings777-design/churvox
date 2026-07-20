@@ -64,6 +64,12 @@ check(
     "the visible DELETE confirmation must be accepted case-insensitively",
 )
 check(
+    "frontend never retries a real deletion failure through another alias",
+    "if (response.status !== 404 && response.status !== 405)" in page
+    and "throw new Error(lastMessage);" in page,
+    "fallback aliases are only for missing routes; 409, 500 and billing errors must stop immediately",
+)
+check(
     "deletion has one stale-safe processing claim",
     '"account_deletion_state": "processing"' in patch
     and '"account_deletion_started_at": now' in patch
