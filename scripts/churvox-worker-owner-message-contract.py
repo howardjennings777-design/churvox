@@ -35,42 +35,31 @@ route_start = route_match.start() if route_match else -1
 next_route = server.find("\n@api_router.", route_start + 1) if route_start >= 0 else -1
 route_block = server[route_start: next_route if next_route > route_start else route_start + 12000] if route_start >= 0 else ""
 route_line = server.count("\n", 0, route_start) + 1 if route_start >= 0 else 0
-
-print(f"Worker contact route line: {route_line or 'missing'}")
-if route_block:
-    print("Worker contact route markers:")
-    for marker in ["support_tickets", "worker_office_contact", "worker_message", "command_slips", "request_id", "source_id"]:
-        print(f"- {marker}: {marker in route_block}")
+print(f"Base worker contact route line: {route_line or 'missing'}")
 
 check(
-    "worker contact endpoint exists",
+    "base worker contact endpoint exists",
     route_start >= 0,
     "POST /worker/contact-office is missing from backend/server.py",
 )
 check(
-    "worker message is stored durably for the office bell",
-    "support_tickets" in route_block
-    and "insert_one" in route_block
-    and ("worker_office_contact" in route_block or "worker_message" in route_block),
-    "the office route must persist one support-ticket record for owner notifications and audit",
-)
-check(
-    "office route does not create a second Command item",
+    "base office route does not create a Command duplicate",
     "command_slips" not in route_block and "db.command" not in route_block,
-    "the dedicated worker Command route owns the Command record",
+    "the final dedicated Command route must remain the sole Command writer",
 )
 check(
     "worker sends one shared request id to both durable paths",
     "const clientRequestId = requestId()" in panel
     and "request_id: clientRequestId" in panel
     and "source_id: clientRequestId" in panel,
-    "office ticket and Command item must be traceable to the same worker request",
+    "office notification and Command item must be traceable to the same worker request",
 )
 check(
     "worker uses the participant-safe update route",
-    'post("/command/worker-update-request"' in panel
+    'post("/worker/contact-office"' in panel
+    and 'post("/command/worker-update-request"' in panel
     and "sendFreshSlipToCommand" not in panel,
-    "workers must not call the owner-only generic Command-slip endpoint",
+    "workers must use the final worker routes rather than the owner-only generic Command endpoint",
 )
 check(
     "worker and job context stay attached",
@@ -78,9 +67,25 @@ check(
     "owner messages need worker and job context for action",
 )
 check(
-    "final route accepts business participants but keeps owner review",
+    "office notification is durable and idempotent",
+    '"/api/worker/contact-office"' in worker_patch
+    and "db.notifications.find_one" in worker_patch
+    and "db.notifications.insert_one" in worker_patch
+    and 'deterministic_object_id(ObjectId, business, request_id, "office-notification")' in worker_patch
+    and '"source": "worker_office_contact"' in worker_patch
+    and '"request_id": request_id' in worker_patch,
+    "the owner bell path must use a deterministic notification id for safe retries",
+)
+check(
+    "job message history is retry-safe",
+    '"worker_messages.request_id": {"$ne": request_id}' in worker_patch
+    and '"$push": {"worker_messages": event, "owner_visible_messages": event}' in worker_patch,
+    "the same request id must not be pushed into job history twice",
+)
+check(
+    "final Command route accepts participants but keeps owner review",
     "PARTICIPANT_ROLES" in worker_patch
-    and 'path = "/api/command/worker-update-request"' in worker_patch
+    and '"/api/command/worker-update-request"' in worker_patch
     and '"owner_review_only": True' in worker_patch
     and '"no_auto_send": True' in worker_patch
     and '"no_auto_record_change": True' in worker_patch,
@@ -88,18 +93,18 @@ check(
 )
 check(
     "Command write is idempotent",
-    "deterministic_object_id" in worker_patch
-    and "hashlib.sha256" in worker_patch
+    "hashlib.sha256" in worker_patch
+    and 'deterministic_object_id(ObjectId, business, request_id, "command-slip")' in worker_patch
     and 'existing = await db.command_slips.find_one({"_id": slip_id})' in worker_patch
     and '"idempotent": True' in worker_patch,
     "retries with the same request id must return the same Command item",
 )
 check(
-    "final route wins startup precedence",
+    "final routes win startup precedence",
     '"churvox_worker_command_visibility_patch"' in loader
     and '"churvox_worker_help_command_patch"' in loader
     and loader.index('"churvox_worker_help_command_patch"') > loader.index('"churvox_worker_command_visibility_patch"'),
-    "the participant-safe route must load after competing Command visibility patches",
+    "the worker-help routes must load after competing Command visibility patches",
 )
 check(
     "owner desk reloads durable Command slips",
@@ -135,4 +140,4 @@ if failures:
         print(f"- {failure}")
     raise SystemExit(1)
 
-print("\nWorker-to-owner message contract passed: one durable office ticket, one idempotent Command item, cross-device owner reload, and safe owner decisions.")
+print("\nWorker-to-owner message contract passed: one idempotent office notification, one idempotent Command item, cross-device owner reload, and safe owner decisions.")
