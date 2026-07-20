@@ -111,7 +111,8 @@
     "test:signup:live": "playwright test tests/e2e/churvox-signup-to-stripe.spec.js --project=desktop-chromium",
     "test:worker-messages": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-worker-message-flow.spec.js --project=desktop-chromium",
     "test:sidebar:tier": "PLAYWRIGHT_BASE_URL=https://www.churvox.com playwright test tests/e2e/churvox-sidebar-tier-contract.spec.js --project=desktop-chromium",
-    "test:tester:ready": "node scripts/churvox-tester-ready-gate.cjs"
+    "test:tester:ready": "node scripts/churvox-tester-ready-gate.cjs",
+    "test:seo:server": "node --test tests/server-public-seo.test.cjs"
   },
   "browserslist": {
     "production": [

@@ -19,6 +19,7 @@ import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 import './runtime/churvoxTesterApplicationAttributionRuntime';
 import './runtime/churvoxFoundingTesterPopupRuntime';
+import './runtime/churvoxPublicSeoRuntime';
 
 const CHURVOX_DEPLOY_BUILD = 'churvox-tester-attribution-20260720';
 const CHURVOX_JOB_DONE_DEPLOY_BUILD = 'churvox-job-done-live-v2-20260714';

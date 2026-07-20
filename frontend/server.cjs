@@ -5,6 +5,7 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const { renderRouteHtml, routeSeoPolicy } = require("./server/publicSeo.cjs");
 
 const PORT = Number(process.env.PORT || 3000);
 const BUILD_DIR = path.join(__dirname, "build");
@@ -333,6 +334,36 @@ function sendFile(res, filePath) {
   fs.createReadStream(filePath).pipe(res);
 }
 
+let cachedIndex = { filePath: "", mtimeMs: 0, html: "" };
+
+function readIndexHtml(indexPath) {
+  const stats = fs.statSync(indexPath);
+  if (cachedIndex.filePath !== indexPath || cachedIndex.mtimeMs !== stats.mtimeMs || !cachedIndex.html) {
+    cachedIndex = {
+      filePath: indexPath,
+      mtimeMs: stats.mtimeMs,
+      html: fs.readFileSync(indexPath, "utf-8"),
+    };
+  }
+  return cachedIndex.html;
+}
+
+function sendRouteIndex(req, res, indexPath, urlPath) {
+  const policy = routeSeoPolicy(urlPath);
+  const html = renderRouteHtml(readIndexHtml(indexPath), urlPath);
+  const headers = {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+    Vary: "Accept-Encoding",
+  };
+  if (!policy.indexable) headers["X-Robots-Tag"] = policy.robots;
+  res.writeHead(200, headers);
+  if (req.method === "HEAD") res.end();
+  else res.end(html);
+}
+
 function workerFallbackPath(urlPath) {
   if (urlPath === "/worker/today" || urlPath === "/worker/today/") {
     return path.join(BUILD_DIR, "worker", "today", "index.html");
@@ -365,6 +396,12 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    const indexPath = path.join(BUILD_DIR, "index.html");
+    if ((req.method === "GET" || req.method === "HEAD") && (urlPath === "/" || urlPath === "/index.html") && fs.existsSync(indexPath)) {
+      sendRouteIndex(req, res, indexPath, "/");
+      return;
+    }
+
     let filePath = safePath(urlPath);
 
     if (!filePath) {
@@ -393,9 +430,12 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    const indexPath = path.join(BUILD_DIR, "index.html");
     if (fs.existsSync(indexPath)) {
-      sendFile(res, indexPath);
+      if (req.method === "GET" || req.method === "HEAD") sendRouteIndex(req, res, indexPath, urlPath);
+      else {
+        res.writeHead(405, { "Content-Type": "text/plain; charset=utf-8", Allow: "GET, HEAD" });
+        res.end("Method not allowed");
+      }
       return;
     }
 

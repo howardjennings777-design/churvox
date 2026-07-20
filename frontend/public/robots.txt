@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /platform
+Disallow: /dashboard
+Disallow: /worker
+Disallow: /billing
+Disallow: /plans
+Disallow: /setup
+Disallow: /guide
+Disallow: /invite/
+Disallow: /api/
 
 Sitemap: https://www.churvox.com/sitemap.xml
