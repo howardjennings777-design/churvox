@@ -131,6 +131,9 @@ function localCardFromRecord(area, record, action) {
 
 function mapArea(area = "office") {
   const key = String(area || "office").toLowerCase();
+  if (["growth", "rebooking", "capacity", "follow-up"].includes(key)) {
+    return { label: "Growth", tray: "Growth", roleName: "Growth Coordinator", level: "Top opportunity", need: "Review the evidence, edit the prepared step, approve it or park it?", actions: ["Approve prepared action", "Edit", "Park"] };
+  }
   if (["money", "quotes", "invoices", "integrations"].includes(key)) {
     return { label: "Money", tray: "Money", roleName: "Bookkeeper", level: "Needs check", need: "Review, edit, park or leave this money item?", actions: ["Review", "Edit", "Park"] };
   }
