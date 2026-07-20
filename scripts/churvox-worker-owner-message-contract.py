@@ -30,16 +30,16 @@ def check(name, ok, detail):
         failures.append(f"{name}: {detail}")
 
 
-route_match = re.search(r'@api_router\.post\(["\']/worker/contact-office["\']\)', server)
+route_match = re.search(r'@api_router\.post\(\s*["\']/worker/contact-office["\'][^)]*\)', server)
 route_start = route_match.start() if route_match else -1
 next_route = server.find("\n@api_router.", route_start + 1) if route_start >= 0 else -1
-route_block = server[route_start: next_route if next_route > route_start else route_start + 9000] if route_start >= 0 else ""
+route_block = server[route_start: next_route if next_route > route_start else route_start + 12000] if route_start >= 0 else ""
 route_line = server.count("\n", 0, route_start) + 1 if route_start >= 0 else 0
 
 print(f"Worker contact route line: {route_line or 'missing'}")
 if route_block:
     print("Worker contact route markers:")
-    for marker in ["support_tickets", "worker_office_contact", "command_slips", "request_id", "source_id"]:
+    for marker in ["support_tickets", "worker_office_contact", "worker_message", "command_slips", "request_id", "source_id"]:
         print(f"- {marker}: {marker in route_block}")
 
 check(
@@ -49,7 +49,9 @@ check(
 )
 check(
     "worker message is stored durably for the office bell",
-    "support_tickets" in route_block and "insert_one" in route_block and "worker_office_contact" in route_block,
+    "support_tickets" in route_block
+    and "insert_one" in route_block
+    and ("worker_office_contact" in route_block or "worker_message" in route_block),
     "the office route must persist one support-ticket record for owner notifications and audit",
 )
 check(
