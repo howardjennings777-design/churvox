@@ -17,9 +17,10 @@ import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
+import './runtime/churvoxTesterApplicationAttributionRuntime';
 import './runtime/churvoxFoundingTesterPopupRuntime';
 
-const CHURVOX_DEPLOY_BUILD = 'churvox-founding-tester-popup-v1-20260719';
+const CHURVOX_DEPLOY_BUILD = 'churvox-tester-attribution-20260720';
 const CHURVOX_JOB_DONE_DEPLOY_BUILD = 'churvox-job-done-live-v2-20260714';
 if (typeof window !== 'undefined') {
   window.__CHURVOX_DEPLOY_BUILD__ = CHURVOX_DEPLOY_BUILD;
