@@ -47,7 +47,7 @@ function safePaymentUrl(value) {
   if (!raw) return "";
   try {
     const parsed = new URL(raw, window.location.origin);
-    return ["https:", "http:"].includes(parsed.protocol) ? parsed.href : "";
+    return parsed.protocol === "https:" ? parsed.href : "";
   } catch {
     return "";
   }
@@ -74,6 +74,7 @@ export default function PublicInvoicePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [paymentBusy, setPaymentBusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -90,8 +91,30 @@ export default function PublicInvoicePage() {
         const response = await fetch(`${API_BASE}/api/public/invoice/${encodeURIComponent(token)}`, { headers: { Accept: "application/json" } });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || data?.success === false) throw new Error(data?.detail || data?.message || "Unable to load invoice");
-        const record = data?.invoice || data?.data?.invoice || data?.data || data;
+        let record = data?.invoice || data?.data?.invoice || data?.data || data;
         if (!record || typeof record !== "object") throw new Error("The invoice record was not returned.");
+
+        const params = new URLSearchParams(window.location.search || "");
+        const sessionId = params.get("session_id") || "";
+        const paymentResult = params.get("payment") || "";
+        if (sessionId && paymentResult === "success") {
+          if (alive) setNotice("Confirming your payment securely with Stripe…");
+          const statusResponse = await fetch(`${API_BASE}/api/public/invoice/${encodeURIComponent(token)}/payment-status?session_id=${encodeURIComponent(sessionId)}`, { headers: { Accept: "application/json" } });
+          const statusData = await statusResponse.json().catch(() => ({}));
+          if (statusResponse.ok && statusData?.invoice) {
+            record = { ...record, ...statusData.invoice };
+            if (alive) setNotice(statusData.paid ? "Payment confirmed. Thank you." : "Payment is still being confirmed. Refresh this page shortly.");
+          }
+          try {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("session_id");
+            cleanUrl.searchParams.delete("payment");
+            window.history.replaceState({}, document.title, cleanUrl.toString());
+          } catch {}
+        } else if (paymentResult === "cancelled") {
+          if (alive) setNotice("Payment was cancelled. Nothing was charged by Churvox.");
+        }
+
         if (alive) setInvoice(record);
       } catch (requestError) {
         if (!alive) return;
@@ -113,6 +136,35 @@ export default function PublicInvoicePage() {
       setNotice("Invoice link copied.");
     } catch {
       setNotice("Copy the current browser address to share this invoice.");
+    }
+  }
+
+  async function startSecurePayment() {
+    if (!token || paymentBusy) return;
+    setPaymentBusy(true);
+    setNotice("Opening the secure Stripe checkout…");
+    try {
+      const response = await fetch(`${API_BASE}/api/public/invoice/${encodeURIComponent(token)}/checkout`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data?.success === false) throw new Error(data?.detail || data?.message || "Secure payment is not available yet");
+      if (data?.paid && data?.invoice) {
+        setInvoice((current) => ({ ...(current || {}), ...data.invoice }));
+        setNotice("This invoice is already paid.");
+        setPaymentBusy(false);
+        return;
+      }
+      const checkoutUrl = safePaymentUrl(data?.checkout_url);
+      if (!checkoutUrl || !checkoutUrl.includes("stripe.com")) throw new Error("The secure Stripe checkout link could not be verified");
+      window.location.assign(checkoutUrl);
+    } catch (paymentError) {
+      const message = paymentError?.message || "Secure payment could not be started";
+      setNotice(message);
+      toast.error(message);
+      setPaymentBusy(false);
     }
   }
 
@@ -153,14 +205,14 @@ export default function PublicInvoicePage() {
   const publicNotes = invoice.public_notes || invoice.customer_notes || invoice.notes || "";
 
   return (
-    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_INVOICE_PAID_LAUNCH_20260712">
+    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_INVOICE_FIRST_WIN_20260720">
       <section className="cpd-actions">
         <b>{business.business_name || "Churvox invoice"}</b>
         <button type="button" onClick={() => window.print()}>Print / PDF</button>
         <button type="button" onClick={copyLink}>Copy link</button>
-        {paymentLink ? <a href={paymentLink} target="_blank" rel="noopener noreferrer">Pay securely</a> : null}
+        {paymentLink ? <button type="button" onClick={startSecurePayment} disabled={paymentBusy}>{paymentBusy ? "Opening secure payment…" : "Pay securely"}</button> : null}
         {paid ? <span>Paid</span> : null}
-        {notice ? <span>{notice}</span> : null}
+        {notice ? <span aria-live="polite">{notice}</span> : null}
       </section>
 
       <article className="cpd-document">
@@ -219,10 +271,10 @@ export default function PublicInvoicePage() {
               <span>Paid</span><b>{formatCurrency(paid ? Math.max(amountPaid, total) : amountPaid, currency)}</b>
             </div>
             <h2>{formatCurrency(amountDue, currency)}</h2>
-            <p>{paid ? "This invoice is recorded as paid. No payment is required." : paymentLink ? "Use Pay securely to complete payment through the business payment provider." : paymentDetails || bankDetails || "Payment details are provided by the business."}</p>
+            <p>{paid ? "Stripe has confirmed this invoice as paid. No payment is required." : paymentLink ? "Use Pay securely to complete payment through the business Stripe account." : paymentDetails || bankDetails || "The business has not enabled online card payment for this invoice."}</p>
             {!paid && bankDetails ? <p className="cpd-payment-note">{bankDetails}</p> : null}
             {publicNotes ? <p className="cpd-payment-note">{publicNotes}</p> : null}
-            {paymentLink ? <a className="cpd-primary-action" href={paymentLink} target="_blank" rel="noopener noreferrer">Pay securely</a> : null}
+            {paymentLink ? <button className="cpd-primary-action" type="button" onClick={startSecurePayment} disabled={paymentBusy}>{paymentBusy ? "Opening secure payment…" : "Pay securely"}</button> : null}
           </div>
         </section>
 
