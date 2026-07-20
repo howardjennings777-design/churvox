@@ -36,7 +36,7 @@ test('industry pages publish specific title, description and canonical metadata'
   await expect(page).toHaveTitle(/Cleaning job management software \| Churvox/);
 
   const description = page.locator('meta[name="description"]');
-  await expect(description).toHaveAttribute('content', /recurring visits, access notes and proof/i);
+  await expect(description).toHaveAttribute('content', /site checklists, key\/access notes, cleaner updates/i);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.churvox.com/industries/cleaning');
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', 'https://www.churvox.com/industries/cleaning');
 });
