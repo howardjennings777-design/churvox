@@ -198,7 +198,7 @@ export default function PublicInvoicePage() {
       ? Math.max(0, moneyNumber(invoice.balance_due))
       : Math.max(0, total - amountPaid);
   const rawStatus = String(invoice.status || invoice.payment_status || "sent").trim().toLowerCase();
-  const paid = amountDue <= 0 || ["paid", "settled", "complete", "completed"].includes(rawStatus);
+  const paid = ["paid", "settled", "complete", "completed"].includes(rawStatus) || Boolean(invoice.paid_at) || (amountDue <= 0 && amountPaid > 0);
   const paymentLink = paid ? "" : safePaymentUrl(invoice.payment_link || invoice.payment_url || invoice.stripe_payment_url);
   const paymentDetails = invoice.payment_details || invoice.payment_instructions || invoice.bank_details || "";
   const bankDetails = [business.bank_account_name, business.bank_account_number].filter(Boolean).join(" — ");
