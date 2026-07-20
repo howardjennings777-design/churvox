@@ -9,10 +9,14 @@ import {
   saveApprovalBudget,
   savePromiseMemory,
 } from "./OfficeTeamIntelligenceApi";
+import OfficeTeamSafeControls from "./OfficeTeamSafeControls";
+import { rowKey, useOfficeTeamRows } from "./OfficeTeamLiveRows";
 import "./OfficeTeamIntelligence.css";
+import "./OfficeTeamGrowthDesk.css";
 
 const FEATURES = [
   { key: "money_left_behind", label: "Money Left Behind", minimum: "start", promise: "Find completed work, extras, quotes and recurring money that still needs action." },
+  { key: "growth_recovery", label: "Growth Recovery", minimum: "start", promise: "Find warm opportunities already hiding in quotes, clients, messages and spare capacity." },
   { key: "job_truth_receipt", label: "Job Truth Receipt", minimum: "start", promise: "One permanent receipt joining the job, proof, time, extras, invoice and owner decisions." },
   { key: "promise_memory", label: "Promise Memory", minimum: "start", promise: "Remember customer commitments and surface them before the next visit." },
   { key: "voice_to_business", label: "Voice-to-Business", minimum: "start", promise: "Turn natural speech into a connected draft without changing business records." },
@@ -23,6 +27,25 @@ const FEATURES = [
 ];
 
 const SAFE_TEXT = "Nothing sends, syncs, charges, files, pays or changes source records until the owner chooses a separate approved action.";
+const PREVIEW_GROWTH = Object.freeze({
+  quotes: [
+    ["Aroha Property", "Exterior wash quote", "Sent 8 days ago", "Quote is still open and no follow-up decision is recorded."],
+    ["Harbour Cafe", "Quarterly cleaning quote", "Draft ready", "Scope is prepared but the owner has not chosen the next step."],
+  ],
+  clients: [
+    ["Mereana R.", "Regular garden service", "Rebook due", "The usual service cycle has passed with no future booking."],
+    ["Northside Rentals", "Property maintenance", "Quiet client", "No recent work is recorded for a previously active client."],
+  ],
+  work: [
+    ["Johnson lawn service", "Hedge maintenance", "Completed", "The completion note mentions future hedge maintenance."],
+  ],
+  schedule: [
+    ["Thursday afternoon", "Two-hour opening", "Capacity gap", "A usable gap exists between booked jobs."],
+  ],
+  messages: [
+    ["Sarah at Greenview", "Service enquiry", "Waiting for reply", "A customer message appears to need a response decision."],
+  ],
+});
 
 function money(value) {
   return `$${Number(value || 0).toLocaleString("en-NZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -81,19 +104,19 @@ export default function OfficeTeamIntelligence({ appMode = "owner", go }) {
 
   const cards = useMemo(() => FEATURES.map((feature) => ({ ...feature, available: featureAccess(summary, plan, feature) })), [summary, plan]);
   const current = cards.find((item) => item.key === selected) || cards[0];
-  const availableCount = cards.filter((item) => item.available).length;
+  const coreAvailableCount = cards.filter((item) => item.key !== "growth_recovery" && item.available).length;
 
   return (
     <section className="cvSiteScreen cvIntel" data-churvox-intelligence="v1" data-plan={plan}>
       <header className="cvIntelHero">
         <div>
           <span>Churvox Intelligence · {PLAN_LABELS[plan] || plan}</span>
-          <h1>Find what is unfinished. Prepare the fix. Keep the owner in control.</h1>
-          <p>Eight connected tools use the same jobs, clients, proof, time and money records. They prepare decisions instead of silently running the business.</p>
+          <h1>Find what is unfinished. Recover what is being missed. Keep the owner in control.</h1>
+          <p>Eight connected intelligence engines plus Growth Recovery use the same jobs, clients, proof, time and money records. They prepare decisions instead of silently running the business.</p>
           <small>{SAFE_TEXT}</small>
         </div>
         <div className="cvIntelHeroStats">
-          <article><strong>{availableCount}</strong><span>tools included</span></article>
+          <article><strong>{coreAvailableCount}</strong><span>intelligence engines</span></article>
           <article><strong>{summary?.money_left_behind?.finding_count ?? 0}</strong><span>money checks</span></article>
           <article><strong>{summary?.job_truth_receipts?.length ?? 0}</strong><span>truth receipts</span></article>
         </div>
@@ -121,15 +144,16 @@ export default function OfficeTeamIntelligence({ appMode = "owner", go }) {
 
       <main className="cvIntelWorkspace">
         {loading ? <Loading /> : !current.available ? <Locked feature={current} go={go} /> : (
-          <FeaturePanel feature={current.key} summary={summary || previewSummary(plan)} setSummary={setSummary} setNotice={setNotice} />
+          <FeaturePanel feature={current.key} summary={summary || previewSummary(plan)} setSummary={setSummary} setNotice={setNotice} appMode={appMode} go={go} />
         )}
       </main>
     </section>
   );
 }
 
-function FeaturePanel({ feature, summary, setSummary, setNotice }) {
+function FeaturePanel({ feature, summary, setSummary, setNotice, appMode, go }) {
   if (feature === "money_left_behind") return <MoneyLeftBehind data={summary.money_left_behind} setNotice={setNotice} />;
+  if (feature === "growth_recovery") return <GrowthRecovery appMode={appMode} go={go} />;
   if (feature === "job_truth_receipt") return <TruthReceipts items={summary.job_truth_receipts || []} />;
   if (feature === "promise_memory") return <PromiseMemory data={summary.promise_memory} setSummary={setSummary} setNotice={setNotice} />;
   if (feature === "voice_to_business") return <VoiceToBusiness setNotice={setNotice} />;
@@ -167,6 +191,79 @@ function MoneyLeftBehind({ data = {}, setNotice }) {
           <aside><strong>{item.amount ? money(item.amount) : "Check"}</strong><button type="button" disabled={Boolean(busy)} onClick={() => prepare(item)}>{busy === item.id ? "Preparing…" : item.recommended_action}</button></aside>
         </article>) : <Empty title="No money left behind found" text="Churvox did not find completed work, extras, open timers, overdue invoices or recurring gaps needing action." />}
       </div>
+    </section>
+  );
+}
+
+function GrowthRecovery({ appMode = "owner", go }) {
+  const allowFallback = appMode !== "owner";
+  const quotes = useOfficeTeamRows("quotes", PREVIEW_GROWTH.quotes, { allowFallback, emptyMessage: "No quote records found yet." });
+  const clients = useOfficeTeamRows("clients", PREVIEW_GROWTH.clients, { allowFallback, emptyMessage: "No client records found yet." });
+  const work = useOfficeTeamRows("work", PREVIEW_GROWTH.work, { allowFallback, emptyMessage: "No work records found yet." });
+  const schedule = useOfficeTeamRows("schedule", PREVIEW_GROWTH.schedule, { allowFallback, emptyMessage: "No schedule records found yet." });
+  const messages = useOfficeTeamRows("messages", PREVIEW_GROWTH.messages, { allowFallback, emptyMessage: "No message records found yet." });
+  const sources = useMemo(() => [
+    { key: "quotes", label: "Quotes", state: quotes },
+    { key: "clients", label: "Clients", state: clients },
+    { key: "work", label: "Jobs", state: work },
+    { key: "schedule", label: "Schedule", state: schedule },
+    { key: "messages", label: "Messages", state: messages },
+  ], [quotes, clients, work, schedule, messages]);
+  const opportunities = useMemo(() => buildGrowthOpportunities(sources), [sources]);
+  const lanes = useMemo(() => ["all", ...Array.from(new Set(opportunities.map((item) => item.lane)))], [opportunities]);
+  const [lane, setLane] = useState("all");
+  const filtered = lane === "all" ? opportunities : opportunities.filter((item) => item.lane === lane);
+  const [selectedId, setSelectedId] = useState("");
+  const selected = filtered.find((item) => item.id === selectedId) || filtered[0] || opportunities[0] || null;
+  const liveSources = sources.filter((item) => item.state.isLive).length;
+  const loadingSources = sources.filter((item) => item.state.isLoading).length;
+  const urgentCount = opportunities.filter((item) => item.priority === "Top opportunity").length;
+
+  useEffect(() => {
+    if (selected && selected.id !== selectedId) setSelectedId(selected.id);
+    if (!selected && selectedId) setSelectedId("");
+  }, [selected, selectedId]);
+
+  return (
+    <section className="cvIntelPanel cvGrowthDesk" data-intelligence-feature="growth-recovery">
+      <PanelHeader eyebrow="Growth Recovery" title="Find warm work before spending money chasing cold leads" text="Churvox checks existing quotes, clients, jobs, schedule gaps and messages for clear follow-up opportunities. It prepares the next step; the owner still decides what happens." />
+      <div className="cvGrowthMetrics">
+        <article><strong>{opportunities.length}</strong><span>clear opportunities</span></article>
+        <article><strong>{urgentCount}</strong><span>top opportunities</span></article>
+        <article><strong>{loadingSources ? `${5 - loadingSources}/5` : liveSources || (allowFallback ? 5 : 0)}</strong><span>sources checked</span></article>
+        <article><strong>0</strong><span>automatic messages</span></article>
+      </div>
+
+      <div className="cvGrowthSourceStrip" aria-label="Growth data sources">
+        {sources.map((source) => <article key={source.key} data-state={growthSourceState(source.state)}><span>{source.label}</span><strong>{growthSourceLabel(source.state)}</strong><small>{source.state.label}</small></article>)}
+      </div>
+
+      {opportunities.length ? <>
+        <div className="cvGrowthLaneBar" aria-label="Growth opportunity filters">
+          {lanes.map((item) => <button key={item} type="button" className={lane === item ? "active" : ""} onClick={() => { setLane(item); setSelectedId(""); }}>{item === "all" ? "All opportunities" : item}</button>)}
+        </div>
+        <div className="cvGrowthWorkspace">
+          <div className="cvGrowthOpportunityList">
+            {filtered.map((item) => <button key={item.id} type="button" className={selected?.id === item.id ? "active" : ""} onClick={() => setSelectedId(item.id)}>
+              <span>{item.priority}</span><strong>{item.title}</strong><p>{item.subject}</p><small>{item.sourceLabel} · {item.status}</small>
+            </button>)}
+          </div>
+          {selected ? <aside className="cvGrowthOpportunityDetail">
+            <div className="cvGrowthDetailHeader"><span>{selected.lane}</span><em>{selected.priority}</em></div>
+            <h3>{selected.title}</h3>
+            <p>{selected.detail}</p>
+            <dl>
+              <div><dt>Record</dt><dd>{selected.subject}</dd></div>
+              <div><dt>Evidence</dt><dd>{selected.evidence}</dd></div>
+              <div><dt>Prepared next step</dt><dd>{selected.action}</dd></div>
+              <div><dt>Owner control</dt><dd>Review, edit, approve or park</dd></div>
+            </dl>
+            <OfficeTeamSafeControls area="growth" record={growthRecord(selected)} primary="Prepare growth action" secondary="Review evidence" command="Prepare Command decision" />
+            <button className="cvGrowthOpenCommand" type="button" onClick={() => go?.("command")}>Open Command</button>
+            <small>{SAFE_TEXT}</small>
+          </aside> : null}
+        </div>
+      </> : <Empty title="No clear growth opportunity found" text={loadingSources ? "Churvox is still checking the available records." : "No quote, rebooking, capacity or reply signal was strong enough to prepare. Churvox will not invent opportunities from weak data."} />}
     </section>
   );
 }
@@ -339,11 +436,84 @@ function Empty({ title, text }) {
   return <section className="cvIntelEmpty"><strong>{title}</strong><p>{text}</p></section>;
 }
 
+function buildGrowthOpportunities(sources = []) {
+  const found = [];
+  sources.forEach(({ key, label, state }) => {
+    (Array.isArray(state?.rows) ? state.rows : []).forEach((row, index) => {
+      const parts = Array.isArray(row) ? row.map((part) => String(part || "").trim()) : [String(row || "")];
+      const subject = parts[0] || `${label} record`;
+      const title = parts[1] || subject;
+      const status = parts[2] || "Needs review";
+      const detail = parts[3] || "This record contains a possible follow-up signal.";
+      const text = parts.join(" ").toLowerCase();
+      const match = growthRule(key, text);
+      if (!match) return;
+      found.push({
+        id: `${key}-${index}-${slug(rowKey(parts))}`,
+        source: key,
+        sourceLabel: label,
+        subject,
+        title: match.title || title,
+        status,
+        detail,
+        evidence: match.evidence,
+        action: match.action,
+        lane: match.lane,
+        priority: match.priority,
+      });
+    });
+  });
+  return found
+    .filter((item, index, list) => list.findIndex((other) => `${other.source}|${other.subject}|${other.title}` === `${item.source}|${item.subject}|${item.title}`) === index)
+    .sort((a, b) => growthPriority(b.priority) - growthPriority(a.priority) || a.title.localeCompare(b.title))
+    .slice(0, 16);
+}
+
+function growthRule(source, text) {
+  const has = (pattern) => pattern.test(text);
+  if (source === "quotes" && !has(/accepted|won|declined|rejected|expired|paid/)) {
+    if (has(/sent|open|await|pending|draft|quote|follow/)) return { lane: "Quote follow-up", title: "Quote still needs a next step", evidence: "Open, sent or draft quote wording is present in the source record.", action: "Prepare a careful quote follow-up or owner review", priority: has(/sent|await|open/) ? "Top opportunity" : "Worth reviewing" };
+  }
+  if (source === "clients" && has(/rebook|due|quiet|inactive|no future|recurr|last visit|overdue service/)) return { lane: "Rebooking", title: "Existing client may be ready to rebook", evidence: "The client record contains a rebooking, quiet-client or service-cycle signal.", action: "Prepare a rebooking check with editable timing", priority: has(/due|no future|overdue/) ? "Top opportunity" : "Worth reviewing" };
+  if (source === "work" && has(/complete|done|finished/) && has(/extra|maintenance|return|future|follow|next service|not invoiced/)) return { lane: "Next service", title: "Completed work points to another useful service", evidence: "A completed-work record also mentions extras, maintenance or future work.", action: "Prepare a next-service suggestion for owner review", priority: has(/extra|not invoiced/) ? "Top opportunity" : "Worth reviewing" };
+  if (source === "schedule" && has(/gap|cancel|no.?show|unfilled|available|opening|space/)) return { lane: "Capacity", title: "Usable capacity may be recoverable", evidence: "The schedule record contains a gap, cancellation or available-capacity signal.", action: "Prepare a fill-the-gap plan using suitable existing clients", priority: has(/cancel|no.?show/) ? "Top opportunity" : "Worth reviewing" };
+  if (source === "messages" && has(/unread|waiting|reply|no response|follow.?up|enquiry|inquiry/)) return { lane: "Reply recovery", title: "A customer conversation may need a reply", evidence: "The message record contains an unanswered, waiting or enquiry signal.", action: "Prepare an editable reply draft", priority: has(/enquiry|inquiry|waiting/) ? "Top opportunity" : "Worth reviewing" };
+  return null;
+}
+
+function growthPriority(value) {
+  return value === "Top opportunity" ? 2 : value === "Worth reviewing" ? 1 : 0;
+}
+
+function growthSourceState(state = {}) {
+  if (state.isLoading) return "loading";
+  if (state.isError) return "error";
+  if (state.isLive) return "live";
+  if (state.isFallback) return "preview";
+  return "clear";
+}
+
+function growthSourceLabel(state = {}) {
+  if (state.isLoading) return "Checking";
+  if (state.isError) return "Unavailable";
+  if (state.isLive) return `${state.rows.length} live`;
+  if (state.isFallback) return `${state.rows.length} examples`;
+  return "Clear";
+}
+
+function growthRecord(item = {}) {
+  return [item.subject || "Growth record", item.title || "Growth opportunity", item.priority || "Needs review", `${item.detail || ""} Evidence: ${item.evidence || "linked source record"}. Prepared next step: ${item.action || "owner review"}.`];
+}
+
+function slug(value = "") {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "item";
+}
+
 function previewSummary(plan) {
   const available = (minimum) => planMeets(plan, minimum);
   return {
     plan,
-    features: FEATURES.map((item) => ({ key: item.key, available: available(item.minimum), minimum_plan: item.minimum })),
+    features: FEATURES.filter((item) => item.key !== "growth_recovery").map((item) => ({ key: item.key, available: available(item.minimum), minimum_plan: item.minimum })),
     money_left_behind: { potential_total: 840, overdue_total: 310, finding_count: 2, findings: [{ id: "preview-money-1", kind: "completed_not_invoiced", record_id: "preview-job-1", title: "Completed service", amount: 530, reason: "Completed work has no linked invoice.", recommended_action: "Prepare invoice review" }, { id: "preview-money-2", kind: "overdue_invoice", record_id: "preview-invoice-1", title: "Overdue invoice", amount: 310, reason: "An invoice is overdue and still unpaid.", recommended_action: "Prepare payment follow-up" }] },
     job_truth_receipts: [{ id: "preview-receipt", job_id: "preview-job-1", job_title: "Completed service", proof: { count: 3 }, worker_time: { hours: 2.5 }, extras: { amount: 35 }, invoice: { status: "draft", amount: 530 }, closeout: { status: "owner review" }, promised: ["Text before arrival"], source_revision: "preview-only" }],
     promise_memory: { items: [{ id: "preview-promise", client_name: "Example client", text: "Text before arrival", category: "access" }] },
