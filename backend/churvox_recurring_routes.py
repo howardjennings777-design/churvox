@@ -1,3 +1,4 @@
+from calendar import monthrange
 from datetime import datetime, timezone, timedelta
 import sys
 
@@ -44,6 +45,14 @@ def _parse_date(value):
             return None
 
 
+def _add_calendar_month(start):
+    month_index = start.month
+    year = start.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(start.day, monthrange(year, month)[1])
+    return start.replace(year=year, month=month, day=day)
+
+
 def _next_date(start, frequency, custom_days=0):
     if not start:
         start = datetime.now(timezone.utc)
@@ -52,7 +61,7 @@ def _next_date(start, frequency, custom_days=0):
     if frequency == "fortnightly":
         return start + timedelta(days=14)
     if frequency == "monthly":
-        return start + timedelta(days=30)
+        return _add_calendar_month(start)
     if frequency == "custom":
         try:
             days = int(custom_days or 0)
@@ -87,6 +96,21 @@ def _safe(doc):
 
 async def _user(request):
     return await getattr(_server(), "get_current_user")(request)
+
+
+async def _existing_next_job(db, job):
+    next_id = job.get("next_generated_job_id")
+    next_oid = _obj(next_id)
+    if next_oid:
+        return await db.jobs.find_one({"_id": next_oid})
+    return None
+
+
+def _completion_query(job_oid, business_id, biz_oid):
+    ownership = [{"business_id": business_id}]
+    if biz_oid:
+        ownership.append({"contractor_id": biz_oid})
+    return {"_id": job_oid, "$or": ownership}
 
 
 def install(router):
@@ -136,9 +160,7 @@ def install(router):
             update["price"] = _clean(payload.get("price"))
 
         if job_oid:
-            query = {"_id": job_oid, "$or": [{"business_id": business_id}]}
-            if biz_oid:
-                query["$or"].append({"contractor_id": biz_oid})
+            query = _completion_query(job_oid, business_id, biz_oid)
             result = await db.jobs.update_one(query, {"$set": update})
             if result.matched_count:
                 job = await db.jobs.find_one({"_id": job_oid})
@@ -165,40 +187,107 @@ def install(router):
             user = await _user(request)
         except Exception:
             return {"success": False, "error": "Not authenticated"}
+
         business_id = str(user.get("business_id") or user.get("id"))
         biz_oid = _obj(business_id)
         job_oid = _obj(job_id)
         if not job_oid:
             return {"success": False, "error": "Invalid job id"}
-        query = {"_id": job_oid, "$or": [{"business_id": business_id}]}
-        if biz_oid:
-            query["$or"].append({"contractor_id": biz_oid})
+
+        query = _completion_query(job_oid, business_id, biz_oid)
         job = await db.jobs.find_one(query)
         if not job:
             return {"success": False, "error": "Job not found"}
+
         now = datetime.now(timezone.utc)
-        await db.jobs.update_one({"_id": job_oid}, {"$set": {"status": "completed", "completed_at": now, "updated_at": now}})
+        await db.jobs.update_one(query, {"$set": {"status": "completed", "completed_at": job.get("completed_at") or now, "updated_at": now}})
+
+        existing_next = await _existing_next_job(db, job)
+        if existing_next:
+            completed = await db.jobs.find_one({"_id": job_oid})
+            return {
+                "success": True,
+                "idempotent": True,
+                "message": "Job was already completed and the next recurring job already exists",
+                "job": _safe(completed),
+                "next_job": _safe(existing_next),
+            }
+
         next_job = None
-        if job.get("is_recurring") and job.get("recurring_frequency") not in [None, "", "none"]:
-            base = job.get("scheduled_date") or now
-            next_date = _next_date(base, job.get("recurring_frequency"), job.get("custom_repeat_days"))
-            doc = dict(job)
-            doc.pop("_id", None)
-            doc["parent_recurring_job_id"] = job_oid
-            doc["status"] = "assigned"
-            doc["scheduled_date"] = next_date
-            doc["completed_at"] = None
-            doc["started_at"] = None
-            doc["acknowledged_at"] = None
-            doc["time_entries"] = []
-            doc["total_time_seconds"] = 0
-            doc["timer_running"] = False
-            doc["created_at"] = now
-            doc["updated_at"] = now
-            inserted = await db.jobs.insert_one(doc)
-            next_job = await db.jobs.find_one({"_id": inserted.inserted_id})
-            await db.jobs.update_one({"_id": job_oid}, {"$set": {"next_generated_job_id": inserted.inserted_id, "next_recurring_date": next_date}})
+        recurring = job.get("is_recurring") and job.get("recurring_frequency") not in [None, "", "none"]
+        if recurring:
+            stale_before = now - timedelta(minutes=5)
+            claim_filter = {
+                "$and": [
+                    query,
+                    {"$or": [{"next_generated_job_id": {"$exists": False}}, {"next_generated_job_id": None}]},
+                    {"$or": [
+                        {"recurring_generation_state": {"$ne": "creating"}},
+                        {"recurring_generation_started_at": {"$lt": stale_before}},
+                    ]},
+                ]
+            }
+            claim = await db.jobs.update_one(claim_filter, {"$set": {
+                "recurring_generation_state": "creating",
+                "recurring_generation_started_at": now,
+                "updated_at": now,
+            }})
+
+            if not claim.matched_count:
+                latest = await db.jobs.find_one(query)
+                existing_next = await _existing_next_job(db, latest or {})
+                completed = latest or await db.jobs.find_one({"_id": job_oid})
+                return {
+                    "success": True,
+                    "idempotent": True,
+                    "generation_pending": existing_next is None,
+                    "message": "The next recurring job already exists" if existing_next else "The next recurring job is already being prepared",
+                    "job": _safe(completed),
+                    "next_job": _safe(existing_next),
+                }
+
+            try:
+                base = job.get("scheduled_date") or now
+                next_date = _next_date(base, job.get("recurring_frequency"), job.get("custom_repeat_days"))
+                series_id = job.get("recurring_series_id") or job.get("parent_recurring_job_id") or job_oid
+                doc = dict(job)
+                for field in [
+                    "_id", "next_generated_job_id", "completed_at", "started_at", "acknowledged_at",
+                    "recurring_generation_state", "recurring_generation_started_at",
+                ]:
+                    doc.pop(field, None)
+                doc["recurring_series_id"] = series_id
+                doc["parent_recurring_job_id"] = job_oid
+                doc["status"] = "assigned"
+                doc["scheduled_date"] = next_date
+                doc["next_recurring_date"] = _next_date(next_date, job.get("recurring_frequency"), job.get("custom_repeat_days"))
+                doc["time_entries"] = []
+                doc["total_time_seconds"] = 0
+                doc["timer_running"] = False
+                doc["created_at"] = now
+                doc["updated_at"] = now
+                inserted = await db.jobs.insert_one(doc)
+                next_job = await db.jobs.find_one({"_id": inserted.inserted_id})
+                await db.jobs.update_one({"_id": job_oid}, {"$set": {
+                    "next_generated_job_id": inserted.inserted_id,
+                    "next_recurring_date": next_date,
+                    "recurring_generation_state": "complete",
+                    "recurring_generation_completed_at": now,
+                    "updated_at": now,
+                }})
+            except Exception:
+                await db.jobs.update_one({"_id": job_oid}, {"$unset": {
+                    "recurring_generation_state": "",
+                    "recurring_generation_started_at": "",
+                }})
+                raise
+
         completed = await db.jobs.find_one({"_id": job_oid})
-        return {"success": True, "message": "Job completed" + (" and next recurring job created" if next_job else ""), "job": _safe(completed), "next_job": _safe(next_job)}
+        return {
+            "success": True,
+            "message": "Job completed" + (" and next recurring job created" if next_job else ""),
+            "job": _safe(completed),
+            "next_job": _safe(next_job),
+        }
 
     router.churvox_recurring_installed = True
