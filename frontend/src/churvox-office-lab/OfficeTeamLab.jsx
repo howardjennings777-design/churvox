@@ -5,7 +5,7 @@ import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
 const OfficeOSConnected = React.lazy(() => import('../churvox-office-os/OfficeOSConnected'))
 const OfficeOSPreview = React.lazy(() => import('../churvox-office-os/OfficeOSPreview'))
 const PublicSiteConnected = React.lazy(() => import('../churvox-site-next/PublicSiteConnected'))
-const HQNext = React.lazy(() => import('../churvox-site-next/HQNext'))
+const HQConnected = React.lazy(() => import('../churvox-site-next/HQConnected'))
 
 const HASH_ALIASES = new Map([
   ['team', 'office-team'],
@@ -57,7 +57,7 @@ function OfficeTeamLab(props) {
   if (isOfficeOSPreviewPath()) {
     const surface = previewSurface()
     if (surface === 'public') return <PublicSiteConnected />
-    if (surface === 'hq') return <HQNext />
+    if (surface === 'hq') return <HQConnected />
     if (surface === 'blueprint') return <OfficeOSPreview />
     return <OfficeOSConnected />
   }
