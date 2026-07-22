@@ -1,0 +1,294 @@
+.cvosClientApprovalDesk {
+  position: fixed;
+  z-index: 120;
+  right: 18px;
+  bottom: 18px;
+  width: min(500px, calc(100vw - 36px));
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top right, rgba(249, 115, 22, 0.18), transparent 38%),
+    linear-gradient(155deg, rgba(21, 29, 25, 0.99), rgba(7, 11, 9, 0.99));
+  color: #f8fafc;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+}
+
+.cvosClientApprovalHead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 40px;
+  gap: 12px;
+  align-items: start;
+  padding: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(9, 14, 11, 0.96);
+  backdrop-filter: blur(18px);
+}
+
+.cvosClientApprovalIcon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  color: #fff7ed;
+  background: linear-gradient(145deg, #fb923c, #ea580c);
+  box-shadow: 0 12px 26px rgba(234, 88, 12, 0.28);
+}
+
+.cvosClientApprovalHead small,
+.cvosClientApprovalCardTitle small {
+  display: block;
+  color: #fdba74;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.cvosClientApprovalHead h2 {
+  margin: 3px 0 4px;
+  font-size: 21px;
+  line-height: 1.05;
+}
+
+.cvosClientApprovalHead p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cvosClientApprovalHead > button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.cvosClientApprovalHead > button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.cvosClientApprovalList {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.cvosClientApprovalCard {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 21px;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.cvosClientApprovalCardTitle {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+
+.cvosClientApprovalCardTitle > svg {
+  color: #fb923c;
+}
+
+.cvosClientApprovalCardTitle h3 {
+  margin: 2px 0 0;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cvosClientApprovalFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvosClientApprovalFields label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.cvosClientApprovalFields label.wide {
+  grid-column: 1 / -1;
+}
+
+.cvosClientApprovalFields label > span {
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.cvosClientApprovalFields input,
+.cvosClientApprovalFields textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 12px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.23);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.cvosClientApprovalFields input {
+  height: 41px;
+  padding: 0 11px;
+}
+
+.cvosClientApprovalFields textarea {
+  min-height: 68px;
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.cvosClientApprovalFields input:focus,
+.cvosClientApprovalFields textarea:focus {
+  border-color: rgba(251, 146, 60, 0.78);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.14);
+}
+
+.cvosClientApprovalActions {
+  display: grid;
+  gap: 7px;
+}
+
+.cvosClientApprovalActions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 14px;
+  color: #111827;
+  background: linear-gradient(135deg, #fed7aa, #fb923c);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(234, 88, 12, 0.21);
+}
+
+.cvosClientApprovalActions > button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+  opacity: 0.55;
+}
+
+.cvosClientApprovalActions small {
+  color: #94a3b8;
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.cvosClientApprovalResult,
+.cvosClientApprovalEmpty {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  border-radius: 15px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cvosClientApprovalResult {
+  grid-template-columns: 20px minmax(0, 1fr);
+  padding: 11px 12px;
+}
+
+.cvosClientApprovalResult.good {
+  border: 1px solid rgba(74, 222, 128, 0.24);
+  background: rgba(22, 163, 74, 0.12);
+  color: #dcfce7;
+}
+
+.cvosClientApprovalResult.bad {
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  background: rgba(220, 38, 38, 0.12);
+  color: #fee2e2;
+}
+
+.cvosClientApprovalEmpty {
+  justify-items: center;
+  margin: 14px;
+  padding: 25px 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  text-align: center;
+}
+
+.cvosClientApprovalEmpty > svg {
+  color: #fb923c;
+}
+
+.cvosClientApprovalEmpty strong {
+  color: #f8fafc;
+  font-size: 14px;
+}
+
+.cvosClientApprovalEmpty span {
+  max-width: 320px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.cvosClientApprovalDesk .spin {
+  animation: cvosClientApprovalSpin 0.85s linear infinite;
+}
+
+@keyframes cvosClientApprovalSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 680px) {
+  .cvosClientApprovalDesk {
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    border-radius: 22px;
+  }
+
+  .cvosClientApprovalHead {
+    grid-template-columns: 42px minmax(0, 1fr) 38px;
+    padding: 14px;
+  }
+
+  .cvosClientApprovalIcon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .cvosClientApprovalFields {
+    grid-template-columns: 1fr;
+  }
+
+  .cvosClientApprovalFields label.wide {
+    grid-column: auto;
+  }
+}
