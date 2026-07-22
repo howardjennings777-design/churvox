@@ -9,9 +9,11 @@ import {
 } from "lucide-react";
 import {
   BACKEND_COMMAND_EVENT,
+  fetchBackendCommandAudit,
   fetchBackendCommandDecisions,
   recordBackendCommandDecision,
 } from "../churvox-office-lab/OfficeTeamCommandApi";
+import { loadOfficeArea } from "./officeOSLiveData";
 import "./officeOSClientApprovalDesk.css";
 
 export const OFFICE_OS_CLIENT_APPROVAL_DESK_BUILD = "churvox-office-os-client-approval-20260723";
@@ -68,11 +70,38 @@ function approvalAction(decision) {
   return (decision?.actions || []).find((action) => /approve/i.test(String(action || ""))) || "Approve and create client";
 }
 
-function executionSummary(response) {
+async function verifyAppliedClient(response, decision, draft) {
+  const execution = response?.result?.execution || {};
+  if (!execution.applied) return { clientConfirmed: false, auditConfirmed: false };
+
+  const createdId = String(execution.id || execution.ids?.[0] || "");
+  const slipId = String(decision?.raw?.command_slip_id || "");
+  const expectedName = String(draft?.name || "").trim().toLowerCase();
+  const [clients, audit] = await Promise.all([
+    loadOfficeArea("clients").catch(() => ({ records: [] })),
+    fetchBackendCommandAudit().catch(() => ({ audit: [] })),
+  ]);
+
+  const clientConfirmed = (clients?.records || []).some((record) => {
+    const recordId = String(record?.id || "");
+    const title = String(record?.title || "").trim().toLowerCase();
+    return (createdId && recordId === createdId) || (expectedName && title === expectedName);
+  });
+  const auditConfirmed = (audit?.audit || []).some((entry) => {
+    const status = `${entry?.status || ""} ${entry?.action || ""}`.toLowerCase();
+    return slipId && entry?.slipId === slipId && status.includes("approved_applied");
+  });
+
+  return { clientConfirmed, auditConfirmed };
+}
+
+function executionSummary(response, proof = {}) {
   const execution = response?.result?.execution || {};
   if (!execution.applied) return response?.result?.message || response?.safety || "The owner decision was recorded, but no client record was created.";
   const id = execution.id || execution.ids?.[0] || "";
-  return `Owner-approved client created${id ? ` · record ${id}` : ""}. Nothing was sent, charged or synced.`;
+  const clientProof = proof.clientConfirmed ? "Live Clients confirmed" : "Live Clients refresh pending";
+  const auditProof = proof.auditConfirmed ? "Command audit confirmed" : "Command audit refresh pending";
+  return `Owner-approved client created${id ? ` · record ${id}` : ""}. ${clientProof} · ${auditProof}. Nothing was sent, charged or synced.`;
 }
 
 export default function OfficeOSClientApprovalDesk() {
@@ -136,7 +165,8 @@ export default function OfficeOSClientApprovalDesk() {
         fields,
       });
       if (response?.localOnly) throw new Error("The backend approval route was not available. Nothing was created.");
-      const result = { ok: Boolean(response?.result?.execution?.applied), message: executionSummary(response) };
+      const proof = await verifyAppliedClient(response, decision, draft);
+      const result = { ok: Boolean(response?.result?.execution?.applied), message: executionSummary(response, proof) };
       setResults((current) => ({ ...current, [decision.id]: result }));
       setLastResult(result);
       await load();
