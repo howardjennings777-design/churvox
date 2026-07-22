@@ -1,6 +1,6 @@
 .cvosApprovalTabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 12px 14px 0;
 }
@@ -79,9 +79,20 @@
   margin: 12px 14px 0;
 }
 
+@media (max-width: 720px) {
+  .cvosApprovalTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 480px) {
   .cvosApprovalTabs {
     gap: 6px;
+    padding-inline: 10px;
+  }
+
+  .cvosApprovalTabs button {
+    min-height: 40px;
     padding-inline: 10px;
   }
 
