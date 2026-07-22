@@ -10,7 +10,7 @@ test.describe("Churvox whole website rebuild contract", () => {
     const route = read("src/churvox-office-lab/OfficeTeamLab.jsx");
     expect(route).toContain("window.location.pathname === '/new-command-lab'");
     expect(route).toContain("value === 'public' || value === 'hq' || value === 'blueprint'");
-    expect(route).toContain("<PublicSiteNext />");
+    expect(route).toContain("<PublicSiteConnected />");
     expect(route).toContain("<HQNext />");
     expect(route).toContain("<OfficeOSConnected />");
     expect(route).toContain("<OfficeOSPreview />");
@@ -45,6 +45,17 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(publicSite).toContain('page.startsWith("customer-")');
     expect(publicSite).toContain('page.replace("customer-", "")');
     expect(publicSite).toContain("CHURVOX_WHOLE_PUBLIC_REBUILD_20260721");
+  });
+
+  test("hands preview visitors into the current verified public journeys", async () => {
+    const connectedPublic = read("src/churvox-site-next/PublicSiteConnected.jsx");
+    expect(connectedPublic).toContain("PUBLIC_SITE_CONNECTED_BUILD");
+    expect(connectedPublic).toContain('href: "/signup"');
+    expect(connectedPublic).toContain('href: "/login"');
+    expect(connectedPublic).toContain('href: "/request"');
+    expect(connectedPublic).toContain('href: "mailto:hello@churvox.com"');
+    expect(connectedPublic).toContain("Verified routes, not preview submissions");
+    expect(connectedPublic).toContain("no visitor receives a false success");
   });
 
   test("preserves the locked NZD plan prices", async () => {
