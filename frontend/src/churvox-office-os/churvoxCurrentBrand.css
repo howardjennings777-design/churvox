@@ -1,10 +1,9 @@
 /*
  * Rebuild-only brand bridge.
  *
- * ChurvoxLogo is now the shared C/check source of truth. The private owner and
- * blueprint headers still use legacy text tiles, so this bridge replaces only
- * those tiles and standardises sizing for the component-backed public and HQ
- * surfaces.
+ * ChurvoxLogo is the shared C/check source of truth. Component-backed owner,
+ * public and HQ surfaces use it directly; the remaining blueprint text tile is
+ * bridged to the exact same public mark asset.
  */
 
 .cvoscBrand > span,
@@ -30,6 +29,7 @@
   min-width: 46px !important;
 }
 
+.cvoscBrand > svg,
 .cvnextBrand > svg,
 .cvnextFooterBrand > svg,
 .cvnextAuthStory > svg,
@@ -37,7 +37,12 @@
 .cvhqBrand > svg {
   flex: 0 0 auto;
   display: block !important;
+  width: auto;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.2));
+}
+
+.cvoscBrand > svg {
+  height: 52px;
 }
 
 .cvnextBrand > svg {
@@ -68,6 +73,7 @@
     min-width: 43px !important;
   }
 
+  .cvoscBrand > svg,
   .cvnextBrand > svg,
   .cvhqBrand > svg {
     height: 43px;
