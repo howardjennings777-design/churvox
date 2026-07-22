@@ -74,8 +74,7 @@ async function collectVisibleText(page) {
   return page.evaluate(() => {
     const skip = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'SVG']);
     const chunks = [];
-    const els = [...document.querySelectorAll('body *')];
-    for (const el of els) {
+    for (const el of [...document.querySelectorAll('body *')]) {
       if (skip.has(el.tagName)) continue;
       const style = getComputedStyle(el);
       if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity || '1') < 0.08) continue;
@@ -91,9 +90,7 @@ async function collectVisibleText(page) {
 
 async function expectNoLaunchLanguage(page, label) {
   const visibleText = await collectVisibleText(page);
-  const hits = blockedVisibleWords
-    .filter((pattern) => pattern.test(visibleText))
-    .map((pattern) => pattern.toString());
+  const hits = blockedVisibleWords.filter((pattern) => pattern.test(visibleText)).map((pattern) => pattern.toString());
   expect(hits, `${label} contains customer-facing internal launch words. Visible text:\n${visibleText.slice(0, 2500)}`).toEqual([]);
 }
 
@@ -180,13 +177,10 @@ async function fetchLoginToken(page, email, password, role) {
   const paths = role === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
   const attempts = [];
   for (const path of paths) {
-    const response = await page.request.post(apiUrl(path), {
-      data: { email, password },
-      timeout: 30_000,
-    });
+    const response = await page.request.post(apiUrl(path), { data: { email, password }, timeout: 30_000 });
     const body = await readJson(response);
     const token = tokenFrom(body);
-    attempts.push({ path, status: response.status(), token: Boolean(token) });
+    attempts.push({ path, status: response.status(), token: Boolean(token), detail: body?.detail || body?.message || '' });
     if (!response.ok() || body?.success === false || !token) continue;
     await verifyIdentity(page, token, email, role);
     return token;
@@ -196,25 +190,45 @@ async function fetchLoginToken(page, email, password, role) {
 
 async function apiLogin(page, email, password, role) {
   const token = await fetchLoginToken(page, email, password, role);
+
+  // Seed auth before React and AuthProvider run. Setting localStorage after the
+  // public app starts races its anonymous /auth/me request, which can erase the
+  // newly inserted token and produce a false login-page failure.
+  await page.addInitScript(({ seededToken }) => {
+    localStorage.setItem('token', seededToken);
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('churvox:logged-out');
+  }, { seededToken: token });
+
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.evaluate((value) => localStorage.setItem('token', value), token);
+  await page.waitForFunction(
+    () => Boolean(localStorage.getItem('token')) && window.__CHURVOX_AUTH_STATE__?.status === 'authenticated',
+    null,
+    { timeout: 30_000 },
+  );
   return token;
 }
 
 async function uiLogin(page, email, password, role) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await waitStable(page);
-  const emailFilled = await fillByLabelOrPlaceholder(page, 'email', email);
-  const passwordFilled = await fillByLabelOrPlaceholder(page, 'password', password);
-  expect(emailFilled, `${role} login email field was not found`).toBeTruthy();
-  expect(passwordFilled, `${role} login password field was not found`).toBeTruthy();
+  expect(await fillByLabelOrPlaceholder(page, 'email', email), `${role} login email field was not found`).toBeTruthy();
+  expect(await fillByLabelOrPlaceholder(page, 'password', password), `${role} login password field was not found`).toBeTruthy();
+
+  const responsePromise = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && /\/api\/(?:worker\/)?auth\/login(?:[?#]|$)/i.test(response.url()),
+    { timeout: 30_000 },
+  );
   await clickLogin(page);
+  const loginResponse = await responsePromise;
+  const loginBody = await readJson(loginResponse);
+  expect(loginResponse.ok(), `${role} same-origin login failed ${loginResponse.status()}: ${JSON.stringify(loginBody).slice(0, 500)}`).toBeTruthy();
+  expect(tokenFrom(loginBody), `${role} same-origin login returned no token/account JSON`).toBeTruthy();
+
   await page.waitForFunction(() => Boolean(localStorage.getItem('token')), null, { timeout: 30_000 });
   const token = await page.evaluate(() => localStorage.getItem('token') || '');
-  expect(token, `${role} login form did not create an authenticated token`).toBeTruthy();
   await verifyIdentity(page, token, email, role);
-  await page.waitForURL((url) => !/\/login(?:[?#]|$)/i.test(url.pathname), { timeout: 15_000 }).catch(() => null);
-  expect(page.url(), `${role} login did not leave the login page`).not.toMatch(/\/login(?:[?#]|$)/i);
+  await page.waitForURL((url) => !/\/login(?:[?#]|$)/i.test(url.pathname), { timeout: 20_000 });
 }
 
 async function findLinkedWorker(page, ownerToken) {
@@ -229,12 +243,15 @@ async function findLinkedWorker(page, ownerToken) {
 }
 
 async function createAssignedWorkerJob(page) {
+  const workerToken = await page.evaluate(() => localStorage.getItem('token') || '');
+  expect(workerToken, 'worker browser session token').toBeTruthy();
   const ownerToken = await fetchLoginToken(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
   const worker = await findLinkedWorker(page, ownerToken);
   const workerId = idOf(worker);
   expect(workerId, 'linked worker id').toBeTruthy();
 
   const marker = `Full launch worker detail ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const workerName = String(worker.name || worker.full_name || worker.worker_name || '').trim();
   const created = await requestJson(page, ownerToken, 'post', '/api/jobs', {
     title: marker,
     job_type: 'other',
@@ -245,6 +262,12 @@ async function createAssignedWorkerJob(page) {
     estimated_duration: 30,
     price: 0,
     assigned_worker_id: workerId,
+    worker_id: workerId,
+    assigned_to: workerId,
+    assigned_worker_email: WORKER_EMAIL,
+    worker_email: WORKER_EMAIL,
+    assigned_worker_name: workerName,
+    worker_name: workerName,
     worker_instructions: marker,
     notes: marker,
   });
@@ -258,6 +281,16 @@ async function createAssignedWorkerJob(page) {
     jobId = idOf(job);
   }
   expect(jobId, 'created assigned worker audit job id').toBeTruthy();
+
+  await expect.poll(async () => {
+    const result = await requestJson(page, workerToken, 'get', `/api/worker/jobs?ts=${Date.now()}`);
+    return result.ok && listFrom(result.body, ['jobs']).some((row) => textHas(row, marker));
+  }, {
+    message: 'created job never reached the authenticated worker-scoped API',
+    timeout: 30_000,
+    intervals: [500, 1000, 2000],
+  }).toBeTruthy();
+
   return { ownerToken, jobId, marker };
 }
 
@@ -330,9 +363,7 @@ test.describe('Churvox full launch owner audit', () => {
       const menuItem = page.getByRole('menuitem', { name: new RegExp(`^${item}$`, 'i') }).first();
       const accountButton = page.getByRole('navigation', { name: /Account and help pages/i })
         .getByRole('button', { name: new RegExp(`^${item}$`, 'i') }).first();
-      const visibleInMenu = await menuItem.isVisible().catch(() => false);
-      const visibleAsButton = await accountButton.isVisible().catch(() => false);
-      expect(visibleInMenu || visibleAsButton, `missing responsive account navigation item: ${item}`).toBeTruthy();
+      expect(await menuItem.isVisible().catch(() => false) || await accountButton.isVisible().catch(() => false), `missing responsive account navigation item: ${item}`).toBeTruthy();
     }
   });
 });
@@ -359,6 +390,10 @@ test.describe('Churvox full launch worker audit', () => {
       expect(page.url(), 'worker detail audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
 
       const assignedJob = page.getByRole('button', { name: new RegExp(fixture.marker, 'i') }).first();
+      if (!await assignedJob.isVisible().catch(() => false)) {
+        const refresh = page.getByRole('button', { name: /refresh/i }).first();
+        if (await refresh.isVisible().catch(() => false)) await refresh.click();
+      }
       await expect(assignedJob, 'created assigned job did not appear in the worker queue').toBeVisible({ timeout: 30_000 });
       await assignedJob.click();
       await expect(page.locator('body')).toContainText(fixture.marker, { timeout: 15_000 });
@@ -369,9 +404,7 @@ test.describe('Churvox full launch worker audit', () => {
       await expect(page.getByText('Photo proof', { exact: true }).first(), 'missing Photo proof control').toBeVisible();
       await expect(page.getByRole('button', { name: /^Send proof note$/i }).first(), 'missing Send proof note control').toBeVisible();
       await expect(page.getByRole('button', { name: /^Timer note$/i }).first(), 'missing Timer note control').toBeVisible();
-      if (!isMobile) {
-        await expect(page.getByText('Office link', { exact: true }).first(), 'missing desktop Office link control').toBeVisible();
-      }
+      if (!isMobile) await expect(page.getByText('Office link', { exact: true }).first(), 'missing desktop Office link control').toBeVisible();
       await expectBasics(page, 'worker job detail');
     } finally {
       await cleanupAssignedWorkerJob(page, fixture);
