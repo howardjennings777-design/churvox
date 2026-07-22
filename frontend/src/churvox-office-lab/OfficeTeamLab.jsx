@@ -2,6 +2,7 @@ import React from 'react'
 import OfficeTeamLabSite from './OfficeTeamLabSite'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
 
+const OfficeOSConnected = React.lazy(() => import('../churvox-office-os/OfficeOSConnected'))
 const OfficeOSPreview = React.lazy(() => import('../churvox-office-os/OfficeOSPreview'))
 const PublicSiteNext = React.lazy(() => import('../churvox-site-next/PublicSiteNext'))
 const HQNext = React.lazy(() => import('../churvox-site-next/HQNext'))
@@ -31,7 +32,7 @@ function isOfficeOSPreviewPath() {
 function previewSurface() {
   if (typeof window === 'undefined') return 'owner'
   const value = new URLSearchParams(window.location.search || '').get('surface')
-  if (value === 'public' || value === 'hq') return value
+  if (value === 'public' || value === 'hq' || value === 'blueprint') return value
   return 'owner'
 }
 
@@ -57,7 +58,8 @@ function OfficeTeamLab(props) {
     const surface = previewSurface()
     if (surface === 'public') return <PublicSiteNext />
     if (surface === 'hq') return <HQNext />
-    return <OfficeOSPreview />
+    if (surface === 'blueprint') return <OfficeOSPreview />
+    return <OfficeOSConnected />
   }
 
   return (
