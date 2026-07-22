@@ -11,7 +11,7 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(route).toContain("window.location.pathname === '/new-command-lab'");
     expect(route).toContain("value === 'public' || value === 'hq' || value === 'blueprint'");
     expect(route).toContain("<PublicSiteConnected />");
-    expect(route).toContain("<HQNext />");
+    expect(route).toContain("<HQConnected />");
     expect(route).toContain("<OfficeOSConnected />");
     expect(route).toContain("<OfficeOSPreview />");
   });
@@ -56,6 +56,20 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(connectedPublic).toContain('href: "mailto:hello@churvox.com"');
     expect(connectedPublic).toContain("Verified routes, not preview submissions");
     expect(connectedPublic).toContain("no visitor receives a false success");
+  });
+
+  test("connects HQ to platform reads without exposing a second mutation path", async () => {
+    const connectedHq = read("src/churvox-site-next/HQConnected.jsx");
+    const liveData = read("src/churvox-site-next/hqLiveData.js");
+    expect(connectedHq).toContain("HQ_CONNECTED_BUILD");
+    expect(connectedHq).toContain('href="/admin"');
+    expect(connectedHq).toContain("No sample platform totals are substituted");
+    expect(liveData).toContain("HQ_LIVE_DATA_BUILD");
+    expect(liveData).toContain("window.location.origin");
+    expect(liveData).toContain('method: "GET"');
+    expect(liveData).toContain("/api/admin/owner/paid-launch-report");
+    expect(liveData).toContain("/api/admin/owner/testers");
+    expect(liveData).not.toContain('method: "POST"');
   });
 
   test("preserves the locked NZD plan prices", async () => {
