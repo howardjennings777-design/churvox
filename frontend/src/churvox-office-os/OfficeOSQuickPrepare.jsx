@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle2, ClipboardPlus, ShieldCheck, X } from "lucide-
 import { createBackendCommandSlip } from "../churvox-office-lab/OfficeTeamCommandApi";
 import "./officeOSQuickPrepare.css";
 
-export const OFFICE_OS_QUICK_PREPARE_BUILD = "churvox-office-os-quick-prepare-20260723";
+export const OFFICE_OS_QUICK_PREPARE_BUILD = "churvox-office-os-quick-prepare-20260723-required-fields";
 
 if (typeof window !== "undefined") {
   window.__CHURVOX_OFFICE_OS_QUICK_PREPARE_BUILD__ = OFFICE_OS_QUICK_PREPARE_BUILD;
@@ -81,9 +81,11 @@ function detailText(preparedForm) {
 
 function requiredFieldsFor(areaId) {
   if (areaId === "clients") return ["name"];
-  if (areaId === "invoices") return ["job"];
-  if (areaId === "messages") return ["subject"];
-  if (areaId === "staff") return ["worker"];
+  if (areaId === "work") return ["title", "notes"];
+  if (areaId === "quotes") return ["title", "scope"];
+  if (areaId === "invoices") return ["job", "line_items"];
+  if (areaId === "messages") return ["subject", "message"];
+  if (areaId === "staff") return ["worker", "issue"];
   return ["title"];
 }
 
