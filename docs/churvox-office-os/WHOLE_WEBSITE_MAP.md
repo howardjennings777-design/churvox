@@ -54,12 +54,15 @@ The replacement is not only an owner dashboard. It is one operating system expre
 - The current Render product remains live until the replacement passes its release gates.
 - No cutover occurs from appearance alone. Data migration, role isolation, billing, mobile, offline, recovery and real-business flows require evidence.
 
-## Current private preview entrance
+## Current private replacement entrances
 
 The draft branch uses the existing platform-admin-only route:
 
-- Owner Office OS: `/new-command-lab`
+- Connected owner replacement: `/new-command-lab`
+- Owner design blueprint: `/new-command-lab?surface=blueprint`
 - Public rebuild: `/new-command-lab?surface=public`
 - Churvox HQ: `/new-command-lab?surface=hq`
 
-These previews are not the live public or customer routes and use sample data only.
+The connected owner replacement reads current business-scoped records through authenticated GET requests. It does not substitute sample records when a live endpoint is empty or unavailable. Write actions open the existing validated owner workflow until the matching replacement mutation, permission, idempotency, audit and rollback gates pass.
+
+The public, customer and HQ rebuilds remain private previews. The live public routes, current owner app, worker app and HQ are unchanged.
