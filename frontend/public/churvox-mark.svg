@@ -1,35 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Churvox logo mark">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Churvox logo mark">
   <defs>
-    <linearGradient id="orange" x1="92" y1="96" x2="420" y2="410" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ffb43f"/>
-      <stop offset="0.48" stop-color="#ff8a00"/>
-      <stop offset="1" stop-color="#f36b00"/>
+    <linearGradient id="cvxMarkShell" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17211c"/>
+      <stop offset="0.55" stop-color="#0b100e"/>
+      <stop offset="1" stop-color="#050606"/>
     </linearGradient>
-    <linearGradient id="silver" x1="142" y1="172" x2="424" y2="318" gradientUnits="userSpaceOnUse">
+    <linearGradient id="cvxMarkHeat" x1="14" y1="10" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffc06f"/>
+      <stop offset="0.42" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#de4519"/>
+    </linearGradient>
+    <linearGradient id="cvxMarkSteel" x1="20" y1="21" x2="47" y2="44" gradientUnits="userSpaceOnUse">
       <stop stop-color="#ffffff"/>
-      <stop offset="0.46" stop-color="#f4f5f7"/>
-      <stop offset="1" stop-color="#d8dce2"/>
+      <stop offset="1" stop-color="#d7dee8"/>
     </linearGradient>
-    <filter id="lift" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000000" flood-opacity="0.35"/>
-    </filter>
-    <filter id="orangeShadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#000000" flood-opacity="0.36"/>
+    <filter id="cvxMarkLift" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#000000" flood-opacity="0.35"/>
     </filter>
   </defs>
-  <g filter="url(#orangeShadow)">
-    <path d="M111 233C130 148 206 86 297 86C337 86 374 98 406 119" fill="none" stroke="url(#orange)" stroke-width="61" stroke-linecap="round"/>
-    <path d="M160 322C194 383 264 415 334 396C367 387 396 368 419 342" fill="none" stroke="url(#orange)" stroke-width="61" stroke-linecap="round"/>
-    <path d="M49 262H111" fill="none" stroke="url(#orange)" stroke-width="17" stroke-linecap="round"/>
-    <path d="M72 293H119" fill="none" stroke="url(#orange)" stroke-width="17" stroke-linecap="round"/>
-    <path d="M87 324H181" fill="none" stroke="url(#orange)" stroke-width="17" stroke-linecap="round"/>
-    <circle cx="33" cy="293" r="11" fill="#ff8a00"/>
+  <rect x="5" y="5" width="54" height="54" rx="17" fill="url(#cvxMarkShell)"/>
+  <path d="M14 18h36M14 46h36" stroke="#ffffff" stroke-opacity="0.06" stroke-width="5" stroke-linecap="round"/>
+  <path d="M50 11c6 13 4 29-4 40-9 11-22 16-37 13" fill="none" stroke="#f97316" stroke-opacity="0.13" stroke-width="11" stroke-linecap="round"/>
+  <g filter="url(#cvxMarkLift)">
+    <path d="M44.2 19.7C40.9 15.9 36.1 14 30.9 14 21.2 14 13.4 21.8 13.4 31.6S21.2 49.2 31 49.2c6.1 0 11.4-3 14.7-7.7" fill="none" stroke="url(#cvxMarkHeat)" stroke-width="8.5" stroke-linecap="round"/>
+    <path d="M22.5 33.4l7 6.8 14.7-17" fill="none" stroke="url(#cvxMarkSteel)" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <g filter="url(#lift)">
-    <path d="M140 282L229 251L302 293L424 174" fill="none" stroke="url(#silver)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="140" cy="282" r="27" fill="#101316" stroke="url(#silver)" stroke-width="20"/>
-    <circle cx="229" cy="251" r="23" fill="#101316" stroke="url(#silver)" stroke-width="18"/>
-    <circle cx="424" cy="174" r="23" fill="#101316" stroke="url(#silver)" stroke-width="18"/>
-  </g>
+  <circle cx="47.5" cy="19" r="4.4" fill="#f97316"/>
+  <circle cx="47.5" cy="19" r="1.7" fill="#111827"/>
 </svg>
