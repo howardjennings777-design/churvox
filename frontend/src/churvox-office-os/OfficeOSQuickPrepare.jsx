@@ -48,7 +48,7 @@ function fieldCopy(areaId) {
     title: "Subject *", titlePlaceholder: "Booking request", person: "Client or person", personPlaceholder: "Who is the message for?", when: "Send timing", whenPlaceholder: "After owner approval", amount: null, details: "Message *", detailsPlaceholder: "Message that needs preparing", detailsRequired: true, notes: "Prepared reply or owner notes",
   };
   if (areaId === "staff") return {
-    title: "Job or review title *", titlePlaceholder: "Timer review", person: "Worker", personPlaceholder: "Worker name", when: "Hours or timing", whenPlaceholder: "5h 42m", amount: null, details: "Issue or review *", detailsPlaceholder: "What needs checking?", detailsRequired: true, notes: "Staff notes",
+    title: "Job or review title *", titlePlaceholder: "Timer review", person: "Worker *", personPlaceholder: "Worker name", when: "Hours or timing", whenPlaceholder: "5h 42m", amount: null, details: "Issue or review *", detailsPlaceholder: "What needs checking?", detailsRequired: true, notes: "Staff notes",
   };
   return {
     title: "Job or booking title *", titlePlaceholder: "Service visit", person: "Client", personPlaceholder: "Who is it for?", when: "Date or timing", whenPlaceholder: "Friday 10:00am", amount: "Price", details: "Scope or instructions *", detailsPlaceholder: "Work, access and instructions", detailsRequired: true, notes: "Owner notes",
@@ -71,12 +71,20 @@ function preparedFormFor(form) {
   if (form.area === "quotes") return compact({ title, client: person, scope: details, price: amount, follow_up: when, notes });
   if (form.area === "invoices") return compact({ job: title, client: person, line_items: details, total: amount, invoice_timing: when, notes });
   if (form.area === "messages") return compact({ subject: title, client: person, message: details, reply: notes, send_timing: when });
-  if (form.area === "staff") return compact({ job: title, worker: person, hours: when, issue: details, notes });
+  if (form.area === "staff") return compact({ worker: person, job: title, hours: when, issue: details, notes });
   return compact({ title, client: person, date: when, price: amount, notes: [details, notes].filter(Boolean).join(" · ") });
 }
 
 function detailText(preparedForm) {
   return Object.entries(preparedForm).map(([key, value]) => `${key.replaceAll("_", " ")}: ${value}`).join(" · ");
+}
+
+function requiredFieldsFor(areaId) {
+  if (areaId === "clients") return ["name"];
+  if (areaId === "invoices") return ["job"];
+  if (areaId === "messages") return ["subject"];
+  if (areaId === "staff") return ["worker"];
+  return ["title"];
 }
 
 export default function OfficeOSQuickPrepare() {
@@ -86,7 +94,8 @@ export default function OfficeOSQuickPrepare() {
   const [result, setResult] = React.useState(null);
   const area = selectedArea(form.area);
   const copy = fieldCopy(form.area);
-  const canSubmit = Boolean(form.title.trim() && (!copy.detailsRequired || form.details.trim()));
+  const requiredPersonReady = form.area !== "staff" || Boolean(form.person.trim());
+  const canSubmit = Boolean(form.title.trim() && requiredPersonReady && (!copy.detailsRequired || form.details.trim()));
 
   const update = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -123,7 +132,7 @@ export default function OfficeOSQuickPrepare() {
           payload: {
             office_role: area.role,
             prepared_form: preparedForm,
-            required_fields: form.area === "clients" ? ["name"] : [form.area === "messages" ? "subject" : form.area === "staff" ? "worker" : "title"],
+            required_fields: requiredFieldsFor(form.area),
             will_do: [`Create the owner-approved ${area.label.toLowerCase()} draft only after Command approval.`],
             actions: [area.approval, "Ask for more information", "Park"],
             source: "connected_office_os_quick_prepare",
@@ -162,7 +171,7 @@ export default function OfficeOSQuickPrepare() {
 
         <label className="wide"><span>What are you preparing?</span><select value={form.area} onChange={(event) => changeArea(event.target.value)}>{AREAS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
         <label><span>{copy.title}</span><input value={form.title} onChange={(event) => update("title", event.target.value)} placeholder={copy.titlePlaceholder} required /></label>
-        <label><span>{copy.person}</span><input value={form.person} onChange={(event) => update("person", event.target.value)} placeholder={copy.personPlaceholder} /></label>
+        <label><span>{copy.person}</span><input value={form.person} onChange={(event) => update("person", event.target.value)} placeholder={copy.personPlaceholder} required={form.area === "staff"} /></label>
         <label><span>{copy.when}</span><input value={form.when} onChange={(event) => update("when", event.target.value)} placeholder={copy.whenPlaceholder} /></label>
         {copy.amount ? <label><span>{copy.amount}</span><input value={form.amount} onChange={(event) => update("amount", event.target.value)} placeholder="$150 or leave blank" /></label> : null}
         <label className="wide"><span>{copy.details}</span><textarea rows="4" value={form.details} onChange={(event) => update("details", event.target.value)} placeholder={copy.detailsPlaceholder} required={copy.detailsRequired} /></label>
