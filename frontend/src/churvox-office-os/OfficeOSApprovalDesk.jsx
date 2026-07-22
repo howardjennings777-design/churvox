@@ -17,7 +17,7 @@ import { loadOfficeArea } from "./officeOSLiveData";
 import "./officeOSClientApprovalDesk.css";
 import "./officeOSApprovalDesk.css";
 
-export const OFFICE_OS_APPROVAL_DESK_BUILD = "churvox-office-os-approval-desk-20260723-quotes";
+export const OFFICE_OS_APPROVAL_DESK_BUILD = "churvox-office-os-approval-desk-20260723-complete";
 
 if (typeof window !== "undefined") {
   window.__CHURVOX_OFFICE_OS_APPROVAL_DESK_BUILD__ = OFFICE_OS_APPROVAL_DESK_BUILD;
@@ -31,10 +31,13 @@ const APPROVAL_TYPES = Object.freeze([
     empty: "No prepared clients waiting",
     recordNoun: "client",
     liveArea: "clients",
+    expectedCollection: "clients",
+    proofLabel: "Client record",
     primaryField: "name",
     actionFallback: "Approve and create client",
     formTitle: "Owner-approved client record",
     typePattern: /client|customer/,
+    safetyStatement: "Nothing was sent, charged or synced.",
     fields: [
       { key: "name", label: "Client name", required: true },
       { key: "phone", label: "Phone" },
@@ -50,10 +53,13 @@ const APPROVAL_TYPES = Object.freeze([
     empty: "No prepared jobs waiting",
     recordNoun: "job draft",
     liveArea: "work",
+    expectedCollection: "jobs",
+    proofLabel: "Job draft",
     primaryField: "title",
     actionFallback: "Approve and create job draft",
     formTitle: "Owner-approved job draft",
     typePattern: /job|work|booking/,
+    safetyStatement: "Nothing was sent, charged or synced.",
     fields: [
       { key: "title", label: "Job title", required: true },
       { key: "client", label: "Client" },
@@ -70,10 +76,13 @@ const APPROVAL_TYPES = Object.freeze([
     empty: "No prepared quotes waiting",
     recordNoun: "quote draft",
     liveArea: "quotes",
+    expectedCollection: "quotes",
+    proofLabel: "Quote draft",
     primaryField: "title",
     actionFallback: "Approve and create quote draft",
     formTitle: "Owner-approved quote draft",
     typePattern: /quote|estimate/,
+    safetyStatement: "Draft only. Nothing was sent, charged or synced.",
     fields: [
       { key: "title", label: "Quote title", required: true },
       { key: "client", label: "Client" },
@@ -81,6 +90,73 @@ const APPROVAL_TYPES = Object.freeze([
       { key: "follow_up", label: "Follow-up timing" },
       { key: "scope", label: "Scope", long: true, required: true },
       { key: "notes", label: "Quote notes", long: true },
+    ],
+  },
+  {
+    id: "invoices",
+    tab: "Invoices",
+    heading: "Approve prepared invoice drafts",
+    empty: "No prepared invoice drafts waiting",
+    recordNoun: "invoice draft",
+    liveArea: "invoices",
+    expectedCollection: "invoices",
+    proofLabel: "Invoice draft",
+    primaryField: "job",
+    actionFallback: "Approve and create invoice draft",
+    formTitle: "Owner-approved invoice draft",
+    typePattern: /invoice|payment|money/,
+    safetyStatement: "Draft only. Nothing was sent, synced, charged or marked paid.",
+    fields: [
+      { key: "job", label: "Job or invoice title", required: true },
+      { key: "client", label: "Client" },
+      { key: "total", label: "Invoice total" },
+      { key: "invoice_timing", label: "Invoice timing" },
+      { key: "line_items", label: "Line items", long: true, required: true },
+      { key: "notes", label: "Invoice notes", long: true },
+    ],
+  },
+  {
+    id: "messages",
+    tab: "Messages",
+    heading: "Approve prepared message drafts",
+    empty: "No prepared message drafts waiting",
+    recordNoun: "message draft",
+    liveArea: null,
+    expectedCollection: "message_drafts",
+    proofLabel: "Message draft",
+    primaryField: "subject",
+    actionFallback: "Approve and create message draft",
+    formTitle: "Owner-approved message draft",
+    typePattern: /message|reply|email|sms|followup|follow_up/,
+    safetyStatement: "Draft only. No email, SMS or notification was sent.",
+    fields: [
+      { key: "subject", label: "Subject", required: true },
+      { key: "client", label: "Client or person" },
+      { key: "send_timing", label: "Suggested send timing" },
+      { key: "message", label: "Message", long: true, required: true },
+      { key: "reply", label: "Prepared reply or owner notes", long: true },
+    ],
+  },
+  {
+    id: "staff",
+    tab: "Staff",
+    heading: "Approve prepared staff reviews",
+    empty: "No prepared staff reviews waiting",
+    recordNoun: "staff review",
+    liveArea: null,
+    expectedCollection: "payroll_reviews",
+    proofLabel: "Staff review",
+    primaryField: "worker",
+    actionFallback: "Approve and create staff review",
+    formTitle: "Owner-approved staff review",
+    typePattern: /payroll|timer|hours|staff|worker/,
+    safetyStatement: "Review only. Nobody was paid and no tax or bank file was created.",
+    fields: [
+      { key: "worker", label: "Worker", required: true },
+      { key: "job", label: "Job or review title" },
+      { key: "hours", label: "Hours or timing" },
+      { key: "issue", label: "Issue or review", long: true, required: true },
+      { key: "notes", label: "Staff notes", long: true },
     ],
   },
 ]);
@@ -136,33 +212,53 @@ async function verifyAppliedRecord(response, decision, draft, config) {
   if (!execution.applied) return { recordConfirmed: false, auditConfirmed: false };
 
   const createdId = String(execution.id || execution.ids?.[0] || "");
+  const executionCollection = String(execution.collection || "");
+  const executionConfirmed = Boolean(
+    createdId && (!config.expectedCollection || executionCollection === config.expectedCollection),
+  );
   const slipId = String(decision?.raw?.command_slip_id || "");
   const expectedTitle = String(draft?.[config.primaryField] || "").trim().toLowerCase();
+
   const [records, audit] = await Promise.all([
-    loadOfficeArea(config.liveArea).catch(() => ({ records: [] })),
+    config.liveArea
+      ? loadOfficeArea(config.liveArea).catch(() => ({ records: [] }))
+      : Promise.resolve({ records: [] }),
     fetchBackendCommandAudit().catch(() => ({ audit: [] })),
   ]);
 
-  const recordConfirmed = (records?.records || []).some((record) => {
-    const recordId = String(record?.id || "");
-    const title = String(record?.title || "").trim().toLowerCase();
-    return (createdId && recordId === createdId) || (expectedTitle && title === expectedTitle);
-  });
+  const liveConfirmed = config.liveArea
+    ? (records?.records || []).some((record) => {
+      const recordId = String(record?.id || "");
+      const title = String(record?.title || "").trim().toLowerCase();
+      return (createdId && recordId === createdId) || (expectedTitle && title === expectedTitle);
+    })
+    : false;
   const auditConfirmed = (audit?.audit || []).some((entry) => {
     const status = `${entry?.status || ""} ${entry?.action || ""}`.toLowerCase();
     return slipId && entry?.slipId === slipId && status.includes("approved_applied");
   });
 
-  return { recordConfirmed, auditConfirmed };
+  return {
+    recordConfirmed: liveConfirmed || executionConfirmed,
+    liveConfirmed,
+    executionConfirmed,
+    auditConfirmed,
+  };
 }
 
 function executionSummary(response, proof, config) {
   const execution = response?.result?.execution || {};
-  if (!execution.applied) return response?.result?.message || response?.safety || `The owner decision was recorded, but no ${config.recordNoun} was created.`;
+  if (!execution.applied) {
+    return response?.result?.message
+      || response?.safety
+      || `The owner decision was recorded, but no ${config.recordNoun} was created.`;
+  }
   const id = execution.id || execution.ids?.[0] || "";
-  const recordProof = proof.recordConfirmed ? `Live ${config.tab} confirmed` : `Live ${config.tab} refresh pending`;
+  const recordProof = config.liveArea
+    ? (proof.liveConfirmed ? `Live ${config.tab} confirmed` : `${config.proofLabel} creation confirmed`)
+    : (proof.executionConfirmed ? `${config.proofLabel} creation confirmed` : `${config.proofLabel} proof pending`);
   const auditProof = proof.auditConfirmed ? "Command audit confirmed" : "Command audit refresh pending";
-  return `Owner-approved ${config.recordNoun} created${id ? ` · record ${id}` : ""}. ${recordProof} · ${auditProof}. Nothing was sent, charged or synced.`;
+  return `Owner-approved ${config.recordNoun} created${id ? ` · record ${id}` : ""}. ${recordProof} · ${auditProof}. ${config.safetyStatement}`;
 }
 
 export default function OfficeOSApprovalDesk() {
@@ -237,12 +333,18 @@ export default function OfficeOSApprovalDesk() {
       });
       if (response?.localOnly) throw new Error("The backend approval route was not available. Nothing was created.");
       const proof = await verifyAppliedRecord(response, decision, draft, config);
-      const result = { ok: Boolean(response?.result?.execution?.applied), message: executionSummary(response, proof, config) };
+      const result = {
+        ok: Boolean(response?.result?.execution?.applied),
+        message: executionSummary(response, proof, config),
+      };
       setResults((current) => ({ ...current, [decision.id]: result }));
       setLastResult(result);
       await load();
     } catch (error) {
-      const result = { ok: false, message: `${error?.message || "Approval failed."} Nothing was sent, charged or synced.` };
+      const result = {
+        ok: false,
+        message: `${error?.message || "Approval failed."} Nothing was sent, paid, charged, filed or synced.`,
+      };
       setResults((current) => ({ ...current, [decision.id]: result }));
       setLastResult(result);
     } finally {
@@ -282,7 +384,7 @@ export default function OfficeOSApprovalDesk() {
 
       <div className="cvosApprovalTypeCopy">
         <ClipboardPlus size={18} />
-        <div><strong>{config.heading}</strong><span>Edit every field before approving.</span></div>
+        <div><strong>{config.heading}</strong><span>Edit every required field before approving.</span></div>
       </div>
 
       {lastResult ? (
@@ -331,7 +433,7 @@ export default function OfficeOSApprovalDesk() {
                   {busy ? <LoaderCircle size={17} className="spin" /> : <CheckCircle2 size={17} />}
                   {busy ? "Applying owner approval…" : approvalAction(decision, config)}
                 </button>
-                <small>Creates one business-scoped {config.recordNoun}. It does not send, charge or sync.</small>
+                <small>Creates one business-scoped {config.recordNoun}. {config.safetyStatement}</small>
               </div>
 
               {result ? (
