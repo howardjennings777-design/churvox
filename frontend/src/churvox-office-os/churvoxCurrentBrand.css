@@ -1,0 +1,86 @@
+/*
+ * Rebuild-only brand bridge.
+ *
+ * The live owner app already uses this Churvox C/check mark. The private owner,
+ * blueprint, public and HQ rebuild surfaces all use the same asset here so an
+ * older CV tile or alternate experimental mark cannot drift into cutover.
+ */
+
+.cvoscBrand > span,
+.cvosBrand > span {
+  flex: 0 0 auto !important;
+  width: 50px !important;
+  height: 50px !important;
+  min-width: 50px !important;
+  display: block !important;
+  color: transparent !important;
+  background: transparent url('/churvox-current-mark.svg') center / contain no-repeat !important;
+  border-radius: 17px !important;
+  box-shadow: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  letter-spacing: 0 !important;
+  overflow: visible !important;
+}
+
+.cvosBrand > span {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+}
+
+.cvnextBrand > svg,
+.cvnextFooterBrand > svg,
+.cvnextAuthStory > svg,
+.cvnextCustomerBrand > svg,
+.cvhqBrand > svg {
+  display: none !important;
+}
+
+.cvnextBrand::before,
+.cvnextFooterBrand::before,
+.cvnextAuthStory::before,
+.cvnextCustomerBrand::before,
+.cvhqBrand::before {
+  content: '';
+  flex: 0 0 auto;
+  display: block;
+  width: var(--churvox-brand-mark-size, 48px);
+  height: var(--churvox-brand-mark-size, 48px);
+  background: transparent url('/churvox-current-mark.svg') center / contain no-repeat;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.2));
+}
+
+.cvnextBrand {
+  --churvox-brand-mark-size: 48px;
+}
+
+.cvnextFooterBrand {
+  --churvox-brand-mark-size: 42px;
+}
+
+.cvnextAuthStory {
+  --churvox-brand-mark-size: 64px;
+}
+
+.cvnextCustomerBrand {
+  --churvox-brand-mark-size: 44px;
+}
+
+.cvhqBrand {
+  --churvox-brand-mark-size: 48px;
+}
+
+@media (max-width: 480px) {
+  .cvoscBrand > span,
+  .cvosBrand > span {
+    width: 43px !important;
+    height: 43px !important;
+    min-width: 43px !important;
+  }
+
+  .cvnextBrand,
+  .cvhqBrand {
+    --churvox-brand-mark-size: 43px;
+  }
+}
