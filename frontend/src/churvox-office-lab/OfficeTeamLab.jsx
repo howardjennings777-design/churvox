@@ -1,6 +1,7 @@
 import React from 'react'
 import OfficeTeamLabSite from './OfficeTeamLabSite'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
+import '../churvox-office-os/churvoxCurrentBrand.css'
 
 const OfficeOSWorkingConnected = React.lazy(() => import('../churvox-office-os/OfficeOSWorkingConnected'))
 const OfficeOSPreview = React.lazy(() => import('../churvox-office-os/OfficeOSPreview'))
