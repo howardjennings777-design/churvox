@@ -33,6 +33,18 @@ test.describe("Churvox connected client approval desk contract", () => {
     expect(desk).not.toContain("method: \"POST\"");
   });
 
+  test("verifies the applied record through live Clients and Command audit reads", async () => {
+    const desk = readFrontend("src/churvox-office-os/OfficeOSClientApprovalDesk.jsx");
+
+    expect(desk).toContain('loadOfficeArea("clients")');
+    expect(desk).toContain("fetchBackendCommandAudit()");
+    expect(desk).toContain("entry?.slipId === slipId");
+    expect(desk).toContain('status.includes("approved_applied")');
+    expect(desk).toContain("Live Clients confirmed");
+    expect(desk).toContain("Command audit confirmed");
+    expect(desk).toContain("cvosClientApprovalProof");
+  });
+
   test("keeps repeat clicks and external side effects locked", async () => {
     const desk = readFrontend("src/churvox-office-os/OfficeOSClientApprovalDesk.jsx");
     const commandApi = readFrontend("src/churvox-office-lab/OfficeTeamCommandApi.js");
