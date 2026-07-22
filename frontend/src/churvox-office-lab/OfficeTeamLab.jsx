@@ -2,7 +2,7 @@ import React from 'react'
 import OfficeTeamLabSite from './OfficeTeamLabSite'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
 
-const OfficeOSConnected = React.lazy(() => import('../churvox-office-os/OfficeOSConnected'))
+const OfficeOSWorkingConnected = React.lazy(() => import('../churvox-office-os/OfficeOSWorkingConnected'))
 const OfficeOSPreview = React.lazy(() => import('../churvox-office-os/OfficeOSPreview'))
 const PublicSiteConnected = React.lazy(() => import('../churvox-site-next/PublicSiteConnected'))
 const HQConnected = React.lazy(() => import('../churvox-site-next/HQConnected'))
@@ -59,7 +59,7 @@ function OfficeTeamLab(props) {
     if (surface === 'public') return <PublicSiteConnected />
     if (surface === 'hq') return <HQConnected />
     if (surface === 'blueprint') return <OfficeOSPreview />
-    return <OfficeOSConnected />
+    return <OfficeOSWorkingConnected />
   }
 
   return (
