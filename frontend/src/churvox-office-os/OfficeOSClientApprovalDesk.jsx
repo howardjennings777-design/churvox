@@ -81,6 +81,7 @@ export default function OfficeOSClientApprovalDesk() {
   const [drafts, setDrafts] = React.useState({});
   const [busyId, setBusyId] = React.useState("");
   const [results, setResults] = React.useState({});
+  const [lastResult, setLastResult] = React.useState(null);
 
   const load = React.useCallback(async () => {
     setState((current) => ({ ...current, loading: true, message: "" }));
@@ -121,6 +122,7 @@ export default function OfficeOSClientApprovalDesk() {
     if (!draft.name.trim() || busyId) return;
     setBusyId(decision.id);
     setResults((current) => ({ ...current, [decision.id]: null }));
+    setLastResult(null);
 
     try {
       const fields = CLIENT_FIELDS.map((field) => ({
@@ -134,16 +136,14 @@ export default function OfficeOSClientApprovalDesk() {
         fields,
       });
       if (response?.localOnly) throw new Error("The backend approval route was not available. Nothing was created.");
-      setResults((current) => ({
-        ...current,
-        [decision.id]: { ok: Boolean(response?.result?.execution?.applied), message: executionSummary(response) },
-      }));
+      const result = { ok: Boolean(response?.result?.execution?.applied), message: executionSummary(response) };
+      setResults((current) => ({ ...current, [decision.id]: result }));
+      setLastResult(result);
       await load();
     } catch (error) {
-      setResults((current) => ({
-        ...current,
-        [decision.id]: { ok: false, message: `${error?.message || "Approval failed."} Nothing was sent, charged or synced.` },
-      }));
+      const result = { ok: false, message: `${error?.message || "Approval failed."} Nothing was sent, charged or synced.` };
+      setResults((current) => ({ ...current, [decision.id]: result }));
+      setLastResult(result);
     } finally {
       setBusyId("");
     }
@@ -164,6 +164,13 @@ export default function OfficeOSClientApprovalDesk() {
           <RefreshCw size={18} className={state.loading ? "spin" : ""} />
         </button>
       </header>
+
+      {lastResult ? (
+        <div className={lastResult.ok ? "cvosClientApprovalResult cvosClientApprovalProof good" : "cvosClientApprovalResult cvosClientApprovalProof bad"} role="status">
+          {lastResult.ok ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          <span>{lastResult.message}</span>
+        </div>
+      ) : null}
 
       {state.loading && !state.decisions.length ? (
         <div className="cvosClientApprovalEmpty"><LoaderCircle className="spin" size={24} /><strong>Checking Command</strong><span>No record is changed while this loads.</span></div>
