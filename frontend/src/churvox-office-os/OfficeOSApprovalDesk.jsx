@@ -17,7 +17,7 @@ import { loadOfficeArea } from "./officeOSLiveData";
 import "./officeOSClientApprovalDesk.css";
 import "./officeOSApprovalDesk.css";
 
-export const OFFICE_OS_APPROVAL_DESK_BUILD = "churvox-office-os-approval-desk-20260723";
+export const OFFICE_OS_APPROVAL_DESK_BUILD = "churvox-office-os-approval-desk-20260723-quotes";
 
 if (typeof window !== "undefined") {
   window.__CHURVOX_OFFICE_OS_APPROVAL_DESK_BUILD__ = OFFICE_OS_APPROVAL_DESK_BUILD;
@@ -60,7 +60,27 @@ const APPROVAL_TYPES = Object.freeze([
       { key: "date", label: "Date or timing" },
       { key: "worker", label: "Worker" },
       { key: "price", label: "Price" },
-      { key: "notes", label: "Scope and instructions", long: true },
+      { key: "notes", label: "Scope and instructions", long: true, required: true },
+    ],
+  },
+  {
+    id: "quotes",
+    tab: "Quotes",
+    heading: "Approve prepared quotes",
+    empty: "No prepared quotes waiting",
+    recordNoun: "quote draft",
+    liveArea: "quotes",
+    primaryField: "title",
+    actionFallback: "Approve and create quote draft",
+    formTitle: "Owner-approved quote draft",
+    typePattern: /quote|estimate/,
+    fields: [
+      { key: "title", label: "Quote title", required: true },
+      { key: "client", label: "Client" },
+      { key: "price", label: "Quote amount" },
+      { key: "follow_up", label: "Follow-up timing" },
+      { key: "scope", label: "Scope", long: true, required: true },
+      { key: "notes", label: "Quote notes", long: true },
     ],
   },
 ]);
@@ -103,6 +123,12 @@ function draftFromDecision(decision, config) {
 
 function approvalAction(decision, config) {
   return (decision?.actions || []).find((action) => /approve/i.test(String(action || ""))) || config.actionFallback;
+}
+
+function requiredFieldsReady(draft, config) {
+  return config.fields
+    .filter((field) => field.required)
+    .every((field) => Boolean(String(draft?.[field.key] || "").trim()));
 }
 
 async function verifyAppliedRecord(response, decision, draft, config) {
@@ -193,7 +219,7 @@ export default function OfficeOSApprovalDesk() {
 
   const approve = async (decision, config) => {
     const draft = drafts[decision.id] || draftFromDecision(decision, config);
-    if (!String(draft[config.primaryField] || "").trim() || busyId) return;
+    if (!requiredFieldsReady(draft, config) || busyId) return;
     setBusyId(decision.id);
     setResults((current) => ({ ...current, [decision.id]: null }));
     setLastResult(null);
@@ -279,7 +305,7 @@ export default function OfficeOSApprovalDesk() {
           const draft = drafts[decision.id] || draftFromDecision(decision, config);
           const result = results[decision.id];
           const busy = busyId === decision.id;
-          const primaryReady = Boolean(String(draft[config.primaryField] || "").trim());
+          const requiredReady = requiredFieldsReady(draft, config);
           return (
             <article key={decision.id} className="cvosClientApprovalCard">
               <div className="cvosClientApprovalCardTitle">
@@ -301,7 +327,7 @@ export default function OfficeOSApprovalDesk() {
               </div>
 
               <div className="cvosClientApprovalActions">
-                <button type="button" onClick={() => approve(decision, config)} disabled={busy || Boolean(busyId) || !primaryReady}>
+                <button type="button" onClick={() => approve(decision, config)} disabled={busy || Boolean(busyId) || !requiredReady}>
                   {busy ? <LoaderCircle size={17} className="spin" /> : <CheckCircle2 size={17} />}
                   {busy ? "Applying owner approval…" : approvalAction(decision, config)}
                 </button>
