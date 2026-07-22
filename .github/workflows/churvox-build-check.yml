@@ -140,6 +140,9 @@ jobs:
           test -f frontend/node_modules/.bin/craco
           npm --prefix frontend list @craco/craco
 
+      - name: Verify complete Office OS rebuild contract
+        run: node scripts/churvox-office-os-rebuild-contract.cjs
+
       - name: Build frontend
         shell: bash
         run: |
