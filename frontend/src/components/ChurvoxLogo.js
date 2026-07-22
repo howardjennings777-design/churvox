@@ -12,21 +12,22 @@ const SIZE_MAP = {
 function LogoDefs({ id = "cvxBrand" }) {
   return (
     <defs>
-      <linearGradient id={`${id}-bg`} x1="54" y1="38" x2="458" y2="474" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#17211b" />
-        <stop offset="0.52" stopColor="#0f172a" />
-        <stop offset="1" stopColor="#050706" />
+      <linearGradient id={`${id}-shell`} x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#17211c" />
+        <stop offset="0.55" stopColor="#0b100e" />
+        <stop offset="1" stopColor="#050606" />
       </linearGradient>
-      <linearGradient id={`${id}-orange`} x1="112" y1="84" x2="420" y2="416" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#ffb35c" />
-        <stop offset="0.46" stopColor="#f97316" />
-        <stop offset="1" stopColor="#c2410c" />
+      <linearGradient id={`${id}-heat`} x1="14" y1="10" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#ffc06f" />
+        <stop offset="0.42" stopColor="#f97316" />
+        <stop offset="1" stopColor="#de4519" />
       </linearGradient>
-      <filter id={`${id}-shadow`} x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="18" stdDeviation="16" floodColor="#000000" floodOpacity="0.48" />
-      </filter>
-      <filter id={`${id}-glow`} x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#f97316" floodOpacity="0.34" />
+      <linearGradient id={`${id}-steel`} x1="20" y1="21" x2="47" y2="44" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#ffffff" />
+        <stop offset="1" stopColor="#d7dee8" />
+      </linearGradient>
+      <filter id={`${id}-lift`} x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="8" stdDeviation="5" floodColor="#000000" floodOpacity="0.35" />
       </filter>
     </defs>
   );
@@ -34,21 +35,17 @@ function LogoDefs({ id = "cvxBrand" }) {
 
 function ChurvoxMark({ id = "cvxBrand" }) {
   return (
-    <>
-      <rect x="32" y="32" width="448" height="448" rx="112" fill={`url(#${id}-bg)`} />
-      <rect x="43" y="43" width="426" height="426" rx="103" fill="none" stroke="#ffffff" strokeOpacity="0.12" strokeWidth="5" />
-      <path d="M92 132C152 84 235 68 308 91C381 114 431 170 445 240" fill="none" stroke={`url(#${id}-orange)`} strokeWidth="18" strokeLinecap="round" opacity="0.92" />
-      <path d="M420 386C354 434 262 446 187 412C121 382 78 327 67 262" fill="none" stroke={`url(#${id}-orange)`} strokeWidth="18" strokeLinecap="round" opacity="0.62" />
-      <g filter={`url(#${id}-shadow)`}>
-        <path d="M301 152H213C166 152 128 190 128 237V275C128 322 166 360 213 360H301" fill="none" stroke="#f8fafc" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M207 152L265 360" fill="none" stroke="#f8fafc" strokeWidth="44" strokeLinecap="round" />
-        <path d="M265 360L385 152" fill="none" stroke="#f8fafc" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round" />
+    <g transform="scale(8)">
+      <rect x="5" y="5" width="54" height="54" rx="17" fill={`url(#${id}-shell)`} />
+      <path d="M14 18h36M14 46h36" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="5" strokeLinecap="round" />
+      <path d="M50 11c6 13 4 29-4 40-9 11-22 16-37 13" fill="none" stroke="#f97316" strokeOpacity="0.13" strokeWidth="11" strokeLinecap="round" />
+      <g filter={`url(#${id}-lift)`}>
+        <path d="M44.2 19.7C40.9 15.9 36.1 14 30.9 14 21.2 14 13.4 21.8 13.4 31.6S21.2 49.2 31 49.2c6.1 0 11.4-3 14.7-7.7" fill="none" stroke={`url(#${id}-heat)`} strokeWidth="8.5" strokeLinecap="round" />
+        <path d="M22.5 33.4l7 6.8 14.7-17" fill="none" stroke={`url(#${id}-steel)`} strokeWidth="6.8" strokeLinecap="round" strokeLinejoin="round" />
       </g>
-      <g filter={`url(#${id}-glow)`}>
-        <path d="M211 152C165 152 128 190 128 237V275C128 322 165 360 211 360" fill="none" stroke={`url(#${id}-orange)`} strokeWidth="17" strokeLinecap="round" opacity="0.98" />
-        <path d="M265 360L385 152" fill="none" stroke={`url(#${id}-orange)`} strokeWidth="17" strokeLinecap="round" opacity="0.98" />
-      </g>
-    </>
+      <circle cx="47.5" cy="19" r="4.4" fill="#f97316" />
+      <circle cx="47.5" cy="19" r="1.7" fill="#111827" />
+    </g>
   );
 }
 
@@ -60,7 +57,8 @@ export function ChurvoxLogo({
   tone = "auto",
 }) {
   const heightCls = SIZE_MAP[size] || SIZE_MAP.md;
-  const id = `cvxBrand-${variant}-${size}`;
+  const reactId = React.useId().replace(/:/g, "");
+  const id = `cvxBrand-${variant}-${size}-${reactId}`;
   const wordFill = tone === "light" ? "#fffaf3" : "#111827";
   const subFill = tone === "light" ? "#ffbd72" : "#f97316";
 
