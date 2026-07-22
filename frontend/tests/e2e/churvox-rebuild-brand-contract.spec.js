@@ -8,13 +8,18 @@ const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), "u
 test.describe("Churvox rebuild brand contract", () => {
   test("loads the approved C-check mark across every private rebuild surface", async () => {
     const route = read("src/churvox-office-lab/OfficeTeamLab.jsx");
+    const owner = read("src/churvox-office-os/OfficeOSConnected.jsx");
     const brandCss = read("src/churvox-office-os/churvoxCurrentBrand.css");
     const component = read("src/components/ChurvoxLogo.js");
     const currentMark = read("public/churvox-current-mark.svg");
     const publicMark = read("public/churvox-mark.svg");
 
     expect(route).toContain("churvoxCurrentBrand.css");
+    expect(owner).toContain('import ChurvoxLogo from "../components/ChurvoxLogo"');
+    expect(owner).toContain('<ChurvoxLogo size="xl" tone="light"');
+    expect(owner).not.toContain(">CV<");
     expect(brandCss).toContain("/churvox-current-mark.svg");
+    expect(brandCss).toContain(".cvoscBrand > svg");
 
     for (const selector of [
       ".cvoscBrand",
