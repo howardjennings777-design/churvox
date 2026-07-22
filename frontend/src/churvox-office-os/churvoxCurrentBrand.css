@@ -1,9 +1,10 @@
 /*
  * Rebuild-only brand bridge.
  *
- * The live owner app already uses this Churvox C/check mark. The private owner,
- * blueprint, public and HQ rebuild surfaces all use the same asset here so an
- * older CV tile or alternate experimental mark cannot drift into cutover.
+ * ChurvoxLogo is now the shared C/check source of truth. The private owner and
+ * blueprint headers still use legacy text tiles, so this bridge replaces only
+ * those tiles and standardises sizing for the component-backed public and HQ
+ * surfaces.
  */
 
 .cvoscBrand > span,
@@ -34,41 +35,29 @@
 .cvnextAuthStory > svg,
 .cvnextCustomerBrand > svg,
 .cvhqBrand > svg {
-  display: none !important;
-}
-
-.cvnextBrand::before,
-.cvnextFooterBrand::before,
-.cvnextAuthStory::before,
-.cvnextCustomerBrand::before,
-.cvhqBrand::before {
-  content: '';
   flex: 0 0 auto;
-  display: block;
-  width: var(--churvox-brand-mark-size, 48px);
-  height: var(--churvox-brand-mark-size, 48px);
-  background: transparent url('/churvox-current-mark.svg') center / contain no-repeat;
+  display: block !important;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.2));
 }
 
-.cvnextBrand {
-  --churvox-brand-mark-size: 48px;
+.cvnextBrand > svg {
+  height: 48px;
 }
 
-.cvnextFooterBrand {
-  --churvox-brand-mark-size: 42px;
+.cvnextFooterBrand > svg {
+  height: 42px;
 }
 
-.cvnextAuthStory {
-  --churvox-brand-mark-size: 64px;
+.cvnextAuthStory > svg {
+  height: 64px;
 }
 
-.cvnextCustomerBrand {
-  --churvox-brand-mark-size: 44px;
+.cvnextCustomerBrand > svg {
+  height: 44px;
 }
 
-.cvhqBrand {
-  --churvox-brand-mark-size: 48px;
+.cvhqBrand > svg {
+  height: 48px;
 }
 
 @media (max-width: 480px) {
@@ -79,8 +68,8 @@
     min-width: 43px !important;
   }
 
-  .cvnextBrand,
-  .cvhqBrand {
-    --churvox-brand-mark-size: 43px;
+  .cvnextBrand > svg,
+  .cvhqBrand > svg {
+    height: 43px;
   }
 }
