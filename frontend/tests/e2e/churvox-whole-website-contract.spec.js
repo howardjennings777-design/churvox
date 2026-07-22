@@ -12,7 +12,7 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(route).toContain("value === 'public' || value === 'hq' || value === 'blueprint'");
     expect(route).toContain("<PublicSiteConnected />");
     expect(route).toContain("<HQConnected />");
-    expect(route).toContain("<OfficeOSConnected />");
+    expect(route).toContain("<OfficeOSWorkingConnected />");
     expect(route).toContain("<OfficeOSPreview />");
   });
 
@@ -31,6 +31,23 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(liveData).toContain("fetchBackendCommandDecisions");
     expect(liveData).toContain('command: "/dashboard#command"');
     expect(liveData).not.toContain('method: "POST"');
+  });
+
+  test("allows the connected owner screen to prepare real Command slips only", async () => {
+    const working = read("src/churvox-office-os/OfficeOSWorkingConnected.jsx");
+    const quickPrepare = read("src/churvox-office-os/OfficeOSQuickPrepare.jsx");
+    expect(working).toContain("OFFICE_OS_WORKING_CONNECTED_BUILD");
+    expect(working).toContain("<OfficeOSQuickPrepare />");
+    expect(quickPrepare).toContain("OFFICE_OS_QUICK_PREPARE_BUILD");
+    expect(quickPrepare).toContain("createBackendCommandSlip");
+    expect(quickPrepare).toContain("connected_office_os_quick_prepare");
+    expect(quickPrepare).toContain("prepared_only: true");
+    expect(quickPrepare).toContain("owner_review_only: true");
+    expect(quickPrepare).toContain("no_auto_send: true");
+    expect(quickPrepare).toContain("no_auto_sync: true");
+    expect(quickPrepare).toContain("no_auto_charge: true");
+    expect(quickPrepare).toContain("no_auto_record_change: true");
+    expect(quickPrepare).toContain('href="/dashboard#command"');
   });
 
   test("covers the complete public and customer page set", async () => {
