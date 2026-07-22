@@ -6,13 +6,31 @@ const ROOT = path.resolve(__dirname, "../..");
 const read = (relativePath) => fs.readFileSync(path.join(ROOT, relativePath), "utf8");
 
 test.describe("Churvox whole website rebuild contract", () => {
-  test("keeps the public owner and HQ previews isolated behind the private lab route", async () => {
+  test("keeps public owner HQ and blueprint surfaces isolated behind the private lab route", async () => {
     const route = read("src/churvox-office-lab/OfficeTeamLab.jsx");
     expect(route).toContain("window.location.pathname === '/new-command-lab'");
-    expect(route).toContain("value === 'public' || value === 'hq'");
+    expect(route).toContain("value === 'public' || value === 'hq' || value === 'blueprint'");
     expect(route).toContain("<PublicSiteNext />");
     expect(route).toContain("<HQNext />");
+    expect(route).toContain("<OfficeOSConnected />");
     expect(route).toContain("<OfficeOSPreview />");
+  });
+
+  test("connects the owner replacement to real read-only records without inventing fallback data", async () => {
+    const connected = read("src/churvox-office-os/OfficeOSConnected.jsx");
+    const liveData = read("src/churvox-office-os/officeOSLiveData.js");
+
+    expect(connected).toContain("data-connected-replacement=\"true\"");
+    expect(connected).toContain("Real read-only records");
+    expect(connected).toContain("No sample data will be substituted");
+    expect(connected).toContain("OFFICE_OS_CONNECTED_BUILD");
+
+    expect(liveData).toContain("window.location.origin");
+    expect(liveData).toContain('method: "GET"');
+    expect(liveData).toContain("No sample records were substituted");
+    expect(liveData).toContain("fetchBackendCommandDecisions");
+    expect(liveData).toContain('command: "/dashboard#command"');
+    expect(liveData).not.toContain('method: "POST"');
   });
 
   test("covers the complete public and customer page set", async () => {
