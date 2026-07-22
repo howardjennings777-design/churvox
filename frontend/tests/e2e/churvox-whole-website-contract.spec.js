@@ -16,12 +16,11 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(route).toContain("<OfficeOSPreview />");
   });
 
-  test("connects the owner replacement to real read-only records without inventing fallback data", async () => {
+  test("connects the owner replacement to real records without inventing fallback data", async () => {
     const connected = read("src/churvox-office-os/OfficeOSConnected.jsx");
     const liveData = read("src/churvox-office-os/officeOSLiveData.js");
 
-    expect(connected).toContain("data-connected-replacement=\"true\"");
-    expect(connected).toContain("Real read-only records");
+    expect(connected).toContain('data-connected-replacement="true"');
     expect(connected).toContain("No sample data will be substituted");
     expect(connected).toContain("OFFICE_OS_CONNECTED_BUILD");
 
@@ -33,11 +32,14 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(liveData).not.toContain('method: "POST"');
   });
 
-  test("allows the connected owner screen to prepare real Command slips only", async () => {
+  test("prepares and approves the complete safe draft set through Command only", async () => {
     const working = read("src/churvox-office-os/OfficeOSWorkingConnected.jsx");
     const quickPrepare = read("src/churvox-office-os/OfficeOSQuickPrepare.jsx");
+    const approvalDesk = read("src/churvox-office-os/OfficeOSApprovalDesk.jsx");
+
     expect(working).toContain("OFFICE_OS_WORKING_CONNECTED_BUILD");
     expect(working).toContain("<OfficeOSQuickPrepare />");
+    expect(working).toContain("<OfficeOSApprovalDesk />");
     expect(quickPrepare).toContain("OFFICE_OS_QUICK_PREPARE_BUILD");
     expect(quickPrepare).toContain("createBackendCommandSlip");
     expect(quickPrepare).toContain("connected_office_os_quick_prepare");
@@ -48,6 +50,13 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(quickPrepare).toContain("no_auto_charge: true");
     expect(quickPrepare).toContain("no_auto_record_change: true");
     expect(quickPrepare).toContain('href="/dashboard#command"');
+
+    for (const tab of ["Clients", "Jobs", "Quotes", "Invoices", "Messages", "Staff"]) {
+      expect(approvalDesk).toContain(`tab: "${tab}"`);
+    }
+    expect(approvalDesk).toContain("recordBackendCommandDecision");
+    expect(approvalDesk).toContain("fetchBackendCommandAudit");
+    expect(approvalDesk).not.toContain('method: "POST"');
   });
 
   test("covers the complete public and customer page set", async () => {
@@ -112,9 +121,12 @@ test.describe("Churvox whole website rebuild contract", () => {
 
   test("locks owner authority and whole-site release gates into the contract", async () => {
     const contract = read("src/churvox-site-next/siteContract.js");
+    const status = read("../docs/churvox-office-os/CONNECTED_REPLACEMENT_STATUS.md");
     expect(contract).toContain("Churvox does the admin. The owner checks and approves.");
     expect(contract).toContain("Customer-facing pages never expose another business");
     expect(contract).toContain("Migration has preview, duplicate checks, rollback rehearsal");
     expect(contract).toContain("Staging passes build, browser, accessibility, security, billing and real-business workflow gates");
+    expect(status).toContain("Remaining live-cutover gates");
+    expect(status).toContain("Obtain explicit owner approval before any live route cutover");
   });
 });
