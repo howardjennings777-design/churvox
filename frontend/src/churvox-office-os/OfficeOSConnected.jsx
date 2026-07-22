@@ -7,11 +7,12 @@ import {
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
+import ChurvoxLogo from "../components/ChurvoxLogo";
 import { OWNER_AREAS, PRODUCT_PROMISE, RELEASE_GATES } from "./productContract";
 import { loadOfficeArea, stableOwnerRoute } from "./officeOSLiveData";
 import "./officeOSConnected.css";
 
-export const OFFICE_OS_CONNECTED_BUILD = "churvox-office-os-connected-20260723";
+export const OFFICE_OS_CONNECTED_BUILD = "churvox-office-os-connected-20260723-complete-command";
 
 if (typeof window !== "undefined") {
   window.__CHURVOX_OFFICE_OS_CONNECTED_BUILD__ = OFFICE_OS_CONNECTED_BUILD;
@@ -106,7 +107,7 @@ function StableAction({ area, label }) {
   );
 }
 
-function TodayView({ data }) {
+function TodayView({ data, onCommand }) {
   const counts = data?.counts || {};
   const sections = data?.sections || {};
   const command = sections.command || { records: [], state: "empty" };
@@ -120,17 +121,17 @@ function TodayView({ data }) {
         <div>
           <span className="cvoscEyebrow">Connected owner briefing</span>
           <h2>{counts.command ? `${counts.command} decision${counts.command === 1 ? "" : "s"} need you.` : "The owner queue is clear."}</h2>
-          <p>These numbers come from the current Churvox records. This replacement screen is read-only while proven write actions remain in the working owner app.</p>
+          <p>These numbers come from current Churvox records. The replacement can prepare and owner-approve safe drafts through Command while delivery, payments, syncs and destructive actions remain locked.</p>
           <div className="cvoscActions">
-            <StableAction area="command" label="Open working Command" />
-            <StableAction area="work" label="Open working jobs" />
+            <button type="button" className="cvoscPrimary" onClick={onCommand}>Open replacement Command <ArrowUpRight size={17} /></button>
+            <StableAction area="work" label="Open full working jobs" />
           </div>
         </div>
         <aside>
           <ShieldCheck size={28} />
           <small>Migration safety</small>
-          <strong>No duplicate write system</strong>
-          <p>The rebuild reads the real business but does not create a second path that could send, charge, sync or change records.</p>
+          <strong>One controlled approval path</strong>
+          <p>The rebuild delegates safe draft creation to the existing Command executor instead of creating a second uncontrolled write system.</p>
         </aside>
       </section>
 
@@ -162,7 +163,7 @@ function TodayView({ data }) {
           ))}
           {!command.records.length ? <EmptyState state={command.state} message={command.message} /> : null}
         </div>
-        <StableAction area="command" label="Review and decide in Command" />
+        <button type="button" className="cvoscPrimary" onClick={onCommand}>Review replacement approvals <ArrowUpRight size={17} /></button>
       </section>
 
       <section className="cvoscPanel cvoscSpan6">
@@ -188,8 +189,12 @@ function CommandView({ data }) {
   return (
     <section className="cvoscPage">
       <header className="cvoscPageHead">
-        <div><span className="cvoscEyebrow">Single approval desk</span><h2>Command reads the confirmed owner queue.</h2><p>Decision execution remains in the proven Command workflow until this replacement passes mutation, idempotency and audit gates.</p></div>
-        <StableAction area="command" label="Open working Command" />
+        <div>
+          <span className="cvoscEyebrow">Single approval desk</span>
+          <h2>Command reads the confirmed owner queue.</h2>
+          <p>Clients, job drafts, quote drafts, invoice drafts, message drafts and staff reviews can now be checked and approved below. Sending, payments, accounting sync, tax, payroll and destructive actions remain locked.</p>
+        </div>
+        <StableAction area="command" label="Open full working Command" />
       </header>
       <div className="cvoscCommandBoard">
         {(data?.records || []).map((record, index) => (
@@ -210,8 +215,8 @@ function RecordsView({ area, data }) {
   return (
     <section className="cvoscPage">
       <header className="cvoscPageHead">
-        <div><span className="cvoscEyebrow">Live read-only replacement</span><h2>{active.label}</h2><p>{active.purpose} No sample rows are used when the live endpoint is empty or unavailable.</p></div>
-        <StableAction area={area} label={`Open working ${active.label}`} />
+        <div><span className="cvoscEyebrow">Connected replacement</span><h2>{active.label}</h2><p>{active.purpose} No sample rows are used when the live endpoint is empty or unavailable.</p></div>
+        <StableAction area={area} label={`Open full working ${active.label}`} />
       </header>
       <div className="cvoscRecordsGrid">
         {(data?.records || []).map((record) => <RecordCard key={`${record.id}-${record.title}`} record={record} />)}
@@ -249,20 +254,20 @@ function SettingsView({ data }) {
   return (
     <section className="cvoscPage">
       <header className="cvoscPageHead">
-        <div><span className="cvoscEyebrow">Rules and controls</span><h2>Business settings stay owner-controlled.</h2><p>The replacement may display current settings, but changes continue through the existing validated form until save, permission and rollback tests pass.</p></div>
+        <div><span className="cvoscEyebrow">Rules and controls</span><h2>Business settings stay owner-controlled.</h2><p>The replacement displays current settings, while changes continue through the existing validated form until save, permission and rollback tests pass.</p></div>
         <StableAction area="settings" label="Open working Settings" />
       </header>
       <div className="cvoscRecordsGrid settings">
         {(data?.records || []).map((record) => <RecordCard key={`${record.id}-${record.title}`} record={record} />)}
         {!data?.records?.length ? <EmptyState state={data?.state} message={data?.message} /> : null}
-        <article className="cvoscSafetyCard"><ShieldCheck size={28} /><h3>Owner authority remains locked</h3><p>Nothing in this replacement screen sends messages, charges cards, syncs accounting, files tax, pays staff, deletes records or changes financial truth.</p></article>
+        <article className="cvoscSafetyCard"><ShieldCheck size={28} /><h3>Owner authority remains locked</h3><p>The replacement creates only the six explicitly approved draft/review types. It does not send messages, charge cards, sync accounting, file tax, pay staff, delete records or change payment truth.</p></article>
       </div>
     </section>
   );
 }
 
-function Screen({ area, data }) {
-  if (area === "today") return <TodayView data={data} />;
+function Screen({ area, data, onCommand }) {
+  if (area === "today") return <TodayView data={data} onCommand={onCommand} />;
   if (area === "command") return <CommandView data={data} />;
   if (area === "reports") return <ReportsView data={data} />;
   if (area === "settings") return <SettingsView data={data} />;
@@ -281,7 +286,11 @@ export default function OfficeOSConnected() {
       setState({ loading: false, data, error: "" });
     } catch (error) {
       if (error?.name === "AbortError") return;
-      setState({ loading: false, data: { area: nextArea, state: "unavailable", records: [], message: "The live read failed safely. No data was changed." }, error: error?.message || "Live read failed" });
+      setState({
+        loading: false,
+        data: { area: nextArea, state: "unavailable", records: [], message: "The live read failed safely. No data was changed." },
+        error: error?.message || "Live read failed",
+      });
     }
   }, []);
 
@@ -291,16 +300,17 @@ export default function OfficeOSConnected() {
     return () => controller?.abort();
   }, [area, load]);
 
-  const changeArea = (nextArea) => {
+  const changeArea = React.useCallback((nextArea) => {
     setArea(nextArea);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       if (nextArea === "today") url.searchParams.delete("area");
       else url.searchParams.set("area", nextArea);
       window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      window.dispatchEvent(new Event("popstate"));
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  };
+  }, []);
 
   const visibleState = state.loading ? "loading" : state.data?.state || "unavailable";
 
@@ -308,13 +318,13 @@ export default function OfficeOSConnected() {
     <main className="cvoscRoot" data-connected-replacement="true" data-preview-only="true">
       <div className="cvoscPreviewBanner">
         <span>Private connected replacement</span>
-        <strong>Real read-only records · working write flows remain protected</strong>
+        <strong>Real records · owner-approved drafts · live routes protected</strong>
         <a href="/new-command-lab?surface=blueprint">View design blueprint</a>
       </div>
 
       <header className="cvoscTopbar">
-        <button type="button" className="cvoscBrand" onClick={() => changeArea("today")}>
-          <span>CV</span><div><strong>Churvox</strong><small>Office OS</small></div>
+        <button type="button" className="cvoscBrand" onClick={() => changeArea("today")} aria-label="Open Churvox Today">
+          <ChurvoxLogo size="xl" tone="light" dataTestId="connected-office-os-logo" />
         </button>
         <div className="cvoscTitle"><small>Owner command floor</small><h1>{activeArea.label}</h1><p>{activeArea.purpose}</p></div>
         <div className="cvoscTopActions">
@@ -331,7 +341,9 @@ export default function OfficeOSConnected() {
       <AreaNav active={area} onChange={changeArea} />
 
       <section className="cvoscWorkspace" aria-live="polite">
-        {state.loading && !state.data ? <section className="cvoscLoading"><RefreshCw size={26} className="spin" /><h2>Checking the current Churvox records</h2><p>No sample data will be substituted.</p></section> : <Screen area={area} data={state.data} />}
+        {state.loading && !state.data
+          ? <section className="cvoscLoading"><RefreshCw size={26} className="spin" /><h2>Checking the current Churvox records</h2><p>No sample data will be substituted.</p></section>
+          : <Screen area={area} data={state.data} onCommand={() => changeArea("command")} />}
       </section>
     </main>
   );
