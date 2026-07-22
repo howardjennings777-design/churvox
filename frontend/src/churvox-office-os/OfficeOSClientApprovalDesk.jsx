@@ -5,7 +5,7 @@ import {
   LoaderCircle,
   RefreshCw,
   ShieldCheck,
-  UserRoundPlus,
+  UserPlus,
 } from "lucide-react";
 import {
   BACKEND_COMMAND_EVENT,
@@ -218,7 +218,7 @@ export default function OfficeOSClientApprovalDesk() {
           return (
             <article key={decision.id} className="cvosClientApprovalCard">
               <div className="cvosClientApprovalCardTitle">
-                <UserRoundPlus size={20} />
+                <UserPlus size={20} />
                 <div><small>{decision.subtitle}</small><h3>{decision.title}</h3></div>
               </div>
 
