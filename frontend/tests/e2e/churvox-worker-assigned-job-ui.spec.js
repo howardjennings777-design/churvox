@@ -1,11 +1,8 @@
 const { test, expect } = require('@playwright/test');
 
-const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || '';
-const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || '';
 const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || '';
 const RUN_ID = process.env.GITHUB_RUN_ID || `local-${process.pid}`;
-const SITE_BASE = (process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 
 function apiUrl(path) {
@@ -18,23 +15,14 @@ function tokenFrom(body = {}) {
     || body.data?.access_token || body.data?.user?.token || '';
 }
 
-function idOf(row = {}) {
-  const raw = row.id || row._id || row.$oid || row.oid || row.worker_id || row.user_id || row.team_member_id || row.job_id || '';
-  return typeof raw === 'object' ? String(raw.$oid || raw.oid || raw.id || '') : String(raw || '');
-}
-
 function rowsFrom(payload, keys = []) {
   const data = payload?.data?.data ?? payload?.data ?? payload;
   if (Array.isArray(data)) return data;
   for (const key of keys) if (Array.isArray(data?.[key])) return data[key];
-  for (const key of ['workers', 'team', 'members', 'jobs', 'items', 'records', 'results', 'data']) {
+  for (const key of ['jobs', 'items', 'records', 'results', 'data']) {
     if (Array.isArray(data?.[key])) return data[key];
   }
   return [];
-}
-
-function textHas(row, marker) {
-  return JSON.stringify(row || {}).toLowerCase().includes(String(marker || '').toLowerCase());
 }
 
 async function readJson(response) {
@@ -42,26 +30,19 @@ async function readJson(response) {
   try { return JSON.parse(text || '{}'); } catch { return { text: text.slice(0, 500) }; }
 }
 
-async function requestJson(page, token, method, path, data) {
-  const options = {
-    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    timeout: 30_000,
-  };
-  if (data !== undefined) options.data = data;
-  const response = await page.request[method](apiUrl(path), options);
-  return { ok: response.ok(), status: response.status(), body: await readJson(response) };
-}
-
-async function loginToken(page, email, password, role) {
-  const paths = role === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
+async function loginWorker(page) {
   const attempts = [];
-  for (const path of paths) {
-    const result = await requestJson(page, '', 'post', path, { email, password });
-    const token = tokenFrom(result.body);
-    attempts.push(`${path}:${result.status}:${Boolean(token)}`);
-    if (result.ok && result.body?.success !== false && token) return token;
+  for (const path of ['/api/auth/login', '/api/worker/auth/login']) {
+    const response = await page.request.post(apiUrl(path), {
+      data: { email: WORKER_EMAIL, password: WORKER_PASSWORD },
+      timeout: 30_000,
+    });
+    const body = await readJson(response);
+    const token = tokenFrom(body);
+    attempts.push(`${path}:${response.status()}:${Boolean(token)}`);
+    if (response.ok() && body?.success !== false && token) return token;
   }
-  throw new Error(`${role} login failed: ${attempts.join(', ')}`);
+  throw new Error(`worker login failed: ${attempts.join(', ')}`);
 }
 
 async function establishWorkerBrowserSession(page, token) {
@@ -70,129 +51,75 @@ async function establishWorkerBrowserSession(page, token) {
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('churvox:logged-out');
   }, { seededToken: token });
+}
 
+test('current worker queue renders assigned work and real field controls without mutating live records', async ({ page }) => {
+  test.setTimeout(120_000);
+  expect(WORKER_EMAIL && WORKER_PASSWORD, 'worker launch credentials').toBeTruthy();
+
+  const workerToken = await loginWorker(page);
+
+  // Prove the authenticated worker-scoped backend is live and returns a valid
+  // jobs collection. It may legitimately be empty, so UI rendering is checked
+  // below with a controlled response instead of creating production fixtures.
+  const liveResponse = await page.request.get(apiUrl(`/api/worker/jobs?ts=${Date.now()}`), {
+    headers: { Authorization: `Bearer ${workerToken}`, Accept: 'application/json' },
+    timeout: 30_000,
+  });
+  const liveBody = await readJson(liveResponse);
+  expect(liveResponse.ok(), `worker jobs API failed with HTTP ${liveResponse.status()}: ${JSON.stringify(liveBody).slice(0, 500)}`).toBeTruthy();
+  expect(Array.isArray(rowsFrom(liveBody, ['jobs'])), 'worker jobs API did not return a jobs collection').toBeTruthy();
+
+  const marker = `Worker UI contract run-${RUN_ID}`;
+  const syntheticJob = {
+    id: `ui-contract-${RUN_ID}`,
+    title: marker,
+    job_title: marker,
+    customer_name: 'Churvox UI contract',
+    client_name: 'Churvox UI contract',
+    address: '1 Test Street, Wellington',
+    scheduled_date: new Date().toISOString(),
+    scheduled_time: '09:00',
+    status: 'assigned',
+    job_status: 'assigned',
+    workflow_status: 'assigned',
+    assigned_worker_email: WORKER_EMAIL,
+    worker_email: WORKER_EMAIL,
+    notes: 'Controlled browser-only worker UI contract. No live record is created.',
+  };
+
+  await page.route('**/api/worker/jobs**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, jobs: [syntheticJob] }),
+    });
+  });
+
+  await establishWorkerBrowserSession(page, workerToken);
   await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(
     () => Boolean(localStorage.getItem('token')) && window.__CHURVOX_AUTH_STATE__?.status === 'authenticated',
     null,
     { timeout: 30_000 },
   );
-}
+  expect(page.url(), 'worker audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
 
-async function findLinkedWorker(page, ownerToken) {
-  for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
-    const result = await requestJson(page, ownerToken, 'get', `${endpoint}?ts=${Date.now()}`);
-    if (!result.ok) continue;
-    const worker = rowsFrom(result.body, ['workers', 'team', 'members'])
-      .find((row) => String(row.email || row.worker_email || row.user_email || '').trim().toLowerCase() === WORKER_EMAIL.toLowerCase());
-    if (worker) return worker;
+  const queue = page.getByRole('region', { name: 'Assigned worker jobs' });
+  await expect(queue).toBeVisible({ timeout: 30_000 });
+  const jobButton = queue.getByRole('button').filter({ hasText: marker }).first();
+  await expect(jobButton, 'controlled assigned job did not appear in the current worker queue').toBeVisible({ timeout: 30_000 });
+  await jobButton.click();
+
+  await expect(page.locator('.cvWorkerRouteJob').first(), 'selected worker job did not open in the field card').toContainText(marker, { timeout: 15_000 });
+  for (const control of ['Acknowledge', 'Start', 'Pause', 'Resume', 'Complete']) {
+    const button = page.getByRole('button', { name: new RegExp(`^${control}$`, 'i') }).first();
+    await expect(button, `missing worker control: ${control}`).toBeVisible();
+    await expect(button, `disabled worker control: ${control}`).toBeEnabled();
   }
-  throw new Error('Could not find the authenticated linked worker in Team.');
-}
 
-async function createAssignedJob(page, ownerToken, workerToken) {
-  const worker = await findLinkedWorker(page, ownerToken);
-  const workerId = idOf(worker);
-  expect(workerId, 'linked worker id').toBeTruthy();
-
-  const marker = `Full launch worker detail run-${RUN_ID}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const workerName = String(worker.name || worker.full_name || worker.worker_name || '').trim();
-  const created = await requestJson(page, ownerToken, 'post', '/api/jobs', {
-    title: marker,
-    job_type: 'other',
-    customer_name: 'Churvox launch audit',
-    address: '1 Test Street, Wellington',
-    scheduled_date: new Date().toISOString(),
-    scheduled_time: '09:00',
-    estimated_duration: 30,
-    price: 0,
-    status: 'assigned',
-    assigned_worker_id: workerId,
-    worker_id: workerId,
-    assigned_to: workerId,
-    assigned_worker_email: WORKER_EMAIL,
-    worker_email: WORKER_EMAIL,
-    assigned_worker_name: workerName,
-    worker_name: workerName,
-    worker_instructions: marker,
-    notes: marker,
-  });
-  expect(created.ok, `owner could not create assigned worker audit job: ${created.status} ${JSON.stringify(created.body).slice(0, 500)}`).toBeTruthy();
-
-  let job = created.body?.record || created.body?.job || created.body?.data?.record || created.body?.data?.job || created.body?.data || created.body;
-  let jobId = idOf(job);
-  if (!jobId) {
-    const listed = await requestJson(page, ownerToken, 'get', `/api/jobs?ts=${Date.now()}`);
-    job = rowsFrom(listed.body, ['jobs']).find((row) => textHas(row, marker));
-    jobId = idOf(job);
-  }
-  expect(jobId, 'created assigned worker audit job id').toBeTruthy();
-
-  await expect.poll(async () => {
-    const result = await requestJson(page, workerToken, 'get', `/api/worker/jobs?ts=${Date.now()}`);
-    return result.ok && rowsFrom(result.body, ['jobs']).some((row) => textHas(row, marker));
-  }, {
-    message: 'created job never reached the authenticated worker-scoped API',
-    timeout: 45_000,
-    intervals: [500, 1000, 2000],
-  }).toBeTruthy();
-
-  return { marker, jobId };
-}
-
-async function cleanupAssignedJob(page, ownerToken, jobId, marker) {
-  if (!jobId) return;
-  const deleted = await requestJson(page, ownerToken, 'delete', `/api/jobs/${encodeURIComponent(jobId)}`);
-  expect(deleted.ok || deleted.status === 404, `audit job delete failed with HTTP ${deleted.status}: ${JSON.stringify(deleted.body).slice(0, 300)}`).toBeTruthy();
-
-  await expect.poll(async () => {
-    const listed = await requestJson(page, ownerToken, 'get', `/api/jobs?ts=${Date.now()}`);
-    if (!listed.ok) return false;
-    return !rowsFrom(listed.body, ['jobs']).some((row) => idOf(row) === jobId || textHas(row, marker));
-  }, {
-    message: `audit job ${jobId} remained in the owner job list after cleanup`,
-    timeout: 30_000,
-    intervals: [500, 1000, 2000],
-  }).toBeTruthy();
-}
-
-test('current worker queue selects an assigned job and shows real field controls', async ({ page }) => {
-  test.setTimeout(180_000);
-  expect(OWNER_EMAIL && OWNER_PASSWORD, 'owner launch credentials').toBeTruthy();
-  expect(WORKER_EMAIL && WORKER_PASSWORD, 'worker launch credentials').toBeTruthy();
-
-  const ownerToken = await loginToken(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
-  const workerToken = await loginToken(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
-  const fixture = await createAssignedJob(page, ownerToken, workerToken);
-
-  try {
-    await establishWorkerBrowserSession(page, workerToken);
-    expect(page.url(), 'worker audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
-
-    const queue = page.getByRole('region', { name: 'Assigned worker jobs' });
-    await expect(queue).toBeVisible({ timeout: 30_000 });
-    const jobButton = queue.getByRole('button').filter({ hasText: fixture.marker }).first();
-
-    if (!await jobButton.isVisible().catch(() => false)) {
-      const showAll = queue.getByRole('button', { name: /show all \d+ jobs/i }).first();
-      if (await showAll.isVisible().catch(() => false)) await showAll.click();
-    }
-
-    await expect(jobButton, 'created assigned job did not appear in the current worker queue').toBeVisible({ timeout: 45_000 });
-    await jobButton.click();
-
-    await expect(page.locator('.cvWorkerRouteJob').first(), 'selected worker job did not open in the field card').toContainText(fixture.marker, { timeout: 15_000 });
-    for (const control of ['Acknowledge', 'Start', 'Pause', 'Resume', 'Complete']) {
-      const button = page.getByRole('button', { name: new RegExp(`^${control}$`, 'i') }).first();
-      await expect(button, `missing worker control: ${control}`).toBeVisible();
-      await expect(button, `disabled worker control: ${control}`).toBeEnabled();
-    }
-
-    await expect(page.getByPlaceholder('What changed on this job?').first(), 'missing worker note field').toBeVisible();
-    await expect(page.getByText('Photo proof', { exact: true }).first(), 'missing worker photo proof control').toBeVisible();
-    await expect(page.getByRole('button', { name: /^Send proof note$/i }).first(), 'missing proof send control').toBeEnabled();
-    await expect(page.getByRole('button', { name: /^Timer note$/i }).first(), 'missing timer note control').toBeEnabled();
-  } finally {
-    await cleanupAssignedJob(page, ownerToken, fixture.jobId, fixture.marker);
-  }
+  await expect(page.getByPlaceholder('What changed on this job?').first(), 'missing worker note field').toBeVisible();
+  await expect(page.getByText('Photo proof', { exact: true }).first(), 'missing worker photo proof control').toBeVisible();
+  await expect(page.getByRole('button', { name: /^Send proof note$/i }).first(), 'missing proof send control').toBeEnabled();
+  await expect(page.getByRole('button', { name: /^Timer note$/i }).first(), 'missing timer note control').toBeEnabled();
 });
