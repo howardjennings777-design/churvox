@@ -63,6 +63,7 @@ jobs:
           assert backend_env['CHURVOX_STAGING_READ_ONLY']['value'] == 'true'
           assert backend_env['MONGO_URL']['sync'] is False
           assert backend_env['DB_NAME']['sync'] is False
+          assert backend_env['JWT_SECRET']['generateValue'] is True
           assert frontend_env['CHURVOX_STAGING_USER']['sync'] is False
           assert frontend_env['CHURVOX_STAGING_PASSWORD']['sync'] is False
           assert frontend_env['CHURVOX_BACKEND_HOSTPORT']['fromService']['name'] == backend['name']
@@ -88,9 +89,6 @@ jobs:
 
       - name: Prove emergency login contract is unchanged
         run: python -m unittest backend.test_churvox_login_emergency_final
-
-      - name: Prove runtime JWT contract is unchanged
-        run: python -m unittest backend.test_churvox_runtime_jwt_secret_patch
 
       - name: Prove platform-owner frontend lock is unchanged
         run: python -m unittest scripts.test_platform_owner_frontend_lock
