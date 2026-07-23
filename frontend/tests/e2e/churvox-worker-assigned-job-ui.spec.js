@@ -11,10 +11,6 @@ function apiUrl(path) {
   return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
 }
 
-function siteUrl(path) {
-  return `${SITE_BASE}${path.startsWith('/') ? path : `/${path}`}`;
-}
-
 function tokenFrom(body = {}) {
   return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
     || body.user?.token || body.user?.access_token || body.data?.token
@@ -122,7 +118,7 @@ async function createAssignedJob(page, ownerToken, workerToken) {
   });
   expect(created.ok, `owner could not create assigned worker audit job: ${created.status} ${JSON.stringify(created.body).slice(0, 500)}`).toBeTruthy();
 
-  let job = created.body?.job || created.body?.data?.job || created.body?.data || created.body;
+  let job = created.body?.record || created.body?.job || created.body?.data?.record || created.body?.data?.job || created.body?.data || created.body;
   let jobId = idOf(job);
   if (!jobId) {
     const listed = await requestJson(page, ownerToken, 'get', `/api/jobs?ts=${Date.now()}`);
@@ -155,7 +151,7 @@ async function cleanupAssignedJob(page, ownerToken, jobId) {
   expect(deleted.ok || deleted.status === 404, `audit job cleanup failed: archive ${archived.status}, delete ${deleted.status}`).toBeTruthy();
 }
 
-test('current worker queue opens an assigned job and shows real field controls', async ({ page }) => {
+test('current worker queue selects an assigned job and shows real field controls', async ({ page }) => {
   test.setTimeout(180_000);
   expect(OWNER_EMAIL && OWNER_PASSWORD, 'owner launch credentials').toBeTruthy();
   expect(WORKER_EMAIL && WORKER_PASSWORD, 'worker launch credentials').toBeTruthy();
@@ -168,21 +164,29 @@ test('current worker queue opens an assigned job and shows real field controls',
     await establishWorkerBrowserSession(page, workerToken);
     expect(page.url(), 'worker audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
 
-    const jobCard = page.locator('.fieldJobCard').filter({ hasText: fixture.marker }).first();
-    if (!await jobCard.isVisible().catch(() => false)) {
-      const refresh = page.getByRole('button', { name: /refresh/i }).first();
-      if (await refresh.isVisible().catch(() => false)) await refresh.click();
-    }
-    await expect(jobCard, 'created assigned job card did not appear in the worker queue').toBeVisible({ timeout: 30_000 });
-    await jobCard.getByRole('link', { name: /view job|open job|open|start first job/i }).first().click();
+    const queue = page.getByRole('region', { name: 'Assigned worker jobs' });
+    await expect(queue).toBeVisible({ timeout: 30_000 });
+    const jobButton = queue.getByRole('button').filter({ hasText: fixture.marker }).first();
 
-    await expect(page.locator('body')).toContainText(fixture.marker, { timeout: 15_000 });
-    for (const control of ['Acknowledge', 'Start job', 'Pause', 'Resume', 'Finish job']) {
-      await expect(page.getByRole('button', { name: new RegExp(`^${control}$`, 'i') }).first(), `missing worker control: ${control}`).toBeVisible();
+    if (!await jobButton.isVisible().catch(() => false)) {
+      const showAll = queue.getByRole('button', { name: /show all \d+ jobs/i }).first();
+      if (await showAll.isVisible().catch(() => false)) await showAll.click();
     }
-    await expect(page.getByText('Photos and note', { exact: true }).first(), 'missing proof area').toBeVisible();
-    await expect(page.getByRole('button', { name: /^Upload proof to office$/i }).first(), 'missing proof upload control').toBeVisible();
-    await expect(page.getByText('One tap to Command', { exact: true }).first(), 'missing issue-to-Command control').toBeVisible();
+
+    await expect(jobButton, 'created assigned job did not appear in the current worker queue').toBeVisible({ timeout: 45_000 });
+    await jobButton.click();
+
+    await expect(page.locator('.cvWorkerRouteJob').first(), 'selected worker job did not open in the field card').toContainText(fixture.marker, { timeout: 15_000 });
+    for (const control of ['Acknowledge', 'Start', 'Pause', 'Resume', 'Complete']) {
+      const button = page.getByRole('button', { name: new RegExp(`^${control}$`, 'i') }).first();
+      await expect(button, `missing worker control: ${control}`).toBeVisible();
+      await expect(button, `disabled worker control: ${control}`).toBeEnabled();
+    }
+
+    await expect(page.getByPlaceholder('What changed on this job?').first(), 'missing worker note field').toBeVisible();
+    await expect(page.getByText('Photo proof', { exact: true }).first(), 'missing worker photo proof control').toBeVisible();
+    await expect(page.getByRole('button', { name: /^Send proof note$/i }).first(), 'missing proof send control').toBeEnabled();
+    await expect(page.getByRole('button', { name: /^Timer note$/i }).first(), 'missing timer note control').toBeEnabled();
   } finally {
     await cleanupAssignedJob(page, ownerToken, fixture.jobId);
   }
