@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - staging/churvox-office-os-preview
+  pull_request:
+    paths:
+      - 'render-staging.yaml'
+      - 'frontend/staging-server.cjs'
+      - 'backend/churvox_staging_start.py'
+      - 'backend/churvox_staging_readonly_patch.py'
+      - 'docs/churvox-office-os/STAGING_PREVIEW.md'
+      - '.github/workflows/churvox-staging-preview-check.yml'
   workflow_dispatch:
 
 concurrency:
@@ -44,6 +52,7 @@ jobs:
           assert backend['type'] == 'pserv'
           assert backend['branch'] == 'staging/churvox-office-os-preview'
           assert backend['autoDeployTrigger'] == 'off'
+          assert backend['startCommand'].startswith('uvicorn churvox_staging_start:app')
           assert frontend['branch'] == 'staging/churvox-office-os-preview'
           assert frontend['autoDeployTrigger'] == 'off'
           assert frontend['startCommand'] == 'node staging-server.cjs'
@@ -61,6 +70,7 @@ jobs:
           text = path.read_text().lower()
           assert 'grassley-backend' not in text
           assert 'www.churvox.com' not in text
+          assert 'branch: main' not in text
           print('Private staging Blueprint contract passed.')
           PY
 
@@ -68,9 +78,17 @@ jobs:
         run: |
           python -m py_compile \
             backend/churvox_staging_readonly_patch.py \
+            backend/churvox_staging_start.py \
             backend/sitecustomize.py \
             backend/churvox_start.py
           node --check frontend/staging-server.cjs
+
+      - name: Prove production login stack is unchanged
+        run: |
+          python -m unittest backend.test_churvox_auth_me_401_patch
+          python -m unittest backend.test_churvox_login_emergency_final
+          python -m unittest backend.test_churvox_runtime_jwt_secret_patch
+          python -m unittest scripts.test_platform_owner_frontend_lock
 
       - name: Prove production release branch is not targeted
         run: |
