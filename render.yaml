@@ -26,8 +26,6 @@ services:
         value: production
       - key: NODE_VERSION
         value: 22.22.0
-      - key: CHURVOX_STAGING_USER
-        value: churvox
       - key: CHURVOX_STAGING_PASSWORD
         sync: false
       - key: CHURVOX_STAGING_INTERNAL_PORT
