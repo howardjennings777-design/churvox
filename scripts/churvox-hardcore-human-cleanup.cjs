@@ -5,9 +5,27 @@ const OWNER_EMAIL = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLower
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT |Full launch worker detail /i;
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+const REQUEST_TIMEOUT_MS = Math.max(4_000, Number(process.env.CHURVOX_CLEANUP_REQUEST_TIMEOUT_MS || 10_000));
+const MAX_ATTEMPTS = Math.max(1, Number(process.env.CHURVOX_CLEANUP_ATTEMPTS || 2));
+const DEADLINE_MS = Math.max(60_000, Number(process.env.CHURVOX_CLEANUP_DEADLINE_MS || 240_000));
+const STARTED_AT = Date.now();
+
+function log(message) {
+  console.log(`[cleanup +${Math.round((Date.now() - STARTED_AT) / 1000)}s] ${message}`);
+}
+
+function remainingMs() {
+  return DEADLINE_MS - (Date.now() - STARTED_AT);
+}
+
+function assertWithinDeadline(stage) {
+  if (remainingMs() <= 0) throw new Error(`Cleanup deadline reached during ${stage}.`);
+}
 
 function tokenFrom(body = {}) {
-  return body.token || body.access_token || body.user?.token || body.data?.token || body.data?.user?.token || '';
+  return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+    || body.user?.token || body.user?.access_token || body.data?.token
+    || body.data?.access_token || body.data?.user?.token || '';
 }
 
 function idOf(row = {}) {
@@ -32,7 +50,7 @@ function matches(row) {
 function inactiveRecord(row = {}) {
   if (row.archived === true || row.is_archived === true || row.deleted === true || row.is_deleted === true) return true;
   if (row.archived_at || row.deleted_at) return true;
-  return /archived|deleted|dismissed|rejected/i.test(String(row.status || row.state || ''));
+  return /archived|deleted|dismissed|rejected|ignored/i.test(String(row.status || row.state || row.action || ''));
 }
 
 function sleep(ms) {
@@ -40,8 +58,10 @@ function sleep(ms) {
 }
 
 async function callOnce(path, options = {}) {
+  assertWithinDeadline(path);
+  const timeoutMs = Math.max(1_000, Math.min(REQUEST_TIMEOUT_MS, remainingMs()));
   const response = await fetch(`${API_BASE}${path}`, {
-    signal: AbortSignal.timeout(20_000),
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
   });
@@ -53,22 +73,23 @@ async function callOnce(path, options = {}) {
 
 async function call(path, options = {}) {
   let lastError = null;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
       const result = await callOnce(path, options);
-      if (!RETRYABLE_STATUS.has(result.response.status) || attempt === 3) return result;
+      if (!RETRYABLE_STATUS.has(result.response.status) || attempt === MAX_ATTEMPTS) return result;
       lastError = new Error(`Cleanup request ${path} returned HTTP ${result.response.status}.`);
     } catch (error) {
       lastError = error;
-      if (attempt === 3) throw error;
+      if (attempt === MAX_ATTEMPTS) throw error;
     }
-    await sleep(500 * attempt);
+    await sleep(Math.min(750 * attempt, Math.max(0, remainingMs())));
   }
   throw lastError || new Error(`Cleanup request failed: ${path}`);
 }
 
 async function login() {
   if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error('Owner cleanup credentials are missing.');
+  log('Signing in for owner-scoped cleanup.');
   const result = await call('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: OWNER_EMAIL, password: OWNER_PASSWORD }) });
   if (!result.response.ok) throw new Error(`Cleanup owner login failed with ${result.response.status}.`);
   const token = tokenFrom(result.body);
@@ -111,7 +132,32 @@ async function list(path, headers) {
   return rowsFrom(result.body);
 }
 
+async function mapLimited(items, limit, worker) {
+  const rows = Array.from(items || []);
+  const results = new Array(rows.length);
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, rows.length) }, async () => {
+    while (cursor < rows.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await worker(rows[index], index);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+}
+
+async function listCollections(kinds, headers, phase) {
+  log(`${phase}: reading ${kinds.join(', ')} in parallel.`);
+  const entries = await Promise.all(kinds.map(async (kind) => {
+    const rows = await list(`/api/${kind}?limit=400`, headers);
+    return [kind, rows];
+  }));
+  return new Map(entries);
+}
+
 async function main() {
+  log(`Starting bounded cleanup against ${API_BASE}.`);
   const token = await login();
   const headers = { Authorization: `Bearer ${token}` };
   const failures = [];
@@ -120,24 +166,37 @@ async function main() {
   let matched = 0;
   let cleaned = 0;
 
-  for (const kind of ['jobs', 'clients', 'quotes', 'invoices']) {
-    for (const row of await list(`/api/${kind}?limit=400`, headers)) {
-      if (!matches(row)) continue;
-      matched += 1;
-      const id = idOf(row);
-      if (!id) { failures.push(`${kind}:missing-id`); continue; }
-      if (await removeBusinessRecord(kind, id, headers)) { cleaned += 1; settled.add(`${kind}:${id}`); }
-      else failures.push(`${kind}:${id}`);
-    }
+  const kinds = ['jobs', 'clients', 'quotes', 'invoices'];
+  const initial = await listCollections(kinds, headers, 'Initial scan');
+  const businessMatches = [];
+  for (const [kind, rows] of initial.entries()) {
+    for (const row of rows) if (matches(row) && !inactiveRecord(row)) businessMatches.push({ kind, row });
   }
+  log(`Initial scan found ${businessMatches.length} active business fixture record(s).`);
 
-  // The live Command endpoint can expose a bounded page. Drain successive
-  // pages until no matching active audit slips remain instead of cleaning only page one.
-  for (let round = 0; round < 24; round += 1) {
+  await mapLimited(businessMatches, 4, async ({ kind, row }) => {
+    assertWithinDeadline(`${kind} cleanup`);
+    matched += 1;
+    const id = idOf(row);
+    if (!id) { failures.push(`${kind}:missing-id`); return; }
+    if (await removeBusinessRecord(kind, id, headers)) {
+      cleaned += 1;
+      settled.add(`${kind}:${id}`);
+    } else {
+      failures.push(`${kind}:${id}`);
+    }
+  });
+
+  // Command slips are bounded and can be paged. A few short rounds are enough
+  // to drain matching active fixtures without letting a slow backend consume
+  // the entire workflow timeout.
+  for (let round = 1; round <= 4; round += 1) {
+    assertWithinDeadline(`Command cleanup round ${round}`);
     const commandRows = (await list('/api/command/slips?limit=400', headers)).filter((row) => matches(row) && !inactiveRecord(row));
+    log(`Command round ${round} found ${commandRows.length} active matching slip(s).`);
     if (!commandRows.length) break;
     let progressed = 0;
-    for (const row of commandRows) {
+    await mapLimited(commandRows, 4, async (row) => {
       const id = idOf(row);
       if (id && !commandSeen.has(id)) { commandSeen.add(id); matched += 1; }
       if (await resolveCommandSlip(row, headers)) {
@@ -147,20 +206,25 @@ async function main() {
       } else {
         failures.push(`command:${id || 'missing-id'}`);
       }
-    }
+    });
     if (!progressed) break;
-    await sleep(150);
+    await sleep(200);
   }
 
-  // Messages and notifications are immutable audit history. They are checked for safety but are not treated as active business records.
-  const historyMatches = [];
-  for (const path of ['/api/messages?limit=400', '/api/notifications?limit=400']) {
-    for (const row of await list(path, headers)) if (matches(row)) historyMatches.push({ path, id: idOf(row) });
+  // Message/notification rows are immutable audit history. Count them when the
+  // backend is available, but never attempt destructive deletion.
+  let historyMatches = [];
+  try {
+    const history = await Promise.all(['/api/messages?limit=400', '/api/notifications?limit=400'].map(async (path) => [path, await list(path, headers)]));
+    historyMatches = history.flatMap(([path, rows]) => rows.filter(matches).map((row) => ({ path, id: idOf(row) })));
+  } catch (error) {
+    log(`Immutable history count unavailable: ${error.message || error}`);
   }
 
+  const verification = await listCollections(kinds, headers, 'Verification');
   const remainingActive = [];
-  for (const kind of ['jobs', 'clients', 'quotes', 'invoices']) {
-    for (const row of await list(`/api/${kind}?limit=400`, headers)) {
+  for (const [kind, rows] of verification.entries()) {
+    for (const row of rows) {
       const key = `${kind}:${idOf(row)}`;
       if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key);
     }
@@ -170,14 +234,15 @@ async function main() {
     if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key);
   }
 
-  console.log(`Cleanup matched ${matched} active audit records and cleaned/resolved ${cleaned}.`);
-  console.log(`Retained ${historyMatches.length} immutable message/notification audit entries.`);
+  log(`Matched ${matched} active audit record(s); cleaned/resolved ${cleaned}.`);
+  log(`Retained ${historyMatches.length} immutable message/notification audit entr${historyMatches.length === 1 ? 'y' : 'ies'}.`);
   if (failures.length || remainingActive.length) {
     throw new Error(`Cleanup incomplete. Failures: ${failures.join(', ') || 'none'}. Active remnants: ${remainingActive.join(', ') || 'none'}.`);
   }
+  log('Cleanup verification passed with no confirmed active fixture remnants.');
 }
 
 main().catch((error) => {
-  console.error(error.message || error);
+  console.error(`[cleanup failed] ${error.message || error}`);
   process.exit(1);
 });
