@@ -4,6 +4,7 @@ const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || '';
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || '';
 const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || '';
+const RUN_ID = process.env.GITHUB_RUN_ID || `local-${process.pid}`;
 const SITE_BASE = (process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 
@@ -94,7 +95,7 @@ async function createAssignedJob(page, ownerToken, workerToken) {
   const workerId = idOf(worker);
   expect(workerId, 'linked worker id').toBeTruthy();
 
-  const marker = `Full launch worker detail ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const marker = `Full launch worker detail run-${RUN_ID}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const workerName = String(worker.name || worker.full_name || worker.worker_name || '').trim();
   const created = await requestJson(page, ownerToken, 'post', '/api/jobs', {
     title: marker,
@@ -139,16 +140,20 @@ async function createAssignedJob(page, ownerToken, workerToken) {
   return { marker, jobId };
 }
 
-async function cleanupAssignedJob(page, ownerToken, jobId) {
+async function cleanupAssignedJob(page, ownerToken, jobId, marker) {
   if (!jobId) return;
-  const archived = await requestJson(page, ownerToken, 'post', `/api/jobs/${encodeURIComponent(jobId)}/archive`, {
-    archived: true,
-    status: 'archived',
-    archive_reason: 'full launch worker detail audit cleanup',
-  });
-  if (archived.ok || archived.status === 404) return;
   const deleted = await requestJson(page, ownerToken, 'delete', `/api/jobs/${encodeURIComponent(jobId)}`);
-  expect(deleted.ok || deleted.status === 404, `audit job cleanup failed: archive ${archived.status}, delete ${deleted.status}`).toBeTruthy();
+  expect(deleted.ok || deleted.status === 404, `audit job delete failed with HTTP ${deleted.status}: ${JSON.stringify(deleted.body).slice(0, 300)}`).toBeTruthy();
+
+  await expect.poll(async () => {
+    const listed = await requestJson(page, ownerToken, 'get', `/api/jobs?ts=${Date.now()}`);
+    if (!listed.ok) return false;
+    return !rowsFrom(listed.body, ['jobs']).some((row) => idOf(row) === jobId || textHas(row, marker));
+  }, {
+    message: `audit job ${jobId} remained in the owner job list after cleanup`,
+    timeout: 30_000,
+    intervals: [500, 1000, 2000],
+  }).toBeTruthy();
 }
 
 test('current worker queue selects an assigned job and shows real field controls', async ({ page }) => {
@@ -188,6 +193,6 @@ test('current worker queue selects an assigned job and shows real field controls
     await expect(page.getByRole('button', { name: /^Send proof note$/i }).first(), 'missing proof send control').toBeEnabled();
     await expect(page.getByRole('button', { name: /^Timer note$/i }).first(), 'missing timer note control').toBeEnabled();
   } finally {
-    await cleanupAssignedJob(page, ownerToken, fixture.jobId);
+    await cleanupAssignedJob(page, ownerToken, fixture.jobId, fixture.marker);
   }
 });
