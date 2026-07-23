@@ -13,7 +13,7 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn churvox_staging_start:app --host 0.0.0.0 --port $PORT
-    autoDeployTrigger: off
+    autoDeployTrigger: "off"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
@@ -39,7 +39,7 @@ services:
     buildCommand: npm install --include=dev --legacy-peer-deps && npm run build
     startCommand: node staging-server.cjs
     healthCheckPath: /healthz
-    autoDeployTrigger: off
+    autoDeployTrigger: "off"
     envVars:
       - key: NODE_VERSION
         value: 22.22.0
