@@ -1,0 +1,80 @@
+name: Churvox Staging Preview Check
+
+on:
+  push:
+    branches:
+      - staging/churvox-office-os-preview
+  workflow_dispatch:
+
+concurrency:
+  group: churvox-staging-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-staging-harness:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+
+      - name: Validate staging Blueprint
+        run: |
+          python -m pip install --quiet PyYAML
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          path = Path('render-staging.yaml')
+          data = yaml.safe_load(path.read_text())
+          services = {service['name']: service for service in data.get('services', [])}
+
+          backend = services['churvox-office-os-staging-backend']
+          frontend = services['churvox-office-os-staging']
+
+          assert backend['type'] == 'pserv'
+          assert backend['branch'] == 'staging/churvox-office-os-preview'
+          assert backend['autoDeployTrigger'] == 'off'
+          assert frontend['branch'] == 'staging/churvox-office-os-preview'
+          assert frontend['autoDeployTrigger'] == 'off'
+          assert frontend['startCommand'] == 'node staging-server.cjs'
+
+          backend_env = {item['key']: item for item in backend.get('envVars', []) if 'key' in item}
+          frontend_env = {item['key']: item for item in frontend.get('envVars', []) if 'key' in item}
+
+          assert backend_env['CHURVOX_STAGING_READ_ONLY']['value'] == 'true'
+          assert backend_env['MONGO_URL']['sync'] is False
+          assert backend_env['DB_NAME']['sync'] is False
+          assert frontend_env['CHURVOX_STAGING_USER']['sync'] is False
+          assert frontend_env['CHURVOX_STAGING_PASSWORD']['sync'] is False
+          assert frontend_env['CHURVOX_BACKEND_HOSTPORT']['fromService']['name'] == backend['name']
+
+          text = path.read_text().lower()
+          assert 'grassley-backend' not in text
+          assert 'www.churvox.com' not in text
+          print('Private staging Blueprint contract passed.')
+          PY
+
+      - name: Validate staging safety code
+        run: |
+          python -m py_compile \
+            backend/churvox_staging_readonly_patch.py \
+            backend/sitecustomize.py \
+            backend/churvox_start.py
+          node --check frontend/staging-server.cjs
+
+      - name: Prove production release branch is not targeted
+        run: |
+          grep -q 'branch: staging/churvox-office-os-preview' render-staging.yaml
+          ! grep -q 'branch: main' render-staging.yaml
+          ! grep -q 'name: churvox-backend' render-staging.yaml
+          ! grep -q 'name: churvox-frontend' render-staging.yaml
