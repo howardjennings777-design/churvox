@@ -7,6 +7,7 @@ BACKEND_PUBLIC_URL_DEFAULT = "https://churvox-backend.onrender.com"
 FRONTEND_URL_DEFAULT = "https://www.churvox.com"
 
 for _module in [
+    "churvox_staging_readonly_patch",
     "churvox_plan_limits_current_patch",
     "churvox_xero_addon_alias_patch",
     "churvox_worker_role_alias_patch",
