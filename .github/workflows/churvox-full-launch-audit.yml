@@ -20,12 +20,12 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 75
     defaults:
       run:
         working-directory: frontend
@@ -35,6 +35,9 @@ jobs:
       CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
       CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
       CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_REQUIRE_AUTH_AUDIT: '1'
+      CI: true
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,30 +45,27 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Verify private owner credential
         id: credential
-        continue-on-error: true
         run: |
-          if [ -z "$CHURVOX_OWNER_PASSWORD" ]; then
+          test -n "$CHURVOX_OWNER_PASSWORD" || {
             echo "::error::CHURVOX_OWNER_PASSWORD repository secret is missing."
             exit 1
-          fi
+          }
           echo "Owner credential is configured and remains masked."
 
       - name: Discover linked worker login
         id: worker
-        if: steps.credential.outcome == 'success'
-        continue-on-error: true
         run: |
           node <<'NODE'
           const fs = require('fs');
@@ -75,8 +75,10 @@ jobs:
 
           function tokenFrom(body = {}) {
             return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
-              || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+              || body.user?.token || body.user?.access_token || body.data?.token
+              || body.data?.access_token || body.data?.user?.token || '';
           }
+
           function rowsFrom(payload) {
             const data = payload?.data?.data ?? payload?.data ?? payload;
             if (Array.isArray(data)) return data;
@@ -85,15 +87,19 @@ jobs:
             }
             return [];
           }
+
           function emailOf(row = {}) {
             return String(row.email || row.worker_email || row.user_email || row.login_email || '').trim().toLowerCase();
           }
+
           function active(row = {}) {
             const status = String(row.status || row.worker_status || '').toLowerCase();
             return row.active !== false && row.is_active !== false && !/inactive|deleted|archived|disabled/.test(status);
           }
+
           async function request(path, options = {}) {
             const response = await fetch(`${api}${path}`, {
+              signal: AbortSignal.timeout(20_000),
               headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
               ...options,
             });
@@ -102,18 +108,25 @@ jobs:
             try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
             return { response, body };
           }
+
           async function login(path, email) {
             const { response, body } = await request(path, {
               method: 'POST',
               body: JSON.stringify({ email, password }),
             });
-            return { ok: response.ok && body?.success !== false && Boolean(tokenFrom(body)), body, status: response.status };
+            return {
+              ok: response.ok && body?.success !== false && Boolean(tokenFrom(body)),
+              body,
+              status: response.status,
+            };
           }
+
           async function main() {
             const ownerLogin = await login('/api/auth/login', ownerEmail);
             if (!ownerLogin.ok) throw new Error(`Owner login failed during worker discovery with HTTP ${ownerLogin.status}.`);
             const token = tokenFrom(ownerLogin.body);
             const candidates = [];
+
             for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
               const { response, body } = await request(`${endpoint}?ts=${Date.now()}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -125,24 +138,24 @@ jobs:
                 if (!candidates.includes(email)) candidates.push(email);
               }
             }
+
             if (!candidates.length) throw new Error('No active linked worker was found in the owner team endpoints.');
 
-            let selected = '';
             const attempts = [];
             for (const email of candidates.slice(0, 8)) {
               let result = await login('/api/auth/login', email);
               if (!result.ok) result = await login('/api/worker/auth/login', email);
               attempts.push(`${email}:${result.status}`);
-              if (result.ok) {
-                selected = email;
-                break;
-              }
+              if (!result.ok) continue;
+              console.log(`::add-mask::${email}`);
+              fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${email}\n`);
+              console.log('A linked active worker was discovered and its email was masked.');
+              return;
             }
-            if (!selected) throw new Error(`No linked worker accepted the shared password. Attempts: ${attempts.join(', ')}`);
-            console.log(`::add-mask::${selected}`);
-            fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${selected}\n`);
-            console.log('A linked active worker was discovered and its email was masked.');
+
+            throw new Error(`No linked worker accepted the configured password. Attempts: ${attempts.join(', ')}`);
           }
+
           main().catch((error) => {
             console.error(error.message || error);
             process.exit(1);
@@ -151,13 +164,14 @@ jobs:
 
       - name: Run public and authenticated app launch audit
         id: run_audit
-        if: steps.credential.outcome == 'success' && steps.worker.outcome == 'success'
-        env:
-          CHURVOX_REQUIRE_AUTH_AUDIT: '1'
-          CI: true
         run: |
           set +e
-          npx playwright test tests/e2e/churvox-big-launch-audit.spec.js --project=desktop-chromium --project=mobile-chromium 2>&1 | tee ../churvox-audit-output.txt
+          timeout --signal=TERM 58m npx playwright test \
+            tests/e2e/churvox-big-launch-audit.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=2 \
+            --reporter=list 2>&1 | tee ../churvox-audit-output.txt
           status=${PIPESTATUS[0]}
           skipped=$(grep -Eo '[0-9]+ skipped' ../churvox-audit-output.txt | tail -n 1 | awk '{print $1}')
           passed=$(grep -Eo '[0-9]+ passed' ../churvox-audit-output.txt | tail -n 1 | awk '{print $1}')
@@ -177,7 +191,7 @@ jobs:
         if: always() && steps.credential.outcome == 'success'
         continue-on-error: true
         run: |
-          node <<'NODE'
+          timeout --signal=TERM 4m node <<'NODE'
           const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
           const email = process.env.CHURVOX_OWNER_EMAIL;
           const password = process.env.CHURVOX_OWNER_PASSWORD;
@@ -185,8 +199,10 @@ jobs:
 
           function tokenFrom(body = {}) {
             return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
-              || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+              || body.user?.token || body.user?.access_token || body.data?.token
+              || body.data?.access_token || body.data?.user?.token || '';
           }
+
           function rowsFrom(payload) {
             const data = payload?.data?.data ?? payload?.data ?? payload;
             if (Array.isArray(data)) return data;
@@ -195,13 +211,16 @@ jobs:
             }
             return [];
           }
+
           function idOf(row = {}) {
             const raw = row.id || row._id || row.job_id || row.$oid || row.oid || '';
             if (raw && typeof raw === 'object') return String(raw.$oid || raw.oid || raw.id || '');
             return String(raw || '');
           }
+
           async function request(path, options = {}) {
             const response = await fetch(`${api}${path}`, {
+              signal: AbortSignal.timeout(15_000),
               headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
               ...options,
             });
@@ -210,6 +229,7 @@ jobs:
             try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
             return { response, body };
           }
+
           async function main() {
             const login = await request('/api/auth/login', {
               method: 'POST',
@@ -217,9 +237,11 @@ jobs:
             });
             const token = tokenFrom(login.body);
             if (!login.response.ok || !token) throw new Error(`Owner login failed during audit cleanup with HTTP ${login.response.status}.`);
+
             const headers = { Authorization: `Bearer ${token}` };
             const listed = await request(`/api/jobs?limit=500&ts=${Date.now()}`, { headers });
             if (!listed.response.ok) throw new Error(`Could not list jobs for audit cleanup: HTTP ${listed.response.status}.`);
+
             const matches = rowsFrom(listed.body).filter((row) => JSON.stringify(row || {}).toLowerCase().includes(marker));
             const failures = [];
             for (const row of matches) {
@@ -228,28 +250,43 @@ jobs:
                 failures.push('missing job id');
                 continue;
               }
-              const archived = await request(`/api/jobs/${encodeURIComponent(id)}/archive`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ archived: true, archive_reason: 'full launch audit cleanup' }),
-              });
-              const deleted = await request(`/api/jobs/${encodeURIComponent(id)}`, {
-                method: 'DELETE',
-                headers,
-              });
-              const cleaned = archived.response.ok || archived.response.status === 404 || deleted.response.ok || deleted.response.status === 404;
-              if (!cleaned) failures.push(`${id}:archive=${archived.response.status},delete=${deleted.response.status}`);
+
+              let archivedStatus = 0;
+              let deletedStatus = 0;
+              try {
+                const archived = await request(`/api/jobs/${encodeURIComponent(id)}/archive`, {
+                  method: 'POST',
+                  headers,
+                  body: JSON.stringify({ archived: true, archive_reason: 'full launch audit cleanup' }),
+                });
+                archivedStatus = archived.response.status;
+              } catch (error) {
+                console.warn(`Archive cleanup request failed for ${id}: ${error.message}`);
+              }
+
+              try {
+                const deleted = await request(`/api/jobs/${encodeURIComponent(id)}`, { method: 'DELETE', headers });
+                deletedStatus = deleted.response.status;
+              } catch (error) {
+                console.warn(`Delete cleanup request failed for ${id}: ${error.message}`);
+              }
+
+              const cleaned = [200, 201, 202, 204, 404].includes(archivedStatus)
+                || [200, 201, 202, 204, 404].includes(deletedStatus);
+              if (!cleaned) failures.push(`${id}:archive=${archivedStatus},delete=${deletedStatus}`);
             }
+
             console.log(`Full launch audit cleanup processed ${matches.length} marked jobs.`);
             if (failures.length) throw new Error(`Audit cleanup failures: ${failures.join('; ')}`);
           }
+
           main().catch((error) => {
             console.error(error.message || error);
             process.exit(1);
           });
           NODE
 
-      - name: Save readable audit result into repo
+      - name: Write readable audit summary
         if: always()
         run: |
           mkdir -p ../audit-results
@@ -261,7 +298,7 @@ jobs:
           skipped=${skipped:-0}
           {
             echo "# Churvox Full Launch Audit"
-            echo ""
+            echo
             echo "- Site: https://www.churvox.com"
             echo "- Commit: $GITHUB_SHA"
             echo "- Run: $GITHUB_RUN_ID"
@@ -273,42 +310,41 @@ jobs:
             echo "- Audit fixture cleanup: ${{ steps.cleanup.outcome }}"
             echo "- Authenticated audit required: yes"
             echo "- Time: $(date -u)"
-            echo ""
+            echo
             echo "## Output"
             echo '```txt'
-            tail -n 240 ../churvox-audit-output.txt || true
+            tail -n 300 ../churvox-audit-output.txt || true
             echo '```'
           } > ../audit-results/churvox-full-launch-audit-latest.md
 
-      - name: Commit readable audit result
-        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          cd ..
-          git config user.name "github-actions"
-          git config user.email "hello@churvox.com"
-          git add audit-results/churvox-full-launch-audit-latest.md
-          if git diff --cached --quiet; then
-            echo "No audit result changes to commit"
-          else
-            git commit -m "Save Churvox full launch audit result"
-            git push
-          fi
+      - name: Upload readable audit summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-full-launch-audit-summary-${{ github.run_id }}
+          path: |
+            audit-results/churvox-full-launch-audit-latest.md
+            churvox-audit-output.txt
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: churvox-full-launch-audit-report
+          name: churvox-full-launch-audit-report-${{ github.run_id }}
           path: frontend/playwright-report
           if-no-files-found: ignore
+          retention-days: 3
 
       - name: Upload Playwright test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: churvox-full-launch-audit-results
+          name: churvox-full-launch-audit-results-${{ github.run_id }}
           path: frontend/test-results
           if-no-files-found: ignore
+          retention-days: 3
 
       - name: Fail job if audit is incomplete or failed
         if: always()
