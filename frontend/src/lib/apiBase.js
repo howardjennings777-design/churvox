@@ -85,16 +85,24 @@ function isChurvoxHost(host = "") {
   return cleanHost === "www.churvox.com" || cleanHost === "churvox.com";
 }
 
+function browserOrigin() {
+  if (typeof window === "undefined") return "";
+  return clean(window.location?.origin || "");
+}
+
 function resolveApiBase() {
-  // Production uses the frontend's same-origin /api proxy. This keeps auth
-  // cookies first-party and prevents the browser from depending directly on a
-  // Render service hostname that may be renamed, suspended, or temporarily
-  // unavailable in DNS.
+  const configured = configuredBackend();
+
+  // Production uses the frontend's same-origin /api proxy. Return the browser
+  // origin rather than an empty string so live-data modules can distinguish a
+  // working same-origin bridge from a genuinely unavailable API host.
   if (typeof window !== "undefined" && isChurvoxHost(window.location.hostname)) {
-    return "";
+    return browserOrigin();
   }
 
-  return configuredBackend() || "";
+  // Private previews use an explicitly configured backend when supplied.
+  // Otherwise they use the preview server's own same-origin /api bridge.
+  return configured || browserOrigin();
 }
 
 installOutreachSimpleGetGuard();
