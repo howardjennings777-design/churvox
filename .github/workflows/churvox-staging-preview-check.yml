@@ -83,12 +83,17 @@ jobs:
             backend/churvox_start.py
           node --check frontend/staging-server.cjs
 
-      - name: Prove production login stack is unchanged
-        run: |
-          python -m unittest backend.test_churvox_auth_me_401_patch
-          python -m unittest backend.test_churvox_login_emergency_final
-          python -m unittest backend.test_churvox_runtime_jwt_secret_patch
-          python -m unittest scripts.test_platform_owner_frontend_lock
+      - name: Prove auth-me contract is unchanged
+        run: python -m unittest backend.test_churvox_auth_me_401_patch
+
+      - name: Prove emergency login contract is unchanged
+        run: python -m unittest backend.test_churvox_login_emergency_final
+
+      - name: Prove runtime JWT contract is unchanged
+        run: python -m unittest backend.test_churvox_runtime_jwt_secret_patch
+
+      - name: Prove platform-owner frontend lock is unchanged
+        run: python -m unittest scripts.test_platform_owner_frontend_lock
 
       - name: Prove production release branch is not targeted
         run: |
