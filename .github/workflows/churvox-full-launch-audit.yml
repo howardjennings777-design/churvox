@@ -7,12 +7,16 @@ on:
     paths:
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
+      - 'frontend/server.cjs'
+      - 'scripts/churvox-hardcore-human-cleanup.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
   pull_request:
     branches: [main]
     paths:
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
+      - 'frontend/server.cjs'
+      - 'scripts/churvox-hardcore-human-cleanup.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
 
 concurrency:
@@ -25,13 +29,14 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: frontend
     env:
-      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
       PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      PLAYWRIGHT_SKIP_WEB_SERVER: '1'
       CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
       CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
       CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
@@ -51,6 +56,23 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+
+      - name: Build production frontend
+        run: npm run build
+
+      - name: Start PR frontend with same-origin API proxy
+        run: |
+          PORT=3000 node server.cjs > ../churvox-pr-server.log 2>&1 &
+          echo $! > ../churvox-pr-server.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ >/dev/null; then
+              echo "PR frontend and API proxy are ready."
+              exit 0
+            fi
+            sleep 1
+          done
+          cat ../churvox-pr-server.log || true
+          exit 1
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -162,11 +184,11 @@ jobs:
           });
           NODE
 
-      - name: Run public and authenticated app launch audit
+      - name: Run PR public and authenticated launch audit
         id: run_audit
         run: |
           set +e
-          timeout --signal=TERM 58m npx playwright test \
+          timeout --signal=TERM 30m npx playwright test \
             tests/e2e/churvox-big-launch-audit.spec.js \
             --project=desktop-chromium \
             --project=mobile-chromium \
@@ -186,105 +208,10 @@ jobs:
           echo "passed=$passed" >> "$GITHUB_OUTPUT"
           exit 0
 
-      - name: Clean full launch worker audit jobs
+      - name: Clean all launch audit fixtures
         id: cleanup
         if: always() && steps.credential.outcome == 'success'
-        continue-on-error: true
-        run: |
-          timeout --signal=TERM 4m node <<'NODE'
-          const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
-          const email = process.env.CHURVOX_OWNER_EMAIL;
-          const password = process.env.CHURVOX_OWNER_PASSWORD;
-          const marker = 'full launch worker detail ';
-
-          function tokenFrom(body = {}) {
-            return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
-              || body.user?.token || body.user?.access_token || body.data?.token
-              || body.data?.access_token || body.data?.user?.token || '';
-          }
-
-          function rowsFrom(payload) {
-            const data = payload?.data?.data ?? payload?.data ?? payload;
-            if (Array.isArray(data)) return data;
-            for (const key of ['jobs', 'items', 'records', 'results', 'data']) {
-              if (Array.isArray(data?.[key])) return data[key];
-            }
-            return [];
-          }
-
-          function idOf(row = {}) {
-            const raw = row.id || row._id || row.job_id || row.$oid || row.oid || '';
-            if (raw && typeof raw === 'object') return String(raw.$oid || raw.oid || raw.id || '');
-            return String(raw || '');
-          }
-
-          async function request(path, options = {}) {
-            const response = await fetch(`${api}${path}`, {
-              signal: AbortSignal.timeout(15_000),
-              headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
-              ...options,
-            });
-            const text = await response.text();
-            let body = {};
-            try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
-            return { response, body };
-          }
-
-          async function main() {
-            const login = await request('/api/auth/login', {
-              method: 'POST',
-              body: JSON.stringify({ email, password }),
-            });
-            const token = tokenFrom(login.body);
-            if (!login.response.ok || !token) throw new Error(`Owner login failed during audit cleanup with HTTP ${login.response.status}.`);
-
-            const headers = { Authorization: `Bearer ${token}` };
-            const listed = await request(`/api/jobs?limit=500&ts=${Date.now()}`, { headers });
-            if (!listed.response.ok) throw new Error(`Could not list jobs for audit cleanup: HTTP ${listed.response.status}.`);
-
-            const matches = rowsFrom(listed.body).filter((row) => JSON.stringify(row || {}).toLowerCase().includes(marker));
-            const failures = [];
-            for (const row of matches) {
-              const id = idOf(row);
-              if (!id) {
-                failures.push('missing job id');
-                continue;
-              }
-
-              let archivedStatus = 0;
-              let deletedStatus = 0;
-              try {
-                const archived = await request(`/api/jobs/${encodeURIComponent(id)}/archive`, {
-                  method: 'POST',
-                  headers,
-                  body: JSON.stringify({ archived: true, archive_reason: 'full launch audit cleanup' }),
-                });
-                archivedStatus = archived.response.status;
-              } catch (error) {
-                console.warn(`Archive cleanup request failed for ${id}: ${error.message}`);
-              }
-
-              try {
-                const deleted = await request(`/api/jobs/${encodeURIComponent(id)}`, { method: 'DELETE', headers });
-                deletedStatus = deleted.response.status;
-              } catch (error) {
-                console.warn(`Delete cleanup request failed for ${id}: ${error.message}`);
-              }
-
-              const cleaned = [200, 201, 202, 204, 404].includes(archivedStatus)
-                || [200, 201, 202, 204, 404].includes(deletedStatus);
-              if (!cleaned) failures.push(`${id}:archive=${archivedStatus},delete=${deletedStatus}`);
-            }
-
-            console.log(`Full launch audit cleanup processed ${matches.length} marked jobs.`);
-            if (failures.length) throw new Error(`Audit cleanup failures: ${failures.join('; ')}`);
-          }
-
-          main().catch((error) => {
-            console.error(error.message || error);
-            process.exit(1);
-          });
-          NODE
+        run: timeout --signal=TERM 5m node ../scripts/churvox-hardcore-human-cleanup.cjs
 
       - name: Write readable audit summary
         if: always()
@@ -299,7 +226,8 @@ jobs:
           {
             echo "# Churvox Full Launch Audit"
             echo
-            echo "- Site: https://www.churvox.com"
+            echo "- Surface: PR production build through its same-origin proxy"
+            echo "- Backend: https://grassley-backend.onrender.com"
             echo "- Commit: $GITHUB_SHA"
             echo "- Run: $GITHUB_RUN_ID"
             echo "- Status code: $status"
@@ -317,7 +245,7 @@ jobs:
             echo '```'
           } > ../audit-results/churvox-full-launch-audit-latest.md
 
-      - name: Upload readable audit summary
+      - name: Upload readable audit summary and proxy log
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -325,6 +253,7 @@ jobs:
           path: |
             audit-results/churvox-full-launch-audit-latest.md
             churvox-audit-output.txt
+            churvox-pr-server.log
           if-no-files-found: warn
           retention-days: 3
 
