@@ -49,8 +49,9 @@ function matches(row) {
 
 function inactiveRecord(row = {}) {
   if (row.archived === true || row.is_archived === true || row.deleted === true || row.is_deleted === true) return true;
-  if (row.archived_at || row.deleted_at) return true;
-  return /archived|deleted|dismissed|rejected|ignored/i.test(String(row.status || row.state || row.action || ''));
+  if (row.archived_at || row.deleted_at || row.ignored_at || row.dismissed_at || row.decided_at) return true;
+  const status = String(row.status || row.state || row.action || row.owner_decision || row.decision || '');
+  return /archived|deleted|dismissed|rejected|ignored|resolved|approved_recorded/i.test(status);
 }
 
 function sleep(ms) {
@@ -115,14 +116,31 @@ async function removeBusinessRecord(kind, id, headers) {
 async function resolveCommandSlip(row, headers) {
   const id = idOf(row);
   if (!id) return false;
-  let result = await call(`/api/command/slips/${encodeURIComponent(id)}/ignore`, {
-    method: 'POST', headers, body: JSON.stringify({ action: 'Ignore', note: 'Hardcore human audit cleanup' }),
-  });
-  if (result.response.ok || result.response.status === 404) return true;
-  result = await call(`/api/command/field-slips/${encodeURIComponent(id)}/dismiss`, {
-    method: 'POST', headers, body: JSON.stringify({ note: 'Hardcore human audit cleanup' }),
-  });
-  return result.response.ok || result.response.status === 404;
+  let commandHandled = false;
+  let fieldHandled = false;
+
+  try {
+    const command = await call(`/api/command/slips/${encodeURIComponent(id)}/ignore`, {
+      method: 'POST', headers, body: JSON.stringify({ action: 'Ignore', note: 'Hardcore human audit cleanup' }),
+    });
+    commandHandled = command.response.ok || command.response.status === 404;
+  } catch (error) {
+    log(`Command Ignore request for ${id} could not complete: ${error.message || error}`);
+  }
+
+  // Some live Command queues include legacy worker_field_slips. Always record
+  // the paired non-destructive dismissal as well; neither route approves or
+  // applies a record. The final queue read remains the source of truth.
+  try {
+    const field = await call(`/api/command/field-slips/${encodeURIComponent(id)}/dismiss`, {
+      method: 'POST', headers, body: JSON.stringify({ note: 'Hardcore human audit cleanup' }),
+    });
+    fieldHandled = field.response.ok || field.response.status === 404;
+  } catch (error) {
+    log(`Field-slip Dismiss request for ${id} could not complete: ${error.message || error}`);
+  }
+
+  return commandHandled || fieldHandled;
 }
 
 async function list(path, headers) {
@@ -161,7 +179,6 @@ async function main() {
   const token = await login();
   const headers = { Authorization: `Bearer ${token}` };
   const failures = [];
-  const settled = new Set();
   const commandSeen = new Set();
   let matched = 0;
   let cleaned = 0;
@@ -179,21 +196,16 @@ async function main() {
     matched += 1;
     const id = idOf(row);
     if (!id) { failures.push(`${kind}:missing-id`); return; }
-    if (await removeBusinessRecord(kind, id, headers)) {
-      cleaned += 1;
-      settled.add(`${kind}:${id}`);
-    } else {
-      failures.push(`${kind}:${id}`);
-    }
+    if (await removeBusinessRecord(kind, id, headers)) cleaned += 1;
+    else failures.push(`${kind}:${id}`);
   });
 
-  // Command slips are bounded and can be paged. A few short rounds are enough
-  // to drain matching active fixtures without letting a slow backend consume
-  // the entire workflow timeout.
-  for (let round = 1; round <= 4; round += 1) {
+  // Command slips are bounded and can be paged. Drain both the primary Command
+  // slip and legacy worker field-slip decision paths, then prove the queue is clear.
+  for (let round = 1; round <= 6; round += 1) {
     assertWithinDeadline(`Command cleanup round ${round}`);
     const commandRows = (await list('/api/command/slips?limit=400', headers)).filter((row) => matches(row) && !inactiveRecord(row));
-    log(`Command round ${round} found ${commandRows.length} active matching slip(s).`);
+    log(`Command round ${round} found ${commandRows.length} active matching slip(s): ${commandRows.map((row) => idOf(row)).filter(Boolean).slice(0, 12).join(', ') || 'none'}.`);
     if (!commandRows.length) break;
     let progressed = 0;
     await mapLimited(commandRows, 4, async (row) => {
@@ -202,13 +214,12 @@ async function main() {
       if (await resolveCommandSlip(row, headers)) {
         progressed += 1;
         cleaned += 1;
-        if (id) settled.add(`command:${id}`);
       } else {
         failures.push(`command:${id || 'missing-id'}`);
       }
     });
     if (!progressed) break;
-    await sleep(200);
+    await sleep(300);
   }
 
   // Message/notification rows are immutable audit history. Count them when the
@@ -225,16 +236,14 @@ async function main() {
   const remainingActive = [];
   for (const [kind, rows] of verification.entries()) {
     for (const row of rows) {
-      const key = `${kind}:${idOf(row)}`;
-      if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key);
+      if (matches(row) && !inactiveRecord(row)) remainingActive.push(`${kind}:${idOf(row) || 'missing-id'}`);
     }
   }
   for (const row of await list('/api/command/slips?limit=400', headers)) {
-    const key = `command:${idOf(row)}`;
-    if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key);
+    if (matches(row) && !inactiveRecord(row)) remainingActive.push(`command:${idOf(row) || 'missing-id'}`);
   }
 
-  log(`Matched ${matched} active audit record(s); cleaned/resolved ${cleaned}.`);
+  log(`Matched ${matched} active audit record(s); cleanup routes accepted ${cleaned} resolution request(s).`);
   log(`Retained ${historyMatches.length} immutable message/notification audit entr${historyMatches.length === 1 ? 'y' : 'ies'}.`);
   if (failures.length || remainingActive.length) {
     throw new Error(`Cleanup incomplete. Failures: ${failures.join(', ') || 'none'}. Active remnants: ${remainingActive.join(', ') || 'none'}.`);
