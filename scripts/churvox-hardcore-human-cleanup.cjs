@@ -4,6 +4,7 @@ const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.o
 const OWNER_EMAIL = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLowerCase();
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT |Full launch worker detail /i;
+const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 function tokenFrom(body = {}) {
   return body.token || body.access_token || body.user?.token || body.data?.token || body.data?.user?.token || '';
@@ -34,7 +35,11 @@ function inactiveRecord(row = {}) {
   return /archived|deleted|dismissed|rejected/i.test(String(row.status || row.state || ''));
 }
 
-async function call(path, options = {}) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callOnce(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     signal: AbortSignal.timeout(20_000),
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
@@ -44,6 +49,22 @@ async function call(path, options = {}) {
   let body = {};
   try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
   return { response, body };
+}
+
+async function call(path, options = {}) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const result = await callOnce(path, options);
+      if (!RETRYABLE_STATUS.has(result.response.status) || attempt === 3) return result;
+      lastError = new Error(`Cleanup request ${path} returned HTTP ${result.response.status}.`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === 3) throw error;
+    }
+    await sleep(500 * attempt);
+  }
+  throw lastError || new Error(`Cleanup request failed: ${path}`);
 }
 
 async function login() {
@@ -86,7 +107,8 @@ async function resolveCommandSlip(row, headers) {
 async function list(path, headers) {
   const suffix = path.includes('?') ? '&' : '?';
   const result = await call(`${path}${suffix}ts=${Date.now()}`, { headers });
-  return result.response.ok ? rowsFrom(result.body) : [];
+  if (!result.response.ok) throw new Error(`Cleanup list ${path} failed with HTTP ${result.response.status}.`);
+  return rowsFrom(result.body);
 }
 
 async function main() {
@@ -127,7 +149,7 @@ async function main() {
       }
     }
     if (!progressed) break;
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await sleep(150);
   }
 
   // Messages and notifications are immutable audit history. They are checked for safety but are not treated as active business records.
@@ -138,9 +160,15 @@ async function main() {
 
   const remainingActive = [];
   for (const kind of ['jobs', 'clients', 'quotes', 'invoices']) {
-    for (const row of await list(`/api/${kind}?limit=400`, headers)) { const key = `${kind}:${idOf(row)}`; if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key); }
+    for (const row of await list(`/api/${kind}?limit=400`, headers)) {
+      const key = `${kind}:${idOf(row)}`;
+      if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key);
+    }
   }
-  for (const row of await list('/api/command/slips?limit=400', headers)) { const key = `command:${idOf(row)}`; if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key); }
+  for (const row of await list('/api/command/slips?limit=400', headers)) {
+    const key = `command:${idOf(row)}`;
+    if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key);
+  }
 
   console.log(`Cleanup matched ${matched} active audit records and cleaned/resolved ${cleaned}.`);
   console.log(`Retained ${historyMatches.length} immutable message/notification audit entries.`);
