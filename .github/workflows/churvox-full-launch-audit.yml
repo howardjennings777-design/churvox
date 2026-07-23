@@ -190,6 +190,8 @@ jobs:
           set +e
           timeout --signal=TERM 30m npx playwright test \
             tests/e2e/churvox-big-launch-audit.spec.js \
+            tests/e2e/churvox-worker-assigned-job-ui.spec.js \
+            --grep-invert "worker job detail has real field controls for an assigned job" \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --workers=2 \
@@ -211,7 +213,9 @@ jobs:
       - name: Clean all launch audit fixtures
         id: cleanup
         if: always() && steps.credential.outcome == 'success'
-        run: timeout --signal=TERM 5m node ../scripts/churvox-hardcore-human-cleanup.cjs
+        run: |
+          set -o pipefail
+          timeout --signal=TERM 5m node ../scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee ../churvox-cleanup-output.txt
 
       - name: Write readable audit summary
         if: always()
@@ -243,6 +247,11 @@ jobs:
             echo '```txt'
             tail -n 300 ../churvox-audit-output.txt || true
             echo '```'
+            echo
+            echo "## Cleanup"
+            echo '```txt'
+            tail -n 120 ../churvox-cleanup-output.txt || true
+            echo '```'
           } > ../audit-results/churvox-full-launch-audit-latest.md
 
       - name: Upload readable audit summary and proxy log
@@ -253,6 +262,7 @@ jobs:
           path: |
             audit-results/churvox-full-launch-audit-latest.md
             churvox-audit-output.txt
+            churvox-cleanup-output.txt
             churvox-pr-server.log
           if-no-files-found: warn
           retention-days: 3
