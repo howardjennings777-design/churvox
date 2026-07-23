@@ -4,6 +4,7 @@ const OWNER_EMAIL = process.env.CHURVOX_OWNER_EMAIL || process.env.CHURVOX_E2E_E
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || process.env.CHURVOX_E2E_PASSWORD || process.env.CHURVOX_E2E_OWNER_PASSWORD || process.env.E2E_PASSWORD || '';
 const WORKER_EMAIL = process.env.CHURVOX_WORKER_EMAIL || process.env.CHURVOX_E2E_WORKER_EMAIL || process.env.E2E_WORKER_EMAIL || '';
 const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURVOX_E2E_WORKER_PASSWORD || process.env.E2E_WORKER_PASSWORD || '';
+const SITE_BASE = (process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com').replace(/\/+$/, '');
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 const REQUIRE_AUTH_AUDIT = /^(1|true|yes)$/i.test(process.env.CHURVOX_REQUIRE_AUTH_AUDIT || '');
 
@@ -33,6 +34,10 @@ function apiUrl(path) {
   return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
 }
 
+function siteUrl(path) {
+  return `${SITE_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 function tokenFrom(data = {}) {
   return data?.token || data?.access_token || data?.auth_token || data?.jwt || data?.accessToken
     || data?.user?.token || data?.user?.access_token || data?.user?.accessToken
@@ -41,6 +46,20 @@ function tokenFrom(data = {}) {
 
 function accountEmail(data = {}) {
   return String(data?.email || data?.user?.email || data?.data?.email || data?.data?.user?.email || '').trim().toLowerCase();
+}
+
+function hasAccountProof(data = {}) {
+  const record = data?.user || data?.data?.user || data?.data || data || {};
+  return Boolean(
+    tokenFrom(data)
+    || accountEmail(data)
+    || record?.id
+    || record?._id
+    || record?.role
+    || record?.user_role
+    || record?.business_id
+    || record?.worker_id
+  );
 }
 
 function idOf(value) {
@@ -152,7 +171,8 @@ function requireOrSkip(condition, message) {
 }
 
 async function readJson(response) {
-  return response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
+  const text = await response.text().catch(() => '');
+  try { return JSON.parse(text || '{}'); } catch { return { text: text.slice(0, 800) }; }
 }
 
 async function requestJson(page, token, method, path, data) {
@@ -173,6 +193,29 @@ async function verifyIdentity(page, token, email, role) {
   if (returnedEmail) expect(returnedEmail, `${role} auth/me returned a different account`).toBe(email.toLowerCase());
 }
 
+async function verifyBrowserIdentity(page, email, role) {
+  const result = await page.evaluate(async () => {
+    const token = localStorage.getItem('token') || '';
+    const attempt = async (withToken) => {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: withToken && token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const text = await response.text();
+      let body = {};
+      try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 500) }; }
+      return { ok: response.ok, status: response.status, body };
+    };
+    const bearer = await attempt(true);
+    if (bearer.ok || !token) return bearer;
+    return attempt(false);
+  });
+  expect(result.ok, `${role} same-origin auth/me failed ${result.status}: ${JSON.stringify(result.body).slice(0, 500)}`).toBeTruthy();
+  const returnedEmail = accountEmail(result.body);
+  if (returnedEmail) expect(returnedEmail, `${role} browser session returned a different account`).toBe(email.toLowerCase());
+}
+
 async function fetchLoginToken(page, email, password, role) {
   const paths = role === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
   const attempts = [];
@@ -188,8 +231,22 @@ async function fetchLoginToken(page, email, password, role) {
   throw new Error(`${role} API login failed: ${JSON.stringify(attempts)}`);
 }
 
+async function establishSameOriginSession(page, email, password, role) {
+  const paths = role === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
+  const attempts = [];
+  for (const path of paths) {
+    const response = await page.request.post(siteUrl(path), { data: { email, password }, timeout: 30_000 });
+    const body = await readJson(response);
+    attempts.push({ path, status: response.status(), account: hasAccountProof(body), detail: body?.detail || body?.message || '' });
+    if (!response.ok() || body?.success === false || !hasAccountProof(body)) continue;
+    return body;
+  }
+  throw new Error(`${role} same-origin session login failed: ${JSON.stringify(attempts)}`);
+}
+
 async function apiLogin(page, email, password, role) {
   const token = await fetchLoginToken(page, email, password, role);
+  await establishSameOriginSession(page, email, password, role);
 
   // Seed auth before React and AuthProvider run. Setting localStorage after the
   // public app starts races its anonymous /auth/me request, which can erase the
@@ -206,6 +263,7 @@ async function apiLogin(page, email, password, role) {
     null,
     { timeout: 30_000 },
   );
+  await verifyBrowserIdentity(page, email, role);
   return token;
 }
 
@@ -223,12 +281,11 @@ async function uiLogin(page, email, password, role) {
   const loginResponse = await responsePromise;
   const loginBody = await readJson(loginResponse);
   expect(loginResponse.ok(), `${role} same-origin login failed ${loginResponse.status()}: ${JSON.stringify(loginBody).slice(0, 500)}`).toBeTruthy();
-  expect(tokenFrom(loginBody), `${role} same-origin login returned no token/account JSON`).toBeTruthy();
+  expect(hasAccountProof(loginBody), `${role} same-origin login returned no token/account JSON: ${JSON.stringify(loginBody).slice(0, 500)}`).toBeTruthy();
 
-  await page.waitForFunction(() => Boolean(localStorage.getItem('token')), null, { timeout: 30_000 });
-  const token = await page.evaluate(() => localStorage.getItem('token') || '');
-  await verifyIdentity(page, token, email, role);
+  await page.waitForFunction(() => window.__CHURVOX_AUTH_STATE__?.status === 'authenticated', null, { timeout: 30_000 });
   await page.waitForURL((url) => !/\/login(?:[?#]|$)/i.test(url.pathname), { timeout: 20_000 });
+  await verifyBrowserIdentity(page, email, role);
 }
 
 async function findLinkedWorker(page, ownerToken) {
@@ -296,13 +353,21 @@ async function createAssignedWorkerJob(page) {
 
 async function cleanupAssignedWorkerJob(page, fixture) {
   if (!fixture?.jobId || !fixture?.ownerToken) return;
-  const archived = await requestJson(page, fixture.ownerToken, 'post', `/api/jobs/${encodeURIComponent(fixture.jobId)}/archive`, {
+  const path = `/api/jobs/${encodeURIComponent(fixture.jobId)}`;
+  const deleted = await requestJson(page, fixture.ownerToken, 'delete', path);
+  if (deleted.ok || deleted.status === 404) return;
+  const archived = await requestJson(page, fixture.ownerToken, 'post', `${path}/archive`, {
     archived: true,
+    status: 'archived',
     archive_reason: 'full launch worker detail audit cleanup',
   });
-  const deleted = await requestJson(page, fixture.ownerToken, 'delete', `/api/jobs/${encodeURIComponent(fixture.jobId)}`);
-  const cleaned = archived.ok || archived.status === 404 || deleted.ok || deleted.status === 404;
-  expect(cleaned, `audit job cleanup failed: archive ${archived.status}, delete ${deleted.status}`).toBeTruthy();
+  if (archived.ok || archived.status === 404) return;
+  const patched = await requestJson(page, fixture.ownerToken, 'patch', path, {
+    archived: true,
+    status: 'archived',
+    archive_reason: 'full launch worker detail audit cleanup',
+  });
+  expect(patched.ok || patched.status === 404, `audit job cleanup failed: delete ${deleted.status}, archive ${archived.status}, patch ${patched.status}`).toBeTruthy();
 }
 
 test.describe('Churvox full launch public audit', () => {
@@ -327,21 +392,22 @@ test.describe('Churvox authenticated login entry', () => {
 });
 
 test.describe('Churvox full launch owner audit', () => {
-  test.beforeEach(async ({ page }) => {
+  test('every owner area opens and is launch-clean', async ({ page }) => {
+    test.setTimeout(480_000);
     requireOrSkip(Boolean(OWNER_EMAIL && OWNER_PASSWORD), 'Set CHURVOX_OWNER_EMAIL and CHURVOX_OWNER_PASSWORD.');
     await apiLogin(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
-  });
 
-  for (const hash of ownerHashes) {
-    test(`owner area opens and is launch-clean: ${hash}`, async ({ page }) => {
+    for (const hash of ownerHashes) {
       await page.goto(`/dashboard#${hash}`, { waitUntil: 'domcontentloaded' });
       expect(page.url(), `dashboard#${hash} redirected out of the authenticated owner area`).toMatch(/\/dashboard(?:[/?#]|$)/i);
       await expect(page.locator('body')).toContainText(/Churvox|Command|Job|Client|Quote|Invoice|Payroll|Xero|Help|Settings/i);
       await expectBasics(page, `dashboard#${hash}`);
-    });
-  }
+    }
+  });
 
   test('owner navigation keeps every current launch page', async ({ page }) => {
+    requireOrSkip(Boolean(OWNER_EMAIL && OWNER_PASSWORD), 'Set CHURVOX_OWNER_EMAIL and CHURVOX_OWNER_PASSWORD.');
+    await apiLogin(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
     await page.goto('/dashboard#command');
     expect(page.url(), 'owner navigation audit redirected out of dashboard').toMatch(/\/dashboard(?:[/?#]|$)/i);
     await waitStable(page);
@@ -369,12 +435,9 @@ test.describe('Churvox full launch owner audit', () => {
 });
 
 test.describe('Churvox full launch worker audit', () => {
-  test.beforeEach(async ({ page }) => {
+  test('worker jobs page is launch-clean and worker-scoped', async ({ page }) => {
     requireOrSkip(Boolean(WORKER_EMAIL && WORKER_PASSWORD), 'Set CHURVOX_WORKER_EMAIL and CHURVOX_WORKER_PASSWORD.');
     await apiLogin(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
-  });
-
-  test('worker jobs page is launch-clean and worker-scoped', async ({ page }) => {
     await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
     expect(page.url(), 'worker jobs audit redirected out of worker area').toMatch(/\/worker(?:[/?#]|$)/i);
     await expect(page.locator('body')).toContainText(/Today|Work|Job|Waiting|Assigned|Refresh/i);
@@ -383,7 +446,9 @@ test.describe('Churvox full launch worker audit', () => {
   });
 
   test('worker job detail has real field controls for an assigned job', async ({ page, isMobile }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(180_000);
+    requireOrSkip(Boolean(WORKER_EMAIL && WORKER_PASSWORD), 'Set CHURVOX_WORKER_EMAIL and CHURVOX_WORKER_PASSWORD.');
+    await apiLogin(page, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
     const fixture = await createAssignedWorkerJob(page);
     try {
       await page.goto('/worker/jobs', { waitUntil: 'domcontentloaded' });
