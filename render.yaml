@@ -13,7 +13,7 @@ services:
     region: singapore
     branch: staging/churvox-office-os-preview-20260724
     rootDir: frontend
-    buildCommand: npm install --include=dev --legacy-peer-deps && npm run build
+    buildCommand: node --check server.staging.cjs && npm install --include=dev --legacy-peer-deps && npm run build
     startCommand: node server.staging.cjs
     autoDeployTrigger: commit
     healthCheckPath: /__staging_health
