@@ -44,7 +44,7 @@ export const Nav = PublicNav;
 export const Footer = PublicFooter;
 
 export default function ExecutiveHomePage() {
-  return <main className="clhSite" data-version="CHURVOX_LIVING_OFFICE_HOME_20260724">
+  return <main className="clhSite" data-version="CHURVOX_LIVING_OFFICE_HOME_20260724_V2">
     <PublicNav />
     <section className="clhHero">
       <div className="clhHeroCopy">
