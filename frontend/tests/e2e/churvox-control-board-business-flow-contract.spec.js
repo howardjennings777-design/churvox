@@ -51,6 +51,7 @@ test.describe("Churvox Control Board complete business flow", () => {
       "Send reminder",
       "Mark paid",
       "owner_approved: true",
+      "invoice kept its current payment status",
     ]);
     includesAll(editor, ["Payment link", "Invoice notes", "customer_email"]);
   });
@@ -66,6 +67,18 @@ test.describe("Churvox Control Board complete business flow", () => {
       "reply_to_message_id",
     ]);
     includesAll(editor, ["Pay frequency", "Hourly rate", "Approved hours", "Prepared reply"]);
+  });
+
+  test("workflow actions give immediate visible feedback", () => {
+    includesAll(actions, [
+      "options.updateValues",
+      "setValues((current)",
+      "timer_status",
+      "status: \"Accepted\"",
+      "status: \"Due\"",
+      "app: \"Invited\"",
+      "payroll: \"Approved for export\"",
+    ]);
   });
 
   test("the editor is an operating workspace, not only a form", () => {
