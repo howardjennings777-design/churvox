@@ -35,6 +35,7 @@ const frontendServer = read(FRONTEND, 'server.cjs');
 const currentPlans = read(FRONTEND, 'src/config/churvoxPlans.js');
 const marketingPlans = read(FRONTEND, 'src/lib/marketingPlans.js');
 const attributionRuntime = read(FRONTEND, 'src/runtime/churvoxTesterApplicationAttributionRuntime.js');
+const clientCsvRehearsal = read(FRONTEND, 'src/runtime/churvoxClientCsvRehearsalRuntime.js');
 const testerInbox = read(FRONTEND, 'src/pages/admin/TesterApplicationsInbox.jsx');
 const promotionCentre = read(FRONTEND, 'src/pages/admin/ChurvoxPromotionCentre.jsx');
 const backendPlans = read(REPO, 'backend/app/plan_rules.py');
@@ -135,6 +136,39 @@ check(
   'Attribution stays scoped to tester applications',
   hasAll(attributionRuntime, ["const ENDPOINT = '/api/public/tester-applications'", "requestMethod(input, init) !== 'POST'", 'utm_campaign', 'landing_path']),
   'The runtime must only enrich POST requests to the tester intake endpoint.',
+);
+
+check(
+  'Client CSV import is intercepted before React writes rows',
+  frontendEntry.includes("./runtime/churvoxClientCsvRehearsalRuntime")
+    && hasAll(clientCsvRehearsal, [
+      "document.addEventListener('click', interceptImportClick, true)",
+      "event.stopImmediatePropagation()",
+      "ensureFileInput().click()",
+    ]),
+  'The active CSV import button must open the guarded rehearsal instead of the direct ProductAppV3 write path.',
+);
+check(
+  'Client CSV rehearsal requires a live duplicate check and explicit approval',
+  hasAll(clientCsvRehearsal, [
+    "await apiRequest('/clients', { method: 'GET' })",
+    "if (state.busy || !state.liveCheckOk) return",
+    "data-cv-csv-import",
+    "Import ${summary.ready} ready client",
+    "Blocked and existing rows were not written.",
+  ]),
+  'Selecting a CSV must only preview it; writes require a successful duplicate check and a separate owner approval action.',
+);
+check(
+  'Client migration manifest stays privacy-safe',
+  hasAll(clientCsvRehearsal, [
+    "const MANIFEST_SCHEMA = 'churvox.client-migration-manifest.v1'",
+    "privacy: 'No client names, emails, phone numbers, addresses or notes are stored in this manifest.'",
+    'sourceKeyHash: fingerprint(row.identity)',
+    'payloadHash: fingerprint(stableJson(row.payload))',
+  ])
+    && !clientCsvRehearsal.includes('rows: state.rows.map((row) => ({\n      payload:'),
+  'The downloadable rehearsal manifest may contain hashes and status codes, but not raw client payloads.',
 );
 
 check(
