@@ -1,164 +1,28 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  CHURVOX_PLANS,
-  COUNTRY_OPTIONS,
-  addonPriceForCountry,
-  detectCountryCode,
-  getCountryMeta,
-  pricePlanForCountry,
-  pricingNotesForCountry,
-  normalizeCountry,
-} from "../../config/churvoxPlans";
-import { PublicNav, PublicFooter, Eyebrow, SectionHeading } from "./ChurvoxPublicShell";
+import { CHURVOX_PLANS, COUNTRY_OPTIONS, addonPriceForCountry, detectCountryCode, getCountryMeta, pricePlanForCountry, pricingNotesForCountry, normalizeCountry } from "../../config/churvoxPlans";
+import { PublicNav, PublicFooter } from "./ChurvoxPublicShell";
 
-function cleanFeature(item) {
-  return String(item || "")
-    .replace(/AI Operator Actions/gi, "prepared admin actions")
-    .replace(/AI Operator/gi, "prepared admin")
-    .replace(/Customer Follow-Up Brain/gi, "customer follow-up tools");
-}
+function cleanFeature(item){return String(item||"").replace(/AI Operator Actions/gi,"prepared admin actions").replace(/AI Operator/gi,"prepared admin").replace(/Customer Follow-Up Brain/gi,"customer follow-up tools")}
+function featuresFor(plan){const list=plan.features||plan.includes||[];return Array.isArray(list)?list.slice(0,6).map(cleanFeature):[]}
+function signupPath(country,plan){return `/signup?${new URLSearchParams({country,plan:String(plan?.code||plan?.key||plan?.name||"").toLowerCase()})}`}
+const PRESSURE=[["Start","The records are scattered","Bring jobs, clients, quotes and invoices into one place."],["Crew","The field is disconnected","Add workers, proof, team records and messages."],["Operator","The owner is the bottleneck","Let Churvox prepare admin and bring decisions to Command."],["Command","The operation needs deeper control","Add payroll review, accounting handoff and larger-team headroom."]];
 
-function featuresFor(plan) {
-  const list = plan.features || plan.includes || [];
-  return Array.isArray(list) ? list.slice(0, 6).map(cleanFeature) : [];
-}
+export default function ExecutivePricingPage(){
+  const [country,setCountry]=React.useState(()=>{try{const p=new URLSearchParams(window.location.search||"");return normalizeCountry(p.get("country")||detectCountryCode())}catch{return detectCountryCode()}});
+  React.useEffect(()=>{try{window.localStorage.setItem("churvox:billing-country",country)}catch{}},[country]);
+  const countryMeta=getCountryMeta(country); const plans=React.useMemo(()=>CHURVOX_PLANS.map(p=>pricePlanForCountry(p,country)),[country]); const accounting=addonPriceForCountry("accounting_sync",country); const growth=addonPriceForCountry("growth_pack",country); const notes=pricingNotesForCountry(country);
+  return <main className="cp26Site cpWorld cpWorldPricing" data-room="pricing" data-version="CHURVOX_PUBLIC_WORLD_PRICING_20260724">
+    <PublicNav active="/pricing"/>
+    <section className="cpWorldHero"><div className="cpWorldLead"><span className="cpWorldRouteCode">Room 02 · Capacity switchboard</span><h1>Choose how much office you need <em>behind you.</em></h1><p>Do not buy a feature pile. Choose the level that removes the pressure currently landing on the owner, then move up only when the business earns it.</p><div className="cpWorldActions"><Link className="cp26Button" to="/signup?plan=operator">Start 14-day trial</Link><Link className="cp26Button cp26ButtonGhost" to="/demo">Run the workday</Link></div><div className="cpWorldFacts"><span>14 days</span><span>No card upfront</span><span>Published base prices stay visible</span></div></div><aside className="cpPriceSwitchboard"><header><span>Admin load monitor</span><b>Owner control: on</b></header><div className="cpPressureGauge"><div><small>recommended room</small><b>03</b><span>Operator</span></div></div><div className="cpSwitchRows"><div><span>Prepared admin</span><b>High</b></div><div><span>Worker coordination</span><b>Connected</b></div><div><span>Owner decisions</span><b>Command</b></div><div><span>Silent sends</span><b>0</b></div></div></aside></section>
 
-function signupPath(country, plan) {
-  const params = new URLSearchParams({
-    country,
-    plan: String(plan?.code || plan?.key || plan?.name || "").toLowerCase(),
-  });
-  return `/signup?${params.toString()}`;
-}
+    <section className="cpWorldSection"><div className="cpPricingControl"><header className="cpWorldSectionHead" style={{marginBottom:0}}><span>Live plan board</span><h2>Four levels. One control model.</h2><p>Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes.join(" ")}</p></header><label><b>Pricing region</b><select value={country} onChange={e=>setCountry(normalizeCountry(e.target.value))}>{COUNTRY_OPTIONS.map(item=><option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label></div><div className="cpPriceLanes">{plans.map((plan,index)=>{const featured=String(plan?.name||"").toLowerCase()==="operator";return <article key={plan.name} className={`cpPriceLane${featured?" featured":""}`} data-plan-card data-plan-name={plan.name} data-lane={`0${index+1}`}>{featured?<span className="badge">Most popular</span>:<span className="badge" style={{visibility:"hidden"}}>Plan</span>}<h3>{plan.name}</h3><div className="price">{plan.priceLabel}</div><div className="tax">{plan.taxInclusiveLabel||" "}</div><p>{cleanFeature(plan.summary)}</p><ul>{featuresFor(plan).map(feature=><li key={feature}>{feature}</li>)}</ul><Link className={`cp26Button${featured?"":" cp26ButtonGhost"}`} to={signupPath(country,plan)} onClick={()=>{try{window.localStorage.setItem("churvox:billing-plan",String(plan?.code||plan?.key||plan?.name||"operator").toLowerCase())}catch{}}}>Start free trial</Link></article>})}</div></section>
 
-const fitNotes = [
-  ["Start", "For solo operators who want jobs, clients, quotes and invoices under control."],
-  ["Crew", "For businesses adding workers, field updates and simple team coordination."],
-  ["Operator", "For busy owners who want prepared admin and the Command approval desk."],
-  ["Command", "For larger operations that need deeper controls, payroll review and more capacity."],
-];
+    <section className="cpWorldSection cpRecordRiver"><header className="cpWorldSectionHead"><span>Choose by pressure</span><h2>What keeps landing back on the owner?</h2><p>The best plan is the one that removes the current bottleneck without hiding important decisions.</p></header><div className="cpPressureMap">{PRESSURE.map(([name,title,text])=><article key={name}><small>{name}</small><h3>{title}</h3><p>{text}</p></article>)}</div></section>
 
-export default function ExecutivePricingPage() {
-  const [country, setCountry] = React.useState(() => {
-    try {
-      const params = new URLSearchParams(window.location.search || "");
-      return normalizeCountry(params.get("country") || detectCountryCode());
-    } catch {
-      return detectCountryCode();
-    }
-  });
+    <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Workshop drawers</span><h2>Add-ons stay separate, labelled and optional.</h2></header><div className="cpAddonDrawers"><article className="cpAddonDrawer" data-plan-card data-plan-name="Command Growth Pack"><span>Capacity drawer</span><h3>Command Growth Pack</h3><b>{growth.priceLabel}</b><p>{growth.taxInclusiveLabel} Extra active-team capacity and additional Command headroom.</p></article><article className="cpAddonDrawer" data-plan-card data-plan-name="Accounting Sync Add-on"><span>Accounting drawer</span><h3>Accounting Sync Add-on</h3><b>{accounting.priceLabel}</b><p>{accounting.taxInclusiveLabel} Optional owner-controlled draft invoice sync where available.</p></article><article className="cpAddonDrawer"><span>Human help</span><h3>Not sure which room?</h3><p>Email the team size and the admin problem that hurts most. No sales call required.</p><a href="mailto:hello@churvox.com">hello@churvox.com</a></article></div></section>
 
-  React.useEffect(() => {
-    try { window.localStorage.setItem("churvox:billing-country", country); } catch {}
-  }, [country]);
-
-  const countryMeta = getCountryMeta(country);
-  const displayPlans = React.useMemo(() => CHURVOX_PLANS.map((plan) => pricePlanForCountry(plan, country)), [country]);
-  const accountingAddon = addonPriceForCountry("accounting_sync", country);
-  const growthPack = addonPriceForCountry("growth_pack", country);
-  const notes = pricingNotesForCountry(country);
-
-  return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_PRICING_20260712_PAID_LAUNCH_PLAN_PATH">
-      <PublicNav active="/pricing" />
-
-      <section className="cp26PageHero">
-        <div>
-          <Eyebrow>Simple monthly plans</Eyebrow>
-          <h1>Pay for the level of admin Churvox handles.</h1>
-          <p>Start with the operating basics, add worker flow when the team grows, and move into the full approval engine when the admin load demands it.</p>
-          <label className="cp26CountrySelect">
-            <span>Pricing region</span>
-            <select value={country} onChange={(event) => setCountry(normalizeCountry(event.target.value))}>
-              {COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}
-            </select>
-          </label>
-          <p className="cp26FinePrint">Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes.join(" ")}</p>
-        </div>
-        <div className="cp26HeroPanel">
-          <small>Most popular</small>
-          <b>Operator</b>
-          <span>For owners who want Churvox preparing the admin and bringing genuine decisions back to Command.</span>
-        </div>
-      </section>
-
-      <section className="cp26Section">
-        <SectionHeading
-          eyebrow="Plans"
-          title="Choose the level that matches the business today."
-          text="Every plan starts with a 14-day trial and no card upfront. Pricing shown below is taken from the live Churvox plan configuration."
-        />
-        <div className="cp26PlanGrid">
-          {displayPlans.map((plan) => {
-            const featured = String(plan?.name || "").toLowerCase() === "operator";
-            const planSignupTo = signupPath(country, plan);
-            return (
-              <article key={plan.name} className={`cp26PlanCard${featured ? " featured" : ""}`} data-plan-card data-plan-name={plan.name}>
-                {featured ? <span className="cp26PlanBadge">Most Popular</span> : null}
-                <h3>{plan.name}</h3>
-                <div className="cp26PlanPrice">{plan.priceLabel}</div>
-                {plan.taxInclusiveLabel ? <div className="cp26PlanTax">{plan.taxInclusiveLabel}</div> : null}
-                <p>{cleanFeature(plan.summary)}</p>
-                <ul>{featuresFor(plan).map((feature) => <li key={feature}>{feature}</li>)}</ul>
-                <Link className={`cp26Button${featured ? "" : " cp26ButtonGhost"}`} to={planSignupTo} onClick={() => { try { window.localStorage.setItem("churvox:billing-plan", String(plan?.code || plan?.key || plan?.name || "operator").toLowerCase()); } catch {} }}>Start free trial</Link>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="cp26Section cp26SectionDark">
-        <SectionHeading
-          eyebrow="Best fit"
-          title="Choose by the pressure point, not the feature count."
-          text="The right plan is the one that removes the current admin bottleneck without forcing the business into unnecessary complexity."
-        />
-        <div className="cp26AreaGrid">
-          {fitNotes.map(([name, text]) => <article key={name}><b>{name}</b><span>{text}</span></article>)}
-        </div>
-      </section>
-
-      <section className="cp26Section">
-        <SectionHeading
-          eyebrow="Add-ons"
-          title="Extra capacity stays separate and visible."
-          text="Add-ons do not silently change the base plan price."
-        />
-        <div className="cp26ContactGrid">
-          <article data-plan-card data-plan-name="Command Growth Pack">
-            <b>Command Growth Pack</b>
-            <div className="cp26PlanPrice">{growthPack.priceLabel}</div>
-            {growthPack.taxInclusiveLabel ? <span>{growthPack.taxInclusiveLabel}</span> : null}
-            <span>Extra active-team capacity and additional Command headroom for larger operations.</span>
-          </article>
-          <article data-plan-card data-plan-name="Accounting Sync Add-on">
-            <b>Accounting Sync Add-on</b>
-            <div className="cp26PlanPrice">{accountingAddon.priceLabel}</div>
-            {accountingAddon.taxInclusiveLabel ? <span>{accountingAddon.taxInclusiveLabel}</span> : null}
-            <span>Optional draft invoice sync where available, with owner-controlled accounting safeguards.</span>
-          </article>
-          <article>
-            <b>Need help choosing?</b>
-            <span>Tell us how many people are active, what admin hurts most and whether you want Command now or later.</span>
-            <a href="mailto:hello@churvox.com">Email hello@churvox.com</a>
-          </article>
-        </div>
-      </section>
-
-      <section className="cp26Closing">
-        <div>
-          <Eyebrow light>Start without pressure</Eyebrow>
-          <h2>Use the trial to see whether Churvox actually removes work.</h2>
-          <p>No card upfront. Keep the plan only when the system earns its place in the business.</p>
-        </div>
-        <div className="cp26ClosingActions">
-          <Link className="cp26Button" to={signupPath(country, { code: "operator" })} onClick={() => { try { window.localStorage.setItem("churvox:billing-plan", "operator"); } catch {} }}>Start free trial</Link>
-          <Link className="cp26Button cp26ButtonGhost" to="/demo">Open demo</Link>
-        </div>
-      </section>
-
-      <PublicFooter />
-    </main>
-  );
+    <section className="cpWorldClosing"><div><span>14-day trial · no card upfront</span><h2>Let the office earn its place.</h2><p>Use one real job, one worker update and one owner decision to see whether Churvox actually removes work.</p></div><div><Link className="cp26Button" to={signupPath(country,{code:"operator"})}>Start free trial</Link><Link className="cp26Button cp26ButtonGhost" to="/demo">Open demo</Link></div></section>
+    <PublicFooter/>
+  </main>;
 }

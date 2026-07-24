@@ -141,7 +141,7 @@ export default function PublicRequestPage() {
 
   if (sent) {
     return (
-      <main className="publicSite crqShell crqPage" data-version="CHURVOX_REQUEST_QUOTE_SENT_PAID_LAUNCH_20260712">
+      <main className="publicSite crqShell crqPage cvCustomerRoom" data-version="CHURVOX_REQUEST_QUOTE_SENT_PAID_LAUNCH_20260712">
         <Nav />
         <section className="crqDone">
           <span>Request sent</span>
@@ -158,7 +158,7 @@ export default function PublicRequestPage() {
   }
 
   return (
-    <main className="publicSite crqShell crqPage" data-version="CHURVOX_REQUEST_QUOTE_PAID_LAUNCH_20260712">
+    <main className="publicSite crqShell crqPage cvCustomerRoom" data-version="CHURVOX_REQUEST_QUOTE_PAID_LAUNCH_20260712">
       <Nav />
 
       <section className="crqHero publicHeroCompact">

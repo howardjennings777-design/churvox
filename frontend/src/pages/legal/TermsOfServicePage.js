@@ -12,7 +12,7 @@ function Section({ title, id, children }) {
 
 export default function TermsOfServicePage() {
   return (
-    <main className="cp26Site" data-version="CHURVOX_TERMS_PAID_LAUNCH_20260712">
+    <main className="cp26Site cp26LegalWorld" data-version="CHURVOX_TERMS_PAID_LAUNCH_20260712">
       <PublicNav />
       <section className="bg-[#f7f3ea] px-4 py-10 text-slate-950 md:py-16">
         <article className="mx-auto max-w-4xl rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,.08)] md:p-10">

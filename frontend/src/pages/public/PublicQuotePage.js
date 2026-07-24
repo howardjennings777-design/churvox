@@ -57,7 +57,7 @@ function lineRate(line = {}) {
 
 function Unavailable({ message }) {
   return (
-    <main className="cpd-shell">
+    <main className="cpd-shell cvCustomerRoom">
       <article className="cpd-document">
         <section className="cpd-body">
           <small>Churvox quote</small>
@@ -145,7 +145,7 @@ export default function PublicQuotePage() {
     return [{ description: first(quote.job_description, quote.description, quote.notes, "Quoted work prepared for review."), quantity: 1, rate: first(quote.price, quote.total, quote.amount, quote.subtotal) }];
   }, [quote]);
 
-  if (loading) return <main className="cpd-shell"><article className="cpd-document"><section className="cpd-body">Loading quote…</section></article></main>;
+  if (loading) return <main className="cpd-shell cvCustomerRoom"><article className="cpd-document"><section className="cpd-body">Loading quote…</section></article></main>;
   if (error || !quote) return <Unavailable message={error || "The quote was not found or is no longer available."} />;
 
   const quoteNumber = quote.quote_number || quote.number || "Quote";
@@ -165,7 +165,7 @@ export default function PublicQuotePage() {
   const publicNotes = quote.public_notes || quote.customer_notes || quote.notes || "";
 
   return (
-    <main className="cpd-shell cpd-quote-shell" data-version="CHURVOX_PUBLIC_QUOTE_PAID_LAUNCH_20260712">
+    <main className="cpd-shell cpd-quote-shell cvCustomerRoom" data-version="CHURVOX_PUBLIC_QUOTE_PAID_LAUNCH_20260712">
       <section className="cpd-actions cpd-quote-actions">
         <b>{businessName}</b>
         <button type="button" onClick={() => window.print()}>Print / PDF</button>

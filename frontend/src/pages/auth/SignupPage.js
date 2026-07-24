@@ -184,7 +184,7 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="cvPublicAuth" data-version="CHURVOX_SIGNUP_VERIFICATION_FIRST_20260712">
+    <main className="cvPublicAuth cvWorldAccessGate cvWorldSignupGate" data-version="CHURVOX_SIGNUP_VERIFICATION_FIRST_20260712">
       <Nav />
       <section className="cvPublicAuthShell cvPublicSignupShell">
         <form className="cvPublicAuthCard" onSubmit={handleSubmit} noValidate>

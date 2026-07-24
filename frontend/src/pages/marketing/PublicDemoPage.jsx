@@ -80,10 +80,10 @@ export default function PublicDemoPage() {
   }, [industryKey]);
 
   return (
-    <main className="cp26Site">
+    <main className="cp26Site cpWorld cpWorldDemo" data-room="demo">
       <PublicNav active="/demo" />
 
-      <section className="cp26PageHero">
+      <section className="cp26PageHero cpDemoHero">
         <div>
           <Eyebrow>60-second guided workday</Eyebrow>
           <h1>Watch Churvox handle a {industry.short.toLowerCase()} job.</h1>
@@ -135,7 +135,7 @@ export default function PublicDemoPage() {
         </div>
       </section>
 
-      <section className="demoAppShell slimDemoShell" aria-label="Churvox product preview">
+      <section className="demoAppShell slimDemoShell cpDemoMachine" aria-label="Churvox product preview">
         <header className="demoTopBar">
           <div>
             <small data-cv-allow-verbatim="true">Preview workspace · clearly labelled {"sample "}{"records"}</small>
@@ -169,7 +169,7 @@ export default function PublicDemoPage() {
         </section>
       </section>
 
-      <section className="cp26Closing">
+      <section className="cp26Closing cpWorldClosing">
         <div>
           <Eyebrow light>Your records next</Eyebrow>
           <h2>Organise one real job before setting up everything else.</h2>

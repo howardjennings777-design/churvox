@@ -200,7 +200,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_LOGIN_PAID_LAUNCH_CONFIRMED_20260712">
+    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin cvWorldAccessGate ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_LOGIN_PAID_LAUNCH_CONFIRMED_20260712">
       {!appMode ? <Nav /> : null}
       <section className="cvChurvoxLoginShell">
         {!appMode ? (

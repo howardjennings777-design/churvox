@@ -1,137 +1,33 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  PublicNav,
-  PublicFooter,
-  Eyebrow,
-  SectionHeading,
-  CommandPreview,
-  coreAreas,
-  serviceTypes,
-} from "./ChurvoxPublicShell";
+import { PublicNav, PublicFooter, serviceTypes } from "./ChurvoxPublicShell";
 
-const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
-
-const productPrinciples = [
-  ["Facts live with the record", "Jobs, client history, worker updates, proof and money stay connected instead of being copied between pages."],
-  ["Routine work stays quiet", "Churvox handles repeatable checks behind the scenes and does not turn every normal event into an owner alert."],
-  ["Uncertainty stays visible", "Missing price, time, proof, tax treatment or client detail is shown clearly instead of being guessed."],
-  ["Approval has a real effect", "The owner reviews an editable slip and may create an internal draft, while external sends and charges remain locked."],
+const ROOMS = [
+  ["Today","The morning handover","What changed, what is blocked and the one best move—without opening six pages.","01","wide"],
+  ["Command","The owner desk","Approve, edit, park or ask. Every consequence and missing fact stays visible.","02","tall"],
+  ["Jobs","The work record","Schedule, recurrence, price, worker, notes and proof remain one story.","03","mid"],
+  ["Clients","The memory room","Preferences, promises, access notes and history follow the relationship.","04","mid"],
+  ["Workers","The field link","Simple phone updates flow back into the office without making workers run the whole system.","05","long"],
 ];
+const FLOW = [["01","Event","A request, update, problem or payment arrives."],["02","Connect","The right job, client, worker, message and money records are joined."],["03","Check","Ripple effects, missing facts and risk are compared."],["04","Prepare","Churvox builds the safest editable next step."],["05","Approve","The owner decides what actually happens."]];
+const DECISIONS = [["A","Approve","Move the prepared internal work forward."],["E","Edit","Correct the detail before anything changes."],["P","Park","Hold it without losing the trail."],["?","Ask","Get the missing fact instead of guessing."]];
 
-const workerFlow = [
-  ["Receive the job", "Address, notes, timing and the latest office direction appear in one simple field view."],
-  ["Update the work", "Acknowledge, start, pause, complete, add proof and report a problem without operating the full office system."],
-  ["Return a clean record", "The owner gets the update in context, and Churvox prepares the next safe admin step."],
-];
+function ProductBuilding(){return <aside className="cpProductCutaway" aria-label="Churvox connected office cutaway"><div className="cpProductBrain"><small>Churvox</small><b>Office brain</b><span>checks the connected business</span></div><div className="cpProductRoom r1"><small>Bookings room</small><b>Requests prepared</b><p>Timing, recurrence and client intent.</p></div><div className="cpProductRoom r2"><small>Field room</small><b>Workers moving</b><p>Status, proof and problems.</p></div><div className="cpProductRoom r3"><small>Money room</small><b>Value protected</b><p>Quotes, invoices and extras.</p></div><div className="cpProductRoom r4"><small>Owner room</small><b>Real decisions only</b><p>Approve, edit, park or ask.</p></div><i className="cpProductSignal s1"/><i className="cpProductSignal s2"/><i className="cpProductSignal s3"/><i className="cpProductSignal s4"/></aside>}
 
-const commandRules = [
-  ["Approve", "Move a correct prepared draft into the internal Churvox record."],
-  ["Edit", "Correct the detail before approving anything."],
-  ["Park", "Hold uncertain work without losing the evidence or history."],
-  ["Ask", "Send the issue back for the missing fact rather than guessing."],
-];
+export default function ExecutiveFeaturesPage(){return <main className="cp26Site cpWorld cpWorldProduct" data-room="product" data-version="CHURVOX_PUBLIC_WORLD_PRODUCT_20260724">
+  <PublicNav active="/product"/>
+  <section className="cpWorldHero cpProductHero"><div className="cpWorldLead"><span className="cpWorldRouteCode">Room 01 · Product</span><h1>A digital office with rooms that <em>actually talk.</em></h1><p>Churvox is not a dashboard with the same cards repeated everywhere. Each room has one operating job, and the records travel between them as the business changes.</p><div className="cpWorldActions"><Link className="cp26Button" to="/demo">Run a workday</Link><Link className="cp26Button cp26ButtonGhost" to="/signup?plan=operator">Start free trial</Link></div><div className="cpWorldFacts"><span>Connected records</span><span>Owner approval</span><span>Field-to-office handover</span><span>No silent automation</span></div></div><ProductBuilding/></section>
 
-export default function ExecutiveFeaturesPage() {
-  return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_PRODUCT_20260712_PAID_LAUNCH_CTAS">
-      <PublicNav active="/product" />
+  <section className="cpWorldSection cpRecordRiver"><header className="cpWorldSectionHead"><span>The record river</span><h2>One event travels through the whole office.</h2><p>Churvox checks what that event touches before it prepares a response. That is how a worker problem becomes a safe recovery plan instead of four disconnected alerts.</p></header><div className="cpRecordTrack">{FLOW.map(([n,t,p])=><article key={n}><b>{n}</b><h3>{t}</h3><p>{p}</p></article>)}</div></section>
 
-      <section className="cp26PageHero">
-        <div>
-          <Eyebrow>The product</Eyebrow>
-          <h1>The admin engine between the work and the owner.</h1>
-          <p>Churvox keeps the facts on purpose-built work pages, prepares the routine admin behind the scenes and puts only genuine decisions into Command.</p>
-          <div className="cp26HeroActions">
-            <Link className="cp26Button" to="/demo">Open product demo</Link>
-            <Link className="cp26Button cp26ButtonGhost" to={DEFAULT_TRIAL_PATH}>Start free trial</Link>
-          </div>
-        </div>
-        <div className="cp26HeroPanel">
-          <small>Product rule</small>
-          <b>Work pages hold facts. Command holds decisions.</b>
-          <span>That separation keeps the system useful for owners, office staff and workers without turning every page into another dashboard.</span>
-        </div>
-      </section>
+  <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Purpose-built rooms</span><h2>Different work deserves different space.</h2><p>The visual language stays Churvox, but each page changes shape around the job it needs to do.</p></header><div className="cpProductRoomGrid">{ROOMS.map(([title,sub,text,code,size])=><article className={`cpProductTile ${size}`} data-code={code} key={title}><h3>{title}</h3><p><b>{sub}.</b> {text}</p></article>)}</div></section>
 
-      <section className="cp26Section">
-        <CommandPreview />
-      </section>
+  <section className="cpWorldSection cpPocketSection"><div className="cpPocketPhone"><header><span>9:41</span><b>Churvox Field</b><span>●</span></header><div className="cpPocketJob"><small>Today · next job</small><h3>Riverside tidy</h3><p>Gate code, scope, client note and latest office direction are already attached.</p></div><div className="cpPocketSteps"><span>Acknowledge job</span><span>Start work</span><span>Add note or photo</span><span>Complete and return proof</span></div></div><div className="cpWorldLead"><span className="cpWorldRouteCode">Room 05 · Field link</span><h1 style={{fontSize:"clamp(46px,5.5vw,84px)"}}>Small in the worker’s hand. <em>Complete in the office.</em></h1><p>Workers should not operate the owner system. They receive the work, update what happened and return a clean record. Churvox handles the handover.</p></div></section>
 
-      <section className="cp26Section">
-        <SectionHeading
-          eyebrow="Purpose-built workspace"
-          title="Every major page has its own operating job."
-          text="The layout changes with the work instead of repeating the same template across the product."
-        />
-        <div className="cp26AreaGrid">
-          {coreAreas.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-        </div>
-      </section>
+  <section className="cpWorldSection cpDecisionDesk"><header className="cpWorldSectionHead"><span>Room 02 · Command</span><h2>The owner desk has four honest choices.</h2><p>No vague “automation complete” message. The owner sees the evidence, the consequences and what is still uncertain.</p></header><div className="cpDecisionLayout"><div className="cpDecisionKeys">{DECISIONS.map(([key,title,text])=><article key={key}><b>{key}</b><div><h3>{title}</h3><p>{text}</p></div></article>)}</div><article className="cpDecisionSlip"><small>Prepared decision · extra work found</small><h3>Protect $680 before invoicing.</h3><dl><div><dt>What changed</dt><dd>Worker note and photos show an extra retaining-wall section.</dd></div><div><dt>Records checked</dt><dd>Job, quote, worker time and client messages.</dd></div><div><dt>Risk</dt><dd>The completed extra may be missed if the invoice is prepared now.</dd></div><div><dt>Prepared move</dt><dd>Add an editable variation and hold the invoice draft.</dd></div></dl><div className="cpDecisionButtons"><span>Approve variation</span><span>Edit amount</span><span>Park</span><span>Ask worker</span></div></article></div></section>
 
-      <section className="cp26Section cp26SectionDark">
-        <SectionHeading
-          eyebrow="Product discipline"
-          title="Strong logic before clever-looking automation."
-          text="Churvox is designed to be cautious with money, dates, status, worker time, client memory and accounting."
-        />
-        <div className="cp26FeatureGrid">
-          {productPrinciples.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-        </div>
-      </section>
+  <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Built for moving businesses</span><h2>Same brain. The business’s own language.</h2></header><div className="cpIndustryDirectory">{serviceTypes.map((type,index)=><Link key={type} to={`/demo?industry=${encodeURIComponent(type.toLowerCase().replace(/[^a-z0-9]+/g,"-"))}`}><span>Route {String(index+1).padStart(2,"0")}</span>{type}</Link>)}</div></section>
 
-      <section className="cp26Section">
-        <div className="cp26Split">
-          <div className="cp26SplitLead">
-            <Eyebrow>Worker side</Eyebrow>
-            <h2>Simple enough to use in the field.</h2>
-            <p>The worker experience is deliberately smaller than the owner app. Workers see the work, update it and send clean information back.</p>
-          </div>
-          <div className="cp26FlowGrid">
-            {workerFlow.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="cp26Section">
-        <div className="cp26Split">
-          <div className="cp26SplitLead">
-            <Eyebrow>Command</Eyebrow>
-            <h2>One decision desk with four clear choices.</h2>
-            <p>The owner can correct the prepared work without hunting through the original record or letting uncertain details slip through.</p>
-          </div>
-          <div className="cp26AreaGrid">
-            {commandRules.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="cp26Section">
-        <div className="cp26Split">
-          <div className="cp26SplitLead">
-            <Eyebrow>Multi-trade by design</Eyebrow>
-            <h2>The same strong system, using the business’s language.</h2>
-            <p>Churvox can support jobs, appointments, recurring visits and mobile services without forcing every industry into the same wording.</p>
-          </div>
-          <div className="cp26IndustryGrid">
-            {serviceTypes.map((type) => <span key={type}>{type}</span>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="cp26Closing">
-        <div>
-          <Eyebrow light>See the product working</Eyebrow>
-          <h2>Open the demo before making a decision.</h2>
-          <p>See the owner flow, the Command desk and the purpose-built work pages without signing in.</p>
-        </div>
-        <div className="cp26ClosingActions">
-          <Link className="cp26Button" to="/demo">Open demo</Link>
-          <Link className="cp26Button cp26ButtonGhost" to="/pricing">View pricing</Link>
-        </div>
-      </section>
-
-      <PublicFooter />
-    </main>
-  );
-}
+  <section className="cpWorldClosing"><div><span>Next room · Workday simulator</span><h2>Watch the office respond to one real-looking job.</h2><p>The public demo uses clearly labelled sample information. Nothing is added to an account and nothing is sent.</p></div><div><Link className="cp26Button" to="/demo">Run the simulator</Link><Link className="cp26Button cp26ButtonGhost" to="/pricing">Open pricing</Link></div></section>
+  <PublicFooter/>
+</main>}
