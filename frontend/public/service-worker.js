@@ -1,7 +1,5 @@
-/* Churvox service worker — stale Sites/PWA migration 20260724. */
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
+/* Churvox Render service worker cleanup — 20260724-render-only-v2. */
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
@@ -11,28 +9,11 @@ self.addEventListener('activate', (event) => {
     } catch (_) {}
 
     try { await self.clients.claim(); } catch (_) {}
-
-    try {
-      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      for (const client of windows) {
-        const url = new URL(client.url);
-        if (url.hostname === 'grassley-frontend.onrender.com') {
-          url.protocol = 'https:';
-          url.host = 'www.churvox.com';
-          client.navigate(url.toString());
-          continue;
-        }
-        if (url.hostname === 'churvox.com' || url.hostname === 'www.churvox.com') {
-          url.searchParams.set('churvoxSitesExit', '20260724-v2');
-          client.navigate(url.toString());
-        }
-      }
-    } catch (_) {}
   })());
 });
 
 self.addEventListener('fetch', () => {
-  return;
+  // Render owns normal network routing. Do not redirect to ChatGPT Sites.
 });
 
 // CHURVOX_PUSH_NOTIFICATION_HANDLER_20260621
@@ -53,9 +34,7 @@ self.addEventListener('push', (event) => {
     body: data.body || data.message || 'New job update',
     icon: data.icon || '/icons/icon-192.png',
     badge: data.badge || '/icons/icon-192.png',
-    data: {
-      url: data.url || data.route || '/worker/jobs',
-    },
+    data: { url: data.url || data.route || '/worker/jobs' },
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -63,7 +42,6 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
   const targetUrl = event.notification?.data?.url || '/worker/jobs';
 
   event.waitUntil(
@@ -74,12 +52,7 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus();
         }
       }
-
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl);
-      }
-
-      return undefined;
+      return self.clients.openWindow ? self.clients.openWindow(targetUrl) : undefined;
     })
   );
 });
