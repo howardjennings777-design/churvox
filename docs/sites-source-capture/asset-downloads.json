@@ -1,0 +1,184 @@
+[
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/index-C_g2zg14.css",
+    "file": "docs/sites-source-capture/assets/000.css",
+    "bytes": 94159,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/layout-segment-context-DZ3qgUPA.js",
+    "file": "docs/sites-source-capture/assets/001.js",
+    "bytes": 288,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/rolldown-runtime-S-ySWqyJ.js",
+    "file": "docs/sites-source-capture/assets/002.js",
+    "bytes": 694,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/index-BZXWNUtr.js",
+    "file": "docs/sites-source-capture/assets/003.js",
+    "bytes": 82571,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/framework-CXnKph_e.js",
+    "file": "docs/sites-source-capture/assets/004.js",
+    "bytes": 189805,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/runtime-cleanup-Bhd6wXnD.js",
+    "file": "docs/sites-source-capture/assets/005.js",
+    "bytes": 868,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/favicon.svg",
+    "file": "docs/sites-source-capture/assets/006.svg",
+    "bytes": 712,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-8ac0455e797f/geist-ff2310f5.woff2",
+    "file": "docs/sites-source-capture/assets/007.woff2",
+    "bytes": 7252,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-8ac0455e797f/geist-875ccdd4.woff2",
+    "file": "docs/sites-source-capture/assets/008.woff2",
+    "bytes": 14900,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-8ac0455e797f/geist-52306abf.woff2",
+    "file": "docs/sites-source-capture/assets/009.woff2",
+    "bytes": 7968,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-8ac0455e797f/geist-001175b1.woff2",
+    "file": "docs/sites-source-capture/assets/010.woff2",
+    "bytes": 16540,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-8ac0455e797f/geist-98bbbccb.woff2",
+    "file": "docs/sites-source-capture/assets/011.woff2",
+    "bytes": 29288,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-f6b33328.woff2",
+    "file": "docs/sites-source-capture/assets/012.woff2",
+    "bytes": 6204,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44e03052.woff2",
+    "file": "docs/sites-source-capture/assets/013.woff2",
+    "bytes": 12872,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-0638449e.woff2",
+    "file": "docs/sites-source-capture/assets/014.woff2",
+    "bytes": 5892,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-971fb274.woff2",
+    "file": "docs/sites-source-capture/assets/015.woff2",
+    "bytes": 7728,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44745446.woff2",
+    "file": "docs/sites-source-capture/assets/016.woff2",
+    "bytes": 14712,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-013b2f2f.woff2",
+    "file": "docs/sites-source-capture/assets/017.woff2",
+    "bytes": 23108,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/#top",
+    "file": "docs/sites-source-capture/assets/018.bin",
+    "bytes": 27494,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/#product",
+    "file": "docs/sites-source-capture/assets/019.bin",
+    "bytes": 27494,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/#how-it-works",
+    "file": "docs/sites-source-capture/assets/020.bin",
+    "bytes": 27494,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/#trades",
+    "file": "docs/sites-source-capture/assets/021.bin",
+    "bytes": 27494,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/pricing",
+    "file": "docs/sites-source-capture/assets/022.bin",
+    "bytes": 23349,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/login",
+    "file": "docs/sites-source-capture/assets/023.bin",
+    "bytes": 14349,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/signup",
+    "file": "docs/sites-source-capture/assets/024.bin",
+    "bytes": 15423,
+    "exit": 0,
+    "stderr": ""
+  },
+  {
+    "url": "https://churvox.howardjennings77.chatgpt.site/cdn-cgi/challenge-platform/scripts/jsd/main.js",
+    "file": "docs/sites-source-capture/assets/025.js",
+    "bytes": 22261,
+    "exit": 0,
+    "stderr": ""
+  }
+]
