@@ -72,7 +72,7 @@ jobs:
               echo "### Script assets"
               grep -oE '(src|href)="[^"]+\.(js|css)[^"]*"' "$BODY" | head -40
               echo "### Marker hits"
-              for marker in 'custom-domains.chatgpt.site' 'codex-preview' 'workspace-connect' 'Churvox Workspace' '/assets/index-' '/static/js/' 'cvOwnerReady' 'owner-readable-logout-20260724-v4' 'churvox-owner-fallback-logout' 'Churvox does the admin. You approve.'; do
+              for marker in 'custom-domains.chatgpt.site' 'codex-preview' 'workspace-connect' 'Churvox Workspace' '/assets/index-' '/static/js/' 'cvOwnerReady' 'owner-readable-logout-20260724-v4' 'churvox-owner-fallback-logout' 'Churvox does the admin. You approve.' 'Run the job,' 'CHURVOX_RENDER_HOSTED_20260724'; do
                 count=$(grep -Foc "$marker" "$BODY" 2>/dev/null || true)
                 echo "$marker = $count"
               done
@@ -103,4 +103,4 @@ jobs:
               body
             });
 
-# Urgent rerun after user still sees old Render site 20260724-0714
+# Live recheck requested after Render verified and certificate issued: 2026-07-24T08:49Z
