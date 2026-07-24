@@ -1,5 +1,6 @@
 import React from "react";
 import { clean, firstGood, money } from "./controlBoardData";
+import "./controlBoardActions.css";
 
 function payloadOf(result) {
   return result?.data?.data ?? result?.data ?? result ?? {};
@@ -67,7 +68,7 @@ export default function ControlBoardActions({ record, values, setValues, api, re
 
     const completeJob = async () => {
       if (!window.confirm("Complete this job and prepare its follow-up admin?")) return;
-      const result = await run(
+      return run(
         "complete",
         [() => api.post(`/jobs/${encodeURIComponent(id)}/complete`, {
           completion_note: values.notes || values.completionNote || "",
@@ -83,7 +84,6 @@ export default function ControlBoardActions({ record, values, setValues, api, re
         },
         { closeAfter: true }
       );
-      return result;
     };
 
     const createInvoice = () => run(
