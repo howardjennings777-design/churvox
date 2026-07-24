@@ -149,10 +149,15 @@ test.describe('Plans live usage truth', () => {
     await expect(panel.locator('.cvUsageCard')).toHaveCount(0);
   });
 
-  test('Control Board secure checkout opens Stripe from a real plan card', async ({ page }) => {
+  test('Control Board secure checkout opens Stripe from the exact plan card', async ({ page }) => {
     const getCheckoutPayload = await bootNewOwnerPlans(page);
 
-    await page.getByRole('button', { name: /Start Command/i }).click();
+    const commandCard = page.locator('[data-plan-card][data-stripe-plan="Command"]');
+    const growthCard = page.locator('[data-plan-card][data-stripe-plan="Command Growth Pack"]');
+    await expect(commandCard.getByRole('button', { name: 'Start Command', exact: true })).toBeVisible();
+    await expect(growthCard.getByRole('button', { name: 'Add growth pack', exact: true })).toBeVisible();
+
+    await commandCard.getByRole('button', { name: 'Start Command', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Command Stripe checkout' });
     await expect(dialog).toBeVisible();
     await dialog.getByLabel('Owner email').fill('owner@example.test');
