@@ -1,0 +1,92 @@
+name: Churvox live visual inspection
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  inspect:
+    if: startsWith(github.event.issue.title, '[churvox-live-visual-inspection]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Chromium tooling
+        run: |
+          mkdir -p /tmp/churvox-visual
+          cd /tmp/churvox-visual
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.54.1 >/dev/null 2>&1
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+
+      - name: Capture actual live pages
+        run: |
+          mkdir -p docs/live-visual-inspection
+          cat > /tmp/churvox-visual/capture.js <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const context = await browser.newContext({
+              viewport: { width: 1440, height: 1000 },
+              deviceScaleFactor: 1,
+              ignoreHTTPSErrors: true,
+              userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36'
+            });
+            const pages = [
+              ['home','https://www.churvox.com/'],
+              ['login','https://www.churvox.com/login'],
+              ['dashboard','https://www.churvox.com/dashboard'],
+              ['render-login','https://grassley-frontend.onrender.com/login']
+            ];
+            const report = [];
+            for (const [name,url] of pages) {
+              const page = await context.newPage();
+              const errors = [];
+              page.on('console', m => { if (m.type()==='error') errors.push(m.text()); });
+              page.on('pageerror', e => errors.push(String(e)));
+              let status = null;
+              try {
+                const response = await page.goto(url, {waitUntil:'networkidle', timeout:60000});
+                status = response && response.status();
+              } catch (e) { errors.push('goto: '+String(e)); }
+              await page.waitForTimeout(3000);
+              await page.screenshot({path:`${process.env.GITHUB_WORKSPACE}/docs/live-visual-inspection/${name}.png`, fullPage:true});
+              const title = await page.title().catch(()=> '');
+              const text = await page.locator('body').innerText().catch(()=> '');
+              report.push({name,url,status,finalUrl:page.url(),title,text:text.slice(0,5000),errors});
+              await page.close();
+            }
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/docs/live-visual-inspection/report.json`, JSON.stringify(report,null,2));
+            await browser.close();
+          })().catch(e => { console.error(e); process.exit(1); });
+          NODE
+          node /tmp/churvox-visual/capture.js
+          cat docs/live-visual-inspection/report.json
+
+      - name: Commit visual evidence
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/live-visual-inspection
+          git commit -m 'Capture actual live Churvox pages visually' || true
+          git push || true
+
+      - name: Post report to issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const data = fs.readFileSync('docs/live-visual-inspection/report.json','utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Live visual capture completed and committed under `docs/live-visual-inspection/`.\n\n```json\n'+data.slice(0,60000)+'\n```'
+            });
