@@ -1,5 +1,6 @@
 name: Churvox access pages visual proof
 
+# V2 proof captures the React login and the real static tester page separately.
 on:
   pull_request:
     branches: [main]
