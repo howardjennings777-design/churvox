@@ -104,7 +104,9 @@ function hasAccountingAddon(user) {
 }
 
 function createAccess(user = {}) {
-  const admin = user?.is_platform_owner === true || user?.is_admin === true;
+  const ownerEmail = clean(user?.email).toLowerCase();
+  const platformOwnerEmail = ownerEmail === "hello@churvox.com" || ownerEmail === "howardjennings777@gmail.com";
+  const admin = platformOwnerEmail || user?.is_platform_owner === true || user?.is_admin === true || ["platform_owner", "platform-admin", "platform_admin"].includes(clean(user?.role).toLowerCase());
   const planKey = admin ? "command" : normalizePlan(user.plan || user.plan_key || user.selected_plan || user.tier || user.subscription_plan || user?.business?.plan);
   const accounting = admin || planKey === "command" || hasAccountingAddon(user);
   const rank = PLAN_RANK[planKey] || 0;

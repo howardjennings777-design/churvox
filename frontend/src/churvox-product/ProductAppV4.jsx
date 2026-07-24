@@ -365,7 +365,7 @@ export default function ProductAppV4() {
     };
   }, []);
 
-  return <div className="cv4Experience" data-version="CHURVOX_LIVE_OFFICE_TWIN_20260724">
+  return <div className="cv4Experience" data-version="CHURVOX_LIVE_OFFICE_TWIN_20260724_OWNER_ACCESS">
     <div className="cv4Backdrop" aria-hidden="true"><span className="room a" /><span className="room b" /><span className="room c" /><span className="corridor" /></div>
     <ProductAppV3 />
     <div className="cv4Dock" aria-label="Churvox live office controls">
