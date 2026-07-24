@@ -80,7 +80,7 @@ async function installOwnerApi(page) {
 async function visibleLogout(page) {
   const native = page.locator('.cvSiteLogout:visible, [data-churvox-native-logout="true"]:visible').first();
   if (await native.isVisible().catch(() => false)) return native;
-  return page.locator('[data-churvox-visible-logout="true"]:visible').first();
+  return page.locator('[data-churvox-visible-logout="true"]:visible, [data-churvox-emergency-logout="true"]:visible').first();
 }
 
 for (const route of ['/dashboard', '/dashboard#settings']) {
@@ -106,9 +106,9 @@ for (const route of ['/dashboard', '/dashboard#settings']) {
       };
     });
 
-    expect(logoutMetrics.width).toBeGreaterThanOrEqual(88);
-    expect(logoutMetrics.height).toBeGreaterThanOrEqual(42);
-    expect(logoutMetrics.fontSize).toBeGreaterThanOrEqual(14);
+    expect(logoutMetrics.width).toBeGreaterThanOrEqual(112);
+    expect(logoutMetrics.height).toBeGreaterThanOrEqual(48);
+    expect(logoutMetrics.fontSize).toBeGreaterThanOrEqual(16);
     expect(logoutMetrics.pointerEvents).not.toBe('none');
     expect(logoutMetrics.opacity).toBeGreaterThan(0.9);
     expect(logoutMetrics.insideViewport).toBe(true);
@@ -127,14 +127,16 @@ for (const route of ['/dashboard', '/dashboard#settings']) {
         navigation: sizes('.cvOwnerPrimaryNav button, .cvOwnerMore > button, .cvOwnerUtilityNav button'),
         paragraphs: sizes('.cvOwnerReady p'),
         supporting: sizes('.cvOwnerReady small'),
+        cacheResetVersion: localStorage.getItem('churvox:owner-ui-cache-reset'),
       };
     });
 
     expect(typography.navigation.length).toBeGreaterThan(2);
-    expect(Math.min(...typography.navigation)).toBeGreaterThanOrEqual(14);
+    expect(Math.min(...typography.navigation)).toBeGreaterThanOrEqual(16);
     expect(typography.paragraphs.length).toBeGreaterThan(0);
-    expect(Math.min(...typography.paragraphs)).toBeGreaterThanOrEqual(15);
-    if (typography.supporting.length) expect(Math.min(...typography.supporting)).toBeGreaterThanOrEqual(13);
+    expect(Math.min(...typography.paragraphs)).toBeGreaterThanOrEqual(17);
+    if (typography.supporting.length) expect(Math.min(...typography.supporting)).toBeGreaterThanOrEqual(15);
+    expect(typography.cacheResetVersion).toBe('owner-readable-logout-20260724-v4');
 
     await logout.click();
     await page.waitForURL(/\/login\?logged_out=1/, { timeout: 10_000 });
