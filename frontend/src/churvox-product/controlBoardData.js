@@ -96,39 +96,66 @@ function normalize(rows, type) {
   return rows.map((row, index) => {
     const id = idOf(row, `${type}-${index}`);
     const base = { ...row, id, updatedAt: updatedAt(row) };
-    if (type === "jobs") return { ...base, type: "job", title: pick(row, "title", "job_title", "job_name", "name", "description") || `Job ${index + 1}`, client: pick(row, "client_name", "customer_name", "client") || "No client", worker: pick(row, "assigned_worker_name", "worker_name", "worker") || "Unassigned", status: statusLabel(row.status || row.job_status), date: pick(row, "scheduled_date", "date", "start_date"), time: pick(row, "scheduled_time", "start_time", "time"), price: numberPick(row, "price", "amount", "total"), address: pick(row, "address", "site_address"), service: pick(row, "service", "service_type") || "Other", recurring: pick(row, "recurring", "frequency", "repeat") || "One-off", billing: pick(row, "billing", "billing_type") || "Fixed price", proof: pick(row, "proof", "photo_status"), notes: pick(row, "notes", "description"), issue: pick(row, "issue", "problem", "needs_attention") };
+    if (type === "jobs") return { ...base, type: "job", title: pick(row, "title", "job_title", "job_name", "name", "description") || `Job ${index + 1}`, client: pick(row, "client_name", "customer_name", "client") || "No client", worker: pick(row, "assigned_worker_name", "worker_name", "worker") || "Unassigned", status: statusLabel(row.status || row.job_status), date: pick(row, "scheduled_date", "date", "start_date"), time: pick(row, "scheduled_time", "start_time", "time"), price: numberPick(row, "price", "amount", "total"), address: pick(row, "address", "site_address"), service: pick(row, "service", "service_type") || "Other", recurring: pick(row, "recurring", "recurring_frequency", "frequency", "repeat") || "One-off", billing: pick(row, "billing", "billing_type") || "Fixed price", proof: pick(row, "proof", "photo_status", "completion_photos"), notes: pick(row, "notes", "description", "completion_note"), issue: pick(row, "issue", "problem", "needs_attention"), timerStatus: pick(row, "timer_status"), timer_running: Boolean(row.timer_running), timeSeconds: numberPick(row, "total_time_seconds", "time_seconds", "time_spent_seconds"), invoiceId: pick(row, "invoice_id", "linked_invoice_id"), nextRecurringJobId: pick(row, "next_generated_job_id") };
     if (type === "clients") return { ...base, type: "client", name: pick(row, "name", "client_name", "customer_name") || `Client ${index + 1}`, phone: pick(row, "phone", "mobile"), email: pick(row, "email"), address: pick(row, "address", "site_address"), service: pick(row, "service", "preferred_service"), price: pick(row, "price", "saved_price"), schedule: pick(row, "schedule", "preferred_schedule", "recurring") || "One-off", notes: pick(row, "notes", "access_notes") };
-    if (type === "workers") return { ...base, type: "worker", name: pick(row, "name", "full_name", "display_name", "email") || `Worker ${index + 1}`, email: pick(row, "email"), phone: pick(row, "phone", "mobile"), role: pick(row, "role") || "Worker", access: pick(row, "access", "access_level") || "Worker app", status: pick(row, "status", "clock_status") || "Not clocked in", job: pick(row, "current_job", "job_title") || "No job assigned", app: pick(row, "app_status", "invite_status") || "Not invited", gps: pick(row, "gps", "location"), timesheet: pick(row, "timesheet", "hours_today"), proof: pick(row, "proof", "photo_status"), messages: pick(row, "messages", "message_status"), payroll: pick(row, "payroll_status") || "No payroll review", notes: pick(row, "notes") };
-    if (type === "quotes") return { ...base, type: "quote", title: pick(row, "title", "quote_title", "description") || `Quote ${index + 1}`, client: pick(row, "client_name", "customer_name", "client") || "No client", amount: numberPick(row, "amount", "total", "price"), status: pick(row, "status") || "Draft", scope: pick(row, "scope", "description"), terms: pick(row, "terms") || "Valid for 14 days", followUp: pick(row, "follow_up", "followUp"), next: pick(row, "next_step", "next") || "Review in Command" };
-    if (type === "invoices") return { ...base, type: "invoice", number: pick(row, "number", "invoice_number") || `Invoice ${index + 1}`, client: pick(row, "client_name", "customer_name", "client") || "No client", job: pick(row, "job_title", "job"), amount: numberPick(row, "amount", "total"), due: pick(row, "due_date", "due"), status: pick(row, "status") || "Draft", sync: pick(row, "sync", "accounting_status", "xero_status") || "Not synced", line: pick(row, "line_item", "description"), evidence: pick(row, "evidence", "proof") };
-    if (type === "messages") return { ...base, type: "message", from: pick(row, "from", "sender", "source") || "Unknown", subject: pick(row, "subject", "title") || "Message", detail: pick(row, "detail", "body", "message"), draft: pick(row, "draft", "drafted_reply", "reply"), client: pick(row, "client_name", "client"), job: pick(row, "job_title", "job"), priority: pick(row, "priority") || "Normal", channel: pick(row, "channel") || "Internal" };
+    if (type === "workers") return { ...base, type: "worker", name: pick(row, "name", "full_name", "display_name", "email") || `Worker ${index + 1}`, email: pick(row, "email"), phone: pick(row, "phone", "mobile"), role: pick(row, "role") || "Worker", access: pick(row, "access", "access_level") || "Worker app", status: pick(row, "status", "clock_status") || "Not clocked in", job: pick(row, "current_job", "job_title") || "No job assigned", app: pick(row, "app_status", "invite_status") || "Not invited", gps: pick(row, "gps", "location"), timesheet: pick(row, "timesheet", "hours_today"), proof: pick(row, "proof", "photo_status"), messages: pick(row, "messages", "message_status"), payroll: pick(row, "payroll_status") || "No payroll review", payFrequency: pick(row, "pay_frequency") || "Fortnightly", hourlyRate: numberPick(row, "hourly_rate", "rate"), approvedHours: numberPick(row, "approved_hours"), notes: pick(row, "notes") };
+    if (type === "quotes") return { ...base, type: "quote", title: pick(row, "title", "quote_title", "quote_number", "description") || `Quote ${index + 1}`, client: pick(row, "client_name", "customer_name", "client") || "No client", clientEmail: pick(row, "customer_email", "client_email", "email"), amount: numberPick(row, "amount", "total", "price"), status: pick(row, "status") || "Draft", scope: pick(row, "scope", "description", "job_description"), terms: pick(row, "terms") || "Valid for 14 days", followUp: pick(row, "follow_up", "followUp"), next: pick(row, "next_step", "next") || "Review in Command", convertedJobId: pick(row, "converted_job_id", "job_id", "linked_job_id") };
+    if (type === "invoices") return { ...base, type: "invoice", number: pick(row, "number", "invoice_number") || `Invoice ${index + 1}`, client: pick(row, "client_name", "customer_name", "client") || "No client", clientEmail: pick(row, "customer_email", "client_email", "email"), job: pick(row, "job_title", "job"), amount: numberPick(row, "amount", "total", "subtotal"), due: pick(row, "due_date", "due"), status: pick(row, "status") || "Draft", sync: pick(row, "sync", "accounting_status", "xero_status") || "Not synced", line: pick(row, "line_item", "description"), paymentLink: pick(row, "payment_link", "public_invoice_url"), evidence: pick(row, "evidence", "proof"), notes: pick(row, "notes") };
+    if (type === "messages") return { ...base, type: "message", from: pick(row, "from", "sender", "source") || "Unknown", to: pick(row, "to", "recipient"), subject: pick(row, "subject", "title") || "Message", detail: pick(row, "detail", "body", "message"), draft: pick(row, "draft", "drafted_reply", "reply"), client: pick(row, "client_name", "client"), job: pick(row, "job_title", "job"), priority: pick(row, "priority") || "Normal", channel: pick(row, "channel") || "Internal" };
     return { ...base, type: "approval", approvalType: pick(row, "type", "kind", "action_type") || "Owner check", title: pick(row, "title", "record_title", "summary") || "Prepared admin item", status: pick(row, "status", "state") || "Waiting", client: pick(row, "client", "client_name", "customer_name"), amount: numberPick(row, "amount", "total"), recommended: pick(row, "owner", "recommended_action", "action") || "Approve", prepared: pick(row, "prepared", "filled", "summary", "what_churvox_filled") || "Prepared from live records.", evidence: pick(row, "evidence", "proof") || "Record details checked.", reason: pick(row, "reason", "check", "owner_check") || "An owner decision is required." };
   });
+}
+
+const SOURCES = [
+  ["Work", "jobs"],
+  ["Clients", "clients"],
+  ["Team", "team"],
+  ["Quotes", "quotes"],
+  ["Invoices", "invoices"],
+  ["Messages", "messages"],
+  ["Command", "actions"],
+];
+
+function sourceFailure(result, label) {
+  if (!result || result.status === "rejected") return { source: label, message: result?.reason?.message || "Connection failed" };
+  if (result.value?.success === false) return { source: label, message: clean(result.value?.error || result.value?.data?.detail || result.value?.message) || "Could not load" };
+  return null;
 }
 
 export function useControlBoardData(enabled) {
   const api = useApi();
   const [loading, setLoading] = React.useState(Boolean(enabled));
+  const [failures, setFailures] = React.useState([]);
   const [data, setData] = React.useState({ jobs: [], clients: [], workers: [], quotes: [], invoices: [], messages: [], command: [], xero: {} });
 
   const refresh = React.useCallback(async () => {
-    if (!enabled) { setLoading(false); return; }
+    if (!enabled) { setLoading(false); setFailures([]); return; }
     setLoading(true);
-    const results = await Promise.allSettled([
-      api.get("/jobs"), api.get("/clients"), api.get("/team"), api.get("/quotes"), api.get("/invoices"), api.get("/messages"), api.get("/ai/actions"), api.get("/xero/status"),
-    ]);
-    const xero = unwrap(results[7]?.value) || {};
-    setData({
-      jobs: normalize(rowsFrom(results[0]?.value, "jobs"), "jobs"),
-      clients: normalize(rowsFrom(results[1]?.value, "clients"), "clients"),
-      workers: normalize(rowsFrom(results[2]?.value, "team"), "workers"),
-      quotes: normalize(rowsFrom(results[3]?.value, "quotes"), "quotes"),
-      invoices: normalize(rowsFrom(results[4]?.value, "invoices"), "invoices"),
-      messages: normalize(rowsFrom(results[5]?.value, "messages"), "messages"),
-      command: normalize(rowsFrom(results[6]?.value, "actions"), "command"),
-      xero: { connected: Boolean(xero.connected || xero.xero_connected), tenant: pick(xero, "tenant_name", "tenantName", "organisation_name"), status: pick(xero, "status") },
-    });
-    setLoading(false);
+    try {
+      const results = await Promise.allSettled([
+        api.get("/jobs"), api.get("/clients"), api.get("/team"), api.get("/quotes"), api.get("/invoices"), api.get("/messages"), api.get("/ai/actions"), api.get("/xero/status"),
+      ]);
+      const issues = SOURCES.map(([label], index) => sourceFailure(results[index], label)).filter(Boolean);
+      const failed = new Set(issues.map((item) => item.source));
+      setFailures(issues);
+      setData((current) => {
+        const xeroResult = results[7];
+        const xeroOkay = xeroResult?.status === "fulfilled" && xeroResult.value?.success !== false;
+        const xero = xeroOkay ? (unwrap(xeroResult.value) || {}) : current.xero;
+        return {
+          jobs: failed.has("Work") ? current.jobs : normalize(rowsFrom(results[0]?.value, "jobs"), "jobs"),
+          clients: failed.has("Clients") ? current.clients : normalize(rowsFrom(results[1]?.value, "clients"), "clients"),
+          workers: failed.has("Team") ? current.workers : normalize(rowsFrom(results[2]?.value, "team"), "workers"),
+          quotes: failed.has("Quotes") ? current.quotes : normalize(rowsFrom(results[3]?.value, "quotes"), "quotes"),
+          invoices: failed.has("Invoices") ? current.invoices : normalize(rowsFrom(results[4]?.value, "invoices"), "invoices"),
+          messages: failed.has("Messages") ? current.messages : normalize(rowsFrom(results[5]?.value, "messages"), "messages"),
+          command: failed.has("Command") ? current.command : normalize(rowsFrom(results[6]?.value, "actions"), "command"),
+          xero: xeroOkay ? { connected: Boolean(xero.connected || xero.xero_connected), tenant: pick(xero, "tenant_name", "tenantName", "organisation_name"), status: pick(xero, "status") } : current.xero,
+        };
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [api, enabled]);
 
   React.useEffect(() => {
@@ -137,7 +164,7 @@ export function useControlBoardData(enabled) {
     return () => window.removeEventListener("churvox:data-refresh", refresh);
   }, [refresh]);
 
-  return { api, data, loading, refresh };
+  return { api, data, loading, failures, refresh };
 }
 
 export async function firstGood(calls) {
