@@ -81,7 +81,6 @@ export class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      const fallbackHref = this.props.fallbackHref || (typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}${window.location.hash}` : "/");
       const fallbackLabel = this.props.fallbackLabel || "Try this page again";
       const chunkError = isRecoverableChunkError(this.state.error);
 
@@ -106,10 +105,10 @@ export class ErrorBoundary extends React.Component {
                 {fallbackLabel}
               </button>
               <a
-                href={fallbackHref === window?.location?.href ? "/" : fallbackHref}
+                href={this.props.fallbackHref || "/"}
                 className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-800 hover:bg-slate-100"
               >
-                Open Churvox safely
+                Open Churvox home
               </a>
             </div>
           </section>
