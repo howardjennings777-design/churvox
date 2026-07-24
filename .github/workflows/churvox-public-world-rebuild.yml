@@ -1,0 +1,583 @@
+name: Churvox public world rebuild
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  rebuild:
+    if: startsWith(github.event.issue.title, '[churvox-public-world-rebuild]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the Churvox public world
+        shell: bash
+        run: |
+          cat > frontend/src/pages/marketing/ChurvoxPublicWorld.css <<'EOF'
+          :root {
+            --cvw-ink: #111310;
+            --cvw-paper: #f3ede2;
+            --cvw-cream: #fffaf2;
+            --cvw-orange: #f36b21;
+            --cvw-orange-dark: #a83e08;
+            --cvw-lime: #b9e769;
+            --cvw-blue: #8ec9ff;
+            --cvw-red: #ff8e75;
+            --cvw-line: rgba(17, 19, 16, .13);
+          }
+
+          .cpWorld { background: #f2eadf; }
+          .cpWorld::before {
+            background:
+              linear-gradient(90deg, rgba(17,19,16,.035) 1px, transparent 1px),
+              linear-gradient(rgba(17,19,16,.028) 1px, transparent 1px),
+              radial-gradient(circle at 85% 5%, rgba(243,107,33,.18), transparent 25%);
+            background-size: 54px 54px, 54px 54px, auto;
+          }
+
+          .cpWorldTopbar { min-height: 82px; grid-template-columns: auto minmax(0,1fr) auto; }
+          .cpWorldTopbar::after {
+            content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cvw-orange) 18%, transparent 48%, rgba(185,231,105,.7) 78%, transparent);
+          }
+          .cpWorldBrandCode { display: inline-flex; align-items: center; gap: 7px; margin-left: 7px; color: rgba(255,255,255,.45); font: 900 9px/1 monospace; letter-spacing: .08em; text-transform: uppercase; }
+          .cpWorldBrandCode i, .cpWorldOnline i { width: 7px; height: 7px; border-radius: 50%; background: var(--cvw-lime); box-shadow: 0 0 0 5px rgba(185,231,105,.1); }
+          .cpWorldOnline { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 11px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; color: rgba(255,255,255,.7); background: rgba(255,255,255,.045); font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: .08em; }
+          .cpWorldMenu { display: none; min-height: 40px; padding: 0 13px; border: 1px solid rgba(255,255,255,.13); border-radius: 12px; color: white; background: rgba(255,255,255,.07); font-weight: 950; }
+          .cpWorldNavLinks a { position: relative; }
+          .cpWorldNavLinks a[aria-current="page"]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 3px; height: 2px; border-radius: 3px; background: var(--cvw-orange); }
+
+          .cpWorldHero {
+            width: min(1440px, calc(100% - 32px)); margin: 0 auto; padding: clamp(58px, 8vw, 118px) 0 clamp(44px, 7vw, 92px);
+            display: grid; grid-template-columns: minmax(0,.9fr) minmax(480px,1.1fr); gap: clamp(30px,6vw,90px); align-items: center;
+          }
+          .cpWorldRouteCode { display: flex; align-items: center; gap: 12px; color: var(--cvw-orange-dark); font: 950 11px/1 monospace; letter-spacing: .15em; text-transform: uppercase; }
+          .cpWorldRouteCode::before { content: ""; width: 38px; height: 2px; background: var(--cvw-orange); }
+          .cpWorldLead h1 { margin: 20px 0 0; max-width: 850px; font-size: clamp(54px,6.8vw,112px); line-height: .86; letter-spacing: -.08em; font-weight: 1000; }
+          .cpWorldLead h1 em { color: var(--cvw-orange); font-style: normal; }
+          .cpWorldLead > p { max-width: 720px; margin: 24px 0 0; color: #565d56; font-size: clamp(16px,1.6vw,20px); line-height: 1.55; font-weight: 720; }
+          .cpWorldActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+          .cpWorldFacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 25px; }
+          .cpWorldFacts span { padding: 8px 10px; border: 1px solid var(--cvw-line); border-radius: 999px; background: rgba(255,255,255,.58); color: #4d544d; font-size: 10px; font-weight: 900; }
+          .cpWorldSection { width: min(1440px, calc(100% - 32px)); margin: 0 auto; padding: clamp(62px,8vw,118px) 0; }
+          .cpWorldSectionHead { max-width: 900px; margin-bottom: 38px; }
+          .cpWorldSectionHead span { color: var(--cvw-orange-dark); font: 950 10px/1 monospace; letter-spacing: .16em; text-transform: uppercase; }
+          .cpWorldSectionHead h2 { margin: 16px 0 0; font-size: clamp(42px,5.2vw,82px); line-height: .9; letter-spacing: -.07em; font-weight: 1000; }
+          .cpWorldSectionHead p { max-width: 760px; margin: 18px 0 0; color: #5d645d; font-size: 17px; line-height: 1.55; font-weight: 700; }
+
+          /* Product room */
+          .cpProductHero { min-height: calc(100vh - 82px); }
+          .cpProductCutaway { position: relative; min-height: 610px; overflow: hidden; border: 1px solid rgba(255,255,255,.11); border-radius: 38px; color: white; background: radial-gradient(circle at 72% 6%, rgba(243,107,33,.34), transparent 30%), linear-gradient(150deg,#080a09,#141a15 62%,#321707); box-shadow: 0 38px 100px rgba(12,14,12,.3); }
+          .cpProductCutaway::before { content: "OFFICE / LIVE"; position: absolute; top: 24px; left: 26px; color: #ffbd8d; font: 950 10px/1 monospace; letter-spacing: .14em; }
+          .cpProductCutaway::after { content: ""; position: absolute; inset: 72px 28px 28px; border: 1px solid rgba(255,255,255,.09); border-radius: 26px; background: linear-gradient(90deg,transparent 49.7%,rgba(255,255,255,.08) 50%,transparent 50.3%), linear-gradient(transparent 49.7%,rgba(255,255,255,.08) 50%,transparent 50.3%); }
+          .cpProductBrain { position: absolute; z-index: 3; left: 50%; top: 50%; width: 190px; height: 190px; transform: translate(-50%,-50%); display: grid; place-items: center; align-content: center; text-align: center; border-radius: 50%; background: radial-gradient(circle at 36% 28%,#ff9a54,#f36b21 44%,#8f3006 100%); box-shadow: 0 0 0 18px rgba(243,107,33,.08),0 30px 70px rgba(0,0,0,.35); }
+          .cpProductBrain small { font: 900 9px/1 monospace; letter-spacing: .12em; text-transform: uppercase; }
+          .cpProductBrain b { margin-top: 8px; font-size: 25px; letter-spacing: -.05em; }
+          .cpProductBrain span { margin-top: 7px; max-width: 120px; color: rgba(255,255,255,.72); font-size: 10px; font-weight: 800; }
+          .cpProductRoom { position: absolute; z-index: 2; width: 180px; min-height: 118px; padding: 17px; border: 1px solid rgba(255,255,255,.1); border-radius: 22px; background: rgba(255,255,255,.065); backdrop-filter: blur(12px); }
+          .cpProductRoom small { color: #ffbd8d; font: 900 9px/1 monospace; text-transform: uppercase; letter-spacing: .12em; }
+          .cpProductRoom b { display: block; margin-top: 9px; font-size: 18px; }
+          .cpProductRoom p { margin: 7px 0 0; color: rgba(255,255,255,.56); font-size: 10px; line-height: 1.4; font-weight: 750; }
+          .cpProductRoom.r1 { left: 28px; top: 92px; } .cpProductRoom.r2 { right: 28px; top: 92px; }
+          .cpProductRoom.r3 { left: 28px; bottom: 34px; } .cpProductRoom.r4 { right: 28px; bottom: 34px; }
+          .cpProductSignal { position: absolute; z-index: 1; height: 2px; transform-origin: left center; background: linear-gradient(90deg,rgba(243,107,33,.05),rgba(243,107,33,.85),rgba(185,231,105,.35)); }
+          .cpProductSignal.s1 { width: 240px; left: 185px; top: 190px; transform: rotate(25deg); } .cpProductSignal.s2 { width: 240px; right: 165px; top: 190px; transform: rotate(155deg); }
+          .cpProductSignal.s3 { width: 240px; left: 185px; bottom: 150px; transform: rotate(-23deg); } .cpProductSignal.s4 { width: 240px; right: 165px; bottom: 150px; transform: rotate(203deg); }
+          .cpRecordRiver { width: 100%; padding-left: max(16px,calc((100vw - 1440px)/2)); padding-right: max(16px,calc((100vw - 1440px)/2)); color: white; background: linear-gradient(110deg,#080a09,#151a16 62%,#351806); }
+          .cpRecordTrack { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 1px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 28px; background: rgba(255,255,255,.1); }
+          .cpRecordTrack article { min-height: 220px; padding: 24px; background: rgba(255,255,255,.045); }
+          .cpRecordTrack article b { color: var(--cvw-orange); font: 1000 32px/1 monospace; }
+          .cpRecordTrack article h3 { margin: 35px 0 0; font-size: 19px; letter-spacing: -.04em; }
+          .cpRecordTrack article p { margin: 9px 0 0; color: rgba(255,255,255,.57); font-size: 12px; line-height: 1.5; font-weight: 700; }
+          .cpProductRoomGrid { display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); grid-auto-rows: 118px; gap: 14px; }
+          .cpProductTile { position: relative; overflow: hidden; padding: 25px; border: 1px solid var(--cvw-line); border-radius: 28px; background: rgba(255,255,255,.66); box-shadow: 0 18px 60px rgba(20,22,18,.06); }
+          .cpProductTile::after { content: attr(data-code); position: absolute; right: 20px; bottom: 12px; color: rgba(17,19,16,.07); font: 1000 58px/1 monospace; }
+          .cpProductTile h3 { margin: 0; font-size: 24px; letter-spacing: -.05em; }
+          .cpProductTile p { max-width: 470px; margin: 9px 0 0; color: #606760; font-size: 13px; line-height: 1.5; font-weight: 700; }
+          .cpProductTile.wide { grid-column: span 7; grid-row: span 2; } .cpProductTile.tall { grid-column: span 5; grid-row: span 3; background: #111410; color: white; }
+          .cpProductTile.mid { grid-column: span 4; grid-row: span 2; } .cpProductTile.long { grid-column: span 8; grid-row: span 2; }
+          .cpProductTile.tall p { color: rgba(255,255,255,.58); }
+          .cpPocketSection { display: grid; grid-template-columns: minmax(280px,.7fr) minmax(0,1.3fr); gap: clamp(30px,7vw,100px); align-items: center; }
+          .cpPocketPhone { width: min(340px,100%); margin: auto; padding: 16px; border: 10px solid #10120f; border-radius: 48px; background: #faf5ec; box-shadow: 0 35px 90px rgba(12,14,12,.25); }
+          .cpPocketPhone header { display: flex; justify-content: space-between; padding: 10px 8px 17px; font-size: 11px; font-weight: 950; }
+          .cpPocketJob { padding: 18px; border-radius: 25px; color: white; background: linear-gradient(145deg,#111510,#2f1709); }
+          .cpPocketJob small { color: #ffb67e; font-weight: 900; text-transform: uppercase; }
+          .cpPocketJob h3 { margin: 10px 0 0; font-size: 28px; letter-spacing: -.055em; }
+          .cpPocketJob p { color: rgba(255,255,255,.62); font-size: 12px; line-height: 1.5; }
+          .cpPocketSteps { display: grid; gap: 8px; margin-top: 12px; }
+          .cpPocketSteps span { padding: 13px; border: 1px solid var(--cvw-line); border-radius: 15px; background: white; font-size: 12px; font-weight: 900; }
+          .cpDecisionDesk { width: 100%; padding-left: max(16px,calc((100vw - 1440px)/2)); padding-right: max(16px,calc((100vw - 1440px)/2)); background: #e6dbcd; }
+          .cpDecisionLayout { display: grid; grid-template-columns: .75fr 1.25fr; gap: 20px; }
+          .cpDecisionKeys { display: grid; gap: 10px; }
+          .cpDecisionKeys article { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 16px; padding: 18px; border: 1px solid var(--cvw-line); border-radius: 20px; background: rgba(255,255,255,.56); }
+          .cpDecisionKeys b { color: var(--cvw-orange); font: 1000 28px/1 monospace; }
+          .cpDecisionKeys h3 { margin: 0; font-size: 18px; } .cpDecisionKeys p { margin: 4px 0 0; color: #626962; font-size: 11px; font-weight: 700; }
+          .cpDecisionSlip { padding: 30px; border-radius: 30px; color: white; background: radial-gradient(circle at 100% 0%,rgba(243,107,33,.28),transparent 32%),#10130f; box-shadow: 0 30px 80px rgba(15,17,15,.25); }
+          .cpDecisionSlip small { color: #ffba87; font: 950 10px/1 monospace; text-transform: uppercase; letter-spacing: .13em; }
+          .cpDecisionSlip h3 { margin: 16px 0 0; font-size: clamp(32px,4vw,58px); letter-spacing: -.065em; }
+          .cpDecisionSlip dl { display: grid; gap: 0; margin: 26px 0; }
+          .cpDecisionSlip dl div { display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px; padding: 13px 0; border-top: 1px solid rgba(255,255,255,.1); }
+          .cpDecisionSlip dt { color: rgba(255,255,255,.48); font-size: 11px; } .cpDecisionSlip dd { margin: 0; font-size: 12px; font-weight: 900; }
+          .cpDecisionButtons { display: flex; flex-wrap: wrap; gap: 9px; }
+          .cpDecisionButtons span { padding: 11px 15px; border-radius: 13px; background: rgba(255,255,255,.08); font-size: 11px; font-weight: 950; }
+          .cpDecisionButtons span:first-child { background: linear-gradient(135deg,var(--cvw-orange),var(--cvw-orange-dark)); }
+
+          /* Pricing switchboard */
+          .cpPriceSwitchboard { min-height: 610px; padding: 28px; border-radius: 38px; color: white; background: radial-gradient(circle at 80% 5%,rgba(142,201,255,.22),transparent 28%),linear-gradient(145deg,#080a09,#151b16 65%,#2f1608); box-shadow: 0 36px 95px rgba(12,14,12,.3); }
+          .cpPriceSwitchboard header { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+          .cpPriceSwitchboard header span { color: #ffbc8b; font: 950 10px/1 monospace; letter-spacing: .12em; text-transform: uppercase; }
+          .cpPriceSwitchboard header b { padding: 8px 10px; border-radius: 999px; background: rgba(185,231,105,.12); color: var(--cvw-lime); font-size: 10px; }
+          .cpPressureGauge { position: relative; display: grid; place-items: center; width: 280px; height: 280px; margin: 58px auto 30px; border-radius: 50%; background: conic-gradient(from 220deg,var(--cvw-lime),var(--cvw-orange) 55%,rgba(255,255,255,.08) 56% 100%); }
+          .cpPressureGauge::before { content: ""; position: absolute; inset: 20px; border-radius: 50%; background: #10140f; }
+          .cpPressureGauge div { position: relative; z-index: 1; text-align: center; }
+          .cpPressureGauge small { color: rgba(255,255,255,.5); font: 900 9px/1 monospace; text-transform: uppercase; letter-spacing: .12em; }
+          .cpPressureGauge b { display: block; margin-top: 8px; font-size: 56px; line-height: 1; letter-spacing: -.07em; }
+          .cpPressureGauge span { display: block; margin-top: 5px; color: #ffbb87; font-size: 12px; font-weight: 900; }
+          .cpSwitchRows { display: grid; gap: 8px; }
+          .cpSwitchRows div { display: grid; grid-template-columns: 1fr auto; gap: 14px; padding: 13px 15px; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; background: rgba(255,255,255,.045); }
+          .cpSwitchRows span { color: rgba(255,255,255,.58); font-size: 11px; font-weight: 800; } .cpSwitchRows b { font-size: 11px; }
+          .cpPricingControl { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+          .cpPricingControl label { min-width: min(340px,100%); }
+          .cpPricingControl select { width: 100%; min-height: 48px; margin-top: 8px; padding: 0 14px; border: 1px solid var(--cvw-line); border-radius: 14px; background: white; font-size: 14px; font-weight: 850; }
+          .cpPriceLanes { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; align-items: stretch; }
+          .cpPriceLane { position: relative; min-height: 540px; display: flex; flex-direction: column; padding: 24px; overflow: hidden; border: 1px solid var(--cvw-line); border-radius: 28px; background: rgba(255,255,255,.66); box-shadow: 0 20px 60px rgba(16,18,15,.06); }
+          .cpPriceLane::before { content: attr(data-lane); position: absolute; top: 20px; right: 18px; color: rgba(17,19,16,.07); font: 1000 44px/1 monospace; }
+          .cpPriceLane.featured { transform: translateY(-12px); color: white; border-color: rgba(255,255,255,.1); background: radial-gradient(circle at 100% 0%,rgba(243,107,33,.28),transparent 30%),linear-gradient(150deg,#0b0d0c,#171c17 70%,#361806); }
+          .cpPriceLane .badge { width: fit-content; padding: 6px 8px; border-radius: 999px; background: var(--cvw-orange); color: white; font-size: 9px; font-weight: 1000; text-transform: uppercase; }
+          .cpPriceLane h3 { margin: 16px 0 0; font-size: 26px; letter-spacing: -.055em; }
+          .cpPriceLane .price { margin-top: 25px; font-size: clamp(38px,4vw,62px); line-height: .95; font-weight: 1000; letter-spacing: -.07em; }
+          .cpPriceLane .tax { min-height: 18px; margin-top: 6px; color: #777d77; font-size: 10px; font-weight: 800; }
+          .cpPriceLane.featured .tax { color: rgba(255,255,255,.5); }
+          .cpPriceLane > p { min-height: 66px; color: #5d645d; font-size: 12px; line-height: 1.5; font-weight: 700; }
+          .cpPriceLane.featured > p { color: rgba(255,255,255,.62); }
+          .cpPriceLane ul { display: grid; gap: 9px; margin: 8px 0 25px; padding: 0; list-style: none; }
+          .cpPriceLane li { position: relative; padding-left: 18px; color: #4f564f; font-size: 11px; line-height: 1.4; font-weight: 800; }
+          .cpPriceLane.featured li { color: rgba(255,255,255,.72); }
+          .cpPriceLane li::before { content: ""; position: absolute; left: 0; top: .45em; width: 7px; height: 7px; border-radius: 50%; background: var(--cvw-orange); }
+          .cpPriceLane .cp26Button { margin-top: auto; }
+          .cpPressureMap { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 28px; background: rgba(255,255,255,.08); }
+          .cpPressureMap article { min-height: 250px; padding: 25px; background: rgba(255,255,255,.045); }
+          .cpPressureMap small { color: #ffb77f; font: 950 9px/1 monospace; text-transform: uppercase; letter-spacing: .12em; }
+          .cpPressureMap h3 { margin: 45px 0 0; font-size: 22px; }
+          .cpPressureMap p { color: rgba(255,255,255,.57); font-size: 12px; line-height: 1.5; font-weight: 700; }
+          .cpAddonDrawers { display: grid; grid-template-columns: 1fr 1fr .8fr; gap: 14px; }
+          .cpAddonDrawer { min-height: 230px; padding: 26px; border: 1px solid var(--cvw-line); border-radius: 26px; background: rgba(255,255,255,.62); }
+          .cpAddonDrawer > span:first-child { color: var(--cvw-orange-dark); font: 950 9px/1 monospace; text-transform: uppercase; letter-spacing: .13em; }
+          .cpAddonDrawer h3 { margin: 13px 0 0; font-size: 24px; letter-spacing: -.05em; }
+          .cpAddonDrawer b { display: block; margin-top: 20px; font-size: 38px; letter-spacing: -.06em; }
+          .cpAddonDrawer p { color: #606760; font-size: 12px; line-height: 1.5; font-weight: 700; }
+
+          /* Industry route board */
+          .cpIndustryBoard { min-height: 620px; padding: 28px; border-radius: 38px; color: white; background: radial-gradient(circle at 85% 0%,rgba(185,231,105,.18),transparent 27%),linear-gradient(145deg,#080a09,#151b16 62%,#2f1608); box-shadow: 0 35px 95px rgba(12,14,12,.3); }
+          .cpIndustryBoard header { display: flex; justify-content: space-between; gap: 15px; }
+          .cpIndustryBoard header small { color: #ffbd8c; font: 950 10px/1 monospace; text-transform: uppercase; letter-spacing: .12em; }
+          .cpIndustryBoard header b { font-size: 22px; letter-spacing: -.04em; }
+          .cpIndustryRoute { position: relative; display: grid; gap: 11px; margin-top: 35px; }
+          .cpIndustryRoute::before { content: ""; position: absolute; left: 20px; top: 18px; bottom: 18px; width: 2px; background: linear-gradient(var(--cvw-orange),var(--cvw-lime)); }
+          .cpIndustryRoute article { position: relative; z-index: 1; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 14px; min-height: 68px; padding: 10px 12px 10px 0; border: 1px solid rgba(255,255,255,.08); border-radius: 18px; background: rgba(255,255,255,.045); }
+          .cpIndustryRoute i { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: #11150f; border: 2px solid var(--cvw-orange); color: white; font: 1000 12px/1 monospace; }
+          .cpIndustryRoute b { font-size: 14px; } .cpIndustryRoute span { color: rgba(255,255,255,.45); font-size: 9px; font-weight: 850; text-transform: uppercase; }
+          .cpIndustryExamples { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 10px; margin-top: 24px; }
+          .cpIndustryExamples span { padding: 13px; border: 1px dashed rgba(255,255,255,.17); border-radius: 15px; color: rgba(255,255,255,.65); font-size: 10px; font-weight: 850; }
+          .cpIndustryCore { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 10px; }
+          .cpIndustryCore article { min-height: 190px; padding: 22px; border: 1px solid var(--cvw-line); border-radius: 24px; background: rgba(255,255,255,.64); }
+          .cpIndustryCore b { display: block; font-size: 18px; letter-spacing: -.04em; }
+          .cpIndustryCore p { color: #626962; font-size: 11px; line-height: 1.5; font-weight: 700; }
+          .cpIndustryDirectory { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 16px; scrollbar-width: thin; }
+          .cpIndustryDirectory a { flex: 0 0 220px; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between; padding: 18px; border: 1px solid var(--cvw-line); border-radius: 22px; background: rgba(255,255,255,.62); font-weight: 950; }
+          .cpIndustryDirectory a::after { content: "Open route →"; color: var(--cvw-orange-dark); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+          .cpIndustryDirectory a[aria-current="page"] { color: white; background: #121510; }
+
+          /* Contact radio room */
+          .cpRadioRoom { min-height: 590px; padding: 28px; border-radius: 38px; color: white; background: radial-gradient(circle at 78% 5%,rgba(142,201,255,.22),transparent 28%),linear-gradient(145deg,#080a09,#151b17 62%,#2d1608); box-shadow: 0 35px 95px rgba(12,14,12,.3); }
+          .cpRadioRoom header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+          .cpRadioRoom header span { display: inline-flex; align-items: center; gap: 9px; color: #ffbd8d; font: 950 10px/1 monospace; letter-spacing: .12em; text-transform: uppercase; }
+          .cpRadioRoom header span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cvw-lime); box-shadow: 0 0 0 6px rgba(185,231,105,.1); }
+          .cpRadioWave { height: 130px; margin: 35px 0 22px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+          .cpRadioWave i { width: 6px; border-radius: 5px; background: linear-gradient(var(--cvw-lime),var(--cvw-orange)); animation: cvwWave 1.8s ease-in-out infinite; }
+          .cpRadioWave i:nth-child(1){height:30px}.cpRadioWave i:nth-child(2){height:72px;animation-delay:.1s}.cpRadioWave i:nth-child(3){height:110px;animation-delay:.2s}.cpRadioWave i:nth-child(4){height:55px;animation-delay:.3s}.cpRadioWave i:nth-child(5){height:95px;animation-delay:.4s}.cpRadioWave i:nth-child(6){height:42px;animation-delay:.5s}.cpRadioWave i:nth-child(7){height:78px;animation-delay:.6s}
+          @keyframes cvwWave { 0%,100%{transform:scaleY(.55);opacity:.6}50%{transform:scaleY(1);opacity:1} }
+          .cpRadioInbox { display: grid; gap: 8px; }
+          .cpRadioInbox article { display: grid; grid-template-columns: auto 1fr auto; gap: 13px; align-items: center; padding: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 17px; background: rgba(255,255,255,.045); }
+          .cpRadioInbox i { width: 10px; height: 10px; border-radius: 50%; background: var(--cvw-orange); }
+          .cpRadioInbox b { font-size: 13px; } .cpRadioInbox span { color: rgba(255,255,255,.46); font-size: 9px; font-weight: 850; text-transform: uppercase; }
+          .cpContactChannels { display: grid; gap: 12px; }
+          .cpContactChannel { display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 22px; min-height: 132px; padding: 20px; border: 1px solid var(--cvw-line); border-radius: 25px; background: rgba(255,255,255,.63); }
+          .cpContactChannel > b { color: var(--cvw-orange); font: 1000 34px/1 monospace; }
+          .cpContactChannel h3 { margin: 0; font-size: 21px; letter-spacing: -.045em; }
+          .cpContactChannel p { margin: 7px 0 0; color: #616861; font-size: 12px; line-height: 1.45; font-weight: 700; }
+          .cpContactChannel a { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; padding: 0 13px; border-radius: 12px; color: white; background: #121510; font-size: 11px; font-weight: 950; }
+          .cpQuickDirectory { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 28px; background: rgba(255,255,255,.09); }
+          .cpQuickDirectory a { min-height: 210px; display: flex; flex-direction: column; justify-content: space-between; padding: 24px; background: rgba(255,255,255,.045); }
+          .cpQuickDirectory b { font-size: 21px; } .cpQuickDirectory span { color: rgba(255,255,255,.57); font-size: 11px; line-height: 1.5; font-weight: 700; }
+          .cpQuickDirectory em { color: #ffb77f; font: 900 10px/1 monospace; font-style: normal; text-transform: uppercase; }
+
+          /* Trust rooms */
+          .cpTrustRoom[data-room="blueprint"] { --room-accent: #8ec9ff; }
+          .cpTrustRoom[data-room="guard"] { --room-accent: #b9e769; }
+          .cpTrustRoom[data-room="service"] { --room-accent: #ffb26f; }
+          .cpTrustRoom[data-room="ledger"] { --room-accent: #d7a9ff; }
+          .cpTrustInstrument { min-height: 520px; padding: 28px; border-radius: 38px; color: white; background: radial-gradient(circle at 80% 0%,color-mix(in srgb,var(--room-accent) 26%,transparent),transparent 30%),linear-gradient(145deg,#080a09,#151a16 64%,#2d1608); box-shadow: 0 35px 95px rgba(12,14,12,.3); }
+          .cpTrustInstrument header { display: flex; justify-content: space-between; gap: 14px; }
+          .cpTrustInstrument header span { color: var(--room-accent); font: 950 10px/1 monospace; letter-spacing: .12em; text-transform: uppercase; }
+          .cpTrustInstrument header b { font-size: 11px; }
+          .cpTrustInstrument .dial { width: 220px; height: 220px; display: grid; place-items: center; margin: 55px auto 25px; border: 1px solid rgba(255,255,255,.1); border-radius: 50%; background: radial-gradient(circle,rgba(255,255,255,.05) 0 52%,transparent 53%),conic-gradient(from 210deg,var(--room-accent),var(--cvw-orange),rgba(255,255,255,.08) 66%); }
+          .cpTrustInstrument .dial div { width: 164px; height: 164px; display: grid; place-items: center; align-content: center; border-radius: 50%; background: #111410; text-align: center; }
+          .cpTrustInstrument .dial b { font-size: 38px; letter-spacing: -.06em; } .cpTrustInstrument .dial small { color: rgba(255,255,255,.5); font-size: 9px; text-transform: uppercase; }
+          .cpTrustInstrument ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+          .cpTrustInstrument li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 15px; background: rgba(255,255,255,.045); color: rgba(255,255,255,.62); font-size: 10px; font-weight: 850; }
+          .cpTrustInstrument li b { color: white; }
+          .cpBlueprintGrid,.cpGuardGrid,.cpSupportBoard,.cpLedgerRows { display: grid; gap: 12px; }
+          .cpBlueprintGrid { grid-template-columns: 1.25fr .75fr 1fr; }
+          .cpBlueprintGrid article,.cpGuardGrid article,.cpSupportBoard article,.cpLedgerRows article { padding: 24px; border: 1px solid var(--cvw-line); border-radius: 25px; background: rgba(255,255,255,.63); }
+          .cpBlueprintGrid article:first-child { grid-row: span 2; min-height: 400px; background: #111410; color: white; }
+          .cpBlueprintGrid b,.cpGuardGrid b,.cpSupportBoard b,.cpLedgerRows b { display: block; font-size: 20px; letter-spacing: -.04em; }
+          .cpBlueprintGrid span,.cpGuardGrid span,.cpSupportBoard span,.cpLedgerRows span { display: block; margin-top: 9px; color: #616861; font-size: 12px; line-height: 1.5; font-weight: 700; }
+          .cpBlueprintGrid article:first-child span { color: rgba(255,255,255,.58); }
+          .cpGuardGrid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+          .cpGuardGrid article { min-height: 225px; }
+          .cpGuardGrid article:nth-child(2),.cpGuardGrid article:nth-child(5) { color: white; background: #111410; }
+          .cpGuardGrid article:nth-child(2) span,.cpGuardGrid article:nth-child(5) span { color: rgba(255,255,255,.58); }
+          .cpSupportBoard { grid-template-columns: 1fr 1fr; }
+          .cpSupportBoard article { min-height: 180px; }
+          .cpSupportBoard a { display: inline-flex; margin-top: 18px; color: var(--cvw-orange-dark); font-size: 11px; font-weight: 950; }
+          .cpLedgerRows { grid-template-columns: 1fr 1fr; }
+          .cpLedgerRows article { display: grid; grid-template-columns: 80px 1fr; gap: 20px; min-height: 150px; }
+          .cpLedgerRows i { color: #9e58c9; font: 1000 28px/1 monospace; font-style: normal; }
+
+          /* Demo, access gate, archive and customer-facing rooms */
+          .cpWorldDemo .cp26PageHero { width: min(1440px,calc(100% - 32px)); min-height: 620px; padding-top: 90px; }
+          .cpWorldDemo .cp26HeroPanel { min-height: 340px; display: flex; flex-direction: column; justify-content: end; border-radius: 34px; color: white; background: radial-gradient(circle at 80% 0%,rgba(142,201,255,.25),transparent 30%),linear-gradient(145deg,#080a09,#151a16 65%,#2f1608); box-shadow: 0 35px 90px rgba(12,14,12,.26); }
+          .cpWorldDemo .cp26Journey { border-radius: 34px; }
+          .cpDemoMachine { border-radius: 34px !important; box-shadow: 0 30px 90px rgba(14,16,13,.18); }
+          .cvWorldAccessGate { min-height: 100vh; background: radial-gradient(circle at 10% 0%,rgba(243,107,33,.22),transparent 31%),linear-gradient(145deg,#f9f3e9,#e8ddce); }
+          .cvWorldAccessGate::before { content: "ACCESS / CHURVOX"; position: fixed; left: 18px; bottom: 20px; writing-mode: vertical-rl; color: rgba(17,19,16,.16); font: 1000 11px/1 monospace; letter-spacing: .2em; z-index: 1; }
+          .cvWorldAccessGate .cvPublicAuthCard { border-radius: 30px !important; border-color: rgba(17,19,16,.15) !important; box-shadow: 0 30px 90px rgba(15,17,14,.14) !important; }
+          .cvWorldAccessGate .cvLoginControlPanel,.cvWorldAccessGate .cvPublicAuthPanel { border-radius: 34px !important; background: radial-gradient(circle at 85% 0%,rgba(243,107,33,.28),transparent 30%),linear-gradient(145deg,#080a09,#151a16 64%,#311707) !important; box-shadow: 0 35px 95px rgba(12,14,12,.26) !important; }
+          .cvWorldSignupGate .cvPublicSignupShell { max-width: 1380px; }
+          .cp26LegalWorld > section { background: linear-gradient(90deg,#111410 0 12px,#eee5d8 12px 100%) !important; }
+          .cp26LegalWorld article { position: relative; border-radius: 16px 34px 34px 16px !important; border-left: 7px solid var(--cvw-orange) !important; background: #fffdf8 !important; box-shadow: 0 30px 80px rgba(15,17,14,.12) !important; }
+          .cp26LegalWorld article::before { content: "CHURVOX RECORDS ARCHIVE"; position: absolute; top: 24px; right: 28px; color: rgba(17,19,16,.25); font: 900 9px/1 monospace; letter-spacing: .14em; }
+          .cvCustomerRoom { background: radial-gradient(circle at 85% 0%,rgba(243,107,33,.16),transparent 30%),linear-gradient(180deg,#fffaf2,#ece2d5) !important; }
+          .cvCustomerRoom > section:first-of-type { position: relative; }
+          .cvCustomerRoom > section:first-of-type::after { content: "CUSTOMER ROOM · OWNER REVIEWED"; position: absolute; right: 18px; top: 16px; color: rgba(17,19,16,.28); font: 900 9px/1 monospace; letter-spacing: .12em; }
+
+          .cpWorldClosing { width: min(1440px,calc(100% - 32px)); margin: 40px auto 0; padding: clamp(34px,5vw,68px); display: grid; grid-template-columns: 1fr auto; gap: 30px; align-items: end; border-radius: 34px; color: white; background: radial-gradient(circle at 85% 0%,rgba(243,107,33,.3),transparent 30%),linear-gradient(145deg,#080a09,#151a16 65%,#351806); }
+          .cpWorldClosing span { color: #ffbb88; font: 950 10px/1 monospace; text-transform: uppercase; letter-spacing: .13em; }
+          .cpWorldClosing h2 { margin: 14px 0 0; font-size: clamp(40px,5vw,78px); line-height: .9; letter-spacing: -.07em; }
+          .cpWorldClosing p { max-width: 700px; color: rgba(255,255,255,.6); font-size: 15px; line-height: 1.5; font-weight: 700; }
+          .cpWorldClosing > div:last-child { display: flex; flex-wrap: wrap; gap: 10px; }
+
+          .cpWorldFooter { width: 100%; margin-top: 70px; padding: 58px max(16px,calc((100vw - 1440px)/2)) 26px; color: white; background: #0c0f0c; border-radius: 40px 40px 0 0; }
+          .cpWorldFooterGrid { display: grid; grid-template-columns: 1.3fr repeat(3,1fr); gap: 35px; }
+          .cpWorldFooterLead p { max-width: 330px; color: rgba(255,255,255,.53); font-size: 12px; line-height: 1.5; font-weight: 700; }
+          .cpWorldFooterGroup b { display: block; color: #ffb77f; font: 950 9px/1 monospace; letter-spacing: .13em; text-transform: uppercase; }
+          .cpWorldFooterGroup nav { display: grid; gap: 9px; margin-top: 15px; }
+          .cpWorldFooterGroup a { color: rgba(255,255,255,.7); font-size: 12px; font-weight: 800; }
+          .cpWorldFooterBase { display: flex; justify-content: space-between; gap: 20px; margin-top: 42px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.09); color: rgba(255,255,255,.42); font-size: 10px; font-weight: 800; }
+
+          @media (max-width: 1080px) {
+            .cpWorldHero { grid-template-columns: 1fr; }
+            .cpProductHero,.cpWorldDemo .cp26PageHero { min-height: auto; }
+            .cpPriceLanes { grid-template-columns: 1fr 1fr; }
+            .cpPriceLane.featured { transform: none; }
+            .cpIndustryCore { grid-template-columns: repeat(3,1fr); }
+            .cpProductRoomGrid { grid-auto-rows: auto; }
+            .cpProductTile.wide,.cpProductTile.tall,.cpProductTile.mid,.cpProductTile.long { grid-column: span 6; grid-row: auto; min-height: 240px; }
+            .cpWorldFooterGrid { grid-template-columns: 1.4fr 1fr 1fr; }
+            .cpWorldFooterGroup:last-of-type { grid-column: 2 / -1; }
+          }
+
+          @media (max-width: 760px) {
+            .cpWorldTopbar { grid-template-columns: 1fr auto; gap: 10px; }
+            .cpWorldMenu { display: inline-flex; align-items: center; justify-content: center; }
+            .cpWorldNavLinks { position: absolute; top: calc(100% + 8px); left: 12px; right: 12px; display: none; padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: #0d100d; box-shadow: 0 25px 65px rgba(0,0,0,.35); }
+            .cpWorldNavLinks.open { display: grid; }
+            .cpWorldNavLinks a { justify-content: flex-start; }
+            .cpWorldTopbar .cp26NavActions { display: none; }
+            .cpWorldBrandCode { display: none; }
+            .cpWorldHero,.cpWorldSection { width: min(100% - 22px,1440px); }
+            .cpWorldLead h1 { font-size: clamp(47px,15vw,74px); }
+            .cpProductCutaway,.cpPriceSwitchboard,.cpIndustryBoard,.cpRadioRoom,.cpTrustInstrument { min-height: 560px; border-radius: 28px; }
+            .cpProductRoom { width: 145px; min-height: 105px; padding: 13px; }
+            .cpProductRoom.r1,.cpProductRoom.r3 { left: 15px; }.cpProductRoom.r2,.cpProductRoom.r4 { right: 15px; }
+            .cpProductBrain { width: 150px; height: 150px; }
+            .cpProductSignal { display: none; }
+            .cpRecordTrack,.cpPressureMap { grid-template-columns: 1fr; }
+            .cpRecordTrack article,.cpPressureMap article { min-height: 170px; }
+            .cpProductRoomGrid { grid-template-columns: 1fr; }
+            .cpProductTile.wide,.cpProductTile.tall,.cpProductTile.mid,.cpProductTile.long { grid-column: auto; }
+            .cpPocketSection,.cpDecisionLayout { grid-template-columns: 1fr; }
+            .cpPriceLanes,.cpAddonDrawers,.cpBlueprintGrid,.cpGuardGrid,.cpSupportBoard,.cpLedgerRows { grid-template-columns: 1fr; }
+            .cpPricingControl { align-items: stretch; flex-direction: column; }
+            .cpIndustryExamples { grid-template-columns: 1fr 1fr; }
+            .cpIndustryCore { grid-template-columns: 1fr 1fr; }
+            .cpContactChannel { grid-template-columns: 62px 1fr; }
+            .cpContactChannel a { grid-column: 1 / -1; }
+            .cpQuickDirectory { grid-template-columns: 1fr; }
+            .cpBlueprintGrid article:first-child { grid-row: auto; min-height: 270px; }
+            .cpLedgerRows article { grid-template-columns: 55px 1fr; }
+            .cpWorldClosing { width: calc(100% - 22px); grid-template-columns: 1fr; border-radius: 28px; }
+            .cpWorldFooterGrid { grid-template-columns: 1fr 1fr; }
+            .cpWorldFooterLead { grid-column: 1 / -1; }
+            .cpWorldFooterGroup:last-of-type { grid-column: auto; }
+            .cpWorldFooterBase { flex-direction: column; }
+            .cp26LegalWorld article::before,.cvCustomerRoom > section:first-of-type::after { display: none; }
+          }
+          EOF
+
+          cat > frontend/src/pages/marketing/ChurvoxPublicShell.jsx <<'EOF'
+          import React from "react";
+          import { Link } from "react-router-dom";
+          import { ChurvoxLogo } from "../../components/ChurvoxLogo";
+          import "./ChurvoxPublic2026.css";
+          import "./ChurvoxPublicWorld.css";
+          import "./ChurvoxPublicTouchTargets.css";
+          import "./ChurvoxPublicReadableHotfix.css";
+
+          const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
+          const navItems = [["/product","Product"],["/pricing","Pricing"],["/demo","Workday"],["/security","Trust"],["/contact","Contact"]];
+
+          export function PublicNav({ active = "" }) {
+            const [open, setOpen] = React.useState(false);
+            return <header className="cp26Topbar cpWorldTopbar">
+              <Link className="cp26Brand" to="/" aria-label="Churvox home" onClick={() => setOpen(false)}>
+                <span className="cp26BrandMark"><ChurvoxLogo variant="mark" size="lg" /></span>
+                <span className="cp26BrandWords"><b>Churvox</b><small>the living office for service businesses</small></span>
+                <span className="cpWorldBrandCode"><i />building online</span>
+              </Link>
+              <button className="cpWorldMenu" type="button" aria-expanded={open} onClick={() => setOpen(value => !value)}>Explore</button>
+              <nav className={`cp26NavLinks cpWorldNavLinks${open ? " open" : ""}`} aria-label="Public navigation">
+                {navItems.map(([to,label]) => <Link key={to} to={to} aria-current={active === to ? "page" : undefined} onClick={() => setOpen(false)}>{label}</Link>)}
+                <a href="/testers/">Testers</a>
+              </nav>
+              <div className="cp26NavActions">
+                <span className="cpWorldOnline"><i />office ready</span>
+                <Link className="cp26TextLink" to="/login">Log in</Link>
+                <Link className="cp26Button cp26ButtonSmall" to={DEFAULT_TRIAL_PATH}>Start free trial</Link>
+              </div>
+            </header>;
+          }
+
+          export function PublicFooter() {
+            return <footer className="cpWorldFooter">
+              <div className="cpWorldFooterGrid">
+                <div className="cpWorldFooterLead cp26FooterLead"><span className="cp26BrandMark"><ChurvoxLogo variant="mark" size="md" /></span><div><b>Churvox</b><p>A connected digital office that prepares the admin and brings the real decisions back to the owner.</p></div></div>
+                <div className="cpWorldFooterGroup"><b>Walk the building</b><nav><Link to="/product">Product rooms</Link><Link to="/demo">Workday simulator</Link><Link to="/pricing">Capacity switchboard</Link><Link to="/industries/landscaping">Industry routes</Link></nav></div>
+                <div className="cpWorldFooterGroup"><b>Trust and help</b><nav><Link to="/about">About</Link><Link to="/security">Security</Link><Link to="/support">Support</Link><Link to="/refunds-cancellations">Billing and cancellations</Link><Link to="/contact">Contact</Link></nav></div>
+                <div className="cpWorldFooterGroup"><b>Access and records</b><nav><Link to="/login">Log in</Link><Link to={DEFAULT_TRIAL_PATH}>Start trial</Link><Link to="/legal/privacy">Privacy</Link><Link to="/legal/terms">Terms</Link><Link to="/delete-account">Delete account</Link></nav></div>
+              </div>
+              <div className="cpWorldFooterBase"><span>© {new Date().getFullYear()} Churvox · hello@churvox.com</span><span>Nothing important sends, charges, syncs or changes without owner approval.</span></div>
+            </footer>;
+          }
+
+          export function Eyebrow({ children, light = false }) { return <span className={`cp26Eyebrow${light ? " light" : ""}`}>{children}</span>; }
+          export function SectionHeading({ eyebrow, title, text, align = "left" }) { return <header className={`cp26SectionHeading ${align === "center" ? "center" : ""}`}>{eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}<h2>{title}</h2>{text ? <p>{text}</p> : null}</header>; }
+
+          export function CommandPreview() {
+            const queue = [["Invoice check","Example client","$340 example","Money"],["Worker update","Example cleaning job","Photo missing","Quality"],["Client reply","Example Friday booking","Time needed","Bookings"]];
+            return <aside className="cp26CommandPreview" aria-label="Example Churvox Command workspace"><div className="cp26PreviewTop"><div><small>Example workspace · sample data only</small><strong>Command</strong></div><span>3 example decisions</span></div><div className="cp26PreviewNav"><span>Today</span><span className="active">Command</span><span>Jobs</span><span>Clients</span><span>Money</span></div><div className="cp26PreviewBody"><section className="cp26PreviewQueue"><small>Example items prepared for review</small>{queue.map(([title,client,detail,tray],index)=><article key={title} className={index===0?"selected":""}><div><b>{title}</b><span>{client}</span></div><em>{tray}</em><strong>{detail}</strong></article>)}</section><section className="cp26PreviewSlip"><small>Example owner decision slip</small><h3>Invoice check</h3><dl><div><dt>Client</dt><dd>Example client</dd></div><div><dt>Completed work</dt><dd>Example hedge trim</dd></div><div><dt>Checked</dt><dd>Job, price, proof</dd></div><div><dt>Still needed</dt><dd>Confirm example green-waste amount</dd></div></dl><div className="cp26PreviewActions"><span>Approve</span><span>Edit</span><span>Park</span></div><p>Preview only. Nothing is sent, synced, charged or changed from this example.</p></section></div></aside>;
+          }
+
+          export const serviceTypes = ["Lawn care","Landscaping","Cleaning","Property maintenance","Handyman","Painting","Plumbing","Electrical","Pest control","Gardening","Hair & beauty","Mobile services"];
+          export const coreAreas = [["Today","A short owner briefing instead of another dashboard to manage."],["Command","One approval desk for decisions, corrections and exceptions."],["Jobs","Schedule, recurring work, proof, notes and job status stay together."],["Clients","Useful history and preferences stay attached to the relationship."],["Workers","Simple field updates feed the office record without double handling."],["Quotes & invoices","Prepared from real client and job information, ready for review."]];
+          EOF
+
+          cat > frontend/src/pages/marketing/ExecutiveFeaturesPage.jsx <<'EOF'
+          import React from "react";
+          import { Link } from "react-router-dom";
+          import { PublicNav, PublicFooter, serviceTypes } from "./ChurvoxPublicShell";
+
+          const ROOMS = [
+            ["Today","The morning handover","What changed, what is blocked and the one best move—without opening six pages.","01","wide"],
+            ["Command","The owner desk","Approve, edit, park or ask. Every consequence and missing fact stays visible.","02","tall"],
+            ["Jobs","The work record","Schedule, recurrence, price, worker, notes and proof remain one story.","03","mid"],
+            ["Clients","The memory room","Preferences, promises, access notes and history follow the relationship.","04","mid"],
+            ["Workers","The field link","Simple phone updates flow back into the office without making workers run the whole system.","05","long"],
+          ];
+          const FLOW = [["01","Event","A request, update, problem or payment arrives."],["02","Connect","The right job, client, worker, message and money records are joined."],["03","Check","Ripple effects, missing facts and risk are compared."],["04","Prepare","Churvox builds the safest editable next step."],["05","Approve","The owner decides what actually happens."]];
+          const DECISIONS = [["A","Approve","Move the prepared internal work forward."],["E","Edit","Correct the detail before anything changes."],["P","Park","Hold it without losing the trail."],["?","Ask","Get the missing fact instead of guessing."]];
+
+          function ProductBuilding(){return <aside className="cpProductCutaway" aria-label="Churvox connected office cutaway"><div className="cpProductBrain"><small>Churvox</small><b>Office brain</b><span>checks the connected business</span></div><div className="cpProductRoom r1"><small>Bookings room</small><b>Requests prepared</b><p>Timing, recurrence and client intent.</p></div><div className="cpProductRoom r2"><small>Field room</small><b>Workers moving</b><p>Status, proof and problems.</p></div><div className="cpProductRoom r3"><small>Money room</small><b>Value protected</b><p>Quotes, invoices and extras.</p></div><div className="cpProductRoom r4"><small>Owner room</small><b>Real decisions only</b><p>Approve, edit, park or ask.</p></div><i className="cpProductSignal s1"/><i className="cpProductSignal s2"/><i className="cpProductSignal s3"/><i className="cpProductSignal s4"/></aside>}
+
+          export default function ExecutiveFeaturesPage(){return <main className="cp26Site cpWorld cpWorldProduct" data-room="product" data-version="CHURVOX_PUBLIC_WORLD_PRODUCT_20260724">
+            <PublicNav active="/product"/>
+            <section className="cpWorldHero cpProductHero"><div className="cpWorldLead"><span className="cpWorldRouteCode">Room 01 · Product</span><h1>A digital office with rooms that <em>actually talk.</em></h1><p>Churvox is not a dashboard with the same cards repeated everywhere. Each room has one operating job, and the records travel between them as the business changes.</p><div className="cpWorldActions"><Link className="cp26Button" to="/demo">Run a workday</Link><Link className="cp26Button cp26ButtonGhost" to="/signup?plan=operator">Start free trial</Link></div><div className="cpWorldFacts"><span>Connected records</span><span>Owner approval</span><span>Field-to-office handover</span><span>No silent automation</span></div></div><ProductBuilding/></section>
+
+            <section className="cpWorldSection cpRecordRiver"><header className="cpWorldSectionHead"><span>The record river</span><h2>One event travels through the whole office.</h2><p>Churvox checks what that event touches before it prepares a response. That is how a worker problem becomes a safe recovery plan instead of four disconnected alerts.</p></header><div className="cpRecordTrack">{FLOW.map(([n,t,p])=><article key={n}><b>{n}</b><h3>{t}</h3><p>{p}</p></article>)}</div></section>
+
+            <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Purpose-built rooms</span><h2>Different work deserves different space.</h2><p>The visual language stays Churvox, but each page changes shape around the job it needs to do.</p></header><div className="cpProductRoomGrid">{ROOMS.map(([title,sub,text,code,size])=><article className={`cpProductTile ${size}`} data-code={code} key={title}><h3>{title}</h3><p><b>{sub}.</b> {text}</p></article>)}</div></section>
+
+            <section className="cpWorldSection cpPocketSection"><div className="cpPocketPhone"><header><span>9:41</span><b>Churvox Field</b><span>●</span></header><div className="cpPocketJob"><small>Today · next job</small><h3>Riverside tidy</h3><p>Gate code, scope, client note and latest office direction are already attached.</p></div><div className="cpPocketSteps"><span>Acknowledge job</span><span>Start work</span><span>Add note or photo</span><span>Complete and return proof</span></div></div><div className="cpWorldLead"><span className="cpWorldRouteCode">Room 05 · Field link</span><h1 style={{fontSize:"clamp(46px,5.5vw,84px)"}}>Small in the worker’s hand. <em>Complete in the office.</em></h1><p>Workers should not operate the owner system. They receive the work, update what happened and return a clean record. Churvox handles the handover.</p></div></section>
+
+            <section className="cpWorldSection cpDecisionDesk"><header className="cpWorldSectionHead"><span>Room 02 · Command</span><h2>The owner desk has four honest choices.</h2><p>No vague “automation complete” message. The owner sees the evidence, the consequences and what is still uncertain.</p></header><div className="cpDecisionLayout"><div className="cpDecisionKeys">{DECISIONS.map(([key,title,text])=><article key={key}><b>{key}</b><div><h3>{title}</h3><p>{text}</p></div></article>)}</div><article className="cpDecisionSlip"><small>Prepared decision · extra work found</small><h3>Protect $680 before invoicing.</h3><dl><div><dt>What changed</dt><dd>Worker note and photos show an extra retaining-wall section.</dd></div><div><dt>Records checked</dt><dd>Job, quote, worker time and client messages.</dd></div><div><dt>Risk</dt><dd>The completed extra may be missed if the invoice is prepared now.</dd></div><div><dt>Prepared move</dt><dd>Add an editable variation and hold the invoice draft.</dd></div></dl><div className="cpDecisionButtons"><span>Approve variation</span><span>Edit amount</span><span>Park</span><span>Ask worker</span></div></article></div></section>
+
+            <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Built for moving businesses</span><h2>Same brain. The business’s own language.</h2></header><div className="cpIndustryDirectory">{serviceTypes.map((type,index)=><Link key={type} to={`/demo?industry=${encodeURIComponent(type.toLowerCase().replace(/[^a-z0-9]+/g,"-"))}`}><span>Route {String(index+1).padStart(2,"0")}</span>{type}</Link>)}</div></section>
+
+            <section className="cpWorldClosing"><div><span>Next room · Workday simulator</span><h2>Watch the office respond to one real-looking job.</h2><p>The public demo uses clearly labelled sample information. Nothing is added to an account and nothing is sent.</p></div><div><Link className="cp26Button" to="/demo">Run the simulator</Link><Link className="cp26Button cp26ButtonGhost" to="/pricing">Open pricing</Link></div></section>
+            <PublicFooter/>
+          </main>}
+          EOF
+
+          cat > frontend/src/pages/marketing/ExecutivePricingPage.jsx <<'EOF'
+          import React from "react";
+          import { Link } from "react-router-dom";
+          import { CHURVOX_PLANS, COUNTRY_OPTIONS, addonPriceForCountry, detectCountryCode, getCountryMeta, pricePlanForCountry, pricingNotesForCountry, normalizeCountry } from "../../config/churvoxPlans";
+          import { PublicNav, PublicFooter } from "./ChurvoxPublicShell";
+
+          function cleanFeature(item){return String(item||"").replace(/AI Operator Actions/gi,"prepared admin actions").replace(/AI Operator/gi,"prepared admin").replace(/Customer Follow-Up Brain/gi,"customer follow-up tools")}
+          function featuresFor(plan){const list=plan.features||plan.includes||[];return Array.isArray(list)?list.slice(0,6).map(cleanFeature):[]}
+          function signupPath(country,plan){return `/signup?${new URLSearchParams({country,plan:String(plan?.code||plan?.key||plan?.name||"").toLowerCase()})}`}
+          const PRESSURE=[["Start","The records are scattered","Bring jobs, clients, quotes and invoices into one place."],["Crew","The field is disconnected","Add workers, proof, team records and messages."],["Operator","The owner is the bottleneck","Let Churvox prepare admin and bring decisions to Command."],["Command","The operation needs deeper control","Add payroll review, accounting handoff and larger-team headroom."]];
+
+          export default function ExecutivePricingPage(){
+            const [country,setCountry]=React.useState(()=>{try{const p=new URLSearchParams(window.location.search||"");return normalizeCountry(p.get("country")||detectCountryCode())}catch{return detectCountryCode()}});
+            React.useEffect(()=>{try{window.localStorage.setItem("churvox:billing-country",country)}catch{}},[country]);
+            const countryMeta=getCountryMeta(country); const plans=React.useMemo(()=>CHURVOX_PLANS.map(p=>pricePlanForCountry(p,country)),[country]); const accounting=addonPriceForCountry("accounting_sync",country); const growth=addonPriceForCountry("growth_pack",country); const notes=pricingNotesForCountry(country);
+            return <main className="cp26Site cpWorld cpWorldPricing" data-room="pricing" data-version="CHURVOX_PUBLIC_WORLD_PRICING_20260724">
+              <PublicNav active="/pricing"/>
+              <section className="cpWorldHero"><div className="cpWorldLead"><span className="cpWorldRouteCode">Room 02 · Capacity switchboard</span><h1>Choose how much office you need <em>behind you.</em></h1><p>Do not buy a feature pile. Choose the level that removes the pressure currently landing on the owner, then move up only when the business earns it.</p><div className="cpWorldActions"><Link className="cp26Button" to="/signup?plan=operator">Start 14-day trial</Link><Link className="cp26Button cp26ButtonGhost" to="/demo">Run the workday</Link></div><div className="cpWorldFacts"><span>14 days</span><span>No card upfront</span><span>Published base prices stay visible</span></div></div><aside className="cpPriceSwitchboard"><header><span>Admin load monitor</span><b>Owner control: on</b></header><div className="cpPressureGauge"><div><small>recommended room</small><b>03</b><span>Operator</span></div></div><div className="cpSwitchRows"><div><span>Prepared admin</span><b>High</b></div><div><span>Worker coordination</span><b>Connected</b></div><div><span>Owner decisions</span><b>Command</b></div><div><span>Silent sends</span><b>0</b></div></div></aside></section>
+
+              <section className="cpWorldSection"><div className="cpPricingControl"><header className="cpWorldSectionHead" style={{marginBottom:0}}><span>Live plan board</span><h2>Four levels. One control model.</h2><p>Showing {countryMeta.currency} pricing for {countryMeta.label}. {notes.join(" ")}</p></header><label><b>Pricing region</b><select value={country} onChange={e=>setCountry(normalizeCountry(e.target.value))}>{COUNTRY_OPTIONS.map(item=><option key={item.code} value={item.code}>{item.label} · {item.currency}</option>)}</select></label></div><div className="cpPriceLanes">{plans.map((plan,index)=>{const featured=String(plan?.name||"").toLowerCase()==="operator";return <article key={plan.name} className={`cpPriceLane${featured?" featured":""}`} data-plan-card data-plan-name={plan.name} data-lane={`0${index+1}`}>{featured?<span className="badge">Most popular</span>:<span className="badge" style={{visibility:"hidden"}}>Plan</span>}<h3>{plan.name}</h3><div className="price">{plan.priceLabel}</div><div className="tax">{plan.taxInclusiveLabel||" "}</div><p>{cleanFeature(plan.summary)}</p><ul>{featuresFor(plan).map(feature=><li key={feature}>{feature}</li>)}</ul><Link className={`cp26Button${featured?"":" cp26ButtonGhost"}`} to={signupPath(country,plan)} onClick={()=>{try{window.localStorage.setItem("churvox:billing-plan",String(plan?.code||plan?.key||plan?.name||"operator").toLowerCase())}catch{}}}>Start free trial</Link></article>})}</div></section>
+
+              <section className="cpWorldSection cpRecordRiver"><header className="cpWorldSectionHead"><span>Choose by pressure</span><h2>What keeps landing back on the owner?</h2><p>The best plan is the one that removes the current bottleneck without hiding important decisions.</p></header><div className="cpPressureMap">{PRESSURE.map(([name,title,text])=><article key={name}><small>{name}</small><h3>{title}</h3><p>{text}</p></article>)}</div></section>
+
+              <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Workshop drawers</span><h2>Add-ons stay separate, labelled and optional.</h2></header><div className="cpAddonDrawers"><article className="cpAddonDrawer" data-plan-card data-plan-name="Command Growth Pack"><span>Capacity drawer</span><h3>Command Growth Pack</h3><b>{growth.priceLabel}</b><p>{growth.taxInclusiveLabel} Extra active-team capacity and additional Command headroom.</p></article><article className="cpAddonDrawer" data-plan-card data-plan-name="Accounting Sync Add-on"><span>Accounting drawer</span><h3>Accounting Sync Add-on</h3><b>{accounting.priceLabel}</b><p>{accounting.taxInclusiveLabel} Optional owner-controlled draft invoice sync where available.</p></article><article className="cpAddonDrawer"><span>Human help</span><h3>Not sure which room?</h3><p>Email the team size and the admin problem that hurts most. No sales call required.</p><a href="mailto:hello@churvox.com">hello@churvox.com</a></article></div></section>
+
+              <section className="cpWorldClosing"><div><span>14-day trial · no card upfront</span><h2>Let the office earn its place.</h2><p>Use one real job, one worker update and one owner decision to see whether Churvox actually removes work.</p></div><div><Link className="cp26Button" to={signupPath(country,{code:"operator"})}>Start free trial</Link><Link className="cp26Button cp26ButtonGhost" to="/demo">Open demo</Link></div></section>
+              <PublicFooter/>
+            </main>;
+          }
+          EOF
+
+          cat > frontend/src/pages/marketing/IndustryPage.jsx <<'EOF'
+          import React from "react";
+          import { Link, Navigate, useParams } from "react-router-dom";
+          import { getIndustryBySlug, professions } from "./PublicProfessionSections";
+          import { PublicNav, PublicFooter, coreAreas } from "./ChurvoxPublicShell";
+
+          const HOME_TITLE="Churvox — Owner-controlled job admin for service businesses"; const HOME_DESCRIPTION="Churvox prepares jobs, worker updates, messages, quotes, invoices and follow-ups for the service-business owner to review and approve.";
+          function setMeta(attribute,key,content){let node=document.head.querySelector(`meta[${attribute}="${key}"]`);if(!node){node=document.createElement("meta");node.setAttribute(attribute,key);document.head.appendChild(node)}node.setAttribute("content",content)}
+          function setCanonical(href){let node=document.head.querySelector('link[rel="canonical"]');if(!node){node=document.createElement("link");node.setAttribute("rel","canonical");document.head.appendChild(node)}node.setAttribute("href",href)}
+
+          export default function IndustryPage(){const {slug}=useParams(); const industry=getIndustryBySlug(slug);
+            React.useEffect(()=>{if(!industry||typeof document==="undefined")return;const canonical=`https://www.churvox.com/industries/${encodeURIComponent(slug)}`;const title=`${industry.title} job management software | Churvox`;const description=`${industry.intro} Churvox keeps important communication and money steps under owner approval.`;document.title=title;setCanonical(canonical);setMeta("name","description",description);setMeta("property","og:title",title);setMeta("property","og:description",description);setMeta("property","og:url",canonical);return()=>{document.title=HOME_TITLE;setCanonical("https://www.churvox.com/");setMeta("name","description",HOME_DESCRIPTION)}},[industry,slug]);
+            if(!industry)return <Navigate to="/product" replace/>;
+            return <main className="cp26Site cpWorld cpWorldIndustry" data-room="industry" data-version="CHURVOX_PUBLIC_WORLD_INDUSTRY_20260724"><PublicNav active="/product"/><section className="cpWorldHero"><div className="cpWorldLead"><span className="cpWorldRouteCode">Industry route · {industry.short}</span><h1>{industry.headline}</h1><p>{industry.intro} The words and examples change for the work. The connected office and owner-control rules do not.</p><div className="cpWorldActions"><Link className="cp26Button" to={`/demo?industry=${encodeURIComponent(slug)}`}>Run this workday</Link><Link className="cp26Button cp26ButtonGhost" to={`/signup?industry=${encodeURIComponent(slug)}`}>Start 14-day trial</Link></div><div className="cpWorldFacts"><span>Same Churvox brain</span><span>{industry.title} language</span><span>Owner approval</span></div></div><aside className="cpIndustryBoard"><header><small>Live route board · examples only</small><b>{industry.short}</b></header><div className="cpIndustryRoute">{industry.flow.map((item,index)=><article key={item}><i>{String(index+1).padStart(2,"0")}</i><b>{item}</b><span>{index===industry.flow.length-1?"Owner review":"Office handover"}</span></article>)}</div><div className="cpIndustryExamples">{industry.examples.slice(0,5).map(item=><span key={item}>{item}</span>)}</div></aside></section>
+
+            <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Same operating brain</span><h2>The language changes. The rooms stay connected.</h2><p>Each room keeps one responsibility so the business is not forced into a generic page template.</p></header><div className="cpIndustryCore">{coreAreas.map(([title,text])=><article key={title}><b>{title}</b><p>{text}</p></article>)}</div></section>
+
+            <section className="cpWorldSection cpRecordRiver"><header className="cpWorldSectionHead"><span>What stays controlled</span><h2>From request to money without losing the trail.</h2><p>Jobs, client information, field updates, proof and money remain connected. Important external actions return to Command.</p></header><div className="cpRecordTrack">{["Request captured","Job prepared","Worker updated","Proof checked","Owner approved"].map((item,index)=><article key={item}><b>0{index+1}</b><h3>{item}</h3><p>{index===4?"The owner approves, edits, parks or asks for the missing fact.":"The record moves to the next room without being rebuilt from scratch."}</p></article>)}</div></section>
+
+            <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Other routes</span><h2>Choose the closest operating fit.</h2><p>These are configuration examples, not customer endorsements or usage claims.</p></header><div className="cpIndustryDirectory">{professions.map(([title,,industrySlug],index)=><Link key={industrySlug} to={`/industries/${industrySlug}`} aria-current={industrySlug===slug?"page":undefined}><span>Route {String(index+1).padStart(2,"0")}</span>{title}{industrySlug===slug?" · Current":""}</Link>)}</div></section>
+
+            <section className="cpWorldClosing"><div><span>{industry.title} route ready</span><h2>Test the route with your own records.</h2><p>Demo information is clearly labelled. Trial information belongs only to the business account that enters it.</p></div><div><Link className="cp26Button" to={`/demo?industry=${encodeURIComponent(slug)}`}>Open demo</Link><Link className="cp26Button cp26ButtonGhost" to={`/signup?industry=${encodeURIComponent(slug)}`}>Start free trial</Link></div></section><PublicFooter/></main>;
+          }
+          EOF
+
+          cat > frontend/src/pages/marketing/ExecutiveContactPage.jsx <<'EOF'
+          import React from "react";
+          import { Link } from "react-router-dom";
+          import { PublicNav, PublicFooter } from "./ChurvoxPublicShell";
+          const channels=[["01","Product and trial help","Tell us what business you run, what admin is slowing you down and what you want to test.","mailto:hello@churvox.com?subject=Churvox%20trial%20help","Email trial support"],["02","Tester access","Include the invited email and where setup stopped.","mailto:hello@churvox.com?subject=Churvox%20tester%20access","Email tester support"],["03","Technical issue","Send the route, what you clicked, what happened and a screenshot when useful.","mailto:hello@churvox.com?subject=Churvox%20technical%20issue","Report an issue"]];
+          const routes=[["Product demo","/demo","See the connected office without signing in."],["Pricing","/pricing","Open the capacity switchboard."],["Start trial","/signup?plan=operator","Create an owner account with no card upfront."],["Log in","/login","Open the Churvox access gate."]];
+          export default function ExecutiveContactPage(){return <main className="cp26Site cpWorld cpWorldContact" data-room="contact" data-version="CHURVOX_PUBLIC_WORLD_CONTACT_20260724"><PublicNav active="/contact"/><section className="cpWorldHero"><div className="cpWorldLead"><span className="cpWorldRouteCode">Room 06 · Radio room</span><h1>Send the signal with the detail that <em>actually helps.</em></h1><p>Setup question, tester access, product fit or a technical problem—tell us the business, the page and what you expected. Email only. No forced sales call.</p><div className="cpWorldActions"><a className="cp26Button" href="mailto:hello@churvox.com">Email hello@churvox.com</a><Link className="cp26Button cp26ButtonGhost" to="/demo">Open the workday</Link></div><div className="cpWorldFacts"><span>Email support</span><span>Business context first</span><span>Never send passwords or full card details</span></div></div><aside className="cpRadioRoom"><header><span>Radio room listening</span><b>hello@churvox.com</b></header><div className="cpRadioWave">{Array.from({length:7}).map((_,i)=><i key={i}/>)}</div><div className="cpRadioInbox"><article><i/><b>Trial fit question</b><span>Ready for context</span></article><article><i/><b>Tester access check</b><span>Invited email needed</span></article><article><i/><b>Visual or technical fault</b><span>Route + screenshot</span></article></div></aside></section>
+            <section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Choose a channel</span><h2>One clean first message beats five follow-ups.</h2></header><div className="cpContactChannels">{channels.map(([n,title,text,href,label])=><article className="cpContactChannel" key={title}><b>{n}</b><div><h3>{title}</h3><p>{text}</p></div><a href={href}>{label}</a></article>)}</div></section>
+            <section className="cpWorldSection cpRecordRiver"><header className="cpWorldSectionHead"><span>Building directory</span><h2>Go straight to the room you need.</h2></header><div className="cpQuickDirectory">{routes.map(([title,to,text],index)=><Link to={to} key={title}><em>Room 0{index+1}</em><b>{title}</b><span>{text}</span></Link>)}</div></section>
+            <section className="cpWorldClosing"><div><span>Still not sure?</span><h2>Run the workday first.</h2><p>The demo usually answers the product question. Email the part that still does not make sense.</p></div><div><Link className="cp26Button" to="/demo">Open demo</Link><a className="cp26Button cp26ButtonGhost" href="mailto:hello@churvox.com">Email Churvox</a></div></section><PublicFooter/></main>}
+          EOF
+
+          cat > frontend/src/pages/marketing/PublicTrustPages.jsx <<'EOF'
+          import React from "react";
+          import { Link } from "react-router-dom";
+          import { PublicNav, PublicFooter } from "./ChurvoxPublicShell";
+          const EMAIL="hello@churvox.com";
+          const roomInfo={blueprint:["Blueprint room","System understood","Connected records","Owner control","Purpose-built rooms"],guard:["Guard room","Controls active","Authenticated routes","Business isolation","No silent actions"],service:["Service hatch","Help routes open","Password reset","Tester support","Technical reports"],ledger:["Ledger room","Billing visible","Trial terms","Cancellation path","Refund review"]};
+          function Page({active,room,eyebrow,title,intro,children,closingTitle,closingText}){const info=roomInfo[room];return <main className="cp26Site cpWorld cpTrustRoom" data-room={room}><PublicNav active={active}/><section className="cpWorldHero"><div className="cpWorldLead"><span className="cpWorldRouteCode">{info[0]}</span><h1>{title}</h1><p>{intro}</p><div className="cpWorldActions"><a className="cp26Button" href={`mailto:${EMAIL}`}>Email {EMAIL}</a><Link className="cp26Button cp26ButtonGhost" to="/pricing">Open pricing</Link></div></div><aside className="cpTrustInstrument"><header><span>{info[0]}</span><b>Churvox standard</b></header><div className="dial"><div><small>current state</small><b>{info[1]}</b></div></div><ul>{info.slice(2).map(item=><li key={item}><span>{item}</span><b>On</b></li>)}</ul></aside></section>{children}<section className="cpWorldClosing"><div><span>Clear before checkout</span><h2>{closingTitle}</h2><p>{closingText}</p></div><div><Link className="cp26Button" to="/signup?plan=operator">Start free trial</Link><Link className="cp26Button cp26ButtonGhost" to="/contact">Contact Churvox</Link></div></section><PublicFooter/></main>}
+          export function AboutPage(){return <Page active="/about" room="blueprint" title="See how the Churvox building is put together." intro="Churvox reduces the admin between finishing the work and running the business. The records stay connected; Command keeps the important decisions deliberate." closingTitle="Walk the office before creating an account." closingText="The public demo uses clearly labelled sample records and does not add anything to an account."><section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Original blueprint</span><h2>Less double handling. Fewer scattered decisions.</h2></header><div className="cpBlueprintGrid"><article><b>The living-office idea</b><span>Service businesses do not need another set of tabs to babysit. Churvox follows the business story across jobs, people, promises, messages and money, then prepares the safest next move.</span></article><article><b>Connected records</b><span>Client, job, worker, proof, quote and invoice information remains connected.</span></article><article><b>Prepared admin</b><span>Routine next steps are built from records instead of guessed or silently executed.</span></article><article><b>Owner approval</b><span>Command keeps important decisions visible, editable and deliberate.</span></article><article><b>Business language</b><span>Jobs, visits, appointments, cleaners, stylists and technicians can use wording that fits.</span></article></div></section></Page>}
+          export function SecurityPage(){return <Page active="/security" room="guard" title="Nothing important should happen invisibly." intro="Security is not only a password screen. Churvox combines authenticated access, business isolation, cautious money behaviour and deliberate owner approval." closingTitle="Have a security or privacy question?" closingText="Send the route, concern and expected behaviour to hello@churvox.com so it can be checked properly."><section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Guard stations</span><h2>Practical controls for a working service business.</h2></header><div className="cpGuardGrid"><article><b>Account access</b><span>Owner, office, payroll and worker experiences use authenticated, role-aware routes.</span></article><article><b>Business isolation</b><span>Business records are filtered by the authenticated business context.</span></article><article><b>Stripe checkout</b><span>Stripe handles card entry. Churvox receives subscription status rather than raw card details.</span></article><article><b>Owner approval</b><span>Command is the approval desk for decisions that need deliberate review.</span></article><article><b>Accounting caution</b><span>Draft invoice sync remains owner-controlled. Churvox does not file tax.</span></article><article><b>Payroll limits</b><span>Payroll review does not submit to government agencies or create bank payout files.</span></article></div></section></Page>}
+          export function PublicSupportPage(){return <Page active="/support" room="service" title="The help hatch stays open even when the app does not." intro="Use public support for signup, billing, tester access, login, password reset or a fault that blocks the owner or worker app." closingTitle="Still deciding whether Churvox fits?" closingText="Open the demo and pricing first, then send the question that remains."><section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Public help routes</span><h2>Go straight to the right repair path.</h2></header><div className="cpSupportBoard"><article><b>Login or password</b><span>Use password reset first. Contact support if the email does not arrive or the link fails.</span><Link to="/forgot-password">Reset password →</Link></article><article><b>Billing or cancellation</b><span>Check the cancellation record and send the account email if billing status does not update.</span><Link to="/refunds-cancellations">Open billing room →</Link></article><article><b>Tester access</b><span>Use the exact invited email and include it when asking for help.</span><a href={`mailto:${EMAIL}?subject=Churvox%20tester%20access`}>Email tester support →</a></article><article><b>Technical problem</b><span>Include a screenshot, route, click and expected result. Remove private client details where possible.</span><a href={`mailto:${EMAIL}?subject=Churvox%20technical%20issue`}>Report a problem →</a></article></div></section></Page>}
+          export function RefundsCancellationsPage(){const rows=[["01","Trial","The selected trial length and price are shown before Stripe checkout is completed."],["02","Cancellation","Request cancellation before renewal using the account email."],["03","Refund review","Requests are reviewed against the billing record, timing, access and applicable law."],["04","Checkout cancelled","Leaving Stripe before completion should not activate or change the plan."],["05","Incorrect charge","Contact Churvox promptly with the date, amount and business name—never full card details."],["06","Plan changes","Plans and add-ons remain visible and should not silently alter the published base price."]];return <Page active="/refunds-cancellations" room="ledger" title="Billing should read like a ledger, not a trap." intro="Trial, cancellation, plan changes and refund review stay visible in plain language. Use the account email so the correct billing record can be identified." closingTitle="Need a billing record checked?" closingText="Email hello@churvox.com from the account email and include the business name and plan involved."><section className="cpWorldSection"><header className="cpWorldSectionHead"><span>Ledger entries</span><h2>Know what happens before starting checkout.</h2></header><div className="cpLedgerRows">{rows.map(([n,title,text])=><article key={n}><i>{n}</i><div><b>{title}</b><span>{text}</span></div></article>)}</div></section></Page>}
+          EOF
+
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          demo=Path('frontend/src/pages/marketing/PublicDemoPage.jsx')
+          text=demo.read_text()
+          text=text.replace('<main className="cp26Site">','<main className="cp26Site cpWorld cpWorldDemo" data-room="demo">',1)
+          text=text.replace('<section className="cp26PageHero">','<section className="cp26PageHero cpDemoHero">',1)
+          text=text.replace('<section className="demoAppShell slimDemoShell"','<section className="demoAppShell slimDemoShell cpDemoMachine"',1)
+          text=text.replace('<section className="cp26Closing">','<section className="cp26Closing cpWorldClosing">',1)
+          demo.write_text(text)
+
+          login=Path('frontend/src/pages/auth/LoginPage.js')
+          text=login.read_text().replace('cvPublicAuth cvRealAppLogin cvChurvoxLogin ${appMode ? "cvLoginAppOnly" : ""}','cvPublicAuth cvRealAppLogin cvChurvoxLogin cvWorldAccessGate ${appMode ? "cvLoginAppOnly" : ""}',1)
+          login.write_text(text)
+
+          signup=Path('frontend/src/pages/auth/SignupPage.js')
+          text=signup.read_text().replace('<main className="cvPublicAuth"','<main className="cvPublicAuth cvWorldAccessGate cvWorldSignupGate"',1)
+          signup.write_text(text)
+
+          for name in ['PrivacyPolicyPage.js','TermsOfServicePage.js','AccountDeletionPage.js']:
+              path=Path('frontend/src/pages/legal')/name
+              if not path.exists(): continue
+              text=path.read_text()
+              text=text.replace('className="cp26Site"','className="cp26Site cp26LegalWorld"')
+              path.write_text(text)
+
+          for name in ['PublicQuotePage.js','PublicInvoicePage.js','PublicClientPortalPage.js','PublicProofPackPage.js','PublicRequestPage.js']:
+              path=Path('frontend/src/pages/public')/name
+              if not path.exists(): continue
+              text=path.read_text()
+              if 'cvCustomerRoom' not in text:
+                  text=re.sub(r'<main className="([^"]*)"',lambda m:f'<main className="{m.group(1)} cvCustomerRoom"',text)
+              path.write_text(text)
+          PY
+
+      - name: Install and build the full frontend
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+
+      - name: Guard the locked product rules
+        shell: bash
+        run: |
+          grep -F 'Start' frontend/src/pages/marketing/ExecutivePricingPage.jsx >/dev/null
+          grep -F 'Crew' frontend/src/pages/marketing/ExecutivePricingPage.jsx >/dev/null
+          grep -F 'Operator' frontend/src/pages/marketing/ExecutivePricingPage.jsx >/dev/null
+          grep -F 'Command' frontend/src/pages/marketing/ExecutivePricingPage.jsx >/dev/null
+          grep -F 'Nothing important sends, charges, syncs or changes without owner approval.' frontend/src/pages/marketing/ChurvoxPublicShell.jsx >/dev/null
+          grep -F 'CHURVOX_PLANS' frontend/src/pages/marketing/ExecutivePricingPage.jsx >/dev/null
+
+      - name: Commit the public world
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/pages/marketing frontend/src/pages/auth frontend/src/pages/legal frontend/src/pages/public
+          git commit -m 'Turn every public route into the Churvox building'
+          git push
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report completion
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`Whole-site public world build passed and was committed. Product, pricing, demo, industry, trust, support, billing, contact, login, signup, legal and customer-facing pages now share the Churvox building identity while keeping route-specific layouts. Commit: \`${process.env.COMMIT || 'unknown'}\``});
