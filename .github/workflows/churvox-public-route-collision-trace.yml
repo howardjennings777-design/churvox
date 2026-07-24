@@ -1,0 +1,58 @@
+name: Churvox public route collision trace
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  trace:
+    if: startsWith(github.event.issue.title, '[churvox-public-route-collision-trace]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Trace redirects and rewrites
+        shell: bash
+        run: |
+          set +e
+          REPORT=/tmp/churvox-route-collision-report.txt
+          {
+            echo '=== EXACT DESTINATIONS ==='
+            grep -RInE --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude='*.map' \
+              'legal/privacy\?section=security|contact\?reason=support|legal/terms#billing-cancellations' . || true
+            echo
+            echo '=== PARTIAL DESTINATION TERMS ==='
+            grep -RInE --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude='*.map' \
+              'section=security|reason=support|billing-cancellations' . || true
+            echo
+            echo '=== SOURCE ROUTE REDIRECT LOGIC ==='
+            grep -RInE --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude='*.map' \
+              '(/security|/support|/refunds-cancellations).*(replace|assign|redirect|location|Navigate)|((replace|assign|redirect|location|Navigate).*(/security|/support|/refunds-cancellations))' frontend .github render.yaml static.json 2>/dev/null || true
+            echo
+            echo '=== REDIRECT/REWRITE FILES ==='
+            find . -maxdepth 5 -type f \( -iname '*redirect*' -o -iname '*rewrite*' -o -name '_redirects' -o -name 'render.yaml' -o -name 'static.json' -o -name 'vercel.json' -o -name 'netlify.toml' \) -print | sort
+            echo
+            echo '=== LOCATION MUTATIONS IN PUBLIC/STARTUP CODE ==='
+            grep -RInE --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude='*.map' \
+              'window\.location|location\.(href|replace|assign)|history\.replaceState|Navigate' frontend/public frontend/src/runtime frontend/src/index* frontend/src/App* frontend/scripts 2>/dev/null || true
+          } > "$REPORT"
+          cat "$REPORT"
+
+      - name: Post trace
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('/tmp/churvox-route-collision-report.txt','utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '```text\n' + report.slice(0,62000) + '\n```'
+            });
