@@ -1,12 +1,14 @@
 # Churvox Hardening V8 source package
 
-This package contains the reviewed Churvox Control Board V8 hardening source. It is materialised before the frontend compiles and before the backend installs its routes.
+This package contains the reviewed Churvox Control Board V8 source. The base package is materialised before frontend compilation and backend startup, then a second checksummed safety patch applies the final worker-boundary, offline-queue and keyboard-accessibility hardening.
 
-- Archive SHA-256: `e1bf0047230ac1a02eab0f671dae9efc3791c647c1359fc5e3968e225aba8928`
-- Parts: `part_00` through `part_08`
+- Base archive SHA-256: `e1bf0047230ac1a02eab0f671dae9efc3791c647c1359fc5e3968e225aba8928`
+- Safety patch SHA-256: `5622d422495b6f82c7d382588a450b8b1abb650cd840d247f4fdbba289c06c73`
+- Base parts: `part_00` through `part_08`
 - Python materialiser: `scripts/churvox_hardening_v8_materialize.py`
 - Node materialiser: `scripts/churvox_hardening_v8_materialize.cjs`
-- Safety: both materialisers validate the checksum and reject paths outside the repository root.
+- Safety patch: `scripts/churvox_hardening_v8_security_patch.gz.b64`
+- Safety: both checksums are verified and both archive and patch paths are restricted to the repository root.
 
 ## Materialised files
 
@@ -24,4 +26,4 @@ This package contains the reviewed Churvox Control Board V8 hardening source. It
 
 ## Product coverage
 
-The package implements permanent record IDs, attachment proof, week scheduling, recurring controls, line-item quotes and invoices with NZ GST, proper time entries, threaded messages, expanded settings, safe CSV import and complete export, server audit history, live/offline sync, owner approval guardrails and worker access boundaries.
+The package implements permanent record IDs, attachment proof, week scheduling, recurring controls, line-item quotes and invoices with NZ GST, proper time entries, threaded messages, expanded settings, safe CSV import and complete export, server audit history, live/offline sync, owner approval guardrails, strict worker access boundaries and keyboard-safe overlays.
