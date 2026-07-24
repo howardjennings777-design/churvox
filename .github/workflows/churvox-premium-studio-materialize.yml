@@ -1,0 +1,79 @@
+name: Churvox premium studio materialize
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  materialize:
+    if: startsWith(github.event.issue.title, '[churvox-premium-studio-materialize]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Materialize the new owner app
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, gzip
+
+          root = Path('frontend')
+          staged = root / '.premium-studio'
+          payload = ''.join((staged / f'v5.part{i}').read_text().strip() for i in range(1, 6))
+          source = gzip.decompress(base64.b64decode(payload)).decode('utf-8')
+          assert 'CHURVOX_PREMIUM_STUDIO_V5_20260725' in source
+          assert 'export default function ProductAppV5' in source
+          (root / 'src/churvox-product/ProductAppV5.jsx').write_text(source)
+
+          fresh = root / 'src/churvox-fresh/FreshApp.jsx'
+          fresh.write_text('import ProductAppV5 from "../churvox-product/ProductAppV5";\n\nexport default ProductAppV5;\n')
+
+          index = root / 'src/index.js'
+          text = index.read_text().replace("import './styles/churvoxOwnerPremiumWorkspace.css';\n", '')
+          index.write_text(text)
+          PY
+
+      - name: Prove the production build
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+
+      - name: Commit the new owner product
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/churvox-product/ProductAppV5.jsx frontend/src/churvox-fresh/FreshApp.jsx frontend/src/index.js
+          git commit -m 'Launch the rebuilt Churvox premium owner studio'
+          git push
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const success = '${{ job.status }}' === 'success';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: success
+                ? `Premium owner studio built and committed. Commit: \`${process.env.COMMIT || 'unknown'}\``
+                : 'Premium owner studio did not commit because the materialize or production build step failed.'
+            });
