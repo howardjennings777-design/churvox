@@ -1,0 +1,78 @@
+name: Churvox live domain concise diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/churvox-live-domain-concise-diagnostic-20260724.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run concise diagnostic
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          OUT="$RUNNER_TEMP/diag.md"
+          {
+            echo "## Live domain diagnostic"
+            echo
+            echo "UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            echo '### DNS'
+            echo '```text'
+            for resolver in system 8.8.8.8 1.1.1.1; do
+              echo "resolver=$resolver"
+              for host in churvox.com www.churvox.com; do
+                if [ "$resolver" = system ]; then
+                  A=$(dig +short "$host" A | paste -sd ',' -)
+                  C=$(dig +short "$host" CNAME | paste -sd ',' -)
+                else
+                  A=$(dig @"$resolver" +short "$host" A | paste -sd ',' -)
+                  C=$(dig @"$resolver" +short "$host" CNAME | paste -sd ',' -)
+                fi
+                echo "$host A=[$A] CNAME=[$C]"
+              done
+            done
+            echo '```'
+            echo
+            echo '### HTTP and build identity'
+            echo '```text'
+            for url in \
+              'https://churvox.com/' \
+              'https://www.churvox.com/' \
+              'https://www.churvox.com/dashboard' \
+              'https://www.churvox.com/login' \
+              'https://grassley-frontend.onrender.com/'; do
+              stamp=$(date +%s%N)
+              body="$RUNNER_TEMP/body-$stamp.html"
+              head="$RUNNER_TEMP/head-$stamp.txt"
+              curl -sS -L --max-time 40 -H 'Cache-Control: no-cache, no-store, max-age=0' -H 'Pragma: no-cache' -D "$head" -o "$body" "${url}?domainDiag=${stamp}"
+              meta=$(curl -sS -L --max-time 40 -o /dev/null -w 'status=%{http_code} final=%{url_effective} ip=%{remote_ip}' -H 'Cache-Control: no-cache, no-store, max-age=0' "${url}?domainDiagMeta=${stamp}")
+              title=$(grep -ioE '<title>[^<]*</title>' "$body" | head -1 | sed -E 's#</?title>##Ig')
+              scripts=$(grep -oE 'src="[^"]+\.js[^"]*"' "$body" | head -3 | tr '\n' ' ')
+              server=$(grep -i '^server:' "$head" | tail -1 | tr -d '\r')
+              render=$(grep -i '^rndr-id:' "$head" | tail -1 | tr -d '\r')
+              rsc=$(grep -i '^vary:.*RSC' "$head" | tail -1 | tr -d '\r')
+              markers=""
+              for m in 'custom-domains.chatgpt.site' 'codex-preview' 'workspace-connect' 'Churvox Workspace' '/assets/index-' '/static/js/' 'cvOwnerReady' 'owner-readable-logout-20260724-v4' 'churvox-owner-fallback-logout' 'Churvox does the admin. You approve.'; do
+                if grep -Fq "$m" "$body"; then markers="$markers|$m"; fi
+              done
+              echo "URL=$url"
+              echo "$meta title=[$title]"
+              echo "$server $render $rsc"
+              echo "scripts=[$scripts]"
+              echo "markers=[$markers]"
+              echo '---'
+            done
+            echo '```'
+          } > "$OUT" 2>&1
+          cat "$OUT"
+          gh issue comment 758 --repo howardjennings777-design/churvox --body-file "$OUT"
