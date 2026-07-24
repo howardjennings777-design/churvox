@@ -1,5 +1,6 @@
 name: Churvox access pages push proof
 
+# Registered push proof for the premium login and tester rebuild.
 on:
   push:
     branches: [main]
