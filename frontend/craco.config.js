@@ -1,5 +1,7 @@
 // craco.config.js
 const path = require("path");
+const materializeHardening = require("../scripts/churvox_hardening_v8_materialize.cjs");
+materializeHardening();
 try {
   require("dotenv").config();
 } catch (err) {
