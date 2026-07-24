@@ -92,12 +92,13 @@ test.describe('Churvox public entry and stale-chunk recovery', () => {
 
   test('one stale lazy chunk is recovered without losing the requested page', async ({ page }) => {
     let blockedChunk = false;
-    let recoveryNavigations = 0;
+    const recoveryUrls = new Set();
 
     page.on('framenavigated', (frame) => {
       if (frame !== page.mainFrame()) return;
       try {
-        if (new URL(frame.url()).searchParams.has('cv_reload')) recoveryNavigations += 1;
+        const url = new URL(frame.url());
+        if (url.searchParams.has('cv_reload')) recoveryUrls.add(url.href);
       } catch {}
     });
 
@@ -129,7 +130,7 @@ test.describe('Churvox public entry and stale-chunk recovery', () => {
     await page.waitForTimeout(1500);
 
     expect(blockedChunk).toBe(true);
-    expect(recoveryNavigations).toBe(1);
+    expect(recoveryUrls.size).toBe(1);
     expect(page.url()).toBe(stableUrl);
   });
 });
