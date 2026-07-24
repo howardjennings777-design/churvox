@@ -1,0 +1,74 @@
+name: Churvox access pages visual proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-access-pages-visual-proof.yml'
+      - 'frontend/src/pages/auth/ChurvoxLoginPolish.css'
+      - 'frontend/public/testers/index.html'
+      - 'frontend/public/testers/churvox-tester-premium.css'
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install and build
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Capture login and tester pages
+        working-directory: frontend
+        run: |
+          npx serve -s build -l 4173 >/tmp/churvox-access-serve.log 2>&1 &
+          for i in {1..40}; do curl -fsS http://127.0.0.1:4173/login >/dev/null && break; sleep 1; done
+          mkdir -p access-visual-proof
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const targets = [
+              { name: 'desktop-login', url: 'http://127.0.0.1:4173/login', viewport: { width: 1440, height: 1000 } },
+              { name: 'phone-login', url: 'http://127.0.0.1:4173/login', viewport: { width: 390, height: 844 } },
+              { name: 'desktop-testers', url: 'http://127.0.0.1:4173/testers/', viewport: { width: 1440, height: 1000 } },
+              { name: 'phone-testers', url: 'http://127.0.0.1:4173/testers/', viewport: { width: 390, height: 844 } },
+            ];
+            const results = [];
+            for (const target of targets) {
+              const page = await browser.newPage({ viewport: target.viewport, deviceScaleFactor: 1 });
+              const errors = [];
+              page.on('pageerror', error => errors.push(String(error)));
+              await page.goto(target.url, { waitUntil: 'networkidle' });
+              const audit = await page.evaluate(() => ({
+                title: document.title,
+                heading: document.querySelector('h1')?.textContent?.trim() || '',
+                overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
+                bodyWidth: document.body.scrollWidth,
+                viewportWidth: document.documentElement.clientWidth,
+              }));
+              await page.screenshot({ path: `access-visual-proof/${target.name}.png`, fullPage: true });
+              results.push({ name: target.name, ...audit, errors });
+              await page.close();
+            }
+            fs.writeFileSync('access-visual-proof/results.json', JSON.stringify(results, null, 2));
+            if (results.some(result => result.overflow || result.errors.length)) process.exitCode = 1;
+            await browser.close();
+          })();
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: churvox-access-pages-visual-proof
+          path: frontend/access-visual-proof
