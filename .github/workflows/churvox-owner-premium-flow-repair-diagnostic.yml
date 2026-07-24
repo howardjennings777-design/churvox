@@ -31,11 +31,11 @@ jobs:
           set -o pipefail
           python - <<'PY'
           from pathlib import Path
-          import textwrap
           source = Path('.github/workflows/churvox-owner-premium-flow-repair.yml').read_text()
           start = source.index("          python - <<'PY'") + len("          python - <<'PY'\n")
           end = source.index("          PY\n", start)
-          code = textwrap.dedent(source[start:end])
+          lines = source[start:end].splitlines()
+          code = "\n".join(line[10:] if line.startswith("          ") else line for line in lines) + "\n"
           Path('/tmp/churvox-premium-patch.py').write_text(code)
           PY
           python /tmp/churvox-premium-patch.py 2>&1 | tee /tmp/churvox-premium-patch.log
