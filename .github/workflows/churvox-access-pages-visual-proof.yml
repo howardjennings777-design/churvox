@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/churvox-access-pages-visual-proof.yml'
+      - 'frontend/src/pages/auth/LoginPage.js'
       - 'frontend/src/pages/auth/ChurvoxLoginPolish.css'
       - 'frontend/public/testers/index.html'
       - 'frontend/public/testers/churvox-tester-premium.css'
@@ -31,8 +32,9 @@ jobs:
       - name: Capture login and tester pages
         working-directory: frontend
         run: |
-          npx serve -s build -l 4173 >/tmp/churvox-access-serve.log 2>&1 &
-          for i in {1..40}; do curl -fsS http://127.0.0.1:4173/login >/dev/null && break; sleep 1; done
+          npx serve -s build -l 4173 >/tmp/churvox-react-serve.log 2>&1 &
+          (cd build && python3 -m http.server 4174 >/tmp/churvox-static-serve.log 2>&1) &
+          for i in {1..40}; do curl -fsS http://127.0.0.1:4173/login >/dev/null && curl -fsS http://127.0.0.1:4174/testers/ >/dev/null && break; sleep 1; done
           mkdir -p access-visual-proof
           node <<'NODE'
           const { chromium } = require('playwright');
@@ -42,8 +44,8 @@ jobs:
             const targets = [
               { name: 'desktop-login', url: 'http://127.0.0.1:4173/login', viewport: { width: 1440, height: 1000 } },
               { name: 'phone-login', url: 'http://127.0.0.1:4173/login', viewport: { width: 390, height: 844 } },
-              { name: 'desktop-testers', url: 'http://127.0.0.1:4173/testers/', viewport: { width: 1440, height: 1000 } },
-              { name: 'phone-testers', url: 'http://127.0.0.1:4173/testers/', viewport: { width: 390, height: 844 } },
+              { name: 'desktop-testers', url: 'http://127.0.0.1:4174/testers/', viewport: { width: 1440, height: 1000 } },
+              { name: 'phone-testers', url: 'http://127.0.0.1:4174/testers/', viewport: { width: 390, height: 844 } },
             ];
             const results = [];
             for (const target of targets) {
