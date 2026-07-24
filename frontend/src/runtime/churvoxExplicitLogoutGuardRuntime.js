@@ -7,7 +7,7 @@ const MARKER = "churvox:logged-out";
 const RESTORE_PATHS = ["/api/auth/me", "/api/auth/check", "/api/auth/session"];
 const NEW_SESSION_PATHS = ["/api/auth/login", "/api/worker/auth/login", "/api/auth/worker-login", "/api/auth/register"];
 const CACHE_RESET_KEY = "churvox:owner-ui-cache-reset";
-const CACHE_RESET_VERSION = "owner-readable-logout-20260724-v4";
+const CACHE_RESET_VERSION = "owner-readable-logout-20260724-v5";
 const OWNER_STYLE_ID = "churvox-owner-readable-logout-style";
 const FALLBACK_LOGOUT_ID = "churvox-owner-fallback-logout";
 
@@ -32,11 +32,33 @@ const AUTH_KEYS = [
 ];
 
 const OWNER_READABLE_CSS = `
+  html.churvoxOwnerReadableMode,
+  html.churvoxOwnerReadableMode body,
+  html.churvoxOwnerReadableMode #root,
   .cvOwnerReady {
     font-size: 18px !important;
     line-height: 1.55 !important;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+  }
+
+  html.churvoxOwnerReadableMode body :where(p, li, dd, dt, label, td, th),
+  .cvOwnerReady :where(p, li, dd, dt, label, td, th) {
+    font-size: 17px !important;
+    line-height: 1.55 !important;
+  }
+
+  html.churvoxOwnerReadableMode body :where(button, a, input, textarea, select),
+  .cvOwnerReady :where(button, a, input, textarea, select) {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+  }
+
+  html.churvoxOwnerReadableMode body :where(small),
+  html.churvoxOwnerReadableMode body :where(.cvSiteScreen span, .cvSiteStatus span, .cvSiteTopbar span, .cvOwnerMoreMenu span, .cvCommandSlip span),
+  .cvOwnerReady :where(small, .cvSiteScreen span, .cvSiteStatus span, .cvSiteTopbar span, .cvOwnerMoreMenu span, .cvCommandSlip span) {
+    font-size: 15px !important;
+    line-height: 1.45 !important;
   }
 
   .cvOwnerReady .cvSiteTopbar {
@@ -192,6 +214,8 @@ function hasAuthProof() {
 
 function installOwnerReadableStyle() {
   if (typeof document === "undefined") return;
+  if (isOwnerPath()) document.documentElement.classList.add("churvoxOwnerReadableMode");
+  else document.documentElement.classList.remove("churvoxOwnerReadableMode");
   let style = document.getElementById(OWNER_STYLE_ID);
   if (!style) {
     style = document.createElement("style");
@@ -258,11 +282,9 @@ function ensureOwnerLogout() {
   if (typeof document === "undefined" || !isOwnerPath()) return;
   installOwnerReadableStyle();
 
+  // The owner session can be cookie-only, so localStorage is not reliable proof.
+  // On a protected owner route, always keep a visible logout control available.
   const fallback = document.getElementById(FALLBACK_LOGOUT_ID);
-  if (!hasAuthProof()) {
-    fallback?.remove();
-    return;
-  }
 
   const candidates = Array.from(document.querySelectorAll(
     ".cvSiteLogout, .cvxVisibleLogout, [data-churvox-native-logout=\"true\"], [data-churvox-visible-logout=\"true\"]"
@@ -335,6 +357,7 @@ if (typeof window !== "undefined") {
     [0, 80, 220, 600, 1400, 3000].forEach((delay) => window.setTimeout(ensureOwnerLogout, delay));
   };
   scheduleOwnerRepair();
+  window.setInterval(ensureOwnerLogout, 1500);
   window.addEventListener("load", scheduleOwnerRepair);
   window.addEventListener("resize", scheduleOwnerRepair);
   window.addEventListener("orientationchange", scheduleOwnerRepair);
