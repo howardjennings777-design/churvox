@@ -1,29 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Churvox favicon">
-  <defs>
-    <linearGradient id="bg" x1="36" y1="20" x2="220" y2="236" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#151b18"/>
-      <stop offset="0.58" stop-color="#090d0b"/>
-      <stop offset="1" stop-color="#030404"/>
-    </linearGradient>
-    <linearGradient id="orange" x1="44" y1="38" x2="210" y2="214" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ffad55"/>
-      <stop offset="0.5" stop-color="#f97316"/>
-      <stop offset="1" stop-color="#dc3f17"/>
-    </linearGradient>
-    <linearGradient id="white" x1="76" y1="86" x2="188" y2="170" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#dce3ec"/>
-    </linearGradient>
-    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#000000" flood-opacity="0.40"/>
-    </filter>
-  </defs>
-  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#bg)"/>
-  <rect x="13.5" y="13.5" width="229" height="229" rx="52.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
-  <g filter="url(#shadow)">
-    <path d="M184 75C171 54 148 41 121 41C74 41 36 79 36 128C36 177 74 215 121 215C150 215 175 201 190 179" fill="none" stroke="url(#orange)" stroke-width="28" stroke-linecap="round"/>
-    <path d="M76 132L111 164L184 86" fill="none" stroke="url(#white)" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-  <circle cx="190" cy="75" r="13" fill="#f97316"/>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M22 19.2727C22 20.779 20.779 22 19.2727 22H14.7273C13.221 22 12 20.779 12 19.2727V12H19.2727C20.779 12 22 13.221 22 14.7273V19.2727Z" fill="#68C4FF"/>
+<path d="M20 2C21.1046 2 22 2.89543 22 4V7C22 8.10457 21.1046 9 20 9H17C15.8954 9 15 8.10457 15 7V4C15 2.89543 15.8954 2 17 2H20Z" fill="#0C79D8"/>
+<path d="M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z" fill="#0C79D8"/>
+<path d="M12 12H4.72727C3.22104 12 2 10.779 2 9.27273V4.72727C2 3.22104 3.22104 2 4.72727 2H9.27273C10.779 2 12 3.22104 12 4.72727V12Z" fill="#2E9EFF"/>
 </svg>
