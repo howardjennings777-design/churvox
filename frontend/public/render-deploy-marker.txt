@@ -1,4 +1,5 @@
 Render frontend deploy marker
-Triggered: 2026-07-24T07:43:00Z
-Purpose: force every legacy Render or stale custom-domain request directly to the finished Churvox Sites build.
-Sites target: https://churvox.howardjennings77.chatgpt.site
+Triggered: 2026-07-24T09:05:00Z
+Purpose: serve the new Churvox homepage and application directly from grassley-frontend on Render.
+Sites redirects: removed.
+Expected homepage: Run the job, not the admin.
