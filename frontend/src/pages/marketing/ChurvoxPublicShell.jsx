@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "./ChurvoxPublic2026.css";
 import "./ChurvoxPublicTouchTargets.css";
+import "./ChurvoxPublicReadableHotfix.css";
 
 const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
 const navItems = [
