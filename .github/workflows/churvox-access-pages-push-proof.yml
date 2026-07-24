@@ -1,0 +1,36 @@
+name: Churvox access pages push proof
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/src/pages/auth/ChurvoxLoginPolish.css'
+      - 'frontend/public/testers/index.html'
+      - 'frontend/public/testers/churvox-tester-premium.css'
+      - '.github/workflows/churvox-access-pages-push-proof.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Production build
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+      - name: Check rebuilt access pages
+        run: |
+          test -f frontend/build/testers/index.html
+          test -f frontend/build/testers/churvox-tester-premium.css
+          grep -q 'Put Churvox into a real workday' frontend/build/testers/index.html
+          grep -q 'testerRouteScene' frontend/build/testers/churvox-tester-premium.css
+          grep -q 'cvLoginOrbit' frontend/build/static/css/*.css
