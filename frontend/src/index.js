@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './runtime/churvoxDateInputIsoGuardRuntime';
 import './runtime/churvoxPublicHelpRouteGuardRuntime';
 import './runtime/churvoxExplicitLogoutGuardRuntime';
+import './runtime/churvoxControlBoardMobileLogoutRuntime';
 import './runtime/churvoxProtectedFetchAuthGuardRuntime';
 import './runtime/churvoxLegacyHostExitRuntime';
 import './runtime/churvoxStripeCheckoutLiveRuntime';
