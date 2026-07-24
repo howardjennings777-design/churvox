@@ -4,7 +4,7 @@ const path = require("path");
 const zlib = require("zlib");
 
 const EXPECTED_SHA256 = "e1bf0047230ac1a02eab0f671dae9efc3791c647c1359fc5e3968e225aba8928";
-const PATCH_SHA256 = "5622d422495b6f82c7d382588a450b8b1abb650cd840d247f4fdbba289c06c73";
+const PATCH_SHA256 = "2c2b33016523cce7432151eca4642888d49403618efe88ea0940a462ad955829";
 
 function text(bytes) {
   const zero = bytes.indexOf(0);
@@ -48,17 +48,12 @@ function applyUnifiedPatch(root, patchText) {
         const body = line.slice(1);
         if (prefix === " ") {
           if (source[cursor] !== body) throw new Error(`Patch context mismatch in ${targetName}`);
-          output.push(body);
-          cursor += 1;
-          consumedOld += 1;
-          consumedNew += 1;
+          output.push(body); cursor += 1; consumedOld += 1; consumedNew += 1;
         } else if (prefix === "-") {
           if (source[cursor] !== body) throw new Error(`Patch removal mismatch in ${targetName}`);
-          cursor += 1;
-          consumedOld += 1;
+          cursor += 1; consumedOld += 1;
         } else if (prefix === "+") {
-          output.push(body);
-          consumedNew += 1;
+          output.push(body); consumedNew += 1;
         } else {
           throw new Error(`Unexpected patch line in ${targetName}`);
         }

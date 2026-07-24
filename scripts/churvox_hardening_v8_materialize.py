@@ -6,10 +6,10 @@ import hashlib
 import io
 import re
 import tarfile
-from pathlib import Path
+from pathib import Path
 
 EXPECTED_SHA256 = "e1bf0047230ac1a02eab0f671dae9efc3791c647c1359fc5e3968e225aba8928"
-PATCH_SHA256 = "5622d422495b6f82c7d382588a450b8b1abb650cd840d247f4fdbba289c06c73"
+PATCH_SHA256 = "2c2b33016523cce7432151eca4642888d49403618efe88ea0940a462ad955829"
 
 
 def _apply_unified_patch(root: Path, patch_text: str) -> int:
@@ -22,7 +22,7 @@ def _apply_unified_patch(root: Path, patch_text: str) -> int:
             index += 1
             continue
         index += 1
-        if index >= len(lines) or not lines[index].startswith("+++ "):
+        if index >= len(lines) or not lines[index].startswith("++ "):
             raise RuntimeError("Malformed Churvox hardening patch")
         target_name = lines[index][4:].strip()
         if target_name.startswith("b/"):
@@ -59,18 +59,13 @@ def _apply_unified_patch(root: Path, patch_text: str) -> int:
                 if prefix == " ":
                     if cursor >= len(source) or source[cursor] != body:
                         raise RuntimeError(f"Patch context mismatch in {target_name}")
-                    output.append(body)
-                    cursor += 1
-                    consumed_old += 1
-                    consumed_new += 1
+                    output.append(body); cursor += 1; consumed_old += 1; consumed_new += 1
                 elif prefix == "-":
                     if cursor >= len(source) or source[cursor] != body:
                         raise RuntimeError(f"Patch removal mismatch in {target_name}")
-                    cursor += 1
-                    consumed_old += 1
+                    cursor += 1; consumed_old += 1
                 elif prefix == "+":
-                    output.append(body)
-                    consumed_new += 1
+                    output.append(body); consumed_new += 1
                 else:
                     raise RuntimeError(f"Unexpected patch line in {target_name}: {line[:20]!r}")
                 index += 1
