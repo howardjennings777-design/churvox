@@ -1,5 +1,6 @@
 name: Churvox access pages visual proof
 
+# Temporary branch change used to trigger the focused visual capture.
 on:
   pull_request:
     branches: [main]
