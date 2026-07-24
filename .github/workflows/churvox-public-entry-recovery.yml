@@ -62,15 +62,16 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: |
+          set -o pipefail
           npx playwright test \
             tests/e2e/churvox-public-entry-recovery.spec.js \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --workers=1 \
-            --reporter=line
+            --reporter=line 2>&1 | tee /tmp/churvox-entry-test.log
 
-      - name: Upload failure evidence
-        if: failure()
+      - name: Upload test evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: churvox-public-entry-recovery-${{ github.run_id }}
@@ -78,5 +79,6 @@ jobs:
             frontend/playwright-report
             frontend/test-results
             /tmp/churvox-entry-server.log
+            /tmp/churvox-entry-test.log
           if-no-files-found: ignore
           retention-days: 7
