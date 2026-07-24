@@ -1,0 +1,16 @@
+.cv7EditorBody{min-height:0;overflow:auto;background:#fff}
+.cv7EditorBody .cv7EditorForm{overflow:visible}
+.cv7FlowDock{margin:0 24px 24px;border:1px solid #242721;border-radius:18px;padding:18px;background:linear-gradient(135deg,#181a17,#24271f);color:#fff;box-shadow:0 18px 45px rgba(20,22,18,.16)}
+.cv7FlowDock>header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.11)}
+.cv7FlowDock>header small{color:#ff9f70;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.14em}
+.cv7FlowDock h3{margin:5px 0 0;font-size:22px;line-height:1.05;letter-spacing:-.045em}
+.cv7FlowDock>header>span{max-width:220px;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:7px 10px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.72);font-size:9px;font-weight:800;text-align:right}
+.cv7FlowDock>p{max-width:700px;margin:13px 0 16px;color:rgba(255,255,255,.65);font-size:11px;line-height:1.55}
+.cv7FlowDock>div{display:flex;flex-wrap:wrap;gap:8px}
+.cv7FlowAction{min-height:42px;border:1px solid rgba(255,255,255,.18);border-radius:11px;padding:0 14px;background:rgba(255,255,255,.07);color:#fff;font-size:10px;font-weight:900}
+.cv7FlowAction:hover{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.11)}
+.cv7FlowAction.primary{border-color:#fff;background:#fff;color:#171915}
+.cv7FlowAction.complete{border-color:#f1682c;background:#f1682c;color:#fff;box-shadow:0 10px 25px rgba(241,104,44,.24)}
+.cv7FlowAction.quiet{color:rgba(255,255,255,.62)}
+.cv7FlowAction:disabled{cursor:not-allowed;opacity:.5}
+@media(max-width:760px){.cv7FlowDock{margin:0 18px 18px;padding:16px;border-radius:16px}.cv7FlowDock>header{display:grid}.cv7FlowDock>header>span{justify-self:start;text-align:left}.cv7FlowDock>div{display:grid}.cv7FlowAction{width:100%;min-height:48px}}
