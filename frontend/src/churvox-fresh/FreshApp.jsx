@@ -1,3 +1,3 @@
-import ProductAppV7Gate from "../churvox-product/ProductAppV7Gate";
+import ChurvoxStudioApp from "../churvox-studio/ChurvoxStudioApp";
 
-export default ProductAppV7Gate;
+export default ChurvoxStudioApp;
