@@ -6,10 +6,23 @@ import hashlib
 import io
 import re
 import tarfile
-from pathib import Path
+from pathlib import Path
 
 EXPECTED_SHA256 = "e1bf0047230ac1a02eab0f671dae9efc3791c647c1359fc5e3968e225aba8928"
 PATCH_SHA256 = "2c2b33016523cce7432151eca4642888d49403618efe88ea0940a462ad955829"
+
+
+def _already_materialised(root: Path) -> bool:
+    checks = {
+        root / "usercustomize.py": "Mount Job Done immediately after the public build marker",
+        root / "backend" / "churvox_hardening_routes.py": "def _is_owner",
+        root / "frontend" / "src" / "churvox-product" / "ProductAppV8.jsx": "useDialogKeyboard",
+        root / "frontend" / "src" / "churvox-product" / "ControlBoardStrongEditor.jsx": "hardening.request",
+    }
+    try:
+        return all(marker in file.read_text(encoding="utf-8") for file, marker in checks.items())
+    except (FileNotFoundError, OSError, UnicodeDecodeError):
+        return False
 
 
 def _apply_unified_patch(root: Path, patch_text: str) -> int:
@@ -22,7 +35,7 @@ def _apply_unified_patch(root: Path, patch_text: str) -> int:
             index += 1
             continue
         index += 1
-        if index >= len(lines) or not lines[index].startswith("++ "):
+        if index >= len(lines) or not lines[index].startswith("+++ "):
             raise RuntimeError("Malformed Churvox hardening patch")
         target_name = lines[index][4:].strip()
         if target_name.startswith("b/"):
@@ -59,13 +72,18 @@ def _apply_unified_patch(root: Path, patch_text: str) -> int:
                 if prefix == " ":
                     if cursor >= len(source) or source[cursor] != body:
                         raise RuntimeError(f"Patch context mismatch in {target_name}")
-                    output.append(body); cursor += 1; consumed_old += 1; consumed_new += 1
+                    output.append(body)
+                    cursor += 1
+                    consumed_old += 1
+                    consumed_new += 1
                 elif prefix == "-":
                     if cursor >= len(source) or source[cursor] != body:
                         raise RuntimeError(f"Patch removal mismatch in {target_name}")
-                    cursor += 1; consumed_old += 1
+                    cursor += 1
+                    consumed_old += 1
                 elif prefix == "+":
-                    output.append(body); consumed_new += 1
+                    output.append(body)
+                    consumed_new += 1
                 else:
                     raise RuntimeError(f"Unexpected patch line in {target_name}: {line[:20]!r}")
                 index += 1
@@ -88,6 +106,10 @@ def _apply_security_patch(root: Path) -> int:
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
+    if _already_materialised(root):
+        print("Churvox Hardening V8 is already materialised; no rewrite needed.")
+        return
+
     parts_dir = root / "scripts" / "churvox_hardening_v8_parts"
     parts = sorted(parts_dir.glob("part_*"))
     if len(parts) != 9:
