@@ -1,0 +1,140 @@
+name: Churvox apply exact Sites homepage
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  apply:
+    if: startsWith(github.event.issue.title, '[churvox-apply-exact-sites-home]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Generate exact homepage from captured Sites output
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urlparse
+          import json, re, shutil
+
+          capture=Path('docs/sites-source-capture')
+          dom=(capture/'home.dom.html').read_text(errors='replace')
+          matches=list(re.finditer(r'<main(?:\s[^>]*)?>.*?</main>',dom,flags=re.I|re.S))
+          if not matches:
+              raise SystemExit('Could not find the rendered Sites <main> element')
+          fragment=max((m.group(0) for m in matches),key=len)
+          fragment=re.sub(r'<script\b[^>]*>.*?</script>','',fragment,flags=re.I|re.S)
+          fragment=re.sub(r'<iframe\b[^>]*>.*?</iframe>','',fragment,flags=re.I|re.S)
+
+          markup=Path('frontend/src/pages/marketing/SitesExactHomeMarkup.js')
+          markup.write_text('// Generated from the approved Churvox ChatGPT Sites build.\nexport default '+json.dumps(fragment)+';\n')
+
+          public=Path('frontend/public')
+          exact=public/'sites-exact'
+          exact.mkdir(parents=True,exist_ok=True)
+          shutil.copy2(capture/'assets/000.css',exact/'sites.css')
+
+          downloads=json.loads((capture/'asset-downloads.json').read_text())
+          for row in downloads:
+              source=Path(row['file'])
+              url=row['url']
+              path=urlparse(url).path.lstrip('/')
+              if not source.exists() or not path:
+                  continue
+              if path.startswith('assets/_vinext_fonts/') or path=='favicon.svg':
+                  dest=public/path
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(source,dest)
+          PY
+
+          cat > frontend/src/pages/marketing/ExecutiveHomePage.jsx <<'EOF'
+          import React from "react";
+          import { PublicNav, PublicFooter } from "./ChurvoxPublicShell";
+          import exactSitesMarkup from "./SitesExactHomeMarkup";
+
+          export const Nav = PublicNav;
+          export const Footer = PublicFooter;
+
+          const EXACT_STYLESHEET = "/sites-exact/sites.css?v=sites-approved-20260724";
+
+          export default function ExecutiveHomePage() {
+            const [ready, setReady] = React.useState(false);
+
+            React.useLayoutEffect(() => {
+              const previousTitle = document.title;
+              document.title = "Churvox | Run the job, not the admin";
+              document.documentElement.classList.add("churvox-sites-exact-active");
+              document.body.classList.add("churvox-sites-exact-active");
+
+              let link = document.querySelector('link[data-churvox-sites-exact="1"]');
+              let created = false;
+              const markReady = () => setReady(true);
+              if (!link) {
+                created = true;
+                link = document.createElement("link");
+                link.rel = "stylesheet";
+                link.href = EXACT_STYLESHEET;
+                link.dataset.churvoxSitesExact = "1";
+                link.addEventListener("load", markReady, { once: true });
+                link.addEventListener("error", markReady, { once: true });
+                document.head.appendChild(link);
+              } else {
+                setReady(true);
+              }
+              const timeout = window.setTimeout(markReady, 1200);
+
+              return () => {
+                window.clearTimeout(timeout);
+                document.title = previousTitle;
+                document.documentElement.classList.remove("churvox-sites-exact-active");
+                document.body.classList.remove("churvox-sites-exact-active");
+                if (created && link?.parentNode) link.parentNode.removeChild(link);
+              };
+            }, []);
+
+            return (
+              <div
+                data-churvox-exact-sites-home="approved-20260724"
+                style={{ visibility: ready ? "visible" : "hidden", minHeight: "100vh" }}
+                dangerouslySetInnerHTML={{ __html: exactSitesMarkup }}
+              />
+            );
+          }
+          EOF
+
+      - name: Build the production frontend
+        working-directory: frontend
+        shell: bash
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+
+      - name: Commit exact Sites homepage
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/pages/marketing/ExecutiveHomePage.jsx frontend/src/pages/marketing/SitesExactHomeMarkup.js frontend/public/sites-exact frontend/public/assets/_vinext_fonts frontend/public/favicon.svg
+          git commit -m 'Replace Render homepage with exact approved Sites design'
+          git push
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`Exact captured Sites homepage applied to the Render frontend and production build passed. Commit: \`${process.env.COMMIT}\`.`});
