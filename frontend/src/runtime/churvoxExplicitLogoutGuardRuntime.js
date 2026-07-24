@@ -224,7 +224,7 @@ if (typeof window !== "undefined") {
     }
     if (loggedOut() && RESTORE_PATHS.some((item) => path.endsWith(item))) {
       const error = new Error("Explicit logout prevents restoring an older browser session.");
-      error.response = { status: 401, data: { detail: "Signed out" };
+      error.response = { status: 401, data: { detail: "Signed out" } };
       return Promise.reject(error);
     }
     return config;
