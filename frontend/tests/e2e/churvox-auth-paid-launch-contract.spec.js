@@ -99,7 +99,7 @@ test.describe('Paid-launch auth contract', () => {
     await page.goto('/login?next=%2Fplans%3Fplan%3Doperator', { waitUntil: 'domcontentloaded' });
     await page.getByLabel('Email').fill('owner@real.test');
     await page.getByLabel('Password').fill('LongEnough8');
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.getByRole('button', { name: 'Open Churvox' }).click();
     await page.waitForURL(/\/plans\?plan=operator/i);
   });
 
