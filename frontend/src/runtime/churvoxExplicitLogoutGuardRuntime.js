@@ -7,9 +7,9 @@ const MARKER = "churvox:logged-out";
 const RESTORE_PATHS = ["/api/auth/me", "/api/auth/check", "/api/auth/session"];
 const NEW_SESSION_PATHS = ["/api/auth/login", "/api/worker/auth/login", "/api/auth/worker-login", "/api/auth/register"];
 const CACHE_RESET_KEY = "churvox:owner-ui-cache-reset";
-const CACHE_RESET_VERSION = "owner-readable-logout-20260724-v5";
-const OWNER_STYLE_ID = "churvox-owner-readable-logout-style";
-const FALLBACK_LOGOUT_ID = "churvox-owner-fallback-logout";
+const CACHE_RESET_VERSION = "owner-premium-workspace-20260724-v1";
+const STYLE_ID = "churvox-owner-native-logout-style";
+const BUTTON_ID = "churvox-owner-native-logout";
 
 const AUTH_KEYS = [
   "token",
@@ -31,137 +31,40 @@ const AUTH_KEYS = [
   "churvox:pending-checkout:v1",
 ];
 
-const OWNER_READABLE_CSS = `
-  html.churvoxOwnerReadableMode,
-  html.churvoxOwnerReadableMode body,
-  html.churvoxOwnerReadableMode #root,
-  .cvOwnerReady {
-    font-size: 18px !important;
-    line-height: 1.55 !important;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
+const CSS = `
+  #${BUTTON_ID}{
+    position:static!important;
+    inset:auto!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    margin:6px 0 0 auto!important;
+    padding:0 10px!important;
+    border:1px solid rgba(255,255,255,.14)!important;
+    border-radius:8px!important;
+    background:rgba(255,255,255,.06)!important;
+    color:rgba(255,255,255,.72)!important;
+    box-shadow:none!important;
+    font:700 11px/1 Inter,ui-sans-serif,system-ui,sans-serif!important;
+    white-space:nowrap!important;
+    cursor:pointer!important;
   }
-
-  html.churvoxOwnerReadableMode body :where(p, li, dd, dt, label, td, th),
-  .cvOwnerReady :where(p, li, dd, dt, label, td, th) {
-    font-size: 17px !important;
-    line-height: 1.55 !important;
+  #${BUTTON_ID}:hover,
+  #${BUTTON_ID}:focus-visible{
+    border-color:rgba(239,107,46,.55)!important;
+    background:rgba(239,107,46,.12)!important;
+    color:#fff!important;
+    outline:none!important;
   }
-
-  html.churvoxOwnerReadableMode body :where(button, a, input, textarea, select),
-  .cvOwnerReady :where(button, a, input, textarea, select) {
-    font-size: 16px !important;
-    line-height: 1.4 !important;
-  }
-
-  html.churvoxOwnerReadableMode body :where(small),
-  html.churvoxOwnerReadableMode body :where(.cvSiteScreen span, .cvSiteStatus span, .cvSiteTopbar span, .cvOwnerMoreMenu span, .cvCommandSlip span),
-  .cvOwnerReady :where(small, .cvSiteScreen span, .cvSiteStatus span, .cvSiteTopbar span, .cvOwnerMoreMenu span, .cvCommandSlip span) {
-    font-size: 15px !important;
-    line-height: 1.45 !important;
-  }
-
-  .cvOwnerReady .cvSiteTopbar {
-    overflow: visible !important;
-    padding-right: 146px !important;
-  }
-
-  .cvOwnerReady :where(p, li, dd, dt, label) {
-    font-size: 17px !important;
-    line-height: 1.55 !important;
-  }
-
-  .cvOwnerReady :where(button, a) {
-    font-size: 16px !important;
-    line-height: 1.3 !important;
-  }
-
-  .cvOwnerReady :where(
-    small,
-    .cvSiteScreen span,
-    .cvSiteStatus span,
-    .cvSiteTopbar span,
-    .cvOwnerMoreMenu span,
-    .cvCommandSlip span,
-    .cvCommandSlip small
-  ) {
-    font-size: 15px !important;
-    line-height: 1.45 !important;
-  }
-
-  .cvOwnerReady :where(input, textarea, select) {
-    min-height: 46px !important;
-    font-size: 17px !important;
-    line-height: 1.45 !important;
-  }
-
-  .cvOwnerReady :where(button, a[role="button"]) {
-    min-height: 46px;
-  }
-
-  .cvOwnerReady .cvSiteLogout,
-  .cvOwnerReady .cvEmergencyLogoutPinned,
-  #${FALLBACK_LOGOUT_ID} {
-    position: fixed !important;
-    top: max(12px, env(safe-area-inset-top, 0px)) !important;
-    right: 12px !important;
-    z-index: 2147483000 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    visibility: visible !important;
-    width: 116px !important;
-    min-width: 116px !important;
-    max-width: 116px !important;
-    min-height: 50px !important;
-    margin: 0 !important;
-    padding: 0 18px !important;
-    border: 2px solid #f97316 !important;
-    border-radius: 999px !important;
-    color: #ffffff !important;
-    background: #17120e !important;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .34) !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    font-family: inherit !important;
-    font-size: 16px !important;
-    font-weight: 950 !important;
-    line-height: 1 !important;
-    text-transform: none !important;
-    white-space: nowrap !important;
-    cursor: pointer !important;
-  }
-
-  .cvOwnerReady .cvSiteLogout:hover,
-  .cvOwnerReady .cvSiteLogout:focus-visible,
-  #${FALLBACK_LOGOUT_ID}:hover,
-  #${FALLBACK_LOGOUT_ID}:focus-visible {
-    color: #17120e !important;
-    background: #fff7ec !important;
-    outline: 3px solid rgba(249, 115, 22, .45) !important;
-    outline-offset: 2px !important;
-  }
-
-  @media (max-width: 760px) {
-    .cvOwnerReady {
-      font-size: 18px !important;
-    }
-
-    .cvOwnerReady .cvSiteTopbar {
-      padding-right: 138px !important;
-    }
-
-    .cvOwnerReady :where(p, li, dd, dt, label) {
-      font-size: 17px !important;
-    }
-
-    .cvOwnerReady :where(button, a) {
-      font-size: 16px !important;
-    }
-
-    .cvOwnerReady :where(small, .cvSiteScreen span, .cvSiteStatus span, .cvSiteTopbar span) {
-      font-size: 15px !important;
-    }
+  #${BUTTON_ID}:disabled{opacity:.6!important;cursor:wait!important;}
+  @media(max-width:900px){
+    #${BUTTON_ID}{height:30px!important;min-height:30px!important;max-height:30px!important;margin-top:3px!important;padding:0 8px!important;font-size:10px!important;}
   }
 `;
 
@@ -185,8 +88,7 @@ function clearLoggedOut() {
 
 function pathOf(config = {}) {
   try {
-    const raw = String(config.url || "");
-    return new URL(raw, window.location.origin).pathname;
+    return new URL(String(config.url || ""), window.location.origin).pathname;
   } catch {
     return String(config.url || "");
   }
@@ -212,33 +114,16 @@ function hasAuthProof() {
   }
 }
 
-function installOwnerReadableStyle() {
+function installStyle() {
   if (typeof document === "undefined") return;
-  if (isOwnerPath()) document.documentElement.classList.add("churvoxOwnerReadableMode");
-  else document.documentElement.classList.remove("churvoxOwnerReadableMode");
-  let style = document.getElementById(OWNER_STYLE_ID);
+  document.documentElement.classList.remove("churvoxOwnerReadableMode");
+  let style = document.getElementById(STYLE_ID);
   if (!style) {
     style = document.createElement("style");
-    style.id = OWNER_STYLE_ID;
+    style.id = STYLE_ID;
     document.head.appendChild(style);
   }
-  if (style.textContent !== OWNER_READABLE_CSS) style.textContent = OWNER_READABLE_CSS;
-}
-
-function visible(element) {
-  if (!(element instanceof HTMLElement) || !element.isConnected) return false;
-  const style = window.getComputedStyle(element);
-  const rect = element.getBoundingClientRect();
-  return style.display !== "none"
-    && style.visibility !== "hidden"
-    && Number(style.opacity || 1) > 0.05
-    && style.pointerEvents !== "none"
-    && rect.width >= 96
-    && rect.height >= 42
-    && rect.right > 0
-    && rect.bottom > 0
-    && rect.left < window.innerWidth
-    && rect.top < window.innerHeight;
+  if (style.textContent !== CSS) style.textContent = CSS;
 }
 
 function clearAuthStorage() {
@@ -267,39 +152,38 @@ async function forceOwnerLogout(button) {
   window.location.replace("/login?logged_out=1");
 }
 
-function makeFallbackLogout() {
+function makeLogout() {
   const button = document.createElement("button");
-  button.id = FALLBACK_LOGOUT_ID;
+  button.id = BUTTON_ID;
   button.type = "button";
   button.textContent = "Log out";
   button.setAttribute("aria-label", "Log out of Churvox");
-  button.setAttribute("data-churvox-emergency-logout", "true");
+  button.setAttribute("data-churvox-native-logout", "true");
   button.addEventListener("click", () => forceOwnerLogout(button));
   return button;
 }
 
+function removeLegacyOwnerLogout() {
+  document.querySelectorAll(
+    "#churvox-owner-fallback-logout, #churvox-runtime-logout-button, #churvox-product-runtime-logout-button, .cvxVisibleLogout, .cvxLogoutNavButton, .cvEmergencyLogoutPinned"
+  ).forEach((element) => {
+    if (element.id !== BUTTON_ID) element.remove();
+  });
+}
+
 function ensureOwnerLogout() {
-  if (typeof document === "undefined" || !isOwnerPath()) return;
-  installOwnerReadableStyle();
-
-  // The owner session can be cookie-only, so localStorage is not reliable proof.
-  // On a protected owner route, always keep a visible logout control available.
-  const fallback = document.getElementById(FALLBACK_LOGOUT_ID);
-
-  const candidates = Array.from(document.querySelectorAll(
-    ".cvSiteLogout, .cvxVisibleLogout, [data-churvox-native-logout=\"true\"], [data-churvox-visible-logout=\"true\"]"
-  ));
-  const native = candidates.find((element) => element.id !== FALLBACK_LOGOUT_ID);
-  if (native) {
-    native.classList.add("cvEmergencyLogoutPinned");
-    if (visible(native)) {
-      fallback?.remove();
-      return;
-    }
+  if (typeof document === "undefined") return;
+  if (!isOwnerPath()) {
+    document.getElementById(BUTTON_ID)?.remove();
+    return;
   }
-
-  const button = fallback || makeFallbackLogout();
-  if (!button.isConnected) document.body.appendChild(button);
+  installStyle();
+  removeLegacyOwnerLogout();
+  const account = document.querySelector(".cv3Account");
+  if (!account) return;
+  let button = document.getElementById(BUTTON_ID);
+  if (!button) button = makeLogout();
+  if (button.parentElement !== account) account.appendChild(button);
 }
 
 async function resetStaleOwnerShellOnce() {
@@ -307,23 +191,17 @@ async function resetStaleOwnerShellOnce() {
   let previous = "";
   try { previous = localStorage.getItem(CACHE_RESET_KEY) || ""; } catch {}
   if (previous === CACHE_RESET_VERSION) return;
-
   try { localStorage.setItem(CACHE_RESET_KEY, CACHE_RESET_VERSION); } catch {}
-
   try {
     const work = [];
-    if ("caches" in window) {
-      work.push(window.caches.keys().then((names) => Promise.all(names.map((name) => window.caches.delete(name)))));
-    }
-    if ("serviceWorker" in navigator) {
-      work.push(navigator.serviceWorker.getRegistrations().then((registrations) => Promise.all(registrations.map((registration) => registration.unregister()))));
-    }
+    if ("caches" in window) work.push(window.caches.keys().then((names) => Promise.all(names.map((name) => window.caches.delete(name)))));
+    if ("serviceWorker" in navigator) work.push(navigator.serviceWorker.getRegistrations().then((registrations) => Promise.all(registrations.map((registration) => registration.unregister()))));
     await Promise.allSettled(work);
   } catch {}
 }
 
 if (typeof window !== "undefined") {
-  installOwnerReadableStyle();
+  installStyle();
   resetStaleOwnerShellOnce();
 
   if (window.location.pathname === "/admin/login") {
@@ -346,29 +224,26 @@ if (typeof window !== "undefined") {
     }
     if (loggedOut() && RESTORE_PATHS.some((item) => path.endsWith(item))) {
       const error = new Error("Explicit logout prevents restoring an older browser session.");
-      error.response = { status: 401, data: { detail: "Signed out" } };
+      error.response = { status: 401, data: { detail: "Signed out" };
       return Promise.reject(error);
     }
     return config;
   });
 
-  const scheduleOwnerRepair = () => {
+  const schedule = () => {
     resetStaleOwnerShellOnce();
-    [0, 80, 220, 600, 1400, 3000].forEach((delay) => window.setTimeout(ensureOwnerLogout, delay));
+    [0, 80, 220, 600, 1400].forEach((delay) => window.setTimeout(ensureOwnerLogout, delay));
   };
-  scheduleOwnerRepair();
-  window.setInterval(ensureOwnerLogout, 1500);
-  window.addEventListener("load", scheduleOwnerRepair);
-  window.addEventListener("resize", scheduleOwnerRepair);
-  window.addEventListener("orientationchange", scheduleOwnerRepair);
-  window.addEventListener("hashchange", scheduleOwnerRepair);
-  window.addEventListener("popstate", scheduleOwnerRepair);
-  window.addEventListener("churvox-auth-state", scheduleOwnerRepair);
-  window.addEventListener("churvox-owner-app-ready", scheduleOwnerRepair);
-
+  schedule();
+  window.setInterval(ensureOwnerLogout, 2500);
+  window.addEventListener("load", schedule);
+  window.addEventListener("hashchange", schedule);
+  window.addEventListener("popstate", schedule);
+  window.addEventListener("churvox-auth-state", schedule);
+  window.addEventListener("churvox-owner-app-ready", schedule);
   if (typeof MutationObserver !== "undefined" && document.documentElement) {
-    const observer = new MutationObserver(() => window.setTimeout(ensureOwnerLogout, 40));
-    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "hidden", "aria-hidden"] });
+    const observer = new MutationObserver(() => window.setTimeout(ensureOwnerLogout, 60));
+    observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 }
 
