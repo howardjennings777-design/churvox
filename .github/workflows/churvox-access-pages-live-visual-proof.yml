@@ -1,0 +1,66 @@
+name: Churvox access pages live visual proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-access-pages-live-visual-proof.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  capture-live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm install playwright@1.54.1
+          npx playwright install --with-deps chromium
+      - name: Capture live login and tester pages
+        run: |
+          mkdir -p live-access-proof
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const targets = [
+              { name: 'desktop-login-live', url: 'https://www.churvox.com/login', viewport: { width: 1440, height: 1000 }, expected: 'Open the right room.' },
+              { name: 'phone-login-live', url: 'https://www.churvox.com/login', viewport: { width: 390, height: 844 }, expected: 'Open the right room.' },
+              { name: 'desktop-testers-live', url: 'https://www.churvox.com/testers/', viewport: { width: 1440, height: 1000 }, expected: 'Put Churvox into a real workday.' },
+              { name: 'phone-testers-live', url: 'https://www.churvox.com/testers/', viewport: { width: 390, height: 844 }, expected: 'Put Churvox into a real workday.' },
+            ];
+            const results = [];
+            for (const target of targets) {
+              const page = await browser.newPage({ viewport: target.viewport, deviceScaleFactor: 1 });
+              const errors = [];
+              page.on('pageerror', error => errors.push(String(error)));
+              const response = await page.goto(target.url, { waitUntil: 'networkidle', timeout: 90000 });
+              const audit = await page.evaluate(() => ({
+                title: document.title,
+                heading: document.querySelector('h1')?.textContent?.replace(/\s+/g, ' ').trim() || '',
+                text: document.body?.innerText?.replace(/\s+/g, ' ').trim() || '',
+                overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
+                bodyWidth: document.body.scrollWidth,
+                viewportWidth: document.documentElement.clientWidth,
+              }));
+              await page.screenshot({ path: `live-access-proof/${target.name}.png`, fullPage: true });
+              results.push({ name: target.name, status: response?.status() || 0, expected: target.expected, ...audit, errors });
+              await page.close();
+            }
+            fs.writeFileSync('live-access-proof/results.json', JSON.stringify(results, null, 2));
+            const failed = results.some(result => result.status !== 200 || result.overflow || result.errors.length || !result.text.includes(result.expected));
+            if (failed) process.exitCode = 1;
+            await browser.close();
+          })();
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: churvox-access-pages-live-visual-proof
+          path: live-access-proof
