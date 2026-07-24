@@ -92,10 +92,13 @@ test.describe('Churvox public entry and stale-chunk recovery', () => {
 
   test('one stale lazy chunk is recovered without losing the requested page', async ({ page }) => {
     let blockedChunk = false;
-    let topLevelNavigations = 0;
+    let recoveryNavigations = 0;
 
     page.on('framenavigated', (frame) => {
-      if (frame === page.mainFrame()) topLevelNavigations += 1;
+      if (frame !== page.mainFrame()) return;
+      try {
+        if (new URL(frame.url()).searchParams.has('cv_reload')) recoveryNavigations += 1;
+      } catch {}
     });
 
     await page.route('**/static/js/*.chunk.js', async (route) => {
@@ -122,8 +125,11 @@ test.describe('Churvox public entry and stale-chunk recovery', () => {
     await expect(page.locator('[data-testid="churvox-error-boundary"]')).toHaveCount(0);
     await expect(page.locator('body')).not.toContainText(/Loading chunk .+ failed|Something went wrong loading this page/i);
 
+    const stableUrl = page.url();
+    await page.waitForTimeout(1500);
+
     expect(blockedChunk).toBe(true);
-    expect(topLevelNavigations).toBeGreaterThanOrEqual(2);
-    expect(topLevelNavigations).toBeLessThanOrEqual(3);
+    expect(recoveryNavigations).toBe(1);
+    expect(page.url()).toBe(stableUrl);
   });
 });
