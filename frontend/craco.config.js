@@ -1,35 +1,25 @@
 // craco.config.js
-const fs = require("fs");
 const path = require("path");
 const materializeHardening = require("../scripts/churvox_hardening_v8_materialize.cjs");
+const materializeLayoutV9 = require("../scripts/churvox_layout_v9_materialize.cjs");
 materializeHardening();
-
-// V8 remains the operating engine. Replace only the rendered shell after the
-// verified hardening package is materialised, so future bundle refreshes cannot
-// silently restore the rejected layout.
-const gatePath = path.resolve(__dirname, "src/churvox-product/ProductAppV7Gate.jsx");
-if (fs.existsSync(gatePath)) {
-  const currentGate = fs.readFileSync(gatePath, "utf8");
-  const controlRoomGate = currentGate
-    .replace(/import ProductAppV8 from ["']\.\/ProductAppV8["'];?/, 'import ProductAppV9 from "./ProductAppV9";')
-    .replace(/<ProductAppV8\s*\/>/g, "<ProductAppV9 />");
-  if (!controlRoomGate.includes('ProductAppV9 from "./ProductAppV9"')) {
-    throw new Error("Churvox Control Room V9 could not take ownership of the product gate");
-  }
-  fs.writeFileSync(gatePath, controlRoomGate, "utf8");
-}
-
+materializeLayoutV9();
 try {
   require("dotenv").config();
 } catch (err) {
   if (err.code !== "MODULE_NOT_FOUND") throw err;
 }
 
+// Check if we're in development/preview mode (not production build)
+// Craco sets NODE_ENV=development for start, NODE_ENV=production for build
 const isDevServer = process.env.NODE_ENV !== "production";
+
+// Environment variable overrides
 const config = {
   enableHealthCheck: process.env.ENABLE_HEALTH_CHECK === "true",
 };
 
+// Conditionally load health check modules only if enabled
 let WebpackHealthPlugin;
 let setupHealthEndpoints;
 let healthPluginInstance;
@@ -55,18 +45,21 @@ let webpackConfig = {
       '@': path.resolve(__dirname, 'src'),
     },
     configure: (webpackConfig) => {
-      webpackConfig.watchOptions = {
-        ...webpackConfig.watchOptions,
-        ignored: [
-          '**/node_modules/**',
-          '**/.git/**',
-          '**/build/**',
-          '**/dist/**',
-          '**/coverage/**',
-          '**/public/**',
+
+      // Add ignored patterns to reduce watched directories
+        webpackConfig.watchOptions = {
+          ...webpackConfig.watchOptions,
+          ignored: [
+            '**/node_modules/**',
+            '**/.git/**',
+            '**/build/**',
+            '**/dist/**',
+            '**/coverage/**',
+            '**/public/**',
         ],
       };
 
+      // Add health check plugin to webpack if enabled
       if (config.enableHealthCheck && healthPluginInstance) {
         webpackConfig.plugins.push(healthPluginInstance);
       }
@@ -76,26 +69,36 @@ let webpackConfig = {
 };
 
 webpackConfig.devServer = (devServerConfig) => {
+  // Add health check endpoints if enabled
   if (config.enableHealthCheck && setupHealthEndpoints && healthPluginInstance) {
     const originalSetupMiddlewares = devServerConfig.setupMiddlewares;
+
     devServerConfig.setupMiddlewares = (middlewares, devServer) => {
+      // Call original setup if exists
       if (originalSetupMiddlewares) {
         middlewares = originalSetupMiddlewares(middlewares, devServer);
       }
+
+      // Setup health check endpoints
       setupHealthEndpoints(devServer, healthPluginInstance);
+
       return middlewares;
     };
   }
+
   return devServerConfig;
 };
 
+// Wrap with visual edits (automatically adds babel plugin, dev server, and overlay in dev mode)
 if (isDevServer) {
   try {
     const { withVisualEdits } = require("@emergentbase/visual-edits/craco");
     webpackConfig = withVisualEdits(webpackConfig);
   } catch (err) {
     if (err.code === 'MODULE_NOT_FOUND' && err.message.includes('@emergentbase/visual-edits/craco')) {
-      console.warn("[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.");
+      console.warn(
+        "[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled."
+      );
     } else {
       throw err;
     }
