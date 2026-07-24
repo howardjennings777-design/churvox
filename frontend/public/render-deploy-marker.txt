@@ -1,4 +1,4 @@
 Render frontend deploy marker
-Triggered: 2026-07-24T04:34:47Z
-Deploy main through: 9e8694ba0d3435a7d0c96f038f819186ec0744a9
-Purpose: deploy the real owner cache cleanup, 17px readable page text, 16px controls, 15px supporting text and fixed 116x50 logout on desktop and mobile.
+Triggered: 2026-07-24T07:05:00Z
+Deploy main through: eb89836d4f88c5f6abcda0865f64ab7983ada732
+Purpose: force production frontend redeploy so the legacy grassley-frontend.onrender.com login immediately redirects to the current www.churvox.com site and cannot show the old Churvox interface.
