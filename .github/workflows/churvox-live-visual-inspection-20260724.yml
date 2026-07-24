@@ -43,7 +43,10 @@ jobs:
               ['home','https://www.churvox.com/'],
               ['login','https://www.churvox.com/login'],
               ['dashboard','https://www.churvox.com/dashboard'],
-              ['render-login','https://grassley-frontend.onrender.com/login']
+              ['render-login','https://grassley-frontend.onrender.com/login'],
+              ['sites-home','https://churvox.howardjennings77.chatgpt.site/'],
+              ['sites-login','https://churvox.howardjennings77.chatgpt.site/login'],
+              ['sites-dashboard','https://churvox.howardjennings77.chatgpt.site/dashboard']
             ];
             const report = [];
             for (const [name,url] of pages) {
