@@ -21,7 +21,7 @@ function normaliseOfficeHash() {
   return true
 }
 
-function OfficeTeamLab(props) {
+function LegacyOfficeTeamLab(props) {
   const [routeVersion, setRouteVersion] = React.useState(0)
 
   React.useLayoutEffect(() => {
@@ -39,8 +39,6 @@ function OfficeTeamLab(props) {
     }
   }, [])
 
-  if (props.appMode === 'owner') return <FreshApp />
-
   return (
     <OfficeTeamOwnerScreenGuard appMode={props.appMode}>
       <React.Suspense fallback={<main className="cvOfficeLabLoading">Loading Churvox office…</main>}>
@@ -48,6 +46,11 @@ function OfficeTeamLab(props) {
       </React.Suspense>
     </OfficeTeamOwnerScreenGuard>
   )
+}
+
+function OfficeTeamLab(props) {
+  if (props.appMode === 'owner') return <FreshApp />
+  return <LegacyOfficeTeamLab {...props} />
 }
 
 export default OfficeTeamLab
