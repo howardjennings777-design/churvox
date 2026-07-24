@@ -55,6 +55,9 @@ test.describe("Churvox Control Board complete business flow", () => {
       "Mark paid",
       "owner_approved: true",
       "invoice kept its current payment status",
+      "Drafts must be approved first",
+      "const canSend",
+      "Record ${money(total)} as paid?",
     ]);
     includesAll(editor, ["Payment link", "Invoice notes", "customer_email"]);
   });
@@ -70,6 +73,17 @@ test.describe("Churvox Control Board complete business flow", () => {
       "reply_to_message_id",
     ]);
     includesAll(editor, ["Pay frequency", "Hourly rate", "Approved hours", "Prepared reply"]);
+  });
+
+  test("outbound communication never claims delivery it cannot prove", () => {
+    includesAll(actions, [
+      "Churvox has not falsely marked it as delivered",
+      "Churvox recorded the draft without pretending it was delivered",
+      "SMS is coming soon",
+      "SMS remains disabled until delivery is properly connected",
+      "email_draft_opened",
+    ]);
+    includesAll(editor, ["Worker app", "Email", "SMS (Coming soon)"]);
   });
 
   test("workflow actions give immediate visible feedback", () => {
