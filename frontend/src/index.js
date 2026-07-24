@@ -6,6 +6,7 @@ import './runtime/churvoxExplicitLogoutGuardRuntime';
 import './runtime/churvoxProtectedFetchAuthGuardRuntime';
 import './runtime/churvoxLegacyHostExitRuntime';
 import './runtime/churvoxStripeCheckoutLiveRuntime';
+import './runtime/churvoxStripePlanIdentityRuntime';
 import App from './App';
 import API_BASE from './lib/apiBase';
 import './index.css';
