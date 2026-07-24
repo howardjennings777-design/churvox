@@ -281,18 +281,10 @@ function ensureOwnerLogout() {
 }
 
 async function resetStaleOwnerShellOnce() {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !isOwnerPath() || !hasAuthProof()) return;
   let previous = "";
   try { previous = localStorage.getItem(CACHE_RESET_KEY) || ""; } catch {}
-
-  const url = new URL(window.location.href);
-  if (previous === CACHE_RESET_VERSION) {
-    if (url.searchParams.get("cvui") === CACHE_RESET_VERSION) {
-      url.searchParams.delete("cvui");
-      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
-    }
-    return;
-  }
+  if (previous === CACHE_RESET_VERSION) return;
 
   try { localStorage.setItem(CACHE_RESET_KEY, CACHE_RESET_VERSION); } catch {}
 
@@ -306,11 +298,6 @@ async function resetStaleOwnerShellOnce() {
     }
     await Promise.allSettled(work);
   } catch {}
-
-  if (url.searchParams.get("cvui") !== CACHE_RESET_VERSION) {
-    url.searchParams.set("cvui", CACHE_RESET_VERSION);
-    window.location.replace(url.toString());
-  }
 }
 
 if (typeof window !== "undefined") {
@@ -343,7 +330,10 @@ if (typeof window !== "undefined") {
     return config;
   });
 
-  const scheduleOwnerRepair = () => [0, 80, 220, 600, 1400, 3000].forEach((delay) => window.setTimeout(ensureOwnerLogout, delay));
+  const scheduleOwnerRepair = () => {
+    resetStaleOwnerShellOnce();
+    [0, 80, 220, 600, 1400, 3000].forEach((delay) => window.setTimeout(ensureOwnerLogout, delay));
+  };
   scheduleOwnerRepair();
   window.addEventListener("load", scheduleOwnerRepair);
   window.addEventListener("resize", scheduleOwnerRepair);
