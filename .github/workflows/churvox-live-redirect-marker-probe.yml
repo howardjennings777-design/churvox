@@ -1,0 +1,53 @@
+name: Churvox live redirect marker probe
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  probe:
+    if: startsWith(github.event.issue.title, '[churvox-live-redirect-marker-probe]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect live HTML bundle and worker
+        shell: bash
+        run: |
+          set +e
+          {
+            base='https://grassley-frontend.onrender.com'
+            curl -sS --max-time 40 -D /tmp/h -o /tmp/index -H 'Cache-Control: no-cache, no-store, max-age=0' "$base/login?probe=$(date +%s%N)"
+            echo "INDEX_BYTES=$(wc -c </tmp/index)"
+            echo "LAST_MODIFIED=$(grep -i '^last-modified:' /tmp/h | tail -1 | tr -d '\r')"
+            echo "INDEX_START=$(head -c 700 /tmp/index | tr '\n' ' ')"
+            asset=$(grep -oE '/static/js/main\.[^"]+\.js' /tmp/index | head -1)
+            echo "ASSET=$asset"
+            if [ -n "$asset" ]; then curl -sS --max-time 60 -o /tmp/main "$base$asset?probe=$(date +%s%N)"; fi
+            curl -sS --max-time 40 -o /tmp/sw "$base/sw.js?probe=$(date +%s%N)"
+            for target in index main sw; do
+              echo "--- $target ---"
+              [ -f "/tmp/$target" ] || continue
+              echo "BYTES=$(wc -c </tmp/$target)"
+              for marker in 'redirectLegacyRenderHost' 'grassley-frontend.onrender.com' 'fromLegacyRender' 'churvoxLegacyHostExitRuntime' 'churvox-legacy-exit-20260724-v3' 'Response.redirect' 'LEGACY_HOST' 'window.location.replace' 'www.churvox.com'; do
+                echo "$marker=$(grep -Foc "$marker" "/tmp/$target" 2>/dev/null || true)"
+              done
+            done
+          } > /tmp/report.txt 2>&1
+          cat /tmp/report.txt
+          {
+            echo 'REPORT<<EOF'
+            cat /tmp/report.txt
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+      - name: Post marker proof
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '```text\n' + (process.env.REPORT || 'missing') + '\n```'
+            });
