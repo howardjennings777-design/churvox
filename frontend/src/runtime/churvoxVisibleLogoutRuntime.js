@@ -20,14 +20,15 @@ const css = `
     align-items: center;
     justify-content: center;
     gap: 7px;
-    min-width: 96px;
-    min-height: 44px;
+    width: 104px !important;
+    min-width: 104px !important;
+    min-height: 44px !important;
     border: 1px solid rgba(16, 21, 19, 0.12);
     border-radius: 999px;
     padding: 9px 14px;
     background: rgba(255, 255, 255, 0.94);
     color: #101513;
-    font-size: 14px;
+    font-size: 14px !important;
     font-weight: 1000;
     letter-spacing: -0.01em;
     cursor: pointer;
@@ -39,7 +40,7 @@ const css = `
   .cvxVisibleLogout:disabled { opacity: 0.68; cursor: wait; transform: none; }
   .cv3Top .cvxVisibleLogout { margin-left: 8px; }
   .cv3Account .cvxVisibleLogout { margin-top: 9px; align-self: flex-end; }
-  .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { width: 100%; margin-top: 10px; }
+  .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { width: 100% !important; margin-top: 10px; }
   .cvxFloatingLogout {
     position: fixed;
     right: 14px;
@@ -51,13 +52,14 @@ const css = `
   }
   @media (max-width: 720px) {
     .cv3Top .cv3Account { display: grid !important; gap: 6px !important; justify-items: end !important; }
-    .cv3Account .cvxVisibleLogout { min-height: 44px; padding: 9px 12px; font-size: 14px; }
-    .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { min-height: 44px; }
+    .cv3Account .cvxVisibleLogout { min-height: 46px !important; padding: 9px 12px; font-size: 14px !important; }
+    .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { min-height: 44px !important; }
     .cvxFloatingLogout {
       right: 10px;
       bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-      min-width: 100px;
-      min-height: 48px;
+      width: 104px !important;
+      min-width: 104px !important;
+      min-height: 48px !important;
     }
   }
 `;
@@ -146,8 +148,8 @@ function isVisibleControl(element) {
     && style.visibility !== 'hidden'
     && Number(style.opacity || 1) > 0.05
     && style.pointerEvents !== 'none'
-    && rect.width >= 72
-    && rect.height >= 36
+    && rect.width >= 88
+    && rect.height >= 40
     && insideViewport;
 }
 
