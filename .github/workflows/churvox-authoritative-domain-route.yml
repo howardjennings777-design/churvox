@@ -44,11 +44,12 @@ jobs:
               dig +noall +answer @$dns www.churvox.com A
             done
             echo
-            for u in https://churvox.com/ https://www.churvox.com/ https://www.churvox.com/dashboard https://grassley-frontend.onrender.com/ https://grassley-frontend.onrender.com/dashboard; do
+            for u in https://churvox.com/ https://www.churvox.com/ https://www.churvox.com/login https://www.churvox.com/dashboard https://grassley-frontend.onrender.com/ https://grassley-frontend.onrender.com/login https://grassley-frontend.onrender.com/dashboard; do
               echo "=== URL $u ==="
               curl -sS -L --max-time 40 -D - -o /tmp/body "${u}?route=$(date +%s%N)" | sed -n '1,30p'
               grep -ioE '<title>[^<]*</title>' /tmp/body | head -1
               grep -oE 'src="[^"]+"' /tmp/body | head -10
+              grep -F 'redirectLegacyRenderHost' /tmp/body | head -1
               echo
             done
           } > "$OUT" 2>&1
