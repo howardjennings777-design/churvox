@@ -1,5 +1,5 @@
-UTC=2026-07-24 15:08:39
-COMMIT=a689a378510421438f40217e9706640e19219535
+UTC=2026-07-24 15:32:27
+COMMIT=f8821ab44b5bdc704d10439d722a2590c7b31382
 INSTALL_EXIT=0
 BUILD_EXIT=0
 RESULT=PASS
@@ -68,7 +68,7 @@ CHURVOX PREDEPLOY RELEASE AUDIT PASSED (17 checks)
 - Tester backend routes are installed
 - HQ application inbox stays view-only
 - Promotion Centre stays local-only
-CHURVOX RELEASE METADATA WRITTEN frontend/public/__churvox/release.json a689a378510421438f40217e9706640e19219535
+CHURVOX RELEASE METADATA WRITTEN frontend/public/__churvox/release.json f8821ab44b5bdc704d10439d722a2590c7b31382
 Worker proof contract passed: one proof panel, one completion check, one job note, and sent photo proof persists through Complete.
 Generated Churvox PNG app icons (churvox-integrated-mark-20260708b)
 Creating an optimized production build...
@@ -76,16 +76,15 @@ Compiled successfully.
 
 File sizes after gzip:
 
-  106.31 kB  build/static/js/main.3718edf2.js
+  106.32 kB  build/static/js/main.cb8994e2.js
   59.33 kB   build/static/js/7847.4a655653.chunk.js
   40.96 kB   build/static/css/main.95a179fc.css
-  25.48 kB   build/static/js/8148.1d09f318.chunk.js
   22.17 kB   build/static/css/7847.77c5a5fa.chunk.css
+  19.53 kB   build/static/js/4962.bc276a3e.chunk.js
   16.7 kB    build/static/js/1598.0b13db9e.chunk.js
   15.86 kB   build/static/css/3380.e977714b.chunk.css
   12.44 kB   build/static/js/9967.438942ef.chunk.js
   11.89 kB   build/static/js/9857.b1c092aa.chunk.js
-  10.04 kB   build/static/css/8148.8e157169.chunk.css
   9.65 kB    build/static/js/9957.e757ef93.chunk.js
   8.89 kB    build/static/js/5539.c5024515.chunk.js
   8.48 kB    build/static/js/7245.8bc82715.chunk.js
@@ -121,8 +120,10 @@ File sizes after gzip:
   4.65 kB    build/static/css/3797.704d0553.chunk.css
   4.65 kB    build/static/css/7153.704d0553.chunk.css
   4.59 kB    build/static/js/4918.16159496.chunk.js
-  4.26 kB    build/static/js/19.9d627e1c.chunk.js
+  4.39 kB    build/static/css/8665.44ed34f1.chunk.css
+  4.27 kB    build/static/js/8665.1912dda3.chunk.js
   4.18 kB    build/static/js/9213.ec32f0f4.chunk.js
+  4.06 kB    build/static/css/6755.7c62cbed.chunk.css
   3.66 kB    build/static/css/2255.48ad9474.chunk.css
   3.53 kB    build/static/js/8628.43300fa0.chunk.js
   3.52 kB    build/static/js/5550.32bdd03b.chunk.js
@@ -157,7 +158,6 @@ File sizes after gzip:
   744 B      build/static/js/3974.54b3821d.chunk.js
   733 B      build/static/js/1106.67851e8c.chunk.js
   697 B      build/static/js/8370.9250f6dc.chunk.js
-  651 B      build/static/css/19.cdd4da38.chunk.css
   625 B      build/static/js/2524.9233f298.chunk.js
   616 B      build/static/js/5457.4750c06a.chunk.js
   554 B      build/static/js/7497.5f7a6fb0.chunk.js
