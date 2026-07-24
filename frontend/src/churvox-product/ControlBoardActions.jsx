@@ -31,11 +31,14 @@ export default function ControlBoardActions({ record, values, setValues, api, re
 
   const fail = (title, error) => notify({ tone: "bad", title, text: error?.message || error?.error || "The action could not be completed." });
 
-  const run = async (name, calls, title, text, options) => {
+  const run = async (name, calls, title, text, options = {}) => {
     setBusy(name);
     try {
       const result = await firstGood(calls);
-      await finish(title, typeof text === "function" ? text(payloadOf(result)) : text, options);
+      const data = payloadOf(result);
+      const update = typeof options.updateValues === "function" ? options.updateValues(data) : options.updateValues;
+      if (update) setValues((current) => ({ ...current, ...update }));
+      await finish(title, typeof text === "function" ? text(data) : text, options);
       return result;
     } catch (error) {
       fail(title, error);
@@ -53,7 +56,7 @@ export default function ControlBoardActions({ record, values, setValues, api, re
     const completed = /complete/.test(status);
     const recurring = clean(values.recurring || record.recurring);
     const invoiceId = clean(record.invoiceId || record.invoice_id || values.invoiceId || values.invoice_id);
-    const seconds = Number(record.timeSeconds || record.total_time_seconds || record.time_seconds || 0);
+    const seconds = Number(values.timeSeconds || values.total_time_seconds || values.time_seconds || record.timeSeconds || record.total_time_seconds || record.time_seconds || 0);
     const hours = seconds > 0 ? `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m recorded` : "No time recorded yet";
 
     const timerAction = (action, label) => run(
@@ -63,7 +66,16 @@ export default function ControlBoardActions({ record, values, setValues, api, re
         () => api.post(`/jobs/${encodeURIComponent(id)}/${action}`, {}),
       ],
       `Job ${label.toLowerCase()}`,
-      `${record.title || "Job"} is now ${label.toLowerCase()}.`
+      `${record.title || "Job"} is now ${label.toLowerCase()}.`,
+      {
+        updateValues: (data) => ({
+          status: data.status || "In progress",
+          timer_status: data.timer_status || (action === "pause" ? "paused" : "running"),
+          timer_running: action !== "pause",
+          time_seconds: data.time_seconds ?? values.time_seconds,
+          total_time_seconds: data.time_seconds ?? values.total_time_seconds,
+        }),
+      }
     );
 
     const completeJob = async () => {
@@ -146,7 +158,8 @@ export default function ControlBoardActions({ record, values, setValues, api, re
       "accept",
       [() => api.patch(`/quotes/${encodeURIComponent(id)}`, { status: "Accepted", accepted_at: new Date().toISOString() })],
       "Quote accepted",
-      "The quote is ready to become scheduled work."
+      "The quote is ready to become scheduled work.",
+      { updateValues: { status: "Accepted" } }
     );
 
     const convert = () => run(
@@ -184,7 +197,8 @@ export default function ControlBoardActions({ record, values, setValues, api, re
         () => api.patch(`/invoices/${encodeURIComponent(id)}`, { status: "Due", approved_at: new Date().toISOString() }),
       ],
       "Invoice approved",
-      "The draft is approved and ready to send."
+      "The draft is approved and ready to send.",
+      { updateValues: { status: "Due" } }
     );
 
     const sendInvoice = async (reminder = false) => {
@@ -197,8 +211,10 @@ export default function ControlBoardActions({ record, values, setValues, api, re
           () => api.post(`/invoices/${encodeURIComponent(id)}/${reminder ? "send-reminder" : "send-with-pdf"}`, { to: email, subject, html, invoice: { ...record, ...values }, owner_approved: true }),
           () => api.post(`/invoices/${encodeURIComponent(id)}/send-with-pdf`, { to: email, subject, html, invoice: { ...record, ...values }, owner_approved: true }),
         ]);
-        await firstGood([() => api.patch(`/invoices/${encodeURIComponent(id)}`, { status: "Sent", sent_at: new Date().toISOString(), last_reminder_at: reminder ? new Date().toISOString() : undefined })]);
-        await finish(reminder ? "Reminder sent" : "Invoice sent", reminder ? "The client has been reminded and the record is up to date." : "The invoice PDF has been sent and payment tracking has started.");
+        const nextStatus = reminder ? (values.status || record.status || "Sent") : "Sent";
+        await firstGood([() => api.patch(`/invoices/${encodeURIComponent(id)}`, { status: nextStatus, sent_at: new Date().toISOString(), last_reminder_at: reminder ? new Date().toISOString() : undefined })]);
+        setValues((current) => ({ ...current, status: nextStatus }));
+        await finish(reminder ? "Reminder sent" : "Invoice sent", reminder ? "The client has been reminded and the invoice kept its current payment status." : "The invoice PDF has been sent and payment tracking has started.");
         return result;
       } catch (error) { fail(reminder ? "Reminder not sent" : "Invoice not sent", error); return null; }
       finally { setBusy(""); }
@@ -236,13 +252,15 @@ export default function ControlBoardActions({ record, values, setValues, api, re
         () => api.patch(`/team/workers/${encodeURIComponent(id)}`, { app_status: "Invited", status: "Invited", invited_at: new Date().toISOString() }),
       ],
       "Worker invited",
-      "The person can now enter the worker flow for assigned jobs."
+      "The person can now enter the worker flow for assigned jobs.",
+      { updateValues: { app: "Invited", status: "Invited" } }
     );
     const approveTime = () => run(
       "timesheet",
       [() => api.patch(`/team/workers/${encodeURIComponent(id)}`, { payroll_status: "Approved for export", timesheet_approved_at: new Date().toISOString() })],
       "Timesheet approved",
-      "Recorded time is approved for CSV export. No tax, government or bank action was taken."
+      "Recorded time is approved for CSV export. No tax, government or bank action was taken.",
+      { updateValues: { payroll: "Approved for export" } }
     );
     return <section className="cv7FlowDock" data-testid="control-board-worker-actions">
       <header><div><small>Team flow</small><h3>{invited ? "Worker connected" : "Finish worker setup"}</h3></div><span>{values.timesheet || record.timesheet || "No time recorded"}</span></header>
