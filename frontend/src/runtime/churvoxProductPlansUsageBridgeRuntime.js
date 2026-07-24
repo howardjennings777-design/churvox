@@ -33,6 +33,13 @@ function authUser() {
   }
 }
 
+function keepVisibleToolsHonest(root, plan) {
+  root.querySelectorAll(".cv7SubNav button").forEach((button) => {
+    const label = String(button.textContent || "").trim().toLowerCase();
+    if (label === "timesheets") button.hidden = plan !== "command";
+  });
+}
+
 function decorateControlBoard() {
   const root = document.querySelector(".cv7Product");
   if (!root) return null;
@@ -48,6 +55,7 @@ function decorateControlBoard() {
     nav.classList.add("cvOwnerNavigation");
     nav.dataset.plan = plan;
   }
+  keepVisibleToolsHonest(root, plan);
 
   if (root.classList.contains("page-plans")) {
     root.dataset.churvoxPage = "plans";
