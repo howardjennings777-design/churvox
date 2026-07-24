@@ -1,6 +1,7 @@
 import React from 'react'
 import OfficeTeamLabSite from './OfficeTeamLabSite'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
+import FreshApp from '../churvox-fresh/FreshApp'
 
 const HASH_ALIASES = new Map([
   ['team', 'office-team'],
@@ -36,6 +37,8 @@ function OfficeTeamLab(props) {
       window.removeEventListener('popstate', handleRoute)
     }
   }, [])
+
+  if (props.appMode === 'owner') return <FreshApp />
 
   return (
     <OfficeTeamOwnerScreenGuard appMode={props.appMode}>
