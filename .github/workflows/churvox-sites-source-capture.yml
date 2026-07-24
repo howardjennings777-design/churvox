@@ -1,0 +1,88 @@
+name: Churvox Sites source capture
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  capture:
+    if: startsWith(github.event.issue.title, '[churvox-sites-source-capture]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Capture actual ChatGPT Sites source and browser output
+        shell: bash
+        run: |
+          set -e
+          OUT=docs/sites-source-capture
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+          base='https://churvox.howardjennings77.chatgpt.site'
+          for name_path in 'home:/' 'login:/login' 'dashboard:/dashboard'; do
+            name=${name_path%%:*}
+            path=${name_path#*:}
+            curl -sS -L --max-time 60 -D "$OUT/$name.headers.txt" -o "$OUT/$name.raw.html" "$base$path?capture=$(date +%s%N)"
+            if command -v google-chrome >/dev/null 2>&1; then
+              google-chrome --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,1000 --virtual-time-budget=12000 --dump-dom "$base$path?browsercapture=$(date +%s%N)" > "$OUT/$name.dom.html" 2>"$OUT/$name.chrome.log" || true
+              google-chrome --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,1000 --virtual-time-budget=12000 --screenshot="$GITHUB_WORKSPACE/$OUT/$name.png" --full-page "$base$path?shot=$(date +%s%N)" >>"$OUT/$name.chrome.log" 2>&1 || true
+            fi
+          done
+
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urljoin, urlparse
+          import re, json, subprocess
+          out=Path('docs/sites-source-capture')
+          base='https://churvox.howardjennings77.chatgpt.site/'
+          html=(out/'home.raw.html').read_text(errors='replace')
+          urls=[]
+          for u in re.findall(r'''(?:src|href)=["']([^"']+)["']''', html, flags=re.I):
+              full=urljoin(base,u)
+              if urlparse(full).netloc==urlparse(base).netloc and full not in urls:
+                  urls.append(full)
+          (out/'assets.json').write_text(json.dumps(urls,indent=2))
+          assets=out/'assets'; assets.mkdir(exist_ok=True)
+          rows=[]
+          for i,url in enumerate(urls):
+              parsed=urlparse(url)
+              suffix=Path(parsed.path).suffix or '.bin'
+              dest=assets/f'{i:03d}{suffix}'
+              r=subprocess.run(['curl','-sS','-L','--max-time','60','-o',str(dest),url],capture_output=True,text=True)
+              rows.append({'url':url,'file':str(dest),'bytes':dest.stat().st_size if dest.exists() else 0,'exit':r.returncode,'stderr':r.stderr[:500]})
+          (out/'asset-downloads.json').write_text(json.dumps(rows,indent=2))
+          summary=[]
+          for name in ['home','login','dashboard']:
+              raw=(out/f'{name}.raw.html').read_text(errors='replace')
+              dom=(out/f'{name}.dom.html').read_text(errors='replace') if (out/f'{name}.dom.html').exists() else ''
+              title=re.search(r'<title>(.*?)</title>',raw,re.I|re.S)
+              text=re.sub(r'<[^>]+>',' ',dom or raw)
+              text=' '.join(text.split())[:12000]
+              summary.append({'name':name,'raw_bytes':len(raw.encode()),'dom_bytes':len(dom.encode()),'title':title.group(1).strip() if title else '', 'text':text})
+          (out/'summary.json').write_text(json.dumps(summary,indent=2))
+          PY
+
+      - name: Commit capture
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/sites-source-capture
+          git commit -m 'Capture actual Churvox Sites source and assets' || true
+          git push || true
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report capture
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs=require('fs');
+            const summary=fs.readFileSync('docs/sites-source-capture/summary.json','utf8');
+            const assets=fs.readFileSync('docs/sites-source-capture/asset-downloads.json','utf8');
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`Actual Sites source captured at \`${process.env.COMMIT}\`.\n\nSummary:\n\`\`\`json\n${summary.slice(0,30000)}\n\`\`\`\nAssets:\n\`\`\`json\n${assets.slice(0,30000)}\n\`\`\``});
