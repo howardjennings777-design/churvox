@@ -1,8 +1,14 @@
-name: Churvox access pages push proof
+name: Churvox access pages proof
 
-# Registered push proof for the premium login and tester rebuild.
 on:
   push:
+    branches: [main]
+    paths:
+      - 'frontend/src/pages/auth/ChurvoxLoginPolish.css'
+      - 'frontend/public/testers/index.html'
+      - 'frontend/public/testers/churvox-tester-premium.css'
+      - '.github/workflows/churvox-access-pages-push-proof.yml'
+  pull_request:
     branches: [main]
     paths:
       - 'frontend/src/pages/auth/ChurvoxLoginPolish.css'
