@@ -1,0 +1,130 @@
+.cv6Shell,.cv6Shell *{box-sizing:border-box}
+.cv6Shell{min-height:100vh;background:#f2efe9}
+.cv6Shell .cv3Product{--canvas:#f2efe9;--paper:#ffffff;--paper-soft:#f8f5ef;--ink:#171815;--ink-soft:#4c514a;--muted:#757b72;--line:#dedbd3;--line-strong:#c9c5ba;--orange:#f06b2f;--orange-dark:#b84618;background:radial-gradient(circle at 12% 2%,rgba(240,107,47,.08),transparent 25%),#f2efe9}
+
+/* One clear desktop navigation. The older grouped dropdown navigation remains available only through the mobile shell. */
+.cv6Shell .cv3Top{background:#191b18;border-bottom:0;box-shadow:0 10px 34px rgba(21,22,19,.16);backdrop-filter:none}
+.cv6Shell .cv3TopRow{height:72px}
+.cv6Shell .cv3Brand{color:#fff}
+.cv6Shell .cv3Brand span{background:linear-gradient(145deg,#ff8b50,#e95519);box-shadow:0 10px 28px rgba(240,107,47,.35)}
+.cv6Shell .cv3Brand small{color:rgba(255,255,255,.52)}
+.cv6Shell .cv3TopCopy small{color:#ff9d6d}
+.cv6Shell .cv3TopCopy h1{color:#fff;font-size:21px}
+.cv6Shell .cv3Create{border-color:#f06b2f;background:#f06b2f;color:#fff;box-shadow:0 8px 20px rgba(240,107,47,.22)}
+.cv6Shell .cv3Account{border-color:rgba(255,255,255,.24);background:rgba(255,255,255,.08);color:#fff}
+.cv6Shell .cv3AccountMenu{border-color:#d8d5cd;background:#fff;color:#171815}
+.cv6Shell .cv3Nav{display:none!important}
+.cv6NavHost{width:100%;background:#fff;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid #dad7cf}
+.cv6DirectNav{max-width:1680px;height:68px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:10px;align-items:stretch}
+.cv6CoreLinks{min-width:0;display:flex;align-items:stretch;overflow-x:auto;scrollbar-width:none}
+.cv6CoreLinks::-webkit-scrollbar{display:none}
+.cv6CoreLinks>button,.cv6MoreButton{position:relative;min-width:102px;height:68px;display:grid;align-content:center;gap:4px;border:0;border-right:1px solid #ece9e2;padding:0 15px;background:#fff;color:#555a53;text-align:left;white-space:nowrap}
+.cv6CoreLinks>button:first-child{border-left:1px solid #ece9e2}
+.cv6CoreLinks>button:after,.cv6More.active .cv6MoreButton:after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:999px 999px 0 0;background:transparent}
+.cv6CoreLinks>button b,.cv6MoreButton b{font-size:13px;line-height:1;font-weight:820;letter-spacing:-.02em}
+.cv6CoreLinks>button small,.cv6MoreButton small{color:#858a82;font-size:9px;line-height:1;font-weight:700}
+.cv6CoreLinks>button:hover,.cv6CoreLinks>button.active,.cv6More.active .cv6MoreButton{background:#faf7f2;color:#171815}
+.cv6CoreLinks>button.active:after,.cv6More.active .cv6MoreButton:after{background:#f06b2f}
+.cv6CoreLinks>button.active small,.cv6More.active .cv6MoreButton small{color:#bd4b1c}
+.cv6More{position:relative;min-width:0}
+.cv6MoreButton{width:100%;border-left:1px solid #ece9e2;border-right:1px solid #ece9e2;padding-right:30px}
+.cv6MoreButton>span{position:absolute;right:14px;top:25px;color:#8a8e87;font-size:16px;line-height:1}
+.cv6MoreMenu{position:absolute;right:0;top:60px;z-index:170;width:310px;border:1px solid #d8d5cd;border-radius:18px;padding:8px;background:#fff;box-shadow:0 28px 78px rgba(20,22,18,.22)}
+.cv6MoreMenu>button{width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;border-radius:12px;padding:10px 12px;background:transparent;color:#171815;text-align:left}
+.cv6MoreMenu>button:hover,.cv6MoreMenu>button.active{background:#f7f3ed}
+.cv6MoreMenu>button span{display:grid;gap:4px}
+.cv6MoreMenu>button b{font-size:13px;font-weight:820}
+.cv6MoreMenu>button small{color:#777d74;font-size:10px}
+.cv6MoreMenu>button em{color:#bf4b1b;font-size:9px;font-style:normal;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
+
+/* Every page opens with a visual explanation of where the owner is and what to look for. */
+.cv6Shell .cv3Workspace{padding-top:22px}
+.cv6LensHost{margin-bottom:18px}
+.cv6PageLens{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(460px,.85fr);gap:0;border:1px solid #252823;border-radius:22px;background:linear-gradient(128deg,#171916 0%,#22251f 64%,#292a23 100%);color:#fff;box-shadow:0 18px 54px rgba(28,30,25,.18)}
+.cv6PageLens:before{content:"";position:absolute;width:260px;height:260px;right:-80px;top:-120px;border-radius:50%;background:radial-gradient(circle,rgba(240,107,47,.28),rgba(240,107,47,0) 70%);pointer-events:none}
+.cv6LensCopy{position:relative;z-index:1;padding:28px 30px}
+.cv6LensCopy>small{display:block;color:#ff9d6d;font-size:9px;font-weight:880;letter-spacing:.15em;text-transform:uppercase}
+.cv6LensCopy h2{max-width:780px;margin:8px 0 9px;font-size:clamp(30px,3.2vw,49px);line-height:1.01;letter-spacing:-.055em;font-weight:730}
+.cv6LensCopy p{max-width:740px;margin:0;color:rgba(255,255,255,.68);font-size:13px;line-height:1.6}
+.cv6LensLanes{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-left:1px solid rgba(255,255,255,.12)}
+.cv6LensLanes>span{min-width:0;display:grid;align-content:end;gap:6px;padding:24px 18px;border-right:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.065))}
+.cv6LensLanes>span:last-child{border-right:0}
+.cv6LensLanes i{align-self:start;color:#ff9d6d;font-size:9px;font-style:normal;font-weight:900;letter-spacing:.12em}
+.cv6LensLanes small{color:rgba(255,255,255,.45);font-size:8px;font-weight:850;letter-spacing:.13em;text-transform:uppercase}
+.cv6LensLanes b{max-width:150px;font-size:13px;line-height:1.35;font-weight:760}
+
+/* Existing live page information becomes the second, data-led layer rather than another oversized intro. */
+.cv6Shell .cv3Hero{align-items:center;gap:24px;border:1px solid #ddd9d0;border-radius:18px;padding:20px 22px;background:#fff;box-shadow:0 8px 28px rgba(35,36,31,.06)}
+.cv6Shell .cv3Hero>div:first-child>small,.cv6Shell .cv3Hero>div:first-child>h2{display:none}
+.cv6Shell .cv3Hero p{max-width:820px;font-size:13px}
+.cv6Shell .cv3Hero p b{display:block;margin-bottom:4px;color:#171815;font-size:16px;line-height:1.25}
+.cv6Shell .cv3HeroStats{gap:0;border:1px solid #e2ded6;border-radius:14px;overflow:hidden;background:#faf8f4}
+.cv6Shell .cv3HeroStats span{min-width:100px;min-height:65px;align-content:center;border-left:0;border-right:1px solid #e1ddd5;padding:10px 14px}
+.cv6Shell .cv3HeroStats span:last-child{border-right:0}
+.cv6Shell .cv3HeroStats b{font-size:16px}
+
+/* Clear blocks, readable records, and less visual drift between pages. */
+.cv6Shell .cv3Page{gap:18px}
+.cv6Shell .cv3Toolbar{position:relative;gap:8px;border:1px solid #ddd9d0;border-radius:16px;padding:10px;background:rgba(255,255,255,.78);box-shadow:0 8px 24px rgba(35,36,31,.05)}
+.cv6Shell .cv3Toolbar button{border-radius:10px;background:#fff}
+.cv6Shell .cv3Panel{min-height:240px;border:1px solid #ddd9d0;border-radius:18px;padding:0 18px;background:#fff;box-shadow:0 8px 28px rgba(35,36,31,.055);overflow:hidden}
+.cv6Shell .cv3Panel>header{padding:16px 0}
+.cv6Shell .cv3Row{padding-left:2px;padding-right:2px}
+.cv6Shell .cv3Row:hover{padding-left:10px;background:linear-gradient(90deg,rgba(240,107,47,.085),transparent 70%)}
+.cv6Shell .cv3Preview{padding-bottom:20px}
+.cv6Shell .cv3Stats{overflow:hidden;border:1px solid #d9d5cc;border-radius:18px;background:#fff;box-shadow:0 8px 28px rgba(35,36,31,.05)}
+.cv6Shell .cv3Brief{overflow:hidden;border:1px solid #d9d5cc;border-radius:20px;box-shadow:0 12px 38px rgba(35,36,31,.07)}
+.cv6Shell .cv3BriefLead{background:#fff}
+.cv6Shell .cv3BriefMove{background:#f8f4ed}
+.cv6Shell .cv3BriefPulse{background:#fff}
+.cv6Shell .cv3Brief h2{font-size:clamp(31px,3.5vw,49px)}
+.cv6Shell .cv3TodayBoard{overflow:hidden;border:1px solid #d9d5cc;border-radius:20px;background:#fff;box-shadow:0 10px 32px rgba(35,36,31,.06)}
+.cv6Shell .cv3ActionRail{overflow:hidden;border:1px solid #d9d5cc;border-radius:18px;background:#fff;box-shadow:0 8px 26px rgba(35,36,31,.05)}
+.cv6Shell .cv3CommandDesk{overflow:hidden;border-radius:22px;box-shadow:0 18px 52px rgba(22,24,20,.2)}
+.cv6Shell .cv3ScheduleRoom,.cv6Shell .cv3ScheduleSide{border:1px solid #ddd9d0;border-radius:18px;padding:0 18px;background:#fff;box-shadow:0 8px 28px rgba(35,36,31,.055)}
+.cv6Shell .cv3ScheduleSide{padding:20px}
+.cv6Shell .cv3Pipeline{overflow:hidden;border:1px solid #d9d5cc;border-radius:18px;background:#fff;box-shadow:0 8px 28px rgba(35,36,31,.05)}
+.cv6Shell .cv3GuardGrid{overflow:hidden;border:1px solid #ddd9d0;border-radius:16px;background:#fff}
+.cv6Shell .cv3CapacityRoom,.cv6Shell .cv3AddonRoom,.cv6Shell .cv3SupportRoom,.cv6Shell .cv3SupportRules,.cv6Shell .cv3Lock{border:1px solid #d9d5cc;border-radius:20px;padding:22px;background:#fff;box-shadow:0 10px 34px rgba(35,36,31,.06)}
+.cv6Shell .cv3SupportRoom,.cv6Shell .cv3SupportRules{padding:0;overflow:hidden}
+.cv6Shell .cv3AddonRoom{margin-top:0}
+.cv6Shell .cv3DrawerLayer{justify-content:center;align-items:center;padding:24px;background:rgba(18,20,17,.52)}
+.cv6Shell .cv3Drawer{width:min(760px,100%);height:min(88vh,920px);border-radius:22px;padding:30px;background:#fff;box-shadow:0 32px 100px rgba(17,19,16,.34)}
+.cv6Shell .cv3DrawerActions{margin:28px -30px -30px;border-radius:0 0 22px 22px}
+
+@media(max-width:1260px){
+  .cv6DirectNav{padding-left:20px;padding-right:20px;grid-template-columns:minmax(0,1fr) 122px}
+  .cv6CoreLinks>button{min-width:96px;padding-left:12px;padding-right:12px}
+  .cv6PageLens{grid-template-columns:minmax(0,1fr) 430px}
+  .cv6LensCopy{padding:26px}
+}
+
+@media(max-width:1000px){
+  .cv6PageLens{grid-template-columns:1fr}
+  .cv6LensLanes{min-height:130px;border-left:0;border-top:1px solid rgba(255,255,255,.12)}
+  .cv6LensLanes>span{padding:18px 22px}
+  .cv6Shell .cv3Hero{grid-template-columns:1fr}
+  .cv6Shell .cv3HeroStats{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .cv6Shell .cv3HeroStats span{min-width:0}
+}
+
+@media(max-width:760px){
+  .cv6Shell .cv3TopRow{height:62px}
+  .cv6NavHost{display:none}
+  .cv6Shell .cv3Workspace{padding-top:14px}
+  .cv6LensHost{margin-bottom:14px}
+  .cv6PageLens{border-radius:18px}
+  .cv6LensCopy{padding:21px 20px}
+  .cv6LensCopy h2{font-size:31px}
+  .cv6LensCopy p{font-size:12px}
+  .cv6LensLanes{min-height:112px;overflow-x:auto;grid-template-columns:repeat(3,minmax(135px,1fr))}
+  .cv6LensLanes>span{padding:16px}
+  .cv6Shell .cv3Hero{border-radius:16px;padding:17px}
+  .cv6Shell .cv3HeroStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cv6Shell .cv3HeroStats span:nth-child(2){border-right:0}
+  .cv6Shell .cv3HeroStats span:nth-child(-n+2){border-bottom:1px solid #e1ddd5}
+  .cv6Shell .cv3Toolbar,.cv6Shell .cv3Panel,.cv6Shell .cv3Stats,.cv6Shell .cv3Brief,.cv6Shell .cv3TodayBoard,.cv6Shell .cv3ActionRail,.cv6Shell .cv3CommandDesk,.cv6Shell .cv3ScheduleRoom,.cv6Shell .cv3ScheduleSide,.cv6Shell .cv3Pipeline,.cv6Shell .cv3GuardGrid,.cv6Shell .cv3CapacityRoom,.cv6Shell .cv3AddonRoom,.cv6Shell .cv3SupportRoom,.cv6Shell .cv3SupportRules,.cv6Shell .cv3Lock{border-radius:16px}
+  .cv6Shell .cv3DrawerLayer{align-items:flex-end;padding:0}
+  .cv6Shell .cv3Drawer{width:100%;height:92vh;border-radius:22px 22px 0 0;padding:24px 18px 32px}
+  .cv6Shell .cv3DrawerActions{margin:24px -18px -32px;border-radius:0}
+}
