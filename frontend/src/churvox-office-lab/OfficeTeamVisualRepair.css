@@ -1,6 +1,6 @@
 .cvOwnerReady .cvSiteLogout,
 .cvSafeControlButtons button {
-  min-height: 44px;
+  min-height: 46px;
 }
 
 .cvSafeControlButtons button {
@@ -25,21 +25,24 @@
 
 /* Launch readability and logout visibility repair. */
 .cvOwnerReady {
-  font-size: 16px;
-  line-height: 1.48;
+  font-size: 18px !important;
+  line-height: 1.55 !important;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .cvOwnerReady .cvSiteTopbar {
   overflow: visible !important;
+  padding-right: 146px !important;
 }
 
 .cvOwnerReady .cvSiteTopbar .cvOfficeBrand strong {
-  font-size: 1.16rem !important;
+  font-size: 1.18rem !important;
 }
 
 .cvOwnerReady .cvSiteTopbar .cvOfficeBrand span {
-  font-size: .82rem !important;
-  line-height: 1.35;
+  font-size: .9375rem !important;
+  line-height: 1.4;
 }
 
 .cvOwnerReady .cvOwnerPrimaryNav button,
@@ -50,7 +53,8 @@
 .cvOwnerReady .cvSiteTrayRail button,
 .cvOwnerReady .cvSiteScreen button,
 .cvOwnerReady .cvSiteScreen a {
-  font-size: .9rem !important;
+  font-size: 1rem !important;
+  line-height: 1.3 !important;
 }
 
 .cvOwnerReady .cvSiteScreen p,
@@ -58,9 +62,12 @@
 .cvOwnerReady .cvCorePageHero p,
 .cvOwnerReady .cvCommandSlip p,
 .cvOwnerReady .cvSiteDecisionCard dd,
-.cvOwnerReady .cvSiteScreen label {
-  font-size: .98rem !important;
-  line-height: 1.5;
+.cvOwnerReady .cvSiteScreen label,
+.cvOwnerReady .cvSiteScreen li,
+.cvOwnerReady .cvSiteScreen dt,
+.cvOwnerReady .cvSiteScreen dd {
+  font-size: 1.0625rem !important;
+  line-height: 1.55 !important;
 }
 
 .cvOwnerReady .cvSiteScreen small,
@@ -74,49 +81,60 @@
 .cvOwnerReady .cvCommandSlipTop span,
 .cvOwnerReady .cvCommandSlip > span,
 .cvOwnerReady .cvCommandSlip dt,
-.cvOwnerReady .cvCommandSlipMeta small {
-  font-size: .82rem !important;
-  line-height: 1.4;
+.cvOwnerReady .cvCommandSlipMeta small,
+.cvOwnerReady .cvSiteScreen > span,
+.cvOwnerReady .cvSiteScreen article > span {
+  font-size: .9375rem !important;
+  line-height: 1.45 !important;
 }
 
 .cvOwnerReady input,
 .cvOwnerReady textarea,
 .cvOwnerReady select {
-  min-height: 44px;
-  font-size: 1rem !important;
-  line-height: 1.4;
+  min-height: 46px !important;
+  font-size: 1.0625rem !important;
+  line-height: 1.45 !important;
 }
 
 .cvOwnerReady .cvSiteLogout {
-  position: relative;
-  z-index: 20;
+  position: fixed !important;
+  top: max(12px, env(safe-area-inset-top, 0px)) !important;
+  right: 12px !important;
+  z-index: 2147483000 !important;
   display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
+  align-items: center !important;
+  justify-content: center !important;
   visibility: visible !important;
-  flex: 0 0 104px !important;
-  width: 104px !important;
-  min-width: 104px !important;
-  min-height: 46px !important;
-  padding: 0 16px !important;
+  flex: 0 0 116px !important;
+  width: 116px !important;
+  min-width: 116px !important;
+  max-width: 116px !important;
+  min-height: 50px !important;
+  padding: 0 18px !important;
+  margin: 0 !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  color: #17120e !important;
-  border: 1px solid rgba(255, 247, 236, .82) !important;
-  background: #fff7ec !important;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, .24) !important;
-  font-size: .88rem !important;
+  color: #fff !important;
+  border: 2px solid #f97316 !important;
+  border-radius: 999px !important;
+  background: #17120e !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .34) !important;
+  font-size: 1rem !important;
   font-weight: 1000 !important;
+  line-height: 1 !important;
   letter-spacing: 0;
   text-transform: none;
   white-space: nowrap;
+  cursor: pointer !important;
 }
 
 .cvOwnerReady .cvSiteLogout:hover,
 .cvOwnerReady .cvSiteLogout:focus-visible {
-  color: #fff7ec !important;
-  border-color: rgba(249, 115, 22, .9) !important;
-  background: #17120e !important;
+  color: #17120e !important;
+  border-color: #f97316 !important;
+  background: #fff7ec !important;
+  outline: 3px solid rgba(249, 115, 22, .45) !important;
+  outline-offset: 2px !important;
 }
 
 @media (max-width: 760px) {
@@ -126,12 +144,12 @@
     gap: 10px;
     align-items: center;
     min-height: 0;
-    padding: 10px 12px 12px;
+    padding: 10px 138px 12px 12px !important;
   }
   .cvOwnerReady .cvSiteTopbar .cvOfficeBrand {
     min-width: 0;
     max-width: 100%;
-    padding-right: 112px;
+    padding-right: 0;
   }
   .cvOwnerReady .cvSiteTopbar .cvOfficeBrand img { width: 36px; height: 36px; }
   .cvOwnerReady .cvSiteTopbar .cvOfficeBrand span { display: none; }
@@ -139,21 +157,17 @@
   .cvOwnerReady .cvOwnerMainNavigation { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
   .cvOwnerReady .cvOwnerPrimaryNav { width: 100%; min-width: 0; padding: 4px !important; gap: 5px !important; }
   .cvOwnerReady .cvOwnerPrimaryNav button,
-  .cvOwnerReady .cvOwnerMore > button { min-height: 46px; padding: 0 14px; font-size: .92rem !important; }
+  .cvOwnerReady .cvOwnerMore > button { min-height: 48px; padding: 0 14px; font-size: 1rem !important; }
   .cvOwnerReady .cvOwnerUtilityNav { display: none !important; }
   .cvOwnerReady .cvSiteLogout {
-    position: fixed !important;
-    top: max(10px, env(safe-area-inset-top, 0px));
-    right: 10px;
-    z-index: 10050;
-    grid-column: auto;
-    grid-row: auto;
-    width: 104px !important;
-    min-width: 104px !important;
-    min-height: 46px !important;
-    padding: 0 15px !important;
-    margin: 0;
-    font-size: .9rem !important;
+    top: max(10px, env(safe-area-inset-top, 0px)) !important;
+    right: 10px !important;
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+    min-height: 50px !important;
+    padding: 0 16px !important;
+    font-size: 1rem !important;
   }
   .cvOwnerMoreUtility {
     display: grid;
@@ -163,10 +177,10 @@
     border-top: 1px solid rgba(255, 255, 255, .14);
   }
   .cvOwnerMoreUtility > span {
-    color: rgba(255, 248, 237, .74);
-    font-size: .82rem !important;
+    color: rgba(255, 248, 237, .78);
+    font-size: .9375rem !important;
     font-weight: 950;
-    letter-spacing: .08em;
+    letter-spacing: .06em;
     text-transform: uppercase;
   }
   .cvOwnerMoreUtility button { min-height: 50px; justify-content: flex-start; border-radius: 14px; }
@@ -175,7 +189,7 @@
 @media (max-width: 640px) {
   .cvCorePageHero { padding: 18px 16px; }
   .cvCorePageHero h2 { font-size: clamp(2rem, 11vw, 3rem); }
-  .cvCorePageHero p { font-size: .98rem !important; line-height: 1.5; }
+  .cvCorePageHero p { font-size: 1.0625rem !important; line-height: 1.55 !important; }
   .cvCoreHeroStats {
     display: flex;
     overflow-x: auto;
@@ -184,8 +198,8 @@
     scroll-snap-type: x proximity;
   }
   .cvCoreHeroStats article {
-    flex: 0 0 124px;
-    min-height: 84px;
+    flex: 0 0 132px;
+    min-height: 88px;
     padding: 13px;
     scroll-snap-align: start;
   }
@@ -211,5 +225,5 @@
 .cvOwnerReady .cvOwnerPrimaryNav button,
 .cvOwnerReady .cvOwnerMore > button,
 .cvOwnerReady .cvOwnerUtilityNav button {
-  min-height: 44px;
+  min-height: 46px;
 }
