@@ -1,5 +1,6 @@
 name: Churvox access pages live visual proof
 
+# Temporary PR trigger for the deployed login and tester pages.
 on:
   pull_request:
     branches: [main]
