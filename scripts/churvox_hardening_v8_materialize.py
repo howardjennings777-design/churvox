@@ -23,13 +23,14 @@ def main() -> None:
         raise RuntimeError(f"Hardening bundle checksum mismatch: {digest}")
 
     with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as archive:
-        for member in archive.getmembers():
+        members = archive.getmembers()
+        for member in members:
             target = (root / member.name).resolve()
             if target != root and root not in target.parents:
                 raise RuntimeError(f"Unsafe bundle path: {member.name}")
         archive.extractall(root, filter="data")
 
-    print(f"Materialised {len(archive.getmembers())} Churvox hardening files ({digest[:12]}).")
+    print(f"Materialised {len(members)} Churvox hardening files ({digest[:12]}).")
 
 
 if __name__ == "__main__":
