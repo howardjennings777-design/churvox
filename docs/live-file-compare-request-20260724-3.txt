@@ -1,0 +1,1 @@
+Do not trust marker-only checks; compare current repository source, DNS, live HTML and deployed bundle.
