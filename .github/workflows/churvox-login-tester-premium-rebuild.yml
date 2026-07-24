@@ -1,0 +1,169 @@
+name: Churvox login and tester premium rebuild
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  rebuild:
+    if: startsWith(github.event.issue.title, '[churvox-login-tester-premium-rebuild]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Rebuild login and tester access rooms
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          login = Path('frontend/src/pages/auth/LoginPage.js')
+          text = login.read_text()
+          start = text.index('  return (\n    <main className={`cvPublicAuth')
+          end = text.index('\n  );\n}', start)
+          replacement = '''  return (
+    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin cvAccessChamber ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_ACCESS_CHAMBER_20260724">
+      {!appMode ? <Nav /> : null}
+      <section className="cvAccessScene">
+        {!appMode ? (
+          <aside className="cvAccessSignal" aria-label="Churvox access routing">
+            <div className="cvAccessSignalHead"><ChurvoxAppLogo /><div><span>Churvox access layer</span><b>One login. The right room opens.</b></div></div>
+            <div className="cvAccessCore" aria-hidden="true"><i /><i /><i /><span>CV</span><small>session route</small></div>
+            <div className="cvAccessRoutes">
+              <article><span>01</span><div><b>Owner detected</b><small>Command and the live office open.</small></div><em>COMMAND</em></article>
+              <article><span>02</span><div><b>Worker detected</b><small>Today’s jobs and field tools open.</small></div><em>FIELD</em></article>
+              <article><span>03</span><div><b>Access checked</b><small>Plan, tester and account rules stay intact.</small></div><em>GUARD</em></article>
+            </div>
+            <div className="cvAccessPromise"><i /><p><b>Nothing important happens at login.</b><span>Churvox only verifies who you are and opens the correct workspace.</span></p></div>
+          </aside>
+        ) : null}
+
+        <form className="cvPublicAuthCard cvRealAppAuthCard cvChurvoxLoginCard cvAccessConsole" onSubmit={handleSubmit} noValidate>
+          <div className="cvAccessConsoleTop"><div className="cvLoginMiniBrand"><ChurvoxAppLogo compact /><div><b>Churvox</b><small>{workerAccess ? "Worker access" : "Secure office entry"}</small></div></div><span><i /> Live</span></div>
+          <p className="cvPublicAuthKicker">Identity check</p>
+          <h1>{workerAccess ? "Open today’s work." : appMode ? "Enter Churvox." : "Open the right room."}</h1>
+          <p className="cvPublicAuthIntro">{workerAccess ? "Sign in and Churvox will take you straight to today’s field work." : "Your account decides what opens next—Command for owners, the field view for workers, and the correct access gate for everyone else."}</p>
+
+          <div className="cvAccessStatusLine"><span>SESSION</span><b>Waiting for identity</b><i /></div>
+          {verifiedNotice && !error ? <div className="cvPublicAuthSuccess" role="status">Email verified. Sign in to continue.</div> : null}
+          {error ? <div className="cvPublicAuthError" role="alert" aria-live="assertive">{error}</div> : null}
+
+          <label>Email<input className="cvPublicNativeInput" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@business.co.nz" autoComplete="email" autoCapitalize="none" spellCheck="false" inputMode="email" autoFocus disabled={submitting} /></label>
+          <label>Password<div className="password-row"><input className="cvPublicNativeInput" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your password" autoComplete="current-password" disabled={submitting} /><button className="cvPublicAuthGhost" type="button" aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)} disabled={submitting}>{showPassword ? "Hide" : "Show"}</button></div></label>
+          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting}>{submitting ? "Checking access..." : "Open Churvox"}</button>
+          <p className="cvPublicAuthBottom">{workerAccess ? <Link to="/">Back to website</Link> : <Link to="/forgot-password">Forgot password?</Link>}{!workerAccess ? <><span> / </span><Link to="/signup?plan=operator">Start trial</Link></> : null}</p>
+          <div className="cvAccessFoot"><span>Encrypted session</span><span>Role-aware entry</span><span>No hidden action</span></div>
+        </form>
+      </section>
+    </main>'''
+          login.write_text(text[:start] + replacement + text[end:])
+
+          Path('frontend/src/pages/auth/ChurvoxLoginPolish.css').write_text(r'''
+          .cvChurvoxLogin,.cvChurvoxLogin *{box-sizing:border-box}.cvChurvoxLogin{--cv-orange:#ff6a1a;--cv-cream:#fff4e7;--cv-muted:#a89f94;min-height:100vh;color:var(--cv-cream);background:radial-gradient(circle at 8% 4%,rgba(255,106,26,.22),transparent 27%),radial-gradient(circle at 88% 8%,rgba(255,183,105,.08),transparent 22%),linear-gradient(135deg,#050706 0%,#0c110e 48%,#170b05 100%)!important;overflow:hidden}.cvChurvoxLogin:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(to bottom,black,transparent 82%)}.cvAccessScene{position:relative;width:min(1420px,calc(100% - 36px));min-height:calc(100svh - 92px);margin:0 auto;padding:clamp(28px,5vw,72px) 0 max(28px,env(safe-area-inset-bottom));display:grid;grid-template-columns:minmax(0,1.3fr) minmax(390px,.7fr);gap:clamp(22px,4vw,54px);align-items:center}.cvAccessSignal{position:relative;min-height:660px;display:grid;grid-template-rows:auto 1fr auto;gap:24px;padding:clamp(24px,4vw,48px);border-left:1px solid rgba(255,255,255,.11);overflow:hidden}.cvAccessSignal:before{content:"";position:absolute;left:46%;top:12%;bottom:12%;width:1px;background:linear-gradient(transparent,rgba(255,106,26,.6),transparent);box-shadow:0 0 34px rgba(255,106,26,.5)}.cvAccessSignalHead{position:relative;z-index:2;display:flex;align-items:center;gap:15px}.cvAccessSignalHead span{color:#ffb477;font-size:10px;font-weight:1000;letter-spacing:.16em;text-transform:uppercase}.cvAccessSignalHead b{display:block;max-width:560px;margin-top:5px;font-size:clamp(28px,4vw,54px);line-height:.94;letter-spacing:-.065em}.cvAccessCore{position:absolute;left:46%;top:47%;width:220px;height:220px;transform:translate(-50%,-50%);display:grid;place-items:center;border:1px solid rgba(255,133,52,.42);border-radius:50%;background:radial-gradient(circle,rgba(255,106,26,.28),rgba(9,14,11,.95) 62%);box-shadow:0 0 0 28px rgba(255,106,26,.035),0 0 110px rgba(255,106,26,.22)}.cvAccessCore i{position:absolute;inset:-18px;border:1px dashed rgba(255,177,112,.18);border-radius:50%;animation:cvAccessSpin 22s linear infinite}.cvAccessCore i:nth-child(2){inset:-44px;animation-direction:reverse;animation-duration:34s}.cvAccessCore i:nth-child(3){inset:46px;border-style:solid;border-color:rgba(255,255,255,.08)}.cvAccessCore span{font-size:58px;font-weight:1000;letter-spacing:-.11em}.cvAccessCore small{position:absolute;bottom:52px;color:#ffb477;font-size:9px;font-weight:1000;letter-spacing:.15em;text-transform:uppercase}.cvAccessRoutes{position:relative;z-index:2;display:grid;gap:14px;align-self:center;margin-left:auto;width:min(46%,420px)}.cvAccessRoutes article{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.09)}.cvAccessRoutes article>span{color:#ff8a42;font-size:11px;font-weight:1000}.cvAccessRoutes b{display:block;font-size:16px}.cvAccessRoutes small{display:block;margin-top:4px;color:rgba(255,244,231,.53);font-weight:700;line-height:1.4}.cvAccessRoutes em{color:#ffb477;font-size:9px;font-style:normal;font-weight:1000;letter-spacing:.16em}.cvAccessPromise{position:relative;z-index:2;display:flex;gap:13px;align-items:flex-start;max-width:620px}.cvAccessPromise>i{width:10px;height:10px;margin-top:5px;border-radius:50%;background:#52dd94;box-shadow:0 0 0 7px rgba(82,221,148,.08),0 0 28px rgba(82,221,148,.35)}.cvAccessPromise p{display:grid;gap:4px;margin:0}.cvAccessPromise b{font-size:14px}.cvAccessPromise span{color:rgba(255,244,231,.54);font-size:12px;line-height:1.45}.cvAccessConsole{position:relative!important;min-height:640px!important;display:grid!important;align-content:center!important;gap:14px!important;padding:clamp(24px,4vw,42px)!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:34px!important;color:var(--cv-cream)!important;background:radial-gradient(circle at 100% 0%,rgba(255,106,26,.19),transparent 34%),linear-gradient(150deg,rgba(255,255,255,.075),rgba(255,255,255,.025))!important;box-shadow:0 36px 110px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08)!important;backdrop-filter:blur(22px)}.cvAccessConsole:before{content:"ACCESS / 01";position:absolute;right:24px;bottom:18px;color:rgba(255,255,255,.14);font-size:9px;font-weight:1000;letter-spacing:.22em}.cvAccessConsoleTop{display:flex;align-items:center;justify-content:space-between;gap:16px}.cvAccessConsoleTop>span{display:flex;align-items:center;gap:7px;color:#8ff0bc;font-size:9px;font-weight:1000;letter-spacing:.15em;text-transform:uppercase}.cvAccessConsoleTop>span i{width:7px;height:7px;border-radius:50%;background:#52dd94;box-shadow:0 0 15px rgba(82,221,148,.65)}.cvAccessConsole .cvLoginMiniBrand{margin:0!important}.cvAccessConsole .cvLoginMiniBrand b,.cvAccessConsole h1{color:var(--cv-cream)!important}.cvAccessConsole .cvLoginMiniBrand small{color:rgba(255,244,231,.5)!important}.cvAccessConsole .cvPublicAuthKicker{margin:16px 0 0!important;color:#ff9a58!important}.cvAccessConsole h1{margin:0!important;font-size:clamp(42px,5vw,72px)!important;line-height:.9!important;letter-spacing:-.075em!important}.cvAccessConsole .cvPublicAuthIntro{margin:0 0 6px!important;color:rgba(255,244,231,.58)!important;font-size:14px!important;line-height:1.55!important}.cvAccessStatusLine{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:11px 0;border-top:1px solid rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.09)}.cvAccessStatusLine span{color:#ff9a58;font-size:9px;font-weight:1000;letter-spacing:.16em}.cvAccessStatusLine b{font-size:12px}.cvAccessStatusLine i{width:8px;height:8px;border-radius:50%;background:#ff8a42;box-shadow:0 0 18px rgba(255,106,26,.55)}.cvAccessConsole label{color:rgba(255,244,231,.7)!important;font-size:11px!important;font-weight:900!important;letter-spacing:.07em!important;text-transform:uppercase!important}.cvAccessConsole .cvPublicNativeInput{min-height:56px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:15px!important;background:rgba(0,0,0,.25)!important;color:#fff4e7!important;-webkit-text-fill-color:#fff4e7!important;box-shadow:none!important}.cvAccessConsole .cvPublicNativeInput::placeholder{color:rgba(255,244,231,.34)!important}.cvAccessConsole .cvPublicNativeInput:focus{border-color:rgba(255,129,49,.7)!important;box-shadow:0 0 0 4px rgba(255,106,26,.09)!important}.cvAccessConsole .password-row{grid-template-columns:1fr auto!important;gap:8px!important}.cvAccessConsole .cvPublicAuthGhost{min-width:72px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:15px!important;color:#ffb477!important;-webkit-text-fill-color:#ffb477!important;background:rgba(255,255,255,.045)!important}.cvAccessConsole .cvPublicAuthSubmit{min-height:58px!important;border-radius:15px!important;color:#130b06!important;-webkit-text-fill-color:#130b06!important;background:linear-gradient(135deg,#ffb06f,#ff6a1a)!important;box-shadow:0 20px 50px rgba(255,106,26,.27)!important}.cvAccessConsole .cvPublicAuthBottom{margin:0!important}.cvAccessConsole .cvPublicAuthBottom,.cvAccessConsole .cvPublicAuthBottom a{color:rgba(255,244,231,.65)!important}.cvAccessFoot{display:flex;flex-wrap:wrap;gap:7px;padding-top:8px}.cvAccessFoot span{padding:6px 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;color:rgba(255,244,231,.42);font-size:8px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.cvAccessConsole .cvPublicAuthError{border-color:rgba(255,91,91,.25)!important;background:rgba(255,91,91,.08)!important;color:#ffcaca!important}.cvAccessConsole .cvPublicAuthSuccess{border-color:rgba(82,221,148,.25)!important;background:rgba(82,221,148,.08)!important;color:#baf3d2!important}@keyframes cvAccessSpin{to{transform:rotate(360deg)}}@media(max-width:980px){.cvAccessScene{grid-template-columns:1fr}.cvAccessSignal{min-height:520px}.cvAccessConsole{min-height:auto!important}.cvAccessRoutes{width:46%}}@media(max-width:720px){.cvChurvoxLogin{overflow:auto}.cvAccessScene{width:calc(100% - 18px);min-height:auto;padding:14px 0 24px}.cvAccessSignal{display:none}.cvAccessConsole{padding:22px 18px!important;border-radius:26px!important}.cvAccessConsole h1{font-size:clamp(42px,14vw,58px)!important}.cvAccessConsole .password-row{grid-template-columns:1fr!important}.cvAccessFoot{justify-content:center}.cvAccessConsoleTop>span{display:none}}
+          ''')
+
+          tester = Path('frontend/public/testers/index.html')
+          html = tester.read_text()
+          html = html.replace('<meta name="theme-color" content="#0f172a" />','<meta name="theme-color" content="#090d0b" />')
+          premium_link = '  <link rel="stylesheet" href="/testers/churvox-tester-premium.css?v=20260724" />\n'
+          if 'churvox-tester-premium.css' not in html:
+              html = html.replace('</head>', premium_link + '</head>')
+          body_start = html.index('<body>')
+          script_start = html.index('  <script>', body_start)
+          body = r'''<body class="cvTesterGate">
+  <header class="topbar testerTopbar">
+    <a class="brand" href="/" aria-label="Churvox home"><span class="brand-mark"><img src="/churvox-app-icon.svg" alt="" /></span><span class="brand-copy"><b>Churvox</b><small>Founding signal room</small></span></a>
+    <nav class="top-actions" aria-label="Page navigation"><a class="home-link" href="/">Public site</a><a class="login-link" href="/login">Open Churvox</a></nav>
+  </header>
+
+  <main>
+    <section class="testerHero">
+      <div class="testerStory">
+        <span class="testerKicker"><i></i>10 real businesses · one live feedback loop</span>
+        <h1>Don’t test a demo.<br><em>Put Churvox into a real workday.</em></h1>
+        <p>We’re selecting a small group of service businesses to run real clients, jobs, workers and invoices through Churvox for 30 days—then tell us where the office saves time and where it still gets in the way.</p>
+        <div class="testerSignalRail" aria-label="Tester programme route">
+          <article><b>01</b><span>Apply</span><small>One minute. No account created.</small></article>
+          <article><b>02</b><span>Get selected</span><small>Setup arrives by email.</small></article>
+          <article><b>03</b><span>Run one real job</span><small>Use the full workflow.</small></article>
+          <article><b>04</b><span>Send the signal back</span><small>Tell us what matters.</small></article>
+        </div>
+        <div class="testerPromises"><span>No card</span><span>No contract</span><span>No automatic subscription</span></div>
+      </div>
+
+      <aside class="application-card testerConsole" id="apply" aria-labelledby="application-title">
+        <div class="testerConsoleTop"><span><i></i>Applications open</span><b>FOUNDING / 10</b></div>
+        <div class="application-head"><small>Founding tester access</small><h2 id="application-title">Send your business signal.</h2><p>Applying does not create an account, start billing or guarantee a place.</p></div>
+        <form class="tester-form" id="tester-form" novalidate>
+          <label class="field"><span>Full name</span><input name="name" autocomplete="name" maxlength="100" placeholder="Your name" required /></label>
+          <label class="field"><span>Business name</span><input name="business_name" autocomplete="organization" maxlength="140" placeholder="Business name" required /></label>
+          <label class="field"><span>Trade</span><select name="trade" required><option value="">Choose one</option><option>Lawn care</option><option>Landscaping</option><option>Cleaning</option><option>Property maintenance</option><option>Handyman</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Pest control</option><option>Gardening</option><option>Hair &amp; beauty</option><option>Other service business</option></select></label>
+          <label class="field"><span>Team size</span><select name="team_size" required><option value="">Choose one</option><option value="1">Just me</option><option value="2-5">2–5 people</option><option value="6-10">6–10 people</option><option value="11-25">11–25 people</option><option value="26+">26+ people</option></select></label>
+          <label class="field wide"><span>Email</span><input name="email" type="email" inputmode="email" autocomplete="email" maxlength="180" placeholder="you@business.co.nz" required /></label>
+          <label class="trap" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off" /></label>
+          <p class="status" id="form-status" role="alert" aria-live="assertive" hidden></p>
+          <button class="submit" type="submit">Send application</button>
+          <p class="fine-print">Your details are used only to review the application and contact you about Churvox.</p>
+        </form>
+      </aside>
+    </section>
+
+    <section class="testerRouteScene">
+      <div class="testerRouteCore" aria-hidden="true"><i></i><i></i><span>30</span><small>days live</small></div>
+      <div class="testerRouteCopy"><span class="testerKicker">What you actually test</span><h2>One business story, end to end.</h2><p>Add a real client. Prepare a real quote. Schedule the job. Send work to the field. Bring proof back. Prepare the invoice. Every step stays connected, and anything important still waits for owner approval.</p></div>
+      <div class="testerRouteNodes"><span>Request</span><span>Quote</span><span>Job</span><span>Worker</span><span>Proof</span><span>Invoice</span></div>
+    </section>
+
+    <section class="testerControlScene">
+      <div><span class="testerKicker">The deal stays clean</span><h2>This is product testing—not a sales funnel.</h2></div>
+      <div class="testerControlLines"><article><b>Nothing charges</b><p>No card, surprise fee or automatic paid plan.</p></article><article><b>Nothing traps you</b><p>Tester access ends cleanly unless you decide otherwise.</p></article><article><b>Your feedback reaches the build</b><p>Confusing steps and missing logic become real product decisions.</p></article></div>
+    </section>
+
+    <section class="testerClose"><div><span>Up to 10 selected businesses</span><h2>Put a real workday through Churvox.</h2></div><a href="#apply">Open the application console</a></section>
+  </main>
+
+  <footer><span>© <span id="year"></span> Churvox · hello@churvox.com</span><nav aria-label="Footer links"><a href="/pricing">Pricing</a><a href="/security">Security</a><a href="/legal/privacy">Privacy</a><a href="/legal/terms">Terms</a></nav></footer>
+
+'''
+          html = html[:body_start] + body + html[script_start:]
+          tester.write_text(html)
+
+          Path('frontend/public/testers/churvox-tester-premium.css').write_text(r'''
+          .cvTesterGate,.cvTesterGate *{box-sizing:border-box}.cvTesterGate{--orange:#ff6a1a;--cream:#fff3e4;--muted:#9d978f;margin:0;color:var(--cream);background:radial-gradient(circle at 8% 2%,rgba(255,106,26,.24),transparent 26rem),radial-gradient(circle at 91% 10%,rgba(255,187,112,.08),transparent 24rem),linear-gradient(135deg,#050706,#0d120f 52%,#180c06);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}.cvTesterGate:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px);background-size:56px 56px;mask-image:linear-gradient(black,transparent 92%)}.cvTesterGate .topbar{position:sticky;top:0;z-index:20;min-height:78px;padding:14px clamp(18px,4vw,62px);border-bottom:1px solid rgba(255,255,255,.08);background:rgba(5,8,6,.78);backdrop-filter:blur(22px);box-shadow:none}.cvTesterGate .brand-mark{width:42px;height:42px;border:1px solid rgba(255,255,255,.13);border-radius:13px;background:#0c100e;overflow:hidden}.cvTesterGate .brand-mark img{width:100%;height:100%;object-fit:cover}.cvTesterGate .brand-copy small{color:rgba(255,243,228,.42)}.cvTesterGate .top-actions .home-link{color:rgba(255,243,228,.58)}.cvTesterGate .login-link{border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.045)}.testerHero{position:relative;width:min(1460px,calc(100% - 40px));min-height:760px;margin:0 auto;padding:clamp(54px,8vw,112px) 0 86px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(410px,.72fr);gap:clamp(36px,7vw,100px);align-items:center}.testerStory{position:relative;z-index:2}.testerKicker{display:flex;align-items:center;gap:10px;color:#ffb477;font-size:10px;font-weight:1000;letter-spacing:.17em;text-transform:uppercase}.testerKicker i{width:8px;height:8px;border-radius:50%;background:#57de98;box-shadow:0 0 0 6px rgba(87,222,152,.08),0 0 24px rgba(87,222,152,.4)}.testerStory h1{max-width:900px;margin:22px 0 24px;color:var(--cream);font-size:clamp(62px,7.1vw,116px);line-height:.82;letter-spacing:-.09em}.testerStory h1 em{display:block;color:var(--orange);font-style:normal}.testerStory>p{max-width:760px;margin:0;color:rgba(255,243,228,.62);font-size:18px;line-height:1.6;font-weight:680}.testerSignalRail{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:44px;border-top:1px solid rgba(255,255,255,.12)}.testerSignalRail:before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:linear-gradient(90deg,var(--orange),rgba(255,106,26,.2),transparent)}.testerSignalRail article{position:relative;display:grid;gap:6px;padding:22px 18px 0 0}.testerSignalRail article:before{content:"";position:absolute;top:-5px;left:0;width:9px;height:9px;border-radius:50%;background:var(--orange);box-shadow:0 0 20px rgba(255,106,26,.55)}.testerSignalRail b{color:#ff9a58;font-size:10px}.testerSignalRail span{font-size:14px;font-weight:950}.testerSignalRail small{color:rgba(255,243,228,.42);font-size:11px;line-height:1.4;font-weight:700}.testerPromises{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}.testerPromises span{padding:7px 9px;border:1px solid rgba(255,255,255,.08);border-radius:999px;color:rgba(255,243,228,.48);font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.testerConsole{position:relative!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:34px!important;background:radial-gradient(circle at 100% 0%,rgba(255,106,26,.18),transparent 31%),linear-gradient(150deg,rgba(255,255,255,.072),rgba(255,255,255,.025))!important;box-shadow:0 40px 120px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)!important;backdrop-filter:blur(22px)}.testerConsole:before{height:1px!important;background:linear-gradient(90deg,transparent,var(--orange),transparent)!important}.testerConsoleTop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px 0;color:#ffb477;font-size:9px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.testerConsoleTop span{display:flex;align-items:center;gap:7px}.testerConsoleTop i{width:7px;height:7px;border-radius:50%;background:#57de98;box-shadow:0 0 16px rgba(87,222,152,.55)}.testerConsoleTop b{color:rgba(255,243,228,.34);font-size:8px}.cvTesterGate .application-head{padding:24px 24px 0}.cvTesterGate .application-head small{color:#ff9a58}.cvTesterGate .application-head h2{margin:8px 0;color:var(--cream);font-size:clamp(34px,4vw,54px);line-height:.92;letter-spacing:-.065em}.cvTesterGate .application-head p{color:rgba(255,243,228,.46)}.cvTesterGate .tester-form{grid-template-columns:1fr 1fr;gap:13px;padding:22px 24px 26px}.cvTesterGate .field span{color:rgba(255,243,228,.62);font-size:9px;letter-spacing:.09em;text-transform:uppercase}.cvTesterGate .field input,.cvTesterGate .field select{min-height:54px;border:1px solid rgba(255,255,255,.11);border-radius:14px;background:rgba(0,0,0,.25);color:var(--cream);font-weight:760}.cvTesterGate .field select option{color:#15110d}.cvTesterGate .field input::placeholder{color:rgba(255,243,228,.28)}.cvTesterGate .field input:focus,.cvTesterGate .field select:focus{border-color:rgba(255,130,49,.65);box-shadow:0 0 0 4px rgba(255,106,26,.08)}.cvTesterGate .submit{min-height:58px;border-radius:14px;background:linear-gradient(135deg,#ffb06f,#ff6a1a);color:#170c06;box-shadow:0 18px 44px rgba(255,106,26,.24)}.cvTesterGate .fine-print{color:rgba(255,243,228,.38)}.cvTesterGate .status{border:1px solid rgba(255,106,26,.2);background:rgba(255,106,26,.08);color:#ffc493}.cvTesterGate .success{color:var(--cream)}.cvTesterGate .success p{color:rgba(255,243,228,.55)}.testerRouteScene{position:relative;width:min(1460px,calc(100% - 40px));min-height:670px;margin:60px auto 120px;display:grid;grid-template-columns:minmax(300px,.7fr) minmax(0,1fr);gap:clamp(40px,8vw,120px);align-items:center;padding:clamp(34px,6vw,72px);border-top:1px solid rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.09);overflow:hidden}.testerRouteCore{position:relative;width:min(38vw,430px);aspect-ratio:1;display:grid;place-items:center;border:1px solid rgba(255,128,47,.4);border-radius:50%;background:radial-gradient(circle,rgba(255,106,26,.27),rgba(7,11,9,.95) 64%);box-shadow:0 0 0 40px rgba(255,106,26,.025),0 0 140px rgba(255,106,26,.22)}.testerRouteCore i{position:absolute;inset:-25px;border:1px dashed rgba(255,173,103,.18);border-radius:50%;animation:testerSpin 30s linear infinite}.testerRouteCore i:nth-child(2){inset:-62px;animation-direction:reverse;animation-duration:44s}.testerRouteCore span{font-size:clamp(88px,11vw,170px);font-weight:1000;letter-spacing:-.12em}.testerRouteCore small{position:absolute;bottom:25%;color:#ffb477;font-size:10px;font-weight:1000;letter-spacing:.16em;text-transform:uppercase}.testerRouteCopy{display:grid;gap:16px;max-width:760px}.testerRouteCopy h2,.testerControlScene h2,.testerClose h2{margin:0;color:var(--cream);font-size:clamp(48px,6vw,92px);line-height:.88;letter-spacing:-.085em}.testerRouteCopy p{margin:0;color:rgba(255,243,228,.55);font-size:17px;line-height:1.65;font-weight:680}.testerRouteNodes{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.09)}.testerRouteNodes span{position:relative;padding:20px 8px 0;color:rgba(255,243,228,.66);font-size:11px;font-weight:900;text-align:center}.testerRouteNodes span:before{content:"";position:absolute;top:-4px;left:50%;width:7px;height:7px;transform:translateX(-50%);border-radius:50%;background:var(--orange);box-shadow:0 0 18px rgba(255,106,26,.5)}.testerControlScene{width:min(1460px,calc(100% - 40px));margin:0 auto 120px;display:grid;grid-template-columns:minmax(0,1fr) minmax(480px,.85fr);gap:60px;align-items:start}.testerControlScene>div:first-child{display:grid;gap:16px}.testerControlLines{display:grid;border-left:1px solid rgba(255,255,255,.1)}.testerControlLines article{padding:18px 0 18px 28px;border-bottom:1px solid rgba(255,255,255,.09)}.testerControlLines b{font-size:18px}.testerControlLines p{margin:6px 0 0;color:rgba(255,243,228,.48);line-height:1.5}.testerClose{width:min(1460px,calc(100% - 40px));margin:0 auto 54px;display:flex;align-items:end;justify-content:space-between;gap:30px;padding:44px 0;border-top:1px solid rgba(255,255,255,.09)}.testerClose span{color:#ffb477;font-size:10px;font-weight:1000;letter-spacing:.15em;text-transform:uppercase}.testerClose h2{max-width:900px;margin-top:12px}.testerClose a{flex:0 0 auto;padding:16px 20px;border-radius:14px;background:linear-gradient(135deg,#ffb06f,#ff6a1a);color:#170c06;font-weight:1000;text-decoration:none}.cvTesterGate footer{border-top:1px solid rgba(255,255,255,.08);color:rgba(255,243,228,.42)}.cvTesterGate footer a{color:rgba(255,243,228,.56)}@keyframes testerSpin{to{transform:rotate(360deg)}}@media(max-width:980px){.testerHero{grid-template-columns:1fr}.testerConsole{max-width:760px}.testerRouteScene{grid-template-columns:1fr}.testerRouteCore{width:min(66vw,420px);margin:auto}.testerControlScene{grid-template-columns:1fr}.testerSignalRail{grid-template-columns:repeat(2,1fr);row-gap:28px}}@media(max-width:640px){.cvTesterGate .topbar{min-height:68px;padding:10px 14px}.testerHero{width:calc(100% - 24px);padding:44px 0 62px}.testerStory h1{font-size:clamp(52px,17vw,76px)}.testerStory>p{font-size:16px}.testerSignalRail{grid-template-columns:1fr}.testerPromises{margin-top:22px}.testerConsole{border-radius:26px!important}.cvTesterGate .tester-form{grid-template-columns:1fr;padding:20px 18px 24px}.cvTesterGate .application-head{padding:22px 18px 0}.testerConsoleTop{padding:18px 18px 0}.cvTesterGate .field.wide,.cvTesterGate .status,.cvTesterGate .submit,.cvTesterGate .fine-print{grid-column:1}.testerRouteScene{width:calc(100% - 24px);min-height:auto;margin:28px auto 82px;padding:52px 8px}.testerRouteCore{width:min(76vw,330px)}.testerRouteNodes{grid-template-columns:repeat(3,1fr);row-gap:24px}.testerControlScene{width:calc(100% - 24px);margin-bottom:80px}.testerClose{width:calc(100% - 24px);align-items:flex-start;flex-direction:column}.testerClose a{width:100%;text-align:center}.cvTesterGate footer{align-items:flex-start;flex-direction:column;padding:24px 16px}}
+          ''')
+          PY
+
+      - name: Prove production build
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+
+      - name: Commit premium access rooms
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/pages/auth/LoginPage.js frontend/src/pages/auth/ChurvoxLoginPolish.css frontend/public/testers/index.html frontend/public/testers/churvox-tester-premium.css
+          git commit -m 'Rebuild login and tester pages as Churvox access rooms'
+          git push
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Post result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `Login and tester pages rebuilt and the full production build passed. Commit: \`${process.env.COMMIT || 'unknown'}\`` });
