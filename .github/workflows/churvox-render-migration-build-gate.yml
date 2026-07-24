@@ -6,8 +6,12 @@ on:
     paths:
       - '.github/workflows/churvox-render-migration-build-gate.yml'
       - 'frontend/src/pages/marketing/ExecutiveHomePage.jsx'
+      - 'frontend/src/pages/marketing/ChurvoxLivingOfficeHome.css'
       - 'frontend/src/pages/marketing/SitesRenderHome.css'
       - 'frontend/src/churvox-office-lab/OfficeTeamLab.jsx'
+      - 'frontend/src/churvox-fresh/FreshApp.jsx'
+      - 'frontend/src/churvox-product/ProductAppV4.jsx'
+      - 'frontend/src/churvox-product/productAppV4.css'
       - 'frontend/src/runtime/churvoxLegacyHostExitRuntime.js'
       - 'frontend/public/index.html'
       - 'frontend/public/sw.js'
