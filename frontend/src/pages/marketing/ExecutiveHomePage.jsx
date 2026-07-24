@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { PublicNav, PublicFooter } from "./ChurvoxPublicShell";
 import "./ChurvoxLivingOfficeHome.css";
+import "./ChurvoxPremiumPublic.css";
 
 const DESKS = [
   ["Bookings", "Requests, timing and recurring work", "3 prepared"],
