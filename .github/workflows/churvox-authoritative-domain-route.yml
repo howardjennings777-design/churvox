@@ -63,4 +63,4 @@ jobs:
           git commit -m 'record authoritative Churvox domain route' || true
           git push || true
 
-# Rerun after legacy Render redirect repair 20260724-0706
+# Urgent rerun after confirmed stale-site report 20260724-0709
