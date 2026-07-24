@@ -1,0 +1,44 @@
+name: Churvox direct Sites probe
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  probe:
+    if: startsWith(github.event.issue.title, '[churvox-sites-direct-probe]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe direct Sites routes
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "UTC=$(date -u '+%Y-%m-%d %H:%M:%S')"
+            for url in \
+              https://churvox.howardjennings77.chatgpt.site/ \
+              https://churvox.howardjennings77.chatgpt.site/login \
+              https://churvox.howardjennings77.chatgpt.site/dashboard; do
+              echo "URL=$url"
+              curl -sS -L --max-time 45 -D /tmp/h -o /tmp/b -w 'FINAL=%{url_effective} STATUS=%{http_code} TYPE=%{content_type}\n' "$url"
+              echo "SERVER=$(grep -i '^server:' /tmp/h | tail -1 | tr -d '\r')"
+              echo "TITLE=$(grep -ioE '<title>[^<]*</title>' /tmp/b | head -1 | tr '\n' ' ')"
+              echo "BYTES=$(wc -c < /tmp/b)"
+              echo "TEXT=$(sed -E 's/<[^>]+>/ /g' /tmp/b | tr -s '[:space:]' ' ' | head -c 800)"
+              echo
+            done
+          } > /tmp/report.txt 2>&1
+          cat /tmp/report.txt
+          {
+            echo 'REPORT<<EOF'
+            cat /tmp/report.txt
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+      - name: Post result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:'```text\n'+(process.env.REPORT||'missing')+'\n```'});
