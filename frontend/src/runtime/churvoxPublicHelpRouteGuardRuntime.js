@@ -1,43 +1,13 @@
-// Paid-launch public route guard.
-// Anonymous visitors should never fall through /support or /security into an
-// authenticated app route. Logged-in owners keep the existing in-app /support flow.
+// Public trust and help pages are now first-class Churvox routes.
+//
+// Older paid-launch code redirected /security, /support and
+// /refunds-cancellations into generic legal/contact pages before React
+// could render them. That behaviour made separate public rooms impossible
+// and also changed the URL unexpectedly. Keep this module as a harmless
+// compatibility marker because older startup code still imports it.
 
-function hasSession() {
-  try {
-    return Boolean(
-      localStorage.getItem('token') ||
-      localStorage.getItem('authToken') ||
-      localStorage.getItem('access_token') ||
-      localStorage.getItem('churvox_auth_session_snapshot_v1')
-    );
-  } catch {
-    return false;
-  }
-}
-
-function redirectPublicHelpRoutes() {
-  if (typeof window === 'undefined') return;
-  const path = window.location.pathname || '';
-
-  if (path === '/security') {
-    window.location.replace('/legal/privacy?section=security');
-    return;
-  }
-
-  if (path === '/refunds-cancellations') {
-    window.location.replace('/legal/terms#billing-cancellations');
-    return;
-  }
-
-  if (path === '/support' && !hasSession()) {
-    window.location.replace('/contact?reason=support');
-  }
-}
-
-if (typeof window !== 'undefined' && !window.__CHURVOX_PUBLIC_HELP_ROUTE_GUARD__) {
-  window.__CHURVOX_PUBLIC_HELP_ROUTE_GUARD__ = true;
-  redirectPublicHelpRoutes();
-  window.addEventListener('popstate', redirectPublicHelpRoutes);
+if (typeof window !== 'undefined') {
+  window.__CHURVOX_PUBLIC_HELP_ROUTE_GUARD__ = 'first-class-public-routes-20260724';
 }
 
 export {};
