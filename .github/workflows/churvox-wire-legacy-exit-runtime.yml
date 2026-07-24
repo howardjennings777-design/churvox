@@ -1,0 +1,50 @@
+name: Wire Churvox legacy host exit runtime
+
+on:
+  push:
+    paths:
+      - '.github/workflows/churvox-wire-legacy-exit-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Wire earliest runtime and worker registration
+        shell: python
+        run: |
+          from pathlib import Path
+
+          index_js = Path('frontend/src/index.js')
+          text = index_js.read_text()
+          marker = "import './runtime/churvoxLegacyHostExitRuntime';"
+          if marker not in text:
+              anchor = "import ReactDOM from 'react-dom/client';\n"
+              if anchor not in text:
+                  raise SystemExit('index.js anchor missing')
+              text = text.replace(anchor, anchor + marker + "\n", 1)
+              index_js.write_text(text)
+
+          html = Path('frontend/public/index.html')
+          h = html.read_text()
+          registration = '''    <script>\n      (function keepLegacyExitWorkerCurrent() {\n        if (!("serviceWorker" in navigator)) return;\n        window.addEventListener("load", function () {\n          navigator.serviceWorker.register("/sw.js?v=churvox-legacy-exit-20260724-v3", { updateViaCache: "none" })\n            .then(function (registration) { return registration.update(); })\n            .catch(function () {});\n        }, { once: true });\n      })();\n    </script>\n'''
+          if 'churvox-legacy-exit-20260724-v3' not in h:
+              anchor = '    </script>\n<!-- CHURVOX_FIELD_MARK_20260708 -->'
+              if anchor not in h:
+                  raise SystemExit('index.html anchor missing')
+              h = h.replace(anchor, '    </script>\n' + registration + '<!-- CHURVOX_FIELD_MARK_20260708 -->', 1)
+              html.write_text(h)
+      - name: Commit wiring
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/index.js frontend/public/index.html
+          git commit -m 'wire forced legacy Render exit before app startup' || exit 0
+          git push
