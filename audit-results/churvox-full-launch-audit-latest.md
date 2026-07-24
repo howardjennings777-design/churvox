@@ -1,8 +1,8 @@
 # Churvox Full Launch Audit
 
 - Site: https://www.churvox.com
-- Commit: ccd7ef76eae6899686b80bbf77696d025d5c17b5
-- Run: 30117910304
+- Commit: c1177e8efb96019739d81f9598261d6e25ecf6e7
+- Run: 30131599435
 - Status code: 1
 - Passed: 78
 - Skipped: 0
@@ -10,7 +10,7 @@
 - Linked worker discovery: success
 - Audit fixture cleanup: success
 - Authenticated audit required: yes
-- Time: Fri Jul 24 19:09:16 UTC 2026
+- Time: Fri Jul 24 23:04:38 UTC 2026
 
 ## Output
 ```txt
@@ -164,14 +164,14 @@
 
     [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
 
-    Locator: getByRole('button', { name: /Full launch worker detail 1784919014118-5yeh9i/i }).first()
+    Locator: getByRole('button', { name: /Full launch worker detail 1784933192907-3bp8nk/i }).first()
     Expected: visible
     Timeout: 30000ms
     Error: element(s) not found
 
     Call log:
     [2m  - created assigned job did not appear in the worker queue with timeout 30000ms[22m
-    [2m  - waiting for getByRole('button', { name: /Full launch worker detail 1784919014118-5yeh9i/i }).first()[22m
+    [2m  - waiting for getByRole('button', { name: /Full launch worker detail 1784933192907-3bp8nk/i }).first()[22m
 
 
       360 |
@@ -207,14 +207,14 @@
 
     [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
 
-    Locator: getByRole('button', { name: /Full launch worker detail 1784919058986-hwqd24/i }).first()
+    Locator: getByRole('button', { name: /Full launch worker detail 1784933236243-ahtnpg/i }).first()
     Expected: visible
     Timeout: 30000ms
     Error: element(s) not found
 
     Call log:
     [2m  - created assigned job did not appear in the worker queue with timeout 30000ms[22m
-    [2m  - waiting for getByRole('button', { name: /Full launch worker detail 1784919058986-hwqd24/i }).first()[22m
+    [2m  - waiting for getByRole('button', { name: /Full launch worker detail 1784933236243-ahtnpg/i }).first()[22m
 
 
       360 |
@@ -253,5 +253,5 @@
     [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:290:3 › Churvox authenticated login entry › worker login form creates the correct authenticated session 
     [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:311:3 › Churvox full launch owner audit › owner navigation keeps every current launch page 
     [mobile-chromium] › tests/e2e/churvox-big-launch-audit.spec.js:354:3 › Churvox full launch worker audit › worker job detail has real field controls for an assigned job 
-  78 passed (7.5m)
+  78 passed (7.0m)
 ```
