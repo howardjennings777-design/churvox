@@ -1,5 +1,6 @@
 import React from "react";
 import { useApi } from "../hooks/useApi";
+import { publishControlBoardHealth } from "./controlBoardHealthStore";
 
 export const SUPPORT_EMAIL = "hello@churvox.com";
 
@@ -129,7 +130,12 @@ export function useControlBoardData(enabled) {
   const [data, setData] = React.useState({ jobs: [], clients: [], workers: [], quotes: [], invoices: [], messages: [], command: [], xero: {} });
 
   const refresh = React.useCallback(async () => {
-    if (!enabled) { setLoading(false); setFailures([]); return; }
+    if (!enabled) {
+      setLoading(false);
+      setFailures([]);
+      publishControlBoardHealth([]);
+      return;
+    }
     setLoading(true);
     try {
       const results = await Promise.allSettled([
@@ -138,6 +144,7 @@ export function useControlBoardData(enabled) {
       const issues = SOURCES.map(([label], index) => sourceFailure(results[index], label)).filter(Boolean);
       const failed = new Set(issues.map((item) => item.source));
       setFailures(issues);
+      publishControlBoardHealth(issues);
       setData((current) => {
         const xeroResult = results[7];
         const xeroOkay = xeroResult?.status === "fulfilled" && xeroResult.value?.success !== false;
