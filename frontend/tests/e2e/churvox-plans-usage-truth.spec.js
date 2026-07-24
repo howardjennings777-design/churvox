@@ -18,11 +18,12 @@ async function bootPlans(page, usageResponse) {
     email_verified: true,
   };
 
-  await page.addInitScript(() => {
+  await page.addInitScript((snapshotUser) => {
     localStorage.setItem('token', 'plans-usage-token');
     localStorage.setItem('authToken', 'plans-usage-token');
     localStorage.setItem('churvox:stable-current-plan:v1', 'operator');
-  });
+    localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({ at: Date.now(), token: 'plans-usage-token', user: snapshotUser }));
+  }, user);
 
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -35,7 +36,7 @@ async function bootPlans(page, usageResponse) {
 
   await page.goto('/dashboard#plans', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.cvOwnerReady')).toBeVisible({ timeout: 10000 });
-  await expect(page.getByRole('heading', { name: 'Choose the level of control Churvox runs for the business.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible();
 }
 
 async function bootNewOwnerPlans(page) {
@@ -76,7 +77,7 @@ async function bootNewOwnerPlans(page) {
   });
 
   await page.goto('/dashboard#plans', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: 'Choose the level of control Churvox runs for the business.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible();
   return () => checkoutPayload;
 }
 
@@ -148,21 +149,23 @@ test.describe('Plans live usage truth', () => {
     await expect(panel.locator('.cvUsageCard')).toHaveCount(0);
   });
 
-  test('new Plans secure checkout opens Stripe and returns to dashboard plans', async ({ page }) => {
+  test('Control Board secure checkout opens Stripe from a real plan card', async ({ page }) => {
     const getCheckoutPayload = await bootNewOwnerPlans(page);
 
-    await page.getByRole('button', { name: 'Continue to secure checkout' }).click();
+    await page.getByRole('button', { name: /Start Command/i }).click();
+    const dialog = page.getByRole('dialog', { name: 'Command Stripe checkout' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel('Owner email').fill('owner@example.test');
+    await dialog.getByRole('button', { name: 'Continue to Stripe' }).click();
     await expect(page).toHaveURL(/checkout\.stripe\.com\/c\/pay\/churvox-new-plans-test/);
 
     const payload = getCheckoutPayload();
     expect(payload).toBeTruthy();
-    expect(payload.plan).toBe('pro');
-    expect(payload.plan_key).toBe('operator');
-    expect(payload.selected_plan).toBe('operator');
+    expect(payload.plan).toBe('enterprise');
+    expect(payload.plan_key).toBe('command');
+    expect(payload.selected_plan).toBe('command');
     expect(payload.email).toBe('owner@example.test');
-    expect(payload.success_url).toContain('/dashboard?checkout=success&plan=operator#plans');
-    expect(payload.cancel_url).toContain('/dashboard?checkout=cancelled&plan=operator#plans');
-    expect(payload.success_url).not.toContain('/plans?');
-    expect(payload.cancel_url).not.toContain('/plans?');
+    expect(payload.success_url).toContain('/billing/success?plan=command&country=NZ');
+    expect(payload.cancel_url).toContain('/plans?checkout=cancelled&plan=command');
   });
 });
