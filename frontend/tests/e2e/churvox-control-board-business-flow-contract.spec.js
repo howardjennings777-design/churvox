@@ -5,6 +5,9 @@ import path from "node:path";
 const frontendRoot = process.cwd();
 const actions = fs.readFileSync(path.join(frontendRoot, "src/churvox-product/ControlBoardActions.jsx"), "utf8");
 const editor = fs.readFileSync(path.join(frontendRoot, "src/churvox-product/ControlBoardEditor.jsx"), "utf8");
+const data = fs.readFileSync(path.join(frontendRoot, "src/churvox-product/controlBoardData.js"), "utf8");
+const health = fs.readFileSync(path.join(frontendRoot, "src/churvox-product/ControlBoardHealth.jsx"), "utf8");
+const gate = fs.readFileSync(path.join(frontendRoot, "src/churvox-product/ProductAppV7Gate.jsx"), "utf8");
 
 function includesAll(source, values) {
   for (const value of values) expect(source, `Missing ${value}`).toContain(value);
@@ -79,6 +82,23 @@ test.describe("Churvox Control Board complete business flow", () => {
       "app: \"Invited\"",
       "payroll: \"Approved for export\"",
     ]);
+  });
+
+  test("failed sources stay honest instead of becoming false empty states", () => {
+    includesAll(data, [
+      "Promise.allSettled",
+      "sourceFailure",
+      "failed.has(\"Work\") ? current.jobs",
+      "failed.has(\"Invoices\") ? current.invoices",
+      "publishControlBoardHealth(issues)",
+    ]);
+    includesAll(health, [
+      "Some live business data did not load",
+      "last reliable records",
+      "Retry now",
+      "churvox:data-refresh",
+    ]);
+    expect(gate).toContain("<ControlBoardHealth />");
   });
 
   test("the editor is an operating workspace, not only a form", () => {
