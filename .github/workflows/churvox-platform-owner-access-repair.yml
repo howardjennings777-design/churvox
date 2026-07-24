@@ -1,0 +1,70 @@
+name: Churvox platform owner access repair
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-platform-owner-access-repair]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply narrow platform-owner bypass
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('frontend/src/churvox-product/ProductAppV3.jsx')
+          text=path.read_text()
+          old='''function createAccess(user = {}) {\n  const admin = user?.is_platform_owner === true || user?.is_admin === true;'''
+          new='''function createAccess(user = {}) {\n  const ownerEmail = clean(user?.email).toLowerCase();\n  const platformOwnerEmail = ownerEmail === "hello@churvox.com" || ownerEmail === "howardjennings777@gmail.com";\n  const admin = platformOwnerEmail || user?.is_platform_owner === true || user?.is_admin === true || ["platform_owner", "platform-admin", "platform_admin"].includes(clean(user?.role).toLowerCase());'''
+          if old not in text:
+              raise SystemExit('createAccess target not found')
+          path.write_text(text.replace(old,new,1))
+
+          v4=Path('frontend/src/churvox-product/ProductAppV4.jsx')
+          v4text=v4.read_text()
+          v4text=v4text.replace('CHURVOX_LIVE_OFFICE_TWIN_20260724"','CHURVOX_LIVE_OFFICE_TWIN_20260724_OWNER_ACCESS"',1)
+          v4.write_text(v4text)
+          PY
+
+      - name: Prove production build
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/churvox-product/ProductAppV3.jsx frontend/src/churvox-product/ProductAppV4.jsx
+          git commit -m 'Recognise Churvox platform owner without changing customer plans'
+          git push
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Post result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Platform-owner access repaired and production build passed. Customer pricing and normal plan locks were not changed. Commit: \`${process.env.COMMIT || 'unknown'}\``
+            });
