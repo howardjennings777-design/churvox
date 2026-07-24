@@ -1,14 +1,16 @@
 import React from "react";
+import { getControlBoardHealth, subscribeControlBoardHealth } from "./controlBoardHealthStore";
 import "./controlBoardHealth.css";
 
-export default function ControlBoardHealth({ failures = [], refresh }) {
+export default function ControlBoardHealth() {
+  const failures = React.useSyncExternalStore(subscribeControlBoardHealth, getControlBoardHealth, () => []);
   const [retrying, setRetrying] = React.useState(false);
   if (!failures.length) return null;
 
-  const retry = async () => {
+  const retry = () => {
     setRetrying(true);
-    try { await refresh(); }
-    finally { setRetrying(false); }
+    window.dispatchEvent(new Event("churvox:data-refresh"));
+    window.setTimeout(() => setRetrying(false), 900);
   };
 
   const names = failures.map((item) => item.source).join(", ");
