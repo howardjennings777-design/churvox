@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      (function redirectLegacyRenderHost() {
+        if (window.location.hostname !== "grassley-frontend.onrender.com") return;
+        var target = new URL(window.location.href);
+        target.protocol = "https:";
+        target.host = "www.churvox.com";
+        window.location.replace(target.toString());
+      })();
+    </script>
 <!-- CHURVOX_FIELD_MARK_20260708 -->
 <!-- CHURVOX_REAL_PWA_PNG_ICON_20260708 -->
 <!-- CHURVOX_OS_PRODUCTION_DEPLOY_20260628_1058 -->
