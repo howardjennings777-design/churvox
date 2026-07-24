@@ -1,6 +1,8 @@
 name: Churvox Hardening V8 Materializer
 
 on:
+  issues:
+    types: [opened]
   pull_request:
     branches:
       - main
@@ -13,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: churvox-hardening-v8-materializer
@@ -22,7 +25,9 @@ jobs:
   materialise-test-and-commit:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.head.ref == 'agent/churvox-hardening-v8' &&
+      (github.event_name == 'issues' && github.event.issue.title == '[churvox-hardening-v8-materialize] run verified build') ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.ref == 'agent/churvox-hardening-v8' &&
        github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -80,3 +85,12 @@ jobs:
           git diff --cached --stat
           git commit -m "Harden Churvox Control Board V8"
           git push origin HEAD:agent/churvox-hardening-v8
+
+      - name: Report materializer result
+        if: always() && github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "Churvox Hardening V8 materializer finished with **$JOB_STATUS**. Backend compile/tests, all twelve product contracts and the production frontend build must all pass before product code is committed."
