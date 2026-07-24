@@ -1,0 +1,82 @@
+name: Churvox Hardening V8 Materializer
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+    paths:
+      - "scripts/churvox_hardening_v8_parts/**"
+      - "scripts/churvox_hardening_v8_materialize.py"
+      - ".github/workflows/churvox-hardening-v8-bootstrap.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: churvox-hardening-v8-materializer
+  cancel-in-progress: false
+
+jobs:
+  materialise-test-and-commit:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.ref == 'agent/churvox-hardening-v8' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out trusted hardening branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-hardening-v8
+          fetch-depth: 0
+
+      - name: Use Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Materialise verified hardening package
+        run: python scripts/churvox_hardening_v8_materialize.py
+
+      - name: Compile and test hardening backend
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "fastapi>=0.100" python-multipart pytest
+          python -m py_compile backend/churvox_hardening_routes.py backend/test_churvox_hardening_v8.py usercustomize.py backend/usercustomize.py
+          python -m pytest backend/test_churvox_hardening_v8.py -q
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Verify all twelve hardening contracts
+        working-directory: frontend
+        run: npx playwright test tests/e2e/churvox-hardening-v8.spec.js --reporter=line
+
+      - name: Build production Control Board
+        working-directory: frontend
+        env:
+          CI: "true"
+        run: npm run build
+
+      - name: Commit tested product code to the PR branch
+        run: |
+          rm -rf scripts/churvox_hardening_v8_parts
+          rm -f scripts/churvox_hardening_v8_materialize.py
+          rm -f .github/workflows/churvox-hardening-v8-bootstrap.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --stat
+          git commit -m "Harden Churvox Control Board V8"
+          git push origin HEAD:agent/churvox-hardening-v8
