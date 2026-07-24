@@ -5,6 +5,7 @@ import './runtime/churvoxPublicHelpRouteGuardRuntime';
 import './runtime/churvoxExplicitLogoutGuardRuntime';
 import './runtime/churvoxProtectedFetchAuthGuardRuntime';
 import './runtime/churvoxLegacyHostExitRuntime';
+import './runtime/churvoxStripeCheckoutLiveRuntime';
 import App from './App';
 import API_BASE from './lib/apiBase';
 import './index.css';
@@ -75,7 +76,6 @@ const globalHelperImports = [
   () => import('./runtime/churvoxPlainSendGuardRuntime'),
   () => import('./runtime/churvoxPlansCountryRuntime'),
   () => import('./runtime/churvoxPlansBillingNavClickGuard'),
-  () => import('./runtime/churvoxStripeCheckoutLiveRuntime'),
   () => import('./runtime/churvoxPublicPricingLinkGuardRuntime'),
   () => import('./runtime/churvoxFirstWinGuideEntryRuntime'),
 ];
