@@ -336,7 +336,7 @@ function Panel({ title, kicker, children, className = "", action = null }) {
   return <section className={`cv3Panel ${className}`}><header><div>{kicker ? <small>{kicker}</small> : null}<h3>{title}</h3></div>{action}</header>{children}</section>;
 }
 function Toolbar({ children }) { return <div className="cv3Toolbar">{children}</div>; }
-function Empty({ title = "Nothing here yet", text = "Records will appear here when they exist." }) { return <div className="cv3Empty"><b>{title}</b><span>{text}</span></div>; }
+function Empty({ title = "Nothing here yet", text = "Records will appear here when they exist." }) { return <div className="cv3Empty"><span className="cv3EmptySignal" aria-hidden="true"><i /><i /><i /></span><div><small>Ready when you are</small><b>{title}</b><span>{text}</span><em>Use the action above to start this room.</em></div></div>; }
 function Row({ title, meta, tag, tone = "", onClick, action = "Open" }) { return <button type="button" className={`cv3Row ${tone}`} onClick={onClick}><span className="bar" /><span><b>{title}</b><small>{meta}</small></span><em>{tag || action}</em></button>; }
 function StatGrid({ items }) { return <div className="cv3Stats">{items.map(([label, value, tone]) => <span key={label} className={tone || ""}><b>{value}</b><small>{label}</small></span>)}</div>; }
 function Rule({ title, text, children }) { return <div className="cv3Rule"><b>{title}</b><span>{text}</span>{children}</div>; }
