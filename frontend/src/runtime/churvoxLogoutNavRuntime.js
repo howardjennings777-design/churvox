@@ -77,6 +77,27 @@ function makeButton(id, className, text = "Log out") {
   return button;
 }
 
+function isProtectedAppPath() {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname || "";
+  return path === "/dashboard"
+    || path.startsWith("/dashboard/")
+    || path === "/plans"
+    || path === "/guide"
+    || path === "/setup"
+    || path === "/setup-guide"
+    || path.startsWith("/worker")
+    || path === "/admin"
+    || path.startsWith("/admin/")
+    || path === "/platform"
+    || path === "/app-owner"
+    || path === "/churvox-hq";
+}
+
+function removeRuntimeLogoutButtons() {
+  [LOGOUT_ID, WORKER_LOGOUT_ID, PRODUCT_LOGOUT_ID].forEach((id) => document.getElementById(id)?.remove());
+}
+
 function installOwnerLogout() {
   const nav = document.querySelector(".cocNav");
   if (!nav || document.getElementById(LOGOUT_ID)) return;
@@ -96,6 +117,10 @@ function installWorkerLogout() {
 }
 
 function installLogoutButtons() {
+  if (!isProtectedAppPath()) {
+    removeRuntimeLogoutButtons();
+    return;
+  }
   installOwnerLogout();
   installProductLogout();
   installWorkerLogout();
