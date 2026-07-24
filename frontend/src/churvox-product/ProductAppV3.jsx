@@ -300,17 +300,80 @@ function useProductData(enabled) {
   return { api, data, loading, refresh };
 }
 
-function Header({ page, user, go, access }) {
-  const [headline, subhead] = PAGE_COPY[page] || PAGE_COPY.today;
+const NAV_GROUPS = [
+  { id: "today", label: "Today", pages: ["today"] },
+  { id: "command", label: "Command", pages: ["command"] },
+  { id: "work", label: "Work", pages: ["jobs", "schedule", "quotes"] },
+  { id: "people", label: "People", pages: ["clients", "workers", "messages", "team"] },
+  { id: "money", label: "Money", pages: ["invoices", "payroll", "xero"] },
+  { id: "more", label: "More", pages: ["settings", "plans", "support"] },
+];
+
+function pageItem(page) {
+  return NAV.find((item) => item.id === page) || NAV[0];
+}
+
+function groupFor(page) {
+  return NAV_GROUPS.find((group) => group.pages.includes(page))?.id || "today";
+}
+
+function Header({ page, user, go, access, logout }) {
+  const [accountOpen, setAccountOpen] = React.useState(false);
+  const name = user?.business_name || user?.company_name || user?.name || user?.email || "Owner";
+  const initials = clean(name).split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "CV";
   return <header className="cv3Top">
-    <button type="button" className="cv3Brand" onClick={() => go("today")}><span>CV</span><b>Churvox<small>does the admin</small></b></button>
-    <div className="cv3TopCopy"><small>Owner command floor</small><h1>{NAV.find((item) => item.id === page)?.label || "Today"}</h1><p>{headline} {subhead}</p></div>
-    <div className="cv3Account"><small>{access.planName}</small><b>{user?.business_name || user?.company_name || user?.name || user?.email || "Owner"}</b></div>
+    <div className="cv3TopRow">
+      <button type="button" className="cv3Brand" onClick={() => go("today")}><span>CV</span><b>Churvox<small>owner workspace</small></b></button>
+      <div className="cv3TopCopy"><small>{pageItem(page).hint}</small><h1>{pageItem(page).label}</h1></div>
+      <div className="cv3TopActions">
+        <button type="button" className="cv3Create" onClick={() => go("jobs")}>Add work</button>
+        <div className="cv3AccountWrap">
+          <button type="button" className="cv3Account" aria-label="Open account menu" onClick={() => setAccountOpen((value) => !value)}>{initials}</button>
+          {accountOpen ? <div className="cv3AccountMenu"><small>{access.planName}</small><b>{name}</b><span>{user?.email || "Owner account"}</span><button type="button" onClick={async () => { setAccountOpen(false); await logout(); window.location.assign("/login"); }}>Log out</button></div> : null}
+        </div>
+      </div>
+    </div>
+    <NavBar page={page} go={go} access={access} />
   </header>;
 }
 
 function NavBar({ page, go, access }) {
-  return <nav className="cv3Nav" aria-label="Churvox sections">{NAV.filter((item) => access.can(item.id)).map((item) => <button key={item.id} type="button" className={page === item.id ? "active" : ""} onClick={() => go(item.id)}><b>{item.label}</b><small>{item.hint}</small></button>)}</nav>;
+  const [open, setOpen] = React.useState("");
+  React.useEffect(() => {
+    const close = (event) => { if (!event.target.closest?.(".cv3NavGroup")) setOpen(""); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, []);
+  return <nav className="cv3Nav" aria-label="Churvox workspace navigation">
+    {NAV_GROUPS.map((group) => {
+      const pages = group.pages.filter((item) => access.can(item));
+      if (!pages.length) return null;
+      const active = pages.includes(page);
+      const current = active ? pageItem(page).label : pageItem(pages[0]).label;
+      return <div key={group.id} className={`cv3NavGroup ${active ? "active" : ""}`}>
+        <button type="button" onClick={() => pages.length === 1 ? go(pages[0]) : setOpen((value) => value === group.id ? "" : group.id)}>{group.label}<span>{current}</span></button>
+        {open === group.id && pages.length > 1 ? <div className="cv3NavMenu">{pages.map((item) => <button type="button" key={item} className={page === item ? "active" : ""} onClick={() => { setOpen(""); go(item); }}><b>{pageItem(item).label}</b><small>{pageItem(item).hint}</small></button>)}</div> : null}
+      </div>;
+    })}
+  </nav>;
+}
+
+function MobileNav({ page, go, access }) {
+  const [moreOpen, setMoreOpen] = React.useState(false);
+  const mobile = [
+    { id: "today", label: "Today", page: "today", pages: ["today"] },
+    { id: "work", label: "Work", page: "jobs", pages: ["jobs", "schedule", "quotes"] },
+    { id: "command", label: "Command", page: "command", pages: ["command"] },
+    { id: "messages", label: "Messages", page: "messages", pages: ["messages"] },
+  ].filter((item) => access.can(item.page));
+  const morePages = NAV.filter((item) => access.can(item.id));
+  return <>
+    <nav className="cv3MobileNav" aria-label="Mobile workspace navigation">
+      {mobile.map((item) => <button type="button" key={item.id} className={item.pages.includes(page) ? "active" : ""} onClick={() => go(item.page)}><span />{item.label}</button>)}
+      <button type="button" className={groupFor(page) === "more" ? "active" : ""} onClick={() => setMoreOpen(true)}><span />More</button>
+    </nav>
+    {moreOpen ? <div className="cv3MobileSheet" role="dialog" aria-modal="true"><section><header><h3>Churvox workspace</h3><button type="button" onClick={() => setMoreOpen(false)}>Close</button></header><nav>{morePages.map((item) => <button type="button" key={item.id} onClick={() => { setMoreOpen(false); go(item.id); }}><b>{item.label}</b><small>{item.hint}</small></button>)}</nav></section></div> : null}
+  </>;
 }
 
 function Hero({ page, data, access }) {
@@ -319,17 +382,17 @@ function Hero({ page, data, access }) {
   const chips = {
     today: [[data.jobs.length, "jobs"], [data.workers.length, "workers"], [access.can("command") ? data.command.length : access.planName, access.can("command") ? "checks" : "plan"], [money(invoiceValue), "invoice value"]],
     command: [[data.command.length, "waiting"], ["Approve", "decide"], ["Edit", "fix"], ["Park", "hold"]],
-    jobs: [[data.jobs.length, "jobs"], [data.jobs.filter((job) => job.recurring !== "One-off").length, "recurring"], [data.jobs.filter((job) => job.issue || /needs check/i.test(job.status)).length, "needs check"], ["Form", "editable"]],
+    jobs: [[data.jobs.length, "jobs"], [data.jobs.filter((job) => job.recurring !== "One-off").length, "recurring"], [data.jobs.filter((job) => job.issue || /needs check/i.test(job.status)).length, "needs check"], ["Live", "records"]],
     schedule: [[data.jobs.length, "scheduled"], [data.jobs.filter((job) => job.recurring !== "One-off").length, "recurring"], [data.workers.length, "field team"], [data.jobs.filter((job) => !job.date).length, "need dates"]],
     clients: [[data.clients.length, "clients"], ["CSV", "import/export"], ["Notes", "site memory"], ["History", "linked"]],
     workers: [[data.workers.length, "workers"], [data.workers.filter((worker) => !/not clocked|not invited/i.test(worker.status)).length, "active"], ["Proof", "photos"], ["Time", "review"]],
     messages: [[data.messages.length, "messages"], [data.messages.filter((message) => message.draft).length, "drafts"], ["Job", "context"], ["Owner", "review"]],
     quotes: [[data.quotes.length, "quotes"], [data.quotes.filter((quote) => /accepted/i.test(quote.status)).length, "accepted"], ["Follow", "up"], ["Convert", "to job"]],
     invoices: [[money(invoiceValue), "ledger"], [data.invoices.filter((item) => /overdue/i.test(item.status)).length, "overdue"], ["Draft", "sync only"], ["Paid", "confirmed"]],
-    xero: [[data.xero.connected ? "Connected" : "Not connected", "status"], ["Draft", "sync only"], ["Owner", "approved"], ["Safe", "guardrails"]],
+    xero: [[data.xero.connected ? "Connected" : "Not connected", "status"], ["Draft", "sync only"], ["Owner", "approved"], ["Safe", "handoff"]],
     plans: [[access.planName, "current"], ["14-day", "trial"], ["No card", "upfront"], ["Locked", "pricing"]],
-  }[page] || [["Ready", "workspace"], ["Records", "editable"], ["Clean", "layout"], ["Owner", "control"]];
-  return <section className={`cv3Hero page-${page}`}><div><small>{page}</small><h2>{headline}</h2><p>{subhead}</p></div><div className="cv3HeroStats">{chips.map(([value, label]) => <span key={label}><b>{value}</b><small>{label}</small></span>)}</div></section>;
+  }[page] || [["Ready", "workspace"], ["Records", "editable"], ["Clear", "layout"], ["Owner", "control"]];
+  return <section className={`cv3Hero page-${page}`}><div><small>{pageItem(page).hint}</small><h2>{pageItem(page).label}</h2><p><b>{headline}</b> {subhead}</p></div><div className="cv3HeroStats">{chips.map(([value, label]) => <span key={label}><b>{value}</b><small>{label}</small></span>)}</div></section>;
 }
 
 function Panel({ title, kicker, children, className = "", action = null }) {
@@ -405,73 +468,32 @@ function Drawer({ record, data, api, refresh, close, notify }) {
 
 function TodayPage({ data, open, go, access }) {
   const invoiceValue = data.invoices.reduce((sum, item) => sum + item.amount, 0);
-  const attention = [...data.command, ...data.jobs.filter((job) => job.issue || /needs check/i.test(job.status)), ...data.invoices.filter((invoice) => /overdue/i.test(invoice.status))];
+  const jobIssues = data.jobs.filter((job) => job.issue || /needs check|hold|late|missing|unassigned/i.test(`${job.status} ${job.issue} ${job.worker}`));
+  const overdue = data.invoices.filter((invoice) => /overdue|late/i.test(invoice.status));
+  const attention = [...data.command, ...jobIssues, ...overdue];
   const best = attention[0] || null;
   const complete = data.jobs.filter((job) => /complete|done/i.test(job.status)).length;
+  const active = data.workers.filter((worker) => !/not clocked|inactive|offline|not invited/i.test(worker.status)).length;
+  const bestTitle = best ? titleOf(best) : data.jobs.length ? "Keep the run sheet moving" : "Add the first real job";
+  const bestText = best ? (best.check || best.issue || best.status || best.client || "This is the clearest item needing a check.") : data.jobs.length ? "The office is connected and no urgent owner decision is visible." : "One real client and job is enough for Churvox to begin organising the day.";
   return <>
-    <section className="cv3Handover span12">
-      <div className="cv3HandoverCopy">
-        <small>Live office handover</small>
-        <h2>{best ? "One move needs the owner." : data.jobs.length ? "The day is connected." : "Start with one real job."}</h2>
-        <p>{best ? `${titleOf(best)} is the clearest next decision. Churvox has kept the records together so you can check it once.` : data.jobs.length ? "Jobs, field updates, messages and money are connected below. Only exceptions rise to Command." : "Add a client or job and Churvox will begin building the live office around the work."}</p>
-        <div className="cv3HandoverActions">
-<button type="button" className="primary" onClick={() => best ? go("command") : open(blank("job", data))}>{best ? "Open the decision" : "Add the first job"}</button>
-<button type="button" onClick={() => go("schedule")}>Open the week</button>
-        </div>
-        <footer>Nothing sends, moves, charges or syncs without owner approval.</footer>
-      </div>
-      <div className="cv3OfficeSignal" aria-label="Live Churvox office flow">
-        <div className="brain"><span /><small>Churvox</small><b>{attention.length ? `${attention.length} owner check${attention.length === 1 ? "" : "s"}` : "Office calm"}</b></div>
-        <div className="signalLine" />
-        <div className="signalNodes">
-<span><i />Bookings<b>{data.jobs.length}</b></span>
-<span><i />Field<b>{data.workers.length}</b></span>
-<span><i />Proof<b>{complete}</b></span>
-<span><i />Money<b>{money(invoiceValue)}</b></span>
-<span className="owner"><i />Owner<b>{attention.length}</b></span>
-        </div>
-      </div>
+    <section className="cv3Brief span12">
+      <div className="cv3BriefLead"><small>Today · owner handover</small><h2>{data.jobs.length ? "Your day, already sorted into the right order." : "Start small. Churvox builds around the real work."}</h2><p>{data.jobs.length ? "The run sheet, field activity, client promises and money checks are together below. Only genuine exceptions rise to you." : "No fake demo numbers and no setup maze. Add the first client or job and the workspace begins filling with the business."}</p><div className="cv3BriefActions"><button type="button" className="primary" onClick={() => best ? (best.type === "approval" ? go("command") : open(best)) : open(blank("job", data))}>{best ? "Handle the next move" : "Add the first job"}</button><button type="button" onClick={() => go("schedule")}>Open the week</button></div><footer>Nothing sends, moves, charges or syncs without owner approval.</footer></div>
+      <div className="cv3BriefMove"><small>One best move</small><b>{bestTitle}</b><span>{bestText}</span><button type="button" onClick={() => best ? (best.type === "approval" ? go("command") : open(best)) : open(blank("job", data))}>{best ? "Review it" : "Create work"}</button></div>
+      <div className="cv3BriefPulse"><span><small>Work today</small><b>{data.jobs.length}</b></span><span><small>Field active</small><b>{active}</b></span><span><small>Completed</small><b>{complete}</b></span><span><small>Invoice value</small><b>{money(invoiceValue)}</b></span></div>
     </section>
-    <section className="cv3DayLedger span12">
-      <header><div><small>Today</small><h3>Work moving through the office</h3></div><button type="button" onClick={() => open(blank("job", data))}>Add job</button></header>
-      <div className="cv3DayColumns">
-        <div><small>Run sheet</small>{data.jobs.length ? data.jobs.slice(0, 7).map((job) => <Row key={job.id} title={`${job.time || "Any time"} · ${job.title}`} meta={`${job.client} · ${job.worker} · ${job.status}`} tag={money(job.price)} onClick={() => open(job)} />) : <Empty title="No jobs yet" text="The first real job turns this handover into a live business view." />}</div>
-        <div><small>Owner desk</small>{attention.length ? attention.slice(0, 6).map((item) => <Row key={`${item.type}-${item.id}`} title={titleOf(item)} meta={item.status || item.client || "Owner check"} tone="red" action="Check" onClick={() => open(item)} />) : <Empty title="Nothing needs you" text="Churvox will bring exceptions and prepared decisions here." />}</div>
-      </div>
-    </section>
-    <section className="cv3PulseLine span12">
-      <button type="button" onClick={() => go("workers")}><small>Field</small><b>{data.workers.length ? `${data.workers.length} worker records` : "No workers connected"}</b><span>Open field view</span></button>
-      <button type="button" onClick={() => go("messages")}><small>Promises</small><b>{data.messages.length ? `${data.messages.length} messages` : "No follow-ups waiting"}</b><span>Open messages</span></button>
-      <button type="button" onClick={() => go("invoices")}><small>Money</small><b>{money(invoiceValue)}</b><span>Open invoice ledger</span></button>
-    </section>
+    <section className="cv3TodayBoard span12"><header><div><small>Live work</small><h3>What is moving and what needs you</h3></div><button type="button" onClick={() => open(blank("job", data))}>Add job</button></header><div className="cv3TodayColumns"><div><small>Run sheet</small>{data.jobs.length ? data.jobs.slice(0, 8).map((job) => <Row key={job.id} title={`${job.time || "Any time"} · ${job.title}`} meta={`${job.client} · ${job.worker} · ${job.status}`} tag={money(job.price)} onClick={() => open(job)} />) : <Empty title="No work on the sheet yet" text="Add a real job and it will appear here with the client, worker, timing and value." />}</div><div><small>Owner checks</small>{attention.length ? attention.slice(0, 7).map((item) => <Row key={`${item.type}-${item.id}`} title={titleOf(item)} meta={item.status || item.issue || item.client || "Owner check"} tone="red" action="Review" onClick={() => item.type === "approval" ? go("command") : open(item)} />) : <Empty title="Nothing needs your approval" text="Churvox will place only genuine exceptions and prepared decisions here." />}</div></div></section>
+    <section className="cv3ActionRail span12"><button type="button" onClick={() => go("workers")}><small>Field</small><b>{data.workers.length ? `${active} active from ${data.workers.length}` : "Connect the field team"}</b><span>Workers, proof and time</span></button><button type="button" onClick={() => go("messages")}><small>Promises</small><b>{data.messages.length ? `${data.messages.length} messages connected` : "No follow-ups waiting"}</b><span>Replies tied to the work</span></button><button type="button" onClick={() => go("invoices")}><small>Money</small><b>{money(invoiceValue)}</b><span>Drafts, due and paid</span></button></section>
   </>;
 }
 
 function CommandPage({ data, open, access }) {
   const selected = data.command[0] || null;
-  return <>
-    <section className="cv3CommandRoom span12">
-      <header>
-        <div><small>Command · owner decision room</small><h2>Churvox prepares it. You decide what moves.</h2><p>Every slip keeps the source, the prepared result and the consequence together. Approve, edit or park happens here—nowhere else.</p></div>
-        <div className="cv3CommandState"><span className={data.command.length ? "live" : "calm"} /><b>{data.command.length ? `${data.command.length} waiting` : "Room clear"}</b><small>Owner control on</small></div>
-      </header>
-      <div className="cv3CommandBody">
-        <div className="cv3CommandQueue">
-<small>Decision rail</small>
-{data.command.length ? data.command.slice(0, 10).map((item, index) => <button type="button" className={index === 0 ? "active" : ""} key={item.id} onClick={() => open(item)}><span>{String(index + 1).padStart(2, "0")}</span><div><b>{item.approvalType}</b><small>{item.title}</small></div><em>{item.status}</em></button>) : <div className="cv3CommandEmpty"><span /><h3>No approvals waiting.</h3><p>The decision rail stays quiet until a quote, invoice, reply, job issue or accounting handoff genuinely needs the owner.</p></div>}
-        </div>
-        <aside className="cv3DecisionRoom">
-<small>{selected ? "Prepared working slip" : "How Command works"}</small>
-<h3>{selected ? titleOf(selected) : "One decision. Full context."}</h3>
-<p>{selected ? selected.filled || selected.check || "Open the slip to see what Churvox prepared and what still needs checking." : "Churvox connects the records, explains the reason and leaves the final action with the owner."}</p>
-<div className="cv3DecisionSteps"><span><i>1</i>What changed</span><span><i>2</i>What was checked</span><span><i>3</i>What Churvox prepared</span><span><i>4</i>What happens next</span></div>
-{selected ? <button type="button" onClick={() => open(selected)}>Open full decision slip</button> : null}
-<footer>Approve · Edit · Park · Ask for the missing fact</footer>
-        </aside>
-      </div>
-    </section>
-    <section className="cv3CommandPromise span12"><span>Control is the product.</span><p>Nothing important sends, charges, syncs, pays, files or changes because software guessed.</p></section>
-  </>;
+  return <section className="cv3CommandDesk span12">
+    <aside className="cv3CommandQueue"><small>Command queue</small><h3>{data.command.length ? `${data.command.length} waiting for the owner` : "Nothing waiting"}</h3>{data.command.length ? data.command.slice(0, 10).map((item, index) => <button type="button" key={item.id} onClick={() => open(item)}><span>{String(index + 1).padStart(2, "0")}</span><div><b>{item.approvalType || item.type || "Owner check"}</b><small>{item.title}</small></div><em>{item.status}</em></button>) : <div className="cv3CommandEmpty"><span /><h3>The room is clear.</h3><p>Quotes, invoices, replies, job exceptions and accounting handoffs only appear when a real owner decision is needed.</p></div>}</aside>
+    <article className="cv3CommandFocus"><small>{selected ? "Selected decision" : "Owner control"}</small><h2>{selected ? titleOf(selected) : "Nothing important moves because software guessed."}</h2><p>{selected ? (selected.filled || selected.prepared || selected.check || "Open the decision to inspect what Churvox prepared and the evidence connected to it.") : "Churvox prepares the work, keeps the source records together and waits. Approve, edit or park stays in this room."}</p><div className="cv3DecisionFacts"><span><small>What changed</small><b>{selected ? (selected.type || selected.approvalType || "A connected record needs a decision") : "A real event creates the decision"}</b></span><span><small>What was checked</small><b>{selected ? (selected.evidence || selected.client || "Source records and owner rules") : "Clients, jobs, people, promises and money"}</b></span><span><small>What Churvox prepared</small><b>{selected ? (selected.prepared || selected.filled || "A reviewable working result") : "A complete result—not a blind automation"}</b></span><span><small>What happens next</small><b>Approve, edit, park or ask for the missing fact</b></span></div>{selected ? <button type="button" onClick={() => open(selected)}>Open decision</button> : null}<footer>Nothing sends, charges, syncs, pays, files or changes until the owner approves it.</footer></article>
+    <aside className="cv3CommandContext"><small>Connected context</small><h3>Why this room is safe</h3><span><b>Source stays attached</b><small>The client, job, worker or invoice remains visible.</small></span><span><b>Reason stays readable</b><small>Churvox explains why the decision reached you.</small></span><span><b>Ripple stays visible</b><small>Affected promises, time and money can be checked first.</small></span><span><b>Owner stays final</b><small>Approval is never hidden inside another page.</small></span></aside>
+  </section>;
 }
 
 function JobsPage({ data, open, access }) {
@@ -601,7 +623,7 @@ function Page({ page, data, open, go, api, refresh, notify, user, access }) {
 }
 
 export default function ProductAppV3() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const access = React.useMemo(() => createAccess(user), [user]);
   const { api, data, loading, refresh } = useProductData(Boolean(user));
   const [page, setPage] = React.useState(pageFromUrl);
@@ -624,5 +646,5 @@ export default function ProductAppV3() {
     window.dispatchEvent(new Event("hashchange"));
   }
 
-  return <main className={`cv3Product cv3Page-${page}`} data-page={page} data-version="CHURVOX_PREMIUM_OWNER_ROOMS_20260724"><Header page={page} user={user} go={go} access={access} /><NavBar page={page} go={go} access={access} /><section className="cv3Workspace"><div className="cv3Page">{loading ? <div className="cv3Loading"><b>Loading Churvox</b><span>Getting live business records.</span></div> : <Page page={page} data={data} open={setRecord} go={go} api={api} refresh={refresh} notify={setNotice} user={user} access={access} />}</div></section><Drawer record={record} data={data} api={api} refresh={refresh} close={() => setRecord(null)} notify={setNotice} /><Notice notice={notice} clear={() => setNotice(null)} /></main>;
+  return <main className={`cv3Product cv3Page-${page}`} data-page={page} data-version="CHURVOX_PREMIUM_STUDIO_20260725"><Header page={page} user={user} go={go} access={access} logout={logout} /><section className="cv3Workspace"><div className="cv3Page">{loading ? <div className="cv3Loading"><b>Loading Churvox</b><span>Getting live business records.</span></div> : <Page page={page} data={data} open={setRecord} go={go} api={api} refresh={refresh} notify={setNotice} user={user} access={access} />}</div></section><MobileNav page={page} go={go} access={access} /><Drawer record={record} data={data} api={api} refresh={refresh} close={() => setRecord(null)} notify={setNotice} /><Notice notice={notice} clear={() => setNotice(null)} /></main>;
 }
