@@ -1,7 +1,8 @@
 import React from 'react'
-import OfficeTeamLabSite from './OfficeTeamLabSite'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
 import FreshApp from '../churvox-fresh/FreshApp'
+
+const OfficeTeamLabSite = React.lazy(() => import('./OfficeTeamLabSite'))
 
 const HASH_ALIASES = new Map([
   ['team', 'office-team'],
@@ -42,7 +43,9 @@ function OfficeTeamLab(props) {
 
   return (
     <OfficeTeamOwnerScreenGuard appMode={props.appMode}>
-      <OfficeTeamLabSite {...props} key={routeVersion} />
+      <React.Suspense fallback={<main className="cvOfficeLabLoading">Loading Churvox office…</main>}>
+        <OfficeTeamLabSite {...props} key={routeVersion} />
+      </React.Suspense>
     </OfficeTeamOwnerScreenGuard>
   )
 }
