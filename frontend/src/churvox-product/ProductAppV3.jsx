@@ -10,6 +10,7 @@ const NAV = [
   { id: "today", label: "Today", hint: "Control" },
   { id: "command", label: "Command", hint: "Approvals" },
   { id: "jobs", label: "Jobs", hint: "Run sheet" },
+  { id: "schedule", label: "Schedule", hint: "Timing" },
   { id: "clients", label: "Clients", hint: "Memory" },
   { id: "workers", label: "Workers", hint: "Field" },
   { id: "messages", label: "Messages", hint: "Replies" },
@@ -27,6 +28,7 @@ const PAGE_COPY = {
   today: ["Run today without hunting.", "The day, the field, money and owner checks are grouped into one clear command floor."],
   command: ["Churvox prepares it. The owner decides.", "Approvals, edits and parking stay here so risky actions never get scattered through the app."],
   jobs: ["A real run sheet with recurrence built in.", "Create, schedule, price, assign and repeat jobs from one practical workspace."],
+  schedule: ["See the week as one connected route.", "Timing, worker load, recurring work and gaps stay visible without turning the calendar into a wall of boxes."],
   clients: ["The client file is the business memory.", "Contact details, access notes, pricing, CSV import and linked history stay together."],
   workers: ["Know what is happening outside.", "Worker status, proof, messages, location notes and timesheets stay visible without crowding Jobs."],
   messages: ["Messages become next steps.", "Worker notes and customer replies stay connected to the right client, job and drafted response."],
@@ -65,7 +67,7 @@ const OPTIONS = {
 };
 
 const FEATURE_MIN = {
-  today: "start", jobs: "start", clients: "start", quotes: "start", invoices: "start", settings: "start", plans: "none", support: "none",
+  today: "start", jobs: "start", schedule: "start", clients: "start", quotes: "start", invoices: "start", settings: "start", plans: "none", support: "none",
   workers: "crew", messages: "crew", team: "crew", command: "operator", payroll: "command", xero: "accounting",
 };
 const PLAN_RANK = { none: 0, start: 1, crew: 2, operator: 3, command: 4 };
@@ -161,8 +163,8 @@ function pageFromUrl() {
   if (typeof window === "undefined") return "today";
   const path = keyOf((window.location.pathname || "").split("/")[1] || "dashboard");
   const hash = keyOf((window.location.hash || "").replace(/^#/, "").split("?")[0]);
-  const aliases = { dashboard: "today", smartHub: "today", smarthub: "today", plans: "plans", guide: "support", setup: "support", setupguide: "support", help: "support", supportboard: "support", accounting: "xero" };
-  const wanted = hash || aliases[path] || path;
+  const aliases = { dashboard: "today", smarthub: "today", plans: "plans", guide: "support", setup: "support", setupguide: "support", help: "support", supportboard: "support", work: "jobs", job: "jobs", calendar: "schedule", worker: "workers", staff: "team", integrations: "xero", accounting: "xero" };
+  const wanted = aliases[hash] || hash || aliases[path] || path;
   return NAV.some((item) => item.id === wanted) ? wanted : "today";
 }
 
@@ -318,6 +320,7 @@ function Hero({ page, data, access }) {
     today: [[data.jobs.length, "jobs"], [data.workers.length, "workers"], [access.can("command") ? data.command.length : access.planName, access.can("command") ? "checks" : "plan"], [money(invoiceValue), "invoice value"]],
     command: [[data.command.length, "waiting"], ["Approve", "decide"], ["Edit", "fix"], ["Park", "hold"]],
     jobs: [[data.jobs.length, "jobs"], [data.jobs.filter((job) => job.recurring !== "One-off").length, "recurring"], [data.jobs.filter((job) => job.issue || /needs check/i.test(job.status)).length, "needs check"], ["Form", "editable"]],
+    schedule: [[data.jobs.length, "scheduled"], [data.jobs.filter((job) => job.recurring !== "One-off").length, "recurring"], [data.workers.length, "field team"], [data.jobs.filter((job) => !job.date).length, "need dates"]],
     clients: [[data.clients.length, "clients"], ["CSV", "import/export"], ["Notes", "site memory"], ["History", "linked"]],
     workers: [[data.workers.length, "workers"], [data.workers.filter((worker) => !/not clocked|not invited/i.test(worker.status)).length, "active"], ["Proof", "photos"], ["Time", "review"]],
     messages: [[data.messages.length, "messages"], [data.messages.filter((message) => message.draft).length, "drafts"], ["Job", "context"], ["Owner", "review"]],
@@ -403,17 +406,84 @@ function Drawer({ record, data, api, refresh, close, notify }) {
 function TodayPage({ data, open, go, access }) {
   const invoiceValue = data.invoices.reduce((sum, item) => sum + item.amount, 0);
   const attention = [...data.command, ...data.jobs.filter((job) => job.issue || /needs check/i.test(job.status)), ...data.invoices.filter((invoice) => /overdue/i.test(invoice.status))];
-  return <><Hero page="today" data={data} access={access} /><StatGrid items={[["Jobs today", data.jobs.length], ["Workers", data.workers.length, "blue"], [access.can("command") ? "Owner checks" : "Current plan", access.can("command") ? data.command.length : access.planName, "red"], ["Invoice value", money(invoiceValue), "orange"]]} /><Panel title="Today run sheet" kicker="work" className="span7" action={<button type="button" onClick={() => open(blank("job", data))}>Add job</button>}><div className="cv3List">{data.jobs.length ? data.jobs.slice(0, 7).map((job) => <Row key={job.id} title={`${job.time || "Any time"} · ${job.title}`} meta={`${job.client} · ${job.worker} · ${job.status}`} tag={money(job.price)} onClick={() => open(job)} />) : <Empty title="No jobs yet" text="Add a job with client, worker, price, date, time and recurrence." />}</div></Panel><Panel title="Needs attention" kicker="owner" className="span5" action={access.can("command") ? <button type="button" onClick={() => go("command")}>Review queue</button> : <button type="button" onClick={() => go("plans")}>View plan</button>}><div className="cv3List compact">{attention.length ? attention.slice(0, 6).map((item) => <Row key={`${item.type}-${item.id}`} title={titleOf(item)} meta={item.status || item.client || "Owner check"} tone="red" action="Check" onClick={() => open(item)} />) : <Empty title="Nothing urgent" text="When something needs the owner, it appears here and in Command." />}</div></Panel><Panel title="Field pulse" kicker="workers" className="span4"><div className="cv3List compact">{data.workers.length ? data.workers.slice(0, 5).map((worker) => <Row key={worker.id} title={worker.name} meta={`${worker.status} · ${worker.job}`} tone="blue" onClick={() => open(worker)} />) : <Empty title="No workers yet" />}</div></Panel><Panel title="Follow-ups" kicker="messages" className="span4"><div className="cv3List compact">{data.messages.length ? data.messages.slice(0, 4).map((message) => <Row key={message.id} title={message.subject} meta={`${message.from} · ${message.priority}`} onClick={() => open(message)} />) : <Empty title="No messages" />}</div></Panel><Panel title="Money to check" kicker="invoices" className="span4"><Rule title={money(invoiceValue)} text="Draft, due and ready invoice value. Sending and accounting handoff stay owner-approved." /></Panel></>;
+  const best = attention[0] || null;
+  const complete = data.jobs.filter((job) => /complete|done/i.test(job.status)).length;
+  return <>
+    <section className="cv3Handover span12">
+      <div className="cv3HandoverCopy">
+        <small>Live office handover</small>
+        <h2>{best ? "One move needs the owner." : data.jobs.length ? "The day is connected." : "Start with one real job."}</h2>
+        <p>{best ? `${titleOf(best)} is the clearest next decision. Churvox has kept the records together so you can check it once.` : data.jobs.length ? "Jobs, field updates, messages and money are connected below. Only exceptions rise to Command." : "Add a client or job and Churvox will begin building the live office around the work."}</p>
+        <div className="cv3HandoverActions">
+<button type="button" className="primary" onClick={() => best ? go("command") : open(blank("job", data))}>{best ? "Open the decision" : "Add the first job"}</button>
+<button type="button" onClick={() => go("schedule")}>Open the week</button>
+        </div>
+        <footer>Nothing sends, moves, charges or syncs without owner approval.</footer>
+      </div>
+      <div className="cv3OfficeSignal" aria-label="Live Churvox office flow">
+        <div className="brain"><span /><small>Churvox</small><b>{attention.length ? `${attention.length} owner check${attention.length === 1 ? "" : "s"}` : "Office calm"}</b></div>
+        <div className="signalLine" />
+        <div className="signalNodes">
+<span><i />Bookings<b>{data.jobs.length}</b></span>
+<span><i />Field<b>{data.workers.length}</b></span>
+<span><i />Proof<b>{complete}</b></span>
+<span><i />Money<b>{money(invoiceValue)}</b></span>
+<span className="owner"><i />Owner<b>{attention.length}</b></span>
+        </div>
+      </div>
+    </section>
+    <section className="cv3DayLedger span12">
+      <header><div><small>Today</small><h3>Work moving through the office</h3></div><button type="button" onClick={() => open(blank("job", data))}>Add job</button></header>
+      <div className="cv3DayColumns">
+        <div><small>Run sheet</small>{data.jobs.length ? data.jobs.slice(0, 7).map((job) => <Row key={job.id} title={`${job.time || "Any time"} · ${job.title}`} meta={`${job.client} · ${job.worker} · ${job.status}`} tag={money(job.price)} onClick={() => open(job)} />) : <Empty title="No jobs yet" text="The first real job turns this handover into a live business view." />}</div>
+        <div><small>Owner desk</small>{attention.length ? attention.slice(0, 6).map((item) => <Row key={`${item.type}-${item.id}`} title={titleOf(item)} meta={item.status || item.client || "Owner check"} tone="red" action="Check" onClick={() => open(item)} />) : <Empty title="Nothing needs you" text="Churvox will bring exceptions and prepared decisions here." />}</div>
+      </div>
+    </section>
+    <section className="cv3PulseLine span12">
+      <button type="button" onClick={() => go("workers")}><small>Field</small><b>{data.workers.length ? `${data.workers.length} worker records` : "No workers connected"}</b><span>Open field view</span></button>
+      <button type="button" onClick={() => go("messages")}><small>Promises</small><b>{data.messages.length ? `${data.messages.length} messages` : "No follow-ups waiting"}</b><span>Open messages</span></button>
+      <button type="button" onClick={() => go("invoices")}><small>Money</small><b>{money(invoiceValue)}</b><span>Open invoice ledger</span></button>
+    </section>
+  </>;
 }
 
 function CommandPage({ data, open, access }) {
-  return <><Hero page="command" data={data} access={access} /><Panel title="Approval queue" kicker="decisions" className="span7"><div className="cv3List">{data.command.length ? data.command.slice(0, 10).map((item) => <Row key={item.id} title={item.approvalType} meta={`${item.title} · ${item.status}`} tone="red" action="Slip" onClick={() => open(item)} />) : <Empty title="No approvals waiting" text="Quotes, invoices, replies, job issues and accounting handoff appear here when the owner needs to decide." />}</div></Panel><Panel title="Working slip" kicker="preview" className="span5 dark"><Preview record={data.command[0]} data={data} open={open} /></Panel><Panel title="Command rule" kicker="guardrail" className="span12"><Rule title="Approve, edit and park only live in Command." text="Other pages keep records tidy. Anything risky, unclear or ready to send returns to the owner approval desk." /></Panel></>;
+  const selected = data.command[0] || null;
+  return <>
+    <section className="cv3CommandRoom span12">
+      <header>
+        <div><small>Command · owner decision room</small><h2>Churvox prepares it. You decide what moves.</h2><p>Every slip keeps the source, the prepared result and the consequence together. Approve, edit or park happens here—nowhere else.</p></div>
+        <div className="cv3CommandState"><span className={data.command.length ? "live" : "calm"} /><b>{data.command.length ? `${data.command.length} waiting` : "Room clear"}</b><small>Owner control on</small></div>
+      </header>
+      <div className="cv3CommandBody">
+        <div className="cv3CommandQueue">
+<small>Decision rail</small>
+{data.command.length ? data.command.slice(0, 10).map((item, index) => <button type="button" className={index === 0 ? "active" : ""} key={item.id} onClick={() => open(item)}><span>{String(index + 1).padStart(2, "0")}</span><div><b>{item.approvalType}</b><small>{item.title}</small></div><em>{item.status}</em></button>) : <div className="cv3CommandEmpty"><span /><h3>No approvals waiting.</h3><p>The decision rail stays quiet until a quote, invoice, reply, job issue or accounting handoff genuinely needs the owner.</p></div>}
+        </div>
+        <aside className="cv3DecisionRoom">
+<small>{selected ? "Prepared working slip" : "How Command works"}</small>
+<h3>{selected ? titleOf(selected) : "One decision. Full context."}</h3>
+<p>{selected ? selected.filled || selected.check || "Open the slip to see what Churvox prepared and what still needs checking." : "Churvox connects the records, explains the reason and leaves the final action with the owner."}</p>
+<div className="cv3DecisionSteps"><span><i>1</i>What changed</span><span><i>2</i>What was checked</span><span><i>3</i>What Churvox prepared</span><span><i>4</i>What happens next</span></div>
+{selected ? <button type="button" onClick={() => open(selected)}>Open full decision slip</button> : null}
+<footer>Approve · Edit · Park · Ask for the missing fact</footer>
+        </aside>
+      </div>
+    </section>
+    <section className="cv3CommandPromise span12"><span>Control is the product.</span><p>Nothing important sends, charges, syncs, pays, files or changes because software guessed.</p></section>
+  </>;
 }
 
 function JobsPage({ data, open, access }) {
   const recurring = data.jobs.filter((job) => job.recurring !== "One-off");
   const issues = data.jobs.filter((job) => job.issue || /needs check/i.test(job.status));
   return <><Hero page="jobs" data={data} access={access} /><Toolbar><button type="button" onClick={() => open(blank("job", data))}>Add job</button><button type="button" onClick={() => open({ ...blank("job", data), recurring: "Weekly" })}>Recurring job</button>{access.can("workers") ? <button type="button" onClick={() => open(data.workers[0] || blank("worker", data))}>Assign worker</button> : null}<button type="button" onClick={() => downloadCsv("churvox-jobs.csv", data.jobs, [["Job", "title"], ["Client", "client"], ["Worker", "worker"], ["Date", "date"], ["Time", "time"], ["Price", "price"], ["Status", "status"]])}>Export</button></Toolbar><Panel title="Run sheet" kicker="schedule" className="span6"><div className="cv3List">{data.jobs.length ? data.jobs.slice(0, 10).map((job) => <Row key={job.id} title={`${job.date || "No date"} · ${job.time || "No time"}`} meta={`${job.title} · ${job.client} · ${job.worker}`} tag={money(job.price)} onClick={() => open(job)} />) : <Empty title="No jobs yet" />}</div></Panel><Panel title="Job workspace" kicker="form" className="span6"><Preview record={data.jobs[0]} data={data} open={open} /></Panel><Panel title="Recurring work" kicker="repeat" className="span6"><div className="cv3List compact">{recurring.length ? recurring.slice(0, 6).map((job) => <Row key={job.id} title={job.title} meta={`${job.recurring} · ${job.client}`} onClick={() => open(job)} />) : <Empty title="No recurring jobs" text="Weekly, fortnightly, monthly and custom work lives inside Jobs." />}</div></Panel><Panel title="Needs owner check" kicker="issues" className="span6"><div className="cv3List compact">{issues.length ? issues.slice(0, 6).map((job) => <Row key={job.id} title={job.title} meta={job.issue || job.status} tone="red" onClick={() => open(job)} />) : <Empty title="No job issues" />}</div></Panel></>;
+}
+
+function SchedulePage({ data, open, access }) {
+  const rows = [...data.jobs].sort((a, b) => `${a.date || "9999"} ${a.time || "99"}`.localeCompare(`${b.date || "9999"} ${b.time || "99"}`));
+  const undated = rows.filter((job) => !job.date);
+  return <><Hero page="schedule" data={data} access={access} /><Toolbar><button type="button" onClick={() => open(blank("job", data))}>Add booking</button><button type="button" onClick={() => open({ ...blank("job", data), recurring: "Weekly" })}>Recurring work</button></Toolbar><section className="cv3ScheduleRoom span8"><header><small>Connected week</small><h3>Timing without calendar clutter</h3></header><div className="cv3ScheduleRail">{rows.length ? rows.slice(0, 14).map((job, index) => <button type="button" key={job.id} onClick={() => open(job)}><span>{String(index + 1).padStart(2, "0")}</span><time>{job.date || "Date needed"}<b>{job.time || "Any time"}</b></time><div><b>{job.title}</b><small>{job.client} · {job.worker}</small></div><em>{job.recurring}</em></button>) : <Empty title="The week is open" text="Add a booking and Churvox will connect timing, worker and recurring work here." />}</div></section><section className="cv3ScheduleSide span4"><small>Week check</small><h3>{undated.length ? `${undated.length} job${undated.length === 1 ? " needs" : "s need"} a date` : "No timing gaps visible"}</h3><p>Ripple Preview will compare worker load, client promises and invoice timing before an approved move.</p><button type="button" onClick={() => open(undated[0] || blank("job", data))}>{undated.length ? "Fix first gap" : "Add a booking"}</button></section></>;
 }
 
 function ClientsPage({ data, open, api, refresh, notify, access }) {
@@ -502,6 +572,7 @@ function Page({ page, data, open, go, api, refresh, notify, user, access }) {
   if (!access.can(page)) return <PlanLockedPage page={page} data={data} access={access} go={go} />;
   if (page === "command") return <CommandPage data={data} open={open} access={access} />;
   if (page === "jobs") return <JobsPage data={data} open={open} access={access} />;
+  if (page === "schedule") return <SchedulePage data={data} open={open} access={access} />;
   if (page === "clients") return <ClientsPage data={data} open={open} api={api} refresh={refresh} notify={notify} access={access} />;
   if (page === "workers") return <WorkersPage data={data} open={open} access={access} />;
   if (page === "messages") return <MessagesPage data={data} open={open} access={access} />;
