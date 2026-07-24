@@ -43,7 +43,7 @@ function keepVisibleToolsHonest(root, plan) {
 function decorateControlBoard() {
   const root = document.querySelector(".cv7Product");
   if (!root) return null;
-  root.classList.add("cvOwnerReady", "cv3Product");
+  root.classList.add("cvOwnerReady");
   const pageClass = [...root.classList].find((name) => name.startsWith("page-"));
   root.dataset.screen = pageClass ? pageClass.replace(/^page-/, "") : "today";
   const user = authUser();
