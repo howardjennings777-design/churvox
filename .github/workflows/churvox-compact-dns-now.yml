@@ -1,0 +1,53 @@
+name: Churvox compact DNS now
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    if: startsWith(github.event.issue.title, '[churvox-compact-dns-now]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check current DNS and routing
+        shell: bash
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq dnsutils >/dev/null
+          {
+            echo "UTC=$(date -u '+%Y-%m-%d %H:%M:%S')"
+            for dns in 1.1.1.1 8.8.8.8; do
+              echo "DNS=$dns"
+              echo "APEX_A=$(dig @$dns +short churvox.com A | tr '\n' ',' | sed 's/,$//')"
+              echo "WWW_CNAME=$(dig @$dns +short www.churvox.com CNAME | tr '\n' ',' | sed 's/,$//')"
+              echo "WWW_A=$(dig @$dns +short www.churvox.com A | tr '\n' ',' | sed 's/,$//')"
+            done
+            for url in https://www.churvox.com/ https://www.churvox.com/login https://www.churvox.com/dashboard https://grassley-frontend.onrender.com/; do
+              echo "URL=$url"
+              curl -sS -L --max-time 30 -o /tmp/body -D /tmp/head -H 'Cache-Control: no-cache' -w 'FINAL=%{url_effective} STATUS=%{http_code}\n' "$url?dnsnow=$(date +%s%N)"
+              echo "SERVER=$(grep -i '^server:' /tmp/head | tail -1 | tr -d '\r')"
+              echo "RNDR=$(grep -i '^rndr-id:' /tmp/head | tail -1 | tr -d '\r')"
+              echo "TITLE=$(grep -ioE '<title>[^<]*</title>' /tmp/body | head -1 | tr '\n' ' ')"
+              if grep -Fq '/static/js/' /tmp/body; then echo 'MARKER=render-cra'; fi
+              if grep -Fq 'custom-domains.chatgpt.site' /tmp/body || grep -Fq 'workspace-connect' /tmp/body || grep -Fq 'codex-preview' /tmp/body; then echo 'MARKER=chatgpt-sites'; fi
+              if grep -Fq 'Churvox does the admin. You approve.' /tmp/body; then echo 'TEXT=new-sites-copy'; fi
+            done
+          } > /tmp/report.txt 2>&1
+          cat /tmp/report.txt
+          {
+            echo 'REPORT<<EOF'
+            cat /tmp/report.txt
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+      - name: Post compact result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '```text\n' + (process.env.REPORT || 'missing') + '\n```'
+            });
