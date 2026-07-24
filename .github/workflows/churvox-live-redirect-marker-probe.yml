@@ -12,26 +12,49 @@ jobs:
     if: startsWith(github.event.issue.title, '[churvox-live-redirect-marker-probe]')
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect live HTML bundle and worker
+      - name: Inspect DNS, live domain, Render origin, bundle and worker
         shell: bash
         run: |
           set +e
           {
-            base='https://grassley-frontend.onrender.com'
-            curl -sS --max-time 40 -D /tmp/h -o /tmp/index -H 'Cache-Control: no-cache, no-store, max-age=0' "$base/login?probe=$(date +%s%N)"
-            echo "INDEX_BYTES=$(wc -c </tmp/index)"
-            echo "LAST_MODIFIED=$(grep -i '^last-modified:' /tmp/h | tail -1 | tr -d '\r')"
-            echo "INDEX_START=$(head -c 700 /tmp/index | tr '\n' ' ')"
-            asset=$(grep -oE '/static/js/main\.[^"]+\.js' /tmp/index | head -1)
-            echo "ASSET=$asset"
-            if [ -n "$asset" ]; then curl -sS --max-time 60 -o /tmp/main "$base$asset?probe=$(date +%s%N)"; fi
-            curl -sS --max-time 40 -o /tmp/sw "$base/sw.js?probe=$(date +%s%N)"
-            for target in index main sw; do
-              echo "--- $target ---"
-              [ -f "/tmp/$target" ] || continue
-              echo "BYTES=$(wc -c </tmp/$target)"
-              for marker in 'redirectLegacyRenderHost' 'grassley-frontend.onrender.com' 'fromLegacyRender' 'churvoxLegacyHostExitRuntime' 'churvox-legacy-exit-20260724-v3' 'Response.redirect' 'LEGACY_HOST' 'window.location.replace' 'www.churvox.com'; do
-                echo "$marker=$(grep -Foc "$marker" "/tmp/$target" 2>/dev/null || true)"
+            echo "UTC=$(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            echo '=== DNS ==='
+            for resolver in '' '@1.1.1.1' '@8.8.8.8'; do
+              echo "RESOLVER=${resolver:-system}"
+              for host in churvox.com www.churvox.com; do
+                echo "HOST=$host"
+                echo "A=$(dig $resolver +short "$host" A | tr '\n' ' ')"
+                echo "AAAA=$(dig $resolver +short "$host" AAAA | tr '\n' ' ')"
+                echo "CNAME=$(dig $resolver +short "$host" CNAME | tr '\n' ' ')"
+              done
+            done
+            echo
+            for base in 'https://www.churvox.com' 'https://churvox.com' 'https://grassley-frontend.onrender.com'; do
+              echo "=== BASE=$base ==="
+              for path in '/' '/login' '/dashboard'; do
+                url="$base$path?probe=$(date +%s%N)"
+                curl -sS -L --max-time 45 -D /tmp/h -o /tmp/index -H 'Cache-Control: no-cache, no-store, max-age=0' -H 'Pragma: no-cache' "$url"
+                echo "URL=$url"
+                curl -sS -L --max-time 45 -o /dev/null -w 'FINAL=%{url_effective} STATUS=%{http_code} IP=%{remote_ip} TYPE=%{content_type}\n' "$url"
+                echo "SERVER=$(grep -i '^server:' /tmp/h | tail -1 | tr -d '\r')"
+                echo "RNDR=$(grep -i '^rndr-id:' /tmp/h | tail -1 | tr -d '\r')"
+                echo "TITLE=$(grep -ioE '<title>[^<]*</title>' /tmp/index | head -1 | tr '\n' ' ')"
+                echo "INDEX_BYTES=$(wc -c </tmp/index)"
+                echo "SITES_SHELL=$(grep -Foc 'Please enable JavaScript to use the Churvox app, or contact hello@churvox.com for help.' /tmp/index 2>/dev/null || true)"
+                echo "RENDER_HOSTED=$(grep -Foc 'CHURVOX_RENDER_HOSTED_20260724' /tmp/index 2>/dev/null || true)"
+                echo "NEW_HERO=$(grep -Foc 'Run the job, not the admin' /tmp/index 2>/dev/null || true)"
+                echo "OLD_HERO=$(grep -Foc 'Your business handled. Your decisions waiting.' /tmp/index 2>/dev/null || true)"
+                asset=$(grep -oE '/static/js/main\.[^"?]+\.js' /tmp/index | head -1)
+                echo "ASSET=$asset"
+                if [ -n "$asset" ]; then
+                  curl -sS --max-time 60 -o /tmp/main "$base$asset?probe=$(date +%s%N)"
+                  echo "MAIN_BYTES=$(wc -c </tmp/main)"
+                  echo "MAIN_NEW_HERO=$(grep -Foc 'Run the job, not the admin' /tmp/main 2>/dev/null || true)"
+                  echo "MAIN_OLD_HERO=$(grep -Foc 'Your business handled. Your decisions waiting.' /tmp/main 2>/dev/null || true)"
+                  echo "MAIN_SITES_MIGRATION=$(grep -Foc 'CHURVOX_RENDER_SITES_MIGRATION_20260724' /tmp/main 2>/dev/null || true)"
+                fi
+                echo
               done
             done
           } > /tmp/report.txt 2>&1
