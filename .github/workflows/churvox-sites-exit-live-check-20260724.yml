@@ -20,6 +20,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
+          # Trigger revision 2: run after the workflow already exists on main.
           OUT="$RUNNER_TEMP/sites-exit-check.md"
           PASS=0
           for attempt in $(seq 1 20); do
