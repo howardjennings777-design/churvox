@@ -1,0 +1,52 @@
+name: Churvox Chrome final cutover proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  prove:
+    if: startsWith(github.event.issue.title, '[churvox-chrome-cutover-proof]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute live pages in real Chrome
+        shell: bash
+        run: |
+          set +e
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser)
+          {
+            echo "UTC=$(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo "CHROME=$CHROME"
+            for url in \
+              https://www.churvox.com/ \
+              https://www.churvox.com/login \
+              https://www.churvox.com/dashboard \
+              https://grassley-frontend.onrender.com/login; do
+              echo "URL=$url"
+              rm -rf /tmp/chrome-profile /tmp/dom.html /tmp/chrome.err
+              "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --user-data-dir=/tmp/chrome-profile --virtual-time-budget=12000 --dump-dom "$url?chromeProof=$(date +%s%N)" > /tmp/dom.html 2>/tmp/chrome.err
+              echo "BYTES=$(wc -c < /tmp/dom.html 2>/dev/null)"
+              echo "TITLE=$(grep -ioE '<title>[^<]*</title>' /tmp/dom.html | head -1 | tr '\n' ' ')"
+              echo "OLD_RENDER=$(grep -Foc 'Your business handled. Your decisions waiting.' /tmp/dom.html 2>/dev/null || true)"
+              echo "SITES_HOME=$(grep -Foc 'Run the job, not the admin' /tmp/dom.html 2>/dev/null || true)"
+              echo "SITES_LOGIN=$(grep -Foc 'Sign in | Churvox' /tmp/dom.html 2>/dev/null || true)"
+              echo "SITES_WORKSPACE=$(grep -Foc 'Churvox Workspace' /tmp/dom.html 2>/dev/null || true)"
+              echo "VINEXT=$(grep -Foc '__VINEXT_RSC' /tmp/dom.html 2>/dev/null || true)"
+              echo "ERROR=$(tail -3 /tmp/chrome.err | tr '\n' ' ' | head -c 500)"
+              echo
+            done
+          } > /tmp/report.txt 2>&1
+          cat /tmp/report.txt
+          {
+            echo 'REPORT<<EOF'
+            cat /tmp/report.txt
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+      - name: Post browser proof
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:'```text\n'+(process.env.REPORT||'missing')+'\n```'});
