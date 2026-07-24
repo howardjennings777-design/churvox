@@ -28,7 +28,7 @@ def main() -> None:
             target = (root / member.name).resolve()
             if target != root and root not in target.parents:
                 raise RuntimeError(f"Unsafe bundle path: {member.name}")
-        archive.extractall(root, filter="data")
+        archive.extractall(root)
 
     print(f"Materialised {len(members)} Churvox hardening files ({digest[:12]}).")
 
