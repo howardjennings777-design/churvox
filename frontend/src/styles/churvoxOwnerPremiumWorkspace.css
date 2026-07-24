@@ -1,0 +1,597 @@
+/* Churvox owner workspace — open canvas, calm hierarchy, no dashboard blocks */
+
+.cv4Experience{
+  --cv-ink:#111513;
+  --cv-sub:#65706b;
+  --cv-line:rgba(17,21,19,.12);
+  --cv-faint:rgba(17,21,19,.055);
+  --cv-paper:#f6f6f2;
+  --cv-panel:#fbfbf8;
+  --cv-orange:#ef6b2e;
+  --cv-dark:#111412;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 82% -10%,rgba(239,107,46,.10),transparent 28%),
+    linear-gradient(180deg,#f8f8f5 0,#f2f2ed 100%);
+}
+
+.cv4Experience .cv4Backdrop{display:none!important}
+
+.cv4Experience .cv3Product{
+  --bg:transparent;
+  --paper:transparent;
+  --paper2:transparent;
+  --ink:var(--cv-ink);
+  --soft:var(--cv-sub);
+  --muted:#89918d;
+  --line:var(--cv-line);
+  --orange:var(--cv-orange);
+  min-height:100vh;
+  grid-template-rows:auto auto minmax(0,1fr);
+  background:transparent!important;
+  overflow:visible;
+}
+
+/* Quiet, architectural header */
+.cv4Experience .cv3Top{
+  min-height:68px;
+  grid-template-columns:190px minmax(0,1fr) minmax(160px,260px);
+  gap:22px;
+  padding:11px 28px;
+  background:rgba(15,18,16,.97)!important;
+  border-bottom:1px solid rgba(255,255,255,.09);
+  box-shadow:none;
+  overflow:visible;
+}
+.cv4Experience .cv3Top:before{
+  background:
+    linear-gradient(90deg,transparent 0 72%,rgba(239,107,46,.08)),
+    radial-gradient(circle at 88% 0,rgba(239,107,46,.20),transparent 24%);
+}
+.cv4Experience .cv3Brand{gap:10px}
+.cv4Experience .cv3Brand span{
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  background:var(--cv-orange);
+  box-shadow:none;
+  font-size:12px;
+  letter-spacing:-.04em;
+}
+.cv4Experience .cv3Brand b{
+  gap:3px;
+  font-size:19px;
+  letter-spacing:-.055em;
+}
+.cv4Experience .cv3Brand small,
+.cv4Experience .cv3TopCopy small,
+.cv4Experience .cv3Account small{
+  color:rgba(255,255,255,.50);
+  font-size:8px;
+  letter-spacing:.18em;
+}
+.cv4Experience .cv3TopCopy h1{
+  margin:1px 0 0;
+  font-size:22px;
+  line-height:1;
+  letter-spacing:-.055em;
+}
+.cv4Experience .cv3TopCopy p{
+  margin:5px 0 0;
+  color:rgba(255,255,255,.54);
+  font-size:11px;
+  font-weight:600;
+}
+.cv4Experience .cv3Account b{
+  font-size:12px;
+  font-weight:780;
+}
+.cv4Experience .cv3Account .cvxVisibleLogout,
+.cv4Experience .cv3Account .cvxLogoutNavButton{
+  min-width:auto!important;
+  width:auto!important;
+  min-height:34px!important;
+  margin-top:6px!important;
+  padding:6px 10px!important;
+  border-radius:8px!important;
+  border-color:rgba(255,255,255,.12)!important;
+  background:rgba(255,255,255,.06)!important;
+  color:rgba(255,255,255,.72)!important;
+  box-shadow:none!important;
+  font-size:11px!important;
+}
+
+/* Navigation is a control strip, not a row of pills */
+.cv4Experience .cv3Nav{
+  top:68px;
+  min-height:48px;
+  gap:2px;
+  padding:0 24px;
+  border-bottom:1px solid var(--cv-line);
+  background:rgba(248,248,245,.92);
+  box-shadow:0 8px 30px rgba(17,21,19,.035);
+  scrollbar-width:none;
+}
+.cv4Experience .cv3Nav::-webkit-scrollbar{display:none}
+.cv4Experience .cv3Nav button{
+  min-width:auto;
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  border:0;
+  border-radius:0;
+  padding:0 12px;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#737b77;
+  transform:none!important;
+  position:relative;
+}
+.cv4Experience .cv3Nav button b{
+  font-size:12px;
+  font-weight:760;
+  letter-spacing:-.01em;
+}
+.cv4Experience .cv3Nav button small{display:none}
+.cv4Experience .cv3Nav button:after{
+  content:"";
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:-1px;
+  height:2px;
+  background:transparent;
+}
+.cv4Experience .cv3Nav button:hover{color:var(--cv-ink)}
+.cv4Experience .cv3Nav button.active{color:var(--cv-ink)}
+.cv4Experience .cv3Nav button.active:after{background:var(--cv-orange)}
+
+/* Open workspace */
+.cv4Experience .cv3Workspace{
+  max-width:1580px;
+  padding:30px 44px 110px;
+}
+.cv4Experience .cv3Page{
+  gap:28px 30px;
+}
+
+/* Page intro becomes typography, not a giant card */
+.cv4Experience .cv3Hero{
+  min-height:118px;
+  grid-template-columns:minmax(0,1fr) minmax(360px,500px);
+  gap:30px;
+  align-items:end;
+  border:0;
+  border-radius:0;
+  padding:5px 0 24px;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+  border-bottom:1px solid var(--cv-line);
+}
+.cv4Experience .cv3Hero:before{display:none}
+.cv4Experience .cv3Hero small{
+  color:var(--cv-orange);
+  font-size:9px;
+  letter-spacing:.19em;
+}
+.cv4Experience .cv3Hero h2{
+  max-width:840px;
+  margin:7px 0 8px;
+  font-size:clamp(30px,3.3vw,50px);
+  line-height:.96;
+  letter-spacing:-.065em;
+}
+.cv4Experience .cv3Hero p{
+  max-width:720px;
+  font-size:14px;
+  line-height:1.55;
+  font-weight:560;
+}
+.cv4Experience .cv3HeroStats{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0;
+  align-self:end;
+}
+.cv4Experience .cv3HeroStats span{
+  min-height:66px;
+  align-content:end;
+  gap:5px;
+  border:0;
+  border-left:1px solid var(--cv-line);
+  border-radius:0;
+  padding:6px 14px 4px;
+  background:transparent;
+}
+.cv4Experience .cv3HeroStats b{
+  display:block;
+  font-size:20px;
+  letter-spacing:-.045em;
+}
+.cv4Experience .cv3HeroStats small{
+  display:block;
+  color:#8a918e;
+  font-size:8px;
+  white-space:nowrap;
+}
+
+/* Metrics are one clean ledger line */
+.cv4Experience .cv3Stats{
+  gap:0;
+  border-top:1px solid var(--cv-line);
+  border-bottom:1px solid var(--cv-line);
+}
+.cv4Experience .cv3Stats span,
+.cv4Experience .cv3Stats .blue,
+.cv4Experience .cv3Stats .red,
+.cv4Experience .cv3Stats .orange{
+  min-height:88px;
+  border:0;
+  border-right:1px solid var(--cv-line);
+  border-radius:0;
+  padding:16px 20px;
+  background:transparent;
+  box-shadow:none;
+}
+.cv4Experience .cv3Stats span:last-child{border-right:0}
+.cv4Experience .cv3Stats b{font-size:27px}
+.cv4Experience .cv3Stats small{font-size:8px;color:#858d89}
+
+/* Sections breathe. Only the content that needs containment gets containment. */
+.cv4Experience .cv3Panel{
+  min-height:0;
+  border:0;
+  border-top:1px solid var(--cv-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+}
+.cv4Experience .cv3Panel.dark{
+  border-top:0;
+  border-radius:18px;
+  background:linear-gradient(145deg,#101310,#1a211d);
+  box-shadow:0 24px 70px rgba(17,21,19,.16);
+  overflow:hidden;
+}
+.cv4Experience .cv3Panel>header{
+  min-height:58px;
+  padding:14px 0 12px;
+  border-bottom:1px solid var(--cv-faint);
+  background:transparent;
+}
+.cv4Experience .cv3Panel.dark>header{padding-left:18px;padding-right:18px}
+.cv4Experience .cv3Panel h3{
+  font-size:17px;
+  font-weight:780;
+  letter-spacing:-.035em;
+}
+.cv4Experience .cv3Panel header small{
+  color:#8b938f;
+  font-size:8px;
+  letter-spacing:.16em;
+}
+
+/* Buttons are tools, not bubbles */
+.cv4Experience .cv3Panel header button,
+.cv4Experience .cv3Toolbar button,
+.cv4Experience .cv3Rule button,
+.cv4Experience .cv3Lock button{
+  min-height:38px;
+  border-radius:9px;
+  padding:9px 13px;
+  background:#1b201d;
+  box-shadow:none;
+  font-size:11px;
+  font-weight:760;
+}
+.cv4Experience .cv3Toolbar{
+  gap:7px;
+  padding:0;
+}
+.cv4Experience .cv3Toolbar button:first-child{background:var(--cv-orange)}
+
+/* Records read like a premium ledger */
+.cv4Experience .cv3List{
+  gap:0;
+  padding:0;
+  max-height:620px;
+}
+.cv4Experience .cv3Row{
+  min-height:66px;
+  grid-template-columns:3px minmax(0,1fr) auto;
+  gap:14px;
+  border:0;
+  border-bottom:1px solid var(--cv-faint);
+  border-radius:0;
+  padding:11px 4px;
+  background:transparent;
+  box-shadow:none;
+  transform:none!important;
+}
+.cv4Experience .cv3Row:hover{
+  border-color:rgba(239,107,46,.28);
+  background:linear-gradient(90deg,rgba(239,107,46,.05),transparent 64%);
+  box-shadow:none;
+}
+.cv4Experience .cv3Row .bar{
+  width:2px;
+  height:30px;
+  border-radius:0;
+}
+.cv4Experience .cv3Row b{
+  font-size:13px;
+  font-weight:760;
+}
+.cv4Experience .cv3Row small{
+  margin-top:4px;
+  color:#77807b;
+  font-size:11px;
+  font-weight:540;
+}
+.cv4Experience .cv3Row em{
+  border-radius:0;
+  padding:5px 0 5px 12px;
+  background:transparent;
+  color:#59625e;
+  font-size:10px;
+  font-weight:760;
+}
+.cv4Experience .cv3Empty{
+  gap:5px;
+  margin:0;
+  border:0;
+  border-bottom:1px solid var(--cv-faint);
+  border-radius:0;
+  padding:22px 4px;
+  background:transparent;
+}
+
+/* Preview and forms become a work sheet */
+.cv4Experience .cv3Preview{padding:18px 0 0}
+.cv4Experience .cv3PreviewTop{margin-bottom:18px}
+.cv4Experience .cv3PreviewTop h3{font-size:25px;font-weight:780}
+.cv4Experience .cv3PreviewTop button{border-radius:9px}
+.cv4Experience .cv3Form{gap:14px 18px}
+.cv4Experience .cv3Field{gap:7px}
+.cv4Experience .cv3Field span,
+.cv4Experience .cv3Settings span{font-size:8px;color:#818985}
+.cv4Experience .cv3Field input,
+.cv4Experience .cv3Field select,
+.cv4Experience .cv3Field textarea,
+.cv4Experience .cv3Settings input,
+.cv4Experience .cv3Settings select{
+  min-height:43px;
+  border:1px solid rgba(17,21,19,.12);
+  border-radius:9px;
+  background:rgba(255,255,255,.70);
+  font-size:13px;
+  font-weight:620;
+  box-shadow:none;
+}
+.cv4Experience .cv3Form.readonly .cv3Field input,
+.cv4Experience .cv3Form.readonly .cv3Field select,
+.cv4Experience .cv3Form.readonly .cv3Field textarea{
+  background:rgba(255,255,255,.42);
+}
+
+.cv4Experience .cv3Rule{
+  gap:9px;
+  margin:18px 0 0;
+  border:0;
+  border-left:2px solid var(--cv-orange);
+  border-radius:0;
+  padding:5px 0 5px 18px;
+  background:transparent;
+}
+.cv4Experience .cv3Rule b{font-size:24px;font-weight:760}
+.cv4Experience .cv3Rule span{font-weight:540}
+
+/* Purpose-built surfaces retain shape, without becoming card soup */
+.cv4Experience .cv3Tiles{
+  gap:0;
+  padding:0;
+}
+.cv4Experience .cv3Tiles button{
+  min-height:118px;
+  border:0;
+  border-bottom:1px solid var(--cv-faint);
+  border-radius:0;
+  padding:18px 4px;
+  background:transparent;
+}
+.cv4Experience .cv3History{gap:0;padding:0}
+.cv4Experience .cv3Pipeline{gap:0;border-top:1px solid var(--cv-line);border-bottom:1px solid var(--cv-line)}
+.cv4Experience .cv3Pipeline>div{
+  min-height:260px;
+  border:0;
+  border-right:1px solid var(--cv-line);
+  border-radius:0;
+  padding:18px;
+  background:transparent;
+  box-shadow:none;
+}
+.cv4Experience .cv3Pipeline>div:last-child{border-right:0}
+.cv4Experience .cv3Pipeline>div>small{border:0;border-top:1px dashed var(--cv-line);border-radius:0;padding:14px 0}
+.cv4Experience .cv3GuardGrid{gap:0;padding:0;border-top:1px solid var(--cv-faint)}
+.cv4Experience .cv3GuardGrid span{
+  min-height:74px;
+  border:0;
+  border-right:1px solid var(--cv-faint);
+  border-radius:0;
+  background:transparent;
+  font-size:12px;
+  font-weight:680;
+}
+.cv4Experience .cv3GuardGrid span:last-child{border-right:0}
+.cv4Experience .cv3Accounting{padding:22px 0}
+
+/* Settings and plans should feel like controlled sheets */
+.cv4Experience .cv3Settings{padding:20px 0!important}
+.cv4Experience .cv3PlanGrid,
+.cv4Experience .cv3Plans{gap:16px!important}
+.cv4Experience [class*="Plan"] article,
+.cv4Experience [class*="plan"] article{
+  border-radius:14px!important;
+  box-shadow:none!important;
+}
+
+/* Drawer is a precision side sheet */
+.cv4Experience .cv3DrawerLayer{
+  background:rgba(12,15,13,.40);
+  backdrop-filter:blur(8px);
+}
+.cv4Experience .cv3Drawer{
+  width:min(720px,100vw);
+  border-left:1px solid rgba(255,255,255,.55);
+  border-radius:0;
+  background:#f8f8f5;
+  box-shadow:-30px 0 90px rgba(17,21,19,.24);
+}
+.cv4Experience .cv3Drawer h2{font-weight:760;letter-spacing:-.05em}
+.cv4Experience .cv3DrawerActions button{border-radius:9px!important}
+
+/* The living-office controls become a slim command edge, never a content blocker */
+.cv4Experience .cv4Dock{
+  position:fixed!important;
+  z-index:92!important;
+  top:50%!important;
+  right:14px!important;
+  bottom:auto!important;
+  left:auto!important;
+  width:56px!important;
+  min-height:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+  transform:translateY(-50%)!important;
+  padding:6px!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-radius:17px!important;
+  background:rgba(15,18,16,.94)!important;
+  box-shadow:0 20px 60px rgba(17,21,19,.22)!important;
+  backdrop-filter:blur(18px)!important;
+}
+.cv4Experience .cv4DeskStrip{display:none!important}
+.cv4Experience .cv4OfficeButton,
+.cv4Experience .cv4Move,
+.cv4Experience .cv4TellButton{
+  width:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:0!important;
+  border-radius:11px!important;
+  padding:0!important;
+  background:transparent!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+  text-align:center!important;
+}
+.cv4Experience .cv4OfficeButton:hover,
+.cv4Experience .cv4Move:hover,
+.cv4Experience .cv4TellButton:hover{background:rgba(255,255,255,.08)!important}
+.cv4Experience .cv4OfficeButton>b,
+.cv4Experience .cv4OfficeButton>small,
+.cv4Experience .cv4Move>small,
+.cv4Experience .cv4Move>b,
+.cv4Experience .cv4Move>span,
+.cv4Experience .cv4TellButton>b{display:none!important}
+.cv4Experience .cv4OfficeButton>span{
+  width:10px!important;
+  height:10px!important;
+  border-radius:50%!important;
+  background:#67d391!important;
+  box-shadow:0 0 0 6px rgba(103,211,145,.10)!important;
+}
+.cv4Experience .cv4OfficeButton:after{content:"O";font-size:9px;font-weight:800;color:rgba(255,255,255,.48);position:absolute;margin-top:25px}
+.cv4Experience .cv4Move:after{content:"↗";font-size:20px;color:var(--cv-orange)}
+.cv4Experience .cv4TellButton>span{font-size:24px!important;line-height:1;color:#fff!important}
+.cv4Experience .cv4TellButton{background:var(--cv-orange)!important}
+
+/* Modals become cinematic work rooms */
+.cv4Experience .cv4Layer{background:rgba(8,10,9,.64)!important;backdrop-filter:blur(10px)}
+.cv4Experience .cv4Twin,
+.cv4Experience .cv4Handover,
+.cv4Experience .cv4Tell{
+  border-radius:20px!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:0 40px 120px rgba(0,0,0,.40)!important;
+}
+
+/* Mobile is a work app, not compressed desktop */
+@media(max-width:900px){
+  .cv4Experience .cv3Top{
+    min-height:58px;
+    grid-template-columns:1fr auto;
+    padding:9px 14px;
+  }
+  .cv4Experience .cv3TopCopy{display:none}
+  .cv4Experience .cv3Brand span{width:34px;height:34px}
+  .cv4Experience .cv3Account small{display:none}
+  .cv4Experience .cv3Account b{max-width:128px;font-size:10px}
+  .cv4Experience .cv3Account .cvxVisibleLogout,
+  .cv4Experience .cv3Account .cvxLogoutNavButton{min-height:30px!important;margin-top:3px!important;padding:4px 8px!important;font-size:10px!important}
+  .cv4Experience .cv3Nav{
+    top:58px;
+    min-height:45px;
+    padding:0 8px;
+  }
+  .cv4Experience .cv3Nav button{min-height:45px;padding:0 10px}
+  .cv4Experience .cv3Nav button b{font-size:11px}
+  .cv4Experience .cv3Workspace{padding:22px 16px 100px}
+  .cv4Experience .cv3Page{display:block}
+  .cv4Experience .cv3Page>*{margin-bottom:28px}
+  .cv4Experience .cv3Hero{
+    display:block;
+    min-height:0;
+    padding:2px 0 18px;
+  }
+  .cv4Experience .cv3Hero h2{font-size:32px;margin-top:6px}
+  .cv4Experience .cv3Hero p{font-size:13px}
+  .cv4Experience .cv3HeroStats{
+    display:flex;
+    gap:0;
+    margin-top:18px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .cv4Experience .cv3HeroStats::-webkit-scrollbar{display:none}
+  .cv4Experience .cv3HeroStats span{min-width:112px;border-left:0;border-right:1px solid var(--cv-line);padding-left:0}
+  .cv4Experience .cv3Stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cv4Experience .cv3Stats span{min-height:72px;border-bottom:1px solid var(--cv-line);padding:12px}
+  .cv4Experience .cv3Stats b{font-size:22px}
+  .cv4Experience .cv3Panel{margin-bottom:30px!important}
+  .cv4Experience .cv3Panel>header{min-height:52px}
+  .cv4Experience .cv3Pipeline{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}
+  .cv4Experience .cv3Pipeline>div{min-width:82vw;scroll-snap-align:start}
+  .cv4Experience .cv3History{display:block}
+  .cv4Experience .cv3Tiles{display:block}
+  .cv4Experience .cv3GuardGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cv4Experience .cv3GuardGrid span{min-height:62px;border-bottom:1px solid var(--cv-faint);padding:10px}
+  .cv4Experience .cv3Form{grid-template-columns:1fr}
+  .cv4Experience .cv3Field.wide{grid-column:auto}
+  .cv4Experience .cv4Dock{
+    top:auto!important;
+    right:12px!important;
+    bottom:12px!important;
+    width:auto!important;
+    flex-direction:row!important;
+    transform:none!important;
+    border-radius:16px!important;
+  }
+}
+
+@media(max-width:520px){
+  .cv4Experience .cv3Brand b{font-size:17px}
+  .cv4Experience .cv3Brand small{font-size:7px}
+  .cv4Experience .cv3Account b{display:none}
+  .cv4Experience .cv3Nav button{padding:0 9px}
+  .cv4Experience .cv3Hero h2{font-size:28px}
+  .cv4Experience .cv3Toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cv4Experience .cv3Toolbar button{width:100%}
+  .cv4Experience .cv3Row{grid-template-columns:2px minmax(0,1fr)}
+  .cv4Experience .cv3Row em{grid-column:2;padding:0;color:#8a918e}
+}
