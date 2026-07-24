@@ -28,7 +28,7 @@ jobs:
         python-version: '3.11'
 
     - name: Materialise verified Churvox V8 source
-      run: python3 scripts/churvox_hardening_v8_materialize.py
+      run: node scripts/churvox_hardening_v8_materialize.cjs
 
     - name: Install frontend dependencies
       working-directory: ./frontend
