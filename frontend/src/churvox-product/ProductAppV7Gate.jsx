@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
+import ControlBoardHealth from "./ControlBoardHealth";
 import ProductAppV7 from "./ProductAppV7";
 import { clean, createAccess } from "./controlBoardData";
 
@@ -73,5 +74,5 @@ export default function ProductAppV7Gate() {
   }, [access]);
 
   if (!ready) return null;
-  return <ProductAppV7 />;
+  return <><ProductAppV7 /><ControlBoardHealth /></>;
 }
