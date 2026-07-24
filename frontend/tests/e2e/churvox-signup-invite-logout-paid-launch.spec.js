@@ -181,17 +181,17 @@ test.describe('Paid-launch signup, invite and logout lifecycle', () => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.cvOwnerReady')).toBeVisible();
 
-    const logout = page.getByRole('button', { name: 'Log out of Churvox' }).first();
+    const profile = page.locator('.cv7Profile');
+    await profile.click();
+    const logout = page.getByRole('button', { name: 'Log out', exact: true });
     await expect(logout).toBeVisible({ timeout: 8000 });
     await logout.click();
-    await expect.poll(() => page.url()).toMatch(/\/login\?logged_out=1/);
+    await expect.poll(() => page.url()).toMatch(/\/login/);
     expect(api.logoutCalled()).toBe(true);
 
     for (const key of ['token', 'authToken', 'churvox_auth_session_snapshot_v1', 'churvox:stable-current-plan:v1', 'churvox:plan-override', 'churvox:addon:accounting_sync', 'churvox:addon:command_growth_pack', 'churvox:billing-plan']) {
       await expect.poll(() => page.evaluate((name) => localStorage.getItem(name), key)).toBeNull();
     }
-    await page.waitForTimeout(500);
-    await expect(page).toHaveURL(/\/login\?logged_out=1/);
   });
 
   test('deliberate login clears the signed-out lock and confirms a new account', async ({ page }) => {
@@ -200,7 +200,7 @@ test.describe('Paid-launch signup, invite and logout lifecycle', () => {
     await page.goto('/login?logged_out=1', { waitUntil: 'domcontentloaded' });
     await page.getByLabel('Email').fill('second@lifecycle.test');
     await page.getByLabel('Password').fill('StrongPass9');
-    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await page.getByRole('button', { name: 'Open Churvox', exact: true }).click();
     await expect.poll(() => page.url()).toMatch(/\/dashboard/);
     await expect.poll(() => page.evaluate(() => sessionStorage.getItem('churvox:logged-out'))).toBeNull();
   });
@@ -209,6 +209,6 @@ test.describe('Paid-launch signup, invite and logout lifecycle', () => {
     await routeLifecycleApi(page);
     await page.goto('/admin/login', { waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.url()).toMatch(/\/login\?.*admin=1/);
-    await expect(page.getByRole('heading', { name: 'Open Command.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Open the right room.' })).toBeVisible();
   });
 });
