@@ -1,0 +1,104 @@
+name: Churvox Render Fix Fingerprint
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  fingerprint:
+    if: startsWith(github.event.issue.title, '[churvox-render-fix-fingerprint]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Verify the fix exists in the deployed Render bundle
+        shell: bash
+        run: |
+          mkdir -p /tmp/churvox-render-fingerprint
+          python - <<'PY'
+          import json, re, urllib.request
+          from urllib.parse import urljoin
+
+          base = 'https://grassley-frontend.onrender.com/'
+          markers = [
+              'owner-readable-logout-20260724-v4',
+              'churvox-owner-readable-logout-style',
+              'churvox-owner-fallback-logout',
+              'cvEmergencyLogoutPinned',
+              'cvOwnerReady',
+          ]
+
+          def fetch(url):
+              request = urllib.request.Request(url, headers={'User-Agent': 'Churvox-render-fingerprint/1.0', 'Cache-Control': 'no-cache'})
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  return response.geturl(), response.status, dict(response.headers.items()), response.read()
+
+          final_url, status, headers, raw = fetch(base + '?fixFingerprint=20260724')
+          html = raw.decode('utf-8', 'replace')
+          scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)
+          report = {
+              'base': base,
+              'final_url': final_url,
+              'status': status,
+              'headers': headers,
+              'scripts': scripts,
+              'bundles': [],
+          }
+          hits = set()
+          for src in scripts:
+              url = urljoin(base, src)
+              try:
+                  bundle_url, bundle_status, bundle_headers, bundle_raw = fetch(url + ('&' if '?' in url else '?') + 'fixFingerprint=20260724')
+                  text = bundle_raw.decode('utf-8', 'replace')
+                  marker_hits = [marker for marker in markers if marker in text]
+                  hits.update(marker_hits)
+                  report['bundles'].append({
+                      'url': bundle_url,
+                      'status': bundle_status,
+                      'headers': bundle_headers,
+                      'length': len(bundle_raw),
+                      'marker_hits': marker_hits,
+                  })
+              except Exception as exc:
+                  report['bundles'].append({'url': url, 'error': repr(exc), 'marker_hits': []})
+          report['all_marker_hits'] = sorted(hits)
+          report['fix_present'] = 'owner-readable-logout-20260724-v4' in hits
+          with open('/tmp/churvox-render-fingerprint/report.json', 'w', encoding='utf-8') as handle:
+              json.dump(report, handle, indent=2)
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Upload fingerprint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-render-fix-fingerprint
+          path: /tmp/churvox-render-fingerprint
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Post fingerprint result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '/tmp/churvox-render-fingerprint/report.json';
+            const report = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
+            let summary = 'No fingerprint report was produced.';
+            if (report) {
+              const parsed = JSON.parse(report);
+              summary = parsed.fix_present
+                ? 'PASS: grassley-frontend contains the deployed logout/readability repair.'
+                : 'FAIL: grassley-frontend does not contain the deployed logout/readability repair.';
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${summary}\n\n${report ? `Report:\n\`\`\`json\n${report.slice(0, 12000)}\n\`\`\`` : ''}\n\nWorkflow run: \`${context.runId}\``,
+            });
