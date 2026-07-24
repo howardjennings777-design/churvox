@@ -2,15 +2,97 @@ import React from "react";
 import ProductAppV3 from "./ProductAppV3";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
+import API_BASE from "../lib/apiBase";
 import "./productAppV4.css";
+import "./ownerExperience10.css";
 
 const clean = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+const keyOf = (value) => clean(value).toLowerCase().replace(/[^a-z0-9]/g, "");
 const unwrap = (payload) => payload?.data?.data ?? payload?.data ?? payload;
 const money = (value) => new Intl.NumberFormat("en-NZ", {
   style: "currency",
   currency: "NZD",
   maximumFractionDigits: 0,
 }).format(Number(value || 0));
+
+const OWNER_NAV = [
+  { id: "today", label: "Today", hint: "Live handover" },
+  { id: "command", label: "Command", hint: "Owner decisions" },
+  { id: "jobs", label: "Jobs", hint: "Run sheet" },
+  { id: "schedule", label: "Schedule", hint: "Week and timing" },
+  { id: "clients", label: "Clients", hint: "Business memory" },
+  { id: "workers", label: "Workers", hint: "Field view" },
+  { id: "messages", label: "Messages", hint: "Replies and promises" },
+  { id: "quotes", label: "Quotes", hint: "Pipeline" },
+  { id: "invoices", label: "Invoices", hint: "Money" },
+  { id: "team", label: "Team", hint: "Roles and access" },
+  { id: "payroll", label: "Payroll", hint: "Review only" },
+  { id: "xero", label: "Xero", hint: "Accounting handoff" },
+  { id: "settings", label: "Settings", hint: "Business controls" },
+  { id: "plans", label: "Plans", hint: "Capacity" },
+  { id: "support", label: "Help", hint: "Service room" },
+];
+
+const DESKTOP_PRIMARY = ["today", "command", "jobs", "schedule", "clients", "workers"];
+const MOBILE_PRIMARY = ["today", "command", "jobs", "workers"];
+const PAGE_ALIASES = {
+  work: "jobs",
+  worker: "workers",
+  integrations: "xero",
+  help: "support",
+  "office-team": "team",
+};
+
+function canonicalPage(value) {
+  const page = clean(value).toLowerCase() || "today";
+  return PAGE_ALIASES[page] || page;
+}
+
+function pageLabel(page) {
+  return OWNER_NAV.find((item) => item.id === page)?.label || "Today";
+}
+
+function normalizePlan(value) {
+  const key = keyOf(value);
+  if (["command", "enterprise"].includes(key)) return "command";
+  if (["operator", "pro", "professional"].includes(key)) return "operator";
+  if (["crew", "team"].includes(key)) return "crew";
+  if (["start", "solo", "starter", "basic"].includes(key)) return "start";
+  return "none";
+}
+
+function hasAccounting(user = {}) {
+  const text = [
+    user?.addons,
+    user?.add_ons,
+    user?.features,
+    user?.enabled_features,
+    user?.accounting_sync,
+    user?.xero_addon,
+    user?.xero_connected,
+  ].map((value) => typeof value === "object" ? JSON.stringify(value) : clean(value)).join(" ").toLowerCase();
+  return /accounting|xero|myob|sync|true|enabled/.test(text);
+}
+
+function ownerAccess(user = {}) {
+  const email = clean(user?.email).toLowerCase();
+  const admin = ["hello@churvox.com", "howardjennings777@gmail.com"].includes(email)
+    || user?.is_platform_owner === true
+    || user?.is_admin === true
+    || ["platform_owner", "platform-admin", "platform_admin"].includes(clean(user?.role).toLowerCase());
+  const plan = admin ? "command" : normalizePlan(user?.plan || user?.plan_key || user?.selected_plan || user?.tier || user?.subscription_plan || user?.business?.plan);
+  const rank = { none: 0, start: 1, crew: 2, operator: 3, command: 4 }[plan] || 0;
+  const minimum = {
+    today: 1, jobs: 1, schedule: 1, clients: 1, quotes: 1, invoices: 1, settings: 1,
+    workers: 2, messages: 2, team: 2, command: 3, payroll: 4,
+  };
+  const can = (page) => {
+    if (["plans", "support"].includes(page)) return true;
+    if (page === "xero") return admin || plan === "command" || hasAccounting(user);
+    return rank >= (minimum[page] || 1);
+  };
+  return { plan, can };
+}
 
 function rowsFrom(payload, preferred) {
   const data = unwrap(payload);
@@ -39,12 +121,16 @@ function normalise(payloads) {
     status: clean(row?.status || row?.job_status || "Ready"),
     issue: clean(pick(row, "issue", "problem", "needs_attention")),
     price: Number(pick(row, "price", "amount", "total") || 0),
+    date: clean(pick(row, "scheduled_date", "date", "job_date")),
+    time: clean(pick(row, "scheduled_time", "time", "start_time")),
+    proof: clean(pick(row, "proof", "photos", "evidence")),
   }));
 
   const workers = rowsFrom(payloads.workers, "team").map((row, index) => ({
     id: clean(row?.id || row?._id || `worker-${index}`),
     name: pick(row, "name", "full_name", "display_name", "email") || `Worker ${index + 1}`,
     status: clean(pick(row, "status", "clock_status", "app_status") || "Not clocked in"),
+    job: clean(pick(row, "current_job", "job", "job_title")),
   }));
 
   const invoices = rowsFrom(payloads.invoices, "invoices").map((row, index) => ({
@@ -67,8 +153,13 @@ function normalise(payloads) {
   const command = rowsFrom(payloads.command, "actions").map((row, index) => ({
     id: clean(row?.id || row?._id || row?.action_id || `action-${index}`),
     title: pick(row, "title", "record_title", "summary") || "Prepared owner decision",
-    type: pick(row, "type", "kind", "action_type") || "Owner check",
+    type: pick(row, "approval_type", "type", "kind", "action_type") || "Owner check",
+    status: clean(pick(row, "status", "state") || "Waiting"),
+    client: clean(pick(row, "client_name", "client")),
     amount: Number(pick(row, "amount", "total") || 0),
+    prepared: clean(pick(row, "filled", "prepared", "prepared_result", "description")),
+    evidence: clean(pick(row, "evidence", "evidence_checked", "context")),
+    check: clean(pick(row, "check", "owner_check", "reason")),
   }));
 
   return { jobs, workers, invoices, messages, command };
@@ -113,12 +204,13 @@ function useLiveOffice(enabled) {
 
 function pageNow() {
   if (typeof window === "undefined") return "today";
-  return clean(window.location.hash.replace(/^#/, "")).toLowerCase() || "today";
+  return canonicalPage(window.location.hash.replace(/^#/, ""));
 }
 
 function go(page) {
   if (typeof window === "undefined") return;
-  window.history.pushState({}, "", page === "today" ? "/dashboard" : `/dashboard#${page}`);
+  const next = canonicalPage(page);
+  window.history.pushState({}, "", next === "today" ? "/dashboard" : `/dashboard#${next}`);
   window.dispatchEvent(new Event("hashchange"));
 }
 
@@ -285,6 +377,87 @@ function answerFor(raw, data, signals) {
   };
 }
 
+function initialsFor(user = {}) {
+  const source = clean(user?.business_name || user?.company_name || user?.name || user?.email || "Owner");
+  const parts = source.split(" ").filter(Boolean);
+  return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : source.slice(0, 2)).toUpperCase();
+}
+
+function OwnerShell({ user, page, access, onOffice, onBrief, onTell, onLogout }) {
+  const [moreOpen, setMoreOpen] = React.useState(false);
+  const [accountOpen, setAccountOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const primary = OWNER_NAV.filter((item) => DESKTOP_PRIMARY.includes(item.id) && access.can(item.id));
+  const more = OWNER_NAV.filter((item) => !DESKTOP_PRIMARY.includes(item.id) && access.can(item.id));
+  const mobilePrimary = OWNER_NAV.filter((item) => MOBILE_PRIMARY.includes(item.id) && access.can(item.id));
+  const mobileMore = OWNER_NAV.filter((item) => !MOBILE_PRIMARY.includes(item.id) && access.can(item.id));
+  const moreActive = more.some((item) => item.id === page);
+
+  React.useEffect(() => {
+    setMoreOpen(false);
+    setAccountOpen(false);
+    setMobileOpen(false);
+  }, [page]);
+
+  const navigate = (next) => {
+    go(next);
+    setMoreOpen(false);
+    setAccountOpen(false);
+    setMobileOpen(false);
+  };
+
+  return <>
+    <header className="cv10Header">
+      <button type="button" className="cv10Brand" onClick={() => navigate("today")} aria-label="Open Churvox Today">
+        <span className="cv10BrandMark">CV</span>
+        <span className="cv10BrandText"><b>Churvox</b><small>does the admin</small></span>
+      </button>
+
+      <div className="cv10MobileTitle"><b>{pageLabel(page)}</b><small>owner workspace</small></div>
+
+      <nav className="cv10DesktopNav" aria-label="Owner workspace">
+        {primary.map((item) => <button key={item.id} type="button" className={page === item.id ? "active" : ""} onClick={() => navigate(item.id)}>{item.label}</button>)}
+        <div className="cv10NavWrap">
+          <button type="button" className={`cv10MoreButton ${moreActive ? "active" : ""}`} aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}>More</button>
+          {moreOpen ? <div className="cv10MorePopover">{more.map((item) => <button key={item.id} type="button" className={page === item.id ? "active" : ""} onClick={() => navigate(item.id)}><span>{item.label}</span><small>{item.hint}</small></button>)}</div> : null}
+        </div>
+      </nav>
+
+      <div className="cv10HeaderActions">
+        <button type="button" onClick={onBrief}>Office brief</button>
+        <button type="button" className="cv10Ask" onClick={onTell}>Ask Churvox</button>
+        <div className="cv10AccountWrap">
+          <button type="button" className="cv10AccountButton" aria-label="Open account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((value) => !value)}>{initialsFor(user)}</button>
+          {accountOpen ? <div className="cv10AccountPopover">
+            <div className="cv10AccountMeta"><b>{clean(user?.business_name || user?.company_name || user?.name || "Churvox owner")}</b><small>{clean(user?.email)}</small></div>
+            <button type="button" onClick={() => navigate("settings")}>Business settings</button>
+            <button type="button" onClick={() => navigate("plans")}>Plan and billing</button>
+            <button type="button" className="danger" onClick={onLogout}>Log out</button>
+          </div> : null}
+        </div>
+      </div>
+    </header>
+
+    <nav className="cv10MobileNav" aria-label="Mobile owner navigation">
+      {mobilePrimary.map((item) => <button key={item.id} type="button" className={page === item.id ? "active" : ""} onClick={() => navigate(item.id)}>{item.label}</button>)}
+      <button type="button" className={mobileOpen || mobileMore.some((item) => item.id === page) ? "active" : ""} onClick={() => setMobileOpen(true)}>More</button>
+    </nav>
+
+    {mobileOpen ? <>
+      <button type="button" className="cv10MobileShade" aria-label="Close menu" onClick={() => setMobileOpen(false)} />
+      <section className="cv10MobileSheet" aria-label="All Churvox sections">
+        <header><b>Churvox rooms</b><button type="button" onClick={() => setMobileOpen(false)}>Close</button></header>
+        <nav>{mobileMore.map((item) => <button key={item.id} type="button" className={page === item.id ? "active" : ""} onClick={() => navigate(item.id)}><b>{item.label}</b><small>{item.hint}</small></button>)}</nav>
+        <div className="officeTools">
+          <button type="button" onClick={() => { setMobileOpen(false); onBrief(); }}>Office brief</button>
+          <button type="button" onClick={() => { setMobileOpen(false); onOffice(); }}>Live office</button>
+          <button type="button" onClick={() => { setMobileOpen(false); onTell(); }}>Ask Churvox</button>
+        </div>
+      </section>
+    </> : null}
+  </>;
+}
+
 function OfficeModal({ data, signals, close }) {
   return <div className="cv4Layer" role="dialog" aria-modal="true" aria-label="Churvox live office">
     <section className="cv4Twin">
@@ -347,7 +520,8 @@ function TellModal({ data, signals, close }) {
 }
 
 export default function ProductAppV4() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const access = React.useMemo(() => ownerAccess(user), [user]);
   const { data, loading } = useLiveOffice(Boolean(user));
   const signals = React.useMemo(() => buildSignals(data), [data]);
   const [page, setPage] = React.useState(pageNow);
@@ -365,17 +539,24 @@ export default function ProductAppV4() {
     };
   }, []);
 
-  return <div className="cv4Experience" data-version="CHURVOX_LIVE_OFFICE_TWIN_20260724_OWNER_ACCESS">
-    <div className="cv4Backdrop" aria-hidden="true"><span className="room a" /><span className="room b" /><span className="room c" /><span className="corridor" /></div>
+  const handleLogout = React.useCallback(async () => {
+    try { await logout(); } finally { window.location.assign("/login"); }
+  }, [logout]);
+
+  return <div className="cv4Experience" data-version="CHURVOX_OWNER_EXPERIENCE_10_20260725">
+    <OwnerShell
+      user={user}
+      page={page}
+      access={access}
+      onOffice={() => setOfficeOpen(true)}
+      onBrief={() => setHandoverOpen(true)}
+      onTell={() => setTellOpen(true)}
+      onLogout={handleLogout}
+    />
     <ProductAppV3 />
-    <div className="cv4Dock" aria-label="Churvox live office controls">
-      <button type="button" className="cv4OfficeButton" onClick={() => setOfficeOpen(true)}><span className={loading ? "loading" : signals.pressure > 55 ? "busy" : ""} /><b>Live office</b><small>{loading ? "Connecting records" : `${signals.pressure}% pressure · ${data.command.length} decisions`}</small></button>
-      <button type="button" className={`cv4Move ${signals.best.tone}`} onClick={() => setHandoverOpen(true)}><small>One best move</small><b>{signals.best.title}</b><span>{signals.best.reason}</span></button>
-      <div className="cv4DeskStrip">{DESKS.map((desk) => <button key={desk.id} type="button" className={page === desk.page ? "active" : ""} onClick={() => go(desk.page)} title={desk.note}><span>{deskCount(desk.id, data, signals)}</span><b>{desk.label}</b></button>)}</div>
-      <button type="button" className="cv4TellButton" onClick={() => setTellOpen(true)}><span>+</span><b>Tell Churvox</b></button>
-    </div>
     {officeOpen ? <OfficeModal data={data} signals={signals} close={() => setOfficeOpen(false)} /> : null}
     {handoverOpen ? <HandoverModal data={data} signals={signals} close={() => setHandoverOpen(false)} /> : null}
     {tellOpen ? <TellModal data={data} signals={signals} close={() => setTellOpen(false)} /> : null}
+    {loading ? <span className="cv10LiveStatus" aria-label="Connecting live office" /> : null}
   </div>;
 }
