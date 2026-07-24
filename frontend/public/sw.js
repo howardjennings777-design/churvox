@@ -16,8 +16,14 @@ self.addEventListener('activate', (event) => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const client of windows) {
         const url = new URL(client.url);
+        if (url.hostname === 'grassley-frontend.onrender.com') {
+          url.protocol = 'https:';
+          url.host = 'www.churvox.com';
+          client.navigate(url.toString());
+          continue;
+        }
         if (url.hostname === 'churvox.com' || url.hostname === 'www.churvox.com') {
-          url.searchParams.set('churvoxSitesExit', '20260724-v1');
+          url.searchParams.set('churvoxSitesExit', '20260724-v2');
           client.navigate(url.toString());
         }
       }
