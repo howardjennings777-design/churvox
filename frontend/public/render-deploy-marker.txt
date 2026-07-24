@@ -1,4 +1,4 @@
 Render frontend deploy marker
-Triggered: 2026-07-24T03:29:30Z
-Deploy main through: f9b93a92d25858dc814035a2121ee9155a430a90
-Purpose: deploy stale-chunk recovery, Google-readable public pages and original-copy launch protection.
+Triggered: 2026-07-24T04:10:00Z
+Deploy main through: 095b907ffef692746961d89e5f2af0119846b489
+Purpose: deploy always-visible logout and readable owner-app typography on desktop and mobile.
