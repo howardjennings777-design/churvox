@@ -4,6 +4,7 @@ import './runtime/churvoxDateInputIsoGuardRuntime';
 import './runtime/churvoxPublicHelpRouteGuardRuntime';
 import './runtime/churvoxExplicitLogoutGuardRuntime';
 import './runtime/churvoxProtectedFetchAuthGuardRuntime';
+import './runtime/churvoxLegacyHostExitRuntime';
 import App from './App';
 import API_BASE from './lib/apiBase';
 import './index.css';

@@ -1,4 +1,4 @@
 Render frontend deploy marker
-Triggered: 2026-07-24T07:05:00Z
-Deploy main through: eb89836d4f88c5f6abcda0865f64ab7983ada732
-Purpose: force production frontend redeploy so the legacy grassley-frontend.onrender.com login immediately redirects to the current www.churvox.com site and cannot show the old Churvox interface.
+Triggered: 2026-07-24T07:43:00Z
+Purpose: force every legacy Render or stale custom-domain request directly to the finished Churvox Sites build.
+Sites target: https://churvox.howardjennings77.chatgpt.site

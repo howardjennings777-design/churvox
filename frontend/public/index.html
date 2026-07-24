@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <script>
-      (function redirectLegacyRenderHost() {
-        if (window.location.hostname !== "grassley-frontend.onrender.com") return;
-        var target = new URL(window.location.href);
-        target.protocol = "https:";
-        target.host = "www.churvox.com";
+      (function exitLegacyChurvoxBuild() {
+        var legacyHosts = ["grassley-frontend.onrender.com", "www.churvox.com", "churvox.com"];
+        if (legacyHosts.indexOf(window.location.hostname) === -1) return;
+        var target = new URL(window.location.pathname + window.location.search + window.location.hash, "https://churvox.howardjennings77.chatgpt.site");
+        target.searchParams.set("fromLegacyBuild", "1");
         window.location.replace(target.toString());
       })();
     </script>

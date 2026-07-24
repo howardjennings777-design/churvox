@@ -1,18 +1,15 @@
-/* Churvox legacy Render exit worker — 20260724-v3. */
-const LEGACY_HOST = 'grassley-frontend.onrender.com';
-const CANONICAL_ORIGIN = 'https://www.churvox.com';
+/* Churvox forced Sites cutover worker — 20260724-v4. */
+const LEGACY_HOSTS = new Set(['grassley-frontend.onrender.com', 'www.churvox.com', 'churvox.com']);
+const SITES_ORIGIN = 'https://churvox.howardjennings77.chatgpt.site';
 
-function canonicalUrl(input) {
-  const url = new URL(input);
-  url.protocol = 'https:';
-  url.host = 'www.churvox.com';
-  url.searchParams.set('fromLegacyRender', '1');
-  return url.toString();
+function sitesUrl(input) {
+  const source = new URL(input);
+  const target = new URL(source.pathname + source.search + source.hash, SITES_ORIGIN);
+  target.searchParams.set('fromLegacyBuild', '1');
+  return target.toString();
 }
 
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
@@ -20,16 +17,12 @@ self.addEventListener('activate', (event) => {
       const keys = await caches.keys();
       await Promise.all(keys.map((key) => caches.delete(key)));
     } catch (_) {}
-
     try { await self.clients.claim(); } catch (_) {}
-
     try {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const client of windows) {
         const url = new URL(client.url);
-        if (url.hostname === LEGACY_HOST) {
-          await client.navigate(canonicalUrl(url.toString()));
-        }
+        if (LEGACY_HOSTS.has(url.hostname)) await client.navigate(sitesUrl(url.toString()));
       }
     } catch (_) {}
   })());
@@ -38,9 +31,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   try {
     const url = new URL(event.request.url);
-    if (url.hostname === LEGACY_HOST && event.request.mode === 'navigate') {
-      event.respondWith(Response.redirect(canonicalUrl(url.toString()), 302));
-      return;
+    if (LEGACY_HOSTS.has(url.hostname) && event.request.mode === 'navigate') {
+      event.respondWith(Response.redirect(sitesUrl(url.toString()), 302));
     }
   } catch (_) {}
 });

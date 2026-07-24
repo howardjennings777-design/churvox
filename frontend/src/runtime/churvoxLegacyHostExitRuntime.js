@@ -1,14 +1,12 @@
-const LEGACY_HOST = 'grassley-frontend.onrender.com';
-const CANONICAL_HOST = 'www.churvox.com';
+const LEGACY_HOSTS = new Set(['grassley-frontend.onrender.com', 'www.churvox.com', 'churvox.com']);
+const SITES_ORIGIN = 'https://churvox.howardjennings77.chatgpt.site';
 
 export function exitLegacyRenderHost() {
   if (typeof window === 'undefined') return false;
-  if (window.location.hostname !== LEGACY_HOST) return false;
+  if (!LEGACY_HOSTS.has(window.location.hostname)) return false;
 
-  const target = new URL(window.location.href);
-  target.protocol = 'https:';
-  target.host = CANONICAL_HOST;
-  target.searchParams.set('fromLegacyRender', '1');
+  const target = new URL(window.location.pathname + window.location.search + window.location.hash, SITES_ORIGIN);
+  target.searchParams.set('fromLegacyBuild', '1');
   window.location.replace(target.toString());
   return true;
 }
