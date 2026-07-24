@@ -62,7 +62,7 @@ jobs:
               render=$(grep -i '^rndr-id:' "$head" | tail -1 | tr -d '\r')
               rsc=$(grep -i '^vary:.*RSC' "$head" | tail -1 | tr -d '\r')
               markers=""
-              for m in 'custom-domains.chatgpt.site' 'codex-preview' 'workspace-connect' 'Churvox Workspace' '/assets/index-' '/static/js/' 'cvOwnerReady' 'owner-readable-logout-20260724-v4' 'churvox-owner-fallback-logout' 'Churvox does the admin. You approve.'; do
+              for m in 'custom-domains.chatgpt.site' 'codex-preview' 'workspace-connect' 'Churvox Workspace' '/assets/index-' '/static/js/' 'cvOwnerReady' 'owner-readable-logout-20260724-v4' 'churvox-owner-fallback-logout' 'Churvox does the admin. You approve.' 'redirectLegacyRenderHost'; do
                 if grep -Fq "$m" "$body"; then markers="$markers|$m"; fi
               done
               echo "URL=$url"
