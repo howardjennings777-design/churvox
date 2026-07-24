@@ -109,13 +109,16 @@ export default function ControlBoardActions({ record, values, setValues, api, re
       { closeAfter: true }
     );
 
-    const archive = () => run(
-      "archive",
-      [() => api.patch(`/jobs/${encodeURIComponent(id)}`, { is_archived: true, archived_at: new Date().toISOString() })],
-      "Job archived",
-      "The one-off job is out of the active run sheet but remains in history.",
-      { closeAfter: true }
-    );
+    const archive = () => {
+      if (!window.confirm("Archive this completed one-off job? It will remain in history.")) return null;
+      return run(
+        "archive",
+        [() => api.patch(`/jobs/${encodeURIComponent(id)}`, { is_archived: true, archived_at: new Date().toISOString() })],
+        "Job archived",
+        "The one-off job is out of the active run sheet but remains in history.",
+        { closeAfter: true }
+      );
+    };
 
     return <section className="cv7FlowDock" data-testid="control-board-job-actions">
       <header><div><small>Next move</small><h3>{completed ? "Close the loop" : running ? "Work is live" : paused ? "Work is paused" : "Move the job forward"}</h3></div><span>{hours}</span></header>
@@ -138,15 +141,16 @@ export default function ControlBoardActions({ record, values, setValues, api, re
     const converted = clean(record.convertedJobId || record.converted_job_id || record.job_id);
 
     const sendQuote = async () => {
+      if (!email) { fail("Quote not sent", new Error("Add the client email before sending this quote.")); return; }
       setBusy("send");
       try {
         const direct = await api.post(`/quotes/${encodeURIComponent(id)}/send`, { to: email, owner_approved: true });
         if (direct?.success === false) {
-          if (!email) throw new Error("Add the client email before sending this quote.");
           const subject = `Quote: ${values.title || record.title || "Your work"}`;
           const body = `Hi ${values.client || record.client || "there"},\n\nYour quote is ready for review.\n\n${values.scope || record.scope || ""}\n\nTotal: ${money(values.amount || record.amount)}\n\nThanks`;
           window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-          await firstGood([() => api.patch(`/quotes/${encodeURIComponent(id)}`, { status: "Sent", sent_at: new Date().toISOString() })]);
+          notify({ tone: "good", title: "Email draft opened", text: "Send it from your email app, then return and change the quote to Sent. Churvox has not falsely marked it as delivered." });
+          return;
         }
         setValues((current) => ({ ...current, status: "Sent" }));
         await finish("Quote sent", "The quote has moved to Sent and the follow-up clock has started.");
@@ -189,6 +193,8 @@ export default function ControlBoardActions({ record, values, setValues, api, re
     const status = clean(values.status || record.status).toLowerCase();
     const email = emailOf(values, record);
     const total = Number(values.amount || record.amount || record.total || 0);
+    const canSend = /due|approved|sent|viewed|overdue/.test(status) && !/paid|cancel/.test(status);
+    const canCollect = /due|sent|viewed|overdue/.test(status) && !/paid|cancel/.test(status);
 
     const approve = () => run(
       "approve",
@@ -220,25 +226,28 @@ export default function ControlBoardActions({ record, values, setValues, api, re
       finally { setBusy(""); }
     };
 
-    const markPaid = () => run(
-      "paid",
-      [
-        () => api.post(`/invoices/${encodeURIComponent(id)}/mark-paid-pipeline`, {}),
-        () => api.patch(`/invoices/${encodeURIComponent(id)}`, { status: "Paid", paid_at: new Date().toISOString() }),
-      ],
-      "Payment recorded",
-      "The invoice and connected business flow now show Paid.",
-      { closeAfter: true }
-    );
+    const markPaid = () => {
+      if (!window.confirm(`Record ${money(total)} as paid?`)) return null;
+      return run(
+        "paid",
+        [
+          () => api.post(`/invoices/${encodeURIComponent(id)}/mark-paid-pipeline`, {}),
+          () => api.patch(`/invoices/${encodeURIComponent(id)}`, { status: "Paid", paid_at: new Date().toISOString() }),
+        ],
+        "Payment recorded",
+        "The invoice and connected business flow now show Paid.",
+        { closeAfter: true }
+      );
+    };
 
     return <section className="cv7FlowDock" data-testid="control-board-invoice-actions">
       <header><div><small>Money flow</small><h3>{/paid/.test(status) ? "Payment complete" : /overdue/.test(status) ? "Payment needs chasing" : /sent|due/.test(status) ? "Waiting for payment" : "Owner review before sending"}</h3></div><span>{money(total)}</span></header>
-      <p>Draft, approve, send, remind and record payment from the same invoice. Nothing sends until the owner chooses it.</p>
+      <p>Drafts must be approved first. After that, send, remind and record payment from the same invoice. Nothing sends until the owner chooses it.</p>
       <div>
         {/draft/.test(status) ? <ActionButton tone="primary" busy={busy} onClick={approve}>Approve invoice</ActionButton> : null}
-        {!/paid|cancel/.test(status) ? <ActionButton tone="complete" busy={busy} onClick={() => sendInvoice(false)}>Send PDF</ActionButton> : null}
+        {canSend ? <ActionButton tone="complete" busy={busy} onClick={() => sendInvoice(false)}>{/sent|viewed|overdue/.test(status) ? "Resend PDF" : "Send PDF"}</ActionButton> : null}
         {/sent|due|overdue/.test(status) ? <ActionButton busy={busy} onClick={() => sendInvoice(true)}>Send reminder</ActionButton> : null}
-        {!/paid|cancel/.test(status) ? <ActionButton tone="primary" busy={busy} onClick={markPaid}>Mark paid</ActionButton> : null}
+        {canCollect ? <ActionButton tone="primary" busy={busy} onClick={markPaid}>Mark paid</ActionButton> : null}
       </div>
     </section>;
   }
@@ -273,29 +282,53 @@ export default function ControlBoardActions({ record, values, setValues, api, re
   }
 
   if (record.type === "message") {
-    const sendReply = () => run(
-      "message",
-      [() => api.post("/messages", {
-        from: "Owner",
-        to: values.to || record.from || "Worker/client",
-        channel: values.channel || record.channel || "Internal",
-        client_name: values.client || record.client || "",
-        job_title: values.job || record.job || "",
-        subject: values.subject || record.subject || "Reply",
-        priority: values.priority || record.priority || "Normal",
-        message: values.draft || values.detail || record.draft || record.detail || "",
-        status: "sent",
-        sent_at: new Date().toISOString(),
-        reply_to_message_id: id,
-      })],
-      "Reply sent",
-      "The reply is stored with its client, job and worker context.",
-      { closeAfter: true }
-    );
+    const channel = clean(values.channel || record.channel || "Internal").toLowerCase();
+    const recipient = clean(values.to || record.to || record.from);
+    const body = clean(values.draft || values.detail || record.draft || record.detail);
+    const sms = /sms|text/.test(channel);
+    const email = /email/.test(channel);
+
+    const sendReply = async () => {
+      if (sms) {
+        fail("SMS is coming soon", new Error("Quick SMS is not enabled yet. Use Internal, Worker app or Email."));
+        return;
+      }
+      if (email) {
+        if (!recipient.includes("@")) { fail("Email draft not opened", new Error("Add a valid recipient email first.")); return; }
+        const subject = values.subject || record.subject || "Reply";
+        window.location.href = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        await firstGood([() => api.post("/messages", {
+          from: "Owner", to: recipient, channel: "Email", client_name: values.client || record.client || "", job_title: values.job || record.job || "", subject, priority: values.priority || record.priority || "Normal", message: body, status: "email_draft_opened", reply_to_message_id: id,
+        })]);
+        notify({ tone: "good", title: "Email draft opened", text: "Send it from your email app. Churvox recorded the draft without pretending it was delivered." });
+        close();
+        return;
+      }
+      await run(
+        "message",
+        [() => api.post("/messages", {
+          from: "Owner",
+          to: recipient || "Worker/client",
+          channel: values.channel || record.channel || "Internal",
+          client_name: values.client || record.client || "",
+          job_title: values.job || record.job || "",
+          subject: values.subject || record.subject || "Reply",
+          priority: values.priority || record.priority || "Normal",
+          message: body,
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          reply_to_message_id: id,
+        })],
+        "Reply sent",
+        "The in-app reply is stored with its client, job and worker context.",
+        { closeAfter: true }
+      );
+    };
+
     return <section className="cv7FlowDock" data-testid="control-board-message-actions">
-      <header><div><small>Conversation flow</small><h3>Review the prepared reply</h3></div><span>{values.channel || record.channel || "Internal"}</span></header>
-      <p>Churvox keeps the conversation attached to the work. Edit the draft above, then send it as the owner.</p>
-      <div><ActionButton tone="primary" busy={busy} disabled={!clean(values.draft || values.detail || record.draft || record.detail)} onClick={sendReply}>Send approved reply</ActionButton></div>
+      <header><div><small>Conversation flow</small><h3>{sms ? "SMS coming soon" : email ? "Open an owner-approved email" : "Send the approved in-app reply"}</h3></div><span>{values.channel || record.channel || "Internal"}</span></header>
+      <p>{sms ? "SMS remains disabled until delivery is properly connected." : email ? "Churvox opens the prepared email but does not mark it delivered until a real sending service confirms it." : "Churvox keeps the conversation attached to the work. Edit the draft above, then send it to the worker app or internal thread."}</p>
+      <div><ActionButton tone="primary" busy={busy} disabled={!body || sms} onClick={sendReply}>{sms ? "SMS coming soon" : email ? "Open email draft" : "Send approved reply"}</ActionButton></div>
     </section>;
   }
 
