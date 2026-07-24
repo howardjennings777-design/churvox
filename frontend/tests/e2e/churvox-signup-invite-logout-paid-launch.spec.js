@@ -107,6 +107,26 @@ async function routeLifecycleApi(page, options = {}) {
   return { calls, logoutCalled: () => logoutCalled };
 }
 
+async function logoutFromVisibleControl(page) {
+  const profile = page.locator('.cv7Profile');
+  if (await profile.isVisible().catch(() => false)) {
+    await profile.click();
+    const logout = page.getByRole('button', { name: 'Log out', exact: true });
+    await expect(logout).toBeVisible({ timeout: 8000 });
+    await logout.click();
+    return;
+  }
+
+  const more = page.locator('.cv7MobileNav').getByRole('button', { name: 'More', exact: true });
+  await expect(more).toBeVisible();
+  await more.click();
+  const sheet = page.locator('.cv7MobileMore');
+  await expect(sheet).toBeVisible();
+  const logout = sheet.getByRole('button', { name: 'Log out', exact: true });
+  await expect(logout).toBeVisible({ timeout: 8000 });
+  await logout.click();
+}
+
 test.describe('Paid-launch signup, invite and logout lifecycle', () => {
   test('signup requires consent and sends the complete consent payload', async ({ page }) => {
     const api = await routeLifecycleApi(page);
@@ -181,11 +201,7 @@ test.describe('Paid-launch signup, invite and logout lifecycle', () => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.cvOwnerReady')).toBeVisible();
 
-    const profile = page.locator('.cv7Profile');
-    await profile.click();
-    const logout = page.getByRole('button', { name: 'Log out', exact: true });
-    await expect(logout).toBeVisible({ timeout: 8000 });
-    await logout.click();
+    await logoutFromVisibleControl(page);
     await expect.poll(() => page.url()).toMatch(/\/login/);
     expect(api.logoutCalled()).toBe(true);
 
