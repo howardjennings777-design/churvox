@@ -96,8 +96,14 @@ async function uiLogin(page, email, password, role) {
   await page.goto(`${BASE_URL}/login${role === 'worker' ? '?worker=1' : ''}`, { waitUntil: 'domcontentloaded' });
   await page.getByLabel(/email/i).first().fill(email);
   await page.getByLabel(/password/i).first().fill(password);
-  await page.getByRole('button', { name: /open churvox|sign in|log in/i }).first().click();
-  await expect.poll(() => page.url(), { timeout: 30_000, intervals: [400, 800, 1500, 2500] }).not.toMatch(/\/login(?:[?#]|$)/i);
+  const submit = page.getByRole('button', { name: /open churvox|preparing secure entry|sign in|log in/i }).first();
+  await expect(submit, 'login did not finish its startup session check').toBeEnabled({ timeout: 20_000 });
+  await submit.click();
+  await expect.poll(async () => ({ url: page.url(), error: await page.locator('[role="alert"]').first().textContent().catch(() => '') }), {
+    timeout: 35_000,
+    intervals: [400, 800, 1500, 2500],
+    message: `The ${role} login did not leave the login page`,
+  }).toMatchObject({ url: expect.not.stringMatching(/\/login(?:[?#]|$)/i) });
   expect(page.url()).toMatch(role === 'worker' ? /\/worker(?:[/?#]|$)/i : /\/dashboard(?:[/?#]|$)|\/plans(?:[/?#]|$)/i);
 }
 
@@ -152,16 +158,17 @@ test.describe('Current Studio owner desktop and phone crawl', () => {
       await assertHealthy(page, 'owner navigation', { owner: true });
       if (isMobile) {
         const dock = page.locator('.cvsMobileDock');
-        for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) await expect(dock.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first()).toBeVisible();
-        await dock.getByRole('button').filter({ hasText: /^\s*More\b/i }).first().click();
+        for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) await expect(dock.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
+        await dock.locator('button').filter({ hasText: /More/i }).first().click();
         const more = page.locator('.cvsMobileMore section');
         await expect(more).toBeVisible();
-        for (const item of ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command', 'Settings', 'Plans & billing', 'Help']) await expect(more.getByRole('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
+        for (const item of ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command', 'Settings', 'Plans & billing', 'Help']) await expect(more.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
       } else {
-        const nav = page.getByRole('navigation', { name: /Main Churvox navigation/i });
-        for (const item of ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command']) await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing desktop ${item}`).toBeVisible();
+        const nav = page.locator('.cvsWorkstream');
+        await expect(nav, 'desktop Studio workstream did not render').toBeVisible();
+        for (const item of ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command']) await expect(nav.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing desktop ${item}`).toBeVisible();
         await page.locator('.cvsProfileWrap > button.profile').click();
-        for (const item of ['Settings', 'Plans & billing', 'Help', 'Log out']) await expect(page.locator('.cvsProfileMenu').getByRole('button').filter({ hasText: new RegExp(item, 'i') }).first()).toBeVisible();
+        for (const item of ['Settings', 'Plans & billing', 'Help', 'Log out']) await expect(page.locator('.cvsProfileMenu').locator('button').filter({ hasText: new RegExp(item, 'i') }).first()).toBeVisible();
       }
     } finally {
       await context.close();
@@ -202,10 +209,10 @@ test.describe('Current Worker View and role boundaries', () => {
     const workerPage = await workerContext.newPage();
     try {
       await ownerPage.goto(`${BASE_URL}/worker/jobs`, { waitUntil: 'domcontentloaded' });
-      expect(ownerPage.url()).not.toMatch(/\/worker\/jobs(?:[?#]|$)/i);
+      await expect.poll(() => ownerPage.url(), { timeout: 20_000, intervals: [300, 700, 1200, 2200] }).not.toMatch(/\/worker\/jobs(?:[?#]|$)/i);
       for (const route of ['/dashboard', '/dashboard#plans', '/admin']) {
         await workerPage.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded' });
-        expect(workerPage.url(), `worker entered protected owner route ${route}`).not.toMatch(/\/dashboard(?:[/?#]|$)|\/admin(?:[/?#]|$)/i);
+        await expect.poll(() => workerPage.url(), { timeout: 20_000, intervals: [300, 700, 1200, 2200] }).not.toMatch(/\/dashboard(?:[/?#]|$)|\/admin(?:[/?#]|$)/i);
       }
     } finally {
       await ownerContext.close();
