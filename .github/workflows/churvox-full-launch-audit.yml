@@ -8,6 +8,7 @@ on:
       - 'frontend/src/**'
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
+      - 'frontend/server-branch-test.cjs'
       - 'scripts/churvox-discover-linked-worker.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
   pull_request:
@@ -16,6 +17,7 @@ on:
       - 'frontend/src/**'
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
+      - 'frontend/server-branch-test.cjs'
       - 'scripts/churvox-discover-linked-worker.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
 
@@ -61,6 +63,7 @@ jobs:
       - name: Compile current Studio tests and production frontend
         working-directory: frontend
         run: |
+          node --check server-branch-test.cjs
           node --check tests/e2e/churvox-studio-live-pages.spec.js
           npm run build
 
@@ -71,10 +74,10 @@ jobs:
       - name: Discover linked worker login
         run: node scripts/churvox-discover-linked-worker.cjs
 
-      - name: Start branch application
+      - name: Start branch application with fetch proxy
         working-directory: frontend
         run: |
-          setsid npm start </dev/null > /tmp/churvox-full-launch-local.log 2>&1 &
+          setsid node server-branch-test.cjs </dev/null > /tmp/churvox-full-launch-local.log 2>&1 &
           for i in {1..90}; do
             status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
             if [[ "$status" =~ ^[234] ]]; then
