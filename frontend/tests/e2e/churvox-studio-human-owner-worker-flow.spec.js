@@ -1,1 +1,1 @@
-require('./churvox-studio-human-owner-worker-flow-v2.spec.js');
+require('./churvox-studio-human-owner-worker-flow-v3.spec.js');
