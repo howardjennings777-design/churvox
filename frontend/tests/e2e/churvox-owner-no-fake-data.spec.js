@@ -14,7 +14,7 @@ async function installEmptyOwnerApi(page) {
     business_id: 'business-safe-test',
     email: 'owner-safe-test@churvox.test',
     role: 'owner',
-    plan: 'operator',
+    plan: 'command',
     subscription_status: 'active',
     has_app_access: true,
     stripe_customer_id: 'cus_safe_test',
