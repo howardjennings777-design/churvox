@@ -1,9 +1,6 @@
 name: Agent Fix Plans Route
 
 on:
-  push:
-    branches:
-      - agent/fix-plans-route-and-flow
   pull_request:
     branches:
       - main
