@@ -344,23 +344,23 @@ test.describe('Churvox full launch owner audit', () => {
   if (isMobile) {
     const dock = page.locator('.cvsMobileDock');
     for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) {
-      await expect(dock.getByRole('button').filter({ hasText: new RegExp(`^\s*${item}\b`, 'i') }).first(), `missing mobile Studio navigation: ${item}`).toBeVisible();
+      await expect(dock.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio navigation: ${item}`).toBeVisible();
     }
 
     await dock.getByRole('button').filter({ hasText: /^\s*More\b/i }).first().click();
     const morePanel = page.locator('.cvsMobileMore section');
     await expect(morePanel, 'mobile Studio More panel did not open').toBeVisible();
     for (const item of studioAreas) {
-      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\s*${item}\b`, 'i') }).first(), `missing mobile Studio area: ${item}`).toBeVisible();
+      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio area: ${item}`).toBeVisible();
     }
     for (const item of ['Settings', 'Plans & billing', 'Help']) {
-      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\s*${item}\b`, 'i') }).first(), `missing mobile account area: ${item}`).toBeVisible();
+      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile account area: ${item}`).toBeVisible();
     }
   } else {
     const nav = page.getByRole('navigation', { name: /Main Churvox navigation/i });
     await expect(nav, 'desktop Studio navigation did not load').toBeVisible();
     for (const item of studioAreas) {
-      await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\s*${item}\b`, 'i') }).first(), `missing desktop Studio area: ${item}`).toBeVisible();
+      await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing desktop Studio area: ${item}`).toBeVisible();
     }
 
     await page.locator('.cvsProfileWrap > button.profile').click();
