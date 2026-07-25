@@ -1,17 +1,26 @@
 /* Public navigation and contact actions must remain comfortably clickable and tappable. */
-.cp26Footer nav a {
+.cp26Footer nav a,
+.cpWorldFooterGroup nav a {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 28px;
-  padding: 5px 6px;
+  min-height: 44px;
+  padding: 6px;
   touch-action: manipulation;
+}
+
+.cp26Footer nav a {
+  justify-content: center;
+}
+
+.cpWorldFooterGroup nav a {
+  justify-content: flex-start;
 }
 
 @media (max-width: 560px) {
   .cp26NavLinks a,
   .cp26NavActions .cp26Button,
   .cp26Footer nav a,
+  .cpWorldFooterGroup nav a,
   .cp26ContactGrid a,
   .cvPublicAuth .cvPublicAuthBottom a {
     min-height: 44px;
@@ -20,12 +29,17 @@
 
   .cp26NavLinks a,
   .cp26Footer nav a,
+  .cpWorldFooterGroup nav a,
   .cp26ContactGrid a,
   .cvPublicAuth .cvPublicAuthBottom a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 10px 12px;
+  }
+
+  .cpWorldFooterGroup nav a {
+    justify-content: flex-start;
   }
 
   .cvPublicAuth .cvPublicAuthBottom {
@@ -41,7 +55,8 @@
     margin-top: 2px;
   }
 
-  .cp26Footer nav {
+  .cp26Footer nav,
+  .cpWorldFooterGroup nav {
     gap: 4px 8px;
   }
 }
