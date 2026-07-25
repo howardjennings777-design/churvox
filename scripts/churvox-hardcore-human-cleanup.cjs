@@ -3,7 +3,7 @@
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 const OWNER_EMAIL = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLowerCase();
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
-const MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT /i;
+const MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT |STUDIO HUMAN /i;
 
 function tokenFrom(body = {}) {
   return body.token || body.access_token || body.user?.token || body.data?.token || body.data?.user?.token || '';
