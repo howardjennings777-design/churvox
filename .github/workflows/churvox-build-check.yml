@@ -85,65 +85,56 @@ jobs:
         path: ${{ runner.temp }}/backend-syntax.txt
         if-no-files-found: error
 
-    - name: Verify real command and automation wiring
-      run: python3 scripts/verify_command_automation_contract.py
+    - name: Run every launch contract
+      shell: bash
+      run: |
+        set +e
+        set -o pipefail
+        report="$RUNNER_TEMP/launch-contracts.txt"
+        status=0
+        checks=(
+          "Real command and automation wiring|scripts/verify_command_automation_contract.py"
+          "Command writes into real records|scripts/verify_command_apply_contract.py"
+          "Real quote and invoice action wiring|scripts/verify_quote_invoice_action_contract.py"
+          "Browser-level quote and invoice action flow|scripts/verify_quote_invoice_browser_flow_contract.py"
+          "Worker to owner and owner to worker messaging wiring|scripts/verify_worker_owner_messaging_contract.py"
+          "Jobs open and create edit delete actions|scripts/verify_jobs_open_actions_contract.py"
+          "Client history and worker records open|scripts/verify_client_worker_open_records_contract.py"
+          "No page-visible workspace is empty|scripts/verify_no_empty_pages_contract.py"
+          "Paid launch baseline contracts|scripts/verify_paid_launch_contracts.py"
+          "Command Full Control contract|scripts/churvox-command-full-control-contract.py"
+          "Command real AI operator contract|scripts/churvox-ai-operator-reality-contract.py"
+          "Command human mimic guard contract|scripts/churvox-command-human-mimic-guard-contract.py"
+          "Real AI operator integration contract|scripts/churvox-ai-operator-integration-contract.py"
+          "Real Command apply reality contract|scripts/churvox-command-apply-reality-contract.py"
+          "Command human mimic intelligence contract|scripts/churvox-command-human-mimic-intelligence-contract.py"
+          "Paid launch readiness contract|scripts/churvox-paid-launch-readiness-contract.py"
+          "Command human mimic smoke contract|scripts/churvox-command-human-mimic-smoke-contract.py"
+          "Command shared live state contract|scripts/churvox-command-live-smoke-contract.py"
+          "Command source truth contract|scripts/churvox-command-source-truth-contract.py"
+          "Job Done reality contract|scripts/churvox-job-done-reality-contract.py"
+          "Churvox Intelligence reality contract|scripts/churvox-intelligence-reality-contract.py"
+        )
+        : > "$report"
+        for check in "${checks[@]}"; do
+          label="${check%%|*}"
+          script="${check#*|}"
+          echo "== $label ==" | tee -a "$report"
+          echo "script=$script" | tee -a "$report"
+          if python3 "$script" 2>&1 | tee -a "$report"; then
+            echo "PASS" | tee -a "$report"
+          else
+            echo "FAIL" | tee -a "$report"
+            status=1
+          fi
+          echo | tee -a "$report"
+        done
+        exit "$status"
 
-    - name: Verify Command writes into real records
-      run: python3 scripts/verify_command_apply_contract.py
-
-    - name: Verify real quote and invoice action wiring
-      run: python3 scripts/verify_quote_invoice_action_contract.py
-
-    - name: Verify browser-level quote and invoice action flow
-      run: python3 scripts/verify_quote_invoice_browser_flow_contract.py
-
-    - name: Verify worker to owner and owner to worker messaging wiring
-      run: python3 scripts/verify_worker_owner_messaging_contract.py
-
-    - name: Verify Jobs open and support create edit delete actions
-      run: python3 scripts/verify_jobs_open_actions_contract.py
-
-    - name: Verify client history and worker records open properly
-      run: python3 scripts/verify_client_worker_open_records_contract.py
-
-    - name: Verify no page-visible workspace is empty
-      run: python3 scripts/verify_no_empty_pages_contract.py
-
-    - name: Verify paid launch baseline contracts
-      run: python3 scripts/verify_paid_launch_contracts.py
-
-    - name: Verify Command Full Control contract
-      run: python3 scripts/churvox-command-full-control-contract.py
-
-    - name: Verify Command real AI operator contract
-      run: python3 scripts/churvox-ai-operator-reality-contract.py
-
-    - name: Verify Command human mimic guard contract
-      run: python3 scripts/churvox-command-human-mimic-guard-contract.py
-
-    - name: Verify real AI operator integration contract
-      run: python3 scripts/churvox-ai-operator-integration-contract.py
-
-    - name: Verify real Command apply reality contract
-      run: python3 scripts/churvox-command-apply-reality-contract.py
-
-    - name: Verify Command human mimic intelligence contract
-      run: python3 scripts/churvox-command-human-mimic-intelligence-contract.py
-
-    - name: Verify paid launch readiness contract
-      run: python3 scripts/churvox-paid-launch-readiness-contract.py
-
-    - name: Verify Command human mimic smoke contract
-      run: python3 scripts/churvox-command-human-mimic-smoke-contract.py
-
-    - name: Verify Command shared live state contract
-      run: python3 scripts/churvox-command-live-smoke-contract.py
-
-    - name: Verify Command source truth contract
-      run: python3 scripts/churvox-command-source-truth-contract.py
-
-    - name: Verify Job Done reality contract
-      run: python3 scripts/churvox-job-done-reality-contract.py
-
-    - name: Verify Churvox Intelligence reality contract
-      run: python3 scripts/churvox-intelligence-reality-contract.py
+    - name: Upload launch contract report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: churvox-launch-contract-report
+        path: ${{ runner.temp }}/launch-contracts.txt
+        if-no-files-found: error
