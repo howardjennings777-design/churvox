@@ -232,13 +232,27 @@ test.describe('Current Studio real owner-worker mutation v3', () => {
         const prepare = drawer.getByRole('button', { name: /Prepare invoice/i });
         await expect(prepare).toBeVisible({ timeout: 15_000 });
         const responsePromise = ownerPage.waitForResponse(
-          (response) => new RegExp(`/api/jobs/${job.id}/(?:create-invoice-draft|invoice-draft)$`).test(new URL(response.url()).pathname) && response.request().method() === 'POST',
+          (response) => {
+            if (response.request().method() !== 'POST' || !response.ok()) return false;
+            const path = new URL(response.url()).pathname;
+            return path === '/api/invoices' || new RegExp(`/api/jobs/${job.id}/(?:create-invoice-draft|invoice-draft)$`).test(path);
+          },
           { timeout: 30_000 },
         );
         await prepare.click();
         const response = await responsePromise;
         expect(response.ok(), `Invoice preparation failed with ${response.status()}`).toBeTruthy();
         await expect(ownerPage.getByText(/Draft invoice prepared/i).first()).toBeVisible({ timeout: 10_000 });
+
+        await expect.poll(async () => {
+          const listed = await api(request, 'get', `/api/invoices?ts=${Date.now()}`, ownerToken);
+          if (!listed.response.ok()) return false;
+          return rowsFrom(listed.body).some((invoice) => contains(invoice, job.id) || contains(invoice, job.title));
+        }, {
+          timeout: 30_000,
+          intervals: [700, 1200, 2500],
+          message: 'Prepared invoice was not linked to the completed job',
+        }).toBe(true);
       });
     } finally {
       await workerContext.close();
