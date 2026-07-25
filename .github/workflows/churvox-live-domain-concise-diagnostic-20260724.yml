@@ -1,4 +1,4 @@
-# post-studio-live-proof-trigger: 2026-07-25T02:14Z
+# post-studio-live-proof-complete: 2026-07-25T02:16Z
 name: Churvox live domain concise diagnostic
 
 on:
@@ -76,4 +76,4 @@ jobs:
             echo '```'
           } > "$OUT" 2>&1
           cat "$OUT"
-          gh issue comment 870 --repo howardjennings777-design/churvox --body-file "$OUT"
+          gh issue comment 758 --repo howardjennings777-design/churvox --body-file "$OUT"
