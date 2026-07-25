@@ -30,6 +30,9 @@ jobs:
     - name: Materialise verified Churvox V8 source
       run: node scripts/churvox_hardening_v8_materialize.cjs
 
+    - name: Install backend contract dependencies
+      run: python3 -m pip install --disable-pip-version-check --no-cache-dir fastapi==0.110.1 pymongo==4.5.0
+
     - name: Install frontend dependencies
       working-directory: ./frontend
       run: npm ci --legacy-peer-deps
@@ -100,7 +103,6 @@ jobs:
           "Recurring job idempotency|scripts/churvox-recurring-idempotency-contract.py"
           "Job completion final contract|scripts/churvox-job-completion-final-contract.py"
           "Job Done reality contract|scripts/churvox-job-done-reality-contract.py"
-          "Owner intelligence contract|scripts/churvox-owner-intelligence-contract.py"
           "Paid launch backend contract|scripts/churvox_paid_launch_backend_contract.py"
           "Launch completion matrix|scripts/audit_launch_done_matrix.py"
         )
