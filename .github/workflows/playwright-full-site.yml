@@ -106,6 +106,8 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run current Studio desktop and mobile UI suite
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: |
           npx playwright test \
             tests/e2e/churvox-full-ui-logic-buttons.spec.js \
