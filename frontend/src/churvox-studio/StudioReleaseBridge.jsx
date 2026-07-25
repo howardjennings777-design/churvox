@@ -21,7 +21,7 @@ function exactLabel(button, fallback = "") {
 }
 
 export default function StudioReleaseBridge() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const api = useApi();
   const access = React.useMemo(() => createAccess(user), [user]);
   const [page, setPage] = React.useState(pageFromLocation);
@@ -91,6 +91,21 @@ export default function StudioReleaseBridge() {
       const profile = document.querySelector(".cvsBeamActions .profile");
       if (profile) profile.classList.add("cv7Profile");
 
+      const logoutButton = document.querySelector(".cvsProfileMenu button.logout");
+      if (logoutButton && logoutButton.dataset.cvStableLogout !== "true") {
+        logoutButton.dataset.cvStableLogout = "true";
+        logoutButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          logoutButton.disabled = true;
+          const request = logout();
+          window.history.replaceState({}, "", "/login?logged_out=1");
+          window.dispatchEvent(new PopStateEvent("popstate"));
+          Promise.resolve(request).catch(() => {});
+        }, true);
+      }
+
       const mobile = document.querySelector(".cvsMobileDock");
       if (mobile) {
         mobile.classList.add("cv7MobileNav");
@@ -134,7 +149,7 @@ export default function StudioReleaseBridge() {
       window.removeEventListener("resize", schedule);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [access]);
+  }, [access, logout]);
 
   if (page !== "plans" || !workspace) return null;
   return createPortal(<StudioPlansRelease access={access} user={user} api={api} />, workspace);
