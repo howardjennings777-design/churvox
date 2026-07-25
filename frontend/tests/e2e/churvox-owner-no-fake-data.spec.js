@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-const OWNER_SCREENS = ['today', 'command', 'work', 'schedule', 'clients', 'messages', 'worker', 'quotes', 'invoices', 'money', 'staff', 'payroll', 'team', 'automation', 'branding', 'settings', 'plans', 'help'];
+const OWNER_SCREENS = ['today', 'command', 'jobs', 'schedule', 'recurring', 'clients', 'messages', 'crew', 'field', 'timesheets', 'access', 'quotes', 'invoices', 'money', 'accounting', 'settings', 'plans', 'support'];
 const FORBIDDEN_SAMPLE_COPY = /Example preview records|Starter structure|Sample workspace|Example client|Belmont Villas|Northwood|Cam added a note|Jay asked|Monthly cleaning quote|Local Property Services/i;
 const OLD_INJECTED_UI = '#churvox-paid-launch-stable-owner-text, #churvox-paid-launch-client-form, [id^="churvox-paid-launch-fallback-"], .cvxPaidLaunchFallbackForm';
 
@@ -19,6 +19,13 @@ async function installEmptyOwnerApi(page) {
     has_app_access: true,
     stripe_customer_id: 'cus_safe_test',
   };
+
+  await page.addInitScript(() => {
+    sessionStorage.removeItem('churvox:logged-out');
+    localStorage.setItem('token', 'owner-safe-token');
+    localStorage.setItem('authToken', 'owner-safe-token');
+    localStorage.setItem('access_token', 'owner-safe-token');
+  });
 
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -78,19 +85,17 @@ async function installEmptyOwnerApi(page) {
 }
 
 async function openScreen(page, screen) {
-  await page.goto(`/dashboard#${screen}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(screen === 'today' ? '/dashboard' : `/dashboard#${screen}`, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('networkidle', { timeout: 1500 }).catch(() => null);
-  await expect(page.locator('.cvOfficeSite')).toBeVisible();
-  await expect(page.locator('.cvSiteScreen')).toBeVisible();
-  await expect(page.locator('.cvOfficeSite')).toHaveAttribute('data-screen', screen);
-  await page.waitForTimeout(700);
+  await expect(page.locator('[data-churvox-layout="fresh-studio"]')).toBeVisible();
+  await expect(page.locator('.cvsWorkspace')).toBeVisible();
+  await expect(page.locator(`.cvsStudio.page-${screen}`)).toBeVisible();
+  await page.waitForTimeout(250);
 }
 
 test.describe('Live owner dashboard truthfulness', () => {
   test.beforeEach(async ({ page }) => {
     await installEmptyOwnerApi(page);
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   });
 
   test('empty live business never receives preview or fallback records', async ({ page }) => {
@@ -103,7 +108,7 @@ test.describe('Live owner dashboard truthfulness', () => {
 
     for (const screen of OWNER_SCREENS) {
       await openScreen(page, screen);
-      const text = (await page.locator('.cvSiteScreen').innerText()).replace(/\s+/g, ' ').trim();
+      const text = (await page.locator('.cvsWorkspace').innerText()).replace(/\s+/g, ' ').trim();
       expect(text, `${screen} exposed sample/fallback business data`).not.toMatch(FORBIDDEN_SAMPLE_COPY);
       await expect(page.locator(OLD_INJECTED_UI), `${screen} exposed injected fallback UI`).toHaveCount(0);
     }
