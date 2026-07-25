@@ -94,12 +94,11 @@ function isFrontendProxyHost(host = "") {
 
 function resolveApiBase() {
   // Production and local branch previews both use the frontend's same-origin
-  // /api proxy. This keeps auth cookies first-party, avoids browser CORS
-  // differences, and makes a built branch exercise the same request path as
-  // churvox.com. Hosted previews without the proxy may still use an explicit
-  // configured backend URL.
+  // /api proxy. Return the concrete origin rather than an empty string so
+  // live-data loaders can distinguish a valid same-origin backend from a
+  // missing backend while auth cookies remain first-party.
   if (typeof window !== "undefined" && isFrontendProxyHost(window.location.hostname)) {
-    return "";
+    return clean(window.location.origin);
   }
 
   return configuredBackend() || "";
