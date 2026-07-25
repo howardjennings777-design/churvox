@@ -18,6 +18,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: churvox-full-launch-audit-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -90,6 +94,7 @@ jobs:
           }
           async function request(path, options = {}) {
             const response = await fetch(`${api}${path}`, {
+              signal: AbortSignal.timeout(20_000),
               headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
               ...options,
             });
@@ -198,6 +203,7 @@ jobs:
           }
           async function request(path, options = {}) {
             const response = await fetch(`${api}${path}`, {
+              signal: AbortSignal.timeout(20_000),
               headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
               ...options,
             });
