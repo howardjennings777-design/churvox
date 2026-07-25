@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
       PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
       CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
       CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
@@ -71,6 +71,21 @@ jobs:
       - name: Discover linked worker login
         run: node scripts/churvox-discover-linked-worker.cjs
 
+      - name: Start branch application
+        working-directory: frontend
+        run: |
+          setsid npm start </dev/null > /tmp/churvox-full-launch-local.log 2>&1 &
+          for i in {1..90}; do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
+            if [[ "$status" =~ ^[234] ]]; then
+              echo "Branch application ready with HTTP $status"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/churvox-full-launch-local.log
+          exit 1
+
       - name: Run current public, owner, worker and role audit
         working-directory: frontend
         run: |
@@ -94,6 +109,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: churvox-full-launch-audit-results
-          path: frontend/test-results
+          path: |
+            /tmp/churvox-full-launch-local.log
+            frontend/test-results
           if-no-files-found: ignore
           retention-days: 14
