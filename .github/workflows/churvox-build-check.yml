@@ -51,9 +51,6 @@ jobs:
           backend/server.py
           backend/xero_routes.py
           backend/churvox_command_routes.py
-          backend/churvox_automation_engine.py
-          backend/churvox_email_notifications.py
-          backend/churvox_quote_workflow.py
           backend/churvox_ai_operator_routes.py
           backend/churvox_command_compat_routes.py
           backend/churvox_command_apply_routes.py
