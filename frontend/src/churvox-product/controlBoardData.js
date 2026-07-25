@@ -128,13 +128,15 @@ function resultOkay(result) {
 }
 
 function ownerReviewRows(payload) {
-  return rowsFrom(payload, "messages").filter((row) => {
-    const signal = [
-      row?.type, row?.kind, row?.event_type, row?.action_type, row?.status, row?.state,
-      row?.route, row?.office_route, row?.title, row?.subject, row?.summary, row?.message, row?.detail,
-    ].map(clean).join(" ").toLowerCase();
-    return /worker_problem|waiting_owner|needs_owner|owner review|owner_review|dashboard#command|reported an issue|extra work/.test(signal);
-  });
+  return rowsFrom(payload, "messages")
+    .filter((row) => {
+      const signal = [
+        row?.type, row?.kind, row?.event_type, row?.action_type, row?.status, row?.state,
+        row?.route, row?.office_route, row?.title, row?.subject, row?.summary, row?.message, row?.detail,
+      ].map(clean).join(" ").toLowerCase();
+      return /worker_problem|waiting_owner|needs_owner|owner review|owner_review|dashboard#command|reported an issue|extra work/.test(signal);
+    })
+    .map((row) => ({ ...row, status: "waiting_owner_review", state: "waiting_owner_review", __commandOwnerReview: true }));
 }
 
 function mergeCommandRows(...groups) {
