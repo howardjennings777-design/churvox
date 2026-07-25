@@ -121,13 +121,28 @@ export default function StudioRecordDrawer({ record, data, api, refresh, close, 
       const running = /progress|working|running/.test(status) || values.timer_running === true;
       const paused = /pause/.test(clean(values.timerStatus || values.timer_status || record.timerStatus));
       const completed = /complete/.test(status);
+      const invoicePayload = {
+        job_id: id,
+        linked_job_id: id,
+        source_job_id: id,
+        job_title: values.title || record.title || "Completed job",
+        client_name: values.client || record.client || "No client",
+        customer_email: values.clientEmail || record.clientEmail || "",
+        amount: Number(values.price || record.price || 0) + Number(values.extrasTotal || record.extrasTotal || 0),
+        status: "draft",
+        line_item: values.title || record.title || "Completed job",
+        description: values.completionNote || values.notes || record.notes || "Completed work ready for owner invoice review.",
+        evidence: values.proof || record.proof || "",
+        notes: values.completionNote || values.notes || record.notes || "",
+        source: "studio_completed_job",
+      };
       return (
         <>
           {!completed && !running && !paused ? <Action tone="primary" icon={Play} busy={busy} onClick={() => run("start", [() => api.post(`/jobs/${id}/timer/start`, {}), () => api.post(`/jobs/${id}/start`, {})], "Job started", "The worker timer and live job state are moving.", { status: "in_progress", timerStatus: "running", timer_running: true })}>Start job</Action> : null}
           {!completed && running ? <Action icon={Pause} busy={busy} onClick={() => run("pause", [() => api.post(`/jobs/${id}/timer/pause`, {}), () => api.post(`/jobs/${id}/pause`, {})], "Job paused", "The job is paused without losing recorded time.", { timerStatus: "paused", timer_running: false })}>Pause</Action> : null}
           {!completed && paused ? <Action tone="primary" icon={Play} busy={busy} onClick={() => run("resume", [() => api.post(`/jobs/${id}/timer/resume`, {}), () => api.post(`/jobs/${id}/resume`, {})], "Job resumed", "The field timer is running again.", { status: "in_progress", timerStatus: "running", timer_running: true })}>Resume</Action> : null}
           {!completed ? <Action tone="complete" icon={FileCheck2} busy={busy} onClick={() => run("complete", [() => api.post(`/jobs/${id}/complete`, { completion_note: values.completionNote || values.notes || "", completion_photos: values.proof ? [values.proof] : [], extras_total: Number(values.extrasTotal || 0) })], "Job completed", "The field work is closed and the next admin has been prepared.", { status: "completed" }, true)}>Complete & prepare admin</Action> : null}
-          {completed ? <Action tone="primary" icon={FileCheck2} busy={busy} onClick={() => run("invoice", [() => api.post(`/jobs/${id}/create-invoice-draft`, {}), () => api.post(`/jobs/${id}/invoice-draft`, {})], "Draft invoice prepared", "The invoice is waiting in Money for owner review.", null, true)}>Prepare invoice</Action> : null}
+          {completed ? <Action tone="primary" icon={FileCheck2} busy={busy} onClick={() => run("invoice", [() => api.post("/invoices", invoicePayload), () => api.post(`/jobs/${id}/create-invoice-draft`, {}), () => api.post(`/jobs/${id}/invoice-draft`, {})], "Draft invoice prepared", "The invoice is waiting in Money for owner review.", null, true)}>Prepare invoice</Action> : null}
         </>
       );
     }
