@@ -50,11 +50,12 @@ jobs:
         working-directory: frontend
         run: npm install --include=dev --legacy-peer-deps
 
-      - name: Compile current Studio audit and production frontend
+      - name: Compile current Studio audits and production frontend
         id: build
         continue-on-error: true
         working-directory: frontend
         run: |
+          node --check tests/e2e/churvox-studio-live-pages.spec.js
           node --check tests/e2e/churvox-studio-human-owner-worker-flow.spec.js
           node --check ../scripts/churvox-studio-owner-worker-audit.cjs
           npm run build
@@ -145,13 +146,13 @@ jobs:
             --workers=1 \
             --reporter=line 2>&1 | tee /tmp/churvox-studio-local-ui.txt
 
-      - name: Run current live owner, worker, route and billing audit
+      - name: Run focused current live owner, worker, role and billing crawl
         id: live_pages
         continue-on-error: true
         working-directory: frontend
         run: |
           set -o pipefail
-          npx playwright test tests/e2e/churvox-big-launch-audit.spec.js \
+          npx playwright test tests/e2e/churvox-studio-live-pages.spec.js \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --workers=1 \
