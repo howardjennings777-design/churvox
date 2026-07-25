@@ -80,17 +80,25 @@ function configuredBackend() {
   );
 }
 
-function isChurvoxHost(host = "") {
-  const cleanHost = String(host || "").toLowerCase();
-  return cleanHost === "www.churvox.com" || cleanHost === "churvox.com";
+function isFrontendProxyHost(host = "") {
+  const cleanHost = String(host || "").trim().toLowerCase();
+  return (
+    cleanHost === "www.churvox.com" ||
+    cleanHost === "churvox.com" ||
+    cleanHost === "localhost" ||
+    cleanHost === "127.0.0.1" ||
+    cleanHost === "0.0.0.0" ||
+    cleanHost === "::1"
+  );
 }
 
 function resolveApiBase() {
-  // Production uses the frontend's same-origin /api proxy. This keeps auth
-  // cookies first-party and prevents the browser from depending directly on a
-  // Render service hostname that may be renamed, suspended, or temporarily
-  // unavailable in DNS.
-  if (typeof window !== "undefined" && isChurvoxHost(window.location.hostname)) {
+  // Production and local branch previews both use the frontend's same-origin
+  // /api proxy. This keeps auth cookies first-party, avoids browser CORS
+  // differences, and makes a built branch exercise the same request path as
+  // churvox.com. Hosted previews without the proxy may still use an explicit
+  // configured backend URL.
+  if (typeof window !== "undefined" && isFrontendProxyHost(window.location.hostname)) {
     return "";
   }
 
