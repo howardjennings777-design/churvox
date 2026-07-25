@@ -69,7 +69,7 @@ function rowsFrom(payload, key) {
   const data = unwrap(payload);
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.[key])) return data[key];
-  for (const name of ["items", "records", "results", "data", "jobs", "clients", "workers", "team", "quotes", "invoices", "messages", "actions", "notifications"]) {
+  for (const name of ["items", "records", "results", "data", "jobs", "clients", "workers", "team", "quotes", "invoices", "messages", "actions", "notifications", "slips"]) {
     if (Array.isArray(data?.[name])) return data[name];
   }
   return [];
@@ -103,7 +103,7 @@ function normalize(rows, type) {
     if (type === "quotes") return { ...base, type: "quote", title: pick(row, "title", "quote_title", "quote_number", "description") || `Quote ${index + 1}`, client: pick(row, "client_name", "customer_name", "client") || "No client", clientEmail: pick(row, "customer_email", "client_email", "email"), amount: numberPick(row, "amount", "total", "price"), status: pick(row, "status") || "Draft", scope: pick(row, "scope", "description", "job_description"), terms: pick(row, "terms") || "Valid for 14 days", followUp: pick(row, "follow_up", "followUp"), next: pick(row, "next_step", "next") || "Review in Command", convertedJobId: pick(row, "converted_job_id", "job_id", "linked_job_id") };
     if (type === "invoices") return { ...base, type: "invoice", number: pick(row, "number", "invoice_number") || `Invoice ${index + 1}`, client: pick(row, "client_name", "customer_name", "client") || "No client", clientEmail: pick(row, "customer_email", "client_email", "email"), job: pick(row, "job_title", "job"), amount: numberPick(row, "amount", "total", "subtotal"), due: pick(row, "due_date", "due"), status: pick(row, "status") || "Draft", sync: pick(row, "sync", "accounting_status", "xero_status") || "Not synced", line: pick(row, "line_item", "description"), paymentLink: pick(row, "payment_link", "public_invoice_url"), evidence: pick(row, "evidence", "proof"), notes: pick(row, "notes") };
     if (type === "messages") return { ...base, type: "message", from: pick(row, "from", "sender", "source") || "Unknown", to: pick(row, "to", "recipient"), subject: pick(row, "subject", "title") || "Message", detail: pick(row, "detail", "body", "message"), draft: pick(row, "draft", "drafted_reply", "reply"), client: pick(row, "client_name", "client"), job: pick(row, "job_title", "job"), priority: pick(row, "priority") || "Normal", channel: pick(row, "channel") || "Internal" };
-    return { ...base, type: "approval", approvalType: pick(row, "type", "kind", "action_type") || "Owner check", title: pick(row, "title", "record_title", "summary") || "Prepared admin item", status: pick(row, "status", "state") || "Waiting", client: pick(row, "client", "client_name", "customer_name"), amount: numberPick(row, "amount", "total"), recommended: pick(row, "owner", "recommended_action", "action") || "Approve", prepared: pick(row, "prepared", "filled", "summary", "what_churvox_filled") || "Prepared from live records.", evidence: pick(row, "evidence", "proof") || "Record details checked.", reason: pick(row, "reason", "check", "owner_check") || "An owner decision is required." };
+    return { ...base, type: "approval", approvalType: pick(row, "type", "kind", "action_type") || "Owner check", title: pick(row, "title", "record_title", "summary") || "Prepared admin item", status: pick(row, "status", "state") || "Waiting", client: pick(row, "client", "client_name", "customer_name"), amount: numberPick(row, "amount", "total"), recommended: pick(row, "owner", "recommended_action", "action") || "Approve", prepared: pick(row, "prepared", "filled", "summary", "message", "detail", "what_churvox_filled") || "Prepared from live records.", evidence: pick(row, "evidence", "proof") || "Record details checked.", reason: pick(row, "reason", "check", "owner_check", "summary", "message", "detail") || "An owner decision is required." };
   });
 }
 
@@ -123,13 +123,45 @@ function sourceFailure(result, label) {
   return null;
 }
 
+function resultOkay(result) {
+  return Boolean(result?.status === "fulfilled" && result.value?.success !== false);
+}
+
+function ownerReviewRows(payload) {
+  return rowsFrom(payload, "messages").filter((row) => {
+    const signal = [
+      row?.type, row?.kind, row?.event_type, row?.action_type, row?.status, row?.state,
+      row?.route, row?.office_route, row?.title, row?.subject, row?.summary, row?.message, row?.detail,
+    ].map(clean).join(" ").toLowerCase();
+    return /worker_problem|waiting_owner|needs_owner|owner review|owner_review|dashboard#command|reported an issue|extra work/.test(signal);
+  });
+}
+
+function mergeCommandRows(...groups) {
+  const seen = new Set();
+  const merged = [];
+  groups.flat().forEach((row, index) => {
+    if (!row || typeof row !== "object") return;
+    const body = pick(row, "summary", "message", "detail", "prepared", "title");
+    const key = clean(row.id || row._id || row.action_id || row.message_id || row.notification_id || row.source_id)
+      || `${pick(row, "type", "kind", "action_type")}:${pick(row, "job_id", "record_id")}:${body}`
+      || `command-${index}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    merged.push(row);
+  });
+  return merged;
+}
+
 export function useControlBoardData(enabled) {
   const api = useApi();
+  const refreshRun = React.useRef(0);
   const [loading, setLoading] = React.useState(Boolean(enabled));
   const [failures, setFailures] = React.useState([]);
   const [data, setData] = React.useState({ jobs: [], clients: [], workers: [], quotes: [], invoices: [], messages: [], command: [], xero: {} });
 
   const refresh = React.useCallback(async () => {
+    const run = ++refreshRun.current;
     if (!enabled) {
       setLoading(false);
       setFailures([]);
@@ -141,13 +173,23 @@ export function useControlBoardData(enabled) {
       const results = await Promise.allSettled([
         api.get("/jobs"), api.get("/clients"), api.get("/team"), api.get("/quotes"), api.get("/invoices"), api.get("/messages"), api.get("/ai/actions"), api.get("/xero/status"),
       ]);
-      const issues = SOURCES.map(([label], index) => sourceFailure(results[index], label)).filter(Boolean);
+      if (run !== refreshRun.current) return;
+
+      const messagesOkay = resultOkay(results[5]);
+      const commandOkay = resultOkay(results[6]);
+      const messageCommandRows = messagesOkay ? ownerReviewRows(results[5].value) : [];
+      const actionCommandRows = commandOkay ? rowsFrom(results[6].value, "actions") : [];
+      const commandRows = mergeCommandRows(actionCommandRows, messageCommandRows);
+
+      const issues = SOURCES.map(([label], index) => sourceFailure(results[index], label))
+        .filter(Boolean)
+        .filter((issue) => issue.source !== "Command" || !messagesOkay);
       const failed = new Set(issues.map((item) => item.source));
       setFailures(issues);
       publishControlBoardHealth(issues);
       setData((current) => {
         const xeroResult = results[7];
-        const xeroOkay = xeroResult?.status === "fulfilled" && xeroResult.value?.success !== false;
+        const xeroOkay = resultOkay(xeroResult);
         const xero = xeroOkay ? (unwrap(xeroResult.value) || {}) : current.xero;
         return {
           jobs: failed.has("Work") ? current.jobs : normalize(rowsFrom(results[0]?.value, "jobs"), "jobs"),
@@ -156,19 +198,23 @@ export function useControlBoardData(enabled) {
           quotes: failed.has("Quotes") ? current.quotes : normalize(rowsFrom(results[3]?.value, "quotes"), "quotes"),
           invoices: failed.has("Invoices") ? current.invoices : normalize(rowsFrom(results[4]?.value, "invoices"), "invoices"),
           messages: failed.has("Messages") ? current.messages : normalize(rowsFrom(results[5]?.value, "messages"), "messages"),
-          command: failed.has("Command") ? current.command : normalize(rowsFrom(results[6]?.value, "actions"), "command"),
+          command: (messagesOkay || commandOkay) ? normalize(commandRows, "command") : current.command,
           xero: xeroOkay ? { connected: Boolean(xero.connected || xero.xero_connected), tenant: pick(xero, "tenant_name", "tenantName", "organisation_name"), status: pick(xero, "status") } : current.xero,
         };
       });
     } finally {
-      setLoading(false);
+      if (run === refreshRun.current) setLoading(false);
     }
   }, [api, enabled]);
 
   React.useEffect(() => {
     refresh();
     window.addEventListener("churvox:data-refresh", refresh);
-    return () => window.removeEventListener("churvox:data-refresh", refresh);
+    window.addEventListener("hashchange", refresh);
+    return () => {
+      window.removeEventListener("churvox:data-refresh", refresh);
+      window.removeEventListener("hashchange", refresh);
+    };
   }, [refresh]);
 
   return { api, data, loading, failures, refresh };
