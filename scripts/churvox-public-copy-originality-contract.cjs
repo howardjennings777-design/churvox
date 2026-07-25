@@ -125,10 +125,10 @@ for (const file of headlineFiles) {
 
 const home = files.get('frontend/src/pages/marketing/ExecutiveHomePage.jsx') || '';
 const distinctiveHomeLines = [
-  /your business handled/i,
-  /your decisions waiting/i,
-  /one owner control room/i,
-  /four questions\. no dashboard hunting/i,
+  /your business moves/i,
+  /churvox sees the whole move/i,
+  /one connected signal/i,
+  /prepared does not mean automatic/i,
 ];
 
 for (const pattern of distinctiveHomeLines) {
