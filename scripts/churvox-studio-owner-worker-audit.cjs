@@ -24,7 +24,6 @@ function all(text, tokens) {
 const app = read('frontend/src/App.js');
 const fresh = read('frontend/src/churvox-fresh/FreshApp.jsx');
 const studio = read('frontend/src/churvox-studio/ChurvoxStudioApp.jsx');
-const pages = read('frontend/src/churvox-studio/StudioPages.jsx');
 const drawer = read('frontend/src/churvox-studio/StudioRecordDrawer.jsx');
 const model = read('frontend/src/churvox-studio/studioModel.js');
 const data = read('frontend/src/churvox-product/controlBoardData.js');
@@ -58,9 +57,12 @@ check(
 );
 
 check(
-  'Studio uses live business data without fake records',
-  studio.includes('useControlBoardData(Boolean(user))') && data.includes('source: "live"') && !studio.includes('Belmont Villas'),
-  'Owner pages must be driven by the authenticated business data source.',
+  'Studio uses authenticated live business endpoints without fake records',
+  studio.includes('useControlBoardData(Boolean(user))')
+    && all(data, ['api.get("/jobs")', 'api.get("/clients")', 'api.get("/team")', 'api.get("/quotes")', 'api.get("/invoices")', 'api.get("/messages")', 'api.get("/ai/actions")'])
+    && !studio.includes('Belmont Villas')
+    && !data.includes('Belmont Villas'),
+  'Owner pages must load the signed-in business endpoints rather than sample records.',
 );
 
 check(
@@ -88,9 +90,9 @@ check(
 );
 
 check(
-  'login opens the role-aware workspace',
-  all(login, ['Open Churvox', 'postLoginPath', 'if (looksWorker(user, payload)) return "/worker/today"', 'return getDefaultRoute(role) || "/dashboard"']),
-  'Login must route owners and workers to the correct current workspace.',
+  'login waits for startup auth and opens the role-aware workspace',
+  all(login, ['loading: authLoading', 'if (submitting || authLoading) return;', 'Open Churvox', 'postLoginPath', 'if (looksWorker(user, payload)) return "/worker/today"', 'return getDefaultRoute(role) || "/dashboard"']),
+  'Login must avoid startup-session races and route owners and workers correctly.',
 );
 
 check(
