@@ -138,7 +138,7 @@ async function fillByLabelOrPlaceholder(page, words, value) {
 }
 
 async function clickLogin(page) {
-  for (const name of [/sign in/i, /log in/i, /login/i]) {
+  for (const name of [/open churvox/i, /sign in/i, /log in/i, /login/i]) {
     const button = page.getByRole('button', { name }).first();
     if (await button.count().catch(() => 0) && await button.isVisible().catch(() => false)) {
       await button.click();
@@ -194,10 +194,28 @@ async function fetchLoginToken(page, email, password, role) {
   throw new Error(`${role} API login failed: ${JSON.stringify(attempts)}`);
 }
 
+async function seedVerifiedSession(page, token, email, role) {
+  await page.context().addInitScript(({ tokenValue, emailValue, roleValue }) => {
+    sessionStorage.removeItem('churvox:logged-out');
+    localStorage.setItem('token', tokenValue);
+    localStorage.setItem('authToken', tokenValue);
+    localStorage.setItem('access_token', tokenValue);
+    localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+      at: Date.now(),
+      token: tokenValue,
+      user: {
+        email: emailValue,
+        role: roleValue,
+        has_app_access: true,
+        email_verified: true,
+      },
+    }));
+  }, { tokenValue: token, emailValue: email, roleValue: role });
+}
+
 async function apiLogin(page, email, password, role) {
   const token = await fetchLoginToken(page, email, password, role);
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.evaluate((value) => localStorage.setItem('token', value), token);
+  await seedVerifiedSession(page, token, email, role);
   return token;
 }
 
@@ -235,18 +253,26 @@ async function createAssignedWorkerJob(page) {
   expect(workerId, 'linked worker id').toBeTruthy();
 
   const marker = `Full launch worker detail ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const workerName = worker.name || worker.full_name || worker.email || WORKER_EMAIL;
   const created = await requestJson(page, ownerToken, 'post', '/api/jobs', {
     title: marker,
+    job_title: marker,
     job_type: 'other',
+    client_name: 'Churvox launch audit',
     customer_name: 'Churvox launch audit',
     address: '1 Test Street, Wellington',
-    scheduled_date: new Date().toISOString(),
+    scheduled_date: new Date().toISOString().slice(0, 10),
     scheduled_time: '09:00',
     estimated_duration: 30,
+    status: 'assigned',
     price: 0,
     assigned_worker_id: workerId,
+    worker_id: workerId,
+    worker_email: WORKER_EMAIL,
+    assigned_worker_name: workerName,
     worker_instructions: marker,
     notes: marker,
+    source: 'full-launch-worker-detail-audit',
   });
   expect(created.ok, `owner could not create assigned worker audit job: ${created.status} ${JSON.stringify(created.body).slice(0, 500)}`).toBeTruthy();
 
@@ -308,33 +334,43 @@ test.describe('Churvox full launch owner audit', () => {
     });
   }
 
-  test('owner navigation keeps every current launch page', async ({ page }) => {
-    await page.goto('/dashboard#command');
-    expect(page.url(), 'owner navigation audit redirected out of dashboard').toMatch(/\/dashboard(?:[/?#]|$)/i);
-    await waitStable(page);
+  test('owner navigation keeps every current Studio area', async ({ page, isMobile }) => {
+  await page.goto('/dashboard#command', { waitUntil: 'domcontentloaded' });
+  expect(page.url(), 'owner navigation audit redirected out of dashboard').toMatch(/\/dashboard(?:[/?#]|$)/i);
+  await waitStable(page);
+  await expect(page.locator('[data-churvox-layout="fresh-studio"]'), 'Studio owner shell did not load').toBeVisible();
 
-    for (const item of ['Today', 'Intelligence', 'Command', 'Jobs', 'Clients', 'Workers', 'Quotes', 'Invoices']) {
-      await expect(page.getByRole('button', { name: new RegExp(`^${item}(?:\\s+\\d+)?$`, 'i') }).first(), `missing main owner navigation: ${item}`).toBeVisible();
+  const studioAreas = ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command'];
+  if (isMobile) {
+    const dock = page.locator('.cvsMobileDock');
+    for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) {
+      await expect(dock.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio navigation: ${item}`).toBeVisible();
     }
 
-    const more = page.getByRole('button', { name: /^More$/i }).first();
-    await expect(more, 'missing More navigation button').toBeVisible();
-    if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click();
-    await expect(page.getByRole('menu', { name: /More tools/i }), 'More navigation menu did not open').toBeVisible();
-
-    for (const item of ['Schedule', 'Messages', 'Payroll', 'Xero', 'How Churvox works', 'Activity']) {
-      await expect(page.getByRole('menuitem', { name: new RegExp(`^${item}$`, 'i') }).first(), `missing More navigation item: ${item}`).toBeVisible();
+    await dock.getByRole('button').filter({ hasText: /^\s*More\b/i }).first().click();
+    const morePanel = page.locator('.cvsMobileMore section');
+    await expect(morePanel, 'mobile Studio More panel did not open').toBeVisible();
+    for (const item of studioAreas) {
+      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio area: ${item}`).toBeVisible();
+    }
+    for (const item of ['Settings', 'Plans & billing', 'Help']) {
+      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile account area: ${item}`).toBeVisible();
+    }
+  } else {
+    const nav = page.getByRole('navigation', { name: /Main Churvox navigation/i });
+    await expect(nav, 'desktop Studio navigation did not load').toBeVisible();
+    for (const item of studioAreas) {
+      await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing desktop Studio area: ${item}`).toBeVisible();
     }
 
-    for (const item of ['Settings', 'Plans', 'Help']) {
-      const menuItem = page.getByRole('menuitem', { name: new RegExp(`^${item}$`, 'i') }).first();
-      const accountButton = page.getByRole('navigation', { name: /Account and help pages/i })
-        .getByRole('button', { name: new RegExp(`^${item}$`, 'i') }).first();
-      const visibleInMenu = await menuItem.isVisible().catch(() => false);
-      const visibleAsButton = await accountButton.isVisible().catch(() => false);
-      expect(visibleInMenu || visibleAsButton, `missing responsive account navigation item: ${item}`).toBeTruthy();
+    await page.locator('.cvsProfileWrap > button.profile').click();
+    const profileMenu = page.locator('.cvsProfileMenu');
+    await expect(profileMenu, 'desktop account menu did not open').toBeVisible();
+    for (const item of ['Settings', 'Plans & billing', 'Help']) {
+      await expect(profileMenu.getByRole('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing desktop account area: ${item}`).toBeVisible();
     }
-  });
+  }
+});
 });
 
 test.describe('Churvox full launch worker audit', () => {

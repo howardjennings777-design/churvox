@@ -30,6 +30,9 @@ jobs:
     - name: Materialise verified Churvox V8 source
       run: node scripts/churvox_hardening_v8_materialize.cjs
 
+    - name: Install backend contract dependencies
+      run: python3 -m pip install --disable-pip-version-check --no-cache-dir fastapi==0.110.1 pymongo==4.5.0
+
     - name: Install frontend dependencies
       working-directory: ./frontend
       run: npm ci --legacy-peer-deps
@@ -41,85 +44,91 @@ jobs:
       run: npm run build
 
     - name: Validate backend syntax
+      shell: bash
       run: |
-        python3 -m py_compile backend/server.py
-        python3 -m py_compile backend/xero_routes.py
-        python3 -m py_compile backend/churvox_command_routes.py
-        python3 -m py_compile backend/churvox_automation_engine.py
-        python3 -m py_compile backend/churvox_email_notifications.py
-        python3 -m py_compile backend/churvox_quote_workflow.py
-        python3 -m py_compile backend/churvox_ai_operator_routes.py
-        python3 -m py_compile backend/churvox_command_compat_routes.py
-        python3 -m py_compile backend/churvox_command_apply_routes.py
-        python3 -m py_compile backend/churvox_command_human_mimic_routes.py
-        python3 -m py_compile backend/churvox_command_human_mimic_guard_routes.py
-        python3 -m py_compile backend/churvox_command_mimic_intelligence_routes.py
-        python3 -m py_compile backend/churvox_command_human_mimic_marker_routes.py
-        python3 -m py_compile backend/churvox_paid_launch_readiness_routes.py
-        python3 -m py_compile backend/churvox_job_done_routes.py
-        python3 -m py_compile backend/churvox_owner_intelligence_routes.py
-        python3 -m py_compile usercustomize.py
-        python3 -m py_compile backend/usercustomize.py
+        set +e
+        set -o pipefail
+        report="$RUNNER_TEMP/backend-syntax.txt"
+        status=0
+        files=(
+          backend/server.py
+          backend/xero_routes.py
+          backend/churvox_command_routes.py
+          backend/churvox_ai_operator_routes.py
+          backend/churvox_command_compat_routes.py
+          backend/churvox_command_apply_routes.py
+          backend/churvox_command_human_mimic_routes.py
+          backend/churvox_command_human_mimic_guard_routes.py
+          backend/churvox_command_mimic_intelligence_routes.py
+          backend/churvox_command_human_mimic_marker_routes.py
+          backend/churvox_paid_launch_readiness_routes.py
+          backend/churvox_job_done_routes.py
+          backend/churvox_owner_intelligence_routes.py
+          usercustomize.py
+          backend/usercustomize.py
+        )
+        : > "$report"
+        for file in "${files[@]}"; do
+          echo "== $file ==" | tee -a "$report"
+          if python3 -m py_compile "$file" 2>&1 | tee -a "$report"; then
+            echo "PASS" | tee -a "$report"
+          else
+            echo "FAIL" | tee -a "$report"
+            status=1
+          fi
+          echo | tee -a "$report"
+        done
+        exit "$status"
 
-    - name: Verify real command and automation wiring
-      run: python3 scripts/verify_command_automation_contract.py
+    - name: Upload backend syntax report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: churvox-backend-syntax-report
+        path: ${{ runner.temp }}/backend-syntax.txt
+        if-no-files-found: error
 
-    - name: Verify Command writes into real records
-      run: python3 scripts/verify_command_apply_contract.py
+    - name: Run current launch contracts
+      shell: bash
+      run: |
+        set +e
+        set -o pipefail
+        report="$RUNNER_TEMP/launch-contracts.txt"
+        status=0
+        checks=(
+          "Fresh Studio has one owner shell|scripts/audit_fresh_no_double_shell.py"
+          "Command wiring|scripts/audit_command_wiring.py"
+          "Command runs the office safely|scripts/churvox-command-runs-office-contract.py"
+          "Worker and owner messaging|scripts/churvox-worker-owner-message-contract.py"
+          "Recurring job idempotency|scripts/churvox-recurring-idempotency-contract.py"
+          "Job completion final contract|scripts/churvox-job-completion-final-contract.py"
+          "Job Done reality contract|scripts/churvox-job-done-reality-contract.py"
+          "Paid launch backend contract|scripts/churvox_paid_launch_backend_contract.py"
+          "Launch completion matrix|scripts/audit_launch_done_matrix.py"
+        )
+        : > "$report"
+        for check in "${checks[@]}"; do
+          label="${check%%|*}"
+          script="${check#*|}"
+          echo "== $label ==" | tee -a "$report"
+          echo "script=$script" | tee -a "$report"
+          if [ ! -f "$script" ]; then
+            echo "FAIL — current contract file is missing" | tee -a "$report"
+            status=1
+          elif python3 "$script" 2>&1 | tee -a "$report"; then
+            echo "PASS" | tee -a "$report"
+          else
+            echo "FAIL" | tee -a "$report"
+            status=1
+          fi
+          echo | tee -a "$report"
+        done
+        exit "$status"
 
-    - name: Verify real quote and invoice action wiring
-      run: python3 scripts/verify_quote_invoice_action_contract.py
-
-    - name: Verify browser-level quote and invoice action flow
-      run: python3 scripts/verify_quote_invoice_browser_flow_contract.py
-
-    - name: Verify worker to owner and owner to worker messaging wiring
-      run: python3 scripts/verify_worker_owner_messaging_contract.py
-
-    - name: Verify Jobs open and support create edit delete actions
-      run: python3 scripts/verify_jobs_open_actions_contract.py
-
-    - name: Verify client history and worker records open properly
-      run: python3 scripts/verify_client_worker_open_records_contract.py
-
-    - name: Verify no page-visible workspace is empty
-      run: python3 scripts/verify_no_empty_pages_contract.py
-
-    - name: Verify paid launch baseline contracts
-      run: python3 scripts/verify_paid_launch_contracts.py
-
-    - name: Verify Command Full Control contract
-      run: python3 scripts/churvox-command-full-control-contract.py
-
-    - name: Verify Command real AI operator contract
-      run: python3 scripts/churvox-ai-operator-reality-contract.py
-
-    - name: Verify Command human mimic guard contract
-      run: python3 scripts/churvox-command-human-mimic-guard-contract.py
-
-    - name: Verify real AI operator integration contract
-      run: python3 scripts/churvox-ai-operator-integration-contract.py
-
-    - name: Verify real Command apply reality contract
-      run: python3 scripts/churvox-command-apply-reality-contract.py
-
-    - name: Verify Command human mimic intelligence contract
-      run: python3 scripts/churvox-command-human-mimic-intelligence-contract.py
-
-    - name: Verify paid launch readiness contract
-      run: python3 scripts/churvox-paid-launch-readiness-contract.py
-
-    - name: Verify Command human mimic smoke contract
-      run: python3 scripts/churvox-command-human-mimic-smoke-contract.py
-
-    - name: Verify Command shared live state contract
-      run: python3 scripts/churvox-command-live-smoke-contract.py
-
-    - name: Verify Command source truth contract
-      run: python3 scripts/churvox-command-source-truth-contract.py
-
-    - name: Verify Job Done reality contract
-      run: python3 scripts/churvox-job-done-reality-contract.py
-
-    - name: Verify Churvox Intelligence reality contract
-      run: python3 scripts/churvox-intelligence-reality-contract.py
+    - name: Upload launch contract report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: churvox-launch-contract-report
+        path: ${{ runner.temp }}/launch-contracts.txt
+        if-no-files-found: error

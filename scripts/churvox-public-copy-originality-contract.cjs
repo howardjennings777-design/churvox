@@ -47,7 +47,7 @@ const REQUIRED_PRODUCT_SIGNALS = [
   { label: 'owner control language', pattern: /owner(?:-|\s)(?:controlled|approval)/i },
   { label: '14-day public trial', pattern: /14-day trial/i },
   { label: 'no-card trial', pattern: /no card/i },
-  { label: 'no silent sending', pattern: /nothing auto-sends|nothing (?:important )?sends without approval/i },
+  { label: 'no silent sending', pattern: /nothing auto-sends|nothing (?:important )?sends(?:, charges, syncs or changes)? without (?:owner )?approval|nothing sends without you/i },
 ];
 
 function fail(message) {
@@ -125,10 +125,10 @@ for (const file of headlineFiles) {
 
 const home = files.get('frontend/src/pages/marketing/ExecutiveHomePage.jsx') || '';
 const distinctiveHomeLines = [
-  /your business handled/i,
-  /your decisions waiting/i,
-  /one owner control room/i,
-  /four questions\. no dashboard hunting/i,
+  /your business moves/i,
+  /churvox sees the whole move/i,
+  /one connected signal/i,
+  /prepared does not mean automatic/i,
 ];
 
 for (const pattern of distinctiveHomeLines) {

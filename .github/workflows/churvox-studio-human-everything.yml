@@ -1,0 +1,154 @@
+name: Churvox Studio Human Everything
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-studio-human-everything-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  studio-human-everything:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CHURVOX_E2E_MUTATE: '1'
+      CI: true
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify private owner credential
+        run: |
+          test -n "$CHURVOX_OWNER_PASSWORD"
+          echo "Owner password secret is present and remains masked."
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Compile current Studio audits and production frontend
+        working-directory: frontend
+        run: |
+          node --check server-branch-test.cjs
+          node --check tests/e2e/churvox-studio-live-pages.spec.js
+          node --check tests/e2e/churvox-studio-human-owner-worker-flow.spec.js
+          node --check tests/e2e/churvox-studio-human-owner-worker-flow-v2.spec.js
+          node --check ../scripts/churvox-studio-owner-worker-audit.cjs
+          npm run build
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Prove the current Studio is live
+        run: |
+          node <<'NODE'
+          const base = 'https://www.churvox.com';
+          const required = ['CHURVOX_FRESH_STUDIO_20260725', 'Open Churvox', 'cvsMobileDock', 'Prepare invoice', 'What changed on this job?'];
+          async function main() {
+            const manifestResponse = await fetch(`${base}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
+            if (!manifestResponse.ok) throw new Error(`Live asset manifest returned ${manifestResponse.status}`);
+            const manifest = await manifestResponse.json();
+            const assets = new Set([...Object.values(manifest.files || {}), ...(manifest.entrypoints || [])].filter((item) => /\.js(?:$|\?)/.test(String(item || ''))));
+            const texts = await Promise.all([...assets].map(async (asset) => {
+              const response = await fetch(new URL(asset, base), { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
+              return response.ok ? response.text() : '';
+            }));
+            const joined = texts.join('\n');
+            const missing = required.filter((token) => !joined.includes(token));
+            if (missing.length) throw new Error(`Live Studio is missing: ${missing.join(', ')}`);
+            console.log(`Current live Studio verified across ${assets.size} JS assets.`);
+          }
+          main().catch((error) => { console.error(error.message || error); process.exit(1); });
+          NODE
+
+      - name: Discover linked worker login
+        run: node scripts/churvox-discover-linked-worker.cjs
+
+      - name: Run current Studio owner-worker contract
+        run: node scripts/churvox-studio-owner-worker-audit.cjs
+
+      - name: Start the branch build with fetch proxy
+        working-directory: frontend
+        run: |
+          setsid node server-branch-test.cjs </dev/null > /tmp/churvox-studio-local.log 2>&1 &
+          echo $! > /tmp/churvox-studio-local.pid
+          for i in {1..90}; do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
+            if [[ "$status" =~ ^[234] ]]; then
+              echo "Branch Studio ready with HTTP $status"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/churvox-studio-local.log
+          exit 1
+
+      - name: Test branch Studio layout, controls, plans and no fake data
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-owner-no-fake-data.spec.js \
+            tests/e2e/churvox-plans-usage-truth.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Test branch owner login, worker login, pages and role boundaries
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: |
+          npx playwright test tests/e2e/churvox-studio-live-pages.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Run real branch owner-worker mutation and invoice loop
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: |
+          npx playwright test tests/e2e/churvox-studio-human-owner-worker-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Clean every active live audit record
+        if: always()
+        run: node scripts/churvox-hardcore-human-cleanup.cjs
+
+      - name: Upload Studio human evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-studio-human-everything
+          path: |
+            /tmp/churvox-studio-local.log
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 14
