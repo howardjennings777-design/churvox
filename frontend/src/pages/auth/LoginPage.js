@@ -130,7 +130,7 @@ function friendlyLoginError(error) {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, checkAuth, logout } = useAuth();
+  const { login, checkAuth, logout, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -145,7 +145,7 @@ export default function LoginPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (submitting) return;
+    if (submitting || authLoading) return;
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !password) {
       setError("Enter your email and password.");
@@ -193,6 +193,8 @@ export default function LoginPage() {
     }
   }
 
+  const preparing = authLoading && !submitting;
+
   return (
     <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin cvAccessChamber ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_ACCESS_CHAMBER_20260724_V2">
       {!appMode ? <Nav /> : null}
@@ -228,14 +230,14 @@ export default function LoginPage() {
           <p className="cvPublicAuthKicker">Identity check</p>
           <h1>{workerAccess ? "Open today’s work." : appMode ? "Enter Churvox." : "Open the right room."}</h1>
           <p className="cvPublicAuthIntro">{workerAccess ? "Sign in and Churvox will take you straight to today’s field work." : "Your account decides what opens next—Command for owners, the field view for workers, and the correct access gate for everyone else."}</p>
-          <div className="cvAccessStatus"><span>SESSION</span><b>{submitting ? "Checking identity" : "Waiting for identity"}</b><i className={submitting ? "working" : ""} /></div>
+          <div className="cvAccessStatus"><span>SESSION</span><b>{submitting ? "Checking identity" : preparing ? "Preparing secure entry" : "Waiting for identity"}</b><i className={submitting || preparing ? "working" : ""} /></div>
 
           {verifiedNotice && !error ? <div className="cvPublicAuthSuccess" role="status">Email verified. Sign in to continue.</div> : null}
           {error ? <div className="cvPublicAuthError" role="alert" aria-live="assertive">{error}</div> : null}
 
           <label>Email<input className="cvPublicNativeInput" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@business.co.nz" autoComplete="email" autoCapitalize="none" spellCheck="false" inputMode="email" autoFocus disabled={submitting} /></label>
           <label>Password<div className="password-row"><input className="cvPublicNativeInput" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your password" autoComplete="current-password" disabled={submitting} /><button className="cvPublicAuthGhost" type="button" aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)} disabled={submitting}>{showPassword ? "Hide" : "Show"}</button></div></label>
-          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting}>{submitting ? "Checking access…" : "Open Churvox"}</button>
+          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting || authLoading}>{submitting ? "Checking access…" : preparing ? "Preparing secure entry…" : "Open Churvox"}</button>
           <p className="cvPublicAuthBottom">{workerAccess ? <Link to="/">Back to website</Link> : <Link to="/forgot-password">Forgot password?</Link>}{!workerAccess ? <><span> / </span><Link to="/signup?plan=operator">Start trial</Link></> : null}</p>
           <div className="cvAccessConsoleFoot"><span>Encrypted session</span><span>Role-aware entry</span><span>No hidden action</span></div>
         </form>
