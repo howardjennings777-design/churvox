@@ -1,0 +1,71 @@
+name: Fix full launch audit cleanup
+
+on:
+  push:
+    branches: [ agent/final-studio-launch-fix ]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/final-studio-launch-fix
+          fetch-depth: 0
+
+      - name: Bound network cleanup and cancel stale audits
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/churvox-full-launch-audit.yml')
+          text = path.read_text()
+
+          old_fetch = """            const response = await fetch(`${api}${path}`, {
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
+              ...options,
+            });
+          """
+          new_fetch = """            const response = await fetch(`${api}${path}`, {
+              signal: AbortSignal.timeout(20_000),
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
+              ...options,
+            });
+          """
+          count = text.count(old_fetch)
+          if count != 2:
+              raise SystemExit(f'Expected two audit fetch helpers, found {count}')
+          text = text.replace(old_fetch, new_fetch)
+
+          old_jobs = """permissions:
+  contents: write
+
+jobs:
+          """
+          new_jobs = """permissions:
+  contents: write
+
+concurrency:
+  group: churvox-full-launch-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+          """
+          if text.count(old_jobs) != 1:
+              raise SystemExit('Expected one audit permissions block')
+          text = text.replace(old_jobs, new_jobs, 1)
+          path.write_text(text)
+          PY
+
+      - name: Commit permanent audit cleanup fix
+        run: |
+          rm .github/workflows/churvox-fix-audit-cleanup.yml
+          git config user.name "Churvox Launch Repair"
+          git config user.email "hello@churvox.com"
+          git add .github/workflows/churvox-full-launch-audit.yml .github/workflows/churvox-fix-audit-cleanup.yml
+          git commit -m "Bound launch audit cleanup and cancel stale runs"
+          git push origin HEAD:agent/final-studio-launch-fix
