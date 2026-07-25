@@ -41,25 +41,52 @@ jobs:
       run: npm run build
 
     - name: Validate backend syntax
+      shell: bash
       run: |
-        python3 -m py_compile backend/server.py
-        python3 -m py_compile backend/xero_routes.py
-        python3 -m py_compile backend/churvox_command_routes.py
-        python3 -m py_compile backend/churvox_automation_engine.py
-        python3 -m py_compile backend/churvox_email_notifications.py
-        python3 -m py_compile backend/churvox_quote_workflow.py
-        python3 -m py_compile backend/churvox_ai_operator_routes.py
-        python3 -m py_compile backend/churvox_command_compat_routes.py
-        python3 -m py_compile backend/churvox_command_apply_routes.py
-        python3 -m py_compile backend/churvox_command_human_mimic_routes.py
-        python3 -m py_compile backend/churvox_command_human_mimic_guard_routes.py
-        python3 -m py_compile backend/churvox_command_mimic_intelligence_routes.py
-        python3 -m py_compile backend/churvox_command_human_mimic_marker_routes.py
-        python3 -m py_compile backend/churvox_paid_launch_readiness_routes.py
-        python3 -m py_compile backend/churvox_job_done_routes.py
-        python3 -m py_compile backend/churvox_owner_intelligence_routes.py
-        python3 -m py_compile usercustomize.py
-        python3 -m py_compile backend/usercustomize.py
+        set +e
+        set -o pipefail
+        report="$RUNNER_TEMP/backend-syntax.txt"
+        status=0
+        files=(
+          backend/server.py
+          backend/xero_routes.py
+          backend/churvox_command_routes.py
+          backend/churvox_automation_engine.py
+          backend/churvox_email_notifications.py
+          backend/churvox_quote_workflow.py
+          backend/churvox_ai_operator_routes.py
+          backend/churvox_command_compat_routes.py
+          backend/churvox_command_apply_routes.py
+          backend/churvox_command_human_mimic_routes.py
+          backend/churvox_command_human_mimic_guard_routes.py
+          backend/churvox_command_mimic_intelligence_routes.py
+          backend/churvox_command_human_mimic_marker_routes.py
+          backend/churvox_paid_launch_readiness_routes.py
+          backend/churvox_job_done_routes.py
+          backend/churvox_owner_intelligence_routes.py
+          usercustomize.py
+          backend/usercustomize.py
+        )
+        : > "$report"
+        for file in "${files[@]}"; do
+          echo "== $file ==" | tee -a "$report"
+          if python3 -m py_compile "$file" 2>&1 | tee -a "$report"; then
+            echo "PASS" | tee -a "$report"
+          else
+            echo "FAIL" | tee -a "$report"
+            status=1
+          fi
+          echo | tee -a "$report"
+        done
+        exit "$status"
+
+    - name: Upload backend syntax report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: churvox-backend-syntax-report
+        path: ${{ runner.temp }}/backend-syntax.txt
+        if-no-files-found: error
 
     - name: Verify real command and automation wiring
       run: python3 scripts/verify_command_automation_contract.py
