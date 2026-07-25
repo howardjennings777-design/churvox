@@ -1,37 +1,37 @@
-UTC=2026-07-24 17:17:47
-COMMIT=101e140897d50828dd712f755ce890400a16951d
+UTC=2026-07-25 02:06:00
+COMMIT=7efb469d84b9081cc63e5fd209c40b4af1237442
 INSTALL_EXIT=0
 BUILD_EXIT=0
 RESULT=PASS
 --- INSTALL TAIL ---
 npm warn deprecated whatwg-encoding@1.0.5: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 npm warn deprecated w3c-hr-time@1.0.2: Use your platform's native performance.now() and performance.timeOrigin.
-npm warn deprecated workbox-cacheable-response@6.6.0: workbox-background-sync@6.6.0
 npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
-npm warn deprecated workbox-google-analytics@6.6.0: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
-npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
 npm warn deprecated rollup-plugin-terser@7.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-terser
+npm warn deprecated workbox-cacheable-response@6.6.0: workbox-background-sync@6.6.0
 npm warn deprecated q@1.5.1: You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
 npm warn deprecated
 npm warn deprecated (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
+npm warn deprecated workbox-google-analytics@6.6.0: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
 npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting hello@churvox.com
 npm warn deprecated domexception@2.0.1: Use your platform's native DOMException instead
 npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() methods instead
-npm warn deprecated svgo@1.3.2: This SVGO version is no longer supported. Upgrade to v2.x.x.
 npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
 npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
 npm warn deprecated @babel/plugin-proposal-private-property-in-object@7.21.11: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-private-property-in-object instead.
-npm warn deprecated @babel/plugin-proposal-numeric-separator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-numeric-separator instead.
 npm warn deprecated @babel/plugin-proposal-optional-chaining@7.21.0: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-chaining instead.
-npm warn deprecated @babel/plugin-proposal-nullish-coalescing-operator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-nullish-coalescing-operator instead.
+npm warn deprecated @babel/plugin-proposal-numeric-separator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-numeric-separator instead.
 npm warn deprecated @babel/plugin-proposal-private-methods@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-private-methods instead.
+npm warn deprecated @babel/plugin-proposal-nullish-coalescing-operator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-nullish-coalescing-operator instead.
 npm warn deprecated @babel/plugin-proposal-class-properties@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-class-properties instead.
+npm warn deprecated svgo@1.3.2: This SVGO version is no longer supported. Upgrade to v2.x.x.
 npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
 npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
 
-added 1531 packages, and audited 1532 packages in 14s
+added 1531 packages, and audited 1532 packages in 20s
 
 298 packages are looking for funding
   run `npm fund` for details
@@ -69,33 +69,33 @@ CHURVOX PREDEPLOY RELEASE AUDIT PASSED (17 checks)
 - Tester backend routes are installed
 - HQ application inbox stays view-only
 - Promotion Centre stays local-only
-CHURVOX RELEASE METADATA WRITTEN frontend/public/__churvox/release.json 101e140897d50828dd712f755ce890400a16951d
+CHURVOX RELEASE METADATA WRITTEN frontend/public/__churvox/release.json 7efb469d84b9081cc63e5fd209c40b4af1237442
 Worker proof contract passed: one proof panel, one completion check, one job note, and sent photo proof persists through Complete.
 Generated Churvox PNG app icons (churvox-integrated-mark-20260708b)
+Materialised 11 Churvox hardening files and patched 7 safety-critical files (e1bf0047230a).
+Materialised 11 Churvox hardening files and patched 7 safety-critical files (e1bf0047230a).
 Creating an optimized production build...
 Compiled successfully.
 
 File sizes after gzip:
 
-  106.33 kB  build/static/js/main.0e00b8fb.js
+  111.64 kB  build/static/js/main.470afeba.js
   59.33 kB   build/static/js/7847.4a655653.chunk.js
-  34.9 kB    build/static/css/main.2d69c3e3.css
+  34.92 kB   build/static/css/main.733865ec.css
+  30.25 kB   build/static/js/6470.627a1447.chunk.js
   22.17 kB   build/static/css/7847.77c5a5fa.chunk.css
-  21.2 kB    build/static/js/8103.01305a55.chunk.js
-  21.2 kB    build/static/js/484.b1f7b522.chunk.js
-  16.7 kB    build/static/js/1598.0b13db9e.chunk.js
+  16.73 kB   build/static/js/2264.638f5232.chunk.js
   15.86 kB   build/static/css/3380.e977714b.chunk.css
+  14.25 kB   build/static/css/6470.50dd2f11.chunk.css
   12.44 kB   build/static/js/9967.438942ef.chunk.js
-  11.89 kB   build/static/js/9857.b1c092aa.chunk.js
+  11.96 kB   build/static/js/9490.d7243b58.chunk.js
   9.65 kB    build/static/js/9957.e757ef93.chunk.js
   8.89 kB    build/static/js/5539.c5024515.chunk.js
   8.48 kB    build/static/js/7245.8bc82715.chunk.js
-  8.22 kB    build/static/js/5379.263ae96b.chunk.js
+  8.23 kB    build/static/js/5379.46dba522.chunk.js
   8.11 kB    build/static/css/9614.0cc0a073.chunk.css
-  7.74 kB    build/static/css/3317.ce27f805.chunk.css
   7.55 kB    build/static/js/9394.bc9100f2.chunk.js
   7.49 kB    build/static/js/3056.cced9f31.chunk.js
-  7.4 kB     build/static/css/8103.e90f3e09.chunk.css
   6.98 kB    build/static/js/7090.20b3e59b.chunk.js
   6.97 kB    build/static/js/7153.3dc47d3d.chunk.js
   6.89 kB    build/static/css/347.b5e9c56d.chunk.css
@@ -106,8 +106,7 @@ File sizes after gzip:
   6.01 kB    build/static/js/3357.198282c0.chunk.js
   5.82 kB    build/static/js/2926.03dd6afc.chunk.js
   5.79 kB    build/static/js/6520.87420c61.chunk.js
-  5.64 kB    build/static/css/1598.1a749ccb.chunk.css
-  5.64 kB    build/static/js/2629.b12168a6.chunk.js
+  5.64 kB    build/static/css/2264.c309f1e9.chunk.css
   5.52 kB    build/static/js/7687.a48e2290.chunk.js
   5.49 kB    build/static/js/170.d6c74fa4.chunk.js
   5.48 kB    build/static/js/6776.ab68b580.chunk.js
@@ -124,9 +123,10 @@ File sizes after gzip:
   4.65 kB    build/static/css/3797.704d0553.chunk.css
   4.65 kB    build/static/css/7153.704d0553.chunk.css
   4.59 kB    build/static/js/4918.16159496.chunk.js
-  4.26 kB    build/static/js/3317.2cc0ef16.chunk.js
+  4.26 kB    build/static/js/19.4c2f9062.chunk.js
   4.18 kB    build/static/js/9213.ec32f0f4.chunk.js
   3.66 kB    build/static/css/2255.48ad9474.chunk.css
+  3.57 kB    build/static/js/5783.582e7ecf.chunk.js
   3.53 kB    build/static/js/8628.43300fa0.chunk.js
   3.52 kB    build/static/js/5550.32bdd03b.chunk.js
   3.29 kB    build/static/js/6294.66db70c9.chunk.js
@@ -136,7 +136,7 @@ File sizes after gzip:
   3.19 kB    build/static/js/347.c42ebb2c.chunk.js
   3.17 kB    build/static/css/9967.0c10c531.chunk.css
   2.96 kB    build/static/js/2046.f086889f.chunk.js
-  2.9 kB     build/static/css/9857.2dfdf9be.chunk.css
+  2.91 kB    build/static/css/9490.82e584de.chunk.css
   2.73 kB    build/static/js/8682.aa1af98e.chunk.js
   2.66 kB    build/static/css/5379.95981e78.chunk.css
   2.42 kB    build/static/js/913.aa091c25.chunk.js
@@ -144,22 +144,23 @@ File sizes after gzip:
   2.21 kB    build/static/css/7981.2d051490.chunk.css
   2.21 kB    build/static/css/9942.2d051490.chunk.css
   2.2 kB     build/static/css/2046.2d051490.chunk.css
-  2.14 kB    build/static/js/9389.c7d503d9.chunk.js
+  2.15 kB    build/static/js/9389.fe8e3b5d.chunk.js
   2.01 kB    build/static/js/4748.46ec1db2.chunk.js
   1.97 kB    build/static/js/6296.9149d431.chunk.js
   1.58 kB    build/static/js/3797.2cc32a10.chunk.js
   1.58 kB    build/static/css/9394.6e0a7993.chunk.css
   1.45 kB    build/static/js/7695.c3f730a6.chunk.js
   1.37 kB    build/static/css/913.5527e1d1.chunk.css
+  1.35 kB    build/static/js/5149.a2d65c34.chunk.js
   1.32 kB    build/static/js/3395.34f2a8b4.chunk.js
   1.27 kB    build/static/js/2255.3906688a.chunk.js
   1.26 kB    build/static/css/1106.5e72f530.chunk.css
   1.1 kB     build/static/js/5971.7f381298.chunk.js
   924 B      build/static/js/1724.234e60b4.chunk.js
-  759 B      build/static/js/5149.4dfa02d4.chunk.js
   744 B      build/static/js/3974.54b3821d.chunk.js
   733 B      build/static/js/1106.67851e8c.chunk.js
   697 B      build/static/js/8370.9250f6dc.chunk.js
+  651 B      build/static/css/19.cdd4da38.chunk.css
   625 B      build/static/js/2524.9233f298.chunk.js
   616 B      build/static/js/5457.4750c06a.chunk.js
   554 B      build/static/js/7497.5f7a6fb0.chunk.js
