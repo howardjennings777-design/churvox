@@ -66,10 +66,16 @@ export default function StudioRecordDrawer({ record, data, api, refresh, close, 
   const isNew = Boolean(record.__new || !id);
   const definitions = fieldsFor(record, data);
 
-  const finish = async (title, text, shouldClose = false) => {
-    await refresh();
+  const refreshQuietly = () => {
+    try {
+      Promise.resolve(refresh()).catch(() => {});
+    } catch {}
+  };
+
+  const finish = (title, text, shouldClose = false) => {
     notify({ tone: "good", title, text });
     if (shouldClose) close();
+    refreshQuietly();
   };
 
   const fail = (title, error) => notify({ tone: "bad", title, text: error?.message || "The action could not be completed." });
@@ -78,7 +84,7 @@ export default function StudioRecordDrawer({ record, data, api, refresh, close, 
     setBusy(action);
     try {
       await saveRecord(api, record, values, action);
-      await finish(record.type === "approval" ? "Decision updated" : isNew ? "Record created" : "Changes saved", `${titleOf(values)} is up to date.`, true);
+      finish(record.type === "approval" ? "Decision updated" : isNew ? "Record created" : "Changes saved", `${titleOf(values)} is up to date.`, true);
     } catch (error) {
       fail("Could not save", error);
     } finally {
@@ -91,7 +97,7 @@ export default function StudioRecordDrawer({ record, data, api, refresh, close, 
     try {
       const result = await firstGood(calls);
       if (update) setValues((current) => ({ ...current, ...(typeof update === "function" ? update(result?.data?.data ?? result?.data ?? result) : update) }));
-      await finish(title, text, shouldClose);
+      finish(title, text, shouldClose);
     } catch (error) {
       fail(title, error);
     } finally {
