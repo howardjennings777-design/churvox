@@ -1,0 +1,273 @@
+name: Churvox Studio Human Everything
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: churvox-studio-human-everything-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  studio-human-everything:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PLAYWRIGHT_BASE_URL: https://www.churvox.com
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CHURVOX_E2E_MUTATE: '1'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify private owner credential exists
+        id: credential
+        continue-on-error: true
+        run: |
+          test -n "$CHURVOX_OWNER_PASSWORD"
+          echo "Owner password secret is present and remains masked."
+
+      - name: Install frontend dependencies
+        id: install
+        continue-on-error: true
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Compile current Studio audit and production frontend
+        id: build
+        continue-on-error: true
+        working-directory: frontend
+        run: |
+          node --check tests/e2e/churvox-studio-human-owner-worker-flow.spec.js
+          node --check ../scripts/churvox-studio-owner-worker-audit.cjs
+          npm run build
+
+      - name: Install Chromium
+        id: chromium
+        continue-on-error: true
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Prove the current Studio is live
+        id: deploy
+        continue-on-error: true
+        run: |
+          node <<'NODE'
+          const base = 'https://www.churvox.com';
+          const required = ['CHURVOX_FRESH_STUDIO_20260725', 'Open Churvox', 'cvsMobileDock', 'Prepare invoice', 'What changed on this job?'];
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          async function main() {
+            let last = '';
+            for (let attempt = 1; attempt <= 30; attempt += 1) {
+              try {
+                const manifestResponse = await fetch(`${base}/asset-manifest.json?ts=${Date.now()}`, { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
+                const manifest = await manifestResponse.json();
+                const assets = new Set([...Object.values(manifest.files || {}), ...(manifest.entrypoints || [])].filter((item) => /\.js(?:$|\?)/.test(String(item || ''))));
+                const texts = await Promise.all([...assets].map(async (asset) => {
+                  const response = await fetch(new URL(asset, base), { cache: 'no-store', signal: AbortSignal.timeout(20_000) });
+                  return response.ok ? response.text() : '';
+                }));
+                const joined = texts.join('\n');
+                const missing = required.filter((token) => !joined.includes(token));
+                if (!missing.length) {
+                  console.log(`Current Studio markers found on attempt ${attempt} across ${assets.size} JS assets.`);
+                  return;
+                }
+                last = `missing ${missing.join(', ')}`;
+              } catch (error) {
+                last = error.message || String(error);
+              }
+              if (attempt < 30) await sleep(20_000);
+            }
+            throw new Error(`Current Studio did not prove live in the probe window: ${last}`);
+          }
+          main().catch((error) => { console.error(error.message || error); process.exit(1); });
+          NODE
+
+      - name: Discover a linked worker using the saved shared password
+        id: worker
+        continue-on-error: true
+        run: node scripts/churvox-discover-linked-worker.cjs
+
+      - name: Run current Studio owner-worker static contract
+        id: static
+        continue-on-error: true
+        run: node scripts/churvox-studio-owner-worker-audit.cjs
+
+      - name: Start branch frontend for safe desktop and phone checks
+        id: server
+        continue-on-error: true
+        working-directory: frontend
+        run: |
+          setsid npm start </dev/null > /tmp/churvox-studio-local.log 2>&1 &
+          echo $! > /tmp/churvox-studio-local.pid
+          for i in {1..90}; do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
+            if [[ "$status" =~ ^[234] ]]; then
+              echo "Local Studio ready with HTTP $status"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/churvox-studio-local.log
+          exit 1
+
+      - name: Test current Studio layout, buttons, plan truth and no fake data
+        id: local_ui
+        continue-on-error: true
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: |
+          set -o pipefail
+          npx playwright test \
+            tests/e2e/churvox-owner-no-fake-data.spec.js \
+            tests/e2e/churvox-plans-usage-truth.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-studio-local-ui.txt
+
+      - name: Run current live owner, worker, route and billing audit
+        id: live_pages
+        continue-on-error: true
+        working-directory: frontend
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-big-launch-audit.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-studio-live-pages.txt
+
+      - name: Run real Studio owner-worker mutation and invoice loop
+        id: human_flow
+        continue-on-error: true
+        working-directory: frontend
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-studio-human-owner-worker-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-studio-human-flow.txt
+
+      - name: Clean every active live audit record
+        id: cleanup
+        if: always()
+        continue-on-error: true
+        run: node scripts/churvox-hardcore-human-cleanup.cjs
+
+      - name: Build complete Studio human report
+        id: report
+        if: always()
+        env:
+          CREDENTIAL: ${{ steps.credential.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          WORKER: ${{ steps.worker.outcome }}
+          STATIC: ${{ steps.static.outcome }}
+          SERVER: ${{ steps.server.outcome }}
+          LOCAL_UI: ${{ steps.local_ui.outcome }}
+          LIVE_PAGES: ${{ steps.live_pages.outcome }}
+          HUMAN_FLOW: ${{ steps.human_flow.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const checks = {
+            'Private owner credential': process.env.CREDENTIAL,
+            'Install dependencies': process.env.INSTALL,
+            'Production build and syntax': process.env.BUILD,
+            'Chromium install': process.env.CHROMIUM,
+            'Current Studio live deployment': process.env.DEPLOY,
+            'Linked worker discovery and login': process.env.WORKER,
+            'Current Studio owner-worker wiring': process.env.STATIC,
+            'Local branch app server': process.env.SERVER,
+            'Current Studio desktop/mobile UI': process.env.LOCAL_UI,
+            'Live owner/worker pages, roles and billing': process.env.LIVE_PAGES,
+            'Real owner-worker mutation and invoice loop': process.env.HUMAN_FLOW,
+            'Live test-data cleanup': process.env.CLEANUP,
+          };
+          const logs = {
+            'Local branch app server': '/tmp/churvox-studio-local.log',
+            'Current Studio desktop/mobile UI': '/tmp/churvox-studio-local-ui.txt',
+            'Live owner/worker pages, roles and billing': '/tmp/churvox-studio-live-pages.txt',
+            'Real owner-worker mutation and invoice loop': '/tmp/churvox-studio-human-flow.txt',
+          };
+          const failures = Object.entries(checks).filter(([, value]) => value !== 'success').map(([name]) => name);
+          const lines = [
+            '# Churvox Studio human audit',
+            '',
+            ...Object.entries(checks).map(([name, value]) => `- ${value === 'success' ? 'PASS' : 'FAIL'} — ${name}`),
+            '',
+            failures.length
+              ? `**Result: FAILED — ${failures.length} current area(s) need fixing.**`
+              : '**Result: PASSED — current Studio owner, worker, desktop, phone, role isolation, billing safety, live mutation, invoice preparation and cleanup all passed.**',
+          ];
+          for (const name of failures) {
+            const file = logs[name];
+            if (!file || !fs.existsSync(file)) continue;
+            const text = fs.readFileSync(file, 'utf8');
+            lines.push('', `<details><summary>${name} — failure tail</summary>`, '', '```txt', text.slice(-7000), '```', '', '</details>');
+          }
+          fs.writeFileSync('/tmp/churvox-studio-human-summary.md', `${lines.join('\n')}\n`);
+          fs.writeFileSync('/tmp/churvox-studio-human-report.json', JSON.stringify({ success: failures.length === 0, checks, failures }, null, 2));
+          console.log(lines.join('\n'));
+          NODE
+
+      - name: Upload full Studio evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-studio-human-everything
+          path: |
+            /tmp/churvox-studio-human-summary.md
+            /tmp/churvox-studio-human-report.json
+            /tmp/churvox-studio-local-ui.txt
+            /tmp/churvox-studio-live-pages.txt
+            /tmp/churvox-studio-human-flow.txt
+            /tmp/churvox-studio-local.log
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Post complete result to pull request
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.existsSync('/tmp/churvox-studio-human-summary.md')
+              ? fs.readFileSync('/tmp/churvox-studio-human-summary.md', 'utf8')
+              : 'Studio human audit did not produce a summary.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Fail when any current audit area failed
+        if: always()
+        run: |
+          node -e "const r=require('/tmp/churvox-studio-human-report.json'); if(!r.success) process.exit(1)"
