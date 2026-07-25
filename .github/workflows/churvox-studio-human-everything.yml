@@ -48,6 +48,7 @@ jobs:
       - name: Compile current Studio audits and production frontend
         working-directory: frontend
         run: |
+          node --check server-branch-test.cjs
           node --check tests/e2e/churvox-studio-live-pages.spec.js
           node --check tests/e2e/churvox-studio-human-owner-worker-flow.spec.js
           node --check tests/e2e/churvox-studio-human-owner-worker-flow-v2.spec.js
@@ -86,10 +87,10 @@ jobs:
       - name: Run current Studio owner-worker contract
         run: node scripts/churvox-studio-owner-worker-audit.cjs
 
-      - name: Start the branch build
+      - name: Start the branch build with fetch proxy
         working-directory: frontend
         run: |
-          setsid npm start </dev/null > /tmp/churvox-studio-local.log 2>&1 &
+          setsid node server-branch-test.cjs </dev/null > /tmp/churvox-studio-local.log 2>&1 &
           echo $! > /tmp/churvox-studio-local.pid
           for i in {1..90}; do
             status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
