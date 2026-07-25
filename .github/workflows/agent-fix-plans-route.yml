@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     env:
-      CHURVOX_E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL || secrets.CHURVOX_OWNER_EMAIL }}
+      CHURVOX_E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL || secrets.CHURVOX_OWNER_EMAIL || 'hello@churvox.com' }}
       CHURVOX_E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD || secrets.CHURVOX_OWNER_PASSWORD }}
       PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
     steps:
@@ -28,97 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Apply isolated plans route fix
-        shell: python
-        run: |
-          from pathlib import Path
-
-          app_path = Path("frontend/src/App.js")
-          app = app_path.read_text(encoding="utf-8")
-
-          import_anchor = 'const FreshApp = React.lazy(() => import("./churvox-fresh/FreshApp"));'
-          plans_import = 'const StandalonePlansRoute = React.lazy(() => import("./StandalonePlansRoute"));'
-          if plans_import not in app:
-              if import_anchor not in app:
-                  raise SystemExit("FreshApp import anchor not found")
-              app = app.replace(import_anchor, import_anchor + "\n" + plans_import, 1)
-
-          old_route = '<Route path="/plans" element={<FreshBusinessRoute><AppRedirect to="/dashboard#plans" /></FreshBusinessRoute>} />'
-          new_route = '<Route path="/plans" element={<FreshBusinessRoute><StandalonePlansRoute /></FreshBusinessRoute>} />'
-          if old_route in app:
-              app = app.replace(old_route, new_route, 1)
-          elif new_route not in app:
-              raise SystemExit("Plans route anchor not found")
-
-          app_path.write_text(app, encoding="utf-8")
-
-          wrapper = '''import React from "react";
-          import FreshPlans from "./churvox-fresh/FreshPlans";
-
-          export default function StandalonePlansRoute() {
-            const handleNavigate = React.useCallback((target) => {
-              const section = String(target || "").trim().toLowerCase();
-              if (section === "support" || section === "help") {
-                window.location.assign("/support");
-                return;
-              }
-              window.location.assign(section ? `/dashboard#${section}` : "/dashboard");
-            }, []);
-
-            return (
-              <main className="cvStandalonePlansRoute" data-checkout-trace="plans-route-auth-recover-v1">
-                <FreshPlans onNavigate={handleNavigate} />
-              </main>
-            );
-          }
-          '''
-          wrapper = "\n".join(line[10:] if line.startswith("          ") else line for line in wrapper.splitlines()).strip() + "\n"
-          Path("frontend/src/StandalonePlansRoute.jsx").write_text(wrapper, encoding="utf-8")
-
-          test_content = '''const { test, expect } = require("@playwright/test");
-
-          test.describe("standalone authenticated plans route", () => {
-            test("renders real pricing and the country selector", async ({ page }) => {
-              await page.route("**/api/auth/me", async (route) => {
-                await route.fulfill({
-                  status: 200,
-                  contentType: "application/json",
-                  body: JSON.stringify({
-                    token: "plans-route-test-token",
-                    user: {
-                      id: "plans-route-test-owner",
-                      business_id: "plans-route-test-business",
-                      email: "plans-route-test@example.com",
-                      email_verified: true,
-                      role: "owner",
-                      has_app_access: false,
-                      plan: "",
-                    },
-                  }),
-                });
-              });
-              await page.route("**/api/billing/subscription-status", async (route) => {
-                await route.fulfill({
-                  status: 200,
-                  contentType: "application/json",
-                  body: JSON.stringify({ plan: null, has_app_access: false, subscription_status: "unpaid" }),
-                });
-              });
-
-              await page.goto("/plans?country=NZ");
-              await page.waitForLoadState("domcontentloaded");
-              await expect(page).toHaveURL(/\\/plans(?:[?#]|$)/i);
-              await expect(page.locator("body")).toContainText("Churvox pricing");
-              await expect(page.locator("body")).toContainText("Pricing country");
-              await expect(page.locator("body")).toContainText(/Start.*Crew.*Operator.*Command/s);
-              await expect(page.locator("[data-checkout-trace]").first()).toHaveAttribute("data-checkout-trace", /auth-recover/);
-              const country = page.locator("select").filter({ has: page.locator('option[value="NZ"]') }).first();
-              await expect(country).toBeVisible();
-              await expect(country.locator("option")).toHaveCount(4);
-            });
-          });
-          '''
-          test_content = "\n".join(line[10:] if line.startswith("          ") else line for line in test_content.splitlines()).strip() + "\n"
-          Path("frontend/tests/e2e/churvox-plans-route-contract.spec.js").write_text(test_content, encoding="utf-8")
+        run: python3 scripts/agent_apply_plans_fix.py
 
       - name: Verify route source contract
         run: |
@@ -156,31 +66,45 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run local plans route contract
+        id: plans_browser
+        continue-on-error: true
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
-        run: npx playwright test tests/e2e/churvox-plans-route-contract.spec.js --project=desktop-chromium --reporter=line
+        run: |
+          set -o pipefail
+          npx playwright test tests/e2e/churvox-plans-route-contract.spec.js --project=desktop-chromium --reporter=line 2>&1 | tee ../plans-route-test-failure.txt
 
-      - name: Run authenticated plans regression when credentials exist
-        if: env.CHURVOX_E2E_EMAIL != '' && env.CHURVOX_E2E_PASSWORD != ''
+      - name: Save exact browser failure
+        if: steps.plans_browser.outcome == 'failure'
+        run: |
+          git config user.name "Churvox Agent"
+          git config user.email "hello@churvox.com"
+          git add plans-route-test-failure.txt
+          git commit -m "Record plans route browser failure"
+          git push origin HEAD:agent/fix-plans-route-and-flow
+          exit 1
+
+      - name: Run authenticated plans regression
+        if: env.CHURVOX_E2E_PASSWORD != ''
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: npx playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g "Plans page loads billing JSON" --reporter=line
 
-      - name: Run owner and worker route gauntlet when credentials exist
-        if: env.CHURVOX_E2E_EMAIL != '' && env.CHURVOX_E2E_PASSWORD != ''
+      - name: Run owner and worker route gauntlet
+        if: env.CHURVOX_E2E_PASSWORD != ''
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
-          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL || secrets.CHURVOX_E2E_EMAIL }}
+          CHURVOX_OWNER_EMAIL: ${{ secrets.CHURVOX_OWNER_EMAIL || secrets.CHURVOX_E2E_EMAIL || 'hello@churvox.com' }}
           CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD || secrets.CHURVOX_E2E_PASSWORD }}
           CHURVOX_WORKER_EMAIL: ${{ secrets.CHURVOX_WORKER_EMAIL }}
           CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
         run: npx playwright test tests/e2e/churvox-human-business-gauntlet.spec.js --project=desktop-chromium --workers=1 -g "owner dashboard|worker app route" --reporter=line
 
-      - name: Run client job quote invoice journey when credentials exist
-        if: env.CHURVOX_E2E_EMAIL != '' && env.CHURVOX_E2E_PASSWORD != ''
+      - name: Run client job quote invoice journey
+        if: env.CHURVOX_E2E_PASSWORD != ''
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
@@ -188,18 +112,18 @@ jobs:
         run: npx playwright test tests/e2e/churvox-real-business-audit-v2.spec.js --project=desktop-chromium --workers=1 -g "creates client, job, quote and invoice" --reporter=line
 
       - name: Clean journey test records
-        if: always() && env.CHURVOX_E2E_EMAIL != '' && env.CHURVOX_E2E_PASSWORD != ''
+        if: always() && env.CHURVOX_E2E_PASSWORD != ''
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
           CHURVOX_E2E_CLEANUP: "1"
         run: npx playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g "cleanup live Playwright test records" --reporter=line
 
-      - name: Commit verified fix and remove temporary workflow
+      - name: Commit verified fix and remove temporary helpers
         run: |
-          rm -f .github/workflows/agent-fix-plans-route.yml
+          rm -f .github/workflows/agent-fix-plans-route.yml scripts/agent_apply_plans_fix.py plans-route-test-failure.txt
           git config user.name "Churvox Agent"
           git config user.email "hello@churvox.com"
-          git add frontend/src/App.js frontend/src/StandalonePlansRoute.jsx frontend/tests/e2e/churvox-plans-route-contract.spec.js .github/workflows/agent-fix-plans-route.yml
+          git add -A frontend/src/App.js frontend/src/StandalonePlansRoute.jsx frontend/tests/e2e/churvox-plans-route-contract.spec.js .github/workflows/agent-fix-plans-route.yml scripts/agent_apply_plans_fix.py plans-route-test-failure.txt
           git commit -m "Fix standalone plans route"
           git push origin HEAD:agent/fix-plans-route-and-flow
