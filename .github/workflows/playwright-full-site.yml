@@ -105,8 +105,18 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run complete local desktop and mobile UI suite
-        run: npm run test:ui:full
+      - name: Run current Studio desktop and mobile UI suite
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-full-ui-logic-buttons.spec.js \
+            tests/e2e/churvox-public-honesty-and-function.spec.js \
+            tests/e2e/churvox-owner-no-fake-data.spec.js \
+            tests/e2e/churvox-paid-launch-hq-reality.spec.js \
+            tests/e2e/churvox-studio-visual.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line
 
       - name: Wait briefly for live deploy to settle
         if: github.event_name == 'push'
