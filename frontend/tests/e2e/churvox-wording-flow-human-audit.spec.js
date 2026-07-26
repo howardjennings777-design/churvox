@@ -107,6 +107,40 @@ async function settle(page) {
 async function auditVisibleWords(page, label, { blockPreviewLanguage = false } = {}) {
   const result = await page.evaluate(() => {
     const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+    const colour = (value) => {
+      const match = String(value || '').match(/rgba?\(([^)]+)\)/i);
+      if (!match) return null;
+      const parts = match[1].split(',').map((part) => Number(String(part).trim()));
+      if (parts.length < 3 || parts.some((part, index) => index < 3 && !Number.isFinite(part))) return null;
+      return { r: parts[0], g: parts[1], b: parts[2], a: Number.isFinite(parts[3]) ? parts[3] : 1 };
+    };
+    const channel = (value) => {
+      const next = Math.max(0, Math.min(255, Number(value || 0))) / 255;
+      return next <= 0.03928 ? next / 12.92 : Math.pow((next + 0.055) / 1.055, 2.4);
+    };
+    const luminance = (value) => (0.2126 * channel(value.r)) + (0.7152 * channel(value.g)) + (0.0722 * channel(value.b));
+    const contrast = (first, second) => {
+      if (!first || !second) return 21;
+      const high = Math.max(luminance(first), luminance(second));
+      const low = Math.min(luminance(first), luminance(second));
+      return (high + 0.05) / (low + 0.05);
+    };
+    const background = (element) => {
+      let node = element;
+      while (node && node !== document.documentElement) {
+        const style = getComputedStyle(node);
+        const value = colour(style.backgroundColor);
+        if (value && value.a > 0.35) return value;
+        if (String(style.backgroundImage || 'none') !== 'none') {
+          const hint = `${node.className || ''} ${node.id || ''}`;
+          return /dark|hero|header|nav|sidebar|shell|command|hq|worker|owner/i.test(hint)
+            ? { r: 17, g: 24, b: 39, a: 1 }
+            : { r: 247, g: 243, b: 234, a: 1 };
+        }
+        node = node.parentElement;
+      }
+      return colour(getComputedStyle(document.body).backgroundColor) || { r: 247, g: 243, b: 234, a: 1 };
+    };
     const visible = (element) => {
       if (!element || element.closest('[hidden], [aria-hidden="true"]')) return false;
       const style = getComputedStyle(element);
@@ -116,12 +150,6 @@ async function auditVisibleWords(page, label, { blockPreviewLanguage = false } =
         && style.display !== 'none'
         && style.visibility !== 'hidden'
         && Number(style.opacity || '1') > 0.02;
-    };
-    const colourAlpha = (value) => {
-      const match = String(value || '').match(/rgba?\(([^)]+)\)/i);
-      if (!match) return 1;
-      const parts = match[1].split(',').map((part) => Number(String(part).trim()));
-      return Number.isFinite(parts[3]) ? parts[3] : 1;
     };
     const classText = (element) => `${element.className || ''} ${element.parentElement?.className || ''}`;
     const pillLike = (element) => /pill|badge|chip|tag|status|filter|segment|tab|count|notice|current|health/i.test(classText(element))
@@ -146,13 +174,15 @@ async function auditVisibleWords(page, label, { blockPreviewLanguage = false } =
         const style = getComputedStyle(node);
         const rect = node.getBoundingClientRect();
         const size = Number.parseFloat(style.fontSize || '0');
+        const foreground = colour(style.color);
         const clipped = style.overflow === 'hidden' && node.clientWidth > 0 && node.scrollWidth > node.clientWidth + 6;
         return rect.width > 1
           && rect.height > 1
           && style.display !== 'none'
           && style.visibility !== 'hidden'
           && Number(style.opacity || '1') >= 0.5
-          && colourAlpha(style.color) >= 0.5
+          && (!foreground || foreground.a >= 0.5)
+          && contrast(foreground, background(node)) >= 2.35
           && (!Number.isFinite(size) || size === 0 || size >= 9)
           && !clipped;
       });
