@@ -27,6 +27,12 @@ const unwrap = (payload) => payload?.data?.data ?? payload?.data ?? payload;
 const pick = (row, ...keys) => keys.map((key) => row?.[key]).find((value) => value !== undefined && value !== null && clean(value)) || "";
 const numberPick = (row, ...keys) => Number(keys.map((key) => row?.[key]).find((value) => value !== undefined && value !== null && value !== "") || 0);
 
+const PLATFORM_OWNER_EMAILS = new Set([
+  "hello@churvox.com",
+  "howardjennings777@gmail.com",
+  "howardjennings77@gmail.com",
+]);
+
 function valueList(value) {
   if (Array.isArray(value)) return value.map(keyOf);
   if (value && typeof value === "object") return Object.keys(value).filter((key) => value[key]).map(keyOf);
@@ -50,9 +56,22 @@ function hasAccountingAddon(user) {
   return /accounting|xero|myob|sync|true|enabled/.test(values);
 }
 
+function verifiedSessionEmail() {
+  if (typeof window === "undefined") return "";
+  try {
+    const raw = window.localStorage.getItem("churvox_auth_session_snapshot_v1");
+    if (!raw) return "";
+    const snapshot = JSON.parse(raw);
+    return clean(snapshot?.user?.email).toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
 export function createAccess(user = {}) {
-  const ownerEmail = clean(user?.email).toLowerCase();
-  const admin = ownerEmail === "hello@churvox.com" || ownerEmail === "howardjennings777@gmail.com" || user?.is_platform_owner === true || user?.is_admin === true || ["platform_owner", "platform-admin", "platform_admin"].includes(clean(user?.role).toLowerCase());
+  const ownerEmail = clean(user?.email || user?.user_email || user?.login_email || verifiedSessionEmail()).toLowerCase();
+  const role = clean(user?.role || user?.user_role || user?.account_role).toLowerCase().replace(/\s+/g, "_");
+  const admin = PLATFORM_OWNER_EMAILS.has(ownerEmail) || user?.is_platform_owner === true || user?.is_admin === true || ["platform_owner", "platform-owner", "platform_admin", "platform-admin"].includes(role);
   const planKey = admin ? "command" : normalizePlan(user.plan || user.plan_key || user.selected_plan || user.tier || user.subscription_plan || user?.business?.plan);
   const accounting = admin || planKey === "command" || hasAccountingAddon(user);
   const rank = PLAN_RANK[planKey] || 0;
