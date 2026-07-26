@@ -1,19 +1,17 @@
 import React from "react";
-import FreshPlans from "./churvox-fresh/FreshPlans";
+import "./churvox-studio/studioIconBridge";
+import ChurvoxStudioApp from "./churvox-studio/ChurvoxStudioApp";
+import StudioReleaseBridge from "./churvox-studio/StudioReleaseBridge";
+import StudioCleanupBridge from "./churvox-studio/StudioCleanupBridge";
+import "./churvox-studio/studioPolish.css";
+import "./churvox-studio/studioCleanup.css";
 
 export default function StandalonePlansRoute() {
-  const handleNavigate = React.useCallback((target) => {
-    const section = String(target || "").trim().toLowerCase();
-    if (section === "support" || section === "help") {
-      window.location.assign("/support");
-      return;
-    }
-    window.location.assign(section ? `/dashboard#${section}` : "/dashboard");
-  }, []);
-
   return (
-    <main className="cvStandalonePlansRoute" data-checkout-trace="plans-route-auth-recover-v1">
-      <FreshPlans onNavigate={handleNavigate} />
-    </main>
+    <div className="cvStandalonePlansRoute" data-checkout-trace="plans-current-owner-shell-v1">
+      <ChurvoxStudioApp />
+      <StudioReleaseBridge />
+      <StudioCleanupBridge />
+    </div>
   );
 }
