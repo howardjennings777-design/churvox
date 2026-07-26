@@ -123,6 +123,7 @@ const visibleTextRuntime = "frontend/src/runtime/churvoxVisibleControlTextRuntim
 requireAll(visibleTextRuntime, [
   "installVisibleControlTextRuntime",
   "textLooksHidden",
+  "contrastRatio",
   "cvVisibleControlTextRepair",
   "cvNeedsVisibleControlLabel",
   "MutationObserver",
@@ -155,7 +156,7 @@ requireAll(connectedHq, [
   'import ChurvoxHQPage from "../pages/ChurvoxHQPage"',
   "<ChurvoxHQPage embedded />",
   'data-live-hq-workspace="true"',
-  "No sample businesses, billing totals or tester records are substituted.",
+  "Only authenticated live businesses, billing totals and tester records are shown.",
 ]);
 forbidText(connectedHq, "<HQNext />", "sample-only HQ mock");
 
