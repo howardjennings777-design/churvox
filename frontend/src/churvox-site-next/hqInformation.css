@@ -1,0 +1,178 @@
+.cvhqSnapshot {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cvhqSnapshot > div {
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.cvhqSnapshot small {
+  color: #aeb7c4;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cvhqSnapshot strong {
+  overflow-wrap: anywhere;
+  color: #fff;
+  font-size: clamp(17px, 2vw, 25px);
+  line-height: 1.1;
+}
+
+.cvhqSourceGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cvhqSourceGrid .cvhqInfoCard {
+  display: block;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.cvhqInfoCard > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.cvhqInfoCard > header > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.cvhqInfoCard > header svg {
+  flex: 0 0 auto;
+  color: #ff9d69;
+}
+
+.cvhqInfoCard > header span:not(.cvhqSourceState) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cvhqInfoCard > header strong {
+  color: #fff;
+  font-size: 14px;
+}
+
+.cvhqInfoCard > header small {
+  overflow: hidden;
+  color: #aeb7c4;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cvhqSourceState {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: #dbe3ec;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.cvhqSourceState.good {
+  color: #bbf7d0;
+  border-color: rgba(74, 222, 128, 0.34);
+  background: rgba(22, 101, 52, 0.26);
+}
+
+.cvhqSourceState.bad,
+.cvhqSourceState.warn {
+  color: #fed7aa;
+  border-color: rgba(251, 146, 60, 0.35);
+  background: rgba(154, 52, 18, 0.25);
+}
+
+.cvhqMetricGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.cvhqMetricGrid > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.13);
+}
+
+.cvhqMetricGrid small {
+  color: #aeb7c4;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.cvhqMetricGrid strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: clamp(18px, 2vw, 27px);
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cvhqMetricGrid p,
+.cvhqSourceMessage,
+.cvhqNoMetrics p {
+  margin: 0;
+  color: #aeb7c4;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.cvhqSourceMessage {
+  margin-top: 11px;
+}
+
+.cvhqNoMetrics {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+}
+
+.cvhqNoMetrics strong {
+  color: #f8fafc;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .cvhqSnapshot,
+  .cvhqSourceGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .cvhqMetricGrid {
+    grid-template-columns: 1fr;
+  }
+}
