@@ -7,9 +7,90 @@ const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const WORKER_EMAIL = String(process.env.CHURVOX_WORKER_EMAIL || '').trim().toLowerCase();
 const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || process.env.CHURVOX_OWNER_PASSWORD || '';
 
-const OWNER_PAGES = ['today', 'command', 'parked', 'completed', 'jobs', 'schedule', 'recurring', 'clients', 'messages', 'crew', 'field', 'timesheets', 'access', 'quotes', 'invoices', 'money', 'accounting', 'settings', 'plans', 'support'];
-const WORKER_ROUTES = ['/worker/today', '/worker/jobs', '/worker/messages', '/worker/help'];
-const PUBLIC_ROUTES = ['/', '/pricing', '/login'];
+const PUBLIC_ROUTES = [
+  '/', '/product', '/features', '/about', '/security', '/support', '/refunds-cancellations',
+  '/industries/landscaping', '/demo', '/pricing', '/request', '/contact', '/public/demo',
+  '/public/request', '/app', '/login', '/signup', '/register', '/verify-email',
+  '/forgot-password', '/reset-password', '/privacy', '/terms', '/legal/privacy',
+  '/legal/terms', '/delete-account',
+];
+
+const WORKER_ROUTES = [
+  '/worker/today', '/worker/jobs', '/worker/messages', '/worker/help', '/worker/ops', '/worker/settings',
+];
+
+const OWNER_PAGES = {
+  today: { area: 'Today', selector: '.cvsToday', nav: 'Today' },
+  command: { area: 'Command', selector: '.cvsDecisionTheatre', nav: 'Command' },
+  parked: { area: 'Command', selector: '.cvsDecisionTheatre', nav: 'Command' },
+  completed: { area: 'Command', selector: '.cvsDecisionTheatre', nav: 'Command' },
+  jobs: { area: 'Jobs', selector: '.cvsDispatchBoard, .cvsJobList', nav: 'Jobs' },
+  schedule: { area: 'Jobs', selector: '.cvsWeekBoard', nav: 'Jobs' },
+  recurring: { area: 'Jobs', selector: '.cvsCadenceBoard', nav: 'Jobs' },
+  clients: { area: 'Clients', selector: '.cvsClientCockpit', nav: 'Clients' },
+  messages: { area: 'Messages', selector: '.cvsConversationDesk', nav: 'Messages' },
+  crew: { area: 'Team', selector: '.cvsCrewMatrix', nav: 'Team' },
+  field: { area: 'Team', selector: '.cvsFieldSignal', nav: 'Team' },
+  timesheets: { area: 'Team', selector: '.cvsTimeBoard', nav: 'Team' },
+  access: { area: 'Team', selector: '.cvsAccessMatrix', nav: 'Team' },
+  quotes: { area: 'Money', selector: '.cvsQuoteRiver', nav: 'Money' },
+  invoices: { area: 'Money', selector: '.cvsLedger', nav: 'Money' },
+  money: { area: 'Money', selector: '.cvsMoneyRiver', nav: 'Money' },
+  accounting: { area: 'Money', selector: '.cvsAccountingBridge, .cvsEmpty', nav: 'Money' },
+  settings: { area: 'Settings', selector: '.cvsSettingsStudio' },
+  support: { area: 'Help', selector: '.cvsSupportStudio' },
+};
+
+const LEGACY_OWNER_ENTRIES = [
+  ['/dashboard#smart', 'today'],
+  ['/dashboard#smarthub', 'today'],
+  ['/dashboard#smart-hub', 'today'],
+  ['/dashboard#aiguide', 'today'],
+  ['/dashboard#ai-guide', 'today'],
+  ['/dashboard#this-route-does-not-exist', 'today'],
+  ['/dashboard#work', 'jobs'],
+  ['/dashboard#job', 'jobs'],
+  ['/dashboard#calendar', 'schedule'],
+  ['/dashboard#repeat-work', 'recurring'],
+  ['/dashboard#workers', 'crew'],
+  ['/dashboard#staff', 'crew'],
+  ['/dashboard#team', 'crew'],
+  ['/dashboard#people', 'crew'],
+  ['/dashboard#worker', 'field'],
+  ['/dashboard#dispatch', 'field'],
+  ['/dashboard#crew-map', 'field'],
+  ['/dashboard#live-field', 'field'],
+  ['/dashboard#time', 'timesheets'],
+  ['/dashboard#payroll', 'timesheets'],
+  ['/dashboard#pulse', 'money'],
+  ['/dashboard#reports', 'invoices'],
+  ['/dashboard#xero', 'accounting'],
+  ['/dashboard#inbox', 'messages'],
+  ['/dashboard#command-desk', 'command'],
+  ['/dashboard#command-board', 'command'],
+  ['/dashboard#help', 'support'],
+  ['/dashboard#guide', 'support'],
+  ['/dashboard#setup', 'support'],
+  ['/dashboard#setupassistant', 'support'],
+  ['/dashboard#firstrun', 'support'],
+  ['/dashboard#onboarding', 'support'],
+  ['/smart-hub', 'today'],
+  ['/command-board', 'command'],
+  ['/operator-tools', 'command'],
+  ['/jobs', 'jobs'],
+  ['/clients', 'clients'],
+  ['/quotes', 'quotes'],
+  ['/invoices', 'invoices'],
+  ['/team', 'crew'],
+  ['/payroll', 'timesheets'],
+  ['/dispatch', 'field'],
+  ['/crew-map', 'field'],
+  ['/schedule', 'schedule'],
+  ['/settings', 'settings'],
+  ['/support-board', 'support'],
+  ['/offline-sync', 'support'],
+  ['/onboarding', 'support'],
+];
 
 function apiUrl(path) {
   return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
@@ -64,7 +145,7 @@ function watchRuntime(page) {
 
 async function assertHealthy(page, label, { owner = false, worker = false } = {}) {
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(650);
   if (owner) await expect(page.locator('[data-churvox-layout="fresh-studio"]'), `${label} did not load current Studio`).toBeVisible({ timeout: 20_000 });
   if (worker) await expect(page.locator('.cvWorkerRouteShell, .cvWorkerNoFuss, [data-churvox-worker]'), `${label} did not load Worker View`).toBeVisible({ timeout: 20_000 });
 
@@ -92,6 +173,17 @@ async function assertHealthy(page, label, { owner = false, worker = false } = {}
   expect(result.text).not.toMatch(/demo data|mock data|dummy|fake customer|fake job|lorem|debug mode|todo/i);
 }
 
+async function assertOwnerPage(page, screen, label = screen) {
+  const expected = OWNER_PAGES[screen];
+  expect(expected, `No page expectation exists for ${screen}`).toBeTruthy();
+  await expect(page.locator(`[data-churvox-layout="fresh-studio"].page-${screen}`), `${label} rendered the wrong Studio page`).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator(expected.selector).first(), `${label} is missing its own page layout`).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.cvsContextIdentity b'), `${label} has the wrong area heading`).toHaveText(new RegExp(`^${expected.area}$`, 'i'));
+  if (expected.nav) await expect(page.locator('.cvsWorkstream button.active'), `${label} highlights the wrong main navigation`).toContainText(new RegExp(expected.nav, 'i'));
+  if (screen === 'support') await expect(page.locator('.cvsWorkspace')).toContainText(/Help and support/i);
+  else await expect(page.locator('.cvsWorkspace')).not.toContainText(/Help and support/i);
+}
+
 async function uiLogin(page, email, password, role) {
   await page.goto(`${BASE_URL}/login${role === 'worker' ? '?worker=1' : ''}`, { waitUntil: 'domcontentloaded' });
   await page.getByLabel(/email/i).first().fill(email);
@@ -107,15 +199,23 @@ async function uiLogin(page, email, password, role) {
   expect(page.url()).toMatch(role === 'worker' ? /\/worker(?:[/?#]|$)/i : /\/dashboard(?:[/?#]|$)|\/plans(?:[/?#]|$)/i);
 }
 
-test.describe('Current Studio public and login entry', () => {
-  for (const route of PUBLIC_ROUTES) {
-    test(`public route is readable and healthy: ${route}`, async ({ page }) => {
+test.describe('Every public and account entry page', () => {
+  test('all public routes are readable and healthy', async ({ page }) => {
+    for (const route of PUBLIC_ROUTES) {
       await page.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded' });
-      await assertHealthy(page, route);
-    });
-  }
+      await assertHealthy(page, `public ${route}`);
+    }
+  });
 
-  test('owner login opens the owner workspace', async ({ page }) => {
+  test('sign-in aliases reach the login page', async ({ page }) => {
+    for (const route of ['/signin', '/sign-in']) {
+      await page.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded' });
+      await expect.poll(() => page.url()).toMatch(/\/login(?:[?#]|$)/i);
+      await assertHealthy(page, route);
+    }
+  });
+
+  test('owner and worker login open the correct product', async ({ page }) => {
     if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error('Owner credential is required.');
     await uiLogin(page, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
   });
@@ -126,8 +226,8 @@ test.describe('Current Studio public and login entry', () => {
   });
 });
 
-test.describe('Current Studio owner desktop and phone crawl', () => {
-  test('every current owner page opens cleanly with live controls', async ({ browser, request }) => {
+test.describe('Every owner page and legacy entry', () => {
+  test('every current owner page opens with the correct identity and layout', async ({ browser, request }) => {
     if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error('Owner credential is required.');
     const token = await apiLogin(request, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
     const context = await browser.newContext({ serviceWorkers: 'block' });
@@ -135,13 +235,47 @@ test.describe('Current Studio owner desktop and phone crawl', () => {
     const page = await context.newPage();
     const errors = watchRuntime(page);
     try {
-      for (const screen of OWNER_PAGES) {
+      for (const screen of Object.keys(OWNER_PAGES)) {
         await page.goto(`${BASE_URL}/dashboard${screen === 'today' ? '' : `#${screen}`}`, { waitUntil: 'domcontentloaded' });
-        expect(page.url(), `${screen} redirected out of owner workspace`).toMatch(/\/dashboard(?:[/?#]|$)/i);
         await assertHealthy(page, `owner ${screen}`, { owner: true });
-        await expect(page.locator(`.cvsStudio.page-${screen}`), `${screen} did not become the active Studio page`).toBeVisible();
+        await assertOwnerPage(page, screen);
       }
-      expect(errors, 'runtime errors across owner crawl').toEqual([]);
+      expect(errors, 'runtime errors across owner page crawl').toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('every old bookmark and redirect lands on the intended page', async ({ browser, request }) => {
+    if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error('Owner credential is required.');
+    const token = await apiLogin(request, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
+    const context = await browser.newContext({ serviceWorkers: 'block' });
+    await seedSession(context, token, OWNER_EMAIL, 'owner');
+    const page = await context.newPage();
+    try {
+      for (const [entry, expected] of LEGACY_OWNER_ENTRIES) {
+        await page.goto(`${BASE_URL}${entry}`, { waitUntil: 'domcontentloaded' });
+        await assertHealthy(page, `legacy ${entry}`, { owner: true });
+        await assertOwnerPage(page, expected, entry);
+      }
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('Plans always opens the standalone billing page', async ({ browser, request }) => {
+    if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error('Owner credential is required.');
+    const token = await apiLogin(request, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
+    const context = await browser.newContext({ serviceWorkers: 'block' });
+    await seedSession(context, token, OWNER_EMAIL, 'owner');
+    const page = await context.newPage();
+    try {
+      for (const entry of ['/plans', '/dashboard#plans']) {
+        await page.goto(`${BASE_URL}${entry}`, { waitUntil: 'domcontentloaded' });
+        await expect.poll(() => page.url(), { timeout: 20_000 }).toMatch(/\/plans(?:[?#]|$)/i);
+        await expect(page.locator('.cvStandalonePlansRoute')).toBeVisible({ timeout: 20_000 });
+        await assertHealthy(page, entry);
+      }
     } finally {
       await context.close();
     }
@@ -158,15 +292,15 @@ test.describe('Current Studio owner desktop and phone crawl', () => {
       await assertHealthy(page, 'owner navigation', { owner: true });
       if (isMobile) {
         const dock = page.locator('.cvsMobileDock');
-        for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) await expect(dock.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
+        for (const item of ['Today', 'Jobs', 'Command', 'Messages', 'More']) await expect(dock.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
         await dock.locator('button').filter({ hasText: /More/i }).first().click();
         const more = page.locator('.cvsMobileMore section');
         await expect(more).toBeVisible();
-        for (const item of ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command', 'Settings', 'Plans & billing', 'Help']) await expect(more.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
+        for (const item of ['Today', 'Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command', 'Settings', 'Plans & billing', 'Help']) await expect(more.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
       } else {
         const nav = page.locator('.cvsWorkstream');
-        await expect(nav, 'desktop Studio workstream did not render').toBeVisible();
-        for (const item of ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command']) await expect(nav.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing desktop ${item}`).toBeVisible();
+        await expect(nav).toBeVisible();
+        for (const item of ['Today', 'Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command']) await expect(nav.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing desktop ${item}`).toBeVisible();
         await page.locator('.cvsProfileWrap > button.profile').click();
         for (const item of ['Settings', 'Plans & billing', 'Help', 'Log out']) await expect(page.locator('.cvsProfileMenu').locator('button').filter({ hasText: new RegExp(item, 'i') }).first()).toBeVisible();
       }
@@ -176,8 +310,8 @@ test.describe('Current Studio owner desktop and phone crawl', () => {
   });
 });
 
-test.describe('Current Worker View and role boundaries', () => {
-  test('worker routes are clean and worker-scoped', async ({ browser, request }) => {
+test.describe('Every Worker View page and role boundary', () => {
+  test('all worker routes are clean and worker-scoped', async ({ browser, request }) => {
     if (!WORKER_EMAIL || !WORKER_PASSWORD) throw new Error('Worker credential is required.');
     const token = await apiLogin(request, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
     const context = await browser.newContext({ serviceWorkers: 'block' });
@@ -197,7 +331,7 @@ test.describe('Current Worker View and role boundaries', () => {
     }
   });
 
-  test('owner and worker cannot enter each other’s protected rooms', async ({ browser, request }) => {
+  test('owner and worker cannot enter each other’s protected areas', async ({ browser, request }) => {
     if (!OWNER_EMAIL || !OWNER_PASSWORD || !WORKER_EMAIL || !WORKER_PASSWORD) throw new Error('Owner and worker credentials are required.');
     const ownerToken = await apiLogin(request, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
     const workerToken = await apiLogin(request, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
