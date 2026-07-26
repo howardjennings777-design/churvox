@@ -1,10 +1,10 @@
 import React from "react";
 import { ArrowUpRight, RefreshCw, ShieldCheck } from "lucide-react";
-import HQNext from "./HQNext";
+import ChurvoxHQPage from "../pages/ChurvoxHQPage";
 import { loadHqLiveStatus } from "./hqLiveData";
 import "./hqConnected.css";
 
-export const HQ_CONNECTED_BUILD = "churvox-hq-connected-20260723";
+export const HQ_CONNECTED_BUILD = "churvox-hq-connected-live-20260726";
 
 if (typeof window !== "undefined") {
   window.__CHURVOX_HQ_CONNECTED_BUILD__ = HQ_CONNECTED_BUILD;
@@ -18,7 +18,7 @@ function tone(state) {
 }
 
 function label(state) {
-  if (state === "live") return "Live read connected";
+  if (state === "live") return "Live HQ reads connected";
   if (state === "locked") return "Platform owner access required";
   if (state === "loading") return "Checking HQ sources";
   return "HQ reads unavailable";
@@ -51,20 +51,20 @@ export default function HQConnected() {
   const visibleState = loading ? "loading" : status.state;
 
   return (
-    <div className="cvhqConnected" data-connected-hq-replacement="true">
+    <div className="cvhqConnected" data-connected-hq-replacement="true" data-live-hq-workspace="true">
       <section className="cvhqLiveRail" aria-label="Connected HQ read status">
         <div className="cvhqLiveSummary">
           <ShieldCheck size={24} />
           <div>
-            <small>Private connected HQ replacement</small>
+            <small>Connected My HQ</small>
             <h1>{status.connected} of {status.total} platform read sources confirmed</h1>
-            <p>Live platform health is read-only here. Account, billing, tester, support and data changes remain in the current validated HQ.</p>
+            <p>This private route now uses the same live HQ controls as the working /admin page. No sample businesses, billing totals or tester records are substituted.</p>
           </div>
         </div>
         <div className="cvhqLiveActions">
           <span className={`cvhqLiveState ${tone(visibleState)}`}>{label(visibleState)}</span>
           <button type="button" onClick={() => refresh()} disabled={loading}><RefreshCw size={16} className={loading ? "cvhqSpin" : ""} /> Refresh reads</button>
-          <a href="/admin">Open working HQ <ArrowUpRight size={16} /></a>
+          <a href="/admin">Open My HQ <ArrowUpRight size={16} /></a>
         </div>
         <div className="cvhqSourceGrid">
           {(status.sources || []).map((source) => (
@@ -74,13 +74,13 @@ export default function HQConnected() {
               <p>{source.message}</p>
             </article>
           ))}
-          {!status.sources?.length ? <article className="neutral"><div><strong>HQ platform reads</strong><span>{label(visibleState)}</span></div><b>—</b><p>No sample platform totals are substituted while live sources are unavailable.</p></article> : null}
+          {!status.sources?.length ? <article className="neutral"><div><strong>HQ platform reads</strong><span>{label(visibleState)}</span></div><b>—</b><p>No platform totals are shown until the live owner sources answer.</p></article> : null}
         </div>
         <footer>
-          <strong>Read-only boundary:</strong> this adapter contains authenticated GET requests only. The visual HQ below remains sample-labelled until each area receives a verified live mapping.
+          <strong>Wired boundary:</strong> the status adapter remains authenticated and read-only. Changes inside My HQ still use the existing validated platform-owner controls.
         </footer>
       </section>
-      <HQNext />
+      <ChurvoxHQPage embedded />
     </div>
   );
 }
