@@ -60,7 +60,7 @@ function buildWalkthrough(industry) {
         label: "Plan",
         title: "The job is ready to approve",
         summary: `The ${workerLabel.toLowerCase()}, timing, price basis and repeat setting are brought together before the job is released.`,
-        prepared: `${workerLabel}, date, time, price and job instructions.",
+        prepared: `${workerLabel}, date, time, price and job instructions.`,
         owner: "Approve the plan or change any detail.",
         status: "Ready for owner",
         progress: 30,
