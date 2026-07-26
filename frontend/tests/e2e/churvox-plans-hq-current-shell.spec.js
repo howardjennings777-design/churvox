@@ -12,6 +12,10 @@ const OWNER = {
   business_name: 'Churvox',
 };
 
+function json(route, body) {
+  return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+}
+
 async function installOwnerApi(page) {
   await page.addInitScript(() => {
     localStorage.setItem('token', 'plans-hq-owner-token');
@@ -22,60 +26,152 @@ async function installOwnerApi(page) {
     const path = url.pathname;
 
     if (path === '/api/auth/me') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, user: OWNER, ...OWNER }),
-      });
+      await json(route, { success: true, user: OWNER, ...OWNER });
       return;
     }
 
     if (path === '/api/billing/subscription-status') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: { plan: 'enterprise', stripe_customer_id: 'cus_current_shell' } }),
-      });
+      await json(route, { success: true, data: { plan: 'enterprise', stripe_customer_id: 'cus_current_shell' } });
       return;
     }
 
     if (path === '/api/plan/usage') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: {
-            plan_label: 'Command',
-            usage_verified: true,
-            limit_source: 'locked_paid_launch_limits_current_shell',
-            used: { active_team_members: 2, clients: 8, jobs_this_month: 14, ai_actions: 6 },
-            limits: { active_team_members: 50, clients: 10000, jobs_per_month: 1500, ai_actions: 2000 },
-          },
-        }),
+      await json(route, {
+        success: true,
+        data: {
+          plan_label: 'Command',
+          usage_verified: true,
+          limit_source: 'locked_paid_launch_limits_current_shell',
+          used: { active_team_members: 2, clients: 8, jobs_this_month: 14, ai_actions: 6 },
+          limits: { active_team_members: 50, clients: 10000, jobs_per_month: 1500, ai_actions: 2000 },
+        },
       });
       return;
     }
 
     if (path === '/api/billing/addons') {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { active: [] } }) });
+      await json(route, { success: true, data: { active: [] } });
       return;
     }
 
-    if (path.startsWith('/api/admin/owner') || path.startsWith('/api/platform/hq')) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: { count: 3, message: 'Live nested HQ source', lists: { all_users: [], businesses: [], events: [] } } }),
+    if (path === '/api/admin/owner/paid-launch-report') {
+      await json(route, {
+        success: true,
+        ready_to_take_payments: true,
+        counts: {
+          users_total: 24,
+          businesses_total: 8,
+          verified_paid_users: 3,
+          verified_trial_users: 2,
+          tester_users: 5,
+          billing_needs_verification: 1,
+          internal_users_excluded: 2,
+        },
+        billing: {
+          actual_mrr_nzd: 338,
+          estimated_mrr_nzd: 447,
+          verified_paid_users: [],
+          verified_trial_users: [],
+          tester_users: [],
+          needs_verification: [],
+          stripe: { available: true },
+        },
+        collections: { connected: true, counts: { users: 24, jobs: 42, clients: 18 }, latest: {} },
+        launch_checks: [{ key: 'database', label: 'Database', status: 'pass', detail: 'Live' }],
       });
       return;
     }
 
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data: [], items: [], records: [] }),
-    });
+    if (path === '/api/admin/owner-overview') {
+      await json(route, {
+        success: true,
+        data: {
+          metrics: {
+            total_users: 24,
+            total_businesses: 8,
+            active_today: 6,
+            total_jobs: 42,
+            total_invoices: 19,
+            total_clients: 18,
+          },
+          lists: { all_users: [], businesses: [], events: [], jobs: [], invoices: [], clients: [] },
+        },
+      });
+      return;
+    }
+
+    if (path === '/api/admin/owner/growth-report') {
+      await json(route, {
+        success: true,
+        counts: {
+          unique_total: 310,
+          new_unique_today: 12,
+          signups_total: 7,
+          accepted_testers: 4,
+          pageviews_total: 1280,
+        },
+        visitors: [],
+      });
+      return;
+    }
+
+    if (path === '/api/admin/owner/connection' || path === '/api/platform/hq/connection' || path === '/api/platform/hq') {
+      await json(route, {
+        success: true,
+        connected: true,
+        database_connected: true,
+        collections_seen: Array.from({ length: 16 }, (_, index) => `collection_${index + 1}`),
+        counts: { users: 24, jobs: 42, clients: 18 },
+        message: 'HQ is connected to the owner backend and database.',
+      });
+      return;
+    }
+
+    if (path === '/api/admin/owner/plan-report') {
+      await json(route, {
+        success: true,
+        paid_count: 3,
+        trial_count: 2,
+        free_tester_count: 5,
+        no_plan_count: 4,
+        monthly_revenue_estimate: 447,
+        paid_users: [],
+        trial_users: [],
+        free_testers: [],
+        no_plan_users: [],
+      });
+      return;
+    }
+
+    if (path === '/api/admin/owner/control-log') {
+      await json(route, {
+        success: true,
+        count: 9,
+        items: [{ action: 'tester_intake', created_at: new Date().toISOString() }],
+        testers: [{ email: 'tester@business.co.nz', status: 'accepted' }],
+      });
+      return;
+    }
+
+    if (path === '/api/admin/owner/testers') {
+      await json(route, {
+        success: true,
+        counts: { total: 5, accepted: 4, active: 3, invited_not_accepted: 1, revoked: 0 },
+        testers: [],
+        accepted_testers: [],
+        active_testers: [],
+        invited_testers: [],
+        revoked_testers: [],
+      });
+      return;
+    }
+
+    if (path === '/api/admin/owner/retention-email-status') {
+      await json(route, { success: true, state: { running: false }, templates: [] });
+      return;
+    }
+
+    await json(route, { success: true, data: [], items: [], records: [] });
   });
 }
 
@@ -136,7 +232,7 @@ test('Plans uses the current owner shell and explains every tier clearly', async
   expect(priceVisibility.color).not.toBe('rgba(0, 0, 0, 0)');
 });
 
-test('HQ shows real source results and useful navigation', async ({ page }) => {
+test('HQ shows useful live platform information before the deeper controls', async ({ page }) => {
   await page.goto('/admin', { waitUntil: 'domcontentloaded' });
 
   await expect(page.locator('#CHURVOX_HQ_SYSTEM')).toBeVisible();
@@ -144,7 +240,31 @@ test('HQ shows real source results and useful navigation', async ({ page }) => {
   await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /Owner app/i })).toBeVisible();
   await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /^Usage$/i })).toBeVisible();
   await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /Platform tools/i })).toBeVisible();
-  await expect(page.locator('.cvMyHqSourceGrid article')).toHaveCount(7);
+
+  const summary = page.locator('.cvMyHqAtAGlance');
+  await expect(summary).toBeVisible();
+  await expect(summary).toContainText('Live platform picture');
+  await expect(summary).toContainText('24');
+  await expect(summary).toContainText('8');
+  await expect(summary).toContainText('310');
+  await expect(summary).toContainText('42');
+  await expect(summary).toContainText('3');
+  await expect(summary).toContainText('$338.00');
+  await expect(summary).toContainText('6 active today');
+  await expect(summary).toContainText('7 sign-ups');
+  await expect(summary).toContainText('12 new today');
+  await expect(summary).toContainText('19 invoices');
+  await expect(summary).toContainText('2 verified trials');
+  await expect(summary).toContainText('1 need checking');
+
+  const sourceGrid = page.locator('.cvMyHqSourceGrid');
+  await expect(sourceGrid.locator('article')).toHaveCount(7);
   await expect(page.getByText('7 connected sources', { exact: false })).toBeVisible();
-  await expect(page.getByText('Live nested HQ source').first()).toBeVisible();
+  await expect(sourceGrid).toContainText('Ready to sell');
+  await expect(sourceGrid).toContainText('24 registered users');
+  await expect(sourceGrid).toContainText('310 public visitors');
+  await expect(sourceGrid).toContainText('Database live');
+  await expect(sourceGrid).toContainText('3 paid plans');
+  await expect(sourceGrid).toContainText('9 owner actions');
+  await expect(sourceGrid).toContainText('5 testers');
 });
