@@ -84,12 +84,24 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(connectedPublic).toContain("no visitor receives a false success");
   });
 
-  test("connects HQ to platform reads without exposing a second mutation path", async () => {
+  test("wires the private HQ rebuild to the same live platform-owner workspace", async () => {
     const connectedHq = read("src/churvox-site-next/HQConnected.jsx");
     const liveData = read("src/churvox-site-next/hqLiveData.js");
+    const liveHq = read("src/pages/ChurvoxHQPage.jsx");
+
     expect(connectedHq).toContain("HQ_CONNECTED_BUILD");
     expect(connectedHq).toContain('href="/admin"');
-    expect(connectedHq).toContain("No sample platform totals are substituted");
+    expect(connectedHq).toContain('import ChurvoxHQPage from "../pages/ChurvoxHQPage"');
+    expect(connectedHq).toContain("<ChurvoxHQPage embedded />");
+    expect(connectedHq).toContain('data-live-hq-workspace="true"');
+    expect(connectedHq).not.toContain("<HQNext />");
+
+    expect(liveHq).toContain("My Churvox HQ");
+    expect(liveHq).toContain("Live control");
+    expect(liveHq).toContain("Outreach");
+    expect(liveHq).toContain("Tester applications");
+    expect(liveHq).toContain('data-live-hq="true"');
+
     expect(liveData).toContain("HQ_LIVE_DATA_BUILD");
     expect(liveData).toContain("window.location.origin");
     expect(liveData).toContain('method: "GET"');
@@ -108,15 +120,33 @@ test.describe("Churvox whole website rebuild contract", () => {
     expect(contract).toContain("$99");
   });
 
-  test("gives HQ the full platform operating surface", async () => {
-    const contract = read("src/churvox-site-next/siteContract.js");
-    const hq = read("src/churvox-site-next/HQNext.jsx");
-    for (const area of ["Command", "Businesses", "Billing", "Testers", "Support", "Incidents", "Releases", "Data"]) {
-      expect(contract).toContain(`["${area}"`);
-      expect(hq).toContain(area);
+  test("gives My HQ the complete live platform operating surface", async () => {
+    const hqPage = read("src/pages/ChurvoxHQPage.jsx");
+    const liveControl = read("src/pages/PaidLaunchHQSystem.jsx");
+
+    for (const workspace of ["Live control", "Outreach", "Tester applications"]) {
+      expect(hqPage).toContain(workspace);
     }
-    expect(hq).toContain("CHURVOX_HQ_REBUILD_20260721");
-    expect(hq).toContain("No live endpoint, account, subscription or customer record is changed");
+    for (const area of ["Command", "Launch", "Users", "Billing", "Testers", "Businesses", "Activity", "System", "Data"]) {
+      expect(liveControl).toContain(area);
+    }
+    expect(liveControl).toContain("Live backend responses, truthful empty states, and no demo number substitution.");
+    expect(liveControl).toContain("RemoveCustomerDataCard");
+  });
+
+  test("repairs and audits pill wording as text a person can actually see", async () => {
+    const runtime = read("src/runtime/churvoxVisibleControlTextRuntime.js");
+    const audit = read("tests/e2e/churvox-wording-flow-human-audit.spec.js");
+    const entry = read("src/index.js");
+
+    expect(entry).toContain("./runtime/churvoxVisibleControlTextRuntime");
+    expect(runtime).toContain("cvVisibleControlTextRepair");
+    expect(runtime).toContain("cvNeedsVisibleControlLabel");
+    expect(runtime).toContain("textLooksHidden");
+    expect(runtime).toContain("MutationObserver");
+    expect(audit).toContain("pill text not human-visible");
+    expect(audit).toContain("owner can move through the whole working site");
+    expect(audit).toContain("worker can move through field pages");
   });
 
   test("locks owner authority and whole-site release gates into the contract", async () => {
