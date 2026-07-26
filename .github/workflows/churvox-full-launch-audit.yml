@@ -8,6 +8,10 @@ on:
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
       - 'frontend/server.cjs'
+      - 'frontend/src/runtime/churvoxVisibleControlTextRuntime.js'
+      - 'frontend/src/pages/ChurvoxHQPage.jsx'
+      - 'frontend/src/pages/ChurvoxHQPage.css'
+      - 'frontend/src/churvox-site-next/HQConnected.jsx'
       - 'scripts/churvox-hardcore-human-cleanup.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
   pull_request:
@@ -16,6 +20,10 @@ on:
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
       - 'frontend/server.cjs'
+      - 'frontend/src/runtime/churvoxVisibleControlTextRuntime.js'
+      - 'frontend/src/pages/ChurvoxHQPage.jsx'
+      - 'frontend/src/pages/ChurvoxHQPage.css'
+      - 'frontend/src/churvox-site-next/HQConnected.jsx'
       - 'scripts/churvox-hardcore-human-cleanup.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
 
@@ -29,7 +37,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: frontend
@@ -40,7 +48,10 @@ jobs:
       CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
       CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
       CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HQ_EMAIL: hello@churvox.com
+      CHURVOX_HQ_PASSWORD: ${{ secrets.CHURVOX_HQ_PASSWORD || secrets.CHURVOX_OWNER_PASSWORD }}
       CHURVOX_REQUIRE_AUTH_AUDIT: '1'
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
       CI: true
 
     steps:
@@ -77,14 +88,18 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Verify private owner credential
+      - name: Verify private owner credentials
         id: credential
         run: |
           test -n "$CHURVOX_OWNER_PASSWORD" || {
             echo "::error::CHURVOX_OWNER_PASSWORD repository secret is missing."
             exit 1
           }
-          echo "Owner credential is configured and remains masked."
+          test -n "$CHURVOX_HQ_PASSWORD" || {
+            echo "::error::Neither CHURVOX_HQ_PASSWORD nor the owner-password fallback is available."
+            exit 1
+          }
+          echo "Owner and HQ credentials are configured and remain masked."
 
       - name: Discover linked worker login
         id: worker
@@ -184,17 +199,19 @@ jobs:
           });
           NODE
 
-      - name: Run PR public and authenticated launch audit
+      - name: Run full wording, page, flow and boss-worker human audit
         id: run_audit
         run: |
           set +e
-          timeout --signal=TERM 30m npx playwright test \
+          timeout --signal=TERM 48m npx playwright test \
             tests/e2e/churvox-big-launch-audit.spec.js \
             tests/e2e/churvox-worker-assigned-job-ui.spec.js \
+            tests/e2e/churvox-wording-flow-human-audit.spec.js \
+            tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js \
             --grep-invert "worker job detail has real field controls for an assigned job" \
             --project=desktop-chromium \
             --project=mobile-chromium \
-            --workers=2 \
+            --workers=1 \
             --reporter=list 2>&1 | tee ../churvox-audit-output.txt
           status=${PIPESTATUS[0]}
           skipped=$(grep -Eo '[0-9]+ skipped' ../churvox-audit-output.txt | tail -n 1 | awk '{print $1}')
@@ -202,7 +219,7 @@ jobs:
           skipped=${skipped:-0}
           passed=${passed:-0}
           if [ "$skipped" != "0" ]; then
-            echo "::error::Authenticated launch audit is incomplete: $skipped tests were skipped."
+            echo "::error::Full human audit is incomplete: $skipped tests were skipped."
             status=1
           fi
           echo "status=$status" >> "$GITHUB_OUTPUT"
@@ -228,7 +245,7 @@ jobs:
           passed=${passed:-0}
           skipped=${skipped:-0}
           {
-            echo "# Churvox Full Launch Audit"
+            echo "# Churvox Full Human Audit"
             echo
             echo "- Surface: PR production build through its same-origin proxy"
             echo "- Backend: https://grassley-backend.onrender.com"
@@ -237,6 +254,9 @@ jobs:
             echo "- Status code: $status"
             echo "- Passed: $passed"
             echo "- Skipped: $skipped"
+            echo "- Wording and invisible-pill audit: required"
+            echo "- Public, owner, worker and My HQ flow audit: required"
+            echo "- Worker-to-boss and boss-to-worker live loop: required"
             echo "- Owner credential: ${{ steps.credential.outcome }}"
             echo "- Linked worker discovery: ${{ steps.worker.outcome }}"
             echo "- Audit fixture cleanup: ${{ steps.cleanup.outcome }}"
@@ -245,12 +265,12 @@ jobs:
             echo
             echo "## Output"
             echo '```txt'
-            tail -n 300 ../churvox-audit-output.txt || true
+            tail -n 500 ../churvox-audit-output.txt || true
             echo '```'
             echo
             echo "## Cleanup"
             echo '```txt'
-            tail -n 120 ../churvox-cleanup-output.txt || true
+            tail -n 160 ../churvox-cleanup-output.txt || true
             echo '```'
           } > ../audit-results/churvox-full-launch-audit-latest.md
 
