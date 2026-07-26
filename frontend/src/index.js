@@ -4,6 +4,7 @@ import './runtime/churvoxDateInputIsoGuardRuntime';
 import './runtime/churvoxPublicHelpRouteGuardRuntime';
 import './runtime/churvoxExplicitLogoutGuardRuntime';
 import './runtime/churvoxProtectedFetchAuthGuardRuntime';
+import './runtime/churvoxVisibleControlTextRuntime';
 import App from './App';
 import API_BASE from './lib/apiBase';
 import './index.css';
@@ -20,7 +21,7 @@ import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 import './runtime/churvoxTesterApplicationAttributionRuntime';
 import './runtime/churvoxFoundingTesterPopupRuntime';
 
-const CHURVOX_DEPLOY_BUILD = 'churvox-tester-attribution-20260720';
+const CHURVOX_DEPLOY_BUILD = 'churvox-wording-flow-hq-audit-20260726';
 const CHURVOX_JOB_DONE_DEPLOY_BUILD = 'churvox-job-done-live-v2-20260714';
 if (typeof window !== 'undefined') {
   window.__CHURVOX_DEPLOY_BUILD__ = CHURVOX_DEPLOY_BUILD;
