@@ -173,7 +173,7 @@ check(
   'safe browser proof rejects duplicate HQs and covers controls',
   validJs(mockedHqTest)
     && mockedHqTest.includes('Single rebuilt Churvox HQ')
-    && mockedHqTest.includes('CHURVOX_HQ_ONE_CONSOLE_20260727')
+    && mockedHqTest.includes('main#CHURVOX_HQ_SYSTEM.hqOne')
     && mockedHqTest.includes("page.locator('.hq2, .cvMyHq, #churvox-hq-tester-outreach-root')")
     && mockedHqTest.includes('tester actions use the final routes')
     && mockedHqTest.includes('endpoint failure stays visible')
@@ -185,8 +185,9 @@ check(
   'current shell proof checks exactly one HQ root and eight tabs',
   validJs(currentShellTest)
     && currentShellTest.includes('HQ is one clean console wired to all live owner sources')
-    && currentShellTest.includes("toHaveCount(1)")
-    && currentShellTest.includes("toHaveCount(8)")
+    && currentShellTest.includes('main#CHURVOX_HQ_SYSTEM.hqOne')
+    && currentShellTest.includes('toHaveCount(1)')
+    && currentShellTest.includes('toHaveCount(8)')
     && currentShellTest.includes('8 of 8 live sources')
     && currentShellTest.includes('$338.00'),
   'The release browser contract must prove one root, one navigation and useful live metrics',
@@ -196,7 +197,7 @@ check(
   'authenticated live HQ proof matches the single console',
   validJs(liveHqTest)
     && liveHqTest.includes("expect(report.source).toBe('live_database_and_stripe_v3')")
-    && liveHqTest.includes('CHURVOX_HQ_ONE_CONSOLE_20260727')
+    && liveHqTest.includes('main#CHURVOX_HQ_SYSTEM.hqOne')
     && liveHqTest.includes("page.locator('.hqOneMetric')")
     && liveHqTest.includes("page.goto('/admin'")
     && !/\btest\.(?:skip|only)\b|\bdescribe\.only\b/.test(liveHqTest),
