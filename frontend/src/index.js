@@ -20,6 +20,7 @@ import './styles/churvoxNavBadges.css';
 import './styles/churvoxIndustryMode.css';
 import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
+import './pages/ChurvoxHQMobileGuard.css';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 import './runtime/churvoxTesterApplicationAttributionRuntime';
