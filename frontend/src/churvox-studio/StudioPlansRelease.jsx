@@ -133,7 +133,7 @@ function CheckoutDialog({ selected, email, setEmail, close, continueToStripe, bu
           <div>
             <small>{isAddon ? "Secure add-on checkout" : "Secure plan checkout"}</small>
             <h2>{selected.name}</h2>
-            <p>{moneyText(selected.price)}/month + GST. Card details are entered directly in Stripe.</p>
+            <p>{moneyText(selected.price)}/month + GST. <b>New Zealand - NZD.</b> Card details are entered directly in Stripe.</p>
           </div>
           <button type="button" onClick={close} aria-label="Close"><X size={18} /></button>
         </header>
