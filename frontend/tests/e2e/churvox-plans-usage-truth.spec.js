@@ -38,8 +38,8 @@ async function bootPlans(page, usageResponse) {
 
   await page.goto('/plans', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('main[data-churvox-layout="fresh-studio"]')).toBeVisible({ timeout: 10000 });
-  await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText('Current plan', { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose the plan that matches how your business actually runs.' })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.cvReleaseCurrentPlan').getByRole('heading', { name: 'Operator' })).toBeVisible();
 }
 
 async function bootNewOwnerPlans(page) {
@@ -86,7 +86,7 @@ async function bootNewOwnerPlans(page) {
 
   await page.goto('/plans', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('main[data-churvox-layout="fresh-studio"]')).toBeVisible({ timeout: 10000 });
-  await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Choose the plan that matches how your business actually runs.' })).toBeVisible({ timeout: 10000 });
   return () => checkoutPayload;
 }
 
@@ -164,7 +164,7 @@ test.describe('Plans live usage truth', () => {
 
     const commandCard = page.locator('.cvReleasePlansGrid article').filter({ has: page.locator('h2:text-is("Command")') });
     await expect(commandCard).toHaveCount(1);
-    await commandCard.getByRole('button', { name: 'Start Command', exact: true }).click();
+    await commandCard.getByRole('button', { name: 'Upgrade to Command', exact: true }).click();
 
     const checkout = page.getByRole('dialog', { name: 'Command Stripe checkout' });
     await expect(checkout).toBeVisible();

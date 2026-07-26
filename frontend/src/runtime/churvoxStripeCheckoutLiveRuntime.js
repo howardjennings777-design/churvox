@@ -226,7 +226,10 @@ function showCheckoutError(planName, plan, message) {
 }
 
 function findCards(planName) {
-  return [...PUBLIC_PLAN_SELECTORS, ...APP_PLAN_SELECTORS].flatMap((selector) => Array.from(document.querySelectorAll(selector))).filter((card) => lower(card.textContent).includes(lower(planName)) || lower(card.dataset?.planName).includes(lower(planName)));
+  return [...PUBLIC_PLAN_SELECTORS, ...APP_PLAN_SELECTORS]
+    .flatMap((selector) => Array.from(document.querySelectorAll(selector)))
+    .filter((card) => !card.closest('.cvReleasePlansRoot'))
+    .filter((card) => lower(card.textContent).includes(lower(planName)) || lower(card.dataset?.planName).includes(lower(planName)));
 }
 
 function markStatus(planName, message, tone = '') {
@@ -259,6 +262,7 @@ function wirePublicCard(card, planName) {
 }
 
 function wireCheckoutCard(card, planName) {
+  if (card.closest('.cvReleasePlansRoot')) return;
   const plan = planByName(planName);
   if (!plan || card.dataset.stripeLiveReady === '1') return;
   card.dataset.stripeLiveReady = '1';
@@ -299,7 +303,7 @@ function clickHandler(event) {
     }
   }
   const button = event.target.closest('[data-stripe-live-plan],[data-stripe-plan]');
-  if (!button) return;
+  if (!button || button.closest('.cvReleasePlansRoot')) return;
   const planName = button.dataset.stripeLivePlan || button.dataset.stripePlan;
   if (!planByName(planName)) return;
   event.preventDefault();

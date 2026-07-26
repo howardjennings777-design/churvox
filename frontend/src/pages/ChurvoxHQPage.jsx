@@ -162,7 +162,10 @@ export default function ChurvoxHQPage({ embedded = false }) {
           <h1 id="cv-my-hq-title">{current.title}</h1>
           <p>{current.detail}</p>
         </div>
-        <span className={`cvMyHqLiveBadge ${sourceTone(sourceLoading ? "loading" : sourceStatus.state)}`}><i aria-hidden="true" /> {sourceLoading ? "Checking live HQ data" : `${sourceStatus.connected} of ${sourceStatus.total} sources connected`}</span>
+        <div className="cvMyHqConnectionState">
+          <strong>Connected to live HQ controls</strong>
+          <span className={`cvMyHqLiveBadge ${sourceTone(sourceLoading ? "loading" : sourceStatus.state)}`}><i aria-hidden="true" /> {sourceLoading ? "Checking live HQ data" : `${sourceStatus.connected} of ${sourceStatus.total} sources connected`}</span>
+        </div>
       </section>
 
       <section className="cvMyHqSources" aria-label="HQ live source information">
