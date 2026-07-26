@@ -39,20 +39,9 @@ jobs:
 
     - name: Build frontend
       working-directory: ./frontend
-      shell: bash
       env:
         CI: false
-      run: |
-        set -o pipefail
-        npm run build 2>&1 | tee "$RUNNER_TEMP/frontend-build.txt"
-
-    - name: Upload frontend build report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: churvox-frontend-build-report
-        path: ${{ runner.temp }}/frontend-build.txt
-        if-no-files-found: error
+      run: npm run build
 
     - name: Validate backend syntax
       shell: bash
@@ -129,7 +118,7 @@ jobs:
           elif python3 "$script" 2>&1 | tee -a "$report"; then
             echo "PASS" | tee -a "$report"
           else
-            echo "FAIL" | tee -a "$report"
+            echo "FAIL — current contract file is missing" | tee -a "$report"
             status=1
           fi
           echo | tee -a "$report"
