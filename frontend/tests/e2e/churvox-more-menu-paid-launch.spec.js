@@ -152,6 +152,6 @@ test.describe('Paid-launch Control Board navigation', () => {
 
     await expect.poll(() => page.url()).toMatch(/\/dashboard(?:\?[^#]*)?#plans$/);
     await expect(page.locator('.cvOwnerReady')).toHaveAttribute('data-screen', 'plans');
-    await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Choose the plan that matches how your business actually runs.' })).toBeVisible();
   });
 });
