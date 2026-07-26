@@ -260,8 +260,11 @@ test.describe('Churvox full human business gauntlet', () => {
     }
     await page.goto('/dashboard');
     await waitHuman(page);
+    await expect(page.locator('.cvsLoading')).toHaveCount(0, { timeout: 45000 });
+    await expect(page.locator('[data-churvox-layout="fresh-studio"]')).toBeVisible();
     const text = await bodyText(page);
-    expect(text, 'dashboard should expose the Churvox Business System Suite panel').toMatch(/Churvox business system|Autopilot|Office live feed|Daily closeout|Proof pack|Client memory/i);
+    expect(text, 'dashboard should expose the live Churvox Studio owner workspace').toMatch(/Today|Live records|Owner-controlled actions|Live business data/i);
+    expect(text, 'dashboard should finish building the live business picture').not.toMatch(/Building the live business picture/i);
     for (const endpoint of protectedBusinessEndpoints) {
       const result = await assertProtectedEndpointExists(page, endpoint, token);
       expect([200, 401, 403].includes(result.status), `${endpoint} should be available or intentionally protected`).toBeTruthy();

@@ -44,6 +44,7 @@ const TermsOfServicePage = React.lazy(() => import("./pages/legal/TermsOfService
 const AccountDeletionPage = React.lazy(() => import("./pages/legal/AccountDeletionPage"));
 const BillingReturnPage = React.lazy(() => import("./pages/BillingReturnPage"));
 const FreshApp = React.lazy(() => import("./churvox-fresh/FreshApp"));
+const StandalonePlansRoute = React.lazy(() => import("./StandalonePlansRoute"));
 const OfficeTeamLab = React.lazy(() => import("./churvox-office-lab/OfficeTeamLab"));
 const OfficeTeamWorkerRoute = React.lazy(() => import("./churvox-office-lab/OfficeTeamWorkerRoute"));
 
@@ -218,7 +219,7 @@ function App() {
               <Route path="/invite/setup/:token" element={OWNER_MAINTENANCE_MODE ? <OwnerMaintenance /> : <InviteSetupPage />} />
               <Route path="/dashboard" element={<FreshBusinessRoute><OwnerOfficeApp /></FreshBusinessRoute>} />
               <Route path="/legacy-dashboard" element={<FreshBusinessRoute><AppRedirect to="/dashboard" /></FreshBusinessRoute>} />
-              <Route path="/plans" element={<FreshBusinessRoute><AppRedirect to="/dashboard#plans" /></FreshBusinessRoute>} />
+              <Route path="/plans" element={<FreshBusinessRoute><StandalonePlansRoute /></FreshBusinessRoute>} />
               <Route path="/guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/setup" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />
               <Route path="/setup-guide" element={<FreshBusinessRoute><FreshApp /></FreshBusinessRoute>} />

@@ -37,8 +37,15 @@ async function login(page) {
   await page.waitForLoadState('domcontentloaded');
   await fillFirst(page, ['input[type="email"]', 'input[name="email"]', 'input[placeholder*="email" i]'], EMAIL);
   await fillFirst(page, ['input[type="password"]', 'input[name="password"]', 'input[placeholder*="password" i]'], PASSWORD);
-  const clicked = await clickText(page, ['Log in', 'Login', 'Sign in']);
-  expect(clicked, 'login button should be clickable').toBeTruthy();
+  const submit = page.locator('button[type="submit"], input[type="submit"]').last();
+  let clicked = false;
+  if (await submit.isVisible().catch(() => false)) {
+    await submit.click();
+    clicked = true;
+  } else {
+    clicked = await clickText(page, ['Open Churvox', 'Log in', 'Login', 'Sign in']);
+  }
+  expect(clicked, 'login submit button should be clickable').toBeTruthy();
   await page.waitForURL(/dashboard|plans|setup|guide|#/i, { timeout: 30000 }).catch(() => null);
   await page.waitForLoadState('domcontentloaded');
   await expect(page.locator('body')).toContainText(/Churvox|Plans|Command|Smart|Dashboard/i);
