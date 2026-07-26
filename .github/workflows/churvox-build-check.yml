@@ -118,7 +118,7 @@ jobs:
           elif python3 "$script" 2>&1 | tee -a "$report"; then
             echo "PASS" | tee -a "$report"
           else
-            echo "FAIL — current contract file is missing" | tee -a "$report"
+            echo "FAIL" | tee -a "$report"
             status=1
           fi
           echo | tee -a "$report"
