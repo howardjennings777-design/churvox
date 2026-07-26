@@ -7,6 +7,8 @@ const ROOT = path.resolve(__dirname, '..');
 
 const PUBLIC_COPY_FILES = [
   'frontend/public/index.html',
+  'frontend/public/industries/new-zealand/index.html',
+  'frontend/public/industries/australia/index.html',
   'frontend/src/pages/marketing/ExecutiveHomePage.jsx',
   'frontend/src/pages/marketing/ExecutiveFeaturesPage.jsx',
   'frontend/src/pages/marketing/ExecutivePricingPage.jsx',
