@@ -20,6 +20,74 @@ function exactLabel(button, fallback = "") {
   return String(span?.textContent || fallback || button?.textContent || "").trim();
 }
 
+function customerLabel(value) {
+  return String(value || "").trim() === "Work" ? "Jobs" : String(value || "").trim();
+}
+
+function setCustomerButtonLabel(button) {
+  if (!button) return "";
+  const current = exactLabel(button);
+  const next = customerLabel(current);
+  const span = button.querySelector("span");
+  if (span && next && span.textContent !== next) span.textContent = next;
+  if (next) button.setAttribute("aria-label", next);
+  return next;
+}
+
+function navigateOwner(page) {
+  window.history.pushState({}, "", `/dashboard${page === "today" ? "" : `#${page}`}`);
+  window.dispatchEvent(new Event("hashchange"));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function ensureMobileMoreDestination(mobileMore, page, label) {
+  const section = mobileMore?.querySelector("section");
+  if (!section) return;
+  const buttons = Array.from(section.querySelectorAll(":scope > button"));
+  const existing = buttons.find((button) => new RegExp(`^\\s*${label}\\b`, "i").test(String(button.textContent || "")));
+  if (existing) {
+    existing.setAttribute("aria-label", label);
+    return;
+  }
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "cvStableMobileDestination";
+  button.dataset.cvDestination = page;
+  button.textContent = label;
+  button.setAttribute("aria-label", label);
+  button.addEventListener("click", () => {
+    const close = mobileMore.querySelector("section > header button");
+    if (close) close.click();
+    window.setTimeout(() => navigateOwner(page), 0);
+  });
+
+  const utility = buttons.find((item) => /^(Settings|Plans|Help)/i.test(String(item.textContent || "").trim()));
+  section.insertBefore(button, utility || null);
+}
+
+function keepMobileTodayHeading(target, currentPage) {
+  if (!target) return;
+  const mobile = window.matchMedia("(max-width: 760px)").matches;
+  let heading = target.querySelector(":scope > .cvMobileTodayHeading");
+  if (!mobile || currentPage !== "today") {
+    if (heading) heading.remove();
+    return;
+  }
+  if (!heading) {
+    heading = document.createElement("h1");
+    heading.className = "cvMobileTodayHeading";
+    heading.textContent = "Today";
+    heading.style.margin = "0 0 12px";
+    heading.style.color = "#161a17";
+    heading.style.fontFamily = '"Manrope", sans-serif';
+    heading.style.fontSize = "30px";
+    heading.style.lineHeight = "1";
+    heading.style.letterSpacing = "-0.045em";
+    target.prepend(heading);
+  }
+}
+
 export default function StudioReleaseBridge() {
   const { user, logout } = useAuth();
   const api = useApi();
@@ -61,14 +129,13 @@ export default function StudioReleaseBridge() {
       if (nav) {
         nav.classList.add("cvOwnerNavigation");
         nav.dataset.plan = access.planKey;
-        nav.querySelectorAll("button").forEach((button) => {
-          const label = exactLabel(button);
-          if (label) button.setAttribute("aria-label", label);
-        });
+        nav.querySelectorAll("button").forEach(setCustomerButtonLabel);
       }
 
       const pageHeading = document.querySelector(".cvsContextIdentity b");
       if (pageHeading) {
+        const next = customerLabel(pageHeading.textContent);
+        if (next && pageHeading.textContent !== next) pageHeading.textContent = next;
         pageHeading.setAttribute("role", "heading");
         pageHeading.setAttribute("aria-level", "1");
       }
@@ -115,10 +182,7 @@ export default function StudioReleaseBridge() {
       const mobile = document.querySelector(".cvsMobileDock");
       if (mobile) {
         mobile.classList.add("cv7MobileNav");
-        mobile.querySelectorAll("button").forEach((button) => {
-          const label = exactLabel(button);
-          if (label) button.setAttribute("aria-label", label);
-        });
+        mobile.querySelectorAll("button").forEach(setCustomerButtonLabel);
       }
 
       const mobileMore = document.querySelector(".cvsMobileMore");
@@ -130,14 +194,20 @@ export default function StudioReleaseBridge() {
         const close = mobileMore.querySelector("section > header button");
         if (close) close.setAttribute("aria-label", "Close");
         mobileMore.querySelectorAll("section > button").forEach((button) => {
-          const text = String(button.textContent || "").trim();
-          if (/^Plans/i.test(text)) button.setAttribute("aria-label", "Plans");
+          const text = customerLabel(button.textContent);
+          if (/^Work$/i.test(String(button.textContent || "").trim())) button.textContent = "Jobs";
+          if (/^Plans/i.test(text)) button.setAttribute("aria-label", "Plans & billing");
           else if (/^Help/i.test(text)) button.setAttribute("aria-label", "Help");
           else if (/^Settings/i.test(text)) button.setAttribute("aria-label", "Settings");
+          else if (text) button.setAttribute("aria-label", text.replace(/\d+$/, "").trim());
         });
+        ensureMobileMoreDestination(mobileMore, "clients", "Clients");
+        ensureMobileMoreDestination(mobileMore, "money", "Money");
+        ensureMobileMoreDestination(mobileMore, "crew", "Team");
       }
 
       const target = document.querySelector(".cvsWorkspace");
+      keepMobileTodayHeading(target, currentPage);
       setWorkspace((current) => current === target ? current : target);
       if (target) target.classList.toggle("cvPlansReleaseHost", currentPage === "plans");
       setPage((current) => current === currentPage ? current : currentPage);
