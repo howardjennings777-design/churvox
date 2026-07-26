@@ -56,12 +56,35 @@ jobs:
       - name: Install frontend dependencies from lockfile
         run: npm ci --legacy-peer-deps
 
+      - name: Audit active Fresh Studio, worker, Plans, HQ and public wiring
+        run: node ../scripts/churvox-active-surface-wiring-audit.cjs
+
+      - name: Build production frontend
+        run: npm run build
+
+      - name: Start exact production server and repair route pages
+        run: |
+          PORT=3000 node scripts/start-production.cjs > ../churvox-full-site-server.log 2>&1 &
+          echo $! > ../churvox-full-site-server.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ >/dev/null; then
+              echo "Production frontend is ready."
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:3000/product | grep -F "Churvox product | Job admin prepared for owner approval"
+          curl --fail --silent http://127.0.0.1:3000/pricing | grep -F "Churvox pricing | Start, Crew, Operator and Command plans"
+          curl --fail --silent http://127.0.0.1:3000/demo | grep -F "Churvox demo | See an owner-controlled job workflow"
+          curl --fail --silent http://127.0.0.1:3000/login | grep -F 'content="noindex,nofollow,noarchive"'
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Run current desktop and mobile UI suite
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          PLAYWRIGHT_SKIP_WEB_SERVER: '1'
         run: |
           npx playwright test \
             tests/e2e/churvox-full-ui-logic-buttons.spec.js \
@@ -85,6 +108,8 @@ jobs:
 
       - name: Run live public desktop and mobile contracts
         if: github.event_name != 'pull_request'
+        env:
+          PLAYWRIGHT_SKIP_WEB_SERVER: '1'
         run: |
           npx playwright test \
             tests/e2e/churvox-public-honesty-and-function.spec.js \
@@ -96,6 +121,8 @@ jobs:
 
       - name: Run authenticated desktop and mobile launch contracts
         if: github.event_name != 'pull_request' && env.E2E_EMAIL != '' && env.E2E_PASSWORD != ''
+        env:
+          PLAYWRIGHT_SKIP_WEB_SERVER: '1'
         run: |
           npx playwright test \
             tests/e2e/deep-launch-audit.spec.js \
@@ -109,6 +136,15 @@ jobs:
         run: |
           echo "Authenticated full-site coverage was not run because CHURVOX_E2E_EMAIL and CHURVOX_E2E_PASSWORD are not configured."
           echo "The complete local UI suite, live Job Done deploy proof and live public contracts still ran and must pass."
+
+      - name: Upload production server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-site-server-log-${{ github.run_id }}
+          path: churvox-full-site-server.log
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Upload Playwright report
         if: always()
