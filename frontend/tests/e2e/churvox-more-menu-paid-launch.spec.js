@@ -69,7 +69,7 @@ test.describe('Paid-launch Control Board navigation', () => {
     await openArea(page, 'Jobs');
     const workTabs = page.getByRole('navigation', { name: 'work navigation' });
     await expect(workTabs).toBeVisible();
-    for (const tab of ['Jobs', 'Schedule', 'Recurring']) {
+    for (const tab of ['Jobs', 'Schedule', 'Recurring jobs']) {
       await expect(workTabs.getByRole('button', { name: tab, exact: true })).toBeVisible();
     }
   });
@@ -152,6 +152,6 @@ test.describe('Paid-launch Control Board navigation', () => {
 
     await expect.poll(() => page.url()).toMatch(/\/dashboard(?:\?[^#]*)?#plans$/);
     await expect(page.locator('.cvOwnerReady')).toHaveAttribute('data-screen', 'plans');
-    await expect(page.getByRole('heading', { name: 'Churvox does the admin. You approve.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible();
   });
 });
