@@ -94,11 +94,29 @@ jobs:
           }
 
           async function login(page, email, password, worker = false) {
-            await page.goto(`${base}/login${worker ? '?worker=1' : ''}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-            await page.getByLabel(/email/i).first().fill(email);
-            await page.getByLabel(/password/i).first().fill(password);
-            await page.getByRole('button', { name: /sign in|log in/i }).first().click();
-            await page.waitForFunction(() => !location.pathname.includes('/login'), null, { timeout: 30000 });
+            const paths = worker ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
+            const attempts = [];
+            let token = '';
+            for (const pathname of paths) {
+              const result = await callApi(pathname, { method: 'POST', body: JSON.stringify({ email, password }) });
+              attempts.push(`${pathname}:${result.response.status}`);
+              if (!result.response.ok || result.body?.success === false) continue;
+              token = tokenFrom(result.body);
+              if (token) break;
+            }
+            if (!token) throw new Error(`${worker ? 'Worker' : 'Owner'} API login failed (${attempts.join(', ')})`);
+            const role = worker ? 'worker' : 'owner';
+            await page.context().addInitScript(({ tokenValue, emailValue, roleValue }) => {
+              localStorage.setItem('token', tokenValue);
+              localStorage.setItem('authToken', tokenValue);
+              localStorage.setItem('access_token', tokenValue);
+              localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+                at: Date.now(),
+                token: tokenValue,
+                user: { email: emailValue, role: roleValue, has_app_access: true, email_verified: true },
+              }));
+            }, { tokenValue: token, emailValue: email, roleValue: role });
+            await page.goto(`${base}${worker ? '/worker/today' : '/dashboard#today'}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
             await page.waitForTimeout(900);
           }
 
