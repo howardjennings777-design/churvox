@@ -74,7 +74,9 @@ jobs:
         run: npm install --include=dev --legacy-peer-deps
 
       - name: Build production frontend
-        run: npm run build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee /tmp/churvox-production-build.log
 
       - name: Compile all backend Python
         working-directory: .
@@ -189,6 +191,7 @@ jobs:
           path: |
             frontend/playwright-report
             frontend/test-results
+            /tmp/churvox-production-build.log
             /tmp/churvox-frontend.log
             /tmp/churvox-billing-truth-behavior.log
             /tmp/churvox-billing-truth-static.log
