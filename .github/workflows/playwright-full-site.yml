@@ -57,7 +57,9 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Audit active Fresh Studio, worker, Plans, HQ and public wiring
-        run: node ../scripts/churvox-active-surface-wiring-audit.cjs
+        run: |
+          set -o pipefail
+          node ../scripts/churvox-active-surface-wiring-audit.cjs 2>&1 | tee ../churvox-active-wiring-output.txt
 
       - name: Build production frontend
         run: npm run build
@@ -136,6 +138,15 @@ jobs:
         run: |
           echo "Authenticated full-site coverage was not run because CHURVOX_E2E_EMAIL and CHURVOX_E2E_PASSWORD are not configured."
           echo "The complete local UI suite, live Job Done deploy proof and live public contracts still ran and must pass."
+
+      - name: Upload active wiring diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: active-wiring-diagnostics-${{ github.run_id }}
+          path: churvox-active-wiring-output.txt
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Upload production server log
         if: always()
