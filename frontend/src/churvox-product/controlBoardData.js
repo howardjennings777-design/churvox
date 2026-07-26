@@ -56,20 +56,8 @@ function hasAccountingAddon(user) {
   return /accounting|xero|myob|sync|true|enabled/.test(values);
 }
 
-function verifiedSessionEmail() {
-  if (typeof window === "undefined") return "";
-  try {
-    const raw = window.localStorage.getItem("churvox_auth_session_snapshot_v1");
-    if (!raw) return "";
-    const snapshot = JSON.parse(raw);
-    return clean(snapshot?.user?.email).toLowerCase();
-  } catch {
-    return "";
-  }
-}
-
 export function createAccess(user = {}) {
-  const ownerEmail = clean(user?.email || user?.user_email || user?.login_email || verifiedSessionEmail()).toLowerCase();
+  const ownerEmail = clean(user?.email || user?.user_email || user?.login_email).toLowerCase();
   const role = clean(user?.role || user?.user_role || user?.account_role).toLowerCase().replace(/\s+/g, "_");
   const admin = PLATFORM_OWNER_EMAILS.has(ownerEmail) || user?.is_platform_owner === true || user?.is_admin === true || ["platform_owner", "platform-owner", "platform_admin", "platform-admin"].includes(role);
   const planKey = admin ? "command" : normalizePlan(user.plan || user.plan_key || user.selected_plan || user.tier || user.subscription_plan || user?.business?.plan);
