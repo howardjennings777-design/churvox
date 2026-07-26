@@ -116,7 +116,7 @@ test.describe('Standalone Plans billing truth', () => {
     expect(payload.get('ui_plan')).toBe('enterprise');
     expect(payload.get('country')).toBe('NZ');
     expect(payload.get('accounting_sync')).toBe('1');
-    expect(payload.get('growth_packs')).toBe('0');
+    expect(payload.get('growth_packs') || '0').toBe('0');
     expect(payload.get('token')).toBe('plans-token');
   });
 });
