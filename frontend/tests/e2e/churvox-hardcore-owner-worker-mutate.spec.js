@@ -49,6 +49,22 @@ function statusOf(job = {}) {
   return String(job.status || job.job_status || job.workflow_status || job.state || '').trim().toLowerCase();
 }
 
+function eventKind(row = {}) {
+  return String(row.kind || row.type || row.event_type || '').trim().toLowerCase();
+}
+
+function eventText(row = {}) {
+  return String(row.message || row.body || row.detail || row.summary || row.note || '').replace(/\s+/g, ' ').trim();
+}
+
+function eventJobId(row = {}) {
+  return String(row.job_id || row.source_id || row.record_id || '').trim();
+}
+
+function completionRows(rows, titleToken) {
+  return rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
+}
+
 async function loginApi(page, email, password, label) {
   if (!email || !password) throw new Error(`Missing ${label} credentials. Hardcore mutation fails rather than skips.`);
   const paths = label === 'worker' ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
@@ -98,13 +114,11 @@ async function findWorker(page, ownerToken) {
 }
 
 async function getJob(page, token, jobId, titleToken = '') {
-  const directPaths = [`/api/jobs/${encodeURIComponent(jobId)}`, `/api/worker/jobs/${encodeURIComponent(jobId)}`];
-  for (const path of directPaths) {
+  for (const path of [`/api/jobs/${encodeURIComponent(jobId)}`, `/api/worker/jobs/${encodeURIComponent(jobId)}`]) {
     const direct = await json(page, 'get', path, token);
-    if (direct.ok) {
-      const candidate = direct.body?.job || direct.body?.data?.job || direct.body?.data || direct.body;
-      if (idOf(candidate) === String(jobId) || contains(candidate, titleToken || jobId)) return candidate;
-    }
+    if (!direct.ok) continue;
+    const candidate = direct.body?.job || direct.body?.data?.job || direct.body?.data || direct.body;
+    if (idOf(candidate) === String(jobId) || contains(candidate, titleToken || jobId)) return candidate;
   }
   for (const path of [`/api/worker/jobs?ts=${Date.now()}`, `/api/jobs?ts=${Date.now()}`]) {
     const result = await json(page, 'get', path, token);
@@ -119,17 +133,19 @@ async function waitForJob(page, token, jobId, titleToken, predicate, label) {
   let latest = null;
   await expect.poll(async () => {
     latest = await getJob(page, token, jobId, titleToken);
-    return latest && predicate(latest) ? true : false;
+    return Boolean(latest && predicate(latest));
   }, { message: label, timeout: 25_000, intervals: [500, 900, 1500, 2500] }).toBe(true);
   return latest;
 }
 
+async function rowsAt(page, token, path) {
+  const result = await json(page, 'get', `${path}${path.includes('?') ? '&' : '?'}ts=${Date.now()}`, token);
+  return result.ok ? listFrom(result.body) : [];
+}
+
 async function corpus(page, token, paths) {
   const rows = [];
-  for (const path of paths) {
-    const result = await json(page, 'get', `${path}${path.includes('?') ? '&' : '?'}ts=${Date.now()}`, token);
-    if (result.ok) rows.push(...listFrom(result.body));
-  }
+  for (const path of paths) rows.push(...await rowsAt(page, token, path));
   return rows;
 }
 
@@ -149,7 +165,7 @@ async function cleanupJob(page, ownerToken, jobId, cleanupToken) {
 test.describe('Hardcore live boss-worker mutation loop', () => {
   test.setTimeout(360_000);
 
-  test('Acknowledge Start Pause Resume Complete — owner sees and worker sees every real transition with exactly one completion', async ({ browser }) => {
+  test('Acknowledge Start Pause Resume Complete — worker reaches boss once per channel and boss send-back reaches worker', async ({ browser }) => {
     if (process.env.CHURVOX_HARDCORE_MUTATE !== CONSENT) {
       throw new Error(`Set CHURVOX_HARDCORE_MUTATE=${CONSENT} to run this live-data test.`);
     }
@@ -203,14 +219,12 @@ test.describe('Hardcore live boss-worker mutation loop', () => {
       const workerCreated = await waitForJob(page, workerToken, jobId, titleToken, (job) => contains(job, instructionToken), 'worker sees assigned job and boss instruction');
       expect(contains(workerCreated, instructionToken), 'worker sees boss instruction').toBeTruthy();
 
-      const steps = [
+      for (const [label, endpoint, expected] of [
         ['Acknowledge', 'acknowledge', /acknowledged|acknowledge/],
         ['Start', 'start', /in_progress|started|start/],
         ['Pause', 'pause', /paused|pause/],
         ['Resume', 'resume', /in_progress|resumed|resume/],
-      ];
-
-      for (const [label, endpoint, expected] of steps) {
+      ]) {
         const note = `${label} ${run}`;
         const result = await json(page, 'post', `/api/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}`, workerToken, { worker_notes: note, note, source: 'hardcore-owner-worker-test' });
         expect(result.ok, `${label} button endpoint failed: ${result.status} ${result.text.slice(0, 500)}`).toBeTruthy();
@@ -221,19 +235,11 @@ test.describe('Hardcore live boss-worker mutation loop', () => {
       }
 
       const issue = await json(page, 'post', '/api/worker/field-slip', workerToken, {
-        type: 'worker_problem',
-        kind: 'worker_problem',
-        job_id: jobId,
-        job_title: titleToken,
-        client_name: `Hardcore Test Client ${run}`,
-        text: issueToken,
-        note: issueToken,
-        summary: issueToken,
-        problem_key: 'extra_work',
-        source: 'hardcore-owner-worker-test',
+        type: 'worker_problem', kind: 'worker_problem', job_id: jobId, job_title: titleToken,
+        client_name: `Hardcore Test Client ${run}`, text: issueToken, note: issueToken, summary: issueToken,
+        problem_key: 'extra_work', source: 'hardcore-owner-worker-test',
       });
       expect(issue.ok, `Worker issue did not reach office backend: ${issue.status} ${issue.text.slice(0, 500)}`).toBeTruthy();
-
       await expect.poll(async () => {
         const ownerRows = await corpus(page, ownerToken, ['/api/notifications?limit=120', '/api/command/slips', '/api/command/audit', '/api/messages?limit=120']);
         return ownerRows.some((row) => contains(row, issueToken));
@@ -253,16 +259,22 @@ test.describe('Hardcore live boss-worker mutation loop', () => {
       expect(statusOf(ownerComplete), 'owner sees Complete').toMatch(/complete/);
       expect(Number(ownerComplete.proof_photo_count || 0), 'owner sees proof count').toBe(1);
       expect(ownerComplete.needs_owner_review, 'completion returns to owner review').toBeTruthy();
-
       const workerComplete = await waitForJob(page, workerToken, jobId, titleToken, (job) => /complete/.test(statusOf(job)), 'worker sees Complete');
       expect(statusOf(workerComplete), 'worker sees Complete').toMatch(/complete/);
 
-      await expect.poll(async () => {
-        const rows = await corpus(page, ownerToken, ['/api/notifications?limit=160', '/api/messages?limit=160']);
-        const completionRows = rows.filter((row) => contains(row, titleToken) && /job_complete|job_completed|finished the job|complete/i.test(JSON.stringify(row)));
-        const unique = new Set(completionRows.map((row) => idOf(row) || JSON.stringify(row)));
-        return unique.size;
-      }, { message: 'exactly one completion event reaches owner-facing notification/message collections', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(1);
+      await expect.poll(async () => completionRows(await rowsAt(page, ownerToken, '/api/notifications?limit=160'), titleToken).length,
+        { message: 'exactly one completion notification reaches the owner', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(1);
+      await expect.poll(async () => completionRows(await rowsAt(page, ownerToken, '/api/messages?limit=160'), titleToken).length,
+        { message: 'exactly one completion message reaches the owner', timeout: 20_000, intervals: [700, 1300, 2400] }).toBe(1);
+
+      const notification = completionRows(await rowsAt(page, ownerToken, '/api/notifications?limit=160'), titleToken)[0];
+      const message = completionRows(await rowsAt(page, ownerToken, '/api/messages?limit=160'), titleToken)[0];
+      expect(eventJobId(notification), 'notification is linked to the completed job').toBe(jobId);
+      expect(eventJobId(message), 'message is linked to the completed job').toBe(jobId);
+      expect(eventKind(notification), 'notification reports completion').toMatch(/job_complete|job_completed/);
+      expect(eventKind(message), 'message reports completion').toMatch(/job_complete|job_completed/);
+      expect(eventText(notification), 'notification and message carry the same worker completion note').toBe(completeNote);
+      expect(eventText(message), 'notification and message carry the same worker completion note').toBe(completeNote);
 
       const sendBackNote = `Boss sent back ${run}: confirm the proof note.`;
       const sendBack = await firstWorking(page, 'post', [
