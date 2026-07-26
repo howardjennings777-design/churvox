@@ -5,6 +5,7 @@ import './runtime/churvoxPublicHelpRouteGuardRuntime';
 import './runtime/churvoxExplicitLogoutGuardRuntime';
 import './runtime/churvoxControlBoardMobileLogoutRuntime';
 import './runtime/churvoxProtectedFetchAuthGuardRuntime';
+import './runtime/churvoxVisibleControlTextRuntime';
 import './runtime/churvoxLegacyHostExitRuntime';
 import './runtime/churvoxStripeCheckoutLiveRuntime';
 import './runtime/churvoxStripePlanIdentityRuntime';

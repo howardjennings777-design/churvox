@@ -1,10 +1,10 @@
 BASE=https://grassley-frontend.onrender.com
-TITLE=Churvox — Owner-controlled job admin for service businesses
-SCRIPT=/static/js/main.31e70c14.js
+TITLE=Job management software NZ & Australia | Churvox
+SCRIPT=/static/js/main.f1acd2a9.js
 RELEASE={
   "schema_version": "churvox-release-v1",
-  "generated_at": "2026-07-24T06:16:14.553Z",
-  "git_commit": "15395248fef2de2c0479d9f1f1e1d06e5c623dd9",
+  "generated_at": "2026-07-26T03:38:29.351Z",
+  "git_commit": "343efbfba04eeadad69c861fb7ef0b33abbc4113",
   "git_branch": "main",
   "repository": "howardjennings777-design/churvox",
   "service": {
@@ -13,7 +13,7 @@ RELEASE={
     "external_hostname": "grassley-frontend.onrender.com"
   },
   "frontend_version": "0.1.2",
-  "release_marker": "Render frontend deploy marker\nTriggered: 2026-07-24T04:34:47Z\nDeploy main through: 9e8694ba0d3435a7d0c96f038f819186ec0744a9\nPurpose: deploy the real owner cache cleanup, 17px readable page text, 16px controls, 15px supporting text and fixed 116x50 logout on desktop and mobile.",
+  "release_marker": "Render frontend deploy marker\nTriggered: 2026-07-24T09:05:00Z\nPurpose: serve the new Churvox homepage and application directly from grassley-frontend on Render.\nSites redirects: removed.\nExpected homepage: Run the job, not the admin.",
   "safeguards": {
     "public_trial_days": 14,
     "selected_tester_days": 30,
@@ -33,11 +33,44 @@ RELEASE={
   }
 }
 V4=no
-V5=yes
+V5=no
 READABLE_MODE=yes
 ---
 BASE=https://www.churvox.com
-TITLE=Churvox | Run the job, not the admin
-SCRIPT=none
-RELEASE=Not Found
+TITLE=Job management software NZ & Australia | Churvox
+SCRIPT=/static/js/main.f1acd2a9.js
+RELEASE={
+  "schema_version": "churvox-release-v1",
+  "generated_at": "2026-07-26T03:38:29.351Z",
+  "git_commit": "343efbfba04eeadad69c861fb7ef0b33abbc4113",
+  "git_branch": "main",
+  "repository": "howardjennings777-design/churvox",
+  "service": {
+    "name": "grassley-frontend",
+    "type": "static",
+    "external_hostname": "grassley-frontend.onrender.com"
+  },
+  "frontend_version": "0.1.2",
+  "release_marker": "Render frontend deploy marker\nTriggered: 2026-07-24T09:05:00Z\nPurpose: serve the new Churvox homepage and application directly from grassley-frontend on Render.\nSites redirects: removed.\nExpected homepage: Run the job, not the admin.",
+  "safeguards": {
+    "public_trial_days": 14,
+    "selected_tester_days": 30,
+    "automatic_access_grant": false,
+    "automatic_social_publish": false,
+    "automatic_customer_contact": false,
+    "owner_approval_required": true
+  },
+  "features": {
+    "tester_page": true,
+    "tester_campaign_attribution": true,
+    "hq_tester_application_inbox": true,
+    "hq_promotion_centre": true,
+    "tester_backend_intake": true,
+    "public_sitemap": true,
+    "first_party_api_proxy": true
+  }
+}
+V4=no
+V5=no
+READABLE_MODE=yes
 ---

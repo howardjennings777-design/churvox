@@ -340,17 +340,16 @@ test.describe('Churvox full launch owner audit', () => {
   await waitStable(page);
   await expect(page.locator('[data-churvox-layout="fresh-studio"]'), 'Studio owner shell did not load').toBeVisible();
 
-  const studioAreas = ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command'];
   if (isMobile) {
     const dock = page.locator('.cvsMobileDock');
-    for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) {
+    for (const item of ['Today', 'Jobs', 'Command', 'Messages', 'More']) {
       await expect(dock.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio navigation: ${item}`).toBeVisible();
     }
 
     await dock.getByRole('button').filter({ hasText: /^\s*More\b/i }).first().click();
     const morePanel = page.locator('.cvsMobileMore section');
     await expect(morePanel, 'mobile Studio More panel did not open').toBeVisible();
-    for (const item of studioAreas) {
+    for (const item of ['Clients', 'Money', 'Team']) {
       await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio area: ${item}`).toBeVisible();
     }
     for (const item of ['Settings', 'Plans & billing', 'Help']) {
@@ -359,9 +358,13 @@ test.describe('Churvox full launch owner audit', () => {
   } else {
     const nav = page.getByRole('navigation', { name: /Main Churvox navigation/i });
     await expect(nav, 'desktop Studio navigation did not load').toBeVisible();
-    for (const item of studioAreas) {
+    for (const item of ['Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command']) {
       await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing desktop Studio area: ${item}`).toBeVisible();
     }
+    const todayControl = page.locator('.cvsBrand');
+    await expect(todayControl, 'desktop Today/home control did not load').toBeVisible();
+    await todayControl.click();
+    await expect(page.locator('[data-screen="today"]'), 'desktop Today/home control did not open Today').toBeVisible();
 
     await page.locator('.cvsProfileWrap > button.profile').click();
     const profileMenu = page.locator('.cvsProfileMenu');

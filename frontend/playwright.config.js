@@ -3,6 +3,8 @@ const { defineConfig, devices } = require('@playwright/test');
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com';
 const useExternalSite = /^https?:\/\//i.test(baseURL) && !/127\.0\.0\.1|localhost/i.test(baseURL);
 const storageState = process.env.PLAYWRIGHT_STORAGE_STATE || undefined;
+const skipWebServer = /^(1|true|yes)$/i.test(process.env.PLAYWRIGHT_SKIP_WEB_SERVER || '');
+const webServerCommand = process.env.PLAYWRIGHT_WEB_SERVER_COMMAND || 'npm run build && npx serve -s build -l 3000';
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
@@ -26,8 +28,8 @@ module.exports = defineConfig({
     ignoreHTTPSErrors: true,
     serviceWorkers: 'block',
   },
-  webServer: useExternalSite ? undefined : {
-    command: 'npm run build && npx serve -s build -l 3000',
+  webServer: useExternalSite || skipWebServer ? undefined : {
+    command: webServerCommand,
     url: baseURL,
     reuseExistingServer: true,
     timeout: 180_000,

@@ -1,5 +1,5 @@
-// CHURVOX_FRONTEND_MIME_SERVER_20260616_JOB_NEW_REDIRECT_FIX
-// Serves React build with correct MIME types and no stale index caching.
+// CHURVOX_FRONTEND_MIME_SERVER_20260723_AUTH_PROXY_BODY_FIX
+// Serves React build with correct MIME types, same-origin API proxying and no stale index caching.
 
 const http = require("http");
 const https = require("https");
@@ -63,13 +63,28 @@ function rewriteSetCookieHeader(value) {
     .replace(/;\s*Domain=\.onrender\.com/gi, "");
 }
 
+function bufferedResponseHeaders(headers = {}, body = Buffer.alloc(0), extraHeaders = {}) {
+  const next = filterHeaders(headers);
+  for (const key of Object.keys(next)) {
+    const lower = String(key).toLowerCase();
+    if (lower === "content-length" || lower === "content-encoding" || lower === "transfer-encoding") {
+      delete next[key];
+    }
+  }
+  const bodyBuffer = Buffer.isBuffer(body) ? body : Buffer.from(String(body || ""));
+  next["content-length"] = String(bodyBuffer.length);
+  return { ...next, ...extraHeaders };
+}
+
 function sendJson(res, statusCode, body, extraHeaders = {}) {
+  const payload = Buffer.from(JSON.stringify(body));
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": String(payload.length),
     "Cache-Control": "no-store",
     ...extraHeaders,
   });
-  res.end(JSON.stringify(body));
+  res.end(payload);
 }
 
 function redirect(res, location) {
@@ -114,6 +129,7 @@ function normalizeCheckoutProxyResponse(req, res, urlPath) {
     requestHeaders["x-forwarded-proto"] = "https";
     requestHeaders["x-churvox-proxy"] = "frontend-checkout-normalizer";
     requestHeaders["content-length"] = String(bodyBuffer.length);
+    requestHeaders["accept-encoding"] = "identity";
     if (requestHeaders.authorization || requestHeaders.Authorization) {
       delete requestHeaders.cookie;
       delete requestHeaders.Cookie;
@@ -134,7 +150,8 @@ function normalizeCheckoutProxyResponse(req, res, urlPath) {
         proxyRes.on("end", () => {
           const statusCode = proxyRes.statusCode || 502;
           const location = responseHeaders.location || responseHeaders.Location || "";
-          const responseText = Buffer.concat(chunks).toString("utf-8");
+          const responseBuffer = Buffer.concat(chunks);
+          const responseText = responseBuffer.toString("utf-8");
 
           let cookieHeaders = {};
           if (responseHeaders["set-cookie"]) {
@@ -168,11 +185,11 @@ function normalizeCheckoutProxyResponse(req, res, urlPath) {
 
           const contentType = responseHeaders["content-type"] || responseHeaders["Content-Type"] || "";
           if (contentType.includes("application/json")) {
-            res.writeHead(statusCode, {
-              ...responseHeaders,
-              "Cache-Control": "no-store",
-            });
-            res.end(responseText);
+            res.writeHead(statusCode, bufferedResponseHeaders(responseHeaders, responseBuffer, {
+              "cache-control": "no-store",
+              ...cookieHeaders,
+            }));
+            res.end(responseBuffer);
             return;
           }
 
@@ -215,21 +232,22 @@ function proxyApiRequest(req, res, urlPath) {
     target = new URL(req.url, base);
   } catch (err) {
     console.error("API_PROXY_BAD_TARGET", err);
-    res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
-    res.end(JSON.stringify({ detail: "API proxy target is invalid." }));
+    sendJson(res, 502, { detail: "API proxy target is invalid." });
     return;
   }
 
   const client = target.protocol === "http:" ? http : https;
   const requestHeaders = filterHeaders(req.headers);
+  const bufferedLogin = req.method === "POST" && urlPath === "/api/auth/login";
   requestHeaders.host = target.host;
   requestHeaders["x-forwarded-host"] = req.headers.host || "";
   requestHeaders["x-forwarded-proto"] = "https";
   requestHeaders["x-churvox-proxy"] = "frontend";
+  if (bufferedLogin) requestHeaders["accept-encoding"] = "identity";
 
   // Login and signup must never forward an old browser auth cookie.
-  // Otherwise hello@churvox.com can stay logged in even when another email is typed.
-  if (urlPath === "/api/auth/login" || urlPath === "/api/auth/register") {
+  // Otherwise one account can remain active when another email is typed.
+  if (urlPath === "/api/auth/login" || urlPath === "/api/auth/register" || urlPath === "/api/worker/auth/login") {
     delete requestHeaders.cookie;
     delete requestHeaders.Cookie;
   }
@@ -255,11 +273,12 @@ function proxyApiRequest(req, res, urlPath) {
         responseHeaders["set-cookie"] = cookies.map(rewriteSetCookieHeader);
       }
 
-      if (req.method === "POST" && urlPath === "/api/auth/login") {
+      if (bufferedLogin) {
         const chunks = [];
         proxyRes.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
         proxyRes.on("end", () => {
-          const bodyText = Buffer.concat(chunks).toString("utf-8");
+          const bodyBuffer = Buffer.concat(chunks);
+          const bodyText = bodyBuffer.toString("utf-8");
           let statusCode = proxyRes.statusCode || 502;
 
           try {
@@ -276,10 +295,22 @@ function proxyApiRequest(req, res, urlPath) {
             )) {
               statusCode = detail.includes("please complete") ? 403 : 401;
             }
-          } catch {}
+          } catch {
+            statusCode = statusCode < 400 ? 502 : statusCode;
+          }
 
-          res.writeHead(statusCode, responseHeaders);
-          res.end(bodyText);
+          if (!bodyBuffer.length) {
+            sendJson(res, statusCode >= 400 ? statusCode : 502, {
+              success: false,
+              detail: "Login backend returned an empty response.",
+            }, responseHeaders["set-cookie"] ? { "set-cookie": responseHeaders["set-cookie"] } : {});
+            return;
+          }
+
+          res.writeHead(statusCode, bufferedResponseHeaders(responseHeaders, bodyBuffer, {
+            "cache-control": "no-store",
+          }));
+          res.end(bodyBuffer);
         });
         return;
       }
@@ -296,17 +327,16 @@ function proxyApiRequest(req, res, urlPath) {
   proxyReq.on("error", (err) => {
     console.error("API_PROXY_ERROR", err);
     if (!res.headersSent) {
-      res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+      sendJson(res, 502, { detail: "Churvox API is temporarily unreachable." });
     }
-    res.end(JSON.stringify({ detail: "Churvox API is temporarily unreachable." }));
   });
 
   req.pipe(proxyReq);
 }
 
 function safePath(urlPath) {
-  const clean = decodeURIComponent(urlPath.split("?")[0]).replace(/^\/+/, "");
-  const resolved = path.resolve(BUILD_DIR, clean || "index.html");
+  const cleanPath = decodeURIComponent(urlPath.split("?")[0]).replace(/^\/+/, "");
+  const resolved = path.resolve(BUILD_DIR, cleanPath || "index.html");
   if (!resolved.startsWith(BUILD_DIR)) return null;
   return resolved;
 }

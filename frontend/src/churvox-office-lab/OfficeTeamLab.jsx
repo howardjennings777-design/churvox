@@ -1,56 +1,16 @@
 import React from 'react'
 import OfficeTeamOwnerScreenGuard from './OfficeTeamOwnerScreenGuard'
 import FreshApp from '../churvox-fresh/FreshApp'
-
+import '../churvox-office-os/churvoxCurrentBrand.css'
 const OfficeTeamLabSite = React.lazy(() => import('./OfficeTeamLabSite'))
-
-const HASH_ALIASES = new Map([
-  ['team', 'office-team'],
-])
-
-function normaliseOfficeHash() {
-  if (typeof window === 'undefined') return false
-  const raw = String(window.location.hash || '').replace(/^#/, '').trim().toLowerCase()
-  const canonical = HASH_ALIASES.get(raw)
-  if (!canonical) return false
-  window.history.replaceState(
-    window.history.state,
-    '',
-    `${window.location.pathname}${window.location.search}#${canonical}`,
-  )
-  return true
-}
-
-function LegacyOfficeTeamLab(props) {
-  const [routeVersion, setRouteVersion] = React.useState(0)
-
-  React.useLayoutEffect(() => {
-    if (normaliseOfficeHash()) setRouteVersion((current) => current + 1)
-
-    const handleRoute = () => {
-      if (normaliseOfficeHash()) setRouteVersion((current) => current + 1)
-    }
-
-    window.addEventListener('hashchange', handleRoute)
-    window.addEventListener('popstate', handleRoute)
-    return () => {
-      window.removeEventListener('hashchange', handleRoute)
-      window.removeEventListener('popstate', handleRoute)
-    }
-  }, [])
-
-  return (
-    <OfficeTeamOwnerScreenGuard appMode={props.appMode}>
-      <React.Suspense fallback={<main className="cvOfficeLabLoading">Loading Churvox office…</main>}>
-        <OfficeTeamLabSite {...props} key={routeVersion} />
-      </React.Suspense>
-    </OfficeTeamOwnerScreenGuard>
-  )
-}
-
-function OfficeTeamLab(props) {
-  if (props.appMode === 'owner') return <FreshApp />
-  return <LegacyOfficeTeamLab {...props} />
-}
-
+const OfficeOSWorkingConnected = React.lazy(() => import('../churvox-office-os/OfficeOSWorkingConnected'))
+const OfficeOSPreview = React.lazy(() => import('../churvox-office-os/OfficeOSPreview'))
+const PublicSiteConnected = React.lazy(() => import('../churvox-site-next/PublicSiteConnected'))
+const HQConnected = React.lazy(() => import('../churvox-site-next/HQConnected'))
+const HASH_ALIASES = new Map([['team', 'office-team']])
+function normaliseOfficeHash() { if (typeof window === 'undefined') return false; const raw = String(window.location.hash || '').replace(/^#/, '').trim().toLowerCase(); const canonical = HASH_ALIASES.get(raw); if (!canonical) return false; window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}#${canonical}`); return true }
+function isOfficeOSPreviewPath() { return typeof window !== 'undefined' && window.location.pathname === '/new-command-lab' }
+function previewSurface() { if (typeof window === 'undefined') return 'owner'; const value = new URLSearchParams(window.location.search || '').get('surface'); return value === 'public' || value === 'hq' || value === 'blueprint' ? value : 'owner' }
+function LegacyOfficeTeamLab(props) { const [routeVersion, setRouteVersion] = React.useState(0); React.useLayoutEffect(() => { if (normaliseOfficeHash()) setRouteVersion((current) => current + 1); const handleRoute = () => { if (normaliseOfficeHash()) setRouteVersion((current) => current + 1) }; window.addEventListener('hashchange', handleRoute); window.addEventListener('popstate', handleRoute); return () => { window.removeEventListener('hashchange', handleRoute); window.removeEventListener('popstate', handleRoute) } }, []); return <OfficeTeamOwnerScreenGuard appMode={props.appMode}><React.Suspense fallback={<main className="cvOfficeLabLoading">Loading Churvox office…</main>}><OfficeTeamLabSite {...props} key={routeVersion} /></React.Suspense></OfficeTeamOwnerScreenGuard> }
+function OfficeTeamLab(props) { if (isOfficeOSPreviewPath()) { const surface = previewSurface(); if (surface === 'public') return <PublicSiteConnected />; if (surface === 'hq') return <HQConnected />; if (surface === 'blueprint') return <OfficeOSPreview />; return <OfficeOSWorkingConnected /> } if (props.appMode === 'owner') return <FreshApp />; return <LegacyOfficeTeamLab {...props} /> }
 export default OfficeTeamLab

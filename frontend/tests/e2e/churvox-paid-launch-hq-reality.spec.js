@@ -217,9 +217,9 @@ test.describe('Rebuilt paid-launch HQ', () => {
 
     await page.getByRole('button', { name: 'Testers', exact: true }).click();
     await expect(page.getByText('Tester@Real.test', { exact: true }).first()).toBeVisible();
-    await page.getByRole('textbox', { name: 'Email', exact: true }).fill('NewTester@Real.test');
-    await page.getByRole('textbox', { name: 'Name', exact: true }).fill('Real Tester');
-    await page.getByRole('textbox', { name: 'Business', exact: true }).fill('Real Tester Business');
+    await page.getByRole('textbox', { name: /^email$/i }).fill('NewTester@Real.test');
+    await page.getByRole('textbox', { name: /^name$/i }).fill('Real Tester');
+    await page.getByRole('textbox', { name: /^business$/i }).fill('Real Tester Business');
     await page.getByRole('button', { name: 'Grant tester access' }).click();
     await expect(page.getByText('NewTester@Real.test', { exact: true }).first()).toBeVisible();
 

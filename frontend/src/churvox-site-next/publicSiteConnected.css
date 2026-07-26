@@ -1,0 +1,158 @@
+.cvnextConnected {
+  position: relative;
+}
+
+.cvnextHandoff {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 80;
+  width: min(440px, calc(100vw - 32px));
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: linear-gradient(150deg, #111317, #262a31);
+  box-shadow: 0 24px 65px rgba(10, 12, 15, 0.32);
+  overflow: hidden;
+}
+
+.cvnextHandoffToggle {
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 16px;
+  color: inherit;
+  border: 0;
+  background: linear-gradient(120deg, rgba(242, 101, 34, 0.25), rgba(255, 255, 255, 0.04));
+  cursor: pointer;
+  text-align: left;
+}
+
+.cvnextHandoffToggle > span {
+  display: grid;
+  gap: 2px;
+}
+
+.cvnextHandoffToggle strong {
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.cvnextHandoffToggle small {
+  color: #cbd5e1;
+  font-size: 10px;
+}
+
+.cvnextHandoffToggle > svg {
+  color: #ff9255;
+  transition: transform 160ms ease;
+}
+
+.cvnextHandoff.open .cvnextHandoffToggle > svg {
+  transform: rotate(90deg);
+}
+
+.cvnextHandoffPanel {
+  display: none;
+  padding: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cvnextHandoff.open .cvnextHandoffPanel {
+  display: block;
+}
+
+.cvnextHandoffPanel header small {
+  color: #ff9c66;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cvnextHandoffPanel h2 {
+  margin: 6px 0 8px;
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.cvnextHandoffPanel header p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.cvnextHandoffLinks {
+  display: grid;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.cvnextHandoffLinks a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.055);
+  text-decoration: none;
+}
+
+.cvnextHandoffLinks a.primary {
+  color: #111317;
+  border-color: #ff9c66;
+  background: linear-gradient(135deg, #ff9c66, #f26522);
+}
+
+.cvnextHandoffLinks a > span {
+  display: grid;
+  gap: 2px;
+}
+
+.cvnextHandoffLinks a strong {
+  font-size: 12px;
+}
+
+.cvnextHandoffLinks a small {
+  color: #bfc7d2;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.cvnextHandoffLinks a.primary small {
+  color: #4b2415;
+}
+
+.cvnextHandoffPanel footer {
+  margin-top: 13px;
+  color: #98a2b3;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .cvnextHandoff {
+    right: 10px;
+    bottom: 10px;
+    width: calc(100vw - 20px);
+  }
+
+  .cvnextHandoff.open {
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cvnextHandoffToggle > svg {
+    transition: none;
+  }
+}

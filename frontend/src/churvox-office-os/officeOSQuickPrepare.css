@@ -1,0 +1,234 @@
+.cvQuickPrepare {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 95;
+  width: min(520px, calc(100vw - 28px));
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  background: linear-gradient(150deg, #111317, #272b32);
+  box-shadow: 0 26px 70px rgba(10, 12, 15, 0.34);
+  overflow: hidden;
+}
+
+.cvQuickPrepareToggle {
+  width: 100%;
+  min-height: 66px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  color: inherit;
+  border: 0;
+  background: linear-gradient(120deg, rgba(242, 101, 34, 0.28), rgba(255, 255, 255, 0.04));
+  cursor: pointer;
+  text-align: left;
+}
+
+.cvQuickPrepareToggle > svg:first-child {
+  color: #ff9255;
+}
+
+.cvQuickPrepareToggle span {
+  display: grid;
+  gap: 2px;
+}
+
+.cvQuickPrepareToggle strong {
+  font-size: 13px;
+}
+
+.cvQuickPrepareToggle small {
+  color: #cbd5e1;
+  font-size: 10px;
+}
+
+.cvQuickPrepareForm {
+  display: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-height: min(720px, calc(100vh - 105px));
+  padding: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.11);
+  overflow-y: auto;
+}
+
+.cvQuickPrepare.open .cvQuickPrepareForm {
+  display: grid;
+}
+
+.cvQuickPrepareForm header,
+.cvQuickPrepareForm .wide,
+.cvQuickPrepareActions,
+.cvQuickPrepareResult {
+  grid-column: 1 / -1;
+}
+
+.cvQuickPrepareForm header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+.cvQuickPrepareForm header > svg {
+  flex: 0 0 auto;
+  color: #ff9255;
+}
+
+.cvQuickPrepareForm header small {
+  color: #ff9d69;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cvQuickPrepareForm header h2 {
+  margin: 4px 0 6px;
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.cvQuickPrepareForm header p {
+  margin: 0;
+  color: #c5ced9;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.cvQuickPrepareForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.cvQuickPrepareForm label > span {
+  color: #dbe2eb;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cvQuickPrepareForm input,
+.cvQuickPrepareForm select,
+.cvQuickPrepareForm textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 11px;
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.07);
+  font: inherit;
+  font-size: 12px;
+}
+
+.cvQuickPrepareForm textarea {
+  resize: vertical;
+}
+
+.cvQuickPrepareForm select option {
+  color: #111317;
+}
+
+.cvQuickPrepareForm input:focus,
+.cvQuickPrepareForm select:focus,
+.cvQuickPrepareForm textarea:focus {
+  border-color: #ff9255;
+  box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.16);
+}
+
+.cvQuickPrepareActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.cvQuickPrepareActions button,
+.cvQuickPrepareActions a {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.cvQuickPrepareActions button {
+  color: #111317;
+  border: 0;
+  background: linear-gradient(135deg, #ff9c66, #f26522);
+  cursor: pointer;
+}
+
+.cvQuickPrepareActions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cvQuickPrepareActions a {
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cvQuickPrepareResult {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px;
+  border-radius: 11px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.cvQuickPrepareResult.good {
+  color: #dcfce7;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  background: rgba(22, 101, 52, 0.28);
+}
+
+.cvQuickPrepareResult.bad {
+  color: #fee2e2;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(153, 27, 27, 0.28);
+}
+
+.cvQuickPrepareResult svg {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 620px) {
+  .cvQuickPrepare {
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+  }
+
+  .cvQuickPrepareForm {
+    grid-template-columns: 1fr;
+    max-height: calc(100vh - 90px);
+    padding: 14px;
+  }
+
+  .cvQuickPrepareForm label,
+  .cvQuickPrepareForm header,
+  .cvQuickPrepareActions,
+  .cvQuickPrepareResult {
+    grid-column: 1;
+  }
+
+  .cvQuickPrepareActions > * {
+    width: 100%;
+  }
+}

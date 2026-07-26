@@ -3,10 +3,31 @@
 const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
 const OWNER_EMAIL = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLowerCase();
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
-const MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT |STUDIO HUMAN /i;
+const RUN_ID = String(process.env.GITHUB_RUN_ID || `local-${process.pid}`);
+const RUN_MARKER = `run-${RUN_ID}-`;
+const LEGACY_MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT |Full launch worker detail /i;
+const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+const REQUEST_TIMEOUT_MS = Math.max(4_000, Number(process.env.CHURVOX_CLEANUP_REQUEST_TIMEOUT_MS || 10_000));
+const MAX_ATTEMPTS = Math.max(1, Number(process.env.CHURVOX_CLEANUP_ATTEMPTS || 3));
+const DEADLINE_MS = Math.max(60_000, Number(process.env.CHURVOX_CLEANUP_DEADLINE_MS || 180_000));
+const STARTED_AT = Date.now();
+
+function log(message) {
+  console.log(`[cleanup +${Math.round((Date.now() - STARTED_AT) / 1000)}s] ${message}`);
+}
+
+function remainingMs() {
+  return DEADLINE_MS - (Date.now() - STARTED_AT);
+}
+
+function assertWithinDeadline(stage) {
+  if (remainingMs() <= 0) throw new Error(`Cleanup deadline reached during ${stage}.`);
+}
 
 function tokenFrom(body = {}) {
-  return body.token || body.access_token || body.user?.token || body.data?.token || body.data?.user?.token || '';
+  return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+    || body.user?.token || body.user?.access_token || body.data?.token
+    || body.data?.access_token || body.data?.user?.token || '';
 }
 
 function idOf(row = {}) {
@@ -23,132 +44,194 @@ function rowsFrom(payload) {
   return [];
 }
 
-function matches(row) {
-  MARKERS.lastIndex = 0;
-  return MARKERS.test(JSON.stringify(row || {}));
+function textOf(row) {
+  return JSON.stringify(row || {});
+}
+
+function isCurrentRunFixture(row) {
+  return textOf(row).includes(RUN_MARKER);
+}
+
+function isLegacyFixture(row) {
+  LEGACY_MARKERS.lastIndex = 0;
+  return LEGACY_MARKERS.test(textOf(row));
 }
 
 function inactiveRecord(row = {}) {
   if (row.archived === true || row.is_archived === true || row.deleted === true || row.is_deleted === true) return true;
-  if (row.archived_at || row.deleted_at) return true;
-  return /archived|deleted|dismissed|rejected/i.test(String(row.status || row.state || ''));
+  if (row.archived_at || row.deleted_at || row.ignored_at || row.dismissed_at || row.decided_at) return true;
+  const status = String(row.status || row.state || row.action || row.owner_decision || row.decision || '');
+  return /archived|deleted|dismissed|rejected|ignored|resolved|approved_recorded/i.test(status);
 }
 
-async function call(path, options = {}) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callOnce(path, options = {}) {
+  assertWithinDeadline(path);
+  const timeoutMs = Math.max(1_000, Math.min(REQUEST_TIMEOUT_MS, remainingMs()));
   const response = await fetch(`${API_BASE}${path}`, {
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
   });
   const text = await response.text();
   let body = {};
-  try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
+  try { body = JSON.parse(text || '{}'); } catch { body = { text: text.slice(0, 300) }; }
   return { response, body };
+}
+
+async function call(path, options = {}) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await callOnce(path, options);
+      if (!RETRYABLE_STATUS.has(result.response.status) || attempt === MAX_ATTEMPTS) return result;
+      lastError = new Error(`Cleanup request ${path} returned HTTP ${result.response.status}.`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_ATTEMPTS) throw error;
+    }
+    await sleep(Math.min(750 * attempt, Math.max(0, remainingMs())));
+  }
+  throw lastError || new Error(`Cleanup request failed: ${path}`);
 }
 
 async function login() {
   if (!OWNER_EMAIL || !OWNER_PASSWORD) throw new Error('Owner cleanup credentials are missing.');
+  log('Signing in for owner-scoped cleanup.');
   const result = await call('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: OWNER_EMAIL, password: OWNER_PASSWORD }) });
-  if (!result.response.ok) throw new Error(`Cleanup owner login failed with ${result.response.status}.`);
+  if (!result.response.ok) throw new Error(`Cleanup owner login failed with HTTP ${result.response.status}.`);
   const token = tokenFrom(result.body);
   if (!token) throw new Error('Cleanup owner login returned no token.');
   return token;
 }
 
 async function removeBusinessRecord(kind, id, headers) {
-  let result = await call(`/api/${kind}/${encodeURIComponent(id)}`, { method: 'DELETE', headers });
+  const result = await call(`/api/${kind}/${encodeURIComponent(id)}`, { method: 'DELETE', headers });
   if (result.response.ok || result.response.status === 404) return true;
-  if (kind === 'jobs') {
-    result = await call(`/api/jobs/${encodeURIComponent(id)}/archive`, {
-      method: 'POST', headers, body: JSON.stringify({ archived: true, status: 'archived', archive_reason: 'hardcore human audit cleanup' }),
-    });
-    if (result.response.ok || result.response.status === 404) return true;
-    result = await call(`/api/jobs/${encodeURIComponent(id)}`, {
-      method: 'PATCH', headers, body: JSON.stringify({ archived: true, status: 'archived', archive_reason: 'hardcore human audit cleanup' }),
-    });
-  }
-  return result.response.ok || result.response.status === 404;
+  log(`${kind} ${id} delete returned HTTP ${result.response.status}: ${JSON.stringify(result.body).slice(0, 180)}`);
+  return false;
 }
 
 async function resolveCommandSlip(row, headers) {
   const id = idOf(row);
   if (!id) return false;
-  let result = await call(`/api/command/slips/${encodeURIComponent(id)}/ignore`, {
-    method: 'POST', headers, body: JSON.stringify({ action: 'Ignore', note: 'Hardcore human audit cleanup' }),
+
+  const command = await call(`/api/command/slips/${encodeURIComponent(id)}/ignore`, {
+    method: 'POST', headers, body: JSON.stringify({ action: 'Ignore', note: `Launch audit ${RUN_ID} cleanup` }),
   });
-  if (result.response.ok || result.response.status === 404) return true;
-  result = await call(`/api/command/field-slips/${encodeURIComponent(id)}/dismiss`, {
-    method: 'POST', headers, body: JSON.stringify({ note: 'Hardcore human audit cleanup' }),
+  if (command.response.ok || command.response.status === 404) return true;
+
+  const field = await call(`/api/command/field-slips/${encodeURIComponent(id)}/dismiss`, {
+    method: 'POST', headers, body: JSON.stringify({ note: `Launch audit ${RUN_ID} cleanup` }),
   });
-  return result.response.ok || result.response.status === 404;
+  if (field.response.ok || field.response.status === 404) return true;
+
+  log(`Command fixture ${id} could not be resolved: ignore ${command.response.status}, dismiss ${field.response.status}`);
+  return false;
 }
 
 async function list(path, headers) {
   const suffix = path.includes('?') ? '&' : '?';
   const result = await call(`${path}${suffix}ts=${Date.now()}`, { headers });
-  return result.response.ok ? rowsFrom(result.body) : [];
+  if (!result.response.ok) throw new Error(`Cleanup list ${path} failed with HTTP ${result.response.status}.`);
+  return rowsFrom(result.body);
+}
+
+async function mapLimited(items, limit, worker) {
+  const rows = Array.from(items || []);
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, rows.length) }, async () => {
+    while (cursor < rows.length) {
+      const index = cursor;
+      cursor += 1;
+      await worker(rows[index], index);
+    }
+  });
+  await Promise.all(runners);
+}
+
+async function listCollections(kinds, headers, phase) {
+  log(`${phase}: reading ${kinds.join(', ')} in parallel.`);
+  const entries = await Promise.all(kinds.map(async (kind) => [kind, await list(`/api/${kind}?limit=1000`, headers)]));
+  return new Map(entries);
 }
 
 async function main() {
+  log(`Starting exact-run cleanup for GitHub run ${RUN_ID} against ${API_BASE}.`);
   const token = await login();
   const headers = { Authorization: `Bearer ${token}` };
   const failures = [];
-  const settled = new Set();
-  const commandSeen = new Set();
   let matched = 0;
   let cleaned = 0;
+  let legacyBacklog = 0;
 
-  for (const kind of ['jobs', 'clients', 'quotes', 'invoices']) {
-    for (const row of await list(`/api/${kind}?limit=400`, headers)) {
-      if (!matches(row)) continue;
-      matched += 1;
-      const id = idOf(row);
-      if (!id) { failures.push(`${kind}:missing-id`); continue; }
-      if (await removeBusinessRecord(kind, id, headers)) { cleaned += 1; settled.add(`${kind}:${id}`); }
-      else failures.push(`${kind}:${id}`);
+  const kinds = ['jobs', 'clients', 'quotes', 'invoices'];
+  const initial = await listCollections(kinds, headers, 'Initial scan');
+  const businessMatches = [];
+  for (const [kind, rows] of initial.entries()) {
+    for (const row of rows) {
+      if (isLegacyFixture(row) && !isCurrentRunFixture(row) && !inactiveRecord(row)) legacyBacklog += 1;
+      if (isCurrentRunFixture(row) && !inactiveRecord(row)) businessMatches.push({ kind, row });
     }
   }
+  log(`Found ${businessMatches.length} active fixture record(s) created by run ${RUN_ID}.`);
+  if (legacyBacklog) log(`Found ${legacyBacklog} older audit record(s); reported as legacy backlog and not mutated by this run.`);
 
-  // The live Command endpoint can expose a bounded page. Drain successive
-  // pages until no matching active audit slips remain instead of cleaning only page one.
-  for (let round = 0; round < 24; round += 1) {
-    const commandRows = (await list('/api/command/slips?limit=400', headers)).filter((row) => matches(row) && !inactiveRecord(row));
+  await mapLimited(businessMatches, 3, async ({ kind, row }) => {
+    matched += 1;
+    const id = idOf(row);
+    if (!id) { failures.push(`${kind}:missing-id`); return; }
+    if (await removeBusinessRecord(kind, id, headers)) cleaned += 1;
+    else failures.push(`${kind}:${id}`);
+  });
+
+  for (let round = 1; round <= 3; round += 1) {
+    const commandRows = (await list('/api/command/slips?limit=400', headers))
+      .filter((row) => isCurrentRunFixture(row) && !inactiveRecord(row));
+    log(`Command cleanup round ${round} found ${commandRows.length} exact-run slip(s).`);
     if (!commandRows.length) break;
     let progressed = 0;
-    for (const row of commandRows) {
+    await mapLimited(commandRows, 3, async (row) => {
+      matched += 1;
       const id = idOf(row);
-      if (id && !commandSeen.has(id)) { commandSeen.add(id); matched += 1; }
-      if (await resolveCommandSlip(row, headers)) {
-        progressed += 1;
-        cleaned += 1;
-        if (id) settled.add(`command:${id}`);
-      } else {
-        failures.push(`command:${id || 'missing-id'}`);
-      }
-    }
+      if (await resolveCommandSlip(row, headers)) { progressed += 1; cleaned += 1; }
+      else failures.push(`command:${id || 'missing-id'}`);
+    });
     if (!progressed) break;
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await sleep(300);
   }
 
-  // Messages and notifications are immutable audit history. They are checked for safety but are not treated as active business records.
-  const historyMatches = [];
-  for (const path of ['/api/messages?limit=400', '/api/notifications?limit=400']) {
-    for (const row of await list(path, headers)) if (matches(row)) historyMatches.push({ path, id: idOf(row) });
+  let immutableCurrentEntries = 0;
+  try {
+    const history = await Promise.all(['/api/messages?limit=400', '/api/notifications?limit=400'].map((path) => list(path, headers)));
+    immutableCurrentEntries = history.flat().filter(isCurrentRunFixture).length;
+  } catch (error) {
+    log(`Immutable history count unavailable: ${error.message || error}`);
   }
 
+  const verification = await listCollections(kinds, headers, 'Verification');
   const remainingActive = [];
-  for (const kind of ['jobs', 'clients', 'quotes', 'invoices']) {
-    for (const row of await list(`/api/${kind}?limit=400`, headers)) { const key = `${kind}:${idOf(row)}`; if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key); }
+  for (const [kind, rows] of verification.entries()) {
+    for (const row of rows) {
+      if (isCurrentRunFixture(row) && !inactiveRecord(row)) remainingActive.push(`${kind}:${idOf(row) || 'missing-id'}`);
+    }
   }
-  for (const row of await list('/api/command/slips?limit=400', headers)) { const key = `command:${idOf(row)}`; if (matches(row) && !inactiveRecord(row) && !settled.has(key)) remainingActive.push(key); }
+  for (const row of await list('/api/command/slips?limit=400', headers)) {
+    if (isCurrentRunFixture(row) && !inactiveRecord(row)) remainingActive.push(`command:${idOf(row) || 'missing-id'}`);
+  }
 
-  console.log(`Cleanup matched ${matched} active audit records and cleaned/resolved ${cleaned}.`);
-  console.log(`Retained ${historyMatches.length} immutable message/notification audit entries.`);
+  log(`Matched ${matched} exact-run record(s); accepted ${cleaned} cleanup resolution(s).`);
+  log(`Retained ${immutableCurrentEntries} immutable exact-run audit entr${immutableCurrentEntries === 1 ? 'y' : 'ies'}.`);
   if (failures.length || remainingActive.length) {
-    throw new Error(`Cleanup incomplete. Failures: ${failures.join(', ') || 'none'}. Active remnants: ${remainingActive.join(', ') || 'none'}.`);
+    throw new Error(`Exact-run cleanup incomplete. Failures: ${failures.join(', ') || 'none'}. Active remnants: ${remainingActive.join(', ') || 'none'}.`);
   }
+  log(`Exact-run cleanup passed. Legacy backlog count: ${legacyBacklog}.`);
 }
 
 main().catch((error) => {
-  console.error(error.message || error);
+  console.error(`[cleanup failed] ${error.message || error}`);
   process.exit(1);
 });

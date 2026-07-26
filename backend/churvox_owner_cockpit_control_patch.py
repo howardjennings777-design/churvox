@@ -11,6 +11,15 @@ INSTALLED = set()
 OWNER_EMAIL = "hello@churvox.com"
 PLAN_ALIAS = {"start": "solo", "solo": "solo", "crew": "team", "team": "team", "operator": "pro", "pro": "pro", "command": "enterprise", "enterprise": "enterprise"}
 PACK_LABELS = {"full_access": "Full tester access", "command_growth_pack": "Command Growth Pack", "accounting_sync": "Accounting Sync Add-on", "operator_pack": "Operator free pack", "command_pack": "Command free pack"}
+PREPARED_COLLECTIONS = {
+    "message_drafts",
+    "payroll_reviews",
+    "accounting_reviews",
+    "quality_reviews",
+    "client_memory_reviews",
+    "operations_reviews",
+    "invoice_reviews",
+}
 
 
 def now_utc():
@@ -82,6 +91,31 @@ def install(module):
         if lower(user.get("email")) != OWNER_EMAIL:
             raise HTTPException(status_code=403, detail="App owner cockpit is locked to hello@churvox.com")
         return user
+
+    async def require_business_owner(request: Request):
+        user = await get_current_user(request)
+        role = lower(user.get("role") or user.get("user_role") or user.get("account_type"))
+        allowed = {"employer", "admin", "owner", "business_owner", "manager", "office_admin"}
+        if role not in allowed and not user.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Only owners/admins can read prepared Command records")
+        return user
+
+    def business_query(user):
+        business_id = text(user.get("business_id") or user.get("businessId") or user.get("id") or user.get("_id"))
+        if not business_id:
+            raise HTTPException(status_code=400, detail="Business id is missing")
+        values = [business_id]
+        maybe = oid(business_id)
+        if maybe is not None:
+            values.append(maybe)
+        return {
+            "$or": [
+                {"business_id": {"$in": values}},
+                {"businessId": {"$in": values}},
+                {"contractor_id": {"$in": values}},
+                {"owner_business_id": {"$in": values}},
+            ]
+        }
 
     async def find_user(identifier):
         ident = lower(identifier)
@@ -161,9 +195,44 @@ def install(module):
         testers = await db.app_owner_testers.find({}).sort("updated_at", -1).limit(500).to_list(length=500)
         return {"success": True, "items": safe(rows), "testers": safe(testers)}
 
-    for method, path, endpoint in [("POST", "/api/admin/owner/tester-intake", tester_intake), ("POST", "/api/admin/owner/control-access", control_access), ("GET", "/api/admin/owner/control-log", control_log)]:
-        remove_route(app, path, method)
-        app.add_api_route(path, endpoint, methods=[method])
+    async def prepared_records(collection_name: str, request: Request, limit: int = 30):
+        user = await require_business_owner(request)
+        collection = lower(collection_name)
+        if collection not in PREPARED_COLLECTIONS:
+            raise HTTPException(status_code=404, detail="Prepared record collection is not available")
+        bounded_limit = max(1, min(int(limit or 30), 100))
+        rows = await db[collection].find(business_query(user)).sort("created_at", -1).limit(bounded_limit).to_list(length=bounded_limit)
+        clean_rows = safe(rows)
+        return {
+            "success": True,
+            "collection": collection,
+            "records": clean_rows,
+            "items": clean_rows,
+            "data": clean_rows,
+            "count": len(clean_rows),
+            "safety": "Owner-only business-scoped read. No record was changed, sent, paid, filed or synced.",
+        }
+
+    async def prepared_records_readiness(request: Request):
+        await require_business_owner(request)
+        return {
+            "success": True,
+            "ready": True,
+            "collections": sorted(PREPARED_COLLECTIONS),
+            "route": "/api/command/prepared-records/{collection_name}",
+            "safety": "Read-only and business-scoped.",
+        }
+
+    routes = [
+        ("POST", "/api/admin/owner/tester-intake", tester_intake),
+        ("POST", "/api/admin/owner/control-access", control_access),
+        ("GET", "/api/admin/owner/control-log", control_log),
+        ("GET", "/api/command/prepared-records/{collection_name}", prepared_records),
+        ("GET", "/api/command/prepared-records-readiness", prepared_records_readiness),
+    ]
+    for method, route_path, endpoint in routes:
+        remove_route(app, route_path, method)
+        app.add_api_route(route_path, endpoint, methods=[method])
     INSTALLED.add(name)
 
 

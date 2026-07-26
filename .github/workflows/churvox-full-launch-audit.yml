@@ -3,41 +3,55 @@ name: Churvox Full Launch Audit
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, agent/churvox-office-os-foundation]
     paths:
-      - 'frontend/src/**'
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
-      - 'frontend/server-branch-test.cjs'
-      - 'scripts/churvox-discover-linked-worker.cjs'
+      - 'frontend/server.cjs'
+      - 'frontend/src/runtime/churvoxVisibleControlTextRuntime.js'
+      - 'frontend/src/pages/ChurvoxHQPage.jsx'
+      - 'frontend/src/pages/ChurvoxHQPage.css'
+      - 'frontend/src/churvox-site-next/HQConnected.jsx'
+      - 'scripts/churvox-hardcore-human-cleanup.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'frontend/src/**'
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
-      - 'frontend/server-branch-test.cjs'
-      - 'scripts/churvox-discover-linked-worker.cjs'
+      - 'frontend/server.cjs'
+      - 'frontend/src/runtime/churvoxVisibleControlTextRuntime.js'
+      - 'frontend/src/pages/ChurvoxHQPage.jsx'
+      - 'frontend/src/pages/ChurvoxHQPage.css'
+      - 'frontend/src/churvox-site-next/HQConnected.jsx'
+      - 'scripts/churvox-hardcore-human-cleanup.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
-
-permissions:
-  contents: read
 
 concurrency:
   group: churvox-full-launch-audit-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: frontend
     env:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
       PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      PLAYWRIGHT_SKIP_WEB_SERVER: '1'
       CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
       CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
       CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_HQ_EMAIL: hello@churvox.com
+      CHURVOX_HQ_PASSWORD: ${{ secrets.CHURVOX_HQ_PASSWORD || secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_REQUIRE_AUTH_AUDIT: '1'
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
       CI: true
 
     steps:
@@ -48,72 +62,277 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
+          cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Verify private owner credential
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build production frontend
+        run: npm run build
+
+      - name: Start PR frontend with same-origin API proxy
         run: |
-          test -n "$CHURVOX_OWNER_PASSWORD"
-          echo "Owner credential is configured and remains masked."
-
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm install --include=dev --legacy-peer-deps
-
-      - name: Compile current Studio tests and production frontend
-        working-directory: frontend
-        run: |
-          node --check server-branch-test.cjs
-          node --check tests/e2e/churvox-studio-live-pages.spec.js
-          npm run build
-
-      - name: Install Playwright Chromium
-        working-directory: frontend
-        run: npx playwright install --with-deps chromium
-
-      - name: Discover linked worker login
-        run: node scripts/churvox-discover-linked-worker.cjs
-
-      - name: Start branch application with fetch proxy
-        working-directory: frontend
-        run: |
-          setsid node server-branch-test.cjs </dev/null > /tmp/churvox-full-launch-local.log 2>&1 &
-          for i in {1..90}; do
-            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
-            if [[ "$status" =~ ^[234] ]]; then
-              echo "Branch application ready with HTTP $status"
+          PORT=3000 node server.cjs > ../churvox-pr-server.log 2>&1 &
+          echo $! > ../churvox-pr-server.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ >/dev/null; then
+              echo "PR frontend and API proxy are ready."
               exit 0
             fi
-            sleep 2
+            sleep 1
           done
-          cat /tmp/churvox-full-launch-local.log
+          cat ../churvox-pr-server.log || true
           exit 1
 
-      - name: Run current public, owner, worker and role audit
-        working-directory: frontend
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify private owner credentials
+        id: credential
         run: |
-          npx playwright test tests/e2e/churvox-studio-live-pages.spec.js \
+          test -n "$CHURVOX_OWNER_PASSWORD" || {
+            echo "::error::CHURVOX_OWNER_PASSWORD repository secret is missing."
+            exit 1
+          }
+          test -n "$CHURVOX_HQ_PASSWORD" || {
+            echo "::error::Neither CHURVOX_HQ_PASSWORD nor the owner-password fallback is available."
+            exit 1
+          }
+          echo "Owner and HQ credentials are configured and remain masked."
+
+      - name: Discover linked worker login
+        id: worker
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const api = process.env.PLAYWRIGHT_API_BASE.replace(/\/+$/, '');
+          const ownerEmail = process.env.CHURVOX_OWNER_EMAIL;
+          const password = process.env.CHURVOX_OWNER_PASSWORD;
+
+          function tokenFrom(body = {}) {
+            return body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+              || body.user?.token || body.user?.access_token || body.data?.token
+              || body.data?.access_token || body.data?.user?.token || '';
+          }
+
+          function rowsFrom(payload) {
+            const data = payload?.data?.data ?? payload?.data ?? payload;
+            if (Array.isArray(data)) return data;
+            for (const key of ['workers', 'team', 'members', 'items', 'records', 'results', 'data']) {
+              if (Array.isArray(data?.[key])) return data[key];
+            }
+            return [];
+          }
+
+          function emailOf(row = {}) {
+            return String(row.email || row.worker_email || row.user_email || row.login_email || '').trim().toLowerCase();
+          }
+
+          function active(row = {}) {
+            const status = String(row.status || row.worker_status || '').toLowerCase();
+            return row.active !== false && row.is_active !== false && !/inactive|deleted|archived|disabled/.test(status);
+          }
+
+          async function request(path, options = {}) {
+            const response = await fetch(`${api}${path}`, {
+              signal: AbortSignal.timeout(20_000),
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(options.headers || {}) },
+              ...options,
+            });
+            const text = await response.text();
+            let body = {};
+            try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
+            return { response, body };
+          }
+
+          async function login(path, email) {
+            const { response, body } = await request(path, {
+              method: 'POST',
+              body: JSON.stringify({ email, password }),
+            });
+            return {
+              ok: response.ok && body?.success !== false && Boolean(tokenFrom(body)),
+              body,
+              status: response.status,
+            };
+          }
+
+          async function main() {
+            const ownerLogin = await login('/api/auth/login', ownerEmail);
+            if (!ownerLogin.ok) throw new Error(`Owner login failed during worker discovery with HTTP ${ownerLogin.status}.`);
+            const token = tokenFrom(ownerLogin.body);
+            const candidates = [];
+
+            for (const endpoint of ['/api/team/workers', '/api/team', '/api/workers']) {
+              const { response, body } = await request(`${endpoint}?ts=${Date.now()}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (!response.ok) continue;
+              for (const row of rowsFrom(body)) {
+                const email = emailOf(row);
+                if (!email || email === ownerEmail.toLowerCase() || !active(row)) continue;
+                if (!candidates.includes(email)) candidates.push(email);
+              }
+            }
+
+            if (!candidates.length) throw new Error('No active linked worker was found in the owner team endpoints.');
+
+            const attempts = [];
+            for (const email of candidates.slice(0, 8)) {
+              let result = await login('/api/auth/login', email);
+              if (!result.ok) result = await login('/api/worker/auth/login', email);
+              attempts.push(`${email}:${result.status}`);
+              if (!result.ok) continue;
+              console.log(`::add-mask::${email}`);
+              fs.appendFileSync(process.env.GITHUB_ENV, `CHURVOX_WORKER_EMAIL=${email}\n`);
+              console.log('A linked active worker was discovered and its email was masked.');
+              return;
+            }
+
+            throw new Error(`No linked worker accepted the configured password. Attempts: ${attempts.join(', ')}`);
+          }
+
+          main().catch((error) => {
+            console.error(error.message || error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Run full wording, page, flow and boss-worker human audit
+        id: run_audit
+        run: |
+          set +e
+          : > ../churvox-audit-output.txt
+
+          timeout --signal=TERM 38m npx playwright test \
+            tests/e2e/churvox-big-launch-audit.spec.js \
+            tests/e2e/churvox-worker-assigned-job-ui.spec.js \
+            tests/e2e/churvox-wording-flow-human-audit.spec.js \
+            --grep-invert "worker job detail has real field controls for an assigned job" \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --workers=1 \
-            --reporter=line
+            --reporter=list 2>&1 | tee -a ../churvox-audit-output.txt
+          site_status=${PIPESTATUS[0]}
+
+          timeout --signal=TERM 8m npx playwright test \
+            tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=list 2>&1 | tee -a ../churvox-audit-output.txt
+          loop_status=${PIPESTATUS[0]}
+
+          status=0
+          if [ "$site_status" != "0" ] || [ "$loop_status" != "0" ]; then
+            status=1
+          fi
+          skipped=$(grep -Eo '[0-9]+ skipped' ../churvox-audit-output.txt | awk '{sum += $1} END {print sum + 0}')
+          passed=$(grep -Eo '[0-9]+ passed' ../churvox-audit-output.txt | awk '{sum += $1} END {print sum + 0}')
+          skipped=${skipped:-0}
+          passed=${passed:-0}
+          if [ "$skipped" != "0" ]; then
+            echo "::error::Full human audit is incomplete: $skipped tests were skipped."
+            status=1
+          fi
+          echo "site_status=$site_status" >> "$GITHUB_OUTPUT"
+          echo "loop_status=$loop_status" >> "$GITHUB_OUTPUT"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "skipped=$skipped" >> "$GITHUB_OUTPUT"
+          echo "passed=$passed" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Clean all launch audit fixtures
+        id: cleanup
+        if: always() && steps.credential.outcome == 'success'
+        run: |
+          set -o pipefail
+          timeout --signal=TERM 5m node ../scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee ../churvox-cleanup-output.txt
+
+      - name: Write readable audit summary
+        if: always()
+        run: |
+          mkdir -p ../audit-results
+          status="${{ steps.run_audit.outputs.status }}"
+          site_status="${{ steps.run_audit.outputs.site_status }}"
+          loop_status="${{ steps.run_audit.outputs.loop_status }}"
+          passed="${{ steps.run_audit.outputs.passed }}"
+          skipped="${{ steps.run_audit.outputs.skipped }}"
+          status=${status:-1}
+          site_status=${site_status:-1}
+          loop_status=${loop_status:-1}
+          passed=${passed:-0}
+          skipped=${skipped:-0}
+          {
+            echo "# Churvox Full Human Audit"
+            echo
+            echo "- Surface: PR production build through its same-origin proxy"
+            echo "- Backend: https://grassley-backend.onrender.com"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Run: $GITHUB_RUN_ID"
+            echo "- Overall status code: $status"
+            echo "- Site wording/page/flow status: $site_status"
+            echo "- Boss-worker live loop status: $loop_status"
+            echo "- Passed: $passed"
+            echo "- Skipped: $skipped"
+            echo "- Wording and invisible-pill audit: required"
+            echo "- Public, owner, worker and My HQ flow audit: required"
+            echo "- Worker-to-boss and boss-to-worker live loop: required"
+            echo "- Owner credential: ${{ steps.credential.outcome }}"
+            echo "- Linked worker discovery: ${{ steps.worker.outcome }}"
+            echo "- Audit fixture cleanup: ${{ steps.cleanup.outcome }}"
+            echo "- Authenticated audit required: yes"
+            echo "- Time: $(date -u)"
+            echo
+            echo "## Output"
+            echo '```txt'
+            tail -n 500 ../churvox-audit-output.txt || true
+            echo '```'
+            echo
+            echo "## Cleanup"
+            echo '```txt'
+            tail -n 160 ../churvox-cleanup-output.txt || true
+            echo '```'
+          } > ../audit-results/churvox-full-launch-audit-latest.md
+
+      - name: Upload readable audit summary and proxy log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-full-launch-audit-summary-${{ github.run_id }}
+          path: |
+            audit-results/churvox-full-launch-audit-latest.md
+            churvox-audit-output.txt
+            churvox-cleanup-output.txt
+            churvox-pr-server.log
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: churvox-full-launch-audit-report
+          name: churvox-full-launch-audit-report-${{ github.run_id }}
           path: frontend/playwright-report
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 3
 
       - name: Upload Playwright test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: churvox-full-launch-audit-results
-          path: |
-            /tmp/churvox-full-launch-local.log
-            frontend/test-results
+          name: churvox-full-launch-audit-results-${{ github.run_id }}
+          path: frontend/test-results
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 3
+
+      - name: Fail job if audit is incomplete or failed
+        if: always()
+        run: |
+          test "${{ steps.credential.outcome }}" = success || exit 1
+          test "${{ steps.worker.outcome }}" = success || exit 1
+          test "${{ steps.cleanup.outcome }}" = success || exit 1
+          test "${{ steps.run_audit.outputs.site_status }}" = 0 || exit 1
+          test "${{ steps.run_audit.outputs.loop_status }}" = 0 || exit 1
+          test "${{ steps.run_audit.outputs.status }}" = 0 || exit 1
+          test "${{ steps.run_audit.outputs.skipped }}" = 0 || exit 1
