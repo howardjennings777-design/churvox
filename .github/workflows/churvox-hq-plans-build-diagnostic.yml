@@ -1,0 +1,59 @@
+name: Churvox HQ Plans Build Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/src/StandalonePlansRoute.jsx'
+      - 'frontend/src/pages/ChurvoxHQPage.jsx'
+      - 'frontend/tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js'
+      - 'frontend/tests/e2e/churvox-hq-outreach-navigation.spec.js'
+      - '.github/workflows/churvox-hq-plans-build-diagnostic.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-hq-plans-build-diagnostic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  strict-build-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CI: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps >/dev/null
+
+      - name: Capture strict production build result
+        run: |
+          set +e
+          npm run build > /tmp/churvox-strict-build.log 2>&1
+          status=$?
+          tail -n 300 /tmp/churvox-strict-build.log > /tmp/churvox-strict-build-tail.log
+          echo "Strict build exit code: $status"
+          exit "$status"
+
+      - name: Upload strict build diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-hq-plans-strict-build-diagnostic
+          path: /tmp/churvox-strict-build-tail.log
+          if-no-files-found: error
+          retention-days: 1
