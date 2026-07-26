@@ -7,6 +7,7 @@ import "./ChurvoxPublicTouchTargets.css";
 import "./ChurvoxPublicReadableHotfix.css";
 import "./ChurvoxPremiumPublic.css";
 import "./ChurvoxPremiumScenes.css";
+import "./ChurvoxPublicContrastFixes.css";
 
 const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
 const navItems = [["/product", "Product"], ["/pricing", "Pricing"], ["/demo", "Demo"], ["/security", "Security"], ["/contact", "Contact"]];
