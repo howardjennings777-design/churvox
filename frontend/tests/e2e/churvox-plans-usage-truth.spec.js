@@ -173,7 +173,8 @@ test.describe('Plans live usage truth', () => {
     expect(payload.ui_plan).toBe('enterprise');
     expect(payload.country).toBe('NZ');
     expect(payload.accounting_sync).toBe('1');
-    expect(payload.growth_packs).toBe('0');
+    expect(payload.growth_packs).toBe('');
+    expect(payload.packs).toBe('');
     expect(payload.source).toBe('fresh_plans_clean_v46');
   });
 });
