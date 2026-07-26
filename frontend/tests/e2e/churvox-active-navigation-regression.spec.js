@@ -66,7 +66,7 @@ test('active owner navigation uses Jobs and complete mobile destinations', async
   await expect(dock.getByRole('button', { name: /^Jobs$/i })).toBeVisible();
   await dock.getByRole('button', { name: /^More$/i }).click();
   const more = page.locator('.cvsMobileMore');
-  for (const label of ['Clients', 'Money', 'Team', 'Settings', 'Plans & billing', 'Help']) {
+  for (const label of ['Clients', 'Money', 'Team', 'Settings', 'Plans', 'Help']) {
     await expect(more.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }).first()).toBeVisible();
   }
 });
