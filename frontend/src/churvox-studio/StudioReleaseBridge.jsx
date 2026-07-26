@@ -66,18 +66,49 @@ function ensureMobileMoreDestination(mobileMore, page, label) {
   section.insertBefore(button, utility || null);
 }
 
-function keepMobileTodayHeading(target, currentPage) {
+function fallbackPageLabel(page) {
+  const labels = {
+    today: "Today",
+    jobs: "Jobs",
+    recurring: "Recurring jobs",
+    dispatch: "Dispatch",
+    routes: "Routes",
+    areas: "Service areas",
+    clients: "Clients",
+    quotes: "Quotes",
+    invoices: "Invoices",
+    payments: "Payments",
+    accounting: "Accounting",
+    crew: "Team",
+    field: "Field activity",
+    payroll: "Payroll",
+    timesheets: "Timesheets",
+    messages: "Messages",
+    command: "Command",
+    aioperator: "Command",
+    quickcreateai: "Command",
+    planday: "Command",
+    settings: "Settings",
+    plans: "Plans & billing",
+    support: "Help",
+  };
+  return labels[page] || "Churvox";
+}
+
+function keepMobilePageHeading(target, currentPage) {
   if (!target) return;
   const mobile = window.matchMedia("(max-width: 760px)").matches;
-  let heading = target.querySelector(":scope > .cvMobileTodayHeading");
-  if (!mobile || currentPage !== "today") {
+  let heading = target.querySelector(":scope > .cvMobilePageHeading");
+  if (!mobile) {
     if (heading) heading.remove();
     return;
   }
+
+  const contextLabel = customerLabel(document.querySelector(".cvsContextIdentity b")?.textContent);
+  const label = contextLabel || fallbackPageLabel(currentPage);
   if (!heading) {
     heading = document.createElement("h1");
-    heading.className = "cvMobileTodayHeading";
-    heading.textContent = "Today";
+    heading.className = "cvMobilePageHeading";
     heading.style.margin = "0 0 12px";
     heading.style.color = "#161a17";
     heading.style.fontFamily = '"Manrope", sans-serif';
@@ -86,6 +117,7 @@ function keepMobileTodayHeading(target, currentPage) {
     heading.style.letterSpacing = "-0.045em";
     target.prepend(heading);
   }
+  if (heading.textContent !== label) heading.textContent = label;
 }
 
 export default function StudioReleaseBridge() {
@@ -207,7 +239,7 @@ export default function StudioReleaseBridge() {
       }
 
       const target = document.querySelector(".cvsWorkspace");
-      keepMobileTodayHeading(target, currentPage);
+      keepMobilePageHeading(target, currentPage);
       setWorkspace((current) => current === target ? current : target);
       if (target) target.classList.toggle("cvPlansReleaseHost", currentPage === "plans");
       setPage((current) => current === currentPage ? current : currentPage);
