@@ -167,6 +167,7 @@ async function main() {
   let matched = 0;
   let cleaned = 0;
   let legacyBacklog = 0;
+  let commandMatches = 0;
 
   const kinds = ['jobs', 'clients', 'quotes', 'invoices'];
   const initial = await listCollections(kinds, headers, 'Initial scan');
@@ -191,6 +192,7 @@ async function main() {
   for (let round = 1; round <= 3; round += 1) {
     const commandRows = (await list('/api/command/slips?limit=400', headers))
       .filter((row) => isCurrentRunFixture(row) && !inactiveRecord(row));
+    commandMatches += commandRows.length;
     log(`Command cleanup round ${round} found ${commandRows.length} exact-run slip(s).`);
     if (!commandRows.length) break;
     let progressed = 0;
@@ -210,6 +212,13 @@ async function main() {
     immutableCurrentEntries = history.flat().filter(isCurrentRunFixture).length;
   } catch (error) {
     log(`Immutable history count unavailable: ${error.message || error}`);
+  }
+
+  if (!businessMatches.length && commandMatches === 0 && !failures.length) {
+    log(`Matched 0 exact-run mutable records; no destructive verification scan is required.`);
+    log(`Retained ${immutableCurrentEntries} immutable exact-run audit entr${immutableCurrentEntries === 1 ? 'y' : 'ies'}.`);
+    log(`Exact-run cleanup passed. Legacy backlog count: ${legacyBacklog}.`);
+    return;
   }
 
   const verification = await listCollections(kinds, headers, 'Verification');

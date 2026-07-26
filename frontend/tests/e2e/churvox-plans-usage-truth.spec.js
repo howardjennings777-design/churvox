@@ -31,13 +31,15 @@ async function bootPlans(page, usageResponse) {
     if (/\/api\/auth\/(?:me|check|session)$/.test(path)) return route.fulfill(json({ success: true, user, ...user }));
     if (path === '/api/billing/subscription-status') return route.fulfill(json({ success: true, plan: 'pro', current_plan: 'operator', subscription_status: 'active', stripe_subscription_id: 'sub_plans_usage', has_app_access: true }));
     if (path === '/api/plan/usage') return route.fulfill(json(usageResponse.body, usageResponse.status || 200));
+    if (path === '/api/billing/addons') return route.fulfill(json({ success: true, data: { active: [] } }));
     if (path === '/api/platform/visit') return route.fulfill(json({ ok: true }));
     return route.fulfill(json({ success: true, items: [], data: [] }));
   });
 
-  await page.goto('/dashboard#plans', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: 'Churvox does the admin. You approve.' })).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText('Current plan', { exact: true })).toBeVisible();
+  await page.goto('/plans', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('main[data-churvox-layout="fresh-studio"]')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('Current plan', { exact: true }).first()).toBeVisible();
 }
 
 async function bootNewOwnerPlans(page) {
@@ -72,16 +74,19 @@ async function bootNewOwnerPlans(page) {
     const path = new URL(request.url()).pathname;
     if (/\/api\/auth\/(?:me|check|session)$/.test(path)) return route.fulfill(json({ success: true, user, ...user }));
     if (path === '/api/billing/subscription-status') return route.fulfill(json({ success: true, plan: 'pro', current_plan: 'operator', subscription_status: 'active', stripe_subscription_id: 'sub_new_plans', has_app_access: true }));
-    if (path === '/api/billing/start-checkout-form') {
-      checkoutPayload = Object.fromEntries(new URLSearchParams(request.postData() || ''));
-      return route.fulfill({ status: 302, headers: { location: 'https://checkout.stripe.com/c/pay/churvox-new-plans-test' }, body: '' });
+    if (path === '/api/plan/usage') return route.fulfill(json({ success: true, usage_verified: true, limit_source: 'locked_paid_launch_limits_current_plans', used: { clients: 1, jobs_this_month: 1, ai_actions: 1, active_team_members: 1 }, limits: { clients: 3000, jobs_per_month: 500, ai_actions: 500, active_team_members: 15 } }));
+    if (path === '/api/billing/addons') return route.fulfill(json({ success: true, data: { active: [] } }));
+    if (path === '/api/billing/create-checkout-session') {
+      checkoutPayload = request.postDataJSON();
+      return route.fulfill(json({ success: true, url: 'https://checkout.stripe.com/c/pay/churvox-current-plans-test' }));
     }
     if (path === '/api/platform/visit') return route.fulfill(json({ ok: true }));
     return route.fulfill(json({ success: true, items: [], decisions: [], audit: [], data: [] }));
   });
 
-  await page.goto('/dashboard#plans', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: 'Churvox does the admin. You approve.' })).toBeVisible({ timeout: 10000 });
+  await page.goto('/plans', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('main[data-churvox-layout="fresh-studio"]')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible({ timeout: 10000 });
   return () => checkoutPayload;
 }
 
@@ -104,7 +109,8 @@ test.describe('Plans live usage truth', () => {
 
     const panel = page.locator('#churvox-plan-live-usage');
     await expect(panel).toBeVisible({ timeout: 10000 });
-    await expect(panel.getByRole('heading', { name: 'Operator usage' })).toBeVisible();
+    await expect(panel.getByRole('heading', { name: 'Plan usage' })).toBeVisible();
+    await expect(page.locator('.cvReleaseCurrentPlan').getByRole('heading', { name: 'Operator' })).toBeVisible();
     await expect(panel).toContainText('4 / 15');
     await expect(panel).toContainText('42 / 3,000');
     await expect(panel).toContainText('18 / 500');
@@ -156,25 +162,24 @@ test.describe('Plans live usage truth', () => {
   test('current Plans secure checkout posts the exact Command selection to Stripe', async ({ page }) => {
     const getCheckoutPayload = await bootNewOwnerPlans(page);
 
-    const commandCard = page.locator('.cvPlanCard').filter({ has: page.locator('strong', { hasText: /^Command$/ }) });
-    await expect(commandCard).toBeVisible();
-    await commandCard.click();
+    const commandCard = page.locator('.cvReleasePlansGrid article').filter({ has: page.locator('h2:text-is("Command")') });
+    await expect(commandCard).toHaveCount(1);
+    await commandCard.getByRole('button', { name: 'Start Command', exact: true }).click();
 
-    const selectedPanel = page.locator('.cvPlanSelected');
-    await expect(selectedPanel.getByRole('heading', { name: 'Command' })).toBeVisible();
-    await expect(selectedPanel).toContainText('Accounting sync');
-    await page.locator('.cvPlanCheckout').getByRole('button', { name: 'Buy selected plan', exact: true }).click();
-    await expect(page).toHaveURL(/checkout\.stripe\.com\/c\/pay\/churvox-new-plans-test/);
+    const checkout = page.getByRole('dialog', { name: 'Command Stripe checkout' });
+    await expect(checkout).toBeVisible();
+    await expect(checkout).toContainText('$299/month + GST');
+    await expect(checkout).toContainText('New Zealand - NZD');
+    await checkout.getByRole('button', { name: 'Continue to Stripe', exact: true }).click();
+    await expect(page).toHaveURL(/checkout\.stripe\.com\/c\/pay\/churvox-current-plans-test/);
 
     const payload = getCheckoutPayload();
     expect(payload).toBeTruthy();
-    expect(payload.token).toBe('new-plans-token');
     expect(payload.plan).toBe('enterprise');
-    expect(payload.ui_plan).toBe('enterprise');
-    expect(payload.country).toBe('NZ');
-    expect(payload.accounting_sync).toBe('1');
-    expect(payload.growth_packs).toBe('');
-    expect(payload.packs).toBe('');
-    expect(payload.source).toBe('fresh_plans_clean_v46');
+    expect(payload.plan_key).toBe('command');
+    expect(payload.selected_plan).toBe('command');
+    expect(payload.email).toBe('owner@example.test');
+    expect(payload.success_url).toContain('/billing/success?plan=command');
+    expect(payload.cancel_url).toContain('/plans?checkout=cancelled&plan=command');
   });
 });

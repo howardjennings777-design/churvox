@@ -1,6 +1,6 @@
 import API_BASE from "../lib/apiBase";
 
-export const HQ_LIVE_DATA_BUILD = "churvox-hq-live-data-20260723";
+export const HQ_LIVE_DATA_BUILD = "churvox-hq-live-data-20260727";
 
 if (typeof window !== "undefined") {
   window.__CHURVOX_HQ_LIVE_DATA_BUILD__ = HQ_LIVE_DATA_BUILD;
@@ -25,7 +25,7 @@ function host() {
 
 function token() {
   try {
-    return localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+    return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
   } catch {
     return "";
   }
@@ -37,6 +37,14 @@ function headers() {
     Accept: "application/json",
     ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
   };
+}
+
+function bodyOf(payload = {}) {
+  const nested = payload?.data?.data ?? payload?.data;
+  if (nested === undefined || nested === null) return payload;
+  if (Array.isArray(nested)) return { ...payload, items: nested };
+  if (typeof nested === "object") return { ...payload, ...nested };
+  return payload;
 }
 
 function clean(value, fallback = "") {
@@ -65,7 +73,8 @@ function arrayCount(body, depth = 0) {
   return Math.max(0, ...Object.values(body).map((value) => arrayCount(value, depth + 1)));
 }
 
-function sourceSummary(label, body = {}) {
+function sourceSummary(label, payload = {}) {
+  const body = bodyOf(payload);
   const explicitCount = findCount(body, [
     "total",
     "count",
@@ -103,14 +112,15 @@ async function fetchSource(label, path, signal) {
       headers: headers(),
       signal,
     });
-    const body = await response.json().catch(() => ({}));
+    const rawBody = await response.json().catch(() => ({}));
+    const body = bodyOf(rawBody);
     if (response.status === 401 || response.status === 403) {
       return { label, path, state: "locked", count: 0, status: "Owner access required", message: clean(body.detail || body.message, "Platform owner access is required.") };
     }
     if (response.status === 404) {
       return { label, path, state: "missing", count: 0, status: "Not connected", message: "This read endpoint is not registered." };
     }
-    if (!response.ok || body?.success === false || body?.ok === false) {
+    if (!response.ok || rawBody?.success === false || rawBody?.ok === false || body?.success === false || body?.ok === false) {
       return { label, path, state: "error", count: 0, status: `Error ${response.status}`, message: clean(body.detail || body.message || body.error, "The source failed safely.") };
     }
     return { label, path, state: "live", ...sourceSummary(label, body), fetchedAt: new Date().toISOString() };

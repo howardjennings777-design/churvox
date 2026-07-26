@@ -66,6 +66,10 @@ const ICONS = {
   command: Command,
 };
 
+function publicAreaLabel(area, fallback = "") {
+  return area === "work" ? "Jobs" : fallback;
+}
+
 function useStudioRoute(access) {
   const [page, setPage] = React.useState(pageFromLocation);
 
@@ -122,10 +126,11 @@ function StudioHeader({ page, go, access, user, logout, data, openSearch, openCr
             const Icon = ICONS[item.area];
             const active = area === item.area;
             const count = navCount(item.area, data);
+            const label = publicAreaLabel(item.area, item.label);
             return (
-              <button type="button" key={item.id} className={active ? "active" : ""} onClick={() => go(item.id)}>
+              <button type="button" key={item.id} className={active ? "active" : ""} onClick={() => go(item.id)} aria-label={label}>
                 <Icon size={17} />
-                <span>{item.label}</span>
+                <span>{label}</span>
                 <em>{count}</em>
               </button>
             );
@@ -152,7 +157,7 @@ function StudioHeader({ page, go, access, user, logout, data, openSearch, openCr
       </header>
 
       <div className="cvsContextBeam">
-        <div className="cvsContextIdentity"><span>{ICONS[area] ? React.createElement(ICONS[area], { size: 16 }) : <Sparkles size={16} />}</span><b>{area === "utility" ? page === "support" ? "Help" : page === "plans" ? "Plans & billing" : "Settings" : PRIMARY_NAV.find((item) => item.area === area)?.label}</b></div>
+        <div className="cvsContextIdentity"><span>{ICONS[area] ? React.createElement(ICONS[area], { size: 16 }) : <Sparkles size={16} />}</span><b>{area === "utility" ? page === "support" ? "Help" : page === "plans" ? "Plans & billing" : "Settings" : publicAreaLabel(area, PRIMARY_NAV.find((item) => item.area === area)?.label)}</b></div>
         {AREA_TABS[area] ? <nav>{AREA_TABS[area].filter(([id]) => id !== "accounting" || access.accounting).map(([id, label]) => <button type="button" key={id} className={page === id ? "active" : ""} onClick={() => go(id)}>{label}</button>)}</nav> : <div className="cvsContextLine"><span>Live records</span><i /><span>Owner-controlled actions</span></div>}
         <div className="cvsContextStatus"><span className="live-dot" />Live business data</div>
       </div>
@@ -216,11 +221,11 @@ function UpdatesPanel({ updates, close, open, go }) {
 
 function MobileDock({ page, go, access }) {
   const [open, setOpen] = React.useState(false);
-  const items = [["today", "Today", LayoutDashboard], ["jobs", "Work", BriefcaseBusiness], ["command", "Command", Command], ["messages", "Messages", MessageSquare]].filter(([id]) => access.can(areaForPage(id)));
+  const items = [["today", "Today", LayoutDashboard], ["jobs", "Jobs", BriefcaseBusiness], ["command", "Command", Command], ["messages", "Messages", MessageSquare]].filter(([id]) => access.can(areaForPage(id)));
   return (
     <>
       <nav className="cvsMobileDock">{items.map(([id, label, Icon]) => <button type="button" key={id} className={areaForPage(page) === areaForPage(id) ? "active" : ""} onClick={() => go(id)}><Icon size={19} /><span>{label}</span></button>)}<button type="button" onClick={() => setOpen(true)}><Menu size={19} /><span>More</span></button></nav>
-      {open ? <div className="cvsMobileMore"><button type="button" className="scrim" onClick={() => setOpen(false)} /><section><header><div><b>Churvox</b><small>All business areas</small></div><button type="button" onClick={() => setOpen(false)}><X size={19} /></button></header>{PRIMARY_NAV.filter((item) => access.can(item.area)).map((item) => { const Icon = ICONS[item.area]; return <button type="button" key={item.id} onClick={() => { setOpen(false); go(item.id); }}><Icon size={18} />{item.label}<span>{navCount(item.area, { jobs: [], clients: [], invoices: [], workers: [], messages: [], command: [] })}</span></button>; })}<button type="button" onClick={() => { setOpen(false); go("settings"); }}><Settings size={18} />Settings</button><button type="button" onClick={() => { setOpen(false); go("plans"); }}><CircleDollarSign size={18} />Plans & billing</button><button type="button" onClick={() => { setOpen(false); go("support"); }}><HelpCircle size={18} />Help</button></section></div> : null}
+      {open ? <div className="cvsMobileMore"><button type="button" className="scrim" onClick={() => setOpen(false)} /><section><header><div><b>Churvox</b><small>All business areas</small></div><button type="button" onClick={() => setOpen(false)}><X size={19} /></button></header>{PRIMARY_NAV.filter((item) => access.can(item.area)).map((item) => { const Icon = ICONS[item.area]; const label = publicAreaLabel(item.area, item.label); return <button type="button" key={item.id} onClick={() => { setOpen(false); go(item.id); }} aria-label={label}><Icon size={18} />{label}<span>{navCount(item.area, { jobs: [], clients: [], invoices: [], workers: [], messages: [], command: [] })}</span></button>; })}<button type="button" onClick={() => { setOpen(false); go("settings"); }}><Settings size={18} />Settings</button><button type="button" onClick={() => { setOpen(false); go("plans"); }}><CircleDollarSign size={18} />Plans & billing</button><button type="button" onClick={() => { setOpen(false); go("support"); }}><HelpCircle size={18} />Help</button></section></div> : null}
     </>
   );
 }

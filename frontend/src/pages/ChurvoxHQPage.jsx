@@ -1,9 +1,11 @@
 import React from "react";
-import { BarChart3, ExternalLink, Gift, Megaphone, ShieldCheck, Wrench } from "lucide-react";
+import { AlertTriangle, BarChart3, CheckCircle2, ExternalLink, Gift, Megaphone, RefreshCw, ShieldCheck, Wrench } from "lucide-react";
 import PaidLaunchHQSystem from "./PaidLaunchHQSystem";
 import TesterApplicationsInbox from "./admin/TesterApplicationsInbox";
 import ChurvoxPromotionCentre from "./admin/ChurvoxPromotionCentre";
+import { loadHqLiveStatus } from "../churvox-site-next/hqLiveData";
 import "./ChurvoxHQPage.css";
+import "./ChurvoxHQSources.css";
 
 const WORKSPACES = [
   {
@@ -53,8 +55,17 @@ function writeWorkspace(workspace) {
   } catch {}
 }
 
+function sourceTone(state) {
+  if (state === "live") return "good";
+  if (state === "locked") return "warn";
+  if (state === "loading") return "neutral";
+  return "bad";
+}
+
 export default function ChurvoxHQPage({ embedded = false }) {
   const [workspace, setWorkspace] = React.useState(workspaceFromLocation);
+  const [sourceStatus, setSourceStatus] = React.useState({ state: "loading", sources: [], connected: 0, total: 7, fetchedAt: "" });
+  const [sourceLoading, setSourceLoading] = React.useState(true);
   const current = WORKSPACES.find((item) => item.key === workspace) || WORKSPACES[0];
 
   React.useEffect(() => {
@@ -66,6 +77,33 @@ export default function ChurvoxHQPage({ embedded = false }) {
       window.removeEventListener("hashchange", sync);
     };
   }, []);
+
+  const refreshSources = React.useCallback(async (signal) => {
+    setSourceLoading(true);
+    try {
+      const next = await loadHqLiveStatus({ signal });
+      setSourceStatus(next);
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setSourceStatus({
+          state: "unavailable",
+          sources: [],
+          connected: 0,
+          total: 7,
+          fetchedAt: "",
+          message: error?.message || "HQ live reads could not be loaded.",
+        });
+      }
+    } finally {
+      setSourceLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    refreshSources(controller?.signal);
+    return () => controller?.abort();
+  }, [refreshSources]);
 
   const selectWorkspace = (key) => {
     setWorkspace(key);
@@ -110,9 +148,9 @@ export default function ChurvoxHQPage({ embedded = false }) {
           </nav>
           {!embedded ? (
             <nav className="cvMyHqUtilityNav" aria-label="HQ platform tools">
+              <a href="/dashboard"><ExternalLink size={16} />Owner app</a>
               <a href="/admin/usage"><BarChart3 size={16} />Usage</a>
               <a href="/platform"><Wrench size={16} />Platform tools</a>
-              <a href="/new-command-lab?surface=hq"><ExternalLink size={16} />Connected view</a>
             </nav>
           ) : null}
         </div>
@@ -124,7 +162,36 @@ export default function ChurvoxHQPage({ embedded = false }) {
           <h1 id="cv-my-hq-title">{current.title}</h1>
           <p>{current.detail}</p>
         </div>
-        <span className="cvMyHqLiveBadge"><i aria-hidden="true" /> Connected to live HQ controls</span>
+        <span className={`cvMyHqLiveBadge ${sourceTone(sourceLoading ? "loading" : sourceStatus.state)}`}><i aria-hidden="true" /> {sourceLoading ? "Checking live HQ data" : `${sourceStatus.connected} of ${sourceStatus.total} sources connected`}</span>
+      </section>
+
+      <section className="cvMyHqSources" aria-label="HQ live source information">
+        <header>
+          <div>
+            <small>Live information</small>
+            <h2>{sourceLoading ? "Checking Churvox HQ" : `${sourceStatus.connected} connected source${sourceStatus.connected === 1 ? "" : "s"}`}</h2>
+            <p>Every card below shows the real backend result. Failed or locked sources stay visible instead of being replaced with guessed numbers.</p>
+          </div>
+          <button type="button" onClick={() => refreshSources()} disabled={sourceLoading}><RefreshCw size={16} className={sourceLoading ? "spin" : ""} />{sourceLoading ? "Checking…" : "Refresh information"}</button>
+        </header>
+        <div className="cvMyHqSourceGrid">
+          {(sourceStatus.sources || []).map((source) => (
+            <article key={source.path} className={sourceTone(source.state)}>
+              <span aria-hidden="true">{source.state === "live" ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}</span>
+              <div>
+                <small>{source.label}</small>
+                <strong>{source.state === "live" ? Number(source.count || 0).toLocaleString("en-NZ") : source.status}</strong>
+                <p>{source.message}</p>
+              </div>
+            </article>
+          ))}
+          {!sourceStatus.sources?.length ? (
+            <article className="neutral">
+              <span aria-hidden="true"><RefreshCw size={18} /></span>
+              <div><small>HQ sources</small><strong>{sourceLoading ? "Checking" : "Unavailable"}</strong><p>{sourceStatus.message || "No live source response has been received yet."}</p></div>
+            </article>
+          ) : null}
+        </div>
       </section>
 
       <section className="cvMyHqPanel" data-hq-workspace={workspace}>

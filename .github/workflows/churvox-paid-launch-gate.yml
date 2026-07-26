@@ -148,38 +148,47 @@ jobs:
           cat /tmp/churvox-frontend.log
           exit 1
 
-      - name: Run safe paid-launch browser contracts
+      - name: Run isolated safe paid-launch browser contracts
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: |
-          npx playwright test \
-            tests/e2e/churvox-auth-paid-launch-contract.spec.js \
-            tests/e2e/churvox-login-recovery-paid-launch.spec.js \
-            tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js \
-            tests/e2e/churvox-more-menu-paid-launch.spec.js \
-            tests/e2e/churvox-plans-usage-truth.spec.js \
-            tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
-            tests/e2e/churvox-paid-launch-hq-reality.spec.js \
-            tests/e2e/churvox-public-documents-paid-launch.spec.js \
-            tests/e2e/churvox-public-request-paid-launch.spec.js \
-            tests/e2e/churvox-billing-email-verification-gate.spec.js \
-            --project=desktop-chromium \
-            --workers=1 \
-            --reporter=line
+          set -o pipefail
+          specs=(
+            tests/e2e/churvox-auth-paid-launch-contract.spec.js
+            tests/e2e/churvox-login-recovery-paid-launch.spec.js
+            tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js
+            tests/e2e/churvox-more-menu-paid-launch.spec.js
+            tests/e2e/churvox-plans-usage-truth.spec.js
+            tests/e2e/churvox-plans-hq-current-shell.spec.js
+            tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js
+            tests/e2e/churvox-paid-launch-hq-reality.spec.js
+            tests/e2e/churvox-public-documents-paid-launch.spec.js
+            tests/e2e/churvox-public-request-paid-launch.spec.js
+            tests/e2e/churvox-billing-email-verification-gate.spec.js
+          )
+          : > /tmp/churvox-paid-launch-browser.log
+          for spec in "${specs[@]}"; do
+            echo "===== $spec =====" | tee -a /tmp/churvox-paid-launch-browser.log
+            npx playwright test "$spec" --project=desktop-chromium --workers=1 --reporter=line 2>&1 | tee -a /tmp/churvox-paid-launch-browser.log
+          done
 
-      - name: Run mobile account, More and billing contracts
+      - name: Run isolated mobile account, More and billing contracts
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: |
-          npx playwright test \
-            tests/e2e/churvox-login-recovery-paid-launch.spec.js \
-            tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js \
-            tests/e2e/churvox-more-menu-paid-launch.spec.js \
-            tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js \
-            tests/e2e/churvox-paid-launch-hq-reality.spec.js \
-            --project=mobile-chromium \
-            --workers=1 \
-            --reporter=line
+          set -o pipefail
+          specs=(
+            tests/e2e/churvox-login-recovery-paid-launch.spec.js
+            tests/e2e/churvox-signup-invite-logout-paid-launch.spec.js
+            tests/e2e/churvox-more-menu-paid-launch.spec.js
+            tests/e2e/churvox-billing-lifecycle-paid-launch.spec.js
+            tests/e2e/churvox-paid-launch-hq-reality.spec.js
+          )
+          : > /tmp/churvox-paid-launch-mobile.log
+          for spec in "${specs[@]}"; do
+            echo "===== $spec =====" | tee -a /tmp/churvox-paid-launch-mobile.log
+            npx playwright test "$spec" --project=mobile-chromium --workers=1 --reporter=line 2>&1 | tee -a /tmp/churvox-paid-launch-mobile.log
+          done
 
       - name: Upload browser and billing diagnostics on failure
         if: failure()
@@ -190,6 +199,8 @@ jobs:
             frontend/playwright-report
             frontend/test-results
             /tmp/churvox-frontend.log
+            /tmp/churvox-paid-launch-browser.log
+            /tmp/churvox-paid-launch-mobile.log
             /tmp/churvox-billing-truth-behavior.log
             /tmp/churvox-billing-truth-static.log
           if-no-files-found: ignore

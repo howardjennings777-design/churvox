@@ -1,0 +1,206 @@
+.cvMyHqSources {
+  margin: 0 clamp(1rem, 3vw, 2.3rem) 1.2rem;
+  padding: 1rem;
+  border: 1px solid #d7dce2;
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 36px rgba(17, 24, 39, 0.07);
+}
+
+.cvMyHqSources > header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.cvMyHqSources > header small,
+.cvMyHqSourceGrid article small {
+  display: block;
+  color: #9a3412;
+  -webkit-text-fill-color: #9a3412;
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.cvMyHqSources h2 {
+  margin: 0.18rem 0 0;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: clamp(1.3rem, 2.4vw, 2rem);
+  letter-spacing: -0.035em;
+}
+
+.cvMyHqSources > header p {
+  max-width: 58rem;
+  margin: 0.4rem 0 0;
+  color: #4b5563;
+  -webkit-text-fill-color: #4b5563;
+  line-height: 1.45;
+}
+
+.cvMyHqSources > header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.7rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #111827;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cvMyHqSources > header button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.cvMyHqSources .spin {
+  animation: cvMyHqSpin 0.8s linear infinite;
+}
+
+@keyframes cvMyHqSpin {
+  to { transform: rotate(360deg); }
+}
+
+.cvMyHqSourceGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.cvMyHqSourceGrid article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  min-height: 8.4rem;
+  padding: 0.85rem;
+  border: 1px solid #d7dce2;
+  border-radius: 0.9rem;
+  background: #f8fafc;
+}
+
+.cvMyHqSourceGrid article > span {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.65rem;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cvMyHqSourceGrid article strong {
+  display: block;
+  margin-top: 0.22rem;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.cvMyHqSourceGrid article p {
+  margin: 0.42rem 0 0;
+  color: #4b5563;
+  -webkit-text-fill-color: #4b5563;
+  font-size: 0.79rem;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+.cvMyHqSourceGrid article.good {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.cvMyHqSourceGrid article.good > span {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cvMyHqSourceGrid article.warn {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.cvMyHqSourceGrid article.warn > span {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cvMyHqSourceGrid article.bad {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.cvMyHqSourceGrid article.bad > span {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cvMyHqLiveBadge.loading,
+.cvMyHqLiveBadge.neutral {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  -webkit-text-fill-color: #334155;
+}
+
+.cvMyHqLiveBadge.loading i,
+.cvMyHqLiveBadge.neutral i {
+  background: #64748b;
+  box-shadow: 0 0 0 0.25rem rgba(100, 116, 139, 0.14);
+}
+
+.cvMyHqLiveBadge.warn {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+  -webkit-text-fill-color: #92400e;
+}
+
+.cvMyHqLiveBadge.warn i {
+  background: #f59e0b;
+  box-shadow: 0 0 0 0.25rem rgba(245, 158, 11, 0.14);
+}
+
+.cvMyHqLiveBadge.bad {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #991b1b;
+  -webkit-text-fill-color: #991b1b;
+}
+
+.cvMyHqLiveBadge.bad i {
+  background: #ef4444;
+  box-shadow: 0 0 0 0.25rem rgba(239, 68, 68, 0.14);
+}
+
+@media (max-width: 1180px) {
+  .cvMyHqSourceGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .cvMyHqSources {
+    margin-inline: 0.7rem;
+    padding: 0.8rem;
+  }
+
+  .cvMyHqSources > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cvMyHqSources > header button { width: 100%; }
+  .cvMyHqSourceGrid { grid-template-columns: 1fr; }
+  .cvMyHqSourceGrid article { min-height: auto; }
+}
