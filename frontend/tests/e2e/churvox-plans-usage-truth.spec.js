@@ -109,7 +109,8 @@ test.describe('Plans live usage truth', () => {
 
     const panel = page.locator('#churvox-plan-live-usage');
     await expect(panel).toBeVisible({ timeout: 10000 });
-    await expect(panel.getByRole('heading', { name: 'Operator usage' })).toBeVisible();
+    await expect(panel.getByRole('heading', { name: 'Plan usage' })).toBeVisible();
+    await expect(page.locator('.cvReleaseCurrentPlan').getByRole('heading', { name: 'Operator' })).toBeVisible();
     await expect(panel).toContainText('4 / 15');
     await expect(panel).toContainText('42 / 3,000');
     await expect(panel).toContainText('18 / 500');
@@ -161,8 +162,8 @@ test.describe('Plans live usage truth', () => {
   test('current Plans secure checkout posts the exact Command selection to Stripe', async ({ page }) => {
     const getCheckoutPayload = await bootNewOwnerPlans(page);
 
-    const commandCard = page.locator('.cvReleasePlansGrid article').filter({ hasText: 'Command' }).first();
-    await expect(commandCard).toBeVisible();
+    const commandCard = page.locator('.cvReleasePlansGrid article').filter({ has: page.locator('h2:text-is("Command")') });
+    await expect(commandCard).toHaveCount(1);
     await commandCard.getByRole('button', { name: 'Start Command', exact: true }).click();
 
     const checkout = page.getByRole('dialog', { name: 'Command Stripe checkout' });
