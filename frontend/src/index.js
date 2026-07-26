@@ -20,6 +20,7 @@ import './styles/churvoxNavBadges.css';
 import './styles/churvoxIndustryMode.css';
 import './pages/marketing/PublicMobileFirst.css';
 import './pages/worker/WorkerFieldFinalFix.css';
+import './pages/ChurvoxHQMobileGuard.css';
 import './runtime/churvoxLaunchSplashRuntime';
 import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 import './runtime/churvoxTesterApplicationAttributionRuntime';
@@ -103,14 +104,10 @@ const workerRuntimeImports = [
   () => import('./runtime/churvoxVisibleLogoutRuntime'),
 ];
 
-// HQ is owned by the React PaidLaunchHQSystem component. The verified outreach
-// runtime owns its complete draft-loading and compliance-safe approval flow.
-const hqRuntimeImports = [
-  () => import('./runtime/churvoxVisibleLogoutRuntime'),
-  () => import('./runtime/churvoxHqTesterOutreachRuntime'),
-  () => import('./runtime/churvoxHqAssistantDraftImportRuntime'),
-  () => import('./runtime/churvoxHqVerifiedSmallBusinessOutreachRuntime'),
-];
+// The rebuilt React HQ owns its complete UI and data wiring. Legacy HQ runtimes
+// are deliberately disabled so no extra navigation, overlays or duplicate HQs
+// can be injected after the single console has rendered.
+const hqRuntimeImports = [];
 
 function runImports(imports) {
   imports.forEach((load) => {

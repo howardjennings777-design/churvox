@@ -1,0 +1,5 @@
+@media (max-width: 600px) {
+  .hqOneNav button {
+    min-height: 42px !important;
+  }
+}

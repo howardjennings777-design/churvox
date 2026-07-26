@@ -141,15 +141,33 @@ requireAll(humanAudit, [
 
 const liveHqPage = "frontend/src/pages/ChurvoxHQPage.jsx";
 requireAll(liveHqPage, [
-  "My Churvox HQ",
-  "Live control",
-  "Outreach",
-  "Tester applications",
-  "<PaidLaunchHQSystem />",
-  "<ChurvoxPromotionCentre />",
-  "<TesterApplicationsInbox />",
-  'data-live-hq="true"',
+  "CHURVOX_HQ_ONE_CONSOLE_20260727",
+  "One owner console",
+  'label: "Overview"',
+  'label: "Users"',
+  'label: "Businesses"',
+  'label: "Billing"',
+  'label: "Testers"',
+  'label: "Visitors"',
+  'label: "Activity"',
+  'label: "System"',
+  "/api/admin/owner-overview",
+  "/api/admin/owner/paid-launch-report",
+  "/api/admin/owner/growth-report",
+  "/api/admin/owner/tester-intake",
+  "/api/admin/owner/control-access",
 ]);
+forbidText(liveHqPage, "PaidLaunchHQSystem", "nested paid-launch HQ");
+forbidText(liveHqPage, "ChurvoxPromotionCentre", "nested promotion HQ");
+forbidText(liveHqPage, "TesterApplicationsInbox", "nested tester applications HQ");
+forbidText(liveHqPage, "cvMyHq", "old HQ wrapper");
+forbidText(liveHqPage, "hq2", "old paid-launch HQ shell");
+
+const index = "frontend/src/index.js";
+requireText(index, "const hqRuntimeImports = [];");
+forbidText(index, "churvoxHqTesterOutreachRuntime", "legacy HQ outreach injection");
+forbidText(index, "churvoxHqAssistantDraftImportRuntime", "legacy HQ assistant injection");
+forbidText(index, "churvoxHqVerifiedSmallBusinessOutreachRuntime", "legacy HQ business outreach injection");
 
 const connectedHq = "frontend/src/churvox-site-next/HQConnected.jsx";
 requireAll(connectedHq, [
@@ -181,5 +199,5 @@ console.log("- Six owner-approved draft/review types are wired through Command."
 console.log("- Prepared draft proof reads are owner-only and GET-only.");
 console.log("- Login proxy body handling and deterministic launch auth are locked.");
 console.log("- Pill wording is repaired and challenged by a human-visible text audit.");
-console.log("- My HQ and the private HQ rebuild share the live platform-owner controls.");
+console.log("- The private owner route renders one live HQ console with no nested legacy HQs.");
 console.log("- Pricing and live-route protection remain unchanged.");

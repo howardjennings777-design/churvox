@@ -129,39 +129,38 @@ function assertBillingTruth(report) {
 }
 
 function expectedMoney(value) {
-  if (value === null || value === undefined || value === '') return 'Unavailable';
   return Number(value).toLocaleString('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 2 });
 }
 
-test.describe('Live authenticated paid-launch HQ', () => {
+test.describe('Live authenticated Churvox HQ', () => {
   test.setTimeout(150_000);
 
-  test('real backend report and current /admin display agree without inferred billing', async ({ page }) => {
+  test('real backend report and the single /admin console agree without inferred billing', async ({ page }) => {
     const token = await login(page);
     const report = await getReport(page, token);
     assertBillingTruth(report);
 
     await page.goto('/admin', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-version="CHURVOX_HQ_SYSTEM_TESTER_REVOKE_FIXED_20260712"]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('main#CHURVOX_HQ_SYSTEM.hqOne')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.hq2, .cvMyHq, #churvox-hq-tester-outreach-root')).toHaveCount(0);
 
-    const paidMetric = page.locator('.hq2Metric').filter({ hasText: 'Verified paid' }).first();
+    const paidMetric = page.locator('.hqOneMetric').filter({ hasText: 'Verified paid' }).first();
     await expect(paidMetric.locator('strong')).toHaveText(Number(report.counts.verified_paid_users).toLocaleString('en-NZ'));
 
-    const mrrMetric = page.locator('.hq2Metric').filter({ hasText: 'Stripe MRR' }).first();
+    const mrrMetric = page.locator('.hqOneMetric').filter({ hasText: 'Stripe MRR' }).first();
     await expect(mrrMetric.locator('strong')).toHaveText(expectedMoney(report.billing.actual_mrr_nzd));
 
-    const stateMetric = page.locator('.hq2Metric').filter({ hasText: 'Launch state' }).first();
-    await expect(stateMetric.locator('strong')).toHaveText(report.ready_to_take_payments ? 'Confirmed' : 'Check');
-
-    for (const check of report.launch_checks) {
-      await expect(page.getByText(check.label, { exact: true }).first()).toBeVisible();
-    }
+    const needsMetric = page.locator('.hqOneMetric').filter({ hasText: 'Needs checking' }).first();
+    await expect(needsMetric.locator('strong')).toHaveText(Number(report.counts.billing_needs_verification).toLocaleString('en-NZ'));
 
     const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ');
     expect(body).not.toMatch(/Belmont Villas|Example client|Sample workspace|Starter structure/i);
 
     await page.getByRole('button', { name: 'System', exact: true }).click();
-    await expect(page.getByText('paid-launch-report', { exact: false })).toBeVisible();
-    await expect(page.getByText(report.collections.connected ? 'connected' : 'unavailable', { exact: false })).toBeVisible();
+    for (const check of report.launch_checks) {
+      await expect(page.getByText(check.label, { exact: true }).first()).toBeVisible();
+    }
+    await expect(page.getByText('/api/admin/owner/paid-launch-report', { exact: true })).toBeVisible();
+    await expect(page.locator('.hqOneEndpointGrid article')).toHaveCount(8);
   });
 });
