@@ -122,7 +122,7 @@ async function installHqApi(page, options = {}) {
 
 async function openHq(page) {
   await page.goto('/admin', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-version="CHURVOX_HQ_ONE_CONSOLE_20260727"]')).toBeVisible();
+  await expect(page.locator('main#CHURVOX_HQ_SYSTEM.hqOne')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible();
 }
 
