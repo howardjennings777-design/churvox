@@ -102,13 +102,22 @@ export function PublicNav({ active = "" }) {
   </header></>;
 }
 
+function FooterLink({ to, children }) {
+  const openPageAtTop = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+  };
+
+  return <Link to={to} onClick={openPageAtTop}>{children}</Link>;
+}
+
 export function PublicFooter() {
   return <footer className="cpWorldFooter">
     <div className="cpWorldFooterGrid">
       <div className="cpWorldFooterLead cp26FooterLead"><span className="cp26BrandMark"><ChurvoxLogo variant="mark" size="md" /></span><div><b>Churvox</b><p>Manage jobs, clients, workers, quotes and invoices in one place. Churvox prepares the admin; the owner reviews and approves.</p></div></div>
-      <div className="cpWorldFooterGroup"><b>Product</b><nav><Link to="/product">Features</Link><Link to="/demo">Demo</Link><Link to="/pricing">Pricing</Link><Link to="/industries/landscaping">Industries</Link></nav></div>
-      <div className="cpWorldFooterGroup"><b>Help and trust</b><nav><Link to="/about">About</Link><Link to="/security">Security</Link><Link to="/support">Support</Link><Link to="/refunds-cancellations">Billing and cancellations</Link><Link to="/contact">Contact</Link></nav></div>
-      <div className="cpWorldFooterGroup"><b>Account and legal</b><nav><Link to="/login">Log in</Link><Link to={DEFAULT_TRIAL_PATH}>Start trial</Link><Link to="/legal/privacy">Privacy</Link><Link to="/legal/terms">Terms</Link><Link to="/delete-account">Delete account</Link></nav></div>
+      <div className="cpWorldFooterGroup"><b>Product</b><nav><FooterLink to="/product">Features</FooterLink><FooterLink to="/demo">Demo</FooterLink><FooterLink to="/pricing">Pricing</FooterLink><FooterLink to="/industries/landscaping">Industries</FooterLink></nav></div>
+      <div className="cpWorldFooterGroup"><b>Help and trust</b><nav><FooterLink to="/about">About</FooterLink><FooterLink to="/security">Security</FooterLink><FooterLink to="/support">Support</FooterLink><FooterLink to="/refunds-cancellations">Billing and cancellations</FooterLink><FooterLink to="/contact">Contact</FooterLink></nav></div>
+      <div className="cpWorldFooterGroup"><b>Account and legal</b><nav><FooterLink to="/login">Log in</FooterLink><FooterLink to={DEFAULT_TRIAL_PATH}>Start trial</FooterLink><FooterLink to="/legal/privacy">Privacy</FooterLink><FooterLink to="/legal/terms">Terms</FooterLink><FooterLink to="/delete-account">Delete account</FooterLink></nav></div>
     </div>
     <div className="cpWorldFooterBase"><span>© {new Date().getFullYear()} Churvox · hello@churvox.com</span><span>Nothing important sends, charges, syncs or changes without owner approval.</span></div>
   </footer>;
