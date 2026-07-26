@@ -1,4 +1,4 @@
-# clean-audit-marker: 2026-07-14h
+# clean-audit-marker: 2026-07-26-whole-site
 name: Churvox Playwright Full Site Test
 
 on:
@@ -15,7 +15,6 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 concurrency:
   group: churvox-full-site-${{ github.ref }}
@@ -38,51 +37,6 @@ jobs:
       E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
 
     steps:
-      - name: Remove old Actions artifacts and dependency caches
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const removeInBatches = async (items, remove, label) => {
-              const batchSize = 20;
-              let removed = 0;
-              for (let start = 0; start < items.length; start += batchSize) {
-                const batch = items.slice(start, start + batchSize);
-                const results = await Promise.allSettled(batch.map(remove));
-                removed += results.filter((result) => result.status === 'fulfilled').length;
-                const failed = results.filter((result) => result.status === 'rejected');
-                if (failed.length) core.warning(`${failed.length} ${label} deletion(s) failed in a batch.`);
-              }
-              return removed;
-            };
-
-            const artifacts = await github.paginate(
-              github.rest.actions.listArtifactsForRepo,
-              { owner, repo, per_page: 100 }
-            );
-            const removedArtifacts = await removeInBatches(
-              artifacts,
-              (artifact) => github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id }),
-              'artifact'
-            );
-            core.info(`Deleted ${removedArtifacts} of ${artifacts.length} old workflow artifact(s).`);
-
-            try {
-              const caches = await github.paginate(
-                github.rest.actions.getActionsCacheList,
-                { owner, repo, per_page: 100 }
-              );
-              const removedCaches = await removeInBatches(
-                caches,
-                (cache) => github.rest.actions.deleteActionsCacheById({ owner, repo, cache_id: cache.id }),
-                'cache'
-              );
-              core.info(`Deleted ${removedCaches} of ${caches.length} old Actions cache(s).`);
-            } catch (error) {
-              core.warning(`Cache cleanup was unavailable: ${error.message}`);
-            }
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -105,13 +59,14 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run current Studio desktop and mobile UI suite
+      - name: Run current desktop and mobile UI suite
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: |
           npx playwright test \
             tests/e2e/churvox-full-ui-logic-buttons.spec.js \
             tests/e2e/churvox-public-honesty-and-function.spec.js \
+            tests/e2e/churvox-public-search-foundation.spec.js \
             tests/e2e/churvox-owner-no-fake-data.spec.js \
             tests/e2e/churvox-paid-launch-hq-reality.spec.js \
             tests/e2e/churvox-studio-visual.spec.js \
@@ -133,6 +88,7 @@ jobs:
         run: |
           npx playwright test \
             tests/e2e/churvox-public-honesty-and-function.spec.js \
+            tests/e2e/churvox-public-search-foundation.spec.js \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --workers=1 \
@@ -161,7 +117,7 @@ jobs:
           name: playwright-report-${{ github.run_id }}
           path: frontend/playwright-report
           if-no-files-found: ignore
-          retention-days: 1
+          retention-days: 3
 
       - name: Upload Playwright test results
         if: always()
@@ -170,4 +126,4 @@ jobs:
           name: playwright-test-results-${{ github.run_id }}
           path: frontend/test-results
           if-no-files-found: ignore
-          retention-days: 1
+          retention-days: 3
