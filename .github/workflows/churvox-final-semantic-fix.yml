@@ -34,8 +34,14 @@ jobs:
 
           bridge = Path('frontend/src/churvox-studio/StudioReleaseBridge.jsx')
           text = bridge.read_text()
-          marker = '''      const context = document.querySelector(".cvsContextBeam nav");\n'''
-          addition = '''      const pageHeading = document.querySelector(".cvsContextIdentity b");\n      if (pageHeading) {\n        pageHeading.setAttribute("role", "heading");\n        pageHeading.setAttribute("aria-level", "1");\n      }\n\n'''
+          marker = '      const context = document.querySelector(".cvsContextBeam nav");\n'
+          addition = '''      const pageHeading = document.querySelector(".cvsContextIdentity b");
+      if (pageHeading) {
+        pageHeading.setAttribute("role", "heading");
+        pageHeading.setAttribute("aria-level", "1");
+      }
+
+'''
           if addition not in text:
               if marker not in text:
                   raise SystemExit('Could not find Studio context insertion point')
@@ -44,14 +50,54 @@ jobs:
 
           audit = Path('frontend/tests/e2e/churvox-big-launch-audit.spec.js')
           text = audit.read_text()
-          old = '''  const studioAreas = ['Today', 'Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command'];\n  if (isMobile) {\n    const dock = page.locator('.cvsMobileDock');\n    for (const item of ['Today', 'Jobs', 'Command', 'Messages', 'More']) {\n      await expect(dock.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio navigation: ${item}`).toBeVisible();\n    }\n\n    await dock.getByRole('button').filter({ hasText: /^\\s*More\\b/i }).first().click();\n    const morePanel = page.locator('.cvsMobileMore section');\n    await expect(morePanel, 'mobile Studio More panel did not open').toBeVisible();\n    for (const item of studioAreas) {\n      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio area: ${item}`).toBeVisible();\n    }\n    for (const item of ['Settings', 'Plans & billing', 'Help']) {\n      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile account area: ${item}`).toBeVisible();\n    }\n  } else {\n    const nav = page.getByRole('navigation', { name: /Main Churvox navigation/i });\n    await expect(nav, 'desktop Studio navigation did not load').toBeVisible();\n    for (const item of studioAreas) {\n      await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing desktop Studio area: ${item}`).toBeVisible();\n    }\n\n    await page.locator('.cvsProfileWrap > button.profile').click();\n'''
-          new = '''  if (isMobile) {\n    const dock = page.locator('.cvsMobileDock');\n    for (const item of ['Today', 'Jobs', 'Command', 'Messages', 'More']) {\n      await expect(dock.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio navigation: ${item}`).toBeVisible();\n    }\n\n    await dock.getByRole('button').filter({ hasText: /^\\s*More\\b/i }).first().click();\n    const morePanel = page.locator('.cvsMobileMore section');\n    await expect(morePanel, 'mobile Studio More panel did not open').toBeVisible();\n    for (const item of ['Clients', 'Money', 'Team']) {\n      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio area: ${item}`).toBeVisible();\n    }\n    for (const item of ['Settings', 'Plans & billing', 'Help']) {\n      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile account area: ${item}`).toBeVisible();\n    }\n  } else {\n    const nav = page.getByRole('navigation', { name: /Main Churvox navigation/i });\n    await expect(nav, 'desktop Studio navigation did not load').toBeVisible();\n    for (const item of ['Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command']) {\n      await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing desktop Studio area: ${item}`).toBeVisible();\n    }\n    const todayControl = page.locator('.cvsBrand');\n    await expect(todayControl, 'desktop Today/home control did not load').toBeVisible();\n    await todayControl.click();\n    await expect(page.locator('[data-screen="today"]'), 'desktop Today/home control did not open Today').toBeVisible();\n\n    await page.locator('.cvsProfileWrap > button.profile').click();\n'''
-          if old not in text:
-              raise SystemExit('Could not find owner navigation audit block')
-          audit.write_text(text.replace(old, new, 1))
+          areas_line = "  const studioAreas = ['Today', 'Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command'];\n"
+          text = text.replace(areas_line, '', 1)
+
+          mobile_old = '''    for (const item of studioAreas) {
+      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio area: ${item}`).toBeVisible();
+    }
+'''
+          mobile_new = '''    for (const item of ['Clients', 'Money', 'Team']) {
+      await expect(morePanel.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio area: ${item}`).toBeVisible();
+    }
+'''
+          if mobile_new not in text:
+              if mobile_old not in text:
+                  raise SystemExit('Could not find mobile More audit loop')
+              text = text.replace(mobile_old, mobile_new, 1)
+
+          desktop_old = '''    for (const item of studioAreas) {
+      await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing desktop Studio area: ${item}`).toBeVisible();
+    }
+'''
+          desktop_new = '''    for (const item of ['Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command']) {
+      await expect(nav.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing desktop Studio area: ${item}`).toBeVisible();
+    }
+'''
+          if desktop_new not in text:
+              if desktop_old not in text:
+                  raise SystemExit('Could not find desktop navigation audit loop')
+              text = text.replace(desktop_old, desktop_new, 1)
+
+          profile_marker = "    await page.locator('.cvsProfileWrap > button.profile').click();\n"
+          today_check = '''    const todayControl = page.locator('.cvsBrand');
+    await expect(todayControl, 'desktop Today/home control did not load').toBeVisible();
+    await todayControl.click();
+    await expect(page.locator('[data-screen="today"]'), 'desktop Today/home control did not open Today').toBeVisible();
+
+'''
+          if today_check not in text:
+              if profile_marker not in text:
+                  raise SystemExit('Could not find desktop profile audit insertion point')
+              text = text.replace(profile_marker, today_check + profile_marker, 1)
+          audit.write_text(text)
           PY
 
           git diff --check
+          if git diff --quiet; then
+            echo "Final semantic changes are already present."
+            exit 0
+          fi
           git config user.name "Churvox Audit Bot"
           git config user.email "hello@churvox.com"
           git add frontend/src/churvox-studio/StudioReleaseBridge.jsx frontend/tests/e2e/churvox-big-launch-audit.spec.js
