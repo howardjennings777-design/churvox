@@ -1,8 +1,10 @@
 import React from "react";
-import { BarChart3, ExternalLink, Gift, Megaphone, ShieldCheck, Wrench } from "lucide-react";
+import { ArrowUpRight, BarChart3, ExternalLink, Gift, Megaphone, RefreshCw, ShieldCheck, Wrench } from "lucide-react";
 import PaidLaunchHQSystem from "./PaidLaunchHQSystem";
 import TesterApplicationsInbox from "./admin/TesterApplicationsInbox";
 import ChurvoxPromotionCentre from "./admin/ChurvoxPromotionCentre";
+import { loadHqLiveStatus } from "../churvox-site-next/hqLiveData";
+import "../churvox-site-next/hqConnected.css";
 import "./ChurvoxHQPage.css";
 
 const WORKSPACES = [
@@ -30,6 +32,7 @@ const WORKSPACES = [
 ];
 
 const WORKSPACE_KEYS = new Set(WORKSPACES.map((item) => item.key));
+const EMPTY_READ_STATUS = Object.freeze({ state: "loading", sources: [], connected: 0, total: 7, fetchedAt: "" });
 
 function workspaceFromLocation() {
   if (typeof window === "undefined") return "control";
@@ -53,9 +56,85 @@ function writeWorkspace(workspace) {
   } catch {}
 }
 
+function readTone(state) {
+  if (state === "live") return "good";
+  if (state === "locked") return "warn";
+  if (state === "loading") return "neutral";
+  return "bad";
+}
+
+function readLabel(state) {
+  if (state === "live") return "Live HQ reads connected";
+  if (state === "locked") return "Platform owner access required";
+  if (state === "loading") return "Checking HQ sources";
+  return "HQ reads unavailable";
+}
+
+function ConnectedReadRail({ status, loading, onRefresh }) {
+  const visibleState = loading ? "loading" : status.state;
+  const sources = status.sources || [];
+
+  return (
+    <section className="cvhqLiveRail" aria-label="Connected HQ read status">
+      <div className="cvhqLiveSummary">
+        <ShieldCheck size={24} />
+        <div>
+          <small>Connected My HQ</small>
+          <h1>{status.connected} of {status.total} platform read sources confirmed</h1>
+          <p>Live business, billing, tester, growth and control information is checked before the HQ workspaces are shown below.</p>
+        </div>
+      </div>
+      <div className="cvhqLiveActions">
+        <span className={`cvhqLiveState ${readTone(visibleState)}`}>{readLabel(visibleState)}</span>
+        <button type="button" onClick={onRefresh} disabled={loading}>
+          <RefreshCw size={16} className={loading ? "cvhqSpin" : ""} />
+          Refresh HQ
+        </button>
+        <a href="/platform">Platform tools <ArrowUpRight size={16} /></a>
+      </div>
+      <div className="cvhqSourceGrid">
+        {sources.map((source) => (
+          <article key={source.path} className={readTone(source.state)}>
+            <div><strong>{source.label}</strong><span>{source.status}</span></div>
+            <b>{source.state === "live" ? source.count : "—"}</b>
+            <p>{source.message}</p>
+          </article>
+        ))}
+        {!sources.length ? (
+          <article className="neutral">
+            <div><strong>HQ platform reads</strong><span>{readLabel(visibleState)}</span></div>
+            <b>—</b>
+            <p>HQ is checking the protected owner sources now.</p>
+          </article>
+        ) : null}
+      </div>
+      <footer>
+        <strong>Live boundary:</strong> these source checks are authenticated and read-only. Changes still use the protected controls inside My Churvox HQ.
+      </footer>
+    </section>
+  );
+}
+
 export default function ChurvoxHQPage({ embedded = false }) {
   const [workspace, setWorkspace] = React.useState(workspaceFromLocation);
+  const [readStatus, setReadStatus] = React.useState(EMPTY_READ_STATUS);
+  const [readsLoading, setReadsLoading] = React.useState(!embedded);
   const current = WORKSPACES.find((item) => item.key === workspace) || WORKSPACES[0];
+
+  const refreshReads = React.useCallback(async (signal) => {
+    if (embedded) return;
+    setReadsLoading(true);
+    try {
+      const next = await loadHqLiveStatus({ signal });
+      setReadStatus(next);
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setReadStatus({ state: "unavailable", sources: [], connected: 0, total: 7, fetchedAt: "", message: error?.message || "HQ reads failed safely." });
+      }
+    } finally {
+      setReadsLoading(false);
+    }
+  }, [embedded]);
 
   React.useEffect(() => {
     const sync = () => setWorkspace(workspaceFromLocation());
@@ -67,6 +146,13 @@ export default function ChurvoxHQPage({ embedded = false }) {
     };
   }, []);
 
+  React.useEffect(() => {
+    if (embedded) return undefined;
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    refreshReads(controller?.signal);
+    return () => controller?.abort();
+  }, [embedded, refreshReads]);
+
   const selectWorkspace = (key) => {
     setWorkspace(key);
     writeWorkspace(key);
@@ -75,12 +161,15 @@ export default function ChurvoxHQPage({ embedded = false }) {
   return (
     <div
       id="CHURVOX_HQ_SYSTEM"
-      className={`cvMyHq${embedded ? " cvMyHqEmbedded" : ""}`}
+      className={`cvMyHq${embedded ? " cvMyHqEmbedded" : " cvhqConnected"}`}
       data-cv-allow-verbatim="true"
       data-live-hq="true"
+      data-connected-hq-replacement={embedded ? undefined : "true"}
       data-hq-workspace={workspace}
       aria-label="My Churvox HQ"
     >
+      {!embedded ? <ConnectedReadRail status={readStatus} loading={readsLoading} onRefresh={() => refreshReads()} /> : null}
+
       <header className="cvMyHqHeader">
         <div className="cvMyHqIdentity">
           <span aria-hidden="true"><ShieldCheck size={25} /></span>
