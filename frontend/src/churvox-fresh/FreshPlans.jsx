@@ -343,7 +343,7 @@ export default function FreshPlans({ onNavigate }) {
   React.useEffect(() => {
     const fromUser = planFromUser(user);
     if (fromUser && fromUser !== currentPlan) applyPlan(fromUser, "Loaded from account profile.");
-  }, [user?.plan, user?.ui_plan, user?.subscription_plan, user?.billing_plan]);
+  }, [currentPlan, user]);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search || "");
@@ -362,6 +362,8 @@ export default function FreshPlans({ onNavigate }) {
     if (params.get("checkout") === "success" && sessionId) {
       confirmCheckout(sessionId, params.get("plan") || pending?.plan || selected.backendPlan, params.get("country") || pending?.country || "NZ");
     }
+    // Stripe return parameters must be consumed once. Re-running this effect can duplicate confirmation requests.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function confirmCheckout(sessionId, plan, countryValue) {
