@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowUpRight, CheckCircle2, RefreshCw, ShieldCheck } fro
 import ChurvoxHQPage from "../pages/ChurvoxHQPage";
 import { loadHqLiveStatus } from "./hqLiveData";
 import "./hqConnected.css";
+import "./hqInformation.css";
 
 export const HQ_CONNECTED_BUILD = "churvox-hq-connected-live-20260727";
 
