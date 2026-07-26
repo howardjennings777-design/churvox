@@ -1,0 +1,108 @@
+export const PLAN_RANK = Object.freeze({ none: 0, start: 1, crew: 2, operator: 3, command: 4 });
+
+export const PLAN_TIERS = Object.freeze([
+  {
+    name: "Start",
+    code: "start",
+    backendCode: "solo",
+    price: 39,
+    badge: "Core business",
+    step: "Run jobs and money",
+    headline: "The full core job flow.",
+    bestFor: "Best for a solo owner who needs the work organised from first request to paid invoice.",
+    note: "Start is not a cut-down demo. It gives one owner the everyday tools needed to run clients, jobs and money properly.",
+    capacity: ["1 active team member", "250 clients", "50 jobs/month", "25 prepared actions/month"],
+    included: [
+      "Smart Hub and setup guidance",
+      "Jobs with recurring work inside Jobs",
+      "Clients and complete job history",
+      "Quotes and quote-to-job flow",
+      "Invoices and payment tracking",
+      "Churvox checks for missed money, job details and promises",
+    ],
+    locked: [
+      "Team workspace, worker app and messages",
+      "Worker proof, photos, time approval and proof packs",
+      "Command, prepared admin and payroll summaries",
+      "Accounting Sync — available as a $39 add-on",
+    ],
+  },
+  {
+    name: "Crew",
+    code: "crew",
+    backendCode: "team",
+    price: 89,
+    badge: "Small team",
+    step: "Add workers, messages and proof",
+    headline: "Connect the office and the field.",
+    bestFor: "Best for a small team that needs clear assignments, communication, proof and approved time.",
+    note: "Crew adds the worker side of Churvox without forcing the owner into the full admin-automation tier.",
+    capacity: ["5 active team members", "1,000 clients", "150 jobs/month", "100 prepared actions/month"],
+    included: [
+      "Everything in Start",
+      "Team workspace and worker app",
+      "Messages linked to jobs and clients",
+      "Worker proof, photos and completion notes",
+      "Time capture with owner approval",
+      "Proof packs and Worker Proof Coach",
+    ],
+    locked: [
+      "Command Approval System and AI-prepared admin",
+      "Payroll summaries, Approval Memory and deeper owner analysis",
+      "Accounting Sync — available as a $39 add-on",
+    ],
+  },
+  {
+    name: "Operator",
+    code: "operator",
+    backendCode: "pro",
+    price: 149,
+    popular: true,
+    badge: "Most Popular",
+    step: "Churvox prepares the admin",
+    headline: "Churvox does the admin. You approve.",
+    bestFor: "Best for an owner who wants admin prepared, checked and lined up for a final decision.",
+    note: "Operator turns Churvox from a job system into an approval-led admin assistant, while the owner stays in control.",
+    capacity: ["15 active team members", "3,000 clients", "500 jobs/month", "500 prepared actions/month"],
+    included: [
+      "Everything in Crew",
+      "Command Approval System",
+      "AI-prepared quotes, invoices, replies and follow-ups",
+      "Payroll summaries from approved worker time",
+      "Admin Debt and Customer Follow-Up Brain",
+      "Approval Memory, Explain My Week and Approval Budget",
+    ],
+    locked: [
+      "What Happens If? business simulations",
+      "Control Score plus deeper imports and exports",
+      "Accounting Sync — available as a $39 add-on",
+    ],
+  },
+  {
+    name: "Command",
+    code: "command",
+    backendCode: "enterprise",
+    price: 299,
+    badge: "Full control",
+    step: "Add accounting, control and scale",
+    headline: "Full Churvox control for a larger operation.",
+    bestFor: "Best for a larger business that needs the full approval system, deeper controls and more operating capacity.",
+    note: "Command unlocks every Churvox feature. The Growth Pack adds capacity when 50 active team members is no longer enough.",
+    capacity: ["50 active team members", "10,000 clients", "1,500 jobs/month", "2,000 prepared actions/month"],
+    included: [
+      "Everything in Operator",
+      "Full Command control and advanced Approval Memory",
+      "Accounting Sync included — approved draft sync only",
+      "What Happens If? business simulations",
+      "Control Score and deeper reporting",
+      "Advanced imports, exports and Growth Pack access",
+    ],
+    locked: [],
+    fullAccessNote: "No Churvox feature is tier-locked. Growth Packs add capacity, not extra features.",
+  },
+]);
+
+export function planTierFor(value) {
+  const key = String(value || "").trim().toLowerCase();
+  return PLAN_TIERS.find((plan) => plan.code === key) || null;
+}
