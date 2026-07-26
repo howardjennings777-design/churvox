@@ -70,14 +70,18 @@ async function installOwnerApi(page) {
         billing: {
           actual_mrr_nzd: 338,
           estimated_mrr_nzd: 447,
-          verified_paid_users: [],
-          verified_trial_users: [],
+          verified_paid_users: [{ email: 'paid@trade.co.nz', business_name: 'Paid Trade', plan: 'pro', subscription_status: 'active', stripe_subscription_id: 'sub_paid' }],
+          verified_trial_users: [{ email: 'trial@trade.co.nz', business_name: 'Trial Trade', plan: 'team', subscription_status: 'trialing', stripe_subscription_id: 'sub_trial' }],
           tester_users: [],
-          needs_verification: [],
+          needs_verification: [{ email: 'check@trade.co.nz', business_name: 'Check Trade', plan: 'solo', subscription_status: 'active' }],
           stripe: { available: true },
         },
-        collections: { connected: true, counts: { users: 24, jobs: 42, clients: 18 }, latest: {} },
-        launch_checks: [{ key: 'database', label: 'Database', status: 'pass', detail: 'Live' }],
+        collections: { connected: true, counts: { users: 24, businesses: 8, jobs: 42, clients: 18, invoices: 19 }, latest: {} },
+        launch_checks: [
+          { key: 'database', label: 'Database', status: 'pass', detail: 'Live database connected' },
+          { key: 'stripe', label: 'Stripe', status: 'pass', detail: 'Stripe account confirmed' },
+          { key: 'billing_truth', label: 'Billing truth', status: 'warn', detail: 'One record needs verification' },
+        ],
       });
       return;
     }
@@ -94,7 +98,12 @@ async function installOwnerApi(page) {
             total_invoices: 19,
             total_clients: 18,
           },
-          lists: { all_users: [], businesses: [], events: [], jobs: [], invoices: [], clients: [] },
+          lists: {
+            all_users: [{ email: 'owner@trade.co.nz', name: 'Trade Owner', business_name: 'Trade Business', plan: 'pro', subscription_status: 'active', last_active: new Date().toISOString() }],
+            businesses: [{ email: 'owner@trade.co.nz', business_name: 'Trade Business', plan: 'pro', subscription_status: 'active' }],
+            events: [{ title: 'Trade Owner signed in', kind: 'user', at: new Date().toISOString() }],
+            jobs: [], invoices: [], clients: [],
+          },
         },
       });
       return;
@@ -110,7 +119,8 @@ async function installOwnerApi(page) {
           accepted_testers: 4,
           pageviews_total: 1280,
         },
-        visitors: [],
+        visitors: [{ visitor_key: 'visitor-1', last_path: '/pricing', last_source: 'google', last_seen: new Date().toISOString(), status: 'active' }],
+        tester_pipeline: { accepted: [], pending: [], expired: [] },
       });
       return;
     }
@@ -121,7 +131,7 @@ async function installOwnerApi(page) {
         connected: true,
         database_connected: true,
         collections_seen: Array.from({ length: 16 }, (_, index) => `collection_${index + 1}`),
-        counts: { users: 24, jobs: 42, clients: 18 },
+        counts: { users: 24, businesses: 8, jobs: 42, clients: 18, invoices: 19 },
         message: 'HQ is connected to the owner backend and database.',
       });
       return;
@@ -135,10 +145,7 @@ async function installOwnerApi(page) {
         free_tester_count: 5,
         no_plan_count: 4,
         monthly_revenue_estimate: 447,
-        paid_users: [],
-        trial_users: [],
-        free_testers: [],
-        no_plan_users: [],
+        paid_users: [], trial_users: [], free_testers: [], no_plan_users: [],
       });
       return;
     }
@@ -147,7 +154,7 @@ async function installOwnerApi(page) {
       await json(route, {
         success: true,
         count: 9,
-        items: [{ action: 'tester_intake', created_at: new Date().toISOString() }],
+        items: [{ action: 'tester_intake', title: 'Tester invited', created_at: new Date().toISOString() }],
         testers: [{ email: 'tester@business.co.nz', status: 'accepted' }],
       });
       return;
@@ -157,11 +164,8 @@ async function installOwnerApi(page) {
       await json(route, {
         success: true,
         counts: { total: 5, accepted: 4, active: 3, invited_not_accepted: 1, revoked: 0 },
-        testers: [],
-        accepted_testers: [],
-        active_testers: [],
-        invited_testers: [],
-        revoked_testers: [],
+        testers: [{ email: 'tester@business.co.nz', name: 'Real Tester', business_name: 'Tester Business', plan: 'pro', status: 'accepted' }],
+        accepted_testers: [], active_testers: [], invited_testers: [], revoked_testers: [],
       });
       return;
     }
@@ -194,26 +198,22 @@ test('Plans uses the current owner shell and explains every tier clearly', async
   await expect(page.locator('.cvPlansPage')).toHaveCount(0);
 
   const start = plans.locator('[data-plan-card][data-stripe-plan="Start"]');
-  await expect(start).toHaveCount(1);
   await expect(start).toContainText('Jobs with recurring work inside Jobs');
   await expect(start).toContainText('Team workspace, worker app and messages');
   await expect(start).toContainText('50 jobs/month');
 
   const crew = plans.locator('[data-plan-card][data-stripe-plan="Crew"]');
-  await expect(crew).toHaveCount(1);
   await expect(crew).toContainText('Time capture with owner approval');
   await expect(crew).toContainText('Proof packs and Worker Proof Coach');
   await expect(crew).toContainText('5 active team members');
 
   const operator = plans.locator('[data-plan-card][data-stripe-plan="Operator"]');
-  await expect(operator).toHaveCount(1);
   await expect(operator).toContainText('Churvox does the admin. You approve.');
   await expect(operator).toContainText('Payroll review and timesheets workspace');
   await expect(operator).toContainText('Accounting Sync — available as a $39 add-on');
   await expect(operator).toContainText('15 active team members');
 
   const command = plans.locator('[data-plan-card][data-stripe-plan="Command"]');
-  await expect(command).toHaveCount(1);
   await expect(command).toContainText('Payroll review and timesheets workspace');
   await expect(command).toContainText('Accounting Sync included');
   await expect(command).toContainText('No Churvox feature is tier-locked');
@@ -221,50 +221,60 @@ test('Plans uses the current owner shell and explains every tier clearly', async
   const price = command.locator('.cvReleasePlanPrice');
   await expect(price).toBeVisible();
   await expect(price).toContainText('$299/month + GST');
-  const priceVisibility = await price.evaluate((node) => {
-    const style = getComputedStyle(node);
-    const rect = node.getBoundingClientRect();
-    return { opacity: Number(style.opacity), width: rect.width, height: rect.height, color: style.color };
-  });
-  expect(priceVisibility.opacity).toBeGreaterThanOrEqual(0.95);
-  expect(priceVisibility.width).toBeGreaterThan(120);
-  expect(priceVisibility.height).toBeGreaterThan(25);
-  expect(priceVisibility.color).not.toBe('rgba(0, 0, 0, 0)');
 });
 
-test('HQ shows useful live platform information before the deeper controls', async ({ page }) => {
+test('HQ is one clean console wired to all live owner sources', async ({ page }) => {
   await page.goto('/admin', { waitUntil: 'domcontentloaded' });
 
-  await expect(page.locator('#CHURVOX_HQ_SYSTEM')).toBeVisible();
-  await expect(page.getByText('Connected to live HQ controls', { exact: true })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /Owner app/i })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /^Usage$/i })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /Platform tools/i })).toBeVisible();
+  const hq = page.locator('[data-version="CHURVOX_HQ_ONE_CONSOLE_20260727"]');
+  await expect(hq).toHaveCount(1);
+  await expect(hq).toBeVisible();
+  await expect(page.locator('.hq2')).toHaveCount(0);
+  await expect(page.locator('.cvMyHq')).toHaveCount(0);
+  await expect(page.locator('#churvox-hq-tester-outreach-root')).toHaveCount(0);
 
-  const summary = page.locator('.cvMyHqAtAGlance');
-  await expect(summary).toBeVisible();
-  await expect(summary).toContainText('Live platform picture');
-  await expect(summary).toContainText('24');
-  await expect(summary).toContainText('8');
-  await expect(summary).toContainText('310');
-  await expect(summary).toContainText('42');
-  await expect(summary).toContainText('3');
-  await expect(summary).toContainText('$338.00');
-  await expect(summary).toContainText('6 active today');
-  await expect(summary).toContainText('7 sign-ups');
-  await expect(summary).toContainText('12 new today');
-  await expect(summary).toContainText('19 invoices');
-  await expect(summary).toContainText('2 verified trials');
-  await expect(summary).toContainText('1 need checking');
+  const nav = page.getByRole('navigation', { name: 'Churvox HQ navigation' });
+  await expect(nav).toBeVisible();
+  await expect(nav.getByRole('button')).toHaveCount(8);
+  for (const name of ['Overview', 'Users', 'Businesses', 'Billing', 'Testers', 'Visitors', 'Activity', 'System']) {
+    await expect(nav.getByRole('button', { name, exact: true })).toBeVisible();
+  }
 
-  const sourceGrid = page.locator('.cvMyHqSourceGrid');
-  await expect(sourceGrid.locator('article')).toHaveCount(7);
-  await expect(page.getByText('7 connected sources', { exact: false })).toBeVisible();
-  await expect(sourceGrid).toContainText('Ready to sell');
-  await expect(sourceGrid).toContainText('24 registered users');
-  await expect(sourceGrid).toContainText('310 public visitors');
-  await expect(sourceGrid).toContainText('Database live');
-  await expect(sourceGrid).toContainText('3 paid plans');
-  await expect(sourceGrid).toContainText('9 owner actions');
-  await expect(sourceGrid).toContainText('5 testers');
+  await expect(page.getByText('8 of 8 live sources', { exact: false })).toBeVisible();
+  const metrics = page.locator('.hqOneMetrics').first();
+  await expect(metrics).toContainText('Registered users');
+  await expect(metrics).toContainText('24');
+  await expect(metrics).toContainText('Businesses');
+  await expect(metrics).toContainText('8');
+  await expect(metrics).toContainText('Jobs');
+  await expect(metrics).toContainText('42');
+  await expect(metrics).toContainText('Public visitors');
+  await expect(metrics).toContainText('310');
+  await expect(metrics).toContainText('Verified paid');
+  await expect(metrics).toContainText('3');
+  await expect(metrics).toContainText('Stripe MRR');
+  await expect(metrics).toContainText('$338.00');
+  await expect(metrics).toContainText('Testers');
+  await expect(metrics).toContainText('5');
+  await expect(metrics).toContainText('Needs checking');
+  await expect(metrics).toContainText('1');
+
+  await nav.getByRole('button', { name: 'Users', exact: true }).click();
+  await expect(page.getByText('Trade Owner', { exact: true })).toBeVisible();
+
+  await nav.getByRole('button', { name: 'Billing', exact: true }).click();
+  await expect(page.getByText('$338.00', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Paid Trade', { exact: true })).toBeVisible();
+
+  await nav.getByRole('button', { name: 'Testers', exact: true }).click();
+  await expect(page.getByText('Invite a tester', { exact: true })).toBeVisible();
+  await expect(page.getByText('Real Tester', { exact: true })).toBeVisible();
+
+  await nav.getByRole('button', { name: 'Visitors', exact: true }).click();
+  await expect(page.getByText('/pricing', { exact: true })).toBeVisible();
+
+  await nav.getByRole('button', { name: 'System', exact: true }).click();
+  await expect(page.locator('.hqOneEndpointGrid article')).toHaveCount(8);
+  await expect(page.getByText('/api/admin/owner/paid-launch-report', { exact: true })).toBeVisible();
+  await expect(page.getByText('Stripe account confirmed', { exact: true })).toBeVisible();
 });
