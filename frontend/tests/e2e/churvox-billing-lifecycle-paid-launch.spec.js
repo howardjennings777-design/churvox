@@ -45,6 +45,10 @@ test.describe('Paid customer billing lifecycle', () => {
   test('Plans exposes secure billing management for a Stripe-backed account', async ({ page }) => {
     const api = await installPaidOwnerApi(page);
     await page.goto('/plans', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.locator('.freshSide')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Plans', exact: true })).toHaveClass(/active/);
+    await expect(page.getByRole('button', { name: 'Smart Hub', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Manage billing' })).toBeVisible();
 
     const navigation = page.waitForURL(/billing\.stripe\.com/i, { timeout: 10000 }).catch(() => null);
