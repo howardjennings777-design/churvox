@@ -10,7 +10,9 @@ const PUBLIC_COPY_FILES = [
   'frontend/src/pages/marketing/ExecutiveHomePage.jsx',
   'frontend/src/pages/marketing/ExecutiveFeaturesPage.jsx',
   'frontend/src/pages/marketing/ExecutivePricingPage.jsx',
+  'frontend/src/pages/marketing/ExecutiveContactPage.jsx',
   'frontend/src/pages/marketing/ChurvoxPublicShell.jsx',
+  'frontend/src/pages/marketing/PublicTrustPages.jsx',
   'frontend/src/pages/marketing/PublicDemoPage.jsx',
   'frontend/src/pages/marketing/IndustryPage.jsx',
   'frontend/scripts/generate-public-search-pages.cjs',
@@ -40,6 +42,27 @@ const TEMPLATE_RESIDUE = [
   'replace this text',
   'your company name here',
   'example product name',
+];
+
+const RETIRED_PUBLIC_PHRASES = [
+  'capacity switchboard',
+  'radio room',
+  'control room',
+  'building directory',
+  'go straight to the room',
+  'the rooms stay connected',
+  'same churvox brain',
+  'run the workday',
+  'open the workday',
+  'walk the building',
+  'building online',
+  'office ready',
+  'living office',
+  'blueprint room',
+  'guard room',
+  'service hatch',
+  'ledger room',
+  'product rooms',
 ];
 
 const REQUIRED_PRODUCT_SIGNALS = [
@@ -89,6 +112,12 @@ for (const residue of TEMPLATE_RESIDUE) {
   }
 }
 
+for (const phrase of RETIRED_PUBLIC_PHRASES) {
+  if (combined.includes(phrase)) {
+    fail(`Public copy brought back retired template-style wording: “${phrase}”.`);
+  }
+}
+
 for (const signal of REQUIRED_PRODUCT_SIGNALS) {
   if (!signal.pattern.test(combined)) {
     fail(`Public copy lost the required ${signal.label}.`);
@@ -99,6 +128,9 @@ const headlineFiles = [
   'frontend/src/pages/marketing/ExecutiveHomePage.jsx',
   'frontend/src/pages/marketing/ExecutiveFeaturesPage.jsx',
   'frontend/src/pages/marketing/ExecutivePricingPage.jsx',
+  'frontend/src/pages/marketing/ExecutiveContactPage.jsx',
+  'frontend/src/pages/marketing/PublicDemoPage.jsx',
+  'frontend/src/pages/marketing/IndustryPage.jsx',
 ];
 
 const headlineOwners = new Map();
@@ -140,4 +172,4 @@ for (const pattern of distinctiveHomeLines) {
 if (process.exitCode) process.exit(process.exitCode);
 
 console.log('CHURVOX PUBLIC COPY ORIGINALITY CONTRACT PASSED');
-console.log(`Checked ${PUBLIC_COPY_FILES.length} public-copy sources, ${COMPETITOR_NAMES.length} competitor-name exclusions and ${headlineOwners.size} unique page headlines.`);
+console.log(`Checked ${PUBLIC_COPY_FILES.length} public-copy sources, ${COMPETITOR_NAMES.length} competitor-name exclusions, ${RETIRED_PUBLIC_PHRASES.length} retired phrases and ${headlineOwners.size} unique page headlines.`);
