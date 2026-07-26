@@ -125,9 +125,9 @@ for (const file of headlineFiles) {
 
 const home = files.get('frontend/src/pages/marketing/ExecutiveHomePage.jsx') || '';
 const distinctiveHomeLines = [
-  /your business moves/i,
-  /churvox sees the whole move/i,
-  /one connected signal/i,
+  /jobs, clients, workers and money/i,
+  /connected in one place/i,
+  /churvox prepares the admin/i,
   /prepared does not mean automatic/i,
 ];
 
