@@ -1,4 +1,4 @@
-const BUILD = 'churvox-visible-control-text-runtime-20260726';
+const BUILD = 'churvox-visible-control-text-runtime-20260726b';
 
 function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
@@ -19,6 +19,14 @@ function channel(value) {
 
 function luminance(color) {
   return (0.2126 * channel(color.r)) + (0.7152 * channel(color.g)) + (0.0722 * channel(color.b));
+}
+
+function contrastRatio(foreground, background) {
+  const first = luminance(foreground);
+  const second = luminance(background);
+  const light = Math.max(first, second);
+  const dark = Math.min(first, second);
+  return (light + 0.05) / (dark + 0.05);
 }
 
 function effectiveBackground(element) {
@@ -77,10 +85,14 @@ function textLooksHidden(element) {
     const clipped = style.overflow === 'hidden'
       && node.scrollWidth > node.clientWidth + 6
       && node.clientWidth > 0;
+    const lowContrast = colour
+      && colour.a >= 0.35
+      && contrastRatio(colour, effectiveBackground(node)) < 2.35;
     return style.display === 'none'
       || style.visibility === 'hidden'
       || Number(style.opacity || '1') < 0.35
       || (colour && colour.a < 0.35)
+      || lowContrast
       || (Number.isFinite(fontSize) && fontSize > 0 && fontSize < 9)
       || (Number.isFinite(indent) && Math.abs(indent) > 120)
       || clipped;
@@ -132,7 +144,6 @@ function installStyle() {
     }
 
     html body .cvVisibleControlTextRepair {
-      min-width: max-content !important;
       overflow: visible !important;
     }
 
