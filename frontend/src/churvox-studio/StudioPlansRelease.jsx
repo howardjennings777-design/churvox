@@ -1,17 +1,17 @@
 import React from "react";
-import { Check, CreditCard, ExternalLink, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-react";
-import { ADDONS, PLANS } from "../churvox-product/controlBoardData";
-
-const PLAN_KEYS = {
-  start: "solo",
-  crew: "team",
-  operator: "pro",
-  command: "enterprise",
-};
+import { Check, CreditCard, ExternalLink, LockKeyhole, RefreshCw, ShieldCheck, Sparkles, X } from "lucide-react";
+import { ADDONS } from "../churvox-product/controlBoardData";
+import { PLAN_RANK, PLAN_TIERS, planTierFor } from "./planTierPresentation";
+import "./studioPlanTiers.css";
 
 const ADDON_KEYS = {
   "Command Growth Pack": "command_growth_pack",
   "Accounting Sync Add-on": "xero_addon",
+};
+
+const ADDON_COPY = {
+  command_growth_pack: "Adds 50 active team members, 1,500 jobs per month and 1,000 prepared actions per month to Command.",
+  xero_addon: "Adds owner-approved draft invoice sync to Start, Crew or Operator. Accounting Sync is already included in Command.",
 };
 
 const PLATFORM_OWNER_EMAILS = new Set([
@@ -70,7 +70,9 @@ function UsagePanel({ usage, loading }) {
   const acceptedSource = /^locked_paid_launch_limits_/i.test(String(usage?.limit_source || ""));
   const used = usage?.used || {};
   const limits = usage?.limits || {};
-  const verified = usage?.usage_verified === true && acceptedSource && [used.active_team_members, used.clients, used.jobs_this_month, used.ai_actions].every((value) => Number.isFinite(Number(value)));
+  const verified = usage?.usage_verified === true
+    && acceptedSource
+    && [used.active_team_members, used.clients, used.jobs_this_month, used.ai_actions].every((value) => Number.isFinite(Number(value)));
 
   if (loading) {
     return (
@@ -99,13 +101,13 @@ function UsagePanel({ usage, loading }) {
     ["Active team", used.active_team_members, limits.active_team_members],
     ["Clients", used.clients, limits.clients],
     ["Jobs this month", used.jobs_this_month, limits.jobs_per_month],
-    ["Command actions", used.ai_actions, limits.ai_actions],
+    ["Prepared actions", used.ai_actions, limits.ai_actions],
   ];
 
   return (
     <section id="churvox-plan-live-usage" className="cvReleaseUsage verified">
       <header>
-        <div><small>Live account truth</small><h2>{usage?.plan_label || "Plan"} usage</h2></div>
+        <div><small>Live account usage</small><h2>{usage?.plan_label || "Plan"} usage</h2></div>
         <span className="cvReleaseStatusPill good"><Check size={16} />Verified from live business records</span>
       </header>
       <div className="cvReleaseUsageGrid">
@@ -250,6 +252,7 @@ export default function StudioPlansRelease({ access, user, api }) {
 
   const stripeBacked = Boolean(billing?.stripe_customer_id || billing?.stripe_subscription_id || user?.stripe_customer_id || user?.stripe_subscription_id);
   const currentPlan = normalizePlanKey(billing?.plan || billing?.plan_key || billing?.selected_plan || billing?.subscription_plan || access.planKey);
+  const currentTier = planTierFor(currentPlan);
   const userEmail = String(user?.email || billing?.email || "").trim().toLowerCase();
   const userRole = String(user?.role || "").trim().toLowerCase().replace(/\s+/g, "_");
   const platformOwner = PLATFORM_OWNER_EMAILS.has(userEmail) || ["platform_owner", "platform-owner", "platformowner"].includes(userRole);
@@ -319,7 +322,7 @@ export default function StudioPlansRelease({ access, user, api }) {
         quantity: 1,
         country: "NZ",
       } : {
-        plan: PLAN_KEYS[selected.code] || selected.code,
+        plan: selected.backendCode || selected.code,
         plan_key: selected.code,
         selected_plan: selected.code,
         email: email.trim().toLowerCase(),
@@ -345,8 +348,8 @@ export default function StudioPlansRelease({ access, user, api }) {
       <header className="cvsPageLead cvReleasePlansLead">
         <div>
           <span className="cvsEyebrow">Plans & billing</span>
-          <h1>See your current access before comparing anything.</h1>
-          <p>Pricing stays exactly as set. Churvox shows live usage honestly and sends payment details directly through Stripe.</p>
+          <h1>Choose the plan that matches how your business actually runs.</h1>
+          <p>Every tier includes the core job flow. The real differences are team tools, Churvox-prepared admin, owner controls and operating capacity.</p>
         </div>
         <div className="cvReleaseHeaderActions">
           <button type="button" className="cvsButton" onClick={refreshStatus} disabled={busy === "refresh" || statusLoading}>
@@ -365,25 +368,74 @@ export default function StudioPlansRelease({ access, user, api }) {
       {notice ? <p role="status" className="cvReleasePlansNotice">{notice}</p> : null}
 
       <section className="cvReleaseCurrentPlan">
-        <div><small>Current access</small><h2>{access.planName}</h2><p>14-day trial, no card. Upgrade only when the business needs the next layer.</p></div>
+        <div>
+          <small>Current access</small>
+          <h2>{currentTier?.name || access.planName}</h2>
+          <p>{currentTier ? `${currentTier.headline} ${currentTier.capacity.join(" · ")}.` : "No active paid plan is attached to this account yet."}</p>
+        </div>
         <span className="cvReleaseStatusPill dark">OWNER-CONTROLLED BILLING</span>
       </section>
 
       <UsagePanel usage={usage} loading={statusLoading} />
 
+      <section className="cvReleaseTierLadder" aria-label="How Churvox plans build on each other">
+        {PLAN_TIERS.map((plan, index) => (
+          <article key={plan.code}>
+            <small>{String(index + 1).padStart(2, "0")} · {plan.name}</small>
+            <b>{plan.step}</b>
+            <p>{plan.capacity[0]} · {plan.capacity[2]}</p>
+          </article>
+        ))}
+      </section>
+
       <section className="cvsPlansStrip cvReleasePlansGrid" aria-label="Churvox plans">
-        {PLANS.map((plan) => {
+        {PLAN_TIERS.map((plan) => {
           const isCurrent = currentPlan === plan.code;
-          const buttonLabel = isCurrent ? "Current plan" : plan.code === "command" ? "Start Command" : `Choose ${plan.name}`;
+          const currentRank = PLAN_RANK[currentPlan] || 0;
+          const targetRank = PLAN_RANK[plan.code] || 0;
+          const buttonLabel = isCurrent
+            ? "Current plan"
+            : currentRank === 0
+              ? `Choose ${plan.name}`
+              : targetRank > currentRank
+                ? `Upgrade to ${plan.name}`
+                : `Change to ${plan.name}`;
           return (
-            <article key={plan.code} data-plan-card data-stripe-plan={plan.name} className={isCurrent ? "current" : ""}>
-              <small>{isCurrent ? "Current plan" : "Monthly"}</small>
+            <article
+              key={plan.code}
+              data-plan-card
+              data-stripe-plan={plan.name}
+              className={`${isCurrent ? "current" : ""} ${plan.popular ? "popular" : ""}`.trim()}
+            >
+              <div className="cvReleasePlanTopline">
+                <span className="cvReleasePlanBadge">{plan.badge}</span>
+                {isCurrent ? <em className="cvReleasePlanPill">CURRENT</em> : null}
+              </div>
               <h2>{plan.name}</h2>
-              <strong>{moneyText(plan.price)}/month + GST</strong>
-              <p>{plan.note}</p>
-              <ul>{plan.items.map((item) => <li key={item}><Check size={14} />{item}</li>)}</ul>
+              <strong className="cvReleasePlanPrice">{moneyText(plan.price)}<span>/month + GST</span></strong>
+              <h3 className="cvReleasePlanHeadline">{plan.headline}</h3>
+              <p className="cvReleasePlanBestFor">{plan.bestFor}</p>
+              <p className="cvReleasePlanNote">{plan.note}</p>
+
+              <div className="cvReleasePlanCapacity" aria-label={`${plan.name} capacity`}>
+                {plan.capacity.map((item) => <span key={item}>{item}</span>)}
+              </div>
+
+              <section className="cvReleasePlanSection cvReleasePlanIncluded">
+                <small>Included in {plan.name}</small>
+                <ul>{plan.included.map((item) => <li key={item}><Check size={14} />{item}</li>)}</ul>
+              </section>
+
+              <section className="cvReleasePlanSection cvReleasePlanLocked">
+                <small>{plan.locked.length ? "Locked at this tier" : "Full tier access"}</small>
+                {plan.locked.length ? (
+                  <ul>{plan.locked.map((item) => <li key={item}><LockKeyhole size={13} />{item}</li>)}</ul>
+                ) : (
+                  <p className="cvReleasePlanFullAccess"><ShieldCheck size={15} />{plan.fullAccessNote}</p>
+                )}
+              </section>
+
               <button type="button" disabled={isCurrent} onClick={() => startPlanCheckout(plan)}>{buttonLabel}</button>
-              {isCurrent ? <em className="cvReleasePlanPill">CURRENT</em> : null}
             </article>
           );
         })}
@@ -399,9 +451,9 @@ export default function StudioPlansRelease({ access, user, api }) {
           return (
             <article key={addon.name} data-plan-card data-stripe-plan={addon.stripe}>
               <div>
-                <small>Optional capacity</small>
+                <small>{isGrowth ? "Command capacity add-on" : "Accounting add-on"}</small>
                 <h3>{addon.name}</h3>
-                <p>{addon.note}</p>
+                <p>{ADDON_COPY[addonKey] || addon.note}</p>
                 {active ? <span className="cvReleaseAddonPill good">{isGrowth ? `${growthPackCount} active pack${growthPackCount === 1 ? "" : "s"}` : "Active"}</span> : null}
                 {blocked ? <span className="cvReleaseAddonPill warn">Command plan required</span> : null}
               </div>
