@@ -17,10 +17,10 @@
   box-shadow: 0 14px 34px rgba(20,24,21,.14);
 }
 .cvReleaseCurrentPlan small,
-.cvReleaseCurrentPlan > span { color: #9fa79f; font-size: 9px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.cvReleaseCurrentPlan > span { color: #cbd1cb; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .cvReleaseCurrentPlan h2 { margin: 4px 0; font-family: "Manrope", sans-serif; font-size: 30px; letter-spacing: -.05em; }
-.cvReleaseCurrentPlan p { margin: 0; color: #b8beb8; font-size: 12px; }
-.cvReleaseCurrentPlan > span { padding: 8px 10px; border: 1px solid #414841; border-radius: 999px; color: #ffac88; white-space: nowrap; }
+.cvReleaseCurrentPlan p { margin: 0; color: #d2d7d2; font-size: 12px; }
+.cvReleaseCurrentPlan > span { padding: 8px 10px; border: 1px solid #697269; border-radius: 999px; color: #ffd0bd; white-space: nowrap; }
 
 .cvReleaseUsage {
   display: grid;
@@ -52,7 +52,7 @@
 .cvReleasePlansGrid article.current { border-color: var(--cvs-orange); box-shadow: inset 0 4px 0 var(--cvs-orange); }
 .cvReleasePlansGrid article ul li { display: flex; align-items: center; gap: 7px; }
 .cvReleasePlansGrid article ul li svg { color: var(--cvs-teal); }
-.cvReleasePlansGrid article > em { position: absolute; top: 13px; right: 13px; color: var(--cvs-orange); font-size: 8px; font-style: normal; font-weight: 800; letter-spacing: .11em; }
+.cvReleasePlansGrid article > em { position: absolute; top: 13px; right: 13px; color: #713014; font-size: 10px; font-style: normal; font-weight: 900; letter-spacing: .1em; }
 
 .cvReleaseAddons article { border-radius: 12px; overflow: hidden; }
 .cvReleaseAddons article > strong { display: grid; font-family: "Manrope", sans-serif; font-size: 24px; }
