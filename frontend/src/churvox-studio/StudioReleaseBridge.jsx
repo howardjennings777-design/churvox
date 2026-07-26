@@ -196,7 +196,7 @@ export default function StudioReleaseBridge() {
         mobileMore.querySelectorAll("section > button").forEach((button) => {
           const text = customerLabel(button.textContent);
           if (/^Work$/i.test(String(button.textContent || "").trim())) button.textContent = "Jobs";
-          if (/^Plans/i.test(text)) button.setAttribute("aria-label", "Plans & billing");
+          if (/^Plans/i.test(text)) button.setAttribute("aria-label", "Plans");
           else if (/^Help/i.test(text)) button.setAttribute("aria-label", "Help");
           else if (/^Settings/i.test(text)) button.setAttribute("aria-label", "Settings");
           else if (text) button.setAttribute("aria-label", text.replace(/\d+$/, "").trim());
