@@ -168,7 +168,8 @@ test.describe('Plans live usage truth', () => {
 
     const checkout = page.getByRole('dialog', { name: 'Command Stripe checkout' });
     await expect(checkout).toBeVisible();
-    await expect(checkout).toContainText('NZ$299/month + GST');
+    await expect(checkout).toContainText('$299/month + GST');
+    await expect(checkout).toContainText('New Zealand - NZD');
     await checkout.getByRole('button', { name: 'Continue to Stripe', exact: true }).click();
     await expect(page).toHaveURL(/checkout\.stripe\.com\/c\/pay\/churvox-current-plans-test/);
 
