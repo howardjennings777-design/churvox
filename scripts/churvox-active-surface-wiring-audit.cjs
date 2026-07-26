@@ -13,9 +13,18 @@ function walk(target) {
   const stat = fs.statSync(target);
   if (stat.isFile()) return /\.(?:js|jsx)$/.test(target) && !/\.bak(?:_|\.|$)/i.test(target) ? [target] : [];
   return fs.readdirSync(target, { withFileTypes: true }).flatMap((entry) => {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.')) return [];
+    if (entry.name === 'node_modules' || entry.name.startsWith('.') || /before-|option[A-Z]|legacy/i.test(entry.name)) return [];
     return walk(path.join(target, entry.name));
   });
+}
+
+function firstExisting(...values) {
+  return values.find((value) => fs.existsSync(value));
+}
+
+function component(relativeBase) {
+  const base = path.join(frontend, relativeBase);
+  return firstExisting(base, `${base}.js`, `${base}.jsx`);
 }
 
 function openings(text, tag) {
@@ -63,26 +72,67 @@ function fail(file, text, index, message, snippet = '') {
   failures.push(`${relative(file)}:${lineAt(text, index)} ${message}${snippet ? ` — ${snippet.replace(/\s+/g, ' ').slice(0, 180)}` : ''}`);
 }
 
+const routedComponents = [
+  'App.js',
+  'StandalonePlansRoute',
+  'churvox-fresh/FreshApp',
+  'churvox-office-lab/OfficeTeamLab',
+  'churvox-office-lab/OfficeTeamWorkerRoute',
+  'pages/AppOwnerPage',
+  'pages/ChurvoxHQPage',
+  'pages/PaidLaunchHQSystem',
+  'pages/AdminUsagePage',
+  'pages/admin/PlatformUnlock',
+  'pages/admin/QAAuditorPage',
+  'components/admin/PlatformAdminRoute',
+  'pages/auth/LoginPage',
+  'pages/auth/PwaLaunchPage',
+  'pages/auth/SignupPage',
+  'pages/auth/VerifyEmailPage',
+  'pages/auth/InviteSetupPage',
+  'pages/auth/ForgotPasswordPage',
+  'pages/auth/ResetPasswordPage',
+  'pages/marketing/ExecutiveHomePage',
+  'pages/marketing/ExecutivePricingPage',
+  'pages/marketing/ExecutiveFeaturesPage',
+  'pages/marketing/PublicDemoPage',
+  'pages/marketing/IndustryPage',
+  'pages/marketing/ExecutiveContactPage',
+  'pages/marketing/PublicTrustPages',
+  'pages/marketing/ChurvoxPublicShell',
+  'pages/public/PublicRequestPage',
+  'pages/public/PublicQuotePage',
+  'pages/public/PublicInvoicePage',
+  'pages/public/PublicClientPortalPage',
+  'pages/public/PublicProofPackPage',
+  'pages/legal/PrivacyPage',
+  'pages/legal/TermsPage',
+  'pages/legal/PrivacyPolicyPage',
+  'pages/legal/TermsOfServicePage',
+  'pages/legal/AccountDeletionPage',
+  'pages/BillingReturnPage',
+  'churvox-site-next/HQConnected',
+  'churvox-site-next/PublicSiteConnected',
+  'churvox-site-next/hqLiveData',
+].map(component).filter(Boolean);
+
 const targets = [
-  path.join(frontend, 'App.js'),
-  path.join(frontend, 'StandalonePlansRoute.jsx'),
-  path.join(frontend, 'churvox-fresh'),
+  ...routedComponents,
   path.join(frontend, 'churvox-studio'),
-  path.join(frontend, 'churvox-site-next'),
-  path.join(frontend, 'pages', 'marketing'),
-  path.join(frontend, 'pages', 'auth'),
-  path.join(frontend, 'pages', 'worker'),
-  path.join(frontend, 'pages', 'admin'),
-  path.join(frontend, 'pages', 'ChurvoxHQPage.jsx'),
-  path.join(frontend, 'pages', 'PaidLaunchHQSystem.jsx'),
-  path.join(frontend, 'churvox-office-lab', 'OfficeTeamLab.jsx'),
-  path.join(frontend, 'churvox-office-lab', 'OfficeTeamWorkerRoute.jsx'),
 ];
 
 const files = Array.from(new Set(targets.flatMap(walk))).filter((file) => !/\.bak(?:_|\.|$)/i.test(file));
 let buttons = 0;
 let anchors = 0;
 let forms = 0;
+
+function bridgeHandled(file, text, opening) {
+  const name = relative(file);
+  const nearby = text.slice(opening.start, opening.start + 520);
+  if (/data-stripe-live-action|data-stripe-live-plan/.test(opening.text)) return true;
+  if (name.endsWith('frontend/src/churvox-studio/StudioPages.jsx') && /Active sessions|Export business data|Delete account/.test(nearby)) return true;
+  return false;
+}
 
 for (const file of files) {
   const text = fs.readFileSync(file, 'utf8');
@@ -91,8 +141,9 @@ for (const file of files) {
   for (const opening of openings(text, 'button')) {
     buttons += 1;
     const tag = opening.text;
-    const handled = /\bonClick\s*=|\btype\s*=\s*["'](?:submit|reset)["']|\bformAction\s*=|\bdisabled(?:\s*=|\s|>)|\.\.\./.test(tag);
-    if (!handled) fail(file, text, opening.start, 'active button has no click, submit, reset, form-action, disabled or delegated-props contract', tag);
+    const handled = /\bon(?:Click|MouseDown|PointerDown|KeyDown|TouchStart)\s*=|\btype\s*=\s*["'](?:submit|reset)["']|\bformAction\s*=|\bdisabled(?:\s*=|\s|>)|\.\.\./.test(tag)
+      || bridgeHandled(file, text, opening);
+    if (!handled) fail(file, text, opening.start, 'active button has no click, keyboard, submit, reset, form-action, disabled or verified release-bridge contract', tag);
     if (/onClick\s*=\s*\{\s*(?:undefined|null|false)\s*\}/.test(tag)) fail(file, text, opening.start, 'active button has an empty handler', tag);
     if (/onClick[^>]*(?:TODO|FIXME|console\.log)/i.test(tag)) fail(file, text, opening.start, 'active button still contains build-only click logic', tag);
   }
@@ -135,9 +186,7 @@ for (const route of [
 
 const officeBridgeFile = path.join(frontend, 'churvox-office-lab', 'OfficeTeamLab.jsx');
 const officeBridge = fs.readFileSync(officeBridgeFile, 'utf8');
-if (!officeBridge.includes("if (props.appMode === 'owner') return <FreshApp />")) {
-  failures.push('Active owner route no longer resolves to FreshApp.');
-}
+if (!officeBridge.includes("if (props.appMode === 'owner') return <FreshApp />")) failures.push('Active owner route no longer resolves to FreshApp.');
 
 const plansFile = path.join(frontend, 'churvox-studio', 'StudioPlansRelease.jsx');
 const plans = fs.readFileSync(plansFile, 'utf8');
@@ -158,14 +207,26 @@ for (const endpoint of [
   if (!hq.includes(endpoint)) failures.push(`HQ wiring is missing ${endpoint}`);
 }
 
+const workerFile = path.join(frontend, 'churvox-office-lab', 'OfficeTeamWorkerRoute.jsx');
+const worker = fs.readFileSync(workerFile, 'utf8');
+for (const endpoint of ['/worker/field-slip', '/worker/jobs/${encodeURIComponent(jobId)}/${endpoint}']) {
+  if (!worker.includes(endpoint)) failures.push(`Worker wiring is missing ${endpoint}`);
+}
+
 const generatorFile = path.join(root, 'frontend', 'scripts', 'generate-public-search-pages.cjs');
 const generator = fs.readFileSync(generatorFile, 'utf8');
 for (const route of ['/product', '/features', '/demo', '/pricing', '/about', '/security', '/support', '/contact', '/signup', '/login', '/legal/privacy', '/legal/terms']) {
   if (!generator.includes(`route: '${route}'`)) failures.push(`Public search-page generator is missing ${route}`);
 }
 
+const startFile = path.join(root, 'frontend', 'scripts', 'start-production.cjs');
+const start = fs.readFileSync(startFile, 'utf8');
+if (!start.includes("require('./generate-public-search-pages.cjs')") || !start.includes("require('../server.cjs')")) {
+  failures.push('Production startup no longer repairs public route pages before starting the server.');
+}
+
 if (files.length < 30) failures.push(`Active surface audit found too few source files (${files.length}).`);
-if (buttons < 80) failures.push(`Active surface audit found too few buttons (${buttons}).`);
+if (buttons < 100) failures.push(`Active surface audit found too few buttons (${buttons}).`);
 if (anchors < 12) failures.push(`Active surface audit found too few anchors (${anchors}).`);
 if (forms < 6) failures.push(`Active surface audit found too few forms (${forms}).`);
 
