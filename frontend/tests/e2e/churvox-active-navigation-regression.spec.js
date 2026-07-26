@@ -71,7 +71,10 @@ test('active owner navigation uses Jobs and complete mobile destinations', async
   }
 });
 
-test('mobile Today always has a visible page heading', async ({ page, isMobile }) => {
-  test.skip(!isMobile, 'Mobile-only heading contract.');
-  await expect(page.getByRole('heading', { level: 1, name: /^Today$/i }).first()).toBeVisible();
+test('Today has a stable page heading contract', async ({ page, isMobile }) => {
+  if (isMobile) {
+    await expect(page.getByRole('heading', { level: 1, name: /^Today$/i }).first()).toBeVisible();
+    return;
+  }
+  await expect(page.locator('.cvsContextIdentity [role="heading"][aria-level="1"]')).toContainText(/^Today$/i);
 });
