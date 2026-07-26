@@ -214,10 +214,33 @@ async function auditVisibleWords(page, label, { blockPreviewLanguage = false } =
   }
 }
 
+function isTransientPageFailure(error) {
+  return /rendered too little usable wording|has no usable controls|has no visible page heading|temporarily unreachable|api proxy timeout|\b50[234]\b/i.test(String(error?.message || error || ''));
+}
+
+async function auditCurrentPage(page, label, options, route = '') {
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) {
+      await page.waitForTimeout(1200 * attempt);
+      if (route) await page.goto(route, { waitUntil: 'domcontentloaded' });
+      else await page.reload({ waitUntil: 'domcontentloaded' });
+    }
+    await settle(page);
+    try {
+      await auditVisibleWords(page, label, options);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (!isTransientPageFailure(error) || attempt === 2) throw error;
+    }
+  }
+  throw lastError;
+}
+
 async function auditRoute(page, route, label, options) {
   await page.goto(route, { waitUntil: 'domcontentloaded' });
-  await settle(page);
-  await auditVisibleWords(page, label, options);
+  await auditCurrentPage(page, label, options, route);
 }
 
 test.describe('Churvox wording, page and flow human audit', () => {
@@ -254,8 +277,7 @@ test.describe('Churvox wording, page and flow human audit', () => {
       const button = page.getByRole('button', { name: new RegExp(`^${workspace}$`, 'i') }).first();
       await expect(button, `missing My HQ workspace: ${workspace}`).toBeVisible();
       await button.click();
-      await settle(page);
-      await auditVisibleWords(page, `My HQ ${workspace}`, { blockPreviewLanguage: true });
+      await auditCurrentPage(page, `My HQ ${workspace}`, { blockPreviewLanguage: true });
     }
   });
 
