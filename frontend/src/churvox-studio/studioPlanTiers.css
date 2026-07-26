@@ -1,0 +1,221 @@
+.cvReleaseTierLadder {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--cvs-line-strong);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.cvReleaseTierLadder article {
+  min-width: 0;
+  padding: 17px 18px;
+  border-right: 1px solid var(--cvs-line);
+}
+
+.cvReleaseTierLadder article:last-child { border-right: 0; }
+.cvReleaseTierLadder small {
+  display: block;
+  margin-bottom: 6px;
+  color: #8a4a24;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.cvReleaseTierLadder b { display: block; color: #151a16; font-family: "Manrope", sans-serif; font-size: 14px; }
+.cvReleaseTierLadder p { margin: 5px 0 0; color: #667068; font-size: 10px; line-height: 1.45; }
+
+.cvReleasePlansGrid.cvsPlansStrip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 14px;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.cvReleasePlansGrid.cvsPlansStrip article {
+  min-width: 0;
+  min-height: 0;
+  padding: 25px;
+  border: 1px solid var(--cvs-line-strong) !important;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(24, 29, 25, .06);
+}
+
+.cvReleasePlansGrid.cvsPlansStrip article.popular:not(.current) {
+  border-color: rgba(255, 107, 44, .55) !important;
+  background: linear-gradient(155deg, #fff8f3, #fff);
+  box-shadow: 0 16px 36px rgba(178, 73, 27, .11);
+}
+
+.cvReleasePlanTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cvReleasePlanBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  width: fit-content;
+  padding: 5px 9px;
+  border: 1px solid #d7ddd7;
+  border-radius: 999px;
+  background: #f5f7f5;
+  color: #3f4a41;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.cvReleasePlansGrid article.popular .cvReleasePlanBadge {
+  border-color: #f0a47a;
+  background: #fff0e7;
+  color: #8a340e;
+}
+
+.cvReleasePlansGrid article.current .cvReleasePlanBadge {
+  border-color: #59635b;
+  background: #2e342f;
+  color: #f7faf7;
+}
+
+.cvReleasePlansGrid .cvReleasePlanPrice {
+  margin-top: 13px;
+  color: #161b17;
+  -webkit-text-fill-color: #161b17;
+  font-family: "Manrope", sans-serif;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.cvReleasePlansGrid article.current .cvReleasePlanPrice {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+
+.cvReleasePlansGrid .cvReleasePlanPrice span {
+  margin-left: 5px;
+  color: #6b746d;
+  -webkit-text-fill-color: #6b746d;
+  font-family: "DM Sans", sans-serif;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.cvReleasePlansGrid article.current .cvReleasePlanPrice span {
+  color: #bdc5be;
+  -webkit-text-fill-color: #bdc5be;
+}
+
+.cvReleasePlanHeadline {
+  margin: 17px 0 5px;
+  color: #151a16;
+  font-family: "Manrope", sans-serif;
+  font-size: 22px;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.cvReleasePlansGrid article.current .cvReleasePlanHeadline { color: #fff; }
+.cvReleasePlanBestFor { margin: 0 !important; color: #3e4941 !important; font-size: 11px !important; font-weight: 800; line-height: 1.55 !important; }
+.cvReleasePlansGrid article.current .cvReleasePlanBestFor { color: #e1e6e1 !important; }
+.cvReleasePlanNote { min-height: 49px; margin: 9px 0 0 !important; }
+
+.cvReleasePlanCapacity {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 18px 0;
+}
+
+.cvReleasePlanCapacity span {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid #dfe4df;
+  border-radius: 9px;
+  background: #f7f8f5;
+  color: #273029;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.cvReleasePlansGrid article.current .cvReleasePlanCapacity span {
+  border-color: #3e463f;
+  background: #262c27;
+  color: #eef2ee;
+}
+
+.cvReleasePlanSection {
+  padding-top: 15px;
+  border-top: 1px solid #e0e4df;
+}
+
+.cvReleasePlansGrid article.current .cvReleasePlanSection { border-color: #3c433d; }
+.cvReleasePlanSection + .cvReleasePlanSection { margin-top: 3px; }
+.cvReleasePlanSection > small {
+  display: block;
+  color: #5f6961;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.cvReleasePlansGrid article.current .cvReleasePlanSection > small { color: #abb4ac; }
+
+.cvReleasePlansGrid .cvReleasePlanSection ul {
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.cvReleasePlansGrid .cvReleasePlanSection li {
+  align-items: flex-start;
+  color: #283129;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.cvReleasePlansGrid article.current .cvReleasePlanSection li { color: #eef2ee; }
+.cvReleasePlansGrid .cvReleasePlanSection li svg { flex: 0 0 auto; margin-top: 1px; }
+.cvReleasePlansGrid .cvReleasePlanLocked li svg { color: #a35a32; }
+.cvReleasePlansGrid article.current .cvReleasePlanLocked li svg { color: #f3a274; }
+.cvReleasePlanFullAccess { display: flex; gap: 8px; margin: 12px 0 17px; color: #235b35; font-size: 10px; font-weight: 800; line-height: 1.5; }
+.cvReleasePlanFullAccess svg { flex: 0 0 auto; color: #228449; }
+.cvReleasePlansGrid article.current .cvReleasePlanFullAccess { color: #d9f2df; }
+
+.cvReleasePlansGrid article > button {
+  min-height: 46px;
+  border-radius: 9px;
+}
+
+.cvReleaseAddons article > div > small {
+  color: #7c4729;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 980px) {
+  .cvReleaseTierLadder { grid-template-columns: 1fr 1fr; }
+  .cvReleaseTierLadder article:nth-child(2) { border-right: 0; }
+  .cvReleaseTierLadder article:nth-child(-n+2) { border-bottom: 1px solid var(--cvs-line); }
+  .cvReleasePlansGrid.cvsPlansStrip { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .cvReleaseTierLadder { grid-template-columns: 1fr; }
+  .cvReleaseTierLadder article { border-right: 0; border-bottom: 1px solid var(--cvs-line); }
+  .cvReleaseTierLadder article:last-child { border-bottom: 0; }
+  .cvReleasePlansGrid.cvsPlansStrip article { padding: 20px; }
+  .cvReleasePlanCapacity { grid-template-columns: 1fr; }
+}
