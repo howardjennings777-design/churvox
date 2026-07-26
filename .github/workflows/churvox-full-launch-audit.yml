@@ -3,7 +3,7 @@ name: Churvox Full Launch Audit
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, agent/churvox-office-os-foundation]
     paths:
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'
