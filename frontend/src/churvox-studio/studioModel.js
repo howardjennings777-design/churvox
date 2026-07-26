@@ -21,6 +21,8 @@ export const AREA_PAGES = {
   utility: ["settings", "plans", "support"],
 };
 
+const KNOWN_PAGES = new Set(Object.values(AREA_PAGES).flat());
+
 export const AREA_TABS = {
   work: [["jobs", "Dispatch"], ["schedule", "Week"], ["recurring", "Repeat work"]],
   money: [["money", "Pulse"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["accounting", "Accounting"]],
@@ -30,6 +32,7 @@ export const AREA_TABS = {
 
 const ROUTE_ALIASES = {
   dashboard: "today",
+  smart: "today",
   smarthub: "today",
   work: "jobs",
   job: "jobs",
@@ -48,7 +51,8 @@ export function pageFromLocation() {
   if (typeof window === "undefined") return "today";
   const path = clean((window.location.pathname || "").split("/")[1]).toLowerCase();
   const hash = clean((window.location.hash || "").replace(/^#/, "").split("?")[0]).toLowerCase();
-  return ROUTE_ALIASES[hash] || hash || ROUTE_ALIASES[path] || path || "today";
+  const candidate = ROUTE_ALIASES[hash] || hash || ROUTE_ALIASES[path] || path || "today";
+  return KNOWN_PAGES.has(candidate) ? candidate : "today";
 }
 
 export function areaForPage(page) {
