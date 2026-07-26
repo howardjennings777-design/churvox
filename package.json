@@ -3,7 +3,7 @@
   "scripts": {
     "build": "npm --prefix frontend run render-build",
     "render-build": "npm --prefix frontend run render-build",
-    "start": "npm --prefix frontend start",
+    "start": "node frontend/scripts/start-production.cjs",
     "test:e2e": "npm --prefix frontend run test:e2e",
     "test:office-lab": "npm --prefix frontend run test:office-lab",
     "test:rebuild:routes": "npm --prefix frontend run test:rebuild:routes",
