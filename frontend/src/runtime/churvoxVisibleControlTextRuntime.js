@@ -1,4 +1,4 @@
-const BUILD = 'churvox-visible-control-text-runtime-20260726b';
+const BUILD = 'churvox-visible-control-text-runtime-20260726c';
 
 function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
@@ -35,6 +35,12 @@ function effectiveBackground(element) {
     const style = window.getComputedStyle(node);
     const color = rgba(style.backgroundColor);
     if (color && color.a > 0.35) return color;
+    if (String(style.backgroundImage || 'none') !== 'none') {
+      const hint = `${node.className || ''} ${node.id || ''}`;
+      return /dark|hero|header|nav|sidebar|shell|command|hq|worker|owner/i.test(hint)
+        ? { r: 17, g: 24, b: 39, a: 1 }
+        : { r: 247, g: 243, b: 234, a: 1 };
+    }
     node = node.parentElement;
   }
   return rgba(window.getComputedStyle(document.body).backgroundColor) || { r: 247, g: 243, b: 234, a: 1 };
@@ -204,7 +210,7 @@ export function installVisibleControlTextRuntime() {
   [100, 300, 700, 1400, 2600].forEach((delay) => window.setTimeout(run, delay));
 
   const observer = new MutationObserver(run);
-  if (document.body) observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'aria-pressed', 'aria-current', 'aria-label'] });
+  if (document.body) observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'aria-pressed', 'aria-current', 'aria-label'] });
   window.addEventListener('hashchange', run);
   window.addEventListener('popstate', run);
   window.addEventListener('churvox:fresh-data-updated', run);
