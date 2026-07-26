@@ -46,9 +46,10 @@ test.describe('Paid customer billing lifecycle', () => {
     const api = await installPaidOwnerApi(page);
     await page.goto('/plans', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.locator('.freshSide')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Plans', exact: true })).toHaveClass(/active/);
-    await expect(page.getByRole('button', { name: 'Smart Hub', exact: true })).toBeVisible();
+    const desktopNavigation = page.locator('.freshSide');
+    await expect(desktopNavigation).toBeVisible();
+    await expect(desktopNavigation.getByRole('button', { name: 'Plans', exact: true })).toHaveClass(/active/);
+    await expect(desktopNavigation.getByRole('button', { name: 'Smart Hub', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Manage billing' })).toBeVisible();
 
     const navigation = page.waitForURL(/billing\.stripe\.com/i, { timeout: 10000 }).catch(() => null);
