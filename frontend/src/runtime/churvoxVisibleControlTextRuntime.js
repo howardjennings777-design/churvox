@@ -1,4 +1,4 @@
-const BUILD = 'churvox-visible-control-text-runtime-20260726c';
+const BUILD = 'churvox-visible-control-text-runtime-20260726d';
 
 function clean(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
@@ -79,6 +79,39 @@ function accessibleLabel(element) {
   );
 }
 
+function wrappedControlLabel(element) {
+  const labels = element?.labels ? [...element.labels] : [];
+  if (!labels.length) {
+    const closest = element?.closest?.('label');
+    if (closest) labels.push(closest);
+  }
+  for (const label of labels) {
+    const preferred = label.querySelector(':scope > span, :scope > strong, :scope > b');
+    const text = clean(preferred?.innerText || preferred?.textContent || label.innerText || label.textContent);
+    if (text) return text;
+  }
+  return '';
+}
+
+function ensureControlName(element) {
+  if (!element.matches('input, select, textarea, button, [role="button"]')) return;
+  const existing = clean(
+    element.getAttribute('aria-label')
+      || element.getAttribute('aria-labelledby')
+      || element.getAttribute('title')
+      || element.getAttribute('placeholder')
+      || element.getAttribute('name')
+      || element.innerText
+      || element.textContent
+  );
+  if (existing) return;
+  const label = wrappedControlLabel(element);
+  if (label) {
+    element.setAttribute('aria-label', label);
+    element.dataset.cvControlNameSource = 'visible-label';
+  }
+}
+
 function textLooksHidden(element) {
   const nodes = [element, ...element.querySelectorAll('span, small, strong, b, em, label')];
   return nodes.some((node) => {
@@ -106,7 +139,9 @@ function textLooksHidden(element) {
 }
 
 function repair(element) {
-  if (!isVisible(element) || !isPillLike(element)) return;
+  if (!isVisible(element)) return;
+  ensureControlName(element);
+  if (!isPillLike(element)) return;
   const label = accessibleLabel(element);
   if (!label) return;
 
@@ -175,6 +210,9 @@ export function fixVisibleControlTextNow() {
   const selector = [
     'button',
     'a[href]',
+    'input',
+    'select',
+    'textarea',
     '[role="button"]',
     '[class*="Pill"]',
     '[class*="pill"]',
