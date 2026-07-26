@@ -70,7 +70,7 @@ requireAll(desk, [
   "/api/invoices",
   "/api/messages",
   "/api/workers",
-].forEach((endpoint) => forbidText(desk, `fetch(\"${endpoint}`, `direct replacement write ${endpoint}`));
+].forEach((endpoint) => forbidText(desk, `fetch("${endpoint}`, `direct replacement write ${endpoint}`));
 forbidText(desk, 'method: "POST"', "direct replacement POST");
 
 const wrapper = "frontend/src/churvox-office-os/OfficeOSWorkingConnected.jsx";
@@ -105,8 +105,8 @@ const server = "frontend/server.cjs";
 requireAll(server, [
   "bufferedResponseHeaders",
   'requestHeaders["accept-encoding"] = "identity"',
-  'delete requestHeaders.cookie',
-  'delete requestHeaders.Cookie',
+  "delete requestHeaders.cookie",
+  "delete requestHeaders.Cookie",
   "Login backend returned an empty response.",
   "res.end(bodyBuffer)",
 ]);
@@ -118,6 +118,46 @@ requireAll(audit, [
   "same-origin login returned no token/account JSON",
   "created job never reached the authenticated worker-scoped API",
 ]);
+
+const visibleTextRuntime = "frontend/src/runtime/churvoxVisibleControlTextRuntime.js";
+requireAll(visibleTextRuntime, [
+  "installVisibleControlTextRuntime",
+  "pill text",
+  "cvVisibleControlTextRepair",
+  "cvNeedsVisibleControlLabel",
+  "MutationObserver",
+]);
+requireText("frontend/src/index.js", "./runtime/churvoxVisibleControlTextRuntime");
+
+const humanAudit = "frontend/tests/e2e/churvox-wording-flow-human-audit.spec.js";
+requireAll(humanAudit, [
+  "pill text not human-visible",
+  "owner can move through the whole working site",
+  "worker can move through field pages",
+  "My HQ is live, organised",
+  "private HQ rebuild is wired to the same live My HQ",
+]);
+
+const liveHqPage = "frontend/src/pages/ChurvoxHQPage.jsx";
+requireAll(liveHqPage, [
+  "My Churvox HQ",
+  "Live control",
+  "Outreach",
+  "Tester applications",
+  "<PaidLaunchHQSystem />",
+  "<ChurvoxPromotionCentre />",
+  "<TesterApplicationsInbox />",
+  'data-live-hq="true"',
+]);
+
+const connectedHq = "frontend/src/churvox-site-next/HQConnected.jsx";
+requireAll(connectedHq, [
+  'import ChurvoxHQPage from "../pages/ChurvoxHQPage"',
+  "<ChurvoxHQPage embedded />",
+  'data-live-hq-workspace="true"',
+  "No sample businesses, billing totals or tester records are substituted.",
+]);
+forbidText(connectedHq, "<HQNext />", "sample-only HQ mock");
 
 const publicContract = "frontend/src/churvox-site-next/siteContract.js";
 requireAll(publicContract, [
@@ -139,4 +179,6 @@ console.log("- Shared C/check logo is the owner source.");
 console.log("- Six owner-approved draft/review types are wired through Command.");
 console.log("- Prepared draft proof reads are owner-only and GET-only.");
 console.log("- Login proxy body handling and deterministic launch auth are locked.");
+console.log("- Pill wording is repaired and challenged by a human-visible text audit.");
+console.log("- My HQ and the private HQ rebuild share the live platform-owner controls.");
 console.log("- Pricing and live-route protection remain unchanged.");
