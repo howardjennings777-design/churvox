@@ -260,7 +260,8 @@ test('HQ is one clean console wired to all live owner sources', async ({ page })
   await expect(metrics).toContainText('1');
 
   await nav.getByRole('button', { name: 'Users', exact: true }).click();
-  await expect(page.getByText('Trade Owner', { exact: true })).toBeVisible();
+  await expect(page.getByText('Trade Business', { exact: true })).toBeVisible();
+  await expect(page.getByText('owner@trade.co.nz', { exact: true })).toBeVisible();
 
   await nav.getByRole('button', { name: 'Billing', exact: true }).click();
   await expect(page.getByText('$338.00', { exact: true }).first()).toBeVisible();
@@ -268,7 +269,8 @@ test('HQ is one clean console wired to all live owner sources', async ({ page })
 
   await nav.getByRole('button', { name: 'Testers', exact: true }).click();
   await expect(page.getByText('Invite a tester', { exact: true })).toBeVisible();
-  await expect(page.getByText('Real Tester', { exact: true })).toBeVisible();
+  await expect(page.getByText('Tester Business', { exact: true })).toBeVisible();
+  await expect(page.getByText('tester@business.co.nz', { exact: true })).toBeVisible();
 
   await nav.getByRole('button', { name: 'Visitors', exact: true }).click();
   await expect(page.getByText('/pricing', { exact: true })).toBeVisible();
