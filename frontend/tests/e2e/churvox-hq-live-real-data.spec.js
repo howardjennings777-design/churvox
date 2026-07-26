@@ -141,7 +141,7 @@ test.describe('Live authenticated Churvox HQ', () => {
     assertBillingTruth(report);
 
     await page.goto('/admin', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-version="CHURVOX_HQ_ONE_CONSOLE_20260727"]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('main#CHURVOX_HQ_SYSTEM.hqOne')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('.hq2, .cvMyHq, #churvox-hq-tester-outreach-root')).toHaveCount(0);
 
     const paidMetric = page.locator('.hqOneMetric').filter({ hasText: 'Verified paid' }).first();
