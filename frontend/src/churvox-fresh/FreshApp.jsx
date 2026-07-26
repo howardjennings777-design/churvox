@@ -6,9 +6,5 @@ import "../churvox-studio/studioPolish.css";
 import "../churvox-studio/studioCleanup.css";
 
 export default function FreshApp() {
-  if (typeof window !== "undefined" && String(window.location.hash || "").replace(/^#/, "").toLowerCase() === "plans") {
-    window.location.replace("/plans");
-    return null;
-  }
   return <><ChurvoxStudioApp /><StudioReleaseBridge /><StudioCleanupBridge /></>;
 }
