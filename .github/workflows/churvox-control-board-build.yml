@@ -6,7 +6,12 @@ on:
       - "frontend/src/churvox-product/**"
       - "frontend/src/churvox-studio/**"
       - "frontend/src/churvox-fresh/FreshApp.jsx"
+      - "frontend/src/churvox-fresh/FreshPlans.jsx"
+      - "frontend/src/StandalonePlansRoute.jsx"
       - "frontend/tests/e2e/churvox-studio-visual.spec.js"
+      - "frontend/tests/e2e/churvox-studio-mobile-every-page.spec.js"
+      - "frontend/tests/e2e/churvox-studio-route-contract.spec.js"
+      - "frontend/tests/e2e/churvox-plans-usage-truth.spec.js"
       - "frontend/package.json"
       - "frontend/package-lock.json"
       - ".github/workflows/churvox-control-board-build.yml"
@@ -39,8 +44,15 @@ jobs:
           CI: "true"
       - name: Install Chromium
         run: npx playwright install chromium --with-deps
-      - name: Render every owner page
-        run: npx playwright test tests/e2e/churvox-studio-visual.spec.js --project=desktop-chromium --workers=1
+      - name: Render and verify every owner page
+        run: |
+          npx playwright test \
+            tests/e2e/churvox-studio-visual.spec.js \
+            tests/e2e/churvox-studio-mobile-every-page.spec.js \
+            tests/e2e/churvox-studio-route-contract.spec.js \
+            tests/e2e/churvox-plans-usage-truth.spec.js \
+            --project=desktop-chromium \
+            --workers=1
         env:
           CI: "true"
           PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3000"

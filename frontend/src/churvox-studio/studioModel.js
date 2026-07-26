@@ -2,7 +2,7 @@ import { clean, firstGood, titleOf } from "../churvox-product/controlBoardData";
 
 export const PRIMARY_NAV = [
   { id: "today", label: "Today", area: "today" },
-  { id: "jobs", label: "Work", area: "work" },
+  { id: "jobs", label: "Jobs", area: "work" },
   { id: "clients", label: "Clients", area: "clients" },
   { id: "money", label: "Money", area: "money" },
   { id: "crew", label: "Team", area: "team" },
@@ -24,27 +24,45 @@ export const AREA_PAGES = {
 const KNOWN_PAGES = new Set(Object.values(AREA_PAGES).flat());
 
 export const AREA_TABS = {
-  work: [["jobs", "Dispatch"], ["schedule", "Week"], ["recurring", "Repeat work"]],
-  money: [["money", "Pulse"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["accounting", "Accounting"]],
-  team: [["crew", "People"], ["field", "Live field"], ["timesheets", "Time"], ["access", "Access"]],
-  command: [["command", "Waiting"], ["parked", "Parked"], ["completed", "History"]],
+  work: [["jobs", "Jobs"], ["schedule", "Schedule"], ["recurring", "Recurring"]],
+  money: [["money", "Overview"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["accounting", "Accounting"]],
+  team: [["crew", "Team"], ["field", "Team status"], ["timesheets", "Timesheets"], ["access", "Access"]],
+  command: [["command", "Needs review"], ["parked", "Parked"], ["completed", "History"]],
 };
 
 const ROUTE_ALIASES = {
   dashboard: "today",
   smart: "today",
   smarthub: "today",
+  "smart-hub": "today",
+  aiguide: "today",
+  "ai-guide": "today",
   work: "jobs",
   job: "jobs",
+  dispatch: "field",
   calendar: "schedule",
+  "repeat-work": "recurring",
   workers: "crew",
-  worker: "crew",
+  staff: "crew",
   team: "crew",
+  people: "crew",
+  worker: "field",
+  "crew-map": "field",
+  "live-field": "field",
+  time: "timesheets",
   payroll: "timesheets",
+  pulse: "money",
+  reports: "invoices",
   xero: "accounting",
+  inbox: "messages",
+  "command-desk": "command",
+  "command-board": "command",
   help: "support",
   guide: "support",
   setup: "support",
+  setupassistant: "support",
+  firstrun: "support",
+  onboarding: "support",
 };
 
 export function pageFromLocation() {

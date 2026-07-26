@@ -82,6 +82,80 @@ function repairSettings(root) {
   });
 }
 
+function markCompactBoards(root) {
+  const configurations = [
+    [".cvsDispatchBoard", ".cvsJobTicket"],
+    [".cvsCadenceBoard", "article > div > button"],
+    [".cvsQuoteRiver", "article > div > button"],
+  ];
+  configurations.forEach(([boardSelector, itemSelector]) => {
+    const board = root.querySelector(boardSelector);
+    if (!board) return;
+    const articles = [...board.querySelectorAll(":scope > article")];
+    const anyRecords = articles.some((article) => article.querySelector(itemSelector));
+    articles.forEach((article) => article.classList.toggle("cvMobileEmptyStage", anyRecords && !article.querySelector(itemSelector)));
+  });
+}
+
+function buildMobileSchedule(root) {
+  const board = root.querySelector(".cvsWeekBoard");
+  if (!board) return;
+  const children = [...board.children];
+  if (children.length < 9) return;
+  const signature = `${children.length}:${String(board.textContent || "").replace(/\s+/g, " ").trim()}`;
+  const current = board.nextElementSibling?.classList?.contains("cvMobileScheduleList") ? board.nextElementSibling : null;
+  if (current?.dataset.sourceSignature === signature) return;
+  current?.remove();
+
+  const dayLabels = children.slice(1, 8).map((header) => String(header.textContent || "").replace(/\s+/g, " ").trim());
+  const list = document.createElement("section");
+  list.className = "cvMobileScheduleList";
+  list.dataset.sourceSignature = signature;
+  let totalJobs = 0;
+
+  for (let index = 8; index < children.length; index += 8) {
+    const worker = children[index];
+    const cells = children.slice(index + 1, index + 8);
+    if (!worker || cells.length !== 7) continue;
+    const jobs = [];
+    cells.forEach((cell, dayIndex) => {
+      cell.querySelectorAll(":scope > button").forEach((sourceButton) => jobs.push({ sourceButton, day: dayLabels[dayIndex] || `Day ${dayIndex + 1}` }));
+    });
+    if (!jobs.length) continue;
+    totalJobs += jobs.length;
+
+    const article = document.createElement("article");
+    const header = document.createElement("header");
+    const name = document.createElement("b");
+    name.textContent = worker.querySelector("b")?.textContent || "Worker";
+    const count = document.createElement("small");
+    count.textContent = `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"}`;
+    header.append(name, count);
+    const rows = document.createElement("div");
+
+    jobs.forEach(({ sourceButton, day }) => {
+      const button = sourceButton.cloneNode(true);
+      button.type = "button";
+      button.removeAttribute("style");
+      const dayLabel = document.createElement("small");
+      dayLabel.className = "cvMobileScheduleDay";
+      dayLabel.textContent = day;
+      button.prepend(dayLabel);
+      button.addEventListener("click", () => sourceButton.click());
+      rows.appendChild(button);
+    });
+    article.append(header, rows);
+    list.appendChild(article);
+  }
+
+  if (!totalJobs) {
+    const empty = document.createElement("p");
+    empty.textContent = "No jobs are booked for this week.";
+    list.appendChild(empty);
+  }
+  board.after(list);
+}
+
 function applyCleanup() {
   const root = document.querySelector('main[data-churvox-layout="fresh-studio"]');
   if (!root) return;
@@ -90,6 +164,8 @@ function applyCleanup() {
   labelNavigation(root);
   routePlansSafely(root);
   repairSettings(root);
+  markCompactBoards(root);
+  buildMobileSchedule(root);
 }
 
 export default function StudioCleanupBridge() {

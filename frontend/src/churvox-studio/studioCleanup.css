@@ -64,6 +64,10 @@
   font-weight: 800;
 }
 
+.cvPlainBusinessCopy .cvMobileScheduleList {
+  display: none;
+}
+
 @media (max-width: 1180px) {
   .cvPlainBusinessCopy .cvsContextStatus {
     display: none;
@@ -96,19 +100,212 @@
     display: none;
   }
 
+  /* Mobile pages are lists, not desktop boards squeezed into the phone. */
   .cvPlainBusinessCopy .cvsDispatchBoard,
-  .cvPlainBusinessCopy .cvsCadenceBoard {
-    display: flex;
+  .cvPlainBusinessCopy .cvsCadenceBoard,
+  .cvPlainBusinessCopy .cvsQuoteRiver,
+  .cvPlainBusinessCopy .cvsMoneyRiver,
+  .cvPlainBusinessCopy .cvsPlansStrip {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 12px;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    padding-bottom: 6px;
+    width: 100%;
+    overflow: visible !important;
+    border: 0;
+    background: transparent;
+    scroll-snap-type: none !important;
+  }
+
+  .cvPlainBusinessCopy .cvsDispatchBoard > article,
+  .cvPlainBusinessCopy .cvsCadenceBoard > article,
+  .cvPlainBusinessCopy .cvsQuoteRiver > article,
+  .cvPlainBusinessCopy .cvsPlansStrip > article {
+    flex: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    border: 1px solid var(--cvs-line-strong);
+    border-radius: 12px;
+    background: rgba(249, 248, 244, .92);
+    overflow: hidden;
+    scroll-snap-align: none !important;
   }
 
   .cvPlainBusinessCopy .cvsDispatchBoard > article,
   .cvPlainBusinessCopy .cvsCadenceBoard > article {
-    flex: 0 0 min(84vw, 380px);
-    scroll-snap-align: start;
+    padding: 14px;
+  }
+
+  .cvPlainBusinessCopy .cvsQuoteRiver > article > div {
+    padding: 10px;
+  }
+
+  .cvPlainBusinessCopy .cvsRiverArrow,
+  .cvPlainBusinessCopy .cvsMoneyRiver > i,
+  .cvPlainBusinessCopy .cvMobileEmptyStage {
+    display: none !important;
+  }
+
+  .cvPlainBusinessCopy .cvsMoneyRiver button {
+    min-width: 0;
+    min-height: 112px;
+    padding: 17px;
+    border: 1px solid var(--cvs-line-strong);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .78);
+  }
+
+  .cvPlainBusinessCopy .cvsMoneyRiver button small {
+    margin-top: 10px;
+  }
+
+  /* Weekly schedule becomes a worker-by-worker job list. */
+  .cvPlainBusinessCopy .cvsWeekBoard {
+    display: none !important;
+  }
+
+  .cvPlainBusinessCopy .cvMobileScheduleList {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .cvPlainBusinessCopy .cvMobileScheduleList > article {
+    border: 1px solid var(--cvs-line-strong);
+    border-radius: 12px;
+    background: rgba(249, 248, 244, .94);
+    overflow: hidden;
+  }
+
+  .cvPlainBusinessCopy .cvMobileScheduleList > article > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 10px 13px;
+    border-bottom: 1px solid var(--cvs-line);
+    background: #dedbd2;
+  }
+
+  .cvPlainBusinessCopy .cvMobileScheduleList > article > header b {
+    font-size: 13px;
+  }
+
+  .cvPlainBusinessCopy .cvMobileScheduleList > article > header small {
+    color: #6f746f;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .cvPlainBusinessCopy .cvMobileScheduleList > article > div {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .cvPlainBusinessCopy .cvMobileScheduleList button {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 10px;
+    width: 100%;
+    min-height: 88px;
+    padding: 12px 12px 12px 15px;
+    border: 1px solid #cecac0;
+    border-left: 4px solid #929792;
+    border-radius: 9px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .cvPlainBusinessCopy .cvMobileScheduleList button.live { border-left-color: var(--cvs-blue); }
+  .cvPlainBusinessCopy .cvMobileScheduleList button.good { border-left-color: var(--cvs-teal); }
+  .cvPlainBusinessCopy .cvMobileScheduleList button.danger { border-left-color: var(--cvs-red); }
+  .cvPlainBusinessCopy .cvMobileScheduleList .cvMobileScheduleDay { grid-column: 1; color: #747974; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .cvPlainBusinessCopy .cvMobileScheduleList button > b { grid-column: 2; grid-row: 1; font-size: 11px; }
+  .cvPlainBusinessCopy .cvMobileScheduleList button > span { grid-column: 1 / -1; font-size: 14px; font-weight: 800; }
+  .cvPlainBusinessCopy .cvMobileScheduleList button > small:last-child { grid-column: 1 / -1; color: #727772; font-size: 10px; }
+  .cvPlainBusinessCopy .cvMobileScheduleList > p { margin: 0; padding: 24px 16px; border: 1px solid var(--cvs-line); border-radius: 12px; background: rgba(255,255,255,.68); color: #686e68; text-align: center; }
+
+  /* Data tables become readable cards. */
+  .cvPlainBusinessCopy .cvsJobList,
+  .cvPlainBusinessCopy .cvsLedger,
+  .cvPlainBusinessCopy .cvsTimeBoard,
+  .cvPlainBusinessCopy .cvsAccessMatrix {
+    display: grid;
+    gap: 10px;
+    overflow: visible !important;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .cvPlainBusinessCopy .cvsJobList > header,
+  .cvPlainBusinessCopy .cvsLedger > header,
+  .cvPlainBusinessCopy .cvsAccessMatrix > header {
+    display: none;
+  }
+
+  .cvPlainBusinessCopy .cvsJobList > button,
+  .cvPlainBusinessCopy .cvsLedger > button,
+  .cvPlainBusinessCopy .cvsTimeBoard > button,
+  .cvPlainBusinessCopy .cvsAccessMatrix > button {
+    min-width: 0 !important;
+    width: 100%;
+    min-height: 0;
+    padding: 14px;
+    border: 1px solid var(--cvs-line-strong);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, .82);
+    text-align: left;
+  }
+
+  .cvPlainBusinessCopy .cvsJobList > button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px 10px;
+  }
+  .cvPlainBusinessCopy .cvsJobList > button > time { grid-column: 1; grid-row: 1; }
+  .cvPlainBusinessCopy .cvsJobList > button > .cvsStatus { grid-column: 2; grid-row: 1; }
+  .cvPlainBusinessCopy .cvsJobList > button > div { grid-column: 1 / -1; grid-row: 2; }
+  .cvPlainBusinessCopy .cvsJobList > button > span:not(.cvsStatus) { grid-column: 1; grid-row: 3; color: #656b65; font-size: 11px; }
+  .cvPlainBusinessCopy .cvsJobList > button > strong { grid-column: 2; grid-row: 3; }
+
+  .cvPlainBusinessCopy .cvsLedger > button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px 12px;
+  }
+  .cvPlainBusinessCopy .cvsLedger > button > b:first-child { grid-column: 1; }
+  .cvPlainBusinessCopy .cvsLedger > button > .cvsStatus { grid-column: 2; grid-row: 1; }
+  .cvPlainBusinessCopy .cvsLedger > button > div { grid-column: 1 / -1; }
+  .cvPlainBusinessCopy .cvsLedger > button > span:not(.cvsStatus) { grid-column: 1; color: #6e736e; font-size: 10px; }
+  .cvPlainBusinessCopy .cvsLedger > button > strong { grid-column: 2; grid-row: 3 / span 2; align-self: center; }
+
+  .cvPlainBusinessCopy .cvsTimeBoard > button {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 8px 10px;
+  }
+  .cvPlainBusinessCopy .cvsTimeBoard > button > div { grid-column: 2; }
+  .cvPlainBusinessCopy .cvsTimeBoard > button > .cvsStatus { grid-column: 3; grid-row: 1; }
+  .cvPlainBusinessCopy .cvsTimeBoard > button > span:not(.cvsTimeAvatar):not(.cvsStatus) { grid-column: 2 / -1; display: flex; justify-content: space-between; gap: 12px; }
+  .cvPlainBusinessCopy .cvsTimeBoard > button > svg { display: none; }
+
+  .cvPlainBusinessCopy .cvsAccessMatrix > button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+  }
+  .cvPlainBusinessCopy .cvsAccessMatrix > button > div { grid-column: 1; }
+  .cvPlainBusinessCopy .cvsAccessMatrix > button > .cvsStatus { grid-column: 2; grid-row: 1; }
+  .cvPlainBusinessCopy .cvsAccessMatrix > button > span:not(.cvsStatus) { grid-column: 1 / -1; color: #636963; font-size: 11px; }
+
+  /* Phone Today and Team pages prioritise useful lists over decorative maps. */
+  .cvPlainBusinessCopy .cvsRadarCanvas,
+  .cvPlainBusinessCopy .cvsFlowBand,
+  .cvPlainBusinessCopy .cvsFieldMap {
+    display: none !important;
   }
 
   .cvPlainBusinessCopy .cvsMorningStrip h1 {
@@ -116,6 +313,22 @@
   }
 
   .cvPlainBusinessCopy .cvsMorningNumbers button {
-    min-height: 88px;
+    min-height: 82px;
+  }
+
+  .cvPlainBusinessCopy .cvsCrewRadar {
+    min-height: 0;
+  }
+
+  .cvPlainBusinessCopy .cvsFieldSignal {
+    display: block;
+  }
+
+  .cvPlainBusinessCopy .cvsFieldSignal > aside {
+    border: 0;
+  }
+
+  .cvPlainBusinessCopy .cvsPlansStrip > article {
+    scroll-snap-align: none !important;
   }
 }

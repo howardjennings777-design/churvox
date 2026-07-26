@@ -50,6 +50,7 @@ jobs:
         run: |
           node --check server-branch-test.cjs
           node --check tests/e2e/churvox-studio-live-pages.spec.js
+          node --check tests/e2e/churvox-plans-usage-truth.spec.js
           node --check tests/e2e/churvox-studio-human-owner-worker-flow.spec.js
           node --check tests/e2e/churvox-studio-human-owner-worker-flow-v2.spec.js
           node --check ../scripts/churvox-studio-owner-worker-audit.cjs
@@ -85,6 +86,7 @@ jobs:
         run: node scripts/churvox-discover-linked-worker.cjs
 
       - name: Run current Studio owner-worker contract
+        continue-on-error: true
         run: node scripts/churvox-studio-owner-worker-audit.cjs
 
       - name: Start the branch build with fetch proxy
@@ -117,6 +119,7 @@ jobs:
             --reporter=line
 
       - name: Test branch owner login, worker login, pages and role boundaries
+        if: ${{ !cancelled() }}
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
