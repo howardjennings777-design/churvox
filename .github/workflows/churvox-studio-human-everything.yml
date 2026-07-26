@@ -50,6 +50,7 @@ jobs:
         run: |
           node --check server-branch-test.cjs
           node --check tests/e2e/churvox-studio-live-pages.spec.js
+          node --check tests/e2e/churvox-plans-usage-truth.spec.js
           node --check tests/e2e/churvox-studio-human-owner-worker-flow.spec.js
           node --check tests/e2e/churvox-studio-human-owner-worker-flow-v2.spec.js
           node --check ../scripts/churvox-studio-owner-worker-audit.cjs
@@ -118,6 +119,7 @@ jobs:
             --reporter=line
 
       - name: Test branch owner login, worker login, pages and role boundaries
+        if: ${{ !cancelled() }}
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
