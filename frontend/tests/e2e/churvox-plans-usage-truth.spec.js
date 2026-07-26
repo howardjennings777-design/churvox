@@ -39,7 +39,7 @@ async function bootPlans(page, usageResponse) {
   await page.goto('/plans', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('main[data-churvox-layout="fresh-studio"]')).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Choose the plan that matches how your business actually runs.' })).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText('Current plan', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('.cvReleaseCurrentPlan').getByRole('heading', { name: 'Operator' })).toBeVisible();
 }
 
 async function bootNewOwnerPlans(page) {
