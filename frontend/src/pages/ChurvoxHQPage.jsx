@@ -1,5 +1,22 @@
 import React from "react";
-import { AlertTriangle, BarChart3, CheckCircle2, ExternalLink, Gift, Megaphone, RefreshCw, ShieldCheck, Wrench } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  BriefcaseBusiness,
+  Building2,
+  CheckCircle2,
+  CreditCard,
+  ExternalLink,
+  Gift,
+  Megaphone,
+  ReceiptText,
+  RefreshCw,
+  ShieldCheck,
+  UserPlus,
+  Users,
+  Wrench,
+} from "lucide-react";
 import PaidLaunchHQSystem from "./PaidLaunchHQSystem";
 import TesterApplicationsInbox from "./admin/TesterApplicationsInbox";
 import ChurvoxPromotionCentre from "./admin/ChurvoxPromotionCentre";
@@ -12,7 +29,7 @@ const WORKSPACES = [
     key: "control",
     label: "Live control",
     title: "Your live Churvox control room",
-    detail: "Check real users, billing proof, testers, launch health, activity and protected data controls in one place.",
+    detail: "See what is happening across users, businesses, visitors, work, billing, testers and launch health before opening the deeper controls.",
     icon: ShieldCheck,
   },
   {
@@ -62,9 +79,27 @@ function sourceTone(state) {
   return "bad";
 }
 
+function summaryNumber(value, loading) {
+  if (loading) return "…";
+  const result = Number(value);
+  return Number.isFinite(result) ? result.toLocaleString("en-NZ") : "Unavailable";
+}
+
+function summaryMoney(value, loading) {
+  if (loading) return "…";
+  const result = Number(value);
+  return Number.isFinite(result)
+    ? result.toLocaleString("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 2 })
+    : "Unavailable";
+}
+
+function summaryNote(parts = []) {
+  return parts.filter(Boolean).join(" · ") || "Waiting for a live backend value";
+}
+
 export default function ChurvoxHQPage({ embedded = false }) {
   const [workspace, setWorkspace] = React.useState(workspaceFromLocation);
-  const [sourceStatus, setSourceStatus] = React.useState({ state: "loading", sources: [], connected: 0, total: 7, fetchedAt: "" });
+  const [sourceStatus, setSourceStatus] = React.useState({ state: "loading", sources: [], summary: {}, connected: 0, total: 7, fetchedAt: "" });
   const [sourceLoading, setSourceLoading] = React.useState(true);
   const current = WORKSPACES.find((item) => item.key === workspace) || WORKSPACES[0];
 
@@ -88,6 +123,7 @@ export default function ChurvoxHQPage({ embedded = false }) {
         setSourceStatus({
           state: "unavailable",
           sources: [],
+          summary: {},
           connected: 0,
           total: 7,
           fetchedAt: "",
@@ -109,6 +145,46 @@ export default function ChurvoxHQPage({ embedded = false }) {
     setWorkspace(key);
     writeWorkspace(key);
   };
+
+  const summary = sourceStatus.summary || {};
+  const atAGlance = [
+    {
+      label: "Registered users",
+      value: summaryNumber(summary.totalUsers, sourceLoading),
+      note: summaryNote([`${summaryNumber(summary.activeToday, sourceLoading)} active today`, `${summaryNumber(summary.signups, sourceLoading)} sign-ups`]),
+      icon: Users,
+    },
+    {
+      label: "Businesses",
+      value: summaryNumber(summary.businesses, sourceLoading),
+      note: summaryNote([`${summaryNumber(summary.clients, sourceLoading)} clients stored`, `${summaryNumber(summary.testers, sourceLoading)} testers`]),
+      icon: Building2,
+    },
+    {
+      label: "Public visitors",
+      value: summaryNumber(summary.uniqueVisitors, sourceLoading),
+      note: summaryNote([`${summaryNumber(summary.newVisitorsToday, sourceLoading)} new today`, `${summaryNumber(summary.pageviews, sourceLoading)} pageviews`]),
+      icon: Activity,
+    },
+    {
+      label: "Jobs",
+      value: summaryNumber(summary.jobs, sourceLoading),
+      note: summaryNote([`${summaryNumber(summary.invoices, sourceLoading)} invoices`, "live database totals"]),
+      icon: BriefcaseBusiness,
+    },
+    {
+      label: "Verified paid",
+      value: summaryNumber(summary.verifiedPaid, sourceLoading),
+      note: summaryNote([`${summaryNumber(summary.trials, sourceLoading)} verified trials`, `${summaryNumber(summary.needsCheck, sourceLoading)} need checking`]),
+      icon: CreditCard,
+    },
+    {
+      label: "Stripe MRR",
+      value: summaryMoney(summary.mrr, sourceLoading),
+      note: summary.launchReady === true ? "Launch payment checks are ready" : summary.launchReady === false ? "Open Launch to see what needs attention" : "Waiting for the paid-launch report",
+      icon: ReceiptText,
+    },
+  ];
 
   return (
     <div
@@ -168,12 +244,40 @@ export default function ChurvoxHQPage({ embedded = false }) {
         </div>
       </section>
 
+      {workspace === "control" ? (
+        <section className="cvMyHqAtAGlance" aria-label="Live Churvox platform summary">
+          <header>
+            <div>
+              <small>What is happening now</small>
+              <h2>Live platform picture</h2>
+              <p>These figures come from the owner backend, database, growth report and Stripe-backed launch report.</p>
+            </div>
+            <span>{sourceLoading ? "Refreshing live totals" : sourceStatus.fetchedAt ? `Updated ${new Date(sourceStatus.fetchedAt).toLocaleTimeString("en-NZ", { hour: "numeric", minute: "2-digit" })}` : "No update time returned"}</span>
+          </header>
+          <div>
+            {atAGlance.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.label}>
+                  <span aria-hidden="true"><Icon size={19} /></span>
+                  <div>
+                    <small>{item.label}</small>
+                    <strong>{item.value}</strong>
+                    <p>{item.note}</p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       <section className="cvMyHqSources" aria-label="HQ live source information">
         <header>
           <div>
-            <small>Live information</small>
+            <small>Live source detail</small>
             <h2>{sourceLoading ? "Checking Churvox HQ" : `${sourceStatus.connected} connected source${sourceStatus.connected === 1 ? "" : "s"}`}</h2>
-            <p>Every card below shows the real backend result. Failed or locked sources stay visible instead of being replaced with guessed numbers.</p>
+            <p>Each card now explains the useful information returned by that source. Failed or locked sources stay visible rather than being replaced with guessed numbers.</p>
           </div>
           <button type="button" onClick={() => refreshSources()} disabled={sourceLoading}><RefreshCw size={16} className={sourceLoading ? "spin" : ""} />{sourceLoading ? "Checking…" : "Refresh information"}</button>
         </header>
@@ -183,8 +287,9 @@ export default function ChurvoxHQPage({ embedded = false }) {
               <span aria-hidden="true">{source.state === "live" ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}</span>
               <div>
                 <small>{source.label}</small>
-                <strong>{source.state === "live" ? Number(source.count || 0).toLocaleString("en-NZ") : source.status}</strong>
+                <strong>{source.state === "live" ? source.value || Number(source.count || 0).toLocaleString("en-NZ") : source.status}</strong>
                 <p>{source.message}</p>
+                <em>{source.status}</em>
               </div>
             </article>
           ))}
