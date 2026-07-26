@@ -158,15 +158,15 @@ test.describe('Current Studio owner desktop and phone crawl', () => {
       await assertHealthy(page, 'owner navigation', { owner: true });
       if (isMobile) {
         const dock = page.locator('.cvsMobileDock');
-        for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) await expect(dock.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
+        for (const item of ['Today', 'Jobs', 'Command', 'Messages', 'More']) await expect(dock.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
         await dock.locator('button').filter({ hasText: /More/i }).first().click();
         const more = page.locator('.cvsMobileMore section');
         await expect(more).toBeVisible();
-        for (const item of ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command', 'Settings', 'Plans & billing', 'Help']) await expect(more.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
+        for (const item of ['Today', 'Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command', 'Settings', 'Plans & billing', 'Help']) await expect(more.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing mobile ${item}`).toBeVisible();
       } else {
         const nav = page.locator('.cvsWorkstream');
         await expect(nav, 'desktop Studio workstream did not render').toBeVisible();
-        for (const item of ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command']) await expect(nav.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing desktop ${item}`).toBeVisible();
+        for (const item of ['Today', 'Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command']) await expect(nav.locator('button').filter({ hasText: new RegExp(item, 'i') }).first(), `missing desktop ${item}`).toBeVisible();
         await page.locator('.cvsProfileWrap > button.profile').click();
         for (const item of ['Settings', 'Plans & billing', 'Help', 'Log out']) await expect(page.locator('.cvsProfileMenu').locator('button').filter({ hasText: new RegExp(item, 'i') }).first()).toBeVisible();
       }
