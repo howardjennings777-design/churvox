@@ -1,0 +1,121 @@
+/* Plain-language, lower-noise finishing pass for the owner app. */
+
+.cvPlainBusinessCopy .cvsWorkstream button em {
+  display: none;
+}
+
+.cvPlainBusinessCopy .cvsWorkstream button[data-cv-label="command"] em,
+.cvPlainBusinessCopy .cvsWorkstream button[data-cv-label="messages"] em {
+  display: inline-flex;
+}
+
+.cvPlainBusinessCopy .cvsPageLead {
+  min-height: 82px;
+  padding: 8px 0 18px;
+  align-items: flex-end;
+}
+
+.cvPlainBusinessCopy .cvsPageLead h1 {
+  max-width: 760px;
+  font-size: clamp(28px, 2.15vw, 39px);
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+}
+
+.cvPlainBusinessCopy .cvsPageLead p {
+  max-width: 620px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cvPlainBusinessCopy .cvsEyebrow {
+  letter-spacing: .08em;
+}
+
+.cvPlainBusinessCopy .cvsDispatchBoard,
+.cvPlainBusinessCopy .cvsWeekBoard,
+.cvPlainBusinessCopy .cvsCadenceBoard,
+.cvPlainBusinessCopy .cvsClientCockpit,
+.cvPlainBusinessCopy .cvsConversationDesk,
+.cvPlainBusinessCopy .cvsDecisionTheatre,
+.cvPlainBusinessCopy .cvsSettingsStudio,
+.cvPlainBusinessCopy .cvsAccountingBridge,
+.cvPlainBusinessCopy .cvsSupportStudio,
+.cvPlainBusinessCopy .cvsJobList,
+.cvPlainBusinessCopy .cvsLedger,
+.cvPlainBusinessCopy .cvsAccessMatrix {
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(28, 32, 28, .045);
+}
+
+.cvPlainBusinessCopy .cvsJobTicket,
+.cvPlainBusinessCopy .cvsCrewMatrix > button {
+  box-shadow: 0 5px 15px rgba(28, 32, 28, .055);
+}
+
+.cvPlainBusinessCopy .cvComingSoonControl {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.cvPlainBusinessCopy .cvComingSoonControl small::after {
+  content: " · Coming soon";
+  font-weight: 800;
+}
+
+@media (max-width: 1180px) {
+  .cvPlainBusinessCopy .cvsContextStatus {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvPlainBusinessCopy .cvsBeamActions > button:nth-child(2) {
+    display: inline-flex !important;
+    width: 42px;
+  }
+
+  .cvPlainBusinessCopy .cvsPageLead {
+    min-height: 0;
+    padding: 4px 0 14px;
+  }
+
+  .cvPlainBusinessCopy .cvsPageLead h1 {
+    max-width: none;
+    font-size: 27px;
+    line-height: 1.08;
+  }
+
+  .cvPlainBusinessCopy .cvsPageLead p {
+    max-width: none;
+    font-size: 13px;
+  }
+
+  .cvPlainBusinessCopy .cvsMobileMore section > button > span:last-child {
+    display: none;
+  }
+
+  .cvPlainBusinessCopy .cvsDispatchBoard,
+  .cvPlainBusinessCopy .cvsCadenceBoard {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: 6px;
+  }
+
+  .cvPlainBusinessCopy .cvsDispatchBoard > article,
+  .cvPlainBusinessCopy .cvsCadenceBoard > article {
+    flex: 0 0 min(84vw, 380px);
+    scroll-snap-align: start;
+  }
+
+  .cvPlainBusinessCopy .cvsMorningStrip h1 {
+    font-size: 28px;
+  }
+
+  .cvPlainBusinessCopy .cvsMorningNumbers button {
+    min-height: 88px;
+  }
+}
