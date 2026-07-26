@@ -134,16 +134,24 @@ jobs:
           set -o pipefail
           npx playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g "cleanup live Playwright test records" --reporter=line 2>&1 | tee ../cleanup-test-failure.txt
 
-      - name: Save exact failing checks
+      - name: Upload exact test outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plans-route-diagnostics-${{ github.run_number }}
+          if-no-files-found: warn
+          retention-days: 3
+          path: |
+            plans-route-server.log
+            plans-route-test-failure.txt
+            auth-plans-test-failure.txt
+            owner-worker-test-failure.txt
+            business-journey-test-failure.txt
+            cleanup-test-failure.txt
+
+      - name: Fail on a real journey error
         if: always() && (steps.plans_browser.outcome == 'failure' || steps.auth_plans.outcome == 'failure' || steps.owner_worker.outcome == 'failure' || steps.business_journey.outcome == 'failure')
-        run: |
-          kill $(cat plans-route-server.pid) 2>/dev/null || true
-          git config user.name "Churvox Agent"
-          git config user.email "hello@churvox.com"
-          git add plans-route-server.log plans-route-test-failure.txt auth-plans-test-failure.txt owner-worker-test-failure.txt business-journey-test-failure.txt cleanup-test-failure.txt
-          git commit -m "Record plans and business flow failures"
-          git push origin HEAD:agent/fix-plans-route-and-flow
-          exit 1
+        run: exit 1
 
       - name: Commit verified fix and remove temporary helpers
         run: |
