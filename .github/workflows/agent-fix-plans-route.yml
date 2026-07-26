@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: agent-fix-plans-route-and-flow
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   patch-and-verify:
@@ -28,7 +28,7 @@ jobs:
           ref: agent/fix-plans-route-and-flow
           fetch-depth: 0
 
-      - name: Apply isolated plans route fix
+      - name: Apply plans route and regression fixes
         run: python3 scripts/agent_apply_plans_fix.py
 
       - name: Verify route source contract
@@ -38,11 +38,13 @@ jobs:
           const app = fs.readFileSync('frontend/src/App.js', 'utf8');
           const wrapper = fs.readFileSync('frontend/src/StandalonePlansRoute.jsx', 'utf8');
           const plans = fs.readFileSync('frontend/src/churvox-fresh/FreshPlans.jsx', 'utf8');
+          const regression = fs.readFileSync('frontend/tests/e2e/churvox-plans-regression-and-cleanup.spec.js', 'utf8');
           if (!app.includes('<StandalonePlansRoute />')) throw new Error('/plans is not wired to StandalonePlansRoute');
           if (app.includes('path="/plans" element={<FreshBusinessRoute><AppRedirect')) throw new Error('/plans still redirects into dashboard');
           if (!wrapper.includes('plans-route-auth-recover-v1')) throw new Error('plans auth recovery marker missing');
           if (!plans.includes('Pricing country') || !plans.includes('COUNTRY_OPTIONS')) throw new Error('country-aware pricing selector missing');
-          console.log('PASS: standalone /plans route, auth recovery marker and country selector are wired.');
+          if (!regression.includes('login submit button should be clickable')) throw new Error('plans regression still clicks the navigation login link');
+          console.log('PASS: standalone /plans route, country selector and reliable login regression are wired.');
           NODE
 
       - name: Setup Node
@@ -66,14 +68,106 @@ jobs:
         working-directory: frontend
         run: npx playwright install --with-deps chromium
 
-      - name: Serve verified production build
+      - name: Serve verified build with API proxy
         working-directory: frontend
         run: |
-          nohup npx serve -s build -l 3000 > ../plans-route-server.log 2>&1 &
+          cat > /tmp/churvox-preview-server.cjs <<'NODE'
+          const http = require('http');
+          const fs = require('fs');
+          const path = require('path');
+          const { URL } = require('url');
+
+          const root = path.resolve(process.cwd(), 'build');
+          const backend = 'https://grassley-backend.onrender.com';
+          const mime = {
+            '.html': 'text/html; charset=utf-8',
+            '.js': 'application/javascript; charset=utf-8',
+            '.css': 'text/css; charset=utf-8',
+            '.json': 'application/json; charset=utf-8',
+            '.svg': 'image/svg+xml',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.webp': 'image/webp',
+            '.ico': 'image/x-icon',
+            '.woff': 'font/woff',
+            '.woff2': 'font/woff2',
+          };
+
+          function requestBody(req) {
+            return new Promise((resolve, reject) => {
+              const chunks = [];
+              req.on('data', (chunk) => chunks.push(chunk));
+              req.on('end', () => resolve(Buffer.concat(chunks)));
+              req.on('error', reject);
+            });
+          }
+
+          async function proxyApi(req, res, parsed) {
+            const headers = { ...req.headers };
+            for (const key of ['host', 'content-length', 'connection', 'if-none-match', 'if-modified-since']) delete headers[key];
+            headers['accept-encoding'] = 'identity';
+            headers['cache-control'] = 'no-store';
+            const body = await requestBody(req);
+            const target = `${backend}${parsed.pathname}${parsed.search}`;
+            const init = { method: req.method, headers, redirect: 'manual' };
+            if (!['GET', 'HEAD'].includes(req.method || 'GET') && body.length) init.body = body;
+            const upstream = await fetch(target, init);
+            res.statusCode = upstream.status;
+            for (const [key, value] of upstream.headers.entries()) {
+              if (['content-length', 'content-encoding', 'transfer-encoding', 'connection', 'set-cookie'].includes(key.toLowerCase())) continue;
+              res.setHeader(key, value);
+            }
+            if (typeof upstream.headers.getSetCookie === 'function') {
+              const cookies = upstream.headers.getSetCookie();
+              if (cookies.length) res.setHeader('set-cookie', cookies);
+            }
+            res.setHeader('cache-control', 'no-store');
+            const output = Buffer.from(await upstream.arrayBuffer());
+            res.setHeader('content-length', String(output.length));
+            res.end(req.method === 'HEAD' ? undefined : output);
+          }
+
+          function serveApp(req, res, parsed) {
+            let pathname = '/';
+            try { pathname = decodeURIComponent(parsed.pathname || '/'); } catch {}
+            const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
+            const candidate = path.resolve(root, relative);
+            const safe = candidate.startsWith(root + path.sep) || candidate === path.join(root, 'index.html');
+            const selected = safe && fs.existsSync(candidate) && fs.statSync(candidate).isFile()
+              ? candidate
+              : path.join(root, 'index.html');
+            const data = fs.readFileSync(selected);
+            res.statusCode = 200;
+            res.setHeader('content-type', mime[path.extname(selected).toLowerCase()] || 'application/octet-stream');
+            res.setHeader('cache-control', 'no-store');
+            res.setHeader('content-length', String(data.length));
+            res.end(req.method === 'HEAD' ? undefined : data);
+          }
+
+          const server = http.createServer(async (req, res) => {
+            try {
+              const parsed = new URL(req.url || '/', 'http://127.0.0.1:3000');
+              if (parsed.pathname === '/api' || parsed.pathname.startsWith('/api/')) {
+                await proxyApi(req, res, parsed);
+                return;
+              }
+              serveApp(req, res, parsed);
+            } catch (error) {
+              console.error(error);
+              if (!res.headersSent) res.statusCode = 502;
+              res.end(JSON.stringify({ detail: 'Preview proxy failed.' }));
+            }
+          });
+
+          server.listen(3000, '127.0.0.1', () => console.log('Churvox preview proxy listening on 3000'));
+          NODE
+
+          nohup node /tmp/churvox-preview-server.cjs > ../plans-route-server.log 2>&1 &
           echo $! > ../plans-route-server.pid
-          for attempt in $(seq 1 45); do
-            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then
-              echo "Production build is serving."
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null && curl -fsS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/auth/me | grep -Eq '200|401|403'; then
+              echo "Production build and API proxy are serving."
               exit 0
             fi
             sleep 1
@@ -87,7 +181,7 @@ jobs:
         working-directory: frontend
         run: |
           set -o pipefail
-          npx playwright test tests/e2e/churvox-plans-route-contract.spec.js --project=desktop-chromium --reporter=line 2>&1 | tee ../plans-route-test-failure.txt
+          npx playwright test tests/e2e/churvox-plans-route-contract.spec.js --project=desktop-chromium --reporter=line 2>&1 | tee ../plans-route-test-output.txt
 
       - name: Run authenticated plans regression
         id: auth_plans
@@ -96,7 +190,7 @@ jobs:
         working-directory: frontend
         run: |
           set -o pipefail
-          npx playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g "Plans page loads billing JSON" --reporter=line 2>&1 | tee ../auth-plans-test-failure.txt
+          npx playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g "Plans page loads billing JSON" --reporter=line 2>&1 | tee ../auth-plans-test-output.txt
 
       - name: Run owner and worker route gauntlet
         id: owner_worker
@@ -110,7 +204,7 @@ jobs:
           CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_WORKER_PASSWORD }}
         run: |
           set -o pipefail
-          npx playwright test tests/e2e/churvox-human-business-gauntlet.spec.js --project=desktop-chromium --workers=1 -g "owner dashboard|worker app route" --reporter=line 2>&1 | tee ../owner-worker-test-failure.txt
+          npx playwright test tests/e2e/churvox-human-business-gauntlet.spec.js --project=desktop-chromium --workers=1 -g "owner dashboard|worker app route" --reporter=line 2>&1 | tee ../owner-worker-test-output.txt
 
       - name: Run client job quote invoice journey
         id: business_journey
@@ -121,7 +215,7 @@ jobs:
           CHURVOX_E2E_MUTATE: "1"
         run: |
           set -o pipefail
-          npx playwright test tests/e2e/churvox-real-business-audit-v2.spec.js --project=desktop-chromium --workers=1 -g "creates client, job, quote and invoice" --reporter=line 2>&1 | tee ../business-journey-test-failure.txt
+          npx playwright test tests/e2e/churvox-real-business-audit-v2.spec.js --project=desktop-chromium --workers=1 -g "creates client, job, quote and invoice" --reporter=line 2>&1 | tee ../business-journey-test-output.txt
 
       - name: Clean journey test records
         id: cleanup
@@ -132,7 +226,7 @@ jobs:
           CHURVOX_E2E_CLEANUP: "1"
         run: |
           set -o pipefail
-          npx playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g "cleanup live Playwright test records" --reporter=line 2>&1 | tee ../cleanup-test-failure.txt
+          npx playwright test tests/e2e/churvox-plans-regression-and-cleanup.spec.js --project=desktop-chromium -g "cleanup live Playwright test records" --reporter=line 2>&1 | tee ../cleanup-test-output.txt
 
       - name: Upload exact test outputs
         if: always()
@@ -143,11 +237,11 @@ jobs:
           retention-days: 3
           path: |
             plans-route-server.log
-            plans-route-test-failure.txt
-            auth-plans-test-failure.txt
-            owner-worker-test-failure.txt
-            business-journey-test-failure.txt
-            cleanup-test-failure.txt
+            plans-route-test-output.txt
+            auth-plans-test-output.txt
+            owner-worker-test-output.txt
+            business-journey-test-output.txt
+            cleanup-test-output.txt
 
       - name: Fail on a real journey error
         if: always() && (steps.plans_browser.outcome == 'failure' || steps.auth_plans.outcome == 'failure' || steps.owner_worker.outcome == 'failure' || steps.business_journey.outcome == 'failure')
@@ -156,9 +250,9 @@ jobs:
       - name: Commit verified fix and remove temporary helpers
         run: |
           kill $(cat plans-route-server.pid) 2>/dev/null || true
-          rm -f .github/workflows/agent-fix-plans-route.yml scripts/agent_apply_plans_fix.py plans-route-server.pid plans-route-server.log plans-route-test-failure.txt auth-plans-test-failure.txt owner-worker-test-failure.txt business-journey-test-failure.txt cleanup-test-failure.txt
+          rm -f .github/workflows/agent-fix-plans-route.yml scripts/agent_apply_plans_fix.py plans-route-server.pid plans-route-server.log plans-route-test-failure.txt plans-route-test-output.txt auth-plans-test-output.txt owner-worker-test-output.txt business-journey-test-output.txt cleanup-test-output.txt
           git config user.name "Churvox Agent"
           git config user.email "hello@churvox.com"
-          git add -A frontend/src/App.js frontend/src/StandalonePlansRoute.jsx frontend/tests/e2e/churvox-plans-route-contract.spec.js .github/workflows/agent-fix-plans-route.yml scripts/agent_apply_plans_fix.py plans-route-server.pid plans-route-server.log plans-route-test-failure.txt auth-plans-test-failure.txt owner-worker-test-failure.txt business-journey-test-failure.txt cleanup-test-failure.txt
+          git add -A
           git commit -m "Fix standalone plans route"
           git push origin HEAD:agent/fix-plans-route-and-flow
