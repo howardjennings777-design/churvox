@@ -203,25 +203,40 @@ jobs:
         id: run_audit
         run: |
           set +e
-          timeout --signal=TERM 48m npx playwright test \
+          : > ../churvox-audit-output.txt
+
+          timeout --signal=TERM 38m npx playwright test \
             tests/e2e/churvox-big-launch-audit.spec.js \
             tests/e2e/churvox-worker-assigned-job-ui.spec.js \
             tests/e2e/churvox-wording-flow-human-audit.spec.js \
-            tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js \
             --grep-invert "worker job detail has real field controls for an assigned job" \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --workers=1 \
-            --reporter=list 2>&1 | tee ../churvox-audit-output.txt
-          status=${PIPESTATUS[0]}
-          skipped=$(grep -Eo '[0-9]+ skipped' ../churvox-audit-output.txt | tail -n 1 | awk '{print $1}')
-          passed=$(grep -Eo '[0-9]+ passed' ../churvox-audit-output.txt | tail -n 1 | awk '{print $1}')
+            --reporter=list 2>&1 | tee -a ../churvox-audit-output.txt
+          site_status=${PIPESTATUS[0]}
+
+          timeout --signal=TERM 8m npx playwright test \
+            tests/e2e/churvox-hardcore-owner-worker-mutate.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=list 2>&1 | tee -a ../churvox-audit-output.txt
+          loop_status=${PIPESTATUS[0]}
+
+          status=0
+          if [ "$site_status" != "0" ] || [ "$loop_status" != "0" ]; then
+            status=1
+          fi
+          skipped=$(grep -Eo '[0-9]+ skipped' ../churvox-audit-output.txt | awk '{sum += $1} END {print sum + 0}')
+          passed=$(grep -Eo '[0-9]+ passed' ../churvox-audit-output.txt | awk '{sum += $1} END {print sum + 0}')
           skipped=${skipped:-0}
           passed=${passed:-0}
           if [ "$skipped" != "0" ]; then
             echo "::error::Full human audit is incomplete: $skipped tests were skipped."
             status=1
           fi
+          echo "site_status=$site_status" >> "$GITHUB_OUTPUT"
+          echo "loop_status=$loop_status" >> "$GITHUB_OUTPUT"
           echo "status=$status" >> "$GITHUB_OUTPUT"
           echo "skipped=$skipped" >> "$GITHUB_OUTPUT"
           echo "passed=$passed" >> "$GITHUB_OUTPUT"
@@ -239,9 +254,13 @@ jobs:
         run: |
           mkdir -p ../audit-results
           status="${{ steps.run_audit.outputs.status }}"
+          site_status="${{ steps.run_audit.outputs.site_status }}"
+          loop_status="${{ steps.run_audit.outputs.loop_status }}"
           passed="${{ steps.run_audit.outputs.passed }}"
           skipped="${{ steps.run_audit.outputs.skipped }}"
           status=${status:-1}
+          site_status=${site_status:-1}
+          loop_status=${loop_status:-1}
           passed=${passed:-0}
           skipped=${skipped:-0}
           {
@@ -251,7 +270,9 @@ jobs:
             echo "- Backend: https://grassley-backend.onrender.com"
             echo "- Commit: $GITHUB_SHA"
             echo "- Run: $GITHUB_RUN_ID"
-            echo "- Status code: $status"
+            echo "- Overall status code: $status"
+            echo "- Site wording/page/flow status: $site_status"
+            echo "- Boss-worker live loop status: $loop_status"
             echo "- Passed: $passed"
             echo "- Skipped: $skipped"
             echo "- Wording and invisible-pill audit: required"
@@ -311,5 +332,7 @@ jobs:
           test "${{ steps.credential.outcome }}" = success || exit 1
           test "${{ steps.worker.outcome }}" = success || exit 1
           test "${{ steps.cleanup.outcome }}" = success || exit 1
+          test "${{ steps.run_audit.outputs.site_status }}" = 0 || exit 1
+          test "${{ steps.run_audit.outputs.loop_status }}" = 0 || exit 1
           test "${{ steps.run_audit.outputs.status }}" = 0 || exit 1
           test "${{ steps.run_audit.outputs.skipped }}" = 0 || exit 1
