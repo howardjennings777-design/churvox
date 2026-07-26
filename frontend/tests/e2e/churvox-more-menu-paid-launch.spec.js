@@ -59,14 +59,14 @@ test.describe('Paid-launch Control Board navigation', () => {
 
     const nav = ownerNav(page);
     await expect(nav).toHaveAttribute('data-plan', 'start');
-    for (const included of ['Today', 'Work', 'Clients', 'Money']) {
+    for (const included of ['Today', 'Jobs', 'Clients', 'Money']) {
       await expect(nav.getByRole('button', { name: included, exact: true })).toBeVisible();
     }
     for (const locked of ['Team', 'Messages', 'Command']) {
       await expect(nav.getByRole('button', { name: locked, exact: true })).toHaveCount(0);
     }
 
-    await openArea(page, 'Work');
+    await openArea(page, 'Jobs');
     const workTabs = page.getByRole('navigation', { name: 'work navigation' });
     await expect(workTabs).toBeVisible();
     for (const tab of ['Jobs', 'Schedule', 'Recurring']) {
@@ -96,7 +96,7 @@ test.describe('Paid-launch Control Board navigation', () => {
 
     await openArea(page, 'Team');
     const teamTabs = page.getByRole('navigation', { name: 'team navigation' });
-    for (const tab of ['Crew', 'Field activity', 'Access']) {
+    for (const tab of ['Team', 'Team status', 'Access']) {
       await expect(teamTabs.getByRole('button', { name: tab, exact: true })).toBeVisible();
     }
     await expect(teamTabs.getByRole('button', { name: 'Timesheets', exact: true })).toBeHidden();
@@ -132,7 +132,7 @@ test.describe('Paid-launch Control Board navigation', () => {
     await bootOwner(page, 'command');
 
     const mobile = page.locator('.cv7MobileNav');
-    for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) {
+    for (const item of ['Today', 'Jobs', 'Command', 'Messages', 'More']) {
       await expect(mobile.getByRole('button', { name: item, exact: true })).toBeVisible();
     }
 
@@ -152,6 +152,6 @@ test.describe('Paid-launch Control Board navigation', () => {
 
     await expect.poll(() => page.url()).toMatch(/\/dashboard(?:\?[^#]*)?#plans$/);
     await expect(page.locator('.cvOwnerReady')).toHaveAttribute('data-screen', 'plans');
-    await expect(page.getByRole('heading', { name: 'See your current access before comparing anything.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Churvox does the admin. You approve.' })).toBeVisible();
   });
 });
