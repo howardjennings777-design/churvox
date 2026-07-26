@@ -98,3 +98,13 @@ if old_login_click in regression:
 elif new_login_click not in regression:
     raise SystemExit("Plans regression login helper anchor not found")
 regression_path.write_text(regression, encoding="utf-8")
+
+gauntlet_path = Path("frontend/tests/e2e/churvox-human-business-gauntlet.spec.js")
+gauntlet = gauntlet_path.read_text(encoding="utf-8")
+old_dashboard_check = "    await page.goto('/dashboard');\n    await waitHuman(page);\n    const text = await bodyText(page);\n    expect(text, 'dashboard should expose the Churvox Business System Suite panel').toMatch(/Churvox business system|Autopilot|Office live feed|Daily closeout|Proof pack|Client memory/i);"
+new_dashboard_check = "    await page.goto('/dashboard');\n    await waitHuman(page);\n    await expect(page.locator('.cvsLoading')).toHaveCount(0, { timeout: 45000 });\n    await expect(page.locator('[data-churvox-layout=\"fresh-studio\"]')).toBeVisible();\n    const text = await bodyText(page);\n    expect(text, 'dashboard should expose the live Churvox Studio owner workspace').toMatch(/Today|Live records|Owner-controlled actions|Live business data/i);\n    expect(text, 'dashboard should finish building the live business picture').not.toMatch(/Building the live business picture/i);"
+if old_dashboard_check in gauntlet:
+    gauntlet = gauntlet.replace(old_dashboard_check, new_dashboard_check, 1)
+elif new_dashboard_check not in gauntlet:
+    raise SystemExit("Owner dashboard gauntlet anchor not found")
+gauntlet_path.write_text(gauntlet, encoding="utf-8")
