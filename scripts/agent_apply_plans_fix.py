@@ -88,3 +88,13 @@ test.describe("standalone authenticated plans route", () => {
 ''',
     encoding="utf-8",
 )
+
+regression_path = Path("frontend/tests/e2e/churvox-plans-regression-and-cleanup.spec.js")
+regression = regression_path.read_text(encoding="utf-8")
+old_login_click = "  const clicked = await clickText(page, ['Log in', 'Login', 'Sign in']);\n  expect(clicked, 'login button should be clickable').toBeTruthy();"
+new_login_click = "  const submit = page.locator('button[type=\"submit\"], input[type=\"submit\"]').last();\n  let clicked = false;\n  if (await submit.isVisible().catch(() => false)) {\n    await submit.click();\n    clicked = true;\n  } else {\n    clicked = await clickText(page, ['Open Churvox', 'Log in', 'Login', 'Sign in']);\n  }\n  expect(clicked, 'login submit button should be clickable').toBeTruthy();"
+if old_login_click in regression:
+    regression = regression.replace(old_login_click, new_login_click, 1)
+elif new_login_click not in regression:
+    raise SystemExit("Plans regression login helper anchor not found")
+regression_path.write_text(regression, encoding="utf-8")
