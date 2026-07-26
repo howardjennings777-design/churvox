@@ -90,6 +90,7 @@ test('Plans uses the current owner shell and explains every tier clearly', async
   const nav = page.getByRole('navigation', { name: /Main Churvox navigation/i });
   await expect(nav).toBeVisible();
   await expect(nav.getByRole('button', { name: /^Jobs$/i })).toBeVisible();
+  await expect(nav.getByRole('button', { name: /^Work$/i })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /Choose the plan that matches how your business actually runs/i })).toBeVisible();
   const plans = page.locator('.cvReleasePlansRoot');
   await expect(plans).toBeVisible();
@@ -121,12 +122,25 @@ test('Plans uses the current owner shell and explains every tier clearly', async
   await expect(command).toContainText('Accounting Sync included');
   await expect(command).toContainText('No Churvox feature is tier-locked');
   await expect(command).toContainText('50 active team members');
+  const price = command.locator('.cvReleasePlanPrice');
+  await expect(price).toBeVisible();
+  await expect(price).toContainText('$299/month + GST');
+  const priceVisibility = await price.evaluate((node) => {
+    const style = getComputedStyle(node);
+    const rect = node.getBoundingClientRect();
+    return { opacity: Number(style.opacity), width: rect.width, height: rect.height, color: style.color };
+  });
+  expect(priceVisibility.opacity).toBeGreaterThanOrEqual(0.95);
+  expect(priceVisibility.width).toBeGreaterThan(120);
+  expect(priceVisibility.height).toBeGreaterThan(25);
+  expect(priceVisibility.color).not.toBe('rgba(0, 0, 0, 0)');
 });
 
 test('HQ shows real source results and useful navigation', async ({ page }) => {
   await page.goto('/admin', { waitUntil: 'domcontentloaded' });
 
   await expect(page.locator('#CHURVOX_HQ_SYSTEM')).toBeVisible();
+  await expect(page.getByText('Connected to live HQ controls', { exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /Owner app/i })).toBeVisible();
   await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /^Usage$/i })).toBeVisible();
   await expect(page.getByRole('navigation', { name: /HQ platform tools/i }).getByRole('link', { name: /Platform tools/i })).toBeVisible();
