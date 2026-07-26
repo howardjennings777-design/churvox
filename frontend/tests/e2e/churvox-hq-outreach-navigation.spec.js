@@ -71,6 +71,10 @@ async function installApi(page) {
 test('HQ outreach controls survive React tab rerenders', async ({ page }) => {
   await installApi(page);
   await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+  await expect(page.getByText('Connected My HQ', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '7 of 7 platform read sources confirmed', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Refresh HQ', exact: true })).toBeVisible();
   await expect(page.locator('[data-version^="CHURVOX_HQ_SYSTEM"]')).toBeVisible();
 
   const outreach = page.getByRole('button', { name: /^Outreach/ });
