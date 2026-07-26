@@ -106,11 +106,12 @@ test('Plans uses the current owner shell and explains every tier clearly', async
 
   const operator = page.locator('[data-plan-card][data-stripe-plan="Operator"]');
   await expect(operator).toContainText('Churvox does the admin. You approve.');
-  await expect(operator).toContainText('Payroll summaries from approved worker time');
+  await expect(operator).toContainText('Payroll review and timesheets workspace');
   await expect(operator).toContainText('Accounting Sync — available as a $39 add-on');
   await expect(operator).toContainText('15 active team members');
 
   const command = page.locator('[data-plan-card][data-stripe-plan="Command"]');
+  await expect(command).toContainText('Payroll review and timesheets workspace');
   await expect(command).toContainText('Accounting Sync included');
   await expect(command).toContainText('No Churvox feature is tier-locked');
   await expect(command).toContainText('50 active team members');
