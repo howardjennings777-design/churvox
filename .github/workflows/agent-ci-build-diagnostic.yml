@@ -37,20 +37,17 @@ jobs:
           elif new_profile_deps not in source:
               raise SystemExit("Account-plan effect dependency anchor not found")
 
-          old_checkout_tail = '''    if (params.get("checkout") === "success" && sessionId) {
-              confirmCheckout(sessionId, params.get("plan") || pending?.plan || selected.backendPlan, params.get("country") || pending?.country || "NZ");
-            }
-          }, []);'''
-          new_checkout_tail = '''    if (params.get("checkout") === "success" && sessionId) {
-              confirmCheckout(sessionId, params.get("plan") || pending?.plan || selected.backendPlan, params.get("country") || pending?.country || "NZ");
-            }
-            // Stripe return parameters must be consumed once. Re-running this effect can duplicate confirmation requests.
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-          }, []);'''
-          if old_checkout_tail in source:
-              source = source.replace(old_checkout_tail, new_checkout_tail, 1)
-          elif "Stripe return parameters must be consumed once" not in source:
-              raise SystemExit("Stripe return effect anchor not found")
+          checkout_comment = "Stripe return parameters must be consumed once. Re-running this effect can duplicate confirmation requests."
+          if checkout_comment not in source:
+              call = 'confirmCheckout(sessionId, params.get("plan") || pending?.plan || selected.backendPlan, params.get("country") || pending?.country || "NZ");'
+              call_at = source.find(call)
+              if call_at < 0:
+                  raise SystemExit("Stripe confirmation call not found")
+              effect_end = source.find('\n  }, []);', call_at)
+              if effect_end < 0:
+                  raise SystemExit("Stripe return effect end not found")
+              insertion = f'\n    // {checkout_comment}\n    // eslint-disable-next-line react-hooks/exhaustive-deps'
+              source = source[:effect_end] + insertion + source[effect_end:]
 
           path.write_text(source, encoding="utf-8")
 
