@@ -193,7 +193,7 @@ async function auditVisibleWords(page, label, { blockPreviewLanguage = false } =
     const text = clean(body?.innerText || '');
     const scrollWidth = Math.max(document.documentElement.scrollWidth, body?.scrollWidth || 0);
     const viewportWidth = document.documentElement.clientWidth;
-    const headings = [...document.querySelectorAll('h1, h2')].filter(visible).map((item) => clean(item.innerText)).filter(Boolean);
+    const headings = [...document.querySelectorAll('h1, h2, h3, [role="heading"]')].filter(visible).map((item) => clean(item.innerText)).filter(Boolean);
     return {
       issues: [...new Set(issues)].slice(0, 50),
       text,

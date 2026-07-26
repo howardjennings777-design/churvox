@@ -340,10 +340,10 @@ test.describe('Churvox full launch owner audit', () => {
   await waitStable(page);
   await expect(page.locator('[data-churvox-layout="fresh-studio"]'), 'Studio owner shell did not load').toBeVisible();
 
-  const studioAreas = ['Today', 'Work', 'Clients', 'Money', 'Team', 'Messages', 'Command'];
+  const studioAreas = ['Today', 'Jobs', 'Clients', 'Money', 'Team', 'Messages', 'Command'];
   if (isMobile) {
     const dock = page.locator('.cvsMobileDock');
-    for (const item of ['Today', 'Work', 'Command', 'Messages', 'More']) {
+    for (const item of ['Today', 'Jobs', 'Command', 'Messages', 'More']) {
       await expect(dock.getByRole('button').filter({ hasText: new RegExp(`^\\s*${item}\\b`, 'i') }).first(), `missing mobile Studio navigation: ${item}`).toBeVisible();
     }
 
