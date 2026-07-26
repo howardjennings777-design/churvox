@@ -2,7 +2,7 @@ import { clean, firstGood, titleOf } from "../churvox-product/controlBoardData";
 
 export const PRIMARY_NAV = [
   { id: "today", label: "Today", area: "today" },
-  { id: "jobs", label: "Work", area: "work" },
+  { id: "jobs", label: "Jobs", area: "work" },
   { id: "clients", label: "Clients", area: "clients" },
   { id: "money", label: "Money", area: "money" },
   { id: "crew", label: "Team", area: "team" },
