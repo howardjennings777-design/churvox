@@ -71,6 +71,14 @@ export default function PublicDemoPage() {
   const step = journey[activeStep] || journey[0];
 
   React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  React.useEffect(() => {
     setActiveStep(0);
     try {
       const next = new URL(window.location.href);
