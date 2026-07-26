@@ -1,5 +1,5 @@
-UTC=2026-07-26 03:06:51
-COMMIT=a25ec2690c251701930933346a49436d3dbd3647
+UTC=2026-07-26 08:22:18
+COMMIT=2bcba9432cc8641e49228f8a3a2abe21df5add46
 INSTALL_EXIT=0
 BUILD_EXIT=0
 RESULT=PASS
@@ -8,12 +8,12 @@ npm warn deprecated whatwg-encoding@1.0.5: Use @exodus/bytes instead for a more 
 npm warn deprecated w3c-hr-time@1.0.2: Use your platform's native performance.now() and performance.timeOrigin.
 npm warn deprecated stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
 npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
-npm warn deprecated rollup-plugin-terser@7.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-terser
 npm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
-npm warn deprecated workbox-cacheable-response@6.6.0: workbox-background-sync@6.6.0
+npm warn deprecated rollup-plugin-terser@7.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-terser
 npm warn deprecated q@1.5.1: You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
 npm warn deprecated
 npm warn deprecated (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
+npm warn deprecated workbox-cacheable-response@6.6.0: workbox-background-sync@6.6.0
 npm warn deprecated workbox-google-analytics@6.6.0: It is not compatible with newer versions of GA starting with v4, as long as you are using GAv3 it should be ok, but the package is not longer being maintained
 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
 npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting hello@churvox.com
@@ -22,16 +22,16 @@ npm warn deprecated abab@2.0.6: Use your platform's native atob() and btoa() met
 npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
 npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
 npm warn deprecated @babel/plugin-proposal-private-property-in-object@7.21.11: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-private-property-in-object instead.
-npm warn deprecated @babel/plugin-proposal-numeric-separator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-numeric-separator instead.
 npm warn deprecated @babel/plugin-proposal-optional-chaining@7.21.0: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-chaining instead.
+npm warn deprecated @babel/plugin-proposal-numeric-separator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-numeric-separator instead.
+npm warn deprecated @babel/plugin-proposal-private-methods@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-private-methods instead.
 npm warn deprecated @babel/plugin-proposal-nullish-coalescing-operator@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-nullish-coalescing-operator instead.
 npm warn deprecated @babel/plugin-proposal-class-properties@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-class-properties instead.
-npm warn deprecated @babel/plugin-proposal-private-methods@7.18.6: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-private-methods instead.
 npm warn deprecated svgo@1.3.2: This SVGO version is no longer supported. Upgrade to v2.x.x.
 npm warn deprecated source-map@0.8.0-beta.0: The work that was done in this beta branch won't be included in future versions
 npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
 
-added 1531 packages, and audited 1532 packages in 21s
+added 1531 packages, and audited 1532 packages in 18s
 
 298 packages are looking for funding
   run `npm fund` for details
@@ -69,7 +69,7 @@ CHURVOX PREDEPLOY RELEASE AUDIT PASSED (17 checks)
 - Tester backend routes are installed
 - HQ application inbox stays view-only
 - Promotion Centre stays local-only
-CHURVOX RELEASE METADATA WRITTEN frontend/public/__churvox/release.json a25ec2690c251701930933346a49436d3dbd3647
+CHURVOX RELEASE METADATA WRITTEN frontend/public/__churvox/release.json 2bcba9432cc8641e49228f8a3a2abe21df5add46
 Worker proof contract passed: one proof panel, one completion check, one job note, and sent photo proof persists through Complete.
 Generated Churvox PNG app icons (churvox-integrated-mark-20260708b)
 Materialised 11 Churvox hardening files and patched 7 safety-critical files (e1bf0047230a).
@@ -79,97 +79,107 @@ Compiled successfully.
 
 File sizes after gzip:
 
-  111.7 kB  build/static/js/main.7b9da461.js
-  59.33 kB  build/static/js/7847.4a655653.chunk.js
-  34.92 kB  build/static/css/main.733865ec.css
-  33.88 kB  build/static/js/2735.7390f34d.chunk.js
-  22.17 kB  build/static/css/7847.77c5a5fa.chunk.css
-  16.73 kB  build/static/js/2264.638f5232.chunk.js
-  15.89 kB  build/static/css/3380.fb0eb67b.chunk.css
-  14.62 kB  build/static/css/2735.e65bdde5.chunk.css
-  12.44 kB  build/static/js/9967.438942ef.chunk.js
-  11.96 kB  build/static/js/9490.d7243b58.chunk.js
-  9.73 kB   build/static/js/5539.c3f82c01.chunk.js
-  9.65 kB   build/static/js/9957.e757ef93.chunk.js
-  8.48 kB   build/static/js/7245.8bc82715.chunk.js
-  8.4 kB    build/static/js/9394.66fac4f3.chunk.js
-  8.23 kB   build/static/js/5379.46dba522.chunk.js
-  8.11 kB   build/static/css/9614.0cc0a073.chunk.css
-  7.58 kB   build/static/js/9831.6370b934.chunk.js
-  7.49 kB   build/static/js/3056.cced9f31.chunk.js
-  6.98 kB   build/static/js/7090.20b3e59b.chunk.js
-  6.97 kB   build/static/js/7153.3dc47d3d.chunk.js
-  6.9 kB    build/static/js/2248.8328bfc8.chunk.js
-  6.89 kB   build/static/css/347.b5e9c56d.chunk.css
-  6.83 kB   build/static/js/3520.0a721b7e.chunk.js
-  6.83 kB   build/static/js/3357.3aa20950.chunk.js
-  6.68 kB   build/static/js/4139.8daf0af1.chunk.js
-  6.67 kB   build/static/js/2926.c1e2326d.chunk.js
-  6.64 kB   build/static/js/6520.6818dd34.chunk.js
-  6.59 kB   build/static/js/3033.3e801ff0.chunk.js
-  6.45 kB   build/static/js/7127.f0eaeb1d.chunk.js
-  6.32 kB   build/static/js/170.f2f0debb.chunk.js
-  6.24 kB   build/static/js/7687.4df3bd5a.chunk.js
-  6 kB      build/static/js/1702.0f78dcc6.chunk.js
-  5.68 kB   build/static/js/2915.2f6ff8ad.chunk.js
-  5.64 kB   build/static/css/2264.c309f1e9.chunk.css
-  5.48 kB   build/static/js/6776.ab68b580.chunk.js
-  5.42 kB   build/static/js/1995.264a78af.chunk.js
-  5.18 kB   build/static/js/7334.a6e5fe21.chunk.js
-  5.08 kB   build/static/js/9213.040f6a3e.chunk.js
-  4.75 kB   build/static/js/639.0f8151e2.chunk.js
-  4.73 kB   build/static/js/9614.7399c495.chunk.js
-  4.7 kB    build/static/js/7771.e533df58.chunk.js
-  4.7 kB    build/static/js/9379.8192e8c1.chunk.js
-  4.65 kB   build/static/css/3395.704d0553.chunk.css
-  4.65 kB   build/static/css/3797.704d0553.chunk.css
-  4.65 kB   build/static/css/7153.704d0553.chunk.css
-  4.59 kB   build/static/js/4918.16159496.chunk.js
-  3.66 kB   build/static/css/2255.48ad9474.chunk.css
-  3.57 kB   build/static/js/5783.582e7ecf.chunk.js
-  3.53 kB   build/static/js/8628.43300fa0.chunk.js
-  3.52 kB   build/static/js/5550.32bdd03b.chunk.js
-  3.29 kB   build/static/js/6294.66db70c9.chunk.js
-  3.25 kB   build/static/js/9942.0a725f27.chunk.js
-  3.24 kB   build/static/css/8987.8a2f19d2.chunk.css
-  3.21 kB   build/static/js/7981.c92ca9da.chunk.js
-  3.19 kB   build/static/js/347.c42ebb2c.chunk.js
-  3.17 kB   build/static/css/9967.0c10c531.chunk.css
-  2.96 kB   build/static/js/2046.f086889f.chunk.js
-  2.91 kB   build/static/css/9490.82e584de.chunk.css
-  2.8 kB    build/static/js/6313.6b64c24e.chunk.js
-  2.73 kB   build/static/js/8682.aa1af98e.chunk.js
-  2.66 kB   build/static/css/5379.95981e78.chunk.css
-  2.42 kB   build/static/js/913.aa091c25.chunk.js
-  2.29 kB   build/static/css/2248.9637e1b6.chunk.css
-  2.27 kB   build/static/css/5539.bb52ea77.chunk.css
-  2.21 kB   build/static/css/7981.2d051490.chunk.css
-  2.21 kB   build/static/css/9942.2d051490.chunk.css
-  2.2 kB    build/static/css/2046.2d051490.chunk.css
-  2.16 kB   build/static/js/9389.0b5a910a.chunk.js
-  2.04 kB   build/static/js/19.edbda6f0.chunk.js
-  2.01 kB   build/static/js/4748.46ec1db2.chunk.js
-  1.97 kB   build/static/js/6296.9149d431.chunk.js
-  1.58 kB   build/static/js/3797.2cc32a10.chunk.js
-  1.58 kB   build/static/css/9394.6e0a7993.chunk.css
-  1.45 kB   build/static/js/7695.c3f730a6.chunk.js
-  1.37 kB   build/static/css/913.5527e1d1.chunk.css
-  1.35 kB   build/static/js/5149.a2d65c34.chunk.js
-  1.32 kB   build/static/js/3395.34f2a8b4.chunk.js
-  1.27 kB   build/static/js/2255.3906688a.chunk.js
-  1.26 kB   build/static/css/1106.5e72f530.chunk.css
-  1.1 kB    build/static/js/5971.7f381298.chunk.js
-  924 B     build/static/js/1724.234e60b4.chunk.js
-  744 B     build/static/js/3974.54b3821d.chunk.js
-  733 B     build/static/js/1106.67851e8c.chunk.js
-  697 B     build/static/js/8370.9250f6dc.chunk.js
-  651 B     build/static/css/19.cdd4da38.chunk.css
-  625 B     build/static/js/2524.9233f298.chunk.js
-  616 B     build/static/js/5457.4750c06a.chunk.js
-  554 B     build/static/js/7497.5f7a6fb0.chunk.js
-  541 B     build/static/js/8299.d33b3a40.chunk.js
-  501 B     build/static/css/7695.1727c443.chunk.css
-  263 B     build/static/js/2422.10d55ce6.chunk.js
+  113.74 kB  build/static/js/main.bb514dbf.js
+  59.33 kB   build/static/js/7847.4a655653.chunk.js
+  34.92 kB   build/static/css/main.733865ec.css
+  33.92 kB   build/static/js/2735.4438d51f.chunk.js
+  22.17 kB   build/static/css/7847.77c5a5fa.chunk.css
+  17.64 kB   build/static/js/4380.d0bb2afe.chunk.js
+  16.02 kB   build/static/js/6149.39d31769.chunk.js
+  15.89 kB   build/static/css/3380.fb0eb67b.chunk.css
+  14.63 kB   build/static/css/2735.aba95033.chunk.css
+  12.42 kB   build/static/js/8668.893be503.chunk.js
+  11.96 kB   build/static/js/9490.d7243b58.chunk.js
+  11.42 kB   build/static/js/4024.a6820e8f.chunk.js
+  9.78 kB    build/static/js/5539.efc74e24.chunk.js
+  9.03 kB    build/static/js/1282.5a1f3fdd.chunk.js
+  8.48 kB    build/static/js/7245.8bc82715.chunk.js
+  8.42 kB    build/static/js/9394.af20a4f9.chunk.js
+  8.23 kB    build/static/js/5379.46dba522.chunk.js
+  8.11 kB    build/static/css/9614.0cc0a073.chunk.css
+  7.61 kB    build/static/js/9831.e5789f94.chunk.js
+  7.51 kB    build/static/js/5296.70d095a8.chunk.js
+  6.98 kB    build/static/js/7090.20b3e59b.chunk.js
+  6.97 kB    build/static/js/7153.3dc47d3d.chunk.js
+  6.9 kB     build/static/js/2248.8328bfc8.chunk.js
+  6.89 kB    build/static/css/347.b5e9c56d.chunk.css
+  6.86 kB    build/static/js/3357.1b2cbb43.chunk.js
+  6.83 kB    build/static/js/3520.0a721b7e.chunk.js
+  6.72 kB    build/static/js/4139.c3bc3d4d.chunk.js
+  6.71 kB    build/static/js/2926.f8919890.chunk.js
+  6.68 kB    build/static/js/6520.236fec58.chunk.js
+  6.59 kB    build/static/js/3033.3e801ff0.chunk.js
+  6.45 kB    build/static/js/7127.f0eaeb1d.chunk.js
+  6.36 kB    build/static/js/170.09c16fbe.chunk.js
+  6.34 kB    build/static/css/6149.1687a6ed.chunk.css
+  6.28 kB    build/static/js/7687.3495ca03.chunk.js
+  6.17 kB    build/static/js/9957.9022b6bc.chunk.js
+  6.14 kB    build/static/css/4024.1edfee79.chunk.css
+  6.03 kB    build/static/js/1702.a06857fe.chunk.js
+  5.88 kB    build/static/css/4380.2c672738.chunk.css
+  5.71 kB    build/static/js/2915.22aaca86.chunk.js
+  5.48 kB    build/static/js/6776.ab68b580.chunk.js
+  5.42 kB    build/static/js/1995.264a78af.chunk.js
+  5.2 kB     build/static/css/1282.c7393ac3.chunk.css
+  5.18 kB    build/static/js/7334.a6e5fe21.chunk.js
+  5.11 kB    build/static/js/9213.de615d51.chunk.js
+  4.75 kB    build/static/js/639.0f8151e2.chunk.js
+  4.73 kB    build/static/js/9614.7399c495.chunk.js
+  4.7 kB     build/static/js/7771.e533df58.chunk.js
+  4.7 kB     build/static/js/9379.8192e8c1.chunk.js
+  4.65 kB    build/static/css/3395.704d0553.chunk.css
+  4.65 kB    build/static/css/3797.704d0553.chunk.css
+  4.65 kB    build/static/css/7153.704d0553.chunk.css
+  4.63 kB    build/static/js/1317.559e6573.chunk.js
+  4.59 kB    build/static/js/4918.16159496.chunk.js
+  3.66 kB    build/static/css/2255.48ad9474.chunk.css
+  3.57 kB    build/static/js/5783.2ee41e3f.chunk.js
+  3.53 kB    build/static/js/8628.43300fa0.chunk.js
+  3.52 kB    build/static/js/5550.32bdd03b.chunk.js
+  3.29 kB    build/static/js/6294.66db70c9.chunk.js
+  3.25 kB    build/static/js/9942.0a725f27.chunk.js
+  3.24 kB    build/static/css/8987.8a2f19d2.chunk.css
+  3.21 kB    build/static/js/7981.c92ca9da.chunk.js
+  3.19 kB    build/static/js/347.c42ebb2c.chunk.js
+  3.17 kB    build/static/css/8668.85f02cba.chunk.css
+  2.96 kB    build/static/js/2046.f086889f.chunk.js
+  2.91 kB    build/static/css/9490.82e584de.chunk.css
+  2.8 kB     build/static/js/6313.6b64c24e.chunk.js
+  2.73 kB    build/static/js/8682.aa1af98e.chunk.js
+  2.7 kB     build/static/js/3020.0ac996ce.chunk.js
+  2.66 kB    build/static/css/5379.95981e78.chunk.css
+  2.42 kB    build/static/js/913.aa091c25.chunk.js
+  2.29 kB    build/static/css/2248.9637e1b6.chunk.css
+  2.27 kB    build/static/css/5539.bb52ea77.chunk.css
+  2.22 kB    build/static/js/3260.b7e6dee7.chunk.js
+  2.21 kB    build/static/css/7981.2d051490.chunk.css
+  2.21 kB    build/static/css/9942.2d051490.chunk.css
+  2.2 kB     build/static/css/2046.2d051490.chunk.css
+  2.16 kB    build/static/js/9389.0b5a910a.chunk.js
+  2.01 kB    build/static/js/4748.46ec1db2.chunk.js
+  2 kB       build/static/css/3260.4123bba3.chunk.css
+  1.97 kB    build/static/js/6296.9149d431.chunk.js
+  1.72 kB    build/static/js/9093.6e05b090.chunk.js
+  1.58 kB    build/static/js/3797.2cc32a10.chunk.js
+  1.58 kB    build/static/css/9394.6e0a7993.chunk.css
+  1.45 kB    build/static/js/7695.c3f730a6.chunk.js
+  1.37 kB    build/static/css/913.5527e1d1.chunk.css
+  1.35 kB    build/static/js/5149.a2d65c34.chunk.js
+  1.32 kB    build/static/js/3395.34f2a8b4.chunk.js
+  1.31 kB    build/static/css/3020.6ac5958b.chunk.css
+  1.27 kB    build/static/js/2255.3906688a.chunk.js
+  1.26 kB    build/static/css/1106.5e72f530.chunk.css
+  1.1 kB     build/static/js/5971.7f381298.chunk.js
+  924 B      build/static/js/1724.234e60b4.chunk.js
+  744 B      build/static/js/3974.54b3821d.chunk.js
+  733 B      build/static/js/1106.67851e8c.chunk.js
+  697 B      build/static/js/8370.9250f6dc.chunk.js
+  625 B      build/static/js/2524.9233f298.chunk.js
+  616 B      build/static/js/5457.4750c06a.chunk.js
+  554 B      build/static/js/7497.5f7a6fb0.chunk.js
+  541 B      build/static/js/8299.d33b3a40.chunk.js
+  501 B      build/static/css/7695.1727c443.chunk.css
+  263 B      build/static/js/2422.10d55ce6.chunk.js
 
 The project was built assuming it is hosted at /.
 You can control this with the homepage field in your package.json.
