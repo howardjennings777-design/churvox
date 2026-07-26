@@ -5,6 +5,7 @@ import TesterApplicationsInbox from "./admin/TesterApplicationsInbox";
 import ChurvoxPromotionCentre from "./admin/ChurvoxPromotionCentre";
 import { loadHqLiveStatus } from "../churvox-site-next/hqLiveData";
 import "./ChurvoxHQPage.css";
+import "./ChurvoxHQSources.css";
 
 const WORKSPACES = [
   {
