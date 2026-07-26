@@ -67,6 +67,12 @@ export default function StudioReleaseBridge() {
         });
       }
 
+      const pageHeading = document.querySelector(".cvsContextIdentity b");
+      if (pageHeading) {
+        pageHeading.setAttribute("role", "heading");
+        pageHeading.setAttribute("aria-level", "1");
+      }
+
       const context = document.querySelector(".cvsContextBeam nav");
       if (context) {
         const area = areaForPage(currentPage);
