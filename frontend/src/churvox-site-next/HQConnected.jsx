@@ -4,7 +4,7 @@ import ChurvoxHQPage from "../pages/ChurvoxHQPage";
 import { loadHqLiveStatus } from "./hqLiveData";
 import "./hqConnected.css";
 
-export const HQ_CONNECTED_BUILD = "churvox-hq-connected-live-20260726";
+export const HQ_CONNECTED_BUILD = "churvox-hq-connected-live-20260726b";
 
 if (typeof window !== "undefined") {
   window.__CHURVOX_HQ_CONNECTED_BUILD__ = HQ_CONNECTED_BUILD;
@@ -58,7 +58,7 @@ export default function HQConnected() {
           <div>
             <small>Connected My HQ</small>
             <h1>{status.connected} of {status.total} platform read sources confirmed</h1>
-            <p>This private route now uses the same live HQ controls as the working /admin page. No sample businesses, billing totals or tester records are substituted.</p>
+            <p>This private route now uses the same live HQ controls as the working /admin page. Only authenticated live businesses, billing totals and tester records are shown.</p>
           </div>
         </div>
         <div className="cvhqLiveActions">
@@ -74,7 +74,7 @@ export default function HQConnected() {
               <p>{source.message}</p>
             </article>
           ))}
-          {!status.sources?.length ? <article className="neutral"><div><strong>HQ platform reads</strong><span>{label(visibleState)}</span></div><b>—</b><p>No platform totals are shown until the live owner sources answer.</p></article> : null}
+          {!status.sources?.length ? <article className="neutral"><div><strong>HQ platform reads</strong><span>{label(visibleState)}</span></div><b>—</b><p>Platform totals stay hidden until the live owner sources answer.</p></article> : null}
         </div>
         <footer>
           <strong>Wired boundary:</strong> the status adapter remains authenticated and read-only. Changes inside My HQ still use the existing validated platform-owner controls.
