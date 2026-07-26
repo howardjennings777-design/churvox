@@ -1,0 +1,163 @@
+name: Churvox Live Owner Route Diagnostic
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    if: startsWith(github.event.issue.title, '[churvox-live-owner-route-diagnostic]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_URL: https://www.churvox.com
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install browser tooling
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps
+          npx playwright install --with-deps chromium
+
+      - name: Capture the real deployed owner route
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/churvox-live-owner-route
+          cat > /tmp/churvox-live-owner-route.cjs <<'NODE'
+          const fs = require('fs');
+          const { chromium } = require(process.cwd() + '/node_modules/@playwright/test');
+
+          const base = String(process.env.BASE_URL || '').replace(/\/+$/, '');
+          const apiBase = String(process.env.API_BASE || '').replace(/\/+$/, '');
+          const email = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
+          const password = String(process.env.OWNER_PASSWORD || '');
+          const out = '/tmp/churvox-live-owner-route';
+
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+            || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+
+          (async () => {
+            let browser;
+            try {
+              const loginResponse = await fetch(`${apiBase}/api/auth/login`, {
+                method: 'POST',
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+              });
+              const loginText = await loginResponse.text();
+              let loginBody = {};
+              try { loginBody = JSON.parse(loginText); } catch { loginBody = { text: loginText.slice(0, 400) }; }
+              const token = tokenFrom(loginBody);
+              if (!loginResponse.ok || !token) throw new Error(`Owner login failed ${loginResponse.status}: ${JSON.stringify(loginBody).slice(0, 600)}`);
+
+              browser = await chromium.launch({ headless: true });
+              const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
+              await context.addInitScript(({ tokenValue, emailValue }) => {
+                localStorage.setItem('token', tokenValue);
+                localStorage.setItem('authToken', tokenValue);
+                localStorage.setItem('access_token', tokenValue);
+                localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+                  at: Date.now(),
+                  token: tokenValue,
+                  user: { email: emailValue, role: 'owner', has_app_access: true, email_verified: true, token: tokenValue },
+                }));
+              }, { tokenValue: token, emailValue: email });
+
+              const page = await context.newPage();
+              const consoleMessages = [];
+              const failedRequests = [];
+              page.on('console', (message) => consoleMessages.push(`${message.type()}: ${message.text()}`));
+              page.on('pageerror', (error) => consoleMessages.push(`pageerror: ${error.message}`));
+              page.on('requestfailed', (request) => failedRequests.push(`${request.method()} ${request.url()} :: ${request.failure()?.errorText || 'failed'}`));
+
+              const response = await page.goto(`${base}/dashboard?routeDiagnostic=${Date.now()}#today`, {
+                waitUntil: 'domcontentloaded',
+                timeout: 45000,
+              });
+              await page.waitForTimeout(10000);
+
+              const diagnostic = await page.evaluate(() => {
+                const scripts = [...document.scripts].map((script) => script.src).filter(Boolean);
+                const links = [...document.querySelectorAll('link[rel="stylesheet"]')].map((link) => link.href).filter(Boolean);
+                const classes = [...document.querySelectorAll('[class]')]
+                  .flatMap((element) => String(element.className || '').split(/\s+/))
+                  .filter(Boolean);
+                return {
+                  url: location.href,
+                  title: document.title,
+                  bodyText: String(document.body?.innerText || '').slice(0, 5000),
+                  bodyHtml: String(document.body?.innerHTML || '').slice(0, 5000),
+                  scripts,
+                  stylesheets: links,
+                  uniqueClasses: [...new Set(classes)].slice(0, 300),
+                  ownerReadyCount: document.querySelectorAll('.cvOwnerReady').length,
+                  logoutText: [...document.querySelectorAll('button, a')]
+                    .map((element) => String(element.textContent || '').trim())
+                    .filter((text) => /log\s*out|sign\s*out/i.test(text))
+                    .slice(0, 20),
+                  liveBuild: window.__CHURVOX_LIVE_BUILD__ || null,
+                  deployBuild: window.__CHURVOX_DEPLOY_BUILD__ || null,
+                  cacheResetVersion: localStorage.getItem('churvox:owner-ui-cache-reset'),
+                  storageKeys: Object.keys(localStorage).sort(),
+                };
+              });
+
+              diagnostic.httpStatus = response?.status() || null;
+              diagnostic.consoleMessages = consoleMessages.slice(0, 100);
+              diagnostic.failedRequests = failedRequests.slice(0, 100);
+              fs.writeFileSync(`${out}/diagnostic.json`, JSON.stringify(diagnostic, null, 2));
+              await page.screenshot({ path: `${out}/owner-route.png`, fullPage: true });
+              fs.writeFileSync(`${out}/result.txt`, 'Captured the real deployed owner route.\n');
+              console.log(JSON.stringify(diagnostic, null, 2));
+              await context.close();
+            } catch (error) {
+              fs.writeFileSync(`${out}/result.txt`, `Diagnostic failed: ${String(error.stack || error)}\n`);
+              throw error;
+            } finally {
+              if (browser) await browser.close().catch(() => {});
+            }
+          })();
+          NODE
+          node /tmp/churvox-live-owner-route.cjs 2>&1 | tee /tmp/churvox-live-owner-route/run.log
+
+      - name: Upload route evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-owner-route-diagnostic
+          path: /tmp/churvox-live-owner-route
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Post route diagnostic
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const read = (path) => fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
+            const result = read('/tmp/churvox-live-owner-route/result.txt') || 'No result was produced.';
+            const diagnostic = read('/tmp/churvox-live-owner-route/diagnostic.json');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${result}\n\n${diagnostic ? `Diagnostic:\n\`\`\`json\n${diagnostic.slice(0, 12000)}\n\`\`\`` : ''}\n\nWorkflow run: \`${context.runId}\``,
+            });

@@ -1,311 +1,70 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  PublicNav,
-  PublicFooter,
-  Eyebrow,
-  SectionHeading,
-  coreAreas,
-} from "./ChurvoxPublicShell";
-import "./OwnerControlRoomHome.css";
+import { PublicNav, PublicFooter } from "./ChurvoxPublicShell";
+import "./ChurvoxLivingOfficeHome.css";
+import "./ChurvoxPremiumPublic.css";
+import "./ChurvoxPremiumScenes.css";
+
+const HOME_TITLE = "Job management software NZ & Australia | Churvox";
+const HOME_DESCRIPTION = "Churvox is job management software for New Zealand and Australian service businesses, available worldwide. Manage jobs, clients, workers, quotes and invoices with owner approval.";
+
+const DESKS = [["Bookings", "Requests, timing and recurring work", "3 ready"], ["Team", "Workers, progress and proof", "6 active"], ["Clients", "Details and follow-ups", "2 waiting"], ["Money", "Quotes, invoices and overdue work", "4.2k open"], ["Checks", "Photos, extras and exceptions", "1 review"]];
+const SIGNALS = [["01", "Something changes", "A request, worker update, problem or payment enters Churvox."], ["02", "Records connect", "The right client, job, worker and money records stay together."], ["03", "Churvox checks", "The system checks what else could be affected before preparing the next step."], ["04", "The next step is prepared", "One editable action is prepared with the reason attached."], ["05", "The owner decides", "You approve, edit, park or ask for more information."]];
+const CONTROLS = [["01", "Nothing sends without approval", "Client and worker messages stay editable until the owner approves them."], ["02", "Money actions stay deliberate", "No charge, payout or accounting action happens silently."], ["03", "The reason stays visible", "Every prepared action shows the records checked and what will happen next."]];
+
+function setMeta(attribute, key, content) {
+  let node = document.head.querySelector(`meta[${attribute}="${key}"]`);
+  if (!node) {
+    node = document.createElement("meta");
+    node.setAttribute(attribute, key);
+    document.head.appendChild(node);
+  }
+  node.setAttribute("content", content);
+}
+
+function setCanonical(href) {
+  let node = document.head.querySelector('link[rel="canonical"]');
+  if (!node) {
+    node = document.createElement("link");
+    node.setAttribute("rel", "canonical");
+    document.head.appendChild(node);
+  }
+  node.setAttribute("href", href);
+}
+
+function OfficeVisual() {
+  return <div className="clhOffice" aria-label="Churvox business overview"><div className="clhOfficeTop"><span><i />Live business</span><b>Everything connected</b></div><div className="clhFloor"><div className="clhBrain"><span /><small>Churvox</small><b>Admin centre</b><p>Checks the connected business</p></div>{DESKS.map(([name, note, state], index) => <article key={name} className={`clhDesk desk-${index + 1}`}><i /><small>{name}</small><b>{state}</b><p>{note}</p></article>)}<article className="clhOwnerDesk"><small>Owner review</small><b>3 decisions</b><p>Approve · Edit · Park</p><span>Nothing changes without you</span></article><div className="clhPath path-a" /><div className="clhPath path-b" /><div className="clhPath path-c" /></div><div className="clhOfficeBottom"><span>Churvox prepares the admin.</span><b>You review and approve.</b></div></div>;
+}
 
 export const Nav = PublicNav;
 export const Footer = PublicFooter;
 
-const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
-
-const tradeJourneys = {
-  lawn: {
-    label: "Lawn care",
-    industry: "lawn-care",
-    ownerLine: "Four decisions are waiting. The mowing schedule is already handled.",
-    items: [
-      ["Quote ready", "Thompson Property", "Hedge trim and green waste", "$340", "Approve"],
-      ["Worker update", "Tomorrow · 8:30am", "Arrival moved by 30 minutes", "Reply prepared", "Review"],
-      ["Completed job", "Kauri Street", "Photos and time checked", "Invoice ready", "Approve"],
-      ["Payment follow-up", "Riverside Body Corp", "7 days overdue", "Reminder prepared", "Review"],
-    ],
-  },
-  cleaning: {
-    label: "Cleaning",
-    industry: "cleaning",
-    ownerLine: "The regular cleans are running. Only the exceptions need you.",
-    items: [
-      ["Booking ready", "Harbour Offices", "Fortnightly commercial clean", "$480", "Approve"],
-      ["Access issue", "Friday · 6:00pm", "Door code needs confirming", "Reply prepared", "Review"],
-      ["Completed clean", "Fernhill House", "Checklist and photos checked", "Invoice ready", "Approve"],
-      ["Client request", "Miller Family", "Add oven clean next visit", "$85 extra", "Review"],
-    ],
-  },
-  landscaping: {
-    label: "Landscaping",
-    industry: "landscaping",
-    ownerLine: "Jobs are moving. Churvox has separated progress from decisions.",
-    items: [
-      ["Variation ready", "Wilson Courtyard", "Extra drainage requested", "$1,240", "Approve"],
-      ["Worker update", "North Shore project", "Materials delayed one day", "Client reply ready", "Review"],
-      ["Stage complete", "Fern Grove", "Proof and labour checked", "Invoice ready", "Approve"],
-      ["Quote follow-up", "King Residence", "Viewed two days ago", "Follow-up prepared", "Review"],
-    ],
-  },
-  handyman: {
-    label: "Handyman",
-    industry: "handyman",
-    ownerLine: "Callouts, repairs and follow-ups are together instead of scattered.",
-    items: [
-      ["Quote ready", "Oakridge Rentals", "Three maintenance repairs", "$720", "Approve"],
-      ["Parts update", "Bathroom repair", "Replacement fitting required", "Client reply ready", "Review"],
-      ["Job complete", "Pine Avenue", "Time and materials checked", "Invoice ready", "Approve"],
-      ["Return visit", "City Apartment", "Tenant availability received", "Booking prepared", "Review"],
-    ],
-  },
-  plumbing: {
-    label: "Plumbing",
-    industry: "plumbing",
-    ownerLine: "Urgent work stays visible without turning the whole day into noise.",
-    items: [
-      ["Callout ready", "Lake Road", "Leak investigation", "$185", "Approve"],
-      ["Parts approval", "Hot-water repair", "Replacement valve needed", "$146", "Review"],
-      ["Work complete", "Parkside Café", "Photos, time and parts checked", "Invoice ready", "Approve"],
-      ["Safety follow-up", "Rental inspection", "Owner note prepared", "Reply prepared", "Review"],
-    ],
-  },
-  electrical: {
-    label: "Electrical",
-    industry: "electrical",
-    ownerLine: "Churvox keeps the job record complete before money or messages move.",
-    items: [
-      ["Quote ready", "Rimu Workshop", "Lighting replacement", "$1,860", "Approve"],
-      ["Site update", "Switchboard job", "Extra circuit identified", "Variation ready", "Review"],
-      ["Work complete", "Coastal Retail", "Safety notes and proof checked", "Invoice ready", "Approve"],
-      ["Client follow-up", "Evans Residence", "Quote viewed yesterday", "Email prepared", "Review"],
-    ],
-  },
-};
-
-const outcomes = [
-  ["What needs me?", "Only decisions, corrections and exceptions reach the owner."],
-  ["What did Churvox prepare?", "Quotes, invoices, replies, reminders and job changes are ready to review."],
-  ["What is happening today?", "Jobs, workers, delays and money needing attention are visible together."],
-  ["What happened without chasing?", "Acknowledgements, completed work, viewed invoices and replies stay recorded."],
-];
-
-const trust = [
-  ["Nothing sends without approval", "Client emails, worker messages and reminders stay editable until you approve."],
-  ["Nothing charges or pays automatically", "Churvox does not move money, create payouts or charge clients by itself."],
-  ["No tax filing behind your back", "Accounting preparation and exports remain owner-controlled."],
-  ["Your records stay yours", "Business records are separated, exportable and removable through account controls."],
-];
-
-const firstWin = [
-  ["1", "Add one real client"],
-  ["2", "Create their next job"],
-  ["3", "Assign the worker"],
-  ["4", "See what Churvox prepares"],
-];
-
-function OwnerControlRoom({ journey }) {
-  return (
-    <aside className="cp26ControlRoom" aria-label={`Example ${journey.label} owner control room`}>
-      <header className="cp26ControlRoomHead">
-        <div>
-          <small>Sample workspace · no real records</small>
-          <strong>Owner Control Room</strong>
-          <p>{journey.ownerLine}</p>
-        </div>
-        <span>4 need you</span>
-      </header>
-      <div className="cp26ControlRoomRail">
-        <span className="active">Needs you</span>
-        <span>Today</span>
-        <span>Prepared</span>
-        <span>Done</span>
-      </div>
-      <div className="cp26DecisionStack">
-        {journey.items.map(([type, client, detail, value, action], index) => (
-          <article key={`${type}-${client}`} className={index === 0 ? "selected" : ""}>
-            <div className="cp26DecisionNumber">{index + 1}</div>
-            <div className="cp26DecisionCopy">
-              <small>{type}</small>
-              <b>{client}</b>
-              <span>{detail}</span>
-            </div>
-            <div className="cp26DecisionValue">
-              <strong>{value}</strong>
-              <em>{action}</em>
-            </div>
-          </article>
-        ))}
-      </div>
-      <footer className="cp26ControlRoomFoot">
-        <span>Churvox prepared the admin.</span>
-        <b>You make the decision.</b>
-      </footer>
-    </aside>
-  );
-}
-
 export default function ExecutiveHomePage() {
-  const [tradeKey, setTradeKey] = React.useState("lawn");
-  const journey = tradeJourneys[tradeKey];
-  const demoPath = `/demo?industry=${encodeURIComponent(journey.industry)}`;
-  const trialPath = `${DEFAULT_TRIAL_PATH}&industry=${encodeURIComponent(journey.industry)}`;
+  React.useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    document.title = HOME_TITLE;
+    setCanonical("https://www.churvox.com/");
+    setMeta("name", "description", HOME_DESCRIPTION);
+    setMeta("property", "og:title", HOME_TITLE);
+    setMeta("property", "og:description", HOME_DESCRIPTION);
+    setMeta("property", "og:url", "https://www.churvox.com/");
+    setMeta("name", "twitter:title", HOME_TITLE);
+    setMeta("name", "twitter:description", HOME_DESCRIPTION);
+    return undefined;
+  }, []);
 
-  return (
-    <main className="cp26Site cp26ControlRoomSite" data-version="CHURVOX_OWNER_CONTROL_ROOM_20260716B">
-      <PublicNav />
+  return <main className="clhSite cvPremiumPage" data-version="CHURVOX_NZ_AU_HOME_20260726"><PublicNav />
+    <section className="cvSceneHero"><div className="cvSceneHeroCopy"><span className="cvSceneKicker">Job management software for New Zealand &amp; Australia</span><h1>Job management software that keeps jobs, clients, workers and money <em>connected in one place.</em></h1><p>Churvox is built around New Zealand and Australian service businesses, with global access. It keeps the business story together, prepares the admin and brings the owner only the decisions that genuinely need attention.</p><div className="cvSceneActions"><Link className="cp26Button" to="/signup?plan=operator">Start 14-day trial</Link><Link className="cp26Button cp26ButtonGhost" to="/demo">View demo</Link></div><div className="cvSceneFacts"><span>No card upfront</span><span>Owner approval</span><span>Available worldwide</span></div></div><OfficeVisual /></section>
 
-      <section className="cp26Hero cp26ControlHero">
-        <div className="cp26HeroCopy">
-          <Eyebrow>One control room for service-business owners</Eyebrow>
-          <h1>Your business handled. <span>Your decisions waiting.</span></h1>
-          <p>
-            Churvox prepares the jobs, messages, quotes, invoices and follow-ups. You open one owner control room, check what matters and approve.
-          </p>
-          <div className="cp26HeroActions">
-            <Link className="cp26Button" to={demoPath}>See my day in Churvox</Link>
-            <Link className="cp26Button cp26ButtonGhost" to={trialPath}>Start 14-day trial</Link>
-          </div>
-          <div className="cp26TradeChooser" aria-label="Choose a service business">
-            <small>Show me Churvox for</small>
-            <div>
-              {Object.entries(tradeJourneys).map(([key, item]) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={key === tradeKey ? "active" : ""}
-                  onClick={() => setTradeKey(key)}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="cp26TrustRail">
-            <span>No card upfront</span>
-            <span>Nothing auto-sends</span>
-            <span>Owner approval stays in control</span>
-          </div>
-        </div>
-        <OwnerControlRoom journey={journey} />
-      </section>
+    <section className="cvSignalStage"><div className="cvSceneIntro"><small>How it works</small><h2>One update stays connected to the rest of the job.</h2><p>A worker note, client reply or payment update should not become five separate admin tasks.</p></div><div className="cvSignalRail">{SIGNALS.map(([n, title, text]) => <article className="cvSignalNode" key={n}><div className="cvSignalDot">{n}</div><h3>{title}</h3><p>{text}</p></article>)}</div></section>
 
-      <section className="cp26Section cp26OutcomeSection">
-        <SectionHeading
-          eyebrow="The owner view"
-          title="Four questions. No dashboard hunting."
-          text="Churvox is organised around what an owner needs to know—not around software modules that need managing."
-        />
-        <div className="cp26OutcomeGrid">
-          {outcomes.map(([title, text], index) => (
-            <article key={title}>
-              <span>0{index + 1}</span>
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+    <section className="cvCommandStage"><div className="cvSceneIntro"><small>Command · owner approval</small><h2>See what needs a decision, not another dashboard to manage.</h2><p>Command shows what changed, why it matters, what Churvox checked and the safest next move.</p><strong>Every decision keeps four clear options.</strong><ul><li>Approve the prepared action.</li><li>Edit any detail first.</li><li>Park it without losing the history.</li><li>Ask for missing information instead of guessing.</li></ul></div><div className="cvCommandConsole"><header><span>Command / decision waiting</span><b>Owner control on</b></header><div className="cvCommandBody"><div className="cvCommandQueue"><button className="active" type="button"><small>Money</small><b>Riverside extra work</b></button><button type="button"><small>Schedule</small><b>Worker absence</b></button><button type="button"><small>Client</small><b>Friday booking</b></button></div><div className="cvDecisionPane"><small>Recommended next step</small><h3>Confirm the extra $680 before invoicing.</h3><p>Worker notes and photos show completed extra work. Churvox checked the quote, time, proof and client messages before preparing the change.</p><div className="cvDecisionFacts"><div><span>Value protected</span><b>$680</b></div><div><span>Records checked</span><b>4</b></div></div><div className="cvDecisionActions"><span>Approve change</span><span>Edit</span><span>Park</span><span>Ask worker</span></div></div></div></div></section>
 
-      <section className="cp26Section cp26SectionDark cp26DayFlowSection">
-        <SectionHeading
-          eyebrow="A working day"
-          title="See the work arrive. See Churvox prepare it. Approve what matters."
-          text="The product story is one continuous business flow, not a list of disconnected features."
-        />
-        <div className="cp26DayFlow">
-          {[
-            ["01", "Client asks", "A request, booking, change or question enters the business."],
-            ["02", "Churvox prepares", "The client, job, worker, price and history are brought together."],
-            ["03", "Worker does the job", "Acknowledgement, progress, time, notes and proof update the record."],
-            ["04", "Owner approves", "Only the quote, reply, variation or invoice needing a decision comes back."],
-          ].map(([number, title, text]) => (
-            <article key={number}>
-              <b>{number}</b>
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </article>
-          ))}
-        </div>
-        <div className="cp26CenteredActions">
-          <Link className="cp26Button" to={demoPath}>Open the 60-second walkthrough</Link>
-        </div>
-      </section>
+    <section className="cvFieldStage"><div className="cvFieldDevice"><div className="cvFieldScreen"><header><span>9:41</span><b>Churvox Worker</b><span>●</span></header><div className="cvFieldJob"><small>Today · next job</small><h3>Riverside tidy</h3><p>Scope, access note and latest owner direction are attached.</p></div><div className="cvFieldSteps"><span>Acknowledge job</span><span>Start work</span><span>Add note or photo</span><span>Complete and send proof</span></div></div></div><div className="cvFieldCopy"><div className="cvSceneIntro"><small>Worker app</small><h2>Simple for the worker. Complete for the owner.</h2><p>The worker sees the job, updates what happened and sends proof. Churvox connects that update to the right client, job and invoice records.</p></div><div className="cvHandoffLine"><h3>No double handling.</h3><p>Status, notes, photos and time return to the right record. The owner sees only what needs attention.</p></div></div></section>
 
-      <section className="cp26Section cp26FirstWinSection">
-        <div className="cp26Split">
-          <div className="cp26SplitLead">
-            <Eyebrow>Your first useful result</Eyebrow>
-            <h2>Do one real job before setting up everything.</h2>
-            <p>New owners should not face an empty system or a wall of settings. Churvox guides them to one complete client-and-job flow first.</p>
-            <div className="cp26HeroActions">
-              <Link className="cp26Button" to={trialPath}>Get my first job organised</Link>
-            </div>
-          </div>
-          <div className="cp26FirstWinSteps">
-            {firstWin.map(([number, text]) => (
-              <article key={number}>
-                <b>{number}</b>
-                <span>{text}</span>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+    <section className="cvControlStage"><div className="cvSceneIntro"><small>Owner control</small><h2>Prepared does not mean automatic.</h2><p>Churvox can move quickly without taking control away from the person responsible for the promises, money and reputation.</p></div><div className="cvControlLines">{CONTROLS.map(([n, title, text]) => <article className="cvControlLine" key={n}><span>{n}</span><h3>{title}</h3><p>{text}</p></article>)}</div></section>
 
-      <section className="cp26Section cp26TrustSection">
-        <SectionHeading
-          eyebrow="Owner control is the product"
-          title="Prepared does not mean automatic."
-          text="Churvox does the routine preparation while the owner keeps authority over communication, money, accounting and access."
-        />
-        <div className="cp26TrustGrid">
-          {trust.map(([title, text]) => (
-            <article key={title}>
-              <span>✓</span>
-              <div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+    <section className="cvControlStage"><div className="cvSceneIntro"><small>Where Churvox fits</small><h2>NZ and Australia focused. Available everywhere.</h2><p>The public examples, terminology and business setup prioritise New Zealand and Australia, while the web app remains available to service businesses worldwide.</p></div><div className="cvControlLines"><article className="cvControlLine"><span>NZ</span><h3><a href="/industries/new-zealand">Job management software for New Zealand</a></h3><p>See the New Zealand-focused workflow, including GST settings, NZD pricing and accounting handoff options.</p></article><article className="cvControlLine"><span>AU</span><h3><a href="/industries/australia">Job management software for Australia</a></h3><p>See how Australian service businesses can connect jobs, teams, quotes, invoices and owner approvals.</p></article><article className="cvControlLine"><span>GL</span><h3>Worldwide access</h3><p>Businesses outside New Zealand and Australia can still create an account and use the same connected Churvox workflow.</p></article></div></section>
 
-      <section className="cp26Section">
-        <div className="cp26Split">
-          <div className="cp26SplitLead">
-            <Eyebrow>The complete workspace</Eyebrow>
-            <h2>Each page holds the facts. Command holds the decision.</h2>
-            <p>Jobs controls work. Clients holds the relationship. Workers tracks the field. Quotes and invoices manage the money trail. The owner does not have to run every page.</p>
-            <div className="cp26HeroActions">
-              <Link className="cp26Button" to="/product">See the full product</Link>
-            </div>
-          </div>
-          <div className="cp26AreaGrid">
-            {coreAreas.map(([title, text]) => (
-              <article key={title}>
-                <b>{title}</b>
-                <span>{text}</span>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="cp26Closing cp26ControlClosing">
-        <div>
-          <Eyebrow light>14-day trial · no card upfront</Eyebrow>
-          <h2>Compare plans once, then test Churvox with a real job.</h2>
-          <p>All four plans and add-ons live on one clear pricing page. Choose only the level the business needs today.</p>
-        </div>
-        <div className="cp26ClosingActions">
-          <Link className="cp26Button" to="/pricing">View pricing</Link>
-          <Link className="cp26Button cp26ButtonGhost" to={trialPath}>Start free trial</Link>
-        </div>
-      </section>
-
-      <PublicFooter />
-    </main>
-  );
+    <section className="cvSceneClose"><div><small>14-day trial · no card upfront</small><h2>Try Churvox with one real workday.</h2><p>Add one job, one worker update and one owner decision to see whether Churvox removes admin from your day.</p></div><div><Link className="cp26Button" to="/signup?plan=operator">Start free trial</Link><Link className="cp26Button cp26ButtonGhost" to="/pricing">View pricing</Link></div></section><PublicFooter /></main>;
 }

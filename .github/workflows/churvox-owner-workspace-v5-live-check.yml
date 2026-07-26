@@ -1,0 +1,95 @@
+name: Churvox owner workspace v5 live check
+
+on:
+  push:
+    paths:
+      - '.github/workflows/churvox-owner-workspace-v5-live-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Poll deployed owner bundles
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          OUT="$RUNNER_TEMP/owner-v5-live.md"
+          render_ok=no
+          www_ok=no
+          render_script=none
+          www_script=none
+          render_title=none
+          www_title=none
+
+          check_host() {
+            local base="$1"
+            local prefix="$2"
+            local stamp
+            stamp=$(date +%s%N)
+            local html="$RUNNER_TEMP/${prefix}.html"
+            curl -sS -L --max-time 40 -H 'Cache-Control: no-cache, no-store' -o "$html" "$base/?ownerV5=$stamp"
+            local title
+            title=$(grep -ioE '<title>[^<]*</title>' "$html" | head -1 | sed -E 's#</?title>##Ig')
+            local script
+            script=$(grep -oE 'src="[^"]+/static/js/main\.[^"]+\.js[^"]*"' "$html" | head -1 | sed -E 's/^src="//;s/"$//')
+            if [ -z "$script" ]; then
+              script=$(grep -oE 'src="/static/js/main\.[^"]+\.js[^"]*"' "$html" | head -1 | sed -E 's/^src="//;s/"$//')
+            fi
+            local body="$RUNNER_TEMP/${prefix}.js"
+            if [ -n "$script" ]; then
+              case "$script" in
+                http*) curl -sS -L --max-time 60 -H 'Cache-Control: no-cache, no-store' -o "$body" "$script" ;;
+                *) curl -sS -L --max-time 60 -H 'Cache-Control: no-cache, no-store' -o "$body" "${base%/}$script" ;;
+              esac
+            else
+              : > "$body"
+            fi
+            local ok=no
+            if grep -Fq 'owner-readable-logout-20260724-v5' "$body" \
+              && grep -Fq 'churvoxOwnerReadableMode' "$body" \
+              && grep -Fq 'churvox-owner-fallback-logout' "$body"; then
+              ok=yes
+            fi
+            printf '%s|%s|%s\n' "${title:-none}" "${script:-none}" "$ok"
+          }
+
+          for attempt in $(seq 1 24); do
+            IFS='|' read -r render_title render_script render_ok <<< "$(check_host 'https://grassley-frontend.onrender.com' render)"
+            IFS='|' read -r www_title www_script www_ok <<< "$(check_host 'https://www.churvox.com' www)"
+            if [ "$render_ok" = yes ] && [ "$www_ok" = yes ]; then break; fi
+            sleep 20
+          done
+
+          {
+            echo '## Owner workspace v5 live check'
+            echo
+            echo "UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            echo "- Render title: $render_title"
+            echo "- Render script: $render_script"
+            echo "- Render v5 marker live: $render_ok"
+            echo "- www title: $www_title"
+            echo "- www script: $www_script"
+            echo "- www v5 marker live: $www_ok"
+          } > "$OUT"
+          cat "$OUT"
+          gh issue comment 758 --repo howardjennings777-design/churvox --body-file "$OUT"
+
+          mkdir -p docs
+          cp "$OUT" docs/CHURVOX_OWNER_WORKSPACE_V5_LIVE_STATUS.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/CHURVOX_OWNER_WORKSPACE_V5_LIVE_STATUS.md
+          git commit -m 'record owner workspace v5 live status' || true
+          git push || true
+
+          test "$render_ok" = yes

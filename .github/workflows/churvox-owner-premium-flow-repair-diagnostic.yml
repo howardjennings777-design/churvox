@@ -1,0 +1,89 @@
+name: Churvox owner premium flow repair diagnostic
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-owner-premium-flow-diagnostic]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Extract and run premium patch
+        id: patch
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('.github/workflows/churvox-owner-premium-flow-repair.yml').read_text()
+          start = source.index("          python - <<'PY'") + len("          python - <<'PY'\n")
+          end = source.index("          PY\n", start)
+          lines = source[start:end].splitlines()
+          code = "\n".join(line[10:] if line.startswith("          ") else line for line in lines) + "\n"
+          Path('/tmp/churvox-premium-patch.py').write_text(code)
+          PY
+          python /tmp/churvox-premium-patch.py 2>&1 | tee /tmp/churvox-premium-patch.log
+
+      - name: Build frontend
+        id: build
+        if: steps.patch.outcome == 'success'
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm ci --legacy-peer-deps 2>&1 | tee /tmp/churvox-premium-install.log
+          npm run build 2>&1 | tee /tmp/churvox-premium-build.log
+
+      - name: Commit repair
+        id: commit
+        if: steps.build.outcome == 'success'
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/churvox-product/ProductAppV3.jsx frontend/src/styles/churvoxOwnerPremiumWorkspace.css
+          if git diff --cached --quiet; then
+            echo 'No changes were produced.' | tee /tmp/churvox-premium-commit.log
+          else
+            git commit -m 'Build premium Today Command and Schedule rooms' | tee /tmp/churvox-premium-commit.log
+            git push | tee -a /tmp/churvox-premium-commit.log
+          fi
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Post diagnostic result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const read = (path) => fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
+            const patch = read('/tmp/churvox-premium-patch.log');
+            const build = read('/tmp/churvox-premium-build.log');
+            const commit = read('/tmp/churvox-premium-commit.log');
+            const body = [
+              `Premium repair result: **${{ job.status }}**`,
+              `Patch outcome: \`${{ steps.patch.outcome }}\``,
+              `Build outcome: \`${{ steps.build.outcome }}\``,
+              `Commit outcome: \`${{ steps.commit.outcome }}\``,
+              `Commit: \`${process.env.COMMIT || 'none'}\``,
+              patch ? `\nPatch log:\n\`\`\`text\n${patch.slice(-3500)}\n\`\`\`` : '',
+              build ? `\nBuild log:\n\`\`\`text\n${build.slice(-3500)}\n\`\`\`` : '',
+              commit ? `\nCommit log:\n\`\`\`text\n${commit.slice(-1500)}\n\`\`\`` : '',
+            ].filter(Boolean).join('\n');
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });

@@ -55,7 +55,7 @@ function safePaymentUrl(value) {
 
 function Unavailable({ message }) {
   return (
-    <main className="cpd-shell">
+    <main className="cpd-shell cvCustomerRoom">
       <article className="cpd-document">
         <section className="cpd-body">
           <small>Churvox invoice</small>
@@ -124,7 +124,7 @@ export default function PublicInvoicePage() {
     return [{ description: first(invoice.description, invoice.invoice_description, invoice.notes, "Service work completed."), quantity: 1, unit_price: amount, amount }];
   }, [invoice]);
 
-  if (loading) return <main className="cpd-shell"><article className="cpd-document"><section className="cpd-body">Loading invoice…</section></article></main>;
+  if (loading) return <main className="cpd-shell cvCustomerRoom"><article className="cpd-document"><section className="cpd-body">Loading invoice…</section></article></main>;
   if (error || !invoice) return <Unavailable message={error || "The invoice was not found or is no longer available."} />;
 
   const business = invoice.business_snapshot || invoice.business || {};
@@ -153,7 +153,7 @@ export default function PublicInvoicePage() {
   const publicNotes = invoice.public_notes || invoice.customer_notes || invoice.notes || "";
 
   return (
-    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_INVOICE_PAID_LAUNCH_20260712">
+    <main className="cpd-shell cvCustomerRoom" data-version="CHURVOX_PUBLIC_INVOICE_PAID_LAUNCH_20260712">
       <section className="cpd-actions">
         <b>{business.business_name || "Churvox invoice"}</b>
         <button type="button" onClick={() => window.print()}>Print / PDF</button>

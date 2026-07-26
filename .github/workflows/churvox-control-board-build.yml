@@ -1,0 +1,56 @@
+name: Churvox Control Board Build
+
+on:
+  pull_request:
+    paths:
+      - "frontend/src/churvox-product/**"
+      - "frontend/src/churvox-studio/**"
+      - "frontend/src/churvox-fresh/FreshApp.jsx"
+      - "frontend/tests/e2e/churvox-studio-visual.spec.js"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - ".github/workflows/churvox-control-board-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Build fresh Churvox Studio
+        run: npm run build
+        env:
+          CI: "true"
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+      - name: Render every owner page
+        run: npx playwright test tests/e2e/churvox-studio-visual.spec.js --project=desktop-chromium --workers=1
+        env:
+          CI: "true"
+          PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3000"
+      - name: Upload visual atlas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-fresh-studio-visuals
+          path: |
+            frontend/test-results/**/*.png
+            frontend/playwright-report/**
+          if-no-files-found: warn
+          retention-days: 14

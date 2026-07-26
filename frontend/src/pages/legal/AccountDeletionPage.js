@@ -97,7 +97,7 @@ export default function AccountDeletionPage() {
   };
 
   return (
-    <main className="cp26Site" data-version="CHURVOX_ACCOUNT_DELETION_FINAL_20260720">
+    <main className="cp26Site cp26LegalWorld" data-version="CHURVOX_ACCOUNT_DELETION_FINAL_20260720">
       <PublicNav />
       <section className="cp26PageHero">
         <div>

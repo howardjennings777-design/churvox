@@ -1,0 +1,53 @@
+name: Churvox live version file
+
+on:
+  push:
+    paths:
+      - '.github/workflows/churvox-live-version-file.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Capture live version
+        shell: bash
+        run: |
+          set +e
+          mkdir -p docs
+          OUT=docs/CHURVOX_LIVE_VERSION_NOW.txt
+          : > "$OUT"
+          for base in https://grassley-frontend.onrender.com https://www.churvox.com; do
+            echo "BASE=$base" >> "$OUT"
+            html=$(mktemp)
+            curl -sS -L --max-time 45 -H 'Cache-Control: no-cache, no-store' "$base/?liveVersion=$(date +%s%N)" -o "$html"
+            title=$(grep -ioE '<title>[^<]*</title>' "$html" | head -1 | sed -E 's#</?title>##Ig')
+            script=$(grep -oE 'src="/static/js/main\.[^"]+\.js[^"]*"' "$html" | head -1 | sed -E 's/^src="//;s/"$//')
+            echo "TITLE=${title:-none}" >> "$OUT"
+            echo "SCRIPT=${script:-none}" >> "$OUT"
+            rel=$(curl -sS -L --max-time 30 -H 'Cache-Control: no-cache, no-store' "$base/__churvox/release.json?liveVersion=$(date +%s%N)")
+            echo "RELEASE=$rel" >> "$OUT"
+            if [ -n "$script" ]; then
+              js=$(mktemp)
+              curl -sS -L --max-time 60 -H 'Cache-Control: no-cache, no-store' "$base$script" -o "$js"
+              grep -Fq 'owner-readable-logout-20260724-v4' "$js" && echo 'V4=yes' >> "$OUT" || echo 'V4=no' >> "$OUT"
+              grep -Fq 'owner-readable-logout-20260724-v5' "$js" && echo 'V5=yes' >> "$OUT" || echo 'V5=no' >> "$OUT"
+              grep -Fq 'churvoxOwnerReadableMode' "$js" && echo 'READABLE_MODE=yes' >> "$OUT" || echo 'READABLE_MODE=no' >> "$OUT"
+            fi
+            echo '---' >> "$OUT"
+          done
+          cat "$OUT"
+      - name: Commit live version evidence
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/CHURVOX_LIVE_VERSION_NOW.txt
+          git commit -m 'record current Churvox live version' || true
+          git push || true

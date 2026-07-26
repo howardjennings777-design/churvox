@@ -1,0 +1,51 @@
+name: Churvox owner workspace readable logout fix
+
+on:
+  push:
+    paths:
+      - 'scripts/churvox_owner_workspace_readability_logout_fix.py'
+      - '.github/workflows/churvox-owner-workspace-readable-logout-fix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply owner workspace repair
+        run: python scripts/churvox_owner_workspace_readability_logout_fix.py
+
+      - name: Verify source markers
+        run: |
+          grep -Fq 'owner-readable-logout-20260724-v5' frontend/src/runtime/churvoxExplicitLogoutGuardRuntime.js
+          grep -Fq 'churvoxOwnerReadableMode' frontend/src/runtime/churvoxExplicitLogoutGuardRuntime.js
+          grep -Fq 'window.setInterval(ensureOwnerLogout, 1500)' frontend/src/runtime/churvoxExplicitLogoutGuardRuntime.js
+          grep -Fq 'owner-workspace-readable-logout-20260724-v5' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
+          grep -Fq 'font-size: 17px !important' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
+          grep -Fq '#churvox-owner-fallback-logout' frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
+
+      - name: Commit repaired owner workspace
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo 'No changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/runtime/churvoxExplicitLogoutGuardRuntime.js frontend/src/churvox-office-lab/OfficeTeamOwnerReady.css
+          git commit -m 'fix owner workspace logout and readable text'
+          git push
+
+      - name: Record result
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment 758 --repo howardjennings777-design/churvox --body $'## Owner workspace repair applied\n\n- Log out no longer depends on localStorage auth proof; cookie-only owner sessions keep a visible control.\n- Log out is rechecked every 1.5 seconds on owner routes.\n- Owner workspace body copy is forced to 17px, controls to 16px, supporting wording to at least 15px.\n- Marker: `owner-readable-logout-20260724-v5`.'

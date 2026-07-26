@@ -1,0 +1,57 @@
+name: Churvox owner live version now
+
+on:
+  push:
+    paths:
+      - '.github/workflows/churvox-owner-live-version-now.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check live release and bundle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          OUT="$RUNNER_TEMP/live-now.md"
+          check() {
+            base="$1"
+            label="$2"
+            html="$RUNNER_TEMP/$label.html"
+            curl -sS -L --max-time 45 -H 'Cache-Control: no-cache, no-store' "$base/?now=$(date +%s%N)" -o "$html"
+            title=$(grep -ioE '<title>[^<]*</title>' "$html" | head -1 | sed -E 's#</?title>##Ig')
+            script=$(grep -oE 'src="/static/js/main\.[^"]+\.js[^"]*"' "$html" | head -1 | sed -E 's/^src="//;s/"$//')
+            rel=$(curl -sS -L --max-time 30 -H 'Cache-Control: no-cache, no-store' "$base/__churvox/release.json?now=$(date +%s%N)")
+            body="$RUNNER_TEMP/$label.js"
+            if [ -n "$script" ]; then curl -sS -L --max-time 60 -H 'Cache-Control: no-cache, no-store' "$base$script" -o "$body"; else : > "$body"; fi
+            v4=no; v5=no
+            grep -Fq 'owner-readable-logout-20260724-v4' "$body" && v4=yes
+            grep -Fq 'owner-readable-logout-20260724-v5' "$body" && v5=yes
+            echo "### $label"
+            echo "- title: ${title:-none}"
+            echo "- script: ${script:-none}"
+            echo "- v4: $v4"
+            echo "- v5: $v5"
+            echo '- release:'
+            echo '```json'
+            echo "$rel"
+            echo '```'
+          }
+          {
+            echo '## Current live owner frontend version'
+            echo
+            echo "UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            check 'https://grassley-frontend.onrender.com' 'Render'
+            echo
+            check 'https://www.churvox.com' 'www'
+          } > "$OUT"
+          cat "$OUT"
+          gh issue comment 758 --repo howardjennings777-design/churvox --body-file "$OUT"

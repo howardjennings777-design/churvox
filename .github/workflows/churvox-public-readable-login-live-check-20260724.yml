@@ -1,0 +1,68 @@
+name: Churvox public readable login live check
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/churvox-public-readable-login-live-check-20260724.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll Render and public domain for readable login release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          OUT="$RUNNER_TEMP/readable-login.md"
+          PASS=0
+          DETAIL=""
+          for attempt in $(seq 1 24); do
+            stamp=$(date +%s%N)
+            DETAIL=""
+            ALL_OK=1
+            for base in 'https://grassley-frontend.onrender.com' 'https://www.churvox.com'; do
+              html=$(curl -sS -L --max-time 40 -H 'Cache-Control: no-cache, no-store' "$base/?readableLogin=$stamp")
+              scripts=$(printf '%s' "$html" | grep -oE 'src="[^"]+\.js[^"]*"' | sed -E 's/^src="|"$//g')
+              styles=$(printf '%s' "$html" | grep -oE 'href="[^"]+\.css[^"]*"' | sed -E 's/^href="|"$//g')
+              bundle="$html"
+              for asset in $scripts $styles; do
+                case "$asset" in
+                  http*) url="$asset" ;;
+                  /*) url="$base$asset" ;;
+                  *) url="$base/$asset" ;;
+                esac
+                bundle="$bundle
+$(curl -sS -L --max-time 40 -H 'Cache-Control: no-cache, no-store' "$url?readableLoginAsset=$stamp")"
+              done
+              marker=no
+              login_rule=no
+              readable_text=no
+              printf '%s' "$bundle" | grep -Fq 'CHURVOX_PUBLIC_READABLE_LOGIN_20260724' && marker=yes
+              printf '%s' "$bundle" | grep -Fq 'display:inline-flex!important' && login_rule=yes
+              printf '%s' "$bundle" | grep -Fq 'font-size:16px!important' && readable_text=yes
+              title=$(printf '%s' "$html" | grep -ioE '<title>[^<]*</title>' | head -1 | sed -E 's#</?title>##Ig')
+              DETAIL="$DETAIL
+- $base title: ${title:-none}; marker: $marker; login override: $login_rule; readable sizing: $readable_text"
+              if [ "$marker" != yes ] || [ "$login_rule" != yes ] || [ "$readable_text" != yes ]; then ALL_OK=0; fi
+            done
+            if [ "$ALL_OK" = 1 ]; then PASS=1; break; fi
+            sleep 15
+          done
+          {
+            echo '## Public readable login live check'
+            echo
+            echo "UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            echo "- result: $([ "$PASS" = 1 ] && echo PASS || echo FAIL)"
+            printf '%b\n' "$DETAIL"
+          } > "$OUT"
+          cat "$OUT"
+          gh issue comment 758 --repo howardjennings777-design/churvox --body-file "$OUT"
+          test "$PASS" = 1

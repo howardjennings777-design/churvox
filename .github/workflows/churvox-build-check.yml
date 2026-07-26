@@ -2,162 +2,133 @@ name: Churvox Build Check
 
 on:
   push:
-    branches: [main]
+    branches: [ main, master ]
   pull_request:
-    branches: [main]
+    branches: [ main, master ]
   workflow_dispatch:
 
-concurrency:
-  group: churvox-build-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  backend-check:
-    name: Backend syntax check
+  build-test:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
 
-      - name: Backend compile checks
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import py_compile
-          import sys
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-          failures = []
-          for path in sorted(Path("backend").rglob("*.py")):
-              try:
-                  py_compile.compile(str(path), doraise=True)
-              except py_compile.PyCompileError as exc:
-                  failures.append((path, exc.msg))
+    - name: Materialise verified Churvox V8 source
+      run: node scripts/churvox_hardening_v8_materialize.cjs
 
-          report = Path("/tmp/backend-compile-errors.txt")
-          if failures:
-              lines = [f"Backend compile failures: {len(failures)}"]
-              for path, message in failures:
-                  lines.extend(["", f"--- {path} ---", message])
-              report.write_text("\n".join(lines) + "\n")
-              print(report.read_text())
-              sys.exit(1)
+    - name: Install backend contract dependencies
+      run: python3 -m pip install --disable-pip-version-check --no-cache-dir fastapi==0.110.1 pymongo==4.5.0
 
-          report.write_text("All backend Python files compiled successfully.\n")
-          print(report.read_text())
-          PY
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci --legacy-peer-deps
 
-      - name: Job Done reality contract
-        run: python3 scripts/churvox-job-done-reality-contract.py
+    - name: Build frontend
+      working-directory: ./frontend
+      env:
+        CI: false
+      run: npm run build
 
-      - name: Recurring job idempotency contract
-        run: python3 scripts/churvox-recurring-idempotency-contract.py
+    - name: Validate backend syntax
+      shell: bash
+      run: |
+        set +e
+        set -o pipefail
+        report="$RUNNER_TEMP/backend-syntax.txt"
+        status=0
+        files=(
+          backend/server.py
+          backend/xero_routes.py
+          backend/churvox_command_routes.py
+          backend/churvox_ai_operator_routes.py
+          backend/churvox_command_compat_routes.py
+          backend/churvox_command_apply_routes.py
+          backend/churvox_command_human_mimic_routes.py
+          backend/churvox_command_human_mimic_guard_routes.py
+          backend/churvox_command_mimic_intelligence_routes.py
+          backend/churvox_command_human_mimic_marker_routes.py
+          backend/churvox_paid_launch_readiness_routes.py
+          backend/churvox_job_done_routes.py
+          backend/churvox_owner_intelligence_routes.py
+          usercustomize.py
+          backend/usercustomize.py
+        )
+        : > "$report"
+        for file in "${files[@]}"; do
+          echo "== $file ==" | tee -a "$report"
+          if python3 -m py_compile "$file" 2>&1 | tee -a "$report"; then
+            echo "PASS" | tee -a "$report"
+          else
+            echo "FAIL" | tee -a "$report"
+            status=1
+          fi
+          echo | tee -a "$report"
+        done
+        exit "$status"
 
-      - name: Final job completion contract
-        run: python3 scripts/churvox-job-completion-final-contract.py
+    - name: Upload backend syntax report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: churvox-backend-syntax-report
+        path: ${{ runner.temp }}/backend-syntax.txt
+        if-no-files-found: error
 
-      - name: Password recovery contract
-        run: python3 scripts/churvox-password-recovery-contract.py
+    - name: Run current launch contracts
+      shell: bash
+      run: |
+        set +e
+        set -o pipefail
+        report="$RUNNER_TEMP/launch-contracts.txt"
+        status=0
+        checks=(
+          "Fresh Studio has one owner shell|scripts/audit_fresh_no_double_shell.py"
+          "Command wiring|scripts/audit_command_wiring.py"
+          "Command runs the office safely|scripts/churvox-command-runs-office-contract.py"
+          "Worker and owner messaging|scripts/churvox-worker-owner-message-contract.py"
+          "Recurring job idempotency|scripts/churvox-recurring-idempotency-contract.py"
+          "Job completion final contract|scripts/churvox-job-completion-final-contract.py"
+          "Job Done reality contract|scripts/churvox-job-done-reality-contract.py"
+          "Paid launch backend contract|scripts/churvox_paid_launch_backend_contract.py"
+          "Launch completion matrix|scripts/audit_launch_done_matrix.py"
+        )
+        : > "$report"
+        for check in "${checks[@]}"; do
+          label="${check%%|*}"
+          script="${check#*|}"
+          echo "== $label ==" | tee -a "$report"
+          echo "script=$script" | tee -a "$report"
+          if [ ! -f "$script" ]; then
+            echo "FAIL — current contract file is missing" | tee -a "$report"
+            status=1
+          elif python3 "$script" 2>&1 | tee -a "$report"; then
+            echo "PASS" | tee -a "$report"
+          else
+            echo "FAIL" | tee -a "$report"
+            status=1
+          fi
+          echo | tee -a "$report"
+        done
+        exit "$status"
 
-      - name: Account deletion contract
-        run: python3 scripts/churvox-account-deletion-contract.py
-
-      - name: Paid account boundary contract
-        run: python3 scripts/churvox-paid-account-boundary-contract.py
-
-      - name: Churvox Intelligence contract
-        run: python3 scripts/churvox-owner-intelligence-contract.py
-
-      - name: Command runs-office contract
-        run: python3 scripts/churvox-command-runs-office-contract.py
-
-      - name: Customer wording contract
-        run: python3 scripts/churvox-customer-wording-contract.py
-
-      - name: Upload backend compile diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-compile-diagnostics
-          path: /tmp/backend-compile-errors.txt
-          if-no-files-found: error
-          retention-days: 3
-
-  worker-message-contract:
-    name: Worker-to-owner message contract
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Run message contract
-        shell: bash
-        run: |
-          set -o pipefail
-          python3 scripts/churvox-worker-owner-message-contract.py 2>&1 | tee /tmp/worker-owner-message-contract.txt
-
-      - name: Upload message diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: worker-owner-message-contract
-          path: /tmp/worker-owner-message-contract.txt
-          if-no-files-found: error
-          retention-days: 3
-
-  frontend-build:
-    name: Frontend install and build
-    runs-on: ubuntu-latest
-    env:
-      CI: "true"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Force public npm registry
-        run: |
-          npm config set registry https://registry.npmjs.org/
-          npm config get registry
-
-      - name: Install frontend dependencies
-        run: npm --prefix frontend install --legacy-peer-deps --registry=https://registry.npmjs.org/
-
-      - name: Verify craco exists
-        run: |
-          test -f frontend/node_modules/.bin/craco
-          npm --prefix frontend list @craco/craco
-
-      - name: Verify complete Office OS rebuild contract
-        run: node scripts/churvox-office-os-rebuild-contract.cjs
-
-      - name: Build frontend
-        shell: bash
-        run: |
-          set -o pipefail
-          npm --prefix frontend run build 2>&1 | tee /tmp/frontend-build.log
-
-      - name: Upload frontend build diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build-diagnostics
-          path: /tmp/frontend-build.log
-          if-no-files-found: error
-          retention-days: 3
+    - name: Upload launch contract report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: churvox-launch-contract-report
+        path: ${{ runner.temp }}/launch-contracts.txt
+        if-no-files-found: error

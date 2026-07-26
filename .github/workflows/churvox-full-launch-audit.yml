@@ -15,7 +15,7 @@ on:
       - 'scripts/churvox-hardcore-human-cleanup.cjs'
       - '.github/workflows/churvox-full-launch-audit.yml'
   pull_request:
-    branches: [main, audit/churvox-pr746-base-20260726]
+    branches: [main]
     paths:
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.js'

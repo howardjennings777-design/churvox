@@ -1,0 +1,38 @@
+name: Churvox login tester build check
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  build:
+    if: startsWith(github.event.issue.title, '[churvox-login-tester-build-check]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+      - name: Check tester assets
+        run: |
+          test -f frontend/build/testers/index.html
+          test -f frontend/build/testers/churvox-tester-premium.css
+          grep -q 'Put Churvox into a real workday' frontend/build/testers/index.html
+          grep -q 'testerRouteScene' frontend/build/testers/churvox-tester-premium.css
+          grep -q 'cvLoginOrbit' frontend/build/static/css/*.css
+      - name: Report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: 'Login and tester premium rebuild passed the full production build and asset checks.' });

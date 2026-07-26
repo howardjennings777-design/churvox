@@ -3,8 +3,12 @@ import ReactDOM from 'react-dom/client';
 import './runtime/churvoxDateInputIsoGuardRuntime';
 import './runtime/churvoxPublicHelpRouteGuardRuntime';
 import './runtime/churvoxExplicitLogoutGuardRuntime';
+import './runtime/churvoxControlBoardMobileLogoutRuntime';
 import './runtime/churvoxProtectedFetchAuthGuardRuntime';
 import './runtime/churvoxVisibleControlTextRuntime';
+import './runtime/churvoxLegacyHostExitRuntime';
+import './runtime/churvoxStripeCheckoutLiveRuntime';
+import './runtime/churvoxStripePlanIdentityRuntime';
 import App from './App';
 import API_BASE from './lib/apiBase';
 import './index.css';
@@ -21,7 +25,7 @@ import './runtime/churvoxBusinessSystemDashboardAnchorRuntime';
 import './runtime/churvoxTesterApplicationAttributionRuntime';
 import './runtime/churvoxFoundingTesterPopupRuntime';
 
-const CHURVOX_DEPLOY_BUILD = 'churvox-wording-flow-hq-audit-20260726';
+const CHURVOX_DEPLOY_BUILD = 'churvox-tester-attribution-20260720';
 const CHURVOX_JOB_DONE_DEPLOY_BUILD = 'churvox-job-done-live-v2-20260714';
 if (typeof window !== 'undefined') {
   window.__CHURVOX_DEPLOY_BUILD__ = CHURVOX_DEPLOY_BUILD;
@@ -73,32 +77,18 @@ let globalHelpersLoaded = false;
 const globalHelperImports = [
   () => import('./runtime/authInputVisibilityGuard'),
   () => import('./runtime/churvoxPlainSendGuardRuntime'),
-  () => import('./runtime/churvoxLogoutNavRuntime'),
-  () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxPlansCountryRuntime'),
   () => import('./runtime/churvoxPlansBillingNavClickGuard'),
-  () => import('./runtime/churvoxStripeCheckoutLiveRuntime'),
   () => import('./runtime/churvoxPublicPricingLinkGuardRuntime'),
   () => import('./runtime/churvoxFirstWinGuideEntryRuntime'),
 ];
 
 const ownerFastRuntimeImports = [
-  () => import('./runtime/churvoxNavBadgesRuntime'),
-  () => import('./runtime/churvoxVisibleLogoutRuntime'),
   () => import('./runtime/churvoxDrawerRecordActionsRuntime'),
-  () => import('./runtime/churvoxAllPagesPolishRuntime'),
-  () => import('./runtime/churvoxMessagesPagePolishRuntime'),
-  () => import('./runtime/churvoxRemovePageIntentStripRuntime'),
-  () => import('./runtime/churvoxCompactHeroDesignRuntime'),
-  () => import('./runtime/churvoxNoHeroPageStartsRuntime'),
-  () => import('./runtime/churvoxAppIndustryRuntime'),
   () => import('./runtime/churvoxInternalSupportRuntime'),
-  () => import('./runtime/churvoxTidyRealSlipRuntime'),
   () => import('./runtime/churvoxWorkersMapRestoreRuntime'),
   () => import('./runtime/churvoxPlanPersistenceRuntime'),
   () => import('./runtime/churvoxPaymentSetupRuntime'),
-  () => import('./runtime/churvoxOwnerHeaderLogoRuntime'),
-  () => import('./runtime/churvoxMoreMenuPaidLaunchRuntime'),
   () => import('./runtime/churvoxPlansUsageTruthRuntime'),
   () => import('./runtime/churvoxProductPlansUsageBridgeRuntime'),
   () => import('./runtime/churvoxBillingPortalRuntime'),

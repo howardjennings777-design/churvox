@@ -1,0 +1,99 @@
+name: Churvox Render Frontend Discovery
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  discover:
+    if: startsWith(github.event.issue.title, '[churvox-render-frontend-discovery]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Inspect known Render frontend addresses
+        shell: bash
+        run: |
+          mkdir -p /tmp/churvox-render-discovery
+          python - <<'PY'
+          import json, re, ssl, urllib.request, urllib.error
+
+          candidates = [
+              'https://grassley-frontend.onrender.com/',
+              'https://churvox-frontend-new.onrender.com/',
+              'https://www.churvox.onrender.com/',
+              'https://churvox.onrender.com/',
+          ]
+          markers = [
+              'cvOwnerReady',
+              'owner-readable-logout-20260724-v4',
+              'churvox-owner-readable-logout-style',
+              'static/js/main.',
+              'Churvox does the admin. You approve.',
+              'CHURVOX OWNER WORKSPACE',
+              'vinext',
+              '__VINEXT_RSC_CHUNKS__',
+          ]
+          report = []
+          context = ssl.create_default_context()
+
+          for url in candidates:
+              item = {'requested_url': url}
+              try:
+                  request = urllib.request.Request(url + '?renderDiscovery=20260724', headers={
+                      'User-Agent': 'Churvox-render-discovery/1.0',
+                      'Cache-Control': 'no-cache',
+                  })
+                  with urllib.request.urlopen(request, timeout=45, context=context) as response:
+                      raw = response.read()
+                      text = raw.decode('utf-8', 'replace')
+                      title_match = re.search(r'<title[^>]*>(.*?)</title>', text, re.I | re.S)
+                      item.update({
+                          'final_url': response.geturl(),
+                          'status': response.status,
+                          'headers': dict(response.headers.items()),
+                          'length': len(raw),
+                          'title': re.sub(r'\s+', ' ', title_match.group(1)).strip() if title_match else '',
+                          'marker_hits': [marker for marker in markers if marker.lower() in text.lower()],
+                          'snippet': text[:2500],
+                      })
+              except urllib.error.HTTPError as exc:
+                  body = exc.read().decode('utf-8', 'replace') if hasattr(exc, 'read') else ''
+                  item.update({'status': exc.code, 'error': repr(exc), 'snippet': body[:1000]})
+              except Exception as exc:
+                  item.update({'error': repr(exc)})
+              report.append(item)
+
+          path = '/tmp/churvox-render-discovery/report.json'
+          with open(path, 'w', encoding='utf-8') as handle:
+              json.dump(report, handle, indent=2)
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Upload discovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-render-frontend-discovery
+          path: /tmp/churvox-render-discovery
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Post discovery result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '/tmp/churvox-render-discovery/report.json';
+            const report = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Render frontend discovery completed.\n\n${report ? `Report:\n\`\`\`json\n${report.slice(0, 16000)}\n\`\`\`` : 'No report was produced.'}\n\nWorkflow run: \`${context.runId}\``,
+            });

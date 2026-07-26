@@ -1,0 +1,82 @@
+name: Churvox public trust route repair
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: startsWith(github.event.issue.title, '[churvox-public-trust-route-repair]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Remove obsolete trust-route hijacks
+        shell: bash
+        run: |
+          cat > frontend/src/runtime/churvoxPublicHelpRouteGuardRuntime.js <<'EOF'
+          // Public trust and help pages are now first-class Churvox routes.
+          //
+          // Older paid-launch code redirected /security, /support and
+          // /refunds-cancellations into generic legal/contact pages before React
+          // could render them. That behaviour made separate public rooms impossible
+          // and also changed the URL unexpectedly. Keep this module as a harmless
+          // compatibility marker because older startup code still imports it.
+
+          if (typeof window !== 'undefined') {
+            window.__CHURVOX_PUBLIC_HELP_ROUTE_GUARD__ = 'first-class-public-routes-20260724';
+          }
+
+          export {};
+          EOF
+
+          ! grep -RInE --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=build --exclude='*.map' \
+            "window\.location\.replace\('/(legal/privacy\?section=security|legal/terms#billing-cancellations|contact\?reason=support)'" \
+            frontend/src frontend/public
+
+      - name: Prove full production build
+        working-directory: frontend
+        run: |
+          npm install --include=dev --legacy-peer-deps
+          npm run build
+
+      - name: Verify first-class route declarations remain
+        shell: bash
+        run: |
+          grep -F '<Route path="/security" element={<SecurityPage />} />' frontend/src/App.js
+          grep -F '<Route path="/support" element={<PublicSupportPage />} />' frontend/src/App.js
+          grep -F '<Route path="/refunds-cancellations" element={<RefundsCancellationsPage />} />' frontend/src/App.js
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/runtime/churvoxPublicHelpRouteGuardRuntime.js
+          git commit -m 'Let unique Churvox trust rooms render at their own routes'
+          git push
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Removed the obsolete public-route hijacks, preserved the separate legal pages, and passed the complete production build. Commit: \`${process.env.COMMIT || 'unknown'}\``
+            });

@@ -1,0 +1,78 @@
+name: Churvox owner first-run polish
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  polish:
+    if: startsWith(github.event.issue.title, '[churvox-owner-first-run-polish]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply final first-run polish
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          app = Path('frontend/src/churvox-product/ProductAppV3.jsx')
+          text = app.read_text()
+          old = 'function Empty({ title = "Nothing here yet", text = "Records will appear here when they exist." }) { return <div className="cv3Empty"><b>{title}</b><span>{text}</span></div>; }'
+          new = 'function Empty({ title = "Nothing here yet", text = "Records will appear here when they exist." }) { return <div className="cv3Empty"><span className="cv3EmptySignal" aria-hidden="true"><i /><i /><i /></span><div><small>Ready when you are</small><b>{title}</b><span>{text}</span><em>Use the action above to start this room.</em></div></div>; }'
+          if old not in text:
+              raise SystemExit('Empty component target not found')
+          app.write_text(text.replace(old, new, 1))
+
+          css = Path('frontend/src/churvox-product/ownerExperience10.css')
+          css_text = css.read_text()
+          marker = '@import "./ownerExperience10FirstRun.css";\n'
+          if marker not in css_text:
+              css.write_text(marker + css_text)
+          PY
+
+      - name: Build production frontend
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+
+      - name: Commit polish
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/churvox-product/ProductAppV3.jsx frontend/src/churvox-product/ownerExperience10.css
+          if git diff --cached --quiet; then
+            echo 'No changes produced.'
+          else
+            git commit -m 'Polish empty owner rooms for first use'
+            git push
+          fi
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Post result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Owner first-run polish: **${{ job.status }}**\nCommit: \`${process.env.COMMIT || 'none'}\``
+            });

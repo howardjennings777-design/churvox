@@ -105,7 +105,7 @@ async function installLoginApi(page, options = {}) {
 async function signIn(page, email = 'owner@login.test') {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('LongEnough8');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByRole('button', { name: 'Open Churvox', exact: true }).click();
 }
 
 test.describe('Paid-launch login and recovery', () => {

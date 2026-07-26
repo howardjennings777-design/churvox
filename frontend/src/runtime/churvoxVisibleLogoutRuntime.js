@@ -3,6 +3,7 @@ import API_BASE from '../lib/apiBase';
 const STYLE_ID = 'churvox-visible-logout-style';
 let installed = false;
 let loggingOut = false;
+let observer = null;
 
 const AUTH_KEYS = [
   'token', 'authToken', 'access_token', 'owner_portal_session', 'platform_owner_email',
@@ -19,38 +20,47 @@ const css = `
     align-items: center;
     justify-content: center;
     gap: 7px;
-    min-height: 44px;
+    width: 104px !important;
+    min-width: 104px !important;
+    min-height: 44px !important;
     border: 1px solid rgba(16, 21, 19, 0.12);
     border-radius: 999px;
-    padding: 9px 12px;
-    background: rgba(255, 255, 255, 0.88);
+    padding: 9px 14px;
+    background: rgba(255, 255, 255, 0.94);
     color: #101513;
-    font-size: 12px;
+    font-size: 14px !important;
     font-weight: 1000;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     cursor: pointer;
-    box-shadow: 0 14px 34px rgba(16, 21, 19, 0.08);
+    box-shadow: 0 14px 34px rgba(16, 21, 19, 0.12);
     white-space: nowrap;
     text-decoration: none;
   }
-  .cvxVisibleLogout:hover { transform: translateY(-1px); border-color: rgba(243, 107, 33, 0.28); }
+  .cvxVisibleLogout:hover { transform: translateY(-1px); border-color: rgba(243, 107, 33, 0.42); }
   .cvxVisibleLogout:disabled { opacity: 0.68; cursor: wait; transform: none; }
   .cv3Top .cvxVisibleLogout { margin-left: 8px; }
   .cv3Account .cvxVisibleLogout { margin-top: 9px; align-self: flex-end; }
-  .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { width: 100%; margin-top: 10px; }
+  .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { width: 100% !important; margin-top: 10px; }
   .cvxFloatingLogout {
     position: fixed;
     right: 14px;
     bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    z-index: 9999;
+    z-index: 10050;
     background: #101513;
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.2);
   }
   @media (max-width: 720px) {
     .cv3Top .cv3Account { display: grid !important; gap: 6px !important; justify-items: end !important; }
-    .cv3Account .cvxVisibleLogout { min-height: 44px; padding: 8px 10px; font-size: 11px; }
-    .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { min-height: 40px; }
+    .cv3Account .cvxVisibleLogout { min-height: 46px !important; padding: 9px 12px; font-size: 14px !important; }
+    .aomSidebar .cvxVisibleLogout, .aomBrand .cvxVisibleLogout { min-height: 44px !important; }
+    .cvxFloatingLogout {
+      right: 10px;
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      width: 104px !important;
+      min-width: 104px !important;
+      min-height: 48px !important;
+    }
   }
 `;
 
@@ -127,10 +137,27 @@ function makeButton(extraClass = '') {
   return button;
 }
 
+function isVisibleControl(element) {
+  if (!element || !element.isConnected || typeof window === 'undefined') return false;
+  const style = window.getComputedStyle(element);
+  const rect = element.getBoundingClientRect();
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const insideViewport = rect.right > 0 && rect.bottom > 0 && rect.left < viewportWidth && rect.top < viewportHeight;
+  return style.display !== 'none'
+    && style.visibility !== 'hidden'
+    && Number(style.opacity || 1) > 0.05
+    && style.pointerEvents !== 'none'
+    && rect.width >= 88
+    && rect.height >= 40
+    && insideViewport;
+}
+
 function removeDuplicates() {
   const buttons = Array.from(document.querySelectorAll('[data-churvox-visible-logout="true"]'));
-  buttons.slice(1).forEach((button) => button.remove());
-  return buttons[0] || null;
+  const keep = buttons.find((button) => button.isConnected) || buttons[0] || null;
+  buttons.forEach((button) => { if (button !== keep) button.remove(); });
+  return keep;
 }
 
 function injectOwnerLogout(existing) {
@@ -140,7 +167,7 @@ function injectOwnerLogout(existing) {
   if (!button) button = makeButton();
   if (button.parentElement !== account) account.appendChild(button);
   button.classList.remove('cvxFloatingLogout');
-  return true;
+  return isVisibleControl(button);
 }
 
 function injectHqLogout(existing) {
@@ -150,7 +177,7 @@ function injectHqLogout(existing) {
   if (!button) button = makeButton();
   if (button.parentElement !== anchor) anchor.appendChild(button);
   button.classList.remove('cvxFloatingLogout');
-  return true;
+  return isVisibleControl(button);
 }
 
 function injectWorkerLogout(existing) {
@@ -160,7 +187,7 @@ function injectWorkerLogout(existing) {
   if (!button) button = makeButton();
   if (button.parentElement !== anchor) anchor.appendChild(button);
   button.classList.remove('cvxFloatingLogout');
-  return true;
+  return isVisibleControl(button);
 }
 
 function injectFallback(existing) {
@@ -173,28 +200,45 @@ function injectFallback(existing) {
 function run() {
   if (!isAppPath() || typeof document === 'undefined') return;
   ensureStyle();
-  const button = removeDuplicates();
-  const nativeLogout = document.querySelector('.cvSiteLogout, .cvWorkerLogout, .cvWorkerRouteLogout, [data-churvox-native-logout="true"]');
+  const injected = removeDuplicates();
   const authenticating = document.querySelector('.cvAuthLoading, .cvOwnerScreenGuardLoading');
-  if (nativeLogout || authenticating) {
-    button?.remove();
+  if (authenticating) {
+    injected?.remove();
     return;
   }
+
+  const nativeCandidates = Array.from(document.querySelectorAll('.cvSiteLogout, .cvWorkerLogout, .cvWorkerRouteLogout, [data-churvox-native-logout="true"]'));
+  const visibleNative = nativeCandidates.find(isVisibleControl);
+  if (visibleNative) {
+    injected?.remove();
+    return;
+  }
+
   const path = window.location.pathname || '';
-  const placed = path.startsWith('/worker') ? injectWorkerLogout(button) : (path.includes('admin') || path.includes('hq') || path.includes('owner') || path.includes('platform') || path.includes('app-owner')) ? injectHqLogout(button) : injectOwnerLogout(button);
-  if (!placed) injectFallback(button);
+  const placed = path.startsWith('/worker')
+    ? injectWorkerLogout(injected)
+    : (path.includes('admin') || path.includes('hq') || path.includes('owner') || path.includes('platform') || path.includes('app-owner'))
+      ? injectHqLogout(injected)
+      : injectOwnerLogout(injected);
+  if (!placed) injectFallback(injected);
 }
 
 function schedule(delay = 100) { setTimeout(run, delay); }
 
 if (typeof window !== 'undefined' && !installed) {
   installed = true;
-  [120, 500, 1200, 2600, 5200].forEach(schedule);
-  window.addEventListener('load', () => schedule(200));
-  window.addEventListener('hashchange', () => [80, 300, 900].forEach(schedule));
-  window.addEventListener('popstate', () => [80, 300, 900].forEach(schedule));
-  window.addEventListener('churvox-auth-refresh', () => schedule(300));
-  document.addEventListener('click', () => schedule(160), true);
+  [80, 240, 600, 1200, 2600, 5200].forEach(schedule);
+  window.addEventListener('load', () => schedule(120));
+  window.addEventListener('resize', () => [40, 180].forEach(schedule));
+  window.addEventListener('orientationchange', () => [80, 320].forEach(schedule));
+  window.addEventListener('hashchange', () => [40, 160, 500].forEach(schedule));
+  window.addEventListener('popstate', () => [40, 160, 500].forEach(schedule));
+  window.addEventListener('churvox-auth-refresh', () => schedule(160));
+  document.addEventListener('click', () => schedule(100), true);
+  if (typeof MutationObserver !== 'undefined' && document.documentElement) {
+    observer = new MutationObserver(() => schedule(60));
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'] });
+  }
 }
 
 export { clearAuthStorage, doLogout, postLogout };

@@ -1,0 +1,185 @@
+name: Churvox Live Owner Readability and Logout
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  live-proof:
+    if: startsWith(github.event.issue.title, '[churvox-live-owner-readable-logout]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BASE_URL: https://www.churvox.com
+      API_BASE: https://grassley-backend.onrender.com
+      OWNER_EMAIL: howardjennings777@gmail.com
+      OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install browser tooling
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps
+          npx playwright install --with-deps chromium
+
+      - name: Prove the deployed owner UI
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/churvox-live-owner-proof
+          cat > /tmp/churvox-live-owner-proof.cjs <<'NODE'
+          const fs = require('fs');
+          const { chromium } = require(process.cwd() + '/node_modules/@playwright/test');
+
+          const base = process.env.BASE_URL.replace(/\/+$/, '');
+          const apiBase = process.env.API_BASE.replace(/\/+$/, '');
+          const email = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
+          const password = process.env.OWNER_PASSWORD || '';
+          const out = '/tmp/churvox-live-owner-proof';
+
+          const tokenFrom = (body = {}) => body.token || body.access_token || body.auth_token || body.jwt || body.accessToken
+            || body.user?.token || body.user?.access_token || body.data?.token || body.data?.access_token || body.data?.user?.token || '';
+
+          const min = (values) => values.length ? Math.min(...values) : null;
+
+          async function login() {
+            const response = await fetch(`${apiBase}/api/auth/login`, {
+              method: 'POST',
+              headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const text = await response.text();
+            let body = {};
+            try { body = JSON.parse(text); } catch { body = { text: text.slice(0, 300) }; }
+            const token = tokenFrom(body);
+            if (!response.ok || !token) throw new Error(`Owner login failed ${response.status}: ${JSON.stringify(body).slice(0, 400)}`);
+            return token;
+          }
+
+          (async () => {
+            let browser;
+            try {
+              const token = await login();
+              browser = await chromium.launch({ headless: true });
+              const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'allow' });
+              await context.addInitScript(({ tokenValue, emailValue }) => {
+                localStorage.setItem('token', tokenValue);
+                localStorage.setItem('authToken', tokenValue);
+                localStorage.setItem('access_token', tokenValue);
+                localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+                  at: Date.now(),
+                  token: tokenValue,
+                  user: { email: emailValue, role: 'owner', has_app_access: true, email_verified: true, token: tokenValue },
+                }));
+              }, { tokenValue: token, emailValue: email });
+
+              const page = await context.newPage();
+              const errors = [];
+              page.on('pageerror', (error) => errors.push(error.message));
+              page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+
+              await page.goto(`${base}/dashboard?liveProof=${Date.now()}#today`, { waitUntil: 'domcontentloaded', timeout: 45000 });
+              await page.waitForSelector('.cvOwnerReady', { state: 'visible', timeout: 30000 });
+              await page.waitForTimeout(1800);
+
+              const metrics = await page.evaluate(() => {
+                const visible = (element) => {
+                  if (!(element instanceof HTMLElement)) return false;
+                  const style = getComputedStyle(element);
+                  const rect = element.getBoundingClientRect();
+                  return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > 0.05
+                    && style.pointerEvents !== 'none' && rect.width > 1 && rect.height > 1
+                    && rect.right > 0 && rect.bottom > 0 && rect.left < innerWidth && rect.top < innerHeight;
+                };
+                const logout = [...document.querySelectorAll('.cvSiteLogout, [data-churvox-native-logout="true"], [data-churvox-visible-logout="true"], [data-churvox-emergency-logout="true"]')].find(visible);
+                const sizes = (selector) => [...document.querySelectorAll(selector)].filter(visible).map((el) => parseFloat(getComputedStyle(el).fontSize)).filter(Number.isFinite);
+                const rect = logout?.getBoundingClientRect();
+                const style = logout ? getComputedStyle(logout) : null;
+                return {
+                  url: location.href,
+                  build: window.__CHURVOX_DEPLOY_BUILD__ || '',
+                  cacheResetVersion: localStorage.getItem('churvox:owner-ui-cache-reset'),
+                  logout: logout ? {
+                    text: String(logout.textContent || '').trim(),
+                    width: rect.width,
+                    height: rect.height,
+                    fontSize: parseFloat(style.fontSize),
+                    insideViewport: rect.left >= -1 && rect.top >= -1 && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1,
+                  } : null,
+                  navigation: sizes('.cvOwnerPrimaryNav button, .cvOwnerMore > button, .cvOwnerUtilityNav button'),
+                  paragraphs: sizes('.cvOwnerReady p'),
+                  supporting: sizes('.cvOwnerReady small'),
+                };
+              });
+
+              metrics.minimums = {
+                navigation: min(metrics.navigation),
+                paragraphs: min(metrics.paragraphs),
+                supporting: min(metrics.supporting),
+              };
+              metrics.consoleErrors = errors.filter((text) => !/favicon|manifest|ResizeObserver|ERR_ABORTED/i.test(text)).slice(0, 20);
+              fs.writeFileSync(`${out}/metrics.json`, JSON.stringify(metrics, null, 2));
+              await page.screenshot({ path: `${out}/owner-live.png`, fullPage: true });
+
+              if (!metrics.logout) throw new Error('No visible logout control exists on the deployed owner page.');
+              if (!/log out/i.test(metrics.logout.text)) throw new Error(`Logout text is wrong: ${metrics.logout.text}`);
+              if (metrics.logout.width < 112 || metrics.logout.height < 48 || metrics.logout.fontSize < 16 || !metrics.logout.insideViewport) {
+                throw new Error(`Logout is not large and visible enough: ${JSON.stringify(metrics.logout)}`);
+              }
+              if (metrics.minimums.navigation === null || metrics.minimums.navigation < 16) throw new Error(`Owner navigation is still too small: ${metrics.minimums.navigation}`);
+              if (metrics.minimums.paragraphs === null || metrics.minimums.paragraphs < 17) throw new Error(`Owner paragraphs are still too small: ${metrics.minimums.paragraphs}`);
+              if (metrics.minimums.supporting !== null && metrics.minimums.supporting < 15) throw new Error(`Owner supporting text is still too small: ${metrics.minimums.supporting}`);
+              if (metrics.cacheResetVersion !== 'owner-readable-logout-20260724-v4') throw new Error(`Live site is not running the cache reset build: ${metrics.cacheResetVersion}`);
+
+              await page.locator('.cvSiteLogout:visible, [data-churvox-native-logout="true"]:visible, [data-churvox-visible-logout="true"]:visible, [data-churvox-emergency-logout="true"]:visible').first().click();
+              await page.waitForURL(/\/login\?logged_out=1/, { timeout: 15000 });
+              fs.writeFileSync(`${out}/result.txt`, 'PASS: deployed owner UI has readable text and a working visible logout.\n');
+              console.log(JSON.stringify(metrics, null, 2));
+              await context.close();
+            } catch (error) {
+              fs.writeFileSync(`${out}/result.txt`, `FAIL: ${String(error.stack || error)}\n`);
+              throw error;
+            } finally {
+              if (browser) await browser.close().catch(() => {});
+            }
+          })();
+          NODE
+          node /tmp/churvox-live-owner-proof.cjs 2>&1 | tee /tmp/churvox-live-owner-proof/run.log
+
+      - name: Upload live evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-owner-readable-logout
+          path: /tmp/churvox-live-owner-proof
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Post live result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const read = (file) => fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+            const result = read('/tmp/churvox-live-owner-proof/result.txt') || 'No result file was produced.';
+            const metrics = read('/tmp/churvox-live-owner-proof/metrics.json');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${result}\n\n${metrics ? `Metrics:\n\`\`\`json\n${metrics.slice(0, 5000)}\n\`\`\`` : ''}\n\nWorkflow run: \`${context.runId}\``,
+            });

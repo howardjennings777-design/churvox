@@ -1,0 +1,661 @@
+/* Churvox owner workspace — open canvas, calm hierarchy, no dashboard blocks */
+
+.cv4Experience{
+  --cv-ink:#111513;
+  --cv-sub:#65706b;
+  --cv-line:rgba(17,21,19,.12);
+  --cv-faint:rgba(17,21,19,.055);
+  --cv-paper:#f6f6f2;
+  --cv-panel:#fbfbf8;
+  --cv-orange:#ef6b2e;
+  --cv-dark:#111412;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 82% -10%,rgba(239,107,46,.10),transparent 28%),
+    linear-gradient(180deg,#f8f8f5 0,#f2f2ed 100%);
+}
+
+.cv4Experience .cv4Backdrop{display:none!important}
+
+.cv4Experience .cv3Product{
+  --bg:transparent;
+  --paper:transparent;
+  --paper2:transparent;
+  --ink:var(--cv-ink);
+  --soft:var(--cv-sub);
+  --muted:#89918d;
+  --line:var(--cv-line);
+  --orange:var(--cv-orange);
+  min-height:100vh;
+  grid-template-rows:auto auto minmax(0,1fr);
+  background:transparent!important;
+  overflow:visible;
+}
+
+/* Quiet, architectural header */
+.cv4Experience .cv3Top{
+  min-height:68px;
+  grid-template-columns:190px minmax(0,1fr) minmax(160px,260px);
+  gap:22px;
+  padding:11px 28px;
+  background:rgba(15,18,16,.97)!important;
+  border-bottom:1px solid rgba(255,255,255,.09);
+  box-shadow:none;
+  overflow:visible;
+}
+.cv4Experience .cv3Top:before{
+  background:
+    linear-gradient(90deg,transparent 0 72%,rgba(239,107,46,.08)),
+    radial-gradient(circle at 88% 0,rgba(239,107,46,.20),transparent 24%);
+}
+.cv4Experience .cv3Brand{gap:10px}
+.cv4Experience .cv3Brand span{
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  background:var(--cv-orange);
+  box-shadow:none;
+  font-size:12px;
+  letter-spacing:-.04em;
+}
+.cv4Experience .cv3Brand b{
+  gap:3px;
+  font-size:19px;
+  letter-spacing:-.055em;
+}
+.cv4Experience .cv3Brand small,
+.cv4Experience .cv3TopCopy small,
+.cv4Experience .cv3Account small{
+  color:rgba(255,255,255,.50);
+  font-size:8px;
+  letter-spacing:.18em;
+}
+.cv4Experience .cv3TopCopy h1{
+  margin:1px 0 0;
+  font-size:22px;
+  line-height:1;
+  letter-spacing:-.055em;
+}
+.cv4Experience .cv3TopCopy p{
+  margin:5px 0 0;
+  color:rgba(255,255,255,.54);
+  font-size:11px;
+  font-weight:600;
+}
+.cv4Experience .cv3Account b{
+  font-size:12px;
+  font-weight:780;
+}
+.cv4Experience .cv3Account .cvxVisibleLogout,
+.cv4Experience .cv3Account .cvxLogoutNavButton{
+  min-width:auto!important;
+  width:auto!important;
+  min-height:34px!important;
+  margin-top:6px!important;
+  padding:6px 10px!important;
+  border-radius:8px!important;
+  border-color:rgba(255,255,255,.12)!important;
+  background:rgba(255,255,255,.06)!important;
+  color:rgba(255,255,255,.72)!important;
+  box-shadow:none!important;
+  font-size:11px!important;
+}
+
+/* Navigation is a control strip, not a row of pills */
+.cv4Experience .cv3Nav{
+  top:68px;
+  min-height:48px;
+  gap:2px;
+  padding:0 24px;
+  border-bottom:1px solid var(--cv-line);
+  background:rgba(248,248,245,.92);
+  box-shadow:0 8px 30px rgba(17,21,19,.035);
+  scrollbar-width:none;
+}
+.cv4Experience .cv3Nav::-webkit-scrollbar{display:none}
+.cv4Experience .cv3Nav button{
+  min-width:auto;
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  border:0;
+  border-radius:0;
+  padding:0 12px;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#737b77;
+  transform:none!important;
+  position:relative;
+}
+.cv4Experience .cv3Nav button b{
+  font-size:12px;
+  font-weight:760;
+  letter-spacing:-.01em;
+}
+.cv4Experience .cv3Nav button small{display:none}
+.cv4Experience .cv3Nav button:after{
+  content:"";
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:-1px;
+  height:2px;
+  background:transparent;
+}
+.cv4Experience .cv3Nav button:hover{color:var(--cv-ink)}
+.cv4Experience .cv3Nav button.active{color:var(--cv-ink)}
+.cv4Experience .cv3Nav button.active:after{background:var(--cv-orange)}
+
+/* Open workspace */
+.cv4Experience .cv3Workspace{
+  max-width:1580px;
+  padding:30px 44px 110px;
+}
+.cv4Experience .cv3Page{
+  gap:28px 30px;
+}
+
+/* Page intro becomes typography, not a giant card */
+.cv4Experience .cv3Hero{
+  min-height:118px;
+  grid-template-columns:minmax(0,1fr) minmax(360px,500px);
+  gap:30px;
+  align-items:end;
+  border:0;
+  border-radius:0;
+  padding:5px 0 24px;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+  border-bottom:1px solid var(--cv-line);
+}
+.cv4Experience .cv3Hero:before{display:none}
+.cv4Experience .cv3Hero small{
+  color:var(--cv-orange);
+  font-size:9px;
+  letter-spacing:.19em;
+}
+.cv4Experience .cv3Hero h2{
+  max-width:840px;
+  margin:7px 0 8px;
+  font-size:clamp(30px,3.3vw,50px);
+  line-height:.96;
+  letter-spacing:-.065em;
+}
+.cv4Experience .cv3Hero p{
+  max-width:720px;
+  font-size:14px;
+  line-height:1.55;
+  font-weight:560;
+}
+.cv4Experience .cv3HeroStats{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0;
+  align-self:end;
+}
+.cv4Experience .cv3HeroStats span{
+  min-height:66px;
+  align-content:end;
+  gap:5px;
+  border:0;
+  border-left:1px solid var(--cv-line);
+  border-radius:0;
+  padding:6px 14px 4px;
+  background:transparent;
+}
+.cv4Experience .cv3HeroStats b{
+  display:block;
+  font-size:20px;
+  letter-spacing:-.045em;
+}
+.cv4Experience .cv3HeroStats small{
+  display:block;
+  color:#8a918e;
+  font-size:8px;
+  white-space:nowrap;
+}
+
+/* Metrics are one clean ledger line */
+.cv4Experience .cv3Stats{
+  gap:0;
+  border-top:1px solid var(--cv-line);
+  border-bottom:1px solid var(--cv-line);
+}
+.cv4Experience .cv3Stats span,
+.cv4Experience .cv3Stats .blue,
+.cv4Experience .cv3Stats .red,
+.cv4Experience .cv3Stats .orange{
+  min-height:88px;
+  border:0;
+  border-right:1px solid var(--cv-line);
+  border-radius:0;
+  padding:16px 20px;
+  background:transparent;
+  box-shadow:none;
+}
+.cv4Experience .cv3Stats span:last-child{border-right:0}
+.cv4Experience .cv3Stats b{font-size:27px}
+.cv4Experience .cv3Stats small{font-size:8px;color:#858d89}
+
+/* Sections breathe. Only the content that needs containment gets containment. */
+.cv4Experience .cv3Panel{
+  min-height:0;
+  border:0;
+  border-top:1px solid var(--cv-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+}
+.cv4Experience .cv3Panel.dark{
+  border-top:0;
+  border-radius:18px;
+  background:linear-gradient(145deg,#101310,#1a211d);
+  box-shadow:0 24px 70px rgba(17,21,19,.16);
+  overflow:hidden;
+}
+.cv4Experience .cv3Panel>header{
+  min-height:58px;
+  padding:14px 0 12px;
+  border-bottom:1px solid var(--cv-faint);
+  background:transparent;
+}
+.cv4Experience .cv3Panel.dark>header{padding-left:18px;padding-right:18px}
+.cv4Experience .cv3Panel h3{
+  font-size:17px;
+  font-weight:780;
+  letter-spacing:-.035em;
+}
+.cv4Experience .cv3Panel header small{
+  color:#8b938f;
+  font-size:8px;
+  letter-spacing:.16em;
+}
+
+/* Buttons are tools, not bubbles */
+.cv4Experience .cv3Panel header button,
+.cv4Experience .cv3Toolbar button,
+.cv4Experience .cv3Rule button,
+.cv4Experience .cv3Lock button{
+  min-height:38px;
+  border-radius:9px;
+  padding:9px 13px;
+  background:#1b201d;
+  box-shadow:none;
+  font-size:11px;
+  font-weight:760;
+}
+.cv4Experience .cv3Toolbar{
+  gap:7px;
+  padding:0;
+}
+.cv4Experience .cv3Toolbar button:first-child{background:var(--cv-orange)}
+
+/* Records read like a premium ledger */
+.cv4Experience .cv3List{
+  gap:0;
+  padding:0;
+  max-height:620px;
+}
+.cv4Experience .cv3Row{
+  min-height:66px;
+  grid-template-columns:3px minmax(0,1fr) auto;
+  gap:14px;
+  border:0;
+  border-bottom:1px solid var(--cv-faint);
+  border-radius:0;
+  padding:11px 4px;
+  background:transparent;
+  box-shadow:none;
+  transform:none!important;
+}
+.cv4Experience .cv3Row:hover{
+  border-color:rgba(239,107,46,.28);
+  background:linear-gradient(90deg,rgba(239,107,46,.05),transparent 64%);
+  box-shadow:none;
+}
+.cv4Experience .cv3Row .bar{
+  width:2px;
+  height:30px;
+  border-radius:0;
+}
+.cv4Experience .cv3Row b{
+  font-size:13px;
+  font-weight:760;
+}
+.cv4Experience .cv3Row small{
+  margin-top:4px;
+  color:#77807b;
+  font-size:11px;
+  font-weight:540;
+}
+.cv4Experience .cv3Row em{
+  border-radius:0;
+  padding:5px 0 5px 12px;
+  background:transparent;
+  color:#59625e;
+  font-size:10px;
+  font-weight:760;
+}
+.cv4Experience .cv3Empty{
+  gap:5px;
+  margin:0;
+  border:0;
+  border-bottom:1px solid var(--cv-faint);
+  border-radius:0;
+  padding:22px 4px;
+  background:transparent;
+}
+
+/* Preview and forms become a work sheet */
+.cv4Experience .cv3Preview{padding:18px 0 0}
+.cv4Experience .cv3PreviewTop{margin-bottom:18px}
+.cv4Experience .cv3PreviewTop h3{font-size:25px;font-weight:780}
+.cv4Experience .cv3PreviewTop button{border-radius:9px}
+.cv4Experience .cv3Form{gap:14px 18px}
+.cv4Experience .cv3Field{gap:7px}
+.cv4Experience .cv3Field span,
+.cv4Experience .cv3Settings span{font-size:8px;color:#818985}
+.cv4Experience .cv3Field input,
+.cv4Experience .cv3Field select,
+.cv4Experience .cv3Field textarea,
+.cv4Experience .cv3Settings input,
+.cv4Experience .cv3Settings select{
+  min-height:43px;
+  border:1px solid rgba(17,21,19,.12);
+  border-radius:9px;
+  background:rgba(255,255,255,.70);
+  font-size:13px;
+  font-weight:620;
+  box-shadow:none;
+}
+.cv4Experience .cv3Form.readonly .cv3Field input,
+.cv4Experience .cv3Form.readonly .cv3Field select,
+.cv4Experience .cv3Form.readonly .cv3Field textarea{
+  background:rgba(255,255,255,.42);
+}
+
+.cv4Experience .cv3Rule{
+  gap:9px;
+  margin:18px 0 0;
+  border:0;
+  border-left:2px solid var(--cv-orange);
+  border-radius:0;
+  padding:5px 0 5px 18px;
+  background:transparent;
+}
+.cv4Experience .cv3Rule b{font-size:24px;font-weight:760}
+.cv4Experience .cv3Rule span{font-weight:540}
+
+/* Purpose-built surfaces retain shape, without becoming card soup */
+.cv4Experience .cv3Tiles{
+  gap:0;
+  padding:0;
+}
+.cv4Experience .cv3Tiles button{
+  min-height:118px;
+  border:0;
+  border-bottom:1px solid var(--cv-faint);
+  border-radius:0;
+  padding:18px 4px;
+  background:transparent;
+}
+.cv4Experience .cv3History{gap:0;padding:0}
+.cv4Experience .cv3Pipeline{gap:0;border-top:1px solid var(--cv-line);border-bottom:1px solid var(--cv-line)}
+.cv4Experience .cv3Pipeline>div{
+  min-height:260px;
+  border:0;
+  border-right:1px solid var(--cv-line);
+  border-radius:0;
+  padding:18px;
+  background:transparent;
+  box-shadow:none;
+}
+.cv4Experience .cv3Pipeline>div:last-child{border-right:0}
+.cv4Experience .cv3Pipeline>div>small{border:0;border-top:1px dashed var(--cv-line);border-radius:0;padding:14px 0}
+.cv4Experience .cv3GuardGrid{gap:0;padding:0;border-top:1px solid var(--cv-faint)}
+.cv4Experience .cv3GuardGrid span{
+  min-height:74px;
+  border:0;
+  border-right:1px solid var(--cv-faint);
+  border-radius:0;
+  background:transparent;
+  font-size:12px;
+  font-weight:680;
+}
+.cv4Experience .cv3GuardGrid span:last-child{border-right:0}
+.cv4Experience .cv3Accounting{padding:22px 0}
+
+/* Settings and plans should feel like controlled sheets */
+.cv4Experience .cv3Settings{padding:20px 0!important}
+.cv4Experience .cv3PlanGrid,
+.cv4Experience .cv3Plans{gap:16px!important}
+.cv4Experience [class*="Plan"] article,
+.cv4Experience [class*="plan"] article{
+  border-radius:14px!important;
+  box-shadow:none!important;
+}
+
+/* Drawer is a precision side sheet */
+.cv4Experience .cv3DrawerLayer{
+  background:rgba(12,15,13,.40);
+  backdrop-filter:blur(8px);
+}
+.cv4Experience .cv3Drawer{
+  width:min(720px,100vw);
+  border-left:1px solid rgba(255,255,255,.55);
+  border-radius:0;
+  background:#f8f8f5;
+  box-shadow:-30px 0 90px rgba(17,21,19,.24);
+}
+.cv4Experience .cv3Drawer h2{font-weight:760;letter-spacing:-.05em}
+.cv4Experience .cv3DrawerActions button{border-radius:9px!important}
+
+/* The living-office controls become a slim command edge, never a content blocker */
+.cv4Experience .cv4Dock{
+  position:fixed!important;
+  z-index:92!important;
+  top:50%!important;
+  right:14px!important;
+  bottom:auto!important;
+  left:auto!important;
+  width:56px!important;
+  min-height:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+  transform:translateY(-50%)!important;
+  padding:6px!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-radius:17px!important;
+  background:rgba(15,18,16,.94)!important;
+  box-shadow:0 20px 60px rgba(17,21,19,.22)!important;
+  backdrop-filter:blur(18px)!important;
+}
+.cv4Experience .cv4DeskStrip{display:none!important}
+.cv4Experience .cv4OfficeButton,
+.cv4Experience .cv4Move,
+.cv4Experience .cv4TellButton{
+  width:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:0!important;
+  border-radius:11px!important;
+  padding:0!important;
+  background:transparent!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+  text-align:center!important;
+}
+.cv4Experience .cv4OfficeButton:hover,
+.cv4Experience .cv4Move:hover,
+.cv4Experience .cv4TellButton:hover{background:rgba(255,255,255,.08)!important}
+.cv4Experience .cv4OfficeButton>b,
+.cv4Experience .cv4OfficeButton>small,
+.cv4Experience .cv4Move>small,
+.cv4Experience .cv4Move>b,
+.cv4Experience .cv4Move>span,
+.cv4Experience .cv4TellButton>b{display:none!important}
+.cv4Experience .cv4OfficeButton>span{
+  width:10px!important;
+  height:10px!important;
+  border-radius:50%!important;
+  background:#67d391!important;
+  box-shadow:0 0 0 6px rgba(103,211,145,.10)!important;
+}
+.cv4Experience .cv4OfficeButton:after{content:"O";font-size:9px;font-weight:800;color:rgba(255,255,255,.48);position:absolute;margin-top:25px}
+.cv4Experience .cv4Move:after{content:"↗";font-size:20px;color:var(--cv-orange)}
+.cv4Experience .cv4TellButton>span{font-size:24px!important;line-height:1;color:#fff!important}
+.cv4Experience .cv4TellButton{background:var(--cv-orange)!important}
+
+/* Modals become cinematic work rooms */
+.cv4Experience .cv4Layer{background:rgba(8,10,9,.64)!important;backdrop-filter:blur(10px)}
+.cv4Experience .cv4Twin,
+.cv4Experience .cv4Handover,
+.cv4Experience .cv4Tell{
+  border-radius:20px!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:0 40px 120px rgba(0,0,0,.40)!important;
+}
+
+/* Mobile is a work app, not compressed desktop */
+@media(max-width:900px){
+  .cv4Experience .cv3Top{
+    min-height:58px;
+    grid-template-columns:1fr auto;
+    padding:9px 14px;
+  }
+  .cv4Experience .cv3TopCopy{display:none}
+  .cv4Experience .cv3Brand span{width:34px;height:34px}
+  .cv4Experience .cv3Account small{display:none}
+  .cv4Experience .cv3Account b{max-width:128px;font-size:10px}
+  .cv4Experience .cv3Account .cvxVisibleLogout,
+  .cv4Experience .cv3Account .cvxLogoutNavButton{min-height:30px!important;margin-top:3px!important;padding:4px 8px!important;font-size:10px!important}
+  .cv4Experience .cv3Nav{
+    top:58px;
+    min-height:45px;
+    padding:0 8px;
+  }
+  .cv4Experience .cv3Nav button{min-height:45px;padding:0 10px}
+  .cv4Experience .cv3Nav button b{font-size:11px}
+  .cv4Experience .cv3Workspace{padding:22px 16px 100px}
+  .cv4Experience .cv3Page{display:block}
+  .cv4Experience .cv3Page>*{margin-bottom:28px}
+  .cv4Experience .cv3Hero{
+    display:block;
+    min-height:0;
+    padding:2px 0 18px;
+  }
+  .cv4Experience .cv3Hero h2{font-size:32px;margin-top:6px}
+  .cv4Experience .cv3Hero p{font-size:13px}
+  .cv4Experience .cv3HeroStats{
+    display:flex;
+    gap:0;
+    margin-top:18px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .cv4Experience .cv3HeroStats::-webkit-scrollbar{display:none}
+  .cv4Experience .cv3HeroStats span{min-width:112px;border-left:0;border-right:1px solid var(--cv-line);padding-left:0}
+  .cv4Experience .cv3Stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cv4Experience .cv3Stats span{min-height:72px;border-bottom:1px solid var(--cv-line);padding:12px}
+  .cv4Experience .cv3Stats b{font-size:22px}
+  .cv4Experience .cv3Panel{margin-bottom:30px!important}
+  .cv4Experience .cv3Panel>header{min-height:52px}
+  .cv4Experience .cv3Pipeline{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}
+  .cv4Experience .cv3Pipeline>div{min-width:82vw;scroll-snap-align:start}
+  .cv4Experience .cv3History{display:block}
+  .cv4Experience .cv3Tiles{display:block}
+  .cv4Experience .cv3GuardGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cv4Experience .cv3GuardGrid span{min-height:62px;border-bottom:1px solid var(--cv-faint);padding:10px}
+  .cv4Experience .cv3Form{grid-template-columns:1fr}
+  .cv4Experience .cv3Field.wide{grid-column:auto}
+  .cv4Experience .cv4Dock{
+    top:auto!important;
+    right:12px!important;
+    bottom:12px!important;
+    width:auto!important;
+    flex-direction:row!important;
+    transform:none!important;
+    border-radius:16px!important;
+  }
+}
+
+@media(max-width:520px){
+  .cv4Experience .cv3Brand b{font-size:17px}
+  .cv4Experience .cv3Brand small{font-size:7px}
+  .cv4Experience .cv3Account b{display:none}
+  .cv4Experience .cv3Nav button{padding:0 9px}
+  .cv4Experience .cv3Hero h2{font-size:28px}
+  .cv4Experience .cv3Toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cv4Experience .cv3Toolbar button{width:100%}
+  .cv4Experience .cv3Row{grid-template-columns:2px minmax(0,1fr)}
+  .cv4Experience .cv3Row em{grid-column:2;padding:0;color:#8a918e}
+}
+
+
+/* Distinctive Churvox owner rooms */
+.cv3Handover{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(430px,.95fr);min-height:370px;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,#111411,#1b231e);color:#fff;box-shadow:0 28px 90px rgba(17,21,19,.18)}
+.cv3HandoverCopy{display:flex;flex-direction:column;padding:42px 46px}.cv3HandoverCopy>small,.cv3OfficeSignal small,.cv3DayLedger>header small,.cv3DayColumns>div>small,.cv3PulseLine small,.cv3CommandRoom header small,.cv3ScheduleRoom header small,.cv3ScheduleSide>small{color:#f39a69;font-size:9px;font-weight:850;letter-spacing:.18em;text-transform:uppercase}.cv3HandoverCopy h2{max-width:620px;margin:14px 0 16px;font-size:clamp(42px,5vw,74px);line-height:.88;letter-spacing:-.075em;font-weight:760}.cv3HandoverCopy p{max-width:610px;margin:0;color:rgba(255,255,255,.66);font-size:15px;line-height:1.6}.cv3HandoverActions{display:flex;gap:9px;margin-top:28px}.cv3HandoverActions button,.cv3ScheduleSide button{min-height:42px;border:1px solid rgba(255,255,255,.14);border-radius:9px;padding:0 15px;background:rgba(255,255,255,.06);color:#fff;font-size:12px;font-weight:760}.cv3HandoverActions button.primary,.cv3ScheduleSide button{border-color:transparent;background:#ef6b2e}.cv3HandoverCopy footer{margin-top:auto;padding-top:28px;color:rgba(255,255,255,.40);font-size:10px}
+.cv3OfficeSignal{position:relative;display:grid;align-content:center;padding:40px;background:radial-gradient(circle at 50% 45%,rgba(239,107,46,.17),transparent 34%),linear-gradient(135deg,rgba(255,255,255,.035),transparent);border-left:1px solid rgba(255,255,255,.08)}.cv3OfficeSignal .brain{position:relative;z-index:2;width:180px;height:180px;margin:0 auto 46px;display:grid;place-items:center;align-content:center;gap:7px;border:1px solid rgba(239,107,46,.42);border-radius:50%;background:rgba(10,13,11,.82);box-shadow:0 0 0 18px rgba(239,107,46,.035),0 0 60px rgba(239,107,46,.13)}.cv3OfficeSignal .brain>span{width:12px;height:12px;border-radius:50%;background:#ef6b2e;box-shadow:0 0 0 8px rgba(239,107,46,.12)}.cv3OfficeSignal .brain b{font-size:18px}.cv3OfficeSignal .signalLine{position:absolute;left:13%;right:13%;bottom:89px;height:1px;background:linear-gradient(90deg,transparent,#ef6b2e 12%,#ef6b2e 88%,transparent)}.cv3OfficeSignal .signalNodes{position:relative;z-index:2;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.cv3OfficeSignal .signalNodes span{display:grid;place-items:center;gap:5px;color:rgba(255,255,255,.48);font-size:9px;text-transform:uppercase}.cv3OfficeSignal .signalNodes i{width:9px;height:9px;border:2px solid #ef6b2e;border-radius:50%;background:#151a17}.cv3OfficeSignal .signalNodes b{color:#fff;font-size:12px;text-transform:none}.cv3OfficeSignal .signalNodes .owner i{background:#ef6b2e;box-shadow:0 0 0 6px rgba(239,107,46,.10)}
+.cv3DayLedger{grid-column:1/-1;border-top:1px solid var(--cv-line)}.cv3DayLedger>header{display:flex;align-items:flex-end;justify-content:space-between;padding:20px 0 14px;border-bottom:1px solid var(--cv-faint)}.cv3DayLedger>header h3{margin:5px 0 0;font-size:23px;letter-spacing:-.045em}.cv3DayLedger>header button{min-height:40px;border:0;border-radius:9px;padding:0 14px;background:#1a1f1c;color:#fff;font-size:11px;font-weight:760}.cv3DayColumns{display:grid;grid-template-columns:1.15fr .85fr}.cv3DayColumns>div{min-height:220px;padding:20px 24px 0 0}.cv3DayColumns>div+div{padding-left:28px;border-left:1px solid var(--cv-line)}
+.cv3PulseLine{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--cv-line);border-bottom:1px solid var(--cv-line)}.cv3PulseLine button{min-height:100px;display:grid;align-content:center;gap:6px;border:0;border-right:1px solid var(--cv-line);padding:18px 22px;background:transparent;text-align:left;color:var(--cv-ink)}.cv3PulseLine button:last-child{border-right:0}.cv3PulseLine b{font-size:18px;letter-spacing:-.035em}.cv3PulseLine span{color:#7b8580;font-size:11px}
+.cv3CommandRoom{grid-column:1/-1;overflow:hidden;border-radius:22px;background:#111411;color:#fff;box-shadow:0 28px 90px rgba(17,21,19,.20)}.cv3CommandRoom>header{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:end;padding:38px 42px 30px;border-bottom:1px solid rgba(255,255,255,.09)}.cv3CommandRoom>header h2{max-width:800px;margin:10px 0 10px;font-size:clamp(38px,4.8vw,68px);line-height:.9;letter-spacing:-.075em;font-weight:760}.cv3CommandRoom>header p{max-width:720px;margin:0;color:rgba(255,255,255,.58);line-height:1.55}.cv3CommandState{display:grid;justify-items:end;gap:6px}.cv3CommandState>span{width:12px;height:12px;border-radius:50%;background:#63d28a;box-shadow:0 0 0 8px rgba(99,210,138,.10)}.cv3CommandState>span.live{background:#ef6b2e;box-shadow:0 0 0 8px rgba(239,107,46,.12)}.cv3CommandState b{font-size:18px}.cv3CommandState small{color:rgba(255,255,255,.42)}.cv3CommandBody{display:grid;grid-template-columns:minmax(350px,.75fr) minmax(0,1.25fr);min-height:430px}.cv3CommandQueue{padding:28px;border-right:1px solid rgba(255,255,255,.09)}.cv3CommandQueue>small,.cv3DecisionRoom>small{color:#f39a69;font-size:9px;font-weight:850;letter-spacing:.17em;text-transform:uppercase}.cv3CommandQueue>button{width:100%;min-height:72px;display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;border:0;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 4px;background:transparent;color:#fff;text-align:left}.cv3CommandQueue>button>span{color:#f39a69;font-size:10px}.cv3CommandQueue>button b{font-size:13px}.cv3CommandQueue>button small{display:block;margin-top:4px;color:rgba(255,255,255,.43);font-size:10px}.cv3CommandQueue>button em{font-style:normal;color:rgba(255,255,255,.42);font-size:10px}.cv3CommandQueue>button.active{background:linear-gradient(90deg,rgba(239,107,46,.10),transparent)}.cv3CommandEmpty{display:grid;align-content:center;min-height:300px;padding:30px 0}.cv3CommandEmpty>span{width:13px;height:13px;border-radius:50%;background:#63d28a;box-shadow:0 0 0 9px rgba(99,210,138,.08)}.cv3CommandEmpty h3{margin:26px 0 8px;font-size:28px}.cv3CommandEmpty p{max-width:390px;color:rgba(255,255,255,.48);line-height:1.55}.cv3DecisionRoom{display:flex;flex-direction:column;padding:42px 46px;background:radial-gradient(circle at 85% 12%,rgba(239,107,46,.14),transparent 28%)}.cv3DecisionRoom h3{max-width:680px;margin:14px 0 12px;font-size:clamp(34px,4vw,56px);line-height:.92;letter-spacing:-.065em}.cv3DecisionRoom>p{max-width:660px;color:rgba(255,255,255,.58);line-height:1.6}.cv3DecisionSteps{display:grid;grid-template-columns:repeat(2,1fr);gap:0;margin:30px 0;border-top:1px solid rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.09)}.cv3DecisionSteps span{min-height:68px;display:flex;align-items:center;gap:10px;border-right:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.64);font-size:11px}.cv3DecisionSteps i{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:rgba(239,107,46,.15);color:#f39a69;font-style:normal}.cv3DecisionRoom>button{align-self:flex-start;min-height:42px;border:0;border-radius:9px;padding:0 15px;background:#ef6b2e;color:#fff;font-weight:760}.cv3DecisionRoom footer{margin-top:auto;color:rgba(255,255,255,.38);font-size:10px}.cv3CommandPromise{grid-column:1/-1;display:flex;align-items:baseline;gap:18px;padding:4px 0 20px;border-bottom:1px solid var(--cv-line)}.cv3CommandPromise span{color:#ef6b2e;font-weight:800}.cv3CommandPromise p{margin:0;color:#6f7974}
+.cv3ScheduleRoom{border-top:1px solid var(--cv-line)}.cv3ScheduleRoom>header{padding:18px 0;border-bottom:1px solid var(--cv-faint)}.cv3ScheduleRoom h3,.cv3ScheduleSide h3{margin:5px 0 0;font-size:25px;letter-spacing:-.045em}.cv3ScheduleRail>button{width:100%;min-height:74px;display:grid;grid-template-columns:34px 125px minmax(0,1fr) auto;gap:14px;align-items:center;border:0;border-bottom:1px solid var(--cv-faint);padding:10px 4px;background:transparent;text-align:left;color:var(--cv-ink)}.cv3ScheduleRail>button>span{color:#ef6b2e;font-size:10px}.cv3ScheduleRail time{display:grid;color:#5f6964;font-size:10px}.cv3ScheduleRail time b{margin-top:4px;color:var(--cv-ink);font-size:12px}.cv3ScheduleRail>button div b{display:block;font-size:13px}.cv3ScheduleRail>button div small{display:block;margin-top:4px;color:#7b8580}.cv3ScheduleRail em{font-style:normal;color:#7b8580;font-size:10px}.cv3ScheduleSide{min-height:310px;align-self:start;border-radius:18px;padding:28px;background:#171c19;color:#fff}.cv3ScheduleSide p{color:rgba(255,255,255,.56);line-height:1.55}.cv3ScheduleSide button{margin-top:16px}
+@media(min-width:901px){.cv4Experience .cv4Dock{top:12px!important;right:300px!important;bottom:auto!important;width:auto!important;flex-direction:row!important;transform:none!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}.cv4Experience .cv4OfficeButton,.cv4Experience .cv4Move,.cv4Experience .cv4TellButton{background:rgba(255,255,255,.06)!important}.cv4Experience .cv4TellButton{background:#ef6b2e!important}}
+@media(max-width:900px){.cv3Handover{display:block;min-height:0;border-radius:16px}.cv3HandoverCopy{padding:28px 22px}.cv3HandoverCopy h2{font-size:43px}.cv3OfficeSignal{min-height:310px;border-left:0;border-top:1px solid rgba(255,255,255,.08);padding:30px 20px}.cv3OfficeSignal .brain{width:140px;height:140px;margin-bottom:40px}.cv3OfficeSignal .signalNodes{gap:3px}.cv3OfficeSignal .signalNodes span{font-size:7px}.cv3DayColumns{display:block}.cv3DayColumns>div{padding:18px 0}.cv3DayColumns>div+div{padding-left:0;border-left:0;border-top:1px solid var(--cv-line)}.cv3PulseLine{display:block}.cv3PulseLine button{width:100%;border-right:0;border-bottom:1px solid var(--cv-line)}.cv3CommandRoom{border-radius:16px}.cv3CommandRoom>header{display:block;padding:28px 22px}.cv3CommandRoom>header h2{font-size:42px}.cv3CommandState{justify-items:start;margin-top:25px}.cv3CommandBody{display:block}.cv3CommandQueue{padding:22px;border-right:0;border-bottom:1px solid rgba(255,255,255,.09)}.cv3DecisionRoom{padding:30px 22px;min-height:420px}.cv3DecisionSteps{grid-template-columns:1fr}.cv3ScheduleRail>button{grid-template-columns:25px 90px 1fr}.cv3ScheduleRail em{display:none}.cv3ScheduleSide{margin-top:24px}.cv4Experience .cv4Dock{right:14px!important;bottom:14px!important;padding:5px!important}.cv4Experience .cv4OfficeButton,.cv4Experience .cv4Move{display:none!important}}
+
+
+/* Page identity system — each room has its own visual job */
+.cv3Product[class*="cv3Page-"] .cv3Hero{position:relative;isolation:isolate;overflow:hidden;padding-right:30px}
+.cv3Product[class*="cv3Page-"] .cv3Hero:after{content:"";position:absolute;z-index:-1;right:0;top:0;width:36%;height:100%;pointer-events:none;opacity:.75}
+.cv3Page-jobs .cv3Hero:after{background:repeating-linear-gradient(90deg,transparent 0 34px,rgba(239,107,46,.15) 35px 36px),linear-gradient(90deg,transparent,rgba(239,107,46,.07))}
+.cv3Page-clients .cv3Hero:after{background:linear-gradient(90deg,transparent,rgba(125,88,55,.08)),repeating-linear-gradient(0deg,transparent 0 21px,rgba(17,21,19,.08) 22px 23px)}
+.cv3Page-workers .cv3Hero:after{background:radial-gradient(circle at 65% 52%,transparent 0 28px,rgba(53,139,103,.12) 29px 30px,transparent 31px 56px,rgba(53,139,103,.10) 57px 58px,transparent 59px),linear-gradient(90deg,transparent,rgba(53,139,103,.06))}
+.cv3Page-messages .cv3Hero:after{background:linear-gradient(90deg,transparent,rgba(68,100,150,.07)),repeating-linear-gradient(-35deg,transparent 0 28px,rgba(68,100,150,.09) 29px 30px)}
+.cv3Page-quotes .cv3Hero:after{background:linear-gradient(90deg,transparent,rgba(239,107,46,.10)),repeating-linear-gradient(90deg,transparent 0 70px,rgba(239,107,46,.14) 71px 72px)}
+.cv3Page-invoices .cv3Hero:after{background:linear-gradient(90deg,transparent,rgba(17,21,19,.08)),repeating-linear-gradient(0deg,transparent 0 25px,rgba(17,21,19,.10) 26px 27px)}
+.cv3Page-team .cv3Hero:after,.cv3Page-payroll .cv3Hero:after{background:linear-gradient(90deg,transparent,rgba(136,91,42,.08)),repeating-radial-gradient(circle at 75% 50%,transparent 0 18px,rgba(136,91,42,.09) 19px 20px)}
+.cv3Page-xero .cv3Hero:after{background:linear-gradient(90deg,transparent,rgba(31,110,164,.10)),repeating-linear-gradient(45deg,transparent 0 24px,rgba(31,110,164,.08) 25px 26px)}
+.cv3Page-settings .cv3Hero:after{background:linear-gradient(90deg,transparent,rgba(17,21,19,.06)),linear-gradient(rgba(17,21,19,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(17,21,19,.06) 1px,transparent 1px);background-size:auto,22px 22px,22px 22px}
+
+/* Jobs — route board */
+.cv3Page-jobs .cv3Panel.span6{min-height:290px}.cv3Page-jobs .cv3Panel:first-of-type{border-top:2px solid #ef6b2e}.cv3Page-jobs .cv3Toolbar{padding:4px 0 8px}.cv3Page-jobs .cv3Row>span:first-of-type{background:#ef6b2e}
+
+/* Clients — dossier */
+.cv3Page-clients .cv3Panel.span7{padding-left:26px;border-left:1px solid var(--cv-line)}.cv3Page-clients .cv3PreviewTop{padding-bottom:14px;border-bottom:1px solid var(--cv-line)}.cv3Page-clients .cv3History{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+
+/* Workers — field radar */
+.cv3Page-workers .cv3Panel.span7{border-radius:18px;padding:0 22px 22px;background:linear-gradient(145deg,#111612,#1b241f);color:#fff;box-shadow:0 24px 70px rgba(17,21,19,.15)}.cv3Page-workers .cv3Panel.span7>header{border-color:rgba(255,255,255,.09)}.cv3Page-workers .cv3Panel.span7 header small{color:#78c89e}.cv3Page-workers .cv3Panel.span7 .cv3Empty span{color:rgba(255,255,255,.48)}.cv3Page-workers .cv3Tiles button{color:inherit;border-color:rgba(255,255,255,.08)}
+
+/* Messages — signal lanes */
+.cv3Page-messages .cv3Page{column-gap:0}.cv3Page-messages .cv3Panel.span4{padding:0 22px;border-right:1px solid var(--cv-line)}.cv3Page-messages .cv3Panel.span4:last-child{border-right:0}.cv3Page-messages .cv3Panel.span4:nth-of-type(3){border-radius:16px;background:#f9f9f5}.cv3Page-messages .cv3Row .bar{background:#5478a7}
+
+/* Quotes — a continuous pipeline */
+.cv3Page-quotes .cv3Pipeline{background:linear-gradient(180deg,rgba(255,255,255,.34),transparent)}.cv3Page-quotes .cv3Pipeline>div{position:relative}.cv3Page-quotes .cv3Pipeline>div:before{content:"";position:absolute;left:0;right:0;top:50px;height:2px;background:linear-gradient(90deg,#ef6b2e,rgba(239,107,46,.10))}.cv3Page-quotes .cv3Pipeline h3{position:relative;z-index:1;display:inline-block;padding-right:10px;background:#f5f3ed}
+
+/* Invoices — controlled money ledger */
+.cv3Page-invoices .cv3Stats{background:#151a17;color:#fff;border:0}.cv3Page-invoices .cv3Stats span{border-color:rgba(255,255,255,.09)}.cv3Page-invoices .cv3Stats small{color:rgba(255,255,255,.45)}.cv3Page-invoices .cv3Panel.span7{border-top:2px solid #ef6b2e}.cv3Page-invoices .cv3GuardGrid{border-radius:14px;overflow:hidden;background:#171c19;color:#fff}.cv3Page-invoices .cv3GuardGrid span{border-color:rgba(255,255,255,.08)}
+
+/* Team and payroll — controlled access sheets */
+.cv3Page-team .cv3Panel.span4,.cv3Page-payroll .cv3Panel.span4{align-self:start;border-radius:16px;padding:0 22px 22px;background:#171c19;color:#fff}.cv3Page-team .cv3Rule span,.cv3Page-payroll .cv3Rule span{color:rgba(255,255,255,.55)}
+
+/* Xero — accounting handoff bay */
+.cv3Page-xero .cv3Panel.span5{border-radius:18px;padding:0 24px 24px;background:linear-gradient(145deg,#101820,#172633);color:#fff;box-shadow:0 24px 70px rgba(20,56,82,.16)}.cv3Page-xero .cv3Panel.span5>header{border-color:rgba(255,255,255,.09)}.cv3Page-xero .cv3Accounting span{color:rgba(255,255,255,.55)}.cv3Page-xero .cv3Accounting em{color:#7dc3ee}
+
+/* Settings — blueprint workbench */
+.cv3Page-settings .cv3Panel.span6:first-of-type{border-radius:18px;padding:0 24px 26px;background:rgba(255,255,255,.45);box-shadow:0 18px 55px rgba(17,21,19,.06)}.cv3Page-settings .cv3Settings{grid-template-columns:repeat(2,minmax(0,1fr))}.cv3Page-settings .cv3Settings label:first-child,.cv3Page-settings .cv3Settings label:nth-child(3){grid-column:1/-1}
+
+/* Plans — capacity switchboard */
+.cv3CapacityRoom{grid-column:1/-1;overflow:hidden;border-radius:22px;background:#111411;color:#fff;box-shadow:0 28px 90px rgba(17,21,19,.20)}.cv3CapacityRoom>header{display:grid;grid-template-columns:1fr auto;gap:40px;align-items:end;padding:42px;border-bottom:1px solid rgba(255,255,255,.09);background:radial-gradient(circle at 88% 0,rgba(239,107,46,.16),transparent 25%)}.cv3CapacityRoom>header small,.cv3AddonRoom>header small,.cv3SupportRoom small{color:#f39a69;font-size:9px;font-weight:850;letter-spacing:.17em;text-transform:uppercase}.cv3CapacityRoom>header h2{max-width:820px;margin:12px 0 12px;font-size:clamp(40px,5vw,70px);line-height:.9;letter-spacing:-.075em}.cv3CapacityRoom>header p{max-width:760px;margin:0;color:rgba(255,255,255,.57);line-height:1.55}.cv3CapacityRoom>header aside{display:grid;justify-items:end;gap:6px}.cv3CapacityRoom>header aside span{color:rgba(255,255,255,.42);font-size:10px}.cv3CapacityRoom>header aside b{font-size:24px}.cv3CapacityRoom>header aside small{color:rgba(255,255,255,.42);letter-spacing:0;text-transform:none}.cv3CapacityRail{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.cv3CapacityRail article{min-width:0;display:flex;flex-direction:column;min-height:480px;border:0;border-right:1px solid rgba(255,255,255,.09);border-radius:0!important;padding:26px;background:transparent;color:#fff;box-shadow:none!important}.cv3CapacityRail article:last-child{border-right:0}.cv3CapacityRail article>span{color:#f39a69;font-size:10px}.cv3CapacityRail article h3{margin:8px 0 5px;font-size:28px;letter-spacing:-.05em}.cv3CapacityRail article p{min-height:55px;color:rgba(255,255,255,.50);font-size:11px;line-height:1.45}.cv3CapacityRail article strong{display:block;margin:20px 0;font-size:36px;letter-spacing:-.06em}.cv3CapacityRail article strong em,.cv3AddonRoom strong em{display:block;color:rgba(255,255,255,.36);font-size:9px;font-style:normal;letter-spacing:0}.cv3CapacityRail article ul{display:grid;gap:8px;margin:0 0 24px;padding:0;list-style:none}.cv3CapacityRail article li{color:rgba(255,255,255,.62);font-size:10px}.cv3CapacityRail article li:before{content:"·";margin-right:7px;color:#ef6b2e}.cv3CapacityRail article button{margin-top:auto;min-height:42px;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:rgba(255,255,255,.06);color:#fff;font-weight:760}.cv3CapacityRail article.popular{background:linear-gradient(180deg,rgba(239,107,46,.16),rgba(239,107,46,.035))}.cv3CapacityRail article.popular button{border-color:transparent;background:#ef6b2e}.cv3CapacityRail article.current{background:rgba(255,255,255,.04)}.cv3AddonRoom{grid-column:1/-1;border-top:1px solid var(--cv-line)}.cv3AddonRoom>header{padding:20px 0}.cv3AddonRoom>header h3{margin:5px 0;font-size:25px}.cv3AddonRoom>article{display:grid;grid-template-columns:1fr 180px 140px;gap:20px;align-items:center;min-height:94px;border-top:1px solid var(--cv-faint);padding:14px 0}.cv3AddonRoom>article h3{margin:0;font-size:17px}.cv3AddonRoom>article p{margin:5px 0 0;color:#747d78}.cv3AddonRoom>article strong{font-size:22px}.cv3AddonRoom strong em{color:#89918d}.cv3AddonRoom button{min-height:40px;border:0;border-radius:9px;background:#181d1a;color:#fff;font-weight:760}
+
+/* Support — service room */
+.cv3SupportRoom{grid-column:1/-1;display:grid;grid-template-columns:1.05fr .95fr;overflow:hidden;border-radius:22px;background:#111411;color:#fff;box-shadow:0 28px 90px rgba(17,21,19,.18)}.cv3SupportSignal{display:flex;flex-direction:column;min-height:470px;padding:44px;background:radial-gradient(circle at 12% 90%,rgba(239,107,46,.15),transparent 30%)}.cv3SupportSignal h2{max-width:680px;margin:14px 0 15px;font-size:clamp(42px,5vw,70px);line-height:.9;letter-spacing:-.075em}.cv3SupportSignal p{max-width:620px;color:rgba(255,255,255,.58);line-height:1.6}.cv3SupportActions{display:flex;gap:9px;margin-top:24px}.cv3SupportActions button{min-height:42px;border:1px solid rgba(255,255,255,.14);border-radius:9px;padding:0 15px;background:rgba(255,255,255,.06);color:#fff;font-weight:760}.cv3SupportActions button:first-child{border-color:transparent;background:#ef6b2e}.cv3SupportSignal footer{margin-top:auto;color:rgba(255,255,255,.38);font-size:10px}.cv3SupportPath{padding:44px;border-left:1px solid rgba(255,255,255,.09);background:linear-gradient(145deg,rgba(255,255,255,.025),transparent)}.cv3SupportPath h3{max-width:520px;margin:14px 0 25px;font-size:31px;letter-spacing:-.05em}.cv3SupportPath>span{min-height:58px;display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}.cv3SupportPath i{color:#f39a69;font-size:10px;font-style:normal}.cv3SupportPath b{font-size:12px}.cv3SupportRules{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--cv-line);border-bottom:1px solid var(--cv-line)}.cv3SupportRules>div{min-height:100px;display:grid;align-content:center;gap:6px;border-right:1px solid var(--cv-line);padding:18px 22px}.cv3SupportRules>div:last-child{border-right:0}.cv3SupportRules small{color:#ef6b2e;font-size:8px;letter-spacing:.16em;text-transform:uppercase}.cv3SupportRules b{font-size:14px}
+
+/* Reliable touch targets without chunky controls */
+.cv4Experience .cv3Brand{min-height:40px}.cv4Experience #churvox-owner-native-logout{height:40px!important;min-height:40px!important;max-height:40px!important}.cv4Experience button:not(.cv3Row){min-height:40px}
+
+@media(max-width:900px){.cv3Product[class*="cv3Page-"] .cv3Hero:after{width:48%;opacity:.45}.cv3Page-clients .cv3Panel.span7{padding-left:0;border-left:0}.cv3Page-clients .cv3History{display:block}.cv3Page-workers .cv3Panel.span7{padding-left:16px;padding-right:16px}.cv3Page-messages .cv3Panel.span4{padding:0;border-right:0}.cv3CapacityRoom>header{display:block;padding:28px 22px}.cv3CapacityRoom>header h2{font-size:43px}.cv3CapacityRoom>header aside{justify-items:start;margin-top:24px}.cv3CapacityRail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.cv3CapacityRail article{min-width:84vw;scroll-snap-align:start}.cv3AddonRoom>article{grid-template-columns:1fr auto}.cv3AddonRoom>article button{grid-column:1/-1}.cv3SupportRoom{display:block;border-radius:16px}.cv3SupportSignal{min-height:450px;padding:30px 22px}.cv3SupportSignal h2{font-size:43px}.cv3SupportPath{padding:30px 22px;border-left:0;border-top:1px solid rgba(255,255,255,.09)}.cv3SupportRules{display:block}.cv3SupportRules>div{border-right:0;border-bottom:1px solid var(--cv-line)}.cv4Experience #churvox-owner-native-logout{height:40px!important;min-height:40px!important;max-height:40px!important}}

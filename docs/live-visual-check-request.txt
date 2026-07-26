@@ -1,0 +1,1 @@
+Need a real screenshot and DOM comparison because the live site still appears old despite the repository containing the new homepage component.

@@ -1,0 +1,65 @@
+name: Churvox Sites exit live check
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/churvox-sites-exit-live-check-20260724.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll live domain and stale-app escape files
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          # Trigger revision 2: run after the workflow already exists on main.
+          OUT="$RUNNER_TEMP/sites-exit-check.md"
+          PASS=0
+          for attempt in $(seq 1 20); do
+            stamp=$(date +%s%N)
+            home=$(curl -sS -L --max-time 30 -H 'Cache-Control: no-cache' "https://www.churvox.com/?sitesExitCheck=$stamp")
+            dash=$(curl -sS -L --max-time 30 -H 'Cache-Control: no-cache' "https://www.churvox.com/dashboard?sitesExitCheck=$stamp")
+            shim=$(curl -sS -L --max-time 30 -H 'Cache-Control: no-cache' "https://www.churvox.com/assets/index-BZXWNUtr.js?sitesExitCheck=$stamp")
+            sw=$(curl -sS -L --max-time 30 -H 'Cache-Control: no-cache' "https://www.churvox.com/sw.js?sitesExitCheck=$stamp")
+            service_worker=$(curl -sS -L --max-time 30 -H 'Cache-Control: no-cache' "https://www.churvox.com/service-worker.js?sitesExitCheck=$stamp")
+
+            if echo "$home" | grep -Fq '/static/js/main.' \
+              && echo "$dash" | grep -Fq '/static/js/main.' \
+              && echo "$shim" | grep -Fq 'CHURVOX_RETIRED_SITES_ESCAPE_RUNNING' \
+              && echo "$sw" | grep -Fq 'churvoxSitesExit' \
+              && echo "$service_worker" | grep -Fq 'churvoxSitesExit'; then
+              PASS=1
+              break
+            fi
+            sleep 30
+          done
+
+          cname=$(dig +short www.churvox.com CNAME | paste -sd ',' -)
+          home_title=$(echo "$home" | grep -ioE '<title>[^<]*</title>' | head -1 | sed -E 's#</?title>##Ig')
+          dash_title=$(echo "$dash" | grep -ioE '<title>[^<]*</title>' | head -1 | sed -E 's#</?title>##Ig')
+          {
+            echo '## Sites exit live check'
+            echo
+            echo "UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            echo "- result: $([ "$PASS" = 1 ] && echo PASS || echo FAIL)"
+            echo "- www CNAME: ${cname:-none}"
+            echo "- home title: ${home_title:-none}"
+            echo "- dashboard title: ${dash_title:-none}"
+            echo "- current CRA home: $(echo "$home" | grep -Fq '/static/js/main.' && echo yes || echo no)"
+            echo "- current CRA dashboard: $(echo "$dash" | grep -Fq '/static/js/main.' && echo yes || echo no)"
+            echo "- retired Sites asset shim live: $(echo "$shim" | grep -Fq 'CHURVOX_RETIRED_SITES_ESCAPE_RUNNING' && echo yes || echo no)"
+            echo "- sw migration live: $(echo "$sw" | grep -Fq 'churvoxSitesExit' && echo yes || echo no)"
+            echo "- service-worker migration live: $(echo "$service_worker" | grep -Fq 'churvoxSitesExit' && echo yes || echo no)"
+          } > "$OUT"
+          cat "$OUT"
+          gh issue comment 758 --repo howardjennings777-design/churvox --body-file "$OUT"
+          test "$PASS" = 1

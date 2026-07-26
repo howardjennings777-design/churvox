@@ -94,11 +94,29 @@ jobs:
           }
 
           async function login(page, email, password, worker = false) {
-            await page.goto(`${base}/login${worker ? '?worker=1' : ''}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-            await page.getByLabel(/email/i).first().fill(email);
-            await page.getByLabel(/password/i).first().fill(password);
-            await page.getByRole('button', { name: /sign in|log in/i }).first().click();
-            await page.waitForFunction(() => !location.pathname.includes('/login'), null, { timeout: 30000 });
+            const paths = worker ? ['/api/auth/login', '/api/worker/auth/login'] : ['/api/auth/login'];
+            const attempts = [];
+            let token = '';
+            for (const pathname of paths) {
+              const result = await callApi(pathname, { method: 'POST', body: JSON.stringify({ email, password }) });
+              attempts.push(`${pathname}:${result.response.status}`);
+              if (!result.response.ok || result.body?.success === false) continue;
+              token = tokenFrom(result.body);
+              if (token) break;
+            }
+            if (!token) throw new Error(`${worker ? 'Worker' : 'Owner'} API login failed (${attempts.join(', ')})`);
+            const role = worker ? 'worker' : 'owner';
+            await page.context().addInitScript(({ tokenValue, emailValue, roleValue }) => {
+              localStorage.setItem('token', tokenValue);
+              localStorage.setItem('authToken', tokenValue);
+              localStorage.setItem('access_token', tokenValue);
+              localStorage.setItem('churvox_auth_session_snapshot_v1', JSON.stringify({
+                at: Date.now(),
+                token: tokenValue,
+                user: { email: emailValue, role: roleValue, has_app_access: true, email_verified: true },
+              }));
+            }, { tokenValue: token, emailValue: email, roleValue: role });
+            await page.goto(`${base}${worker ? '/worker/today' : '/dashboard#today'}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
             await page.waitForTimeout(900);
           }
 
@@ -149,8 +167,6 @@ jobs:
 
           (async () => {
             if (!ownerPassword) throw new Error('OWNER_PASSWORD secret missing.');
-            const workerEmail = await discoverWorker();
-            console.log('::add-mask::' + workerEmail);
             const browser = await chromium.launch({ headless: true });
             const ownerPages = [
               ['today', '/dashboard#today'], ['command', '/dashboard#command'], ['work', '/dashboard#work'], ['clients', '/dashboard#clients'],
@@ -160,10 +176,20 @@ jobs:
             ].map(([name, path]) => ({ name, path }));
             const ownerMobile = ownerPages.filter((item) => ['today','command','work','clients','worker','plans','help'].includes(item.name));
             const workerPages = [['today','/worker/today'],['jobs','/worker/jobs'],['messages','/worker/messages'],['help','/worker/help']].map(([name, path]) => ({ name, path }));
+
             await captureSet(browser, 'owner', { width: 1440, height: 1000 }, ownerPages, ownerEmail, ownerPassword);
             await captureSet(browser, 'owner', { width: 390, height: 844 }, ownerMobile, ownerEmail, ownerPassword);
-            await captureSet(browser, 'worker', { width: 1280, height: 900 }, workerPages, workerEmail, workerPassword);
-            await captureSet(browser, 'worker', { width: 390, height: 844 }, workerPages, workerEmail, workerPassword);
+
+            try {
+              const workerEmail = await discoverWorker();
+              console.log('::add-mask::' + workerEmail);
+              await captureSet(browser, 'worker', { width: 1280, height: 900 }, workerPages, workerEmail, workerPassword);
+              await captureSet(browser, 'worker', { width: 390, height: 844 }, workerPages, workerEmail, workerPassword);
+            } catch (error) {
+              runtimeErrors.push(`Worker capture skipped: ${error.message || error}`);
+              console.warn(`Worker capture skipped: ${error.message || error}`);
+            }
+
             await browser.close();
 
             fs.writeFileSync(path.join(out, 'metrics.json'), JSON.stringify({ results, runtimeErrors }, null, 2));

@@ -1,0 +1,10 @@
+HTTP/2 200 
+date: Fri, 24 Jul 2026 09:12:58 GMT
+content-type: text/html; charset=utf-8
+cache-control: no-store, must-revalidate
+link: </assets/_vinext_fonts/geist-8ac0455e797f/geist-ff2310f5.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-8ac0455e797f/geist-875ccdd4.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-8ac0455e797f/geist-52306abf.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-8ac0455e797f/geist-001175b1.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-8ac0455e797f/geist-98bbbccb.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-f6b33328.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44e03052.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-0638449e.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-971fb274.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44745446.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-013b2f2f.woff2>; rel=preload; as=font; type=font/woff2; crossorigin
+vary: RSC, Accept, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Next-Url, X-Vinext-Interception-Context, X-Vinext-Mounted-Slots, X-Vinext-Rsc-Render-Mode
+set-cookie: __cf_bm=FIM4WyjxYwEPB4BrPdxXeBkETzt.9wDtwYG1HKF4Ym4-1784884378.834293-1.0.1.1-ZrhQy8xfhUEAdpGU9tZWIhcs1XOXYUAs3mhplDMcXSliW6NuMC8Eh9pyYKpAI8oC0UsrggfGaXbGc2.UB3RnY8w4TWFmQn7vK7qFoeeWhmvpd5LnJQk1Ld3CoQ3P0EUG; HttpOnly; SameSite=None; Secure; Path=/; Domain=chatgpt.site; Expires=Fri, 24 Jul 2026 09:42:58 GMT
+server: cloudflare
+cf-ray: a201ce67babd4c97-MSP
+

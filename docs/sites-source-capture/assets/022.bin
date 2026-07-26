@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en-NZ"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="/assets/index-C_g2zg14.css" data-rsc-css-href="/assets/index-C_g2zg14.css" data-precedence="vite-rsc/importer-resources"/><link rel="modulepreload" href="/assets/layout-segment-context-DZ3qgUPA.js" crossorigin=""/><link rel="modulepreload" href="/assets/rolldown-runtime-S-ySWqyJ.js" crossorigin=""/><link rel="modulepreload" href="/assets/index-BZXWNUtr.js" crossorigin=""/><link rel="modulepreload" href="/assets/framework-CXnKph_e.js" crossorigin=""/><link rel="modulepreload" href="/assets/runtime-cleanup-Bhd6wXnD.js" crossorigin=""/><link rel="modulepreload" href="/assets/link-B6eWePDz.js" crossorigin=""/><title>Churvox | Run the job, not the admin</title><meta name="description" content="Job management for service businesses. Churvox prepares the admin; you check and approve."/><link rel="shortcut icon" href="/favicon.svg"/><link rel="icon" href="/favicon.svg"/><meta name="codex-preview" content="development"/><script>self.__VINEXT_RSC_PARAMS__={}</script><script>self.__VINEXT_RSC_NAV__={"pathname":"/pricing","searchParams":[]}</script><link rel="modulepreload" href="/assets/index-BZXWNUtr.js" />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-ff2310f5.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-875ccdd4.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-52306abf.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-001175b1.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-98bbbccb.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-f6b33328.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44e03052.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-0638449e.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-971fb274.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44745446.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-013b2f2f.woff2" as="font" type="font/woff2" crossorigin />
+<style data-vinext-fonts>/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-ff2310f5.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-875ccdd4.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-52306abf.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-001175b1.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-98bbbccb.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.__font_geist_0tvmz3h { font-family: 'Geist', sans-serif; }
+
+.__variable_geist_0tvmz3h { --font-geist-sans: 'Geist', sans-serif; }
+
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-f6b33328.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44e03052.woff2) format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* symbols2 */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-0638449e.woff2) format('woff2');
+  unicode-range: U+2000-2001, U+2004-2008, U+200A, U+23B8-23BD, U+2500-259F;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-971fb274.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44745446.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-013b2f2f.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.__font_geist_mono_1diim1n { font-family: 'Geist Mono', sans-serif; }
+
+.__variable_geist_mono_1diim1n { --font-geist-mono: 'Geist Mono', sans-serif; }
+</style>
+</head><body class="__variable_geist_0tvmz3h __variable_geist_mono_1diim1n antialiased"><main><header class="site-header"><a href="/" class="brand-link"><span class="brand-lockup" aria-label="Churvox"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>CHURVOX</span></span></a><nav class="desktop-nav" aria-label="Main navigation"><a href="/product">Product</a><a href="/industries">For trades</a><a href="/pricing">Pricing</a><a href="/dashboard">See Churvox</a></nav><div class="header-actions"><a href="/login" class="login-link">Log in</a><a href="/signup" class="button button-dark button-small">Start free <span aria-hidden="true">↗</span></a></div></header><section class="page-hero"><p class="eyebrow"><span></span>SIMPLE, HONEST PRICING</p><h1>Pick the level that fits <em>today.</em></h1><p>Every plan starts with 14 days free. No card required. Prices are in NZD, and the full amount including GST is shown on every plan.</p></section><section class="pricing-grid"><article class="price-card"><p class="plan-name">Start</p><div class="plan-price"><strong>$39</strong><span>/ month<br/>+ GST</span></div><div class="plan-total"><span>Total including GST</span><strong>$44.85<small>/ month</small></strong></div><p class="plan-note">For one-person businesses getting organised.</p><a class="button button-dark" href="/signup">Start free <span aria-hidden="true">↗</span></a><ul><li>Jobs and clients</li><li>Quotes and invoices</li><li>Calendar and recurring jobs</li><li>CSV imports and exports</li></ul></article><article class="price-card"><p class="plan-name">Crew</p><div class="plan-price"><strong>$89</strong><span>/ month<br/>+ GST</span></div><div class="plan-total"><span>Total including GST</span><strong>$102.35<small>/ month</small></strong></div><p class="plan-note">For small teams working across the day.</p><a class="button button-dark" href="/signup">Start free <span aria-hidden="true">↗</span></a><ul><li>Everything in Start</li><li>Team scheduling</li><li>Worker view and time tracking</li><li>Photos, notes and job proof</li></ul></article><article class="price-card popular"><span class="popular-flag">MOST POPULAR</span><p class="plan-name">Operator</p><div class="plan-price"><strong>$149</strong><span>/ month<br/>+ GST</span></div><div class="plan-total"><span>Total including GST</span><strong>$171.35<small>/ month</small></strong></div><p class="plan-note">For growing operations that need a tighter office.</p><a class="button button-orange" href="/signup">Start free <span aria-hidden="true">↗</span></a><ul><li>Everything in Crew</li><li>Command approval desk</li><li>Background office preparation</li><li>Payroll preparation and reporting</li></ul></article><article class="price-card"><p class="plan-name">Command</p><div class="plan-price"><strong>$299</strong><span>/ month<br/>+ GST</span></div><div class="plan-total"><span>Total including GST</span><strong>$343.85<small>/ month</small></strong></div><p class="plan-note">For larger teams using Churvox across the whole operation.</p><a class="button button-dark" href="/signup">Start free <span aria-hidden="true">↗</span></a><ul><li>Everything in Operator</li><li>50 active team members</li><li>Advanced capacity</li><li>Priority support</li></ul></article></section><section class="growth-pack"><div><p class="eyebrow dark"><span></span>NEED MORE CAPACITY?</p><h2>Command Growth Pack</h2><p>Add another 50 active team members and extra capacity without changing the way your office runs.</p></div><div class="growth-pack-price"><strong>$99 <small>/ month + GST</small></strong><span>Total including GST <b>$113.85 / month</b></span></div></section><section class="pricing-note"><h2>Every plan keeps you in control.</h2><p>Churvox prepares admin for review. It does not send, charge, sync, file, pay, or change important records without your approval.</p></section><footer><span class="brand-lockup" aria-label="Churvox"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span>CHURVOX</span></span><p>Job management that works like an office in the background.</p><span>© 2026 Churvox</span></footer></main><script id="_R_">import("/assets/index-BZXWNUtr.js")</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a201ce95fee6a1f1',t:'MTc4NDg4NDM4Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body></html><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("2:I[\"04ba4c2c8beb\",[],\"default\",1]\n3:I[\"8c0f216c4604\",[],\"Children\",1]\n4:I[\"15c18cfaeeff\",[],\"LayoutSegmentProvider\",1]\n5:I[\"8c0f216c4604\",[],\"Slot\",1]\n6:I[\"593f344dc510\",[],\"RedirectBoundary\",1]\n:HL[\"/assets/index-C_g2zg14.css\",\"style\"]\n0:{\"__route\":\"route:/pricing\",\"__interceptionContext\":null,\"__layoutIds\":[\"layout:/\"],\"__rootLayout\":\"/\",\"page:/pricing\":\"$L1\",\"layout:/\":[[[[\"$\",\"link\",\"css:/assets/index-C_g2zg14.css\",{\"rel\":\"stylesheet\",\"precedence\":\"vite-rsc/importer-resources\",\"href\":\"/assets/index-C_g2zg14.css\",\"data-rsc-css-href\":\"/assets/index-C_g2zg14.css\"}],\"$undefined\"],[\"$\",\"html\",null,{\"lang\":\"en-NZ\",\"children\":[\"$\",\"body\",null,{\"className\":\"__variable_geist_0tvmz3h __variable_geist_mono_1diim1n antialiased\",\"children\":[[\"$\",\"$L2\",null,{}],[\"$\",\"$L3\",null,{}]]}]}]],null],\"route:/pricing\":[[[\"$\",\"meta\",null,{\"charSet\":\"utf-8\"}],[[\"$\",\"title\",\"0\",{\"children\":\"Churvox | Run the job, not the admin\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Job management for service businesses. Churvox prepares the admin; you check and approve.\"}],[\"$\",\"link\",\"2\",{\"rel\":\"shortcut icon\",\"href\":\"/favicon.svg\"}],[\"$\",\"link\",\"3\",{\"rel\":\"icon\",\"href\":\"/favicon.svg\"}],[\"$\",\"meta\",\"4\",{\"name\":\"codex-preview\",\"content\":\"development\"}]],[[\"$\",\"meta\",\"0\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]],[\"$\",\"$L4\",null,{\"segmentMap\":{\"children\":[\"pricing\"]},\"children\":[\"$\",\"$L5\",null,{\"id\":\"layout:/\",\"parallelSlots\":\"$undefined\",\"children\":[\"$\",\"$L6\",null,{\"children\":[\"$\",\"$L4\",null,{\"segmentMap\":{\"children\":[]},\"children\":[\"$\",\"$L5\",null,{\"id\":\"page:/pricing\"}]}]}]}]}]],\"__layoutFlags\":{\"layout:/\":\"s\"},\"__artifactCompatibility\":{\"schemaVersion\":1,\"graphVersion\":\"app-route-graph:17kpafk13fb3el\",\"deploymentVersion\":\"3b77c579-26b0-4597-abbc-01dbc20637d7\",\"appElementsSchemaVersion\":1,\"rscPayloadSchemaVersion\":1,\"rootBoundaryId\":\"/\",\"renderEpoch\":null}}\n")</script><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("7:I[\"c2747888630f\",[],\"default\",1]\n")</script><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("1:[\"$\",\"main\",null,{\"children\":[[\"$\",\"header\",null,{\"className\":\"site-header\",\"children\":[[\"$\",\"$L7\",null,{\"className\":\"brand-link\",\"href\":\"/\",\"children\":[\"$\",\"span\",null,{\"className\":\"brand-lockup\",\"aria-label\":\"Churvox\",\"children\":[[\"$\",\"span\",null,{\"className\":\"brand-mark\",\"aria-hidden\":\"true\",\"children\":[[\"$\",\"i\",null,{}],[\"$\",\"i\",null,{}],[\"$\",\"i\",null,{}]]}],[\"$\",\"span\",null,{\"children\":\"CHURVOX\"}]]}]}],[\"$\",\"nav\",null,{\"className\":\"desktop-nav\",\"aria-label\":\"Main navigation\",\"children\":[[\"$\",\"$L7\",null,{\"href\":\"/product\",\"children\":\"Product\"}],[\"$\",\"$L7\",null,{\"href\":\"/industries\",\"children\":\"For trades\"}],[\"$\",\"$L7\",null,{\"href\":\"/pricing\",\"children\":\"Pricing\"}],[\"$\",\"$L7\",null,{\"href\":\"/dashboard\",\"children\":\"See Churvox\"}]]}],[\"$\",\"div\",null,{\"className\":\"header-actions\",\"children\":[[\"$\",\"$L7\",null,{\"className\":\"login-link\",\"href\":\"/login\",\"children\":\"Log in\"}],[\"$\",\"$L7\",null,{\"className\":\"button button-dark button-small\",\"href\":\"/signup\",\"children\":[\"Start free \",[\"$\",\"span\",null,{\"aria-hidden\":\"true\",\"children\":\"↗\"}]]}]]}]]}],[\"$\",\"section\",null,{\"className\":\"page-hero\",\"children\":[[\"$\",\"p\",null,{\"className\":\"eyebrow\",\"children\":[[\"$\",\"span\",null,{}],\"SIMPLE, HONEST PRICING\"]}],[\"$\",\"h1\",null,{\"children\":[\"Pick the level that fits \",[\"$\",\"em\",null,{\"children\":\"today.\"}]]}],[\"$\",\"p\",null,{\"children\":\"Every plan starts with 14 days free. No card required. Prices are in NZD, and the full amount including GST is shown on every plan.\"}]]}],[[\"$\",\"section\",null,{\"className\":\"pricing-grid\",\"children\":[[\"$\",\"article\",\"Start\",{\"className\":\"price-card\",\"children\":[\"$undefined\",[\"$\",\"p\",null,{\"className\":\"plan-name\",\"children\":\"Start\"}],[\"$\",\"div\",null,{\"className\":\"plan-price\",\"children\":[[\"$\",\"strong\",null,{\"children\":\"$$39\"}],[\"$\",\"span\",null,{\"children\":[\"/ month\",[\"$\",\"br\",null,{}],\"+ GST\"]}]]}],[\"$\",\"div\",null,{\"className\":\"plan-total\",\"children\":[[\"$\",\"span\",null,{\"children\":\"Total including GST\"}],[\"$\",\"strong\",null,{\"children\":[\"$$44.85\",[\"$\",\"small\",null,{\"children\":\"/ month\"}]]}]]}],[\"$\",\"p\",null,{\"className\":\"plan-note\",\"children\":\"For one-person businesses getting organised.\"}],[\"$\",\"a\",null,{\"className\":\"button button-dark\",\"href\":\"/signup\",\"children\":[\"Start free \",[\"$\",\"span\",null,{\"aria-hidden\":\"true\",\"children\":\"↗\"}]]}],[\"$\",\"ul\",null,{\"children\":[[\"$\",\"li\",\"Jobs and clients\",{\"children\":\"Jobs and clients\"}],[\"$\",\"li\",\"Quotes and invoices\",{\"children\":\"Quotes and invoices\"}],[\"$\",\"li\",\"Calendar and recurring jobs\",{\"children\":\"Calendar and recurring jobs\"}],[\"$\",\"li\",\"CSV imports and exports\",{\"children\":\"CSV imports and exports\"}]]}]]}],[\"$\",\"article\",\"Crew\",{\"className\":\"price-card\",\"children\":[\"$undefined\",[\"$\",\"p\",null,{\"className\":\"plan-name\",\"children\":\"Crew\"}],[\"$\",\"div\",null,{\"className\":\"plan-price\",\"children\":[[\"$\",\"strong\",null,{\"children\":\"$$89\"}],[\"$\",\"span\",null,{\"children\":[\"/ month\",[\"$\",\"br\",null,{}],\"+ GST\"]}]]}],[\"$\",\"div\",null,{\"className\":\"plan-total\",\"children\":[[\"$\",\"span\",null,{\"children\":\"Total including GST\"}],[\"$\",\"strong\",null,{\"children\":[\"$$102.35\",[\"$\",\"small\",null,{\"children\":\"/ month\"}]]}]]}],[\"$\",\"p\",null,{\"className\":\"plan-note\",\"children\":\"For small teams working across the day.\"}],[\"$\",\"a\",null,{\"className\":\"button button-dark\",\"href\":\"/signup\",\"children\":[\"Start free \",[\"$\",\"span\",null,{\"aria-hidden\":\"true\",\"children\":\"↗\"}]]}],[\"$\",\"ul\",null,{\"children\":[[\"$\",\"li\",\"Everything in Start\",{\"children\":\"Everything in Start\"}],[\"$\",\"li\",\"Team scheduling\",{\"children\":\"Team scheduling\"}],[\"$\",\"li\",\"Worker view and time tracking\",{\"children\":\"Worker view and time tracking\"}],[\"$\",\"li\",\"Photos, notes and job proof\",{\"children\":\"Photos, notes and job proof\"}]]}]]}],[\"$\",\"article\",\"Operator\",{\"className\":\"price-card popular\",\"children\":[[\"$\",\"span\",null,{\"className\":\"popular-flag\",\"children\":\"MOST POPULAR\"}],[\"$\",\"p\",null,{\"className\":\"plan-name\",\"children\":\"Operator\"}],[\"$\",\"div\",null,{\"className\":\"plan-price\",\"children\":[[\"$\",\"strong\",null,{\"children\":\"$$149\"}],[\"$\",\"span\",null,{\"children\":[\"/ month\",[\"$\",\"br\",null,{}],\"+ GST\"]}]]}],[\"$\",\"div\",null,{\"className\":\"plan-total\",\"children\":[[\"$\",\"span\",null,{\"children\":\"Total including GST\"}],[\"$\",\"strong\",null,{\"children\":[\"$$171.35\",[\"$\",\"small\",null,{\"children\":\"/ month\"}]]}]]}],[\"$\",\"p\",null,{\"className\":\"plan-note\",\"children\":\"For growing operations that need a tighter office.\"}],[\"$\",\"a\",null,{\"className\":\"button button-orange\",\"href\":\"/signup\",\"children\":[\"Start free \",[\"$\",\"span\",null,{\"aria-hidden\":\"true\",\"children\":\"↗\"}]]}],[\"$\",\"ul\",null,{\"children\":[[\"$\",\"li\",\"Everything in Crew\",{\"children\":\"Everything in Crew\"}],[\"$\",\"li\",\"Command approval desk\",{\"children\":\"Command approval desk\"}],[\"$\",\"li\",\"Background office preparation\",{\"children\":\"Background office preparation\"}],[\"$\",\"li\",\"Payroll preparation and reporting\",{\"children\":\"Payroll preparation and reporting\"}]]}]]}],\"$L8\"]}],\"$L9\",\"$La\"],\"$Lb\"]}]\n8:[\"$\",\"article\",\"Command\",{\"className\":\"price-card\",\"children\":[\"$undefined\",[\"$\",\"p\",null,{\"className\":\"plan-name\",\"children\":\"Command\"}],[\"$\",\"div\",null,{\"className\":\"plan-price\",\"children\":[[\"$\",\"strong\",null,{\"children\":\"$$299\"}],[\"$\",\"span\",null,{\"children\":[\"/ month\",[\"$\",\"br\",null,{}],\"+ GST\"]}]]}],[\"$\",\"div\",null,{\"className\":\"plan-total\",\"children\":[[\"$\",\"span\",null,{\"children\":\"Total including GST\"}],[\"$\",\"strong\",null,{\"children\":[\"$$343.85\",[\"$\",\"small\",null,{\"children\":\"/ month\"}]]}]]}],[\"$\",\"p\",null,{\"className\":\"plan-note\",\"children\":\"For larger teams using Churvox across the whole operation.\"}],[\"$\",\"a\",null,{\"className\":\"button button-dark\",\"href\":\"/signup\",\"children\":[\"Start free \",[\"$\",\"span\",null,{\"aria-hidden\":\"true\",\"children\":\"↗\"}]]}],[\"$\",\"ul\",null,{\"children\":[[\"$\",\"li\",\"Everything in Operator\",{\"children\":\"Everything in Operator\"}],[\"$\",\"li\",\"50 active team members\",{\"children\":\"50 active team members\"}],[\"$\",\"li\",\"Advanced capacity\",{\"children\":\"Advanced capacity\"}],[\"$\",\"li\",\"Priority support\",{\"children\":\"Priority support\"}]]}]]}]\n9:[\"$\",\"section\",null,{\"className\":\"growth-pack\",\"children\":[[\"$\",\"div\",null,{\"children\":[[\"$\",\"p\",null,{\"className\":\"eyebrow dark\",\"children\":[[\"$\",\"span\",null,{}],\"NEED MORE CAPACITY?\"]}],[\"$\",\"h2\",null,{\"children\":\"Command Growth Pack\"}],[\"$\",\"p\",null,{\"children\":\"Add another 50 active team members and extra capacity without changing the way your office runs.\"}]]}],[\"$\",\"div\",null,{\"className\":\"growth-pack-price\",\"children\":[[\"$\",\"strong\",null,{\"children\":[\"$$99 \",[\"$\",\"small\",null,{\"children\":\"/ month + GST\"}]]}],[\"$\",\"span\",null,{\"children\":[\"Total including GST \",[\"$\",\"b\",null,{\"children\":\"$$113.85 / month\"}]]}]]}]]}]\na:[\"$\",\"section\",null,{\"className\":\"pricing-note\",\"children\":[[\"$\",\"h2\",null,{\"children\":\"Every plan keeps you in control.\"}],[\"$\",\"p\",null,{\"children\":\"Churvox prepares admin for review. It does not send, charge, sync, file, pay, or change important records without your approval.\"}]]}]\nb:[\"$\",\"footer\",null,{\"children\":[[\"$\",\"span\",null,{\"className\":\"brand-lockup\",\"aria-label\":\"Churvox\",\"children\":[[\"$\",\"span\",null,{\"className\":\"brand-mark\",\"aria-hidden\":\"true\",\"children\":[[\"$\",\"i\",null,{}],[\"$\",\"i\",null,{}],[\"$\",\"i\",null,{}]]}],[\"$\",\"span\",null,{\"children\":\"CHURVOX\"}]]}],[\"$\",\"p\",null,{\"children\":\"Job management that works like an office in the background.\"}],[\"$\",\"span\",null,{\"children\":\"© 2026 Churvox\"}]]}]\n")</script><script>self.__VINEXT_RSC_DONE__=true</script>

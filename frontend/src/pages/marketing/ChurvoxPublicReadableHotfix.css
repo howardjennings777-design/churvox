@@ -1,0 +1,183 @@
+/*
+ * CHURVOX_PUBLIC_READABLE_LOGIN_20260724
+ * Keep the public login obvious at every width and remove tiny marketing text.
+ * Scoped to .cp26Site so authenticated owner/worker screens are untouched.
+ */
+
+.cp26Site .cp26BrandWords b {
+  font-size: 20px !important;
+}
+
+.cp26Site .cp26BrandWords small {
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
+
+.cp26Site .cp26NavLinks a,
+.cp26Site .cp26TextLink {
+  min-height: 46px !important;
+  padding: 11px 15px !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.cp26Site .cp26NavActions {
+  flex: 0 0 auto !important;
+  gap: 9px !important;
+}
+
+.cp26Site .cp26NavActions .cp26TextLink {
+  display: inline-flex !important;
+  min-width: 88px !important;
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 2px solid rgba(255, 155, 93, 0.95) !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2) !important;
+}
+
+.cp26Site .cp26NavActions .cp26TextLink:hover,
+.cp26Site .cp26NavActions .cp26TextLink:focus-visible {
+  color: #111713 !important;
+  background: #ffffff !important;
+}
+
+.cp26Site .cp26Button,
+.cp26Site .cp26ButtonSmall {
+  min-height: 48px !important;
+  padding: 12px 17px !important;
+  font-size: 16px !important;
+  line-height: 1.15 !important;
+}
+
+.cp26Site .cp26Eyebrow {
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+}
+
+.cp26Site .cp26HeroCopy > p,
+.cp26Site .cp26PageHero p,
+.cp26Site .cp26SectionHeading p,
+.cp26Site .cp26SplitLead p,
+.cp26Site .cp26Closing p {
+  font-size: clamp(18px, 1.7vw, 22px) !important;
+  line-height: 1.6 !important;
+}
+
+.cp26Site .cp26TrustRail span {
+  font-size: 15px !important;
+  line-height: 1.25 !important;
+}
+
+.cp26Site .cp26TradeChooser > small {
+  font-size: 14px !important;
+}
+
+.cp26Site .cp26TradeChooser button {
+  min-height: 46px !important;
+  padding: 11px 15px !important;
+  font-size: 16px !important;
+}
+
+.cp26Site .cp26ControlRoomHead small {
+  font-size: 13px !important;
+}
+
+.cp26Site .cp26ControlRoomHead p {
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+}
+
+.cp26Site .cp26ControlRoomHead > span,
+.cp26Site .cp26ControlRoomRail span,
+.cp26Site .cp26DecisionNumber {
+  font-size: 14px !important;
+}
+
+.cp26Site .cp26DecisionCopy small {
+  font-size: 13px !important;
+}
+
+.cp26Site .cp26DecisionCopy b {
+  font-size: 17px !important;
+}
+
+.cp26Site .cp26DecisionCopy span {
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+}
+
+.cp26Site .cp26DecisionValue strong {
+  font-size: 15px !important;
+}
+
+.cp26Site .cp26DecisionValue em {
+  font-size: 14px !important;
+}
+
+.cp26Site .cp26ControlRoomFoot {
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+}
+
+.cp26Site .cp26OutcomeGrid article > span,
+.cp26Site .cp26DayFlow b {
+  font-size: 14px !important;
+}
+
+.cp26Site .cp26OutcomeGrid p,
+.cp26Site .cp26DayFlow p,
+.cp26Site .cp26TrustGrid p {
+  font-size: 17px !important;
+  line-height: 1.6 !important;
+}
+
+.cp26Site .cp26FooterLead p,
+.cp26Site .cp26Footer nav a,
+.cp26Site .cp26Footer > small {
+  font-size: 15px !important;
+  line-height: 1.45 !important;
+}
+
+@media (max-width: 820px) {
+  .cp26Site .cp26NavActions .cp26TextLink {
+    display: inline-flex !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .cp26Site .cp26Topbar {
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+  }
+
+  .cp26Site .cp26BrandWords small {
+    display: block !important;
+  }
+
+  .cp26Site .cp26NavActions {
+    grid-row: 2 !important;
+    width: 100% !important;
+  }
+
+  .cp26Site .cp26NavActions > a {
+    flex: 1 1 0 !important;
+  }
+
+  .cp26Site .cp26NavLinks {
+    grid-row: 3 !important;
+  }
+
+  .cp26Site .cp26NavLinks a,
+  .cp26Site .cp26TextLink,
+  .cp26Site .cp26NavActions .cp26Button {
+    min-height: 44px !important;
+    font-size: 15px !important;
+  }
+
+  .cp26Site .cp26HeroCopy > p,
+  .cp26Site .cp26PageHero p,
+  .cp26Site .cp26SectionHeading p,
+  .cp26Site .cp26SplitLead p {
+    font-size: 18px !important;
+  }
+}

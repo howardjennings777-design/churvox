@@ -1,0 +1,91 @@
+name: Churvox Render migration build gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/churvox-render-migration-build-gate.yml'
+      - 'frontend/src/pages/marketing/ExecutiveHomePage.jsx'
+      - 'frontend/src/pages/marketing/ChurvoxLivingOfficeHome.css'
+      - 'frontend/src/pages/marketing/SitesRenderHome.css'
+      - 'frontend/src/churvox-office-lab/OfficeTeamLab.jsx'
+      - 'frontend/src/churvox-fresh/FreshApp.jsx'
+      - 'frontend/src/churvox-product/ProductAppV4.jsx'
+      - 'frontend/src/churvox-product/productAppV4.css'
+      - 'frontend/src/runtime/churvoxLegacyHostExitRuntime.js'
+      - 'frontend/public/index.html'
+      - 'frontend/public/sw.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: churvox-render-migration-build-gate
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Run Render-equivalent frontend build
+        id: build
+        working-directory: frontend
+        shell: bash
+        run: |
+          set +e
+          npm install --include=dev --legacy-peer-deps > /tmp/install.log 2>&1
+          install_code=$?
+          if [ "$install_code" -eq 0 ]; then
+            npm run build > /tmp/build.log 2>&1
+            build_code=$?
+          else
+            build_code=99
+          fi
+          echo "install_code=$install_code" >> "$GITHUB_OUTPUT"
+          echo "build_code=$build_code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Save build result
+        shell: bash
+        run: |
+          mkdir -p docs
+          {
+            echo "UTC=$(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo "COMMIT=$(git rev-parse HEAD)"
+            echo "INSTALL_EXIT=${{ steps.build.outputs.install_code }}"
+            echo "BUILD_EXIT=${{ steps.build.outputs.build_code }}"
+            if [ "${{ steps.build.outputs.install_code }}" = "0" ] && [ "${{ steps.build.outputs.build_code }}" = "0" ]; then
+              echo "RESULT=PASS"
+            else
+              echo "RESULT=FAIL"
+            fi
+            echo "--- INSTALL TAIL ---"
+            tail -80 /tmp/install.log 2>/dev/null || true
+            echo "--- BUILD TAIL ---"
+            tail -160 /tmp/build.log 2>/dev/null || true
+          } > docs/render-migration-build-gate.txt
+          cat docs/render-migration-build-gate.txt
+
+      - name: Commit build result
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/render-migration-build-gate.txt
+          git commit -m 'Record Render migration build gate' || true
+          git push || true
+
+      - name: Fail gate when build failed
+        if: steps.build.outputs.install_code != '0' || steps.build.outputs.build_code != '0'
+        run: exit 1

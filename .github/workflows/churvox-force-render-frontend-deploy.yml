@@ -1,0 +1,149 @@
+name: Churvox force Render frontend deploy
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  deploy:
+    if: startsWith(github.event.issue.title, '[churvox-force-render-frontend-deploy]')
+    runs-on: ubuntu-latest
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_TOKEN: ${{ secrets.RENDER_TOKEN }}
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+      RENDER_FRONTEND_DEPLOY_HOOK_URL: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL }}
+      RENDER_GRASSLEY_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_GRASSLEY_FRONTEND_DEPLOY_HOOK }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Force exact main commit onto grassley frontend
+        shell: bash
+        run: |
+          set +e
+          REPORT="$RUNNER_TEMP/render-force-report.txt"
+          API_KEY="$RENDER_API_KEY"
+          [ -z "$API_KEY" ] && API_KEY="$RENDER_TOKEN"
+          HOOK="$RENDER_GRASSLEY_FRONTEND_DEPLOY_HOOK"
+          [ -z "$HOOK" ] && HOOK="$RENDER_FRONTEND_DEPLOY_HOOK_URL"
+          [ -z "$HOOK" ] && HOOK="$RENDER_FRONTEND_DEPLOY_HOOK"
+          [ -z "$HOOK" ] && HOOK="$RENDER_DEPLOY_HOOK"
+          SHA=$(git rev-parse HEAD)
+
+          {
+            echo "UTC=$(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo "TARGET_COMMIT=$SHA"
+            echo "API_KEY_PRESENT=$([ -n "$API_KEY" ] && echo yes || echo no)"
+            echo "DEPLOY_HOOK_PRESENT=$([ -n "$HOOK" ] && echo yes || echo no)"
+
+            if [ -n "$API_KEY" ]; then
+              code=$(curl -sS -o /tmp/services.json -w '%{http_code}' \
+                -H 'Accept: application/json' \
+                -H "Authorization: Bearer $API_KEY" \
+                'https://api.render.com/v1/services?limit=100')
+              echo "LIST_SERVICES_HTTP=$code"
+              python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/services.json')
+          try: data=json.loads(p.read_text())
+          except Exception as e:
+              print('SERVICES_PARSE_ERROR='+str(e)); raise SystemExit
+          items=data if isinstance(data,list) else data.get('items', data.get('services', [])) if isinstance(data,dict) else []
+          for item in items:
+              service=item.get('service', item) if isinstance(item,dict) else {}
+              print('SERVICE=' + str(service.get('name','')) + '|' + str(service.get('id','')) + '|' + str(service.get('type','')) + '|branch=' + str(service.get('branch','')) + '|repo=' + str(service.get('repo','')) + '|rootDir=' + str(service.get('rootDir','')))
+          target=next(( (x.get('service',x) if isinstance(x,dict) else {}) for x in items if str((x.get('service',x) if isinstance(x,dict) else {}).get('name','')).lower()=='grassley-frontend'), None)
+          if target and target.get('id'):
+              Path('/tmp/service_id').write_text(str(target['id']))
+          PY
+              SERVICE_ID=$(cat /tmp/service_id 2>/dev/null)
+              echo "TARGET_SERVICE_ID=$SERVICE_ID"
+              if [ -n "$SERVICE_ID" ]; then
+                deploy_code=$(curl -sS -o /tmp/deploy.json -w '%{http_code}' \
+                  -X POST \
+                  -H 'Accept: application/json' \
+                  -H 'Content-Type: application/json' \
+                  -H "Authorization: Bearer $API_KEY" \
+                  --data "{\"commitId\":\"$SHA\",\"clearCache\":\"clear\"}" \
+                  "https://api.render.com/v1/services/$SERVICE_ID/deploys")
+                echo "TRIGGER_DEPLOY_HTTP=$deploy_code"
+                python - <<'PY'
+          import json
+          from pathlib import Path
+          try: d=json.loads(Path('/tmp/deploy.json').read_text())
+          except Exception as e:
+              print('DEPLOY_PARSE_ERROR='+str(e)); raise SystemExit
+          deploy=d.get('deploy',d) if isinstance(d,dict) else {}
+          print('DEPLOY_ID='+str(deploy.get('id','')))
+          print('DEPLOY_STATUS='+str(deploy.get('status','')))
+          if deploy.get('id'): Path('/tmp/deploy_id').write_text(str(deploy['id']))
+          PY
+                DEPLOY_ID=$(cat /tmp/deploy_id 2>/dev/null)
+                if [ -n "$DEPLOY_ID" ]; then
+                  for i in $(seq 1 60); do
+                    sleep 10
+                    poll_code=$(curl -sS -o /tmp/poll.json -w '%{http_code}' \
+                      -H 'Accept: application/json' \
+                      -H "Authorization: Bearer $API_KEY" \
+                      "https://api.render.com/v1/services/$SERVICE_ID/deploys/$DEPLOY_ID")
+                    status=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          try: d=json.loads(Path('/tmp/poll.json').read_text())
+          except: print('parse_error'); raise SystemExit
+          x=d.get('deploy',d) if isinstance(d,dict) else {}
+          print(x.get('status','unknown'))
+          PY
+          )
+                    echo "POLL_$i=$poll_code:$status"
+                    case "$status" in live|build_failed|update_failed|canceled|deactivated) break;; esac
+                  done
+                fi
+              fi
+            elif [ -n "$HOOK" ]; then
+              sep='?'; [[ "$HOOK" == *'?'* ]] && sep='&'
+              hook_code=$(curl -sS -o /tmp/hook.txt -w '%{http_code}' -X POST "${HOOK}${sep}ref=${SHA}")
+              echo "DEPLOY_HOOK_HTTP=$hook_code"
+              echo "DEPLOY_HOOK_BODY=$(head -c 500 /tmp/hook.txt | tr '\n' ' ')"
+              sleep 180
+            else
+              echo 'NO_RENDER_CREDENTIAL_FOUND=yes'
+            fi
+
+            echo '--- LIVE PROOF ---'
+            for url in https://grassley-frontend.onrender.com/ https://grassley-frontend.onrender.com/login https://grassley-frontend.onrender.com/dashboard; do
+              curl -sS --max-time 40 -D /tmp/h -o /tmp/b -H 'Cache-Control: no-cache, no-store, max-age=0' "$url?forced=$(date +%s%N)"
+              echo "URL=$url"
+              echo "STATUS=$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END{print code}' /tmp/h)"
+              echo "LAST_MODIFIED=$(grep -i '^last-modified:' /tmp/h | tail -1 | tr -d '\r')"
+              echo "INLINE_REDIRECT=$(grep -Foc 'redirectLegacyRenderHost' /tmp/b 2>/dev/null || true)"
+              echo "WORKER_REGISTRATION=$(grep -Foc 'churvox-legacy-exit-20260724-v3' /tmp/b 2>/dev/null || true)"
+              echo "MAIN_ASSET=$(grep -oE '/static/js/main\.[^"]+\.js' /tmp/b | head -1)"
+            done
+          } > "$REPORT" 2>&1
+          cat "$REPORT"
+          {
+            echo 'REPORT<<EOF'
+            cat "$REPORT"
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+
+      - name: Post deploy result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = process.env.REPORT || 'Missing deploy report';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '```text\n' + report.slice(0, 62000) + '\n```'
+            });

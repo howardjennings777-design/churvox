@@ -1,137 +1,21 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  PublicNav,
-  PublicFooter,
-  Eyebrow,
-  SectionHeading,
-  CommandPreview,
-  coreAreas,
-  serviceTypes,
-} from "./ChurvoxPublicShell";
+import { PublicNav, PublicFooter, serviceTypes } from "./ChurvoxPublicShell";
+import "./ChurvoxPremiumScenes.css";
 
-const DEFAULT_TRIAL_PATH = "/signup?plan=operator";
+const ROOMS = [["01", "Today", "Daily overview", "See today's jobs, anything blocked and what needs attention first."], ["02", "Jobs", "Work management", "Keep schedule, recurring work, scope, notes, proof and price together."], ["03", "Clients", "Client history", "Keep contact details, access notes, preferences and past work in one place."], ["04", "Workers", "Field updates", "Workers receive jobs and return status, notes, photos and time."], ["05", "Money", "Quotes and invoices", "Keep quotes, completed work, extras and invoice drafts connected."], ["06", "Command", "Owner approval", "Approve, edit, park or ask with the evidence and next effect visible."]];
 
-const productPrinciples = [
-  ["Facts live with the record", "Jobs, client history, worker updates, proof and money stay connected instead of being copied between pages."],
-  ["Routine work stays quiet", "Churvox handles repeatable checks behind the scenes and does not turn every normal event into an owner alert."],
-  ["Uncertainty stays visible", "Missing price, time, proof, tax treatment or client detail is shown clearly instead of being guessed."],
-  ["Approval has a real effect", "The owner reviews an editable slip and may create an internal draft, while external sends and charges remain locked."],
-];
+function ProductBuilding() { return <aside className="cpProductCutaway" aria-label="Churvox product overview"><div className="cpProductBrain"><small>Churvox</small><b>Admin centre</b><span>checks the connected business</span></div><div className="cpProductRoom r1"><small>Bookings</small><b>Requests ready</b><p>Timing, recurrence and client needs.</p></div><div className="cpProductRoom r2"><small>Workers</small><b>Jobs moving</b><p>Status, proof and problems.</p></div><div className="cpProductRoom r3"><small>Money</small><b>Value protected</b><p>Quotes, invoices and extras.</p></div><div className="cpProductRoom r4"><small>Owner approval</small><b>Real decisions only</b><p>Approve, edit, park or ask.</p></div><i className="cpProductSignal s1" /><i className="cpProductSignal s2" /><i className="cpProductSignal s3" /><i className="cpProductSignal s4" /></aside>; }
 
-const workerFlow = [
-  ["Receive the job", "Address, notes, timing and the latest office direction appear in one simple field view."],
-  ["Update the work", "Acknowledge, start, pause, complete, add proof and report a problem without operating the full office system."],
-  ["Return a clean record", "The owner gets the update in context, and Churvox prepares the next safe admin step."],
-];
+export default function ExecutiveFeaturesPage() { return <main className="cp26Site cpWorld cvPremiumPage" data-room="product" data-version="CHURVOX_PLAIN_PRODUCT_20260726"><PublicNav active="/product" />
+  <section className="cvSceneHero"><div className="cvSceneHeroCopy"><span className="cvSceneKicker">Product</span><h1>Every part of the job. <em>Connected.</em></h1><p>Churvox brings jobs, clients, workers, messages, quotes and invoices into one operating system without repeating the same generic dashboard everywhere.</p><div className="cvSceneActions"><Link className="cp26Button" to="/demo">View demo</Link><Link className="cp26Button cp26ButtonGhost" to="/signup?plan=operator">Start free trial</Link></div><div className="cvSceneFacts"><span>Connected records</span><span>Worker handover</span><span>Owner approval</span></div></div><ProductBuilding /></section>
 
-const commandRules = [
-  ["Approve", "Move a correct prepared draft into the internal Churvox record."],
-  ["Edit", "Correct the detail before approving anything."],
-  ["Park", "Hold uncertain work without losing the evidence or history."],
-  ["Ask", "Send the issue back for the missing fact rather than guessing."],
-];
+  <section className="cvProductSpine"><div className="cvProductSticky"><div className="cvSceneIntro"><small>Main areas</small><h2>Different jobs. One connected system.</h2><p>Each area is built for a clear purpose, while the client, job, worker and money records stay connected.</p></div></div><div className="cvRoomSpine">{ROOMS.map(([n, title, sub, text]) => <article className="cvRoomEntry" data-room={n} key={n}><small>{sub}</small><h3>{title}</h3><p>{text}</p></article>)}</div></section>
 
-export default function ExecutiveFeaturesPage() {
-  return (
-    <main className="cp26Site" data-version="CHURVOX_PUBLIC_PRODUCT_20260712_PAID_LAUNCH_CTAS">
-      <PublicNav active="/product" />
+  <section className="cvCommandStage"><div className="cvSceneIntro"><small>Command · owner approval</small><h2>Churvox prepares. The owner decides.</h2><p>Every decision explains what changed, what records were checked, what is still missing and what happens next.</p><strong>Nothing important disappears into automation.</strong><ul><li>Messages remain editable.</li><li>Money actions stay deliberate.</li><li>Accounting sync stays owner-controlled.</li><li>Every approval leaves a history.</li></ul></div><div className="cvCommandConsole"><header><span>Decision waiting / extra work</span><b>4 records checked</b></header><div className="cvCommandBody"><div className="cvCommandQueue"><button className="active" type="button"><small>Quality</small><b>Extra work found</b></button><button type="button"><small>Client</small><b>Follow-up due</b></button><button type="button"><small>Money</small><b>Invoice check</b></button></div><div className="cvDecisionPane"><small>Recommended next step</small><h3>Add the extra work. Hold the invoice.</h3><p>The extra work appears in worker time, notes and photos but is not yet included in the quote or invoice.</p><div className="cvDecisionFacts"><div><span>Value at risk</span><b>$680</b></div><div><span>Next safe step</span><b>Variation</b></div></div><div className="cvDecisionActions"><span>Approve</span><span>Edit amount</span><span>Park</span><span>Ask</span></div></div></div></div></section>
 
-      <section className="cp26PageHero">
-        <div>
-          <Eyebrow>The product</Eyebrow>
-          <h1>The admin engine between the work and the owner.</h1>
-          <p>Churvox keeps the facts on purpose-built work pages, prepares the routine admin behind the scenes and puts only genuine decisions into Command.</p>
-          <div className="cp26HeroActions">
-            <Link className="cp26Button" to="/demo">Open product demo</Link>
-            <Link className="cp26Button cp26ButtonGhost" to={DEFAULT_TRIAL_PATH}>Start free trial</Link>
-          </div>
-        </div>
-        <div className="cp26HeroPanel">
-          <small>Product rule</small>
-          <b>Work pages hold facts. Command holds decisions.</b>
-          <span>That separation keeps the system useful for owners, office staff and workers without turning every page into another dashboard.</span>
-        </div>
-      </section>
+  <section className="cvFieldStage"><div className="cvFieldDevice"><div className="cvFieldScreen"><header><span>9:41</span><b>Churvox Worker</b><span>●</span></header><div className="cvFieldJob"><small>Assigned · ready</small><h3>Riverside tidy</h3><p>Client access, scope and latest owner direction are attached.</p></div><div className="cvFieldSteps"><span>Acknowledge</span><span>Start work</span><span>Add proof</span><span>Complete</span></div></div></div><div className="cvFieldCopy"><div className="cvSceneIntro"><small>Worker app</small><h2>Workers see only what they need.</h2><p>Workers receive the job, update what happened and return proof. Churvox connects that handover to the rest of the business.</p></div><div className="cvHandoffLine"><h3>One update can move the whole job forward.</h3><p>A completion note can prepare an invoice, surface extra work, update a client promise and create an owner decision without retyping.</p></div></div></section>
 
-      <section className="cp26Section">
-        <CommandPreview />
-      </section>
+  <section className="cvIndustryFrequency"><div className="cvSceneIntro"><small>Built for service businesses</small><h2>Use wording that fits your work.</h2><p>Jobs, visits, appointments, cleaners, stylists and technicians can use language that matches the business.</p></div><div className="cvFrequencyTrack">{serviceTypes.map((type, index) => <Link key={type} to={`/demo?industry=${encodeURIComponent(type.toLowerCase().replace(/[^a-z0-9]+/g, "-"))}`}><small>Example {String(index + 1).padStart(2, "0")}</small><b>{type}</b><span>View demo →</span></Link>)}</div></section>
 
-      <section className="cp26Section">
-        <SectionHeading
-          eyebrow="Purpose-built workspace"
-          title="Every major page has its own operating job."
-          text="The layout changes with the work instead of repeating the same template across the product."
-        />
-        <div className="cp26AreaGrid">
-          {coreAreas.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-        </div>
-      </section>
-
-      <section className="cp26Section cp26SectionDark">
-        <SectionHeading
-          eyebrow="Product discipline"
-          title="Strong logic before clever-looking automation."
-          text="Churvox is designed to be cautious with money, dates, status, worker time, client memory and accounting."
-        />
-        <div className="cp26FeatureGrid">
-          {productPrinciples.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-        </div>
-      </section>
-
-      <section className="cp26Section">
-        <div className="cp26Split">
-          <div className="cp26SplitLead">
-            <Eyebrow>Worker side</Eyebrow>
-            <h2>Simple enough to use in the field.</h2>
-            <p>The worker experience is deliberately smaller than the owner app. Workers see the work, update it and send clean information back.</p>
-          </div>
-          <div className="cp26FlowGrid">
-            {workerFlow.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="cp26Section">
-        <div className="cp26Split">
-          <div className="cp26SplitLead">
-            <Eyebrow>Command</Eyebrow>
-            <h2>One decision desk with four clear choices.</h2>
-            <p>The owner can correct the prepared work without hunting through the original record or letting uncertain details slip through.</p>
-          </div>
-          <div className="cp26AreaGrid">
-            {commandRules.map(([title, text]) => <article key={title}><b>{title}</b><span>{text}</span></article>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="cp26Section">
-        <div className="cp26Split">
-          <div className="cp26SplitLead">
-            <Eyebrow>Multi-trade by design</Eyebrow>
-            <h2>The same strong system, using the business’s language.</h2>
-            <p>Churvox can support jobs, appointments, recurring visits and mobile services without forcing every industry into the same wording.</p>
-          </div>
-          <div className="cp26IndustryGrid">
-            {serviceTypes.map((type) => <span key={type}>{type}</span>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="cp26Closing">
-        <div>
-          <Eyebrow light>See the product working</Eyebrow>
-          <h2>Open the demo before making a decision.</h2>
-          <p>See the owner flow, the Command desk and the purpose-built work pages without signing in.</p>
-        </div>
-        <div className="cp26ClosingActions">
-          <Link className="cp26Button" to="/demo">Open demo</Link>
-          <Link className="cp26Button cp26ButtonGhost" to="/pricing">View pricing</Link>
-        </div>
-      </section>
-
-      <PublicFooter />
-    </main>
-  );
-}
+  <section className="cvSceneClose"><div><small>Next · product demo</small><h2>See how one job moves through Churvox.</h2><p>The demo uses clearly labelled sample information. Nothing is sent or added to an account.</p></div><div><Link className="cp26Button" to="/demo">View demo</Link><Link className="cp26Button cp26ButtonGhost" to="/pricing">View pricing</Link></div></section><PublicFooter /></main>; }

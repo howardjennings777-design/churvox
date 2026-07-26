@@ -1,0 +1,1 @@
+Migration requested 2026-07-24: move the approved new Churvox experience from ChatGPT Sites onto the existing grassley-frontend Render service while preserving the Render backend and owner-approval product rules.

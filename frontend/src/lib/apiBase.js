@@ -80,29 +80,28 @@ function configuredBackend() {
   );
 }
 
-function isChurvoxHost(host = "") {
-  const cleanHost = String(host || "").toLowerCase();
-  return cleanHost === "www.churvox.com" || cleanHost === "churvox.com";
-}
-
-function browserOrigin() {
-  if (typeof window === "undefined") return "";
-  return clean(window.location?.origin || "");
+function isFrontendProxyHost(host = "") {
+  const cleanHost = String(host || "").trim().toLowerCase();
+  return (
+    cleanHost === "www.churvox.com" ||
+    cleanHost === "churvox.com" ||
+    cleanHost === "localhost" ||
+    cleanHost === "127.0.0.1" ||
+    cleanHost === "0.0.0.0" ||
+    cleanHost === "::1"
+  );
 }
 
 function resolveApiBase() {
-  const configured = configuredBackend();
-
-  // Production uses the frontend's same-origin /api proxy. Return the browser
-  // origin rather than an empty string so live-data modules can distinguish a
-  // working same-origin bridge from a genuinely unavailable API host.
-  if (typeof window !== "undefined" && isChurvoxHost(window.location.hostname)) {
-    return browserOrigin();
+  // Production and local branch previews both use the frontend's same-origin
+  // /api proxy. Return the concrete origin rather than an empty string so
+  // live-data loaders can distinguish a valid same-origin backend from a
+  // missing backend while auth cookies remain first-party.
+  if (typeof window !== "undefined" && isFrontendProxyHost(window.location.hostname)) {
+    return clean(window.location.origin);
   }
 
-  // Private previews use an explicitly configured backend when supplied.
-  // Otherwise they use the preview server's own same-origin /api bridge.
-  return configured || browserOrigin();
+  return configuredBackend() || "";
 }
 
 installOutreachSimpleGetGuard();

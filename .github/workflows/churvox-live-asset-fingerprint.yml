@@ -1,0 +1,150 @@
+name: Churvox Live Asset Fingerprint
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  fingerprint:
+    if: startsWith(github.event.issue.title, '[churvox-live-asset-fingerprint]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Inspect deployed HTML, manifest and JavaScript
+        shell: bash
+        run: |
+          mkdir -p /tmp/churvox-live-assets
+          python - <<'PY'
+          import json, re, urllib.request
+          from urllib.parse import urljoin
+
+          BASE = 'https://www.churvox.com/'
+          OUT = '/tmp/churvox-live-assets/diagnostic.json'
+          markers = [
+              'owner-readable-logout-20260724-v4',
+              'churvox-owner-readable-logout-style',
+              'churvox-owner-fallback-logout',
+              'cvEmergencyLogoutPinned',
+              'cvOwnerReady',
+              'churvox-auth-401-storm-repair-20260713b',
+              'churvox-owner-visual-repair-20260713f',
+          ]
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers={'User-Agent': 'Churvox-live-fingerprint/1.0', 'Cache-Control': 'no-cache'})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  data = response.read()
+                  return {
+                      'url': response.geturl(),
+                      'status': response.status,
+                      'headers': dict(response.headers.items()),
+                      'data': data,
+                  }
+
+          report = {'base': BASE, 'markers': markers, 'errors': []}
+          try:
+              home = fetch(BASE + '?assetFingerprint=20260724')
+              html = home['data'].decode('utf-8', 'replace')
+              report['home'] = {
+                  'url': home['url'],
+                  'status': home['status'],
+                  'headers': home['headers'],
+                  'length': len(home['data']),
+                  'snippet': html[:2500],
+                  'scripts': re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I),
+                  'styles': re.findall(r'<link[^>]+href=["\']([^"\']+\.css[^"\']*)', html, re.I),
+              }
+          except Exception as exc:
+              report['errors'].append(f'home: {exc!r}')
+              html = ''
+
+          manifest = {}
+          try:
+              manifest_response = fetch(urljoin(BASE, 'asset-manifest.json?assetFingerprint=20260724'))
+              manifest_text = manifest_response['data'].decode('utf-8', 'replace')
+              manifest = json.loads(manifest_text)
+              report['manifest'] = {
+                  'url': manifest_response['url'],
+                  'status': manifest_response['status'],
+                  'headers': manifest_response['headers'],
+                  'length': len(manifest_response['data']),
+                  'content': manifest,
+              }
+          except Exception as exc:
+              report['errors'].append(f'manifest: {exc!r}')
+
+          candidates = []
+          files = manifest.get('files', {}) if isinstance(manifest, dict) else {}
+          for value in files.values():
+              if isinstance(value, str) and '.js' in value:
+                  candidates.append(urljoin(BASE, value))
+          entrypoints = manifest.get('entrypoints', []) if isinstance(manifest, dict) else []
+          for value in entrypoints:
+              if isinstance(value, str) and '.js' in value:
+                  candidates.append(urljoin(BASE, value))
+          for value in report.get('home', {}).get('scripts', []):
+              candidates.append(urljoin(BASE, value))
+
+          seen = set()
+          bundles = []
+          for url in candidates:
+              if url in seen:
+                  continue
+              seen.add(url)
+              try:
+                  response = fetch(url + ('&' if '?' in url else '?') + 'assetFingerprint=20260724')
+                  text = response['data'].decode('utf-8', 'replace')
+                  hits = [marker for marker in markers if marker in text]
+                  bundles.append({
+                      'url': response['url'],
+                      'status': response['status'],
+                      'headers': response['headers'],
+                      'length': len(response['data']),
+                      'marker_hits': hits,
+                  })
+              except Exception as exc:
+                  bundles.append({'url': url, 'error': repr(exc), 'marker_hits': []})
+          report['bundles'] = bundles
+          report['all_marker_hits'] = sorted({hit for bundle in bundles for hit in bundle.get('marker_hits', [])})
+          report['new_fix_present'] = 'owner-readable-logout-20260724-v4' in report['all_marker_hits']
+
+          with open(OUT, 'w', encoding='utf-8') as handle:
+              json.dump(report, handle, indent=2)
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Upload fingerprint evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-live-asset-fingerprint
+          path: /tmp/churvox-live-assets
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Post fingerprint result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '/tmp/churvox-live-assets/diagnostic.json';
+            const diagnostic = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
+            let summary = 'No live asset diagnostic was produced.';
+            if (diagnostic) {
+              const parsed = JSON.parse(diagnostic);
+              summary = parsed.new_fix_present
+                ? 'PASS: the live JavaScript bundles contain the new logout/readability repair.'
+                : 'FAIL: the live JavaScript bundles do not contain the new logout/readability repair.';
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${summary}\n\n${diagnostic ? `Diagnostic:\n\`\`\`json\n${diagnostic.slice(0, 15000)}\n\`\`\`` : ''}\n\nWorkflow run: \`${context.runId}\``,
+            });

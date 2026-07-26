@@ -1,0 +1,86 @@
+name: Churvox force Sites cutover
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  cutover:
+    if: startsWith(github.event.issue.title, '[churvox-force-sites-cutover]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify finished Sites routes
+        shell: bash
+        run: |
+          set -e
+          for url in \
+            https://churvox.howardjennings77.chatgpt.site/ \
+            https://churvox.howardjennings77.chatgpt.site/login \
+            https://churvox.howardjennings77.chatgpt.site/dashboard; do
+            code=$(curl -sS -L --max-time 45 -o /dev/null -w '%{http_code}' "$url")
+            test "$code" = "200"
+          done
+
+      - name: Point every legacy build route directly at Sites
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          sites_origin = 'https://churvox.howardjennings77.chatgpt.site'
+
+          index = Path('frontend/public/index.html')
+          text = index.read_text()
+          old = '''    <script>\n      (function redirectLegacyRenderHost() {\n        if (window.location.hostname !== "grassley-frontend.onrender.com") return;\n        var target = new URL(window.location.href);\n        target.protocol = "https:";\n        target.host = "www.churvox.com";\n        window.location.replace(target.toString());\n      })();\n    </script>'''
+          new = f'''    <script>\n      (function exitLegacyChurvoxBuild() {{\n        var legacyHosts = ["grassley-frontend.onrender.com", "www.churvox.com", "churvox.com"];\n        if (legacyHosts.indexOf(window.location.hostname) === -1) return;\n        var target = new URL(window.location.pathname + window.location.search + window.location.hash, "{sites_origin}");\n        target.searchParams.set("fromLegacyBuild", "1");\n        window.location.replace(target.toString());\n      }})();\n    </script>'''
+          if old not in text:
+              raise SystemExit('Expected legacy index redirect block not found')
+          index.write_text(text.replace(old, new, 1))
+
+          sw = Path('frontend/public/sw.js')
+          sw.write_text(f'''/* Churvox forced Sites cutover worker — 20260724-v4. */\nconst LEGACY_HOSTS = new Set(['grassley-frontend.onrender.com', 'www.churvox.com', 'churvox.com']);\nconst SITES_ORIGIN = '{sites_origin}';\n\nfunction sitesUrl(input) {{\n  const source = new URL(input);\n  const target = new URL(source.pathname + source.search + source.hash, SITES_ORIGIN);\n  target.searchParams.set('fromLegacyBuild', '1');\n  return target.toString();\n}}\n\nself.addEventListener('install', () => self.skipWaiting());\n\nself.addEventListener('activate', (event) => {{\n  event.waitUntil((async () => {{\n    try {{\n      const keys = await caches.keys();\n      await Promise.all(keys.map((key) => caches.delete(key)));\n    }} catch (_) {{}}\n    try {{ await self.clients.claim(); }} catch (_) {{}}\n    try {{\n      const windows = await self.clients.matchAll({{ type: 'window', includeUncontrolled: true }});\n      for (const client of windows) {{\n        const url = new URL(client.url);\n        if (LEGACY_HOSTS.has(url.hostname)) await client.navigate(sitesUrl(url.toString()));\n      }}\n    }} catch (_) {{}}\n  }})());\n}});\n\nself.addEventListener('fetch', (event) => {{\n  try {{\n    const url = new URL(event.request.url);\n    if (LEGACY_HOSTS.has(url.hostname) && event.request.mode === 'navigate') {{\n      event.respondWith(Response.redirect(sitesUrl(url.toString()), 302));\n    }}\n  }} catch (_) {{}}\n}});\n''')
+
+          runtime = Path('frontend/src/runtime/churvoxLegacyHostExitRuntime.js')
+          runtime.write_text(f'''const LEGACY_HOSTS = new Set(['grassley-frontend.onrender.com', 'www.churvox.com', 'churvox.com']);\nconst SITES_ORIGIN = '{sites_origin}';\n\nexport function exitLegacyRenderHost() {{\n  if (typeof window === 'undefined') return false;\n  if (!LEGACY_HOSTS.has(window.location.hostname)) return false;\n\n  const target = new URL(window.location.pathname + window.location.search + window.location.hash, SITES_ORIGIN);\n  target.searchParams.set('fromLegacyBuild', '1');\n  window.location.replace(target.toString());\n  return true;\n}}\n\nexitLegacyRenderHost();\n''')
+
+          entry = Path('frontend/src/index.js')
+          entry_text = entry.read_text()
+          import_line = "import './runtime/churvoxLegacyHostExitRuntime';\n"
+          anchor = "import './runtime/churvoxProtectedFetchAuthGuardRuntime';\n"
+          if import_line not in entry_text:
+              if anchor not in entry_text:
+                  raise SystemExit('Expected index.js import anchor not found')
+              entry.write_text(entry_text.replace(anchor, anchor + import_line, 1))
+
+          marker = Path('frontend/public/render-deploy-marker.txt')
+          marker.write_text('''Render frontend deploy marker\nTriggered: 2026-07-24T07:43:00Z\nPurpose: force every legacy Render or stale custom-domain request directly to the finished Churvox Sites build.\nSites target: https://churvox.howardjennings77.chatgpt.site\n''')
+          PY
+
+      - name: Commit forced cutover
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/public/index.html frontend/public/sw.js frontend/src/runtime/churvoxLegacyHostExitRuntime.js frontend/src/index.js frontend/public/render-deploy-marker.txt
+          git commit -m 'Force old Churvox build directly onto Sites'
+          git push
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report cutover commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Forced Sites cutover committed: \`${process.env.COMMIT}\`. The old Render build and any stale www/apex copies now redirect directly to the finished Sites URL while preserving the route.`
+            });

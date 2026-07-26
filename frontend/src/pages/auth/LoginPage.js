@@ -21,12 +21,6 @@ const SAFE_RETURN_PATHS = new Set([
   "/delete-account", "/support", "/refunds-cancellations", "/security", "/contact",
 ]);
 
-const loginHighlights = [
-  ["Command", "Owner decisions first", "Prepared admin waits for approval before anything moves."],
-  ["Workers", "Simple phone updates", "Field notes and proof come back to the owner."],
-  ["Money", "No blind charges", "Invoices, payment links and sync stay owner-controlled."],
-];
-
 function ChurvoxAppLogo({ compact = false }) {
   return <div className={`cvAppLogoMark cvIntegratedAuthLogo ${compact ? "compact" : ""}`} aria-label="Churvox logo"><img src={BRAND_ICON} alt="Churvox" /></div>;
 }
@@ -136,7 +130,7 @@ function friendlyLoginError(error) {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, checkAuth, logout } = useAuth();
+  const { login, checkAuth, logout, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -151,7 +145,7 @@ export default function LoginPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (submitting) return;
+    if (submitting || authLoading) return;
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !password) {
       setError("Enter your email and password.");
@@ -199,37 +193,53 @@ export default function LoginPage() {
     }
   }
 
+  const preparing = authLoading && !submitting;
+
   return (
-    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_LOGIN_PAID_LAUNCH_CONFIRMED_20260712">
+    <main className={`cvPublicAuth cvRealAppLogin cvChurvoxLogin cvAccessChamber ${appMode ? "cvLoginAppOnly" : ""}`} data-version="CHURVOX_ACCESS_CHAMBER_20260724_V2">
       {!appMode ? <Nav /> : null}
-      <section className="cvChurvoxLoginShell">
+      <section className="cvAccessScene">
         {!appMode ? (
-          <aside className="cvLoginControlPanel" aria-label="Churvox sign in overview">
-            <div className="cvLoginControlBrand"><ChurvoxAppLogo /><div><span>Churvox control</span><h2>Admin prepared. Owner approved.</h2></div></div>
-            <p className="cvLoginControlText">Sign in to the workspace where jobs, workers, invoices, messages and payment requests come back to Command before anything real happens.</p>
-            <div className="cvLoginCommandPreview" aria-label="Example Command preview">
-              <div><span>Example Command queue</span><b>Owner decisions stay together</b><small>Invoice extra · worker update · client follow-up</small></div>
-              <div><span>Example money check</span><b>Payment request prepared</b><small>Owner approval required before a customer sees it</small></div>
-              <div><span>Example worker update</span><b>Proof returned</b><small>Sent back to Command for owner review</small></div>
+          <aside className="cvAccessSignal" aria-label="Churvox secure access routing">
+            <div className="cvAccessSignalBrand">
+              <ChurvoxAppLogo />
+              <div><span>Churvox access layer</span><h2>One login.<br />The right room opens.</h2></div>
             </div>
-            <div className="cvLoginStats"><span><b>0</b><small>auto-sent</small></span><span><b>0</b><small>auto-charged</small></span><span><b>Owner</b><small>approves</small></span></div>
+
+            <div className="cvAccessOrbit" aria-hidden="true">
+              <i /><i /><i />
+              <div><b>CV</b><small>identity route</small></div>
+            </div>
+
+            <div className="cvAccessRouteList">
+              <article><em>01</em><div><b>Owner recognised</b><small>Command and the living office open.</small></div><span>COMMAND</span></article>
+              <article><em>02</em><div><b>Worker recognised</b><small>Today’s jobs and field tools open.</small></div><span>FIELD</span></article>
+              <article><em>03</em><div><b>Access checked</b><small>Plans, tester access and account rules remain intact.</small></div><span>GUARD</span></article>
+            </div>
+
+            <div className="cvAccessSafety"><i /><p><b>Login never performs business actions.</b><span>It verifies the person and opens the correct workspace. Nothing sends, charges or changes here.</span></p></div>
           </aside>
         ) : null}
 
-        <form className="cvPublicAuthCard cvRealAppAuthCard cvChurvoxLoginCard" onSubmit={handleSubmit} noValidate>
-          <div className="cvLoginMiniBrand"><ChurvoxAppLogo compact /><div><b>Churvox</b><small>{workerAccess ? "Worker job access" : appMode ? "Worker and owner sign in" : "Owner approval desk"}</small></div></div>
-          <p className="cvPublicAuthKicker">Welcome back</p>
-          <h1>{workerAccess ? "Worker sign in." : appMode ? "Sign in." : "Open Command."}</h1>
-          <p className="cvPublicAuthIntro">{workerAccess ? "Open today’s work, add notes, and send updates back to the owner." : appMode ? "Use your Churvox login. Workers open the field app. Owners open Command." : "Check the admin Churvox prepared, approve what is ready, and keep the business moving."}</p>
-          <div className="cvLoginMiniFlow">{loginHighlights.map(([title, label, copy]) => <article key={title}><span>{title}</span><b>{label}</b><small>{copy}</small></article>)}</div>
+        <form className="cvPublicAuthCard cvRealAppAuthCard cvChurvoxLoginCard cvAccessConsole" onSubmit={handleSubmit} noValidate>
+          <div className="cvAccessConsoleTop">
+            <div className="cvLoginMiniBrand"><ChurvoxAppLogo compact /><div><b>Churvox</b><small>{workerAccess ? "Worker access" : "Secure office entry"}</small></div></div>
+            <span><i />Live</span>
+          </div>
+
+          <p className="cvPublicAuthKicker">Identity check</p>
+          <h1>{workerAccess ? "Open today’s work." : appMode ? "Enter Churvox." : "Open the right room."}</h1>
+          <p className="cvPublicAuthIntro">{workerAccess ? "Sign in and Churvox will take you straight to today’s field work." : "Your account decides what opens next—Command for owners, the field view for workers, and the correct access gate for everyone else."}</p>
+          <div className="cvAccessStatus"><span>SESSION</span><b>{submitting ? "Checking identity" : preparing ? "Preparing secure entry" : "Waiting for identity"}</b><i className={submitting || preparing ? "working" : ""} /></div>
 
           {verifiedNotice && !error ? <div className="cvPublicAuthSuccess" role="status">Email verified. Sign in to continue.</div> : null}
           {error ? <div className="cvPublicAuthError" role="alert" aria-live="assertive">{error}</div> : null}
 
           <label>Email<input className="cvPublicNativeInput" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@business.co.nz" autoComplete="email" autoCapitalize="none" spellCheck="false" inputMode="email" autoFocus disabled={submitting} /></label>
           <label>Password<div className="password-row"><input className="cvPublicNativeInput" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your password" autoComplete="current-password" disabled={submitting} /><button className="cvPublicAuthGhost" type="button" aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)} disabled={submitting}>{showPassword ? "Hide" : "Show"}</button></div></label>
-          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting}>{submitting ? "Signing in..." : "Sign in"}</button>
+          <button className="cvPublicAuthSubmit" type="submit" disabled={submitting || authLoading}>{submitting ? "Checking access…" : preparing ? "Preparing secure entry…" : "Open Churvox"}</button>
           <p className="cvPublicAuthBottom">{workerAccess ? <Link to="/">Back to website</Link> : <Link to="/forgot-password">Forgot password?</Link>}{!workerAccess ? <><span> / </span><Link to="/signup?plan=operator">Start trial</Link></> : null}</p>
+          <div className="cvAccessConsoleFoot"><span>Encrypted session</span><span>Role-aware entry</span><span>No hidden action</span></div>
         </form>
       </section>
     </main>

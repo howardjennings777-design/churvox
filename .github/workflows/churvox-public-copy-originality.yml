@@ -1,0 +1,39 @@
+name: Churvox Public Copy Originality
+
+on:
+  pull_request:
+    paths:
+      - "frontend/public/index.html"
+      - "frontend/src/pages/marketing/**"
+      - "frontend/scripts/generate-public-search-pages.cjs"
+      - "scripts/churvox-public-copy-originality-contract.cjs"
+      - ".github/workflows/churvox-public-copy-originality.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/public/index.html"
+      - "frontend/src/pages/marketing/**"
+      - "frontend/scripts/generate-public-search-pages.cjs"
+      - "scripts/churvox-public-copy-originality-contract.cjs"
+      - ".github/workflows/churvox-public-copy-originality.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-copy-originality:
+    name: Original Churvox public copy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run Churvox public-copy originality contract
+        run: node scripts/churvox-public-copy-originality-contract.cjs

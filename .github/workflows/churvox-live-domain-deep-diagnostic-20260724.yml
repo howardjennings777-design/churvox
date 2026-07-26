@@ -1,0 +1,106 @@
+name: Churvox live domain deep diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/churvox-live-domain-deep-diagnostic-20260724.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Diagnose DNS and live responses
+        shell: bash
+        run: |
+          set +e
+          OUT="$RUNNER_TEMP/churvox-domain-diagnostic.txt"
+          {
+            echo "# Churvox live-domain deep diagnostic"
+            echo
+            echo "UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            echo "## DNS — system resolver"
+            for host in churvox.com www.churvox.com; do
+              echo
+              echo "### $host"
+              echo "A:"
+              dig +short "$host" A
+              echo "AAAA:"
+              dig +short "$host" AAAA
+              echo "CNAME:"
+              dig +short "$host" CNAME
+            done
+            echo
+            echo "## DNS — Google 8.8.8.8"
+            for host in churvox.com www.churvox.com; do
+              echo
+              echo "### $host"
+              dig @8.8.8.8 +short "$host" A
+              dig @8.8.8.8 +short "$host" CNAME
+            done
+            echo
+            echo "## DNS — Cloudflare 1.1.1.1"
+            for host in churvox.com www.churvox.com; do
+              echo
+              echo "### $host"
+              dig @1.1.1.1 +short "$host" A
+              dig @1.1.1.1 +short "$host" CNAME
+            done
+
+            for url in \
+              "https://churvox.com/?deepcheck=$(date +%s)" \
+              "https://www.churvox.com/?deepcheck=$(date +%s)" \
+              "https://www.churvox.com/dashboard?deepcheck=$(date +%s)" \
+              "https://www.churvox.com/login?deepcheck=$(date +%s)" \
+              "https://grassley-frontend.onrender.com/?deepcheck=$(date +%s)"; do
+              echo
+              echo "## $url"
+              HDR="$RUNNER_TEMP/headers.txt"
+              BODY="$RUNNER_TEMP/body.txt"
+              curl -sS -L --max-time 40 -D "$HDR" -o "$BODY" -H 'Cache-Control: no-cache, no-store, max-age=0' -H 'Pragma: no-cache' "$url"
+              echo "### Final URL / status"
+              curl -sS -L --max-time 40 -o /dev/null -w 'final_url=%{url_effective}\nhttp_code=%{http_code}\nremote_ip=%{remote_ip}\ncontent_type=%{content_type}\n' -H 'Cache-Control: no-cache, no-store, max-age=0' "$url"
+              echo "### Headers"
+              sed -n '1,100p' "$HDR"
+              echo "### HTML title"
+              grep -ioE '<title>[^<]*</title>' "$BODY" | head -5
+              echo "### Script assets"
+              grep -oE '(src|href)="[^"]+\.(js|css)[^"]*"' "$BODY" | head -40
+              echo "### Marker hits"
+              for marker in 'custom-domains.chatgpt.site' 'codex-preview' 'workspace-connect' 'Churvox Workspace' '/assets/index-' '/static/js/' 'cvOwnerReady' 'owner-readable-logout-20260724-v4' 'churvox-owner-fallback-logout' 'Churvox does the admin. You approve.' 'Run the job,' 'CHURVOX_RENDER_HOSTED_20260724'; do
+                count=$(grep -Foc "$marker" "$BODY" 2>/dev/null || true)
+                echo "$marker = $count"
+              done
+              echo "### Body first 1200 chars"
+              head -c 1200 "$BODY"
+              echo
+            done
+          } > "$OUT" 2>&1
+          cat "$OUT"
+          {
+            echo 'DIAG<<EOF'
+            cat "$OUT"
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+
+      - name: Post diagnostic to issue 757
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const text = process.env.DIAG || 'Diagnostic output missing';
+            const limit = 62000;
+            const body = '```text\n' + text.slice(0, limit) + '\n```';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 757,
+              body
+            });
+
+# Live recheck requested after Render verified and certificate issued: 2026-07-24T08:49Z

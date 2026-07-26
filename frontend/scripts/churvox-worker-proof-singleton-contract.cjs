@@ -2,6 +2,10 @@
 const fs = require('fs');
 const path = require('path');
 
+// The premium owner studio is generated from a locked staged payload before
+// any release audit or React compilation can begin.
+require('./materialize-premium-studio.cjs');
+
 // This contract is the first command in the existing production build.
 // Keep the release checks here so Render and GitHub cannot build a bundle
 // without first proving the locked product rules and writing a public fingerprint.

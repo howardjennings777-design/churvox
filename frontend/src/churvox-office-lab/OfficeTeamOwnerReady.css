@@ -201,3 +201,59 @@
     justify-self: start;
   }
 }
+
+
+/* owner-workspace-readable-logout-20260724-v5 */
+html.churvoxOwnerReadableMode body {
+  font-size: 18px !important;
+  line-height: 1.55 !important;
+}
+
+html.churvoxOwnerReadableMode body :where(.cvSiteScreen, .cvSiteStatus, .cvSitePanel, .cvSiteCard, .cvCommandSlip) :where(p, li, dd, dt, label, td, th) {
+  font-size: 17px !important;
+  line-height: 1.55 !important;
+}
+
+html.churvoxOwnerReadableMode body :where(.cvSiteScreen, .cvSiteStatus, .cvSitePanel, .cvSiteCard, .cvCommandSlip) small,
+html.churvoxOwnerReadableMode body :where(.cvSiteScreen, .cvSiteStatus, .cvSitePanel, .cvSiteCard, .cvCommandSlip) span {
+  font-size: max(15px, .94rem) !important;
+  line-height: 1.45 !important;
+}
+
+html.churvoxOwnerReadableMode body :where(button, a, input, textarea, select) {
+  font-size: 16px !important;
+}
+
+html.churvoxOwnerReadableMode .cvSiteTopbar {
+  overflow: visible !important;
+  padding-right: 132px !important;
+}
+
+html.churvoxOwnerReadableMode :where(.cvSiteLogout, .cvEmergencyLogoutPinned),
+html.churvoxOwnerReadableMode #churvox-owner-fallback-logout {
+  position: fixed !important;
+  top: max(12px, env(safe-area-inset-top, 0px)) !important;
+  right: 12px !important;
+  z-index: 2147483000 !important;
+  display: inline-flex !important;
+  visibility: visible !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 110px !important;
+  min-width: 110px !important;
+  max-width: 110px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 15px !important;
+  border: 2px solid #f97316 !important;
+  border-radius: 999px !important;
+  color: #fff !important;
+  background: #17120e !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.34) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}

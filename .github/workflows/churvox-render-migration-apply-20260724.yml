@@ -1,0 +1,180 @@
+name: Churvox Render migration apply
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  apply:
+    if: startsWith(github.event.issue.title, '[churvox-render-migration-apply]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Switch owner workspace back to the full Fresh app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('frontend/src/App.js')
+          s=p.read_text()
+          old='const OwnerOfficeApp = () => <OfficeTeamLab appMode="owner" />;'
+          new='const OwnerOfficeApp = () => <FreshApp />;'
+          if old not in s:
+              raise SystemExit('OwnerOfficeApp anchor not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+
+      - name: Replace public homepage with Sites-matched Render homepage
+        run: |
+          cat > frontend/src/pages/marketing/ExecutiveHomePage.jsx <<'EOF'
+          import React from "react";
+          import { Link } from "react-router-dom";
+          import { PublicNav, PublicFooter } from "./ChurvoxPublicShell";
+          import "./SitesRenderHome.css";
+
+          const approvals = [
+            ["Quote ready", "Thompson Property", "Hedge trim and green waste", "$340"],
+            ["Worker update", "Tomorrow · 8:30am", "Arrival moved by 30 minutes", "Review"],
+            ["Completed job", "Kauri Street", "Photos and time checked", "Invoice ready"],
+            ["Payment follow-up", "Riverside Body Corp", "7 days overdue", "Reminder ready"],
+          ];
+
+          const ownerQuestions = [
+            ["What needs me?", "Only decisions, corrections and exceptions reach the owner."],
+            ["What did Churvox prepare?", "Quotes, invoices, replies, reminders and job changes are ready to review."],
+            ["What is happening today?", "Jobs, workers, delays and money needing attention are visible together."],
+            ["What happened without chasing?", "Acknowledgements, completed work, viewed invoices and replies stay recorded."],
+          ];
+
+          const flow = [
+            ["01", "Client asks", "A request, booking, change or question enters the business."],
+            ["02", "Churvox prepares", "The client, job, worker, price and history are brought together."],
+            ["03", "Worker does the job", "Acknowledgement, progress, time, notes and proof update the record."],
+            ["04", "Owner approves", "Only the quote, reply, variation or invoice needing a decision comes back."],
+          ];
+
+          export default function ExecutiveHomePage() {
+            return (
+              <main className="srhSite" data-version="CHURVOX_RENDER_SITES_MIGRATION_20260724">
+                <PublicNav />
+                <section className="srhHero">
+                  <div className="srhHeroCopy">
+                    <span className="srhKicker">OWNER-APPROVED JOB ADMIN FOR SERVICE BUSINESSES</span>
+                    <h1>Run the job, <em>not the admin.</em></h1>
+                    <p>Churvox prepares the jobs, messages, quotes, invoices and follow-ups. You check what matters and approve before anything real moves.</p>
+                    <div className="srhActions">
+                      <Link className="srhPrimary" to="/signup?plan=operator">Start 14-day trial</Link>
+                      <Link className="srhSecondary" to="/demo">See Churvox in action</Link>
+                    </div>
+                    <div className="srhTrust"><span>No card upfront</span><span>Nothing auto-sends</span><span>Owner approval stays in control</span></div>
+                  </div>
+                  <aside className="srhWorkspace">
+                    <header><div><small>CHURVOX WORKSPACE</small><strong>Needs you</strong></div><b>4</b></header>
+                    <nav><span className="active">Needs you</span><span>Today</span><span>Prepared</span><span>Done</span></nav>
+                    <div className="srhApprovalList">
+                      {approvals.map(([type, client, detail, value], index) => <article key={client} className={index === 0 ? "selected" : ""}><i>{index + 1}</i><div><small>{type}</small><strong>{client}</strong><span>{detail}</span></div><b>{value}</b></article>)}
+                    </div>
+                    <footer><span>Churvox prepared the admin.</span><strong>You make the decision.</strong></footer>
+                  </aside>
+                </section>
+
+                <section className="srhSection srhQuestions">
+                  <div className="srhSectionHead"><span>THE OWNER VIEW</span><h2>Four questions. No dashboard hunting.</h2><p>Churvox is organised around what an owner needs to know—not around software modules that need managing.</p></div>
+                  <div className="srhQuestionGrid">{ownerQuestions.map(([title,text],index)=><article key={title}><b>0{index+1}</b><h3>{title}</h3><p>{text}</p></article>)}</div>
+                </section>
+
+                <section className="srhSection srhDark">
+                  <div className="srhSectionHead"><span>A WORKING DAY</span><h2>See the work arrive. See Churvox prepare it. Approve what matters.</h2></div>
+                  <div className="srhFlow">{flow.map(([number,title,text])=><article key={number}><b>{number}</b><h3>{title}</h3><p>{text}</p></article>)}</div>
+                </section>
+
+                <section className="srhSection srhControl">
+                  <div className="srhSectionHead"><span>OWNER CONTROL IS THE PRODUCT</span><h2>Prepared does not mean automatic.</h2><p>Communication, money, accounting and access stay owner-controlled.</p></div>
+                  <div className="srhControlGrid">
+                    <article><b>✓</b><h3>Nothing sends without approval</h3><p>Client emails, worker messages and reminders stay editable until you approve.</p></article>
+                    <article><b>✓</b><h3>Nothing charges or pays automatically</h3><p>Churvox does not move money, create payouts or charge clients by itself.</p></article>
+                    <article><b>✓</b><h3>No tax filing behind your back</h3><p>Accounting preparation and exports remain owner-controlled.</p></article>
+                    <article><b>✓</b><h3>Your records stay yours</h3><p>Business records remain separated, exportable and removable.</p></article>
+                  </div>
+                </section>
+
+                <section className="srhClosing"><div><span>14-DAY TRIAL · NO CARD UPFRONT</span><h2>Churvox does the admin. You approve.</h2></div><div><Link className="srhPrimary" to="/signup?plan=operator">Start free trial</Link><Link className="srhSecondary light" to="/pricing">View pricing</Link></div></section>
+                <PublicFooter />
+              </main>
+            );
+          }
+          EOF
+
+          cat > frontend/src/pages/marketing/SitesRenderHome.css <<'EOF'
+          :root{--srh-bg:#f3efe7;--srh-ink:#0b1220;--srh-orange:#ff7a1a;--srh-line:rgba(15,23,42,.12)}
+          .srhSite{min-height:100vh;background:var(--srh-bg);color:var(--srh-ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+          .srhHero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(520px,.95fr);gap:54px;align-items:center;max-width:1480px;margin:0 auto;padding:88px 48px 72px;min-height:760px;background:radial-gradient(circle at 85% 12%,rgba(255,122,26,.17),transparent 29rem)}
+          .srhKicker,.srhSectionHead>span,.srhClosing span{display:block;font-size:12px;font-weight:950;letter-spacing:.16em;color:#c2410c;margin-bottom:18px}
+          .srhHero h1{font-size:clamp(58px,7vw,112px);line-height:.88;letter-spacing:-.07em;margin:0;max-width:800px;font-weight:1000}
+          .srhHero h1 em{display:block;color:var(--srh-orange);font-style:normal}
+          .srhHeroCopy>p{font-size:21px;line-height:1.62;max-width:720px;color:#475569;margin:32px 0}
+          .srhActions,.srhClosing>div:last-child{display:flex;gap:14px;flex-wrap:wrap}
+          .srhPrimary,.srhSecondary{display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:0 24px;border-radius:14px;font-weight:900;text-decoration:none;border:1px solid transparent}
+          .srhPrimary{background:var(--srh-orange);color:#111827;box-shadow:0 15px 35px rgba(234,88,12,.24)}
+          .srhSecondary{background:#fff;color:#111827;border-color:var(--srh-line)}.srhSecondary.light{background:transparent;color:#fff;border-color:rgba(255,255,255,.28)}
+          .srhTrust{display:flex;gap:24px;flex-wrap:wrap;margin-top:28px;color:#475569;font-size:13px;font-weight:800}.srhTrust span:before{content:"✓";color:#16a34a;margin-right:7px}
+          .srhWorkspace{border-radius:30px;background:linear-gradient(160deg,#0a0f18,#111827);color:#fff;padding:24px;box-shadow:0 35px 90px rgba(15,23,42,.28);border:1px solid rgba(255,255,255,.1)}
+          .srhWorkspace header{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 20px}.srhWorkspace header small{display:block;color:#fb923c;font-weight:950;letter-spacing:.14em}.srhWorkspace header strong{display:block;font-size:30px;margin-top:7px}.srhWorkspace header>b{width:54px;height:54px;border-radius:18px;background:var(--srh-orange);display:grid;place-items:center;color:#111827;font-size:24px}
+          .srhWorkspace nav{display:flex;gap:8px;padding:6px;background:rgba(255,255,255,.06);border-radius:14px;margin-bottom:16px}.srhWorkspace nav span{flex:1;text-align:center;padding:9px;border-radius:10px;color:#94a3b8;font-weight:800;font-size:13px}.srhWorkspace nav .active{background:#fff;color:#111827}
+          .srhApprovalList{display:grid;gap:10px}.srhApprovalList article{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:16px;border-radius:17px;background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.08)}.srhApprovalList article.selected{background:#fff;color:#111827}.srhApprovalList i{font-style:normal;width:34px;height:34px;border-radius:10px;background:rgba(255,122,26,.18);display:grid;place-items:center;color:#fb923c;font-weight:950}.srhApprovalList article>div{display:grid;gap:3px}.srhApprovalList small{font-weight:950;letter-spacing:.08em;color:#fb923c}.srhApprovalList span{font-size:13px;color:#94a3b8}.srhApprovalList .selected span{color:#64748b}.srhApprovalList article>b{font-size:14px;text-align:right}
+          .srhWorkspace footer{display:flex;justify-content:space-between;gap:16px;margin-top:18px;padding:17px 4px 3px;color:#94a3b8}.srhWorkspace footer strong{color:#fff}.srhWorkspace .selected~*{} 
+          .srhSection{max-width:1480px;margin:0 auto;padding:96px 48px}.srhSectionHead{max-width:860px}.srhSectionHead h2{font-size:clamp(42px,5vw,72px);line-height:.98;letter-spacing:-.05em;margin:0}.srhSectionHead p{font-size:19px;color:#64748b;line-height:1.6}
+          .srhQuestionGrid,.srhFlow,.srhControlGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:42px}.srhQuestionGrid article,.srhControlGrid article{background:#fff;border:1px solid var(--srh-line);border-radius:22px;padding:28px;box-shadow:0 18px 45px rgba(15,23,42,.06)}.srhQuestionGrid article>b{color:#f97316;font-size:13px;letter-spacing:.14em}.srhQuestionGrid h3,.srhControlGrid h3,.srhFlow h3{font-size:23px;margin:24px 0 10px}.srhQuestionGrid p,.srhControlGrid p,.srhFlow p{color:#64748b;line-height:1.6;margin:0}
+          .srhDark{max-width:none;background:#0b1220;color:#fff;padding-left:max(48px,calc((100vw - 1480px)/2 + 48px));padding-right:max(48px,calc((100vw - 1480px)/2 + 48px))}.srhDark .srhSectionHead>span{color:#fb923c}.srhFlow article{border-top:2px solid rgba(255,255,255,.14);padding:24px 12px 6px}.srhFlow article>b{color:#fb923c;font-size:13px}.srhFlow p{color:#94a3b8}
+          .srhControlGrid article>b{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:#dcfce7;color:#15803d;font-size:20px}.srhClosing{display:flex;justify-content:space-between;gap:30px;align-items:center;padding:68px max(48px,calc((100vw - 1384px)/2));background:linear-gradient(110deg,#111827,#271305);color:#fff}.srhClosing h2{font-size:clamp(38px,5vw,68px);margin:0;letter-spacing:-.05em}
+          @media(max-width:1050px){.srhHero{grid-template-columns:1fr;padding-top:60px}.srhQuestionGrid,.srhFlow,.srhControlGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.srhClosing{align-items:flex-start;flex-direction:column}}
+          @media(max-width:700px){.srhHero,.srhSection{padding-left:20px;padding-right:20px}.srhHero{min-height:auto;padding-top:36px;gap:34px}.srhHero h1{font-size:58px}.srhHeroCopy>p{font-size:18px}.srhWorkspace{padding:14px;border-radius:22px}.srhApprovalList article{grid-template-columns:34px 1fr}.srhApprovalList article>b{grid-column:2;text-align:left}.srhQuestionGrid,.srhFlow,.srhControlGrid{grid-template-columns:1fr}.srhDark{padding-left:20px;padding-right:20px}.srhClosing{padding:52px 20px}.srhWorkspace footer{flex-direction:column}}
+          EOF
+
+      - name: Remove emergency Sites redirect from the Render build
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('frontend/public/index.html')
+          s=p.read_text()
+          start=s.find('<script>\n      (function exitLegacyChurvoxBuild()')
+          if start < 0:
+              start=s.find('<script>(function(){if(-1!==["grassley-frontend.onrender.com"')
+          if start >= 0:
+              end=s.find('</script>',start)
+              if end >= 0: s=s[:start]+s[end+9:]
+          p.write_text(s)
+
+          p=Path('frontend/src/index.js')
+          s=p.read_text().replace("import './runtime/churvoxLegacyHostExitRuntime';\n",'')
+          p.write_text(s)
+
+          p=Path('frontend/public/sw.js')
+          p.write_text('''/* Churvox Render frontend service worker. */\nself.addEventListener('install', () => self.skipWaiting());\nself.addEventListener('activate', (event) => { event.waitUntil(self.clients.claim()); });\n''')
+          PY
+
+      - name: Build migrated Render frontend
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps && npm run build
+
+      - name: Commit migration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/src/App.js frontend/src/pages/marketing/ExecutiveHomePage.jsx frontend/src/pages/marketing/SitesRenderHome.css frontend/public/index.html frontend/src/index.js frontend/public/sw.js
+          git commit -m 'Move new Churvox experience onto Render frontend'
+          git push
+          echo "COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Report migration commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:`Render migration built and committed at \`${process.env.COMMIT}\`. Public homepage now uses the Sites-matched design, dashboard uses the full Fresh Churvox workspace, and the temporary redirect to chatgpt.site has been removed.`});

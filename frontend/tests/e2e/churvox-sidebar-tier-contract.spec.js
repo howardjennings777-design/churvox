@@ -39,28 +39,32 @@ async function login(page) {
   }
 }
 
-test('main app navigation stays simple and tier driven', async ({ page }) => {
+test('Control Board navigation stays simple, honest and tier driven', async ({ page }) => {
   await login(page);
 
-  const nav = page.locator('.cvxNav, .freshSide, nav[aria-label*="Churvox" i]').first();
+  const nav = page.locator('nav[aria-label="Churvox main navigation"]');
   await expect(nav).toBeVisible();
   const navText = (await nav.innerText()).replace(/\s+/g, ' ').trim();
 
-  expect(navText).toMatch(/Today|Smart Hub/);
-  expect(navText).toMatch(/Jobs/);
+  expect(navText).toMatch(/Today/);
+  expect(navText).toMatch(/Work/);
   expect(navText).toMatch(/Clients/);
-  expect(navText).toMatch(/Quotes/);
-  expect(navText).toMatch(/Invoices/);
-  expect(navText).toMatch(/Settings/);
-  expect(navText).toMatch(/Plans/);
-  expect(navText).toMatch(/Help|Support/);
-  expect(navText).not.toMatch(/Recurring/);
+  expect(navText).toMatch(/Money/);
+  expect(navText).not.toMatch(/Recurring|Schedule|Quotes|Invoices|Settings|Plans|Help/);
 
-  if (/Command/.test(navText)) {
-    expect(navText).toMatch(/Messages/);
-  }
+  if (/Team/.test(navText)) expect(navText).toMatch(/Messages/);
+  if (/Command/.test(navText)) expect(navText).toMatch(/Messages/);
 
-  if (/Team/.test(navText)) {
-    expect(navText).toMatch(/Workers|Worker View/);
-  }
+  const profile = page.locator('.cv7Profile');
+  await expect(profile).toBeVisible();
+  await profile.click();
+  const menu = page.locator('.cv7ProfileMenu');
+  await expect(menu).toBeVisible();
+  await expect(menu).toContainText(/Plans and billing/);
+  await expect(menu).toContainText(/Help/);
+
+  await page.goto('/dashboard#recurring');
+  await expect(page.locator('nav[aria-label="work navigation"]')).toContainText(/Jobs/);
+  await expect(page.locator('nav[aria-label="work navigation"]')).toContainText(/Schedule/);
+  await expect(page.locator('nav[aria-label="work navigation"]')).toContainText(/Recurring/);
 });

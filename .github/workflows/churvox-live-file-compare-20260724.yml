@@ -1,0 +1,76 @@
+name: Churvox live file compare
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  compare:
+    if: startsWith(github.event.issue.title, '[churvox-live-file-compare]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare repository source with live www and Render origin
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "UTC=$(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo '=== REPO SOURCE ==='
+            grep -nF 'Run the job, not the admin.' frontend/src/pages/marketing/ExecutiveHomePage.jsx || true
+            grep -nF 'CHURVOX_RENDER_SITES_MIGRATION_20260724' frontend/src/pages/marketing/ExecutiveHomePage.jsx || true
+            grep -nF 'const HomePage = React.lazy(() => import("./pages/marketing/ExecutiveHomePage"));' frontend/src/App.js || true
+            grep -nF '<Route path="/" element={<HomePage />} />' frontend/src/App.js || true
+            echo
+            echo '=== DNS ==='
+            for resolver in '' '@1.1.1.1' '@8.8.8.8'; do
+              echo "RESOLVER=${resolver:-system}"
+              for host in churvox.com www.churvox.com; do
+                echo "HOST=$host"
+                echo "A=$(dig $resolver +short "$host" A | tr '\n' ' ')"
+                echo "AAAA=$(dig $resolver +short "$host" AAAA | tr '\n' ' ')"
+                echo "CNAME=$(dig $resolver +short "$host" CNAME | tr '\n' ' ')"
+              done
+            done
+            echo
+            for base in 'https://www.churvox.com' 'https://churvox.com' 'https://grassley-frontend.onrender.com'; do
+              echo "=== BASE=$base ==="
+              for path in '/' '/login' '/dashboard'; do
+                url="$base$path?filecompare=$(date +%s%N)"
+                curl -sS -L --max-time 45 -D /tmp/h -o /tmp/body -H 'Cache-Control: no-cache, no-store, max-age=0' -H 'Pragma: no-cache' "$url"
+                echo "URL=$url"
+                curl -sS -L --max-time 45 -o /dev/null -w 'FINAL=%{url_effective} STATUS=%{http_code} IP=%{remote_ip} TYPE=%{content_type}\n' "$url"
+                echo "SERVER=$(grep -i '^server:' /tmp/h | tail -1 | tr -d '\r')"
+                echo "RNDR=$(grep -i '^rndr-id:' /tmp/h | tail -1 | tr -d '\r')"
+                echo "TITLE=$(grep -ioE '<title>[^<]*</title>' /tmp/body | head -1 | tr '\n' ' ')"
+                echo "BODY_BYTES=$(wc -c </tmp/body)"
+                echo "SITES_FALLBACK=$(grep -Foc 'Please enable JavaScript to use the Churvox app, or contact hello@churvox.com for help.' /tmp/body 2>/dev/null || true)"
+                echo "RENDER_MARKER=$(grep -Foc 'CHURVOX_RENDER_HOSTED_20260724' /tmp/body 2>/dev/null || true)"
+                asset=$(grep -oE '/static/js/main\.[^"?]+\.js' /tmp/body | head -1)
+                echo "ASSET=$asset"
+                if [ -n "$asset" ]; then
+                  curl -sS --max-time 60 -o /tmp/main "$base$asset?filecompare=$(date +%s%N)"
+                  echo "MAIN_BYTES=$(wc -c </tmp/main)"
+                  echo "MAIN_NEW_HERO=$(grep -Foc 'Run the job, not the admin.' /tmp/main 2>/dev/null || true)"
+                  echo "MAIN_MIGRATION_MARKER=$(grep -Foc 'CHURVOX_RENDER_SITES_MIGRATION_20260724' /tmp/main 2>/dev/null || true)"
+                  echo "MAIN_OLD_HERO=$(grep -Foc 'Your business handled. Your decisions waiting.' /tmp/main 2>/dev/null || true)"
+                fi
+                echo
+              done
+            done
+          } > /tmp/report.txt 2>&1
+          cat /tmp/report.txt
+          {
+            echo 'REPORT<<EOF'
+            cat /tmp/report.txt
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+      - name: Post comparison
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.issue.number,body:'```text\n'+(process.env.REPORT||'missing')+'\n```'});

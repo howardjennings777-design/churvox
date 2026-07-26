@@ -1,0 +1,66 @@
+name: Churvox authoritative domain route
+
+on:
+  push:
+    paths:
+      - '.github/workflows/churvox-authoritative-domain-route.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Capture DNS and HTTP routing
+        shell: bash
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq dnsutils >/dev/null
+          mkdir -p docs
+          OUT=docs/CHURVOX_AUTHORITATIVE_ROUTE_NOW.txt
+          {
+            echo "UTC=$(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            echo '=== NAMESERVERS ==='
+            dig +short NS churvox.com
+            echo
+            echo '=== AUTHORITATIVE DNS ==='
+            for ns in $(dig +short NS churvox.com); do
+              echo "NS=$ns"
+              dig +noall +answer @$ns churvox.com A
+              dig +noall +answer @$ns www.churvox.com CNAME
+              dig +noall +answer @$ns www.churvox.com A
+            done
+            echo
+            echo '=== PUBLIC RESOLVERS ==='
+            for dns in 1.1.1.1 8.8.8.8 9.9.9.9; do
+              echo "RESOLVER=$dns"
+              dig +noall +answer @$dns churvox.com A
+              dig +noall +answer @$dns www.churvox.com CNAME
+              dig +noall +answer @$dns www.churvox.com A
+            done
+            echo
+            for u in https://churvox.com/ https://www.churvox.com/ https://www.churvox.com/login https://www.churvox.com/dashboard https://grassley-frontend.onrender.com/ https://grassley-frontend.onrender.com/login https://grassley-frontend.onrender.com/dashboard; do
+              echo "=== URL $u ==="
+              curl -sS -L --max-time 40 -D - -o /tmp/body "${u}?route=$(date +%s%N)" | sed -n '1,30p'
+              grep -ioE '<title>[^<]*</title>' /tmp/body | head -1
+              grep -oE 'src="[^"]+"' /tmp/body | head -10
+              grep -F 'redirectLegacyRenderHost' /tmp/body | head -1
+              echo
+            done
+          } > "$OUT" 2>&1
+          cat "$OUT"
+      - name: Commit routing evidence
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/CHURVOX_AUTHORITATIVE_ROUTE_NOW.txt
+          git commit -m 'record authoritative Churvox domain route' || true
+          git push || true
+
+# Urgent rerun after confirmed stale-site report 20260724-0709

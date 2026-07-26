@@ -35,14 +35,14 @@ function ensureStyle() {
 }
 
 function root() {
-  return document.querySelector(".cv3Product, .freshPricingPage, .freshPricingShell, .churvoxOptionC");
+  return document.querySelector(".cvPlansPage, .cv7Product, .cv3Product, .freshPricingPage, .freshPricingShell, .churvoxOptionC");
 }
 
 function insertButton() {
   if (!onPlans() || document.getElementById(BUTTON_ID)) return null;
   const pageRoot = root();
   if (!pageRoot) return null;
-  const anchor = pageRoot.querySelector(".cv3Hero.page-plans, .freshPricingHero, #churvox-plan-live-usage") || pageRoot.firstElementChild;
+  const anchor = pageRoot.querySelector(".cvPlanHero, .cv7PageTitle, .cv3Hero.page-plans, .freshPricingHero, #churvox-plan-live-usage") || pageRoot.firstElementChild;
   if (!anchor) return null;
   ensureStyle();
   const bar = document.createElement("section");

@@ -37,7 +37,7 @@ function safeImageUrl(value) {
 
 function Unavailable({ message }) {
   return (
-    <main className="cpd-shell">
+    <main className="cpd-shell cvCustomerRoom">
       <article className="cpd-document">
         <section className="cpd-body">
           <small>Churvox client portal</small>
@@ -129,7 +129,7 @@ export default function PublicClientPortalPage() {
     }).filter(Boolean);
   }, [portal]);
 
-  if (loading) return <main className="cpd-shell"><article className="cpd-document"><section className="cpd-body">Loading client portal…</section></article></main>;
+  if (loading) return <main className="cpd-shell cvCustomerRoom"><article className="cpd-document"><section className="cpd-body">Loading client portal…</section></article></main>;
   if (error || !portal) return <Unavailable message={error || "The client portal was not found or is no longer available."} />;
 
   const customer = first(portal.customer_name, portal.client_name, portal.name, "Customer");
@@ -153,7 +153,7 @@ export default function PublicClientPortalPage() {
   const canApprove = completed && !approved;
 
   return (
-    <main className="cpd-shell" data-version="CHURVOX_PUBLIC_CLIENT_PORTAL_PAID_LAUNCH_20260712">
+    <main className="cpd-shell cvCustomerRoom" data-version="CHURVOX_PUBLIC_CLIENT_PORTAL_PAID_LAUNCH_20260712">
       <section className="cpd-actions">
         <b>{businessName} client portal</b>
         <button type="button" onClick={() => window.print()}>Print / PDF</button>
