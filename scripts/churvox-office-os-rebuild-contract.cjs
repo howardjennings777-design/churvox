@@ -122,7 +122,7 @@ requireAll(audit, [
 const visibleTextRuntime = "frontend/src/runtime/churvoxVisibleControlTextRuntime.js";
 requireAll(visibleTextRuntime, [
   "installVisibleControlTextRuntime",
-  "pill text",
+  "textLooksHidden",
   "cvVisibleControlTextRepair",
   "cvNeedsVisibleControlLabel",
   "MutationObserver",
