@@ -1,50 +1,84 @@
-name: Agent Strict CI Build Diagnostic
+name: Agent Fix Strict Plans Build
 
 on:
   pull_request:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: agent-strict-ci-build-diagnostic
+  group: agent-fix-strict-plans-build
   cancel-in-progress: true
 
 jobs:
-  capture:
+  fix-and-verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
         with:
           ref: agent/fix-plans-route-and-flow
+          fetch-depth: 0
+
+      - name: Fix Plans hook dependencies
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("frontend/src/churvox-fresh/FreshPlans.jsx")
+          source = path.read_text(encoding="utf-8")
+
+          old_profile_deps = '  }, [user?.plan, user?.ui_plan, user?.subscription_plan, user?.billing_plan]);'
+          new_profile_deps = '  }, [currentPlan, user]);'
+          if old_profile_deps in source:
+              source = source.replace(old_profile_deps, new_profile_deps, 1)
+          elif new_profile_deps not in source:
+              raise SystemExit("Account-plan effect dependency anchor not found")
+
+          old_checkout_tail = '''    if (params.get("checkout") === "success" && sessionId) {
+              confirmCheckout(sessionId, params.get("plan") || pending?.plan || selected.backendPlan, params.get("country") || pending?.country || "NZ");
+            }
+          }, []);'''
+          new_checkout_tail = '''    if (params.get("checkout") === "success" && sessionId) {
+              confirmCheckout(sessionId, params.get("plan") || pending?.plan || selected.backendPlan, params.get("country") || pending?.country || "NZ");
+            }
+            // Stripe return parameters must be consumed once. Re-running this effect can duplicate confirmation requests.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+          }, []);'''
+          if old_checkout_tail in source:
+              source = source.replace(old_checkout_tail, new_checkout_tail, 1)
+          elif "Stripe return parameters must be consumed once" not in source:
+              raise SystemExit("Stripe return effect anchor not found")
+
+          path.write_text(source, encoding="utf-8")
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+
       - name: Install dependencies
         working-directory: frontend
         run: npm ci --legacy-peer-deps
-      - name: Capture strict build
-        id: strict_build
-        continue-on-error: true
+
+      - name: Run strict production build
         working-directory: frontend
         env:
           CI: true
+        run: npm run build
+
+      - name: Commit verified Plans fix
         run: |
-          set -o pipefail
-          npm run build 2>&1 | tee ../strict-ci-build.log
-      - name: Upload strict build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: strict-ci-build-log-${{ github.run_number }}
-          path: strict-ci-build.log
-          retention-days: 2
-      - name: Preserve build result
-        if: steps.strict_build.outcome == 'failure'
-        run: exit 1
+          git config user.name "Churvox Agent"
+          git config user.email "hello@churvox.com"
+          git add frontend/src/churvox-fresh/FreshPlans.jsx
+          if git diff --cached --quiet; then
+            echo "Strict Plans fix is already committed."
+            exit 0
+          fi
+          git commit -m "Fix Plans hook dependencies"
+          git push origin HEAD:agent/fix-plans-route-and-flow
