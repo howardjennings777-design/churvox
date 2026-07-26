@@ -1,0 +1,28 @@
+name: Resolve PR 746 Visible Run
+
+on:
+  pull_request:
+    branches: [audit/churvox-pr746-base-20260726]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resolve-pr746-visible
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout rebuild branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/churvox-office-os-foundation
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Merge current main safely
+        run: bash scripts/churvox-resolve-pr746-main.sh
