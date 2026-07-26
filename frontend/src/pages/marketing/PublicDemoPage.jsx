@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { getIndustry, industryOptions, normalizeIndustry } from "../../config/churvoxIndustrySystem";
 import { PublicNav, PublicFooter, Eyebrow } from "./ChurvoxPublicShell";
 import "./PublicDemoPage.css";
-import "./GuidedWorkdayPublic.css";
 
 function queryIndustry() {
   try {
@@ -18,68 +17,135 @@ function trialPath(industryKey) {
   return `/signup?plan=operator&industry=${encodeURIComponent(industryKey)}`;
 }
 
-function rowsFor(industry) {
-  const title = industry.title;
-  if (/clean/i.test(title)) return {
-    jobs: [["8:30", "Regular clean", "Site A", "Worker A", "$160", "Weekly"], ["10:15", "Deep clean", "Site B", "Worker B", "$340", "One-off"], ["1:00", "Checklist visit", "Site C", "Worker C", "$120", "Fortnightly"]],
-    workers: [["Worker A", "On site", "Site A", "Checklist open"], ["Worker B", "Finishing", "Site B", "Photos added"], ["Worker C", "Next visit", "Site C", "Queued"]],
-    queue: [["Invoice ready", "Deep clean", "$340", "Approve"], ["Access issue", "Entry details need checking", "Check", "Edit"], ["Follow-up", "Client asked for extras", "$120", "Park"]],
-    form: ["Site B", "Deep clean", "Worker B", "$340", "One-off"],
-  };
-  if (/painting/i.test(title)) return {
-    jobs: [["8:00", "Interior prep", "Site A", "Worker A", "$420", "Stage 1"], ["11:30", "Feature wall", "Site B", "Worker B", "$680", "One-off"], ["2:00", "Touch-up", "Site C", "Worker C", "$160", "Follow-up"]],
-    workers: [["Worker A", "Preparing", "Site A", "Photos added"], ["Worker B", "Painting", "Site B", "Progress added"], ["Worker C", "Next job", "Site C", "Queued"]],
-    queue: [["Quote accepted", "Feature wall", "$680", "Approve"], ["Extra area", "Hallway added", "Check", "Edit"], ["Invoice ready", "Touch-up", "$160", "Park"]],
-    form: ["Site B", "Feature wall", "Worker B", "$680", "One-off"],
-  };
-  if (/plumbing|electrical|hvac|technical/i.test(title)) return {
-    jobs: [["8:00", "Callout", "Site A", "Worker A", "$180", "Urgent"], ["10:45", "Parts install", "Site B", "Worker B", "$460", "One-off"], ["1:30", "Safety check", "Site C", "Worker C", "$220", "Follow-up"]],
-    workers: [["Worker A", "On site", "Site A", "Parts note"], ["Worker B", "Installing", "Site B", "Work update added"], ["Worker C", "Next callout", "Site C", "Queued"]],
-    queue: [["Invoice ready", "Parts install", "$460", "Approve"], ["Safety note", "Owner check", "Check", "Edit"], ["Quote required", "Follow-up repair", "$220", "Park"]],
-    form: ["Site B", "Parts install", "Worker B", "$460", "One-off"],
-  };
+function amountFor(industry) {
+  const title = String(industry.title || "");
+  if (/landscap/i.test(title)) return "NZ$1,280";
+  if (/paint/i.test(title)) return "NZ$680";
+  if (/plumb|electric|hvac|technical/i.test(title)) return "NZ$460";
+  if (/clean/i.test(title)) return "NZ$340";
+  if (/barber|hair|beauty|salon/i.test(title)) return "NZ$95";
+  return "NZ$340";
+}
+
+function buildWalkthrough(industry) {
+  const service = industry.services?.[1] || industry.services?.[0] || "Service visit";
+  const clientLabel = industry.jobWords?.client || "Client";
+  const workerLabel = industry.jobWords?.worker || "Worker";
+  const proofLabel = industry.jobWords?.proof || "Proof";
+  const amount = amountFor(industry);
+
   return {
-    jobs: [["8:30", industry.services?.[0] || "Service visit", "Site A", "Worker A", "$95", "Weekly"], ["10:15", industry.services?.[1] || "Job", "Site B", "Worker B", "$340", "One-off"], ["1:00", industry.services?.[2] || "Follow-up", "Site C", "Worker C", "$180", "Fortnightly"]],
-    workers: [["Worker A", "On site", "Site A", "Location shared"], ["Worker B", "Finishing", "Site B", "Photos added"], ["Worker C", "Next job", "Site C", "Queued"]],
-    queue: [["Invoice ready", `${industry.short} work`, "$340", "Approve"], ["Access issue", "Worker note", "Check", "Edit"], ["Quote viewed", "Follow-up", "$780", "Park"]],
-    form: ["Site B", industry.services?.[1] || "Service visit", "Worker B", "$340", "One-off"],
+    record: {
+      client: "Kauri Street",
+      service,
+      worker: "Alex",
+      date: "Tuesday · 10:30 am",
+      amount,
+      repeat: /clean|lawn|garden|pest/i.test(industry.title || "") ? "Fortnightly" : "One-off",
+    },
+    steps: [
+      {
+        key: "request",
+        label: "Request",
+        title: `${clientLabel} request received`,
+        summary: `Churvox captures the ${service.toLowerCase()} request, contact details and useful notes in one place.`,
+        prepared: "A clean request record with the next missing detail highlighted.",
+        owner: "Check only anything unclear.",
+        status: "New request",
+        progress: 12,
+        activity: ["Request captured", "Contact details attached", "Missing details highlighted"],
+      },
+      {
+        key: "plan",
+        label: "Plan",
+        title: "The job is ready to approve",
+        summary: `The ${workerLabel.toLowerCase()}, timing, price basis and repeat setting are brought together before the job is released.`,
+        prepared: `${workerLabel}, date, time, price and job instructions.",
+        owner: "Approve the plan or change any detail.",
+        status: "Ready for owner",
+        progress: 30,
+        activity: ["Job record prepared", `${workerLabel} suggested`, "Price basis checked"],
+      },
+      {
+        key: "field",
+        label: "Worker",
+        title: `${workerLabel} has one clear job`,
+        summary: "The field view keeps directions, work details, notes and status attached to the same job record.",
+        prepared: "A focused field job with no office clutter.",
+        owner: "Step in only when an issue is raised.",
+        status: "In progress",
+        progress: 52,
+        activity: ["Job acknowledged", "Work started", "Office can see progress"],
+      },
+      {
+        key: "proof",
+        label: "Proof",
+        title: `${proofLabel} has returned from the field`,
+        summary: "Time, notes, checklist details and photos return to the job before a money step is prepared.",
+        prepared: "Completion evidence connected to the correct job.",
+        owner: "Review only missing or unusual details.",
+        status: "Proof returned",
+        progress: 72,
+        activity: ["Completion note received", `${proofLabel} attached`, "Time checked"],
+      },
+      {
+        key: "money",
+        label: "Invoice",
+        title: `${amount} invoice draft is ready`,
+        summary: "The completed work, price and proof are combined into an editable invoice decision for the owner.",
+        prepared: "An invoice draft based on the approved job record.",
+        owner: "Approve, edit or park before sending.",
+        status: "Invoice ready",
+        progress: 90,
+        activity: ["Job total checked", "Invoice draft prepared", "Waiting for owner"],
+      },
+      {
+        key: "next",
+        label: "Next",
+        title: "The next useful action is prepared",
+        summary: "Churvox uses the real job history to prepare the follow-up, repeat visit or quote without silently doing it.",
+        prepared: "A sensible next step based on the completed job.",
+        owner: "Approve it only when it makes sense.",
+        status: "Next action ready",
+        progress: 100,
+        activity: ["Job history updated", "Next visit suggested", "Owner decision waiting"],
+      },
+    ],
   };
 }
 
-function journeyFor(industry, preview) {
-  const [client, work, worker, price, repeat] = preview.form;
-  return [
-    ["Request", `${client} asks for ${work.toLowerCase()}`, `Churvox captures the request and attaches it to the right ${industry.jobWords.client.toLowerCase()} record.`, "Check only anything unclear."],
-    ["Plan", "The job record is prepared", `${worker}, timing, price basis and ${repeat.toLowerCase()} details are placed together.`, "Approve or adjust the plan."],
-    ["Field", `${worker} receives one clear job`, "Directions, work details, notes and status stay attached to the same record.", "Step in only when an exception is raised."],
-    ["Proof", "Completion evidence is checked", "Time, notes, checklist details and photos are checked before money moves.", "Resolve missing or unusual details."],
-    ["Money", `${price} invoice is ready`, "The completed work, amount and proof are combined into an editable owner decision.", "Approve, edit or park."],
-    ["Next", "The next useful action is prepared", "A follow-up, repeat visit or quote is prepared from the real job history.", "Approve it only when it makes sense."],
-  ];
-}
-
-function Panel({ title, eyebrow, children, className = "", id }) {
-  return <section id={id} className={`demoPanel ${className}`}><header>{eyebrow ? <small>{eyebrow}</small> : null}<h3>{title}</h3></header>{children}</section>;
+function RecordField({ label, value }) {
+  return (
+    <div className="cvDemoField">
+      <span>{label}</span>
+      <b>{value}</b>
+    </div>
+  );
 }
 
 export default function PublicDemoPage() {
   const [industryKey, setIndustryKey] = React.useState(queryIndustry);
   const [activeStep, setActiveStep] = React.useState(0);
+  const [isPlaying, setIsPlaying] = React.useState(false);
   const industry = getIndustry(industryKey);
-  const preview = rowsFor(industry);
-  const journey = journeyFor(industry, preview);
-  const step = journey[activeStep] || journey[0];
+  const walkthrough = React.useMemo(() => buildWalkthrough(industry), [industry]);
+  const step = walkthrough.steps[activeStep] || walkthrough.steps[0];
 
   React.useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    const frame = window.requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+    const previousTitle = document.title;
+    const description = document.querySelector('meta[name="description"]');
+    const previousDescription = description?.getAttribute("content") || "";
+    document.title = `Churvox demo | See a ${industry.short} job from request to invoice`;
+    description?.setAttribute("content", `Use the interactive Churvox demo to follow a ${industry.short.toLowerCase()} job through planning, worker updates, proof and owner-approved invoicing.`);
+    return () => {
+      document.title = previousTitle;
+      if (description) description.setAttribute("content", previousDescription);
+    };
+  }, [industry.short]);
 
   React.useEffect(() => {
     setActiveStep(0);
+    setIsPlaying(false);
     try {
       const next = new URL(window.location.href);
       next.searchParams.set("industry", industryKey);
@@ -87,104 +153,172 @@ export default function PublicDemoPage() {
     } catch {}
   }, [industryKey]);
 
+  React.useEffect(() => {
+    if (!isPlaying) return undefined;
+    const timer = window.setInterval(() => {
+      setActiveStep((current) => {
+        if (current >= walkthrough.steps.length - 1) {
+          setIsPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, 1900);
+    return () => window.clearInterval(timer);
+  }, [isPlaying, walkthrough.steps.length]);
+
+  const goToStep = (index) => {
+    setIsPlaying(false);
+    setActiveStep(index);
+  };
+
+  const resetDemo = () => {
+    setIsPlaying(false);
+    setActiveStep(0);
+  };
+
   return (
-    <main className="cp26Site cpWorld cpWorldDemo" data-room="demo">
+    <main className="cp26Site cpWorld cvDemoPage" data-room="demo">
       <PublicNav active="/demo" />
 
-      <section className="cp26PageHero cpDemoHero">
-        <div>
-          <Eyebrow>60-second guided workday</Eyebrow>
-          <h1>Watch Churvox handle a {industry.short.toLowerCase()} job.</h1>
-          <p>This guided example contains invented business information only. Choose the business type, move through the six stages and see where Churvox prepares the work and where the owner approves.</p>
-          <label className="cp26CountrySelect">
-            <span>Business type</span>
-            <select value={industryKey} onChange={(event) => setIndustryKey(normalizeIndustry(event.target.value))}>
-              {industryOptions(true).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-            </select>
-          </label>
-          <div className="cp26HeroActions">
-            <a href="#command-demo" className="cp26Button">Run the workday</a>
-            <Link to={trialPath(industryKey)} className="cp26Button cp26ButtonGhost">Start free trial</Link>
+      <section className="cvDemoHero">
+        <div className="cvDemoHeroCopy">
+          <Eyebrow>Interactive Churvox demo</Eyebrow>
+          <h1>See one job move from request to invoice.</h1>
+          <p>Choose your business type, then click through a real Churvox-style workday. You will see what Churvox prepares, what the worker sees and exactly where the owner stays in control.</p>
+
+          <div className="cvDemoHeroTools">
+            <label>
+              <span>Show me</span>
+              <select value={industryKey} onChange={(event) => setIndustryKey(normalizeIndustry(event.target.value))}>
+                {industryOptions(true).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+            </label>
+            <button type="button" className="cvDemoPlay" onClick={() => {
+              if (activeStep >= walkthrough.steps.length - 1) setActiveStep(0);
+              setIsPlaying((current) => !current);
+            }}>
+              {isPlaying ? "Pause walkthrough" : "Play walkthrough"}
+            </button>
+          </div>
+
+          <div className="cvDemoHeroActions">
+            <a href="#interactive-demo" className="cp26Button">Open the demo</a>
+            <Link to={trialPath(industryKey)} className="cp26Button cp26ButtonGhost">Start 14-day trial</Link>
           </div>
         </div>
-        <div className="cp26HeroPanel">
-          <small>Guided example</small>
-          <b>{industry.title} owner control room</b>
-          <span>{industry.intro}</span>
-        </div>
+
+        <aside className="cvDemoPromise" aria-label="What this demo proves">
+          <small>What you will see</small>
+          <strong>Churvox does the admin.</strong>
+          <strong>The owner checks and approves.</strong>
+          <p>Example information only. Nothing is sent, charged, synced or saved.</p>
+        </aside>
       </section>
 
-      <section id="command-demo" className="cp26Section cp26DemoJourneySection">
-        <div className="cp26Journey">
-          <nav className="cp26JourneyRail" aria-label="Guided Churvox workday">
-            {journey.map((item, index) => (
-              <button key={item[0]} type="button" className={activeStep === index ? "active" : ""} aria-pressed={activeStep === index} onClick={() => setActiveStep(index)}>
-                <b>{index + 1}</b><span>{item[0]}</span>
+      <section id="interactive-demo" className="cvDemoSection" aria-label="Interactive Churvox job walkthrough">
+        <div className="cvDemoShell">
+          <header className="cvDemoTopbar">
+            <div>
+              <span className="cvDemoBrandMark">C</span>
+              <div>
+                <small>Example workspace · {industry.title}</small>
+                <b>{walkthrough.record.service}</b>
+              </div>
+            </div>
+            <span className="cvDemoStatus">{step.status}</span>
+          </header>
+
+          <nav className="cvDemoSteps" aria-label="Demo stages">
+            {walkthrough.steps.map((item, index) => (
+              <button
+                key={item.key}
+                type="button"
+                className={activeStep === index ? "active" : activeStep > index ? "complete" : ""}
+                aria-current={activeStep === index ? "step" : undefined}
+                onClick={() => goToStep(index)}
+              >
+                <span>{activeStep > index ? "✓" : index + 1}</span>
+                <b>{item.label}</b>
               </button>
             ))}
           </nav>
-          <article className="cp26JourneyStage">
-            <div className="cp26JourneyStory">
-              <small>Step {activeStep + 1} of {journey.length} · example information only</small>
-              <h3>{step[1]}</h3>
-              <p>{step[2]}</p>
-            </div>
-            <div className="cp26JourneyDecision">
-              <section><span>Churvox prepares</span><b>{step[2]}</b></section>
-              <section><span>The owner does</span><b>{step[3]}</b></section>
-              <section><span>The rule</span><b>Nothing sends, syncs, charges or changes without owner approval.</b></section>
-            </div>
-            <div className="cp26JourneyControls">
-              <button type="button" onClick={() => setActiveStep((current) => Math.max(0, current - 1))} disabled={activeStep === 0}>Back</button>
-              <button type="button" className="primary" onClick={() => setActiveStep((current) => Math.min(journey.length - 1, current + 1))} disabled={activeStep === journey.length - 1}>Next step</button>
-              <Link to={trialPath(industryKey)}>Try it with my records</Link>
-            </div>
-          </article>
+
+          <div className="cvDemoProgress" aria-hidden="true"><span style={{ width: `${step.progress}%` }} /></div>
+
+          <div className="cvDemoWorkspace">
+            <article className="cvDemoStory" aria-live="polite">
+              <small>Step {activeStep + 1} of {walkthrough.steps.length}</small>
+              <h2>{step.title}</h2>
+              <p>{step.summary}</p>
+
+              <div className="cvDemoDecisionGrid">
+                <section>
+                  <span>Churvox prepares</span>
+                  <b>{step.prepared}</b>
+                </section>
+                <section className="owner">
+                  <span>The owner does</span>
+                  <b>{step.owner}</b>
+                </section>
+              </div>
+
+              <div className="cvDemoControls">
+                <button type="button" onClick={() => goToStep(Math.max(0, activeStep - 1))} disabled={activeStep === 0}>Back</button>
+                <button type="button" className="primary" onClick={() => goToStep(Math.min(walkthrough.steps.length - 1, activeStep + 1))} disabled={activeStep === walkthrough.steps.length - 1}>Next step</button>
+                <button type="button" className="quiet" onClick={resetDemo}>Restart</button>
+              </div>
+            </article>
+
+            <aside className="cvDemoRecord" aria-label="Example job record">
+              <header>
+                <div>
+                  <small>{industry.jobWords?.job || "Job"} record</small>
+                  <h3>{walkthrough.record.service}</h3>
+                </div>
+                <span>{step.status}</span>
+              </header>
+
+              <div className="cvDemoRecordGrid">
+                <RecordField label={industry.jobWords?.client || "Client"} value={walkthrough.record.client} />
+                <RecordField label={industry.jobWords?.worker || "Worker"} value={walkthrough.record.worker} />
+                <RecordField label="When" value={walkthrough.record.date} />
+                <RecordField label="Price" value={walkthrough.record.amount} />
+                <RecordField label="Repeat" value={walkthrough.record.repeat} />
+                <RecordField label="Owner control" value="Approval required" />
+              </div>
+
+              <div className="cvDemoActivity">
+                <small>What just happened</small>
+                {step.activity.map((item, index) => (
+                  <div key={item}><span>{index + 1}</span><b>{item}</b></div>
+                ))}
+              </div>
+            </aside>
+          </div>
         </div>
       </section>
 
-      <section className="demoAppShell slimDemoShell cpDemoMachine" aria-label="Churvox product preview">
-        <header className="demoTopBar">
-          <div>
-            <small data-cv-allow-verbatim="true">Preview workspace · clearly labelled {"sample "}{"records"}</small>
-            <small data-cv-allow-verbatim="true">{"Sample "}{"business"}</small>
-            <h2>{industry.short} Command preview</h2>
-          </div>
-          <nav aria-label="Preview sections"><a href="#today-preview">Today</a><a href="#command-demo">Command</a><a href="#jobs-preview">Jobs</a><a href="#workers-preview">Workers</a></nav>
-        </header>
-
-        <section id="today-preview" className="demoHeroStrip compactDemoHero">
-          <div><small>Today</small><h2>The day is already sorted.</h2><p>{industry.jobWords.jobs}, {industry.jobWords.workers}, owner checks and draft value are visible without hunting through tabs.</p></div>
-          <div className="demoStats"><span className="demoStat"><b>3</b><small>{industry.jobWords.jobs}</small></span><span className="demoStat blue"><b>3</b><small>{industry.jobWords.workers}</small></span><span className="demoStat red"><b>3</b><small>checks</small></span><span className="demoStat orange"><b>$615</b><small>drafts</small></span></div>
-        </section>
-
-        <section className="demoGrid">
-          <Panel title="Run sheet" eyebrow="Today" className="span7">
-            <div className="demoList">{preview.jobs.map(([time, title, client, worker, price, repeat]) => <article className="demoRow" key={time + title}><div><b>{time} · {title}</b><span>{client} · {worker} · {repeat}</span></div><em>{price}</em></article>)}</div>
-          </Panel>
-          <Panel title="Owner checks" eyebrow="Command" className="span5 dark">
-            <div className="demoList compact">{preview.queue.map(([type, title, amount, action]) => <article className="demoRow hot" key={title}><div><b>{type}</b><span>{title} · {amount}</span></div><em>{action}</em></article>)}</div>
-          </Panel>
-        </section>
-
-        <section id="jobs-preview" className="demoGrid">
-          <Panel title="Job record" eyebrow="Prepared admin" className="span6">
-            <div className="demoFormPreview"><label><span>{industry.jobWords.client}</span><b>{preview.form[0]}</b></label><label><span>Work</span><b>{preview.form[1]}</b></label><label><span>{industry.jobWords.worker}</span><b>{preview.form[2]}</b></label><label><span>Price</span><b>{preview.form[3]}</b></label><label><span>Repeat</span><b>{preview.form[4]}</b></label></div>
-          </Panel>
-          <Panel title="Field updates" eyebrow="Workers" className="span6" id="workers-preview">
-            <div className="demoList">{preview.workers.map(([name, status, job, tag]) => <article className="demoRow cool" key={name}><div><b>{name}</b><span>{status} · {job}</span></div><em>{tag}</em></article>)}</div>
-          </Panel>
-        </section>
+      <section className="cvDemoProofBand">
+        <div>
+          <Eyebrow>Simple on purpose</Eyebrow>
+          <h2>One connected record. Fewer loose messages.</h2>
+        </div>
+        <div className="cvDemoProofCards">
+          <article><b>Office</b><span>Client, price, schedule and instructions stay together.</span></article>
+          <article><b>Field</b><span>The worker sees the job and returns progress and proof.</span></article>
+          <article><b>Owner</b><span>Important messages and money steps wait for approval.</span></article>
+        </div>
       </section>
 
-      <section className="cp26Closing cpWorldClosing">
+      <section className="cp26Closing cpWorldClosing cvDemoClosing">
         <div>
-          <Eyebrow light>Your records next</Eyebrow>
-          <h2>Organise one real job before setting up everything else.</h2>
-          <p>Your account starts empty and uses only the records you add. Nothing from this sample is copied into the account.</p>
+          <Eyebrow light>Your business next</Eyebrow>
+          <h2>Try one real job without setting up everything first.</h2>
+          <p>Your account starts empty and uses only the records you add. The public trial lasts 14 days and does not require a card upfront.</p>
         </div>
         <div className="cp26ClosingActions">
-          <Link to={trialPath(industryKey)} className="cp26Button">Start free trial</Link>
+          <Link to={trialPath(industryKey)} className="cp26Button">Start 14-day trial</Link>
           <Link to="/pricing" className="cp26Button cp26ButtonGhost">View pricing</Link>
         </div>
       </section>
