@@ -226,7 +226,7 @@ test('Plans uses the current owner shell and explains every tier clearly', async
 test('HQ is one clean console wired to all live owner sources', async ({ page }) => {
   await page.goto('/admin', { waitUntil: 'domcontentloaded' });
 
-  const hq = page.locator('[data-version="CHURVOX_HQ_ONE_CONSOLE_20260727"]');
+  const hq = page.locator('main#CHURVOX_HQ_SYSTEM.hqOne');
   await expect(hq).toHaveCount(1);
   await expect(hq).toBeVisible();
   await expect(page.locator('.hq2')).toHaveCount(0);
