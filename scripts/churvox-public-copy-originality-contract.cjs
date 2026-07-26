@@ -130,7 +130,6 @@ const headlineFiles = [
   'frontend/src/pages/marketing/ExecutivePricingPage.jsx',
   'frontend/src/pages/marketing/ExecutiveContactPage.jsx',
   'frontend/src/pages/marketing/PublicDemoPage.jsx',
-  'frontend/src/pages/marketing/IndustryPage.jsx',
 ];
 
 const headlineOwners = new Map();
@@ -155,6 +154,11 @@ for (const file of headlineFiles) {
   }
 }
 
+const industry = files.get('frontend/src/pages/marketing/IndustryPage.jsx') || '';
+if (!/<h1[^>]*>\s*\{industry\.headline\}\s*<\/h1>/i.test(industry)) {
+  fail('IndustryPage must render the selected industry headline as its H1.');
+}
+
 const home = files.get('frontend/src/pages/marketing/ExecutiveHomePage.jsx') || '';
 const distinctiveHomeLines = [
   /jobs, clients, workers and money/i,
@@ -172,4 +176,4 @@ for (const pattern of distinctiveHomeLines) {
 if (process.exitCode) process.exit(process.exitCode);
 
 console.log('CHURVOX PUBLIC COPY ORIGINALITY CONTRACT PASSED');
-console.log(`Checked ${PUBLIC_COPY_FILES.length} public-copy sources, ${COMPETITOR_NAMES.length} competitor-name exclusions, ${RETIRED_PUBLIC_PHRASES.length} retired phrases and ${headlineOwners.size} unique page headlines.`);
+console.log(`Checked ${PUBLIC_COPY_FILES.length} public-copy sources, ${COMPETITOR_NAMES.length} competitor-name exclusions, ${RETIRED_PUBLIC_PHRASES.length} retired phrases and ${headlineOwners.size + 1} page headlines.`);
