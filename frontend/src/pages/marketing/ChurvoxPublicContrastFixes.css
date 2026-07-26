@@ -1,0 +1,18 @@
+/* High-contrast fixes for public pages that sit on the premium dark shell. */
+
+.cvDemoPage .cvDemoHeroCopy h1 {
+  color: #f8f5ec !important;
+  -webkit-text-fill-color: #f8f5ec !important;
+  font-weight: 780 !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.055em !important;
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.34);
+}
+
+.cvDemoPage .cvDemoHeroCopy > p {
+  color: #d1d6d1 !important;
+}
+
+.cvDemoPage .cvDemoHeroTools label span {
+  color: #ff9b62 !important;
+}
