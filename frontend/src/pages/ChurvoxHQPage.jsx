@@ -1,5 +1,5 @@
 import React from "react";
-import { Gift, Megaphone, ShieldCheck } from "lucide-react";
+import { BarChart3, ExternalLink, Gift, Megaphone, ShieldCheck, Wrench } from "lucide-react";
 import PaidLaunchHQSystem from "./PaidLaunchHQSystem";
 import TesterApplicationsInbox from "./admin/TesterApplicationsInbox";
 import ChurvoxPromotionCentre from "./admin/ChurvoxPromotionCentre";
@@ -29,9 +29,48 @@ const WORKSPACES = [
   },
 ];
 
+const WORKSPACE_KEYS = new Set(WORKSPACES.map((item) => item.key));
+
+function workspaceFromLocation() {
+  if (typeof window === "undefined") return "control";
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    const queryValue = String(params.get("workspace") || "").trim().toLowerCase();
+    if (WORKSPACE_KEYS.has(queryValue)) return queryValue;
+    const hashValue = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
+    if (WORKSPACE_KEYS.has(hashValue)) return hashValue;
+  } catch {}
+  return "control";
+}
+
+function writeWorkspace(workspace) {
+  if (typeof window === "undefined") return;
+  try {
+    const next = new URL(window.location.href);
+    next.searchParams.set("workspace", workspace);
+    next.hash = "";
+    window.history.replaceState({ ...(window.history.state || {}), churvoxHqWorkspace: workspace }, "", next.toString());
+  } catch {}
+}
+
 export default function ChurvoxHQPage({ embedded = false }) {
-  const [workspace, setWorkspace] = React.useState("control");
+  const [workspace, setWorkspace] = React.useState(workspaceFromLocation);
   const current = WORKSPACES.find((item) => item.key === workspace) || WORKSPACES[0];
+
+  React.useEffect(() => {
+    const sync = () => setWorkspace(workspaceFromLocation());
+    window.addEventListener("popstate", sync);
+    window.addEventListener("hashchange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("hashchange", sync);
+    };
+  }, []);
+
+  const selectWorkspace = (key) => {
+    setWorkspace(key);
+    writeWorkspace(key);
+  };
 
   return (
     <div
@@ -39,6 +78,7 @@ export default function ChurvoxHQPage({ embedded = false }) {
       className={`cvMyHq${embedded ? " cvMyHqEmbedded" : ""}`}
       data-cv-allow-verbatim="true"
       data-live-hq="true"
+      data-hq-workspace={workspace}
       aria-label="My Churvox HQ"
     >
       <header className="cvMyHqHeader">
@@ -49,23 +89,33 @@ export default function ChurvoxHQPage({ embedded = false }) {
             <strong>My Churvox HQ</strong>
           </span>
         </div>
-        <nav className="cvMyHqNav" aria-label="My HQ workspaces">
-          {WORKSPACES.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                type="button"
-                className={workspace === item.key ? "active" : ""}
-                aria-pressed={workspace === item.key}
-                onClick={() => setWorkspace(item.key)}
-              >
-                <Icon size={17} aria-hidden="true" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        <div className="cvMyHqHeaderTools">
+          <nav className="cvMyHqNav" aria-label="My HQ workspaces">
+            {WORKSPACES.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={workspace === item.key ? "active" : ""}
+                  aria-pressed={workspace === item.key}
+                  aria-current={workspace === item.key ? "page" : undefined}
+                  onClick={() => selectWorkspace(item.key)}
+                >
+                  <Icon size={17} aria-hidden="true" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+          {!embedded ? (
+            <nav className="cvMyHqUtilityNav" aria-label="HQ platform tools">
+              <a href="/admin/usage"><BarChart3 size={16} />Usage</a>
+              <a href="/platform"><Wrench size={16} />Platform tools</a>
+              <a href="/new-command-lab?surface=hq"><ExternalLink size={16} />Connected view</a>
+            </nav>
+          ) : null}
+        </div>
       </header>
 
       <section className="cvMyHqIntro" aria-labelledby="cv-my-hq-title">
