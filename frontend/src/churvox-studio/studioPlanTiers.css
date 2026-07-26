@@ -96,8 +96,11 @@
 }
 
 .cvReleasePlansGrid article.current .cvReleasePlanPrice {
-  color: #fff;
-  -webkit-text-fill-color: #fff;
+  display: block;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  opacity: 1 !important;
+  overflow: visible !important;
 }
 
 .cvReleasePlansGrid .cvReleasePlanPrice span {
@@ -110,8 +113,9 @@
 }
 
 .cvReleasePlansGrid article.current .cvReleasePlanPrice span {
-  color: #bdc5be;
-  -webkit-text-fill-color: #bdc5be;
+  color: #f0f4f0 !important;
+  -webkit-text-fill-color: #f0f4f0 !important;
+  opacity: 1 !important;
 }
 
 .cvReleasePlanHeadline {
