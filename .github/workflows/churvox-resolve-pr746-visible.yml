@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: resolve-pr746-visible
@@ -25,4 +26,22 @@ jobs:
           persist-credentials: true
 
       - name: Merge current main safely
-        run: bash scripts/churvox-resolve-pr746-main.sh
+        id: merge
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          bash scripts/churvox-resolve-pr746-main.sh 2>&1 | tee resolve-pr746.log
+
+      - name: Upload exact merge log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resolve-pr746-log-${{ github.run_id }}
+          path: resolve-pr746.log
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Fail if merge did not complete
+        if: steps.merge.outcome != 'success'
+        run: exit 1
