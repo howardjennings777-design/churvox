@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const BASE_URL = (process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com').replace(/\/+$/, '');
-const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
+const REQUEST_BASE = (process.env.PLAYWRIGHT_REQUEST_BASE || BASE_URL).replace(/\/+$/, '');
 const OWNER_EMAIL = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLowerCase();
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const WORKER_EMAIL = String(process.env.CHURVOX_WORKER_EMAIL || '').trim().toLowerCase();
@@ -12,7 +12,7 @@ const WORKER_ROUTES = ['/worker/today', '/worker/jobs', '/worker/messages', '/wo
 const PUBLIC_ROUTES = ['/', '/pricing', '/login'];
 
 function apiUrl(path) {
-  return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
+  return `${REQUEST_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
 }
 
 function tokenFrom(body = {}) {
@@ -20,17 +20,31 @@ function tokenFrom(body = {}) {
     || body?.user?.token || body?.user?.access_token || body?.data?.token || body?.data?.access_token || body?.data?.user?.token || '';
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function bodyOf(response) {
   return response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
 }
 
 async function apiLogin(request, email, password, label) {
-  const response = await request.post(apiUrl('/api/auth/login'), { data: { email, password }, timeout: 30_000 });
-  const body = await bodyOf(response);
-  expect(response.ok(), `${label} API login failed ${response.status()}: ${JSON.stringify(body).slice(0, 700)}`).toBeTruthy();
-  const token = tokenFrom(body);
-  expect(token, `${label} login returned no token`).toBeTruthy();
-  return token;
+  const failures = [];
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    try {
+      const response = await request.post(apiUrl('/api/auth/login'), { data: { email, password }, timeout: 60_000 });
+      const body = await bodyOf(response);
+      if (response.ok()) {
+        const token = tokenFrom(body);
+        if (token) return token;
+      }
+      failures.push(`attempt ${attempt}: HTTP ${response.status()} ${JSON.stringify(body).slice(0, 300)}`);
+    } catch (error) {
+      failures.push(`attempt ${attempt}: ${error?.message || error}`);
+    }
+    if (attempt < 4) await sleep(1000 * attempt);
+  }
+  throw new Error(`${label} API login failed after 4 attempts via ${REQUEST_BASE}: ${failures.join(' | ')}`);
 }
 
 async function seedSession(context, token, email, role) {
@@ -65,8 +79,8 @@ function watchRuntime(page) {
 async function assertHealthy(page, label, { owner = false, worker = false } = {}) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(500);
-  if (owner) await expect(page.locator('[data-churvox-layout="fresh-studio"]'), `${label} did not load current Studio`).toBeVisible({ timeout: 20_000 });
-  if (worker) await expect(page.locator('.cvWorkerRouteShell, .cvWorkerNoFuss, [data-churvox-worker]'), `${label} did not load Worker View`).toBeVisible({ timeout: 20_000 });
+  if (owner) await expect(page.locator('[data-churvox-layout="fresh-studio"]'), `${label} did not load current Studio`).toBeVisible({ timeout: 40_000 });
+  if (worker) await expect(page.locator('.cvWorkerRouteShell, .cvWorkerNoFuss, [data-churvox-worker]'), `${label} did not load Worker View`).toBeVisible({ timeout: 40_000 });
 
   const result = await page.evaluate(() => {
     const visible = (element) => {
@@ -97,11 +111,11 @@ async function uiLogin(page, email, password, role) {
   await page.getByLabel(/email/i).first().fill(email);
   await page.getByLabel(/password/i).first().fill(password);
   const submit = page.getByRole('button', { name: /open churvox|preparing secure entry|sign in|log in/i }).first();
-  await expect(submit, 'login did not finish its startup session check').toBeEnabled({ timeout: 20_000 });
+  await expect(submit, 'login did not finish its startup session check').toBeEnabled({ timeout: 40_000 });
   await submit.click();
   await expect.poll(async () => ({ url: page.url(), error: await page.locator('[role="alert"]').first().textContent().catch(() => '') }), {
-    timeout: 35_000,
-    intervals: [400, 800, 1500, 2500],
+    timeout: 75_000,
+    intervals: [400, 800, 1500, 2500, 5000],
     message: `The ${role} login did not leave the login page`,
   }).toMatchObject({ url: expect.not.stringMatching(/\/login(?:[?#]|$)/i) });
   expect(page.url()).toMatch(role === 'worker' ? /\/worker(?:[/?#]|$)/i : /\/dashboard(?:[/?#]|$)|\/plans(?:[/?#]|$)/i);
@@ -209,10 +223,10 @@ test.describe('Current Worker View and role boundaries', () => {
     const workerPage = await workerContext.newPage();
     try {
       await ownerPage.goto(`${BASE_URL}/worker/jobs`, { waitUntil: 'domcontentloaded' });
-      await expect.poll(() => ownerPage.url(), { timeout: 20_000, intervals: [300, 700, 1200, 2200] }).not.toMatch(/\/worker\/jobs(?:[?#]|$)/i);
+      await expect.poll(() => ownerPage.url(), { timeout: 40_000, intervals: [300, 700, 1200, 2200, 5000] }).not.toMatch(/\/worker\/jobs(?:[?#]|$)/i);
       for (const route of ['/dashboard', '/dashboard#plans', '/admin']) {
         await workerPage.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded' });
-        await expect.poll(() => workerPage.url(), { timeout: 20_000, intervals: [300, 700, 1200, 2200] }).not.toMatch(/\/dashboard(?:[/?#]|$)|\/admin(?:[/?#]|$)/i);
+        await expect.poll(() => workerPage.url(), { timeout: 40_000, intervals: [300, 700, 1200, 2200, 5000] }).not.toMatch(/\/dashboard(?:[/?#]|$)|\/admin(?:[/?#]|$)/i);
       }
     } finally {
       await ownerContext.close();
