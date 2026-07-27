@@ -1,0 +1,131 @@
+name: Churvox Product Readiness Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'scripts/**'
+      - '.github/workflows/churvox-product-readiness-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'scripts/**'
+      - '.github/workflows/churvox-product-readiness-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-product-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  product-readiness:
+    name: Current product, commercial loop and owner-worker proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_E2E_MUTATE: '1'
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CI: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify private owner credential
+        run: |
+          test -n "$CHURVOX_OWNER_PASSWORD"
+          echo "Owner credential is present and remains masked."
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Check current readiness tests and owner-worker wiring
+        run: |
+          node --check frontend/tests/e2e/churvox-current-product-readiness.spec.js
+          node --check frontend/tests/e2e/churvox-studio-human-owner-worker-flow-v3.spec.js
+          node scripts/churvox-studio-owner-worker-audit.cjs
+
+      - name: Build production frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Start exact production frontend with same-origin API proxy
+        working-directory: frontend
+        run: |
+          PORT=3000 node scripts/start-production.cjs > /tmp/churvox-product-readiness-server.log 2>&1 &
+          echo $! > /tmp/churvox-product-readiness-server.pid
+          for attempt in $(seq 1 90); do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
+            if [[ "$status" =~ ^[234] ]]; then
+              echo "Production frontend is ready with HTTP $status."
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/churvox-product-readiness-server.log
+          exit 1
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Prove current desktop and mobile owner product
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          PLAYWRIGHT_SKIP_WEB_SERVER: '1'
+        run: |
+          npx playwright test tests/e2e/churvox-current-product-readiness.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Discover linked worker login
+        run: node scripts/churvox-discover-linked-worker.cjs
+
+      - name: Prove quote to job to worker to linked draft invoice
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          PLAYWRIGHT_SKIP_WEB_SERVER: '1'
+        run: |
+          npx playwright test tests/e2e/churvox-studio-human-owner-worker-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line
+
+      - name: Clean exact-run product audit records
+        if: always()
+        run: node scripts/churvox-hardcore-human-cleanup.cjs
+
+      - name: Upload readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-product-readiness-${{ github.run_id }}
+          path: |
+            /tmp/churvox-product-readiness-server.log
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 14
