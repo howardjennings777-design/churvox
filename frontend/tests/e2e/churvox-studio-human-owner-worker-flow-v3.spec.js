@@ -6,20 +6,21 @@ const OWNER_EMAIL = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLower
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const WORKER_EMAIL = String(process.env.CHURVOX_WORKER_EMAIL || '').trim().toLowerCase();
 const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || OWNER_PASSWORD;
+const RUN_ID = String(process.env.GITHUB_RUN_ID || `local-${process.pid}`);
 
 function apiUrl(path) {
   return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
 }
 
 function idOf(row = {}) {
-  const raw = row.id || row._id || row.job_id || row.worker_id || row.client_id || row.invoice_id || row.source_id || '';
+  const raw = row.id || row._id || row.job_id || row.worker_id || row.client_id || row.invoice_id || row.quote_id || row.source_id || '';
   return typeof raw === 'object' ? String(raw.$oid || raw.oid || raw.id || '') : String(raw || '');
 }
 
 function rowsFrom(payload) {
   const body = payload?.data?.data ?? payload?.data ?? payload;
   if (Array.isArray(body)) return body;
-  for (const key of ['items', 'records', 'results', 'workers', 'team', 'members', 'jobs', 'clients', 'invoices', 'slips', 'data']) {
+  for (const key of ['items', 'records', 'results', 'workers', 'team', 'members', 'jobs', 'clients', 'quotes', 'invoices', 'slips', 'data']) {
     if (Array.isArray(body?.[key])) return body[key];
   }
   return [];
@@ -53,6 +54,16 @@ async function api(request, method, path, token, data) {
     timeout: 30_000,
   });
   return { response, body: await bodyOf(response) };
+}
+
+async function firstGood(calls, label) {
+  const failures = [];
+  for (const [name, call] of calls) {
+    const result = await call();
+    if (result.response.ok() && result.body?.success !== false) return result;
+    failures.push(`${name} ${result.response.status()} ${JSON.stringify(result.body).slice(0, 500)}`);
+  }
+  throw new Error(`${label} failed: ${failures.join(' | ')}`);
 }
 
 async function seed(context, token, email, role) {
@@ -94,7 +105,7 @@ async function createClientByHuman(page, run) {
   await expect(drawer).toBeVisible();
   await drawer.getByLabel('Name', { exact: true }).fill(name);
   await drawer.getByLabel('Phone', { exact: true }).fill('021 555 0199');
-  await drawer.getByLabel('Email', { exact: true }).fill(`studio-human-${run}@example.com`);
+  await drawer.getByLabel('Email', { exact: true }).fill(`studio-human-${run.replace(/[^a-z0-9]/gi, '')}@example.com`);
   await drawer.getByLabel('Address', { exact: true }).fill('1 Studio Audit Street, Wellington');
   await drawer.getByLabel('Access notes', { exact: true }).fill(`STUDIO HUMAN access note ${run}`);
 
@@ -109,41 +120,103 @@ async function createClientByHuman(page, run) {
   return name;
 }
 
-async function createAssignedJob(request, ownerToken, worker, run, clientName) {
+async function createQuoteAndConvertByHuman(page, request, ownerToken, worker, run, clientName) {
   const workerId = idOf(worker);
   expect(workerId, 'Linked worker has no stable id').toBeTruthy();
-  const title = `STUDIO HUMAN JOB ${run}`;
-  const result = await api(request, 'post', '/api/jobs', ownerToken, {
-    title,
-    job_title: title,
-    job_type: 'other',
-    client_name: clientName,
-    customer_name: clientName,
-    address: '1 Studio Audit Street, Wellington',
-    scheduled_date: new Date().toISOString().slice(0, 10),
-    scheduled_time: '09:00',
-    estimated_duration: 30,
-    status: 'assigned',
-    price: 0,
-    assigned_worker_id: workerId,
-    worker_id: workerId,
-    worker_email: WORKER_EMAIL,
-    assigned_worker_name: worker.name || worker.full_name || worker.email || WORKER_EMAIL,
-    worker_instructions: `STUDIO HUMAN instruction ${run}: complete, attach proof and report extra work.`,
-    notes: `STUDIO HUMAN instruction ${run}`,
-    source: 'studio-human-owner-worker-v3',
-  });
-  expect(result.response.ok(), `Job creation failed ${result.response.status()}: ${JSON.stringify(result.body).slice(0, 800)}`).toBeTruthy();
-  const record = result.body.job || result.body.record || result.body.data?.job || result.body.data?.record || result.body.data || result.body;
-  let id = idOf(record);
-  if (!id) {
+  const quoteTitle = `STUDIO HUMAN QUOTE ${run}`;
+  const quoteCreate = await firstGood([
+    ['POST /api/quotes', () => api(request, 'post', '/api/quotes', ownerToken, {
+      title: quoteTitle,
+      quote_title: quoteTitle,
+      client_name: clientName,
+      customer_name: clientName,
+      customer_email: `studio-human-${run.replace(/[^a-z0-9]/gi, '')}@example.com`,
+      amount: 149,
+      total: 149,
+      status: 'Draft',
+      scope: `STUDIO HUMAN quote scope ${run}`,
+      description: `STUDIO HUMAN quote scope ${run}`,
+      terms: 'Valid for 14 days',
+      source: 'studio-human-commercial-loop-v4',
+    })],
+    ['POST /api/quotes/create', () => api(request, 'post', '/api/quotes/create', ownerToken, {
+      title: quoteTitle,
+      quote_title: quoteTitle,
+      client_name: clientName,
+      customer_name: clientName,
+      amount: 149,
+      status: 'Draft',
+      scope: `STUDIO HUMAN quote scope ${run}`,
+      source: 'studio-human-commercial-loop-v4',
+    })],
+  ], 'quote creation');
+
+  let quoteId = idOf(quoteCreate.body.quote || quoteCreate.body.record || quoteCreate.body.data?.quote || quoteCreate.body.data || quoteCreate.body);
+  if (!quoteId) {
     await expect.poll(async () => {
-      const listed = await api(request, 'get', `/api/jobs?ts=${Date.now()}`, ownerToken);
-      id = idOf(rowsFrom(listed.body).find((row) => contains(row, title)));
-      return Boolean(id);
+      const listed = await api(request, 'get', `/api/quotes?ts=${Date.now()}`, ownerToken);
+      quoteId = idOf(rowsFrom(listed.body).find((row) => contains(row, quoteTitle)));
+      return Boolean(quoteId);
     }, { timeout: 25_000, intervals: [500, 1000, 2000] }).toBe(true);
   }
-  return { id, title };
+
+  await page.goto(`${BASE_URL}/dashboard#quotes`, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByText(quoteTitle).first()).toBeVisible({ timeout: 30_000 });
+  await page.locator('button').filter({ hasText: quoteTitle }).first().click();
+  const drawer = page.getByRole('dialog', { name: /Open quote/i });
+  await expect(drawer).toBeVisible();
+
+  const acceptedResponse = page.waitForResponse(
+    (response) => response.request().method() === 'PATCH' && new URL(response.url()).pathname === `/api/quotes/${quoteId}`,
+    { timeout: 30_000 },
+  );
+  await drawer.getByRole('button', { name: /Mark accepted/i }).click();
+  expect((await acceptedResponse).ok(), 'Quote acceptance failed').toBeTruthy();
+
+  const convertResponsePromise = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && new RegExp(`/api/quotes/${quoteId}/convert(?:-to-job)?$`).test(new URL(response.url()).pathname),
+    { timeout: 30_000 },
+  );
+  const convertButton = drawer.getByRole('button', { name: /Convert to job/i });
+  await expect(convertButton).toBeVisible({ timeout: 15_000 });
+  await convertButton.click();
+  const convertResponse = await convertResponsePromise;
+  expect(convertResponse.ok(), `Quote conversion failed with ${convertResponse.status()}`).toBeTruthy();
+  const convertBody = await bodyOf(convertResponse);
+
+  let jobId = idOf(convertBody.job || convertBody.record || convertBody.data?.job || convertBody.data?.record || convertBody.data || convertBody);
+  let jobRow = null;
+  await expect.poll(async () => {
+    const listed = await api(request, 'get', `/api/jobs?ts=${Date.now()}`, ownerToken);
+    jobRow = rowsFrom(listed.body).find((row) => idOf(row) === jobId || contains(row, quoteTitle) || (contains(row, clientName) && contains(row, '149')));
+    if (!jobId) jobId = idOf(jobRow);
+    return Boolean(jobId && jobRow);
+  }, { timeout: 30_000, intervals: [700, 1200, 2500], message: 'Converted quote did not create a linked job' }).toBe(true);
+
+  const jobTitle = String(jobRow.title || jobRow.job_title || jobRow.name || quoteTitle);
+  const assignmentPayload = {
+    assigned_worker_id: workerId,
+    worker_id: workerId,
+    assigned_worker_name: worker.name || worker.full_name || worker.email || WORKER_EMAIL,
+    worker_name: worker.name || worker.full_name || worker.email || WORKER_EMAIL,
+    worker_email: WORKER_EMAIL,
+    scheduled_date: new Date().toISOString().slice(0, 10),
+    scheduled_time: '09:00',
+    status: 'assigned',
+    worker_instructions: `STUDIO HUMAN instruction ${run}: complete, attach proof and report extra work.`,
+    notes: `STUDIO HUMAN instruction ${run}`,
+  };
+  await firstGood([
+    ['PATCH converted job', () => api(request, 'patch', `/api/jobs/${jobId}`, ownerToken, assignmentPayload)],
+    ['POST converted job assign', () => api(request, 'post', `/api/jobs/${jobId}/assign`, ownerToken, assignmentPayload)],
+  ], 'converted job assignment');
+
+  await expect.poll(async () => {
+    const listed = await api(request, 'get', `/api/worker/jobs?ts=${Date.now()}`, await login(request, WORKER_EMAIL, WORKER_PASSWORD, 'worker assignment check'));
+    return listed.response.ok() && rowsFrom(listed.body).some((row) => idOf(row) === jobId || contains(row, jobTitle));
+  }, { timeout: 30_000, intervals: [700, 1200, 2500], message: 'Assigned converted job did not reach worker queue' }).toBe(true);
+
+  return { id: jobId, title: jobTitle, quoteId, quoteTitle };
 }
 
 async function workerAction(page, jobId, label) {
@@ -157,16 +230,17 @@ async function workerAction(page, jobId, label) {
   expect(response.ok(), `${label} failed with ${response.status()}`).toBeTruthy();
 }
 
-test.describe('Current Studio real owner-worker mutation v3', () => {
+test.describe('Current Studio real commercial and owner-worker mutation v4', () => {
   test.setTimeout(600_000);
 
-  test('human owner creates, worker completes, Command receives issue and owner prepares invoice', async ({ browser, request }) => {
+  test('quote becomes assigned job, worker completes it, Command receives issue and owner prepares linked invoice', async ({ browser, request }) => {
     if (!OWNER_EMAIL || !OWNER_PASSWORD || !WORKER_EMAIL || !WORKER_PASSWORD) throw new Error('Real owner and worker credentials are required.');
 
     const ownerToken = await login(request, OWNER_EMAIL, OWNER_PASSWORD, 'owner');
     const workerToken = await login(request, WORKER_EMAIL, WORKER_PASSWORD, 'worker');
     const worker = await linkedWorker(request, ownerToken);
-    const run = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+    const run = `run-${RUN_ID}-${timestamp}`;
     const issue = `STUDIO HUMAN ISSUE ${run}: extra work needs owner judgement`;
 
     const ownerContext = await browser.newContext({ serviceWorkers: 'block' });
@@ -178,7 +252,7 @@ test.describe('Current Studio real owner-worker mutation v3', () => {
 
     try {
       const clientName = await test.step('Owner creates client through Studio UI', () => createClientByHuman(ownerPage, run));
-      const job = await test.step('Owner creates assigned live job', () => createAssignedJob(request, ownerToken, worker, run, clientName));
+      const job = await test.step('Owner accepts quote, converts it to a job and assigns the worker', () => createQuoteAndConvertByHuman(ownerPage, request, ownerToken, worker, run, clientName));
 
       await test.step('Worker attaches proof and completes every field state', async () => {
         await workerPage.goto(`${BASE_URL}/worker/jobs`, { waitUntil: 'domcontentloaded' });
@@ -223,7 +297,7 @@ test.describe('Current Studio real owner-worker mutation v3', () => {
         }).toBe(true);
       });
 
-      await test.step('Owner prepares invoice from completed job', async () => {
+      await test.step('Owner prepares invoice from completed converted job', async () => {
         await ownerPage.goto(`${BASE_URL}/dashboard#jobs`, { waitUntil: 'domcontentloaded' });
         await expect(ownerPage.getByText(job.title).first()).toBeVisible({ timeout: 35_000 });
         await ownerPage.locator('button').filter({ hasText: job.title }).first().click();
@@ -247,11 +321,11 @@ test.describe('Current Studio real owner-worker mutation v3', () => {
         await expect.poll(async () => {
           const listed = await api(request, 'get', `/api/invoices?ts=${Date.now()}`, ownerToken);
           if (!listed.response.ok()) return false;
-          return rowsFrom(listed.body).some((invoice) => contains(invoice, job.id) || contains(invoice, job.title));
+          return rowsFrom(listed.body).some((invoice) => (contains(invoice, job.id) || contains(invoice, job.title)) && /draft/i.test(JSON.stringify(invoice)));
         }, {
           timeout: 30_000,
           intervals: [700, 1200, 2500],
-          message: 'Prepared invoice was not linked to the completed job',
+          message: 'Prepared draft invoice was not linked to the completed converted job',
         }).toBe(true);
       });
     } finally {
