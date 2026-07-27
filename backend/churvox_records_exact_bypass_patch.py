@@ -199,6 +199,13 @@ def split_direct_record_path(path: str):
     return record_type, parts[2], "delete"
 
 
+def split_quote_accept_path(path: str):
+    parts = [part for part in text(path).split("/") if part]
+    if len(parts) == 4 and parts[0] == "api" and parts[1] == "quotes" and parts[3] == "accept":
+        return parts[2]
+    return None
+
+
 def install(module):
     name = getattr(module, "__name__", "")
     if name in INSTALLED:
@@ -244,6 +251,57 @@ def install(module):
             "collections": touched,
             "record": safe(matched) if matched else None,
             "message": f"{target['label'].capitalize()} deleted." if deleted else f"No matching {target['label']} found to delete.",
+        }
+
+    async def accept_quote(record_id: str, request, user: Dict[str, Any]):
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {}
+        target = TARGETS["quote"]
+        query = combined_query(record_id, target["id_fields"], user)
+        accepted_at = now_utc()
+        accepted_by_email = lower(user_value(user, "email", "user_email", "owner_email"))
+        accepted_by_id = user_value(user, "id", "_id", "user_id")
+        update = {
+            "status": "Accepted",
+            "accepted_at": accepted_at,
+            "updated_at": accepted_at,
+            "accepted_by_owner": True,
+            "owner_approved": True,
+            "accepted_by_email": accepted_by_email,
+            "accepted_by_id": accepted_by_id,
+            "acceptance_source": "owner_record_drawer",
+        }
+        note = text(payload.get("note") or payload.get("acceptance_note"))[:2000]
+        if note:
+            update["acceptance_note"] = note
+        for collection_name in target["collections"]:
+            try:
+                found = await db[collection_name].find_one(query)
+                if not found:
+                    continue
+                result = await db[collection_name].update_one({"_id": found.get("_id")}, {"$set": update})
+                matched_count = int(getattr(result, "matched_count", 0) or 0)
+                if not matched_count:
+                    continue
+                return {
+                    "success": True,
+                    "status": "accepted",
+                    "record_id": record_id,
+                    "record_type": "quote",
+                    "collection": collection_name,
+                    "quote": safe({**found, **update}),
+                    "message": "Quote accepted by owner.",
+                }
+            except Exception:
+                continue
+        return {
+            "success": False,
+            "status": "not_found",
+            "record_id": record_id,
+            "record_type": "quote",
+            "message": "No matching quote was found for this business.",
         }
 
     async def reply_to_message(record_id: str, request, user: Dict[str, Any]):
@@ -297,9 +355,18 @@ def install(module):
 
     @app.middleware("http")
     async def records_exact_bypass(request, call_next):
+        quote_accept_id = split_quote_accept_path(request.url.path)
         parsed = split_record_path(request.url.path) or split_direct_record_path(request.url.path)
-        if parsed and request.method.upper() == "OPTIONS":
+        if (parsed or quote_accept_id) and request.method.upper() == "OPTIONS":
             return add_cors(JSONResponse({"ok": True, "source": "records_exact_bypass"}), request)
+        if quote_accept_id:
+            if request.method.upper() != "POST":
+                return add_cors(JSONResponse({"success": False, "message": "Quote acceptance requires POST."}, status_code=405), request)
+            user, error = await current_user_or_response(request)
+            if error:
+                return add_cors(error, request)
+            body = await accept_quote(quote_accept_id, request, user)
+            return add_cors(JSONResponse(body, status_code=200 if body.get("success") else 404), request)
         if parsed:
             record_type, record_id, action = parsed
             user, error = await current_user_or_response(request)
