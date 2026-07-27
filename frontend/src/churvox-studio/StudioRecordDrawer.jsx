@@ -150,11 +150,12 @@ export default function StudioRecordDrawer({ record, data, api, refresh, close, 
     if (record.type === "quote") {
       const accepted = /accepted/.test(status);
       const converted = /converted/.test(status) || record.convertedJobId;
+      const acceptedAt = new Date().toISOString();
       return (
         <>
           {!accepted && !converted ? <Action tone="primary" icon={Send} busy={busy} onClick={() => run("send", [() => api.post(`/quotes/${id}/send`, { to: values.clientEmail, owner_approved: true })], "Quote sent", "The quote moved to Sent and follow-up tracking has started.", { status: "Sent" })}>Send quote</Action> : null}
-          {!accepted && !converted ? <Action icon={Check} busy={busy} onClick={() => run("accept", [() => api.patch(`/quotes/${id}`, { status: "Accepted", accepted_at: new Date().toISOString() })], "Quote accepted", "The quote is ready to become scheduled work.", { status: "Accepted" })}>Mark accepted</Action> : null}
-          {accepted && !converted ? <Action tone="complete" busy={busy} onClick={() => run("convert", [() => api.post(`/quotes/${id}/convert-to-job`, {}), () => api.post(`/quotes/${id}/convert`, {})], "Job created", "Client, scope and price moved into Work without retyping.", { status: "Converted" }, true)}>Convert to job</Action> : null}
+          {!accepted && !converted ? <Action icon={Check} busy={busy} onClick={() => run("accept", [() => api.post(`/quotes/${id}/accept`, { owner_approved: true, accepted_at: acceptedAt }), () => api.patch(`/quotes/${id}`, { status: "accepted", accepted_at: acceptedAt })], "Quote accepted", "The quote is ready to become scheduled work.", { status: "Accepted" })}>Mark accepted</Action> : null}
+          {accepted && !converted ? <Action tone="complete" busy={busy} onClick={() => run("convert", [() => api.post(`/quotes/${id}/convert-to-job`, {}), () => api.post(`/quotes/${id}/convert`, {})], "Job created", "Client, scope and price moved into Jobs without retyping.", { status: "Converted" }, true)}>Convert to job</Action> : null}
         </>
       );
     }

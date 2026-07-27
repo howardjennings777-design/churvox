@@ -46,7 +46,7 @@ check(
 
 check(
   'Studio has current primary business areas',
-  all(model, ['label: "Today"', 'label: "Work"', 'label: "Clients"', 'label: "Money"', 'label: "Team"', 'label: "Messages"', 'label: "Command"']),
+  all(model, ['label: "Today"', 'label: "Jobs"', 'label: "Clients"', 'label: "Money"', 'label: "Team"', 'label: "Messages"', 'label: "Command"']),
   'The current owner navigation must expose every main business area.',
 );
 

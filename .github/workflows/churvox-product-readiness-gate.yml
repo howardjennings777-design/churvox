@@ -1,0 +1,200 @@
+name: Churvox Product Readiness Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'scripts/**'
+      - '.github/workflows/churvox-product-readiness-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'scripts/**'
+      - '.github/workflows/churvox-product-readiness-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-product-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  product-readiness:
+    name: Current product, commercial loop and owner-worker proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PLAYWRIGHT_API_BASE: https://grassley-backend.onrender.com
+      CHURVOX_OWNER_EMAIL: howardjennings777@gmail.com
+      CHURVOX_OWNER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_WORKER_PASSWORD: ${{ secrets.CHURVOX_OWNER_PASSWORD }}
+      CHURVOX_E2E_MUTATE: '1'
+      CHURVOX_HARDCORE_MUTATE: I_UNDERSTAND_LIVE_DATA_WILL_CHANGE
+      CI: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verify private owner credential
+        run: |
+          test -n "$CHURVOX_OWNER_PASSWORD"
+          echo "Owner credential is present and remains masked."
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Check current readiness tests and owner-worker wiring
+        run: |
+          node --check frontend/tests/e2e/churvox-current-product-readiness.spec.js
+          node --check frontend/tests/e2e/churvox-studio-human-owner-worker-flow-v3.spec.js
+          node scripts/churvox-studio-owner-worker-audit.cjs
+          python3 scripts/churvox_quote_accept_contract.py
+
+      - name: Build production frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Start exact production frontend with same-origin API proxy
+        working-directory: frontend
+        run: |
+          PORT=3000 node scripts/start-production.cjs > /tmp/churvox-product-readiness-server.log 2>&1 &
+          echo $! > /tmp/churvox-product-readiness-server.pid
+          for attempt in $(seq 1 90); do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)
+            if [[ "$status" =~ ^[234] ]]; then
+              echo "Production frontend is ready with HTTP $status."
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/churvox-product-readiness-server.log
+          exit 1
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Prove current desktop and mobile owner product
+        id: current_ui
+        continue-on-error: true
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          PLAYWRIGHT_SKIP_WEB_SERVER: '1'
+        run: |
+          set -o pipefail
+          set +e
+          npx playwright test tests/e2e/churvox-current-product-readiness.spec.js \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-current-product-readiness-output.txt
+          code=$?
+          echo "$code" > /tmp/churvox-current-product-readiness.exit
+          exit "$code"
+
+      - name: Discover linked worker login
+        id: worker_discovery
+        if: always()
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          set +e
+          node scripts/churvox-discover-linked-worker.cjs 2>&1 | tee /tmp/churvox-worker-discovery-output.txt
+          code=$?
+          echo "$code" > /tmp/churvox-worker-discovery.exit
+          exit "$code"
+
+      - name: Prove quote to job to worker to linked draft invoice
+        id: commercial_loop
+        if: always()
+        continue-on-error: true
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          PLAYWRIGHT_SKIP_WEB_SERVER: '1'
+        run: |
+          set -o pipefail
+          set +e
+          npx playwright test tests/e2e/churvox-studio-human-owner-worker-flow.spec.js \
+            --project=desktop-chromium \
+            --workers=1 \
+            --reporter=line 2>&1 | tee /tmp/churvox-commercial-loop-output.txt
+          code=$?
+          echo "$code" > /tmp/churvox-commercial-loop.exit
+          exit "$code"
+
+      - name: Clean exact-run product audit records
+        id: cleanup
+        if: always()
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_API_BASE: http://127.0.0.1:3000
+          CHURVOX_CLEANUP_REQUEST_TIMEOUT_MS: '60000'
+          CHURVOX_CLEANUP_ATTEMPTS: '4'
+          CHURVOX_CLEANUP_DEADLINE_MS: '480000'
+        run: |
+          set -o pipefail
+          set +e
+          node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/churvox-product-cleanup-output.txt
+          code=$?
+          echo "$code" > /tmp/churvox-product-cleanup.exit
+          exit "$code"
+
+      - name: Upload readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-product-readiness-${{ github.run_id }}
+          path: |
+            /tmp/churvox-product-readiness-server.log
+            /tmp/churvox-current-product-readiness-output.txt
+            /tmp/churvox-current-product-readiness.exit
+            /tmp/churvox-worker-discovery-output.txt
+            /tmp/churvox-worker-discovery.exit
+            /tmp/churvox-commercial-loop-output.txt
+            /tmp/churvox-commercial-loop.exit
+            /tmp/churvox-product-cleanup-output.txt
+            /tmp/churvox-product-cleanup.exit
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Enforce readiness results
+        if: always()
+        run: |
+          for file in \
+            /tmp/churvox-current-product-readiness.exit \
+            /tmp/churvox-worker-discovery.exit \
+            /tmp/churvox-commercial-loop.exit \
+            /tmp/churvox-product-cleanup.exit; do
+            test -f "$file" || { echo "Missing result file: $file"; exit 1; }
+          done
+          current_ui=$(cat /tmp/churvox-current-product-readiness.exit)
+          worker_discovery=$(cat /tmp/churvox-worker-discovery.exit)
+          commercial_loop=$(cat /tmp/churvox-commercial-loop.exit)
+          cleanup=$(cat /tmp/churvox-product-cleanup.exit)
+          echo "Current UI exit: $current_ui"
+          echo "Worker discovery exit: $worker_discovery"
+          echo "Commercial loop exit: $commercial_loop"
+          echo "Cleanup exit: $cleanup"
+          test "$current_ui" = "0"
+          test "$worker_discovery" = "0"
+          test "$commercial_loop" = "0"
+          test "$cleanup" = "0"

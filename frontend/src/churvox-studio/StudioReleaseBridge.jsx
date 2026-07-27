@@ -40,13 +40,23 @@ function navigateOwner(page) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function mobileDestinationLabel(button) {
+  return String(button?.getAttribute("aria-label") || button?.textContent || "")
+    .replace(/\d+$/, "")
+    .trim();
+}
+
 function ensureMobileMoreDestination(mobileMore, page, label) {
   const section = mobileMore?.querySelector("section");
   if (!section) return;
   const buttons = Array.from(section.querySelectorAll(":scope > button"));
-  const existing = buttons.find((button) => new RegExp(`^\\s*${label}\\b`, "i").test(String(button.textContent || "")));
-  if (existing) {
+  const matches = buttons.filter((button) => mobileDestinationLabel(button).toLowerCase() === label.toLowerCase());
+  if (matches.length) {
+    const existing = matches.find((button) => !button.classList.contains("cvStableMobileDestination")) || matches[0];
     existing.setAttribute("aria-label", label);
+    for (const duplicate of matches) {
+      if (duplicate !== existing && duplicate.classList.contains("cvStableMobileDestination")) duplicate.remove();
+    }
     return;
   }
 

@@ -12,6 +12,17 @@ ALLOWED_ORIGINS = {
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
 }
+PLATFORM_OWNER_EMAILS = {
+    "hello@churvox.com",
+    "howardjennings77@gmail.com",
+    "howardjennings777@gmail.com",
+}
+DIRECT_RECORD_TYPES = {
+    "jobs": "job",
+    "clients": "client",
+    "quotes": "quote",
+    "invoices": "invoice",
+}
 
 
 def now_utc():
@@ -138,8 +149,9 @@ def ownership_query(user: Dict[str, Any]) -> Dict[str, Any]:
     ors: List[Dict[str, Any]] = []
     if business_id:
         ors += [{"business_id": business_id}, {"company_id": business_id}, {"tenant_id": business_id}, {"business.id": business_id}]
-    if email:
-        ors += [{"user_email": email}, {"owner_email": email}, {"created_by_email": email}, {"email": email}]
+    emails = PLATFORM_OWNER_EMAILS if email in PLATFORM_OWNER_EMAILS else {email} if email else set()
+    for allowed_email in emails:
+        ors += [{"user_email": allowed_email}, {"owner_email": allowed_email}, {"created_by_email": allowed_email}, {"email": allowed_email}]
     if user_id:
         ors += [{"user_id": user_id}, {"owner_id": user_id}, {"created_by": user_id}]
     ors += [
@@ -167,7 +179,6 @@ TARGETS = {
 
 def split_record_path(path: str):
     parts = [part for part in text(path).split("/") if part]
-    # /api/records/{type}/{id} or /api/records/{type}/{id}/reply
     if len(parts) not in (4, 5):
         return None
     if parts[0] != "api" or parts[1] != "records":
@@ -176,6 +187,23 @@ def split_record_path(path: str):
     if not action:
         return None
     return normal_type(parts[2]), parts[3], action
+
+
+def split_direct_record_path(path: str):
+    parts = [part for part in text(path).split("/") if part]
+    if len(parts) != 3 or parts[0] != "api":
+        return None
+    record_type = DIRECT_RECORD_TYPES.get(parts[1])
+    if not record_type:
+        return None
+    return record_type, parts[2], "delete"
+
+
+def split_quote_accept_path(path: str):
+    parts = [part for part in text(path).split("/") if part]
+    if len(parts) == 4 and parts[0] == "api" and parts[1] == "quotes" and parts[3] == "accept":
+        return parts[2]
+    return None
 
 
 def install(module):
@@ -215,7 +243,66 @@ def install(module):
                     touched.append(collection_name)
             except Exception:
                 continue
-        return {"success": True, "deleted": deleted, "record_id": record_id, "record_type": target["label"], "collections": touched, "record": safe(matched) if matched else None, "message": f"{target['label'].capitalize()} deleted." if deleted else f"No matching {target['label']} found to delete."}
+        return {
+            "success": deleted > 0,
+            "deleted": deleted,
+            "record_id": record_id,
+            "record_type": target["label"],
+            "collections": touched,
+            "record": safe(matched) if matched else None,
+            "message": f"{target['label'].capitalize()} deleted." if deleted else f"No matching {target['label']} found to delete.",
+        }
+
+    async def accept_quote(record_id: str, request, user: Dict[str, Any]):
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {}
+        target = TARGETS["quote"]
+        query = combined_query(record_id, target["id_fields"], user)
+        accepted_at = now_utc()
+        accepted_by_email = lower(user_value(user, "email", "user_email", "owner_email"))
+        accepted_by_id = user_value(user, "id", "_id", "user_id")
+        update = {
+            "status": "Accepted",
+            "accepted_at": accepted_at,
+            "updated_at": accepted_at,
+            "accepted_by_owner": True,
+            "owner_approved": True,
+            "accepted_by_email": accepted_by_email,
+            "accepted_by_id": accepted_by_id,
+            "acceptance_source": "owner_record_drawer",
+        }
+        note = text(payload.get("note") or payload.get("acceptance_note"))[:2000]
+        if note:
+            update["acceptance_note"] = note
+        for collection_name in target["collections"]:
+            try:
+                found = await db[collection_name].find_one(query)
+                if not found:
+                    continue
+                result = await db[collection_name].update_one({"_id": found.get("_id")}, {"$set": update})
+                matched_count = int(getattr(result, "matched_count", 0) or 0)
+                if not matched_count:
+                    continue
+                return {
+                    "success": True,
+                    "status": "accepted",
+                    "record_id": record_id,
+                    "record_type": "quote",
+                    "collection": collection_name,
+                    "quote": safe({**found, **update}),
+                    "message": "Quote accepted by owner.",
+                }
+            except Exception:
+                continue
+        return {
+            "success": False,
+            "status": "not_found",
+            "record_id": record_id,
+            "record_type": "quote",
+            "message": "No matching quote was found for this business.",
+        }
 
     async def reply_to_message(record_id: str, request, user: Dict[str, Any]):
         try:
@@ -268,9 +355,18 @@ def install(module):
 
     @app.middleware("http")
     async def records_exact_bypass(request, call_next):
-        parsed = split_record_path(request.url.path)
-        if parsed and request.method.upper() == "OPTIONS":
+        quote_accept_id = split_quote_accept_path(request.url.path)
+        parsed = split_record_path(request.url.path) or split_direct_record_path(request.url.path)
+        if (parsed or quote_accept_id) and request.method.upper() == "OPTIONS":
             return add_cors(JSONResponse({"ok": True, "source": "records_exact_bypass"}), request)
+        if quote_accept_id:
+            if request.method.upper() != "POST":
+                return add_cors(JSONResponse({"success": False, "message": "Quote acceptance requires POST."}, status_code=405), request)
+            user, error = await current_user_or_response(request)
+            if error:
+                return add_cors(error, request)
+            body = await accept_quote(quote_accept_id, request, user)
+            return add_cors(JSONResponse(body, status_code=200 if body.get("success") else 404), request)
         if parsed:
             record_type, record_id, action = parsed
             user, error = await current_user_or_response(request)
@@ -281,7 +377,7 @@ def install(module):
                 return add_cors(JSONResponse({"success": False, "message": f"Unknown record type: {record_type}"}, status_code=404), request)
             if request.method.upper() == "DELETE" and action == "delete":
                 body = await delete_from_target(target, record_id, user)
-                return add_cors(JSONResponse(body), request)
+                return add_cors(JSONResponse(body, status_code=200 if body.get("deleted") else 404), request)
             if request.method.upper() == "POST" and action == "reply" and record_type == "message":
                 return add_cors(await reply_to_message(record_id, request, user), request)
             return add_cors(JSONResponse({"success": False, "message": "Record action not allowed"}, status_code=405), request)
