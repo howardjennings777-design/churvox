@@ -168,6 +168,7 @@ async function createQuoteAndConvertByHuman(page, request, ownerToken, workerTok
 
   const acceptedResponsePromise = page.waitForResponse(
     (response) => {
+      if (!response.ok()) return false;
       const method = response.request().method();
       const path = new URL(response.url()).pathname;
       return (method === 'POST' && path === `/api/quotes/${quoteId}/accept`)
@@ -179,6 +180,15 @@ async function createQuoteAndConvertByHuman(page, request, ownerToken, workerTok
   const acceptedResponse = await acceptedResponsePromise;
   const acceptedBody = await bodyOf(acceptedResponse);
   expect(acceptedResponse.ok(), `Quote acceptance failed ${acceptedResponse.status()}: ${JSON.stringify(acceptedBody).slice(0, 700)}`).toBeTruthy();
+  await expect.poll(async () => {
+    const listed = await api(request, 'get', `/api/quotes?ts=${Date.now()}`, ownerToken);
+    const quote = rowsFrom(listed.body).find((row) => idOf(row) === quoteId || contains(row, quoteTitle));
+    return /accepted/i.test(String(quote?.status || quote?.state || ''));
+  }, {
+    timeout: 30_000,
+    intervals: [500, 1000, 2000],
+    message: 'Quote acceptance response succeeded but the stored quote never became Accepted',
+  }).toBe(true);
 
   const convertResponsePromise = page.waitForResponse(
     (response) => response.request().method() === 'POST' && new RegExp(`/api/quotes/${quoteId}/convert(?:-to-job)?$`).test(new URL(response.url()).pathname),
