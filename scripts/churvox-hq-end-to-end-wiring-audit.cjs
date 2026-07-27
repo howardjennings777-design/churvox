@@ -30,7 +30,7 @@ const testerRoutes = read('backend/churvox_hq_tester_system_patch.py');
 const controlRoutes = read('backend/churvox_hq_control_access_final_patch.py');
 const ownerCanonical = read('backend/churvox_hq_hello_canonical_patch.py');
 const endpointProof = read('frontend/tests/e2e/churvox-hq-endpoint-wiring.spec.js');
-const workflow = read('.github/workflows/churvox-paid-launch-gate.yml');
+const workflow = read('.github/workflows/churvox-hq-wiring-gate.yml');
 
 const readPaths = [
   '/api/admin/owner-overview',
@@ -148,10 +148,11 @@ check(
 );
 
 check(
-  'the paid-launch workflow executes both the static and browser wiring proofs',
+  'the dedicated HQ workflow executes both the static and browser wiring proofs',
   workflow.includes('node scripts/churvox-hq-end-to-end-wiring-audit.cjs')
-    && workflow.includes('tests/e2e/churvox-hq-endpoint-wiring.spec.js'),
-  'The new wiring proofs must run automatically on every HQ-related pull request and main push',
+    && workflow.includes('tests/e2e/churvox-hq-endpoint-wiring.spec.js')
+    && workflow.includes('Start exact production frontend and API proxy'),
+  'The wiring proofs must run automatically on every HQ-related pull request and main push',
 );
 
 for (const item of checks) console.log(`${item.passed ? '✓' : '✗'} ${item.name}`);
