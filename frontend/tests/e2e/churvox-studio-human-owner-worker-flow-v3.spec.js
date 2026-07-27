@@ -120,7 +120,7 @@ async function createClientByHuman(page, run) {
   return name;
 }
 
-async function createQuoteAndConvertByHuman(page, request, ownerToken, worker, run, clientName) {
+async function createQuoteAndConvertByHuman(page, request, ownerToken, workerToken, worker, run, clientName) {
   const workerId = idOf(worker);
   expect(workerId, 'Linked worker has no stable id').toBeTruthy();
   const quoteTitle = `STUDIO HUMAN QUOTE ${run}`;
@@ -166,12 +166,19 @@ async function createQuoteAndConvertByHuman(page, request, ownerToken, worker, r
   const drawer = page.getByRole('dialog', { name: /Open quote/i });
   await expect(drawer).toBeVisible();
 
-  const acceptedResponse = page.waitForResponse(
-    (response) => response.request().method() === 'PATCH' && new URL(response.url()).pathname === `/api/quotes/${quoteId}`,
+  const acceptedResponsePromise = page.waitForResponse(
+    (response) => {
+      const method = response.request().method();
+      const path = new URL(response.url()).pathname;
+      return (method === 'POST' && path === `/api/quotes/${quoteId}/accept`)
+        || (method === 'PATCH' && path === `/api/quotes/${quoteId}`);
+    },
     { timeout: 30_000 },
   );
   await drawer.getByRole('button', { name: /Mark accepted/i }).click();
-  expect((await acceptedResponse).ok(), 'Quote acceptance failed').toBeTruthy();
+  const acceptedResponse = await acceptedResponsePromise;
+  const acceptedBody = await bodyOf(acceptedResponse);
+  expect(acceptedResponse.ok(), `Quote acceptance failed ${acceptedResponse.status()}: ${JSON.stringify(acceptedBody).slice(0, 700)}`).toBeTruthy();
 
   const convertResponsePromise = page.waitForResponse(
     (response) => response.request().method() === 'POST' && new RegExp(`/api/quotes/${quoteId}/convert(?:-to-job)?$`).test(new URL(response.url()).pathname),
@@ -212,7 +219,7 @@ async function createQuoteAndConvertByHuman(page, request, ownerToken, worker, r
   ], 'converted job assignment');
 
   await expect.poll(async () => {
-    const listed = await api(request, 'get', `/api/worker/jobs?ts=${Date.now()}`, await login(request, WORKER_EMAIL, WORKER_PASSWORD, 'worker assignment check'));
+    const listed = await api(request, 'get', `/api/worker/jobs?ts=${Date.now()}`, workerToken);
     return listed.response.ok() && rowsFrom(listed.body).some((row) => idOf(row) === jobId || contains(row, jobTitle));
   }, { timeout: 30_000, intervals: [700, 1200, 2500], message: 'Assigned converted job did not reach worker queue' }).toBe(true);
 
@@ -252,7 +259,7 @@ test.describe('Current Studio real commercial and owner-worker mutation v4', () 
 
     try {
       const clientName = await test.step('Owner creates client through Studio UI', () => createClientByHuman(ownerPage, run));
-      const job = await test.step('Owner accepts quote, converts it to a job and assigns the worker', () => createQuoteAndConvertByHuman(ownerPage, request, ownerToken, worker, run, clientName));
+      const job = await test.step('Owner accepts quote, converts it to a job and assigns the worker', () => createQuoteAndConvertByHuman(ownerPage, request, ownerToken, workerToken, worker, run, clientName));
 
       await test.step('Worker attaches proof and completes every field state', async () => {
         await workerPage.goto(`${BASE_URL}/worker/jobs`, { waitUntil: 'domcontentloaded' });
