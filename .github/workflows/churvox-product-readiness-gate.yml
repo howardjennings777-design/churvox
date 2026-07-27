@@ -97,11 +97,15 @@ jobs:
           PLAYWRIGHT_SKIP_WEB_SERVER: '1'
         run: |
           set -o pipefail
+          set +e
           npx playwright test tests/e2e/churvox-current-product-readiness.spec.js \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --workers=1 \
             --reporter=line 2>&1 | tee /tmp/churvox-current-product-readiness-output.txt
+          code=$?
+          echo "$code" > /tmp/churvox-current-product-readiness.exit
+          exit "$code"
 
       - name: Discover linked worker login
         id: worker_discovery
@@ -109,11 +113,15 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
+          set +e
           node scripts/churvox-discover-linked-worker.cjs 2>&1 | tee /tmp/churvox-worker-discovery-output.txt
+          code=$?
+          echo "$code" > /tmp/churvox-worker-discovery.exit
+          exit "$code"
 
       - name: Prove quote to job to worker to linked draft invoice
         id: commercial_loop
-        if: always() && steps.worker_discovery.outcome == 'success'
+        if: always()
         continue-on-error: true
         working-directory: frontend
         env:
@@ -121,10 +129,14 @@ jobs:
           PLAYWRIGHT_SKIP_WEB_SERVER: '1'
         run: |
           set -o pipefail
+          set +e
           npx playwright test tests/e2e/churvox-studio-human-owner-worker-flow.spec.js \
             --project=desktop-chromium \
             --workers=1 \
             --reporter=line 2>&1 | tee /tmp/churvox-commercial-loop-output.txt
+          code=$?
+          echo "$code" > /tmp/churvox-commercial-loop.exit
+          exit "$code"
 
       - name: Clean exact-run product audit records
         id: cleanup
@@ -132,7 +144,11 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
+          set +e
           node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/churvox-product-cleanup-output.txt
+          code=$?
+          echo "$code" > /tmp/churvox-product-cleanup.exit
+          exit "$code"
 
       - name: Upload readiness evidence
         if: always()
@@ -142,9 +158,13 @@ jobs:
           path: |
             /tmp/churvox-product-readiness-server.log
             /tmp/churvox-current-product-readiness-output.txt
+            /tmp/churvox-current-product-readiness.exit
             /tmp/churvox-worker-discovery-output.txt
+            /tmp/churvox-worker-discovery.exit
             /tmp/churvox-commercial-loop-output.txt
+            /tmp/churvox-commercial-loop.exit
             /tmp/churvox-product-cleanup-output.txt
+            /tmp/churvox-product-cleanup.exit
             frontend/playwright-report
             frontend/test-results
           if-no-files-found: warn
@@ -152,17 +172,23 @@ jobs:
 
       - name: Enforce readiness results
         if: always()
-        env:
-          CURRENT_UI_OUTCOME: ${{ steps.current_ui.outcome }}
-          WORKER_DISCOVERY_OUTCOME: ${{ steps.worker_discovery.outcome }}
-          COMMERCIAL_LOOP_OUTCOME: ${{ steps.commercial_loop.outcome }}
-          CLEANUP_OUTCOME: ${{ steps.cleanup.outcome }}
         run: |
-          echo "Current UI: $CURRENT_UI_OUTCOME"
-          echo "Worker discovery: $WORKER_DISCOVERY_OUTCOME"
-          echo "Commercial loop: $COMMERCIAL_LOOP_OUTCOME"
-          echo "Cleanup: $CLEANUP_OUTCOME"
-          test "$CURRENT_UI_OUTCOME" = "success"
-          test "$WORKER_DISCOVERY_OUTCOME" = "success"
-          test "$COMMERCIAL_LOOP_OUTCOME" = "success"
-          test "$CLEANUP_OUTCOME" = "success"
+          for file in \
+            /tmp/churvox-current-product-readiness.exit \
+            /tmp/churvox-worker-discovery.exit \
+            /tmp/churvox-commercial-loop.exit \
+            /tmp/churvox-product-cleanup.exit; do
+            test -f "$file" || { echo "Missing result file: $file"; exit 1; }
+          done
+          current_ui=$(cat /tmp/churvox-current-product-readiness.exit)
+          worker_discovery=$(cat /tmp/churvox-worker-discovery.exit)
+          commercial_loop=$(cat /tmp/churvox-commercial-loop.exit)
+          cleanup=$(cat /tmp/churvox-product-cleanup.exit)
+          echo "Current UI exit: $current_ui"
+          echo "Worker discovery exit: $worker_discovery"
+          echo "Commercial loop exit: $commercial_loop"
+          echo "Cleanup exit: $cleanup"
+          test "$current_ui" = "0"
+          test "$worker_discovery" = "0"
+          test "$commercial_loop" = "0"
+          test "$cleanup" = "0"
