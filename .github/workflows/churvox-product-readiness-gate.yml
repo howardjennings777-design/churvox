@@ -143,6 +143,11 @@ jobs:
         id: cleanup
         if: always()
         continue-on-error: true
+        env:
+          PLAYWRIGHT_API_BASE: http://127.0.0.1:3000
+          CHURVOX_CLEANUP_REQUEST_TIMEOUT_MS: '60000'
+          CHURVOX_CLEANUP_ATTEMPTS: '4'
+          CHURVOX_CLEANUP_DEADLINE_MS: '480000'
         run: |
           set -o pipefail
           set +e
