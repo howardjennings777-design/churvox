@@ -1,0 +1,98 @@
+name: Churvox HQ Wiring Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/src/pages/ChurvoxHQPage.jsx'
+      - 'frontend/src/components/admin/PlatformAdminRoute.jsx'
+      - 'frontend/src/lib/apiBase.js'
+      - 'frontend/server.cjs'
+      - 'frontend/tests/e2e/churvox-hq-endpoint-wiring.spec.js'
+      - 'backend/churvox_hq_*.py'
+      - 'backend/server/__init__.py'
+      - 'scripts/churvox-hq-end-to-end-wiring-audit.cjs'
+      - '.github/workflows/churvox-hq-wiring-gate.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/src/pages/ChurvoxHQPage.jsx'
+      - 'frontend/src/components/admin/PlatformAdminRoute.jsx'
+      - 'frontend/src/lib/apiBase.js'
+      - 'frontend/server.cjs'
+      - 'frontend/tests/e2e/churvox-hq-endpoint-wiring.spec.js'
+      - 'backend/churvox_hq_*.py'
+      - 'backend/server/__init__.py'
+      - 'scripts/churvox-hq-end-to-end-wiring-audit.cjs'
+      - '.github/workflows/churvox-hq-wiring-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-hq-wiring-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hq-wiring:
+    name: Prove live HQ wiring end to end
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --include=dev --legacy-peer-deps
+
+      - name: Audit route, proxy, auth and backend mounts
+        run: node scripts/churvox-hq-end-to-end-wiring-audit.cjs
+
+      - name: Build production frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start exact production frontend and API proxy
+        working-directory: frontend
+        run: |
+          npm start > /tmp/churvox-hq-wiring-frontend.log 2>&1 &
+          echo $! > /tmp/churvox-hq-wiring-frontend.pid
+          for i in {1..45}; do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/churvox-hq-wiring-frontend.log
+          exit 1
+
+      - name: Prove all eight HQ reads and protected tester writes
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: npx playwright test tests/e2e/churvox-hq-endpoint-wiring.spec.js --project=desktop-chromium --workers=1 --reporter=line
+
+      - name: Upload HQ wiring evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-hq-wiring-evidence
+          path: |
+            /tmp/churvox-hq-wiring-frontend.log
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 14
