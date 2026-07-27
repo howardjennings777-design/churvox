@@ -87,7 +87,13 @@
 }
 
 .cvReleasePlansGrid .cvReleasePlanPrice {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px;
+  width: 100%;
   margin-top: 13px;
+  overflow: visible;
   color: #161b17;
   -webkit-text-fill-color: #161b17;
   font-family: "Manrope", sans-serif;
@@ -96,7 +102,7 @@
 }
 
 .cvReleasePlansGrid article.current .cvReleasePlanPrice {
-  display: block;
+  display: flex;
   color: #fff !important;
   -webkit-text-fill-color: #fff !important;
   opacity: 1 !important;
@@ -104,12 +110,15 @@
 }
 
 .cvReleasePlansGrid .cvReleasePlanPrice span {
-  margin-left: 5px;
+  display: inline-block;
+  margin-left: 0;
   color: #6b746d;
   -webkit-text-fill-color: #6b746d;
   font-family: "DM Sans", sans-serif;
   font-size: 10px;
   font-weight: 750;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .cvReleasePlansGrid article.current .cvReleasePlanPrice span {
@@ -221,5 +230,7 @@
   .cvReleaseTierLadder article { border-right: 0; border-bottom: 1px solid var(--cvs-line); }
   .cvReleaseTierLadder article:last-child { border-bottom: 0; }
   .cvReleasePlansGrid.cvsPlansStrip article { padding: 20px; }
+  .cvReleasePlansGrid .cvReleasePlanPrice { font-size: 30px; }
+  .cvReleasePlansGrid .cvReleasePlanPrice span { flex-basis: 100%; margin-top: 5px; }
   .cvReleasePlanCapacity { grid-template-columns: 1fr; }
 }
