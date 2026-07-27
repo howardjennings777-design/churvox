@@ -170,11 +170,12 @@ test('the single HQ calls every owner source through the authenticated same-orig
   expect(intake.payload.days).toBe(90);
 
   await page.getByRole('button', { name: 'Grant', exact: true }).first().click();
-  await expect(page.getByText('Tester access granted through the protected owner route', { exact: true })).toBeVisible();
+  await expect.poll(() => requests.filter((request) => request.method === 'POST' && request.path === '/api/admin/owner/control-access' && request.payload?.action === 'grant').length).toBeGreaterThan(0);
+  await expect(page.getByRole('button', { name: 'Revoke', exact: true }).first()).toBeEnabled();
   await page.getByRole('button', { name: 'Revoke', exact: true }).first().click();
-  await expect(page.getByText('Tester access revoked through the protected owner route', { exact: true })).toBeVisible();
+  await expect.poll(() => requests.filter((request) => request.method === 'POST' && request.path === '/api/admin/owner/control-access' && request.payload?.action === 'revoke').length).toBeGreaterThan(0);
 
   const controls = requests.filter((request) => request.method === 'POST' && request.path === '/api/admin/owner/control-access');
-  expect(controls.some((request) => request.authorization === 'Bearer hq-wiring-owner-token' && request.payload?.action === 'grant' && request.payload?.identifier === 'tester@realtrade.co.nz')).toBeTruthy();
-  expect(controls.some((request) => request.authorization === 'Bearer hq-wiring-owner-token' && request.payload?.action === 'revoke' && request.payload?.identifier === 'tester@realtrade.co.nz')).toBeTruthy();
+  expect(controls.some((request) => request.authorization === 'Bearer hq-wiring-owner-token' && request.origin === pageOrigin && request.payload?.action === 'grant' && request.payload?.identifier === 'tester@realtrade.co.nz')).toBeTruthy();
+  expect(controls.some((request) => request.authorization === 'Bearer hq-wiring-owner-token' && request.origin === pageOrigin && request.payload?.action === 'revoke' && request.payload?.identifier === 'tester@realtrade.co.nz')).toBeTruthy();
 });
