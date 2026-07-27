@@ -63,6 +63,7 @@ jobs:
           node --check frontend/tests/e2e/churvox-current-product-readiness.spec.js
           node --check frontend/tests/e2e/churvox-studio-human-owner-worker-flow-v3.spec.js
           node scripts/churvox-studio-owner-worker-audit.cjs
+          python3 scripts/churvox_quote_accept_contract.py
 
       - name: Build production frontend
         working-directory: frontend
