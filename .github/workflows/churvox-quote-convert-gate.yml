@@ -1,0 +1,52 @@
+name: Churvox Quote Conversion Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/churvox_quote_convert_exact_patch.py'
+      - 'backend/churvox_nav_attention_request_signature_fix_patch.py'
+      - 'scripts/churvox_quote_convert_contract.py'
+      - '.github/workflows/churvox-quote-convert-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/churvox_quote_convert_exact_patch.py'
+      - 'backend/churvox_nav_attention_request_signature_fix_patch.py'
+      - 'scripts/churvox_quote_convert_contract.py'
+      - '.github/workflows/churvox-quote-convert-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-quote-convert-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quote-convert:
+    name: Business-isolated and idempotent quote conversion
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install contract dependencies
+        run: python -m pip install --disable-pip-version-check fastapi
+
+      - name: Compile conversion implementation
+        run: |
+          python -m py_compile backend/churvox_quote_convert_exact_patch.py
+          python -m py_compile backend/churvox_nav_attention_request_signature_fix_patch.py
+          python -m py_compile scripts/churvox_quote_convert_contract.py
+
+      - name: Prove conversion and security contract
+        run: python scripts/churvox_quote_convert_contract.py
