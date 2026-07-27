@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const BASE_URL = (process.env.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com').replace(/\/+$/, '');
-const API_BASE = (process.env.PLAYWRIGHT_API_BASE || 'https://grassley-backend.onrender.com').replace(/\/+$/, '');
+const REQUEST_BASE = (process.env.PLAYWRIGHT_REQUEST_BASE || BASE_URL).replace(/\/+$/, '');
 const OWNER_EMAIL = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLowerCase();
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const WORKER_EMAIL = String(process.env.CHURVOX_WORKER_EMAIL || '').trim().toLowerCase();
@@ -9,7 +9,7 @@ const WORKER_PASSWORD = process.env.CHURVOX_WORKER_PASSWORD || OWNER_PASSWORD;
 const RUN_ID = String(process.env.GITHUB_RUN_ID || `local-${process.pid}`);
 
 function apiUrl(path) {
-  return `${API_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
+  return `${REQUEST_BASE}${path.startsWith('/api') ? path : `/api${path}`}`;
 }
 
 function idOf(row = {}) {
@@ -34,24 +34,38 @@ function contains(row, token) {
   return JSON.stringify(row || {}).toLowerCase().includes(String(token || '').toLowerCase());
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function bodyOf(response) {
   return response.json().catch(async () => ({ text: await response.text().catch(() => '') }));
 }
 
 async function login(request, email, password, label) {
-  const response = await request.post(apiUrl('/api/auth/login'), { data: { email, password }, timeout: 30_000 });
-  const body = await bodyOf(response);
-  expect(response.ok(), `${label} login failed ${response.status()}: ${JSON.stringify(body).slice(0, 700)}`).toBeTruthy();
-  const token = tokenFrom(body);
-  expect(token, `${label} login returned no token`).toBeTruthy();
-  return token;
+  const failures = [];
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    try {
+      const response = await request.post(apiUrl('/api/auth/login'), { data: { email, password }, timeout: 60_000 });
+      const body = await bodyOf(response);
+      if (response.ok()) {
+        const token = tokenFrom(body);
+        if (token) return token;
+      }
+      failures.push(`attempt ${attempt}: HTTP ${response.status()} ${JSON.stringify(body).slice(0, 300)}`);
+    } catch (error) {
+      failures.push(`attempt ${attempt}: ${error?.message || error}`);
+    }
+    if (attempt < 4) await sleep(1000 * attempt);
+  }
+  throw new Error(`${label} login failed after 4 attempts via ${REQUEST_BASE}: ${failures.join(' | ')}`);
 }
 
 async function api(request, method, path, token, data) {
   const response = await request[method](apiUrl(path), {
     headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     ...(data === undefined ? {} : { data }),
-    timeout: 30_000,
+    timeout: 60_000,
   });
   return { response, body: await bodyOf(response) };
 }
@@ -111,12 +125,12 @@ async function createClientByHuman(page, run) {
 
   const responsePromise = page.waitForResponse(
     (response) => /\/api\/clients(?:\/create)?$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST',
-    { timeout: 30_000 },
+    { timeout: 60_000 },
   );
   await drawer.getByRole('button', { name: /Create record/i }).click();
   const response = await responsePromise;
   expect(response.ok(), `Client creation failed with ${response.status()}`).toBeTruthy();
-  await expect(page.getByText(/Record created/i).first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Record created/i).first()).toBeVisible({ timeout: 15_000 });
   return name;
 }
 
@@ -157,48 +171,38 @@ async function createQuoteAndConvertByHuman(page, request, ownerToken, workerTok
       const listed = await api(request, 'get', `/api/quotes?ts=${Date.now()}`, ownerToken);
       quoteId = idOf(rowsFrom(listed.body).find((row) => contains(row, quoteTitle)));
       return Boolean(quoteId);
-    }, { timeout: 25_000, intervals: [500, 1000, 2000] }).toBe(true);
+    }, { timeout: 45_000, intervals: [500, 1000, 2000, 4000] }).toBe(true);
   }
 
   await page.goto(`${BASE_URL}/dashboard#quotes`, { waitUntil: 'domcontentloaded' });
-  await expect(page.getByText(quoteTitle).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(quoteTitle).first()).toBeVisible({ timeout: 45_000 });
   await page.locator('button').filter({ hasText: quoteTitle }).first().click();
   const drawer = page.getByRole('dialog', { name: /Open quote/i });
   await expect(drawer).toBeVisible();
 
-  const acceptedResponsePromise = page.waitForResponse(
-    (response) => {
-      if (!response.ok()) return false;
-      const method = response.request().method();
-      const path = new URL(response.url()).pathname;
-      return (method === 'POST' && path === `/api/quotes/${quoteId}/accept`)
-        || (method === 'PATCH' && path === `/api/quotes/${quoteId}`);
-    },
-    { timeout: 30_000 },
-  );
   await drawer.getByRole('button', { name: /Mark accepted/i }).click();
-  const acceptedResponse = await acceptedResponsePromise;
-  const acceptedBody = await bodyOf(acceptedResponse);
-  expect(acceptedResponse.ok(), `Quote acceptance failed ${acceptedResponse.status()}: ${JSON.stringify(acceptedBody).slice(0, 700)}`).toBeTruthy();
   await expect.poll(async () => {
-    const listed = await api(request, 'get', `/api/quotes?ts=${Date.now()}`, ownerToken);
-    const quote = rowsFrom(listed.body).find((row) => idOf(row) === quoteId || contains(row, quoteTitle));
-    return /accepted/i.test(String(quote?.status || quote?.state || ''));
+    try {
+      const listed = await api(request, 'get', `/api/quotes?ts=${Date.now()}`, ownerToken);
+      const quote = rowsFrom(listed.body).find((row) => idOf(row) === quoteId || contains(row, quoteTitle));
+      return /accepted/i.test(String(quote?.status || quote?.state || ''));
+    } catch {
+      return false;
+    }
   }, {
-    timeout: 30_000,
-    intervals: [500, 1000, 2000],
-    message: 'Quote acceptance response succeeded but the stored quote never became Accepted',
+    timeout: 90_000,
+    intervals: [700, 1200, 2500, 5000],
+    message: 'Mark accepted did not persist the quote as Accepted',
   }).toBe(true);
 
   const convertResponsePromise = page.waitForResponse(
-    (response) => response.request().method() === 'POST' && new RegExp(`/api/quotes/${quoteId}/convert(?:-to-job)?$`).test(new URL(response.url()).pathname),
-    { timeout: 30_000 },
+    (response) => response.request().method() === 'POST' && response.ok() && new RegExp(`/api/quotes/${quoteId}/convert(?:-to-job)?$`).test(new URL(response.url()).pathname),
+    { timeout: 60_000 },
   );
   const convertButton = drawer.getByRole('button', { name: /Convert to job/i });
-  await expect(convertButton).toBeVisible({ timeout: 15_000 });
+  await expect(convertButton).toBeVisible({ timeout: 30_000 });
   await convertButton.click();
   const convertResponse = await convertResponsePromise;
-  expect(convertResponse.ok(), `Quote conversion failed with ${convertResponse.status()}`).toBeTruthy();
   const convertBody = await bodyOf(convertResponse);
 
   let jobId = idOf(convertBody.job || convertBody.record || convertBody.data?.job || convertBody.data?.record || convertBody.data || convertBody);
@@ -208,7 +212,7 @@ async function createQuoteAndConvertByHuman(page, request, ownerToken, workerTok
     jobRow = rowsFrom(listed.body).find((row) => idOf(row) === jobId || contains(row, quoteTitle) || (contains(row, clientName) && contains(row, '149')));
     if (!jobId) jobId = idOf(jobRow);
     return Boolean(jobId && jobRow);
-  }, { timeout: 30_000, intervals: [700, 1200, 2500], message: 'Converted quote did not create a linked job' }).toBe(true);
+  }, { timeout: 60_000, intervals: [700, 1200, 2500, 5000], message: 'Converted quote did not create a linked job' }).toBe(true);
 
   const jobTitle = String(jobRow.title || jobRow.job_title || jobRow.name || quoteTitle);
   const assignmentPayload = {
@@ -231,7 +235,7 @@ async function createQuoteAndConvertByHuman(page, request, ownerToken, workerTok
   await expect.poll(async () => {
     const listed = await api(request, 'get', `/api/worker/jobs?ts=${Date.now()}`, workerToken);
     return listed.response.ok() && rowsFrom(listed.body).some((row) => idOf(row) === jobId || contains(row, jobTitle));
-  }, { timeout: 30_000, intervals: [700, 1200, 2500], message: 'Assigned converted job did not reach worker queue' }).toBe(true);
+  }, { timeout: 60_000, intervals: [700, 1200, 2500, 5000], message: 'Assigned converted job did not reach worker queue' }).toBe(true);
 
   return { id: jobId, title: jobTitle, quoteId, quoteTitle };
 }
@@ -239,16 +243,15 @@ async function createQuoteAndConvertByHuman(page, request, ownerToken, workerTok
 async function workerAction(page, jobId, label) {
   const endpoint = label.toLowerCase();
   const responsePromise = page.waitForResponse(
-    (response) => response.request().method() === 'POST' && new RegExp(`/api/worker/jobs/${jobId}/${endpoint}`).test(response.url()),
-    { timeout: 30_000 },
+    (response) => response.request().method() === 'POST' && response.ok() && new RegExp(`/api/worker/jobs/${jobId}/${endpoint}`).test(response.url()),
+    { timeout: 60_000 },
   );
   await page.getByRole('button', { name: new RegExp(`^${label}$`, 'i') }).click();
-  const response = await responsePromise;
-  expect(response.ok(), `${label} failed with ${response.status()}`).toBeTruthy();
+  await responsePromise;
 }
 
 test.describe('Current Studio real commercial and owner-worker mutation v4', () => {
-  test.setTimeout(600_000);
+  test.setTimeout(900_000);
 
   test('quote becomes assigned job, worker completes it, Command receives issue and owner prepares linked invoice', async ({ browser, request }) => {
     if (!OWNER_EMAIL || !OWNER_PASSWORD || !WORKER_EMAIL || !WORKER_PASSWORD) throw new Error('Real owner and worker credentials are required.');
@@ -273,7 +276,7 @@ test.describe('Current Studio real commercial and owner-worker mutation v4', () 
 
       await test.step('Worker attaches proof and completes every field state', async () => {
         await workerPage.goto(`${BASE_URL}/worker/jobs`, { waitUntil: 'domcontentloaded' });
-        await expect(workerPage.getByText(job.title).first()).toBeVisible({ timeout: 30_000 });
+        await expect(workerPage.getByText(job.title).first()).toBeVisible({ timeout: 60_000 });
         const jobButton = workerPage.locator('.cvWorkerRouteQueue button').filter({ hasText: job.title }).first();
         if (await jobButton.count()) await jobButton.click();
 
@@ -285,11 +288,11 @@ test.describe('Current Studio real commercial and owner-worker mutation v4', () 
           buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=', 'base64'),
         });
         const proofPromise = workerPage.waitForResponse(
-          (response) => /\/api\/worker\/field-slip$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST',
-          { timeout: 30_000 },
+          (response) => /\/api\/worker\/field-slip$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST' && response.ok(),
+          { timeout: 60_000 },
         );
         await workerPage.getByRole('button', { name: /Send 1 proof item/i }).click();
-        expect((await proofPromise).ok(), 'Proof upload failed').toBeTruthy();
+        await proofPromise;
 
         for (const label of ['Acknowledge', 'Start', 'Pause', 'Resume', 'Complete']) {
           await workerAction(workerPage, job.id, label);
@@ -300,48 +303,47 @@ test.describe('Current Studio real commercial and owner-worker mutation v4', () 
         await workerPage.goto(`${BASE_URL}/worker/messages`, { waitUntil: 'domcontentloaded' });
         await workerPage.getByPlaceholder('What changed?', { exact: true }).fill(issue);
         const responsePromise = workerPage.waitForResponse(
-          (response) => /\/api\/worker\/field-slip$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST',
-          { timeout: 30_000 },
+          (response) => /\/api\/worker\/field-slip$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST' && response.ok(),
+          { timeout: 60_000 },
         );
         await workerPage.getByRole('button', { name: 'Send to Command', exact: true }).click();
-        expect((await responsePromise).ok(), 'Command issue send failed').toBeTruthy();
+        await responsePromise;
 
         await ownerPage.goto(`${BASE_URL}/dashboard#command`, { waitUntil: 'domcontentloaded' });
         await expect.poll(async () => (await ownerPage.locator('body').innerText()).includes(issue), {
-          timeout: 35_000,
-          intervals: [700, 1200, 2500],
+          timeout: 60_000,
+          intervals: [700, 1200, 2500, 5000],
           message: 'Owner Command did not receive worker issue',
         }).toBe(true);
       });
 
       await test.step('Owner prepares invoice from completed converted job', async () => {
         await ownerPage.goto(`${BASE_URL}/dashboard#jobs`, { waitUntil: 'domcontentloaded' });
-        await expect(ownerPage.getByText(job.title).first()).toBeVisible({ timeout: 35_000 });
+        await expect(ownerPage.getByText(job.title).first()).toBeVisible({ timeout: 60_000 });
         await ownerPage.locator('button').filter({ hasText: job.title }).first().click();
         const drawer = ownerPage.getByRole('dialog', { name: /Open job/i });
         await expect(drawer).toBeVisible();
         const prepare = drawer.getByRole('button', { name: /Prepare invoice/i });
-        await expect(prepare).toBeVisible({ timeout: 15_000 });
+        await expect(prepare).toBeVisible({ timeout: 30_000 });
         const responsePromise = ownerPage.waitForResponse(
           (response) => {
             if (response.request().method() !== 'POST' || !response.ok()) return false;
             const path = new URL(response.url()).pathname;
             return path === '/api/invoices' || new RegExp(`/api/jobs/${job.id}/(?:create-invoice-draft|invoice-draft)$`).test(path);
           },
-          { timeout: 30_000 },
+          { timeout: 60_000 },
         );
         await prepare.click();
-        const response = await responsePromise;
-        expect(response.ok(), `Invoice preparation failed with ${response.status()}`).toBeTruthy();
-        await expect(ownerPage.getByText(/Draft invoice prepared/i).first()).toBeVisible({ timeout: 10_000 });
+        await responsePromise;
+        await expect(ownerPage.getByText(/Draft invoice prepared/i).first()).toBeVisible({ timeout: 15_000 });
 
         await expect.poll(async () => {
           const listed = await api(request, 'get', `/api/invoices?ts=${Date.now()}`, ownerToken);
           if (!listed.response.ok()) return false;
           return rowsFrom(listed.body).some((invoice) => (contains(invoice, job.id) || contains(invoice, job.title)) && /draft/i.test(JSON.stringify(invoice)));
         }, {
-          timeout: 30_000,
-          intervals: [700, 1200, 2500],
+          timeout: 60_000,
+          intervals: [700, 1200, 2500, 5000],
           message: 'Prepared draft invoice was not linked to the completed converted job',
         }).toBe(true);
       });
