@@ -89,34 +89,50 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Prove current desktop and mobile owner product
+        id: current_ui
+        continue-on-error: true
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
           PLAYWRIGHT_SKIP_WEB_SERVER: '1'
         run: |
+          set -o pipefail
           npx playwright test tests/e2e/churvox-current-product-readiness.spec.js \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --workers=1 \
-            --reporter=line
+            --reporter=line 2>&1 | tee /tmp/churvox-current-product-readiness-output.txt
 
       - name: Discover linked worker login
-        run: node scripts/churvox-discover-linked-worker.cjs
+        id: worker_discovery
+        if: always()
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node scripts/churvox-discover-linked-worker.cjs 2>&1 | tee /tmp/churvox-worker-discovery-output.txt
 
       - name: Prove quote to job to worker to linked draft invoice
+        id: commercial_loop
+        if: always() && steps.worker_discovery.outcome == 'success'
+        continue-on-error: true
         working-directory: frontend
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
           PLAYWRIGHT_SKIP_WEB_SERVER: '1'
         run: |
+          set -o pipefail
           npx playwright test tests/e2e/churvox-studio-human-owner-worker-flow.spec.js \
             --project=desktop-chromium \
             --workers=1 \
-            --reporter=line
+            --reporter=line 2>&1 | tee /tmp/churvox-commercial-loop-output.txt
 
       - name: Clean exact-run product audit records
+        id: cleanup
         if: always()
-        run: node scripts/churvox-hardcore-human-cleanup.cjs
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node scripts/churvox-hardcore-human-cleanup.cjs 2>&1 | tee /tmp/churvox-product-cleanup-output.txt
 
       - name: Upload readiness evidence
         if: always()
@@ -125,7 +141,28 @@ jobs:
           name: churvox-product-readiness-${{ github.run_id }}
           path: |
             /tmp/churvox-product-readiness-server.log
+            /tmp/churvox-current-product-readiness-output.txt
+            /tmp/churvox-worker-discovery-output.txt
+            /tmp/churvox-commercial-loop-output.txt
+            /tmp/churvox-product-cleanup-output.txt
             frontend/playwright-report
             frontend/test-results
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Enforce readiness results
+        if: always()
+        env:
+          CURRENT_UI_OUTCOME: ${{ steps.current_ui.outcome }}
+          WORKER_DISCOVERY_OUTCOME: ${{ steps.worker_discovery.outcome }}
+          COMMERCIAL_LOOP_OUTCOME: ${{ steps.commercial_loop.outcome }}
+          CLEANUP_OUTCOME: ${{ steps.cleanup.outcome }}
+        run: |
+          echo "Current UI: $CURRENT_UI_OUTCOME"
+          echo "Worker discovery: $WORKER_DISCOVERY_OUTCOME"
+          echo "Commercial loop: $COMMERCIAL_LOOP_OUTCOME"
+          echo "Cleanup: $CLEANUP_OUTCOME"
+          test "$CURRENT_UI_OUTCOME" = "success"
+          test "$WORKER_DISCOVERY_OUTCOME" = "success"
+          test "$COMMERCIAL_LOOP_OUTCOME" = "success"
+          test "$CLEANUP_OUTCOME" = "success"
