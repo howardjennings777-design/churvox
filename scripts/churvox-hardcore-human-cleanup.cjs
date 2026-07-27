@@ -5,11 +5,11 @@ const OWNER_EMAIL = String(process.env.CHURVOX_OWNER_EMAIL || '').trim().toLower
 const OWNER_PASSWORD = process.env.CHURVOX_OWNER_PASSWORD || '';
 const RUN_ID = String(process.env.GITHUB_RUN_ID || `local-${process.pid}`);
 const RUN_MARKER = `run-${RUN_ID}-`;
-const LEGACY_MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT |Full launch worker detail /i;
+const LEGACY_MARKERS = /Human Client |Human Job |Human Quote |HUMAN-INV-|Boss to worker |Human worker |HARDCORE boss-worker |Hardcore Test Client |hardcore-owner-worker-test|HUMAN CURRENT |Full launch worker detail |STUDIO HUMAN /i;
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
 const REQUEST_TIMEOUT_MS = Math.max(4_000, Number(process.env.CHURVOX_CLEANUP_REQUEST_TIMEOUT_MS || 10_000));
 const MAX_ATTEMPTS = Math.max(1, Number(process.env.CHURVOX_CLEANUP_ATTEMPTS || 3));
-const DEADLINE_MS = Math.max(60_000, Number(process.env.CHURVOX_CLEANUP_DEADLINE_MS || 180_000));
+const DEADLINE_MS = Math.max(60_000, Number(process.env.CHURVOX_CLEANUP_DEADLINE_MS || 240_000));
 const STARTED_AT = Date.now();
 
 function log(message) {
@@ -59,9 +59,10 @@ function isLegacyFixture(row) {
 
 function inactiveRecord(row = {}) {
   if (row.archived === true || row.is_archived === true || row.deleted === true || row.is_deleted === true) return true;
+  if (row.active === false || row.is_active === false) return true;
   if (row.archived_at || row.deleted_at || row.ignored_at || row.dismissed_at || row.decided_at) return true;
   const status = String(row.status || row.state || row.action || row.owner_decision || row.decision || '');
-  return /archived|deleted|dismissed|rejected|ignored|resolved|approved_recorded/i.test(status);
+  return /archived|deleted|inactive|dismissed|rejected|ignored|resolved|approved_recorded/i.test(status);
 }
 
 function sleep(ms) {
@@ -108,10 +109,23 @@ async function login() {
   return token;
 }
 
+function deleteCount(body = {}) {
+  const value = body.deleted ?? body.deleted_count ?? body.data?.deleted ?? body.data?.deleted_count;
+  return Number(value || 0);
+}
+
 async function removeBusinessRecord(kind, id, headers) {
-  const result = await call(`/api/${kind}/${encodeURIComponent(id)}`, { method: 'DELETE', headers });
-  if (result.response.ok || result.response.status === 404) return true;
-  log(`${kind} ${id} delete returned HTTP ${result.response.status}: ${JSON.stringify(result.body).slice(0, 180)}`);
+  const singular = { jobs: 'job', clients: 'client', quotes: 'quote', invoices: 'invoice' }[kind] || kind.replace(/s$/, '');
+  const paths = [`/api/records/${singular}/${encodeURIComponent(id)}`, `/api/${kind}/${encodeURIComponent(id)}`];
+  const attempts = [];
+  for (const path of paths) {
+    const result = await call(path, { method: 'DELETE', headers });
+    const deleted = deleteCount(result.body);
+    attempts.push(`${path} HTTP ${result.response.status} deleted=${deleted}`);
+    if (result.response.ok && deleted > 0) return true;
+    if (result.response.status !== 404 && result.response.ok && result.body?.success === true && result.body?.record) return true;
+  }
+  log(`${kind} ${id} was not actually deleted: ${attempts.join(' | ')}`);
   return false;
 }
 
@@ -159,6 +173,17 @@ async function listCollections(kinds, headers, phase) {
   return new Map(entries);
 }
 
+async function activeCurrentRecords(kinds, headers, phase) {
+  const collections = await listCollections(kinds, headers, phase);
+  const active = [];
+  for (const [kind, rows] of collections.entries()) {
+    for (const row of rows) {
+      if (isCurrentRunFixture(row) && !inactiveRecord(row)) active.push({ kind, row });
+    }
+  }
+  return { collections, active };
+}
+
 async function main() {
   log(`Starting exact-run cleanup for GitHub run ${RUN_ID} against ${API_BASE}.`);
   const token = await login();
@@ -170,14 +195,13 @@ async function main() {
   let commandMatches = 0;
 
   const kinds = ['jobs', 'clients', 'quotes', 'invoices'];
-  const initial = await listCollections(kinds, headers, 'Initial scan');
-  const businessMatches = [];
-  for (const [kind, rows] of initial.entries()) {
+  const initialState = await activeCurrentRecords(kinds, headers, 'Initial scan');
+  for (const rows of initialState.collections.values()) {
     for (const row of rows) {
       if (isLegacyFixture(row) && !isCurrentRunFixture(row) && !inactiveRecord(row)) legacyBacklog += 1;
-      if (isCurrentRunFixture(row) && !inactiveRecord(row)) businessMatches.push({ kind, row });
     }
   }
+  const businessMatches = initialState.active;
   log(`Found ${businessMatches.length} active fixture record(s) created by run ${RUN_ID}.`);
   if (legacyBacklog) log(`Found ${legacyBacklog} older audit record(s); reported as legacy backlog and not mutated by this run.`);
 
@@ -215,24 +239,24 @@ async function main() {
   }
 
   if (!businessMatches.length && commandMatches === 0 && !failures.length) {
-    log(`Matched 0 exact-run mutable records; no destructive verification scan is required.`);
+    log('Matched 0 exact-run mutable records; no destructive verification scan is required.');
     log(`Retained ${immutableCurrentEntries} immutable exact-run audit entr${immutableCurrentEntries === 1 ? 'y' : 'ies'}.`);
     log(`Exact-run cleanup passed. Legacy backlog count: ${legacyBacklog}.`);
     return;
   }
 
-  const verification = await listCollections(kinds, headers, 'Verification');
-  const remainingActive = [];
-  for (const [kind, rows] of verification.entries()) {
-    for (const row of rows) {
-      if (isCurrentRunFixture(row) && !inactiveRecord(row)) remainingActive.push(`${kind}:${idOf(row) || 'missing-id'}`);
+  let remainingActive = [];
+  for (let round = 1; round <= 4; round += 1) {
+    await sleep(round === 1 ? 700 : 1500);
+    remainingActive = (await activeCurrentRecords(kinds, headers, `Verification round ${round}`)).active
+      .map(({ kind, row }) => `${kind}:${idOf(row) || 'missing-id'}`);
+    for (const row of await list('/api/command/slips?limit=400', headers)) {
+      if (isCurrentRunFixture(row) && !inactiveRecord(row)) remainingActive.push(`command:${idOf(row) || 'missing-id'}`);
     }
-  }
-  for (const row of await list('/api/command/slips?limit=400', headers)) {
-    if (isCurrentRunFixture(row) && !inactiveRecord(row)) remainingActive.push(`command:${idOf(row) || 'missing-id'}`);
+    if (!remainingActive.length) break;
   }
 
-  log(`Matched ${matched} exact-run record(s); accepted ${cleaned} cleanup resolution(s).`);
+  log(`Matched ${matched} exact-run record(s); confirmed ${cleaned} destructive cleanup action(s).`);
   log(`Retained ${immutableCurrentEntries} immutable exact-run audit entr${immutableCurrentEntries === 1 ? 'y' : 'ies'}.`);
   if (failures.length || remainingActive.length) {
     throw new Error(`Exact-run cleanup incomplete. Failures: ${failures.join(', ') || 'none'}. Active remnants: ${remainingActive.join(', ') || 'none'}.`);
