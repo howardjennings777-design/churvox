@@ -12,6 +12,17 @@ ALLOWED_ORIGINS = {
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
 }
+PLATFORM_OWNER_EMAILS = {
+    "hello@churvox.com",
+    "howardjennings77@gmail.com",
+    "howardjennings777@gmail.com",
+}
+DIRECT_RECORD_TYPES = {
+    "jobs": "job",
+    "clients": "client",
+    "quotes": "quote",
+    "invoices": "invoice",
+}
 
 
 def now_utc():
@@ -138,8 +149,9 @@ def ownership_query(user: Dict[str, Any]) -> Dict[str, Any]:
     ors: List[Dict[str, Any]] = []
     if business_id:
         ors += [{"business_id": business_id}, {"company_id": business_id}, {"tenant_id": business_id}, {"business.id": business_id}]
-    if email:
-        ors += [{"user_email": email}, {"owner_email": email}, {"created_by_email": email}, {"email": email}]
+    emails = PLATFORM_OWNER_EMAILS if email in PLATFORM_OWNER_EMAILS else {email} if email else set()
+    for allowed_email in emails:
+        ors += [{"user_email": allowed_email}, {"owner_email": allowed_email}, {"created_by_email": allowed_email}, {"email": allowed_email}]
     if user_id:
         ors += [{"user_id": user_id}, {"owner_id": user_id}, {"created_by": user_id}]
     ors += [
@@ -167,7 +179,6 @@ TARGETS = {
 
 def split_record_path(path: str):
     parts = [part for part in text(path).split("/") if part]
-    # /api/records/{type}/{id} or /api/records/{type}/{id}/reply
     if len(parts) not in (4, 5):
         return None
     if parts[0] != "api" or parts[1] != "records":
@@ -176,6 +187,16 @@ def split_record_path(path: str):
     if not action:
         return None
     return normal_type(parts[2]), parts[3], action
+
+
+def split_direct_record_path(path: str):
+    parts = [part for part in text(path).split("/") if part]
+    if len(parts) != 3 or parts[0] != "api":
+        return None
+    record_type = DIRECT_RECORD_TYPES.get(parts[1])
+    if not record_type:
+        return None
+    return record_type, parts[2], "delete"
 
 
 def install(module):
@@ -215,7 +236,15 @@ def install(module):
                     touched.append(collection_name)
             except Exception:
                 continue
-        return {"success": True, "deleted": deleted, "record_id": record_id, "record_type": target["label"], "collections": touched, "record": safe(matched) if matched else None, "message": f"{target['label'].capitalize()} deleted." if deleted else f"No matching {target['label']} found to delete."}
+        return {
+            "success": deleted > 0,
+            "deleted": deleted,
+            "record_id": record_id,
+            "record_type": target["label"],
+            "collections": touched,
+            "record": safe(matched) if matched else None,
+            "message": f"{target['label'].capitalize()} deleted." if deleted else f"No matching {target['label']} found to delete.",
+        }
 
     async def reply_to_message(record_id: str, request, user: Dict[str, Any]):
         try:
@@ -268,7 +297,7 @@ def install(module):
 
     @app.middleware("http")
     async def records_exact_bypass(request, call_next):
-        parsed = split_record_path(request.url.path)
+        parsed = split_record_path(request.url.path) or split_direct_record_path(request.url.path)
         if parsed and request.method.upper() == "OPTIONS":
             return add_cors(JSONResponse({"ok": True, "source": "records_exact_bypass"}), request)
         if parsed:
@@ -281,7 +310,7 @@ def install(module):
                 return add_cors(JSONResponse({"success": False, "message": f"Unknown record type: {record_type}"}, status_code=404), request)
             if request.method.upper() == "DELETE" and action == "delete":
                 body = await delete_from_target(target, record_id, user)
-                return add_cors(JSONResponse(body), request)
+                return add_cors(JSONResponse(body, status_code=200 if body.get("deleted") else 404), request)
             if request.method.upper() == "POST" and action == "reply" and record_type == "message":
                 return add_cors(await reply_to_message(record_id, request, user), request)
             return add_cors(JSONResponse({"success": False, "message": "Record action not allowed"}, status_code=405), request)
