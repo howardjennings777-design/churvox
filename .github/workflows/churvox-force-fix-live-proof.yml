@@ -1,0 +1,69 @@
+name: Churvox force-fix live proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-force-fix-live-proof]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Prove exact forced repair is live
+        shell: bash
+        run: |
+          set -euo pipefail
+          site='https://www.churvox.com'
+          expected_marker='churvox-current-full-user-force-fix-20260728'
+          expected_backend='https://grassley-backend.onrender.com'
+          final=''
+          for attempt in $(seq 1 60); do
+            marker="$(curl -fsSL --max-time 30 -H 'Cache-Control: no-cache, no-store, max-age=0' "$site/render-deploy-marker.txt?proof=$(date +%s%N)" 2>/dev/null || true)"
+            html="$(curl -fsSL --max-time 30 -H 'Cache-Control: no-cache, no-store, max-age=0' "$site/login?proof=$(date +%s%N)" 2>/dev/null || true)"
+            asset="$(printf '%s' "$html" | grep -oE '/static/js/main\.[^"?]+\.js' | head -1 || true)"
+            js=''
+            if [ -n "$asset" ]; then
+              js="$(curl -fsSL --max-time 60 -H 'Cache-Control: no-cache, no-store, max-age=0' "$site$asset?proof=$(date +%s%N)" 2>/dev/null || true)"
+            fi
+            marker_ok=0
+            backend_ok=0
+            login_replace=0
+            outage_copy=0
+            printf '%s' "$marker" | grep -Fq "$expected_marker" && marker_ok=1 || true
+            printf '%s' "$js" | grep -Fq "$expected_backend" && backend_ok=1 || true
+            printf '%s' "$js" | grep -Fq 'window.location.replace' && login_replace=1 || true
+            printf '%s' "$js" | grep -Fq 'Churvox could not reach the login service' && outage_copy=1 || true
+            echo "attempt=$attempt marker=$marker_ok backend=$backend_ok replace=$login_replace outage_copy=$outage_copy asset=${asset:-missing}"
+            if [ "$marker_ok" = 1 ] && [ "$backend_ok" = 1 ] && [ "$login_replace" = 1 ] && [ "$outage_copy" = 1 ]; then
+              final="FORCE_FIX_LIVE_PROOF=PASS\nMARKER=$expected_marker\nASSET=$asset\nPRODUCTION_BACKEND=1\nLOGIN_REPLACE=1\nOUTAGE_COPY=1"
+              break
+            fi
+            if [ "$attempt" -lt 60 ]; then sleep 10; fi
+          done
+          if [ -z "$final" ]; then
+            final="FORCE_FIX_LIVE_PROOF=FAIL\nEXPECTED_MARKER=$expected_marker\nLAST_MARKER=$(printf '%s' "$marker" | head -c 300)\nASSET=${asset:-missing}\nPRODUCTION_BACKEND=$backend_ok\nLOGIN_REPLACE=$login_replace\nOUTAGE_COPY=$outage_copy"
+          fi
+          printf '%b\n' "$final" | tee /tmp/churvox-force-fix-live-proof.txt
+          {
+            echo 'REPORT<<EOF'
+            cat /tmp/churvox-force-fix-live-proof.txt
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+          grep -Fq 'FORCE_FIX_LIVE_PROOF=PASS' /tmp/churvox-force-fix-live-proof.txt
+
+      - name: Post exact live proof
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '```text\n' + (process.env.REPORT || 'Force-fix live proof produced no report.') + '\n```',
+            });
