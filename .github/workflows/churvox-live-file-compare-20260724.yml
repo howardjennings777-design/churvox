@@ -22,7 +22,8 @@ jobs:
         run: |
           set -euo pipefail
           site='https://www.churvox.com'
-          expected_marker='churvox-current-full-user-repair-2-20260728'
+          expected_marker='churvox-current-full-user-repair-3-20260728'
+          expected_backend='https://grassley-backend.onrender.com'
           final=''
           for attempt in $(seq 1 60); do
             marker="$(curl -fsSL --max-time 30 -H 'Cache-Control: no-cache, no-store, max-age=0' "$site/render-deploy-marker.txt?proof=$(date +%s%N)" 2>/dev/null || true)"
@@ -34,19 +35,19 @@ jobs:
             fi
             marker_ok=0
             login_ok=0
-            integrations_ok=0
+            backend_ok=0
             printf '%s' "$marker" | grep -Fq "$expected_marker" && marker_ok=1 || true
             printf '%s' "$js" | grep -Fq 'window.location.replace' && login_ok=1 || true
-            printf '%s' "$js" | grep -Fq 'integrations' && integrations_ok=1 || true
-            echo "attempt=$attempt marker_ok=$marker_ok login_replace=$login_ok integrations_token=$integrations_ok asset=${asset:-missing}"
-            if [ "$marker_ok" = 1 ] && [ "$login_ok" = 1 ] && [ "$integrations_ok" = 1 ]; then
-              final="LIVE_REPAIR_PROOF=PASS\nMARKER=$expected_marker\nASSET=$asset\nLOGIN_REPLACE=1\nINTEGRATIONS_TOKEN=1"
+            printf '%s' "$js" | grep -Fq "$expected_backend" && backend_ok=1 || true
+            echo "attempt=$attempt marker_ok=$marker_ok login_replace=$login_ok production_backend=$backend_ok asset=${asset:-missing}"
+            if [ "$marker_ok" = 1 ] && [ "$login_ok" = 1 ] && [ "$backend_ok" = 1 ]; then
+              final="LIVE_REPAIR_PROOF=PASS\nMARKER=$expected_marker\nASSET=$asset\nLOGIN_REPLACE=1\nPRODUCTION_BACKEND=1"
               break
             fi
             if [ "$attempt" -lt 60 ]; then sleep 10; fi
           done
           if [ -z "$final" ]; then
-            final="LIVE_REPAIR_PROOF=FAIL\nEXPECTED_MARKER=$expected_marker\nLAST_MARKER=$(printf '%s' "$marker" | head -c 300)\nASSET=${asset:-missing}\nLOGIN_REPLACE=$login_ok\nINTEGRATIONS_TOKEN=$integrations_ok"
+            final="LIVE_REPAIR_PROOF=FAIL\nEXPECTED_MARKER=$expected_marker\nLAST_MARKER=$(printf '%s' "$marker" | head -c 300)\nASSET=${asset:-missing}\nLOGIN_REPLACE=$login_ok\nPRODUCTION_BACKEND=$backend_ok"
           fi
           printf '%b\n' "$final" | tee /tmp/live-repair-proof.txt
           {
