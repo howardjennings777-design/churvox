@@ -56,7 +56,7 @@ test('Product and Features are genuinely different public pages', async ({ page 
   await testInfo.attach(`${testInfo.project.name}-features.png`, { body: features, contentType: 'image/png' });
 });
 
-test('Features has working conversion and navigation paths', async ({ page }) => {
+test('Features has working conversion, metadata and client navigation paths', async ({ page }) => {
   await open(page, '/features/');
   await expect(page.locator('.cpfActions a[href="/demo/"]')).toBeVisible();
   await expect(page.locator('.cpfActions a[href="/signup/?plan=operator"]')).toBeVisible();
@@ -64,9 +64,13 @@ test('Features has working conversion and navigation paths', async ({ page }) =>
   await expect(page.locator('footer a[href="/features/"]')).toHaveText(/Features/i);
   await expect(page.locator('footer a[href="/pricing/"]')).toBeVisible();
 
-  const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-  expect(canonical).toBe('https://www.churvox.com/features/');
+  expect(await page.locator('link[rel="canonical"]').getAttribute('href')).toBe('https://www.churvox.com/features/');
   await expect(page).toHaveTitle(/Churvox features/i);
+
+  await page.locator('footer a[href="/product/"]').click();
+  await expect(page.locator('main[data-room="product"]')).toBeVisible();
+  expect(await page.locator('link[rel="canonical"]').getAttribute('href')).toBe('https://www.churvox.com/product/');
+  await expect(page).toHaveTitle(/Churvox product/i);
 });
 
 test('Features remains readable and compact on mobile', async ({ page }, testInfo) => {
