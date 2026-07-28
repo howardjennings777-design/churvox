@@ -1,0 +1,56 @@
+# Private Churvox staging Blueprint.
+# Select this file explicitly when creating the Blueprint in Render.
+# It does not modify or adopt the existing production services.
+
+services:
+  - type: pserv
+    name: churvox-office-os-staging-backend
+    runtime: python
+    plan: starter
+    region: singapore
+    repo: https://github.com/howardjennings777-design/churvox
+    branch: staging/churvox-office-os-preview
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn churvox_staging_start:app --host 0.0.0.0 --port $PORT
+    autoDeployTrigger: "off"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: CHURVOX_STAGING_READ_ONLY
+        value: "true"
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+
+  - type: web
+    name: churvox-office-os-staging
+    runtime: node
+    plan: free
+    region: singapore
+    repo: https://github.com/howardjennings777-design/churvox
+    branch: staging/churvox-office-os-preview
+    rootDir: frontend
+    buildCommand: npm install --include=dev --legacy-peer-deps && npm run build
+    startCommand: node staging-server.cjs
+    healthCheckPath: /healthz
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: NODE_ENV
+        value: production
+      - key: CHURVOX_BACKEND_HOSTPORT
+        fromService:
+          name: churvox-office-os-staging-backend
+          type: pserv
+          property: hostport
+      - key: CHURVOX_STAGING_USER
+        sync: false
+      - key: CHURVOX_STAGING_PASSWORD
+        sync: false
