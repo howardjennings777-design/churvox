@@ -36,6 +36,11 @@ const PUBLIC_PATHS = [
   '/industries/barber-hairdresser',
 ];
 
+const CANONICAL_ALIASES = {
+  '/privacy/': '/legal/privacy/',
+  '/terms/': '/legal/terms/',
+};
+
 function slashPath(value) {
   const raw = String(value || '');
   if (!raw || raw === '/' || raw.endsWith('/')) return raw;
@@ -64,7 +69,8 @@ function canonicalizeHtml(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
   const route = routeForFile(filePath);
   if (route !== '/') {
-    const canonical = `${SITE}${route}`;
+    const canonicalRoute = CANONICAL_ALIASES[route] || route;
+    const canonical = `${SITE}${canonicalRoute}`;
     html = html.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?\s*>/i, `<link rel="canonical" href="${canonical}" />`);
     html = html.replace(/<meta\s+property="og:url"\s+content="[^"]*"\s*\/?\s*>/i, `<meta property="og:url" content="${canonical}" />`);
   }
