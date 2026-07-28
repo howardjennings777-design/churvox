@@ -193,8 +193,14 @@ replace_once(
 )
 replace_once(
     flow,
-    "    }, { timeout: 20_000, intervals: [500, 900, 1500, 2500] }).toBe(true);",
-    "    }, { timeout: 45_000, intervals: [500, 900, 1500, 2500, 4000] }).toBe(true);",
+    '''      return Boolean(clientId);
+    }, { timeout: 20_000, intervals: [500, 900, 1500, 2500] }).toBe(true);
+  }
+  await expect(ownerPage.getByText(clientName).first()).toBeVisible({ timeout: 20_000 });''',
+    '''      return Boolean(clientId);
+    }, { timeout: 45_000, intervals: [500, 900, 1500, 2500, 4000] }).toBe(true);
+  }
+  await expect(ownerPage.getByText(clientName).first()).toBeVisible({ timeout: 20_000 });''',
     "allow the created client to appear after a slow backend write",
 )
 
