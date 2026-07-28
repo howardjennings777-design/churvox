@@ -1,0 +1,86 @@
+name: Churvox live conversion funnel proof
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  proof:
+    if: startsWith(github.event.issue.title, '[churvox-live-conversion-funnel-proof]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Prove live event endpoint and owner lock
+        shell: bash
+        run: |
+          set +e
+          REPORT="$RUNNER_TEMP/churvox-live-funnel-proof.txt"
+          FAILURES=0
+          : > "$REPORT"
+
+          for host in 'https://grassley-backend.onrender.com' 'https://www.churvox.com'; do
+            visitor="seed_live_proof_${GITHUB_RUN_ID}_$(date +%s%N)"
+            event_body="$RUNNER_TEMP/funnel-event-$(echo "$host" | tr '/:.' '-').json"
+            event_status=$(curl -L -sS --max-time 60 -o "$event_body" -w '%{http_code}' \
+              -H 'Content-Type: application/json' \
+              -H 'Origin: https://www.churvox.com' \
+              -X POST "${host}/api/platform/funnel-event" \
+              --data "{\"event\":\"homepage_viewed\",\"visitor_id\":\"${visitor}\",\"path\":\"/\",\"source\":\"seed-live-proof\"}")
+            event_ok=$(grep -Foc '"recorded":true' "$event_body" 2>/dev/null || true)
+            source_ok=$(grep -Foc '"event":"homepage_viewed"' "$event_body" 2>/dev/null || true)
+
+            owner_body="$RUNNER_TEMP/funnel-owner-$(echo "$host" | tr '/:.' '-').json"
+            owner_status=$(curl -L -sS --max-time 60 -o "$owner_body" -w '%{http_code}' \
+              -H 'Accept: application/json' \
+              "${host}/api/admin/owner/conversion-funnel")
+
+            {
+              echo "HOST=$host"
+              echo "EVENT_STATUS=$event_status"
+              echo "EVENT_RECORDED_COUNT=$event_ok"
+              echo "EVENT_NAME_COUNT=$source_ok"
+              echo "OWNER_SIGNED_OUT_STATUS=$owner_status"
+              echo "EVENT_BODY=$(tr -d '\n' < "$event_body" | head -c 500)"
+              echo "OWNER_BODY=$(tr -d '\n' < "$owner_body" | head -c 500)"
+              echo '---'
+            } >> "$REPORT"
+
+            if [ "$event_status" != '200' ] || [ "$event_ok" -lt 1 ] || [ "$source_ok" -lt 1 ]; then
+              FAILURES=$((FAILURES + 1))
+            fi
+            if [ "$owner_status" != '401' ] && [ "$owner_status" != '403' ]; then
+              FAILURES=$((FAILURES + 1))
+            fi
+          done
+
+          echo "FAILURES=$FAILURES" >> "$REPORT"
+          cat "$REPORT"
+          {
+            echo 'REPORT<<EOF'
+            cat "$REPORT"
+            echo 'EOF'
+            echo "FAILURES=$FAILURES"
+          } >> "$GITHUB_ENV"
+
+      - name: Post live funnel proof
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = process.env.REPORT || 'Missing live conversion funnel report';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '```text\n' + report.slice(0, 62000) + '\n```'
+            });
+
+      - name: Enforce live funnel proof
+        if: always()
+        shell: bash
+        run: test "${FAILURES:-99}" = '0'
