@@ -59,6 +59,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install backend contract dependencies
+        run: python -m pip install --disable-pip-version-check fastapi
+
       - name: Compile login stack
         run: |
           python -m py_compile \
@@ -86,8 +89,8 @@ jobs:
         run: |
           grep -F 'VERSION = "churvox-auth-me-401-20260712"' backend/churvox_auth_me_401_patch.py
           grep -F 'VERSION = "churvox-login-emergency-final-20260712f"' backend/churvox_login_emergency_final.py
-          grep -F 'VERSION = "churvox-production-launch-security-20260712f"' backend/churvox_production_launch_security.py
-          grep -F 'VERSION = "churvox-runtime-jwt-secret-20260712b"' backend/churvox_runtime_jwt_secret_patch.py
+          grep -F 'VERSION = "churvox-production-launch-security-20260712g"' backend/churvox_production_launch_security.py
+          grep -F 'VERSION = "churvox-runtime-jwt-secret-20260712c"' backend/churvox_runtime_jwt_secret_patch.py
           grep -F 'app.add_api_route("/api/auth/me", strict_auth_me, methods=["GET"])' backend/churvox_auth_me_401_patch.py
           grep -F 'app.add_api_route("/api/auth/login", emergency_login, methods=["POST"])' backend/churvox_login_emergency_final.py
           grep -F 'app.add_api_route("/api/auth/logout", emergency_logout, methods=["POST"])' backend/churvox_login_emergency_final.py

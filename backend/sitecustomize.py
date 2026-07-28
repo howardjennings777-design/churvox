@@ -71,6 +71,7 @@ for _module in [
     "churvox_hq_growth_report_patch",
     "churvox_hq_connection_status_patch",
     "churvox_hq_unique_visitors_patch",
+    "churvox_conversion_funnel_patch",
     "churvox_hq_tester_status_patch",
     "churvox_business_logic_health_patch",
     "churvox_business_system_suite_patch",

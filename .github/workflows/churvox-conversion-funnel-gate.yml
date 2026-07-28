@@ -1,0 +1,85 @@
+name: Churvox real conversion funnel gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/churvox_conversion_funnel_patch.py'
+      - 'backend/sitecustomize.py'
+      - 'frontend/src/lib/platformTelemetry.js'
+      - 'frontend/src/churvox-site-next/hqLiveData.js'
+      - 'scripts/churvox_conversion_funnel_contract.py'
+      - '.github/workflows/churvox-conversion-funnel-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/churvox_conversion_funnel_patch.py'
+      - 'backend/sitecustomize.py'
+      - 'frontend/src/lib/platformTelemetry.js'
+      - 'frontend/src/churvox-site-next/hqLiveData.js'
+      - 'scripts/churvox_conversion_funnel_contract.py'
+      - '.github/workflows/churvox-conversion-funnel-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: churvox-conversion-funnel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  funnel:
+    name: First-party stages and honest HQ reporting
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install contract dependency
+        run: python -m pip install --disable-pip-version-check fastapi
+
+      - name: Compile backend funnel
+        run: |
+          python -m py_compile backend/churvox_conversion_funnel_patch.py
+          python -m py_compile backend/sitecustomize.py
+          python -m py_compile scripts/churvox_conversion_funnel_contract.py
+
+      - name: Prove truthful funnel rules
+        run: python scripts/churvox_conversion_funnel_contract.py
+
+      - name: Prove login compatibility
+        run: |
+          set -o pipefail
+          python -m unittest \
+            backend.test_churvox_auth_me_401_patch \
+            backend.test_churvox_login_emergency_final \
+            backend.test_churvox_runtime_jwt_secret_patch \
+            scripts.test_platform_owner_frontend_lock \
+            2>&1 | tee /tmp/churvox-funnel-login-compatibility.txt
+
+      - name: Prove frontend and HQ wiring
+        run: |
+          grep -F '/api/platform/funnel-event' frontend/src/lib/platformTelemetry.js
+          grep -F 'homepage_viewed' frontend/src/lib/platformTelemetry.js
+          grep -F 'pricing_viewed' frontend/src/lib/platformTelemetry.js
+          grep -F 'signup_started' frontend/src/lib/platformTelemetry.js
+          grep -F '/api/admin/owner/conversion-funnel' frontend/src/churvox-site-next/hqLiveData.js
+          grep -F 'Real conversion funnel live' frontend/src/churvox-site-next/hqLiveData.js
+          grep -F 'churvox_conversion_funnel_patch' backend/sitecustomize.py
+
+      - name: Upload compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-funnel-login-compatibility-${{ github.run_id }}
+          path: /tmp/churvox-funnel-login-compatibility.txt
+          if-no-files-found: ignore
+          retention-days: 3

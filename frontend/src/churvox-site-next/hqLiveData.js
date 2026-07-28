@@ -1,6 +1,6 @@
 import API_BASE from "../lib/apiBase";
 
-export const HQ_LIVE_DATA_BUILD = "churvox-hq-live-information-20260727";
+export const HQ_LIVE_DATA_BUILD = "churvox-hq-live-information-20260728-funnel";
 
 if (typeof window !== "undefined") {
   window.__CHURVOX_HQ_LIVE_DATA_BUILD__ = HQ_LIVE_DATA_BUILD;
@@ -10,6 +10,7 @@ const SOURCES = Object.freeze([
   ["Launch", "/api/admin/owner/paid-launch-report"],
   ["Overview", "/api/admin/owner-overview"],
   ["Growth", "/api/admin/owner/growth-report"],
+  ["Funnel", "/api/admin/owner/conversion-funnel"],
   ["Connection", "/api/admin/owner/connection"],
   ["Plans", "/api/admin/owner/plan-report"],
   ["Control", "/api/admin/owner/control-log"],
@@ -124,6 +125,24 @@ function sourceSummary(label, payload = {}) {
       status: "Growth activity live",
       message: `${nzNumber(newVisitorsToday)} new today · ${nzNumber(signups)} sign-ups · ${nzNumber(acceptedTesters)} accepted testers · ${nzNumber(pageviews)} pageviews`,
       facts: { uniqueVisitors, newVisitorsToday, signups, acceptedTesters, pageviews },
+    };
+  }
+
+  if (label === "Funnel") {
+    const counts = body.counts || {};
+    const homepage = number(counts.homepage_viewed, 0);
+    const pricing = number(counts.pricing_viewed, 0);
+    const signup = number(counts.signup_started, 0);
+    const verified = number(counts.email_verified, 0);
+    const firstClient = number(counts.first_client_created, 0);
+    const firstJob = number(counts.first_job_created, 0);
+    const firstInvoice = number(counts.first_invoice_created, 0);
+    return {
+      count: homepage,
+      value: `${nzNumber(homepage)} homepage visitors`,
+      status: "Real conversion funnel live",
+      message: `${nzNumber(pricing)} pricing · ${nzNumber(signup)} signup starts · ${nzNumber(verified)} verified · ${nzNumber(firstClient)} first clients · ${nzNumber(firstJob)} first jobs · ${nzNumber(firstInvoice)} first invoices`,
+      facts: { funnelHomepage: homepage, funnelPricing: pricing, funnelSignup: signup, funnelVerified: verified, funnelFirstClient: firstClient, funnelFirstJob: firstJob, funnelFirstInvoice: firstInvoice },
     };
   }
 
