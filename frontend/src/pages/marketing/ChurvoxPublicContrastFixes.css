@@ -11,8 +11,143 @@
 
 .cvDemoPage .cvDemoHeroCopy > p {
   color: #d1d6d1 !important;
+  -webkit-text-fill-color: #d1d6d1 !important;
 }
 
 .cvDemoPage .cvDemoHeroTools label span {
   color: #ff9b62 !important;
+  -webkit-text-fill-color: #ff9b62 !important;
+}
+
+/* The premium shell is dark. Keep every conversion and explanatory line readable
+   even when an older light-theme component supplies a dark text colour. */
+.cvPremiumPage .cvSceneIntro h2,
+.cvPremiumPage .cvSignalNode h3,
+.cvPremiumPage .cvControlLine h3,
+.cvPremiumPage .cvRoomEntry h3,
+.cvPremiumPage .cvHandoffLine h3,
+.cvPremiumPage .cvPlanDetail h2,
+.cvPremiumPage .cvPlanPrice,
+.cvPremiumPage .cvAddonRail h3,
+.cvPremiumPage .cvAddonRail b,
+.cvPremiumPage .cvSceneClose h2 {
+  color: #f8f5ec !important;
+  -webkit-text-fill-color: #f8f5ec !important;
+}
+
+.cvPremiumPage .cvSceneIntro p,
+.cvPremiumPage .cvSignalNode p,
+.cvPremiumPage .cvControlLine p,
+.cvPremiumPage .cvRoomEntry p,
+.cvPremiumPage .cvHandoffLine p,
+.cvPremiumPage .cvPlanSummary,
+.cvPremiumPage .cvPlanBottom p,
+.cvPremiumPage .cvAddonRail p,
+.cvPremiumPage .cvSceneClose p {
+  color: #b9c1ba !important;
+  -webkit-text-fill-color: #b9c1ba !important;
+}
+
+.cvPremiumPage .cvCommandStage .cvSceneIntro strong,
+.cvPremiumPage .cvPlanFeatures li,
+.cvPremiumPage .cvPlanRegion,
+.cvPremiumPage .cvPlanTax {
+  color: #d4d9d4 !important;
+  -webkit-text-fill-color: #d4d9d4 !important;
+}
+
+.cvPremiumPage .cvCommandStage .cvSceneIntro li {
+  color: #b9c1ba !important;
+  -webkit-text-fill-color: #b9c1ba !important;
+}
+
+.cvPremiumPage .cvPlanRegion select {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-color: #111713 !important;
+}
+
+/* Signup and access pages use the same dark shell but the original form was built
+   for a pale card. Explicit child colours prevent black-on-black conversion text. */
+.cvWorldAccessGate .cvPublicAuthCard h1 {
+  color: #f8f5ec !important;
+  -webkit-text-fill-color: #f8f5ec !important;
+}
+
+.cvWorldAccessGate .cvPublicAuthCard label,
+.cvWorldAccessGate .cvPublicAuthCard .cvPublicAuthIntro,
+.cvWorldAccessGate .cvPublicAuthCard .cvPublicAuthBottom,
+.cvWorldAccessGate .cvPublicAuthCard .cvPublicAuthIntro b,
+.cvWorldAccessGate .cvPublicAuthCard .cvPublicAuthBottom b {
+  color: #c7cec8 !important;
+  -webkit-text-fill-color: #c7cec8 !important;
+}
+
+.cvWorldAccessGate .cvPublicAuthCard > label.cvPublicAuthIntro a,
+.cvWorldAccessGate .cvPublicAuthCard .cvPublicAuthBottom a {
+  color: #ff9b62 !important;
+  -webkit-text-fill-color: #ff9b62 !important;
+  text-decoration-color: rgba(255, 155, 98, 0.72) !important;
+}
+
+.cvWorldAccessGate .cvPublicAuthCard input[type="checkbox"] {
+  accent-color: #ff7128;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* Legal pages intentionally use a dark document card. Tailwind's original slate
+   utilities were darker than the new surface, making the policy text unreadable. */
+.cp26LegalWorld article h1,
+.cp26LegalWorld article h2,
+.cp26LegalWorld article h3 {
+  color: #f8f5ec !important;
+  -webkit-text-fill-color: #f8f5ec !important;
+}
+
+.cp26LegalWorld article header p,
+.cp26LegalWorld article section p,
+.cp26LegalWorld article section li,
+.cp26LegalWorld article section div {
+  color: #c7cec8 !important;
+  -webkit-text-fill-color: #c7cec8 !important;
+}
+
+.cp26LegalWorld article section {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.cp26LegalWorld article a {
+  color: #ff9b62 !important;
+  -webkit-text-fill-color: #ff9b62 !important;
+}
+
+@media (max-width: 980px) {
+  /* Put the actual signup form before the reassurance panel on phones and tablets.
+     Visitors can still read the guardrails immediately after the form. */
+  .cvWorldSignupGate .cvPublicAuthCard {
+    order: 0 !important;
+  }
+
+  .cvWorldSignupGate .cvPublicAuthPanel {
+    order: 1 !important;
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .cvPremiumPage .cvSceneIntro p,
+  .cvPremiumPage .cvSignalNode p,
+  .cvPremiumPage .cvControlLine p,
+  .cvPremiumPage .cvRoomEntry p,
+  .cvPremiumPage .cvHandoffLine p,
+  .cvPremiumPage .cvPlanSummary,
+  .cvPremiumPage .cvPlanFeatures li,
+  .cvPremiumPage .cvAddonRail p,
+  .cp26LegalWorld article header p,
+  .cp26LegalWorld article section p,
+  .cp26LegalWorld article section li {
+    font-size: 14px !important;
+    line-height: 1.62 !important;
+  }
 }

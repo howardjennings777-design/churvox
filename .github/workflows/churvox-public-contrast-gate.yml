@@ -1,0 +1,65 @@
+name: Churvox public contrast gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/src/pages/marketing/ChurvoxPublicContrastFixes.css'
+      - 'frontend/src/pages/marketing/ChurvoxPremiumPublic.css'
+      - 'frontend/src/pages/marketing/ChurvoxPremiumScenes.css'
+      - 'frontend/src/pages/auth/AuthPublicCommand.css'
+      - 'frontend/src/pages/auth/SignupPage.js'
+      - 'frontend/src/pages/legal/**'
+      - 'frontend/tests/e2e/churvox-public-contrast-and-mobile-order.spec.js'
+      - '.github/workflows/churvox-public-contrast-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contrast:
+    name: Readable public pages on desktop and mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build production public site
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Prove public contrast and signup order
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+          PLAYWRIGHT_WEB_SERVER_COMMAND: npx serve -s build -l 4173
+        run: npx playwright test tests/e2e/churvox-public-contrast-and-mobile-order.spec.js --workers=1
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-public-contrast-evidence-${{ github.run_id }}
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 14
