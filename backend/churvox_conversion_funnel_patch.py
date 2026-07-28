@@ -7,7 +7,7 @@ import importlib.abc
 import importlib.machinery
 import os
 import sys
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 from fastapi import Body, HTTPException
 from starlette.requests import Request
@@ -56,12 +56,12 @@ def safe(value: Any):
     if isinstance(value, list):
         return [safe(item) for item in value]
     if isinstance(value, dict):
-        output = {}
+        result = {}
         for key, item in value.items():
             if any(word in str(key).lower() for word in ("password", "token", "secret", "hash")):
                 continue
-            output["id" if key == "_id" else key] = safe(item)
-        return output
+            result["id" if key == "_id" else key] = safe(item)
+        return result
     return value
 
 
@@ -73,6 +73,15 @@ def configured_owner_emails():
 def email_of(row: Dict[str, Any] | None) -> str:
     row = row or {}
     return lower(row.get("email") or row.get("user_email") or row.get("owner_email") or row.get("login_email"))
+
+
+def nested(row: Dict[str, Any], dotted: str):
+    value: Any = row
+    for part in dotted.split("."):
+        if not isinstance(value, dict) or part not in value:
+            return ""
+        value = value.get(part)
+    return value
 
 
 def actor_key(row: Dict[str, Any] | None) -> str:
@@ -89,15 +98,9 @@ def actor_key(row: Dict[str, Any] | None) -> str:
         "user_id",
         "created_by",
     ):
-        value = row
-        found = True
-        for part in field.split("."):
-            if not isinstance(value, dict) or part not in value:
-                found = False
-                break
-            value = value.get(part)
-        if found and text(value):
-            return f"business:{text(value)}"
+        value = text(nested(row, field))
+        if value:
+            return f"business:{value}"
     email = email_of(row) or lower(row.get("created_by_email") or row.get("business_owner_email"))
     return f"email:{email}" if email else ""
 
@@ -201,15 +204,13 @@ def install(module):
         business_id = text((user or {}).get("business_id") or (user or {}).get("businessId") or (user or {}).get("company_id") or (user or {}).get("tenant_id"))
         identity = business_id or user_email or visitor_key
         dedupe_key = hashlib.sha256(f"{event}|{identity}".encode("utf-8", errors="ignore")).hexdigest()
-        path = text(payload.get("path"))[:500]
-        source = text(payload.get("source"))[:200]
         document = {
             "dedupe_key": dedupe_key,
             "event": event,
             "visitor_key": visitor_key,
             "visitor_id_present": bool(visitor_id),
-            "path": path,
-            "source": source,
+            "path": text(payload.get("path"))[:500],
+            "source": text(payload.get("source"))[:200],
             "referrer": text(request.headers.get("referer") or payload.get("referrer"))[:500],
             "user_id": text((user or {}).get("id") or (user or {}).get("_id") or (user or {}).get("user_id")),
             "user_email": user_email,
@@ -222,7 +223,7 @@ def install(module):
         await db.platform_funnel_events.update_one(
             {"dedupe_key": dedupe_key},
             {
-                "$setOnInsert": {**document, "first_seen": now, "created_at": now},
+                "$setOnInsert": {"first_seen": now, "created_at": now},
                 "$set": document,
                 "$inc": {"event_count": 1},
             },
@@ -247,27 +248,21 @@ def install(module):
         invoices = [row for row in await list_rows("invoices", 30000) if not internal_row(row)]
 
         event_actors: Dict[str, set] = {event: set() for event in ALLOWED_EVENTS}
-        for event_row in events:
-            event = lower(event_row.get("event"))
-            if event not in event_actors or internal_row(event_row):
-                continue
-            identity = text(event_row.get("business_id") or event_row.get("user_email") or event_row.get("visitor_key") or event_row.get("dedupe_key"))
-            if identity:
+        for row in events:
+            event = lower(row.get("event"))
+            identity = text(row.get("business_id") or row.get("user_email") or row.get("visitor_key") or row.get("dedupe_key"))
+            if event in event_actors and identity and not internal_row(row):
                 event_actors[event].add(identity)
-
-        for visit in visits:
-            if internal_row(visit):
-                continue
-            event = path_event(visit.get("path"))
-            identity = text(visit.get("visitor_key") or visit.get("user_email") or visit.get("business_id"))
-            if event and identity:
+        for row in visits:
+            event = path_event(row.get("path"))
+            identity = text(row.get("visitor_key") or row.get("user_email") or row.get("business_id"))
+            if event and identity and not internal_row(row):
                 event_actors[event].add(identity)
 
         verified_actors = {actor_key(user) or f"email:{email_of(user)}" for user in users if verified_user(user) and (actor_key(user) or email_of(user))}
         client_actors = {actor_key(row) for row in clients if actor_key(row)}
         job_actors = {actor_key(row) for row in jobs if actor_key(row)}
         invoice_actors = {actor_key(row) for row in invoices if actor_key(row)}
-
         counts = {
             "homepage_viewed": len(event_actors["homepage_viewed"]),
             "pricing_viewed": len(event_actors["pricing_viewed"]),
@@ -277,7 +272,7 @@ def install(module):
             "first_job_created": len(job_actors),
             "first_invoice_created": len(invoice_actors),
         }
-        stage_order = [
+        order = [
             ("homepage_viewed", "Homepage viewed"),
             ("pricing_viewed", "Pricing viewed"),
             ("signup_started", "Signup started"),
@@ -288,7 +283,7 @@ def install(module):
         ]
         stages: List[Dict[str, Any]] = []
         previous = 0
-        for key, label in stage_order:
+        for key, label in order:
             count = int(counts.get(key) or 0)
             stages.append({
                 "key": key,
