@@ -1,4 +1,4 @@
-name: Churvox Current Full User Repair 5
+name: Churvox Forced Auth Resilience Repair
 
 on:
   issues:
@@ -10,9 +10,9 @@ permissions:
 
 jobs:
   repair:
-    if: startsWith(github.event.issue.title, '[churvox-current-full-user-repair-v6]')
+    if: startsWith(github.event.issue.title, '[churvox-current-full-user-force-fix]')
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,14 +28,14 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Apply transient Render resilience repair
+      - name: Apply forced auth resilience repair
         id: apply
         shell: bash
         run: |
           set -o pipefail
-          python scripts/churvox_current_full_user_repair_5.py 2>&1 | tee /tmp/repair5-apply.log
+          python scripts/churvox_current_full_user_force_fix.py 2>&1 | tee /tmp/force-fix-apply.log
 
-      - name: Verify exact repair anchors and permanent contracts
+      - name: Verify exact product and audit contracts
         id: verify
         shell: bash
         run: |
@@ -50,16 +50,20 @@ jobs:
             grep -F 'const AUTH_TIMEOUT_MS = 30000;' frontend/src/context/AuthContext.js
             grep -F 'async function withTransientAuthRetry(operation, attempts = 4)' frontend/src/context/AuthContext.js
             grep -F 'return [401, 404, 422].includes(status);' frontend/src/context/AuthContext.js
-            grep -F '), 5);' frontend/src/context/AuthContext.js
+            grep -F 'const LOGIN_TIMEOUT_MS = 180000;' frontend/src/pages/auth/LoginPage.js
+            grep -F 'const user = await checkAuth({ allowOfflineFallback: false });' frontend/src/pages/auth/LoginPage.js
+            grep -F 'try { void logout?.(); } catch {}' frontend/src/pages/auth/LoginPage.js
+            grep -F '[408, 425, 502, 503, 504].includes(status)' frontend/src/pages/auth/LoginPage.js
             grep -F 'loginFailures: 2' frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js
+            grep -F 'toBeGreaterThanOrEqual(3)' frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js
             grep -F 'attempt <= 6' frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
             grep -F 'attempt <= 6' frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
             grep -F 'attempt <= 6' frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js
             grep -F 'CHURVOX_CLEANUP_REQUEST_TIMEOUT_MS || 45_000' scripts/churvox-hardcore-human-cleanup.cjs
             grep -F 'CHURVOX_CLEANUP_ATTEMPTS || 6' scripts/churvox-hardcore-human-cleanup.cjs
-            grep -F 'churvox-current-full-user-repair-5-20260728' frontend/public/render-deploy-marker.txt
+            grep -F 'churvox-current-full-user-force-fix-20260728' frontend/public/render-deploy-marker.txt
             node scripts/churvox-hardcore-owner-worker-audit.cjs
-          ) 2>&1 | tee /tmp/repair5-verify.log
+          ) 2>&1 | tee /tmp/force-fix-verify.log
 
       - name: Install and build production frontend
         id: build
@@ -70,7 +74,7 @@ jobs:
             set -euo pipefail
             npm --prefix frontend install --include=dev --legacy-peer-deps
             npm --prefix frontend run build
-          ) 2>&1 | tee /tmp/repair5-build.log
+          ) 2>&1 | tee /tmp/force-fix-build.log
 
       - name: Run complete login and recovery browser contract
         id: browser
@@ -81,15 +85,15 @@ jobs:
           (
             set -euo pipefail
             npx playwright install --with-deps chromium
-            npm start > /tmp/repair5-server.log 2>&1 &
+            npm start > /tmp/force-fix-server.log 2>&1 &
             for i in {1..60}; do
               if curl -fsS http://127.0.0.1:3000/login >/dev/null; then break; fi
               sleep 2
             done
             PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npx playwright test tests/e2e/churvox-login-recovery-paid-launch.spec.js --project=desktop-chromium --workers=1 --reporter=line
-          ) 2>&1 | tee /tmp/repair5-browser.log
+          ) 2>&1 | tee /tmp/force-fix-browser.log
 
-      - name: Commit verified transient resilience repair
+      - name: Commit verified forced repair
         id: commit
         run: |
           set -euo pipefail
@@ -98,12 +102,13 @@ jobs:
           git add \
             frontend/public/render-deploy-marker.txt \
             frontend/src/context/AuthContext.js \
+            frontend/src/pages/auth/LoginPage.js \
             frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js \
             frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js \
             frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js \
             frontend/tests/e2e/churvox-hardcore-owner-worker-visual.spec.js \
             scripts/churvox-hardcore-human-cleanup.cjs
-          git commit -m 'Harden live authentication and audit cleanup'
+          git commit -m 'Force fix live authentication resilience'
           git push origin HEAD:main
 
       - name: Post exact result
@@ -122,12 +127,12 @@ jobs:
             const ok = '${{ job.status }}' === 'success';
             let body;
             if (ok) {
-              body = 'Transient Render resilience repair passed exact guards, permanent owner/worker contracts, the production build and the complete login/recovery browser suite. Owner and worker auth now retry temporary 502/timeouts without misrouting roles; live audit requests and exact-run cleanup are also safely retried. Verified changes were committed to main with the repair-5 frontend marker.';
+              body = 'Forced auth resilience repair passed exact source guards, permanent owner/worker contracts, the production build and the complete login/recovery browser suite. The double post-login retry race is removed, temporary Render gateway failures retry the correct role endpoint, outage messages appear immediately, and exact-run cleanup is safely retried. Verified changes were committed to main with the force-fix marker.';
             } else {
-              const order = [['apply','/tmp/repair5-apply.log'], ['verify','/tmp/repair5-verify.log'], ['build','/tmp/repair5-build.log'], ['browser','/tmp/repair5-browser.log']];
+              const order = [['apply','/tmp/force-fix-apply.log'], ['verify','/tmp/force-fix-verify.log'], ['build','/tmp/force-fix-build.log'], ['browser','/tmp/force-fix-browser.log']];
               const failed = order.find(([name]) => outcomes[name] === 'failure');
               let tail = '';
-              if (failed && fs.existsSync(failed[1])) tail = fs.readFileSync(failed[1], 'utf8').split('\n').slice(-55).join('\n').slice(-8000);
-              body = `Transient Render resilience repair stopped before commit. Exact outcomes: ${JSON.stringify(outcomes)}. No partial product repair was pushed.${tail ? `\n\nFailed-stage log tail:\n\`\`\`text\n${tail}\n\`\`\`` : ''}`;
+              if (failed && fs.existsSync(failed[1])) tail = fs.readFileSync(failed[1], 'utf8').split('\n').slice(-80).join('\n').slice(-12000);
+              body = `Forced auth resilience repair stopped before commit. Exact outcomes: ${JSON.stringify(outcomes)}. No partial product repair was pushed.${tail ? `\n\nFailed-stage log tail:\n\`\`\`text\n${tail}\n\`\`\`` : ''}`;
             }
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
