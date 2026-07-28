@@ -1,5 +1,6 @@
 Render frontend deploy marker
-Triggered: 2026-07-24T09:05:00Z
-Purpose: serve the new Churvox homepage and application directly from grassley-frontend on Render.
-Sites redirects: removed.
-Expected homepage: Run the job, not the admin.
+Triggered: 2026-07-28T01:45:00Z
+Purpose: deploy main commit 97447a82ce7730d7a6d41b374740c3922adcda5a with route-specific Product, Pricing, Demo, Privacy, Terms and cancellation HTML.
+Backend quote conversion: main commit b5e67f10f532722098a9fb4570fecde11f758c37.
+Pricing: unchanged.
+Expected public result: unique route metadata and readable legal pages without JavaScript.
