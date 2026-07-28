@@ -21,6 +21,41 @@ ALLOWED_ORIGINS = {
     "http://127.0.0.1:5173",
 }
 
+# The platform funnel keeps a small set of canonical conversion stages in
+# churvox_conversion_funnel_patch.ALLOWED_EVENTS. The browser also records
+# useful supporting interactions. These are accepted and stored, but they do
+# not alter the canonical owner conversion-stage calculations.
+AUXILIARY_EVENTS = {
+    "demo_viewed",
+    "verification_page_viewed",
+    "dashboard_opened",
+    "customer_request_page_viewed",
+    "billing_cta_clicked",
+    "trial_cta_clicked",
+    "demo_cta_clicked",
+    "pricing_cta_clicked",
+    "customer_request_cta_clicked",
+    "signup_submitted",
+    "customer_request_submitted",
+    "get_work_tool_opened",
+    "get_work_link_shared",
+    "get_work_link_copied",
+    "get_work_social_text_copied",
+    "get_work_website_button_copied",
+    "get_work_qr_requested",
+    "churvox_guard_opened",
+    "churvox_guard_signal_opened",
+}
+
+# The authenticated activation bridge uses descriptive browser event names.
+# Store them under the existing canonical funnel stages so the HQ dashboard and
+# historical reports continue to use one stable name for each milestone.
+EVENT_ALIASES = {
+    "activation_client_present": "first_client_created",
+    "activation_job_present": "first_job_created",
+    "activation_invoice_present": "first_invoice_created",
+}
+
 
 def funnel_helpers():
     try:
@@ -67,11 +102,17 @@ async def optional_user(get_current_user, request):
         return None
 
 
+def metric_number(payload: Dict[str, Any], key: str):
+    value = payload.get(key)
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
 async def record_event(db, get_current_user, request, payload: Dict[str, Any]):
     funnel = funnel_helpers()
     await ensure_indexes(db)
-    event = funnel.lower(payload.get("event") or funnel.path_event(payload.get("path")))
-    if event not in funnel.ALLOWED_EVENTS:
+    raw_event = funnel.lower(payload.get("event") or funnel.path_event(payload.get("path")))
+    event = EVENT_ALIASES.get(raw_event, raw_event)
+    if event not in funnel.ALLOWED_EVENTS and event not in AUXILIARY_EVENTS:
         return JSONResponse({"ok": False, "detail": "Unsupported Churvox funnel event"}, status_code=400)
 
     user = await optional_user(get_current_user, request)
@@ -90,11 +131,25 @@ async def record_event(db, get_current_user, request, payload: Dict[str, Any]):
     document = {
         "dedupe_key": dedupe_key,
         "event": event,
+        "original_event": raw_event if raw_event != event else "",
         "visitor_key": visitor_key,
         "visitor_id_present": bool(visitor_id),
         "path": funnel.text(payload.get("path"))[:500],
+        "title": funnel.text(payload.get("title"))[:250],
         "source": funnel.text(payload.get("source"))[:200],
+        "medium": funnel.text(payload.get("medium"))[:200],
+        "campaign": funnel.text(payload.get("campaign"))[:250],
         "referrer": funnel.text(request.headers.get("referer") or payload.get("referrer"))[:500],
+        "label": funnel.text(payload.get("label"))[:250],
+        "href": funnel.text(payload.get("href"))[:800],
+        "action": funnel.text(payload.get("action"))[:160],
+        "plan": funnel.text(payload.get("plan"))[:120],
+        "method": funnel.text(payload.get("method"))[:80],
+        "record_type": funnel.text(payload.get("record_type"))[:80],
+        "route": funnel.text(payload.get("route"))[:120],
+        "signal_id": funnel.text(payload.get("signal_id"))[:250],
+        "count": metric_number(payload, "count"),
+        "signal_count": metric_number(payload, "signal_count"),
         "user_id": funnel.text((user or {}).get("id") or (user or {}).get("_id") or (user or {}).get("user_id")),
         "user_email": user_email,
         "business_id": business_id,
@@ -115,7 +170,13 @@ async def record_event(db, get_current_user, request, payload: Dict[str, Any]):
         )
     except Exception:
         return JSONResponse({"ok": False, "detail": "Funnel event could not be recorded"}, status_code=500)
-    return JSONResponse({"ok": True, "recorded": True, "event": event, "source": "churvox_conversion_funnel_exact_route"})
+    return JSONResponse({
+        "ok": True,
+        "recorded": True,
+        "event": event,
+        "original_event": raw_event if raw_event != event else None,
+        "source": "churvox_conversion_funnel_exact_route",
+    })
 
 
 def install(module):
