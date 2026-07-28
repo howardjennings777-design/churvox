@@ -193,3 +193,69 @@ jobs:
               ? 'Current exact-anchor full-user repairs passed the permanent owner/worker contract and production build, were committed to main, and updated both Render deployment markers.'
               : 'Current exact-anchor full-user repair stopped before commit because a source anchor, permanent contract or production build failed. No partial repair was pushed.';
             await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
+
+  current-full-user-repair-2:
+    if: startsWith(github.event.issue.title, '[churvox-current-full-user-repair-v3]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Apply second exact-anchor repairs
+        run: python scripts/churvox_current_full_user_repair_2.py
+
+      - name: Verify second repair anchors and production build
+        run: |
+          set -euo pipefail
+          node --check frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          grep -F 'window.location.replace(destination);' frontend/src/pages/auth/LoginPage.js
+          grep -F 'integrations: "accounting"' frontend/src/churvox-studio/studioModel.js
+          grep -F '.cvsContextBeam nav button { min-height: 44px;' frontend/src/churvox-studio/churvoxStudio.css
+          grep -F ".filter({ visible: true }).first().click();" frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          npm --prefix frontend install --include=dev --legacy-peer-deps
+          npm --prefix frontend run build
+
+      - name: Run login and recovery browser contract
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npm start > /tmp/churvox-current-repair-2-server.txt 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3000/login >/dev/null; then break; fi
+            sleep 2
+          done
+          PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npx playwright test tests/e2e/churvox-login-recovery-paid-launch.spec.js --project=desktop-chromium --workers=1 --reporter=line
+
+      - name: Commit second current verified repairs
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            backend/RENDER_RESTART_20260615.txt \
+            frontend/public/render-deploy-marker.txt \
+            frontend/src/pages/auth/LoginPage.js \
+            frontend/src/churvox-studio/studioModel.js \
+            frontend/src/churvox-studio/churvoxStudio.css \
+            frontend/tests/e2e/churvox-current-human-owner-worker-flow.spec.js
+          git commit -m 'Finish current full user test repairs'
+          git push origin HEAD:main
+
+      - name: Post second current repair result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ job.status }}' === 'success';
+            const body = ok
+              ? 'Second current full-user repairs passed exact anchors, the production build and the login/recovery browser suite, were committed to main, and updated both Render deployment markers.'
+              : 'Second current full-user repair stopped before commit because an exact anchor, production build or login browser contract failed. No partial repair was pushed.';
+            await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
