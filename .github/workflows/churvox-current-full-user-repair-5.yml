@@ -33,7 +33,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python scripts/churvox_current_full_user_force_fix.py 2>&1 | tee /tmp/force-fix-apply.log
+          python scripts/churvox_current_full_user_force_fix_2.py 2>&1 | tee /tmp/force-fix-apply.log
 
       - name: Verify exact product and audit contracts
         id: verify
@@ -54,6 +54,7 @@ jobs:
             grep -F 'const user = await checkAuth({ allowOfflineFallback: false });' frontend/src/pages/auth/LoginPage.js
             grep -F 'try { void logout?.(); } catch {}' frontend/src/pages/auth/LoginPage.js
             grep -F '[408, 425, 502, 503, 504].includes(status)' frontend/src/pages/auth/LoginPage.js
+            grep -F "Temporary Render service failure' }, 503" frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js
             grep -F 'loginFailures: 2' frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js
             grep -F 'toBeGreaterThanOrEqual(3)' frontend/tests/e2e/churvox-login-recovery-paid-launch.spec.js
             grep -F 'attempt <= 6' frontend/tests/e2e/churvox-live-launch-human-audit-v2.spec.js
